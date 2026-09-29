@@ -4,13 +4,13 @@
 
 ## Goal
 
-심사위원·팀이 **15분 안에** "PawNote의 하루" 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다.
+심사위원·팀이 **15분 안에** "PawNote의 하루" 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다. 로그인 UX·Welcome·Try demo는 **[onboarding.ko.md](../onboarding.ko.md)** (OB.3·OB.5와 연동).
 
 ### Goal 달성 기준
 
 - [ ] `backend/scripts/seed_demo.py` — owner, sitter, dog Bori, chicken allergy, med 08:00, walk 10:30 (+ `--relative` 옵션)
 - [ ] README Getting Started: clone → env → migrate → seed → run → login
-- [ ] Public frontend URL (Vercel) + backend URL (Nebius Serverless Endpoint, fallback Render), production CORS
+- [ ] Public frontend URL (Vercel) + backend URL (**Nebius AI Cloud Serverless Endpoint** — 정식; Render는 fallback만), production CORS
 - [ ] 테스트 계정 문서 (Devpost 붙여넣기용)
 - [ ] 12/15까지 유지 계획 실행 (keep-alive, 한도 모니터링)
 
@@ -27,7 +27,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Vercel (Expo web export) + Nebius Serverless Endpoint (Docker) | App Store / Play 빌드 |
+| Vercel (Expo web export) + **Nebius AI Cloud** Serverless Endpoint (Docker) | App Store / Play 빌드 |
 | Supabase keep-alive, 모니터링 | Multi-region HA |
 | 3분 영상 스크립트 outline | 영상 편집 (묵) |
 | Nebius/NVIDIA feedback 초안 | Devpost 최종 클릭 (민식) |
@@ -54,7 +54,7 @@
 | :--- | :--- | :--- |
 | 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), dog Bori(Maltese, 4y), allergy chicken, care_tasks 2개, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
 | 10.2 | README | 루트 Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency로 갱신, architecture 그림, 스크린샷 4장. backend/frontend README 최신화 |
-| 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). Nebius Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인. 실패/지연 시 **Render**(Docker 동일) fallback + README에 이유 기록. **CD:** `.github/workflows/deploy-backend.yml` — `push: main` + `paths: backend/**` + `workflow_dispatch(image_tag)`: docker build → Registry push (tag = `${{ github.sha }}`) → Endpoint 이미지 갱신 → `curl -f $BACKEND_URL/health` 재시도 5회. 첫 배포는 수동으로 Endpoint 생성 후 워크플로는 갱신만 담당 ([architecture §11](architecture.ko.md#11-cicd-파이프라인-d20)) |
+| 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). **Nebius AI Cloud:** Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인 (Builders & Brews **AI Cloud $100** 크레딧 활용). **Render**는 Nebius만 막힐 때 fallback + README·피드백에 이유 기록. **CD:** `.github/workflows/deploy-backend.yml` — `push: main` + `paths: backend/**` + `workflow_dispatch(image_tag)`: docker build → Registry push (tag = `${{ github.sha }}`) → Endpoint 이미지 갱신 → `curl -f $BACKEND_URL/health` 재시도 5회. 첫 배포는 수동으로 Endpoint 생성 후 워크플로는 갱신만 담당 ([architecture §11](architecture.ko.md#11-cicd-파이프라인-d20)) |
 | 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용 |
 | 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 **Devpost 제출란에만** 기재 (repo엔 "see submission"), 데모 순서 5줄 |
 | 10.6 | Feedback log | README 피드백 표: Token Factory, Serverless Endpoint, 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |

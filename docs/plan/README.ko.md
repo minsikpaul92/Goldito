@@ -204,34 +204,15 @@ notifications    (id, user_id, type, ref_id, read_at)
 
 ---
 
-## 12. Tavily 가이드
+## 12. Tavily
 
-**뭔가요?** Tavily는 **AI 에이전트용 웹 검색 API**입니다. 구글처럼 링크 목록을 주는 게 아니라, LLM이 바로 읽을 수 있게 정리된 본문(과 선택적으로 짧은 답변)을 돌려줍니다. URL에서 본문을 뽑는 `extract`, 사이트를 훑는 `crawl`도 있습니다.
+상세: **[tavily.ko.md](tavily.ko.md)** (무엇인지, PawNote 연동, $3k 보너스, `TAVILY_API_KEY` 위치).
 
-**왜 쓰나요?**
-- Nemotron의 지식은 학습 시점에 멈춰 있습니다. 사료 리콜이나 생소한 성분 정보는 계속 바뀌니, Tavily로 세이프티 가드에 **최신 정보와 출처**를 붙입니다.
-- **Best Use of Tavily ($3,000)** 보너스상 자격 — 런타임에 실제로 호출해야 함
-- 크레딧: **Nebius Builders Program**에 포함, Tavily 자체 무료 월간 한도도 있음
+---
 
-**어디에 쓰나요?**
-1. **모르는 성분** → "`<성분>`은 강아지에게 안전한가? 닭고기가 들어있나?" → 결과를 Ultra에 전달
-2. **리콜 확인** → "`<브랜드> <제품>` dog treat recall 2026"
-3. (선택) 최신 정보가 필요한 Q&A
+## 12.1 제품 온보딩 (심사·데모)
 
-```python
-from tavily import TavilyClient
-
-tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
-res = tavily.search(
-    query="Is hydrolyzed animal protein safe for dogs with chicken allergy?",
-    search_depth="basic",
-    max_results=5,
-    include_answer=True,
-)
-# res["answer"], res["results"][i]["content"], res["results"][i]["url"]
-```
-
-경고 모달에 **출처 URL**을 함께 보여주세요. AI 판단의 신뢰도가 올라가고 데모에서도 잘 보입니다.
+상세: **[onboarding.ko.md](onboarding.ko.md)** (Welcome · Try demo Owner/Sitter · Phase 03/10 · 묵 handoff).
 
 ---
 
@@ -244,7 +225,8 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 ## 14. 결정 필요
 
 - [x] 데모 언어: **영어 전용** (UI + AI 출력) — 2026-09-29 확정 ([architecture D1](phases/architecture.ko.md#1-결정-로그-확정))
-- [x] 백엔드 배포: **Nebius Serverless Endpoint**, fallback Render — 2026-09-29 확정 (D18)
+- [x] 백엔드 API: **Nebius AI Cloud Serverless Endpoint** (정식), Render는 긴급 fallback만 — 2026-09-29 (D18)
+- [x] Builders & Brews Toronto 참석 — Token Factory $100, AI Cloud $100, Tavily 8k credits
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [ ] Few-shot 샘플 **규모**(3편 확정, 추가 여부)
 - [ ] Nano Omni 사용 가능 여부 (API 키로 확인)

@@ -92,8 +92,8 @@ PawNote의 두 가지 약속:
 ¹ Nebius 공식 cookbook에는 있으나 공개 카탈로그엔 없음 → API 키로 `GET /v1/models` 확인 필요
 
 **기타 Nebius 서비스**
-- **Serverless Jobs** (계획) — 투약·산책 리마인더, 하루 마감 알림장 생성
-- **Serverless Endpoints** (선택) — FastAPI 백엔드 호스팅
+- **Nebius AI Cloud — Serverless Endpoint** — **FastAPI 백엔드(API 서버)** 호스팅 (D18)
+- **Serverless Jobs** (선택) — 투약 리마인더, 알림장 배치
 
 ---
 

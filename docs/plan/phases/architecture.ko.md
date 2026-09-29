@@ -27,7 +27,7 @@
 | D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
 | D16 | sitter 배정 | owner가 **sitter 이메일로 배정** — RPC `assign_sitter(dog_id, sitter_email)` | 초대 링크보다 단순, 데모 재현 쉬움 |
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
-| D18 | 배포 | Backend: **Nebius Serverless Endpoint** (Docker), 실패 시 **Render** fallback. Frontend: `expo export -p web` → **Vercel** 정적 호스팅 | Nebius 서비스 활용 점수 + 안정성 |
+| D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
 | D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
@@ -155,7 +155,7 @@ PawNote/
 | `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, P2 |
-| `TAVILY_API_KEY` | (P1) | 11 |
+| `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08 stretch / 11 (세이프티 웹 검색). [tavily.ko.md](../tavily.ko.md) |
 
 ### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
 
@@ -288,5 +288,5 @@ DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본�
 | 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
 | GitHub Secrets (CD 전용) | `NEBIUS_REGISTRY_*`(레지스트리 로그인), `NEBIUS_ENDPOINT_ID`, `BACKEND_URL`. 앱 런타임 키(Supabase·Cloudinary·Nebius API)는 **Nebius Endpoint env / Vercel env에만** 저장 |
 | 롤백 | backend: 이전 sha 태그로 Endpoint 재지정 (`workflow_dispatch` 입력 `image_tag`). frontend: Vercel 대시보드 "Promote previous deployment" |
-| Fallback | Nebius 배포가 막히면 Render GitHub 자동 배포(같은 Dockerfile)로 전환, `deploy-backend.yml` 비활성 |
+| Fallback | **예외만:** Nebius AI Cloud Endpoint 배포가 막히면 Render(동일 Dockerfile). 정상 경로는 항상 **Nebius AI Cloud Serverless Endpoint** |
 
