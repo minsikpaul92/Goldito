@@ -8,7 +8,7 @@
 
 ### Goal 달성 기준
 
-- [ ] Sitter JWT로 `POST /api/media/sign` → signature 받기 (담당 아닌 dog → 403)
+- [ ] Sitter JWT로 `POST /api/media/sign` → signature 받기 (담당 아닌 pet → 403)
 - [ ] 브라우저에서 파일 선택 → Cloudinary 업로드 성공 (image + video 각 1건)
 - [ ] `POST /api/media/complete` → `media` row 생성 + `secure_url`, `thumb_url` 반환
 
@@ -17,7 +17,7 @@
 ## 선행 조건
 
 - [Phase 00](phase-00.md) 0.2 Cloudinary
-- [Phase 03](phase-03.md) JWT + sitter role + dog 배정 (3.6)
+- [Phase 03](phase-03.md) JWT + sitter role + pet 배정 (3.6)
 
 ---
 
@@ -35,9 +35,9 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_sitter_of(dog_id)`. `folder = f"pawnote/{dog_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
-| 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawnote/{dog_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
-| 4.3 | Frontend helper | `uploadMedia({dogId, purpose, file}) → {mediaId, secureUrl, thumbUrl}`: pick → `api.post('/api/media/sign')` → `FormData(file, api_key, timestamp, signature, folder)` → fetch upload_url → `api.post('/api/media/complete')`. 실패 시 `UploadError(step)` throw → 호출 화면이 Toast + **Retry** |
+| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_sitter_of(pet_id)`. `folder = f"pawnote/{pet_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
+| 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawnote/{pet_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
+| 4.3 | Frontend helper | `uploadMedia({petId, purpose, file}) → {mediaId, secureUrl, thumbUrl}`: pick → `api.post('/api/media/sign')` → `FormData(file, api_key, timestamp, signature, folder)` → fetch upload_url → `api.post('/api/media/complete')`. 실패 시 `UploadError(step)` throw → 호출 화면이 Toast + **Retry** |
 | 4.4 | URL helper | `thumbUrl(publicId, w=400)` → `https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto,c_fill,w_400,h_400/{publicId}`, `videoPosterUrl(publicId)` → `…/video/upload/so_0,f_jpg,w_400/{publicId}.jpg`, `videoUrl(publicId)` → `…/video/upload/q_auto/{publicId}` |
 | 4.5 | 제한 | 클라이언트 사전 체크: image ≤ 10MB, video ≤ 50MB & ≤ 30초 (초과 시 alert "Please pick a shorter clip (max 30s).") |
 | 4.6 | Backend service | `services/cloudinary.py`: `sign()`, `delivery_url()`, `fetch_as_data_url(public_id, resource_type)` (D12 — Phase 08/09용, `w_1024,f_jpg` 변환본 다운로드 → base64) |

@@ -4,11 +4,12 @@
 
 ## Goal
 
-키즈노트 **투약의뢰서/투약보고서** 흐름을 반려견에 맞춘다: 견주가 **약·산책 일정**을 등록 → 펫시터에게 **오늘 할 일**이 자동으로 보이고 시간이 되면 **인앱 리마인더** → **인증 사진 한 장**으로 완료 → **견주 알림 + 피드 게시**.
+키즈노트 **투약의뢰서/투약보고서** 흐름을 강아지·고양이에 맞춘다: 견주가 **약·산책·식사·화장실·놀이 일정**을 등록 (종별 허용 type은 [phase-02 D22](phase-02.md#종별-케어-규칙-d22)) → 펫시터에게 **오늘 할 일**이 자동으로 보이고 시간이 되면 **인앱 리마인더** → **인증 사진 한 장**으로 완료 → **견주 알림 + 피드 게시**.
 
 ### Goal 달성 기준
 
-- [ ] Owner: Care 탭에서 08:00 medication(`Heartworm pill`, `1 tablet`) + 10:30 walk 생성
+- [ ] Owner: Care 탭에서 Bori(dog) 08:00 medication(`Heartworm pill`, `1 tablet`) + 10:30 walk, Mochi(cat) 12:00 litter 생성
+- [ ] 고양이 선택 시 type 목록에 Walk가 없고, 강아지 선택 시 Litter box가 없음
 - [ ] Sitter: Tasks 탭에 오늘 task_logs가 **자동으로** 생성·표시 (버튼 없음)
 - [ ] due 시각 ±5분이 되면 sitter 앱에 배너 + 토스트 "Time for Bori's medication 💊"
 - [ ] **Complete with photo** → status done + feed_post(task 뱃지) + owner `task_done` 알림
@@ -38,10 +39,10 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 6.1 | OwnerTaskScreen `/(owner)/tasks` | 상단: 오늘 상태 리스트. 하단: 등록된 task 목록 + **Add task** 시트 — type 토글(💊 Medication / 🦮 Walk), title(med 필수, walk 기본 "Walk"), dose(med만), time picker(15분 단위), notes. 수정·비활성(`active=false`) |
-| 6.2 | `ensure_today_task_logs(p_dog uuid)` RPC | security definer, `can_access_dog` 확인. `APP_TIMEZONE` 기준 오늘 날짜 + `scheduled_time` → `due_at` (`(current_date at time zone tz + scheduled_time) at time zone tz`). `active and repeat_daily`인 task마다 `insert … on conflict (task_id, due_at) do nothing`. 오늘 로그 목록 반환. **호출 시점:** sitter Today/Tasks, owner Care 화면 진입 시 (멱등) |
+| 6.1 | OwnerTaskScreen `/(owner)/tasks` | 상단: 오늘 상태 리스트. 하단: 등록된 task 목록 + **Add task** 시트 — type 선택은 **선택된 pet의 species 기준** (dog: 💊 Medication · 🦮 Walk · 🍽️ Feeding · 🎾 Play / cat: 💊 Medication · 🍽️ Feeding · 🧺 Litter box · 🎾 Play), title(med 필수, 나머지는 type 라벨이 기본값), dose(med만), time picker(15분 단위), notes. 수정·비활성(`active=false`) |
+| 6.2 | `ensure_today_task_logs(p_pet uuid)` RPC | security definer, `can_access_pet` 확인. `APP_TIMEZONE` 기준 오늘 날짜 + `scheduled_time` → `due_at` (`(current_date at time zone tz + scheduled_time) at time zone tz`). `active and repeat_daily`인 task마다 `insert … on conflict (task_id, due_at) do nothing`. 오늘 로그 목록 반환. **호출 시점:** sitter Today/Tasks, owner Care 화면 진입 시 (멱등) |
 | 6.3 | SitterTasksScreen `/(sitter)/tasks` | 정렬: missed → pending(due 순) → done. TaskRow: 아이콘, title·dose, due 시각, 상태 뱃지, 우측 큰 **Complete** 버튼 (1 주 액션). Today 탭 상단에 "Next up" 카드로도 노출 |
-| 6.4 | Complete flow | 탭 → 사진 선택 → `uploadMedia({purpose:'task_proof'})` → `rpc('complete_task_log', {p_task_log, p_media})`. RPC: `is_sitter_of` 확인, `status='done', completed_at=now(), completed_by, media_id` 갱신, feed_post insert (`task_log_id`, caption `"💊 {title} given"` / `"🦮 Walk done"`, `caption_source='task'`), owner 알림 `task_done` insert. 이미 done이면 exception `already_done` |
+| 6.4 | Complete flow | 탭 → 사진 선택 → `uploadMedia({purpose:'task_proof'})` → `rpc('complete_task_log', {p_task_log, p_media})`. RPC: `is_sitter_of` 확인, `status='done', completed_at=now(), completed_by, media_id` 갱신, feed_post insert (`task_log_id`, caption은 type별 템플릿 — `"💊 {title} given"` / `"🦮 Walk done"` / `"🍽️ Fed {name}"` / `"🧺 Litter box cleaned"` / `"🎾 Play time with {name}"`, `caption_source='task'`), owner 알림 `task_done` insert. 이미 done이면 exception `already_done` |
 | 6.5 | missed / late 표시 | 파생 (D9): pending & now > due+60m → ⚠️ "Missed", done & completed_at > due+60m → "Done late". 완료는 missed여도 허용 |
 | 6.6 | 인앱 리마인더 (D17) | `useDueReminder()` hook (sitter 레이아웃에 1개): 30초 interval, pending 중 `due_at-5m ≤ now ≤ due_at+60m`인 로그 → 상단 배너 + 토스트 1회(`sessionStorage`에 shown id 기록) |
 | 6.7 | (Stretch) 서버 리마인더 | Nebius Serverless Job(cron 5분) 또는 FastAPI APScheduler: due 5분 전 sitter에게 `task_due` notification insert. README "Other Nebius services" 포인트 |

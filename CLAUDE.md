@@ -15,7 +15,7 @@ Every feature must pass:
 | :--- | :--- |
 | **Learn without asking.** Updates arrive proactively. | **Care, snap, tap.** No report typing, no repetitive DMs. |
 
-**Product benchmark:** Korean **Kidsnote** — album feed, medication request/report, daily report (알림장). We adapt that loop for dogs + **NVIDIA Nemotron** on **Nebius Token Factory**.
+**Product benchmark:** Korean **Kidsnote** — album feed, medication request/report, daily report (알림장). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
 **Demo north star:** The flow in root `README.md` — *A Day with PawNote* — must work end-to-end before hackathon submit.
 
@@ -53,8 +53,8 @@ Think in **two apps in one codebase** — role after login:
 
 ```
 Owner                          Sitter
-  Home (my dogs)                 Home (assigned dogs)
-  Feed / Album                   Dog feed upload
+  Home (my pets)                 Home (assigned pets)
+  Feed / Album                   Pet feed upload
   Tasks setup (med/walk)         Today's tasks + complete + photo
   Daily report (read)            Report generate → send
   Notifications                  Treat scanner (safety)

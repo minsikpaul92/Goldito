@@ -26,6 +26,7 @@ PawNote에서는 **Nemotron(고정된 학습 지식)** 만으로는 모르는 **
 
 - `Is hydrolyzed poultry protein safe for dogs with chicken allergy?`
 - `{brand} {product name} dog treat recall 2026`
+- `Is propylene glycol safe for cats?` (고양이 전용 독성 확인)
 
 ---
 

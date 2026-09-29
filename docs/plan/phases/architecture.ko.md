@@ -22,13 +22,16 @@
 | D10 | 피드 게시물 : 미디어 | **1 post = 1 media** (`feed_posts.media_id`). 다중 사진은 P1 | 단순화 |
 | D11 | 캡션 위치 | `feed_posts.caption`만 사용 (`media.caption` 없음) | 중복 제거 |
 | D12 | AI 이미지 입력 | 백엔드가 Cloudinary에서 `w_1024,f_jpg` 변환본을 받아 **base64 data URL**로 모델에 전달. 영상은 `so_0` 썸네일 jpg | 모델 서버의 외부 URL fetch 가능 여부에 의존하지 않음 |
-| D13 | 세이프티 입력 | 성분표도 **일반 업로드 파이프(Phase 04)** 로 올린 뒤 `POST /api/ai/safety-check {dog_id, media_id}` (multipart 아님) | 업로드 코드 재사용, 증거 이미지 보관 |
+| D13 | 세이프티 입력 | 성분표도 **일반 업로드 파이프(Phase 04)** 로 올린 뒤 `POST /api/ai/safety-check {pet_id, media_id}` (multipart 아님) | 업로드 코드 재사용, 증거 이미지 보관 |
 | D14 | JWT 검증 | Supabase **JWKS**(`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) 우선, 레거시 프로젝트면 `SUPABASE_JWT_SECRET`(HS256) fallback | 신규 프로젝트는 asymmetric key 기본 |
 | D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
-| D16 | sitter 배정 | owner가 **sitter 이메일로 배정** — RPC `assign_sitter(dog_id, sitter_email)` | 초대 링크보다 단순, 데모 재현 쉬움 |
+| D16 | sitter 배정 | owner가 **sitter 이메일로 배정** — RPC `assign_sitter(pet_id, sitter_email)` | 초대 링크보다 단순, 데모 재현 쉬움 |
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
 | D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
+| D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·`species_served`·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성 | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
+| D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
+| D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
 | D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
@@ -69,7 +72,7 @@ PawNote/
 │  │  │  ├─ auth.py           # get_current_user, require_role("sitter")
 │  │  │  └─ supabase.py       # service-role client (싱글톤)
 │  │  ├─ services/
-│  │  │  ├─ authz.py          # assert_owner_of(dog_id), assert_sitter_of(dog_id)
+│  │  │  ├─ authz.py          # assert_owner_of(pet_id), assert_sitter_of(pet_id)
 │  │  │  ├─ cloudinary.py     # sign params, delivery URL, fetch image → base64
 │  │  │  ├─ nebius.py         # model role → (model_id, base_url), chat(), chat_json()
 │  │  │  └─ timeutil.py       # APP_TIMEZONE 기준 today/day range
@@ -95,14 +98,14 @@ PawNote/
    ├─ README.md
    ├─ app/                    # expo-router (§3)
    ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal
-   ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, DogSwitcher, NotificationItem …)
+   ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, PetSwitcher, NotificationItem …)
    ├─ lib/
    │  ├─ supabase.ts          # createClient(anon) + web session persist
    │  ├─ api.ts               # FastAPI fetch 래퍼 (Bearer 자동, 에러 정규화)
    │  ├─ cloudinary.ts        # uploadMedia(), thumbUrl(), videoPosterUrl()
    │  ├─ feed.ts              # createFeedPost() — Phase 05/06/09 공용
    │  └─ time.ts              # APP_TIMEZONE 표시 포맷
-   ├─ providers/              # SessionProvider, DogProvider(선택된 dog), ToastProvider, NotificationsProvider(Realtime)
+   ├─ providers/              # SessionProvider, PetProvider(선택된 pet), ToastProvider, NotificationsProvider(Realtime)
    ├─ theme/tokens.ts         # 색·간격(8px)·radius·타이포 — 묵 Figma 토큰으로 교체
    └─ types/db.ts             # Supabase 테이블 타입 (수동 or supabase gen types)
 ```
@@ -116,21 +119,21 @@ PawNote/
 | `/` | - | 세션·역할 보고 redirect | - | 03 |
 | `/(auth)/login` | - | Login | Sign in | 03 |
 | `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
-| `/(owner)/` (tab: Home) | owner | My dogs 카드 + 오늘 요약 | Add dog | 03 |
-| `/(owner)/dogs/new`, `/(owner)/dogs/[dogId]` | owner | Dog profile (이름·견종·생일·메모·**알레르기 chips**·**sitter 이메일 배정**) | Save | 03 |
-| `/(owner)/feed` (tab: Feed) | owner | 선택 dog 타임라인 (DogSwitcher) | 스크롤 | 05 |
+| `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
+| `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (이름·견종·생일·메모·**알레르기 chips**·**sitter 이메일 배정**) | Save | 03 |
+| `/(owner)/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
 | `/(owner)/tasks` (tab: Care) | owner | 투약·산책 등록 + 오늘 상태(done/pending/missed) | Add task | 06 |
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/(sitter)/` (tab: Today) | sitter | 담당 dog + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 06 |
-| `/(sitter)/dogs/[dogId]` | sitter | Dog 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
+| `/(sitter)/` (tab: Today) | sitter | 담당 pet + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 06 |
+| `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
 | `/(sitter)/report` (tab: Report) | sitter | 퀵탭 체크 → Generate → (편집) → Send | **Send report** | 07 |
 | `/(sitter)/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
 
 - 탭: owner `Home · Feed · Care · Reports`, sitter `Today · Tasks · Scan · Report`. 알림 벨은 두 역할 모두 헤더 우측 (unread badge).
-- dog가 여러 마리면 `DogProvider`의 선택값을 모든 탭이 공유 (헤더 DogSwitcher). 데모는 1마리(Bori).
+- pet이 여러 마리면 `PetProvider`의 선택값을 모든 탭이 공유 (헤더 PetSwitcher, 종 아이콘 🐶/🐱). 데모는 2마리(Bori 강아지, Mochi 고양이).
 - 역할 가드: `(owner)`/`(sitter)` 그룹 `_layout.tsx`에서 role 불일치 시 `/`로 redirect.
 
 ---
@@ -186,11 +189,11 @@ PawNote/
 | GET | `/health` | - | - | `{status:"ok"}` | 01 |
 | GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`) — keep-alive 전용 | 10 |
 | GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
-| POST | `/api/media/sign` | sitter of dog | `{dog_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
-| POST | `/api/media/complete` | sitter of dog | `{dog_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
-| POST | `/api/ai/caption` | sitter of dog | `{dog_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
-| POST | `/api/ai/daily-report` | sitter of dog | `{dog_id, date:"YYYY-MM-DD", inputs:{meal?, water?, poop?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
-| POST | `/api/ai/safety-check` | sitter of dog | `{dog_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
+| POST | `/api/media/sign` | sitter of pet | `{pet_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
+| POST | `/api/media/complete` | sitter of pet | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
+| POST | `/api/ai/caption` | sitter of pet | `{pet_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
+| POST | `/api/ai/daily-report` | sitter of pet | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
+| POST | `/api/ai/safety-check` | sitter of pet | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
 
 > 알림장 **전송**, task **완료**, 피드 **게시**는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6).
 
@@ -201,9 +204,9 @@ PawNote/
 | 동작 | 경로 | 부수효과 (트리거) |
 | :--- | :--- | :--- |
 | 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` |
-| dog 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | - |
-| sitter 배정 | RPC `assign_sitter(dog_id, sitter_email)` | - |
-| 오늘 task_logs 생성 | RPC `ensure_today_task_logs(dog_id)` — 화면 진입 시 자동 호출, 멱등 | - |
+| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | - |
+| sitter 배정 | RPC `assign_sitter(pet_id, sitter_email)` | - |
+| 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
 | 피드 게시 | Supabase client insert `feed_posts` (sitter RLS) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
 | task 완료 | RPC `complete_task_log(task_log_id, media_id)` → 내부에서 feed_post도 생성 | owner `task_done` |
@@ -224,7 +227,7 @@ PawNote/
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
 | `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) | "Blocked a risky treat for Bori ⚠️" | `/(owner)/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Bori's walk is due at 10:30" | `/(sitter)/tasks` |
-| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Bori" | `/(sitter)/dogs/[id]` |
+| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Bori" | `/(sitter)/pets/[id]` |
 
 프론트: `NotificationsProvider`가 `notifications` Realtime(INSERT, `user_id=eq.<me>`)을 구독 → 토스트 + unread 카운트 갱신 + type별 쿼리 invalidate (예: `feed_post` → 피드 리페치).
 

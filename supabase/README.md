@@ -8,7 +8,7 @@ SQL migrations for the PawNote demo. Apply in order via the Supabase SQL Editor 
 
 | File | Phase | Contents (summary) |
 | :--- | :--- | :--- |
-| `001_initial_schema.sql` | 02 | Core tables: `profiles`, dogs, allergies, tasks, media, feed, reports, safety, notifications |
+| `001_initial_schema.sql` | 02 | Core tables: `profiles` + `owner_profiles` / `sitter_profiles`, `pets` (dog/cat), allergies, tasks, media, feed, reports, safety, notifications |
 | `002_rls_policies.sql` | 02 | Row-level security by owner / sitter role |
 | `003_functions_triggers.sql` | 02 | Signup → `profiles`, `assign_sitter`, Realtime |
 | `004_feed_notifications.sql` | 05 | Feed posts + notification triggers |

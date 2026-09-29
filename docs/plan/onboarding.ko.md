@@ -12,7 +12,7 @@
 | :--- | :--- | :--- |
 | **해커톤 심사** | Working demo URL 필수, 심사위원은 **몇 분**만 씀 | README만 읽고 로그인하는 friction 제거 |
 | **PawNote 구조** | Owner·Sitter **역할 분리**, Owner는 **견·알레르기·시터 배정** 필요 | **시드 계정** + 화면에서 **Try demo** |
-| **제품 스토리** | Kidsnote for dogs + AI가 한눈에 안 들어옴 | 로그인 **전** 짧은 소개 (문제 → 두 역할 → 하루 타임라인) |
+| **제품 스토리** | Kidsnote for pets + AI가 한눈에 안 들어옴 | 로그인 **전** 짧은 소개 (문제 → 두 역할 → 하루 타임라인) |
 
 Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** 경험을 뜻한다. 이 문서는 **엔드유저(견주·시터·심사위원) 제품 온보딩**이다.
 
@@ -78,8 +78,8 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 ### 3.3 Sign up (기존 Phase 03)
 
-- Intro step 2와 **같은 비주얼·카피**로 “I'm a dog owner” / “I'm a pet sitter” 카드.
-- 가입 후 Owner는 dog·알레르기·시터 배정 (Phase 03.5–3.6). Sitter는 “No dogs assigned yet…” empty state.
+- Intro step 2와 **같은 비주얼·카피**로 “I'm a pet owner” / “I'm a pet sitter” 카드.
+- 가입 후 Owner는 pet·알레르기·시터 배정 (Phase 03.5–3.6). Sitter는 “No pets assigned yet…” empty state.
 
 ### 3.4 로그인 후 (앱 내 “온보딩” — P0 최소)
 
@@ -116,7 +116,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 1. **Welcome flow** — 3 screens (or 1 scroll) + CTA 영역
 2. **Login** — Demo block 레이아웃 (Owner / Sitter)
 3. **Signup role cards** — Intro step 2와 토큰 통일 (색·타이포·illustration style)
-4. **Empty states** (1장): sitter “No dogs assigned”, owner “No posts yet”
+4. **Empty states** (1장): sitter “No pets assigned”, owner “No posts yet”
 
 ### 5.2 UX 원칙 (CLAUDE.md와 동일)
 
@@ -163,7 +163,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 - 소셜 로그인, 비밀번호 재설정 UI
 - 앱 내 coach marks / tooltip 투어
-- Owner 가입 후 forced dog setup wizard (시드 데모가 우선)
+- Owner 가입 후 forced pet setup wizard (시드 데모가 우선)
 - 한국어 UI (D1: EN only)
 
 P1에서 intro_seen, Welcome 일러스트 polish, “Request photo” 스텝을 Intro에 한 줄 추가 등은 [Phase 11](phases/phase-11.md) 폴리싱과 함께 검토.

@@ -1,6 +1,6 @@
 # P0 개발 Todo & AI 프롬프트 플레이북
 
-> ⚠️ **정본은 [phases/architecture.ko.md](phases/architecture.ko.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{dog_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
+> ⚠️ **정본은 [phases/architecture.ko.md](phases/architecture.ko.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{pet_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
 
 > **목적:** 리포가 문서만 있는 상태에서, P0(피드·투약/산책·알림장·세이프티 가드)까지 **AI(Cursor)에게 줄 명령**을 단계별로 정리.
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
@@ -53,7 +53,7 @@ Output:
 | ID | Todo | 담당 | DoD |
 | :--- | :--- | :--- | :--- |
 | 0.1 | Supabase 프로젝트 생성, 리전 선택 | 민식 | URL + anon key + service role key 확보 |
-| 0.2 | Cloudinary 계정, 업로드 프리셋(폴더 `pawnote/{dog_id}/`) | 민식 | cloud name, API key/secret |
+| 0.2 | Cloudinary 계정, 업로드 프리셋(폴더 `pawnote/{pet_id}/`) | 민식 | cloud name, API key/secret |
 | 0.3 | Nebius Token Factory API key, `GET /v1/models`로 비전 모델 ID 확인 | 슬기 | 사용할 model ID 목록 문서화 |
 | 0.4 | Tavily API key (P0 후반 또는 P1) | 슬기 | key 확보 |
 | 0.5 | `.env` 로컬 파일 (gitignore) | 민식 | backend/frontend 각각 |
@@ -109,7 +109,7 @@ DoD: web loads and health check shows ok when backend runs.
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
 | 2.1 | `users` 프로필 + `role` (owner \| sitter) | 0.1 | migration SQL |
-| 2.2 | `dogs`, `dog_allergies` | 2.1 | |
+| 2.2 | `pets`, `pet_allergies` | 2.1 | |
 | 2.3 | `care_tasks`, `task_logs` | 2.2 | |
 | 2.4 | `media`, `feed_posts` | 2.2 | |
 | 2.5 | `daily_reports`, `safety_checks` | 2.2 | |
@@ -123,16 +123,17 @@ Write supabase/migrations/001_initial_schema.sql based on docs/plan/README.ko.md
 
 Include:
 - profiles extending auth.users (id uuid PK references auth.users, role text check owner|sitter, display_name)
-- dogs (owner_id, sitter_id nullable until assigned)
-- dog_allergies, care_tasks (type medication|walk, schedule as jsonb or separate columns — document choice)
+- pets (owner_id, sitter_id nullable until assigned, species dog|cat)
+- owner_profiles / sitter_profiles (1:1 with profiles, see phase-02)
+- pet_allergies, care_tasks (type medication|walk, schedule as jsonb or separate columns — document choice)
 - task_logs (status pending|done|missed, due_at, completed_at, media_id nullable)
 - media (cloudinary_public_id, type image|video, caption nullable)
-- feed_posts (dog_id, sitter_id, caption, links to media via junction or media_ids uuid[])
+- feed_posts (pet_id, sitter_id, caption, links to media via junction or media_ids uuid[])
 - daily_reports (date, body, status draft|sent)
 - safety_checks (result_json jsonb)
 - notifications (user_id, type, ref_id, read_at)
 
-Add indexes on dog_id, user_id, created_at.
+Add indexes on pet_id, user_id, created_at.
 Add updated_at triggers only if simple.
 
 DoD: migration applies cleanly in Supabase SQL editor; comment at top how to run.
@@ -142,14 +143,14 @@ DoD: migration applies cleanly in Supabase SQL editor; comment at top how to run
 
 ```text
 Add supabase/migrations/002_rls_policies.sql:
-- Owners can select/update their dogs and related rows where dogs.owner_id = auth.uid()
-- Sitters can select/update dogs where dogs.sitter_id = auth.uid()
-- Insert feed_posts, task_logs, media only for assigned sitter on that dog
+- Owners can select/update their pets and related rows where pets.owner_id = auth.uid()
+- Sitters can select/update pets where pets.sitter_id = auth.uid()
+- Insert feed_posts, task_logs, media only for assigned sitter on that pet
 - notifications: user can read own user_id = auth.uid()
 
 Use auth.uid(). Document any table that must use service role from FastAPI (if any) in backend/README.md.
 
-DoD: policies compile; no public read on dogs.
+DoD: policies compile; no public read on pets.
 ```
 
 ---
@@ -203,9 +204,9 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 
 ```text
 Implement Cloudinary signed upload:
-- POST /api/media/sign { dog_id, resource_type: image|video } requires auth sitter assigned to dog
-- Return timestamp, signature, cloud_name, api_key, folder pawnote/{dog_id}/
-- POST /api/media/complete { dog_id, public_id, resource_type } inserts media row via Supabase service role or user client — use pattern consistent with Phase 3 choice
+- POST /api/media/sign { pet_id, resource_type: image|video } requires auth sitter assigned to pet
+- Return timestamp, signature, cloud_name, api_key, folder pawnote/{pet_id}/
+- POST /api/media/complete { pet_id, public_id, resource_type } inserts media row via Supabase service role or user client — use pattern consistent with Phase 3 choice
 
 DoD: integration test script or manual steps in backend/README.md.
 ```
@@ -224,9 +225,9 @@ DoD: integration test script or manual steps in backend/README.md.
 
 ```text
 Implement care feed without AI captions first:
-- SitterHome: list assigned dogs (query dogs where sitter_id = me)
+- SitterHome: list assigned pets (query pets where sitter_id = me)
 - DogFeedScreen (sitter): upload photo via signed flow, create feed_post with caption placeholder "..."
-- OwnerHome: select dog, FeedTimeline with infinite scroll by created_at desc
+- OwnerHome: select pet, FeedTimeline with infinite scroll by created_at desc
 - On feed_post insert, create notification for owner and subscribe via supabase channel for notifications insert
 
 DoD: sitter posts photo, owner sees it within realtime or refresh; notification row exists.
@@ -263,7 +264,7 @@ DoD: owner creates 8am medication, sitter completes with photo, owner gets notif
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
 | 7.1 | `backend/app/ai/nebius_client.py` 모델별 base_url | 0.3 | hello world chat |
-| 7.2 | `POST /api/ai/daily-report` 입력: dog_id, date | 5.x, 6.x | draft JSON |
+| 7.2 | `POST /api/ai/daily-report` 입력: pet_id, date | 5.x, 6.x | draft JSON |
 | 7.3 | Sitter: 초안 미리보기 → Send → `daily_reports.sent` | 7.2 | Owner 읽기 |
 | 7.4 | Few-shot 파일 `backend/app/ai/prompts/daily_report/` (익명화 샘플) | 슬기 | git에 샘플만 |
 
@@ -281,9 +282,9 @@ DoD: script scripts/test_nebius.py prints response from nvidia/NVIDIA-Nemotron-3
 ### AI 프롬프트 — 7.2–7.3 알림장 API + UI
 
 ```text
-POST /api/ai/daily-report { dog_id, date }:
+POST /api/ai/daily-report { pet_id, date }:
 - Gather today's feed_post captions, completed task_logs summaries (server-side Supabase service role)
-- Call nvidia/nemotron-3-super-120b-a12b with system prompt from docs/plan (warm dog walker, no fabrication)
+- Call nvidia/nemotron-3-super-120b-a12b with system prompt from docs/plan (warm pet sitter, no fabrication)
 - Save daily_reports status draft
 - Sitter UI: Generate report button, edit optional single textarea, Send sets status sent and notifies owner
 - Owner UI: DailyReportScreen read-only
@@ -303,7 +304,7 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 8.1 | `POST /api/ai/safety-check` photo + dog_id | 7.1, 2.2 | JSON schema |
+| 8.1 | `POST /api/ai/safety-check` photo + pet_id | 7.1, 2.2 | JSON schema |
 | 8.2 | Step1 vision: extract ingredients (Omni or fallback VL) | 8.1 | |
 | 8.3 | Step2 Ultra: allergens + hidden sources | 8.2 | DANGER/WARNING/SAFE |
 | 8.4 | Sitter UI: scanner → modal with warning_message | 8.3 | 데모 가능 |
@@ -312,8 +313,8 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 ### AI 프롬프트 — 8.1–8.3 파이프라인
 
 ```text
-Implement POST /api/ai/safety-check multipart image + dog_id:
-1) Load dog allergens from dog_allergies
+Implement POST /api/ai/safety-check multipart image + pet_id:
+1) Load pet species + allergens from pet_allergies
 2) Vision step: model nvidia/nemotron-3-nano-omni (or env VISION_MODEL_ID) — extract ingredient list from label photo
 3) Reasoning step: nvidia/Nemotron-3-Ultra-550b-a55b — output strict JSON matching schema in docs/plan (safety_status, matched_allergens, detected_ingredients, warning_message)
 4) Validate with pydantic; retry once on invalid JSON
@@ -335,13 +336,13 @@ DoD: matches design stub (red modal).
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 9.1 | `POST /api/ai/caption` image url + dog name | 7.1 | 1–2 warm sentences |
+| 9.1 | `POST /api/ai/caption` image url + pet name | 7.1 | 1–2 warm sentences |
 | 9.2 | 피드 업로드 후 caption 자동 채우기 | 5.1, 9.1 | sitter 타이핑 0 |
 
 ### AI 프롬프트 — 9.1–9.2
 
 ```text
-After media upload, call POST /api/ai/caption with cloudinary secure_url and dog name; set feed_post.caption before save.
+After media upload, call POST /api/ai/caption with cloudinary secure_url and pet name; set feed_post.caption before save.
 Use vision model from env. Fallback: caption "오늘도 잘 지내고 있어요 🐶" if AI fails.
 
 DoD: sitter upload only; caption appears automatically.
@@ -353,7 +354,7 @@ DoD: sitter upload only; caption appears automatically.
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/bori/dog |
+| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Bori(dog)/Mochi(cat) |
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
 | 10.3 | 배포: Vercel(front) + Railway/Render/Fly(backend) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
@@ -364,6 +365,7 @@ DoD: sitter upload only; caption appears automatically.
 Create scripts/seed_demo.sql or Python using service role:
 - Users: demo-owner@pawnote.test, demo-sitter@pawnote.test (document passwords in SECRETS.local.example not committed)
 - Dog Bori with chicken allergy, one medication task 8am, walk 10:30
+- Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
 
 DoD: fresh DB can demo full day flow in 15 minutes.
@@ -383,8 +385,8 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 
 | Endpoint | Body | Response |
 | :--- | :--- | :--- |
-| POST /api/ai/caption | `{ dog_id, image_url }` | `{ caption }` |
-| POST /api/ai/daily-report | `{ dog_id, date }` | `{ report_id, body, status }` |
+| POST /api/ai/caption | `{ pet_id, image_url }` | `{ caption }` |
+| POST /api/ai/daily-report | `{ pet_id, date }` | `{ report_id, body, status }` |
 | POST /api/ai/safety-check | multipart | SafetyCheck JSON |
 
 ---

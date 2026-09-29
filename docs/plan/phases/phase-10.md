@@ -8,7 +8,7 @@
 
 ### Goal 달성 기준
 
-- [ ] `backend/scripts/seed_demo.py` — owner, sitter, dog Bori, chicken allergy, med 08:00, walk 10:30 (+ `--relative` 옵션)
+- [ ] `backend/scripts/seed_demo.py` — owner, sitter, 강아지 Bori(chicken allergy, med 08:00, walk 10:30) + 고양이 Mochi(feeding 09:00, litter 12:00) (+ `--relative` 옵션)
 - [ ] README Getting Started: clone → env → migrate → seed → run → login
 - [ ] Public frontend URL (Vercel) + backend URL (**Nebius AI Cloud Serverless Endpoint** — 정식; Render는 fallback만), production CORS
 - [ ] 테스트 계정 문서 (Devpost 붙여넣기용)
@@ -52,7 +52,7 @@
 
 | ID | 작업 | 상세 / DoD |
 | :--- | :--- | :--- |
-| 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), dog Bori(Maltese, 4y), allergy chicken, care_tasks 2개, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
+| 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), pet Bori(dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi(cat, Domestic Shorthair, 3y, care_tasks feeding+litter), sitter `species_served={dog,cat}`, owner_profiles 가짜 긴급 연락처, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
 | 10.2 | README | 루트 Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency로 갱신, architecture 그림, 스크린샷 4장. backend/frontend README 최신화 |
 | 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). **Nebius AI Cloud:** Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인 (Builders & Brews **AI Cloud $100** 크레딧 활용). **Render**는 Nebius만 막힐 때 fallback + README·피드백에 이유 기록. **CD:** `.github/workflows/deploy-backend.yml` — `push: main` + `paths: backend/**` + `workflow_dispatch(image_tag)`: docker build → Registry push (tag = `${{ github.sha }}`) → Endpoint 이미지 갱신 → `curl -f $BACKEND_URL/health` 재시도 5회. 첫 배포는 수동으로 Endpoint 생성 후 워크플로는 갱신만 담당 ([architecture §11](architecture.ko.md#11-cicd-파이프라인-d20)) |
 | 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용 |

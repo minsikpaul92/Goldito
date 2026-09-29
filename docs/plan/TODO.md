@@ -30,7 +30,7 @@
 - [ ] **2.8** `003_functions_triggers.sql` (signup trigger, `assign_sitter`, realtime)
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
-- [ ] **3.5–3.7** Owner dog profile + allergies + sitter assignment; sitter Today stub
+- [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies + sitter assignment; sitter Today stub; role profiles
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()`
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)

@@ -51,7 +51,7 @@ PawNote is built on two promises:
 
 ### 4. 🛡️ Treat Safety Guard
 1. **See** — snap the ingredient label; Nemotron vision reads it.
-2. **Reason** — Nemotron 3 Ultra checks it against the dog's allergens and breed risks, including *hidden* sources (e.g. "animal fat" may contain chicken).
+2. **Reason** — Nemotron 3 Ultra checks it against the pet's allergens and species/breed risks, including *hidden* sources (e.g. "animal fat" may contain chicken).
 3. **Search** — unknown ingredients or recalls are looked up on the web via **Tavily**.
 4. **Warn** — a warning modal blocks the treat before it's fed.
 
@@ -61,7 +61,7 @@ PawNote is built on two promises:
 
 ### 6. 💬 Private Q&A with AI First Reply
 - Owners message inside the app — no personal phone numbers shared.
-- For routine questions, Nemotron **answers first** in the sitter's tone, grounded in the dog's profile and today's logs. The sitter only steps in when needed.
+- For routine questions, Nemotron **answers first** in the sitter's tone, grounded in the pet's profile and today's logs. The sitter only steps in when needed.
 
 ---
 

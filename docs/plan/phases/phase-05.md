@@ -8,7 +8,7 @@
 
 ### Goal 달성 기준
 
-- [ ] Sitter: Today에서 dog 카드 → Dog 피드 → **+ Photo** → 업로드 → `feed_posts` 생성 (텍스트 입력 없음)
+- [ ] Sitter: Today에서 pet 카드 → Pet 피드 → **+ Photo** → 업로드 → `feed_posts` 생성 (텍스트 입력 없음)
 - [ ] Owner: Feed 탭에서 최신순 게시물 + Cloudinary 썸네일 (image/video)
 - [ ] 새 게시 → `notifications` row(트리거) → Owner 화면 토스트 + 벨 unread +1 + 피드 자동 갱신
 - [ ] 알림 센터: 목록, 탭 시 읽음 처리 + 해당 화면 이동, "Mark all as read"
@@ -18,7 +18,7 @@
 ## 선행 조건
 
 - [Phase 04](phase-04.md) `uploadMedia()`
-- [Phase 03](phase-03.md) dog + sitter 배정
+- [Phase 03](phase-03.md) pet + sitter 배정
 
 ---
 
@@ -26,7 +26,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Sitter dog 피드 + 업로드 FAB | 앨범 날짜 필터·그리드 뷰 (P1) |
+| Sitter pet 피드 + 업로드 FAB | 앨범 날짜 필터·그리드 뷰 (P1) |
 | Owner FeedTimeline (페이지네이션 20) + 상세 모달(원본 이미지/영상 재생) | AI caption (09) |
 | 트리거 `notify_feed_post` (`004_feed_notifications.sql`) | Push (Expo) — 웹 토스트만 |
 | `NotificationsProvider`, 벨 badge, 알림 센터 화면 | 사진 요청 (P1, Phase 11) |
@@ -37,7 +37,7 @@
 
 | 화면 | Route | 역할 | 핵심 액션 | 상태 문구 |
 | :--- | :--- | :--- | :--- | :--- |
-| Sitter Dog 피드 | `/(sitter)/dogs/[dogId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Bori's day." |
+| Sitter Pet 피드 | `/(sitter)/pets/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Bori's day." |
 | Owner Feed | `/(owner)/feed` | owner | 스크롤 / 탭 → 상세 | empty: "No posts yet — your sitter will share photos here." |
 | 알림 센터 | `/(owner)/notifications`, `/(sitter)/notifications` | 둘 다 | 탭 → 이동 | empty: "You're all caught up." |
 
@@ -49,9 +49,9 @@ FeedCard: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 시간("2h ago"
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 5.1 | `lib/feed.ts` `createFeedPost({dogId, mediaId, caption, captionSource})` | Supabase insert `feed_posts` (sitter RLS). Phase 05 caption = `"A moment from today's care 🐾"`, `caption_source='fallback'`. **Phase 09가 이 함수 앞단에 AI 캡션만 끼워 넣음** |
-| 5.2 | Owner timeline query | `feed_posts` join `media` (`select *, media(*)`) where dog_id, order created_at desc, `range(0,19)` + "Load more" / onEndReached |
-| 5.3 | Notification trigger | `004_feed_notifications.sql`: `after insert on feed_posts for each row when (new.task_log_id is null)` → owner에게 `type='feed_post'`, `ref_id=new.id`, title `"New photo of {dog.name} 📸"`. security definer |
+| 5.1 | `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` | Supabase insert `feed_posts` (sitter RLS). Phase 05 caption = `"A moment from today's care 🐾"`, `caption_source='fallback'`. **Phase 09가 이 함수 앞단에 AI 캡션만 끼워 넣음** |
+| 5.2 | Owner timeline query | `feed_posts` join `media` (`select *, media(*)`) where pet_id, order created_at desc, `range(0,19)` + "Load more" / onEndReached |
+| 5.3 | Notification trigger | `004_feed_notifications.sql`: `after insert on feed_posts for each row when (new.task_log_id is null)` → owner에게 `type='feed_post'`, `ref_id=new.id`, title `"New photo of {pet.name} 📸"`. security definer |
 | 5.4 | Realtime subscribe | `NotificationsProvider`: `supabase.channel('notif').on('postgres_changes', {event:'INSERT', schema:'public', table:'notifications', filter:`user_id=eq.${uid}`}, …)` → Toast + unread 증가 + `feed_post`면 피드 리페치 이벤트 발행. 로그인 시 초기 unread count 조회 |
 | 5.5 | 알림 센터 | 최근 50개, unread 굵게. 탭 → `read_at=now()` + architecture §7 "탭 시 이동" |
 | 5.6 | Dev 화면 정리 | Phase 04 `dev-upload` 제거 |
@@ -69,7 +69,7 @@ FeedCard: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 시간("2h ago"
 
 ## 산출물
 
-- `frontend/app/(sitter)/dogs/[dogId].tsx`, `frontend/app/(owner)/feed.tsx`, `frontend/app/(*)/notifications.tsx`
+- `frontend/app/(sitter)/pets/[petId].tsx`, `frontend/app/(owner)/feed.tsx`, `frontend/app/(*)/notifications.tsx`
 - `frontend/components/FeedCard.tsx`, `NotificationBell.tsx`, `frontend/providers/NotificationsProvider.tsx`, `frontend/lib/feed.ts`
 - `supabase/migrations/004_feed_notifications.sql`
 
