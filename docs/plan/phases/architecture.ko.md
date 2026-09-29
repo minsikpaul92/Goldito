@@ -10,7 +10,7 @@
 
 | # | 주제 | 결정 | 이유 |
 | :--- | :--- | :--- | :--- |
-| D1 | 데모·UI·AI 출력 언어 | **영어만 (EN)**. UI 문자열, AI 캡션·알림장·경고문 모두 영어 | 심사위원·영상이 영어. 한국어 원본 few-shot은 슬기가 익명화 후 **영어로 옮겨서** 사용 |
+| D1 | 데모·UI·AI 출력 언어 | **영어만 (EN)**. UI 문자열, AI 캡션·알림장·경고문 모두 영어 | 심사위원·영상이 영어. 실무 few-shot 원본도 **영어** — 슬기는 **익명화(PII 제거)** 후 `few_shot.json`에만 커밋 |
 | D2 | 프론트 라우팅 | **expo-router** (파일 기반, TypeScript) | 웹 URL = 화면. 역할별 route group 분리 용이 |
 | D3 | 패키지 관리 | Frontend **npm**, Backend **requirements.txt + venv** | 해커톤 속도 |
 | D4 | Python 버전 | **3.12** (로컬·Docker 동일). 3.14는 휠 미지원 패키지 위험 | 재현성 |
@@ -244,7 +244,8 @@ PawNote/
 
 ## 9. AI 호출 공통 규칙 (`services/nebius.py`)
 
-- OpenAI 호환 SDK(`openai` 패키지) 사용, **model role → (model_id, base_url)** 매핑은 env에서 (§4). 클라이언트는 base_url별로 캐시.
+- **왜 OpenAI 호환 SDK(`openai` 패키지)?** Nebius Token Factory는 **OpenAI Chat Completions와 같은 HTTP/API 형식**(`base_url` + `api_key` + `model` + `messages`)을 제공합니다. Nemotron 전용 Python SDK를 따로 쓰지 않고, 공식 cookbook·예제와 동일하게 `OpenAI(base_url=..., api_key=...)`로 호출하면 **리전별 base URL**(eu-north1 / us-central1)과 **모델 ID만 바꿔** Vision·Super·Ultra·Nano를 한 코드 경로로 처리할 수 있습니다. (직접 `httpx`로 POST해도 되지만, 스트리밍·에러 타입·멀티모달 `image_url` 메시지 형식을 SDK가 이미 맞춰 줍니다.)
+- **model role → (model_id, base_url)** 매핑은 env에서 (§4). `OpenAI` 클라이언트 인스턴스는 base_url별로 캐시.
 - `chat(role, messages, **kw)` / `chat_json(role, messages, schema: type[BaseModel])`.
 - `chat_json` 규칙: ① `response_format={"type":"json_object"}` 시도 (7.1에서 지원 여부 확인 후 플래그) ② 응답에서 `<think>…</think>` 제거 ③ 첫 `{…}` 블록 추출 ④ pydantic 검증 ⑤ 실패 시 "Return only valid JSON matching the schema" 보정 메시지로 **1회 재시도** ⑥ 그래도 실패 → `ai_invalid_output`.
 - Nemotron reasoning 모드: 캡션·알림장은 reasoning **off**(속도), 세이프티 reasoning 단계는 **on** (7.1에서 모델별 토글 방식 확인 후 `nebius.py`에 기록).

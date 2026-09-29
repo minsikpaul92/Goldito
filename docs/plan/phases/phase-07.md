@@ -19,7 +19,7 @@
 
 - [Phase 05–06](phase-05.md) 당일 feed + task_logs
 - [Phase 00](phase-00.md) 0.3 Nebius key + model ID
-- 슬기: 7.4 few-shot (익명화 + 영어 번역)
+- 슬기: 7.4 few-shot (익명화 — 원본은 영어)
 
 ---
 
@@ -41,7 +41,7 @@
 | 7.1 | Nebius client + test script | 슬기 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **Phase 01 끝나면 바로 시작 가능** |
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
-| 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**, 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤 규칙 + 한국어 원본에서 옮길 때 유지한 요소 기록 |
+| 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
 | 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — `is_sitter_of`, status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
 
