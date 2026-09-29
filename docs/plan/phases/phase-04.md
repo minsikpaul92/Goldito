@@ -1,22 +1,23 @@
 # Phase 04 — Cloudinary 미디어 파이프
 
+> 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, API 계약 §5
+
 ## Goal
 
-펫시터 앱에서 **API secret을 노출하지 않고** 사진·영상을 Cloudinary에 업로드하고, **`media` 테이블에 public_id를 저장**해 이후 피드·인증 사진·AI vision URL로 재사용한다.
+펫시터 앱에서 **API secret을 노출하지 않고** 사진·영상을 Cloudinary에 업로드하고, **`media` 테이블에 public_id를 저장**해 이후 피드(05)·인증 사진(06)·성분표(08)·AI vision(09)에서 **같은 헬퍼 하나**로 재사용한다.
 
 ### Goal 달성 기준
 
-- [ ] Sitter JWT로 `POST /api/media/sign` → signature 받기
-- [ ] 브라우저에서 파일 선택 → Cloudinary 업로드 성공
-- [ ] `POST /api/media/complete` → Supabase `media` row 생성 + delivery URL 반환
+- [ ] Sitter JWT로 `POST /api/media/sign` → signature 받기 (담당 아닌 dog → 403)
+- [ ] 브라우저에서 파일 선택 → Cloudinary 업로드 성공 (image + video 각 1건)
+- [ ] `POST /api/media/complete` → `media` row 생성 + `secure_url`, `thumb_url` 반환
 
 ---
 
 ## 선행 조건
 
-- [Phase 00](phase-00.md) Cloudinary
-- [Phase 03](phase-03.md) JWT + sitter role
-- DB에 dog + sitter 할당 (수동 SQL 또는 Phase 10 seed 미리 일부)
+- [Phase 00](phase-00.md) 0.2 Cloudinary
+- [Phase 03](phase-03.md) JWT + sitter role + dog 배정 (3.6)
 
 ---
 
@@ -24,9 +25,9 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| signed upload (image, video) | Cloudinary AI 태깅 |
-| folder `pawnote/{dog_id}/` | 영상 길이 제한 UI (간단 alert만) |
-| transform URL 헬퍼 (썸네일) | Phase 09 caption |
+| signed upload (image, video), purpose별 폴더 | Cloudinary AI 태깅, unsigned preset |
+| `lib/cloudinary.ts`: `uploadMedia()`, `thumbUrl()`, `videoPosterUrl()` | 피드 화면 (Phase 05) |
+| 개발용 업로드 테스트 화면 `/(sitter)/dev-upload` (Phase 05에서 삭제) | 업로드 진행률 % (선택) |
 
 ---
 
@@ -34,35 +35,34 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 4.1 | Sign endpoint | dog_id, resource_type; sitter가 해당 dog의 sitter_id인지 검증 |
-| 4.2 | Complete endpoint | public_id, width/height optional, insert media |
-| 4.3 | Frontend upload helper | sign → FormData upload → complete |
-| 4.4 | URL helper | `getThumbnailUrl(public_id)` → `f_auto,q_auto,w_400` |
-
-### 보안
-
-- Complete 시 **public_id가 해당 folder prefix**인지 검증 (folder traversal 방지)
+| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_sitter_of(dog_id)`. `folder = f"pawnote/{dog_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
+| 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawnote/{dog_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
+| 4.3 | Frontend helper | `uploadMedia({dogId, purpose, file}) → {mediaId, secureUrl, thumbUrl}`: pick → `api.post('/api/media/sign')` → `FormData(file, api_key, timestamp, signature, folder)` → fetch upload_url → `api.post('/api/media/complete')`. 실패 시 `UploadError(step)` throw → 호출 화면이 Toast + **Retry** |
+| 4.4 | URL helper | `thumbUrl(publicId, w=400)` → `https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto,c_fill,w_400,h_400/{publicId}`, `videoPosterUrl(publicId)` → `…/video/upload/so_0,f_jpg,w_400/{publicId}.jpg`, `videoUrl(publicId)` → `…/video/upload/q_auto/{publicId}` |
+| 4.5 | 제한 | 클라이언트 사전 체크: image ≤ 10MB, video ≤ 50MB & ≤ 30초 (초과 시 alert "Please pick a shorter clip (max 30s).") |
+| 4.6 | Backend service | `services/cloudinary.py`: `sign()`, `delivery_url()`, `fetch_as_data_url(public_id, resource_type)` (D12 — Phase 08/09용, `w_1024,f_jpg` 변환본 다운로드 → base64) |
 
 ---
 
 ## Definition of Done (DoD)
 
-1. `backend/README.md`에 수동 테스트 5단계
-2. 업로드 실패 시 사용자에게 retry 가능
-3. video resource_type 1건 성공 (데모 짧은 clip)
+1. `backend/README.md`에 수동 테스트 5단계 (token 얻기 → sign curl → Cloudinary curl 업로드 → complete curl → DB 확인)
+2. 업로드 실패 시(네트워크 끊기) Retry 버튼으로 재시도 가능
+3. video 1건 성공 + `videoPosterUrl`이 이미지로 열림
+4. `pytest`: 폴더 prefix 불일치 public_id → 422, 비담당 sitter → 403
 
 ---
 
 ## 산출물
 
-- `backend/app/routers/media.py`
-- `frontend/lib/cloudinaryUpload.ts`
+- `backend/app/routers/media.py`, `backend/app/services/cloudinary.py`, `backend/app/services/authz.py`
+- `frontend/lib/cloudinary.ts`, `frontend/lib/api.ts` (Bearer 자동 첨부로 확장)
 
 ---
 
 ## AI 프롬프트
 
-Playbook §6 — 4.1–4.2, then 4.3
+Playbook §6 — (4.1–4.2, 4.6) 후 (4.3–4.5)
 
 ---
 

@@ -1,0 +1,257 @@
+# PawNote P0 — 공통 설계 청사진 (모든 Phase가 따름)
+
+> 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
+> 이 문서와 [README.ko.md §9 데이터 모델 초안](../README.ko.md#9-데이터-모델-초안) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
+> 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
+
+---
+
+## 1. 결정 로그 (확정)
+
+| # | 주제 | 결정 | 이유 |
+| :--- | :--- | :--- | :--- |
+| D1 | 데모·UI·AI 출력 언어 | **영어만 (EN)**. UI 문자열, AI 캡션·알림장·경고문 모두 영어 | 심사위원·영상이 영어. 한국어 원본 few-shot은 슬기가 익명화 후 **영어로 옮겨서** 사용 |
+| D2 | 프론트 라우팅 | **expo-router** (파일 기반, TypeScript) | 웹 URL = 화면. 역할별 route group 분리 용이 |
+| D3 | 패키지 관리 | Frontend **npm**, Backend **requirements.txt + venv** | 해커톤 속도 |
+| D4 | Python 버전 | **3.12** (로컬·Docker 동일). 3.14는 휠 미지원 패키지 위험 | 재현성 |
+| D5 | 데이터 접근 패턴 | **A안:** 프론트 = Supabase JS + RLS (조회·단순 쓰기), FastAPI = Cloudinary 서명, AI, service-role이 필요한 작업 | CLAUDE.md §2 |
+| D6 | 권한이 섞이는 쓰기 | **DB 함수(RPC, `security definer`) 또는 트리거**로 처리. 클라이언트에 넓은 update 정책을 주지 않음 | RLS 단순화, 타인 알림 insert 금지 |
+| D7 | 알림 생성 | **DB 트리거**가 `notifications` insert (앱 레이어 insert 금지) | sitter가 owner 알림을 직접 insert할 수 없게 |
+| D8 | 시간대 | 앱 전체 기준 `APP_TIMEZONE=America/Toronto`. "오늘" = 이 시간대 00:00–24:00 | task_logs 생성·알림장 집계 일관성 |
+| D9 | missed 상태 | **저장하지 않고 파생**: `status='pending' AND now() > due_at + 60분` | 스케줄러 없이 P0 충족 |
+| D10 | 피드 게시물 : 미디어 | **1 post = 1 media** (`feed_posts.media_id`). 다중 사진은 P1 | 단순화 |
+| D11 | 캡션 위치 | `feed_posts.caption`만 사용 (`media.caption` 없음) | 중복 제거 |
+| D12 | AI 이미지 입력 | 백엔드가 Cloudinary에서 `w_1024,f_jpg` 변환본을 받아 **base64 data URL**로 모델에 전달. 영상은 `so_0` 썸네일 jpg | 모델 서버의 외부 URL fetch 가능 여부에 의존하지 않음 |
+| D13 | 세이프티 입력 | 성분표도 **일반 업로드 파이프(Phase 04)** 로 올린 뒤 `POST /api/ai/safety-check {dog_id, media_id}` (multipart 아님) | 업로드 코드 재사용, 증거 이미지 보관 |
+| D14 | JWT 검증 | Supabase **JWKS**(`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) 우선, 레거시 프로젝트면 `SUPABASE_JWT_SECRET`(HS256) fallback | 신규 프로젝트는 asymmetric key 기본 |
+| D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
+| D16 | sitter 배정 | owner가 **sitter 이메일로 배정** — RPC `assign_sitter(dog_id, sitter_email)` | 초대 링크보다 단순, 데모 재현 쉬움 |
+| D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
+| D18 | 배포 | Backend: **Nebius Serverless Endpoint** (Docker), 실패 시 **Render** fallback. Frontend: `expo export -p web` → **Vercel** 정적 호스팅 | Nebius 서비스 활용 점수 + 안정성 |
+| D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
+
+---
+
+## 2. 리포 구조 (최종 형태)
+
+```
+PawNote/
+├─ README.md                  # 제품 + Getting Started (Phase 10에서 완성)
+├─ CLAUDE.md
+├─ .gitignore                 # .env, data/raw/, node_modules, __pycache__, .venv, dist
+├─ docs/
+├─ supabase/
+│  ├─ README.md               # ERD 요약 + 적용 순서
+│  ├─ migrations/
+│  │  ├─ 001_initial_schema.sql
+│  │  ├─ 002_rls_policies.sql
+│  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·assign_sitter·realtime (Phase 02)
+│  │  ├─ 004_feed_notifications.sql   # Phase 05
+│  │  ├─ 005_tasks.sql                # Phase 06 (ensure_today_task_logs, complete_task_log)
+│  │  ├─ 006_reports.sql              # Phase 07 (send_daily_report)
+│  │  ├─ 007_safety.sql               # Phase 08 (DANGER 알림 트리거)
+│  │  └─ 008_p1.sql                   # Phase 11 (P1)
+│  └─ tests/rls_smoke.sql     # 역할 전환 RLS 확인 쿼리
+├─ backend/
+│  ├─ requirements.txt
+│  ├─ Dockerfile              # Phase 10
+│  ├─ .env.example
+│  ├─ README.md
+│  ├─ app/
+│  │  ├─ main.py              # FastAPI app, CORS, router include, 에러 핸들러
+│  │  ├─ config.py            # pydantic-settings (아래 §4 env 전부)
+│  │  ├─ deps/
+│  │  │  ├─ auth.py           # get_current_user, require_role("sitter")
+│  │  │  └─ supabase.py       # service-role client (싱글톤)
+│  │  ├─ services/
+│  │  │  ├─ authz.py          # assert_owner_of(dog_id), assert_sitter_of(dog_id)
+│  │  │  ├─ cloudinary.py     # sign params, delivery URL, fetch image → base64
+│  │  │  ├─ nebius.py         # model role → (model_id, base_url), chat(), chat_json()
+│  │  │  └─ timeutil.py       # APP_TIMEZONE 기준 today/day range
+│  │  ├─ routers/
+│  │  │  ├─ health.py         # GET /health
+│  │  │  ├─ me.py             # GET /api/me
+│  │  │  ├─ media.py          # POST /api/media/sign, /api/media/complete
+│  │  │  ├─ ai_caption.py     # POST /api/ai/caption
+│  │  │  ├─ ai_daily_report.py# POST /api/ai/daily-report
+│  │  │  └─ ai_safety.py      # POST /api/ai/safety-check
+│  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
+│  │  └─ ai/prompts/
+│  │     ├─ caption/{system.md}
+│  │     ├─ daily_report/{PROMPT.md, system.md, few_shot.json}
+│  │     └─ safety/{vision_system.md, reasoning_system.md}
+│  ├─ scripts/
+│  │  ├─ test_nebius.py       # Phase 07.1
+│  │  └─ seed_demo.py         # Phase 10.1
+│  └─ tests/                  # pytest (JSON 파싱, authz, 스키마)
+└─ frontend/
+   ├─ package.json, app.json, tsconfig.json
+   ├─ .env.example
+   ├─ README.md
+   ├─ app/                    # expo-router (§3)
+   ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal
+   ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, DogSwitcher, NotificationItem …)
+   ├─ lib/
+   │  ├─ supabase.ts          # createClient(anon) + web session persist
+   │  ├─ api.ts               # FastAPI fetch 래퍼 (Bearer 자동, 에러 정규화)
+   │  ├─ cloudinary.ts        # uploadMedia(), thumbUrl(), videoPosterUrl()
+   │  ├─ feed.ts              # createFeedPost() — Phase 05/06/09 공용
+   │  └─ time.ts              # APP_TIMEZONE 표시 포맷
+   ├─ providers/              # SessionProvider, DogProvider(선택된 dog), ToastProvider, NotificationsProvider(Realtime)
+   ├─ theme/tokens.ts         # 색·간격(8px)·radius·타이포 — 묵 Figma 토큰으로 교체
+   └─ types/db.ts             # Supabase 테이블 타입 (수동 or supabase gen types)
+```
+
+---
+
+## 3. 화면 & 라우트 맵 (최종 형태)
+
+| Route | 역할 | 화면 | 주 액션 (1개) | 도입 Phase |
+| :--- | :--- | :--- | :--- | :--- |
+| `/` | - | 세션·역할 보고 redirect | - | 03 |
+| `/(auth)/login` | - | Login | Sign in | 03 |
+| `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
+| `/(owner)/` (tab: Home) | owner | My dogs 카드 + 오늘 요약 | Add dog | 03 |
+| `/(owner)/dogs/new`, `/(owner)/dogs/[dogId]` | owner | Dog profile (이름·견종·생일·메모·**알레르기 chips**·**sitter 이메일 배정**) | Save | 03 |
+| `/(owner)/feed` (tab: Feed) | owner | 선택 dog 타임라인 (DogSwitcher) | 스크롤 | 05 |
+| `/(owner)/tasks` (tab: Care) | owner | 투약·산책 등록 + 오늘 상태(done/pending/missed) | Add task | 06 |
+| `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
+| `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
+| `/(sitter)/` (tab: Today) | sitter | 담당 dog + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 06 |
+| `/(sitter)/dogs/[dogId]` | sitter | Dog 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
+| `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
+| `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
+| `/(sitter)/report` (tab: Report) | sitter | 퀵탭 체크 → Generate → (편집) → Send | **Send report** | 07 |
+| `/(sitter)/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
+
+- 탭: owner `Home · Feed · Care · Reports`, sitter `Today · Tasks · Scan · Report`. 알림 벨은 두 역할 모두 헤더 우측 (unread badge).
+- dog가 여러 마리면 `DogProvider`의 선택값을 모든 탭이 공유 (헤더 DogSwitcher). 데모는 1마리(Bori).
+- 역할 가드: `(owner)`/`(sitter)` 그룹 `_layout.tsx`에서 role 불일치 시 `/`로 redirect.
+
+---
+
+## 4. 환경 변수 마스터 목록
+
+`.env.example`에 **아래 이름 그대로** 둡니다. (실제 값은 `.env`, git 제외)
+
+### backend/.env
+
+| 변수 | 예시 / 기본값 | 사용 Phase |
+| :--- | :--- | :--- |
+| `APP_ENV` | `local` \| `production` | 01 |
+| `APP_TIMEZONE` | `America/Toronto` | 06, 07 |
+| `CORS_ORIGINS` | `http://localhost:8081,http://localhost:19006` (콤마 구분) | 01 |
+| `SUPABASE_URL` | `https://<ref>.supabase.co` | 03 |
+| `SUPABASE_SERVICE_ROLE_KEY` | (secret) | 04 |
+| `SUPABASE_JWT_SECRET` | (레거시 HS256 프로젝트만, 비워도 됨) | 03 |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | | 04 |
+| `NEBIUS_API_KEY` | (secret) | 07 |
+| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `nvidia/nemotron-3-nano-omni` / us-central1 URL (0.3에서 확정) | 08, 09 |
+| `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
+| `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
+| `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, P2 |
+| `TAVILY_API_KEY` | (P1) | 11 |
+
+### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
+
+| 변수 | 사용 Phase |
+| :--- | :--- |
+| `EXPO_PUBLIC_API_URL` (예: `http://localhost:8000`) | 01 |
+| `EXPO_PUBLIC_SUPABASE_URL` | 03 |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 03 |
+| `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (delivery URL 조립용) | 04 |
+| `EXPO_PUBLIC_APP_TIMEZONE` (`America/Toronto`) | 06 |
+
+> ❌ service role key, Cloudinary secret, Nebius key는 **절대** frontend env에 두지 않습니다.
+
+---
+
+## 5. API 공통 규약 (FastAPI)
+
+- Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
+- 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_sitter_of` / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
+- 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
+- 타임아웃 (서버→Nebius): caption 20s, daily-report 60s, safety 90s (vision 30 + reasoning 60). 프론트 fetch 타임아웃은 여기에 +5s.
+- 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
+
+### 엔드포인트 계약 (전체)
+
+| Method | Path | 권한 | Body | Response | Phase |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| GET | `/health` | - | - | `{status:"ok"}` | 01 |
+| GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
+| POST | `/api/media/sign` | sitter of dog | `{dog_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
+| POST | `/api/media/complete` | sitter of dog | `{dog_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
+| POST | `/api/ai/caption` | sitter of dog | `{dog_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
+| POST | `/api/ai/daily-report` | sitter of dog | `{dog_id, date:"YYYY-MM-DD", inputs:{meal?, water?, poop?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
+| POST | `/api/ai/safety-check` | sitter of dog | `{dog_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
+
+> 알림장 **전송**, task **완료**, 피드 **게시**는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6).
+
+---
+
+## 6. 쓰기 경로 요약 (누가 무엇을 어디로 쓰나)
+
+| 동작 | 경로 | 부수효과 (트리거) |
+| :--- | :--- | :--- |
+| 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` |
+| dog 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | - |
+| sitter 배정 | RPC `assign_sitter(dog_id, sitter_email)` | - |
+| 오늘 task_logs 생성 | RPC `ensure_today_task_logs(dog_id)` — 화면 진입 시 자동 호출, 멱등 | - |
+| 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
+| 피드 게시 | Supabase client insert `feed_posts` (sitter RLS) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
+| task 완료 | RPC `complete_task_log(task_log_id, media_id)` → 내부에서 feed_post도 생성 | owner `task_done` |
+| 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert) | - |
+| 알림장 전송 | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
+| 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER면 owner `safety_danger` |
+| 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (sitter RLS) | - |
+| 알림 읽음 | Supabase client update `notifications.read_at` (본인 RLS) | - |
+
+---
+
+## 7. 알림 매트릭스 (P0)
+
+| type | 수신자 | 생성 위치 | 제목 예 (EN) | 탭 시 이동 |
+| :--- | :--- | :--- | :--- | :--- |
+| `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
+| `task_done` | owner | `complete_task_log` RPC | "Bori's medication is done ✅" | `/(owner)/tasks` |
+| `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
+| `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) | "Blocked a risky treat for Bori ⚠️" | `/(owner)/notifications` |
+| `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Bori's walk is due at 10:30" | `/(sitter)/tasks` |
+| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Bori" | `/(sitter)/dogs/[id]` |
+
+프론트: `NotificationsProvider`가 `notifications` Realtime(INSERT, `user_id=eq.<me>`)을 구독 → 토스트 + unread 카운트 갱신 + type별 쿼리 invalidate (예: `feed_post` → 피드 리페치).
+
+---
+
+## 8. UX 공통 규칙 (모든 화면)
+
+1. **상태 4종 필수:** loading(Skeleton) · empty(EmptyState 문구) · error(재시도 버튼) · success(Toast).
+2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
+3. **sitter 텍스트 입력 금지 (P0)** — 예외: 알림장 전송 전 본문 선택 편집, 알림장 선택 메모 1줄.
+4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
+5. **웹 카메라:** `expo-image-picker`(`launchImageLibraryAsync` / 모바일 웹은 `capture` 지원) — 데스크톱 웹은 파일 선택으로 대체.
+6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
+7. 개발 빌드에만 헤더에 `Owner`/`Sitter` 역할 라벨 표시 (`APP_ENV !== 'production'`).
+
+---
+
+## 9. AI 호출 공통 규칙 (`services/nebius.py`)
+
+- OpenAI 호환 SDK(`openai` 패키지) 사용, **model role → (model_id, base_url)** 매핑은 env에서 (§4). 클라이언트는 base_url별로 캐시.
+- `chat(role, messages, **kw)` / `chat_json(role, messages, schema: type[BaseModel])`.
+- `chat_json` 규칙: ① `response_format={"type":"json_object"}` 시도 (7.1에서 지원 여부 확인 후 플래그) ② 응답에서 `<think>…</think>` 제거 ③ 첫 `{…}` 블록 추출 ④ pydantic 검증 ⑤ 실패 시 "Return only valid JSON matching the schema" 보정 메시지로 **1회 재시도** ⑥ 그래도 실패 → `ai_invalid_output`.
+- Nemotron reasoning 모드: 캡션·알림장은 reasoning **off**(속도), 세이프티 reasoning 단계는 **on** (7.1에서 모델별 토글 방식 확인 후 `nebius.py`에 기록).
+- 프롬프트 원문은 코드에 하드코딩하지 않고 `app/ai/prompts/**`의 파일에서 로드 (슬기가 코드 수정 없이 튜닝).
+- 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
+
+---
+
+## 10. 검증 공통 절차 (각 Phase DoD 확인 방법)
+
+| 레벨 | 방법 |
+| :--- | :--- |
+| Backend | `cd backend && pytest -q` (Nebius 키 없으면 AI 테스트 skip) + phase 문서의 `curl` 예시 |
+| DB/RLS | Supabase SQL Editor에서 `supabase/tests/rls_smoke.sql` 실행 (역할별 `set local request.jwt.claims`) |
+| Frontend | `npx tsc --noEmit` + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter) 수동 시나리오 |
+| 데모 | Phase 10 "PawNote의 하루" 체크리스트 |

@@ -1,22 +1,24 @@
 # Phase 10 — 데모 시드 · 배포 · 제출 README
 
+> 공통 전제: [architecture.ko.md](architecture.ko.md) — D18 배포, D19 시드
+
 ## Goal
 
-심사위원·팀이 **15분 안에** "PawNote의 하루" 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고 Devpost 제출 준비를 끝낸다.
+심사위원·팀이 **15분 안에** "PawNote의 하루" 전체를 재현할 수 있게 **시드 데이터**, **공개 데모 URL**, **테스트 계정**, **루트 README 실행 가이드**를 완성하고, **12/15 심사 종료까지 데모가 살아 있게** 운영 준비를 끝낸다.
 
 ### Goal 달성 기준
 
-- [ ] `scripts/seed_demo` — owner, sitter, dog Bori, chicken allergy, med 8am, walk 10:30
+- [ ] `backend/scripts/seed_demo.py` — owner, sitter, dog Bori, chicken allergy, med 08:00, walk 10:30 (+ `--relative` 옵션)
 - [ ] README Getting Started: clone → env → migrate → seed → run → login
-- [ ] Public demo URL (frontend) + backend URL, CORS/production env
-- [ ] Test credentials document (비밀번호는 repo 밖 또는 1Password)
-- [ ] 데모 **12/15까지** 유지 계획 (호스팅·Supabase·Cloudinary 한도)
+- [ ] Public frontend URL (Vercel) + backend URL (Nebius Serverless Endpoint, fallback Render), production CORS
+- [ ] 테스트 계정 문서 (Devpost 붙여넣기용)
+- [ ] 12/15까지 유지 계획 실행 (keep-alive, 한도 모니터링)
 
 ---
 
 ## 선행 조건
 
-- Phase 05–09 P0 기능 완료
+- Phase 05–09 P0 기능 완료 (배포 리허설 10.3은 **10/18까지** Phase 06 시점에 먼저 1회 해도 좋음)
 - Phase 00 모든 키 production env에 설정
 
 ---
@@ -25,61 +27,66 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Vercel (Expo web) or EAS web export | App Store 빌드 |
-| Railway/Render/Fly backend | Multi-region HA |
-| 3-min video script outline | 영상 편집 (묵) |
-| Nebius/NVIDIA feedback paragraph draft | Devpost 최종 클릭 |
+| Vercel (Expo web export) + Nebius Serverless Endpoint (Docker) | App Store / Play 빌드 |
+| Supabase keep-alive, 모니터링 | Multi-region HA |
+| 3분 영상 스크립트 outline | 영상 편집 (묵) |
+| Nebius/NVIDIA feedback 초안 | Devpost 최종 클릭 (민식) |
 
 ---
 
 ## "PawNote의 하루" 데모 스크립트 (Goal 시나리오)
 
-| 시간 | 액션 | 검증 |
-| :--- | :--- | :--- |
-| 08:00 | Sitter completes medication + photo | Owner notification |
-| 10:30 | Sitter completes walk + feed post | Auto caption |
-| 13:00 | (P1) photo request — skip if P1 미완 | |
-| 15:00 | Treat scanner DANGER | Modal |
-| 18:00 | Generate + send daily report | Owner reads |
+| 시간 | 액션 (sitter) | 검증 (owner) | Phase |
+| :--- | :--- | :--- | :--- |
+| 08:00 | 리마인더 배너 → medication **Complete with photo** | 토스트 "Bori's medication is done ✅", Care ✅ | 06 |
+| 10:30 | walk 완료 + 산책 사진 **+ Photo** | 피드에 AI 캡션 카드 | 06, 09 |
+| 13:00 | (P1) owner **Request photo** → sitter 낮잠 사진 | 요청 완료 표시 | 11 |
+| 15:00 | Scan 탭 → 치킨 간식 라벨 | sitter 빨간 모달 / owner "Blocked a risky treat" | 08 |
+| 18:00 | 퀵탭 → Generate → Send | Reports에 알림장 | 07 |
+
+녹화는 아무 시간에나 가능해야 함 → `seed_demo.py --relative`: med = now+2분, walk = now+6분으로 시드.
 
 ---
 
 ## 작업 상세
 
-| ID | 작업 | DoD |
+| ID | 작업 | 상세 / DoD |
 | :--- | :--- | :--- |
-| 10.1 | Seed script | no real PII |
-| 10.2 | Root README + backend/frontend README | copy-paste commands |
-| 10.3 | Deploy + env vars | health + login |
-| 10.4 | `docs/DEMO_ACCOUNTS.md` (gitignore password file option) | Devpost paste-ready |
-| 10.5 | Feedback log table filled (initial) | Token Factory onboarding notes |
-| 10.6 | Internal deadline Oct 28 checklist | |
+| 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), dog Bori(Maltese, 4y), allergy chicken, care_tasks 2개, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
+| 10.2 | README | 루트 Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency로 갱신, architecture 그림, 스크린샷 4장. backend/frontend README 최신화 |
+| 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). Nebius Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인. 실패/지연 시 **Render**(Docker 동일) fallback + README에 이유 기록 |
+| 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가 |
+| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 **Devpost 제출란에만** 기재 (repo엔 "see submission"), 데모 순서 5줄 |
+| 10.6 | Feedback log | README 피드백 표: Token Factory, Serverless Endpoint, 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |
+| 10.7 | 유지 계획 (~12/15) | ① Supabase 무료 일시정지 방지: GitHub Actions cron(매일) → backend `/health`가 Supabase에 가벼운 쿼리 1회 ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
+| 10.8 | 내부 마감 10/28 체크리스트 | 아래 DoD 전부 + 영상 업로드(YouTube public, < 3분, 영어 음성) + Devpost 초안 |
 
 ---
 
 ## Definition of Done (DoD)
 
-1. **Cold start:** 새 팀원이 README만 보고 로컬 실행 성공
-2. **Judge path:** demo URL + test owner/sitter + video shows same flow
-3. MIT license visible on GitHub About
-4. Submission materials **English** (description, video audio)
+1. **Cold start:** 팀원이 README만 보고 새 PC에서 로컬 실행 성공
+2. **Judge path:** demo URL + test owner/sitter 로그인 → 데모 스크립트 5단계 성공 (시크릿 창 2개)
+3. MIT license가 GitHub About에 표시
+4. 제출 자료 **영어** (description, video audio, README)
+5. 배포 URL에서 `/health` 200, cold start 포함 첫 응답 < 10초
 
 ---
 
 ## 산출물
 
-- `scripts/seed_demo.sql` or `.py`
-- `docs/DEMO_ACCOUNTS.md` (or SECRETS.local.example)
-- Updated root `README.md` Getting Started + Nemotron usage + Feedback log
+- `backend/scripts/seed_demo.py`, `backend/Dockerfile`, `.github/workflows/keepalive.yml`
+- `docs/DEMO_ACCOUNTS.md`
+- Updated root `README.md` (Getting Started + Nemotron usage + Nebius services + Feedback log)
 
 ---
 
 ## AI 프롬프트
 
-Playbook §12 — seed only first, deploy in separate prompt with host choice
+Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각각 별도
 
 ---
 
-## 이후 (P1+)
+## 다음
 
-- Photo request, notices popup, Tavily, Q&A — [개발 계획](../README.ko.md) P1 표
+→ [Phase 11 — P1 기능](phase-11.md) (P0 데모가 배포 URL에서 동작한 뒤에만)

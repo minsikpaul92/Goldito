@@ -171,6 +171,8 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 
 ## 9. Data Model (draft)
 
+> The final schema lives in [phases/phase-02.md](phases/phase-02.md) (P0) and [phase-11.md](phases/phase-11.md) (P1); cross-cutting decisions in [phases/architecture.ko.md](phases/architecture.ko.md).
+
 ```
 users            (id, role: owner|sitter, name, push_token)
 dogs             (id, owner_id, sitter_id, name, breed, birthdate, notes)
@@ -264,7 +266,8 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 
 ## 14. Open Questions
 
-- [ ] Demo language: English UI, Korean UI, or both? (Judges read English.)
+- [x] Demo language: **English only** (UI + AI output) — decided 2026-09-29 (architecture D1)
+- [x] Backend hosting: **Nebius Serverless Endpoint**, Render fallback — decided 2026-09-29 (D18)
 - [ ] Dataset language (Korean / English) and size.
 - [ ] Nano Omni availability (confirm with API key).
 - [ ] Toronto Builders & Brews (Sep 29) registration status.
