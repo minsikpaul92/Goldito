@@ -32,7 +32,7 @@
 | D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
-| D24 | 파트타임 보딩 시터 & 칸 단위 예약 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 스케줄 = 날짜 × **칸(morning 07–13 · afternoon 13–19 · overnight 19–07)** 을 `open`(+칸 정원 `max_pets`) / `blocked`. 한 칸에 여러 집 반려동물 가능. 예약 = 시터 1명 + 견주 1명, 실제 단위는 `booking_slots`(반려동물 × 날짜 × 칸), 반려동물은 칸당 시터 1명. 견주는 **여행 전체를 한 시터에게** 맡기는 게 기본 — 단골(예약한 적 있는 시터) 스케줄을 먼저 보고, 없으면 검색(전체 가능 먼저). 나눠 맡기기는 견주 선택. 시터가 확정 칸을 막으려 하면 DB가 거부 → **예약 전체 취소** → 견주 알림 → 견주가 재예약(한 명 or 나눠서). 스케줄 변경은 알림 없음. 알림장은 pet·날짜·시터당 1개. 권한: 앞으로 담당 칸이 있으면 조회(`is_sitter_of`), 오늘 담당이면 작업(`is_on_duty_for`) | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 취소를 명시적으로 해야 견주가 확실히 알고 직접 결정 |
+| D24 | 파트타임 보딩 시터 · 칸 · 인수인계 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 칸은 **이름만 고정**(Morning·Afternoon·Overnight) — 정확한 시간은 시터가 칸마다 정함(`sitter_availability.starts_at/ends_at`) + 칸 정원 `max_pets`. 예약 = 시터 1명 + 견주 1명, 정원 단위 `booking_slots`(반려동물 × 날짜 × 칸). 견주가 **맡기는 시각·찾는 시각·장소**(시터 집/견주 집/기타)를 정함 → `booking_handoffs`. 시터 시간 밖·장소 변경은 **협의**(제안 → 상대방 동의), 확정 후 변경도 제안→동의, 동의 전엔 기존 값 유효. 견주는 **여행 전체를 한 시터에게**가 기본 — 단골 스케줄 먼저, 없으면 검색(전체 가능 먼저). 시터가 확정 칸을 막으려 하면 거부 → **예약 전체 취소** → 견주 재예약. 권한·할 일 담당은 칸이 아니라 **맡긴 시각 ~ 찾는 시각** 구간으로 판단. 스케줄 변경은 알림 없음. 주소는 확정 당사자에게만 | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 실제 맡기는 시각이 시터 근무 시간과 다를 수 있어 협의 필요 |
 | D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
@@ -129,8 +129,8 @@ PawNote/
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
 | `/(sitter)/` (tab: Today) | sitter | 오늘 담당 pet(진행 중 예약) + Upcoming 예약 + 요청 배지 + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 03B → 06 |
-| `/(sitter)/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 정원 / blocked) | Save | 03B |
-| `/(sitter)/bookings` | sitter | 요청함 · 예정 · 지난 예약 | Accept | 03B |
+| `/(sitter)/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
+| `/(sitter)/bookings`, `/(sitter)/bookings/[bookingId]` | sitter | 요청함 · 예정 · 지난 예약 / 인수인계·Received·Returned | Accept | 03B |
 | `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
@@ -210,9 +210,11 @@ PawNote/
 | :--- | :--- | :--- |
 | 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
 | pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | `guard_care_task_species` |
-| 스케줄 open(칸·정원)/blocked | Supabase client `sitter_availability` (본인 RLS) | 확정 칸과 겹치면 `guard_availability_change`가 거부 → 시터가 먼저 `cancel_booking`. **알림 없음** |
+| 스케줄 open(칸·시간·정원)/blocked | Supabase client `sitter_availability` (본인 RLS) | 확정 칸과 겹치면 `guard_availability_change`가 거부 → 시터가 먼저 `cancel_booking`. **알림 없음** |
 | 단골 시터·스케줄 보기 | RPC `list_my_sitters()` / `get_sitter_schedule(sitter, from, to)` | - |
-| 시터 검색 | RPC `search_sitters(slots, pet_count)` — 전체 가능 먼저, 일부 가능은 참고용 | - |
+| 시터 검색 | RPC `search_sitters(drop_off_at, pick_up_at, pet_count)` — 전체 가능 먼저, 일부 가능은 참고용 | - |
+| 인수인계 시각·장소 제안 / 응답 | RPC `propose_handoff` / `respond_handoff` | 상대방 `handoff_proposed` / 제안자 `handoff_agreed` |
+| 받았음 / 돌려줬음 | RPC `complete_handoff` (시터) | owner `pet_dropped_off` / `pet_picked_up` |
 | 예약 요청 / 응답 / 취소 | RPC `request_booking` / `respond_booking` / `cancel_booking` | 상대방에게 `booking_*` 알림 |
 | 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
@@ -232,6 +234,9 @@ PawNote/
 | :--- | :--- | :--- | :--- | :--- |
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/(sitter)/bookings` |
 | `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC | "Mina confirmed your booking for Bori and Mochi 🎉" | `/(owner)/bookings/[id]` |
+| `handoff_proposed` | 상대방 | `propose_handoff` RPC | "Mina suggested drop-off at 7:30 AM" | 예약 상세 |
+| `handoff_agreed` | 제안자 | `respond_handoff` RPC | "Jisoo agreed to pick-up at 8:00 PM" | 예약 상세 |
+| `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | "Bori and Mochi arrived at Mina's 🏠" / "…are on their way home 👋" | 예약 상세 |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
 | `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/(owner)/tasks` |

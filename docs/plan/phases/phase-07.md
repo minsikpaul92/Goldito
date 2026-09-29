@@ -47,7 +47,7 @@
 
 ### 7.2 집계 → 프롬프트 → 저장
 
-1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **이 시터가 그날 맡은 칸들** (오전만 맡았으면 07–13시의 task·사진만). 오전 Mina·오후 Jun이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
+1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **그날 중 이 시터가 맡은 시간** (맡긴 시각 ~ 찾는 시각과 그날의 교집합 — 09:00–12:00만 맡았으면 그 사이의 task·사진만). 오전 Mina·오후 Jun이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
 2. 기존 report가 `sent`면 **409** `report_already_sent`.
 3. `source_snapshot` 생성 (이 JSON이 **모델 입력의 전부**):
    ```json
