@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **1.3** | Expo Web + health check button            | [phase-01.md](phases/phase-01.md) |
+| **1.4** | `.gitignore` hardening                    | [phase-01.md](phases/phase-01.md) |
 
 ---
 
@@ -27,7 +27,6 @@
 
 - [ ] **0.3** Nebius: catalog + `model-ids.md` started; finish DoD (test calls) in Phase 07.1 — 2026-09-29 key OK
 - [x] **0.4** Tavily API key → `TAVILY_API_KEY` in local `.env` ([tavily.ko.md](tavily.ko.md)) — 2026-09-29
-- [ ] **1.3** Expo Web (expo-router) + health check button
 - [ ] **1.4** `.gitignore` hardening
 - [ ] **1.5** CI: `.github/workflows/ci.yml` (backend ruff+pytest, frontend tsc+web export) → then enable `main` branch protection
 - [ ] **2.1–2.6** `001_initial_schema.sql`
@@ -68,6 +67,7 @@
 - [x] **0.5** Local `backend/.env` + `frontend/.env` + [env-setup.ko.md](env-setup.ko.md) (2026-09-29)
 - [x] **1.1** Monorepo layout: `supabase/`, README links, env templates verified (2026-09-29)
 - [x] **1.2** FastAPI `/health`, CORS, settings, pytest health test (2026-09-29)
+- [x] **1.3** Expo Web + Check API → `/health` (2026-09-29)
 
 ---
 
@@ -79,7 +79,7 @@
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **partial** — 0.1, 0.2, 0.4, 0.5 done; **0.3 Nebius model doc** pending |
-| 01 Scaffold          | in progress (**1.3** next)                                                    |
+| 01 Scaffold          | in progress (**1.4** next)                                                    |
 | 02 DB + RLS          | not started                                                                   |
 | 03 Auth              | not started                                                                   |
 | 04 Cloudinary (code) | not started                                                                   |

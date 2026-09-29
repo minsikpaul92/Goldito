@@ -135,7 +135,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 ## 🚀 Getting Started
 
-Monorepo layout (Phase **1.1**): `backend/`, `frontend/`, `supabase/migrations/`. Runnable app lands in Phase **1.2** (API) and **1.3** (Expo web).
+Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. Run backend then frontend; use **Check API** on the home screen (Phase **1.3**).
 
 | Path | Doc |
 | :--- | :--- |

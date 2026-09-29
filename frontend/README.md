@@ -2,7 +2,7 @@
 
 Expo (React Native Web) with **expo-router**, TypeScript, npm.
 
-**Monorepo layout (Phase 1.1):** this directory holds `.env.example` and will gain `app/`, `lib/`, `theme/`, and `components/ui/` in Phase **1.3**.
+**Expo Web (Phase 1.3+):** expo-router under `app/`, `lib/api.ts`, `theme/tokens.ts`, `components/ui/`.
 
 ## Environment
 
@@ -12,7 +12,7 @@ Expo (React Native Web) with **expo-router**, TypeScript, npm.
 
 Details: [docs/plan/env-setup.ko.md](../docs/plan/env-setup.ko.md)
 
-## Run (after Phase 1.3)
+## Run
 
 ```bash
 cd frontend
@@ -20,7 +20,7 @@ npm install
 npx expo start --web
 ```
 
-Use **Check API** on the home screen to verify the backend `/health` endpoint.
+Start the backend on port 8000 first, then tap **Check API** on the home screen (`GET /health` → "API OK ✅").
 
 ## Planned layout
 
