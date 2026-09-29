@@ -1,22 +1,24 @@
 # Phase 09 — 피드 AI 캡션 (Caption)
 
+> 공통 전제: [architecture.ko.md](architecture.ko.md) — D11–D12, AI 규칙 §9
+
 ## Goal
 
-펫시터가 **사진만 업로드**하면 Nemotron **Vision**이 **1–2문장 따뜻한 캡션**을 생성해 `feed_post.caption`에 넣어, **타이핑 없는 피드**를 완성한다.
+펫시터가 **사진(또는 영상)만 업로드**하면 Nemotron Vision(`MODEL_VISION`)이 **1–2문장 따뜻한 영어 캡션**을 생성해 `feed_posts.caption`에 넣어, **타이핑 없는 피드**를 완성한다. AI가 실패해도 게시는 항상 성공한다.
 
 ### Goal 달성 기준
 
-- [ ] `POST /api/ai/caption` { dog_id, image_url } → { caption }
-- [ ] 업로드 플로우: complete media → caption API → feed_post insert
-- [ ] AI 실패 시 fallback 캡션 (고정 문구)으로 피드는 항상 생성
+- [ ] `POST /api/ai/caption {dog_id, media_id}` → `{caption, source, model, latency_ms}`
+- [ ] 업로드 플로우: `uploadMedia` → caption API → `createFeedPost(caption_source='ai')`
+- [ ] AI 실패·타임아웃(20s) → fallback 캡션(`caption_source='fallback'`)으로 피드는 항상 생성
 
 ---
 
 ## 선행 조건
 
-- [Phase 05](phase-05.md) feed insert flow
-- [Phase 07.1](phase-07.md) Nebius + vision model
-- Cloudinary **secure_url** 또는 signed delivery URL
+- [Phase 05](phase-05.md) `createFeedPost` 플로우
+- [Phase 07.1](phase-07.md) Nebius client
+- [Phase 04](phase-04.md) `fetch_as_data_url` (영상은 `so_0` poster 사용 — D12)
 
 ---
 
@@ -24,8 +26,9 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Vision prompt: dog name + activity tone | Video caption (stretch: same endpoint) |
-| Backend-only API key | Client-side OpenAI |
+| Vision 캡션 (image + video poster) | 영상 전체 이해 (stretch: omni video 입력) |
+| Backend-only API key | client-side AI |
+| 업로드 카드 "Writing a caption…" 로딩 UX | task 완료 게시물 캡션 (Phase 06 고정 문구 유지) |
 
 ---
 
@@ -33,29 +36,32 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 9.1 | caption endpoint | max tokens 짧게, 한국어 default |
-| 9.2 | Integrate upload | Phase 5 flow 수정 — placeholder 제거 |
-| 9.3 | Loading UX | "캡션 만드는 중…" sitter side |
+| 9.1 | caption endpoint | `routers/ai_caption.py`: `assert_sitter_of`, media가 해당 dog 소유인지 확인, dog name 로드 → `prompts/caption/system.md` + user `[image, "Dog's name: Bori"]` → reasoning off, `max_tokens` 80, temperature 0.8. 후처리: 따옴표·`<think>` 제거, 200자 초과 시 첫 2문장. 모델 에러/타임아웃 → **200 + `source:"fallback"`**, caption `"{name} had a lovely moment today 🐾"` (프론트는 분기 불필요) |
+| 9.2 | Integrate upload | `lib/feed.ts`에 `postPhoto({dogId, file})` = `uploadMedia` → `api.post('/api/ai/caption')` → `createFeedPost`. Phase 05의 고정 캡션 호출부 교체 |
+| 9.3 | Loading UX | 업로드 즉시 sitter 피드 상단에 임시 카드(로컬 썸네일 + skeleton "Writing a caption…"), 완료 시 실제 카드로 교체 + 토스트 |
+| 9.4 | (선택) task 사진 캡션 | Phase 06 완료 게시물에도 AI 캡션을 비동기로 추가 (`caption_source` 유지 규칙 결정 후) |
 
-### 프롬프트 Goal
+### 프롬프트 Goal (`prompts/caption/system.md`, 영어)
 
-- 의학적 진단 금지
-- 표정·활동 묘사
-- 견주가 읽었을 때 안심되는 톤
+- 1–2 sentences, warm and playful, as if the sitter wrote it to the owner. Use the dog's name once.
+- Describe visible expression and activity only. **No medical claims**, no guessing location/people.
+- ≤ 2 emojis. No hashtags.
 
 ---
 
 ## Definition of Done (DoD)
 
-1. Phase 05 DoD 재테스트 — caption이 사람이 쓴 것처럼 보임 (主관 OK)
+1. Phase 05 DoD 재테스트 — 캡션이 사람이 쓴 것처럼 보임 (사진 5장 중 4장 이상 팀 합의)
 2. sitter UI에 **caption 입력 필드 없음** 유지
+3. `MODEL_VISION` 키를 틀리게 설정해도 게시 성공 + fallback 캡션
+4. 평균 latency를 `notes/model-ids.md`에 기록 (피드백 로그용)
 
 ---
 
 ## 산출물
 
-- `backend/app/routers/ai_caption.py`
-- Updated `cloudinaryUpload` or feed service
+- `backend/app/routers/ai_caption.py`, `backend/app/ai/prompts/caption/system.md`
+- Updated `frontend/lib/feed.ts`, `frontend/app/(sitter)/dogs/[dogId].tsx`
 
 ---
 

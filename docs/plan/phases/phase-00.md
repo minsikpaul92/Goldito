@@ -1,20 +1,23 @@
 # Phase 00 — 사전 준비 (Prerequisites)
 
+> 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D19, env 마스터 §4)
+
 ## Goal
 
-**코드를 작성하기 전에** Supabase·Cloudinary·Nebius(·Tavily) 계정과 로컬 환경 변수를 준비해, Phase 01부터 AI/개발이 막히지 않게 한다.
+**코드를 작성하기 전에** Supabase·Cloudinary·Nebius(·Tavily) 계정과 로컬 환경 변수를 준비해, Phase 01부터 개발이 막히지 않게 한다.
 
 ### Goal 달성 기준
 
-- [ ] `backend/.env`와 `frontend/.env`에 필요한 키가 채워져 있음 (git에는 `.env.example`만)
-- [ ] Supabase 대시보드에서 프로젝트 URL·anon key·service role key 확인
-- [ ] 슬기가 사용할 **Nemotron model ID 목록**이 팀 공유 문서 또는 `docs/plan/README.ko.md` §6에 반영됨
+- [ ] Supabase 프로젝트 URL·anon key·service role key 확보, **Confirm email OFF**
+- [ ] Cloudinary cloud name / API key / secret 확보
+- [ ] 사용할 **Nemotron model ID + base URL**이 `docs/plan/phases/notes/model-ids.md`에 기록됨
+- [ ] `backend/.env`, `frontend/.env`가 [architecture §4](architecture.ko.md#4-환경-변수-마스터-목록) 변수명 그대로 채워짐 (git에는 `.env.example`만)
 
 ---
 
 ## 왜 이 Phase가 먼저인가
 
-Phase 01~03은 Supabase 없이도 뼈대는 만들 수 있지만, Phase 02 migration 적용·Phase 03 Auth는 **즉시 Supabase가 필요**합니다. Cloudinary는 Phase 04, Nebius는 Phase 07부터 필수입니다.
+Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시 Supabase가 필요**합니다. Cloudinary는 Phase 04, Nebius는 Phase 07.1부터 필수입니다. → 0.1·0.2(민식), 0.3(슬기)은 **Phase 01과 병행**해도 됩니다.
 
 ---
 
@@ -22,41 +25,51 @@ Phase 01~03은 Supabase 없이도 뼈대는 만들 수 있지만, Phase 02 migra
 
 | 포함 | 제외 |
 | :--- | :--- |
-| 계정 생성, API 키 발급, activation code | 애플리케이션 코드 |
-| 로컬 `.env` 작성 | Devpost 제출 |
-| Nebius 크레딧 신청 (`NEBIUS-DEVPOST-GLOBAL26`) | Tavily 연동 코드 (키만 Phase 00.4) |
+| 계정 생성, API 키 발급, 대시보드 설정 | 애플리케이션 코드 |
+| 로컬 `.env` 작성 (0.5는 Phase 01.1의 `.env.example` 생성 후) | Devpost 제출 |
+| Nebius 크레딧 신청 (`NEBIUS-DEVPOST-GLOBAL26`) + Builders Program | Tavily 연동 코드 (Phase 11) |
 
 ---
 
 ## 작업 상세
 
-| ID | 작업 | 담당 | 상세 |
+| ID | 작업 | 담당 | 상세 체크리스트 |
 | :--- | :--- | :--- | :--- |
-| 0.1 | Supabase 프로젝트 | 민식 | Auth 이메일 활성화, 리전 선택(지연 고려). Realtime 사용 예정이므로 무료 tier 한도 확인 |
-| 0.2 | Cloudinary | 민식 | Cloud name, API Key/Secret. 폴더 규칙: `pawnote/{dog_id}/`. unsigned 금지 → signed upload만 |
-| 0.3 | Nebius Token Factory | 슬기 | API key, `GET /v1/models`로 비전 모델(`nano-omni` 등) 존재 여부 확인. Super/Ultra/Nano 텍스트 ID 확정 |
-| 0.4 | Tavily | 슬기 | Builders Program 또는 tavily.com — P1 보너스상 대비, Phase 08 확장 시 사용 |
-| 0.5 | `.env` | 민식 | `backend/.env.example`, `frontend/.env.example` 키 이름과 1:1 매칭 |
+| 0.1 | Supabase 프로젝트 | 민식 | ① 리전: **Canada Central 또는 US East** (팀·심사 북미) ② Auth → Providers → Email ON, **Confirm email OFF** (D15) ③ Settings → API에서 URL·anon·service_role 복사 ④ Settings → JWT: signing key 종류(**asymmetric JWKS vs legacy HS256**) 메모 → HS256이면 `SUPABASE_JWT_SECRET`도 복사 (D14) ⑤ 무료 tier: **7일 비활성 시 일시정지** 확인 → Phase 10.7 keep-alive 필요 |
+| 0.2 | Cloudinary | 민식 | cloud name, API key/secret. **unsigned preset 만들지 않음** (signed only). 폴더 규칙은 서버가 강제: `pawnote/{dog_id}/{purpose}/` |
+| 0.3 | Nebius Token Factory | 슬기 | ① 크레딧 코드 적용 ② `GET /v1/models`를 **두 base URL**(eu-north1, us-central1)에 각각 호출 ③ 아래 4개 role별 model ID·base URL 확정 ④ `notes/model-ids.md`에 표 + 호출일 기록 ⑤ Nano Omni 없으면 fallback 비전 모델 ID 기록 (NVIDIA 모델이 아닐 경우 README에 명시) |
+| 0.4 | Tavily | 슬기 | Builders Program 크레딧 또는 tavily.com 무료 키 (P1, Phase 11.3에서 사용) |
+| 0.5 | `.env` | 민식 | Phase 01.1이 만든 `.env.example` 복사 → 값 채움. `git status`에 `.env`가 안 보이는지 확인 |
+
+### 0.3 산출물 형식 — `docs/plan/phases/notes/model-ids.md`
+
+```markdown
+| Role (env)    | Model ID                              | Base URL                                              | Checked    |
+| MODEL_VISION  | nvidia/nemotron-3-nano-omni (?)       | https://api.tokenfactory.us-central1.nebius.com/v1/   | 2026-09-30 |
+| MODEL_SAFETY  | nvidia/Nemotron-3-Ultra-550b-a55b     | https://api.tokenfactory.us-central1.nebius.com/v1/   |            |
+| MODEL_REPORT  | nvidia/nemotron-3-super-120b-a12b     | https://api.tokenfactory.us-central1.nebius.com/v1/   |            |
+| MODEL_FAST    | nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B | https://api.tokenfactory.nebius.com/v1/               |            |
+```
++ 영어 출력 품질 한 줄 메모, image 입력(base64 data URL) 지원 여부, `response_format` json 지원 여부.
 
 ### Nebius 크레딧 (권장)
 
 1. Devpost 폼 + 코드 `NEBIUS-DEVPOST-GLOBAL26` ($25)
-2. Nebius Builders Program 가입 (추가 크레딧 + Tavily)
+2. Nebius Builders Program 가입 (추가 $25 + Tavily)
 
 ---
 
 ## Definition of Done (DoD)
 
-1. 팀원(슬기)이 Nebius key로 로컬에서 테스트 스크립트 1회 호출 가능 (Phase 07.1 전에도 `curl` 또는 playground OK)
-2. 민식이 Supabase SQL Editor 접속 가능
-3. `.env`가 `.gitignore`에 있고 커밋되지 않음
+1. 슬기: `curl`(또는 playground)로 MODEL_FAST 1회, MODEL_VISION에 이미지 1장 1회 호출 성공
+2. 민식: Supabase SQL Editor 접속 + `select now();` 성공
+3. `.env`가 `.gitignore`에 있고 커밋되지 않음 (`git check-ignore backend/.env frontend/.env`)
 
----
+### 검증 예시
 
-## 산출물
-
-- 로컬 `.env` (비공개)
-- (선택) `docs/plan/phases/notes/model-ids.md` — 슬기가 확인한 model ID 스냅샷
+```bash
+curl -s https://api.tokenfactory.nebius.com/v1/models -H "Authorization: Bearer $NEBIUS_API_KEY" | head -c 2000
+```
 
 ---
 
@@ -64,8 +77,9 @@ Phase 01~03은 Supabase 없이도 뼈대는 만들 수 있지만, Phase 02 migra
 
 | 리스크 | 대응 |
 | :--- | :--- |
-| Nano Omni 카탈로그 미노출 | `VISION_MODEL_ID` env로 fallback VL + Nemotron은 텍스트 추론에 집중 |
-| Supabase 리전 지연 | 프론트와 같은 대륙 리전 선택 |
+| Nano Omni 카탈로그 미노출 | `MODEL_VISION` env로 fallback VL 모델. Nemotron은 Ultra(세이프티)·Super(알림장)로 핵심 유지 |
+| 모델마다 리전 다름 | role별 `*_BASE_URL` env (architecture §4) |
+| Supabase 무료 일시정지 | Phase 10.7 keep-alive cron |
 
 ---
 

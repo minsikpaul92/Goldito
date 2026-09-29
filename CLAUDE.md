@@ -40,6 +40,7 @@ Every feature must pass:
 - Product: `README.md`, `docs/README.ko.md`
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
+- **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
 - AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
 - Hackathon rules: `docs/hackathon/README.md`
@@ -77,7 +78,6 @@ Owner                          Sitter
 
 ### Ask the human when blocked
 
-- Demo language (KO vs EN UI)
 - Missing Figma for a screen — offer wireframe-level UI and note for Muk
 - Model ID unavailable after `GET /v1/models`
 
@@ -139,7 +139,7 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 → 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10`  
+`00 → 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 (P1)`  
 After **07.1** (Nebius client), **07 / 08 / 09** can parallelize (Seulgi vs Minsik) but TODO must list **one** "Current focus" per agent session.
 
 ### Coding discipline

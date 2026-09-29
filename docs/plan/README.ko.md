@@ -152,6 +152,8 @@
 
 ## 9. 데이터 모델 (초안)
 
+> 확정 스키마는 [phases/phase-02.md](phases/phase-02.md) (P0) · [phase-11.md](phases/phase-11.md) (P1)을 보세요.
+
 ```
 users            (id, role: owner|sitter, name, push_token)
 dogs             (id, owner_id, sitter_id, name, breed, birthdate, notes)
@@ -241,7 +243,8 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 
 ## 14. 결정 필요
 
-- [ ] 데모 언어: 영어 UI, 한국어 UI, 둘 다? (심사위원은 영어)
+- [x] 데모 언어: **영어 전용** (UI + AI 출력) — 2026-09-29 확정 ([architecture D1](phases/architecture.ko.md#1-결정-로그-확정))
+- [x] 백엔드 배포: **Nebius Serverless Endpoint**, fallback Render — 2026-09-29 확정 (D18)
 - [ ] 데이터셋 언어(한국어/영어)와 규모
 - [ ] Nano Omni 사용 가능 여부 (API 키로 확인)
 - [ ] 토론토 Builders & Brews (9/29) 신청 승인 여부

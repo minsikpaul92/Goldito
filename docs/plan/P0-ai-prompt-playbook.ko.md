@@ -1,5 +1,7 @@
 # P0 개발 Todo & AI 프롬프트 플레이북
 
+> ⚠️ **정본은 [phases/architecture.ko.md](phases/architecture.ko.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{dog_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
+
 > **목적:** 리포가 문서만 있는 상태에서, P0(피드·투약/산책·알림장·세이프티 가드)까지 **AI(Cursor)에게 줄 명령**을 단계별로 정리.
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
 
