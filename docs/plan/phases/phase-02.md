@@ -93,8 +93,10 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 | 견주 요청 시 시각이 시터 칸 시간 안이고 장소 = `sitter_home` | `within_sitter_hours=true`, `status='proposed'` → 시터가 예약을 수락하면 함께 `agreed` |
 | 시각이 시터 시간 밖 (예: 07:00 맡김, Mina Morning은 08:00부터) 또는 장소가 `owner_home`/`other` | `within_sitter_hours=false` 또는 장소 다름 → 요청 카드에 **"Custom drop-off — needs your OK"**. 시터가 예약을 수락하면 이 조건에 동의한 것 |
 | 시터가 수락 전에 다른 시각 제안 ("07:30이면 가능해요") | 견주 제안 행 `superseded` → 시터 제안 행 `proposed` → 견주 알림 → 견주가 동의하면 `agreed` → 시터가 예약 수락 |
-| 확정 후 변경 (예: 비행기 연착으로 찾는 시각 변경) | 어느 쪽이든 새 `proposed` 행 → 상대방 동의 시 새 행 `agreed`, 기존 agreed 행 `superseded`. **동의 전까지는 기존 시각이 유효** |
-| 거절 | 제안 행 `rejected`, 기존 agreed 유지 |
+| **주고받기 (횟수 제한 없음)** | 받은 쪽은 매번 **Accept / Suggest another time / Decline**. 역제안할 때마다 이전 제안 `superseded`, 새 제안 `proposed` (대부분 1–2번, 필요하면 더) |
+| **확정 전 협의에서 거절** | 제안 행 `rejected` → **예약 요청 종료**: 시터가 거절하면 booking `declined`, 견주가 거절하면 `cancelled`. 다시 하려면 새로 요청 |
+| 확정 후 변경 (예: 비행기 연착으로 찾는 시각 변경) | 어느 쪽이든 새 `proposed` 행 → 상대방 동의 시 새 행 `agreed`, 기존 agreed 행 `superseded`. **동의 전까지는 기존 시각이 유효**. 역제안도 가능 |
+| 확정 후 변경 제안을 거절 | 제안 행 `rejected`, **기존 agreed 유지** (예약은 그대로 — 변경만 안 됨) |
 
 **시터의 칸별 남은 자리** (`sitter_remaining(p_sitter, p_day, p_slot)`, §2.8) — 저장하지 않고 계산:
 
@@ -255,7 +257,7 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
 | 이름 | 종류 | 동작 |
 | :--- | :--- | :--- |
 | `propose_handoff(p_booking uuid, p_kind text, p_at timestamptz, p_location_type text, p_note text)` | RPC security definer | 호출자 = 그 예약의 견주 또는 시터, status in (`requested`,`confirmed`), 해당 handoff가 아직 `completed_at is null`. 기존 `proposed` 행 → `superseded`, 새 `proposed` 행 insert → **상대방**에게 `handoff_proposed` ("Mina suggested drop-off at 7:30 AM"). 확정 예약이면 새 시각이 걸치는 칸 자리도 재확인 |
-| `respond_handoff(p_handoff uuid, p_accept boolean)` | RPC security definer | 호출자 = 제안하지 않은 쪽. 수락: 기존 agreed → `superseded`, 이 행 → `agreed`, 확정 예약이면 `booking_slots` 재계산 → 제안자에게 `handoff_agreed`. 거절: `rejected` (기존 agreed 유지) |
+| `respond_handoff(p_handoff uuid, p_accept boolean)` | RPC security definer | 호출자 = 제안하지 않은 쪽 (역제안은 `propose_handoff`로 — 횟수 제한 없음). 수락: 기존 agreed → `superseded`, 이 행 → `agreed`, 확정 예약이면 `booking_slots` 재계산 → 제안자에게 `handoff_agreed`. 거절: 이 행 `rejected` → **예약이 `requested`면 예약 종료** (시터 거절 → `declined`, 견주 거절 → `cancelled`, 상대방에게 `booking_declined`/`booking_cancelled`) / **`confirmed`면 기존 agreed 유지**, 제안자에게 `handoff_declined` |
 | `complete_handoff(p_booking uuid, p_kind text)` | RPC security definer | 호출자 = 시터, agreed 행에 `completed_at = now()` → 견주에게 `pet_dropped_off` ("Bori and Mochi arrived at Mina's 🏠") / `pet_picked_up` ("Bori and Mochi are on their way home 👋") |
 | `get_handoff_details(p_booking uuid)` | RPC security definer | 확정 예약 당사자에게 agreed 인수인계 + **실제 주소** (`sitter_home`이면 시터 `home_address`, `owner_home`이면 견주 `home_address`, `other`면 `location_note`) |
 
@@ -286,7 +288,9 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
    - **예약 (시나리오 A–H)**
      - A: 시간 안 맡기기·찾기 + `sitter_home` → 요청·수락 → confirmed, handoff 2개 agreed, 견주 알림 1건
      - B: 정원 3 칸에 3마리 확정 후 4번째 요청 수락 → `sitter_unavailable`, 스케줄에 `full`
-     - C: 시간 밖 맡기기(07:00) 요청 → handoff `within_sitter_hours=false` → 시터 역제안(07:30) → 수락 시도 → `handoff_pending` → 견주 동의 → 시터 수락 → confirmed
+     - C: 시간 밖 맡기기(07:00) 요청 → handoff `within_sitter_hours=false` → 시터 역제안(07:30) → 수락 시도 → `handoff_pending` → 견주 역제안(07:15) → 시터 역제안(07:30) → 견주 동의 → 시터 수락 → confirmed
+     - C″: 확정 전 협의 중 견주가 시터 제안 거절 → booking `cancelled`, slots `active=false`
+     - D″: 확정 후 변경 제안을 시터가 거절 → 기존 agreed 유지, booking `confirmed` 그대로
      - D: 확정 후 견주가 찾는 시각 변경 제안 → 시터 동의 전까지 기존 agreed 유지 → 동의 후 새 시각 agreed, booking_slots 재계산
      - E: 시터가 확정 칸과 겹치게 blocked insert → `overlaps_confirmed_booking` → `cancel_booking` → slots `active=false`, 견주 `booking_cancelled` → 다른 시터에게 `request_booking(p_rebooked_from)` 성공
      - F: 오전 Mina · 오후 Jun 예약 2건 (같은 pet·같은 날, 칸 다름) 성공 / 같은 칸 두 번째 요청 → `pet_already_booked` / 각자 `daily_reports` 1개씩
@@ -317,7 +321,7 @@ rollback;
 | :--- | :--- | :--- | :--- |
 | A | Jisoo가 10/5 09:30 Mina 집에 맡기고 10/8 17:00 찾음. "Your sitters"에서 Mina 스케줄 확인 → 요청 → 수락 | booking 1 + slots 2마리 × 11칸 + handoffs 2 (시간 안, `sitter_home`) → 수락 시 agreed | "Mina confirmed your booking" 1건. 10/5 09:35 Mina가 **Received** 체크 → "Bori and Mochi arrived at Mina's 🏠" |
 | B | Hana가 Coco를 10/6–10/7 Mina에게 맡김. 다른 견주가 Mina 스케줄 확인 | 10/6 morning Mina 사용 3 → 남은 자리 0 | 그 칸 "Full" — 예약 불가 |
-| C | Jisoo의 다음 여행은 새벽 비행기라 **07:00**에 맡기고 싶음 (Mina Morning은 08:00부터) | drop_off handoff `within_sitter_hours=false` → 요청 카드 "Custom drop-off — needs your OK" → Mina가 **07:30** 역제안 → Jisoo 동의 → Mina 수락 | 07:30 맡기기로 확정. 둘 다 앱에서 협의 |
+| C | Jisoo의 다음 여행은 새벽 비행기라 **07:00**에 맡기고 싶음 (Mina Morning은 08:00부터) | drop_off handoff `within_sitter_hours=false` → 요청 카드 "Custom drop-off — needs your OK" → Mina가 **07:30** 역제안 → (필요하면 몇 번 더 주고받음) → Jisoo 동의 → Mina 수락 | 07:30 맡기기로 확정. 둘 다 앱에서 협의. 어느 쪽이든 **Decline**하면 이 요청은 끝 |
 | D | 확정 후 비행기 연착 → Jisoo가 찾는 시각 17:00 → 20:00 변경 제안 | 새 pick_up `proposed` → Mina 동의 전까지 17:00 유효 → 동의 → 20:00 agreed, 10/8 overnight 칸 추가 (자리 재확인) | Mina 동의 알림이 Jisoo에게 |
 | D′ | 찾는 장소를 Jisoo 집으로 요청 ("Can you drop them at my place?") | pick_up `location_type='owner_home'` 제안 → Mina 동의 | `get_handoff_details`로 Mina만 Jisoo 주소 확인 |
 | E | 10/1에 Mina가 10/7 개인 일정 → block 시도 | `overlaps_confirmed_booking` → Mina가 Jisoo·Hana 예약 취소 → 각자 취소 알림 | Jisoo가 **Find a new sitter** → 같은 시각·장소로 검색 → Jun은 오후 17시까지라 "Custom pick-up time" 표시, Sora는 전체 가능 → Jisoo가 **결정** (보통 Sora 한 명) |

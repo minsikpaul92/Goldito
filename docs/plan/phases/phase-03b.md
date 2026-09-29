@@ -12,7 +12,8 @@
 - [ ] Mina: 스케줄에서 10월 전체 open — Morning 08:00–12:00, Afternoon 12:00–18:00, Overnight 18:00–08:00, 정원 3
 - [ ] Jisoo: **Book care** → Bori + Mochi, 10/5 09:30 맡김 → 10/8 17:00 찾음, 장소 Mina's place → "Your sitters"에 Mina(전체 가능) → 요청 → 수락 → Jisoo 알림
 - [ ] Mina: 10/5 09:35 **Received** → Jisoo에게 "Bori and Mochi arrived at Mina's 🏠"
-- [ ] Jisoo: 07:00 맡기기 요청 → Mina 요청 카드에 "Custom drop-off — needs your OK" → Mina가 07:30 제안 → Jisoo 동의 → Mina 수락
+- [ ] Jisoo: 07:00 맡기기 요청 → Mina 요청 카드에 "Custom drop-off — needs your OK" → Mina가 07:30 제안 → Jisoo가 07:15 역제안 → Mina가 07:30 재제안 → Jisoo 동의 → Mina 수락
+- [ ] 확정 전 협의에서 한쪽이 Decline → 요청 종료 / 확정 후 변경 제안을 Decline → 기존 시간으로 예약 유지
 - [ ] Jisoo: 확정 후 찾는 시각 20:00 + 장소 My place로 변경 제안 → Mina 동의 전까지 17:00 유지 → 동의 후 변경
 - [ ] Mina: 10/7 block 시도 → "This overlaps 2 bookings" → 취소 → Jisoo·Hana에게 취소 알림 → **Find a new sitter** (같은 시각·장소로 재검색)
 - [ ] Jun이 11월을 open해도 견주 알림 없음
@@ -33,7 +34,7 @@
 | 시터 스케줄 (날짜 × 칸 open + **칸별 시간** + 정원 / blocked) | 반복 근무 패턴 (매주 토·일 등) |
 | 견주: 단골 시터 스케줄 보기 + 여행 전체 가능 시터 검색 + 요청 | 즐겨찾기(별표) 시터 — P0 단골 = 예약한 적 있는 시터 |
 | **맡기기·찾기 시각 + 장소** (시터 집 / 견주 집 / 기타 텍스트) | 지도·주소 자동완성, 이동 거리 |
-| 시간 밖·장소 변경 **협의** (제안 → 동의/거절), 확정 후 변경 제안 | 인앱 채팅 (협의는 제안 카드 + 선택 메모 1줄) |
+| 시간 밖·장소 변경 **협의** — 제안 카드 주고받기(횟수 제한 없음, 선택 메모 1줄), 확정 전 거절 = 요청 종료, 확정 후 변경 제안 | 인앱 채팅 (P0는 제안 카드로만 협의) |
 | 시터 **Received / Returned** 체크 → 견주 알림 | 가격·결제·리뷰 |
 | 시터 요청함: 수락 / 거절, 예약 목록·상세·취소 (양쪽) | 방문 돌봄 (시터가 견주 집에서 돌봄) |
 | 취소 → **Find a new sitter** (같은 조건 재검색, `rebooked_from`) | |
@@ -68,7 +69,7 @@
 | 3B.2 | 단골 시터 + 스케줄 보기 | `rpc('list_my_sitters')` → "Your sitters". `/(owner)/sitters/[id]` → `rpc('get_sitter_schedule')` 월 캘린더 | 단골 스케줄 표시 |
 | 3B.3 | 예약 만들기 | `/(owner)/bookings/new`: 맡기기·찾기 시각·장소 입력 → 단골마다 `get_sitter_schedule`로 전체 가능 여부 + 시간 안 여부 → 없으면 `rpc('search_sitters', {p_drop_off_at, p_pick_up_at, p_pet_count})`. 요청 → `rpc('request_booking', …)`. 에러 문구: `pet_already_booked` → "{name} already has a sitter at that time." · `invalid_window` → "Pick-up must be after drop-off." | 요청 + handoff 2개 + 시터 알림 |
 | 3B.4 | 시터 요청함 + 시각 제안 | `/(sitter)/bookings` → **Accept** `rpc('respond_booking')` / **Suggest another time** → `rpc('propose_handoff')`. `handoff_pending` → "Waiting for Jisoo to confirm the new time." `sitter_unavailable` → "You no longer have room on {day} {slot}." | 수락·거절·역제안 |
-| 3B.5 | 협의 응답 + 확정 후 변경 | 양쪽 상세에서 제안 카드 **Accept / Decline** → `rpc('respond_handoff')`. **Change time or place** → `rpc('propose_handoff')`. 동의 전엔 기존 값 표시 + "Change pending" | 제안 → 동의 → 반영 |
+| 3B.5 | 협의 응답 + 확정 후 변경 | 양쪽 상세에서 제안 카드 **Accept / Suggest another time / Decline** → `rpc('respond_handoff')` 또는 `rpc('propose_handoff')`(역제안, 횟수 제한 없음). 카드에 이전 제안 이력 표시 ("You: 07:00 → Mina: 07:30 → You: 07:15 …"). 확정 전 **Decline** → 확인 다이얼로그 "This will end the booking request." → 요청 종료. 확정 후 **Change time or place** → 제안, 거절되면 "Mina kept the original time." (예약 유지). 동의 전엔 기존 값 + "Change pending" | 주고받기 → 동의 → 반영 / 거절 규칙 |
 | 3B.6 | 인수인계 체크 | sitter 상세 당일 **Received** / **Returned** → `rpc('complete_handoff')` → 견주 알림. `get_handoff_details`로 주소 표시 (확정 후) | 도착·출발 알림 |
 | 3B.7 | 취소 · 다시 예약 | 취소 → `rpc('cancel_booking', {p_reason})`. 견주 알림 `booking_cancelled` → 상세 → **Find a new sitter** → `/(owner)/bookings/new?rebook=<id>` (반려동물·시각·장소 자동 입력) → `p_rebooked_from` | 취소 → 재예약 |
 | 3B.8 | Sitter Today 연동 | `/(sitter)/index.tsx`: **Now caring** = 맡긴 시간 안 반려동물 (견주별 묶음, 여러 집 가능) · **Today** = 오늘 맡기기/찾기 예정(시각·장소) · **Upcoming**. 없으면 "No bookings yet — open your schedule so owners can find you." | 시각에 따라 표시 전환 |

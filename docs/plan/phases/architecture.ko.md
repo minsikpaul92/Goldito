@@ -236,6 +236,7 @@ PawNote/
 | `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC | "Mina confirmed your booking for Bori and Mochi 🎉" | `/(owner)/bookings/[id]` |
 | `handoff_proposed` | 상대방 | `propose_handoff` RPC | "Mina suggested drop-off at 7:30 AM" | 예약 상세 |
 | `handoff_agreed` | 제안자 | `respond_handoff` RPC | "Jisoo agreed to pick-up at 8:00 PM" | 예약 상세 |
+| `handoff_declined` | 제안자 | `respond_handoff` RPC (확정 후 변경 거절) | "Mina kept the original pick-up time (5:00 PM)" | 예약 상세 |
 | `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | "Bori and Mochi arrived at Mina's 🏠" / "…are on their way home 👋" | 예약 상세 |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
