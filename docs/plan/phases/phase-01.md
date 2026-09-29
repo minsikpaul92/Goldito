@@ -27,7 +27,8 @@
 | 디렉터리 구조, 패키지 설정, `.env.example` (architecture §4 **전체 변수**) | DB, Auth, 비즈니스 API |
 | CORS (`CORS_ORIGINS` env) | Cloudinary, AI |
 | `theme/tokens.ts` 초안 + `components/ui/` 최소 3종(Button, Card, Screen) | 디자인 폴리싱 (묵 Figma 이후) |
-| 루트 README Getting Started 링크 | Dockerfile (Phase 10) |
+| 루트 README Getting Started 링크 | Dockerfile, CD 워크플로 (Phase 10) |
+| CI `ci.yml` (1.5) | 브랜치 보호 설정 (민식이 GitHub에서 직접) |
 
 ---
 
@@ -39,6 +40,7 @@
 | 1.2 | FastAPI skeleton | `app/main.py` (FastAPI, CORSMiddleware ← `settings.cors_origins`), `app/config.py` (pydantic-settings, 모든 env 선언 — AI/Cloudinary 키는 Optional), `app/routers/health.py`. 공통 에러 핸들러 `{detail, code}` (architecture §5). `requirements.txt`: fastapi, uvicorn[standard], pydantic-settings, httpx, pytest | `uvicorn app.main:app --reload` → `/health` 200 |
 | 1.3 | Expo skeleton | `npx create-expo-app@latest frontend --template tabs` 후 불필요 탭 제거 또는 blank + expo-router 설치. TypeScript. `app/index.tsx` = "PawNote" + **Check API** 버튼 → `lib/api.ts`의 `getHealth()` | web에서 `ok` 표시 |
 | 1.4 | `.gitignore` | `.env`, `.env.*` (단 `!.env.example`), `data/raw/`, `__pycache__/`, `.venv/`, `node_modules/`, `dist/`, `.expo/`, `web-build/` | `git status` 깨끗 |
+| 1.5 | CI (GitHub Actions) | `.github/workflows/ci.yml` — [architecture §11](architecture.ko.md#11-cicd-파이프라인-d20). job `backend`: setup-python 3.12 → `pip install -r requirements.txt ruff` → `ruff check .` → `pytest -q`. job `frontend`: setup-node 20 → `npm ci` → `npx tsc --noEmit` → `npx expo export -p web`. 경로 필터(`dorny/paths-filter`)로 변경된 쪽만 실행. `backend/pyproject.toml` 또는 `ruff.toml` 최소 설정 | PR에 초록 체크 2개, 일부러 타입 에러 넣으면 빨간 체크 |
 
 ### 기술 선택 (확정 — D2~D4)
 
@@ -65,6 +67,7 @@
 1. 새 클론 후 README 순서대로 install → backend + frontend 동시 실행 가능
 2. 프론트 health 실패 시 위 표의 **구체적 메시지** 표시 (backend 끄고 확인)
 3. `npx tsc --noEmit` 통과, `pytest -q` 통과 (health 테스트 1개: `TestClient`)
+4. 1.5 PR에서 CI 2개 job이 GitHub에서 통과 → 민식이 `main` 브랜치 보호에 필수 체크로 등록
 
 ### 검증
 
@@ -83,6 +86,7 @@ frontend/ (app/_layout.tsx, app/index.tsx, lib/api.ts, theme/tokens.ts, componen
 backend/  (app/main.py, app/config.py, app/routers/health.py, tests/test_health.py, requirements.txt)
 supabase/migrations/.gitkeep, supabase/README.md
 backend/.env.example, frontend/.env.example, .gitignore
+.github/workflows/ci.yml
 ```
 
 ---

@@ -54,11 +54,11 @@
 | :--- | :--- | :--- |
 | 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), dog Bori(Maltese, 4y), allergy chicken, care_tasks 2개, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
 | 10.2 | README | 루트 Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency로 갱신, architecture 그림, 스크린샷 4장. backend/frontend README 최신화 |
-| 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). Nebius Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인. 실패/지연 시 **Render**(Docker 동일) fallback + README에 이유 기록 |
-| 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가 |
+| 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). Nebius Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인. 실패/지연 시 **Render**(Docker 동일) fallback + README에 이유 기록. **CD:** `.github/workflows/deploy-backend.yml` — `push: main` + `paths: backend/**` + `workflow_dispatch(image_tag)`: docker build → Registry push (tag = `${{ github.sha }}`) → Endpoint 이미지 갱신 → `curl -f $BACKEND_URL/health` 재시도 5회. 첫 배포는 수동으로 Endpoint 생성 후 워크플로는 갱신만 담당 ([architecture §11](architecture.ko.md#11-cicd-파이프라인-d20)) |
+| 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용 |
 | 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 **Devpost 제출란에만** 기재 (repo엔 "see submission"), 데모 순서 5줄 |
 | 10.6 | Feedback log | README 피드백 표: Token Factory, Serverless Endpoint, 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |
-| 10.7 | 유지 계획 (~12/15) | ① Supabase 무료 일시정지 방지: GitHub Actions cron(매일) → backend `/health`가 Supabase에 가벼운 쿼리 1회 ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
+| 10.7 | 유지 계획 (~12/15) | ① Supabase 무료 일시정지 방지: `.github/workflows/keepalive.yml` cron(매일) → backend `GET /health/deep`(Supabase `select 1` 수행; `/health`는 가볍게 유지) ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
 | 10.8 | 내부 마감 10/28 체크리스트 | 아래 DoD 전부 + 영상 업로드(YouTube public, < 3분, 영어 음성) + Devpost 초안 |
 
 ---
@@ -70,12 +70,13 @@
 3. MIT license가 GitHub About에 표시
 4. 제출 자료 **영어** (description, video audio, README)
 5. 배포 URL에서 `/health` 200, cold start 포함 첫 응답 < 10초
+6. backend 코드 1줄 변경 PR 머지 → 수동 개입 없이 운영 반영 (CD 확인), Vercel Preview URL이 PR에 표시
 
 ---
 
 ## 산출물
 
-- `backend/scripts/seed_demo.py`, `backend/Dockerfile`, `.github/workflows/keepalive.yml`
+- `backend/scripts/seed_demo.py`, `backend/Dockerfile`, `.github/workflows/deploy-backend.yml`, `.github/workflows/keepalive.yml`
 - `docs/DEMO_ACCOUNTS.md`
 - Updated root `README.md` (Getting Started + Nemotron usage + Nebius services + Feedback log)
 
