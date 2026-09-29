@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **1.4** | `.gitignore` hardening                    | [phase-01.md](phases/phase-01.md) |
+| **2.1** | `001_initial_schema.sql` (start Phase 02) | [phase-02.md](phases/phase-02.md) |
 
 ---
 
