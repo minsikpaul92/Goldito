@@ -1,7 +1,7 @@
 # 🐾 PawNote
 
-> **Leave your dog, keep your peace of mind.**
-> A Kidsnote-style care app for dog walkers and pet sitters, powered by NVIDIA Nemotron on Nebius Token Factory.
+> **Leave your pet, keep your peace of mind.**
+> A care app for **dog and cat** owners and pet sitters — photos, meds, walks, and AI-assisted reports — powered by NVIDIA Nemotron on Nebius Token Factory.
 >
 > *Nebius x NVIDIA Global AI Hackathon · Track: Best Apps and Agents*
 
@@ -13,11 +13,10 @@
 
 ## 📌 The Problem
 
-In Korea, daycare parents rely on **Kidsnote** — a daily feed of photos, reports, and medication logs — so they never have to ask "how is my child doing?".
-Dog owners have nothing like it. After 3 years of pet sitting in the field, we saw the same pattern every day:
+Pet owners who use sitters or walkers often have **no single place** for photos, medication logs, walks, and end-of-day reports. After 3 years of pet sitting in the field, we saw the same pattern every day:
 
-- **Owners feel anxious** and keep texting: *"Did she eat?" "Did you give the pills?" "Can I see a photo?"*
-- **Sitters lose time** answering messages, writing reports, and sending photos one by one — instead of caring for dogs.
+- **Owners feel anxious** and keep texting: *"Did they eat?" "Did you give the pills?" "Can I see a photo?"*
+- **Sitters lose time** answering messages, writing reports, and sending photos one by one — instead of caring for pets.
 - **Safety slips through the cracks** — a missed pill, a forgotten walk, a treat with a hidden allergen.
 
 ## 💡 Our Answer
@@ -33,15 +32,14 @@ PawNote is built on two promises:
 ## ✨ Features
 
 ### 1. 📸 Care Feed & Album
-- Sitters post photos and videos of the dog to a **private, Facebook-style feed** — no more sending pictures one by one.
+- Sitters post photos and videos of the **pet** to a **private, Facebook-style feed** — no more sending pictures one by one.
 - Owners get a **push notification** on every new post and can browse everything in an album.
 - Owners can **request a photo** with one tap; the sitter gets a nudge.
 - Nemotron (vision) **auto-writes captions** from the photo, so sitters never type.
 - Media is stored and compressed on **Cloudinary** (auto format/quality, video transcoding).
 
 ### 2. 💊 Medication & Walk Requests
-*Inspired by Kidsnote's medication request & report.*
-- Owners register **medication** (name, dose, time, notes) and **walk schedules**.
+- Owners register **medication** (name, dose, time, notes) and **walk schedules** for each pet.
 - At the scheduled time, the sitter gets a **reminder**.
 - The sitter **snaps a proof photo** → the task is checked off → the owner is notified instantly.
 - Missed tasks are flagged, so nothing slips.

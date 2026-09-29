@@ -24,7 +24,9 @@ export default function HomeScreen() {
   return (
     <Screen>
       <Text style={styles.title}>PawNote</Text>
-      <Text style={styles.subtitle}>Kidsnote-style care for dogs — dev scaffold</Text>
+      <Text style={styles.subtitle}>
+        Private care updates for dogs and cats — development build
+      </Text>
 
       <Card style={styles.card}>
         <Text style={styles.label}>Backend</Text>
