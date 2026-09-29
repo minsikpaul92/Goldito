@@ -42,12 +42,12 @@
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
 | 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
-| 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — `is_sitter_of`, status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
+| 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
 
 ### 7.2 집계 → 프롬프트 → 저장
 
-1. `assert_on_duty_for(pet_id)` (오늘이 확정 예약 기간 안). `date`의 하루 범위 = `APP_TIMEZONE` 00:00–24:00.
+1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **이 시터가 그날 맡은 칸들** (오전만 맡았으면 07–13시의 task·사진만). 오전 Mina·오후 Jun이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
 2. 기존 report가 `sent`면 **409** `report_already_sent`.
 3. `source_snapshot` 생성 (이 JSON이 **모델 입력의 전부**):
    ```json
@@ -63,7 +63,7 @@
    ```
 4. 메시지: system(`system.md`) + few-shot 3쌍(user=input JSON, assistant=output) + user(source_snapshot). Reasoning off, `max_tokens` 400, temperature 0.7.
 5. 후처리: `<think>` 제거, 120–220 단어 목표(넘으면 그대로 두되 로그).
-6. `daily_reports` upsert on (pet_id, report_date): body, inputs, source_snapshot, model, status draft, updated_at.
+6. `daily_reports` upsert on (pet_id, report_date, sitter_id): body, inputs, source_snapshot, model, status draft, updated_at.
 7. 응답 `{report_id, body, status, model, latency_ms}`.
 
 ### 프롬프트 규칙 (`system.md`, 영어)

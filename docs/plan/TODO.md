@@ -27,11 +27,11 @@
 
 - [ ] **2.1–2.6** `001_initial_schema.sql`
 - [ ] **2.7** `002_rls_policies.sql` + `rls_smoke.sql`
-- [ ] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, booking RPCs + capacity/dropped-day triggers, realtime)
+- [ ] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/booking RPCs + overlap guard, realtime)
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies + sitter assignment; sitter Today stub; role profiles
-- [ ] **3B.1–3B.6** Sitter availability calendar (daily capacity) + owner search incl. partial days + request/accept/cancel + dropped day → re-search that day ([phase-03b.md](phases/phase-03b.md))
+- [ ] **3B.1–3B.7** Sitter schedule (day × slot, capacity) + owner "Your sitters" schedule / whole-trip search + request/accept/cancel + cancelled → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()`
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)

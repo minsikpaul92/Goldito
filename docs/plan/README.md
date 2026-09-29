@@ -29,7 +29,7 @@ Two developers, ~4 weeks. Build in this order; P2 only if time allows.
 | **P0** | Zero-typing daily report (from the day's feed + tasks) | Daily report (알림장) | Super |
 | **P0** | Treat Safety Guard | — (our differentiator) | Nano Omni + Ultra |
 | **P1** | Photo request (owner → sitter) | — | — |
-| **P0** | Part-time sitter availability (daily capacity) + day-level booking (split trips across sitters, dropped-day alert) | — (marketplace-style) | — |
+| **P0** | Part-time boarding sitters: schedule by day × slot with capacity, regular-sitter schedule view, whole-trip booking, cancel → rebook | — (marketplace-style) | — |
 | **P1** | Notices with popup · one-tap booking reassign/reschedule · partial-range search | Notices | — |
 | **P1** | Tavily ingredient/recall search | — | Tavily |
 | **P2** | Private Q&A with AI first reply | — | Nano |
@@ -188,9 +188,9 @@ photo_requests   (id, pet_id, owner_id, status, created_at)
 daily_reports    (id, pet_id, date, body, status: draft|sent)
 safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_availability (id, sitter_id, kind: open|blocked, period daterange, max_pets)
-bookings         (id, owner_id, sitter_id, period daterange, status)
-booking_days     (booking_id, pet_id, day, dropped_at)  -- pet × day
+sitter_availability (id, sitter_id, kind: open|blocked, start_date, end_date, slots[], max_pets)
+bookings         (id, owner_id, sitter_id, start_date, end_date, status, rebooked_from)
+booking_slots    (booking_id, pet_id, day, slot: morning|afternoon|overnight)
 messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```
