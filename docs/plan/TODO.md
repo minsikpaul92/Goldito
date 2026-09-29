@@ -26,6 +26,7 @@
 - [ ] **1.2** FastAPI `/health` + CORS + settings
 - [ ] **1.3** Expo Web (expo-router) + health check button
 - [ ] **1.4** `.gitignore` hardening
+- [ ] **1.5** CI: `.github/workflows/ci.yml` (backend ruff+pytest, frontend tsc+web export) → then enable `main` branch protection
 - [ ] **2.1–2.6** `001_initial_schema.sql`
 - [ ] **2.7** `002_rls_policies.sql` + `rls_smoke.sql`
 - [ ] **2.8** `003_functions_triggers.sql` (signup trigger, `assign_sitter`, realtime)
@@ -39,7 +40,7 @@
 - [ ] **7.2–7.5** Daily report AI (Super) + quick-tap + send (`006`)
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`)
 - [ ] **9.x** Auto caption on upload
-- [ ] **10.x** Seed + deploy (Nebius Serverless Endpoint / Vercel) + README + demo accounts + keep-alive
+- [ ] **10.x** Seed + deploy + CD (`deploy-backend.yml` → Nebius Serverless Endpoint, Vercel Git integration) + README + demo accounts + keep-alive
 - [ ] **11.x** P1: photo request, Tavily in safety, notices (after P0 is live)
 
 *(Expand **Up next** with sub-bullets from phase docs when you reach each phase; remove lines as they move to Completed.)*
@@ -48,7 +49,8 @@
 
 ## Completed
 
-- [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1) added; decisions D1–D19 (EN-only demo, Nebius Serverless backend) (2026-09-29)
+- [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1) added; decisions D1–D20 (EN-only demo, Nebius Serverless backend) (2026-09-29)
+- [x] **docs** CI/CD plan: D20, architecture §11, task 1.5, CD details in 10.3/10.4/10.7 (2026-09-29)
 
 ---
 

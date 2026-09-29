@@ -29,6 +29,7 @@
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
 | D18 | 배포 | Backend: **Nebius Serverless Endpoint** (Docker), 실패 시 **Render** fallback. Frontend: `expo export -p web` → **Vercel** 정적 호스팅 | Nebius 서비스 활용 점수 + 안정성 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
+| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
 
@@ -39,6 +40,10 @@ PawNote/
 ├─ README.md                  # 제품 + Getting Started (Phase 10에서 완성)
 ├─ CLAUDE.md
 ├─ .gitignore                 # .env, data/raw/, node_modules, __pycache__, .venv, dist
+├─ .github/workflows/
+│  ├─ ci.yml                  # Phase 01.5 — PR 검사 (backend / frontend 2 job)
+│  ├─ deploy-backend.yml      # Phase 10.3 — main → Nebius Serverless Endpoint
+│  └─ keepalive.yml           # Phase 10.7 — 매일 /health/deep 호출
 ├─ docs/
 ├─ supabase/
 │  ├─ README.md               # ERD 요약 + 적용 순서
@@ -179,6 +184,7 @@ PawNote/
 | Method | Path | 권한 | Body | Response | Phase |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | GET | `/health` | - | - | `{status:"ok"}` | 01 |
+| GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`) — keep-alive 전용 | 10 |
 | GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
 | POST | `/api/media/sign` | sitter of dog | `{dog_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
 | POST | `/api/media/complete` | sitter of dog | `{dog_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
@@ -255,3 +261,31 @@ PawNote/
 | DB/RLS | Supabase SQL Editor에서 `supabase/tests/rls_smoke.sql` 실행 (역할별 `set local request.jwt.claims`) |
 | Frontend | `npx tsc --noEmit` + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter) 수동 시나리오 |
 | 데모 | Phase 10 "PawNote의 하루" 체크리스트 |
+
+---
+
+## 11. CI/CD 파이프라인 (D20)
+
+```
+PR 열기/업데이트 ──> ci.yml ─┬─ backend: ruff check · pytest -q            ─┐
+                             └─ frontend: npm ci · tsc --noEmit · expo export ┴─> ✅ 필수 체크 → 머지 가능
+                    Vercel ──> Preview URL (PR 코멘트)
+
+main 머지 ─┬─> Vercel ──> 운영 frontend 자동 배포
+           └─> deploy-backend.yml (backend/** 변경 시)
+                 docker build → Nebius Container Registry push (tag = git sha)
+                 → Serverless Endpoint 이미지 갱신 → /health 스모크 (실패 시 job 실패, 이전 이미지 유지)
+
+매일 cron ──> keepalive.yml ──> GET {BACKEND_URL}/health/deep (Supabase select 1) — 일시정지 방지
+DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본문에 "migration 00N 적용 필요" 명시)
+```
+
+| 항목 | 규칙 |
+| :--- | :--- |
+| CI 트리거 | `pull_request` + `push: main`. `paths` 필터로 backend/frontend job 각각 변경 시만 실행 (docs-only PR은 스킵 → 필수 체크는 "skipped = pass" 되도록 job 단위 `if` 사용) |
+| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache. **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
+| 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
+| GitHub Secrets (CD 전용) | `NEBIUS_REGISTRY_*`(레지스트리 로그인), `NEBIUS_ENDPOINT_ID`, `BACKEND_URL`. 앱 런타임 키(Supabase·Cloudinary·Nebius API)는 **Nebius Endpoint env / Vercel env에만** 저장 |
+| 롤백 | backend: 이전 sha 태그로 Endpoint 재지정 (`workflow_dispatch` 입력 `image_tag`). frontend: Vercel 대시보드 "Promote previous deployment" |
+| Fallback | Nebius 배포가 막히면 Render GitHub 자동 배포(같은 Dockerfile)로 전환, `deploy-backend.yml` 비활성 |
+
