@@ -1,0 +1,71 @@
+from functools import lru_cache
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    app_env: str = Field(default="local", alias="APP_ENV")
+    app_timezone: str = Field(default="America/Toronto", alias="APP_TIMEZONE")
+    cors_origins: str = Field(
+        default="http://localhost:8081,http://localhost:19006",
+        alias="CORS_ORIGINS",
+    )
+
+    supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
+    supabase_service_role_key: str | None = Field(
+        default=None, alias="SUPABASE_SERVICE_ROLE_KEY"
+    )
+    supabase_jwt_secret: str | None = Field(default=None, alias="SUPABASE_JWT_SECRET")
+
+    cloudinary_cloud_name: str | None = Field(default=None, alias="CLOUDINARY_CLOUD_NAME")
+    cloudinary_api_key: str | None = Field(default=None, alias="CLOUDINARY_API_KEY")
+    cloudinary_api_secret: str | None = Field(default=None, alias="CLOUDINARY_API_SECRET")
+
+    nebius_api_key: str | None = Field(default=None, alias="NEBIUS_API_KEY")
+
+    model_vision: str = Field(
+        default="nvidia/nemotron-3-nano-omni", alias="MODEL_VISION"
+    )
+    model_vision_base_url: str = Field(
+        default="https://api.tokenfactory.us-central1.nebius.com/v1/",
+        alias="MODEL_VISION_BASE_URL",
+    )
+    model_safety: str = Field(
+        default="nvidia/Nemotron-3-Ultra-550b-a55b", alias="MODEL_SAFETY"
+    )
+    model_safety_base_url: str = Field(
+        default="https://api.tokenfactory.us-central1.nebius.com/v1/",
+        alias="MODEL_SAFETY_BASE_URL",
+    )
+    model_report: str = Field(
+        default="nvidia/nemotron-3-super-120b-a12b", alias="MODEL_REPORT"
+    )
+    model_report_base_url: str = Field(
+        default="https://api.tokenfactory.us-central1.nebius.com/v1/",
+        alias="MODEL_REPORT_BASE_URL",
+    )
+    model_fast: str = Field(
+        default="nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", alias="MODEL_FAST"
+    )
+    model_fast_base_url: str = Field(
+        default="https://api.tokenfactory.nebius.com/v1/",
+        alias="MODEL_FAST_BASE_URL",
+    )
+
+    tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
