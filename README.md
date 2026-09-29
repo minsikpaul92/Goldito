@@ -56,9 +56,9 @@ PawNote is built on two promises:
 4. **Warn** — a warning modal blocks the treat before it's fed.
 
 ### 5. 📅 Sitter Availability & Trip Booking
-- Sitters **open the dates they can work** (single days or ranges) and **block** days off.
-- Owners pick trip dates and pets, then **search sitters who are free for the whole stay** — like booking a hotel. Booked dates close automatically.
-- If a sitter later blocks a day inside a confirmed booking, the owner is **alerted right away** to find another sitter or change dates.
+- Sitters are **part-time**: they **open the dates they can work** (single days or ranges), set **how many pets they can take that day**, and **block** days off. One sitter can care for pets from several homes on the same day.
+- Owners pick trip dates and pets, then **search sitters** — like booking a hotel. If no one is free for the whole trip, owners **split the days across sitters**. Full days close automatically.
+- If a sitter later blocks a day inside a confirmed booking, **only that day** is dropped and the owner is **alerted right away** to find another sitter for it.
 - Sitters post **notices** (e.g. "Closed on Thanksgiving") that show as a **popup** when owners open the app.
 
 ### 6. 💬 Private Q&A with AI First Reply

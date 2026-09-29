@@ -169,9 +169,9 @@ photo_requests   (id, pet_id, owner_id, status, created_at)
 daily_reports    (id, pet_id, date, body, status: draft|sent)
 safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_availability (id, sitter_id, kind: open|blocked, period daterange)
+sitter_availability (id, sitter_id, kind: open|blocked, period daterange, max_pets)
 bookings         (id, owner_id, sitter_id, period daterange, status)
-booking_pets     (booking_id, pet_id)
+booking_days     (booking_id, pet_id, day, dropped_at)  -- 반려동물 × 날짜
 messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```

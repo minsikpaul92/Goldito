@@ -32,7 +32,7 @@
 | D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
-| D24 | 기간 예약 | 시터가 근무 가능일을 `open`으로 열고 쉬는 날은 `blocked` (하루·기간 모두 `daterange`). 견주가 기간+반려동물로 검색 → `request_booking` → 시터 수락 시 `confirmed`. **한 예약 = 시터 1명**, 시터당 동시 확정 예약 1건 (exclusion 제약 → 예약 찬 날은 자동 불가). 확정 기간 중 시터가 blocked 추가 → `conflict` + 견주 알림 → P0는 취소 후 재검색, P1은 원탭 교체·날짜 변경. 권한: 확정 예약이 있으면 조회(`is_sitter_of`), 오늘이 기간 안이면 작업(`is_on_duty_for`). `pets.sitter_id` 없음 | 여행 기간 단위 맡김이 실제 사용 방식. 권한을 예약에 묶어야 기간 밖 접근 차단 |
+| D24 | 파트타임 시터 & 날짜 단위 예약 | 시터는 **파트타임**. 근무일을 `open` + **그날 정원 `max_pets`**로 열고 쉬는 날은 `blocked` (하루·기간). 한 시터가 같은 날 여러 집 반려동물 가능 (정원까지). 예약 = 시터 1명 + 견주 1명, 실제 단위는 **`booking_days`(반려동물 × 날짜)**. 반려동물은 하루에 담당 시터 1명 (`unique(pet_id, day) where active`). 견주는 여행을 **여러 시터에게 나눠** 예약 (검색이 일부 날짜 가능 시터도 반환). 시터가 확정된 날을 막으면 **그날만 dropped** + 견주 알림 → 그날만 다른 시터 요청. 권한: 앞으로 담당일이 있으면 조회(`is_sitter_of`), 오늘 담당이면 작업(`is_on_duty_for`). `pets.sitter_id` 없음 | 파트타임 시터가 실제 사용 방식. 날짜 단위라 부분 교체가 자연스럽고, 정원으로 "예약 차면 자동 불가" 해결 |
 | D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
@@ -129,7 +129,7 @@ PawNote/
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
 | `/(sitter)/` (tab: Today) | sitter | 오늘 담당 pet(진행 중 예약) + Upcoming 예약 + 요청 배지 + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 03B → 06 |
-| `/(sitter)/availability` | sitter | 근무일 캘린더 (open / blocked) | Save | 03B |
+| `/(sitter)/availability` | sitter | 근무일 캘린더 (open + 정원 / blocked) | Save | 03B |
 | `/(sitter)/bookings` | sitter | 요청함 · 예정 · 지난 예약 | Accept | 03B |
 | `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
@@ -210,8 +210,8 @@ PawNote/
 | :--- | :--- | :--- |
 | 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
 | pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | `guard_care_task_species` |
-| 근무일 open/blocked | Supabase client `sitter_availability` (본인 RLS) | blocked가 확정 예약과 겹치면 `flag_booking_conflicts` → 예약 `conflict` + owner `booking_conflict` |
-| 시터 검색 | RPC `search_available_sitters(start, end)` | - |
+| 근무일 open(정원)/blocked | Supabase client `sitter_availability` (본인 RLS) | blocked가 확정된 날과 겹치면 `drop_days_on_block` → 그날 `booking_days` dropped + owner `booking_day_dropped` |
+| 시터 검색 | RPC `search_available_sitters(start, end, pet_count)` — 일부 날짜 가능 시터 포함 | - |
 | 예약 요청 / 응답 / 취소 | RPC `request_booking` / `respond_booking` / `cancel_booking` | 상대방에게 `booking_*` 알림 |
 | 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
@@ -232,7 +232,7 @@ PawNote/
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/(sitter)/bookings` |
 | `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC | "Mina confirmed your booking 🎉" | `/(owner)/bookings/[id]` |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC | "Your booking for Oct 5 – Oct 12 was cancelled" | 예약 상세 |
-| `booking_conflict` | owner | 트리거 on `sitter_availability` (blocked) | "Mina can't cover Oct 8 — find another sitter" | `/(owner)/bookings/[id]` |
+| `booking_day_dropped` | owner | 트리거 on `sitter_availability` (blocked) | "Mina can't cover Oct 7 for Bori and Mochi — find another sitter for that day" | `/(owner)/bookings/[id]` |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
 | `task_done` | owner | `complete_task_log` RPC | "Bori's medication is done ✅" | `/(owner)/tasks` |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
