@@ -39,7 +39,7 @@
 ```
 Sitter picks label photo → uploadMedia(safety_label) → media_id
 POST /api/ai/safety-check {pet_id, media_id}
-  1. assert_sitter_of → load pet(species, name, breed, weight) + allergens
+  1. assert_on_duty_for → load pet(species, name, breed, weight) + allergens
   2. fetch_as_data_url(media)                          (D12)
   3. Vision (MODEL_VISION, 30s): → VisionResult {readable, product_name?, ingredients[]}
        readable=false or ingredients=[] → 422 "label_unreadable" → UI "Couldn't read the label. Try a closer, well-lit photo."

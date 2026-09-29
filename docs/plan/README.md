@@ -29,7 +29,8 @@ Two developers, ~4 weeks. Build in this order; P2 only if time allows.
 | **P0** | Zero-typing daily report (from the day's feed + tasks) | Daily report (알림장) | Super |
 | **P0** | Treat Safety Guard | — (our differentiator) | Nano Omni + Ultra |
 | **P1** | Photo request (owner → sitter) | — | — |
-| **P1** | Sitter schedule & notices with popup | Notices / calendar | — |
+| **P0** | Sitter availability + trip booking (search, request/accept, conflict alert) | — (marketplace-style) | — |
+| **P1** | Notices with popup · one-tap booking reassign/reschedule · partial-range search | Notices | — |
 | **P1** | Tavily ingredient/recall search | — | Tavily |
 | **P2** | Private Q&A with AI first reply | — | Nano |
 
@@ -176,8 +177,8 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 ```
 users            (id, role: owner|sitter, name, push_token)
 owner_profiles   (id → profiles, emergency contact, vet clinic)
-sitter_profiles  (id → profiles, bio, species_served[], service_area)
-pets             (id, owner_id, sitter_id, species: dog|cat, name, breed, birthdate, notes)
+sitter_profiles  (id → profiles, bio, service_area, experience)
+pets             (id, owner_id, species: dog|cat, name, breed, birthdate, notes)
 pet_allergies    (pet_id, allergen)
 care_tasks       (id, pet_id, type: medication|walk, title, dose, schedule, notes)
 task_logs        (id, task_id, due_at, completed_at, media_id, status: done|missed)
@@ -187,7 +188,9 @@ photo_requests   (id, pet_id, owner_id, status, created_at)
 daily_reports    (id, pet_id, date, body, status: draft|sent)
 safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_schedule  (id, sitter_id, date, status, note)
+sitter_availability (id, sitter_id, kind: open|blocked, period daterange)
+bookings         (id, owner_id, sitter_id, period daterange, status)
+booking_pets     (booking_id, pet_id)
 messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```

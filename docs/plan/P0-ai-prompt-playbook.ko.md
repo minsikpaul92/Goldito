@@ -123,7 +123,7 @@ Write supabase/migrations/001_initial_schema.sql based on docs/plan/README.ko.md
 
 Include:
 - profiles extending auth.users (id uuid PK references auth.users, role text check owner|sitter, display_name)
-- pets (owner_id, sitter_id nullable until assigned, species dog|cat)
+- pets (owner_id, species dog|cat) — no sitter_id; sitters come from bookings
 - owner_profiles / sitter_profiles (1:1 with profiles, see phase-02)
 - pet_allergies, care_tasks (type medication|walk, schedule as jsonb or separate columns — document choice)
 - task_logs (status pending|done|missed, due_at, completed_at, media_id nullable)
@@ -144,7 +144,7 @@ DoD: migration applies cleanly in Supabase SQL editor; comment at top how to run
 ```text
 Add supabase/migrations/002_rls_policies.sql:
 - Owners can select/update their pets and related rows where pets.owner_id = auth.uid()
-- Sitters can select/update pets where pets.sitter_id = auth.uid()
+- Sitters can select pets they have a confirmed booking for (see phase-02 is_sitter_of / is_on_duty_for)
 - Insert feed_posts, task_logs, media only for assigned sitter on that pet
 - notifications: user can read own user_id = auth.uid()
 
@@ -225,7 +225,7 @@ DoD: integration test script or manual steps in backend/README.md.
 
 ```text
 Implement care feed without AI captions first:
-- SitterHome: list assigned pets (query pets where sitter_id = me)
+- SitterHome: list pets from confirmed bookings covering today (phase-03b 3B.6)
 - DogFeedScreen (sitter): upload photo via signed flow, create feed_post with caption placeholder "..."
 - OwnerHome: select pet, FeedTimeline with infinite scroll by created_at desc
 - On feed_post insert, create notification for owner and subscribe via supabase channel for notifications insert

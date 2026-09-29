@@ -35,7 +35,7 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_sitter_of(pet_id)`. `folder = f"pawnote/{pet_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
+| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_on_duty_for(pet_id)` (확정 예약 기간 밖이면 403). `folder = f"pawnote/{pet_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
 | 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawnote/{pet_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
 | 4.3 | Frontend helper | `uploadMedia({petId, purpose, file}) → {mediaId, secureUrl, thumbUrl}`: pick → `api.post('/api/media/sign')` → `FormData(file, api_key, timestamp, signature, folder)` → fetch upload_url → `api.post('/api/media/complete')`. 실패 시 `UploadError(step)` throw → 호출 화면이 Toast + **Retry** |
 | 4.4 | URL helper | `thumbUrl(publicId, w=400)` → `https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto,c_fill,w_400,h_400/{publicId}`, `videoPosterUrl(publicId)` → `…/video/upload/so_0,f_jpg,w_400/{publicId}.jpg`, `videoUrl(publicId)` → `…/video/upload/q_auto/{publicId}` |

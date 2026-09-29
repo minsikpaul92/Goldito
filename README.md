@@ -55,8 +55,10 @@ PawNote is built on two promises:
 3. **Search** — unknown ingredients or recalls are looked up on the web via **Tavily**.
 4. **Warn** — a warning modal blocks the treat before it's fed.
 
-### 5. 📢 Sitter Schedule & Notices
-- Owners see the sitter's **schedule** (availability, holidays).
+### 5. 📅 Sitter Availability & Trip Booking
+- Sitters **open the dates they can work** (single days or ranges) and **block** days off.
+- Owners pick trip dates and pets, then **search sitters who are free for the whole stay** — like booking a hotel. Booked dates close automatically.
+- If a sitter later blocks a day inside a confirmed booking, the owner is **alerted right away** to find another sitter or change dates.
 - Sitters post **notices** (e.g. "Closed on Thanksgiving") that show as a **popup** when owners open the app.
 
 ### 6. 💬 Private Q&A with AI First Reply

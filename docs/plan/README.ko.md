@@ -29,7 +29,8 @@
 | **P0** | 타이핑 없는 알림장 (그날 피드 + 완료 일정 기반) | 알림장 | Super |
 | **P0** | 간식 세이프티 가드 | — (우리 차별점) | Nano Omni + Ultra |
 | **P1** | 사진 요청 (견주 → 펫시터) | — | — |
-| **P1** | 펫시터 일정 & 공지 팝업 | 공지사항/일정표 | — |
+| **P0** | 펫시터 근무일 + 기간 예약 (검색·요청/수락·충돌 알림) | — (예약 플랫폼형) | — |
+| **P1** | 공지 팝업 · 예약 원탭 교체/날짜 변경 · 일부 구간 검색 | 공지사항 | — |
 | **P1** | Tavily 성분·리콜 검색 | — | Tavily |
 | **P2** | AI 1차 답변 Q&A | — | Nano |
 
@@ -157,8 +158,8 @@
 ```
 users            (id, role: owner|sitter, name, push_token)
 owner_profiles   (id → profiles, 긴급 연락처, 동물병원)
-sitter_profiles  (id → profiles, 소개, species_served[], 활동 지역)
-pets             (id, owner_id, sitter_id, species: dog|cat, name, breed, birthdate, notes)
+sitter_profiles  (id → profiles, 소개, 활동 지역, 경력)
+pets             (id, owner_id, species: dog|cat, name, breed, birthdate, notes)
 pet_allergies    (pet_id, allergen)
 care_tasks       (id, pet_id, type: medication|walk, title, dose, schedule, notes)
 task_logs        (id, task_id, due_at, completed_at, media_id, status: done|missed)
@@ -168,7 +169,9 @@ photo_requests   (id, pet_id, owner_id, status, created_at)
 daily_reports    (id, pet_id, date, body, status: draft|sent)
 safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_schedule  (id, sitter_id, date, status, note)
+sitter_availability (id, sitter_id, kind: open|blocked, period daterange)
+bookings         (id, owner_id, sitter_id, period daterange, status)
+booking_pets     (booking_id, pet_id)
 messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```

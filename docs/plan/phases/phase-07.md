@@ -47,7 +47,7 @@
 
 ### 7.2 집계 → 프롬프트 → 저장
 
-1. `assert_sitter_of(pet_id)`. `date`의 하루 범위 = `APP_TIMEZONE` 00:00–24:00.
+1. `assert_on_duty_for(pet_id)` (오늘이 확정 예약 기간 안). `date`의 하루 범위 = `APP_TIMEZONE` 00:00–24:00.
 2. 기존 report가 `sent`면 **409** `report_already_sent`.
 3. `source_snapshot` 생성 (이 JSON이 **모델 입력의 전부**):
    ```json

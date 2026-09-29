@@ -25,13 +25,14 @@
 | D13 | 세이프티 입력 | 성분표도 **일반 업로드 파이프(Phase 04)** 로 올린 뒤 `POST /api/ai/safety-check {pet_id, media_id}` (multipart 아님) | 업로드 코드 재사용, 증거 이미지 보관 |
 | D14 | JWT 검증 | Supabase **JWKS**(`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) 우선, 레거시 프로젝트면 `SUPABASE_JWT_SECRET`(HS256) fallback | 신규 프로젝트는 asymmetric key 기본 |
 | D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
-| D16 | sitter 배정 | owner가 **sitter 이메일로 배정** — RPC `assign_sitter(pet_id, sitter_email)` | 초대 링크보다 단순, 데모 재현 쉬움 |
+| D16 | sitter 배정 | ~~sitter 이메일로 고정 배정~~ → **D24 기간 예약으로 대체** (2026-09-29) | 실제 펫시팅은 여행 기간 단위 |
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
 | D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
-| D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·`species_served`·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성 | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
+| D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
+| D24 | 기간 예약 | 시터가 근무 가능일을 `open`으로 열고 쉬는 날은 `blocked` (하루·기간 모두 `daterange`). 견주가 기간+반려동물로 검색 → `request_booking` → 시터 수락 시 `confirmed`. **한 예약 = 시터 1명**, 시터당 동시 확정 예약 1건 (exclusion 제약 → 예약 찬 날은 자동 불가). 확정 기간 중 시터가 blocked 추가 → `conflict` + 견주 알림 → P0는 취소 후 재검색, P1은 원탭 교체·날짜 변경. 권한: 확정 예약이 있으면 조회(`is_sitter_of`), 오늘이 기간 안이면 작업(`is_on_duty_for`). `pets.sitter_id` 없음 | 여행 기간 단위 맡김이 실제 사용 방식. 권한을 예약에 묶어야 기간 밖 접근 차단 |
 | D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
@@ -53,7 +54,7 @@ PawNote/
 │  ├─ migrations/
 │  │  ├─ 001_initial_schema.sql
 │  │  ├─ 002_rls_policies.sql
-│  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·assign_sitter·realtime (Phase 02)
+│  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·예약 RPC·충돌 트리거·realtime (Phase 02)
 │  │  ├─ 004_feed_notifications.sql   # Phase 05
 │  │  ├─ 005_tasks.sql                # Phase 06 (ensure_today_task_logs, complete_task_log)
 │  │  ├─ 006_reports.sql              # Phase 07 (send_daily_report)
@@ -72,7 +73,7 @@ PawNote/
 │  │  │  ├─ auth.py           # get_current_user, require_role("sitter")
 │  │  │  └─ supabase.py       # service-role client (싱글톤)
 │  │  ├─ services/
-│  │  │  ├─ authz.py          # assert_owner_of(pet_id), assert_sitter_of(pet_id)
+│  │  │  ├─ authz.py          # assert_owner_of(pet_id), assert_on_duty_for(pet_id)
 │  │  │  ├─ cloudinary.py     # sign params, delivery URL, fetch image → base64
 │  │  │  ├─ nebius.py         # model role → (model_id, base_url), chat(), chat_json()
 │  │  │  └─ timeutil.py       # APP_TIMEZONE 기준 today/day range
@@ -120,12 +121,16 @@ PawNote/
 | `/(auth)/login` | - | Login | Sign in | 03 |
 | `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
 | `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
-| `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (이름·견종·생일·메모·**알레르기 chips**·**sitter 이메일 배정**) | Save | 03 |
+| `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) | Save | 03 |
+| `/(owner)/bookings`, `/(owner)/bookings/new`, `/(owner)/bookings/[bookingId]` | owner | 예약 목록 / 기간 검색·요청 / 상세·충돌 해결 | Book a sitter | 03B |
+| `/profile` | both | 역할별 프로필 편집 | Save | 03 |
 | `/(owner)/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
 | `/(owner)/tasks` (tab: Care) | owner | 투약·산책 등록 + 오늘 상태(done/pending/missed) | Add task | 06 |
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/(sitter)/` (tab: Today) | sitter | 담당 pet + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 06 |
+| `/(sitter)/` (tab: Today) | sitter | 오늘 담당 pet(진행 중 예약) + Upcoming 예약 + 요청 배지 + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 03B → 06 |
+| `/(sitter)/availability` | sitter | 근무일 캘린더 (open / blocked) | Save | 03B |
+| `/(sitter)/bookings` | sitter | 요청함 · 예정 · 지난 예약 | Accept | 03B |
 | `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
@@ -177,7 +182,7 @@ PawNote/
 ## 5. API 공통 규약 (FastAPI)
 
 - Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
-- 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_sitter_of` / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
+- 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
 - 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
 - 타임아웃 (서버→Nebius): caption 20s, daily-report 60s, safety 90s (vision 30 + reasoning 60). 프론트 fetch 타임아웃은 여기에 +5s.
 - 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
@@ -189,11 +194,11 @@ PawNote/
 | GET | `/health` | - | - | `{status:"ok"}` | 01 |
 | GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`) — keep-alive 전용 | 10 |
 | GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
-| POST | `/api/media/sign` | sitter of pet | `{pet_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
-| POST | `/api/media/complete` | sitter of pet | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
-| POST | `/api/ai/caption` | sitter of pet | `{pet_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
-| POST | `/api/ai/daily-report` | sitter of pet | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
-| POST | `/api/ai/safety-check` | sitter of pet | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
+| POST | `/api/media/sign` | on-duty sitter | `{pet_id, resource_type:"image"\|"video", purpose}` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
+| POST | `/api/media/complete` | on-duty sitter | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
+| POST | `/api/ai/caption` | on-duty sitter | `{pet_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
+| POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
+| POST | `/api/ai/safety-check` | on-duty sitter | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
 
 > 알림장 **전송**, task **완료**, 피드 **게시**는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6).
 
@@ -203,9 +208,11 @@ PawNote/
 
 | 동작 | 경로 | 부수효과 (트리거) |
 | :--- | :--- | :--- |
-| 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` |
-| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | - |
-| sitter 배정 | RPC `assign_sitter(pet_id, sitter_email)` | - |
+| 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
+| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | `guard_care_task_species` |
+| 근무일 open/blocked | Supabase client `sitter_availability` (본인 RLS) | blocked가 확정 예약과 겹치면 `flag_booking_conflicts` → 예약 `conflict` + owner `booking_conflict` |
+| 시터 검색 | RPC `search_available_sitters(start, end)` | - |
+| 예약 요청 / 응답 / 취소 | RPC `request_booking` / `respond_booking` / `cancel_booking` | 상대방에게 `booking_*` 알림 |
 | 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
 | 피드 게시 | Supabase client insert `feed_posts` (sitter RLS) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
@@ -222,6 +229,10 @@ PawNote/
 
 | type | 수신자 | 생성 위치 | 제목 예 (EN) | 탭 시 이동 |
 | :--- | :--- | :--- | :--- | :--- |
+| `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/(sitter)/bookings` |
+| `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC | "Mina confirmed your booking 🎉" | `/(owner)/bookings/[id]` |
+| `booking_cancelled` | 상대방 | `cancel_booking` RPC | "Your booking for Oct 5 – Oct 12 was cancelled" | 예약 상세 |
+| `booking_conflict` | owner | 트리거 on `sitter_availability` (blocked) | "Mina can't cover Oct 8 — find another sitter" | `/(owner)/bookings/[id]` |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
 | `task_done` | owner | `complete_task_log` RPC | "Bori's medication is done ✅" | `/(owner)/tasks` |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
