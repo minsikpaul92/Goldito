@@ -6,17 +6,23 @@
 
 **Supplementary docs:** [onboarding.ko.md](onboarding.ko.md) · [tavily.ko.md](tavily.ko.md) · [env-setup.ko.md](env-setup.ko.md) · [Devpost](../hackathon/devpost-submission.ko.md)
 
+**GitHub (execution order stays here):** Milestone [P0 hackathon](https://github.com/minsikpaul92/PawNote/milestone/1) · Epics [#4](https://github.com/minsikpaul92/PawNote/issues/4) Phase 01 · [#5](https://github.com/minsikpaul92/PawNote/issues/5) Phase 02 · [#6](https://github.com/minsikpaul92/PawNote/issues/6) Phase 03+OB · [#7](https://github.com/minsikpaul92/PawNote/issues/7) Phase 04–06 · [#8](https://github.com/minsikpaul92/PawNote/issues/8) Phase 07–09 · [#9](https://github.com/minsikpaul92/PawNote/issues/9) Phase 10 · [#10](https://github.com/minsikpaul92/PawNote/issues/10) Phase 11 P1 · [#11](https://github.com/minsikpaul92/PawNote/issues/11) Nebius IDs (Seulgi) · [#12](https://github.com/minsikpaul92/PawNote/issues/12) Tavily key (Seulgi) · [#13](https://github.com/minsikpaul92/PawNote/issues/13) Figma onboarding (Muk)
+
 ---
 
 ## Current focus (one task only)
 
-| ID | Task | Phase doc |
-| :--- | :--- | :--- |
+
+| ID      | Task                                                               | Phase doc                         |
+| ------- | ------------------------------------------------------------------ | --------------------------------- |
 | **1.1** | Monorepo scaffold + `.env.example` (all vars from architecture §4) | [phase-01.md](phases/phase-01.md) |
+
 
 > **1.1 partial:** `backend/.env.example`, `frontend/.env.example`, env guides exist; `backend/app/`, Expo app skeleton, `supabase/migrations/` layout still TODO.
 
 ---
+
+
 
 ## Up next (in order — do not start until Current focus is empty)
 
@@ -48,6 +54,8 @@
 
 ---
 
+
+
 ## Completed
 
 - [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1); decisions D1–D20 (2026-09-29)
@@ -64,35 +72,44 @@
 
 ---
 
+
+
 ## Phase status
 
-| Phase | Status |
-| :--- | :--- |
-| 00 Prerequisites | **partial** — 0.1, 0.2, 0.5 done; **0.3 Nebius, 0.4 Tavily** pending (Seulgi) |
-| 01 Scaffold | in progress (**1.1** — env templates only so far) |
-| 02 DB + RLS | not started |
-| 03 Auth | not started |
-| 04 Cloudinary (code) | not started |
-| 05 Feed | not started |
-| 06 Tasks | not started |
-| 07 Report AI | not started |
-| 08 Safety | not started |
-| 09 Caption AI | not started |
-| 10 Demo & deploy | not started |
-| 11 P1 | not started |
-| Onboarding UX | spec done ([onboarding.ko.md](onboarding.ko.md)); code **OB.*** not started |
+
+| Phase                | Status                                                                        |
+| -------------------- | ----------------------------------------------------------------------------- |
+| 00 Prerequisites     | **partial** — 0.1, 0.2, 0.5 done; **0.3 Nebius, 0.4 Tavily** pending (Seulgi) |
+| 01 Scaffold          | in progress (**1.1** — env templates only so far)                             |
+| 02 DB + RLS          | not started                                                                   |
+| 03 Auth              | not started                                                                   |
+| 04 Cloudinary (code) | not started                                                                   |
+| 05 Feed              | not started                                                                   |
+| 06 Tasks             | not started                                                                   |
+| 07 Report AI         | not started                                                                   |
+| 08 Safety            | not started                                                                   |
+| 09 Caption AI        | not started                                                                   |
+| 10 Demo & deploy     | not started                                                                   |
+| 11 P1                | not started                                                                   |
+| Onboarding UX        | spec done ([onboarding.ko.md](onboarding.ko.md)); code **OB.*** not started   |
+
 
 ---
 
+
+
 ## Documentation readiness (P0 planning)
 
-| Area | Status | Gap |
-| :--- | :--- | :--- |
-| Blueprint + phases 00–11 | ✅ | — |
-| Hackathon rules + Devpost timing | ✅ | Devpost **draft** on site = human (민식) |
-| Env / secrets layout | ✅ | — |
-| Tavily / Nebius deploy / onboarding specs | ✅ written | **Not all committed** on `main` yet (see git) |
-| Seulgi model IDs doc | ❌ | `phases/notes/model-ids.md` (task **0.3**) |
-| Figma ↔ code workflow | ⚠️ | README.ko 한 줄만; optional dedicated md |
-| Root README Getting Started / live URL | ❌ | Phase **10** |
-| P0 playbook ↔ OB.* | ⚠️ | Playbook still generic; use onboarding.ko.md for OB |
+
+| Area                                      | Status    | Gap                                                 |
+| ----------------------------------------- | --------- | --------------------------------------------------- |
+| Blueprint + phases 00–11                  | ✅         | —                                                   |
+| Hackathon rules + Devpost timing          | ✅         | Devpost **draft** on site = human (민식)              |
+| Env / secrets layout                      | ✅         | —                                                   |
+| Tavily / Nebius deploy / onboarding specs | ✅         | On `main` (PR #3)                                   |
+| Seulgi model IDs doc                      | ❌         | `phases/notes/model-ids.md` (task **0.3**)          |
+| Figma ↔ code workflow                     | ⚠️        | README.ko 한 줄만; optional dedicated md               |
+| Root README Getting Started / live URL    | ❌         | Phase **10**                                        |
+| P0 playbook ↔ OB.*                        | ⚠️        | Playbook still generic; use onboarding.ko.md for OB |
+
+
