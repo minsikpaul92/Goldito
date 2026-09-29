@@ -2,7 +2,7 @@
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 
-**Phase index:** [phases/README.ko.md](phases/README.ko.md)
+**Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
 ---
 
@@ -10,19 +10,16 @@
 
 | ID | Task | Phase doc |
 | :--- | :--- | :--- |
-| **0.1** | Create Supabase project (NA region, Email auth ON, **Confirm email OFF**); save URL, anon key, service role key, JWT key type | [phase-00.md](phases/phase-00.md) |
+| **1.1** | Monorepo scaffold + `.env.example` (all vars from architecture §4) | [phase-01.md](phases/phase-01.md) |
 
 ---
 
 ## Up next (in order — do not start until Current focus is empty)
 
-> Phase 00 account tasks (0.1–0.4) may run in parallel with Phase 01 (see phase-00.md). Blueprint: [phases/architecture.ko.md](phases/architecture.ko.md).
+> Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **0.2** Cloudinary account (signed upload only; server enforces `pawnote/{dog_id}/{purpose}/`)
 - [ ] **0.3** Nebius API key + model IDs/base URLs → `phases/notes/model-ids.md` — Seulgi
 - [ ] **0.4** Tavily key (P1) — Seulgi
-- [ ] **1.1** Monorepo scaffold + `.env.example` (all vars from architecture §4)
-- [ ] **0.5** Local `backend/.env` + `frontend/.env` from `.env.example`
 - [ ] **1.2** FastAPI `/health` + CORS + settings
 - [ ] **1.3** Expo Web (expo-router) + health check button
 - [ ] **1.4** `.gitignore` hardening
@@ -43,14 +40,15 @@
 - [ ] **10.x** Seed + deploy + CD (`deploy-backend.yml` → Nebius Serverless Endpoint, Vercel Git integration) + README + demo accounts + keep-alive
 - [ ] **11.x** P1: photo request, Tavily in safety, notices (after P0 is live)
 
-*(Expand **Up next** with sub-bullets from phase docs when you reach each phase; remove lines as they move to Completed.)*
-
 ---
 
 ## Completed
 
-- [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1) added; decisions D1–D20 (EN-only demo, Nebius Serverless backend) (2026-09-29)
-- [x] **docs** CI/CD plan: D20, architecture §11, task 1.5, CD details in 10.3/10.4/10.7 (2026-09-29)
+- [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1); decisions D1–D20 (2026-09-29)
+- [x] **docs** CI/CD plan: D20, architecture §11, task 1.5, CD in phase 10 (2026-09-29)
+- [x] **0.1** Supabase PawNote (Canada Central), URL + anon + service_role; Auth email ON (confirm email OFF 권장 — 대시보드 확인) (2026-09-29)
+- [x] **0.2** Cloudinary (`tsmbhkpw`) + API keys (2026-09-29)
+- [x] **0.5** Local `backend/.env` + `frontend/.env` + [env-setup.ko.md](env-setup.ko.md) (2026-09-29)
 
 ---
 
@@ -58,11 +56,11 @@
 
 | Phase | Status |
 | :--- | :--- |
-| 00 Prerequisites | in progress |
-| 01 Scaffold | not started |
+| 00 Prerequisites | **done** (0.3 Nebius, 0.4 Tavily — Seulgi) |
+| 01 Scaffold | in progress (1.1) |
 | 02 DB + RLS | not started |
 | 03 Auth | not started |
-| 04 Cloudinary | not started |
+| 04 Cloudinary (code) | not started |
 | 05 Feed | not started |
 | 06 Tasks | not started |
 | 07 Report AI | not started |
