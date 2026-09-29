@@ -2,7 +2,7 @@
 
 **변수 이름의 기준:** [phases/architecture.ko.md §4](phases/architecture.ko.md#4-환경-변수-마스터-목록)
 
-**Tavily 설명:** [tavily.ko.md](tavily.ko.md) · **온보딩·데모 UX:** [onboarding.ko.md](onboarding.ko.md) · **Devpost 제출 시점:** [../hackathon/devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)
+**Tavily:** [tavily.ko.md](tavily.ko.md) · **모델 역할:** [phases/notes/model-ids.md](phases/notes/model-ids.md) · **온보딩:** [onboarding.ko.md](onboarding.ko.md) · **Devpost:** [../hackathon/devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)
 
 ---
 

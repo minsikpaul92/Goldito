@@ -13,12 +13,9 @@
 ## Current focus (one task only)
 
 
-| ID      | Task                                                               | Phase doc                         |
-| ------- | ------------------------------------------------------------------ | --------------------------------- |
-| **1.1** | Monorepo scaffold + `.env.example` (all vars from architecture §4) | [phase-01.md](phases/phase-01.md) |
-
-
-> **1.1 partial:** `backend/.env.example`, `frontend/.env.example`, env guides exist; `backend/app/`, Expo app skeleton, `supabase/migrations/` layout still TODO.
+| ID      | Task                                      | Phase doc                         |
+| ------- | ----------------------------------------- | --------------------------------- |
+| **2.1** | `001_initial_schema.sql` (start Phase 02) | [phase-02.md](phases/phase-02.md) |
 
 ---
 
@@ -28,12 +25,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **0.3** Nebius API key + model IDs/base URLs → `phases/notes/model-ids.md` — Seulgi
-- [ ] **0.4** Tavily API key → `TAVILY_API_KEY` in local `.env` ([tavily.ko.md](tavily.ko.md)) — Seulgi
-- [ ] **1.2** FastAPI `/health` + CORS + settings
-- [ ] **1.3** Expo Web (expo-router) + health check button
-- [ ] **1.4** `.gitignore` hardening
-- [ ] **1.5** CI: `.github/workflows/ci.yml` (backend ruff+pytest, frontend tsc+web export) → then enable `main` branch protection
 - [ ] **2.1–2.6** `001_initial_schema.sql`
 - [ ] **2.7** `002_rls_policies.sql` + `rls_smoke.sql`
 - [ ] **2.8** `003_functions_triggers.sql` (signup trigger, `assign_sitter`, realtime)
@@ -68,7 +59,14 @@
 - [x] **docs** English few-shot / anonymization + Nebius OpenAI-compatible SDK note (commit `79fa010`) (2026-09-29)
 - [x] **0.1** Supabase PawNote (Canada Central), URL + anon + service_role; Auth email ON (confirm email OFF 권장 — 대시보드 확인) (2026-09-29)
 - [x] **0.2** Cloudinary (`tsmbhkpw`) + API keys (2026-09-29)
+- [x] **0.3** Nebius key + catalog + [model-ids.md](phases/notes/model-ids.md) + inference smoke (Fast + MiniCPM vision) (2026-09-29)
+- [x] **0.4** Tavily API key in local `backend/.env` (2026-09-29)
 - [x] **0.5** Local `backend/.env` + `frontend/.env` + [env-setup.ko.md](env-setup.ko.md) (2026-09-29)
+- [x] **1.1** Monorepo layout: `supabase/`, README links, env templates verified (2026-09-29)
+- [x] **1.2** FastAPI `/health`, CORS, settings, pytest health test (2026-09-29)
+- [x] **1.3** Expo Web + Check API → `/health` (2026-09-29)
+- [x] **1.4** `.gitignore` hardening (2026-09-29)
+- [x] **1.5** CI `ci.yml` + `backend/ruff.toml` (2026-09-29; branch protection: manual on GitHub)
 
 ---
 
@@ -79,9 +77,9 @@
 
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
-| 00 Prerequisites     | **partial** — 0.1, 0.2, 0.5 done; **0.3 Nebius, 0.4 Tavily** pending (Seulgi) |
-| 01 Scaffold          | in progress (**1.1** — env templates only so far)                             |
-| 02 DB + RLS          | not started                                                                   |
+| 00 Prerequisites     | **done** (2026-09-29)                                                         |
+| 01 Scaffold          | **done** (2026-09-29)                                                         |
+| 02 DB + RLS          | in progress (**2.1**)                                                         |
 | 03 Auth              | not started                                                                   |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
@@ -107,7 +105,7 @@
 | Hackathon rules + Devpost timing          | ✅         | Devpost **draft** on site = human (민식)              |
 | Env / secrets layout                      | ✅         | —                                                   |
 | Tavily / Nebius deploy / onboarding specs | ✅         | On `main` (PR #3)                                   |
-| Seulgi model IDs doc                      | ❌         | `phases/notes/model-ids.md` (task **0.3**)          |
+| Nebius model IDs + smoke                  | ✅         | [phases/notes/model-ids.md](phases/notes/model-ids.md) |
 | Figma ↔ code workflow                     | ⚠️        | README.ko 한 줄만; optional dedicated md               |
 | Root README Getting Started / live URL    | ❌         | Phase **10**                                        |
 | P0 playbook ↔ OB.*                        | ⚠️        | Playbook still generic; use onboarding.ko.md for OB |
