@@ -1,6 +1,6 @@
 # PawNote — 개발 계획 (팀 내부용)
 
-🇺🇸 English: [README.md](README.md) · 제품 소개: [../README.ko.md](../README.ko.md) · 해커톤 규정: [../hackathon/README.ko.md](../hackathon/README.ko.md)
+🇺🇸 English: [README.md](README.md) · 제품 소개: [../README.ko.md](../README.ko.md) · 해커톤 규정: [../hackathon/README.ko.md](../hackathon/README.ko.md) · **P0 Todo & AI 프롬프트:** [P0-ai-prompt-playbook.ko.md](P0-ai-prompt-playbook.ko.md) · **Phase별 Goal:** [phases/README.ko.md](phases/README.ko.md) · **진행 Todo:** [TODO.md](TODO.md) · **AI 규칙:** [CLAUDE.md](../../CLAUDE.md)
 
 마감: **2026-10-30 오전 10시 PT (미 동부 오후 1시)** · 내부 마감: **10/28**
 
