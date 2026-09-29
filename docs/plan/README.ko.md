@@ -29,7 +29,8 @@
 | **P0** | 타이핑 없는 알림장 (그날 피드 + 완료 일정 기반) | 알림장 | Super |
 | **P0** | 간식 세이프티 가드 | — (우리 차별점) | Nano Omni + Ultra |
 | **P1** | 사진 요청 (견주 → 펫시터) | — | — |
-| **P1** | 펫시터 일정 & 공지 팝업 | 공지사항/일정표 | — |
+| **P0** | 펫시터 근무일 + 기간 예약 (검색·요청/수락·충돌 알림) | — (예약 플랫폼형) | — |
+| **P1** | 공지 팝업 · 예약 원탭 교체/날짜 변경 · 일부 구간 검색 | 공지사항 | — |
 | **P1** | Tavily 성분·리콜 검색 | — | Tavily |
 | **P2** | AI 1차 답변 Q&A | — | Nano |
 
@@ -156,18 +157,23 @@
 
 ```
 users            (id, role: owner|sitter, name, push_token)
-dogs             (id, owner_id, sitter_id, name, breed, birthdate, notes)
-dog_allergies    (dog_id, allergen)
-care_tasks       (id, dog_id, type: medication|walk, title, dose, schedule, notes)
+owner_profiles   (id → profiles, 긴급 연락처, 동물병원)
+sitter_profiles  (id → profiles, 소개, 활동 지역, 경력)
+pets             (id, owner_id, species: dog|cat, name, breed, birthdate, notes)
+pet_allergies    (pet_id, allergen)
+care_tasks       (id, pet_id, type: medication|walk, title, dose, schedule, notes)
 task_logs        (id, task_id, due_at, completed_at, media_id, status: done|missed)
-media            (id, dog_id, cloudinary_public_id, type: image|video, caption)
-feed_posts       (id, dog_id, sitter_id, media_ids[], caption, task_log_id?, created_at)
-photo_requests   (id, dog_id, owner_id, status, created_at)
-daily_reports    (id, dog_id, date, body, status: draft|sent)
-safety_checks    (id, dog_id, media_id, result_json, created_at)
+media            (id, pet_id, cloudinary_public_id, type: image|video, caption)
+feed_posts       (id, pet_id, sitter_id, media_ids[], caption, task_log_id?, created_at)
+photo_requests   (id, pet_id, owner_id, status, created_at)
+daily_reports    (id, pet_id, date, body, status: draft|sent)
+safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_schedule  (id, sitter_id, date, status, note)
-messages         (id, dog_id, sender, body, ai_generated, created_at)
+sitter_availability (id, sitter_id, kind: open|blocked, start_date, end_date, slot, starts_at, ends_at, max_pets)
+bookings         (id, owner_id, sitter_id, start_date, end_date, status, rebooked_from)
+booking_slots    (booking_id, pet_id, day, slot: morning|afternoon|overnight)
+booking_handoffs (booking_id, kind: drop_off|pick_up, scheduled_at, location, status: proposed|agreed)
+messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```
 

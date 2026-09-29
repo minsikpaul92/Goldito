@@ -19,10 +19,12 @@
 
 | ID | 기능 | DB (`008_p1.sql`) | 동작 | UI |
 | :--- | :--- | :--- | :--- | :--- |
-| 11.1 | 사진 요청 | `photo_requests(id, dog_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select assigned | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 dog의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter Today 상단 노란 배너 → 탭 → dog 피드 + Photo |
-| 11.2 | 공지 & 일정 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)`, `sitter_schedule(id, sitter_id, date, status 'available'\|'off', note)` | owner는 자기 dog의 sitter 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업), 캘린더 off 토글. Owner: 팝업 + Home "Sitter schedule" 카드 |
-| 11.3 | Tavily in safety | `safety_checks.result_json.sources[]` 추가 (스키마 변경 없음) | Phase 08 파이프라인 step 4 뒤: `unknown_ingredients` 또는 hidden_sources 각 ≤ 3개 → `tavily.search(f"Is {ing} safe for dogs? Does it contain {allergen}?", max_results=3, include_answer=True)` → 결과 요약을 Ultra에 추가 입력 → 최종 판정. 제품명 있으면 `"{product} dog treat recall"` 1회. 총 8초 제한, 실패 시 Tavily 없이 결과 | 모달에 "Sources" 섹션 (도메인 + 링크) |
-| 11.4 | (P2) Q&A 1차 답변 | `messages(id, dog_id, sender_id, body, ai_generated bool, needs_sitter bool, created_at)` | owner 메시지 → `POST /api/ai/qa` (MODEL_FAST) — dog 프로필 + 오늘 source_snapshot만 근거. 확신 없으면 "Your sitter will reply soon." + sitter 알림 | 채팅 화면 1개 |
+| 11.1 | 사진 요청 | `photo_requests(id, pet_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select assigned | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter Today 상단 노란 배너 → 탭 → pet 피드 + Photo |
+| 11.2 | 공지 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)` (근무일은 P0 `sitter_availability`로 이동) | owner는 확정 예약이 있는 시터의 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업). Owner: 팝업 |
+| 11.5 | 즐겨찾기 시터 | `owner_favorite_sitters(owner_id, sitter_id)` — 예약 전이라도 단골로 고정 | - | 시터 카드 ☆ / "Your sitters" 상단 |
+| 11.6 | 반복 근무 패턴 | `sitter_availability`에 `weekdays int[]` 추가 (예: 토·일만 open) — 스케줄·검색 계산에 반영 | - | 캘린더 "Every weekend" 토글 |
+| 11.3 | Tavily in safety | `safety_checks.result_json.sources[]` 추가 (스키마 변경 없음) | Phase 08 파이프라인 step 4 뒤: `unknown_ingredients` 또는 hidden_sources 각 ≤ 3개 → `tavily.search(f"Is {ing} safe for {species}s? Does it contain {allergen}?", max_results=3, include_answer=True)` → 결과 요약을 Ultra에 추가 입력 → 최종 판정. 제품명 있으면 `"{product} {species} treat recall"` 1회. 총 8초 제한, 실패 시 Tavily 없이 결과 | 모달에 "Sources" 섹션 (도메인 + 링크) |
+| 11.4 | (P2) Q&A 1차 답변 | `messages(id, pet_id, sender_id, body, ai_generated bool, needs_sitter bool, created_at)` | owner 메시지 → `POST /api/ai/qa` (MODEL_FAST) — pet 프로필 + 오늘 source_snapshot만 근거. 확신 없으면 "Your sitter will reply soon." + sitter 알림 | 채팅 화면 1개 |
 
 ---
 

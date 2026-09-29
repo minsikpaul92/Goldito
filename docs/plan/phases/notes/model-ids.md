@@ -10,7 +10,7 @@
 
 | PawNote feature | Phase | API route | Env role | Model ID (public endpoint) | Why this model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Feed auto-caption** | 09 | `POST /api/ai/caption` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** reads the photo (dog, activity) and writes a short English caption. Sitter does not type. |
+| **Feed auto-caption** | 09 | `POST /api/ai/caption` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** reads the photo (pet, activity) and writes a short English caption. Sitter does not type. |
 | **Treat safety — read label** | 08 | `POST /api/ai/safety-check` (step 1) | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision/OCR:** ingredient label photo → structured ingredient list + product name. |
 | **Treat safety — reason** | 08 | same (step 2) | `MODEL_SAFETY` | `nvidia/Nemotron-3-Ultra-550b-a55b` | **Text reasoning:** allergens, hidden sources (e.g. poultry in “animal fat”), DANGER/WARNING/SAFE JSON. |
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed (+ optional sitter quick-tap). |

@@ -8,7 +8,7 @@
 
 ### Goal 달성 기준
 
-- [ ] `POST /api/ai/safety-check {dog_id, media_id}` → pydantic-valid JSON
+- [ ] `POST /api/ai/safety-check {pet_id, media_id}` → pydantic-valid JSON
 - [ ] 알레르기 매칭(예: chicken ← "hydrolyzed poultry protein") 시 `DANGER` + 영어 `warning_message`
 - [ ] Sitter Scan 탭 + 결과 모달 (DANGER는 "I understand — don't feed" 전 닫기 불가)
 - [ ] `safety_checks` 저장 + DANGER 시 owner `safety_danger` 알림
@@ -19,7 +19,7 @@
 
 - [Phase 07.1](phase-07.md) Nebius client (`chat_json`)
 - [Phase 04](phase-04.md) `uploadMedia({purpose:'safety_label'})`, `fetch_as_data_url`
-- Bori `dog_allergies = chicken` (Phase 03.5)
+- Bori `pet_allergies = chicken` (Phase 03.5)
 
 ---
 
@@ -38,12 +38,12 @@
 
 ```
 Sitter picks label photo → uploadMedia(safety_label) → media_id
-POST /api/ai/safety-check {dog_id, media_id}
-  1. assert_sitter_of → load dog(name, breed, weight) + allergens
+POST /api/ai/safety-check {pet_id, media_id}
+  1. assert_on_duty_for → load pet(species, name, breed, weight) + allergens
   2. fetch_as_data_url(media)                          (D12)
   3. Vision (MODEL_VISION, 30s): → VisionResult {readable, product_name?, ingredients[]}
        readable=false or ingredients=[] → 422 "label_unreadable" → UI "Couldn't read the label. Try a closer, well-lit photo."
-  4. Reasoning (MODEL_SAFETY, reasoning ON, 60s): input = {dog, allergens, ingredients} → SafetyResult
+  4. Reasoning (MODEL_SAFETY, reasoning ON, 60s): input = {pet, allergens, ingredients} → SafetyResult
   5. Server-side override: if any allergen string-matches an ingredient (case-insensitive substring) and model said SAFE → force DANGER (defense in depth)
   6. insert safety_checks (result_json, models) → trigger notifies owner on DANGER
   7. return SafetyResult + safety_check_id + model + latency_ms
@@ -57,16 +57,16 @@ POST /api/ai/safety-check {dog_id, media_id}
 | `matched_allergens` | `list[str]` | 등록 알레르기 중 걸린 것 (DANGER면 ≥1 또는 toxic 성분 존재) |
 | `detected_ingredients` | `list[str]` | vision 결과 정규화 |
 | `hidden_sources` | `list[{ingredient, may_contain, reason}]` | 예: `{"animal fat", "chicken", "often poultry-derived"}` |
-| `toxic_ingredients` | `list[str]` | xylitol, grapes/raisins, onion, garlic, chocolate/cocoa, macadamia, caffeine, alcohol 등 |
+| `toxic_ingredients` | `list[str]` | **종별 목록 (D23)** — 공통: onion, garlic, chocolate/cocoa, caffeine, alcohol, grapes/raisins, xylitol · 강아지 추가: macadamia · 고양이 추가: lilies(백합), essential oils(tea tree 등), propylene glycol, raw yeast dough. 목록은 `reasoning_system.md`에 species별 표로 두고, 입력의 `pet.species`로 해당 표를 적용 |
 | `unknown_ingredients` | `list[str]` | 판단 불가 성분 (Phase 11.3 Tavily 입력) |
-| `warning_message` | `str` | 영어 1–2문장, dog 이름 포함 |
+| `warning_message` | `str` | 영어 1–2문장, pet 이름 포함 |
 
 ### 판정 기준 (reasoning_system.md에 명시)
 
 | 상태 | 조건 |
 | :--- | :--- |
 | **DANGER** | 등록 알레르기 직접 포함 · 보편 독성 성분 포함 |
-| **WARNING** | 숨은 출처 가능성(animal fat, meat meal, natural flavor, hydrolyzed protein 등) · unknown 성분 존재 · 견종/체중 대비 주의(예: 고지방) |
+| **WARNING** | 숨은 출처 가능성(animal fat, meat meal, natural flavor, hydrolyzed protein 등) · unknown 성분 존재 · 품종/체중 대비 주의(예: 고지방) · **다른 종 전용 제품**(고양이에게 dog treat, 강아지에게 cat food) |
 | **SAFE** | 위 해당 없음 |
 
 ---
@@ -88,7 +88,8 @@ POST /api/ai/safety-check {dog_id, media_id}
 | :--- | :--- |
 | `chicken_jerky.jpg` | DANGER (chicken) |
 | `animal_fat_biscuit.jpg` | WARNING (hidden: animal fat) |
-| `sweet_potato_chew.jpg` | SAFE |
+| `sweet_potato_chew.jpg` | SAFE (Bori) |
+| `lily_scented_cat_treat.jpg` | DANGER (Mochi — lilies, cat-toxic) |
 
 ---
 

@@ -15,7 +15,7 @@ Every feature must pass:
 | :--- | :--- |
 | **Learn without asking.** Updates arrive proactively. | **Care, snap, tap.** No report typing, no repetitive DMs. |
 
-**Product benchmark:** Korean **Kidsnote** — album feed, medication request/report, daily report (알림장). We adapt that loop for dogs + **NVIDIA Nemotron** on **Nebius Token Factory**.
+**Product benchmark:** Korean **Kidsnote** — album feed, medication request/report, daily report (알림장). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
 **Demo north star:** The flow in root `README.md` — *A Day with PawNote* — must work end-to-end before hackathon submit.
 
@@ -53,8 +53,8 @@ Think in **two apps in one codebase** — role after login:
 
 ```
 Owner                          Sitter
-  Home (my dogs)                 Home (assigned dogs)
-  Feed / Album                   Dog feed upload
+  Home (my pets)                 Home (assigned pets)
+  Feed / Album                   Pet feed upload
   Tasks setup (med/walk)         Today's tasks + complete + photo
   Daily report (read)            Report generate → send
   Notifications                  Treat scanner (safety)
@@ -139,7 +139,7 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 → 01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 (P1)`  
+`00 → 01 → 02 → 03 → 03B → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 (P1)`  
 After **07.1** (Nebius client), **07 / 08 / 09** can parallelize (Seulgi vs Minsik) but TODO must list **one** "Current focus" per agent session.
 
 ### Coding discipline
@@ -185,6 +185,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 
 | Feature | Phases |
 | :--- | :--- |
+| Sitter availability + trip booking | 02, 03B (P1 polish: 11) |
 | Care feed & album + notify | 05, 09 |
 | Medication & walk | 06 |
 | Zero-typing daily report | 07 |

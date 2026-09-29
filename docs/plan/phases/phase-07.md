@@ -42,36 +42,36 @@
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
 | 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
-| 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — `is_sitter_of`, status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
+| 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
 
 ### 7.2 집계 → 프롬프트 → 저장
 
-1. `assert_sitter_of(dog_id)`. `date`의 하루 범위 = `APP_TIMEZONE` 00:00–24:00.
+1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **그날 중 이 시터가 맡은 시간** (맡긴 시각 ~ 찾는 시각과 그날의 교집합 — 09:00–12:00만 맡았으면 그 사이의 task·사진만). 오전 Mina·오후 Jun이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
 2. 기존 report가 `sent`면 **409** `report_already_sent`.
 3. `source_snapshot` 생성 (이 JSON이 **모델 입력의 전부**):
    ```json
    {
-     "dog": {"name": "Bori", "breed": "Maltese", "age_years": 4},
+     "pet": {"species": "dog", "name": "Bori", "breed": "Maltese", "age_years": 4},
      "date": "2026-10-15",
      "tasks": [{"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
                {"type": "walk", "title": "Walk", "due": "10:30", "status": "done", "completed_at": "10:52"}],
      "photos": [{"time": "10:55", "caption": "Bori sniffing autumn leaves with a wagging tail"}],
-     "checks": {"meal": "all", "water": "normal", "poop": "normal", "mood": "happy"},
+     "checks": {"meal": "all", "water": "normal", "potty": "normal", "mood": "happy"},
      "sitter_note": "Met a new friend, a golden retriever"
    }
    ```
 4. 메시지: system(`system.md`) + few-shot 3쌍(user=input JSON, assistant=output) + user(source_snapshot). Reasoning off, `max_tokens` 400, temperature 0.7.
 5. 후처리: `<think>` 제거, 120–220 단어 목표(넘으면 그대로 두되 로그).
-6. `daily_reports` upsert on (dog_id, report_date): body, inputs, source_snapshot, model, status draft, updated_at.
+6. `daily_reports` upsert on (pet_id, report_date, sitter_id): body, inputs, source_snapshot, model, status draft, updated_at.
 7. 응답 `{report_id, body, status, model, latency_ms}`.
 
 ### 프롬프트 규칙 (`system.md`, 영어)
 
-- Role: warm, detail-oriented dog walker with 3 years of experience writing to the owner.
-- Address the dog by name; friendly emojis OK (≤ 4); no robotic lists ("Walk completed: 40 min" ❌).
+- Role: warm, detail-oriented pet sitter with 3 years of experience writing to the owner.
+- Address the pet by name; friendly emojis OK (≤ 4); no robotic lists ("Walk completed: 40 min" ❌).
 - One sentence describing expression/behavior from photo captions.
-- Mention meal/water/poop/mood **only if present in `checks`**.
+- Mention meal/water/potty/mood **only if present in `checks`**.
 - **Use only facts in the input JSON. If something isn't there, don't mention it.** Missed tasks: state gently and honestly ("We missed the 10:30 walk today…").
 - No medical diagnosis or advice.
 

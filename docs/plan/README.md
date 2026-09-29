@@ -29,7 +29,8 @@ Two developers, ~4 weeks. Build in this order; P2 only if time allows.
 | **P0** | Zero-typing daily report (from the day's feed + tasks) | Daily report (알림장) | Super |
 | **P0** | Treat Safety Guard | — (our differentiator) | Nano Omni + Ultra |
 | **P1** | Photo request (owner → sitter) | — | — |
-| **P1** | Sitter schedule & notices with popup | Notices / calendar | — |
+| **P0** | Part-time boarding sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule view, whole-trip booking with drop-off/pick-up time & place (negotiable), cancel → rebook | — (marketplace-style) | — |
+| **P1** | Notices with popup · one-tap booking reassign/reschedule · partial-range search | Notices | — |
 | **P1** | Tavily ingredient/recall search | — | Tavily |
 | **P2** | Private Q&A with AI first reply | — | Nano |
 
@@ -124,22 +125,22 @@ client.chat.completions.create(
 ## 7. Prompt Specs (Seulgi)
 
 ### A. Photo caption (Nano Omni)
-- Input: photo/video + dog name.
+- Input: photo/video + pet name and species.
 - Output: 1–2 warm sentences describing expression and activity. No medical claims.
 
 ### B. Daily report (Super)
 - **Input:** the day's feed captions, completed tasks (walk times, meds), sitter's optional quick notes.
-- **Role:** A warm, detail-oriented dog walker with 3 years of experience.
+- **Role:** A warm, detail-oriented pet sitter with 3 years of experience.
 - **Few-shot:** 3 top-rated real reports (**anonymized**).
 - **Rules:**
   1. No robotic reporting. ❌ "Completed a 40-minute walk." ⭕ "Bori wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛"
   2. Naturally mention stool condition, food, and water intake.
-  3. Describe the dog's expression/behavior from the photos.
+  3. Describe the pet's expression/behavior from the photos.
   4. Never invent events not present in the input.
 
 ### C. Treat safety (Nano Omni → Ultra → Tavily)
 - Omni extracts the ingredient list from the label photo.
-- Ultra compares it against the dog's allergens + breed risks, reasoning about hidden sources. Unknown ingredients → Tavily search → Ultra re-evaluates.
+- Ultra compares it against the pet's allergens + species/breed risks, reasoning about hidden sources. Unknown ingredients → Tavily search → Ultra re-evaluates.
 - Output (strict JSON, validated server-side):
 
 ```json
@@ -153,7 +154,7 @@ client.chat.completions.create(
 ```
 
 ### D. Q&A first reply (Nano)
-- Grounded only in the dog's profile and today's logs. If unsure → "Your sitter will reply soon." and notify the sitter.
+- Grounded only in the pet's profile and today's logs. If unsure → "Your sitter will reply soon." and notify the sitter.
 
 ---
 
@@ -161,7 +162,7 @@ client.chat.completions.create(
 
 The 3-year dataset contains real owners' personal data. It must be anonymized **before** it is used in prompts, committed, or shown in the video.
 
-- Remove or replace: owner names, phone numbers, addresses, emails, social handles, exact locations, dog real names (→ consistent pseudonyms like "Bori").
+- Remove or replace: owner names, phone numbers, addresses, emails, social handles, exact locations, real pet names (→ consistent pseudonyms like "Bori", "Mochi").
 - Remove faces of people in photos used for demos.
 - Keep the **tone** (nicknames, emojis, sentence style) — that's the value.
 - Keep raw data **out of the repo** (`data/raw/` in `.gitignore`); commit only anonymized few-shot samples.
@@ -175,18 +176,23 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 
 ```
 users            (id, role: owner|sitter, name, push_token)
-dogs             (id, owner_id, sitter_id, name, breed, birthdate, notes)
-dog_allergies    (dog_id, allergen)
-care_tasks       (id, dog_id, type: medication|walk, title, dose, schedule, notes)
+owner_profiles   (id → profiles, emergency contact, vet clinic)
+sitter_profiles  (id → profiles, bio, service_area, experience)
+pets             (id, owner_id, species: dog|cat, name, breed, birthdate, notes)
+pet_allergies    (pet_id, allergen)
+care_tasks       (id, pet_id, type: medication|walk, title, dose, schedule, notes)
 task_logs        (id, task_id, due_at, completed_at, media_id, status: done|missed)
-media            (id, dog_id, cloudinary_public_id, type: image|video, caption)
-feed_posts       (id, dog_id, sitter_id, media_ids[], caption, task_log_id?, created_at)
-photo_requests   (id, dog_id, owner_id, status, created_at)
-daily_reports    (id, dog_id, date, body, status: draft|sent)
-safety_checks    (id, dog_id, media_id, result_json, created_at)
+media            (id, pet_id, cloudinary_public_id, type: image|video, caption)
+feed_posts       (id, pet_id, sitter_id, media_ids[], caption, task_log_id?, created_at)
+photo_requests   (id, pet_id, owner_id, status, created_at)
+daily_reports    (id, pet_id, date, body, status: draft|sent)
+safety_checks    (id, pet_id, media_id, result_json, created_at)
 notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_schedule  (id, sitter_id, date, status, note)
-messages         (id, dog_id, sender, body, ai_generated, created_at)
+sitter_availability (id, sitter_id, kind: open|blocked, start_date, end_date, slot, starts_at, ends_at, max_pets)
+bookings         (id, owner_id, sitter_id, start_date, end_date, status, rebooked_from)
+booking_slots    (booking_id, pet_id, day, slot: morning|afternoon|overnight)
+booking_handoffs (booking_id, kind: drop_off|pick_up, scheduled_at, location, status: proposed|agreed)
+messages         (id, pet_id, sender, body, ai_generated, created_at)
 notifications    (id, user_id, type, ref_id, read_at)
 ```
 
@@ -219,7 +225,7 @@ Why: Supabase free storage is too small for photos and videos. Cloudinary's free
 - **Compression:** deliver with `f_auto,q_auto` (auto format like WebP/AVIF, auto quality).
 - **Thumbnails:** `c_fill,w_400,h_400` for feed grid; video poster via `so_0` + `.jpg`.
 - **Video:** limit length/size on upload; Cloudinary transcodes for web playback.
-- **Privacy:** use a dedicated folder per dog; don't expose the API secret to the client.
+- **Privacy:** use a dedicated folder per pet; don't expose the API secret to the client.
 
 ---
 
@@ -233,8 +239,8 @@ Why: Supabase free storage is too small for photos and videos. Cloudinary's free
 - Credits: included with the **Nebius Builders Program**; Tavily also has a free monthly tier.
 
 **Where it fits**
-1. **Unknown ingredient** → "Is `<ingredient>` safe for dogs? Does it contain chicken?" → feed results to Ultra.
-2. **Recall check** → "`<brand> <product>` dog treat recall 2026".
+1. **Unknown ingredient** → "Is `<ingredient>` safe for {species}s? Does it contain chicken?" → feed results to Ultra.
+2. **Recall check** → "`<brand> <product>` {species} treat recall 2026".
 3. *(Optional)* Q&A questions that need up-to-date info.
 
 ```python

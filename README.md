@@ -51,17 +51,21 @@ PawNote is built on two promises:
 
 ### 4. 🛡️ Treat Safety Guard
 1. **See** — snap the ingredient label; Nemotron vision reads it.
-2. **Reason** — Nemotron 3 Ultra checks it against the dog's allergens and breed risks, including *hidden* sources (e.g. "animal fat" may contain chicken).
+2. **Reason** — Nemotron 3 Ultra checks it against the pet's allergens and species/breed risks, including *hidden* sources (e.g. "animal fat" may contain chicken).
 3. **Search** — unknown ingredients or recalls are looked up on the web via **Tavily**.
 4. **Warn** — a warning modal blocks the treat before it's fed.
 
-### 5. 📢 Sitter Schedule & Notices
-- Owners see the sitter's **schedule** (availability, holidays).
+### 5. 📅 Sitter Availability & Trip Booking
+- Sitters are **part-time** and care for pets **in their own home**. They open the days and slots they can work (morning, afternoon, overnight) with **their own hours**, set **how many pets they can take**, and block days off. One sitter can care for pets from several homes at once.
+- Owners usually want **one sitter for the whole trip** — changing sitters is stressful for pets. They check their **regular sitters' schedules** first, or search for sitters free for the whole trip. Full slots close automatically.
+- Owners set the **drop-off and pick-up time and place** (sitter's home, owner's home, or elsewhere). Times outside the sitter's hours can be **agreed in the app**, and either side can propose changes later.
+- If a sitter can no longer make it, they **cancel the booking** and the owner is alerted right away to book someone else — one sitter or split, the owner decides.
+- Owners are not pinged about schedules. While a pet is in care, they get updates only for what matters: arrival and departure, photos, meals and bedtime on time, and the daily report.
 - Sitters post **notices** (e.g. "Closed on Thanksgiving") that show as a **popup** when owners open the app.
 
 ### 6. 💬 Private Q&A with AI First Reply
 - Owners message inside the app — no personal phone numbers shared.
-- For routine questions, Nemotron **answers first** in the sitter's tone, grounded in the dog's profile and today's logs. The sitter only steps in when needed.
+- For routine questions, Nemotron **answers first** in the sitter's tone, grounded in the pet's profile and today's logs. The sitter only steps in when needed.
 
 ---
 

@@ -8,7 +8,7 @@
 
 ### Goal 달성 기준
 
-- [ ] `POST /api/ai/caption {dog_id, media_id}` → `{caption, source, model, latency_ms}`
+- [ ] `POST /api/ai/caption {pet_id, media_id}` → `{caption, source, model, latency_ms}`
 - [ ] 업로드 플로우: `uploadMedia` → caption API → `createFeedPost(caption_source='ai')`
 - [ ] AI 실패·타임아웃(20s) → fallback 캡션(`caption_source='fallback'`)으로 피드는 항상 생성
 
@@ -36,14 +36,14 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 9.1 | caption endpoint | `routers/ai_caption.py`: `assert_sitter_of`, media가 해당 dog 소유인지 확인, dog name 로드 → `prompts/caption/system.md` + user `[image, "Dog's name: Bori"]` → reasoning off, `max_tokens` 80, temperature 0.8. 후처리: 따옴표·`<think>` 제거, 200자 초과 시 첫 2문장. 모델 에러/타임아웃 → **200 + `source:"fallback"`**, caption `"{name} had a lovely moment today 🐾"` (프론트는 분기 불필요) |
-| 9.2 | Integrate upload | `lib/feed.ts`에 `postPhoto({dogId, file})` = `uploadMedia` → `api.post('/api/ai/caption')` → `createFeedPost`. Phase 05의 고정 캡션 호출부 교체 |
+| 9.1 | caption endpoint | `routers/ai_caption.py`: `assert_on_duty_for`, media가 해당 pet 소유인지 확인, pet name·species 로드 → `prompts/caption/system.md` + user `[image, "Pet: Bori (dog)"]` → reasoning off, `max_tokens` 80, temperature 0.8. 후처리: 따옴표·`<think>` 제거, 200자 초과 시 첫 2문장. 모델 에러/타임아웃 → **200 + `source:"fallback"`**, caption `"{name} had a lovely moment today 🐾"` (프론트는 분기 불필요) |
+| 9.2 | Integrate upload | `lib/feed.ts`에 `postPhoto({petId, file})` = `uploadMedia` → `api.post('/api/ai/caption')` → `createFeedPost`. Phase 05의 고정 캡션 호출부 교체 |
 | 9.3 | Loading UX | 업로드 즉시 sitter 피드 상단에 임시 카드(로컬 썸네일 + skeleton "Writing a caption…"), 완료 시 실제 카드로 교체 + 토스트 |
 | 9.4 | (선택) task 사진 캡션 | Phase 06 완료 게시물에도 AI 캡션을 비동기로 추가 (`caption_source` 유지 규칙 결정 후) |
 
 ### 프롬프트 Goal (`prompts/caption/system.md`, 영어)
 
-- 1–2 sentences, warm and playful, as if the sitter wrote it to the owner. Use the dog's name once.
+- 1–2 sentences, warm and playful, as if the sitter wrote it to the owner. Use the pet's name once.
 - Describe visible expression and activity only. **No medical claims**, no guessing location/people.
 - ≤ 2 emojis. No hashtags.
 
@@ -61,7 +61,7 @@
 ## 산출물
 
 - `backend/app/routers/ai_caption.py`, `backend/app/ai/prompts/caption/system.md`
-- Updated `frontend/lib/feed.ts`, `frontend/app/(sitter)/dogs/[dogId].tsx`
+- Updated `frontend/lib/feed.ts`, `frontend/app/(sitter)/pets/[petId].tsx`
 
 ---
 
