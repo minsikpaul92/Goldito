@@ -13,12 +13,9 @@
 ## Current focus (one task only)
 
 
-| ID      | Task                                                               | Phase doc                         |
-| ------- | ------------------------------------------------------------------ | --------------------------------- |
-| **1.1** | Monorepo scaffold + `.env.example` (all vars from architecture §4) | [phase-01.md](phases/phase-01.md) |
-
-
-> **1.1 partial:** `backend/.env.example`, `frontend/.env.example`, env guides exist; `backend/app/`, Expo app skeleton, `supabase/migrations/` layout still TODO.
+| ID      | Task                                      | Phase doc                         |
+| ------- | ----------------------------------------- | --------------------------------- |
+| **1.2** | FastAPI `/health` + CORS + settings       | [phase-01.md](phases/phase-01.md) |
 
 ---
 
@@ -28,8 +25,8 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **0.3** Nebius API key + model IDs/base URLs → `phases/notes/model-ids.md` — Seulgi
-- [ ] **0.4** Tavily API key → `TAVILY_API_KEY` in local `.env` ([tavily.ko.md](tavily.ko.md)) — Seulgi
+- [ ] **0.3** Nebius API key + model IDs/base URLs → `phases/notes/model-ids.md` — Seulgi (key: Token Factory dashboard)
+- [x] **0.4** Tavily API key → `TAVILY_API_KEY` in local `.env` ([tavily.ko.md](tavily.ko.md)) — 2026-09-29
 - [ ] **1.2** FastAPI `/health` + CORS + settings
 - [ ] **1.3** Expo Web (expo-router) + health check button
 - [ ] **1.4** `.gitignore` hardening
@@ -68,7 +65,9 @@
 - [x] **docs** English few-shot / anonymization + Nebius OpenAI-compatible SDK note (commit `79fa010`) (2026-09-29)
 - [x] **0.1** Supabase PawNote (Canada Central), URL + anon + service_role; Auth email ON (confirm email OFF 권장 — 대시보드 확인) (2026-09-29)
 - [x] **0.2** Cloudinary (`tsmbhkpw`) + API keys (2026-09-29)
+- [x] **0.4** Tavily API key in local `backend/.env` (2026-09-29)
 - [x] **0.5** Local `backend/.env` + `frontend/.env` + [env-setup.ko.md](env-setup.ko.md) (2026-09-29)
+- [x] **1.1** Monorepo layout: `supabase/`, README links, env templates verified (2026-09-29)
 
 ---
 
@@ -79,8 +78,8 @@
 
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
-| 00 Prerequisites     | **partial** — 0.1, 0.2, 0.5 done; **0.3 Nebius, 0.4 Tavily** pending (Seulgi) |
-| 01 Scaffold          | in progress (**1.1** — env templates only so far)                             |
+| 00 Prerequisites     | **partial** — 0.1, 0.2, 0.4, 0.5 done; **0.3 Nebius model doc** pending |
+| 01 Scaffold          | in progress (**1.2** next)                                                    |
 | 02 DB + RLS          | not started                                                                   |
 | 03 Auth              | not started                                                                   |
 | 04 Cloudinary (code) | not started                                                                   |

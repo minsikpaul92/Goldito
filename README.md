@@ -135,19 +135,20 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 ## 🚀 Getting Started
 
-> 🚧 Will be completed once the code is in place.
+Monorepo layout (Phase **1.1**): `backend/`, `frontend/`, `supabase/migrations/`. Runnable app lands in Phase **1.2** (API) and **1.3** (Expo web).
+
+| Path | Doc |
+| :--- | :--- |
+| Backend env & run | [backend/README.md](backend/README.md) |
+| Frontend env & run | [frontend/README.md](frontend/README.md) |
+| DB migrations | [supabase/README.md](supabase/README.md) |
+| Local secrets | [docs/plan/env-setup.ko.md](docs/plan/env-setup.ko.md) |
 
 ```bash
-# Backend
-cd backend
-cp .env.example .env   # NEBIUS_API_KEY, SUPABASE_URL, SUPABASE_KEY, CLOUDINARY_URL, TAVILY_API_KEY
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-
-# Frontend
-cd frontend
-npm install
-npx expo start --web
+# After Phase 1.2–1.3 (not yet on main until those tasks merge):
+cd backend && cp .env.example .env   # fill per env-setup.ko.md
+cd frontend && cp .env.example .env  # EXPO_PUBLIC_API_URL=http://localhost:8000
+# Then follow backend/ and frontend/ README run commands.
 ```
 
 ---
