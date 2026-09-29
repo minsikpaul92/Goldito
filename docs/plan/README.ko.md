@@ -204,6 +204,12 @@ notifications    (id, user_id, type, ref_id, read_at)
 
 ---
 
+## 11.5 Nebius 모델 매핑
+
+기능별 어떤 Token Factory 모델을 쓰는지: **[phases/notes/model-ids.md](phases/notes/model-ids.md)** (Vision = MiniCPM-V-4_5, Safety = Ultra, Report = Super, smoke = Nano).
+
+---
+
 ## 12. Tavily
 
 상세: **[tavily.ko.md](tavily.ko.md)** (무엇인지, PawNote 연동, $3k 보너스, `TAVILY_API_KEY` 위치).
