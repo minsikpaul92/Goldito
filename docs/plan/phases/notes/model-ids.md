@@ -61,12 +61,21 @@ Use the **exact** `id` string from `GET /v1/models` when calling `chat/completio
 
 ---
 
+## Phase 0.3 inference smoke (2026-09-29)
+
+| Test | Model | Base URL | Result |
+| :--- | :--- | :--- | :--- |
+| Text chat | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | `https://api.tokenfactory.nebius.com/v1/` | **200** — assistant `content`: `OK` (use `max_tokens` ≥ 64; model may fill `reasoning` first) |
+| Vision + image | `openbmb/MiniCPM-V-4_5` | `https://api.tokenfactory.us-central1.nebius.com/v1/` | **200** — `data:image/png;base64,...` in `image_url` works (architecture D12). External image URLs may fail if Nebius cannot fetch them. |
+
+Phase 00 DoD for Nebius: **met** (catalog + role mapping + one Fast + one Vision call).
+
 ## Open questions (Phase 07.1 / 08 spike)
 
-- [ ] MiniCPM: English caption quality on real dog photos
+- [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)
 - [ ] MiniCPM: ingredient list JSON reliability on label photos
 - [ ] Ultra/Super: `response_format` / JSON schema adherence
-- [ ] Image input: base64 data URL (D12) accepted by MiniCPM on Token Factory
+- [x] Image input: base64 data URL (D12) accepted by MiniCPM on Token Factory — smoke 2026-09-29
 
 ---
 
