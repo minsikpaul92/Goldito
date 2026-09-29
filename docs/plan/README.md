@@ -267,7 +267,7 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 ## 14. Open Questions
 
 - [x] Demo language: **English only** (UI + AI output) — decided 2026-09-29 (architecture D1)
-- [x] Backend hosting: **Nebius Serverless Endpoint**, Render fallback — decided 2026-09-29 (D18)
+- [x] Backend API: **Nebius AI Cloud Serverless Endpoint** (primary), Render emergency fallback only — 2026-09-29 (D18)
 - [ ] Dataset language (Korean / English) and size.
 - [ ] Nano Omni availability (confirm with API key).
 - [ ] Toronto Builders & Brews (Sep 29) registration status.

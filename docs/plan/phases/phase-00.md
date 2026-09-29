@@ -38,7 +38,7 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 | 0.1 | Supabase 프로젝트 | 민식 | ① 리전: **Canada Central 또는 US East** (팀·심사 북미) ② Auth → Providers → Email ON, **Confirm email OFF** (D15) ③ Settings → API에서 URL·anon·service_role 복사 ④ Settings → JWT: signing key 종류(**asymmetric JWKS vs legacy HS256**) 메모 → HS256이면 `SUPABASE_JWT_SECRET`도 복사 (D14) ⑤ 무료 tier: **7일 비활성 시 일시정지** 확인 → Phase 10.7 keep-alive 필요 |
 | 0.2 | Cloudinary | 민식 | cloud name, API key/secret. **unsigned preset 만들지 않음** (signed only). 폴더 규칙은 서버가 강제: `pawnote/{dog_id}/{purpose}/` |
 | 0.3 | Nebius Token Factory | 슬기 | ① 크레딧 코드 적용 ② `GET /v1/models`를 **두 base URL**(eu-north1, us-central1)에 각각 호출 ③ 아래 4개 role별 model ID·base URL 확정 ④ `notes/model-ids.md`에 표 + 호출일 기록 ⑤ Nano Omni 없으면 fallback 비전 모델 ID 기록 (NVIDIA 모델이 아닐 경우 README에 명시) |
-| 0.4 | Tavily | 슬기 | Builders Program 크레딧 또는 tavily.com 무료 키 (P1, Phase 11.3에서 사용) |
+| 0.4 | Tavily | 슬기·민식 | [tavily.com](https://tavily.com) API Key → `TAVILY_API_KEY`. Builders & Brews Toronto **8,000 credits** (Phase 8/11) |
 | 0.5 | `.env` | 민식 | Phase 01.1이 만든 `.env.example` 복사 → 값 채움. `git status`에 `.env`가 안 보이는지 확인 |
 
 ### 0.3 산출물 형식 — `docs/plan/phases/notes/model-ids.md`
@@ -54,8 +54,9 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 
 ### Nebius 크레딧 (권장)
 
-1. Devpost 폼 + 코드 `NEBIUS-DEVPOST-GLOBAL26` ($25)
-2. Nebius Builders Program 가입 (추가 $25 + Tavily)
+1. Devpost 폼 + 코드 `NEBIUS-DEVPOST-GLOBAL26` ($25 Token Factory)
+2. Nebius Builders Program 가입
+3. **Builders & Brews Toronto (참석 시):** Token Factory **$100**, Nebius AI Cloud **$100**, Tavily **8,000 credits** — Supabase/Cloudinary **유지**, API 서버는 **AI Cloud Endpoint** (D18)
 
 ---
 

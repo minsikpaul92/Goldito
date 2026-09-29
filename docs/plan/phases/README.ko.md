@@ -5,6 +5,8 @@
 
 문서 우선순위: **architecture.ko.md + phase 문서** > [TODO.md](../TODO.md) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) > [개발 계획 초안](../README.ko.md)
 
+**보조 스펙 (phase 번호 밖):** [온보딩·데모 UX](../onboarding.ko.md) · [Tavily](../tavily.ko.md) · [로컬 env](../env-setup.ko.md) · [Devpost 제출](../../hackathon/devpost-submission.ko.md)
+
 ## 의존 관계
 
 ```
