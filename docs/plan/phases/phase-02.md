@@ -211,7 +211,10 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
 > ```sql
 > revoke update on public.pets, public.profiles, public.owner_profiles, public.sitter_profiles,
 >   public.safety_checks, public.notifications from authenticated;
-> revoke select (home_address) on public.sitter_profiles from authenticated;  -- 공개 목록에서 주소 가림
+> -- 공개 목록에서 주소 가림: 테이블 단위 select가 있으면 컬럼 revoke가 무효라서, 통째로 회수 후 나머지 컬럼만 grant
+> revoke select on public.sitter_profiles from anon, authenticated;
+> grant select (id, bio, service_area, experience_years, home_notes, default_max_pets, default_hours,
+>   created_at, updated_at) on public.sitter_profiles to authenticated;
 > grant update (name, breed, birthdate, weight_kg, notes) on public.pets to authenticated;
 > grant update (display_name) on public.profiles to authenticated;
 > grant update (home_address, emergency_contact_name, emergency_contact_phone, vet_clinic_name,
@@ -241,7 +244,7 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
 | 이름 | 종류 | 동작 |
 | :--- | :--- | :--- |
 | `sitter_hours(p_sitter uuid, p_day date, p_slot care_slot)` | function stable | 그날 그 칸의 open 행 `starts_at`/`ends_at` → `tstzrange` (overnight는 다음날까지). 없으면 null |
-| `slots_for_window(p_sitter uuid, p_from timestamptz, p_to timestamptz)` | function stable | `[p_from, p_to)`와 겹치는 그 시터의 `(day, slot)` 목록. 시터가 연 칸 기준이라 **시터마다 결과가 다를 수 있음** |
+| `slots_for_window(p_sitter uuid, p_from timestamptz, p_to timestamptz)` | function stable | `[p_from, p_to)`와 겹치는 그 시터의 `(day, slot)` 목록. 시터가 연 칸 기준이라 **시터마다 결과가 다를 수 있음**. 열지 않은 칸은 `sitter_profiles.default_hours`로 계산해 포함 (정원 0 → "일부 가능"/`sitter_unavailable`로 드러남, 빈 칸을 건너뛰지 않음) |
 | `sitter_remaining(p_sitter uuid, p_day date, p_slot care_slot)` | function stable | §2.1 "칸별 남은 자리". 음수면 0 |
 | `get_sitter_schedule(p_sitter uuid, p_from date, p_to date)` | RPC security definer | 견주가 **특정 시터(단골)의 스케줄**을 볼 때. 날짜 × 칸마다 `{day, slot, starts_at, ends_at, state: 'open'\|'full'\|'blocked'\|'closed', remaining}`. 다른 견주의 예약 내용은 노출 안 함 |
 | `list_my_sitters()` | RPC security definer | 호출자 owner가 **확정 예약을 한 적 있는 시터** 목록 (최근 순, 예약 횟수). 앱의 "Your sitters" = 단골 |
@@ -250,7 +253,7 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
 | `respond_booking(p_booking uuid, p_accept boolean, p_note text)` | RPC security definer | 호출자 = 해당 시터, status=`requested`. 수락: 두 handoff가 모두 견주 제안이거나 이미 agreed여야 함 (시터 역제안이 대기 중이면 `'handoff_pending'`) → `pg_advisory_xact_lock(hashtext(sitter_id::text))` → 모든 칸 자리 재확인 → 부족하면 `'sitter_unavailable'` → 충분하면 handoff 2개 `agreed` + booking `confirmed` + 견주 `booking_confirmed`. 거절: `declined` + 견주 `booking_declined` |
 | `cancel_booking(p_booking uuid, p_reason text)` | RPC security definer | 호출자 = 견주 또는 시터, status in (`requested`,`confirmed`) → `cancelled`, `cancelled_by`·`cancel_reason` 기록 → 상대방에게 `booking_cancelled` ("Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter.") |
 | `sync_booking_slots_active()` | trigger `after update of status on bookings` | status가 `declined`/`cancelled`가 되면 그 예약의 `booking_slots.active = false` (자리·유니크 해제) |
-| `guard_availability_change()` | trigger `before insert or update or delete on sitter_availability` | (1) `blocked` 추가/변경이 그 시터의 confirmed 칸과 겹치면 `'overlaps_confirmed_booking'` (+ 겹치는 booking id 목록) (2) `open`을 줄이거나 지우거나 `max_pets`를 낮춰서 이미 확정된 마리 수보다 정원이 작아지는 칸이 생기면 같은 에러. 칸 **시간(starts_at/ends_at)만 바꾸는 것은 허용** — 이미 agreed된 인수인계 시각은 그대로 유효 |
+| `guard_availability_change()` | trigger `after insert or update or delete on sitter_availability` (변경 후 정원으로 검사, 실패 시 롤백) | (1) `blocked` 추가/변경이 그 시터의 confirmed 칸과 겹치면 `'overlaps_confirmed_booking'` (+ 겹치는 booking id 목록) (2) `open`을 줄이거나 지우거나 `max_pets`를 낮춰서 이미 확정된 마리 수보다 정원이 작아지는 칸이 생기면 같은 에러. 칸 **시간(starts_at/ends_at)만 바꾸는 것은 허용** — 이미 agreed된 인수인계 시각은 그대로 유효 |
 
 ### 인수인계 (맡기기 · 찾기)
 
@@ -298,7 +301,7 @@ has_confirmed_booking_with(other uuid) → 위와 같되 status = 'confirmed'
      - H: 두 요청이 마지막 1자리 경쟁 → 먼저 수락한 것만 confirmed
    - **케어**
      - 고양이 pet에 `walk` care_task insert → `task_type_not_allowed_for_species`
-     - 맡기기 전 시각의 task를 시터가 완료 → `not_in_care_window`
+     - 맡기기 전 시각의 task를 시터가 완료 → `not_in_care_window` (`complete_task_log`는 Phase 06 — 02에서는 `in_care_window` 참/거짓만 확인)
 3. `backend/README.md`에 service role 사용 테이블 목록
 
 ### rls_smoke.sql 패턴
