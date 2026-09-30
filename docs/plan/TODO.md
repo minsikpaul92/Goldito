@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **2.1** | `001_initial_schema.sql` (start Phase 02) | [phase-02.md](phases/phase-02.md) |
+| **2.9** | Apply `001`–`003` to the hosted Supabase project (SQL Editor) + run `tests/rls_smoke.sql` | [phase-02.md](phases/phase-02.md) |
 
 ---
 
@@ -25,10 +25,8 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **2.1–2.6** `001_initial_schema.sql`
-- [ ] **2.7** `002_rls_policies.sql` + `rls_smoke.sql`
-- [ ] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/booking/handoff RPCs + overlap guard, realtime)
 - [ ] **3.1–3.3** Auth screens + role routing
+- [ ] **2.10** Sitter can read own `home_address` (column is hidden from the public list) — needed by 3.8 sitter profile edit; small RPC or view
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies + sitter assignment; sitter Today stub; role profiles
 - [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
@@ -50,6 +48,9 @@
 
 ## Completed
 
+- [x] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/search/booking/handoff RPCs, overlap guard, realtime) + `rls_smoke.sql` (permissions + scenarios A–H, all pass on local Postgres) + supabase/backend README (2026-09-30)
+- [x] **2.7** `002_rls_policies.sql` — policy helpers, RLS on 16 tables, column grants (2026-09-30)
+- [x] **2.1–2.6** `001_initial_schema.sql` — 16 tables + `care_slot` enum, constraints verified on local Postgres (2026-09-29)
 - [x] **docs** Phase blueprint: `architecture.ko.md`, phase 00–10 detailed, phase 11 (P1); decisions D1–D20 (2026-09-29)
 - [x] **docs** CI/CD plan: D20, architecture §11, task 1.5, CD in phase 10 (2026-09-29)
 - [x] **docs** D18: backend deploy = **Nebius AI Cloud Serverless Endpoint** (Render fallback only) — architecture, phase-00/10, README.ko (2026-09-29)
