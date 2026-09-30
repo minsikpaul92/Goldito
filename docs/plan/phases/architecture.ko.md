@@ -201,6 +201,7 @@ PawNote/
 | POST | `/api/ai/caption` | on-duty sitter | `{pet_id, media_id}` | `{caption, source:"ai"\|"fallback", model, latency_ms}` | 09 |
 | POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, mood?, note?}}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
 | POST | `/api/ai/safety-check` | on-duty sitter | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 |
+| POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (실패 시 `theme:"calm"`, `[]`) | 11.8 (P1) |
 
 > 알림장 **전송**, task **완료**, 피드 **게시**는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6).
 

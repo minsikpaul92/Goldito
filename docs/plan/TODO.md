@@ -38,7 +38,8 @@
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md))
-- [ ] **11.x** P1: photo request, notices, Tavily only if 8.7 slipped (after P0 is live) · P2 idea **11.7** SFT on anonymized reports
+- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.8** pet stickers + AI-decorated report card → **11.9** video mood line → **11.2** notices · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
+- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 — can start any time
 - [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 
 ---
@@ -47,6 +48,7 @@
 
 ## Completed
 
+- [x] **docs** New feature review: stickers + decorated report (11.8) and video mood (11.9) as P1; Pawstagram, pet map, sticker store, bark analysis → post-hackathon roadmap (plan README, root/ko README "What's next") (2026-10-01)
 - [x] **docs-sync** Doc consistency pass: vision model = MiniCPM-V everywhere (Nano Omni not in catalog), #18 Tavily 8.7 / metrics reflected in CLAUDE.md · READMEs · playbook · phase-00/11, plan README §9/§10 → summaries pointing to phase-02 / architecture §7, playbook prompts aligned (signup trigger, English-only, auto task logs, D18 deploy, API bodies), D23 `sleep`, stale "assignment" wording, Toronto attended, deadlines, demo password policy (`EXPO_PUBLIC_DEMO_PASSWORD`), `welcome` route, Python 3.12, source-of-truth order in phases/README (2026-09-30)
 - [x] **2.8b** Phase 02 review fixes: per-pet time overlap guard (`booking_pets` exclusion), custom drop-off/pick-up edge rule, 2 h read wrap-up, requested sitter sees pet profile, no cancel after Received, handoff time/place rules, newest open row wins, `default_hours` check, 24 h address window, execute privileges, `updated_at` trigger; smoke test 99 checks + `supabase_stub.sql` + CI `supabase` job (2026-09-30)
 - [x] **2.10** `get_my_sitter_profile()` — sitter reads own `home_address` (2026-09-30)
