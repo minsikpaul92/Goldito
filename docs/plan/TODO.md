@@ -34,12 +34,12 @@
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()`
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)
 - [ ] **6.x** Med/walk tasks + auto today logs + in-app reminder + complete with photo (`005`)
-- [ ] **7.1** Nebius client + `test_nebius.py` — Seulgi (can start right after Phase 01)
+- [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) — Seulgi (can start right after Phase 01)
 - [ ] **7.2–7.5** Daily report AI (Super) + quick-tap + send (`006`)
-- [ ] **8.x** Safety check pipeline + modal + owner notify (`007`)
+- [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md))
-- [ ] **11.x** P1: photo request, Tavily in safety, notices (after P0 is live)
+- [ ] **11.x** P1: photo request, notices, Tavily only if 8.7 slipped (after P0 is live) · P2 idea **11.7** SFT on anonymized reports
 - [ ] **docs-sync** phases/README index links; architecture §3 `welcome` route (OB.1); optional `figma` workflow note in frontend/README — after doc batch lands on `main`
 
 ---
@@ -48,6 +48,7 @@
 
 ## Completed
 
+- [x] **docs** Sponsor session review: Tavily keyword queries + domain/recall filters, Tavily moved to 8.7 stretch, Nebius per-call metrics (7.1, architecture §9), SFT as P2 idea 11.7 (2026-09-30)
 - [x] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/search/booking/handoff RPCs, overlap guard, realtime) + `rls_smoke.sql` (permissions + scenarios A–H, all pass on local Postgres) + supabase/backend README (2026-09-30)
 - [x] **2.7** `002_rls_policies.sql` — policy helpers, RLS on 16 tables, column grants (2026-09-30)
 - [x] **2.1–2.6** `001_initial_schema.sql` — 16 tables + `care_slot` enum, constraints verified on local Postgres (2026-09-29)

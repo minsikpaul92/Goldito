@@ -10,7 +10,7 @@
 ### Goal 달성 기준
 
 - [ ] Owner **Request photo** 1탭 → sitter 알림 → sitter가 다음 사진을 올리면 요청 자동 완료 + owner 알림
-- [ ] 세이프티 `unknown_ingredients` / WARNING 시 Tavily 검색 → Ultra 재판단 → 모달에 **출처 링크**
+- [ ] 세이프티 Tavily 출처 링크 — **08.7에서 끝났으면 생략**
 - [ ] Sitter 공지 작성 → owner 앱 실행 시 팝업 1회
 
 ---
@@ -23,7 +23,8 @@
 | 11.2 | 공지 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)` (근무일은 P0 `sitter_availability`로 이동) | owner는 확정 예약이 있는 시터의 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업). Owner: 팝업 |
 | 11.5 | 즐겨찾기 시터 | `owner_favorite_sitters(owner_id, sitter_id)` — 예약 전이라도 단골로 고정 | - | 시터 카드 ☆ / "Your sitters" 상단 |
 | 11.6 | 반복 근무 패턴 | `sitter_availability`에 `weekdays int[]` 추가 (예: 토·일만 open) — 스케줄·검색 계산에 반영 | - | 캘린더 "Every weekend" 토글 |
-| 11.3 | Tavily in safety | `safety_checks.result_json.sources[]` 추가 (스키마 변경 없음) | Phase 08 파이프라인 step 4 뒤: `unknown_ingredients` 또는 hidden_sources 각 ≤ 3개 → `tavily.search(f"Is {ing} safe for {species}s? Does it contain {allergen}?", max_results=3, include_answer=True)` → 결과 요약을 Ultra에 추가 입력 → 최종 판정. 제품명 있으면 `"{product} {species} treat recall"` 1회. 총 8초 제한, 실패 시 Tavily 없이 결과 | 모달에 "Sources" 섹션 (도메인 + 링크) |
+| 11.3 | Tavily in safety | - | **Phase 08.7 (stretch)로 앞당김.** 08에서 못 했을 때만 여기서 동일 스펙으로 진행 ([phase-08.md](phase-08.md) 8.7, [tavily.ko.md](../tavily.ko.md) 검색 규칙) | 모달에 "Sources" 섹션 (도메인 + 링크) |
+| 11.7 | (P2 아이디어) SFT 파인튜닝 | - | P0 배포 후 여유가 있을 때만. Token Factory SFT로 **익명화한 알림장 데이터**(슬기 정책)로 Nemotron 튜닝 → few-shot 대비 톤·형식 일관성 비교. 먼저 확인: ① Nemotron이 SFT 대상 모델인지 ② 학습 데이터 최소 수량 ③ 비용·소요 시간. 결과는 README 피드백에 기록 (시도만 해도 피드백 가치 있음) | - |
 | 11.4 | (P2) Q&A 1차 답변 | `messages(id, pet_id, sender_id, body, ai_generated bool, needs_sitter bool, created_at)` | owner 메시지 → `POST /api/ai/qa` (MODEL_FAST) — pet 프로필 + 오늘 source_snapshot만 근거. 확신 없으면 "Your sitter will reply soon." + sitter 알림 | 채팅 화면 1개 |
 
 ---
@@ -31,7 +32,7 @@
 ## Definition of Done (DoD)
 
 1. 11.1: 두 브라우저에서 요청 → 게시 → 자동 완료까지 새로고침 없이
-2. 11.3: WARNING 라벨(animal fat)로 Tavily 호출 로그 + 모달 출처 1개 이상 (런타임 호출 = 보너스상 요건)
+2. 11.3 (08.7에서 안 했을 때만): WARNING 라벨(animal fat)로 Tavily 호출 로그 + 모달 출처 1개 이상 (런타임 호출 = 보너스상 요건)
 3. README에 Tavily 사용 설명 + 데모 영상에 출처 링크 장면
 
 ---

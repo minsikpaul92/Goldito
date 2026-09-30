@@ -38,7 +38,7 @@
 
 | ID | 작업 | 담당 | 상세 |
 | :--- | :--- | :--- | :--- |
-| 7.1 | Nebius client + test script | 슬기 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **Phase 01 끝나면 바로 시작 가능** |
+| 7.1 | Nebius client + test script | 슬기 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **호출 지표 로그**(architecture §9: TTFT·전체 지연·토큰 수)를 `nebius.py`에 포함하고, 테스트 스크립트가 role별 5회 호출해 **TTFT/지연 중앙값 표**를 `notes/model-ids.md`에 남김 (README 피드백 근거). **Phase 01 끝나면 바로 시작 가능** |
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
 | 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |

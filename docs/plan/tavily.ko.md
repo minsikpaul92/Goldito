@@ -15,18 +15,27 @@ PawNote에서는 **Nemotron(고정된 학습 지식)** 만으로는 모르는 **
 
 ## PawNote에서 어디에 쓰나?
 
-**간식 세이프티 가드** (Phase 08 / 11):
+**간식 세이프티 가드** — [Phase 08.7](phases/phase-08.md) (stretch, 8.1–8.6 끝나면 바로). 못 하면 Phase 11.3:
 
 1. Vision이 성분표를 읽고 Ultra가 알레르기를 판단
-2. **모르는 성분**, **애매한 표기**(예: animal fat), **리콜**이 필요하면 → **Tavily `search`**
+2. 결과가 **WARNING**이거나 **모르는 성분**이 있으면 → **Tavily `search`**
 3. 검색 요약 + URL을 Ultra에 다시 넣어 최종 JSON
 4. UI 경고 모달에 **Sources(출처 링크)** 표시 → 견주·심사위원이 신뢰 가능
 
-예시 쿼리:
+`search` 하나만 씁니다. `/extract`·`/crawl`·`/research`는 쓰지 않습니다.
 
-- `Is hydrolyzed poultry protein safe for dogs with chicken allergy?`
-- `{brand} {product name} dog treat recall 2026`
-- `Is propylene glycol safe for cats?` (고양이 전용 독성 확인)
+### 검색어 규칙
+
+Tavily 권장: **챗봇에게 묻듯 문장으로 쓰지 말고, 검색창에 치듯 키워드로.** (Sep 29 Builders & Brews Toronto Tavily 세션)
+
+| 목적 | 쿼리 (키워드) | 옵션 |
+| :--- | :--- | :--- |
+| 종별 독성 | `"{ingredient} toxic {species}s"` → `propylene glycol toxic cats` | `include_domains` = 신뢰 도메인 |
+| 숨은 알레르기 출처 | `"{ingredient} {allergen} derived"` → `animal fat chicken derived` | `include_domains` = 신뢰 도메인 |
+| 리콜 (제품명 있을 때 1회) | `"{product} {species} treat recall"` | `topic="news"`, `time_range="year"` |
+
+- **신뢰 도메인:** `aspca.org`, `fda.gov`, `avma.org`, `petpoisonhelpline.com`, `vcahospitals.com` — 결과가 0개면 도메인 필터 없이 1회 재시도.
+- 한 번의 스캔에서 쿼리 **최대 4개**(성분 3 + 리콜 1), 병렬 호출, **총 8초** 제한. 실패하면 Tavily 없이 Ultra 1차 결과를 그대로 반환.
 
 ---
 
@@ -49,15 +58,16 @@ from tavily import TavilyClient
 
 client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 res = client.search(
-    query="Is xylitol toxic to dogs?",
+    query="xylitol toxic dogs",
     search_depth="basic",
-    max_results=5,
+    max_results=3,
     include_answer=True,
+    include_domains=["aspca.org", "fda.gov", "avma.org", "petpoisonhelpline.com", "vcahospitals.com"],
 )
 # res["answer"], res["results"][i]["content"], res["results"][i]["url"]
 ```
 
-의존성: `tavily-python` (Phase 11 또는 safety 파이프라인 PR에서 추가).
+의존성: `tavily-python` (Phase 08.7 PR에서 추가).
 
 ---
 

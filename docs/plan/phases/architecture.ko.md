@@ -271,6 +271,7 @@ PawNote/
 - Nemotron reasoning 모드: 캡션·알림장은 reasoning **off**(속도), 세이프티 reasoning 단계는 **on** (7.1에서 모델별 토글 방식 확인 후 `nebius.py`에 기록).
 - 프롬프트 원문은 코드에 하드코딩하지 않고 `app/ai/prompts/**`의 파일에서 로드 (슬기가 코드 수정 없이 튜닝).
 - 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
+- **호출 지표 로그:** `chat()`/`chat_json()`마다 구조화 로그 1줄 — `{role, model, endpoint, ttft_ms, latency_ms, prompt_tokens, completion_tokens, retried, ok}` (TTFT는 스트리밍 첫 토큰 기준, 스트리밍 불가 모델은 null). 프롬프트·응답 본문은 남기지 않음. Phase 10 README의 **Token Factory / Nemotron 피드백**(필수·채점 항목)과 Most Valuable Feedback에 모델별 중앙값 표로 사용.
 
 ---
 
