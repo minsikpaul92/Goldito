@@ -1,7 +1,7 @@
 # Phase 02 — Supabase DB + RLS
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D5–D11, D21–D24, 쓰기 경로 §6
-> **이 문서의 스키마가 정본**입니다. SQL은 이 문서를 따르고, 둘이 다르면 이 문서를 먼저 고친 뒤 migration을 맞춥니다. ([README.ko.md §9](../README.ko.md#9-데이터-모델-초안)는 초안)
+> **이 문서의 스키마가 정본**입니다. SQL은 이 문서를 따르고, 둘이 다르면 이 문서를 먼저 고친 뒤 migration을 맞춥니다. ([README.ko.md §9](../README.ko.md#9-데이터-모델-요약)는 요약)
 
 ## Goal
 

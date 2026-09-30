@@ -5,7 +5,7 @@
 > **목적:** 리포가 문서만 있는 상태에서, P0(피드·투약/산책·알림장·세이프티 가드)까지 **AI(Cursor)에게 줄 명령**을 단계별로 정리.
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
 
-관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [데이터 모델 초안](README.ko.md#9-데이터-모델-초안) · [제품 README](../README.ko.md)
+관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [스키마 정본 phase-02](phases/phase-02.md) · [제품 README](../README.ko.md)
 
 ---
 
@@ -21,18 +21,18 @@ AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 캡션/�
 
 ```text
 You are working in the PawNote monorepo (Nebius x NVIDIA hackathon).
-Stack: Expo (React Native Web), FastAPI (Python 3.11+), Supabase (Postgres + Auth + Realtime), Cloudinary (media), Nemotron via Nebius Token Factory (AI only in backend).
+Stack: Expo (React Native Web), FastAPI (Python 3.12), Supabase (Postgres + Auth + Realtime), Cloudinary (media), Nebius Token Factory — Nemotron for reasoning/reports, MiniCPM-V for vision (AI only in backend).
 
 Rules:
 - Minimize scope: only change files needed for this task.
 - Match existing conventions once they exist.
 - No secrets in git; use .env.example only.
-- English for code/comments; user-facing copy can be Korean for now unless I say demo is EN.
+- English for code, comments, UI copy, and AI output (architecture D1).
 - Do not commit unless I ask.
 
 Read before coding:
-- docs/plan/README.ko.md (P0 scope, data model)
-- docs/README.ko.md (features)
+- CLAUDE.md, docs/plan/TODO.md (current focus)
+- docs/plan/phases/architecture.ko.md + the phase doc for this task (source of truth)
 
 Task:
 <아래 단계별 Task 내용>
@@ -108,49 +108,24 @@ DoD: web loads and health check shows ok when backend runs.
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 2.1 | `users` 프로필 + `role` (owner \| sitter) | 0.1 | migration SQL |
-| 2.2 | `pets`, `pet_allergies` | 2.1 | |
-| 2.3 | `care_tasks`, `task_logs` | 2.2 | |
-| 2.4 | `media`, `feed_posts` | 2.2 | |
-| 2.5 | `daily_reports`, `safety_checks` | 2.2 | |
-| 2.6 | `notifications` | 2.1 | Realtime publication |
-| 2.7 | RLS: owner는 자기 개만, sitter는 맡긴 개만 | 2.1–2.6 | 정책 SQL + 짧은 설명 |
+| 2.1–2.6 | 스키마 17개 테이블 — [phase-02 §2.1–2.6](phases/phase-02.md#2126-스키마-001_initial_schemasql) | 0.1 | `001_initial_schema.sql` |
+| 2.7 | RLS + 컬럼 권한 — [phase-02 §2.7](phases/phase-02.md#27-rls-002_rls_policiessql) | 2.1–2.6 | `002_rls_policies.sql` |
+| 2.8 | 함수·트리거·예약 RPC + smoke test — [phase-02 §2.8](phases/phase-02.md#28-공통-함수트리거-003_functions_triggerssql) | 2.7 | `003_functions_triggers.sql`, `tests/rls_smoke.sql` |
 
-### AI 프롬프트 — 2.x 전체 스키마 (한 번에 가능, 크면 2.1–2.4 / 2.5–2.7 분할)
+> Phase 02는 완료(2.9 호스팅 적용만 남음). 스키마를 바꿀 때는 **phase-02.md 표를 먼저 고치고**, 아래 프롬프트에 그 표를 붙여 넣습니다.
+
+### AI 프롬프트 — 001 / 002 / 003 (각각 별도)
 
 ```text
-Write supabase/migrations/001_initial_schema.sql based on docs/plan/README.ko.md section 9 (data model).
+Update supabase/migrations/00N_*.sql to match docs/plan/phases/phase-02.md.
+Paste: the phase-02 table(s) for this file (§2.1–2.6 schema / §2.7 RLS / §2.8 functions).
 
-Include:
-- profiles extending auth.users (id uuid PK references auth.users, role text check owner|sitter, display_name)
-- pets (owner_id, species dog|cat) — no sitter_id; sitters come from bookings
-- owner_profiles / sitter_profiles (1:1 with profiles, see phase-02)
-- pet_allergies, care_tasks (type medication|walk, schedule as jsonb or separate columns — document choice)
-- task_logs (status pending|done|missed, due_at, completed_at, media_id nullable)
-- media (cloudinary_public_id, type image|video, caption nullable)
-- feed_posts (pet_id, sitter_id, caption, links to media via junction or media_ids uuid[])
-- daily_reports (date, body, status draft|sent)
-- safety_checks (result_json jsonb)
-- notifications (user_id, type, ref_id, read_at)
+Rules:
+- phase-02.md is the source of truth; if the SQL needs a different rule, stop and propose a doc change first.
+- Keep rls_smoke.sql passing: stub + migrations + smoke on Postgres 17 (supabase/README.md "Local / CI").
+- Add a smoke check for every new rule (expected result in a comment).
 
-Add indexes on pet_id, user_id, created_at.
-Add updated_at triggers only if simple.
-
-DoD: migration applies cleanly in Supabase SQL editor; comment at top how to run.
-```
-
-### AI 프롬프트 — 2.7 RLS
-
-```text
-Add supabase/migrations/002_rls_policies.sql:
-- Owners can select/update their pets and related rows where pets.owner_id = auth.uid()
-- Sitters can select pets they have a confirmed booking for (see phase-02 is_sitter_of / is_on_duty_for)
-- Insert feed_posts, task_logs, media only for assigned sitter on that pet
-- notifications: user can read own user_id = auth.uid()
-
-Use auth.uid(). Document any table that must use service role from FastAPI (if any) in backend/README.md.
-
-DoD: policies compile; no public read on pets.
+DoD: CI `supabase` job green; phase-02 DoD 2 list still true.
 ```
 
 ---
@@ -174,7 +149,7 @@ DoD: policies compile; no public read on pets.
 ```text
 Implement Supabase auth in frontend using @supabase/supabase-js:
 - LoginScreen, SignUpScreen (email/password)
-- On first signup, insert profiles row with role selected on signup (owner or sitter)
+- Sign up with supabase.auth.signUp({ email, password, options: { data: { role, display_name } } }) — the handle_new_user trigger creates profiles + owner_profiles/sitter_profiles (no client insert, phase-03 3.2)
 - After login, navigate to OwnerHome or SitterHome based on profile.role
 - Store session with supabase auth persistence for web
 
@@ -185,7 +160,7 @@ DoD: can create owner and sitter test users; role persists.
 
 ```text
 Add backend dependency get_current_user that validates Supabase JWT from Authorization Bearer header (use SUPABASE_JWT_SECRET or JWKS — pick standard approach for Supabase).
-Route GET /api/me returns user id and role from profiles via Supabase REST with user token OR decode JWT claims only.
+Route GET /api/me returns user id and role read from profiles (never from JWT user_metadata — users can edit it).
 
 DoD: curl with valid access token returns 200; invalid returns 401.
 ```
@@ -204,7 +179,7 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 
 ```text
 Implement Cloudinary signed upload:
-- POST /api/media/sign { pet_id, resource_type: image|video } requires auth sitter assigned to pet
+- POST /api/media/sign { pet_id, resource_type: image|video, purpose } requires an on-duty sitter: call rpc('is_on_duty_for') with the user's JWT (architecture §5, phase-04)
 - Return timestamp, signature, cloud_name, api_key, folder pawnote/{pet_id}/
 - POST /api/media/complete { pet_id, public_id, resource_type } inserts media row via Supabase service role or user client — use pattern consistent with Phase 3 choice
 
@@ -240,17 +215,17 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
 | 6.1 | Owner: `care_tasks` CRUD (약/산책, 시간) | 3.2 | DB 반영 |
-| 6.2 | `task_logs` 생성 (due_at 스케줄) — v1: 수동 "오늘 일정 생성" 버튼도 OK | 6.1 | sitter todo list |
+| 6.2 | `ensure_today_task_logs` RPC — 화면 진입 시 자동, 멱등 (수동 버튼 없음, phase-06 6.2) | 6.1 | sitter todo list |
 | 6.3 | Sitter: due task → 완료 + **인증 사진** → task_log done | 4.3, 6.2 | optional feed_post link |
 | 6.4 | 완료 시 owner notification | 6.3 | |
-| 6.5 | (stretch) APScheduler: due 알림 sitter | 6.2 | 해커톤 데모는 6.2 버튼으로도 통과 |
+| 6.5 | 인앱 리마인더 배너 (phase-06) · stretch 6.7 Serverless Job | 6.2 | |
 
 ### AI 프롬프트 — 6.1–6.4
 
 ```text
 Implement medication/walk tasks:
-- OwnerTaskScreen: create care_task type medication|walk with title, dose optional, scheduled_time (time of day) and repeat daily for hackathon demo
-- Backend or Supabase function: generate task_logs for today for each care_task (expose POST /api/tasks/generate-today or RPC)
+- OwnerTaskScreen: create care_task with a species-allowed type (medication, feeding, play, sleep + walk for dogs / litter for cats), title, dose optional, scheduled_time, repeat daily
+- RPC ensure_today_task_logs(p_pet) in 005_tasks.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
 - SitterTasksScreen: list pending task_logs for today, Complete opens camera/upload, marks done, links media_id, creates feed_post optional with caption "Medication done" / "Walk done"
 - Notify owner on completion
 
@@ -289,13 +264,13 @@ POST /api/ai/daily-report { pet_id, date }:
 - Sitter UI: Generate report button, edit optional single textarea, Send sets status sent and notifies owner
 - Owner UI: DailyReportScreen read-only
 
-DoD: end of day flow produces Korean warm report from real today's data only.
+DoD: end of day flow produces a warm English report from real today's data only.
 ```
 
 ### 슬기 전용 AI 프롬프트 — 7.4 Few-shot
 
 ```text
-Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (Korean), and PROMPT.md describing rules. No PII. Placeholder names like "보리".
+Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (English, D1), and PROMPT.md describing rules. No PII. Placeholder names like "Bori".
 ```
 
 ---
@@ -305,17 +280,18 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
 | 8.1 | `POST /api/ai/safety-check` photo + pet_id | 7.1, 2.2 | JSON schema |
-| 8.2 | Step1 vision: extract ingredients (Omni or fallback VL) | 8.1 | |
+| 8.2 | Step1 vision: extract ingredients (`MODEL_VISION` = MiniCPM-V) | 8.1 | |
 | 8.3 | Step2 Ultra: allergens + hidden sources | 8.2 | DANGER/WARNING/SAFE |
 | 8.4 | Sitter UI: scanner → modal with warning_message | 8.3 | 데모 가능 |
 | 8.5 | `safety_checks` 저장 + owner notify if DANGER | 8.4 | |
+| 8.7 | (stretch) Tavily 출처 — [tavily.ko.md](tavily.ko.md) 키워드 규칙 | 8.1–8.6 | 모달 Sources |
 
 ### AI 프롬프트 — 8.1–8.3 파이프라인
 
 ```text
-Implement POST /api/ai/safety-check multipart image + pet_id:
+Implement POST /api/ai/safety-check { pet_id, media_id } (phase-08 pipeline):
 1) Load pet species + allergens from pet_allergies
-2) Vision step: model nvidia/nemotron-3-nano-omni (or env VISION_MODEL_ID) — extract ingredient list from label photo
+2) Vision step: env MODEL_VISION (openbmb/MiniCPM-V-4_5, see notes/model-ids.md) — extract ingredient list from label photo
 3) Reasoning step: nvidia/Nemotron-3-Ultra-550b-a55b — output strict JSON matching schema in docs/plan (safety_status, matched_allergens, detected_ingredients, warning_message)
 4) Validate with pydantic; retry once on invalid JSON
 5) Insert safety_checks row
@@ -336,14 +312,14 @@ DoD: matches design stub (red modal).
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 9.1 | `POST /api/ai/caption` image url + pet name | 7.1 | 1–2 warm sentences |
+| 9.1 | `POST /api/ai/caption` `{pet_id, media_id}` | 7.1 | 1–2 warm sentences |
 | 9.2 | 피드 업로드 후 caption 자동 채우기 | 5.1, 9.1 | sitter 타이핑 0 |
 
 ### AI 프롬프트 — 9.1–9.2
 
 ```text
-After media upload, call POST /api/ai/caption with cloudinary secure_url and pet name; set feed_post.caption before save.
-Use vision model from env. Fallback: caption "오늘도 잘 지내고 있어요 🐶" if AI fails.
+After media upload, call POST /api/ai/caption { pet_id, media_id } (backend loads the image as a base64 data URL, D12); set feed_post.caption before save.
+Use MODEL_VISION from env. Fallback caption per phase-09 (English) if AI fails.
 
 DoD: sitter upload only; caption appears automatically.
 ```
@@ -356,14 +332,15 @@ DoD: sitter upload only; caption appears automatically.
 | :--- | :--- | :--- | :--- |
 | 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Bori(dog)/Mochi(cat) |
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
-| 10.3 | 배포: Vercel(front) + Railway/Render/Fly(backend) | 10.2 | public demo URL |
+| 10.3 | 배포: Vercel(front) + Nebius AI Cloud Serverless Endpoint(backend, D18 — Render는 긴급 fallback) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
 
 ### AI 프롬프트 — 10.1 seed
 
 ```text
 Create scripts/seed_demo.sql or Python using service role:
-- Users: demo-owner@pawnote.test, demo-sitter@pawnote.test (document passwords in SECRETS.local.example not committed)
+- Users: demo-owner@pawnote.test, demo-sitter@pawnote.test (password from env DEMO_PASSWORD — never committed; phase-10 10.1)
+- Confirmed booking in progress: bookings + booking_pets + booking_slots + agreed booking_handoffs (see rls_smoke.sql _t_booking)
 - Dog Bori with chicken allergy, one medication task 8am, walk 10:30
 - Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
@@ -385,9 +362,11 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 
 | Endpoint | Body | Response |
 | :--- | :--- | :--- |
-| POST /api/ai/caption | `{ pet_id, image_url }` | `{ caption }` |
-| POST /api/ai/daily-report | `{ pet_id, date }` | `{ report_id, body, status }` |
-| POST /api/ai/safety-check | multipart | SafetyCheck JSON |
+| POST /api/ai/caption | `{ pet_id, media_id }` | `{ caption, source, model, latency_ms }` |
+| POST /api/ai/daily-report | `{ pet_id, date, inputs }` | `{ report_id, body, status, model, latency_ms }` |
+| POST /api/ai/safety-check | `{ pet_id, media_id }` | SafetyCheck JSON (phase-08) |
+
+> 정본은 [architecture §5 엔드포인트 계약](phases/architecture.ko.md#엔드포인트-계약-전체).
 
 ---
 
@@ -415,8 +394,10 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [ ] 1.3 Expo web
 
 ### Phase 2
-- [ ] 2.1–2.6 migrations
-- [ ] 2.7 RLS
+- [x] 2.1–2.6 migrations
+- [x] 2.7 RLS
+- [x] 2.8 functions + smoke test
+- [ ] 2.9 hosted apply
 
 ### Phase 3
 - [ ] 3.1–3.2 Auth + role
@@ -445,6 +426,7 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 ### Phase 8 — Safety
 - [ ] 8.1–8.3 pipeline
 - [ ] 8.4–8.5 UI + notify
+- [ ] 8.7 Tavily sources (stretch)
 
 ### Phase 9 — Caption AI
 - [ ] 9.1–9.2 auto caption

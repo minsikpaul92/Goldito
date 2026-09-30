@@ -1,7 +1,7 @@
 # PawNote P0 — 공통 설계 청사진 (모든 Phase가 따름)
 
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
-> 이 문서와 [README.ko.md §9 데이터 모델 초안](../README.ko.md#9-데이터-모델-초안) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
+> 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
 > 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
 
 ---
@@ -29,11 +29,11 @@
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
 | D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
+| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 | D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
-| D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
+| D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
 | D24 | 파트타임 보딩 시터 · 칸 · 인수인계 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 칸은 **이름만 고정**(Morning·Afternoon·Overnight) — 정확한 시간은 시터가 칸마다 정함(`sitter_availability.starts_at/ends_at`) + 칸 정원 `max_pets`. 예약 = 시터 1명 + 견주 1명. **누가 언제 맡나** = `booking_pets.care_range`(맡긴 구간, 반려동물마다 겹침 금지 — exclusion 제약), **정원** = `booking_slots`(반려동물 × 날짜 × 칸, 그 시터의 칸 시간 기준). 겹치는 open 행은 **가장 최근 행**이 그 날의 시간·정원을 정함. 열지 않은 칸은 맡긴 구간이 절반 넘게 덮을 때만 차지(빈 Overnight 방지) — 앞뒤로 짧게 삐져나온 시간은 custom 시각으로 협의. 견주가 **맡기는 시각·찾는 시각·장소**(시터 집/견주 집/기타)를 정함 → `booking_handoffs`. 시터 시간 밖·장소 변경은 **협의**(제안 → 상대방 동의), 확정 후 변경도 제안→동의, 동의 전엔 기존 값 유효. 견주는 **여행 전체를 한 시터에게**가 기본 — 단골 스케줄 먼저, 없으면 검색(전체 가능 먼저). 시터가 확정 칸을 막으려 하면 거부 → **예약 전체 취소**(맡기기 전만 — Received 뒤엔 찾는 시각 변경으로) → 견주 재예약. 권한·할 일 담당은 칸이 아니라 **맡긴 시각 ~ 찾는 시각** 구간으로 판단. 스케줄 변경은 알림 없음. 주소는 확정 당사자에게만(찾은 뒤 24시간까지) | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 실제 맡기는 시각이 시터 근무 시간과 다를 수 있어 협의 필요 |
-| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 
 ---
 
@@ -117,7 +117,8 @@ PawNote/
 
 | Route | 역할 | 화면 | 주 액션 (1개) | 도입 Phase |
 | :--- | :--- | :--- | :--- | :--- |
-| `/` | - | 세션·역할 보고 redirect | - | 03 |
+| `/` | - | 세션·역할 보고 redirect (미로그인 → welcome) | - | 03 → OB.1 |
+| `/(public)/welcome` | - | Welcome + **Try demo** (Owner / Sitter) · "Already have an account?" | Try demo | OB.1 ([onboarding.ko.md](../onboarding.ko.md)) |
 | `/(auth)/login` | - | Login | Sign in | 03 |
 | `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
 | `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
@@ -159,11 +160,11 @@ PawNote/
 | `SUPABASE_JWT_SECRET` | (레거시 HS256 프로젝트만, 비워도 됨) | 03 |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | | 04 |
 | `NEBIUS_API_KEY` | (secret) | 07 |
-| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `nvidia/nemotron-3-nano-omni` / us-central1 URL (0.3에서 확정) | 08, 09 |
+| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `openbmb/MiniCPM-V-4_5` / us-central1 URL (0.3 확정 — Nano Omni는 카탈로그에 없음, [model-ids.md](notes/model-ids.md)) | 08, 09 |
 | `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, P2 |
-| `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08 stretch / 11 (세이프티 웹 검색). [tavily.ko.md](../tavily.ko.md) |
+| `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
 
 ### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
 
@@ -174,6 +175,7 @@ PawNote/
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 03 |
 | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (delivery URL 조립용) | 04 |
 | `EXPO_PUBLIC_APP_TIMEZONE` (`America/Toronto`) | 06 |
+| `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 비밀번호 — 번들에 들어가는 공개값. 실제 계정·service key 금지) | OB.2, 10 |
 
 > ❌ service role key, Cloudinary secret, Nebius key는 **절대** frontend env에 두지 않습니다.
 

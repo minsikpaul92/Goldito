@@ -18,7 +18,7 @@
 ## 선행 조건
 
 - [Phase 04](phase-04.md) `uploadMedia()`
-- [Phase 03](phase-03.md) pet + sitter 배정
+- [Phase 03](phase-03.md) pet 프로필 · [Phase 03B](phase-03b.md) 확정 예약 (게시 권한 = `is_on_duty_for`)
 
 ---
 

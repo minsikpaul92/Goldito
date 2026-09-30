@@ -102,7 +102,7 @@ A project can win **one Overall award OR one Track award, plus one Bonus award.*
 **Builders & Brews IRL events (remaining after Sep 28):** Berlin & Toronto (Sep 29), Paris (Oct 1), Boston (Oct 2), SF (Oct 9), LA (Oct 13).
 Seoul (Sep 11) and NYC (Sep 25) have already passed.
 
-**Our status:** Minsik registered for **Toronto (Sep 29)** — approval pending. If attended, select Toronto on the submission form for the City Winner Award.
+**Our status:** attended **Builders & Brews Toronto (Sep 29)** — select **City: Toronto** on the final submission form for the City Winner Award.
 
 ---
 

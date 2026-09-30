@@ -28,10 +28,10 @@ Every feature must pass:
 | Layer | Choice |
 | :--- | :--- |
 | Frontend | Expo (React Native Web) → later iOS/Android |
-| Backend | FastAPI (Python 3.11+) — media sign, `/api/ai/*`, JWT |
+| Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| AI | Nemotron via Token Factory (backend only; keys never in client) |
+| AI | Token Factory (backend only; keys never in client) — Nemotron for reasoning/reports, MiniCPM-V for vision ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
 
@@ -53,7 +53,8 @@ Think in **two apps in one codebase** — role after login:
 
 ```
 Owner                          Sitter
-  Home (my pets)                 Home (assigned pets)
+  Home (my pets)                 Today (pets in my care now)
+  Bookings (find sitter, trips)  Schedule + booking requests
   Feed / Album                   Pet feed upload
   Tasks setup (med/walk)         Today's tasks + complete + photo
   Daily report (read)            Report generate → send
@@ -192,21 +193,21 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard | 08 |
 | Deploy & submit README | 10 |
 
-P1 (photo request, notices, Tavily in safety, Q&A) — only after P0 queue is clear unless user reprioritizes.
+Tavily sources in the safety guard are **8.7 (P0 stretch)** right after 8.1–8.6. P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (Q&A, SFT idea 11.7) — only after P0 queue is clear unless user reprioritizes.
 
 ---
 
 ## 8. AI endpoints (contract)
 
-Implement in FastAPI; all call **Nebius Token Factory** with **Nemotron** models:
+Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text reasoning, MiniCPM-V for vision (caption, label reading). Every call writes one metrics log line (architecture §9):
 
 | Endpoint | Purpose |
 | :--- | :--- |
 | `POST /api/ai/caption` | Feed auto-caption |
 | `POST /api/ai/daily-report` | End-of-day report draft |
-| `POST /api/ai/safety-check` | Label photo → JSON safety |
+| `POST /api/ai/safety-check` | Label photo → JSON safety (+ Tavily sources, 8.7) |
 
-Model IDs and regions: `docs/plan/README.ko.md` §6 and phase-07/08 docs.
+Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; checked with `GET /v1/models`) and phase-07/08 docs.
 
 ---
 

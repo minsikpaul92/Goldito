@@ -44,7 +44,7 @@
 | 3.4 | FastAPI JWT | `deps/auth.py`: JWKS 검증(PyJWT + `PyJWKClient`, 캐시), audience `authenticated`, 실패 시 HS256 secret fallback (D14). `get_current_user` → `{id, email}` + service client로 profile(role, display_name) 조회. `require_role("sitter")` dependency. `routers/me.py` | 유효 200 / 무효·만료 401 |
 | 3.5 | Owner pet 프로필 | `/(owner)/index.tsx` 내 pet 카드 목록 + **Add pet**. `/(owner)/pets/new`, `/(owner)/pets/[petId]`: **species(필수, Dog / Cat 세그먼트 — 생성 후 변경 불가, D22)**, name(필수), breed, birthdate, weight, notes, **Allergies** chip 입력(추가/삭제 → `pet_allergies`, 소문자 저장). Owner 입력은 텍스트 허용 (sitter 원칙과 무관) | Bori(dog) + chicken, Mochi(cat) 저장 |
 | 3.6 | (삭제) | 이메일로 시터 배정은 기간 예약으로 대체 → [Phase 03B](phase-03b.md) | - |
-| 3.7 | Sitter Today 스텁 | `/(sitter)/index.tsx`: 빈 상태 "No bookings yet — open your availability so owners can find you." (실제 목록은 3B.6) | 표시 |
+| 3.7 | Sitter Today 스텁 | `/(sitter)/index.tsx`: 빈 상태 "No bookings yet — open your availability so owners can find you." (실제 목록은 3B.8) | 표시 |
 | 3.8 | 내 프로필 (역할별) | 헤더 → **Profile** 화면 1개. Owner: home address, emergency contact, vet clinic (모두 선택 입력) → `owner_profiles`. Sitter: bio, service area, years of experience, home notes, **home address** → `sitter_profiles` (주소 외 항목은 예약 검색 결과 카드에 표시). 시터 화면은 `rpc('get_my_sitter_profile')`로 읽고(주소 컬럼은 공개 select 불가 — `select('*')` 금지), update는 client로. 주소는 **확정 예약 상대방에게만** `get_handoff_details`로 보이고, 견주 긴급 연락처는 **확정 예약 시터에게만** (찾은 뒤 24시간까지) 보임 (phase-02 RLS) | 저장 확인 + 주소가 인수인계 카드에 표시 |
 ---
 
@@ -75,10 +75,10 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 
 ## AI 프롬프트
 
-Playbook §5 — (3.1–3.3) / (3.4) / (3.5–3.7) 세 번
+Playbook §5 — (3.1–3.3) / (3.4) / (3.5–3.8) 세 번
 
 ---
 
 ## 다음 Phase
 
-→ [Phase 03B — 근무일 & 기간 예약](phase-03b.md)
+→ [Phase 03B — 시터 스케줄 · 예약 · 인수인계](phase-03b.md)

@@ -11,7 +11,7 @@
 | 맥락 | 문제 | 온보딩이 해결하는 것 |
 | :--- | :--- | :--- |
 | **해커톤 심사** | Working demo URL 필수, 심사위원은 **몇 분**만 씀 | README만 읽고 로그인하는 friction 제거 |
-| **PawNote 구조** | Owner·Sitter **역할 분리**, Owner는 **견·알레르기·시터 배정** 필요 | **시드 계정** + 화면에서 **Try demo** |
+| **PawNote 구조** | Owner·Sitter **역할 분리**, Owner는 **반려동물·알레르기 등록 + 시터 예약** 필요 | **시드 계정** + 화면에서 **Try demo** |
 | **제품 스토리** | Kidsnote for pets + AI가 한눈에 안 들어옴 | 로그인 **전** 짧은 소개 (문제 → 두 역할 → 하루 타임라인) |
 
 Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** 경험을 뜻한다. 이 문서는 **엔드유저(견주·시터·심사위원) 제품 온보딩**이다.
@@ -45,7 +45,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | **B. Welcome / Intro** | 첫 방문자 전체 | **권장** — 묵 디자인 후 Phase 03 직후 또는 10 직전 구현 |
 | **C. Sign up + 역할 선택** | 새 사용자 (팀·지인) | Phase 03 기존 범위; Intro와 카피만 맞춤 |
 
-**원칙:** 심사 재현의 **정본 경로는 A (시드 + Try demo)**. 가입·견 생성·시터 배정은 README “Advanced: create your own accounts”로 두어도 됨.
+**원칙:** 심사 재현의 **정본 경로는 A (시드 + Try demo)**. 가입·반려동물 등록·시터 예약은 README “Advanced: create your own accounts”로 두어도 됨.
 
 ---
 
@@ -70,7 +70,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | 요소 | 설명 |
 | :--- | :--- |
 | 이메일·비밀번호 | Supabase signIn |
-| **Demo block** | 카드 또는 버튼 2개: Owner / Sitter — 탭 시 `demo-owner@pawnote.test` / `demo-sitter@pawnote.test` + `DEMO_PASSWORD` (env 또는 빌드타임 public 상수 **비밀번호만**; service key 금지) 자동 채움 후 로그인 |
+| **Demo block** | 카드 또는 버튼 2개: Owner / Sitter — 탭 시 `demo-owner@pawnote.test` / `demo-sitter@pawnote.test` + `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 공개값, architecture §4 — service key 금지) 자동 채움 후 로그인 |
 | 힌트 | “For judges: use Try demo — Bori (chicken allergy) is already set up.” |
 | 링크 | Create account → signup |
 
@@ -79,7 +79,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 ### 3.3 Sign up (기존 Phase 03)
 
 - Intro step 2와 **같은 비주얼·카피**로 “I'm a pet owner” / “I'm a pet sitter” 카드.
-- 가입 후 Owner는 pet·알레르기·시터 배정 (Phase 03.5–3.6). Sitter는 “No pets assigned yet…” empty state.
+- 가입 후 Owner는 pet·알레르기 등록 (Phase 3.5) → 예약 (Phase 03B). Sitter는 “No bookings yet — open your schedule so owners can find you.” empty state (3.7).
 
 ### 3.4 로그인 후 (앱 내 “온보딩” — P0 최소)
 
@@ -116,7 +116,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 1. **Welcome flow** — 3 screens (or 1 scroll) + CTA 영역
 2. **Login** — Demo block 레이아웃 (Owner / Sitter)
 3. **Signup role cards** — Intro step 2와 토큰 통일 (색·타이포·illustration style)
-4. **Empty states** (1장): sitter “No pets assigned”, owner “No posts yet”
+4. **Empty states** (1장): sitter “No bookings yet”, owner “No posts yet”
 
 ### 5.2 UX 원칙 (CLAUDE.md와 동일)
 
@@ -143,7 +143,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | **OB.4** | (선택) intro_seen skip | OB.2 | 두 번째 방문 login 직행 |
 | **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist |
 
-**architecture §3 라우트 맵**에 `/(public)/welcome` 추가는 OB.1 merge 시 [architecture.ko.md](phases/architecture.ko.md) 갱신.
+`/(public)/welcome`은 [architecture §3 라우트 맵](phases/architecture.ko.md#3-화면--라우트-맵-최종-형태)에 반영됨 (OB.1).
 
 **담당 제안:** UI OB.2·OB.3 — 민식 (Expo); 비주얼 OB.2 — 묵; 카피 — README와 슬기 검수 (톤).
 

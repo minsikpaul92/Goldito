@@ -4,7 +4,7 @@
 
 ## Goal
 
-새 간식 **성분표 사진**을 찍으면 Vision(`MODEL_VISION`)이 성분을 읽고, **Ultra**(`MODEL_SAFETY`)가 **등록 알레르기 + 숨은 성분 + 개에게 보편적으로 독성인 성분**까지 판단해 **DANGER/WARNING/SAFE** JSON을 반환한다. DANGER는 **확인해야만 닫히는 빨간 모달**과 **견주 알림**으로 이어진다.
+새 간식 **성분표 사진**을 찍으면 Vision(`MODEL_VISION`)이 성분을 읽고, **Ultra**(`MODEL_SAFETY`)가 **등록 알레르기 + 숨은 성분 + 그 종(강아지·고양이)에게 독성인 성분**까지 판단해 **DANGER/WARNING/SAFE** JSON을 반환한다. DANGER는 **확인해야만 닫히는 빨간 모달**과 **견주 알림**으로 이어진다.
 
 ### Goal 달성 기준
 

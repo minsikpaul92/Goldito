@@ -83,20 +83,20 @@ PawNote is built on two promises:
 
 ## 🟩 How We Use NVIDIA Nemotron & Nebius Token Factory
 
-Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API. We route each task to the right-sized Nemotron model.
+Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API. NVIDIA Nemotron handles reasoning and writing; a Token Factory vision model reads photos. Role → model IDs: [model-ids.md](docs/plan/phases/notes/model-ids.md).
 
 | Task | Model ID | Why |
 | :--- | :--- | :--- |
-| Photo/video captions, ingredient label reading | `nvidia/nemotron-3-nano-omni` ¹ | Multimodal (image, video, text) in one compact model |
+| Photo captions, ingredient label reading | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory (reads Cloudinary images) |
 | Allergen & hidden-ingredient reasoning | `nvidia/Nemotron-3-Ultra-550b-a55b` | Safety-critical → strongest reasoning |
 | Daily report generation | `nvidia/nemotron-3-super-120b-a12b` | High-quality tone replication with few-shot examples |
 | Q&A first reply, quick calls | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast and cheap for everyday calls |
 
-¹ Listed in the Nebius Token Factory cookbook; to be confirmed via `GET /v1/models` with our API key.
+¹ `nvidia/nemotron-3-nano-omni` is in the Nebius cookbook but not in the Token Factory catalog (checked 2026-09-29), so vision uses MiniCPM-V-4.5. Safety reasoning (Ultra) and reports (Super) stay on Nemotron.
 
 **Other Nebius services**
 - **Serverless Jobs** *(planned)* — scheduled reminders and end-of-day report generation.
-- **Serverless Endpoints** *(optional)* — hosting the FastAPI backend.
+- **Nebius AI Cloud — Serverless Endpoint** — hosts the FastAPI backend (D18; Render only as an emergency fallback).
 
 **Where Token Factory accelerated our workflow:** _to be written after development._
 
@@ -115,21 +115,21 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
           ├── Supabase     → PostgreSQL (data) · Auth · Realtime (in-app notifications)
           ├── Cloudinary   → photo/video storage, compression, thumbnails
           ├── Nebius Token Factory (NVIDIA Nemotron)
-          │     ├── Nano Omni → captions, label reading
+          │     ├── MiniCPM-V → captions, label reading (vision)
           │     ├── Ultra     → safety reasoning
           │     ├── Super     → daily reports
           │     └── Nano      → Q&A
-          ├── Tavily       → ingredient / recall web search
+          ├── Tavily       → ingredient / recall web search (safety stretch 8.7)
           └── Scheduler    → medication & walk reminders
 ```
 
 | Area | Stack |
 | :--- | :--- |
 | Frontend | Expo (React Native for Web) |
-| Backend | FastAPI (Python 3.11+) |
+| Backend | FastAPI (Python 3.12) |
 | Database / Auth / Realtime | Supabase (PostgreSQL) |
 | Media | Cloudinary |
-| AI | NVIDIA Nemotron on Nebius Token Factory |
+| AI | NVIDIA Nemotron + MiniCPM-V (vision) on Nebius Token Factory |
 | Web search | Tavily |
 | Notifications | Supabase Realtime (web) · Expo Notifications (mobile) |
 
@@ -137,7 +137,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 ## 🚀 Getting Started
 
-Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. Run backend then frontend; use **Check API** on the home screen (Phase **1.3**).
+Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. Apply the migrations, run backend then frontend, and use **Check API** on the home screen. Full judge-ready steps land in Phase 10.
 
 | Path | Doc |
 | :--- | :--- |
@@ -147,7 +147,6 @@ Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. 
 | Local secrets | [docs/plan/env-setup.ko.md](docs/plan/env-setup.ko.md) |
 
 ```bash
-# After Phase 1.2–1.3 (not yet on main until those tasks merge):
 cd backend && cp .env.example .env   # fill per env-setup.ko.md
 cd frontend && cp .env.example .env  # EXPO_PUBLIC_API_URL=http://localhost:8000
 # Then follow backend/ and frontend/ README run commands.

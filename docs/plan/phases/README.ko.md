@@ -1,9 +1,9 @@
 # PawNote — Phase 가이드 (개발 청사진)
 
 각 Phase는 **Goal → 범위 → 작업 → DoD → 산출물** 순으로 정리되어 있습니다.
-**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D20), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
+**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D24), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
 
-문서 우선순위: **architecture.ko.md + phase 문서** > [TODO.md](../TODO.md) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) > [개발 계획 초안](../README.ko.md)
+문서 우선순위 (Source of truth): **architecture.ko.md + phase 문서** (스키마는 [phase-02](phase-02.md), 모델 ID는 [notes/model-ids.md](notes/model-ids.md)) > [TODO.md](../TODO.md) (진행 순서) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) (프롬프트 출발점) > [개발 계획](../README.ko.md) (배경·요약). 아래 문서가 위 문서와 다르면 위 문서가 맞고, 아래 문서를 고칩니다.
 
 **보조 스펙 (phase 번호 밖):** [온보딩·데모 UX](../onboarding.ko.md) · [Tavily](../tavily.ko.md) · [로컬 env](../env-setup.ko.md) · [Devpost 제출](../../hackathon/devpost-submission.ko.md)
 
@@ -24,7 +24,7 @@
 | [01](phase-01.md) | 모노레포 틀 | 프론트·백엔드 기동 + health 연결 | 민식 | 10/1 | - |
 | [02](phase-02.md) | DB + RLS | P0 스키마 + 역할별 접근 통제 + 가입 트리거 | 민식 | 10/1–10/2 | 001–003 |
 | [03](phase-03.md) | 인증·역할·Pet 프로필 | 로그인 → 역할별 탭, pet(종·알레르기)·역할별 프로필 | 민식 | 10/2–10/3 | - |
-| [03B](phase-03b.md) | 근무일 & 기간 예약 | 시터 근무일 → 견주 기간 검색·요청 → 수락 → 기간 동안만 담당, 충돌 알림 | 민식 | 10/3–10/5 | (002–003에 포함) |
+| [03B](phase-03b.md) | 시터 스케줄 · 예약 · 인수인계 | 시터 칸별 스케줄 → 단골 스케줄·여행 전체 검색 → 맡기기·찾기 시각·장소 협의 → 확정 → Received/Returned, 취소 → 재예약 | 민식 | 10/3–10/5 | (001–003에 포함) |
 | [04](phase-04.md) | Cloudinary | secret 없이 사진·영상 업로드 헬퍼 | 민식 | 10/3–10/4 | - |
 | [05](phase-05.md) | 케어 피드 + 알림 | 업로드 → 견주 타임라인·Realtime 알림 센터 | 민식 | 10/5–10/7 | 004 |
 | [06](phase-06.md) | 투약·산책 | 등록 → 자동 오늘 할 일 → 인앱 리마인더 → 사진 완료 → 알림 | 민식 | 10/7–10/9 | 005 |
@@ -32,7 +32,7 @@
 | [08](phase-08.md) | 세이프티 가드 | 성분표 → Vision + Ultra → 경고 모달·알림 | 슬기·민식 | 10/5–10/11 | 007 |
 | [09](phase-09.md) | 캡션 AI | 업로드만으로 AI 캡션 (fallback 보장) | 슬기·민식 | 10/10–10/12 | - |
 | [10](phase-10.md) | 데모·배포 | 시드 + 공개 URL + README + 12/15 유지 | 민식 | 배포 리허설 10/18 · 완료 10/28 | - |
-| [11](phase-11.md) | P1 (+P2) | 사진 요청 · Tavily · 공지 (· Q&A) | 민식·슬기 | 10/12–10/18 (P0 후) | 008 |
+| [11](phase-11.md) | P1 (+P2) | 사진 요청 · 공지 · 즐겨찾기·반복 근무 (Tavily는 8.7 못 했을 때만 · Q&A · SFT 아이디어) | 민식·슬기 | P0 배포 후 남는 시간 | 008 |
 
 ## P0와의 매핑
 
@@ -41,7 +41,7 @@
 | 케어 피드 & 앨범 + 알림 | 05 (+ 09 캡션) | 10:30 |
 | 투약·산책 의뢰 + 리마인더 | 06 | 08:00, 10:30 |
 | 타이핑 없는 알림장 | 07 | 18:00 |
-| 간식 세이프티 가드 | 08 | 15:00 |
+| 간식 세이프티 가드 (+ Tavily 출처 8.7) | 08 | 15:00 |
 | 사진 요청 (P1) | 11.1 | 13:00 |
 
 ## Phase 문서 사용법 (에이전트·사람 공통)

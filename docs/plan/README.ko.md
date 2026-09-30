@@ -24,14 +24,13 @@
 
 | 우선순위 | 기능 | 키즈노트 대응 | AI |
 | :--- | :--- | :--- | :--- |
-| **P0** | 케어 피드 & 앨범 + 업로드 알림 | 앨범 | Nano Omni 캡션 |
+| **P0** | 케어 피드 & 앨범 + 업로드 알림 | 앨범 | Vision(MiniCPM-V) 캡션 |
 | **P0** | 투약·산책 의뢰 → 리마인더 → 인증 사진 → 견주 알림 | 투약의뢰서/보고서 | — |
 | **P0** | 타이핑 없는 알림장 (그날 피드 + 완료 일정 기반) | 알림장 | Super |
-| **P0** | 간식 세이프티 가드 | — (우리 차별점) | Nano Omni + Ultra |
+| **P0** | 간식 세이프티 가드 | — (우리 차별점) | Vision(MiniCPM-V) + Ultra · Tavily 출처(8.7 stretch) |
 | **P1** | 사진 요청 (견주 → 펫시터) | — | — |
-| **P0** | 펫시터 근무일 + 기간 예약 (검색·요청/수락·충돌 알림) | — (예약 플랫폼형) | — |
-| **P1** | 공지 팝업 · 예약 원탭 교체/날짜 변경 · 일부 구간 검색 | 공지사항 | — |
-| **P1** | Tavily 성분·리콜 검색 | — | Tavily |
+| **P0** | 파트타임 보딩 시터: 날짜 × 칸 스케줄(칸별 시간·정원), 단골 시터 스케줄 보기, 여행 전체 예약 + 맡기기·찾기 시각·장소 협의, 취소 → 재예약 | — (예약 플랫폼형) | — |
+| **P1** | 공지 팝업 · 즐겨찾기 시터 · 반복 근무 패턴 | 공지사항 | — |
 | **P2** | AI 1차 답변 Q&A | — | Nano |
 
 데모 기준: README의 **"PawNote의 하루"** 흐름이 처음부터 끝까지 동작해야 합니다.
@@ -47,7 +46,7 @@
 | **묵** | 프로덕트 & UX/UI | 피그마 디자인 시스템(Auto Layout, 토큰), 견주·펫시터 화면 흐름, 피드/앨범, 경고 모달, 공지 팝업, 데모 영상 비주얼 |
 
 - **묵 님께:** 컴포넌트를 Auto Layout과 토큰 기반으로 잡아주시면 Figma MCP 코드 변환 품질이 올라갑니다. **디자인은 심사 기준의 1/4**이에요. 키즈노트 수준의 완성도를 목표로 해주세요.
-- **슬기 님께:** 첫 작업은 API 키로 Nano Omni 모델 ID 확인, 그다음이 데이터 익명화입니다.
+- **슬기 님께:** 모델 ID 확인은 끝났습니다([model-ids.md](phases/notes/model-ids.md)). 다음은 데이터 익명화와 7.1 Nebius 클라이언트(호출 지표 로그 포함)입니다.
 
 ---
 
@@ -55,12 +54,12 @@
 
 | 주차 | 기간 | 묵 | 슬기 | 민식 |
 | :--- | :--- | :--- | :--- | :--- |
-| **0. 킥오프** | 9/28 – 9/30 | Devpost 팀 합류, 무드보드 | 크레딧 받기, `GET /v1/models`로 Nano Omni 확인, 첫 호출 | 리포 뼈대, Supabase·Cloudinary 계정 |
+| **0. 킥오프** | 9/28 – 9/30 | Devpost 팀 합류, 무드보드 | 크레딧 받기, `GET /v1/models`로 모델 ID 확인, 첫 호출 | 리포 뼈대, Supabase·Cloudinary 계정 |
 | **1. 세팅** | 10/1 – 10/4 | 디자인 시스템 + 핵심 화면: 피드, 일정 목록, 알림장, 스캐너 | **데이터 익명화**, 캡션·알림장 프롬프트 | Expo Web, Supabase 스키마, FastAPI 뼈대, Cloudinary 업로드 |
-| **2. P0 코어** | 10/5 – 10/11 | 피드/앨범, 일정 체크, 경고 모달 | 안전 파이프라인(Omni → Ultra, JSON), 하루 데이터 기반 알림장 | 피드 + 알림, 투약·산책 일정 + 리마인더 |
-| **3. P1 + 폴리싱** | 10/12 – 10/18 | 공지 팝업, 일정표, 마이크로 인터랙션 | Tavily 검색, 실제 사진·포장지로 프롬프트 튜닝 | 사진 요청, 공지·일정, 데모 배포 |
+| **2. P0 코어** | 10/5 – 10/11 | 피드/앨범, 일정 체크, 경고 모달 | 안전 파이프라인(Vision → Ultra, JSON), 하루 데이터 기반 알림장 | 피드 + 알림, 투약·산책 일정 + 리마인더 |
+| **3. P1 + 폴리싱** | 10/12 – 10/18 | 공지 팝업, 일정표, 마이크로 인터랙션 | 실제 사진·포장지로 프롬프트 튜닝 (Tavily는 8.7로 앞당김) | 사진 요청, 공지·일정, 데모 배포 |
 | **4. 데모 & 문서** | 10/19 – 10/25 | 영상 비주얼, 썸네일 | Q&A(P2), 피드백 정리 | README 실행 가이드, 테스트 계정, Devpost 초안 |
-| **5. 제출** | 10/26 – 10/30 | 최종 폴리싱 | 최종 피드백 | 버그 수정 · **내부 마감 10/28** · 10/29까지 제출 |
+| **5. 제출** | 10/26 – 10/30 | 최종 폴리싱 | 최종 피드백 | 버그 수정 · **내부 마감 10/28** · 10/29–10/30 최종 Submit (마감 10/30 10:00 AM PT) |
 
 ---
 
@@ -74,12 +73,12 @@
 | **아이디어 품질** | 타이핑 없는 케어 루프, 숨은 알레르기 추론, 실제 데이터 기반 말투 복제 | 슬기 |
 
 **절대 지킬 것**
-- 모든 AI 호출은 Token Factory + Nemotron
+- 모든 AI 호출은 Token Factory — 추론·알림장은 Nemotron, 비전(캡션·성분표)은 MiniCPM-V ([model-ids.md](phases/notes/model-ids.md))
 - 실제 고객 데이터는 프롬프트·리포·영상에 쓰기 전 익명화
 - 데모는 **12/15까지** 무료 접속 유지, 견주·펫시터 테스트 계정 제공
 - 영상 3분 미만, YouTube 공개, 영어 음성으로 Nemotron + Token Factory 설명, 저작권 음악 금지
 
-**노려볼 상:** Best Apps and Agents 트랙 또는 종합상 · Best Use of Tavily · 최우수 피드백 · 토론토 도시상 (이벤트 신청 승인 대기 중)
+**노려볼 상:** Best Apps and Agents 트랙 또는 종합상 · Best Use of Tavily · 최우수 피드백 · 토론토 도시상 (9/29 Builders & Brews Toronto 참석)
 
 ---
 
@@ -93,35 +92,35 @@
 | `nvidia/nemotron-3-super-120b-a12b` | 텍스트 | us-central1 · `https://api.tokenfactory.us-central1.nebius.com/v1/` | $0.30 / $0.90 | 알림장 |
 | `nvidia/Nemotron-3-Ultra-550b-a55b` | 텍스트 | us-central1 | $1.00 / $3.00 | 안전 추론 |
 | `nvidia/Nemotron-3_5-Lightning` | 텍스트 | eu-north1 | $0.06 / $0.24 | 빠른 모델 대안 (100만 토큰 컨텍스트) |
-| `nvidia/nemotron-3-nano-omni` ⚠️ | 이미지+영상+텍스트 | us-central1 (cookbook 기준) | 약 $0.06 / $0.24 | 캡션, 성분표 읽기 |
+| `openbmb/MiniCPM-V-4_5` | 이미지+텍스트 | us-central1 | 카탈로그 참고 | 캡션, 성분표 읽기 |
 
 **주의**
-- ⚠️ **Nano Omni는 cookbook에는 있는데 공개 카탈로그에는 없습니다.** API 키로 `GET /v1/models` 호출해 정확한 ID를 확인하세요. 없으면 대안으로 Token Factory의 다른 비전 모델(MiniCPM-V, Kimi 등)을 OCR에만 씁니다. 규정은 "NVIDIA 모델 최소 1개"라 허용되지만, Nemotron이 핵심이어야 합니다.
+- **Nano Omni(`nvidia/nemotron-3-nano-omni`)는 카탈로그에 없어**(2026-09-29 `GET /v1/models` 확인) 비전은 **MiniCPM-V-4_5**를 씁니다. 규정은 "NVIDIA 모델 최소 1개"이고, 추론·알림장은 Nemotron(Ultra·Super)이 맡습니다. 역할별 ID 정본: [model-ids.md](phases/notes/model-ids.md).
 - **모델마다 리전이 달라서** 백엔드에서 모델별 base URL을 관리해야 합니다.
 - 모델 ID는 **대소문자를 구분**하고 모델마다 표기가 제각각이니 그대로 복사하세요.
-- **한국어/영어 출력 품질**을 초기에 테스트 (데모 언어·데이터 언어에 따라).
+- 데모·AI 출력은 **영어 전용** (D1).
 
 ---
 
 ## 7. 프롬프트 스펙 (슬기)
 
-### A. 사진 캡션 (Nano Omni)
-- 입력: 사진/영상 + 강아지 이름
+### A. 사진 캡션 (Vision: MiniCPM-V)
+- 입력: 사진 + 반려동물 이름·종
 - 출력: 표정과 활동을 묘사하는 따뜻한 1–2문장. 의학적 판단 금지
 
 ### B. 알림장 (Super)
 - **입력:** 그날의 피드 캡션, 완료한 일정(산책 시간, 투약), 펫시터의 선택적 짧은 메모
-- **역할:** 경력 3년의 따뜻하고 꼼꼼한 도그워커
+- **역할:** 경력 3년의 따뜻하고 꼼꼼한 펫시터
 - **Few-shot:** 실제 최고 만족도 일지 3편 (**익명화**)
 - **원칙:**
-  1. 기계적 보고 금지 — ❌ "산책을 40분 완료했습니다" → ⭕ "우리 보리 오늘 날씨가 좋아서 꼬리 살랑살랑 흔들며 40분 동안 신나게 산책했어요! 🐶💛"
+  1. 기계적 보고 금지 — ❌ "Completed a 40-minute walk." → ⭕ "Bori wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛" (출력은 영어, D1)
   2. 대변 상태, 식사·물 섭취를 자연스럽게
   3. 사진 속 표정/행동 묘사
   4. 입력에 없는 일을 지어내지 말 것
 
-### C. 간식 안전 (Nano Omni → Ultra → Tavily)
-- Omni가 성분표 사진에서 성분 목록 추출
-- Ultra가 알레르기 + 견종 금기와 대조, 숨은 성분까지 추론. 모르는 성분은 Tavily 검색 → Ultra 재판단
+### C. 간식 안전 (Vision → Ultra → Tavily 8.7)
+- Vision(MiniCPM-V)이 성분표 사진에서 성분 목록 추출
+- Ultra가 알레르기 + 종별 독성과 대조, 숨은 성분까지 추론. WARNING·모르는 성분이면 Tavily 검색(8.7 stretch, [tavily.ko.md](tavily.ko.md)) → Ultra 재판단
 - 출력: 아래 JSON (서버에서 검증)
 
 ```json
@@ -151,50 +150,29 @@
 
 ---
 
-## 9. 데이터 모델 (초안)
+## 9. 데이터 모델 (요약)
 
-> 확정 스키마는 [phases/phase-02.md](phases/phase-02.md) (P0) · [phase-11.md](phases/phase-11.md) (P1)을 보세요.
+> **정본은 [phases/phase-02.md](phases/phase-02.md)** (P0 17개 테이블 · RLS · RPC)와 [phase-11.md](phases/phase-11.md) (P1). 아래는 한눈에 보기용 목록이며 컬럼·제약은 적지 않습니다 — 스키마를 바꿀 때는 phase-02를 먼저 고칩니다.
 
-```
-users            (id, role: owner|sitter, name, push_token)
-owner_profiles   (id → profiles, 긴급 연락처, 동물병원)
-sitter_profiles  (id → profiles, 소개, 활동 지역, 경력)
-pets             (id, owner_id, species: dog|cat, name, breed, birthdate, notes)
-pet_allergies    (pet_id, allergen)
-care_tasks       (id, pet_id, type: medication|walk, title, dose, schedule, notes)
-task_logs        (id, task_id, due_at, completed_at, media_id, status: done|missed)
-media            (id, pet_id, cloudinary_public_id, type: image|video, caption)
-feed_posts       (id, pet_id, sitter_id, media_ids[], caption, task_log_id?, created_at)
-photo_requests   (id, pet_id, owner_id, status, created_at)
-daily_reports    (id, pet_id, date, body, status: draft|sent)
-safety_checks    (id, pet_id, media_id, result_json, created_at)
-notices          (id, sitter_id, title, body, show_popup, starts_at, ends_at)
-sitter_availability (id, sitter_id, kind: open|blocked, start_date, end_date, slot, starts_at, ends_at, max_pets)
-bookings         (id, owner_id, sitter_id, start_date, end_date, status, rebooked_from)
-booking_slots    (booking_id, pet_id, day, slot: morning|afternoon|overnight)
-booking_handoffs (booking_id, kind: drop_off|pick_up, scheduled_at, location, status: proposed|agreed)
-messages         (id, pet_id, sender, body, ai_generated, created_at)
-notifications    (id, user_id, type, ref_id, read_at)
-```
+| 영역 | 테이블 |
+| :--- | :--- |
+| 사람 | `profiles` (role owner·sitter) · `owner_profiles` · `sitter_profiles` |
+| 반려동물 | `pets` (dog·cat) · `pet_allergies` |
+| 스케줄·예약 | `sitter_availability` · `bookings` · `booking_pets` (맡긴 구간, 겹침 금지) · `booking_slots` (정원) · `booking_handoffs` (맡기기·찾기 시각·장소) |
+| 케어 | `care_tasks` (medication·walk·feeding·litter·play·sleep) · `task_logs` · `media` · `feed_posts` · `daily_reports` · `safety_checks` |
+| 알림 | `notifications` |
+| P1 (Phase 11) | `photo_requests` · `notices` · `notice_reads` · `owner_favorite_sitters` · `messages` (P2) |
 
 ---
 
 ## 10. 알림
 
-| 이벤트 | 받는 사람 |
-| :--- | :--- |
-| 새 피드 게시물 (사진/영상) | 견주 |
-| 투약·산책 시간 | 펫시터 |
-| 투약·산책 완료 (사진 포함) | 견주 |
-| 일정 누락 | 견주 + 펫시터 |
-| 사진 요청 | 펫시터 |
-| 알림장 전송 | 견주 |
-| 새 공지 | 견주 (다음 앱 실행 시 팝업) |
-| 안전 검사 = DANGER | 견주 + 펫시터 |
+알림 종류·수신자·생성 위치는 **[architecture §7 알림 매트릭스](phases/architecture.ko.md#7-알림-매트릭스-p0)**가 정본입니다.
 
 - **웹 데모:** Supabase Realtime → 인앱 알림 센터 + 토스트
 - **모바일 (해커톤 이후):** Expo Notifications (푸시)
-- **예약 리마인더:** 백엔드 스케줄러(APScheduler) 또는 Nebius Serverless Jobs
+- **예약 리마인더:** (stretch 6.7) Nebius Serverless Jobs 또는 APScheduler
+- 시터 스케줄 변경은 알림을 만들지 않음 (D24)
 
 ---
 
@@ -218,7 +196,7 @@ notifications    (id, user_id, type, ref_id, read_at)
 
 ## 12. Tavily
 
-상세: **[tavily.ko.md](tavily.ko.md)** (무엇인지, PawNote 연동, $3k 보너스, `TAVILY_API_KEY` 위치).
+상세: **[tavily.ko.md](tavily.ko.md)** (정본 — 무엇인지, 키워드 검색 규칙·신뢰 도메인·리콜, $3k 보너스, `TAVILY_API_KEY` 위치). 세이프티 **Phase 08.7 (stretch)**, 못 하면 11.3.
 
 ---
 
@@ -241,5 +219,4 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 - [x] Builders & Brews Toronto 참석 — Token Factory $100, AI Cloud $100, Tavily 8k credits
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [ ] Few-shot 샘플 **규모**(3편 확정, 추가 여부)
-- [ ] Nano Omni 사용 가능 여부 (API 키로 확인)
-- [ ] 토론토 Builders & Brews (9/29) 신청 승인 여부
+- [x] Nano Omni 사용 가능 여부 — 카탈로그에 없음, 비전은 MiniCPM-V-4_5 (2026-09-29)

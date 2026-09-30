@@ -27,7 +27,7 @@
 
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
-- [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies + sitter assignment; sitter Today stub; role profiles
+- [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
 - [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()`
@@ -39,7 +39,7 @@
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md))
 - [ ] **11.x** P1: photo request, notices, Tavily only if 8.7 slipped (after P0 is live) · P2 idea **11.7** SFT on anonymized reports
-- [ ] **docs-sync** phases/README index links; architecture §3 `welcome` route (OB.1); optional `figma` workflow note in frontend/README — after doc batch lands on `main`
+- [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 
 ---
 
@@ -47,6 +47,7 @@
 
 ## Completed
 
+- [x] **docs-sync** Doc consistency pass: vision model = MiniCPM-V everywhere (Nano Omni not in catalog), #18 Tavily 8.7 / metrics reflected in CLAUDE.md · READMEs · playbook · phase-00/11, plan README §9/§10 → summaries pointing to phase-02 / architecture §7, playbook prompts aligned (signup trigger, English-only, auto task logs, D18 deploy, API bodies), D23 `sleep`, stale "assignment" wording, Toronto attended, deadlines, demo password policy (`EXPO_PUBLIC_DEMO_PASSWORD`), `welcome` route, Python 3.12, source-of-truth order in phases/README (2026-09-30)
 - [x] **2.8b** Phase 02 review fixes: per-pet time overlap guard (`booking_pets` exclusion), custom drop-off/pick-up edge rule, 2 h read wrap-up, requested sitter sees pet profile, no cancel after Received, handoff time/place rules, newest open row wins, `default_hours` check, 24 h address window, execute privileges, `updated_at` trigger; smoke test 99 checks + `supabase_stub.sql` + CI `supabase` job (2026-09-30)
 - [x] **2.10** `get_my_sitter_profile()` — sitter reads own `home_address` (2026-09-30)
 - [x] **docs** Sponsor session review: Tavily keyword queries + domain/recall filters, Tavily moved to 8.7 stretch, Nebius per-call metrics (7.1, architecture §9), SFT as P2 idea 11.7 (2026-09-30)
@@ -85,6 +86,7 @@
 | 01 Scaffold          | **done** (2026-09-29)                                                         |
 | 02 DB + RLS          | in progress (**2.9** hosted apply — SQL verified locally + CI)                |
 | 03 Auth              | not started                                                                   |
+| 03B Bookings         | not started (DB + RPCs done in 02)                                            |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
 | 06 Tasks             | not started                                                                   |
@@ -108,10 +110,11 @@
 | Blueprint + phases 00–11                  | ✅         | —                                                   |
 | Hackathon rules + Devpost timing          | ✅         | Devpost **draft** on site = human (민식)              |
 | Env / secrets layout                      | ✅         | —                                                   |
-| Tavily / Nebius deploy / onboarding specs | ✅         | On `main` (PR #3)                                   |
+| Tavily / Nebius deploy / onboarding specs | ✅         | Tavily = 8.7 stretch (PR #18)                       |
 | Nebius model IDs + smoke                  | ✅         | [phases/notes/model-ids.md](phases/notes/model-ids.md) |
 | Figma ↔ code workflow                     | ⚠️        | README.ko 한 줄만; optional dedicated md               |
 | Root README Getting Started / live URL    | ❌         | Phase **10**                                        |
-| P0 playbook ↔ OB.*                        | ⚠️        | Playbook still generic; use onboarding.ko.md for OB |
+| P0 playbook ↔ phase docs                  | ✅         | Playbook = prompt starters; phase docs win on conflict |
+| Source-of-truth order                     | ✅         | [phases/README.ko.md](phases/README.ko.md) top   |
 
 

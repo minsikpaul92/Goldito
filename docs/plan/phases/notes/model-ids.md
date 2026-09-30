@@ -19,7 +19,7 @@
 
 **Not in catalog (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — was in early docs; **replace with MiniCPM-V-4_5** until/unless omni appears in your project’s model list.
 
-**Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 11). See [tavily.ko.md](../../tavily.ko.md).
+**Tavily:** not a Nebius model — web search for unknown ingredients/recalls (Phase 08.7 stretch, 11.3 fallback). See [tavily.ko.md](../../tavily.ko.md).
 
 ---
 
@@ -34,7 +34,7 @@ OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token F
 
 Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in [phase-08.md](../phase-08.md).
 
-**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM is an **additional** NVIDIA-catalog-compatible vision endpoint on Nebius (OpenBMB). Mention both in README feedback and demo script.
+**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Ultra and Super. Mention both in README feedback and demo script.
 
 ---
 
