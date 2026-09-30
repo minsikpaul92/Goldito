@@ -27,7 +27,8 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| 2-step: vision extract → reasoning | Tavily (Phase 11.3) |
+| 2-step: vision extract → reasoning | - |
+| **8.7 (stretch) Tavily 웹 근거** — 8.1–8.6 DoD 후 바로 | - |
 | JSON schema + 1 retry | 바코드 스캔 |
 | 트리거 `notify_safety_danger` (`007_safety.sql`) | 자동 구매 차단 |
 | 스캔 기록 목록 (최근 10개) | owner 측 스캔 기능 |
@@ -44,6 +45,7 @@ POST /api/ai/safety-check {pet_id, media_id}
   3. Vision (MODEL_VISION, 30s): → VisionResult {readable, product_name?, ingredients[]}
        readable=false or ingredients=[] → 422 "label_unreadable" → UI "Couldn't read the label. Try a closer, well-lit photo."
   4. Reasoning (MODEL_SAFETY, reasoning ON, 60s): input = {pet, allergens, ingredients} → SafetyResult
+  4b. (8.7 stretch) WARNING 또는 unknown_ingredients 있으면 → Tavily search (8s 총 제한) → 결과 요약을 넣어 Ultra 재판단 → result_json.sources[]. 실패·타임아웃이면 4의 결과 그대로
   5. Server-side override: if any allergen string-matches an ingredient (case-insensitive substring) and model said SAFE → force DANGER (defense in depth)
   6. insert safety_checks (result_json, models) → trigger notifies owner on DANGER
   7. return SafetyResult + safety_check_id + model + latency_ms
@@ -58,7 +60,8 @@ POST /api/ai/safety-check {pet_id, media_id}
 | `detected_ingredients` | `list[str]` | vision 결과 정규화 |
 | `hidden_sources` | `list[{ingredient, may_contain, reason}]` | 예: `{"animal fat", "chicken", "often poultry-derived"}` |
 | `toxic_ingredients` | `list[str]` | **종별 목록 (D23)** — 공통: onion, garlic, chocolate/cocoa, caffeine, alcohol, grapes/raisins, xylitol · 강아지 추가: macadamia · 고양이 추가: lilies(백합), essential oils(tea tree 등), propylene glycol, raw yeast dough. 목록은 `reasoning_system.md`에 species별 표로 두고, 입력의 `pet.species`로 해당 표를 적용 |
-| `unknown_ingredients` | `list[str]` | 판단 불가 성분 (Phase 11.3 Tavily 입력) |
+| `unknown_ingredients` | `list[str]` | 판단 불가 성분 (8.7 Tavily 입력) |
+| `sources` | `list[{title, url, domain}]` | 8.7에서만 채움, 기본 `[]` (스키마 변경 없음 — `result_json` 안) |
 | `warning_message` | `str` | 영어 1–2문장, pet 이름 포함 |
 
 ### 판정 기준 (reasoning_system.md에 명시)
@@ -81,6 +84,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 | 8.4 | TreatScannerScreen `/(sitter)/scan` | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Bori…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
 | 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Bori ✅" |
 | 8.6 | Notify owner | `007_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
+| 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.ko.md](../tavily.ko.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
 
 ### 테스트 샘플 (`backend/tests/fixtures/labels/`, 직접 촬영 or 생성한 라벨 — 상표 가림)
 
