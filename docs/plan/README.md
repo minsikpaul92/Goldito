@@ -31,10 +31,21 @@ Two developers, ~4 weeks. Build in this order; P2 only if time allows.
 | **P1** | Photo request (owner → sitter) | — | — |
 | **P0** | Part-time boarding sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule view, whole-trip booking with drop-off/pick-up time & place (negotiable), cancel → rebook | — (marketplace-style) | — |
 | **P1** | Notices with popup · one-tap booking reassign/reschedule · partial-range search | Notices | — |
-| **P1** | Tavily ingredient/recall search | — | Tavily |
+| **P0 stretch** | Tavily ingredient/recall search (Phase 08.7) | — | Tavily |
+| **P1** | Pet cut-out stickers + AI-decorated daily report card (Phase 11.8) | Diary decorating | Nano picks theme & stickers |
+| **P1** | Video mood line from visible behavior — no bark/audio analysis (Phase 11.9) | — | Vision (multi-frame) + Nano |
 | **P2** | Private Q&A with AI first reply | — | Nano |
 
 Demo priority: the **"A Day with PawNote"** flow in the main README must work end-to-end.
+
+### Post-hackathon roadmap (not built for the hackathon)
+
+| Idea | Why later |
+| :--- | :--- |
+| **Public pet feed ("Pawstagram")** — owners share pet photos and decorated notes; anyone can browse for comfort | Dilutes the owner ↔ sitter care story for judges; needs public feed, reporting/blocking, moderation (AI pet-only photo filter), privacy rules for sitter photos |
+| **Pet-friendly map** — restaurants, stores, parks that allow pets | Outside the care loop; Google Places `allowsDogs` exists but is dogs-only, highest-cost field tier, and cannot be used as a search filter |
+| **Sticker / emoji / skin store** (business model) | Presented in README / Devpost as the monetization path; no payments built |
+| **Bark / vocal emotion analysis** | Public research reaches ~36–57% on 3-class emotion — not reliable enough to show owners |
 
 ---
 

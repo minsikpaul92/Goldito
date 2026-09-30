@@ -39,7 +39,8 @@
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md))
-- [ ] **11.x** P1: photo request, notices, Tavily only if 8.7 slipped (after P0 is live) · P2 idea **11.7** SFT on anonymized reports
+- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.8** pet stickers + AI-decorated report card → **11.9** video mood line → **11.2** notices · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
+- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 — can start any time
 - [ ] **docs-sync** phases/README index links; architecture §3 `welcome` route (OB.1); optional `figma` workflow note in frontend/README — after doc batch lands on `main`
 
 ---
@@ -48,6 +49,7 @@
 
 ## Completed
 
+- [x] **docs** New feature review: stickers + decorated report (11.8) and video mood (11.9) as P1; Pawstagram, pet map, sticker store, bark analysis → post-hackathon roadmap (plan README, root/ko README "What's next") (2026-09-30)
 - [x] **docs** Sponsor session review: Tavily keyword queries + domain/recall filters, Tavily moved to 8.7 stretch, Nebius per-call metrics (7.1, architecture §9), SFT as P2 idea 11.7 (2026-09-30)
 - [x] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/search/booking/handoff RPCs, overlap guard, realtime) + `rls_smoke.sql` (permissions + scenarios A–H, all pass on local Postgres) + supabase/backend README (2026-09-30)
 - [x] **2.7** `002_rls_policies.sql` — policy helpers, RLS on 16 tables, column grants (2026-09-30)
