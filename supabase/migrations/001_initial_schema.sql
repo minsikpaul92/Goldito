@@ -2,7 +2,32 @@
 -- Source of truth: docs/plan/phases/phase-02.md
 -- RLS is added in 002, helper functions / triggers / RPCs in 003.
 
+-- gist on uuid/enum for exclusion constraints (Supabase keeps extensions in `extensions`).
+create extension if not exists btree_gist with schema extensions;
+
 create type public.care_slot as enum ('morning', 'afternoon', 'overnight');
+
+-- sitter_profiles.default_hours: {"morning":["08:00","12:00"],"afternoon":[...],"overnight":[...]}
+-- HH:MM strings; morning/afternoon must end after they start, overnight may wrap past midnight.
+create or replace function public.valid_default_hours(h jsonb)
+returns boolean
+language sql
+immutable
+set search_path = public
+as $$
+  select jsonb_typeof(h) = 'object'
+    and (
+      select bool_and(
+        jsonb_typeof(h -> k) = 'array'
+        and jsonb_array_length(h -> k) = 2
+        and coalesce(h -> k ->> 0, '') ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        and coalesce(h -> k ->> 1, '') ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        and (h -> k ->> 0) <> (h -> k ->> 1)
+        and (k = 'overnight' or (h -> k ->> 1) > (h -> k ->> 0))
+      )
+      from unnest(array['morning', 'afternoon', 'overnight']) k
+    )
+$$;
 
 -- ---------------------------------------------------------------------------
 -- People
@@ -39,7 +64,8 @@ create table public.sitter_profiles (
   home_notes text,
   default_max_pets int not null default 2 check (default_max_pets between 1 and 10),
   default_hours jsonb not null default
-    '{"morning":["08:00","12:00"],"afternoon":["12:00","18:00"],"overnight":["18:00","08:00"]}',
+    '{"morning":["08:00","12:00"],"afternoon":["12:00","18:00"],"overnight":["18:00","08:00"]}'
+    check (public.valid_default_hours(default_hours)),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -77,6 +103,8 @@ create unique index pet_allergies_pet_allergen_key
 -- Sitter schedule, bookings, handoffs (D24)
 -- ---------------------------------------------------------------------------
 
+-- Rows may overlap; for a day × slot the newest open row sets hours and max_pets,
+-- and any blocked row closes the slot.
 create table public.sitter_availability (
   id uuid primary key default gen_random_uuid(),
   sitter_id uuid not null references public.profiles (id) on delete cascade,
@@ -88,7 +116,8 @@ create table public.sitter_availability (
   ends_at time,
   max_pets int,
   note text,
-  created_at timestamptz not null default now(),
+  -- clock_timestamp: rows saved in one transaction still get a distinct "newest" order.
+  created_at timestamptz not null default clock_timestamp(),
   check (end_date >= start_date),
   check (
     (kind = 'open'
@@ -131,18 +160,29 @@ create table public.bookings (
 create index bookings_sitter_start_idx on public.bookings (sitter_id, start_date);
 create index bookings_owner_id_idx on public.bookings (owner_id);
 
+-- Pets in a booking and the time they are with the sitter: [drop-off, pick-up).
+-- One pet is with one sitter at a time while the booking is requested/confirmed.
+create table public.booking_pets (
+  booking_id uuid not null references public.bookings (id) on delete cascade,
+  pet_id uuid not null references public.pets (id) on delete cascade,
+  care_range tstzrange not null check (not isempty(care_range)),
+  active boolean not null default true,
+  primary key (booking_id, pet_id),
+  constraint booking_pets_no_overlap
+    exclude using gist (pet_id with =, care_range with &&) where (active)
+);
+
+create index booking_pets_pet_id_idx on public.booking_pets (pet_id);
+
+-- Capacity units: pet × day × slot, using the booked sitter's own slot hours.
 create table public.booking_slots (
   booking_id uuid not null references public.bookings (id) on delete cascade,
   pet_id uuid not null references public.pets (id) on delete cascade,
   day date not null,
   slot public.care_slot not null,
-  active boolean not null default true,
   primary key (booking_id, pet_id, day, slot)
 );
 
--- One pet, one sitter per day × slot while the booking is requested/confirmed.
-create unique index booking_slots_pet_day_slot_active_key
-  on public.booking_slots (pet_id, day, slot) where active;
 create index booking_slots_day_slot_idx on public.booking_slots (day, slot);
 
 create table public.booking_handoffs (

@@ -11,6 +11,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      supabase: ${{ steps.filter.outputs.supabase }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -21,6 +22,8 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            supabase:
+              - 'supabase/**'
 
   backend:
     needs: changes
@@ -64,3 +67,35 @@ jobs:
         run: npx tsc --noEmit
       - name: Expo web export
         run: npx expo export -p web
+
+  supabase:
+    needs: changes
+    if: needs.changes.outputs.supabase == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply migrations on a Supabase stub
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -f supabase/tests/supabase_stub.sql
+          for f in supabase/migrations/*.sql; do
+            echo "Applying $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+      - name: RLS + booking smoke test
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/tests/rls_smoke.sql

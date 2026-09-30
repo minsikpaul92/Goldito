@@ -27,6 +27,8 @@ Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost
 
 The service role key bypasses RLS. FastAPI uses it only for the writes below, and must call `services/authz.py` → `assert_on_duty_for(pet_id)` (or an equivalent ownership check) first. Everything else goes through the Supabase client with the user's JWT.
 
+`assert_on_duty_for` must call `rpc('is_on_duty_for', {'pet': pet_id})` **with the user's JWT** — under the service role `auth.uid()` is null, so the helper would always return false. Read the caller's role from `profiles`, not from JWT `user_metadata` (users can edit their metadata).
+
 | Table | Operation | Why not the client |
 | :--- | :--- | :--- |
 | `media` | insert | Created after Cloudinary signed upload completes (Phase 04) |

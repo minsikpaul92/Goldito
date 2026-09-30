@@ -26,7 +26,6 @@
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
 - [ ] **3.1–3.3** Auth screens + role routing
-- [ ] **2.10** Sitter can read own `home_address` (column is hidden from the public list) — needed by 3.8 sitter profile edit; small RPC or view
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies + sitter assignment; sitter Today stub; role profiles
 - [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
@@ -48,6 +47,8 @@
 
 ## Completed
 
+- [x] **2.8b** Phase 02 review fixes: per-pet time overlap guard (`booking_pets` exclusion), custom drop-off/pick-up edge rule, 2 h read wrap-up, requested sitter sees pet profile, no cancel after Received, handoff time/place rules, newest open row wins, `default_hours` check, 24 h address window, execute privileges, `updated_at` trigger; smoke test 99 checks + `supabase_stub.sql` + CI `supabase` job (2026-09-30)
+- [x] **2.10** `get_my_sitter_profile()` — sitter reads own `home_address` (2026-09-30)
 - [x] **docs** Sponsor session review: Tavily keyword queries + domain/recall filters, Tavily moved to 8.7 stretch, Nebius per-call metrics (7.1, architecture §9), SFT as P2 idea 11.7 (2026-09-30)
 - [x] **2.8** `003_functions_triggers.sql` (signup trigger, species guard, schedule/search/booking/handoff RPCs, overlap guard, realtime) + `rls_smoke.sql` (permissions + scenarios A–H, all pass on local Postgres) + supabase/backend README (2026-09-30)
 - [x] **2.7** `002_rls_policies.sql` — policy helpers, RLS on 16 tables, column grants (2026-09-30)
@@ -82,7 +83,7 @@
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
 | 01 Scaffold          | **done** (2026-09-29)                                                         |
-| 02 DB + RLS          | in progress (**2.1**)                                                         |
+| 02 DB + RLS          | in progress (**2.9** hosted apply — SQL verified locally + CI)                |
 | 03 Auth              | not started                                                                   |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
