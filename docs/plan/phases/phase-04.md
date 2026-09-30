@@ -17,7 +17,7 @@
 ## 선행 조건
 
 - [Phase 00](phase-00.md) 0.2 Cloudinary
-- [Phase 03](phase-03.md) JWT + sitter role + pet 배정 (3.6)
+- [Phase 03](phase-03.md) JWT + sitter role · [Phase 03B](phase-03b.md) 확정 예약 (서명 권한 = `is_on_duty_for`)
 
 ---
 

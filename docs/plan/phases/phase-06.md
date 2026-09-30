@@ -4,7 +4,7 @@
 
 ## Goal
 
-키즈노트 **투약의뢰서/투약보고서** 흐름을 강아지·고양이에 맞춘다: 견주가 **약·산책·식사·화장실·놀이 일정**을 등록 (종별 허용 type은 [phase-02 D22](phase-02.md#종별-케어-규칙-d22)) → 펫시터에게 **오늘 할 일**이 자동으로 보이고 시간이 되면 **인앱 리마인더** → **인증 사진 한 장**으로 완료 → **견주 알림 + 피드 게시**.
+키즈노트 **투약의뢰서/투약보고서** 흐름을 강아지·고양이에 맞춘다: 견주가 **약·산책·식사·화장실·놀이 일정**을 등록 (종별 허용 type은 [phase-02 D23](phase-02.md#종별-케어-규칙-d23)) → 펫시터에게 **오늘 할 일**이 자동으로 보이고 시간이 되면 **인앱 리마인더** → **인증 사진 한 장**으로 완료 → **견주 알림 + 피드 게시**.
 
 ### Goal 달성 기준
 
@@ -40,7 +40,7 @@
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
 | 6.1 | OwnerTaskScreen `/(owner)/tasks` | 상단: 오늘 상태 리스트. 하단: 등록된 task 목록 + **Add task** 시트 — type 선택은 **선택된 pet의 species 기준** (dog: 💊 Medication · 🦮 Walk · 🍽️ Feeding · 🎾 Play · 😴 Bedtime / cat: 💊 Medication · 🍽️ Feeding · 🧺 Litter box · 🎾 Play · 😴 Bedtime), title(med 필수, 나머지는 type 라벨이 기본값), dose(med만), time picker(15분 단위), notes. 수정·비활성(`active=false`) |
-| 6.2 | `ensure_today_task_logs(p_pet uuid)` RPC | security definer, `can_access_pet` 확인. `APP_TIMEZONE` 기준 오늘 날짜 + `scheduled_time` → `due_at` (`(current_date at time zone tz + scheduled_time) at time zone tz`). `active and repeat_daily`인 task마다 `insert … on conflict (task_id, due_at) do nothing`. 오늘 로그 목록 반환. **호출 시점:** sitter Today/Tasks, owner Care 화면 진입 시 (멱등) |
+| 6.2 | `ensure_today_task_logs(p_pet uuid)` RPC | security definer, `can_access_pet` 확인. `APP_TIMEZONE` 기준 오늘 날짜 + `scheduled_time` → `due_at` (`local_ts(app_today(), scheduled_time)` — 003 헬퍼). `active and repeat_daily`인 task마다 `insert … on conflict (task_id, due_at) do nothing`. 오늘 로그 목록 반환. **호출 시점:** sitter Today/Tasks, owner Care 화면 진입 시 (멱등) |
 | 6.3 | SitterTasksScreen `/(sitter)/tasks` | 정렬: missed → pending(due 순) → done. TaskRow: 아이콘, title·dose, due 시각, 상태 뱃지, 우측 큰 **Complete** 버튼 (1 주 액션). Today 탭 상단에 "Next up" 카드로도 노출 |
 | 6.4 | Complete flow | 탭 → 사진 선택 → `uploadMedia({purpose:'task_proof'})` → `rpc('complete_task_log', {p_task_log, p_media})`. RPC: 호출자가 **그 시각에 이 반려동물을 맡고 있는지** 확인 (`in_care_window(pet, due_at)` — 맡긴 시각 ~ 찾는 시각, phase-02), 아니면 `not_in_care_window`. 시터 Tasks 목록도 맡긴 구간 안의 task_logs만 보여줌. `status='done', completed_at=now(), completed_by, media_id` 갱신, feed_post insert (`task_log_id`, caption은 type별 템플릿 — `"💊 {title} given"` / `"🦮 Walk done"` / `"🍽️ Fed {name}"` / `"🧺 Litter box cleaned"` / `"🎾 Play time with {name}"` / `"😴 {name} is asleep"`, `caption_source='task'`), owner 알림 `task_done` insert. 이미 done이면 exception `already_done` |
 | 6.5 | missed / late 표시 | 파생 (D9): pending & now > due+60m → ⚠️ "Missed", done & completed_at > due+60m → "Done late". 완료는 missed여도 허용 |

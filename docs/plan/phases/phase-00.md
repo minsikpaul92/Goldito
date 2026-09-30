@@ -1,6 +1,6 @@
 # Phase 00 — 사전 준비 (Prerequisites)
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D20, env 마스터 §4)
+> 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D24, env 마스터 §4)
 
 ## Goal
 
@@ -27,7 +27,7 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 | :--- | :--- |
 | 계정 생성, API 키 발급, 대시보드 설정 | 애플리케이션 코드 |
 | 로컬 `.env` 작성 (0.5는 Phase 01.1의 `.env.example` 생성 후) | Devpost 제출 |
-| Nebius 크레딧 신청 (`NEBIUS-DEVPOST-GLOBAL26`) + Builders Program | Tavily 연동 코드 (Phase 11) |
+| Nebius 크레딧 신청 (`NEBIUS-DEVPOST-GLOBAL26`) + Builders Program | Tavily 연동 코드 (Phase 08.7) |
 
 ---
 
@@ -38,14 +38,14 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 | 0.1 | Supabase 프로젝트 | 민식 | ① 리전: **Canada Central 또는 US East** (팀·심사 북미) ② Auth → Providers → Email ON, **Confirm email OFF** (D15) ③ Settings → API에서 URL·anon·service_role 복사 ④ Settings → JWT: signing key 종류(**asymmetric JWKS vs legacy HS256**) 메모 → HS256이면 `SUPABASE_JWT_SECRET`도 복사 (D14) ⑤ 무료 tier: **7일 비활성 시 일시정지** 확인 → Phase 10.7 keep-alive 필요 |
 | 0.2 | Cloudinary | 민식 | cloud name, API key/secret. **unsigned preset 만들지 않음** (signed only). 폴더 규칙은 서버가 강제: `pawnote/{pet_id}/{purpose}/` |
 | 0.3 | Nebius Token Factory | 슬기 | ① 크레딧 코드 적용 ② `GET /v1/models`를 **두 base URL**(eu-north1, us-central1)에 각각 호출 ③ 아래 4개 role별 model ID·base URL 확정 ④ `notes/model-ids.md`에 표 + 호출일 기록 ⑤ Nano Omni 없으면 fallback 비전 모델 ID 기록 (NVIDIA 모델이 아닐 경우 README에 명시) |
-| 0.4 | Tavily | 슬기·민식 | [tavily.com](https://tavily.com) API Key → `TAVILY_API_KEY`. Builders & Brews Toronto **8,000 credits** (Phase 8/11) |
+| 0.4 | Tavily | 슬기·민식 | [tavily.com](https://tavily.com) API Key → `TAVILY_API_KEY`. Builders & Brews Toronto **8,000 credits** (Phase 08.7) |
 | 0.5 | `.env` | 민식 | Phase 01.1이 만든 `.env.example` 복사 → 값 채움. `git status`에 `.env`가 안 보이는지 확인 |
 
 ### 0.3 산출물 형식 — `docs/plan/phases/notes/model-ids.md`
 
 ```markdown
 | Role (env)    | Model ID                              | Base URL                                              | Checked    |
-| MODEL_VISION  | nvidia/nemotron-3-nano-omni (?)       | https://api.tokenfactory.us-central1.nebius.com/v1/   | 2026-09-30 |
+| MODEL_VISION  | openbmb/MiniCPM-V-4_5                 | https://api.tokenfactory.us-central1.nebius.com/v1/   | 2026-09-29 |
 | MODEL_SAFETY  | nvidia/Nemotron-3-Ultra-550b-a55b     | https://api.tokenfactory.us-central1.nebius.com/v1/   |            |
 | MODEL_REPORT  | nvidia/nemotron-3-super-120b-a12b     | https://api.tokenfactory.us-central1.nebius.com/v1/   |            |
 | MODEL_FAST    | nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B | https://api.tokenfactory.nebius.com/v1/               |            |
@@ -78,7 +78,7 @@ curl -s https://api.tokenfactory.nebius.com/v1/models -H "Authorization: Bearer 
 
 | 리스크 | 대응 |
 | :--- | :--- |
-| Nano Omni 카탈로그 미노출 | `MODEL_VISION` env로 fallback VL 모델. Nemotron은 Ultra(세이프티)·Super(알림장)로 핵심 유지 |
+| Nano Omni 카탈로그 미노출 (2026-09-29 확인) | `MODEL_VISION` = MiniCPM-V-4_5. Nemotron은 Ultra(세이프티)·Super(알림장)로 핵심 유지 |
 | 모델마다 리전 다름 | role별 `*_BASE_URL` env (architecture §4) |
 | Supabase 무료 일시정지 | Phase 10.7 keep-alive cron |
 

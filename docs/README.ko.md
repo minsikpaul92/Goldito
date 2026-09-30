@@ -50,17 +50,16 @@ PawNote의 두 가지 약속:
 - 펫시터는 확인하고 **탭 한 번으로 전송**
 
 ### 4. 🛡️ 간식 세이프티 가드
-1. **보기** — 성분표를 찍으면 Nemotron 비전이 읽음
-2. **추론** — Nemotron 3 Ultra가 알레르기·견종 금기와 대조, **숨은 성분**까지 (예: "동물성 지방"에 닭고기 포함 가능)
+1. **보기** — 성분표를 찍으면 비전 모델(MiniCPM-V)이 성분을 읽음
+2. **추론** — Nemotron 3 Ultra가 알레르기·종별 독성과 대조, **숨은 성분**까지 (예: "동물성 지방"에 닭고기 포함 가능)
 3. **검색** — 모르는 성분이나 리콜 정보는 **Tavily**로 웹 검색
 4. **경고** — 급여 전에 경고 모달로 차단
 
-### 5. 📅 펫시터 근무일 & 기간 예약
-- 펫시터가 **근무 가능한 날을 열고**(하루 또는 기간), 쉬는 날은 **막아둠**
+### 5. 📅 펫시터 스케줄 & 여행 예약
 - 펫시터는 **파트타임**이고 반려동물을 **펫시터 집에서** 돌봄. 날짜와 칸(오전·오후·밤)을 **자기 근무 시간**과 함께 열고 **몇 마리까지 받을지** 정함. 같은 시간에 여러 집 반려동물을 맡을 수 있음
 - 견주는 보통 **여행 전체를 한 펫시터에게** 맡김 (펫시터가 자주 바뀌면 반려동물에게 안 좋음). **단골 펫시터 스케줄**을 먼저 확인하고, 안 되면 여행 전체가 가능한 펫시터를 검색. 자리가 찬 칸은 자동으로 닫힘
 - 견주는 **맡기는 시각·찾는 시각·장소**(펫시터 집 / 내 집 / 기타)를 정함. 펫시터 근무 시간 밖이면 **앱에서 협의**하고, 확정 후에도 양쪽이 변경을 제안할 수 있음
-- 펫시터가 일정이 생기면 **예약을 취소**하고 견주에게 **즉시 알림** → 한 명에게 다시 맡길지, 나눠 맡길지 견주가 결정
+- 펫시터가 일정이 생기면 (맡기기 전) **예약을 취소**하고 견주에게 **즉시 알림** → 한 명에게 다시 맡길지, 나눠 맡길지 견주가 결정
 - 스케줄 변경으로는 견주에게 알림이 가지 않음. 맡긴 동안에만 도착·출발, 사진·식사·잠자리·알림장 알림
 - 펫시터가 올린 **공지**(예: "추석 휴무")가 앱 실행 시 **팝업**으로 표시
 
@@ -84,16 +83,16 @@ PawNote의 두 가지 약속:
 
 ## 🟩 NVIDIA Nemotron & Nebius Token Factory 사용 방식
 
-모든 AI 호출은 **Nebius Token Factory**(OpenAI 호환 API)로 실행하고, 작업마다 알맞은 크기의 Nemotron 모델을 씁니다.
+모든 AI 호출은 **Nebius Token Factory**(OpenAI 호환 API)로 실행합니다. 추론·글쓰기는 NVIDIA Nemotron, 사진 읽기는 Token Factory의 비전 모델이 맡습니다. 역할별 모델 ID: [model-ids.md](plan/phases/notes/model-ids.md).
 
 | 작업 | 모델 ID | 이유 |
 | :--- | :--- | :--- |
-| 사진/영상 캡션, 성분표 읽기 | `nvidia/nemotron-3-nano-omni` ¹ | 이미지·영상·텍스트를 한 모델로 |
+| 사진 캡션, 성분표 읽기 | `openbmb/MiniCPM-V-4_5` ¹ | Token Factory 비전 모델 (Cloudinary 이미지 읽기) |
 | 알레르기·숨은 성분 추론 | `nvidia/Nemotron-3-Ultra-550b-a55b` | 안전 판단 → 가장 강한 추론 |
 | 알림장 생성 | `nvidia/nemotron-3-super-120b-a12b` | Few-shot 말투 복제 품질 |
 | Q&A 1차 답변, 빠른 호출 | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 빠르고 저렴 |
 
-¹ Nebius 공식 cookbook에는 있으나 공개 카탈로그엔 없음 → API 키로 `GET /v1/models` 확인 필요
+¹ `nvidia/nemotron-3-nano-omni`는 cookbook에는 있으나 Token Factory 카탈로그에 없음(2026-09-29 확인) → 비전은 MiniCPM-V-4.5. 세이프티 추론(Ultra)·알림장(Super)은 Nemotron
 
 **기타 Nebius 서비스**
 - **Nebius AI Cloud — Serverless Endpoint** — **FastAPI 백엔드(API 서버)** 호스팅 (D18)
@@ -113,18 +112,18 @@ PawNote의 두 가지 약속:
         FastAPI (파이썬 백엔드)
           ├── Supabase     → PostgreSQL · 인증 · Realtime(인앱 알림)
           ├── Cloudinary   → 사진/영상 저장, 압축, 썸네일
-          ├── Token Factory (Nemotron: Nano Omni / Ultra / Super / Nano)
-          ├── Tavily       → 성분·리콜 웹 검색
+          ├── Token Factory (Nemotron: Ultra / Super / Nano · 비전: MiniCPM-V)
+          ├── Tavily       → 성분·리콜 웹 검색 (세이프티 stretch 8.7)
           └── 스케줄러     → 투약·산책 리마인더
 ```
 
 | 영역 | 스택 |
 | :--- | :--- |
 | 프론트엔드 | Expo (React Native for Web) |
-| 백엔드 | FastAPI (Python 3.11+) |
+| 백엔드 | FastAPI (Python 3.12) |
 | DB / 인증 / 실시간 | Supabase (PostgreSQL) |
 | 미디어 | Cloudinary |
-| AI | NVIDIA Nemotron @ Nebius Token Factory |
+| AI | NVIDIA Nemotron + MiniCPM-V(비전) @ Nebius Token Factory |
 | 웹 검색 | Tavily |
 | 알림 | Supabase Realtime (웹) · Expo Notifications (모바일) |
 

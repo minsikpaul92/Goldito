@@ -38,7 +38,7 @@
 
 | 시간 | 액션 (sitter) | 검증 (owner) | Phase |
 | :--- | :--- | :--- | :--- |
-| 08:00 | 리마인더 배너 → medication **Complete with photo** | 토스트 "Bori's medication is done ✅", Care ✅ | 06 |
+| 08:00 | 리마인더 배너 → medication **Complete with photo** | 토스트 "Bori's medication is done 💊", Care ✅ | 06 |
 | 10:30 | walk 완료 + 산책 사진 **+ Photo** | 피드에 AI 캡션 카드 | 06, 09 |
 | 13:00 | (P1) owner **Request photo** → sitter 낮잠 사진 | 요청 완료 표시 | 11 |
 | 15:00 | Scan 탭 → 치킨 간식 라벨 | sitter 빨간 모달 / owner "Blocked a risky treat" | 08 |
@@ -52,11 +52,11 @@
 
 | ID | 작업 | 상세 / DoD |
 | :--- | :--- | :--- |
-| 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), pet Bori(dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi(cat, Domestic Shorthair, 3y, care_tasks feeding+litter), sitter_availability open = 오늘-7일 ~ 오늘+60일, 모든 칸, 정원 3, 칸 시간 = Mina 기본(Morning 08–12 · Afternoon 12–18 · Overnight 18–08), **확정 booking 1건 = 어제 09:30 맡김(Received 완료) ~ 오늘+6일 17:00 찾음, 장소 Mina's place (Bori + Mochi)** → Try demo 즉시 "Now caring" + 과거 예약 1건(단골 표시용). 가짜 `home_address`, 추가로 시터2(Jun) 계정 + open 구간 (재예약 검색 데모용), owner_profiles 가짜 긴급 연락처, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
+| 10.1 | Seed script | `backend/scripts/seed_demo.py` (service role, D19): `auth.admin.create_user` × 2 (`demo-owner@pawnote.test`, `demo-sitter@pawnote.test`, `email_confirm=True`, 비밀번호는 env `DEMO_PASSWORD`), pet Bori(dog, Maltese, 4y, allergy chicken, care_tasks medication+walk), pet Mochi(cat, Domestic Shorthair, 3y, care_tasks feeding+litter), sitter_availability open = 오늘-7일 ~ 오늘+60일, 모든 칸, 정원 3, 칸 시간 = Mina 기본(Morning 08–12 · Afternoon 12–18 · Overnight 18–08), **확정 booking 1건 = 어제 09:30 맡김(Received 완료) ~ 오늘+6일 17:00 찾음, 장소 Mina's place (Bori + Mochi)** — 과거 시각이라 RPC가 아니라 service role로 `bookings` + `booking_pets`(care_range) + `booking_slots` + agreed `booking_handoffs`를 함께 insert (smoke test `_t_booking`과 같은 형태) → Try demo 즉시 "Now caring" + 과거 예약 1건(단골 표시용). 가짜 `home_address`, 추가로 시터2(Jun) 계정 + open 구간 (재예약 검색 데모용), owner_profiles 가짜 긴급 연락처, 샘플 feed 2개(선택, Cloudinary `pawnote/demo/` 공용 이미지). **멱등** (`--reset`이면 demo 계정 데이터 삭제 후 재생성). 실제 PII 0 |
 | 10.2 | README | 루트 Getting Started (복붙 명령, Windows/mac 둘 다), "How we use Nemotron" 표를 실제 model·latency로 갱신, architecture 그림, 스크린샷 4장. backend/frontend README 최신화 |
 | 10.3 | Deploy backend | `backend/Dockerfile` (python:3.12-slim, `uvicorn app.main:app --host 0.0.0.0 --port 8000`). **Nebius AI Cloud:** Container Registry push → **Serverless Endpoint** 생성, env secret 주입, `/health` 확인 (Builders & Brews **AI Cloud $100** 크레딧 활용). **Render**는 Nebius만 막힐 때 fallback + README·피드백에 이유 기록. **CD:** `.github/workflows/deploy-backend.yml` — `push: main` + `paths: backend/**` + `workflow_dispatch(image_tag)`: docker build → Registry push (tag = `${{ github.sha }}`) → Endpoint 이미지 갱신 → `curl -f $BACKEND_URL/health` 재시도 5회. 첫 배포는 수동으로 Endpoint 생성 후 워크플로는 갱신만 담당 ([architecture §11](architecture.ko.md#11-cicd-파이프라인-d20)) |
 | 10.4 | Deploy frontend | `npx expo export -p web` → `dist/` → Vercel (SPA rewrite `/(.*) → /index.html`), env `EXPO_PUBLIC_*` production 값. backend `CORS_ORIGINS`에 Vercel 도메인 추가. **CD:** Vercel GitHub 연동 — Root Directory `frontend`, Build `npx expo export -p web`, Output `dist`. PR마다 Preview URL, main 머지 시 production. Preview 도메인(`*.vercel.app`)은 CORS에 정규식으로 허용하거나 Preview는 staging backend 없이 UI 확인용으로만 사용 |
-| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 **Devpost 제출란에만** 기재 (repo엔 "see submission"), 데모 순서 5줄 |
+| 10.5 | 데모 계정 문서 | `docs/DEMO_ACCOUNTS.md`: URL, 이메일 2개, 비밀번호는 repo에 적지 않고 **Devpost 제출란**과 배포 env(`DEMO_PASSWORD` 시드용, `EXPO_PUBLIC_DEMO_PASSWORD` Try demo용 — 데모 계정 전용 값, [onboarding.ko.md](../onboarding.ko.md))에만 (repo엔 "see submission"), 데모 순서 5줄 |
 | 10.6 | Feedback log | README 피드백 표: Token Factory, Serverless Endpoint, 각 Nemotron 모델별 (용도 / 잘된 점 / 개선점 / 온보딩 / 재사용 의향) — 개발 중 `notes/`에 쌓인 메모 정리 |
 | 10.7 | 유지 계획 (~12/15) | ① Supabase 무료 일시정지 방지: `.github/workflows/keepalive.yml` cron(매일) → backend `GET /health/deep`(Supabase `select 1` 수행; `/health`는 가볍게 유지) ② Cloudinary·Nebius 크레딧 잔량 주 1회 확인 (캡처 1장 ≈ 비용 계산표) ③ 데모 계정 데이터 오염 시 `seed_demo.py --reset` |
 | 10.8 | 내부 마감 10/28 체크리스트 | 아래 DoD 전부 + 영상 업로드(YouTube public, < 3분, 영어 음성) + Devpost 초안 |

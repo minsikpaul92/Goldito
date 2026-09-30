@@ -1,7 +1,7 @@
 # Phase 11 — P1: 사진 요청 · 공지 · Tavily (+ P2 Q&A)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md). **P0(Phase 05–09)가 배포 URL에서 동작한 후에만** 시작 (예외: 사용자가 우선순위 변경).
-> 목표 기간: 10/12 – 10/18 (계획 3주차). 11.1과 11.3이 데모·보너스상에 가장 효과적 → 이 순서로.
+> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** 11.1(사진 요청)이 데모에 가장 효과적. Tavily(11.3)는 Phase 08.7에서 끝났으면 생략.
 
 ## Goal
 
@@ -19,7 +19,7 @@
 
 | ID | 기능 | DB (`008_p1.sql`) | 동작 | UI |
 | :--- | :--- | :--- | :--- | :--- |
-| 11.1 | 사진 요청 | `photo_requests(id, pet_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select assigned | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter Today 상단 노란 배너 → 탭 → pet 피드 + Photo |
+| 11.1 | 사진 요청 | `photo_requests(id, pet_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select `is_sitter_of(pet_id)` (확정 예약 기간) | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter Today 상단 노란 배너 → 탭 → pet 피드 + Photo |
 | 11.2 | 공지 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)` (근무일은 P0 `sitter_availability`로 이동) | owner는 확정 예약이 있는 시터의 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업). Owner: 팝업 |
 | 11.5 | 즐겨찾기 시터 | `owner_favorite_sitters(owner_id, sitter_id)` — 예약 전이라도 단골로 고정 | - | 시터 카드 ☆ / "Your sitters" 상단 |
 | 11.6 | 반복 근무 패턴 | `sitter_availability`에 `weekdays int[]` 추가 (예: 토·일만 open) — 스케줄·검색 계산에 반영 | - | 캘린더 "Every weekend" 토글 |
