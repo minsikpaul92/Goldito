@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **1.6** | Web shell — desktop browsers show the app in a **402 × 874 phone frame** (same-origin iframe, URL sync, `?frame=0|1`) | [phase-01.md](phases/phase-01.md), architecture D25 |
+| **3.0** | Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10 | [phase-03.md](phases/phase-03.md) |
 
 ---
 
@@ -25,8 +25,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **1.7** Mouse = finger (`TouchEmulation`: drag scroll + momentum, no click after drag, horizontal wheel) + `/dev/gestures` + Playwright mouse tests in CI + PR template desktop checklist ([phase-01.md](phases/phase-01.md))
-- [ ] **3.0** Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
@@ -34,14 +32,14 @@
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)
-- [ ] **6.x** Med/walk tasks + auto today logs + in-app reminder + complete with photo (`005`)
+- [ ] **6.x** Care Plan B — check-ins + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `005`)
 - [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) — Seulgi (can start right after Phase 01)
 - [ ] **7.2–7.5** Daily report AI (Super) + quick-tap + send (`006`)
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)) + **10.9** desktop side panel (Try demo, QR, hint) + **10.10 stretch** Split view (Owner + Sitter phones side by side) + mouse-only judge path e2e
-- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.10** pet-color app skin → **11.8** pet stickers + AI-decorated report card → **11.9** video mood line → **11.2** notices · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
-- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 — can start any time
+- [ ] **11.x** P1 (after P0 is live), in order: **11.11** Settings + in-app patch notes (CHANGELOG) → **11.1** photo request → **11.10** pet skin → **11.12** 8bit Pet status room → **11.8** stickers + report card → **11.9** video mood → **11.2** notices · Tavily 11.3 if 8.7 slipped · P2 **11.7** SFT
+- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 + **8bit pixel pet sprites** (Maltese, generic cat, ≥3 mood/hunger states) for 11.12 — can start any time
 - [ ] **design (Muk)** Figma frames at **402 × 874** (spot-check 360 / 440) + desktop backdrop / side panel / phone-frame style (DESIGN.md §2.1, 10.9) + sample photo set for 4.7 (dog / cat daily photos, fictional-brand treat labels = Phase 08 fixtures, no people)
 - [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 
@@ -52,6 +50,9 @@
 ## Completed
 
 - [x] **chore** `frontend/expo-env.d.ts` untracked + gitignored (Expo template): Expo CLI deletes it on every `start` / `export` while `experiments.typedRoutes` is off; `tsc --noEmit` and `expo export -p web` pass without it (2026-10-01)
+- [x] **1.7** Mouse = finger: `TouchEmulation.web.ts` inside the frame iframe, mouse only — drag scroll with axis lock + momentum, no tap after a drag, wheel moves chip rows sideways (paged carousels keep the screen scrolling), paged photos settle on a page, no text selection / image drag, round touch cursor, hidden scrollbars, root-only overscroll containment. `/dev/gestures` lab (`EXPO_PUBLIC_DEV_ROUTES=1`), `color.overlay` token, Playwright (`frontend/e2e/`, Chromium · Firefox · WebKit × 1366 / 1440 / 1920 + touch phone 360 / 402 / 440) in CI, PR template desktop checklist. Local: Chromium + WebKit + phone 73 passed ×2 (momentum test Chromium-only; Firefox needs VC++ runtime this PC lacks — CI covers it). **Phase 01 complete** (2026-10-01)
+- [x] **1.6** Web shell: `components/shell/` (`AppShell` native/web, `DeviceFrame`, `presentation.ts`, `useShell`, `useLayoutMode`) — computers (mouse / trackpad, any window width) → 402 × 874 phone frame with the app in a same-origin iframe; touch phones / tablets → full screen. URL mirrored to the address bar (refresh / deep link / back work), `?frame=0|1`, short windows shrink height, narrower-than-phone windows scale the phone down; frame tokens in `tokens.ts`. Checked 1440×900 · 1366×768 · 1920×1080 · 493 narrow desktop pane (framed) · 375 touch (full screen) · 375 + `?frame=1` (scaled, click OK), wheel scroll + click in frame, `tsc` + `expo export` (2026-10-01)
+- [x] **docs** Plan B sitter care loop ([sitter-care-loop.ko.md](sitter-care-loop.ko.md)): check-ins, optional photo, Activity, notifications; phase-06/07/architecture updated; P1 **11.11** Settings + [CHANGELOG.md](../CHANGELOG.md) (2026-10-01)
 - [x] **2.9** Hosted Supabase: `001`–`003` applied (SQL Editor) + `rls_smoke.sql` passed after API table grants block in `003` (2026-10-01)
 - [x] **docs** D25 web display plan: desktop = 402 × 874 phone frame (same-origin iframe), mouse = finger layer, `pickMedia()` sample tray, Playwright mouse tests, side panel + split view (10.9–10.10), sitter desktop as post-hackathon roadmap. New tasks 1.6 · 1.7 · 4.7 · 10.9 · 10.10; DESIGN.md §2.1 · §2.2 · §7.7; architecture, phase-01/03/03B/04/06/08/10, onboarding, Devpost, playbook, CLAUDE.md, READMEs updated (2026-10-01)
 - [x] **docs** `DESIGN.md` interim design guide from `tokens.ts` (tokens, components, patterns, AI rules, open items for Muk); linked from CLAUDE.md (2026-10-01)
@@ -92,7 +93,7 @@
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
-| 01 Scaffold          | **done** (2026-09-29) · **1.6–1.7 added** (2026-10-01, web shell + mouse — D25) |
+| 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | not started                                                                   |
 | 03B Bookings         | not started (DB + RPCs done in 02)                                            |

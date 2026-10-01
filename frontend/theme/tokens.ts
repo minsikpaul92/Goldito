@@ -10,6 +10,12 @@ export const tokens = {
     border: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
+    /** Dimmed backdrop behind modals and sheets. */
+    overlay: "rgba(26, 26, 26, 0.4)",
+    // Desktop phone frame only (DESIGN.md §2.1)
+    frameBackdrop: "#E8E8E3",
+    frameBezel: "#1A1A1A",
+    frameShadow: "rgba(26, 26, 26, 0.18)",
   },
   spacing: {
     xs: 4,
@@ -27,5 +33,14 @@ export const tokens = {
     title: 24,
     body: 16,
     small: 14,
+  },
+  layout: {
+    /** Phone frame screen on desktop browsers (iPhone 17 class). */
+    frameWidth: 402,
+    frameHeight: 874,
+  },
+  breakpoint: {
+    /** Reserved for the post-hackathon sitter desktop layout. */
+    expanded: 1024,
   },
 } as const;

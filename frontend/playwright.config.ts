@@ -1,0 +1,50 @@
+import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Mouse-only checks of the desktop phone frame (task 1.7, architecture D25).
+ * Runs against `expo export -p web` built with EXPO_PUBLIC_DEV_ROUTES=1 (no backend needed).
+ */
+const PORT = 4173;
+
+const browsers = [
+  { name: "chromium", device: devices["Desktop Chrome"] },
+  { name: "firefox", device: devices["Desktop Firefox"] },
+  { name: "webkit", device: devices["Desktop Safari"] },
+];
+
+const viewports = [
+  { width: 1366, height: 768 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+];
+
+export default defineConfig({
+  testDir: "./e2e",
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? [["github"], ["list"]] : "list",
+  use: {
+    baseURL: `http://127.0.0.1:${PORT}`,
+    trace: "retain-on-failure",
+  },
+  webServer: {
+    command: `node e2e/static-server.mjs dist ${PORT}`,
+    url: `http://127.0.0.1:${PORT}`,
+    reuseExistingServer: !process.env.CI,
+  },
+  projects: [
+    ...browsers.flatMap((browser) =>
+      viewports.map((viewport) => ({
+        name: `${browser.name}-${viewport.width}x${viewport.height}`,
+        testIgnore: /phone\.spec\.ts/,
+        use: { ...browser.device, viewport },
+      })),
+    ),
+    {
+      name: "phone",
+      testMatch: /phone\.spec\.ts/,
+      use: { ...devices["Pixel 7"] },
+    },
+  ],
+});

@@ -34,7 +34,7 @@
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
 | D24 | 파트타임 보딩 시터 · 칸 · 인수인계 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 칸은 **이름만 고정**(Morning·Afternoon·Overnight) — 정확한 시간은 시터가 칸마다 정함(`sitter_availability.starts_at/ends_at`) + 칸 정원 `max_pets`. 예약 = 시터 1명 + 견주 1명. **누가 언제 맡나** = `booking_pets.care_range`(맡긴 구간, 반려동물마다 겹침 금지 — exclusion 제약), **정원** = `booking_slots`(반려동물 × 날짜 × 칸, 그 시터의 칸 시간 기준). 겹치는 open 행은 **가장 최근 행**이 그 날의 시간·정원을 정함. 열지 않은 칸은 맡긴 구간이 절반 넘게 덮을 때만 차지(빈 Overnight 방지) — 앞뒤로 짧게 삐져나온 시간은 custom 시각으로 협의. 견주가 **맡기는 시각·찾는 시각·장소**(시터 집/견주 집/기타)를 정함 → `booking_handoffs`. 시터 시간 밖·장소 변경은 **협의**(제안 → 상대방 동의), 확정 후 변경도 제안→동의, 동의 전엔 기존 값 유효. 견주는 **여행 전체를 한 시터에게**가 기본 — 단골 스케줄 먼저, 없으면 검색(전체 가능 먼저). 시터가 확정 칸을 막으려 하면 거부 → **예약 전체 취소**(맡기기 전만 — Received 뒤엔 찾는 시각 변경으로) → 견주 재예약. 권한·할 일 담당은 칸이 아니라 **맡긴 시각 ~ 찾는 시각** 구간으로 판단. 스케줄 변경은 알림 없음. 주소는 확정 당사자에게만(찾은 뒤 24시간까지) | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 실제 맡기는 시각이 시터 근무 시간과 다를 수 있어 협의 필요 |
-| D25 | 웹 표시 방식 (데스크톱 = 폰 프레임) | 데스크톱 브라우저(폭 ≥ 768)에서는 **402 × 874 폰 프레임** 안에 **같은 앱을 same-origin iframe**으로 띄움 (`components/shell/AppShell.web.tsx` — 네이티브는 `AppShell.tsx`가 children 그대로). 폰 브라우저·네이티브·iframe 내부는 앱 그대로. iframe 안에서 **마우스일 때만** `TouchEmulation`: 드래그 스크롤 + 관성, 드래그 후 클릭 차단, 가로 줄 휠 변환, 글자 선택·이미지 드래그 금지, 원형 커서, 스크롤바 숨김. 사진 선택은 `pickMedia()` 하나 — 데스크톱·데모 계정은 샘플 사진 트레이(4.7). 모드 결정은 `resolvePresentation()` 한 곳, 화면 분기는 `useLayoutMode()`만, 탭은 expo-router JS `Tabs`(NativeTabs 아님). **해커톤 후(마지막 우선순위):** 시터만 데스크톱 `expanded` 레이아웃(iframe 없이 사이드바) — Owner는 계속 프레임 | 심사위원은 PC로 봄 → 폰과 같은 경험 + 마우스로 모든 동작 필요. 앱을 박스에 직접 넣으면 RN `Modal`·Expo Router 웹 모달이 `document.body`로 portal되고(웹 모달은 `min-width: 768px`면 데스크톱 다이얼로그), 창 크기·미디어쿼리가 브라우저 기준이라 깨짐 — react-native-web 0.21.2·expo-router 57.0.24 소스 확인. iframe 안은 진짜 폰 화면이라 화면마다 지킬 금지 규칙이 거의 없음. 402 = 현재 기본 iPhone(17) 폭, 레이아웃은 360–440 대응 |
+| D25 | 웹 표시 방식 (데스크톱 = 폰 프레임) | 컴퓨터 브라우저(마우스·트랙패드가 주 입력 — `pointer: coarse`가 아님, **창 폭 무관**)에서는 **402 × 874 폰 프레임** 안에 **같은 앱을 same-origin iframe**으로 띄움 (`components/shell/AppShell.web.tsx` — 네이티브는 `AppShell.tsx`가 children 그대로). 폰 브라우저·네이티브·iframe 내부는 앱 그대로. iframe 안에서 **마우스일 때만** `TouchEmulation`: 드래그 스크롤 + 관성, 드래그 후 클릭 차단, 가로 줄 휠 변환, 글자 선택·이미지 드래그 금지, 원형 커서, 스크롤바 숨김. 사진 선택은 `pickMedia()` 하나 — 데스크톱·데모 계정은 샘플 사진 트레이(4.7). 모드 결정은 `resolvePresentation()` 한 곳, 화면 분기는 `useLayoutMode()`만, 탭은 expo-router JS `Tabs`(NativeTabs 아님). **해커톤 후(마지막 우선순위):** 시터만 데스크톱 `expanded` 레이아웃(iframe 없이 사이드바) — Owner는 계속 프레임 | 심사위원은 PC로 봄 → 폰과 같은 경험 + 마우스로 모든 동작 필요. 앱을 박스에 직접 넣으면 RN `Modal`·Expo Router 웹 모달이 `document.body`로 portal되고(웹 모달은 `min-width: 768px`면 데스크톱 다이얼로그), 창 크기·미디어쿼리가 브라우저 기준이라 깨짐 — react-native-web 0.21.2·expo-router 57.0.24 소스 확인. iframe 안은 진짜 폰 화면이라 화면마다 지킬 금지 규칙이 거의 없음. 402 = 현재 기본 iPhone(17) 폭, 레이아웃은 360–440 대응 |
 
 ---
 
@@ -103,7 +103,7 @@ PawNote/
    ├─ app/                    # expo-router (§3)
    │  └─ dev/gestures.tsx     # 1.7 — 마우스 동작 테스트 화면 (EXPO_PUBLIC_DEV_ROUTES=1일 때만)
    ├─ assets/demo/            # 4.7 — 샘플 사진 (강아지·고양이 일상, 가상 브랜드 간식 라벨 — PII 없음)
-   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts (화면에서 import 금지)
+   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts (화면은 `useShell`·`useLayoutMode`만 import)
    ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
    ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker …)
    ├─ features/<domain>/      # 화면별 데이터·상태 훅 use*.ts (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
@@ -129,19 +129,20 @@ PawNote/
 | `/(public)/welcome` | - | Welcome + **Try demo** (Owner / Sitter) · "Already have an account?" | Try demo | OB.1 ([onboarding.ko.md](../onboarding.ko.md)) |
 | `/(auth)/login` | - | Login | Sign in | 03 |
 | `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
-| `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
+| `/(owner)/` (tab: Home) | owner | My pets · **Pet status room (8bit, P1 11.12)** · 오늘 요약 | Add pet | 03 · 11.12 |
 | `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) | Save | 03 |
 | `/(owner)/bookings`, `/(owner)/bookings/new`, `/(owner)/bookings/[bookingId]`, `/(owner)/sitters/[sitterId]` | owner | 예약 목록 / 단골 스케줄 확인·검색·요청 / 상세·재예약 / 시터 스케줄 | Book care | 03B |
-| `/profile` | both | 역할별 프로필 편집 | Save | 03 |
+| `/profile` | both | 역할별 프로필 편집 (주소·bio 등) — **Settings 아님** | Save | 03 |
+| `/settings` | both | 계정·알림·앱 정보 · **What's New**(패치노트) | — | **11.11 (P1)** |
 | `/(owner)/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
-| `/(owner)/tasks` (tab: Care) | owner | 투약·산책 등록 + 오늘 상태(done/pending/missed) | Add task | 06 |
+| `/(owner)/tasks` (tab: Care) | owner | Task 등록 + 오늘 상태 · **Activity** 히스토리 (Plan B) | Add task | 06 |
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/(sitter)/` (tab: Today) | sitter | 오늘 담당 pet(진행 중 예약) + Upcoming 예약 + 요청 배지 + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 03B → 06 |
+| `/(sitter)/` (tab: Today) | sitter | 담당 pet · 예약 · **Quick check-ins**(meal/potty/mood/note) · due 배너 | Mark done / check-in | 03(스텁) → 03B → 06 |
 | `/(sitter)/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
 | `/(sitter)/bookings`, `/(sitter)/bookings/[bookingId]` | sitter | 요청함 · 예정 · 지난 예약 / 인수인계·Received·Returned | Accept | 03B |
 | `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
-| `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
+| `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Mark done** / Done with photo | 06 |
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
 | `/(sitter)/report` (tab: Report) | sitter | 퀵탭 체크 → Generate → (편집) → Send | **Send report** | 07 |
 | `/(sitter)/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
@@ -256,7 +257,8 @@ PawNote/
 | `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | "Bori and Mochi arrived at Mina's 🏠" / "Bori and Mochi are on the way home 👋" | 예약 상세 |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
-| `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/(owner)/tasks` |
+| `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/(owner)/tasks` (Activity) |
+| `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/(owner)/tasks` (Activity) |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
 | `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) | "Blocked a risky treat for Bori ⚠️" | `/(owner)/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Bori's walk is due at 10:30" | `/(sitter)/tasks` |

@@ -41,22 +41,23 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 
 | Where the app runs | What renders |
 | :--- | :--- |
-| Native app, phone browser (width < 768) | The app, full screen |
-| Desktop browser (width ≥ 768) | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
+| Native app, phone or tablet browser (touch is the primary input) | The app, full screen |
+| Computer browser (mouse / trackpad), **any window width** | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
 | `?frame=0` / `?frame=1` | Force the frame off (video recording, debugging) / on |
 | `?view=split` (Phase 10.10, stretch) | Owner and Sitter phones side by side |
 
 - The frame holds the **same app in a same-origin iframe**. Inside it, everything behaves like a real 402 px phone: modals, sheets, `useWindowDimensions`, media queries.
 - The frame is a generic CSS phone (rounded body, status bar with the time, home indicator). No real device images or brand marks.
-- On short windows (laptops at 1366 × 768, Windows at 125–150 % scaling) the frame keeps its width and **only gets shorter** (min 600). Never `transform: scale`.
+- The device type decides, not the window width (`pointer: coarse` = touch): narrowing a desktop window keeps the phone frame, so the team can always see the mobile behavior.
+- The app inside always lays out at **402 px wide**. On short windows (laptops at 1366 × 768, Windows at 125–150 % scaling) only the screen height shrinks (min 600). On windows narrower than the phone, the whole phone is scaled down visually — safe because the app lives in an iframe with its own coordinates.
 - Inside the frame, the mouse acts like a finger — see [§7.7](#77-works-with-a-mouse).
 
 | Token | Value | Use |
 | :--- | :--- | :--- |
-| `layout.frameWidth` **(proposed)** | 402 | Phone frame screen width (task 1.6) |
-| `layout.frameHeight` **(proposed)** | 874 | Phone frame screen height (max) |
-| `breakpoint.framed` **(proposed)** | 768 | Desktop browser at or above this → phone frame |
-| `breakpoint.expanded` **(proposed)** | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `layout.frameWidth` | 402 | Phone frame screen width |
+| `layout.frameHeight` | 874 | Phone frame screen height (max) — status bar 44 + app + home indicator 28 |
+| `breakpoint.expanded` | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `color.frameBackdrop` / `frameBezel` / `frameShadow` | `#E8E8E3` / `#1A1A1A` / 18 % black | Desktop page behind the phone / phone body / phone shadow — frame only, never inside the app |
 
 ### 2.2 Later: sitter desktop (post-hackathon, lowest priority)
 
@@ -157,7 +158,7 @@ System font for now (Figma will pick one family).
 | `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
 | `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
-| `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it |
+| `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it — they may only use `useShell()` (`{ embedded }`) and `useLayoutMode()` |
 
 ---
 
@@ -168,7 +169,7 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no report textarea. Sitters tap: photos, quick-tap chips (meal, water, potty, mood), Send. Optional edit before sending a report is OK.
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen: gap-fill chips + Generate → Send. Optional edit before Send is OK. See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
 
 ### 7.3 Feedback loop
 Action → **skeleton / spinner** → **toast** on success → the other side gets a **notification**. In the demo, both sides should be visible.
@@ -200,8 +201,10 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 | On a phone | With a mouse in the frame | Rule |
 | :--- | :--- | :--- |
 | Tap | Click | Works as-is (react-native-web fires `onPress` on click) |
-| Swipe to scroll | Wheel, trackpad, or click-drag | Click-drag scrolling with momentum comes from `TouchEmulation` (task 1.7) |
-| Swipe sideways (chips, photos, dates) | Drag, or plain wheel over the row | Use `HorizontalList` — the next item peeks in |
+| Swipe to scroll | Wheel, trackpad, or click-drag | Click-drag scrolling with momentum comes from `TouchEmulation` (`components/shell/`) — a drag never fires a tap |
+| Swipe sideways (chips, dates) | Drag, or plain wheel over the row | Use `HorizontalList` — the next item peeks in |
+| Swipe through paged photos (`pagingEnabled`) | Drag (past half a page, or a quick flick → next page) | The wheel keeps scrolling the screen over a carousel, so feeds never get stuck |
+| Custom drag gesture (slider, sticker placement) | — | Mark the area `dataSet={{ gestureOwner: "true" }}` so `TouchEmulation` leaves it alone |
 | Pull to refresh | Nothing (`RefreshControl` is a no-op on web) | Data updates via Realtime; add a refresh button if needed |
 | Long press | Works (hold 450 ms), but nobody finds it | Never the only way to do something |
 | Swipe back, swipe to delete, drag a sheet down | Not reliable on web | Always a visible back button, delete button, **Close** |
@@ -216,6 +219,8 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 - [ ] Modals, sheets, and toasts stay inside the phone
 - [ ] Layout holds at 360, 402, and 440 widths
 - [ ] Any new library supports web (check the platform list in Expo docs)
+
+`/dev/gestures` (with `EXPO_PUBLIC_DEV_ROUTES=1`) shows every pattern above in one screen, and the Playwright suite (`frontend/e2e/`) checks it with a mouse in CI. The same checklist is in the PR template.
 
 ---
 
