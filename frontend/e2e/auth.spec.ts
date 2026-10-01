@@ -39,6 +39,11 @@ test.describe("auth and role routing", () => {
     }
     await expect(app(page).getByText("No pets yet")).toBeVisible();
 
+    // Tab labels must not be squeezed (the library default bar height cut them off on web).
+    const label = app(page).getByRole("tab").getByText("Reports", { exact: true });
+    const clipped = await label.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+    expect(clipped).toBe(false);
+
     await page.reload();
     await expect(page).toHaveURL(/\/owner$/);
     await expect(app(page).getByText("No pets yet")).toBeVisible();

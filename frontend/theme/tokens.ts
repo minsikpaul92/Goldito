@@ -47,6 +47,8 @@ export const tokens = {
     /** Phone frame screen on desktop browsers (iPhone 17 class). */
     frameWidth: 402,
     frameHeight: 874,
+    /** Bottom tab bar. The library default (49) squeezes the label on web. */
+    tabBarHeight: 60,
   },
   breakpoint: {
     /** Reserved for the post-hackathon sitter desktop layout. */

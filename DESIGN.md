@@ -57,6 +57,7 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 | `layout.frameWidth` | 402 | Phone frame screen width |
 | `layout.frameHeight` | 874 | Phone frame screen height (max) — status bar 44 + app + home indicator 28 |
 | `breakpoint.expanded` | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `layout.tabBarHeight` | 60 | Bottom tab bar — the library default (49) cuts the labels off on web |
 | `color.frameBackdrop` / `frameBezel` / `frameShadow` | `#E8E8E3` / `#1A1A1A` / 18 % black | Desktop page behind the phone / phone body / phone shadow — frame only, never inside the app |
 
 ### 2.2 Later: sitter desktop (post-hackathon, lowest priority)

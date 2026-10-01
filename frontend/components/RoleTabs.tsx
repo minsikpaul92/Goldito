@@ -49,7 +49,11 @@ export function RoleTabs({ role, children }: Props) {
         },
         tabBarActiveTintColor: theme.color.primary,
         tabBarInactiveTintColor: theme.color.textMuted,
-        tabBarStyle: { backgroundColor: theme.color.surface, borderTopColor: theme.color.border },
+        tabBarStyle: {
+          height: theme.layout.tabBarHeight,
+          backgroundColor: theme.color.surface,
+          borderTopColor: theme.color.border,
+        },
         sceneStyle: { backgroundColor: theme.color.background },
       }}
     >
