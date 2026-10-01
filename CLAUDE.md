@@ -41,6 +41,7 @@ Every feature must pass:
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
+- **Design guide (tokens, components, UI patterns):** `DESIGN.md` — interim until Muk's Figma
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
 - AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
 - Hackathon rules: `docs/hackathon/README.md`
@@ -73,7 +74,7 @@ Owner                          Sitter
 
 ### When implementing UI
 
-- If Figma links or tokens exist, use them; otherwise use neutral spacing (8px grid), rounded cards, clear role labels ("Owner" / "Sitter" in dev builds).
+- **Read [`DESIGN.md`](DESIGN.md) before building UI** (tokens, components, patterns). If a Figma frame exists for the screen, it wins; otherwise follow `DESIGN.md` and `frontend/theme/tokens.ts`.
 - Empty states matter for judges: "No posts yet — sitter will share photos here."
 - Prefer **working interaction** over pixel-perfect static screens.
 
