@@ -61,6 +61,8 @@ class Settings(BaseSettings):
 
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
+    demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

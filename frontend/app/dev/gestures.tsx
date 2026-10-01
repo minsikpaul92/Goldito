@@ -12,7 +12,8 @@ import {
 } from "react-native";
 
 import { Button } from "../../components/ui/Button";
-import { tokens } from "../../theme/tokens";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { Theme } from "../../theme/themes";
 
 /**
  * Gesture lab (task 1.7): every touch pattern the app uses, for checking the
@@ -21,11 +22,11 @@ import { tokens } from "../../theme/tokens";
 const devRoutesEnabled = process.env.EXPO_PUBLIC_DEV_ROUTES === "1";
 
 const CHIPS = ["Meal", "Water", "Potty", "Walk", "Nap", "Play", "Treat", "Litter", "Meds", "Bath", "Brush", "Cuddle"];
-const PAGES = [
-  { label: "Bori at the park", color: tokens.color.primary },
-  { label: "Mochi napping", color: tokens.color.textMuted },
-  { label: "Bori's dinner", color: tokens.color.success },
-  { label: "Mochi on the sofa", color: tokens.color.text },
+const PAGES: { label: string; tone: keyof Theme["color"] }[] = [
+  { label: "Bori at the park", tone: "primary" },
+  { label: "Mochi napping", tone: "textMuted" },
+  { label: "Bori's dinner", tone: "success" },
+  { label: "Mochi on the sofa", tone: "text" },
 ];
 const ROWS = Array.from({ length: 30 }, (_, i) => `Row ${i + 1}`);
 
@@ -35,6 +36,8 @@ export default function GestureLab() {
 }
 
 function GestureLabScreen() {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [taps, setTaps] = useState(0);
   const [lastTap, setLastTap] = useState("—");
   const [chip, setChip] = useState<string | null>(null);
@@ -100,7 +103,7 @@ function GestureLabScreen() {
             {PAGES.map((page) => (
               <View
                 key={page.label}
-                style={[styles.page, { width: pageWidth, backgroundColor: page.color }]}
+                style={[styles.page, { width: pageWidth, backgroundColor: theme.color[page.tone] }]}
               >
                 <Text style={styles.pageText}>{page.label}</Text>
               </View>
@@ -118,7 +121,7 @@ function GestureLabScreen() {
           value={note}
           onChangeText={setNote}
           placeholder="Type a note"
-          placeholderTextColor={tokens.color.textMuted}
+          placeholderTextColor={theme.color.textMuted}
           style={styles.input}
         />
 
@@ -155,128 +158,129 @@ function GestureLabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: tokens.color.background,
-  },
-  content: {
-    padding: tokens.spacing.md,
-    gap: tokens.spacing.sm,
-  },
-  title: {
-    fontSize: tokens.fontSize.title,
-    fontWeight: "700",
-    color: tokens.color.text,
-  },
-  muted: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.textMuted,
-  },
-  link: {
-    fontSize: tokens.fontSize.body,
-    color: tokens.color.primary,
-    fontWeight: "600",
-  },
-  section: {
-    marginTop: tokens.spacing.md,
-    fontSize: tokens.fontSize.small,
-    fontWeight: "600",
-    color: tokens.color.textMuted,
-    textTransform: "uppercase",
-  },
-  chipScroller: {
-    flexGrow: 0,
-  },
-  chipRow: {
-    gap: tokens.spacing.sm,
-  },
-  chip: {
-    paddingVertical: tokens.spacing.sm,
-    paddingHorizontal: tokens.spacing.md,
-    borderRadius: tokens.radius.sm,
-    borderWidth: 1,
-    borderColor: tokens.color.border,
-    backgroundColor: tokens.color.surface,
-  },
-  chipSelected: {
-    backgroundColor: tokens.color.primary,
-    borderColor: tokens.color.primary,
-  },
-  chipText: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.text,
-  },
-  chipTextSelected: {
-    color: tokens.color.primaryText,
-  },
-  pager: {
-    borderRadius: tokens.radius.lg,
-  },
-  page: {
-    height: 160,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pageText: {
-    fontSize: tokens.fontSize.body,
-    fontWeight: "600",
-    color: tokens.color.primaryText,
-  },
-  actions: {
-    marginTop: tokens.spacing.md,
-    gap: tokens.spacing.sm,
-  },
-  input: {
-    marginTop: tokens.spacing.sm,
-    padding: tokens.spacing.sm + 4,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.color.border,
-    backgroundColor: tokens.color.surface,
-    fontSize: tokens.fontSize.body,
-    color: tokens.color.text,
-  },
-  row: {
-    padding: tokens.spacing.md,
-    borderRadius: tokens.radius.md,
-    borderWidth: 1,
-    borderColor: tokens.color.border,
-    backgroundColor: tokens.color.surface,
-  },
-  rowPressed: {
-    opacity: 0.6,
-  },
-  rowText: {
-    fontSize: tokens.fontSize.body,
-    color: tokens.color.text,
-  },
-  toast: {
-    position: "absolute",
-    left: tokens.spacing.md,
-    right: tokens.spacing.md,
-    bottom: tokens.spacing.lg,
-    padding: tokens.spacing.md,
-    borderRadius: tokens.radius.md,
-    backgroundColor: tokens.color.text,
-  },
-  toastText: {
-    fontSize: tokens.fontSize.body,
-    color: tokens.color.primaryText,
-    textAlign: "center",
-  },
-  backdrop: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: tokens.spacing.lg,
-    backgroundColor: tokens.color.overlay,
-  },
-  modal: {
-    width: "100%",
-    gap: tokens.spacing.sm,
-    padding: tokens.spacing.lg,
-    borderRadius: tokens.radius.lg,
-    backgroundColor: tokens.color.surface,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.color.background,
+    },
+    content: {
+      padding: theme.spacing.md,
+      gap: theme.spacing.sm,
+    },
+    title: {
+      fontSize: theme.fontSize.title,
+      fontWeight: "700",
+      color: theme.color.text,
+    },
+    muted: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+    },
+    link: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.primary,
+      fontWeight: "600",
+    },
+    section: {
+      marginTop: theme.spacing.md,
+      fontSize: theme.fontSize.small,
+      fontWeight: "600",
+      color: theme.color.textMuted,
+      textTransform: "uppercase",
+    },
+    chipScroller: {
+      flexGrow: 0,
+    },
+    chipRow: {
+      gap: theme.spacing.sm,
+    },
+    chip: {
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.sm,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    chipSelected: {
+      backgroundColor: theme.color.primary,
+      borderColor: theme.color.primary,
+    },
+    chipText: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.text,
+    },
+    chipTextSelected: {
+      color: theme.color.primaryText,
+    },
+    pager: {
+      borderRadius: theme.radius.lg,
+    },
+    page: {
+      height: 160,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pageText: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.primaryText,
+    },
+    actions: {
+      marginTop: theme.spacing.md,
+      gap: theme.spacing.sm,
+    },
+    input: {
+      marginTop: theme.spacing.sm,
+      padding: theme.spacing.sm + 4,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+    },
+    row: {
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    rowPressed: {
+      opacity: 0.6,
+    },
+    rowText: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+    },
+    toast: {
+      position: "absolute",
+      left: theme.spacing.md,
+      right: theme.spacing.md,
+      bottom: theme.spacing.lg,
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.color.text,
+    },
+    toastText: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.primaryText,
+      textAlign: "center",
+    },
+    backdrop: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: theme.spacing.lg,
+      backgroundColor: theme.color.overlay,
+    },
+    modal: {
+      width: "100%",
+      gap: theme.spacing.sm,
+      padding: theme.spacing.lg,
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.color.surface,
+    },
+  });

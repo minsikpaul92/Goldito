@@ -28,7 +28,7 @@
 | :--- | :--- |
 | signed upload (image, video), purpose별 폴더 | Cloudinary AI 태깅, unsigned preset |
 | `lib/cloudinary.ts`: `uploadMedia()`, `thumbUrl()`, `videoPosterUrl()` | 피드 화면 (Phase 05) |
-| 개발용 업로드 테스트 화면 `/(sitter)/dev-upload` (Phase 05에서 삭제) | 업로드 진행률 % (선택) |
+| 개발용 업로드 테스트 화면 `/sitter/dev-upload` (Phase 05에서 삭제) | 업로드 진행률 % (선택) |
 | `lib/media.ts` `pickMedia()` + `MediaPicker` 샘플 트레이 (4.7) | 샘플 영상 (11.9에서), 웹캠 촬영 |
 
 ---

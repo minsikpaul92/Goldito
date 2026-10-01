@@ -1,7 +1,7 @@
 # PawNote — Phase 가이드 (개발 청사진)
 
 각 Phase는 **Goal → 범위 → 작업 → DoD → 산출물** 순으로 정리되어 있습니다.
-**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D25), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
+**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D26), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
 
 문서 우선순위 (Source of truth): **architecture.ko.md + phase 문서** (스키마는 [phase-02](phase-02.md), 모델 ID는 [notes/model-ids.md](notes/model-ids.md)) > [TODO.md](../TODO.md) (진행 순서) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) (프롬프트 출발점) > [개발 계획](../README.ko.md) (배경·요약). 아래 문서가 위 문서와 다르면 위 문서가 맞고, 아래 문서를 고칩니다.
 

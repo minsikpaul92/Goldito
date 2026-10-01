@@ -36,7 +36,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
                      │                      │
                      └──────────┬───────────┘
                                 ▼
-                     (owner) / (sitter) 앱 (Phase 03+)
+                     /owner · /sitter 앱 (Phase 03+)
 ```
 
 | 경로 | 대상 | P0 우선순위 |

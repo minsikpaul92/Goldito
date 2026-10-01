@@ -1,5 +1,7 @@
 import type { FrameLocator, Locator, Page } from "@playwright/test";
 
+import type { MockUser } from "./supabaseMock";
+
 export const APP_FRAME = 'iframe[title="PawNote app"]';
 
 type Point = { x: number; y: number };
@@ -32,6 +34,14 @@ export function isInside(inner: Box, outer: Box): boolean {
 
 export async function scrollOffset(locator: Locator, axis: "x" | "y" = "y"): Promise<number> {
   return locator.evaluate((el, a) => (a === "y" ? el.scrollTop : el.scrollLeft), axis);
+}
+
+/** Sign in through the real login screen (against the mocked Supabase). */
+export async function signIn(page: Page, user: MockUser) {
+  await page.goto("/login");
+  await app(page).getByTestId("login-email").fill(user.email);
+  await app(page).getByTestId("login-password").fill(user.password);
+  await app(page).getByRole("button", { name: "Sign in" }).click();
 }
 
 /** Press, move like a finger, release — with real mouse events. */

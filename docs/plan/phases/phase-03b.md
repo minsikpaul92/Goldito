@@ -46,13 +46,13 @@
 
 | Route | 역할 | 화면 | 주 액션 |
 | :--- | :--- | :--- | :--- |
-| `/(sitter)/schedule` | sitter | 월 캘린더, 날짜마다 칸 3개(M·A·N). 날짜·기간 선택 → 시트: **Open** (칸별 체크 + 시간 2개 — 기본 `default_hours`, 정원 스테퍼) / **Block** (칸 체크). 칸 표시: "08–12 · 1/3", Full, Blocked. 겹치는 block·정원 축소 → "This overlaps Jisoo's booking (Oct 5–8). Cancel that booking?" | **Save** |
-| `/(sitter)/bookings` | sitter | 탭: Requests · Upcoming · Past. Request 카드: 견주, 반려동물(🐶/🐱 — `get_booking_pets`), **Drop-off Oct 5 09:30 · Mina's place**, **Pick-up Oct 8 17:00 · Mina's place**. 카드 탭 → 반려동물 프로필·알러지·케어 일정(요청 받은 시터는 조회 가능). 시간 밖이면 주황 뱃지 "Custom time — needs your OK" + **Suggest another time** | **Accept** |
-| `/(sitter)/bookings/[bookingId]` | sitter | 인수인계 카드 2개(시각·장소·주소) + 변경 제안 대기 배너. 맡기는 시각 2시간 전부터 **Received**, 그 뒤 **Returned** 큰 버튼 | 상황별 1개 |
-| `/(owner)/bookings` | owner | 내 예약 목록. 뱃지: Requested · **Time suggested by Mina** · Confirmed · Cancelled — find a new sitter · Declined. 상단 **Book care** | **Book care** |
-| `/(owner)/bookings/new` | owner | ① 반려동물 체크 ② **Drop-off**: 날짜 + 시각 + 장소 ③ **Pick-up**: 날짜 + 시각 + 장소 ④ **Your sitters** (단골: 미니 스케줄 + "Available for your whole trip" / "Drop-off 07:00 is before Jun's hours — you can still ask") ⑤ 없으면 **Find other sitters** ⑥ 메모(선택) → 요청 | **Request booking** |
-| `/(owner)/sitters/[sitterId]` | owner | 시터 소개(bio·지역·경력·집 환경) + 월 스케줄 (칸별 시간·open/full/closed — 다른 견주 정보 없음) | **Book this sitter** |
-| `/(owner)/bookings/[bookingId]` | owner | 반려동물·인수인계 카드 2개(확정 후 ~ 찾은 뒤 24시간 주소 표시) · **Change time or place** (맡긴 뒤 일찍 데려가기도 여기서) · 시터 제안이 오면 **Accept / Decline** · 맡기기 전에만 **Cancel** · `cancelled`면 사유 + **Find a new sitter** | 상황별 1개 |
+| `/sitter/schedule` | sitter | 월 캘린더, 날짜마다 칸 3개(M·A·N). 날짜·기간 선택 → 시트: **Open** (칸별 체크 + 시간 2개 — 기본 `default_hours`, 정원 스테퍼) / **Block** (칸 체크). 칸 표시: "08–12 · 1/3", Full, Blocked. 겹치는 block·정원 축소 → "This overlaps Jisoo's booking (Oct 5–8). Cancel that booking?" | **Save** |
+| `/sitter/bookings` | sitter | 탭: Requests · Upcoming · Past. Request 카드: 견주, 반려동물(🐶/🐱 — `get_booking_pets`), **Drop-off Oct 5 09:30 · Mina's place**, **Pick-up Oct 8 17:00 · Mina's place**. 카드 탭 → 반려동물 프로필·알러지·케어 일정(요청 받은 시터는 조회 가능). 시간 밖이면 주황 뱃지 "Custom time — needs your OK" + **Suggest another time** | **Accept** |
+| `/sitter/bookings/[bookingId]` | sitter | 인수인계 카드 2개(시각·장소·주소) + 변경 제안 대기 배너. 맡기는 시각 2시간 전부터 **Received**, 그 뒤 **Returned** 큰 버튼 | 상황별 1개 |
+| `/owner/bookings` | owner | 내 예약 목록. 뱃지: Requested · **Time suggested by Mina** · Confirmed · Cancelled — find a new sitter · Declined. 상단 **Book care** | **Book care** |
+| `/owner/bookings/new` | owner | ① 반려동물 체크 ② **Drop-off**: 날짜 + 시각 + 장소 ③ **Pick-up**: 날짜 + 시각 + 장소 ④ **Your sitters** (단골: 미니 스케줄 + "Available for your whole trip" / "Drop-off 07:00 is before Jun's hours — you can still ask") ⑤ 없으면 **Find other sitters** ⑥ 메모(선택) → 요청 | **Request booking** |
+| `/owner/sitters/[sitterId]` | owner | 시터 소개(bio·지역·경력·집 환경) + 월 스케줄 (칸별 시간·open/full/closed — 다른 견주 정보 없음) | **Book this sitter** |
+| `/owner/bookings/[bookingId]` | owner | 반려동물·인수인계 카드 2개(확정 후 ~ 찾은 뒤 24시간 주소 표시) · **Change time or place** (맡긴 뒤 일찍 데려가기도 여기서) · 시터 제안이 오면 **Accept / Decline** · 맡기기 전에만 **Cancel** · `cancelled`면 사유 + **Find a new sitter** | 상황별 1개 |
 
 - 진입점: owner Home 상단 "Next booking" 카드 / 예약 없으면 **Book care**. sitter `Today` 상단 "Requests (2)" · "Drop-off at 09:30 today" 배지, 헤더 메뉴 **Schedule**.
 - **장소 선택:** `Mina's place` (기본, 보딩) · `My place` · `Somewhere else` (텍스트 1줄 필수, 예: "Trinity Bellwoods Park, north gate"). 주소는 **확정 후** 상대방에게만 보인다. 시각만 바꾸는 역제안은 장소를 그대로 둔다 (`p_location_type` 생략).
@@ -66,14 +66,14 @@
 
 | ID | 작업 | 상세 | DoD |
 | :--- | :--- | :--- | :--- |
-| 3B.1 | 시터 스케줄 | `/(sitter)/schedule`. `sitter_availability` insert/update/delete (칸별 행: slot + starts_at/ends_at + max_pets / blocked). 기간 일부만 바꿀 때는 그 기간으로 **새 open 행을 insert** — 가장 최근 행이 그 날의 시간·정원을 정함(phase-02). `overlaps_confirmed_booking` → 겹치는 예약 목록 → 예약별 **Cancel booking** → 전부 취소되면 block 재시도 | open/blocked/시간/정원 저장, 겹침 시 취소 흐름 |
-| 3B.2 | 단골 시터 + 스케줄 보기 | `rpc('list_my_sitters')` → "Your sitters". `/(owner)/sitters/[id]` → `rpc('get_sitter_schedule')` 월 캘린더 | 단골 스케줄 표시 |
-| 3B.3 | 예약 만들기 | `/(owner)/bookings/new`: 맡기기·찾기 시각·장소 입력 → 단골마다 `get_sitter_schedule`로 전체 가능 여부 + 시간 안 여부 → 없으면 `rpc('search_sitters', {p_drop_off_at, p_pick_up_at, p_pet_count})`. 요청 → `rpc('request_booking', …)`. 에러 문구: `pet_already_booked` → "{name} already has a sitter (or a pending request) at that time." · `invalid_window` → "Pick a drop-off in the future and a pick-up after it." · `location_note_required` → "Tell the sitter where to meet." | 요청 + handoff 2개 + 시터 알림 |
-| 3B.4 | 시터 요청함 + 시각 제안 | `/(sitter)/bookings` → 카드 반려동물은 `rpc('get_booking_pets')`, 상세는 `pets`·`pet_allergies`·`care_tasks` select(요청 받은 시터 허용). **Accept** `rpc('respond_booking')` / **Suggest another time** → `rpc('propose_handoff')`. `handoff_pending` → "Waiting for Jisoo to confirm the new time." `sitter_unavailable` → "You no longer have room on {day} {slot}." | 수락·거절·역제안 |
+| 3B.1 | 시터 스케줄 | `/sitter/schedule`. `sitter_availability` insert/update/delete (칸별 행: slot + starts_at/ends_at + max_pets / blocked). 기간 일부만 바꿀 때는 그 기간으로 **새 open 행을 insert** — 가장 최근 행이 그 날의 시간·정원을 정함(phase-02). `overlaps_confirmed_booking` → 겹치는 예약 목록 → 예약별 **Cancel booking** → 전부 취소되면 block 재시도 | open/blocked/시간/정원 저장, 겹침 시 취소 흐름 |
+| 3B.2 | 단골 시터 + 스케줄 보기 | `rpc('list_my_sitters')` → "Your sitters". `/owner/sitters/[id]` → `rpc('get_sitter_schedule')` 월 캘린더 | 단골 스케줄 표시 |
+| 3B.3 | 예약 만들기 | `/owner/bookings/new`: 맡기기·찾기 시각·장소 입력 → 단골마다 `get_sitter_schedule`로 전체 가능 여부 + 시간 안 여부 → 없으면 `rpc('search_sitters', {p_drop_off_at, p_pick_up_at, p_pet_count})`. 요청 → `rpc('request_booking', …)`. 에러 문구: `pet_already_booked` → "{name} already has a sitter (or a pending request) at that time." · `invalid_window` → "Pick a drop-off in the future and a pick-up after it." · `location_note_required` → "Tell the sitter where to meet." | 요청 + handoff 2개 + 시터 알림 |
+| 3B.4 | 시터 요청함 + 시각 제안 | `/sitter/bookings` → 카드 반려동물은 `rpc('get_booking_pets')`, 상세는 `pets`·`pet_allergies`·`care_tasks` select(요청 받은 시터 허용). **Accept** `rpc('respond_booking')` / **Suggest another time** → `rpc('propose_handoff')`. `handoff_pending` → "Waiting for Jisoo to confirm the new time." `sitter_unavailable` → "You no longer have room on {day} {slot}." | 수락·거절·역제안 |
 | 3B.5 | 협의 응답 + 확정 후 변경 | 양쪽 상세에서 제안 카드 **Accept / Suggest another time / Decline** → `rpc('respond_handoff')` 또는 `rpc('propose_handoff')`(역제안, 횟수 제한 없음). 카드에 이전 제안 이력 표시 ("You: 07:00 → Mina: 07:30 → You: 07:15 …"). 확정 전 **Decline** → 확인 다이얼로그 "This will end the booking request." → 요청 종료. 확정 후 **Change time or place** → 제안, 거절되면 "Mina kept the original time." (예약 유지). 동의 전엔 기존 값 + "Change pending" | 주고받기 → 동의 → 반영 / 거절 규칙 |
 | 3B.6 | 인수인계 체크 | sitter 상세 **Received**(맡기는 시각 2시간 전부터) / **Returned**(Received 후) → `rpc('complete_handoff')` → 견주 알림. `handoff_too_early` → "You can check in from 2 hours before drop-off." `get_handoff_details`로 주소 표시 (확정 후 ~ 찾은 뒤 24시간) | 도착·출발 알림 |
-| 3B.7 | 취소 · 다시 예약 | 취소(맡기기 전만) → `rpc('cancel_booking', {p_reason})`. Received 뒤엔 `booking_in_progress` → "Bori is already with Mina — change the pick-up time instead." 견주 알림 `booking_cancelled` → 상세 → **Find a new sitter** → `/(owner)/bookings/new?rebook=<id>` (반려동물·시각·장소 자동 입력) → `p_rebooked_from` | 취소 → 재예약 |
-| 3B.8 | Sitter Today 연동 | `/(sitter)/index.tsx`: **Now caring** = 맡긴 시간 안 반려동물 (견주별 묶음, 여러 집 가능) · **Today** = 오늘 맡기기/찾기 예정(시각·장소) · **Upcoming**. 없으면 "No bookings yet — open your schedule so owners can find you." | 시각에 따라 표시 전환 |
+| 3B.7 | 취소 · 다시 예약 | 취소(맡기기 전만) → `rpc('cancel_booking', {p_reason})`. Received 뒤엔 `booking_in_progress` → "Bori is already with Mina — change the pick-up time instead." 견주 알림 `booking_cancelled` → 상세 → **Find a new sitter** → `/owner/bookings/new?rebook=<id>` (반려동물·시각·장소 자동 입력) → `p_rebooked_from` | 취소 → 재예약 |
+| 3B.8 | Sitter Today 연동 | `/sitter/index.tsx`: **Now caring** = 맡긴 시간 안 반려동물 (견주별 묶음, 여러 집 가능) · **Today** = 오늘 맡기기/찾기 예정(시각·장소) · **Upcoming**. 없으면 "No bookings yet — open your schedule so owners can find you." | 시각에 따라 표시 전환 |
 
 ---
 
@@ -89,8 +89,8 @@
 
 ## 산출물
 
-- `frontend/app/(sitter)/schedule.tsx`, `frontend/app/(sitter)/bookings/index.tsx`, `[bookingId].tsx`
-- `frontend/app/(owner)/bookings/index.tsx`, `new.tsx`, `[bookingId].tsx`, `frontend/app/(owner)/sitters/[sitterId].tsx`
+- `frontend/app/sitter/schedule.tsx`, `frontend/app/sitter/bookings/index.tsx`, `[bookingId].tsx`
+- `frontend/app/owner/bookings/index.tsx`, `new.tsx`, `[bookingId].tsx`, `frontend/app/owner/sitters/[sitterId].tsx`
 - `frontend/components/SlotCalendar.tsx`, `HandoffCard.tsx`, `HandoffPicker.tsx`, `BookingCard.tsx`, `SitterCard.tsx` — 날짜·시간 선택은 직접 만든 UI (웹 미지원 `@react-native-community/datetimepicker` 금지), 기간은 시작일·종료일 **두 번 탭** (드래그 선택 없음), 시트는 Close 버튼 필수 — 데스크톱 프레임에서 마우스로 동작 ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse), D25)
 - `frontend/lib/bookings.ts` (RPC 래퍼)
 

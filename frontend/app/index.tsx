@@ -1,92 +1,46 @@
-import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text } from "react-native";
+import { Redirect } from "expo-router";
+import { StyleSheet, View } from "react-native";
 
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { Screen } from "../components/ui/Screen";
-import { getApiBaseUrl, getHealth } from "../lib/api";
-import { tokens } from "../theme/tokens";
+import { EmptyState } from "../components/ui/EmptyState";
+import { LoadingView } from "../components/ui/LoadingView";
+import { TextButton } from "../components/ui/TextButton";
+import { homeFor, useSession } from "../providers/SessionProvider";
+import { useThemedStyles } from "../providers/ThemeProvider";
+import { Theme } from "../theme/themes";
 
-export default function HomeScreen() {
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+/** "/" decides where to go: sign in, or the signed-in role's home (phase-03 3.3). */
+export default function Index() {
+  const session = useSession();
 
-  async function onCheckApi() {
-    setLoading(true);
-    setStatusMessage(null);
-    const result = await getHealth();
-    setStatusMessage(result.message);
-    setLoading(false);
-  }
+  if (session.status === "loading") return <LoadingView />;
+  if (session.status === "error") return <ProfileError />;
+  if (session.status === "signedIn") return <Redirect href={homeFor(session.profile.role)} />;
+  return <Redirect href="/login" />;
+}
 
-  const apiUrl = getApiBaseUrl();
+function ProfileError() {
+  const styles = useThemedStyles(makeStyles);
+  const { error, reload, signOut } = useSession();
 
   return (
-    <Screen>
-      <Text style={styles.title}>PawNote</Text>
-      <Text style={styles.subtitle}>
-        Private care updates for dogs and cats — development build
-      </Text>
-
-      <Card style={styles.card}>
-        <Text style={styles.label}>Backend</Text>
-        <Text style={styles.url}>{apiUrl ?? "(EXPO_PUBLIC_API_URL not set)"}</Text>
-        <Button label="Check API" onPress={onCheckApi} disabled={loading} style={styles.button} />
-        {loading ? <ActivityIndicator style={styles.spinner} color={tokens.color.primary} /> : null}
-        {statusMessage ? (
-          <Text
-            style={[
-              styles.status,
-              statusMessage.includes("OK") ? styles.statusOk : styles.statusErr,
-            ]}
-          >
-            {statusMessage}
-          </Text>
-        ) : null}
-      </Card>
-    </Screen>
+    <View style={styles.container}>
+      <EmptyState
+        emoji="🐾"
+        title={error ?? "Something went wrong."}
+        message="Check your connection and try again, or log out and sign in again."
+        action={{ label: "Try again", onPress: reload }}
+      />
+      <TextButton label="Log out" onPress={() => void signOut()} />
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: tokens.fontSize.title,
-    fontWeight: "700",
-    color: tokens.color.text,
-    marginBottom: tokens.spacing.xs,
-  },
-  subtitle: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.textMuted,
-    marginBottom: tokens.spacing.lg,
-  },
-  card: {
-    gap: tokens.spacing.sm,
-  },
-  label: {
-    fontSize: tokens.fontSize.small,
-    fontWeight: "600",
-    color: tokens.color.textMuted,
-    textTransform: "uppercase",
-  },
-  url: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.text,
-  },
-  button: {
-    marginTop: tokens.spacing.sm,
-  },
-  spinner: {
-    marginTop: tokens.spacing.sm,
-  },
-  status: {
-    marginTop: tokens.spacing.sm,
-    fontSize: tokens.fontSize.body,
-  },
-  statusOk: {
-    color: tokens.color.success,
-  },
-  statusErr: {
-    color: tokens.color.error,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      padding: theme.spacing.md,
+      backgroundColor: theme.color.background,
+    },
+  });

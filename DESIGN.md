@@ -1,7 +1,7 @@
 # PawNote — Design Guide
 
 > **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
-> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts). When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` first, then this file.
+> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` / `themes.ts` first, then this file.
 >
 > Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
 > Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
@@ -57,6 +57,7 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 | `layout.frameWidth` | 402 | Phone frame screen width |
 | `layout.frameHeight` | 874 | Phone frame screen height (max) — status bar 44 + app + home indicator 28 |
 | `breakpoint.expanded` | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `layout.tabBarHeight` | 60 | Bottom tab bar — the library default (49) cuts the labels off on web |
 | `color.frameBackdrop` / `frameBezel` / `frameShadow` | `#E8E8E3` / `#1A1A1A` / 18 % black | Desktop page behind the phone / phone body / phone shadow — frame only, never inside the app |
 
 ### 2.2 Later: sitter desktop (post-hackathon, lowest priority)
@@ -71,20 +72,22 @@ After the hackathon, **sitters only** get a full desktop layout for heavy work (
 
 ## 3. Color
 
-Use the token name in code, never a hex value.
+Use the token name in code (`theme.color.primary` from `useTheme()`), never a hex value.
 
-| Token | Value | Use |
-| :--- | :--- | :--- |
-| `background` | `#F7F7F5` | App background behind cards |
-| `surface` | `#FFFFFF` | Cards, sheets, modals |
-| `text` | `#1A1A1A` | Primary text |
-| `textMuted` | `#5C5C5C` | Secondary text, timestamps, helper copy |
-| `primary` | `#2D6A4F` | Primary buttons, active tab, links, checkmarks |
-| `primaryText` | `#FFFFFF` | Text/icons on `primary` |
-| `border` | `#E5E5E0` | Card borders, dividers, input outlines |
-| `success` | `#067647` | Done states, SAFE result |
-| `error` | `#B42318` | Form/API errors, **DANGER** safety result |
-| `warning` **(proposed)** | `#B54708` | WARNING safety result, "needs your OK" handoff badge |
+| Token | Value | Skin? | Use |
+| :--- | :--- | :--- | :--- |
+| `background` | `#F7F7F5` | ✅ | App background behind cards |
+| `surface` | `#FFFFFF` | | Cards, sheets, modals |
+| `text` | `#1A1A1A` | 🔒 fixed | Primary text |
+| `textMuted` | `#5C5C5C` | | Secondary text, timestamps, helper copy |
+| `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
+| `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
+| `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
+| `border` | `#E5E5E0` | | Card borders, dividers, input outlines |
+| `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
+| `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
+| `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
+| `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
 | `warningSurface` **(proposed)** | `#FFFAEB` | Background of warning banners |
 | `errorSurface` **(proposed)** | `#FEF3F2` | Background of DANGER modal body / error banners |
 | `successSurface` **(proposed)** | `#ECFDF3` | Background of SAFE result / success toast |
@@ -92,6 +95,10 @@ Use the token name in code, never a hex value.
 Rules:
 - `error` red is reserved for real problems (failed actions, DANGER). Do not use red for decoration or "cancel" buttons.
 - Status is never color-only — always pair color with an icon or text (e.g. ⚠️ + "Contains chicken").
+
+### 3.1 Themes (pet skins)
+
+A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
 ---
 
@@ -123,6 +130,9 @@ System font for now (Figma will pick one family).
 | `radius.sm` | 8 | Chips, small thumbnails |
 | `radius.md` | 12 | Buttons, inputs |
 | `radius.lg` | 16 | Cards, modals, photos in feed |
+| `icon.sm` | 22 | Header and inline icons, radio marks |
+| `icon.md` | 28 | Icons inside cards (role cards) |
+| `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
 
 - Cards use a 1 px `border`, no heavy shadows.
 - Minimum touch target: **44 × 44**.
@@ -138,18 +148,25 @@ System font for now (Figma will pick one family).
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
+| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen |
+| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
+| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
+| `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
+| `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
+| `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
+| `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
+| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Bori is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
+| `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 
 ### Planned (build as needed, keep the same tokens)
 
 | Component | Notes |
 | :--- | :--- |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
-| `Chip` | `radius.sm`, `small` text. Allergens, task type, mood (🎾 Playful), slot (Morning / Afternoon / Overnight) |
-| `Toast` | Bottom, auto-hide 3 s. Success after actions ("Sent to Jisoo ✅"). **Never** used alone for DANGER |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `EmptyState` | Emoji or small illustration + one line + optional action |
 | `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Feed · Care · Reports …, sitter: Today · Tasks · Scan · Report …) |
-| `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) |
+| `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |
@@ -244,9 +261,9 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 
 ## For AI agents
 
-1. Import values from `frontend/theme/tokens.ts`. **Never hardcode** hex colors, font sizes, or spacing numbers.
+1. Read design values through `useTheme()` / `useThemedStyles(makeStyles)` from `frontend/providers/ThemeProvider.tsx` — in screens and `components/ui`, never import `tokens` directly (only `components/shell/` does, because it renders outside the provider). **Never hardcode** hex colors, font sizes, or spacing numbers. Pattern: a module-level `const makeStyles = (theme: Theme) => StyleSheet.create({...})`, then `const styles = useThemedStyles(makeStyles)` in the component.
 2. Wrap screens in `Screen`; group content in `Card`; use `Button` for actions. Extend these before creating new primitives.
-3. If you need a **(proposed)** token, add it to `tokens.ts` in the same change and mention it in the PR.
+3. If you need a **(proposed)** token, add it to `tokens.ts` in the same change and mention it in the PR. A new color that skins should change also goes into `SkinColors` in `themes.ts`; status colors never do (§3.1).
 4. Follow §7 patterns: one primary action, no sitter text fields, loud DANGER, empty states with copy.
 5. Show both dogs and cats in placeholder content.
 6. If a screen has a Figma frame, the Figma frame wins over this file.

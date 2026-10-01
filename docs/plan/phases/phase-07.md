@@ -83,9 +83,9 @@
 
 | 화면 | Route | 내용 |
 | :--- | :--- | :--- |
-| Sitter Report | `/(sitter)/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **Gap-fill chips** — DB에 없는 항목만 Water / meal·potty·mood 보충 (이미 check-in한 값은 readonly 표시) ③ (선택) 메모 1줄 ④ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
-| Owner Reports | `/(owner)/reports` | 날짜 역순 카드(첫 문장 미리보기). empty: "Your sitter's daily report will appear here each evening." |
-| Owner Report 상세 | `/(owner)/reports/[reportId]` | 날짜, 본문, 그날 feed 사진 가로 스트립, 완료 task 체크리스트 (source_snapshot 기반) |
+| Sitter Report | `/sitter/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **Gap-fill chips** — DB에 없는 항목만 Water / meal·potty·mood 보충 (이미 check-in한 값은 readonly 표시) ③ (선택) 메모 1줄 ④ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
+| Owner Reports | `/owner/reports` | 날짜 역순 카드(첫 문장 미리보기). empty: "Your sitter's daily report will appear here each evening." |
+| Owner Report 상세 | `/owner/reports/[reportId]` | 날짜, 본문, 그날 feed 사진 가로 스트립, 완료 task 체크리스트 (source_snapshot 기반) |
 
 ---
 
@@ -104,7 +104,7 @@
 - `backend/app/services/nebius.py`, `backend/scripts/test_nebius.py`
 - `backend/app/routers/ai_daily_report.py`, `backend/app/schemas/daily_report.py`
 - `backend/app/ai/prompts/daily_report/{system.md, few_shot.json, PROMPT.md}`
-- `frontend/app/(sitter)/report.tsx`, `frontend/app/(owner)/reports/*`
+- `frontend/app/sitter/report.tsx`, `frontend/app/owner/reports/*`
 - `supabase/migrations/006_reports.sql`
 
 ---

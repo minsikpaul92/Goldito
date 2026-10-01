@@ -7,9 +7,12 @@ export const tokens = {
     textMuted: "#5C5C5C",
     primary: "#2D6A4F",
     primaryText: "#FFFFFF",
+    /** Soft tint for highlights (selected chip background, badges). Text on it uses `text`. */
+    accent: "#D8F3DC",
     border: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
+    warning: "#B54708",
     /** Dimmed backdrop behind modals and sheets. */
     overlay: "rgba(26, 26, 26, 0.4)",
     // Desktop phone frame only (DESIGN.md §2.1)
@@ -34,10 +37,18 @@ export const tokens = {
     body: 16,
     small: 14,
   },
+  /** Icon / emoji sizes: header + inline (sm), cards (md), empty states (hero). */
+  icon: {
+    sm: 22,
+    md: 28,
+    hero: 40,
+  },
   layout: {
     /** Phone frame screen on desktop browsers (iPhone 17 class). */
     frameWidth: 402,
     frameHeight: 874,
+    /** Bottom tab bar. The library default (49) squeezes the label on web. */
+    tabBarHeight: 60,
   },
   breakpoint: {
     /** Reserved for the post-hackathon sitter desktop layout. */

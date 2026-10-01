@@ -1,6 +1,7 @@
 # PawNote — Active TODO
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03 → `feat/phase-03-auth` · [#34](https://github.com/minsikpaul92/PawNote/pull/34).
 
 **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
@@ -15,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3.0** | Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10 | [phase-03.md](phases/phase-03.md) |
+| **3B.1** | Sitter schedule `/sitter/schedule` — month calendar, day × slot (Morning · Afternoon · Overnight) open with own hours + capacity / blocked (`sitter_availability`) | [phase-03b.md](phases/phase-03b.md) |
 
 ---
 
@@ -25,10 +26,7 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **3.1–3.3** Auth screens + role routing
-- [ ] **3.4** FastAPI JWT + `/api/me`
-- [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
-- [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
+- [ ] **3B.2–3B.8** Owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)
@@ -49,6 +47,12 @@
 
 ## Completed
 
+- [x] **fix** Radio controls (`SegmentedControl`, `RoleCard`) expose the selected option to screen readers via `aria-checked` (react-native-web ignores `accessibilityState.checked`); e2e asserts it (2026-10-01)
+- [x] **3.5–3.8** Pet profiles + role profiles: owner Home `PetCard` list (🐶 / 🐱, "Dog · Maltese · 4 yrs · 3.2 kg", allergy chips) + Add pet; `/owner/pets/new` · `/owner/pets/[petId]` (`PetForm`: species locked after creation D22, name, breed, birthday, weight, allergy chips stored lowercase + duplicate check); pet insert uses a client UUID without `.select()` (pets_select reads `pets` through `is_owner_of`, which cannot see the row inserted by the same statement — architecture §6); sitter Today stub (3.7); `/profile` for both roles (owner: address, emergency contact, vet; sitter: bio, area, experience, home notes, home address via `get_my_sitter_profile`) + header Profile button; role areas now Stack (guard) over `(tabs)` so details have Back, `initialRouteName` for deep links; `Chip`, `SegmentedControl`, `ToastProvider`, `features/pets`, `features/profile`, `types/db.ts`, `expo-crypto`. Playwright `flows` project (auth 7 + pets 4 + profile 3) on an in-memory PostgREST mock; full local suite 87 passed. Live: sitter profile loads via RPC. Live: Bori (dog, Maltese, chicken) + Mochi (cat, Domestic Shorthair) added on the demo owner through the app and confirmed in the DB. **Phase 03 complete** — handoff-card address check moves to 3B (2026-10-01)
+- [x] **10.1 (accounts part, early)** `backend/scripts/seed_demo.py`: demo-owner.test (Jisoo) / demo-sitter.test (Mina) via Admin API (D19), idempotent refresh, `--check` read-only report of `profiles` + role rows; `DEMO_PASSWORD` in backend `.env.example` + architecture §4 (same value as `EXPO_PUBLIC_DEMO_PASSWORD`). Accounts are created by running the script (not by an agent). Rest of 10.1 (pets, bookings, tasks, Jun, sample feed, `--reset`) stays in Phase 10 (2026-10-01)
+- [x] **3.4** FastAPI JWT: `deps/auth.py` (`verify_supabase_jwt` — ES256/RS256 via project JWKS with 10 min key cache, legacy HS256 via `SUPABASE_JWT_SECRET`; aud `authenticated`, issuer, `exp`/`sub` required), `get_current_user` (role from `profiles` via service role, not token metadata), `require_role`, `deps/supabase.py` service client, `GET /api/me`; 502 → `upstream_error`. pytest 13 (no token / garbage / forged / expired / wrong aud·iss → 401, HS256 + ES256-via-JWKS → 200, other ES256 key → 401, metadata cannot change role, no profile → 403, require_role). Live: real JWKS fetch rejects unknown key, service-role `profiles` lookup works, CORS from :8081. backend README "Auth". **Live:** `/api/me` 200 with real ES256 tokens for demo owner (Jisoo) and sitter (Mina) (2026-10-01)
+- [x] **3.1–3.3** Auth + role routing: `lib/supabase.ts` (lazy `getSupabase()`, AsyncStorage, `getAuthStorageKey()`), `lib/authErrors.ts`, `SessionProvider` (session + `profiles` row; Try again / Log out on load error), `/login` + `/signup` (role cards → `options.data` role + display_name for the signup trigger), `/` gate, role areas `app/owner/` · `app/sitter/` with JS Tabs + stub tabs + header (dev role label, bell slot, Log out) — **D26** URL prefixes instead of `(owner)`/`(sitter)` groups (shared-route refresh picked the wrong role; docs updated). UI: `TextField`, `TextButton`, `EmptyState`, `LoadingView`, `RoleCard`, `icon` tokens. Check API screen → `/dev/health`. Playwright `auth` project with mocked Supabase (7 flows: gate, wrong password, owner/sitter tabs, reload keeps session, sitter blocked from /owner, tab click, sitter signup metadata, log out) + frame/phone specs updated — 80 passed locally. CI frontend job: mock Supabase env + step/job timeouts. **Live (hosted project):** seeded demo owner + sitter sign in, land on their own tabs, reload keeps the session, typing the other role's URL bounces back (2026-10-01)
+- [x] **3.0** Theme provider: `theme/themes.ts` (`SkinColors` = primary · primaryText · background · accent; text / error / success / warning fixed by type), `providers/ThemeProvider.tsx` (`useTheme`, `useThemedStyles`), mounted inside `AppShell`; `Button` / `Card` / `Screen` + home + gesture lab read the theme instead of `tokens`; new tokens `accent`, `warning`; DESIGN.md §3 · §3.1 · AI rules. Checked: computed styles identical to before, temp `primary` change recolors Button only, Playwright 73 passed (2026-10-01)
 - [x] **chore** `frontend/expo-env.d.ts` untracked + gitignored (Expo template): Expo CLI deletes it on every `start` / `export` while `experiments.typedRoutes` is off; `tsc --noEmit` and `expo export -p web` pass without it (2026-10-01)
 - [x] **1.7** Mouse = finger: `TouchEmulation.web.ts` inside the frame iframe, mouse only — drag scroll with axis lock + momentum, no tap after a drag, wheel moves chip rows sideways (paged carousels keep the screen scrolling), paged photos settle on a page, no text selection / image drag, round touch cursor, hidden scrollbars, root-only overscroll containment. `/dev/gestures` lab (`EXPO_PUBLIC_DEV_ROUTES=1`), `color.overlay` token, Playwright (`frontend/e2e/`, Chromium · Firefox · WebKit × 1366 / 1440 / 1920 + touch phone 360 / 402 / 440) in CI, PR template desktop checklist. Local: Chromium + WebKit + phone 73 passed ×2 (momentum test Chromium-only; Firefox needs VC++ runtime this PC lacks — CI covers it). **Phase 01 complete** (2026-10-01)
 - [x] **1.6** Web shell: `components/shell/` (`AppShell` native/web, `DeviceFrame`, `presentation.ts`, `useShell`, `useLayoutMode`) — computers (mouse / trackpad, any window width) → 402 × 874 phone frame with the app in a same-origin iframe; touch phones / tablets → full screen. URL mirrored to the address bar (refresh / deep link / back work), `?frame=0|1`, short windows shrink height, narrower-than-phone windows scale the phone down; frame tokens in `tokens.ts`. Checked 1440×900 · 1366×768 · 1920×1080 · 493 narrow desktop pane (framed) · 375 touch (full screen) · 375 + `?frame=1` (scaled, click OK), wheel scroll + click in frame, `tsc` + `expo export` (2026-10-01)
@@ -95,8 +99,8 @@
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
-| 03 Auth              | not started                                                                   |
-| 03B Bookings         | not started (DB + RPCs done in 02)                                            |
+| 03 Auth              | **done** (2026-10-01)                                                         |
+| 03B Bookings         | next (**3B.1**; DB + RPCs done in 02)                                          |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
 | 06 Tasks             | not started                                                                   |

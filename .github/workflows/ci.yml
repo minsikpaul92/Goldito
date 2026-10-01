@@ -51,6 +51,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: frontend
@@ -68,14 +69,19 @@ jobs:
       - name: Expo web export
         run: npx expo export -p web
         env:
-          # Exposes /dev/gestures for the Playwright checks below (this build is never deployed).
+          # Test-only build for the Playwright checks below (never deployed):
+          # dev routes on, Supabase pointed at the e2e mock on the test server itself.
           EXPO_PUBLIC_DEV_ROUTES: "1"
+          EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:4173/supabase-mock
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: e2e-anon-key
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install Playwright browsers
+        # A stuck browser/apt download once hung this step; fail fast and re-run instead.
+        timeout-minutes: 8
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Playwright (desktop phone frame + mouse)
         run: npx playwright test

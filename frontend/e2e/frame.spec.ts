@@ -5,7 +5,7 @@ import { APP_FRAME, app, box, center, drag, isInside, scrollOffset } from "./hel
 test.describe("desktop phone frame", () => {
   test("shows the app in a 402 px phone that fits the window", async ({ page }) => {
     await page.goto("/");
-    await expect(app(page).getByText("Check API")).toBeVisible();
+    await expect(app(page).getByRole("button", { name: "Sign in" })).toBeVisible();
 
     const frame = await box(page.locator(APP_FRAME));
     const viewport = page.viewportSize()!;
@@ -20,9 +20,10 @@ test.describe("desktop phone frame", () => {
     await page.goto("/dev/gestures");
     await expect(app(page).getByTestId("lab-scroll")).toBeVisible();
 
+    // "Go home" → "/" → the sign-in gate (phase-03 3.3) — the address bar follows both hops.
     await app(page).getByTestId("lab-home").click();
-    await expect(app(page).getByText("Check API")).toBeVisible();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(app(page).getByRole("button", { name: "Sign in" })).toBeVisible();
+    await expect(page).toHaveURL(/\/login$/);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/dev\/gestures$/);
@@ -33,7 +34,7 @@ test.describe("desktop phone frame", () => {
 
   test("?frame=0 turns the frame off", async ({ page }) => {
     await page.goto("/?frame=0");
-    await expect(page.getByText("Check API")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
     await expect(page.locator(APP_FRAME)).toHaveCount(0);
   });
 });

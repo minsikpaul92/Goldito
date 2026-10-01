@@ -48,6 +48,7 @@ Demo priority: the **"A Day with PawNote"** flow in the main README must work en
 | **Pet-friendly map** — restaurants, stores, parks that allow pets | Outside the care loop; Google Places `allowsDogs` exists but is dogs-only, highest-cost field tier, and cannot be used as a search filter |
 | **Sticker / emoji / skin store** (business model) | Presented in README / Devpost as the monetization path; no payments built |
 | **Bark / vocal emotion analysis** | Public research reaches ~36–57% on 3-class emotion — not reliable enough to show owners |
+| **Google / Apple sign-in** | Needs a Google Cloud OAuth client + Supabase provider setup, and an Apple Developer membership ($99/yr) with Services ID and domain verification. Google's sign-in page refuses to load inside the desktop phone frame (iframe), so it needs a popup or top-level redirect; OAuth sign-ups carry no owner/sitter role, so a one-time role choice (+ RPC) is required. Judges use Try demo, so P0 keeps email + password (phase-03 excludes social login) |
 | **Sitter desktop web** — sitters plan schedules and write reports faster on a computer (sidebar layout); owners stay on the phone | Lowest priority. The hackathon build only frames the phone app on desktop (architecture D25); screens use `useLayoutMode()` and JS `Tabs` so this layout can be added later |
 
 ---

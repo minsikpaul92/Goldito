@@ -4,7 +4,7 @@ import { box } from "./helpers";
 
 test("touch phones get the app full screen without a frame", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Check API")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   await expect(page.locator("iframe")).toHaveCount(0);
 });
 
@@ -13,7 +13,7 @@ for (const width of [360, 402, 440]) {
     await page.setViewportSize({ width, height: 800 });
 
     await page.goto("/");
-    const button = await box(page.getByText("Check API"));
+    const button = await box(page.getByRole("button", { name: "Sign in" }));
     expect(button.x).toBeGreaterThanOrEqual(0);
     expect(button.x + button.width).toBeLessThanOrEqual(width);
 
