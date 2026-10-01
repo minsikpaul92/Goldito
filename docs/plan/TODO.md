@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **1.6** | Web shell — desktop browsers show the app in a **402 × 874 phone frame** (same-origin iframe, URL sync, `?frame=0|1`) | [phase-01.md](phases/phase-01.md), architecture D25 |
+| **1.7** | Mouse = finger (`TouchEmulation`: drag scroll + momentum, no click after drag, horizontal wheel) + `/dev/gestures` + Playwright mouse tests in CI + PR template desktop checklist | [phase-01.md](phases/phase-01.md), architecture D25 |
 
 ---
 
@@ -25,7 +25,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **1.7** Mouse = finger (`TouchEmulation`: drag scroll + momentum, no click after drag, horizontal wheel) + `/dev/gestures` + Playwright mouse tests in CI + PR template desktop checklist ([phase-01.md](phases/phase-01.md))
 - [ ] **3.0** Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
@@ -51,6 +50,7 @@
 
 ## Completed
 
+- [x] **1.6** Web shell: `components/shell/` (`AppShell` native/web, `DeviceFrame`, `presentation.ts`, `useShell`, `useLayoutMode`) — computers (mouse / trackpad, any window width) → 402 × 874 phone frame with the app in a same-origin iframe; touch phones / tablets → full screen. URL mirrored to the address bar (refresh / deep link / back work), `?frame=0|1`, short windows shrink height, narrower-than-phone windows scale the phone down; frame tokens in `tokens.ts`. Checked 1440×900 · 1366×768 · 1920×1080 · 493 narrow desktop pane (framed) · 375 touch (full screen) · 375 + `?frame=1` (scaled, click OK), wheel scroll + click in frame, `tsc` + `expo export` (2026-10-01)
 - [x] **docs** Plan B sitter care loop ([sitter-care-loop.ko.md](sitter-care-loop.ko.md)): check-ins, optional photo, Activity, notifications; phase-06/07/architecture updated; P1 **11.11** Settings + [CHANGELOG.md](../CHANGELOG.md) (2026-10-01)
 - [x] **2.9** Hosted Supabase: `001`–`003` applied (SQL Editor) + `rls_smoke.sql` passed after API table grants block in `003` (2026-10-01)
 - [x] **docs** D25 web display plan: desktop = 402 × 874 phone frame (same-origin iframe), mouse = finger layer, `pickMedia()` sample tray, Playwright mouse tests, side panel + split view (10.9–10.10), sitter desktop as post-hackathon roadmap. New tasks 1.6 · 1.7 · 4.7 · 10.9 · 10.10; DESIGN.md §2.1 · §2.2 · §7.7; architecture, phase-01/03/03B/04/06/08/10, onboarding, Devpost, playbook, CLAUDE.md, READMEs updated (2026-10-01)
@@ -92,7 +92,7 @@
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
-| 01 Scaffold          | **done** (2026-09-29) · **1.6–1.7 added** (2026-10-01, web shell + mouse — D25) |
+| 01 Scaffold          | **done** (2026-09-29) · 1.6 done (2026-10-01) · **1.7** next (mouse = finger — D25) |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | not started                                                                   |
 | 03B Bookings         | not started (DB + RPCs done in 02)                                            |
