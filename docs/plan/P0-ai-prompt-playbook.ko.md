@@ -110,15 +110,15 @@ DoD: web loads and health check shows ok when backend runs.
 ```text
 Implement the web shell from architecture D25 and phase-01 task 1.6.
 - components/shell/AppShell.tsx (native: return children) and AppShell.web.tsx.
-- presentation.ts resolvePresentation(): direct when inside an iframe, ?frame=0, or width < 768; framed when ?frame=1 or width >= 768.
+- presentation.ts resolvePresentation(): direct when inside an iframe, ?frame=0, or the primary input is touch (pointer: coarse); framed when ?frame=1 or on a mouse/trackpad computer at any window width.
 - framed: render only a backdrop + DeviceFrame.web.tsx + a same-origin <iframe> of the current path+search (set src once). No providers or routes in the outer page.
-- DeviceFrame: generic CSS phone, screen 402 x 874, status bar + home indicator outside the iframe, height shrinks to fit short windows (min 600), never transform: scale, no real device images.
+- DeviceFrame: generic CSS phone, screen 402 x 874, status bar + home indicator outside the iframe, the app always lays out at 402 px; height shrinks on short windows (min 600) and the whole phone scales down on windows narrower than it; no real device images.
 - Inside the iframe, mirror route changes to the parent with window.parent.history.replaceState.
 - useLayoutMode() returns 'compact' for now; useShell() exposes { embedded }.
-- Add layout.frameWidth/frameHeight and breakpoint.framed/expanded to theme/tokens.ts.
+- Add layout.frameWidth/frameHeight, breakpoint.expanded, and frame colors to theme/tokens.ts.
 - Mount AppShell outside every provider in app/_layout.tsx.
 
-DoD: phase-01 1.6 DoD column (desktop 1440x900 framed, 375 wide full screen, refresh keeps route, 1366x768 not cut off).
+DoD: phase-01 1.6 DoD column (desktop framed at any width, touch phone full screen, refresh keeps route, 1366x768 not cut off).
 ```
 
 ### AI 프롬프트 — 1.7 마우스 = 손가락 + 테스트

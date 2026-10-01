@@ -8,6 +8,8 @@ const STATUS_BAR_HEIGHT = 44;
 const HOME_INDICATOR_HEIGHT = 28;
 const PAGE_MARGIN = tokens.spacing.md;
 const MIN_SCREEN_HEIGHT = 600;
+const MIN_SCALE = 0.5;
+const BODY_WIDTH = tokens.layout.frameWidth + BEZEL * 2;
 
 type Props = {
   /** The app screen (an iframe) shown between the status bar and home indicator. */
@@ -16,23 +18,29 @@ type Props = {
 
 /**
  * Generic CSS phone (no device images or brand marks).
- * Width stays at the design frame; on short windows only the height shrinks.
+ * The app inside always lays out at the design width. Short windows shrink the
+ * screen height; windows narrower than the phone scale the whole phone down
+ * (safe because the app lives in an iframe with its own coordinates).
  */
 export function DeviceFrame({ children }: Props) {
-  const { height: windowHeight } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const scale = Math.max(MIN_SCALE, Math.min(1, (windowWidth - PAGE_MARGIN * 2) / BODY_WIDTH));
   const screenHeight = Math.min(
     tokens.layout.frameHeight,
-    Math.max(MIN_SCREEN_HEIGHT, windowHeight - PAGE_MARGIN * 2 - BEZEL * 2),
+    Math.max(MIN_SCREEN_HEIGHT, (windowHeight - PAGE_MARGIN * 2) / scale - BEZEL * 2),
   );
+  const bodyHeight = screenHeight + BEZEL * 2;
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.pageContent}>
-      <View style={[styles.body, { height: screenHeight + BEZEL * 2 }]}>
-        <View style={styles.screen}>
-          <StatusBar />
-          <View style={styles.content}>{children}</View>
-          <View style={styles.homeIndicatorArea}>
-            <View style={styles.homeIndicator} />
+      <View style={{ width: BODY_WIDTH * scale, height: bodyHeight * scale }}>
+        <View style={[styles.body, { height: bodyHeight, transform: [{ scale }] }]}>
+          <View style={styles.screen}>
+            <StatusBar />
+            <View style={styles.content}>{children}</View>
+            <View style={styles.homeIndicatorArea}>
+              <View style={styles.homeIndicator} />
+            </View>
           </View>
         </View>
       </View>
@@ -90,8 +98,9 @@ const styles = StyleSheet.create({
     padding: PAGE_MARGIN,
   },
   body: {
-    width: tokens.layout.frameWidth + BEZEL * 2,
+    width: BODY_WIDTH,
     padding: BEZEL,
+    transformOrigin: "top left",
     borderRadius: 56,
     backgroundColor: tokens.color.frameBezel,
     boxShadow: `0 24px 60px ${tokens.color.frameShadow}`,

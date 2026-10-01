@@ -1,9 +1,8 @@
 import { ReactNode, useEffect, useState } from "react";
-import { useWindowDimensions } from "react-native";
 
 import { tokens } from "../../theme/tokens";
 import { DeviceFrame } from "./DeviceFrame.web";
-import { readFrameOverride, resolvePresentation } from "./presentation";
+import { TOUCH_PRIMARY_QUERY, readFrameOverride, resolvePresentation } from "./presentation";
 import { ShellContext } from "./useShell";
 
 type Props = {
@@ -27,17 +26,32 @@ function currentUrl(): string {
   return `${pathname}${search}${hash}`;
 }
 
+function useTouchPrimary(): boolean {
+  const [touchPrimary, setTouchPrimary] = useState(
+    () => canUseDOM && window.matchMedia(TOUCH_PRIMARY_QUERY).matches,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia(TOUCH_PRIMARY_QUERY);
+    const onChange = () => setTouchPrimary(query.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
+  return touchPrimary;
+}
+
 /**
  * Web entry for the app (architecture D25).
- * - Desktop browser → phone frame with the same app in a same-origin iframe.
- * - Phone browser, `?frame=0`, or inside that iframe → the app as-is.
+ * - Computer (mouse / trackpad), any window width → phone frame with the same app in a same-origin iframe.
+ * - Phone / tablet browser, `?frame=0`, or inside that iframe → the app as-is.
  */
 export function AppShell({ children }: Props) {
   const [embedded] = useState(isEmbedded);
-  const { width } = useWindowDimensions();
+  const touchPrimary = useTouchPrimary();
   const presentation = resolvePresentation({
     embedded,
-    width,
+    touchPrimary,
     override: canUseDOM ? readFrameOverride(window.location.search) : null,
   });
 

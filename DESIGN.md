@@ -41,21 +41,21 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 
 | Where the app runs | What renders |
 | :--- | :--- |
-| Native app, phone browser (width < 768) | The app, full screen |
-| Desktop browser (width ≥ 768) | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
+| Native app, phone or tablet browser (touch is the primary input) | The app, full screen |
+| Computer browser (mouse / trackpad), **any window width** | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
 | `?frame=0` / `?frame=1` | Force the frame off (video recording, debugging) / on |
 | `?view=split` (Phase 10.10, stretch) | Owner and Sitter phones side by side |
 
 - The frame holds the **same app in a same-origin iframe**. Inside it, everything behaves like a real 402 px phone: modals, sheets, `useWindowDimensions`, media queries.
 - The frame is a generic CSS phone (rounded body, status bar with the time, home indicator). No real device images or brand marks.
-- On short windows (laptops at 1366 × 768, Windows at 125–150 % scaling) the frame keeps its width and **only gets shorter** (min 600). Never `transform: scale`.
+- The device type decides, not the window width (`pointer: coarse` = touch): narrowing a desktop window keeps the phone frame, so the team can always see the mobile behavior.
+- The app inside always lays out at **402 px wide**. On short windows (laptops at 1366 × 768, Windows at 125–150 % scaling) only the screen height shrinks (min 600). On windows narrower than the phone, the whole phone is scaled down visually — safe because the app lives in an iframe with its own coordinates.
 - Inside the frame, the mouse acts like a finger — see [§7.7](#77-works-with-a-mouse).
 
 | Token | Value | Use |
 | :--- | :--- | :--- |
 | `layout.frameWidth` | 402 | Phone frame screen width |
 | `layout.frameHeight` | 874 | Phone frame screen height (max) — status bar 44 + app + home indicator 28 |
-| `breakpoint.framed` | 768 | Desktop browser at or above this → phone frame |
 | `breakpoint.expanded` | 1024 | Reserved for the sitter desktop layout (§2.2) |
 | `color.frameBackdrop` / `frameBezel` / `frameShadow` | `#E8E8E3` / `#1A1A1A` / 18 % black | Desktop page behind the phone / phone body / phone shadow — frame only, never inside the app |
 

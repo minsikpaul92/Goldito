@@ -38,8 +38,6 @@ export const tokens = {
     frameHeight: 874,
   },
   breakpoint: {
-    /** Desktop browser at or above this width → phone frame. */
-    framed: 768,
     /** Reserved for the post-hackathon sitter desktop layout. */
     expanded: 1024,
   },
