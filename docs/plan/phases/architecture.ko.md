@@ -132,16 +132,17 @@ PawNote/
 | `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
 | `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) | Save | 03 |
 | `/(owner)/bookings`, `/(owner)/bookings/new`, `/(owner)/bookings/[bookingId]`, `/(owner)/sitters/[sitterId]` | owner | 예약 목록 / 단골 스케줄 확인·검색·요청 / 상세·재예약 / 시터 스케줄 | Book care | 03B |
-| `/profile` | both | 역할별 프로필 편집 | Save | 03 |
+| `/profile` | both | 역할별 프로필 편집 (주소·bio 등) — **Settings 아님** | Save | 03 |
+| `/settings` | both | 계정·알림·앱 정보 · **What's New**(패치노트) | — | **11.11 (P1)** |
 | `/(owner)/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
-| `/(owner)/tasks` (tab: Care) | owner | 투약·산책 등록 + 오늘 상태(done/pending/missed) | Add task | 06 |
+| `/(owner)/tasks` (tab: Care) | owner | Task 등록 + 오늘 상태 · **Activity** 히스토리 (Plan B) | Add task | 06 |
 | `/(owner)/reports` , `/(owner)/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
 | `/(owner)/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/(sitter)/` (tab: Today) | sitter | 오늘 담당 pet(진행 중 예약) + Upcoming 예약 + 요청 배지 + 오늘 할 일 요약 + due 배너 | 다음 할 일 Complete | 03(스텁) → 03B → 06 |
+| `/(sitter)/` (tab: Today) | sitter | 담당 pet · 예약 · **Quick check-ins**(meal/potty/mood/note) · due 배너 | Mark done / check-in | 03(스텁) → 03B → 06 |
 | `/(sitter)/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
 | `/(sitter)/bookings`, `/(sitter)/bookings/[bookingId]` | sitter | 요청함 · 예정 · 지난 예약 / 인수인계·Received·Returned | Accept | 03B |
 | `/(sitter)/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
-| `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Complete with photo** | 06 |
+| `/(sitter)/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) | **Mark done** / Done with photo | 06 |
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
 | `/(sitter)/report` (tab: Report) | sitter | 퀵탭 체크 → Generate → (편집) → Send | **Send report** | 07 |
 | `/(sitter)/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
@@ -256,7 +257,8 @@ PawNote/
 | `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | "Bori and Mochi arrived at Mina's 🏠" / "Bori and Mochi are on the way home 👋" | 예약 상세 |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/(owner)/feed` |
-| `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/(owner)/tasks` |
+| `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/(owner)/tasks` (Activity) |
+| `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/(owner)/tasks` (Activity) |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/(owner)/reports/[id]` |
 | `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) | "Blocked a risky treat for Bori ⚠️" | `/(owner)/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Bori's walk is due at 10:30" | `/(sitter)/tasks` |
