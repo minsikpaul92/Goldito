@@ -4,7 +4,7 @@
 
 ## Goal
 
-하루의 **피드 캡션 + 완료/누락된 투약·산책 + sitter 퀵탭 체크(식사·물·배변·기분)**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **검토 후 한 번에 전송**, 견주는 **읽기 전용**으로 받는다.
+하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·기분·note) + Report 화면 gap-fill 퀵탭**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **검토 후 한 번에 전송**, 견주는 **읽기 전용**으로 받는다. (Plan B: [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
 
 ### Goal 달성 기준
 
@@ -57,6 +57,10 @@
      "tasks": [{"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
                {"type": "walk", "title": "Walk", "due": "10:30", "status": "done", "completed_at": "10:52"}],
      "photos": [{"time": "10:55", "caption": "Bori sniffing autumn leaves with a wagging tail"}],
+     "checkins": [{"time": "08:15", "kind": "meal", "value": "all", "has_photo": false},
+                  {"time": "11:02", "kind": "potty", "value": "normal", "has_photo": false},
+                  {"time": "14:30", "kind": "mood", "value": "happy", "has_photo": false},
+                  {"time": "15:10", "kind": "note", "note_text": "Met a golden retriever at the park", "has_photo": true}],
      "checks": {"meal": "all", "water": "normal", "potty": "normal", "mood": "happy"},
      "sitter_note": "Met a new friend, a golden retriever"
    }
@@ -79,7 +83,7 @@
 
 | 화면 | Route | 내용 |
 | :--- | :--- | :--- |
-| Sitter Report | `/(sitter)/report` | ① 오늘 요약 카드(완료 task 수, 사진 수) ② **퀵탭 chips** — Meal: All / Most / A little / Didn't eat · Water: Normal / Low · Poop: Normal / Soft / None · Mood: Happy / Calm / Tired ③ (선택) 메모 1줄 ④ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
+| Sitter Report | `/(sitter)/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **Gap-fill chips** — DB에 없는 항목만 Water / meal·potty·mood 보충 (이미 check-in한 값은 readonly 표시) ③ (선택) 메모 1줄 ④ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
 | Owner Reports | `/(owner)/reports` | 날짜 역순 카드(첫 문장 미리보기). empty: "Your sitter's daily report will appear here each evening." |
 | Owner Report 상세 | `/(owner)/reports/[reportId]` | 날짜, 본문, 그날 feed 사진 가로 스트립, 완료 task 체크리스트 (source_snapshot 기반) |
 
