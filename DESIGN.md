@@ -53,10 +53,11 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 
 | Token | Value | Use |
 | :--- | :--- | :--- |
-| `layout.frameWidth` **(proposed)** | 402 | Phone frame screen width (task 1.6) |
-| `layout.frameHeight` **(proposed)** | 874 | Phone frame screen height (max) |
-| `breakpoint.framed` **(proposed)** | 768 | Desktop browser at or above this → phone frame |
-| `breakpoint.expanded` **(proposed)** | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `layout.frameWidth` | 402 | Phone frame screen width |
+| `layout.frameHeight` | 874 | Phone frame screen height (max) — status bar 44 + app + home indicator 28 |
+| `breakpoint.framed` | 768 | Desktop browser at or above this → phone frame |
+| `breakpoint.expanded` | 1024 | Reserved for the sitter desktop layout (§2.2) |
+| `color.frameBackdrop` / `frameBezel` / `frameShadow` | `#E8E8E3` / `#1A1A1A` / 18 % black | Desktop page behind the phone / phone body / phone shadow — frame only, never inside the app |
 
 ### 2.2 Later: sitter desktop (post-hackathon, lowest priority)
 
@@ -157,7 +158,7 @@ System font for now (Figma will pick one family).
 | `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
 | `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
-| `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it |
+| `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it — they may only use `useShell()` (`{ embedded }`) and `useLayoutMode()` |
 
 ---
 

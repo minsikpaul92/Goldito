@@ -95,7 +95,7 @@ supabase/migrations/.gitkeep, supabase/README.md
 backend/.env.example, frontend/.env.example, .gitignore
 .github/workflows/ci.yml
 # 1.6–1.7
-frontend/components/shell/ (AppShell.tsx, AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts)
+frontend/components/shell/ (AppShell.tsx, AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts)
 frontend/app/dev/gestures.tsx, frontend/e2e/*, frontend/playwright.config.ts
 .github/pull_request_template.md
 ```

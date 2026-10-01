@@ -103,7 +103,7 @@ PawNote/
    ├─ app/                    # expo-router (§3)
    │  └─ dev/gestures.tsx     # 1.7 — 마우스 동작 테스트 화면 (EXPO_PUBLIC_DEV_ROUTES=1일 때만)
    ├─ assets/demo/            # 4.7 — 샘플 사진 (강아지·고양이 일상, 가상 브랜드 간식 라벨 — PII 없음)
-   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts (화면에서 import 금지)
+   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts (화면은 `useShell`·`useLayoutMode`만 import)
    ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
    ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker …)
    ├─ features/<domain>/      # 화면별 데이터·상태 훅 use*.ts (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
