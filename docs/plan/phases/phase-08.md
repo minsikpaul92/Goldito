@@ -81,7 +81,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 | 8.1 | Router + pydantic models (`VisionResult`, `SafetyResult`) | invalid JSON → retry x1 → 502 `ai_invalid_output` |
 | 8.2 | Vision step + `prompts/safety/vision_system.md` | 영어·다국어 라벨 모두 영어 성분명으로 정규화 |
 | 8.3 | Reasoning step + `prompts/safety/reasoning_system.md` (hidden allergen 예시 표, toxic 목록) + 서버 override (step 5) | 샘플 3종 기대 결과 일치 |
-| 8.4 | TreatScannerScreen `/(sitter)/scan` | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Bori…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
+| 8.4 | TreatScannerScreen `/sitter/scan` | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Bori…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
 | 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Bori ✅" |
 | 8.6 | Notify owner | `007_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
 | 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.ko.md](../tavily.ko.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
@@ -112,7 +112,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 ## 산출물
 
 - `backend/app/routers/ai_safety.py`, `backend/app/schemas/safety.py`, `backend/app/ai/prompts/safety/*`
-- `frontend/app/(sitter)/scan.tsx`, `frontend/components/ui/AlertModal.tsx`
+- `frontend/app/sitter/scan.tsx`, `frontend/components/ui/AlertModal.tsx`
 - `supabase/migrations/007_safety.sql`
 
 ---

@@ -62,7 +62,7 @@ RLS: insert/select like task completion — on-duty sitter for `pet_id`; owner r
 
 | Route | Phase | Content |
 | :--- | :--- | :--- |
-| `/(owner)/activity` or Care tab **Activity** segment | 06 | Pet switcher · default **today + last 7 days** · merged timeline: `task_logs` (done) + `care_checkins` + feed posts (optional collapse) · each row: time, icon, label (“Fed · All”, “Walk · Done”, “Mood · Happy”, “Note · …”), thumbnail if photo |
+| `/owner/activity` or Care tab **Activity** segment | 06 | Pet switcher · default **today + last 7 days** · merged timeline: `task_logs` (done) + `care_checkins` + feed posts (optional collapse) · each row: time, icon, label (“Fed · All”, “Walk · Done”, “Mood · Happy”, “Note · …”), thumbnail if photo |
 
 Tap row → detail modal (photo full size). No edit/delete for owner in P0.
 

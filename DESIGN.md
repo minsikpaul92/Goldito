@@ -129,6 +129,9 @@ System font for now (Figma will pick one family).
 | `radius.sm` | 8 | Chips, small thumbnails |
 | `radius.md` | 12 | Buttons, inputs |
 | `radius.lg` | 16 | Cards, modals, photos in feed |
+| `icon.sm` | 22 | Header and inline icons, radio marks |
+| `icon.md` | 28 | Icons inside cards (role cards) |
+| `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
 
 - Cards use a 1 px `border`, no heavy shadows.
 - Minimum touch target: **44 × 44**.
@@ -144,6 +147,11 @@ System font for now (Figma will pick one family).
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
+| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen |
+| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
+| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
+| `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
+| `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 
 ### Planned (build as needed, keep the same tokens)
 
@@ -153,7 +161,6 @@ System font for now (Figma will pick one family).
 | `Chip` | `radius.sm`, `small` text. Allergens, task type, mood (🎾 Playful), slot (Morning / Afternoon / Overnight) |
 | `Toast` | Bottom, auto-hide 3 s. Success after actions ("Sent to Jisoo ✅"). **Never** used alone for DANGER |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `EmptyState` | Emoji or small illustration + one line + optional action |
 | `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Feed · Care · Reports …, sitter: Today · Tasks · Scan · Report …) |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |

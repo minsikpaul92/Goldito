@@ -137,7 +137,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 ## 🚀 Getting Started
 
-Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. Apply the migrations, run backend then frontend, and use **Check API** on the home screen. Full judge-ready steps land in Phase 10.
+Monorepo: `backend/` (FastAPI), `frontend/` (Expo Web), `supabase/migrations/`. Apply the migrations, run backend then frontend, and open `/dev/health` (with `EXPO_PUBLIC_DEV_ROUTES=1`) to tap **Check API**; `/` opens sign in. Full judge-ready steps land in Phase 10.
 
 | Path | Doc |
 | :--- | :--- |

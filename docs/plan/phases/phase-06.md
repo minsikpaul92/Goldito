@@ -40,7 +40,7 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 6.1 | Owner Care `/(owner)/tasks` | Segments: **Tasks** (등록·오늘 상태) + **Activity** (히스토리). Add task 시트 — species별 type (phase-06 구 spec), 15분 time picker (DESIGN.md §7.7) |
+| 6.1 | Owner Care `/owner/tasks` | Segments: **Tasks** (등록·오늘 상태) + **Activity** (히스토리). Add task 시트 — species별 type (phase-06 구 spec), 15분 time picker (DESIGN.md §7.7) |
 | 6.2 | `ensure_today_task_logs` | 기존 spec 유지 (003 헬퍼, 멱등) |
 | 6.3 | Sitter Tasks | missed → pending → done · **Mark done** (primary) · **Done with photo** (secondary) · Today "Next up" |
 | 6.4 | `complete_task_log(p_task_log, p_media_id uuid default null)` | `in_care_window` 검사 · done 갱신 · **`task_done` 항상** · `media_id` 있을 때만 `feed_post` + task 캡션 (`caption_source='task'`) |
@@ -73,7 +73,7 @@
 ## 산출물
 
 - `supabase/migrations/005_tasks.sql` — table, RLS, RPCs (`ensure_today_task_logs`, `complete_task_log`, `log_care_checkin`, `list_pet_activity` or view)
-- `frontend/app/(owner)/tasks.tsx` (Activity segment), `/(sitter)/tasks.tsx`, `/(sitter)/index.tsx` (quick check-ins), `TaskRow`, `QuickCheckInBar`, `ActivityTimeline`, `useDueReminder.ts`
+- `frontend/app/owner/tasks.tsx` (Activity segment), `/sitter/tasks.tsx`, `/sitter/index.tsx` (quick check-ins), `TaskRow`, `QuickCheckInBar`, `ActivityTimeline`, `useDueReminder.ts`
 
 ---
 

@@ -61,7 +61,7 @@
 ## 산출물
 
 - `backend/app/routers/ai_caption.py`, `backend/app/ai/prompts/caption/system.md`
-- Updated `frontend/lib/feed.ts`, `frontend/app/(sitter)/pets/[petId].tsx`
+- Updated `frontend/lib/feed.ts`, `frontend/app/sitter/pets/[petId].tsx`
 
 ---
 

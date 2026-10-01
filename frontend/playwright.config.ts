@@ -1,8 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Mouse-only checks of the desktop phone frame (task 1.7, architecture D25).
- * Runs against `expo export -p web` built with EXPO_PUBLIC_DEV_ROUTES=1 (no backend needed).
+ * Mouse-only checks of the desktop phone frame (task 1.7, architecture D25) and the
+ * auth / role routing flows against a mocked Supabase (phase-03).
+ * Runs against `expo export -p web` built with EXPO_PUBLIC_DEV_ROUTES=1 and
+ * EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:4173/supabase-mock (no backend or real project).
  */
 const PORT = 4173;
 
@@ -37,7 +39,7 @@ export default defineConfig({
     ...browsers.flatMap((browser) =>
       viewports.map((viewport) => ({
         name: `${browser.name}-${viewport.width}x${viewport.height}`,
-        testIgnore: /phone\.spec\.ts/,
+        testIgnore: /(phone|auth)\.spec\.ts/,
         use: { ...browser.device, viewport },
       })),
     ),
@@ -45,6 +47,12 @@ export default defineConfig({
       name: "phone",
       testMatch: /phone\.spec\.ts/,
       use: { ...devices["Pixel 7"] },
+    },
+    {
+      // Flow logic, not layout — one desktop browser is enough.
+      name: "auth",
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
   ],
 });

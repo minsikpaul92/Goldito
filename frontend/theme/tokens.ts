@@ -37,6 +37,12 @@ export const tokens = {
     body: 16,
     small: 14,
   },
+  /** Icon / emoji sizes: header + inline (sm), cards (md), empty states (hero). */
+  icon: {
+    sm: 22,
+    md: 28,
+    hero: 40,
+  },
   layout: {
     /** Phone frame screen on desktop browsers (iPhone 17 class). */
     frameWidth: 402,

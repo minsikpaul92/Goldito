@@ -1,96 +1,46 @@
-import { useState } from "react";
-import { ActivityIndicator, StyleSheet, Text } from "react-native";
+import { Redirect } from "expo-router";
+import { StyleSheet, View } from "react-native";
 
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { Screen } from "../components/ui/Screen";
-import { getApiBaseUrl, getHealth } from "../lib/api";
-import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
+import { EmptyState } from "../components/ui/EmptyState";
+import { LoadingView } from "../components/ui/LoadingView";
+import { TextButton } from "../components/ui/TextButton";
+import { homeFor, useSession } from "../providers/SessionProvider";
+import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-export default function HomeScreen() {
-  const theme = useTheme();
+/** "/" decides where to go: sign in, or the signed-in role's home (phase-03 3.3). */
+export default function Index() {
+  const session = useSession();
+
+  if (session.status === "loading") return <LoadingView />;
+  if (session.status === "error") return <ProfileError />;
+  if (session.status === "signedIn") return <Redirect href={homeFor(session.profile.role)} />;
+  return <Redirect href="/login" />;
+}
+
+function ProfileError() {
   const styles = useThemedStyles(makeStyles);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function onCheckApi() {
-    setLoading(true);
-    setStatusMessage(null);
-    const result = await getHealth();
-    setStatusMessage(result.message);
-    setLoading(false);
-  }
-
-  const apiUrl = getApiBaseUrl();
+  const { error, reload, signOut } = useSession();
 
   return (
-    <Screen>
-      <Text style={styles.title}>PawNote</Text>
-      <Text style={styles.subtitle}>
-        Private care updates for dogs and cats — development build
-      </Text>
-
-      <Card style={styles.card}>
-        <Text style={styles.label}>Backend</Text>
-        <Text style={styles.url}>{apiUrl ?? "(EXPO_PUBLIC_API_URL not set)"}</Text>
-        <Button label="Check API" onPress={onCheckApi} disabled={loading} style={styles.button} />
-        {loading ? <ActivityIndicator style={styles.spinner} color={theme.color.primary} /> : null}
-        {statusMessage ? (
-          <Text
-            style={[
-              styles.status,
-              statusMessage.includes("OK") ? styles.statusOk : styles.statusErr,
-            ]}
-          >
-            {statusMessage}
-          </Text>
-        ) : null}
-      </Card>
-    </Screen>
+    <View style={styles.container}>
+      <EmptyState
+        emoji="🐾"
+        title={error ?? "Something went wrong."}
+        message="Check your connection and try again, or log out and sign in again."
+        action={{ label: "Try again", onPress: reload }}
+      />
+      <TextButton label="Log out" onPress={() => void signOut()} />
+    </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    title: {
-      fontSize: theme.fontSize.title,
-      fontWeight: "700",
-      color: theme.color.text,
-      marginBottom: theme.spacing.xs,
-    },
-    subtitle: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-      marginBottom: theme.spacing.lg,
-    },
-    card: {
-      gap: theme.spacing.sm,
-    },
-    label: {
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.textMuted,
-      textTransform: "uppercase",
-    },
-    url: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.text,
-    },
-    button: {
-      marginTop: theme.spacing.sm,
-    },
-    spinner: {
-      marginTop: theme.spacing.sm,
-    },
-    status: {
-      marginTop: theme.spacing.sm,
-      fontSize: theme.fontSize.body,
-    },
-    statusOk: {
-      color: theme.color.success,
-    },
-    statusErr: {
-      color: theme.color.error,
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      padding: theme.spacing.md,
+      backgroundColor: theme.color.background,
     },
   });

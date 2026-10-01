@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3.1–3.3** | Auth screens (login / signup + role) + `SessionProvider` + role routing guards | [phase-03.md](phases/phase-03.md) |
+| **3.4** | FastAPI JWT (`deps/auth.py`: JWKS + HS256 fallback, `get_current_user`, `require_role`) + `GET /api/me` + pytest 401 cases | [phase-03.md](phases/phase-03.md) |
 
 ---
 
@@ -26,7 +26,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
 - [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
@@ -49,6 +48,7 @@
 
 ## Completed
 
+- [x] **3.1–3.3** Auth + role routing: `lib/supabase.ts` (lazy `getSupabase()`, AsyncStorage, `getAuthStorageKey()`), `lib/authErrors.ts`, `SessionProvider` (session + `profiles` row; Try again / Log out on load error), `/login` + `/signup` (role cards → `options.data` role + display_name for the signup trigger), `/` gate, role areas `app/owner/` · `app/sitter/` with JS Tabs + stub tabs + header (dev role label, bell slot, Log out) — **D26** URL prefixes instead of `(owner)`/`(sitter)` groups (shared-route refresh picked the wrong role; docs updated). UI: `TextField`, `TextButton`, `EmptyState`, `LoadingView`, `RoleCard`, `icon` tokens. Check API screen → `/dev/health`. Playwright `auth` project with mocked Supabase (7 flows: gate, wrong password, owner/sitter tabs, reload keeps session, sitter blocked from /owner, tab click, sitter signup metadata, log out) + frame/phone specs updated — 80 passed locally. CI frontend job: mock Supabase env + step/job timeouts. **Pending:** one real signup/login on the hosted project once `frontend/.env` has the Supabase URL + anon key (2026-10-01)
 - [x] **3.0** Theme provider: `theme/themes.ts` (`SkinColors` = primary · primaryText · background · accent; text / error / success / warning fixed by type), `providers/ThemeProvider.tsx` (`useTheme`, `useThemedStyles`), mounted inside `AppShell`; `Button` / `Card` / `Screen` + home + gesture lab read the theme instead of `tokens`; new tokens `accent`, `warning`; DESIGN.md §3 · §3.1 · AI rules. Checked: computed styles identical to before, temp `primary` change recolors Button only, Playwright 73 passed (2026-10-01)
 - [x] **1.7** Mouse = finger: `TouchEmulation.web.ts` inside the frame iframe, mouse only — drag scroll with axis lock + momentum, no tap after a drag, wheel moves chip rows sideways (paged carousels keep the screen scrolling), paged photos settle on a page, no text selection / image drag, round touch cursor, hidden scrollbars, root-only overscroll containment. `/dev/gestures` lab (`EXPO_PUBLIC_DEV_ROUTES=1`), `color.overlay` token, Playwright (`frontend/e2e/`, Chromium · Firefox · WebKit × 1366 / 1440 / 1920 + touch phone 360 / 402 / 440) in CI, PR template desktop checklist. Local: Chromium + WebKit + phone 73 passed ×2 (momentum test Chromium-only; Firefox needs VC++ runtime this PC lacks — CI covers it). **Phase 01 complete** (2026-10-01)
 - [x] **1.6** Web shell: `components/shell/` (`AppShell` native/web, `DeviceFrame`, `presentation.ts`, `useShell`, `useLayoutMode`) — computers (mouse / trackpad, any window width) → 402 × 874 phone frame with the app in a same-origin iframe; touch phones / tablets → full screen. URL mirrored to the address bar (refresh / deep link / back work), `?frame=0|1`, short windows shrink height, narrower-than-phone windows scale the phone down; frame tokens in `tokens.ts`. Checked 1440×900 · 1366×768 · 1920×1080 · 493 narrow desktop pane (framed) · 375 touch (full screen) · 375 + `?frame=1` (scaled, click OK), wheel scroll + click in frame, `tsc` + `expo export` (2026-10-01)
@@ -95,7 +95,7 @@
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
-| 03 Auth              | in progress (3.0 theme provider done 2026-10-01; next 3.1–3.3)                |
+| 03 Auth              | in progress (3.0, 3.1–3.3 done 2026-10-01; next 3.4)                          |
 | 03B Bookings         | not started (DB + RPCs done in 02)                                            |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
