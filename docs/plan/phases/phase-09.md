@@ -26,7 +26,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Vision 캡션 (image + video poster) | 영상 전체 이해 (stretch: omni video 입력) |
+| Vision 캡션 (image + video poster) | 영상 여러 프레임 기반 기분 한 줄 → [Phase 11.9](phase-11.md) |
 | Backend-only API key | client-side AI |
 | 업로드 카드 "Writing a caption…" 로딩 UX | task 완료 게시물 캡션 (Phase 06 고정 문구 유지) |
 
