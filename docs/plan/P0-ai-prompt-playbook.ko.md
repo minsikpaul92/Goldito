@@ -2,7 +2,7 @@
 
 > ⚠️ **정본은 [phases/architecture.ko.md](phases/architecture.ko.md) + 각 phase 문서입니다.** 아래 프롬프트는 출발점일 뿐이며, 스키마·엔드포인트 body·파일 경로가 다르면 phase 문서를 따르세요 (예: safety-check는 multipart가 아니라 `{pet_id, media_id}`, UI·AI 출력은 영어 전용, Nebius client는 `backend/app/services/nebius.py`). 프롬프트에 해당 phase 문서의 "작업 상세" 표를 함께 붙여 넣는 것을 권장합니다.
 
-> **목적:** 리포가 문서만 있는 상태에서, P0(피드·투약/산책·알림장·세이프티 가드)까지 **AI(Cursor)에게 줄 명령**을 단계별로 정리.
+> **목적:** P0 — [Full Process 5단계](full-process.ko.md)(문의 → 사전 미팅 → 예약 → 돌봄 & 이동 → 완료) — 까지 **AI(Cursor·Claude)에게 줄 명령**을 단계별로 정리. 세이프티 가드는 시나리오 코어 뒤 stretch (D27).
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
 
 관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [스키마 정본 phase-02](phases/phase-02.md) · [제품 README](../README.ko.md)
@@ -11,9 +11,9 @@
 
 ## 0. 어디부터? (추천 순서 한 줄)
 
-**사람(계정·키) → DB 스키마 → 백엔드 뼈대 → 프론트 뼈대 → 인증·역할 → Cloudinary 업로드 → 피드( AI 없이) → 알림 → 일정/투약 → AI 모듈(슬기) 붙이기 → 알림장 → 세이프티 → 시드·데모·배포**
+**사람(계정·키) → DB 스키마 → 백엔드 뼈대 → 프론트 뼈대 → 인증·역할 → 예약·Meet & Greet(03B) → 견적·동의서·데모 결제(03C) → Cloudinary 업로드 → 피드·알림 → 케어 의뢰서·5초 체크(06) → Pet Transit(06B) → 알림장(07) → 문의 AI·RAG(07B) → 캡션·앨범(09) → 완료·Life Record(07C) → 시드·데모·배포 → (stretch) 세이프티**
 
-AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 캡션/알림장/세이프티는 **피드·일정 API가 먼저** 있어야 붙입니다.
+AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 기능은 **붙일 데이터(예약·피드·체크인)가 먼저** 있어야 합니다. 슬기의 AI 백엔드(7.1 → 7B → 6.12 → 6B.5 → 7.2 → 9.1 → 7C.4)는 병렬로 진행합니다.
 
 ---
 
@@ -21,7 +21,8 @@ AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 캡션/�
 
 ```text
 You are working in the PawNote monorepo (Nebius x NVIDIA hackathon).
-Stack: Expo (React Native Web), FastAPI (Python 3.12), Supabase (Postgres + Auth + Realtime), Cloudinary (media), Nebius Token Factory — Nemotron for reasoning/reports, MiniCPM-V for vision (AI only in backend).
+Stack: Expo (React Native Web), FastAPI (Python 3.12), Supabase (Postgres + Auth + Realtime + pgvector), Cloudinary (media), Nebius Token Factory — Nemotron for replies/reasoning/reports, MiniCPM-V for vision, Qwen3 Embedding for RAG (AI only in backend).
+Product flow: docs/plan/full-process.ko.md (5 stages).
 
 Rules:
 - Minimize scope: only change files needed for this task.
@@ -202,6 +203,41 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 
 ---
 
+## 5B. Phase 3B·3C — 서비스·이동 방식 · 예약 · Meet & Greet · 견적·동의서·데모 결제 (Stage 2–3)
+
+| ID | Todo | 선행 | DoD |
+| :--- | :--- | :--- | :--- |
+| 3B.0 | 탭 변경 + `004_booking_options.sql` (service_type, services, Meet & Greet, media purpose) | 03 | 탭 라벨 안 잘림 |
+| 3B.1–3B.8 | 스케줄 · 단골·검색 · 요청 · 협의 · Received/Returned · 취소·재예약 | 3B.0 | [phase-03b](phases/phase-03b.md) Goal |
+| 3B.9–3B.10 | Meet & Greet · 서비스·이동 방식 UI | 3B.3 | 제안 → 수락 → Done |
+| 3C.1–3C.7 | `quote_booking` · 동의서 · `pay_booking_demo` · 시터 집 정보 · 출입 정보 2시간 전 해제 | 3B | rls_smoke I–K |
+
+### AI 프롬프트 — 3C SQL (견적·결제·해제)
+
+```text
+Implement supabase/migrations/005_agreements.sql per docs/plan/phases/phase-03c.md (3C.1, 3C.3–3C.5) and architecture D29–D31:
+- sitter_rates, holidays (Ontario 2026–2027), quote_booking(p_sitter, p_service, p_drop_off_at, p_pick_up_at, p_pet_count) returning the breakdown JSON — no AI involved
+- booking_consents + required_consents(p_booking); pay_booking_demo(p_booking) → paid_at + price_snapshot, error codes consents_missing / already_paid
+- owner_home_access (owner-only RLS) + get_home_access(p_booking): paid, booked sitter, window = first owner_home handoff − 2 h … stay end; access_reveals + access_unlocked notification once
+- get_handoff_details: address only after payment
+- Extend supabase/tests/rls_smoke.sql with scenarios I–K
+
+DoD: rls_smoke passes; quote for the phase-03c example = 268.13 CAD.
+```
+
+### AI 프롬프트 — 3C UI (Checkout)
+
+```text
+Build /owner/bookings/[bookingId]/checkout and /owner/home-access per phase-03c (3C.2, 3C.6):
+QuoteCard (rpc quote_booking), ConsentCard list from features/agreements/templates.ts (required kinds from rpc required_consents), signer name, Pay (demo) → rpc pay_booking_demo, then booking detail shows the sitter's place + packing list.
+Sitter booking detail: EntryInfoCard (locked → "Unlocks …", unlocked → Show code, hides after 10 s).
+Mouse-only inside the phone frame (DESIGN.md §7.7). English copy. "Demo template — not legal advice" footer.
+
+DoD: Pay is disabled until every required consent is signed; Playwright flow covers it.
+```
+
+---
+
 ## 6. Phase 4 — Cloudinary 업로드 파이프
 
 | ID | Todo | 선행 | DoD |
@@ -246,7 +282,7 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 
 ---
 
-## 8. Phase 6 — P0-2 투약·산책 의뢰 & 리마인더
+## 8. Phase 6 — 케어·투약 의뢰서 · 5초 체크 · 리마인더 (Stage 2·4)
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
@@ -261,11 +297,50 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 ```text
 Implement medication/walk tasks:
 - OwnerTaskScreen: create care_task with a species-allowed type (medication, feeding, play, sleep + walk for dogs / litter for cats), title, dose optional, scheduled_time, repeat daily
-- RPC ensure_today_task_logs(p_pet) in 005_tasks.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
+- RPC ensure_today_task_logs(p_pet) in 007_care.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
 - SitterTasksScreen: list pending task_logs for today, Complete opens camera/upload, marks done, links media_id, creates feed_post optional with caption "Medication done" / "Walk done"
 - Notify owner on completion
 
 DoD: owner creates 8am medication, sitter completes with photo, owner gets notification and sees task done state.
+```
+
+### AI 프롬프트 — 6.12–6.14 케어·투약 의뢰서 (Stage 2)
+
+```text
+Implement the care request per docs/plan/phases/phase-06.md 6.12–6.14:
+- Backend (Seulgi): POST /api/ai/care-plan {pet_id, text} — assert_owner_of, MODEL_REPORT + prompts/care_plan/system.md → chat_json CarePlan; the server enforces species rules (walk = dogs, litter = cats → skipped), HH:MM times, dedupe. Draft only, nothing saved.
+- Frontend: /owner/pets/[petId]/care-request — text box → Make a checklist → ChecklistCard (editable rows, Heads-up chips) → Save checklist inserts care_requests + care_tasks + pet_cautions; Heads-up cards on sitter Today and the booking request card.
+
+DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 Heads-up; a cat walk is skipped.
+```
+
+---
+
+## 8B. Phase 6B — Pet Transit (Stage 4)
+
+| ID | Todo | 선행 | DoD |
+| :--- | :--- | :--- | :--- |
+| 6B.1 | `008_transit.sql` — trips (마지막 위치만), handoff_checks, home 좌표, start/update/end RPC | 03C | rls_smoke L |
+| 6B.2–6B.4 | `lib/location.ts` (GPS / Simulate) · TripMap(보기 전용) · 도착 카드 | 6B.1, 05 | 두 창에서 ETA 3초 안 |
+| 6B.5 | `POST /api/ai/handoff-check` (슬기) | 7.1, 04 | 샘플 4장 기대 결과 |
+| 6B.6–6B.7 | `complete_handoff(p_check)` 연결 · Playwright | 6B.5 | photo verified 알림 |
+
+### AI 프롬프트 — 6B.1–6B.4
+
+```text
+Implement Pet Transit per docs/plan/phases/phase-06b.md and architecture D32:
+- supabase/migrations/008_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
+- frontend/lib/location.ts: one source for real GPS (expo-location / navigator.geolocation) and "Simulate the drive" (assets/demo/routes/*.json at 10×), posting every 5 s
+- TripMap.web.tsx: Leaflet + OSM, dragging/scrollWheelZoom/touchZoom off, ± buttons, fit both markers, OSM attribution; native TripMap.tsx = distance + ETA card
+- Trip screen for both roles + arrival cards (EntryInfoCard from 03C for the sitter, the sitter's place for the owner)
+
+DoD: phase-06b Goal checklist in two browser windows; drag over the map scrolls the screen (1.7 tests).
+```
+
+### 슬기 전용 AI 프롬프트 — 6B.5 handoff check
+
+```text
+Implement POST /api/ai/handoff-check per phase-06b 6B.5: assert_booked_sitter(booking, 2 h before), fetch_as_data_url, MODEL_VISION + prompts/handoff_check/system.md (per check_type), chat_json → HandoffFindings; the server (not the model) decides ok / warning; timeout or model error → status "unchecked" (200). Insert handoff_checks via service role. Observations only, no medical claims. pytest with mocked model output.
 ```
 
 ---
@@ -311,7 +386,49 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 
 ---
 
-## 10. Phase 8 — P0-4 간식 세이프티 가드
+## 9B. Phase 7B — 문의 AI 자동 답변 + RAG (Stage 1)
+
+| ID | Todo | 선행 | DoD |
+| :--- | :--- | :--- | :--- |
+| 7B.1 | `010_inquiries_rag.sql` — pgvector, inquiries, inquiry_messages, knowledge_chunks, match_knowledge | 03C | rls_smoke M |
+| 7B.2 | `nebius.embed()` + `services/rag.py` (index / search) | 7.1 | 재인덱싱 중복 없음 |
+| 7B.3–7B.4 | `POST /api/ai/inquiry-reply` + prompt (슬기) | 7B.1–7B.2, 3C.1 | 근거 테스트 a–f |
+| 7B.5–7B.6 | Owner 문의 시트·스레드 · Sitter Inquiries + Looks good · 정책 편집 | 05, 7B.3 | 마우스만으로 문의 → 답 → 요청 |
+| 7B.7 | latency 지표 (p50 < 10 s) | 7B.3 | model-ids.md 기록 |
+
+### 슬기 전용 AI 프롬프트 — 7B.2–7B.4
+
+```text
+Implement the inquiry auto-reply per docs/plan/phases/phase-07b.md and architecture §9 (grounding rules, D29, D31, D33):
+- nebius.embed(texts) with MODEL_EMBED and dimensions=MODEL_EMBED_DIM (1024); services/rag.py index_source / search using rpc match_knowledge (service role)
+- POST /api/ai/inquiry-reply {inquiry_id}: collect availability (get_sitter_schedule), quote_booking, pet profiles + pet_cautions, sitter public profile, rag.search top-5 → MODEL_FAST + prompts/inquiry/system.md → chat_json {reply, can_host, needs_sitter, used_sources}
+- Number check: any $ amount or date in reply must exist in the grounding JSON, else regenerate once, else fixed fallback text
+- Grounding JSON must never contain addresses, lockbox, buzzer, or other owners' data (unit test)
+- Idempotent: return the existing AI message if one exists
+
+DoD: backend/tests/test_inquiry.py cases a–f pass with a mocked model; live call p50 < 10 s logged.
+```
+
+---
+
+## 9C. Phase 7C — 완료 · 리뷰 · Pet Life Record (Stage 5)
+
+| ID | Todo | 선행 | DoD |
+| :--- | :--- | :--- | :--- |
+| 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 6B | rls_smoke N |
+| 7C.2–7C.3 | 귀가 리포트 · Stay summary · 리뷰 UI | 7C.1 | 1회 제한 |
+| 7C.4 | `POST /api/ai/life-record` + RAG 인덱싱 (슬기) | 7B.2, 07 | 환각 테스트 3회 |
+| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Jun 요청 카드에 Mina 기록 |
+
+### 슬기 전용 AI 프롬프트 — 7C.4
+
+```text
+Implement POST /api/ai/life-record {booking_id} per phase-07c 7C.4: booking party + pick-up completed (else 409 stay_not_finished); per pet build source_snapshot from that stay (check-ins, task_logs, daily_reports, handoff_checks, sitter memos, owner inquiry questions, previous record) with no address / entry-code keys; MODEL_REPORT + prompts/life_record/system.md → chat_json LifeRecord (null when no evidence, changed_since_last); insert pet_life_records + rag.index_source('life_record', …); notify owner life_record_updated. Idempotent.
+```
+
+---
+
+## 10. Phase 8 — 간식 세이프티 가드 (P0 stretch — 시나리오 코어 뒤, D27)
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
@@ -344,7 +461,7 @@ DoD: matches design stub (red modal).
 
 ---
 
-## 11. Phase 9 — AI 캡션 (피드 P0 마무리)
+## 11. Phase 9 — AI 캡션 + 앨범 분류 (Stage 4)
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
@@ -362,11 +479,11 @@ DoD: sitter upload only; caption appears automatically.
 
 ---
 
-## 12. Phase 10 — 데모 시드 & "PawNote의 하루"
+## 12. Phase 10 — 데모 시드 & "A Stay with PawNote"
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Bori(dog)/Mochi(cat) |
+| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Bori(dog)/Mochi(cat) + 시나리오 데이터(요금·정책·가상 출입 정보·좌표·지난 Life Record) |
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
 | 10.3 | 배포: Vercel(front) + Nebius AI Cloud Serverless Endpoint(backend, D18 — Render는 긴급 fallback) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
@@ -382,7 +499,9 @@ Create scripts/seed_demo.sql or Python using service role:
 - Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
 
-DoD: fresh DB can demo full day flow in 15 minutes.
+- Scenario data (phase-10 10.1): Mina rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Jun + Life Records + review, RAG indexing
+
+DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ```
 
 ---
@@ -391,15 +510,21 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 
 | 동시에 가능 | 민식 (Cursor) | 슬기 (Cursor) |
 | :--- | :--- | :--- |
-| Week 1 | Phase 1–5 (틀, DB, auth, feed) | Phase 0.3, 7.4 few-shot, `scripts/test_nebius.py` |
-| Week 2 | Phase 6–7 UI + wiring | Phase 7.2 prompt tuning, 8.1–8.3 pipeline |
+| Week 1 | Phase 1–3 ✅, 03B 예약 | 7.1 Nebius client + `embed()`, 데이터 익명화, 7.4 few-shot |
+| Week 2 | 03C · 04 · 05 | 07B 문의 AI + RAG 백엔드, 6.12 care-plan |
+| Week 3 | 06 · 06B · 07 UI | 6B.5 handoff-check, 7.2 알림장, 9.1 캡션·분류 |
+| Week 4 | 07B UI · 09 · 07C · 10 | 7C.4 Life Record, 프롬프트 튜닝 · (stretch) 8.1–8.3 |
 | 합류 지점 | `/api/ai/*` contract OpenAPI or README | FastAPI 라우터에 붙이기 |
 
 **API 계약을 먼저 고정**하면 병렬이 쉽습니다. Phase 7 시작 전에 `backend/docs/openapi-ai.yaml` 또는 README 표:
 
 | Endpoint | Body | Response |
 | :--- | :--- | :--- |
-| POST /api/ai/caption | `{ pet_id, media_id }` | `{ caption, source, model, latency_ms }` |
+| POST /api/ai/inquiry-reply | `{ inquiry_id }` | `{ message_id, body, can_host, needs_sitter, quote, sources, model, latency_ms }` |
+| POST /api/ai/care-plan | `{ pet_id, text }` | `{ tasks, cautions, model, latency_ms }` |
+| POST /api/ai/handoff-check | `{ booking_id, kind, check_type, media_id }` | `{ check_id, status, findings, message, model, latency_ms }` |
+| POST /api/ai/caption | `{ pet_id, media_id }` | `{ caption, category, source, model, latency_ms }` |
+| POST /api/ai/life-record | `{ booking_id }` | `{ records, model, latency_ms }` |
 | POST /api/ai/daily-report | `{ pet_id, date, inputs }` | `{ report_id, body, status, model, latency_ms }` |
 | POST /api/ai/safety-check | `{ pet_id, media_id }` | SafetyCheck JSON (phase-08) |
 
@@ -436,11 +561,18 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [x] 2.1–2.6 migrations
 - [x] 2.7 RLS
 - [x] 2.8 functions + smoke test
-- [ ] 2.9 hosted apply
+- [x] 2.9 hosted apply
 
 ### Phase 3
-- [ ] 3.1–3.2 Auth + role
-- [ ] 3.3 FastAPI JWT
+- [x] 3.1–3.3 Auth + role routing
+- [x] 3.4 FastAPI JWT
+- [x] 3.5–3.8 pets + profiles
+
+### Phase 3B · 3C — Stage 2–3
+- [ ] 3B.0 tabs + 004 migration
+- [ ] 3B.1–3B.8 schedule · booking · handoff · cancel
+- [ ] 3B.9–3B.10 Meet & Greet · service / transport
+- [ ] 3C.1–3C.7 quote · consents · demo pay · timed unlock
 
 ### Phase 4
 - [ ] 4.1–4.3 Cloudinary
@@ -451,11 +583,19 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [ ] 5.2 owner timeline
 - [ ] 5.3 notifications
 
-### Phase 6 — Tasks
+### Phase 6 — Care request + checks
 - [ ] 6.1 owner CRUD tasks
 - [ ] 6.2 task_logs today
 - [ ] 6.3 complete + photo
 - [ ] 6.4 notify owner
+- [ ] 6.8–6.11 check-ins (walk minutes) + Activity
+- [ ] 6.12–6.14 care request → AI checklist + Heads-up
+
+### Phase 6B — Pet Transit
+- [ ] 6B.1 trips migration
+- [ ] 6B.2–6B.4 location · map · arrival cards
+- [ ] 6B.5 handoff-check (Seulgi)
+- [ ] 6B.6–6B.7 handoff wiring + e2e
 
 ### Phase 7 — Report AI
 - [ ] 7.1 nebius client
@@ -463,13 +603,27 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [ ] 7.3 send UI
 - [ ] 7.4 few-shot (슬기)
 
-### Phase 8 — Safety
+### Phase 7B — Inquiry AI + RAG
+- [ ] 7B.1 migration (pgvector)
+- [ ] 7B.2 embed + rag service
+- [ ] 7B.3–7B.4 inquiry-reply + prompt
+- [ ] 7B.5–7B.6 owner / sitter UI
+- [ ] 7B.7 latency
+
+### Phase 9 — Caption AI + album
+- [ ] 9.1–9.2 auto caption
+- [ ] 9.5 category + Album view
+
+### Phase 7C — Completion
+- [ ] 7C.1 migration
+- [ ] 7C.2–7C.3 home-safe report + review
+- [ ] 7C.4 life-record (Seulgi)
+- [ ] 7C.5–7C.6 Life Record UI + next booking
+
+### Phase 8 — Safety (stretch)
 - [ ] 8.1–8.3 pipeline
 - [ ] 8.4–8.5 UI + notify
 - [ ] 8.7 Tavily sources (stretch)
-
-### Phase 9 — Caption AI
-- [ ] 9.1–9.2 auto caption
 
 ### Phase 10 — Demo
 - [ ] 10.1 seed
@@ -483,5 +637,5 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 ## 16. 지금 당장 첫 Cursor 채팅에 넣을 한 줄
 
 ```text
-Start Phase 1.1 only: monorepo scaffold for PawNote per docs/plan/P0-ai-prompt-playbook.ko.md section 3 Phase 1. Use the common prompt header from section 1. Do not implement auth or database yet.
+Read CLAUDE.md and docs/plan/TODO.md. Work ONLY on the "Current focus" task (now 3B.0). Read docs/plan/full-process.ko.md and the linked phase doc for Goal and DoD. Use the common prompt header from section 1.
 ```

@@ -1,15 +1,18 @@
 # Phase 07 — 알림장 AI (Daily Report)
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) — D1 영어, AI 규칙 §9, API 계약 §5
+> 공통 전제: [architecture.ko.md](architecture.ko.md) — D1 영어, **D34 5초 체크**, AI 규칙 §9, API 계약 §5
+> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4-3·4-4 — 시터 5초 체크 + 사진 2장 → AI 스마트 알림장
 
 ## Goal
 
-하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·기분·note) + Report 화면 gap-fill 퀵탭**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **검토 후 한 번에 전송**, 견주는 **읽기 전용**으로 받는다. (Plan B: [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
+하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·산책·기분·note) + Report 화면 5초 체크(칩 + 사진 ≤ 2 + 메모 1줄)**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **검토 후 한 번에 전송**, 견주는 **읽기 전용**으로 받는다. 5초 체크 사진은 Vision(`MODEL_VISION`)이 먼저 한 줄 묘사로 바꿔 snapshot에 넣는다. (Plan B: [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
+
+> 목표 문장 예 (시나리오 4-4, 영어): *"Bori took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
 
 ### Goal 달성 기준
 
 - [ ] `POST /api/ai/daily-report` → `daily_reports` status=draft (같은 날 재생성 시 덮어쓰기)
-- [ ] Sitter: 퀵탭 체크 → **Generate** → (선택 편집) → **Send** → status=sent + owner `report_sent` 알림
+- [ ] Sitter: **5초 체크** — ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task에서 자동) + 메모 "Saw a squirrel at the park — so excited" + 사진 2장 → **Generate** → (선택 편집) → **Send** → status=sent + owner `report_sent` 알림
 - [ ] Owner: Reports 탭에서 날짜별 목록 + 본문 + 그날 사진 스트립
 - [ ] **환각 방지:** `source_snapshot`에 없는 산책/투약/식사 내용이 report에 없음 (수동 테스트 3회)
 
@@ -30,7 +33,8 @@
 | `services/nebius.py` (architecture §9 전부), `scripts/test_nebius.py` | Tavily |
 | Super 모델 (`MODEL_REPORT`) | 다국어 (D1: EN만) |
 | 퀵탭 입력 (`daily_reports.inputs`) | 자동 생성 스케줄 (stretch 7.6) |
-| `006_reports.sql` (`send_daily_report` RPC) | 원본 raw 데이터 |
+| `009_reports.sql` (`send_daily_report` RPC) | 원본 raw 데이터 |
+| 5초 체크 사진 ≤ 2 → Vision 한 줄 묘사 (`photos` snapshot) | 사진 3장 이상, 영상 |
 
 ---
 
@@ -42,7 +46,7 @@
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
 | 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편, 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
-| 7.5 | send RPC | 민식 | `006_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
+| 7.5 | send RPC | 민식 | `009_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
 
 ### 7.2 집계 → 프롬프트 → 저장
@@ -56,13 +60,14 @@
      "date": "2026-10-15",
      "tasks": [{"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
                {"type": "walk", "title": "Walk", "due": "10:30", "status": "done", "completed_at": "10:52"}],
-     "photos": [{"time": "10:55", "caption": "Bori sniffing autumn leaves with a wagging tail"}],
+     "photos": [{"time": "10:55", "caption": "Bori sniffing autumn leaves with a wagging tail", "source": "feed"},
+                {"time": "17:40", "caption": "Bori looking up at a squirrel on a tree", "source": "report"}],
      "checkins": [{"time": "08:15", "kind": "meal", "value": "all", "has_photo": false},
                   {"time": "11:02", "kind": "potty", "value": "normal", "has_photo": false},
                   {"time": "14:30", "kind": "mood", "value": "happy", "has_photo": false},
                   {"time": "15:10", "kind": "note", "note_text": "Met a golden retriever at the park", "has_photo": true}],
-     "checks": {"meal": "all", "water": "normal", "potty": "normal", "mood": "happy"},
-     "sitter_note": "Met a new friend, a golden retriever"
+     "checks": {"meal": "all", "potty": "normal", "walk_minutes": 20, "mood": "happy", "meds": "done"},
+     "sitter_note": "Saw a squirrel at the park — so excited"
    }
    ```
 4. 메시지: system(`system.md`) + few-shot 3쌍(user=input JSON, assistant=output) + user(source_snapshot). Reasoning off, `max_tokens` 400, temperature 0.7.
@@ -75,7 +80,7 @@
 - Role: warm, detail-oriented pet sitter with 3 years of experience writing to the owner.
 - Address the pet by name; friendly emojis OK (≤ 4); no robotic lists ("Walk completed: 40 min" ❌).
 - One sentence describing expression/behavior from photo captions.
-- Mention meal/water/potty/mood **only if present in `checks`**.
+- Mention meal/water/potty/walk/mood/meds **only if present in `checks`**. Use the sitter note as the day's episode, in your own warm words.
 - **Use only facts in the input JSON. If something isn't there, don't mention it.** Missed tasks: state gently and honestly ("We missed the 10:30 walk today…").
 - No medical diagnosis or advice.
 
@@ -83,7 +88,7 @@
 
 | 화면 | Route | 내용 |
 | :--- | :--- | :--- |
-| Sitter Report | `/sitter/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **Gap-fill chips** — DB에 없는 항목만 Water / meal·potty·mood 보충 (이미 check-in한 값은 readonly 표시) ③ (선택) 메모 1줄 ④ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
+| Sitter Report | `/sitter/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **5초 체크 칩** — Meal · Potty · Walk(분) · Mood (이미 check-in한 값은 readonly, Meds는 오늘 medication task 상태 자동) ③ (선택) 메모 1줄 ④ **Add photos** (≤ 2, `pickMedia` — purpose `report`) ⑤ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집 가능한 textarea) ⑤ **Send to {owner}** (주 액션) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
 | Owner Reports | `/owner/reports` | 날짜 역순 카드(첫 문장 미리보기). empty: "Your sitter's daily report will appear here each evening." |
 | Owner Report 상세 | `/owner/reports/[reportId]` | 날짜, 본문, 그날 feed 사진 가로 스트립, 완료 task 체크리스트 (source_snapshot 기반) |
 
@@ -105,7 +110,7 @@
 - `backend/app/routers/ai_daily_report.py`, `backend/app/schemas/daily_report.py`
 - `backend/app/ai/prompts/daily_report/{system.md, few_shot.json, PROMPT.md}`
 - `frontend/app/sitter/report.tsx`, `frontend/app/owner/reports/*`
-- `supabase/migrations/006_reports.sql`
+- `supabase/migrations/009_reports.sql`
 
 ---
 
@@ -117,4 +122,4 @@ Playbook §9 — 7.1 / 7.2 / 7.3+7.5 / 7.4(슬기) 분리
 
 ## 다음 Phase
 
-→ [Phase 08 — 세이프티](phase-08.md) · 병렬 가능: [Phase 09](phase-09.md)는 7.1 후 시작 가능
+→ [Phase 07B — 문의 AI](phase-07b.md) · [Phase 09 — 캡션·앨범](phase-09.md) (둘 다 7.1 후 시작 가능) → [Phase 07C — 완료](phase-07c.md). [Phase 08 — 세이프티](phase-08.md)는 시나리오 코어 뒤 stretch (D27)

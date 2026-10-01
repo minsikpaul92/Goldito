@@ -1,8 +1,8 @@
 # 제품 온보딩 — 심사·데모·가입 첫 경험
 
-> **목적:** 해커톤 **실 URL 데모**에서 심사위원이 가입·설정 없이 **Owner / Sitter 역할**과 **“A Day with PawNote”** 가치를 이해하고 바로 체험하게 한다.
+> **목적:** 해커톤 **실 URL 데모**에서 심사위원이 가입·설정 없이 **Owner / Sitter 역할**과 **“A Stay with PawNote”**(5단계 — [full-process.ko.md](full-process.ko.md)) 가치를 이해하고 바로 체험하게 한다.
 >
-> **관련:** [루트 README — A Day with PawNote](../../README.md) · [Phase 03](phases/phase-03.md) (Auth) · [Phase 10](phases/phase-10.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.ko.md#1-결정-로그-확정) (UI·카피 **영어**)
+> **관련:** [루트 README — How PawNote Works · A Stay with PawNote](../../README.md) · [전체 서비스 흐름](full-process.ko.md) · [Phase 03](phases/phase-03.md) (Auth) · [Phase 10](phases/phase-10.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.ko.md#1-결정-로그-확정) (UI·카피 **영어**)
 
 ---
 
@@ -59,7 +59,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | :--- | :--- | :--- |
 | 1 · Problem | Owner anxiety vs sitter DM fatigue (README Problem 1문장씩) | Illustration 또는 아이콘 |
 | 2 · Two roles | **Learn without asking** (Owner) / **Care, snap, tap** (Sitter) | north-star 표와 동일 |
-| 3 · One day | 08:00 med → 10:30 walk → 15:00 scan → 18:00 report (README 타임라인) | 데모·영상과 동일 스토리 |
+| 3 · One stay | ① Ask → ② Care request → ③ Book & sign → ④ Live trip + daily note → ⑤ Home safe + Life Record (README 5단계) | 데모·영상과 동일 스토리 |
 | Footer CTA | Primary: **Try demo as Sitter** · Secondary: **Try demo as Owner** · Text: **Sign in** · **Create account** | 모바일 단일 컬럼, CTA 1개 primary |
 
 - **Skip:** “Skip to sign in” (작은 링크) — 재방문·개발용.
@@ -86,7 +86,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | 역할 | 첫 진입 | P0 |
 | :--- | :--- | :--- |
 | Owner | Home에 Bori 카드·오늘 요약 (시드) | Empty state 카피만 명확히 |
-| Sitter | Today에 Bori + due 배너 (Phase 06 이후) | “Complete with photo”가 primary |
+| Sitter | Today에 Bori + Heads-up + 오늘 인수인계(Trip) 카드 (Phase 06·06B 이후) | 상황별 primary 1개 (Start trip → Received → 체크) |
 
 **풀 튜토리얼(coach marks)은 P0 제외.** Empty state + 데모 데이터로 충분.
 
@@ -102,10 +102,11 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 심사위원 **체크리스트 (Devpost / README에 복붙 가능):**
 
-1. Open demo URL — on a computer it appears in a phone frame (**click = tap, drag or scroll = swipe**); on a phone it opens full screen → Welcome (또는 Login)
-2. **Try demo as Sitter** → Today / Tasks → complete med with photo (pick a sample photo — no camera needed)
-3. Log out → **Try demo as Owner** → Feed / notifications / report read (10.10 Split view가 있으면: **Show both phones** → 두 역할을 한 화면에서)
-4. (Optional) Scan tab → sample **chicken jerky** label → DANGER
+1. Open demo URL — on a computer it appears in a phone frame (**click = tap, drag or scroll = swipe**); on a phone it opens full screen → Welcome (또는 Login). 10.10 Split view가 있으면 **Show both phones** → 두 역할을 한 화면에서
+2. **Try demo as Owner** → Bookings → Mina → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
+3. **Try demo as Sitter** → Bookings → today's pick-up → **Show code** → **Start trip → Simulate the drive** → sample car photo → **Received** (Stage ④ — the owner sees the live ETA and "care has started")
+4. Sitter → Report → 5-second check + 2 sample photos → **Generate → Send**; Owner → Reports / Feed **Album**
+5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Today → **Scan a treat** → `chicken_jerky` → DANGER
 
 > 데스크톱 프레임·마우스 조작·샘플 트레이는 [architecture D25](phases/architecture.ko.md) · [DESIGN.md §2.1·§7.7](../../DESIGN.md#21-desktop-browsers-judges-phone-frame).
 
@@ -181,11 +182,11 @@ P1에서 intro_seen, Welcome 일러스트 polish, “Request photo” 스텝을 
 
 **Welcome step 2:** “Owners get updates without asking. Sitters care, snap, and tap — no report essays.”
 
-**Welcome step 3 title:** “A day with PawNote” — bullet: 08:00 pill · 10:30 walk · 15:00 treat check · 18:00 daily report
+**Welcome step 3 title:** “A stay with PawNote” — bullets: Ask and get an answer in seconds · Turn care notes into a checklist · Book, sign, and unlock on time · Track the ride, get the daily note · Home safe, remembered next time
 
 **CTA:** “Try demo as Sitter” / “Try demo as Owner” / “Sign in” / “Create account”
 
-**Login demo hint:** “Demo accounts include Bori (Maltese, allergic to chicken).”
+**Login demo hint:** “Demo accounts include Bori (Maltese, allergic to chicken) and Mochi (cat), booked with Mina for Thanksgiving weekend.”
 
 ---
 

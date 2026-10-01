@@ -15,9 +15,11 @@ Every feature must pass:
 | :--- | :--- |
 | **Learn without asking.** Updates arrive proactively. | **Care, snap, tap.** No report typing, no repetitive DMs. |
 
-**Product benchmark:** Korean **Kidsnote** — album feed, medication request/report, daily report (알림장). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
+**Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Demo north star:** The flow in root `README.md` — *A Day with PawNote* — must work end-to-end before hackathon submit.
+**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D34).
+
+**Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
 
 **Hackathon hard rules:** Runtime on Token Factory; at least one **NVIDIA open-source model (Nemotron)**; public repo + MIT; demo stays up until judging ends; no real PII in repo or prompts.
 
@@ -31,13 +33,14 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| AI | Token Factory (backend only; keys never in client) — Nemotron for reasoning/reports, MiniCPM-V for vision ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
+| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision, Qwen3 Embedding for RAG (Supabase pgvector) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
 
 **Source of truth docs:**
 
 - Product: `README.md`, `docs/README.ko.md`
+- **Product flow (5 stages, demo path):** `docs/plan/full-process.ko.md`
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
@@ -53,14 +56,17 @@ Every feature must pass:
 Think in **two apps in one codebase** — role after login:
 
 ```
-Owner                          Sitter
-  Home (my pets)                 Today (pets in my care now)
-  Bookings (find sitter, trips)  Schedule + booking requests
-  Feed / Album                   Pet feed upload
-  Tasks setup (med/walk)         Today's tasks + complete + photo
-  Daily report (read)            Report generate → send
-  Notifications                  Treat scanner (safety)
-  (P1) Photo request             (P1) Notices
+Owner                                  Sitter
+  Home (my pets, next booking)           Today (pets in my care, Heads-up, check-ins)
+  Bookings (inquiry → AI reply,          Bookings (inquiries, requests, Meet & Greet,
+    request, Meet & Greet, checkout)       entry-info lock card)
+  Trip (live map + ETA, arrival card)    Trip (Start trip, arrival card, photo check)
+  Feed / Album (by day + category)       Pet feed upload
+  Care request → checklist · Activity    Today's tasks + 5-second check + photo
+  Daily report (read)                    Report generate → send
+  Review · Pet Life Record               Schedule · policies · rates
+  Notifications                          (stretch) Treat scanner (safety)
+  (P1) Photo request                     (P1) Notices
 ```
 
 ### UX principles
@@ -69,7 +75,7 @@ Owner                          Sitter
 2. **One primary action per screen** — e.g. sitter task row → big "Complete with photo".
 3. **Feedback loops** — loading skeleton → success toast → owner notification (visible in demo).
 4. **Danger is loud** — safety `DANGER`: red modal, must acknowledge; do not use subtle toasts only.
-5. **No sitter text fields for P0** — no caption box, no report textarea required (optional edit on report send is OK).
+5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: a one-line memo on the 5-second check (D34), edit before sending a report, a short inquiry reply, the sitter's policy text (written once).
 6. **Kidsnote familiarity** — timeline feed, checkmarks on meds, warm report tone (AI), not a developer dashboard.
 
 ### When implementing UI
@@ -193,26 +199,31 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 
 | Feature | Phases |
 | :--- | :--- |
-| Sitter availability + trip booking | 02, 03B (P1 polish: 11) |
-| Care feed & album + notify | 05, 09 |
-| Medication & walk | 06 |
-| Zero-typing daily report | 07 |
-| Treat safety guard | 08 |
+| ① Inquiry — AI auto-reply + RAG | 07B (quote: 03C) |
+| ② Meet & Greet — care request → checklist, Meet & Greet, transport mode | 06, 03B |
+| ③ Booking — schedule, request, consents, demo payment, timed unlock | 02, 03B, 03C (P1 polish: 11) |
+| ④ Care & Pet Transit — live trip, photo check, 5-second check, daily report, feed & album | 04, 05, 06, 06B, 07, 09 |
+| ⑤ Completion — home-safe report, review, Pet Life Record → RAG | 07C |
+| Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-Tavily sources in the safety guard are **8.7 (P0 stretch)** right after 8.1–8.6. P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (Q&A, SFT idea 11.7) — only after P0 queue is clear unless user reprioritizes.
+The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT idea 11.7) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 
 ## 8. AI endpoints (contract)
 
-Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text reasoning, MiniCPM-V for vision (caption, label reading). Every call writes one metrics log line (architecture §9):
+Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, MiniCPM-V for vision, Qwen3 Embedding for RAG. Prices, dates, and availability come from the server, never from the model; entry codes never go into prompts (D29, D31). Every call writes one metrics log line (architecture §9):
 
 | Endpoint | Purpose |
 | :--- | :--- |
-| `POST /api/ai/caption` | Feed auto-caption |
-| `POST /api/ai/daily-report` | End-of-day report draft |
-| `POST /api/ai/safety-check` | Label photo → JSON safety (+ Tavily sources, 8.7) |
+| `POST /api/ai/inquiry-reply` | Stage 1 — auto-reply grounded in schedule, quote, policy, Life Record (RAG) |
+| `POST /api/ai/care-plan` | Stage 2 — care & medication request → checklist draft |
+| `POST /api/ai/handoff-check` | Stage 4 — handoff photo check (pet visible, crate / seatbelt) |
+| `POST /api/ai/caption` | Stage 4 — feed auto-caption + album category |
+| `POST /api/ai/daily-report` | Stage 4 — report draft from the 5-second check + photos |
+| `POST /api/ai/life-record` | Stage 5 — stay → Pet Life Record + RAG indexing |
+| `POST /api/ai/safety-check` | Stretch — label photo → JSON safety (+ Tavily sources, 8.7) |
 
 Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; checked with `GET /v1/models`) and phase-07/08 docs.
 
@@ -222,10 +233,10 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches *A Day with PawNote*
+- Video path matches *A Stay with PawNote* (5 stages, `docs/plan/full-process.ko.md` §6)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 
 ---
 
-*Last aligned with repo docs: phases 00–10, P0 playbook. If you change process, update this file and `docs/plan/TODO.md` together.*
+*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook. If you change process, update this file and `docs/plan/TODO.md` together.*

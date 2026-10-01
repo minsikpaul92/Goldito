@@ -14,31 +14,40 @@ Every feature must pass both tests:
 | :--- | :--- |
 | "Did I learn this **without asking**?" | "Did this add **zero typing / messaging** for me?" |
 
-Sitter inputs should be limited to: **take a photo, tap a button.** AI and automation do the rest.
+Sitter inputs should be limited to: **take a photo, tap a button** (plus an optional one-line memo on the 5-second check). AI and automation do the rest.
+
+**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D34). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
 
 ---
 
 ## 2. Feature Scope & Priority
 
-Two developers, ~4 weeks. Build in this order; P2 only if time allows.
+Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if time allows.
 
-| Priority | Feature | Kidsnote equivalent | AI |
-| :--- | :--- | :--- | :--- |
-| **P0** | Care Feed & Album + upload notifications | Album | Vision (MiniCPM-V) captions |
-| **P0** | Medication & Walk requests → reminder → photo proof → owner notified | Medication request / report | — |
-| **P0** | Zero-typing daily report (from the day's feed + tasks) | Daily report (알림장) | Super |
-| **P0** | Treat Safety Guard | — (our differentiator) | Vision (MiniCPM-V) + Ultra · Tavily sources (8.7 stretch) |
-| **P1** | Photo request (owner → sitter) | — | — |
-| **P0** | Part-time boarding sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule view, whole-trip booking with drop-off/pick-up time & place (negotiable), cancel → rebook | — (marketplace-style) | — |
-| **P1** | Notices with popup · favorite sitters · recurring schedule patterns | Notices | — |
-| **P1** | Pet-color app skin: owner uploads a pet photo, app theme matches its coat (Phase 11.10; theme provider in 3.0) | — | Vision (coat colors) → preset theme |
-| **P1** | Pet cut-out stickers + AI-decorated daily report card (Phase 11.8) | Diary decorating | Nano picks theme & stickers |
-| **P1** | Settings + in-app patch notes (What's New ← CHANGELOG) (Phase 11.11) | — | — |
-| **P1** | 8-bit Tamagotchi-style pet status room on Owner Home (Phase 11.12) | At-a-glance care | Derived from check-ins + tasks |
-| **P1** | Video mood line from visible behavior — no bark/audio analysis (Phase 11.9) | — | Vision (multi-frame) + Nano |
-| **P2** | Private Q&A with AI first reply | — | Nano |
+| Priority | Stage | Feature | Inspired by | AI | Phase |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P0** | ① Inquiry | Owner asks a sitter (service type, dates, pets, a question) → AI replies on the sitter's behalf in < 1 min, grounded in the calendar, server-side quote (holiday + multi-pet rates), sitter policy, Life Record (RAG) | Rover fast replies | Nano + Qwen3 Embedding | 07B (03C quote) |
+| **P0** | ② Meet & Greet | Care & medication request → AI mission checklist + Heads-up · Meet & Greet (in person / video) · transport mode (Owner drives / Sitter drives) | Kidsnote medication request | Super | 06, 03B |
+| **P0** | ③ Booking | Part-time sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule, whole-trip booking with drop-off/pick-up time & place (negotiable), Boarding / House sitting, cancel → rebook | Marketplace | — | 03B |
+| **P0** | ③ Booking | Quote → Canada-first consent templates → **demo payment** → sitter home info after payment · owner entry info unlocks 2 h before | — | — (rules) | 03C |
+| **P0** | ④ Care & Transit | Uber-style trip: live position + ETA, arrival cards (visitor parking / buzzer + lockbox), handoff photo check (pet, crate, seatbelt) | Uber · Kidsnote check-in/out | Vision (MiniCPM-V) | 06B |
+| **P0** | ④ Care & Transit | 5-second check (meal, potty, walk, meds, memo, ≤ 2 photos) + scheduled tasks → instant owner notifications + Activity | Kidsnote medication report | — | 06 |
+| **P0** | ④ Care & Transit | Zero-typing daily report from the 5-second check + the day's data | Daily report (알림장) | Vision → Super | 07 |
+| **P0** | ④ Care & Transit | Care feed + timeline album sorted by day and category (Meals · Walks · Naps · Play) | Album | Vision captions + category | 05, 09 |
+| **P0** | ⑤ Completion | Home-safe report + 5-star review + Pet Life Record → RAG → reused on the next booking | Kidsnote records | Super + Qwen3 Embedding | 07C |
+| **P0 stretch** | ④ (extra) | Treat Safety Guard — after the scenario core (D27) | — (our differentiator) | Vision (MiniCPM-V) + Ultra · Tavily sources (8.7) | 08 |
+| **P1** | — | Photo request (owner → sitter) | — | — | 11.1 |
+| **P1** | — | Notices with popup · favorite sitters · recurring schedule patterns | Notices | — | 11 |
+| **P1** | — | Pet-color app skin: owner uploads a pet photo, app theme matches its coat (Phase 11.10; theme provider in 3.0) | — | Vision (coat colors) → preset theme | 11.10 |
+| **P1** | — | Pet cut-out stickers + AI-decorated daily report card (Phase 11.8) | Diary decorating | Nano picks theme & stickers | 11.8 |
+| **P1** | — | Settings + in-app patch notes (What's New ← CHANGELOG) (Phase 11.11) | — | — | 11.11 |
+| **P1** | — | 8-bit Tamagotchi-style pet status room on Owner Home (Phase 11.12) | At-a-glance care | Derived from check-ins + tasks | 11.12 |
+| **P1** | — | Video mood line from visible behavior — no bark/audio analysis (Phase 11.9) | — | Vision (multi-frame) + Nano | 11.9 |
 
-Demo priority: the **"A Day with PawNote"** flow in the main README must work end-to-end.
+
+The old P2 "Private Q&A with AI first reply" is now the Stage 1 inquiry AI (07B, P0).
+
+Demo priority: the **5-stage flow** in the main README (*How PawNote Works* → *A Stay with PawNote*) must work end-to-end.
 
 ### Post-hackathon roadmap (not built for the hackathon)
 
@@ -77,10 +86,10 @@ Seulgi: Nemotron pipeline → FastAPI routers
 | Week | Dates | Muk | Seulgi | Minsik |
 | :--- | :--- | :--- | :--- | :--- |
 | **0. Kickoff** | Sep 28 – 30 | Join Devpost team, moodboard | Claim credits, confirm model IDs via `GET /v1/models`, first call | Repo scaffold, Supabase + Cloudinary accounts |
-| **1. Setup** | Oct 1 – 4 | Design system + key screens: feed, task list, report, scanner | **Anonymize dataset**, caption + report prompts | Expo Web, Supabase schema, FastAPI skeleton, Cloudinary upload |
-| **2. P0 core** | Oct 5 – 11 | Feed/album, task check-off, warning modal | Safety pipeline (Vision → Ultra, JSON), report from day's data | Feed + notifications, med/walk tasks + reminders |
-| **3. P1 + polish** | Oct 12 – 18 | Notice popup, schedule, micro-interactions | Prompt tuning with real photos/packages (Tavily moved to 8.7) | Photo request, notices/schedule, deploy demo |
-| **4. Demo & docs** | Oct 19 – 25 | Video visuals, thumbnails | Q&A (P2), feedback write-up | README setup guide, test accounts, Devpost draft |
+| **1. Setup** | Oct 1 – 4 | Design system + scenario screens: inquiry thread, checkout, trip, 5-second check | **Anonymize dataset**, 7.1 Nebius client + `embed()` | Phases 01–03 ✅, 03B bookings |
+| **2. Stages ①–③** | Oct 5 – 11 | Booking, checkout, Meet & Greet, care request screens | 07B inquiry AI + RAG backend, 6.12 care-plan | 03B, 03C, 04, 05 |
+| **3. Stage ④** | Oct 12 – 18 | Trip screen + map, album, micro-interactions | 6B.5 handoff check, 7.2 report, 9.1 caption + category | 06, 06B, 07, deploy rehearsal (Oct 18) |
+| **4. Stage ⑤ + demo** | Oct 19 – 25 | Video visuals, thumbnails, Life Record screen | 7C.4 Life Record, prompt tuning, feedback write-up · (stretch) 08 safety | 07B UI, 09, 07C, README, test accounts, Devpost draft |
 | **5. Submit** | Oct 26 – 30 | Final polish | Final feedback | Bug fixes · **internal deadline Oct 28** · final submit Oct 29–30 (deadline Oct 30, 10:00 AM PT) |
 
 ---
@@ -89,13 +98,13 @@ Seulgi: Nemotron pipeline → FastAPI routers
 
 | Criterion (equal weight) | Our plan | Owner |
 | :--- | :--- | :--- |
-| **Technological Implementation** | 4 Nemotron models routed by task, JSON validation, scheduled jobs, real deployment | Seulgi, Minsik |
-| **Design** | Complete owner + sitter flows, Kidsnote-level polish — not a PoC | Muk |
-| **Potential Impact** | Real problem from 3 years in the field; show numbers (messages avoided, minutes saved per report) | All |
-| **Quality of the Idea** | Zero-typing care loop, hidden-allergen reasoning, tone replication from real data | Seulgi |
+| **Technological Implementation** | Nemotron models routed by task (Nano replies, Super writing, Ultra safety), RAG on Token Factory embeddings + pgvector, server-grounded numbers, JSON validation, Realtime trips, real deployment | Seulgi, Minsik |
+| **Design** | One continuous 5-stage journey for owner + sitter (Rover × Kidsnote × Uber), Kidsnote-level polish — not a PoC | Muk |
+| **Potential Impact** | Real problem from 3 years in the field; show numbers (reply time in seconds, messages avoided, minutes saved per report) | All |
+| **Quality of the Idea** | An agent that answers, plans, checks, and writes for the sitter; timed entry-info unlock; a Life Record that carries over to the next sitter | Seulgi |
 
 **Non-negotiables**
-- Every AI call goes through Token Factory — Nemotron for reasoning and reports, MiniCPM-V for vision (captions, labels). See [model-ids.md](phases/notes/model-ids.md).
+- Every AI call goes through Token Factory — Nemotron for replies, reasoning, and reports, MiniCPM-V for vision (handoff checks, captions, labels), Qwen3 Embedding for RAG. See [model-ids.md](phases/notes/model-ids.md).
 - Real customer data is anonymized before it touches prompts, the repo, or the video.
 - Demo stays online and free until **Dec 15**; test accounts for owner and sitter.
 - Judges use computers: on desktop the demo runs inside a **402 × 874 phone frame** and everything works with a mouse, sample photos included (architecture D25, [DESIGN.md §7.7](../../DESIGN.md#77-works-with-a-mouse)).
@@ -111,14 +120,15 @@ Source: [Token Factory model catalog](https://tokenfactory.nebius.com/model-cata
 
 | Model ID | Type | Region / endpoint | Price (in / out per 1M) | Use |
 | :--- | :--- | :--- | :--- | :--- |
-| `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | text | eu-north1 · `https://api.tokenfactory.nebius.com/v1/` | $0.06 / $0.24 | Q&A, quick calls |
-| `nvidia/nemotron-3-super-120b-a12b` | text | us-central1 · `https://api.tokenfactory.us-central1.nebius.com/v1/` | $0.30 / $0.90 | Daily report |
+| `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | text | eu-north1 · `https://api.tokenfactory.nebius.com/v1/` | $0.06 / $0.24 | Inquiry auto-reply, quick calls |
+| `nvidia/nemotron-3-super-120b-a12b` | text | us-central1 · `https://api.tokenfactory.us-central1.nebius.com/v1/` | $0.30 / $0.90 | Care checklist, daily report, Life Record |
 | `nvidia/Nemotron-3-Ultra-550b-a55b` | text | us-central1 | $1.00 / $3.00 | Safety reasoning |
 | `nvidia/Nemotron-3_5-Lightning` | text | eu-north1 | $0.06 / $0.24 | Alternative fast model (1M context) |
-| `openbmb/MiniCPM-V-4_5` | image + text | us-central1 | see catalog | Captions, label reading |
+| `openbmb/MiniCPM-V-4_5` | image + text | us-central1 | see catalog | Handoff photo check, captions + category, report photos, label reading |
+| `Qwen/Qwen3-Embedding-8B` | text → embedding | both | see catalog | RAG (`dimensions: 1024`, checked 2026-10-01) |
 
 **Notes**
-- **Nano Omni (`nvidia/nemotron-3-nano-omni`) is not in the catalog** (checked with `GET /v1/models`, 2026-09-29), so vision uses **MiniCPM-V-4_5**. Rules require at least one NVIDIA model; Nemotron (Ultra, Super) handles reasoning and reports. Role → ID source of truth: [model-ids.md](phases/notes/model-ids.md).
+- **Nano Omni (`nvidia/nemotron-3-nano-omni`) is not in the catalog** (checked with `GET /v1/models`, 2026-09-29), so vision uses **MiniCPM-V-4_5**. The scenario's **Qwen-2.5-VL** is not in the catalog either (2026-10-01); the only other image-input model is `moonshotai/Kimi-K2.6` (fallback candidate). Rules require at least one NVIDIA model; Nemotron (Ultra, Super) handles reasoning and reports. Role → ID source of truth: [model-ids.md](phases/notes/model-ids.md).
 - **Models live in different regions** → the backend needs a per-model base URL.
 - Model IDs are **case-sensitive** and inconsistent across models — copy them exactly.
 - Demo and AI output are **English only** (D1).
@@ -169,8 +179,18 @@ client.chat.completions.create(
 }
 ```
 
-### D. Q&A first reply (Nano)
-- Grounded only in the pet's profile and today's logs. If unsure → "Your sitter will reply soon." and notify the sitter.
+### D. Inquiry auto-reply (Nano + RAG) — Stage 1, Phase 07B
+- Input: server-collected JSON only — sitter availability, `quote_booking` result, pet profiles, sitter public profile, top-5 RAG chunks (sitter policy, Life Record, past questions, care request).
+- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Mina will confirm" + `needs_sitter`.
+
+### E. Care plan (Super) — Stage 2, Phase 06
+- Owner's free-text care & medication request → `{tasks:[{type, time, title, dose, notes}], cautions:[], skipped:[]}`. Server enforces species rules (no walks for cats). Draft only; the owner confirms.
+
+### F. Handoff check (Vision) — Stage 4, Phase 06B
+- Photo at drop-off / pick-up → `{pet_visible, species_match, crate_visible, restraint_visible, concerns}`; the server decides ok / warning. Observations only, no medical claims.
+
+### G. Pet Life Record (Super) — Stage 5, Phase 07C
+- The stay's check-ins, tasks, reports, handoff checks, sitter memos → `{eats, meds, potty, behavior, heads_up, sitter_tips, changed_since_last}`; null when there is no evidence. Indexed into RAG for the next booking.
 
 ---
 
@@ -196,8 +216,9 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 | Pets | `pets` (dog/cat) · `pet_allergies` |
 | Schedule & bookings | `sitter_availability` · `bookings` · `booking_pets` (care window, no overlaps) · `booking_slots` (capacity) · `booking_handoffs` (drop-off / pick-up time & place) |
 | Care | `care_tasks` (medication·walk·feeding·litter·play·sleep) · `task_logs` · `media` · `feed_posts` · `daily_reports` · `safety_checks` |
+| Scenario (D27–D34) | `sitter_rates` · `holidays` · `booking_consents` · `owner_home_access` · `access_reveals` (03C) · `care_checkins` · `care_requests` · `pet_cautions` (06) · `trips` · `handoff_checks` (06B) · `inquiries` · `inquiry_messages` · `knowledge_chunks` (pgvector) (07B) · `reviews` · `pet_life_records` (07C) |
 | Notifications | `notifications` |
-| P1 (Phase 11) | `photo_requests` · `notices` · `notice_reads` · `owner_favorite_sitters` · `messages` (P2) |
+| P1 (Phase 11) | `photo_requests` · `notices` · `notice_reads` · `owner_favorite_sitters` |
 
 ---
 
@@ -240,6 +261,7 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 | Date | Tool / Model | Used for | Worked well | Needs work | Onboarding | Who |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Sep 28 | Token Factory catalog | Choosing models | Clear pricing per model | Nano Omni in cookbook but missing from public catalog; model ID casing inconsistent | — | Minsik |
+| Oct 1 | Token Factory embeddings | RAG | `Qwen/Qwen3-Embedding-8B` honors `dimensions: 1024` on both regions (fits a pgvector HNSW index) | Only one embedding model and no NVIDIA embedding model in the catalog; only two image-input models (MiniCPM-V-4.5, Kimi-K2.6) | — | Minsik |
 
 ---
 
@@ -251,3 +273,6 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 - [ ] Few-shot sample **size** (3 confirmed; more?)
 - [x] Nano Omni availability — not in catalog; vision uses MiniCPM-V-4_5 (2026-09-29)
 - [x] Toronto Builders & Brews (Sep 29) — attended (Token Factory $100, AI Cloud $100, Tavily 8k credits)
+- [x] Product flow: team Full Process scenario first (5 stages) — 2026-10-01 (D27, [full-process.ko.md](full-process.ko.md))
+- [x] Payment: demo only (no card data); consents: fixed English templates, not legal advice — 2026-10-01 (D30)
+- [x] Treat Safety Guard: P0 stretch after the scenario core — 2026-10-01 (D27)
