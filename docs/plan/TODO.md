@@ -1,6 +1,7 @@
 # PawNote — Active TODO
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03 → `feat/phase-03-auth` · [#34](https://github.com/minsikpaul92/PawNote/pull/34).
 
 **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
