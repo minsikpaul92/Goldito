@@ -3,6 +3,7 @@ node_modules/
 dist/
 web-build/
 *.tsbuildinfo
+expo-env.d.ts
 
 # Playwright
 test-results/
