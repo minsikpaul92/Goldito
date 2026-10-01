@@ -1,7 +1,7 @@
 # PawNote — Phase 가이드 (개발 청사진)
 
 각 Phase는 **Goal → 범위 → 작업 → DoD → 산출물** 순으로 정리되어 있습니다.
-**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D24), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
+**먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D25), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
 
 문서 우선순위 (Source of truth): **architecture.ko.md + phase 문서** (스키마는 [phase-02](phase-02.md), 모델 ID는 [notes/model-ids.md](notes/model-ids.md)) > [TODO.md](../TODO.md) (진행 순서) > [P0 playbook](../P0-ai-prompt-playbook.ko.md) (프롬프트 출발점) > [개발 계획](../README.ko.md) (배경·요약). 아래 문서가 위 문서와 다르면 위 문서가 맞고, 아래 문서를 고칩니다.
 
@@ -21,7 +21,7 @@
 | Phase | 이름 | Goal 한 줄 | 담당 | 목표 기간 | Migration |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | [00](phase-00.md) | 사전 준비 | 외부 서비스 키 + 로컬 `.env` | 민식·슬기 | 9/28–9/30 | - |
-| [01](phase-01.md) | 모노레포 틀 | 프론트·백엔드 기동 + health 연결 | 민식 | 10/1 | - |
+| [01](phase-01.md) | 모노레포 틀 | 프론트·백엔드 기동 + health 연결 · 데스크톱 폰 프레임 + 마우스 조작 (1.6–1.7, D25) | 민식 | 10/1 · 1.6–1.7: 10/2 | - |
 | [02](phase-02.md) | DB + RLS | P0 스키마 + 역할별 접근 통제 + 가입 트리거 | 민식 | 10/1–10/2 | 001–003 |
 | [03](phase-03.md) | 인증·역할·Pet 프로필 | 로그인 → 역할별 탭, pet(종·알레르기)·역할별 프로필 | 민식 | 10/2–10/3 | - |
 | [03B](phase-03b.md) | 시터 스케줄 · 예약 · 인수인계 | 시터 칸별 스케줄 → 단골 스케줄·여행 전체 검색 → 맡기기·찾기 시각·장소 협의 → 확정 → Received/Returned, 취소 → 재예약 | 민식 | 10/3–10/5 | (001–003에 포함) |

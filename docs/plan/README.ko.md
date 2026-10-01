@@ -35,6 +35,8 @@
 
 데모 기준: README의 **"PawNote의 하루"** 흐름이 처음부터 끝까지 동작해야 합니다.
 
+해커톤 이후 (우선순위 마지막): **시터 전용 데스크톱 웹** — 스케줄 작성·알림장 작업을 컴퓨터에서 빠르게 (사이드바 레이아웃). 견주는 계속 폰 화면. 전체 로드맵은 [README.md](README.md#post-hackathon-roadmap-not-built-for-the-hackathon), 설계 대비는 architecture D25.
+
 ---
 
 ## 3. 역할
@@ -76,6 +78,7 @@
 - 모든 AI 호출은 Token Factory — 추론·알림장은 Nemotron, 비전(캡션·성분표)은 MiniCPM-V ([model-ids.md](phases/notes/model-ids.md))
 - 실제 고객 데이터는 프롬프트·리포·영상에 쓰기 전 익명화
 - 데모는 **12/15까지** 무료 접속 유지, 견주·펫시터 테스트 계정 제공
+- 심사위원은 PC로 봄: 데스크톱에서는 **402 × 874 폰 프레임** 안에서 앱이 돌고, 마우스만으로 모든 동작 + 샘플 사진 내장 (architecture D25, [DESIGN.md §7.7](../../DESIGN.md#77-works-with-a-mouse))
 - 영상 3분 미만, YouTube 공개, 영어 음성으로 Nemotron + Token Factory 설명, 저작권 음악 금지
 
 **노려볼 상:** Best Apps and Agents 트랙 또는 종합상 · Best Use of Tavily · 최우수 피드백 · 토론토 도시상 (9/29 Builders & Brews Toronto 참석)

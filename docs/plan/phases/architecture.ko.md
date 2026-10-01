@@ -29,11 +29,12 @@
 | D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
 | D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
-| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export. **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
+| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export+Playwright 마우스 테스트(1.7). **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 | D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
 | D24 | 파트타임 보딩 시터 · 칸 · 인수인계 | 시터는 **파트타임**이고 반려동물을 **시터 집에서** 돌봄. 칸은 **이름만 고정**(Morning·Afternoon·Overnight) — 정확한 시간은 시터가 칸마다 정함(`sitter_availability.starts_at/ends_at`) + 칸 정원 `max_pets`. 예약 = 시터 1명 + 견주 1명. **누가 언제 맡나** = `booking_pets.care_range`(맡긴 구간, 반려동물마다 겹침 금지 — exclusion 제약), **정원** = `booking_slots`(반려동물 × 날짜 × 칸, 그 시터의 칸 시간 기준). 겹치는 open 행은 **가장 최근 행**이 그 날의 시간·정원을 정함. 열지 않은 칸은 맡긴 구간이 절반 넘게 덮을 때만 차지(빈 Overnight 방지) — 앞뒤로 짧게 삐져나온 시간은 custom 시각으로 협의. 견주가 **맡기는 시각·찾는 시각·장소**(시터 집/견주 집/기타)를 정함 → `booking_handoffs`. 시터 시간 밖·장소 변경은 **협의**(제안 → 상대방 동의), 확정 후 변경도 제안→동의, 동의 전엔 기존 값 유효. 견주는 **여행 전체를 한 시터에게**가 기본 — 단골 스케줄 먼저, 없으면 검색(전체 가능 먼저). 시터가 확정 칸을 막으려 하면 거부 → **예약 전체 취소**(맡기기 전만 — Received 뒤엔 찾는 시각 변경으로) → 견주 재예약. 권한·할 일 담당은 칸이 아니라 **맡긴 시각 ~ 찾는 시각** 구간으로 판단. 스케줄 변경은 알림 없음. 주소는 확정 당사자에게만(찾은 뒤 24시간까지) | 반려동물에게 시터 교체는 스트레스 → 한 명이 기본. 실제 맡기는 시각이 시터 근무 시간과 다를 수 있어 협의 필요 |
+| D25 | 웹 표시 방식 (데스크톱 = 폰 프레임) | 데스크톱 브라우저(폭 ≥ 768)에서는 **402 × 874 폰 프레임** 안에 **같은 앱을 same-origin iframe**으로 띄움 (`components/shell/AppShell.web.tsx` — 네이티브는 `AppShell.tsx`가 children 그대로). 폰 브라우저·네이티브·iframe 내부는 앱 그대로. iframe 안에서 **마우스일 때만** `TouchEmulation`: 드래그 스크롤 + 관성, 드래그 후 클릭 차단, 가로 줄 휠 변환, 글자 선택·이미지 드래그 금지, 원형 커서, 스크롤바 숨김. 사진 선택은 `pickMedia()` 하나 — 데스크톱·데모 계정은 샘플 사진 트레이(4.7). 모드 결정은 `resolvePresentation()` 한 곳, 화면 분기는 `useLayoutMode()`만, 탭은 expo-router JS `Tabs`(NativeTabs 아님). **해커톤 후(마지막 우선순위):** 시터만 데스크톱 `expanded` 레이아웃(iframe 없이 사이드바) — Owner는 계속 프레임 | 심사위원은 PC로 봄 → 폰과 같은 경험 + 마우스로 모든 동작 필요. 앱을 박스에 직접 넣으면 RN `Modal`·Expo Router 웹 모달이 `document.body`로 portal되고(웹 모달은 `min-width: 768px`면 데스크톱 다이얼로그), 창 크기·미디어쿼리가 브라우저 기준이라 깨짐 — react-native-web 0.21.2·expo-router 57.0.24 소스 확인. iframe 안은 진짜 폰 화면이라 화면마다 지킬 금지 규칙이 거의 없음. 402 = 현재 기본 iPhone(17) 폭, 레이아웃은 360–440 대응 |
 
 ---
 
@@ -97,17 +98,24 @@ PawNote/
    ├─ package.json, app.json, tsconfig.json
    ├─ .env.example
    ├─ README.md
+   ├─ playwright.config.ts    # 1.7 — 마우스 전용 테스트 설정
+   ├─ e2e/                    # 1.7 — Playwright (데스크톱 프레임 + 마우스) / 10.x 심사 경로
    ├─ app/                    # expo-router (§3)
-   ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal
-   ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, PetSwitcher, NotificationItem …)
+   │  └─ dev/gestures.tsx     # 1.7 — 마우스 동작 테스트 화면 (EXPO_PUBLIC_DEV_ROUTES=1일 때만)
+   ├─ assets/demo/            # 4.7 — 샘플 사진 (강아지·고양이 일상, 가상 브랜드 간식 라벨 — PII 없음)
+   ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts (화면에서 import 금지)
+   ├─ components/ui/          # Button, Card, Screen, EmptyState, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
+   ├─ components/             # 도메인 컴포넌트 (FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker …)
+   ├─ features/<domain>/      # 화면별 데이터·상태 훅 use*.ts (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
    ├─ lib/
    │  ├─ supabase.ts          # createClient(anon) + web session persist
    │  ├─ api.ts               # FastAPI fetch 래퍼 (Bearer 자동, 에러 정규화)
+   │  ├─ media.ts             # pickMedia() — 모든 사진 선택의 유일한 진입점 (4.7)
    │  ├─ cloudinary.ts        # uploadMedia(), thumbUrl(), videoPosterUrl()
    │  ├─ feed.ts              # createFeedPost() — Phase 05/06/09 공용
    │  └─ time.ts              # APP_TIMEZONE 표시 포맷
    ├─ providers/              # SessionProvider, PetProvider(선택된 pet), ToastProvider, NotificationsProvider(Realtime)
-   ├─ theme/tokens.ts         # 색·간격(8px)·radius·타이포 — 묵 Figma 토큰으로 교체
+   ├─ theme/tokens.ts         # 색·간격(8px)·radius·타이포·layout·breakpoint — 묵 Figma 토큰으로 교체
    └─ types/db.ts             # Supabase 테이블 타입 (수동 or supabase gen types)
 ```
 
@@ -137,8 +145,10 @@ PawNote/
 | `/(sitter)/scan` (tab: Scan) | sitter | Treat scanner | **Scan label** | 08 |
 | `/(sitter)/report` (tab: Report) | sitter | 퀵탭 체크 → Generate → (편집) → Send | **Send report** | 07 |
 | `/(sitter)/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
+| `/dev/gestures` | - | 마우스 동작 테스트 화면 (긴 목록·가로 줄·모달·토스트·입력창). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만, 링크 없음 | - | 1.7 |
 
-- 탭: owner `Home · Feed · Care · Reports`, sitter `Today · Tasks · Scan · Report`. 알림 벨은 두 역할 모두 헤더 우측 (unread badge).
+- 탭: owner `Home · Feed · Care · Reports`, sitter `Today · Tasks · Scan · Report`. 알림 벨은 두 역할 모두 헤더 우측 (unread badge). 탭은 expo-router **JS `Tabs`** (NativeTabs 아님 — D25: 해커톤 후 시터 데스크톱에서 `tabBarPosition: 'left'`로 사이드바 전환).
+- 웹 쿼리 (D25, 모든 route 공통): `?frame=0` 폰 프레임 끄기 · `?frame=1` 강제로 켜기 · `?view=split` Owner·Sitter 폰 나란히 (10.10 stretch).
 - pet이 여러 마리면 `PetProvider`의 선택값을 모든 탭이 공유 (헤더 PetSwitcher, 종 아이콘 🐶/🐱). 데모는 2마리(Bori 강아지, Mochi 고양이).
 - 역할 가드: `(owner)`/`(sitter)` 그룹 `_layout.tsx`에서 role 불일치 시 `/`로 redirect.
 
@@ -176,6 +186,7 @@ PawNote/
 | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (delivery URL 조립용) | 04 |
 | `EXPO_PUBLIC_APP_TIMEZONE` (`America/Toronto`) | 06 |
 | `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 비밀번호 — 번들에 들어가는 공개값. 실제 계정·service key 금지) | OB.2, 10 |
+| `EXPO_PUBLIC_DEV_ROUTES` (`1`이면 `/dev/gestures` 노출 — 로컬·CI만, 운영 env에는 두지 않음) | 1.7 |
 
 > ❌ service role key, Cloudinary secret, Nebius key는 **절대** frontend env에 두지 않습니다.
 
@@ -261,9 +272,10 @@ PawNote/
 2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
 3. **sitter 텍스트 입력 금지 (P0)** — 예외: 알림장 전송 전 본문 선택 편집, 알림장 선택 메모 1줄.
 4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
-5. **웹 카메라:** `expo-image-picker`(`launchImageLibraryAsync` / 모바일 웹은 `capture` 지원) — 데스크톱 웹은 파일 선택으로 대체.
+5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Upload from computer**. 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
 6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
 7. 개발 빌드에만 헤더에 `Owner`/`Sitter` 역할 라벨 표시 (`APP_ENV !== 'production'`).
+8. **마우스로 전부 동작 (D25):** 제스처 전용 기능 금지 (스와이프 뒤로가기·삭제, 시트 끌어내리기, 길게 누르기, 당겨서 새로고침 — 웹 `RefreshControl`은 동작 안 함). 항상 보이는 버튼을 둔다. 웹 미지원 라이브러리 금지 (예: `@react-native-community/datetimepicker` → 직접 만든 선택 UI). 화면 PR마다 [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 데스크톱 체크.
 
 ---
 
@@ -286,7 +298,7 @@ PawNote/
 | :--- | :--- |
 | Backend | `cd backend && pytest -q` (Nebius 키 없으면 AI 테스트 skip) + phase 문서의 `curl` 예시 |
 | DB/RLS | Supabase SQL Editor에서 `supabase/tests/rls_smoke.sql` 실행 (역할별 `set local request.jwt.claims`) |
-| Frontend | `npx tsc --noEmit` + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter) 수동 시나리오 |
+| Frontend | `npx tsc --noEmit` + Playwright 마우스 테스트 (1.7, CI) + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter — 10.10 이후는 `?view=split`) 수동 시나리오를 **데스크톱 폰 프레임에서 마우스로** ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 체크) |
 | 데모 | Phase 10 "PawNote의 하루" 체크리스트 |
 
 ---
@@ -294,8 +306,8 @@ PawNote/
 ## 11. CI/CD 파이프라인 (D20)
 
 ```
-PR 열기/업데이트 ──> ci.yml ─┬─ backend: ruff check · pytest -q            ─┐
-                             └─ frontend: npm ci · tsc --noEmit · expo export ┴─> ✅ 필수 체크 → 머지 가능
+PR 열기/업데이트 ──> ci.yml ─┬─ backend: ruff check · pytest -q                               ─┐
+                             └─ frontend: npm ci · tsc --noEmit · expo export · playwright (1.7) ┴─> ✅ 필수 체크 → 머지 가능
                     Vercel ──> Preview URL (PR 코멘트)
 
 main 머지 ─┬─> Vercel ──> 운영 frontend 자동 배포
@@ -310,7 +322,7 @@ DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본�
 | 항목 | 규칙 |
 | :--- | :--- |
 | CI 트리거 | `pull_request` + `push: main`. `paths` 필터로 backend/frontend job 각각 변경 시만 실행 (docs-only PR은 스킵 → 필수 체크는 "skipped = pass" 되도록 job 단위 `if` 사용) |
-| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache. **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
+| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright 브라우저(Chromium·WebKit·Firefox) cache. Playwright는 `expo export` 결과를 정적 서버로 띄워 데스크톱 해상도 3종에서 마우스만으로 테스트 (`EXPO_PUBLIC_DEV_ROUTES=1`, 백엔드 불필요). **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
 | 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
 | GitHub Secrets (CD 전용) | `NEBIUS_REGISTRY_*`(레지스트리 로그인), `NEBIUS_ENDPOINT_ID`, `BACKEND_URL`. 앱 런타임 키(Supabase·Cloudinary·Nebius API)는 **Nebius Endpoint env / Vercel env에만** 저장 |
 | 롤백 | backend: 이전 sha 태그로 Endpoint 재지정 (`workflow_dispatch` 입력 `image_tag`). frontend: Vercel 대시보드 "Promote previous deployment" |

@@ -38,7 +38,7 @@
 ## 파이프라인
 
 ```
-Sitter picks label photo → uploadMedia(safety_label) → media_id
+Sitter picks label photo (pickMedia — desktop frame / demo: sample tray, same images as fixtures below) → uploadMedia(safety_label) → media_id
 POST /api/ai/safety-check {pet_id, media_id}
   1. assert_on_duty_for → load pet(species, name, breed, weight) + allergens
   2. fetch_as_data_url(media)                          (D12)
@@ -88,6 +88,8 @@ POST /api/ai/safety-check {pet_id, media_id}
 
 ### 테스트 샘플 (`backend/tests/fixtures/labels/`, 직접 촬영 or 생성한 라벨 — 상표 가림)
 
+> 같은 이미지를 `frontend/assets/demo/labels/`에도 두어 **샘플 사진 트레이**(4.7)에서 고름 — 카메라 없는 데스크톱에서 심사위원이 DANGER를 직접 재현 (D25).
+
 | 파일 | 기대 |
 | :--- | :--- |
 | `chicken_jerky.jpg` | DANGER (chicken) |
@@ -103,6 +105,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 2. README에 "Vision = {MODEL_VISION}, Reasoning = Nemotron 3 Ultra" 명시 (해커톤 규정)
 3. SAFE / WARNING 케이스 각 1회 녹화용 확보
 4. `pytest`: allergen override 단위 테스트 (모델이 SAFE 반환해도 chicken 포함 시 DANGER), 스키마 검증 테스트
+5. 데스크톱 폰 프레임에서 마우스만으로: Scan → 샘플 `chicken_jerky` → DANGER 모달이 **프레임 안**에 뜨고 "I understand — don't feed" 클릭 전 닫히지 않음 (D25)
 
 ---
 

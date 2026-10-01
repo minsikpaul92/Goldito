@@ -65,7 +65,7 @@ Owner                          Sitter
 
 ### UX principles
 
-1. **Mobile-first, single column** — max comfort on phone-width web demo.
+1. **Mobile-first, single column** — max comfort on phone-width web demo. Design frame **402 × 874**; on desktop browsers the app runs inside a phone frame and **every action must work with a mouse** (click = tap, drag/wheel = swipe) — `DESIGN.md` §2.1 · §7.7, architecture D25.
 2. **One primary action per screen** — e.g. sitter task row → big "Complete with photo".
 3. **Feedback loops** — loading skeleton → success toast → owner notification (visible in demo).
 4. **Danger is loud** — safety `DANGER`: red modal, must acknowledge; do not use subtle toasts only.
