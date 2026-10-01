@@ -168,7 +168,7 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no report textarea. Sitters tap: photos, quick-tap chips (meal, water, potty, mood), Send. Optional edit before sending a report is OK.
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen: gap-fill chips + Generate → Send. Optional edit before Send is OK. See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
 
 ### 7.3 Feedback loop
 Action → **skeleton / spinner** → **toast** on success → the other side gets a **notification**. In the demo, both sides should be visible.
