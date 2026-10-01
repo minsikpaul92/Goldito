@@ -172,6 +172,12 @@ img{max-width:100%}
 .sprite-mood-badge-sm{position:absolute;top:-6px;right:-6px;background:var(--surface);
   border:2px solid var(--tint-bg);border-radius:50%;width:22px;height:22px;
   display:flex;align-items:center;justify-content:center;font-size:11px}
+.streak-chip{color:var(--primary);font-weight:700}
+.view-toggle{display:flex;gap:8px;margin-bottom:2px}
+.view-btn{flex:1;font-family:var(--font-body);font-size:12.5px;font-weight:600;padding:8px 10px;
+  border-radius:999px;border:1px solid var(--tint-border);background:var(--tint-surface);
+  color:var(--text-muted);cursor:pointer}
+.view-btn.active{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
 
 </style>
 
@@ -244,35 +250,65 @@ img{max-width:100%}
 
     <div class="screen" data-step="3" hidden>
       
-<div class="pet-row" id="petRow">
-  <div class="pet-chip active"><img id="homePetChipImg" src="" alt=""><span id="homePetChipName">Bori</span></div>
-  <div class="pet-chip add"><div class="add-circle">+</div><span>Add pet</span></div>
+<div class="view-toggle">
+  <button class="view-btn active" id="viewOwnerBtn" data-view="owner">Owner view</button>
+  <button class="view-btn" id="viewSitterBtn" data-view="sitter">Sitter view (read-only)</button>
 </div>
-<div class="section-title">Today</div>
-<div class="card status-card-balanced">
-  <div style="display:flex;gap:14px;align-items:center">
-    <div class="sprite-wrap-sm">
-      <img id="spriteImg" class="sprite-img-sm bob" src="" alt="pixel pet sprite">
-      <div class="sprite-mood-badge-sm" id="spriteMoodBadge">😌</div>
+
+<div id="ownerView">
+  <div class="pet-row" id="petRow">
+    <div class="pet-chip active"><img id="homePetChipImg" src="" alt=""><span id="homePetChipName">Bori</span></div>
+    <div class="pet-chip add"><div class="add-circle">+</div><span>Add pet</span></div>
+  </div>
+  <div class="section-title">Today</div>
+  <div class="card status-card-balanced">
+    <div style="display:flex;gap:14px;align-items:center">
+      <div class="sprite-wrap-sm">
+        <img id="spriteImg" class="sprite-img-sm bob" src="" alt="pixel pet sprite">
+        <div class="sprite-mood-badge-sm" id="spriteMoodBadge">😌</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:15px" id="homePetName">Bori</div>
+        <p class="status-line" id="moodStatusLine">Calm and settled</p>
+      </div>
     </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:700;font-size:15px" id="homePetName">Bori</div>
-      <p class="status-line" id="moodStatusLine">Calm and settled</p>
+    <div class="hud-row" style="margin-top:14px">
+      <div class="hud-chip">🍽️ Fed &middot; 8:02 AM</div>
+      <div class="hud-chip">💩 Logged &middot; 11:15 AM</div>
+      <div class="hud-chip">🐕 Next: Walk &middot; 4:00 PM</div>
+      <div class="hud-chip streak-chip">🔥 On time 4 days running</div>
+    </div>
+    <div class="mood-row" style="margin-top:12px">
+      <button class="mood-btn" data-mood="happy"><span class="emoji">😊</span>Happy</button>
+      <button class="mood-btn active" data-mood="calm"><span class="emoji">😌</span>Calm</button>
+      <button class="mood-btn" data-mood="hungry"><span class="emoji">🍽️</span>Hungry</button>
+      <button class="mood-btn" data-mood="sleepy"><span class="emoji">😴</span>Sleepy</button>
     </div>
   </div>
-  <div class="hud-row" style="margin-top:14px">
-    <div class="hud-chip">🍽️ Fed &middot; 8:02 AM</div>
-    <div class="hud-chip">💩 Logged &middot; 11:15 AM</div>
-    <div class="hud-chip">🐕 Next: Walk &middot; 4:00 PM</div>
-  </div>
-  <div class="mood-row" style="margin-top:12px">
-    <button class="mood-btn" data-mood="happy"><span class="emoji">😊</span>Happy</button>
-    <button class="mood-btn active" data-mood="calm"><span class="emoji">😌</span>Calm</button>
-    <button class="mood-btn" data-mood="hungry"><span class="emoji">🍽️</span>Hungry</button>
-    <button class="mood-btn" data-mood="sleepy"><span class="emoji">😴</span>Sleepy</button>
-  </div>
+  <p class="status-line" style="font-size:12.5px">Same mechanic as the real 11.10/11.12 spec, sized to sit inside a normal Home screen.</p>
 </div>
-<p class="status-line" style="font-size:12.5px">Same mechanic as the real 11.10/11.12 spec, sized to sit inside a normal Home screen.</p>
+
+<div id="sitterView" hidden>
+  <div class="section-title">Assigned pet today</div>
+  <div class="card status-card-balanced">
+    <div style="display:flex;gap:14px;align-items:center">
+      <div class="sprite-wrap-sm">
+        <img id="spriteImgSitter" class="sprite-img-sm" src="" alt="pixel pet sprite">
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:15px" id="sitterPetName">Bori</div>
+        <p class="status-line">Mood: <span id="sitterMoodLabel">Calm 😌</span></p>
+      </div>
+    </div>
+    <div class="hud-row" style="margin-top:14px">
+      <div class="hud-chip">🍽️ Fed &middot; 8:02 AM</div>
+      <div class="hud-chip">💩 Logged &middot; 11:15 AM</div>
+      <div class="hud-chip">🐕 Next: Walk &middot; 4:00 PM</div>
+      <div class="hud-chip streak-chip">🔥 On time 4 days running</div>
+    </div>
+  </div>
+  <p class="status-line" style="font-size:12.5px">Read-only &mdash; sitters log care from their own Today tab, not here. Pre-authorized stretch idea from pet-status-room.ko.md &sect;3.</p>
+</div>
 
     </div>
 
@@ -577,6 +613,30 @@ document.addEventListener("DOMContentLoaded", () => {
   updateContinueBtn();
   $("#nameInput").value = state.name;
   selectSpecies(state.species);
+});
+
+
+function renderSitterView(){
+  const m = MOODS.find(x=>x.key===state.mood) || MOODS[1];
+  const sitterName = $("#sitterPetName"); if(sitterName) sitterName.textContent = state.name || "Pet";
+  const sitterMood = $("#sitterMoodLabel"); if(sitterMood) sitterMood.textContent = `${m.label} ${m.emoji}`;
+  const sitterSprite = $("#spriteImgSitter");
+  const ownerSprite = $("#spriteImg");
+  if(sitterSprite && ownerSprite && ownerSprite.src) sitterSprite.src = ownerSprite.src;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const ownerBtn = $("#viewOwnerBtn"), sitterBtn = $("#viewSitterBtn");
+  const ownerView = $("#ownerView"), sitterView = $("#sitterView");
+  if(!ownerBtn) return;
+  ownerBtn.onclick = () => {
+    ownerBtn.classList.add("active"); sitterBtn.classList.remove("active");
+    ownerView.hidden = false; sitterView.hidden = true;
+  };
+  sitterBtn.onclick = () => {
+    sitterBtn.classList.add("active"); ownerBtn.classList.remove("active");
+    ownerView.hidden = true; sitterView.hidden = false;
+    renderSitterView();
+  };
 });
 
 </script>
