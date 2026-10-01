@@ -33,5 +33,17 @@ On a computer (mouse / trackpad) the app renders inside a **402 × 874 phone fra
 - `components/shell/` — `AppShell.web.tsx` picks the mode (`presentation.ts`), `DeviceFrame.web.tsx` draws the phone. Screens never import these; use `useShell()` / `useLayoutMode()`.
 - Route changes inside the frame are mirrored to the address bar, so refresh and shared links keep the screen.
 - `?frame=0` turns the frame off (video recording, debugging); `?frame=1` forces it on.
-- Wheel scrolling and clicks work today; click-drag scrolling arrives with task 1.7 (`TouchEmulation`).
+- Inside the frame the mouse acts like a finger (`TouchEmulation.web.ts`): click = tap, click-drag scrolls with momentum (a drag never taps), the wheel moves chip rows sideways, no text selection or image dragging, hidden scrollbars, round touch cursor. Mouse only — real phones and touch laptops keep native touch.
 - Pick photos only through `pickMedia()` (task 4.7) — on desktop it offers built-in sample photos.
+
+## Mouse tests (Playwright)
+
+`/dev/gestures` is a test screen with every touch pattern (long list, chip row, paged photos, rows, modal, toast, input). It only exists when `EXPO_PUBLIC_DEV_ROUTES=1` (set it in `.env` locally; never in production).
+
+```bash
+npx playwright install chromium firefox webkit   # once
+EXPO_PUBLIC_DEV_ROUTES=1 npx expo export -p web   # PowerShell: $env:EXPO_PUBLIC_DEV_ROUTES="1"; npx expo export -p web
+npm run test:e2e
+```
+
+Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 (phone frame + mouse) and a touch phone (no frame, layout at 360 / 402 / 440). CI runs the same suite on every frontend PR. Note: Playwright's Firefox needs the Visual C++ runtime on Windows — run `--project=chromium-*` / `webkit-*` locally if it is missing.
