@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PawNote concepts</title>
+<style>
+  body{margin:0;padding:48px 20px;background:#F7F7F5;color:#1A1A1A;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;gap:28px}
+  h1{font-size:22px;margin:0}
+  p.sub{color:#5C5C5C;margin:0;text-align:center;max-width:480px;font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;width:100%;max-width:760px}
+  a.card{display:block;text-decoration:none;color:inherit;background:#FFFFFF;border:1px solid #E5E5E0;
+    border-radius:16px;padding:20px;transition:transform .15s}
+  a.card:hover{transform:translateY(-2px);border-color:#2D6A4F}
+  .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    color:#2D6A4F;background:#ECFDF3;border-radius:999px;padding:3px 10px;margin-bottom:10px}
+  h2{font-size:17px;margin:0 0 6px}
+  p.desc{font-size:13.5px;color:#5C5C5C;margin:0;line-height:1.45}
+</style>
+</head>
+<body>
+  <div>
+    <h1 style="text-align:center">PawNote &mdash; 3 concepts</h1>
+    <p class="sub">Pet-photo accessible theming + a gamified status room. Same 3-step flow in each &mdash; only the design direction changes.</p>
+  </div>
+  <div class="grid">
+    <a class="card" href="pawnote-concept-a-calm-core.html">
+      <span class="tag">Lowest risk</span>
+      <h2>A &middot; Calm Core</h2>
+      <p class="desc">Accent-only theming, static status card. Closest to PawNote's current trustworthy tone.</p>
+    </a>
+    <a class="card" href="pawnote-concept-b-full-tamagotchi.html">
+      <span class="tag">Boldest</span>
+      <h2>B &middot; Full Tamagotchi</h2>
+      <p class="desc">Full re-theme + an animated pixel-art room built live from your photo.</p>
+    </a>
+    <a class="card" href="pawnote-concept-c-balanced-skin.html">
+      <span class="tag">Recommended</span>
+      <h2>C &middot; Balanced Skin</h2>
+      <p class="desc">The real 11.10/11.12 mechanic, sized to sit inside a normal Home screen.</p>
+    </a>
+  </div>
+</body>
+</html>
