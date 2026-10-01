@@ -12,7 +12,7 @@ This file is written for both people and AI coding agents. Before building any s
 
 ## 1. Product feel
 
-PawNote is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking.
+PawNote is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
 
 | Keyword | Means in UI |
 | :--- | :--- |
@@ -165,12 +165,20 @@ System font for now (Figma will pick one family).
 | :--- | :--- |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Feed · Care · Reports …, sitter: Today · Tasks · Scan · Report …) |
+| `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Bookings · Feed · Care · Reports, sitter: Today · Bookings · Tasks · Report) |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
+| `MessageBubble` | Inquiry thread (07B). AI replies carry a small "Auto-reply from Mina's PawNote assistant" label and source chips ("From Bori's Life Record") — never styled as if the sitter typed it |
+| `QuoteCard` | Price breakdown (03C): nights × rate, extra pet, holiday lines, **Total** in bold, currency. Same component in the inquiry thread and checkout |
+| `ConsentCard` | One consent: title, 3-line summary, **Read full text**, checkbox. Footer note "Demo template — not legal advice" |
+| `EntryInfoCard` | Owner's entry info for the sitter (03C). Locked: 🔒 + "Unlocks Oct 9, 5:30 AM". Unlocked: **Show code** button, code hides again after 10 s. Never on a toast or notification |
+| `ChecklistCard` | AI checklist preview from a care request (06): editable rows (time · title · dose), delete, Heads-up chips |
+| `TripMap` (web) | View-only Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination, **±** buttons only, no drag-pan (drags scroll the screen, §7.7). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
+| `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
+| `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Mina · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout |
 | `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
 | `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
@@ -186,7 +194,9 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen: gap-fill chips + Generate → Send. Optional edit before Send is OK. See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: chips + up to 2 photos + an optional one-line memo → Generate → Send (D34). Optional edit before Send is OK. Inquiries: the AI replies first; the sitter just taps **Looks good 👍**. See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
+
+Owners may type where it saves the sitter work: the inquiry question, the care & medication request, and their name on consents.
 
 ### 7.3 Feedback loop
 Action → **skeleton / spinner** → **toast** on success → the other side gets a **notification**. In the demo, both sides should be visible.
@@ -227,6 +237,8 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 | Swipe back, swipe to delete, drag a sheet down | Not reliable on web | Always a visible back button, delete button, **Close** |
 | Camera | Most desktops have none | `pickMedia()` sample tray (`MediaPicker`) |
 | Date / time pickers | `@react-native-community/datetimepicker` has no web support | Build our own (chips, steppers, `SlotCalendar`) |
+| Pan / pinch a map | Drag would fight frame scrolling | `TripMap` is view-only: auto-fit + **±** buttons (D32) |
+| Real GPS while driving | A desktop does not move | **Simulate the drive** on demo accounts and in the frame — same trip updates, recorded fictional route |
 
 **Desktop check for every screen PR** (phone frame, mouse only, 1366 × 768):
 

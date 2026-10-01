@@ -14,26 +14,34 @@
 | :--- | :--- |
 | "**안 물어봤는데** 알게 됐나?" | "내가 **타이핑·메시지를 하나도 안 늘렸나?**" |
 
-펫시터가 하는 입력은 **사진 찍기, 버튼 탭**뿐. 나머지는 AI와 자동화가 처리합니다.
+펫시터가 하는 입력은 **사진 찍기, 버튼 탭**뿐 (5초 체크의 선택 메모 1줄 정도). 나머지는 AI와 자동화가 처리합니다.
+
+**제품 흐름 (정본):** [full-process.ko.md](full-process.ko.md) — 5단계 **문의 → 사전 미팅 → 예약 확정 → 돌봄 & 이동 → 완료** (architecture D27–D34). Rover 예약 × 키즈노트 케어 × Uber 이동, 타이핑은 AI 에이전트가.
 
 ---
 
 ## 2. 기능 범위 & 우선순위
 
-개발자 2명, 약 4주. 이 순서로 만들고 P2는 시간이 남으면.
+개발자 2명, 약 4주. 5단계 순서로 만들고 P1·P2는 시간이 남으면.
 
-| 우선순위 | 기능 | 키즈노트 대응 | AI |
-| :--- | :--- | :--- | :--- |
-| **P0** | 케어 피드 & 앨범 + 업로드 알림 | 앨범 | Vision(MiniCPM-V) 캡션 |
-| **P0** | 투약·산책 의뢰 → 리마인더 → 인증 사진 → 견주 알림 | 투약의뢰서/보고서 | — |
-| **P0** | 타이핑 없는 알림장 (그날 피드 + 완료 일정 기반) | 알림장 | Super |
-| **P0** | 간식 세이프티 가드 | — (우리 차별점) | Vision(MiniCPM-V) + Ultra · Tavily 출처(8.7 stretch) |
-| **P1** | 사진 요청 (견주 → 펫시터) | — | — |
-| **P0** | 파트타임 보딩 시터: 날짜 × 칸 스케줄(칸별 시간·정원), 단골 시터 스케줄 보기, 여행 전체 예약 + 맡기기·찾기 시각·장소 협의, 취소 → 재예약 | — (예약 플랫폼형) | — |
-| **P1** | 공지 팝업 · 즐겨찾기 시터 · 반복 근무 패턴 | 공지사항 | — |
-| **P2** | AI 1차 답변 Q&A | — | Nano |
+| 우선순위 | 단계 | 기능 | 참고 | AI | Phase |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P0** | ① 문의 | 견주 문의(서비스 방식·날짜·반려동물·질문) → 시터 대신 AI가 1분 안 답장 — 캘린더·서버 견적(공휴일·다두 할증)·시터 정책·Life Record(RAG) 근거 | Rover 빠른 응답 | Nano + Qwen3 Embedding | 07B (견적 03C) |
+| **P0** | ② 사전 미팅 | 케어·투약 의뢰서 → AI 미션 체크리스트 + 주의사항 · Meet & Greet(대면/영상) · 이동 방식(Owner drives / Sitter drives) | 키즈노트 투약의뢰서 | Super | 06, 03B |
+| **P0** | ③ 예약 | 파트타임 시터: 날짜 × 칸 스케줄(칸별 시간·정원), 단골 시터 스케줄, 여행 전체 예약 + 맡기기·찾기 시각·장소 협의, 보딩 / 하우스 시팅, 취소 → 재예약 | 예약 플랫폼 | — | 03B |
+| **P0** | ③ 예약 | 견적 → 캐나다형 동의서 템플릿 → **데모 결제** → 결제 후 시터 집 정보 · 견주 집 출입 정보는 2시간 전 해제 | — | — (규칙) | 03C |
+| **P0** | ④ 돌봄 & 이동 | Uber식 이동: 실시간 위치·ETA, 도착 카드(방문자 주차 / Buzzer·Lockbox), 인계 사진 확인(반려동물·크레이트·안전벨트) | Uber · 키즈노트 등하원 | Vision(MiniCPM-V) | 06B |
+| **P0** | ④ 돌봄 & 이동 | 5초 체크(식사·배변·산책·투약·메모·사진 ≤ 2) + 스케줄 task → 즉시 견주 알림 + Activity | 키즈노트 투약 보고 | — | 06 |
+| **P0** | ④ 돌봄 & 이동 | 5초 체크 + 하루 데이터 기반 타이핑 없는 알림장 | 알림장 | Vision → Super | 07 |
+| **P0** | ④ 돌봄 & 이동 | 케어 피드 + 날짜·분류별 타임라인 앨범 (식사·산책·낮잠·놀이) | 앨범 | Vision 캡션 + 분류 | 05, 09 |
+| **P0** | ⑤ 완료 | 귀가 리포트 + ★ 5점 리뷰 + Pet Life Record → RAG → 다음 예약에서 재사용 | 키즈노트 생활기록 | Super + Qwen3 Embedding | 07C |
+| **P0 stretch** | ④ (추가) | 간식 세이프티 가드 — 시나리오 코어 뒤 (D27) | — (우리 차별점) | Vision(MiniCPM-V) + Ultra · Tavily 출처(8.7) | 08 |
+| **P1** | — | 사진 요청 (견주 → 펫시터) | — | — | 11.1 |
+| **P1** | — | 공지 팝업 · 즐겨찾기 시터 · 반복 근무 패턴 | 공지사항 | — | 11 |
 
-데모 기준: README의 **"PawNote의 하루"** 흐름이 처음부터 끝까지 동작해야 합니다.
+구 P2 "AI 1차 답변 Q&A"는 Stage 1 문의 AI(07B, P0)로 흡수되었습니다.
+
+데모 기준: README의 **5단계 흐름**(*How PawNote Works* → *A Stay with PawNote*)이 처음부터 끝까지 동작해야 합니다.
 
 해커톤 이후 (우선순위 마지막): **시터 전용 데스크톱 웹** — 스케줄 작성·알림장 작업을 컴퓨터에서 빠르게 (사이드바 레이아웃). 견주는 계속 폰 화면. 전체 로드맵은 [README.md](README.md#post-hackathon-roadmap-not-built-for-the-hackathon), 설계 대비는 architecture D25.
 
@@ -57,10 +65,10 @@
 | 주차 | 기간 | 묵 | 슬기 | 민식 |
 | :--- | :--- | :--- | :--- | :--- |
 | **0. 킥오프** | 9/28 – 9/30 | Devpost 팀 합류, 무드보드 | 크레딧 받기, `GET /v1/models`로 모델 ID 확인, 첫 호출 | 리포 뼈대, Supabase·Cloudinary 계정 |
-| **1. 세팅** | 10/1 – 10/4 | 디자인 시스템 + 핵심 화면: 피드, 일정 목록, 알림장, 스캐너 | **데이터 익명화**, 캡션·알림장 프롬프트 | Expo Web, Supabase 스키마, FastAPI 뼈대, Cloudinary 업로드 |
-| **2. P0 코어** | 10/5 – 10/11 | 피드/앨범, 일정 체크, 경고 모달 | 안전 파이프라인(Vision → Ultra, JSON), 하루 데이터 기반 알림장 | 피드 + 알림, 투약·산책 일정 + 리마인더 |
-| **3. P1 + 폴리싱** | 10/12 – 10/18 | 공지 팝업, 일정표, 마이크로 인터랙션 | 실제 사진·포장지로 프롬프트 튜닝 (Tavily는 8.7로 앞당김) | 사진 요청, 공지·일정, 데모 배포 |
-| **4. 데모 & 문서** | 10/19 – 10/25 | 영상 비주얼, 썸네일 | Q&A(P2), 피드백 정리 | README 실행 가이드, 테스트 계정, Devpost 초안 |
+| **1. 세팅** | 10/1 – 10/4 | 디자인 시스템 + 시나리오 화면: 문의 스레드, Checkout, Trip, 5초 체크 | **데이터 익명화**, 7.1 Nebius 클라이언트 + `embed()` | Phase 01–03 ✅, 03B 예약 |
+| **2. 단계 ①–③** | 10/5 – 10/11 | 예약·Checkout·Meet & Greet·케어 의뢰서 화면 | 07B 문의 AI + RAG 백엔드, 6.12 care-plan | 03B, 03C, 04, 05 |
+| **3. 단계 ④** | 10/12 – 10/18 | Trip 화면·지도, 앨범, 마이크로 인터랙션 | 6B.5 인계 사진 체크, 7.2 알림장, 9.1 캡션·분류 | 06, 06B, 07, 배포 리허설(10/18) |
+| **4. 단계 ⑤ + 데모** | 10/19 – 10/25 | 영상 비주얼, 썸네일, Life Record 화면 | 7C.4 Life Record, 프롬프트 튜닝, 피드백 정리 · (stretch) 08 세이프티 | 07B UI, 09, 07C, README, 테스트 계정, Devpost 초안 |
 | **5. 제출** | 10/26 – 10/30 | 최종 폴리싱 | 최종 피드백 | 버그 수정 · **내부 마감 10/28** · 10/29–10/30 최종 Submit (마감 10/30 10:00 AM PT) |
 
 ---
@@ -69,13 +77,13 @@
 
 | 심사 기준 (동일 비중) | 전략 | 담당 |
 | :--- | :--- | :--- |
-| **기술 구현** | 작업별 Nemotron 4개 모델 분리, JSON 검증, 스케줄 작업, 실제 배포 | 슬기, 민식 |
-| **디자인** | 견주·펫시터 양쪽의 완성된 흐름, 키즈노트급 완성도 | 묵 |
-| **잠재적 임팩트** | 3년 현장 경험 기반 실제 문제 + 숫자 (줄어든 메시지 수, 알림장 작성 시간 절감) | 전원 |
-| **아이디어 품질** | 타이핑 없는 케어 루프, 숨은 알레르기 추론, 실제 데이터 기반 말투 복제 | 슬기 |
+| **기술 구현** | 작업별 Nemotron 분리(Nano 답장·Super 글쓰기·Ultra 안전), Token Factory 임베딩 + pgvector RAG, 서버 근거 고정(숫자), JSON 검증, Realtime 이동, 실제 배포 | 슬기, 민식 |
+| **디자인** | 견주·펫시터가 함께 지나가는 5단계 한 흐름 (Rover × 키즈노트 × Uber), 키즈노트급 완성도 | 묵 |
+| **잠재적 임팩트** | 3년 현장 경험 기반 실제 문제 + 숫자 (답장 몇 초, 줄어든 메시지 수, 알림장 작성 시간 절감) | 전원 |
+| **아이디어 품질** | 시터 대신 답하고·정리하고·확인하고·쓰는 에이전트, 시간 맞춰 열리는 출입 정보, 다음 시터에게 이어지는 Life Record | 슬기 |
 
 **절대 지킬 것**
-- 모든 AI 호출은 Token Factory — 추론·알림장은 Nemotron, 비전(캡션·성분표)은 MiniCPM-V ([model-ids.md](phases/notes/model-ids.md))
+- 모든 AI 호출은 Token Factory — 답장·추론·알림장은 Nemotron, 비전(인계 사진·캡션·성분표)은 MiniCPM-V, RAG 임베딩은 Qwen3 Embedding ([model-ids.md](phases/notes/model-ids.md))
 - 실제 고객 데이터는 프롬프트·리포·영상에 쓰기 전 익명화
 - 데모는 **12/15까지** 무료 접속 유지, 견주·펫시터 테스트 계정 제공
 - 심사위원은 PC로 봄: 데스크톱에서는 **402 × 874 폰 프레임** 안에서 앱이 돌고, 마우스만으로 모든 동작 + 샘플 사진 내장 (architecture D25, [DESIGN.md §7.7](../../DESIGN.md#77-works-with-a-mouse))
@@ -91,14 +99,15 @@
 
 | 모델 ID | 입력 | 리전 / 엔드포인트 | 가격 (입력/출력, 100만 토큰당) | 용도 |
 | :--- | :--- | :--- | :--- | :--- |
-| `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 텍스트 | eu-north1 · `https://api.tokenfactory.nebius.com/v1/` | $0.06 / $0.24 | Q&A, 빠른 호출 |
-| `nvidia/nemotron-3-super-120b-a12b` | 텍스트 | us-central1 · `https://api.tokenfactory.us-central1.nebius.com/v1/` | $0.30 / $0.90 | 알림장 |
+| `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 텍스트 | eu-north1 · `https://api.tokenfactory.nebius.com/v1/` | $0.06 / $0.24 | 문의 자동 답장, 빠른 호출 |
+| `nvidia/nemotron-3-super-120b-a12b` | 텍스트 | us-central1 · `https://api.tokenfactory.us-central1.nebius.com/v1/` | $0.30 / $0.90 | 케어 체크리스트, 알림장, Life Record |
 | `nvidia/Nemotron-3-Ultra-550b-a55b` | 텍스트 | us-central1 | $1.00 / $3.00 | 안전 추론 |
 | `nvidia/Nemotron-3_5-Lightning` | 텍스트 | eu-north1 | $0.06 / $0.24 | 빠른 모델 대안 (100만 토큰 컨텍스트) |
-| `openbmb/MiniCPM-V-4_5` | 이미지+텍스트 | us-central1 | 카탈로그 참고 | 캡션, 성분표 읽기 |
+| `openbmb/MiniCPM-V-4_5` | 이미지+텍스트 | us-central1 | 카탈로그 참고 | 인계 사진 체크, 캡션·분류, 알림장 사진, 성분표 읽기 |
+| `Qwen/Qwen3-Embedding-8B` | 텍스트 → 임베딩 | 두 리전 | 카탈로그 참고 | RAG (`dimensions: 1024`, 2026-10-01 확인) |
 
 **주의**
-- **Nano Omni(`nvidia/nemotron-3-nano-omni`)는 카탈로그에 없어**(2026-09-29 `GET /v1/models` 확인) 비전은 **MiniCPM-V-4_5**를 씁니다. 규정은 "NVIDIA 모델 최소 1개"이고, 추론·알림장은 Nemotron(Ultra·Super)이 맡습니다. 역할별 ID 정본: [model-ids.md](phases/notes/model-ids.md).
+- **Nano Omni(`nvidia/nemotron-3-nano-omni`)는 카탈로그에 없어**(2026-09-29 `GET /v1/models` 확인) 비전은 **MiniCPM-V-4_5**를 씁니다. 시나리오의 **Qwen-2.5-VL**도 카탈로그에 없음(2026-10-01) — 이미지 입력 대안은 `moonshotai/Kimi-K2.6`뿐. 규정은 "NVIDIA 모델 최소 1개"이고, 추론·알림장은 Nemotron(Ultra·Super)이 맡습니다. 역할별 ID 정본: [model-ids.md](phases/notes/model-ids.md).
 - **모델마다 리전이 달라서** 백엔드에서 모델별 base URL을 관리해야 합니다.
 - 모델 ID는 **대소문자를 구분**하고 모델마다 표기가 제각각이니 그대로 복사하세요.
 - 데모·AI 출력은 **영어 전용** (D1).
@@ -136,8 +145,18 @@
 }
 ```
 
-### D. Q&A 1차 답변 (Nano)
-- 강아지 프로필과 오늘 기록만 근거로 답변. 확실하지 않으면 "곧 펫시터가 답변드릴게요"라고 하고 펫시터에게 알림
+### D. 문의 자동 답장 (Nano + RAG) — Stage 1, Phase 07B
+- 입력: 서버가 모은 JSON뿐 — 시터 가능 여부, `quote_booking` 결과, 반려동물 프로필, 시터 공개 프로필, RAG 상위 5개(시터 정책·Life Record·지난 문의·케어 의뢰서)
+- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Mina will confirm" + `needs_sitter`
+
+### E. 케어 플랜 (Super) — Stage 2, Phase 06
+- 견주 자유 텍스트 케어·투약 의뢰서 → `{tasks:[{type, time, title, dose, notes}], cautions:[], skipped:[]}`. 종 규칙은 서버가 강제(고양이 산책 없음). 초안만 — 견주가 확인 후 저장
+
+### F. 인계 사진 체크 (Vision) — Stage 4, Phase 06B
+- 맡기기·찾기 사진 → `{pet_visible, species_match, crate_visible, restraint_visible, concerns}` → ok / warning은 서버가 판정. 관찰만, 의학적 판단 금지
+
+### G. Pet Life Record (Super) — Stage 5, Phase 07C
+- 이번 돌봄의 check-in·task·알림장·인계 체크·시터 메모 → `{eats, meds, potty, behavior, heads_up, sitter_tips, changed_since_last}` — 근거 없으면 null. 다음 예약을 위해 RAG에 인덱싱
 
 ---
 
@@ -155,7 +174,7 @@
 
 ## 9. 데이터 모델 (요약)
 
-> **정본은 [phases/phase-02.md](phases/phase-02.md)** (P0 17개 테이블 · RLS · RPC)와 [phase-11.md](phases/phase-11.md) (P1). 아래는 한눈에 보기용 목록이며 컬럼·제약은 적지 않습니다 — 스키마를 바꿀 때는 phase-02를 먼저 고칩니다.
+> **정본은 [phases/phase-02.md](phases/phase-02.md)** (P0 17개 테이블 · RLS · RPC), 시나리오 테이블은 각 phase migration (03B–07C), P1은 [phase-11.md](phases/phase-11.md). 아래는 한눈에 보기용 목록이며 컬럼·제약은 적지 않습니다 — 스키마를 바꿀 때는 phase-02를 먼저 고칩니다.
 
 | 영역 | 테이블 |
 | :--- | :--- |
@@ -163,8 +182,9 @@
 | 반려동물 | `pets` (dog·cat) · `pet_allergies` |
 | 스케줄·예약 | `sitter_availability` · `bookings` · `booking_pets` (맡긴 구간, 겹침 금지) · `booking_slots` (정원) · `booking_handoffs` (맡기기·찾기 시각·장소) |
 | 케어 | `care_tasks` (medication·walk·feeding·litter·play·sleep) · `task_logs` · `media` · `feed_posts` · `daily_reports` · `safety_checks` |
+| 시나리오 (D27–D34) | `sitter_rates` · `holidays` · `booking_consents` · `owner_home_access` · `access_reveals` (03C) · `care_checkins` · `care_requests` · `pet_cautions` (06) · `trips` · `handoff_checks` (06B) · `inquiries` · `inquiry_messages` · `knowledge_chunks` (pgvector) (07B) · `reviews` · `pet_life_records` (07C) |
 | 알림 | `notifications` |
-| P1 (Phase 11) | `photo_requests` · `notices` · `notice_reads` · `owner_favorite_sitters` · `messages` (P2) |
+| P1 (Phase 11) | `photo_requests` · `notices` · `notice_reads` · `owner_favorite_sitters` |
 
 ---
 
@@ -223,3 +243,7 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [ ] Few-shot 샘플 **규모**(3편 확정, 추가 여부)
 - [x] Nano Omni 사용 가능 여부 — 카탈로그에 없음, 비전은 MiniCPM-V-4_5 (2026-09-29)
+- [x] 제품 흐름: 팀 Full Process 시나리오 우선 (5단계) — 2026-10-01 (D27, [full-process.ko.md](full-process.ko.md))
+- [x] 결제는 데모만(카드 정보 없음), 동의서는 고정 영문 템플릿("not legal advice") — 2026-10-01 (D30)
+- [x] 간식 세이프티 가드: 시나리오 코어 뒤 P0 stretch — 2026-10-01 (D27)
+- [ ] 시나리오 Vision 모델 Qwen-2.5-VL → 카탈로그에 없음. MiniCPM-V-4.5로 진행, 인계 사진 품질이 부족하면 Kimi-K2.6 비교 (6B.5 spike)

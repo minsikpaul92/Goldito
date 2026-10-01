@@ -1,0 +1,105 @@
+# Phase 07B — 문의 AI 자동 답변 + RAG Knowledge Base (Stage 1 Inquiry)
+
+> 공통 전제: [architecture.ko.md](architecture.ko.md) — **D29 견적**, **D31 출입 정보 제외**, **D33 임베딩**, AI 규칙 §9, API §5, 알림 §7
+> 제품 흐름: [full-process.ko.md — Stage 1](../full-process.ko.md#stage-1--inquiry-초기-문의--목표-rag-기반-초고속-맞춤-응대)
+> 구 P2 11.4 "Q&A 1차 답변"을 이 Phase가 대신한다 (D27).
+
+## Goal
+
+견주가 시터에게 **문의**(서비스 방식 · 날짜·시각 · 반려동물 · 질문 1줄)를 보내면, 시터가 돌보는 중이거나 자고 있어도 **1분 안에(목표 p50 < 10초)** PawNote AI가 시터 대신 답한다. 답의 근거는 서버가 모은 것뿐이다: **그 시터의 스케줄(가능 여부)**, **`quote_booking` 견적**(공휴일·다두 할증 — 03C), **시터 정책 문서**, 그리고 RAG로 찾은 **이 반려동물의 Pet Life Record·지난 대화·케어 의뢰서**. 견주는 답 아래 견적 카드에서 바로 **Request booking**(문의 내용 자동 입력) 또는 **Schedule Meet & Greet**로 넘어간다.
+
+### Goal 달성 기준
+
+- [ ] Jisoo → Mina 문의: Boarding · Oct 9 07:30 → Oct 12 17:00 · Bori + Mochi · "Can you give Bori her skin pill at 2 PM?" → **10초 안** AI 답 "Hi Jisoo! Mina is available for Bori and Mochi from Oct 9 to Oct 12 🐾 … Total $268.13 CAD (includes Thanksgiving and a second-pet rate). Bori's Life Record says she takes her pill best inside a treat — happy to do that at 2 PM." + 견적 카드 (03C와 같은 숫자)
+- [ ] 답 말풍선에 "Auto-reply from Mina's PawNote assistant" 라벨 · Mina에게 `inquiry_received` · Jisoo에게 `inquiry_replied`
+- [ ] Mina가 10/10을 block한 상태로 같은 문의 → "Mina isn't available on Oct 10 …" + **Find other sitters** (가격 문장 없음)
+- [ ] Mina 정책 "No dogs over 20 kg"이 있고 반려동물이 25 kg → 정책 근거로 정중히 안내 + `needs_sitter=true` ("Mina will confirm")
+- [ ] 답에 다른 견주 이름·예약, 주소, 출입 정보(lockbox 등)가 **절대** 없음
+- [ ] Mina: 스레드 **Looks good 👍** 한 탭 → "Mina confirmed this reply" 표시 (텍스트 입력 없이)
+- [ ] **Request booking** → `/owner/bookings/new`에 서비스·시각·반려동물·이동 방식이 채워짐
+
+---
+
+## 선행 조건
+
+- [Phase 07.1](phase-07.md) Nebius client (`chat_json`, 지표 로그) + 이 Phase에서 `embed()` 추가
+- [Phase 03B](phase-03b.md) 시터 스케줄·`get_sitter_schedule`·서비스 방식 · [Phase 03C](phase-03c.md) `quote_booking`
+- [Phase 05](phase-05.md) 알림 인프라 (UI 연결 시)
+- Life Record 근거는 [Phase 07C](phase-07c.md) 이후 자동으로 들어옴 (그 전엔 펫 프로필·케어 의뢰서·정책만)
+
+---
+
+## 범위
+
+| 포함 (P0) | 제외 |
+| :--- | :--- |
+| 문의 스레드(견주 질문 · AI 답 · 시터 👍/짧은 답) | 실시간 채팅(타이핑 표시·읽음), 첨부 파일 |
+| `/api/ai/inquiry-reply` — 서버가 근거 수집 → Nano 1회 호출 | 모델 tool calling 에이전트 루프 (7.1 spike에서 지원 여부만 기록) |
+| pgvector `knowledge_chunks` + `match_knowledge` + 인덱싱(정책·Life Record·문의·의뢰서) | 외부 마켓플레이스(Rover 등) 문의 연동 |
+| 시터 정책 문서 편집 (`/profile`) | 다국어 답변 (D1: EN) |
+
+---
+
+## 화면
+
+| Route | 역할 | 화면 | 주 액션 |
+| :--- | :--- | :--- | :--- |
+| `/owner/sitters/[sitterId]` (03B 확장) | owner | 시터 프로필 하단 **Ask about a stay** → 시트: Service(Boarding / House sitting — 시터가 제공하는 것만) · Drop-off · Pick-up(HandoffPicker 재사용 — 이동 방식 포함) · Pets(체크 — 안내 "Bori's profile and Life Record are shared with Mina") · Question(선택, ≤ 300자) | **Send** |
+| `/owner/inquiries/[inquiryId]` | owner | 스레드: 내 질문 카드(조건 요약) → "Mina's assistant is replying…" skeleton → AI 말풍선 + **QuoteCard** + 출처 칩("From Mina's policies", "From Bori's Life Record") → 버튼 **Request booking** (primary) · **Schedule Meet & Greet** | **Request booking** |
+| `/sitter/bookings` (Inquiries 세그먼트) · `/sitter/inquiries/[inquiryId]` | sitter | 문의 카드(견주·반려동물·날짜·"Replied in 8 s") → 스레드: AI가 보낸 답 + **Looks good 👍** (primary) · **Add a short reply**(선택 1줄) | **Looks good** |
+| `/profile` (sitter) | sitter | **House rules & policies** (자유 텍스트, 한 번 작성 — 포함 서비스·취소·집 규칙·받지 않는 경우). 저장 시 RAG 재인덱싱 | Save |
+
+---
+
+## 작업 상세
+
+| ID | 작업 | 담당 | 상세 | DoD |
+| :--- | :--- | :--- | :--- | :--- |
+| 7B.1 | DB `010_inquiries_rag.sql` | 민식 | `create extension if not exists vector;` · `inquiries(id, owner_id, sitter_id, service_type, drop_off_at, pick_up_at, drop_off_location_type, pick_up_location_type, pet_ids uuid[] not null, status text check in ('open','booked','closed') default 'open', booking_id → bookings null, created_at)` · `inquiry_messages(id, inquiry_id → inquiries cascade, author text check in ('owner','ai','sitter'), sender_id → profiles null (ai면 null), body text not null check (char_length(body) <= 2000), grounding jsonb null (ai: quote·availability·sources), model text, latency_ms int, confirmed_by_sitter_at timestamptz null, created_at)` · RLS: 당사자 select, 견주 insert (author=owner, 자기 문의), 시터 insert (author=sitter) + `confirmed_by_sitter_at` update, ai는 service role. `sitter_profiles.policies text` 추가. `knowledge_chunks(id, scope text check in ('sitter','pet','owner'), sitter_id null, pet_id null, owner_id null, source_type text check in ('sitter_policy','life_record','inquiry','care_request'), source_id uuid, content text, embedding vector(1024), created_at)` · unique(source_type, source_id, chunk_no) · HNSW index (`vector_cosine_ops`) · **RLS on, 클라이언트 정책 없음**(service role 전용). `match_knowledge(p_query vector(1024), p_sitter uuid, p_pets uuid[], p_owner uuid, p_k int default 5)` — 범위 필터(`sitter_id = p_sitter` or `pet_id = any(p_pets)` or `owner_id = p_owner`) 후 cosine 정렬, `{content, source_type, source_id, similarity}`. 알림 트리거: ai 메시지 insert → `inquiry_received`(시터) + `inquiry_replied`(견주) | rls_smoke M: 제3자 문의 0행, `knowledge_chunks` anon/authenticated select 거부 |
+| 7B.2 | 임베딩 · RAG 서비스 | 슬기 | `nebius.embed(texts)` (D33 — `MODEL_EMBED`, `dimensions=1024`, 지표 로그). `services/rag.py`: `index_source(source_type, source_id, text, scope ids)` — 문단 단위 ≤ 800자 청크, 기존 행 삭제 후 insert. 인덱싱 시점: 시터 정책 저장(`POST /api/rag/reindex-sitter` — 시터 본인), 케어 의뢰서 저장(06 → `POST /api/rag/reindex-care-request`), 문의 메시지(답 생성 후 같은 요청 안에서), Life Record(07C). `search(query, sitter, pets, owner, k=5)` | 같은 소스 재인덱싱 시 중복 없음 |
+| 7B.3 | `POST /api/ai/inquiry-reply` | 슬기·민식 | `routers/ai_inquiry.py`: ① `assert_booking_party` 대신 문의 당사자 확인, 이미 ai 답이 있으면 그대로 반환(멱등) ② 근거 수집(병렬): `get_sitter_schedule` 구간 → 가능 여부 + 막힌 날, `quote_booking` (가능할 때만), 반려동물 프로필(종·품종·나이·체중·알레르기·`pet_cautions`), 시터 공개 프로필(bio·service_area·경력·평균 별점), `rag.search(질문 + 조건 요약)` top-5 ③ 메시지: `prompts/inquiry/system.md` + user = 근거 JSON + 견주 질문 → `MODEL_FAST`(Nano), reasoning off, `max_tokens` 350, temperature 0.4 → `chat_json` `{reply, can_host, needs_sitter, used_sources:[ids]}` ④ **숫자 대조**: reply 안의 `$` 금액·날짜가 근거 JSON에 없으면 1회 재생성 → 또 실패면 고정 문구 + 견적 카드 ⑤ insert ai 메시지(grounding = quote·availability·sources) + 문의 메시지 인덱싱 ⑥ 응답 + `latency_ms`. 45 s 타임아웃·모델 실패 → 고정 문구 "Thanks, Jisoo! Mina will reply soon." + `needs_sitter=true` (200) | 아래 근거 테스트 6건 |
+| 7B.4 | 프롬프트 (`prompts/inquiry/system.md`) | 슬기 | 영어. 시터의 친절한 어시스턴트로 1인칭 복수 금지 ("Mina is available…"). 규칙: 입력 JSON에 있는 사실만 · 금액은 `quote.total`·항목 그대로(계산 금지) · 불확실·정책 밖 요청은 "Mina will confirm" + `needs_sitter` · 의학 조언 금지 · 다른 견주·주소·출입 정보 언급 금지(입력에도 없음) · 120단어 이하 · 이모지 ≤ 2 · 마지막 줄은 다음 행동 1개 ("Tap **Request booking** to hold these dates.") | Seulgi 리뷰 |
+| 7B.5 | Owner 문의 UI | 민식 | 위 화면. 보내기 = Supabase insert(`inquiries` + owner 메시지) → `api.post('/api/ai/inquiry-reply')` (응답 오기 전 skeleton, 실패해도 스레드는 남고 "Mina will reply soon"). **Request booking** → `/owner/bookings/new?inquiry=<id>` 자동 입력 → 요청 성공 시 `inquiries.booking_id`·`status='booked'` | 마우스만으로 문의 → 답 → 요청 |
+| 7B.6 | Sitter 문의 UI + 정책 편집 | 민식 | Inquiries 세그먼트(최근순, 미확인 뱃지), 스레드 **Looks good 👍** → `confirmed_by_sitter_at`, 짧은 답(선택 1줄, ≤ 300) → author=sitter 메시지 + 견주 알림 `inquiry_replied`. `/profile` 정책 필드 + 저장 후 reindex 호출 | 텍스트 없이 확인 가능 |
+| 7B.7 | 지표 | 슬기 | 10회 호출 → `notes/model-ids.md`에 inquiry-reply p50/max latency(근거 수집 + 모델 분리) — README "Inquiry answered in N s" 근거 | p50 < 10 s, max < 60 s |
+
+### 근거 테스트 (`backend/tests/test_inquiry.py` — 모델 호출은 mock, 근거 수집·대조는 실제 로직)
+
+| # | 상황 | 기대 |
+| :--- | :--- | :--- |
+| a | 구간 중 하루 blocked | `can_host=false`, quote 없음, 금액 문장 없음 |
+| b | Thanksgiving 포함 | grounding.quote.holiday_days에 Oct 12, 답 금액 = quote.total |
+| c | 모델이 없는 금액($300)을 씀 | 1회 재생성 → 또 틀리면 고정 문구 |
+| d | 시터 정책에 걸림 | `needs_sitter=true`, 정책 source 포함 |
+| e | Life Record 있음 | sources에 `life_record` |
+| f | 근거 JSON 전체에 `lockbox`·`buzzer`·주소 키 없음 | 단위 테스트로 키 검사 (D31) |
+
+---
+
+## Definition of Done (DoD)
+
+1. Goal 달성 기준 수동 시나리오 통과 (Jisoo → Mina, 블록·정책 케이스 포함)
+2. `pytest` 근거 테스트 a–f + 비당사자 403 + 멱등(두 번 호출해도 ai 메시지 1개)
+3. `knowledge_chunks`를 클라이언트(anon·authenticated)가 읽을 수 없음 (rls_smoke M)
+4. 7B.7 지표 기록, README Nebius 표에 "Inquiry auto-reply — Nemotron Nano + Qwen3 Embedding" 1줄 (Phase 10에서 확장)
+5. 데스크톱 프레임에서 마우스만으로 문의 → 답 → Request booking (D25)
+
+---
+
+## 산출물
+
+- `supabase/migrations/010_inquiries_rag.sql`, `supabase/tests/rls_smoke.sql` (M)
+- `backend/app/services/rag.py`, `nebius.embed()`, `backend/app/routers/ai_inquiry.py`, `backend/app/routers/rag.py`, `backend/app/schemas/inquiry.py`, `backend/app/ai/prompts/inquiry/system.md`, `backend/tests/test_inquiry.py`
+- `frontend/app/owner/inquiries/[inquiryId].tsx`, `frontend/app/sitter/inquiries/[inquiryId].tsx`, `frontend/components/InquirySheet.tsx`, `MessageBubble.tsx`, `frontend/features/inquiries/*`
+
+---
+
+## AI 프롬프트
+
+Playbook §9B — (7B.1 SQL) / (7B.2–7B.4 슬기) / (7B.5–7B.6 UI)
+
+---
+
+## 다음 Phase
+
+→ [Phase 09 — 캡션·앨범 분류](phase-09.md) · 그다음 [Phase 07C — 완료·Life Record](phase-07c.md)

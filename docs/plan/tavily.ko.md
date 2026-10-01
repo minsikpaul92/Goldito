@@ -15,7 +15,7 @@ PawNote에서는 **Nemotron(고정된 학습 지식)** 만으로는 모르는 **
 
 ## PawNote에서 어디에 쓰나?
 
-**간식 세이프티 가드** — [Phase 08.7](phases/phase-08.md) (stretch, 8.1–8.6 끝나면 바로). 못 하면 Phase 11.3:
+**간식 세이프티 가드** — [Phase 08.7](phases/phase-08.md) (stretch, 8.1–8.6 끝나면 바로). Phase 08 자체가 시나리오 코어(03B–07C) 뒤 P0 stretch (D27). 못 하면 Phase 11.3:
 
 1. Vision이 성분표를 읽고 Ultra가 알레르기를 판단
 2. 결과가 **WARNING**이거나 **모르는 성분**이 있으면 → **Tavily `search`**

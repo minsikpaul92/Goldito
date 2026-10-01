@@ -1,9 +1,9 @@
 # PawNote — Active TODO
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
-> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03 → `feat/phase-03-auth` · [#34](https://github.com/minsikpaul92/PawNote/pull/34).
+> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03B → `feat/phase-03b-bookings` (draft PR when the first task lands).
 
-**Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
+**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D34 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
 **Supplementary docs:** [onboarding.ko.md](onboarding.ko.md) · [tavily.ko.md](tavily.ko.md) · [env-setup.ko.md](env-setup.ko.md) · [Devpost](../hackathon/devpost-submission.ko.md)
 
@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3B.1** | Sitter schedule `/sitter/schedule` — month calendar, day × slot (Morning · Afternoon · Overnight) open with own hours + capacity / blocked (`sitter_availability`) | [phase-03b.md](phases/phase-03b.md) |
+| **3B.0** | Tabs (owner `Home · Bookings · Feed · Care · Reports`, sitter `Today · Bookings · Tasks · Report` — Scan tab removed) + `004_booking_options.sql` (`service_type`, sitter `services`, Meet & Greet columns, `request_booking` service param, `media.purpose` + `report`/`handoff`) | [phase-03b.md](phases/phase-03b.md) |
 
 ---
 
@@ -26,19 +26,27 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **3B.2–3B.8** Owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
+> Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 6B.5 → 7.2/7.4 → 9.1 → 7C.4) run in parallel with Minsik's app queue — one Current focus per agent session.
+
+- [ ] **3B.1** Sitter schedule `/sitter/schedule` — month calendar, day × slot (Morning · Afternoon · Overnight) open with own hours + capacity / blocked (`sitter_availability`)
+- [ ] **3B.2–3B.10** Owner "Your sitters" / whole-trip search + service type (Boarding / House sitting) + drop-off & pick-up time/place = transport mode (Owner drives / Sitter drives) with negotiation + Received/Returned + cancel → Find a new sitter + **Meet & Greet** ([phase-03b.md](phases/phase-03b.md))
+- [ ] **3C.1–3C.7** `quote_booking` (rates + Ontario holidays + extra pet) · consent templates + sign · **Pay (demo)** · sitter home info after payment · owner entry info unlocks 2 h before (`005`) ([phase-03c.md](phases/phase-03c.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
-- [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed)
-- [ ] **5.x** Care feed + owner timeline + notifications center (`004`)
-- [ ] **6.x** Care Plan B — check-ins + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `005`)
-- [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) — Seulgi (can start right after Phase 01)
-- [ ] **7.2–7.5** Daily report AI (Super) + quick-tap + send (`006`)
-- [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
-- [ ] **9.x** Auto caption on upload
-- [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)) + **10.9** desktop side panel (Try demo, QR, hint) + **10.10 stretch** Split view (Owner + Sitter phones side by side) + mouse-only judge path e2e
-- [ ] **11.x** P1 (after P0 is live), in order: **11.11** Settings + in-app patch notes (CHANGELOG) → **11.1** photo request → **11.10** pet skin → **11.12** 8bit Pet status room → **11.8** stickers + report card → **11.9** video mood → **11.2** notices · Tavily 11.3 if 8.7 slipped · P2 **11.7** SFT
+- [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed; handoff + report samples)
+- [ ] **5.x** Care feed + owner timeline + notifications center (`006`)
+- [ ] **6.x** Care request → AI mission checklist (6.12–6.14) + 5-second check-ins (walk minutes) + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `007`)
+- [ ] **6B.x** Pet Transit — Start trip, live position + ETA (Simulate the drive), arrival cards, handoff photo check (Vision) (`008`) ([phase-06b.md](phases/phase-06b.md))
+- [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) + `embed()` — Seulgi (can start right after Phase 01)
+- [ ] **7.2–7.5** Daily report AI (Super) from the 5-second check + ≤ 2 photos + send (`009`)
+- [ ] **7B.x** Inquiry AI auto-reply + RAG (pgvector, Qwen3 Embedding) — backend Seulgi after 7.1, UI after 05 (`010`) ([phase-07b.md](phases/phase-07b.md))
+- [ ] **9.x** Auto caption + album category (Meals · Walks · Naps · Play) + Album view
+- [ ] **7C.x** Completion — home-safe report, review, Pet Life Record → RAG, next-booking card (`011`) ([phase-07c.md](phases/phase-07c.md))
+- [ ] **8.x (P0 stretch, after 7C)** Safety check pipeline + modal + owner notify (`012`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
+- [ ] **10.x** Seed (scenario data: rates, entry info, routes, past Life Record) + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)) + **10.9** desktop side panel (Try demo, QR, hint) + **10.10 stretch** Split view (Owner + Sitter phones side by side) + mouse-only judge path e2e
+- [ ] **11.x** P1 (after P0 is live), in order: **11.11** Settings + in-app patch notes (CHANGELOG) → **11.1** photo request → **11.10** pet skin → **11.12** 8bit Pet status room → **11.8** stickers + report card → **11.9** video mood → **11.2** notices · Tavily 11.3 if 8.7 slipped · P2 **11.7** SFT (old 11.4 Q&A → 07B)
 - [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 + **8bit pixel pet sprites** (Maltese, generic cat, ≥3 mood/hunger states) for 11.12 — can start any time
-- [ ] **design (Muk)** Figma frames at **402 × 874** (spot-check 360 / 440) + desktop backdrop / side panel / phone-frame style (DESIGN.md §2.1, 10.9) + sample photo set for 4.7 (dog / cat daily photos, fictional-brand treat labels = Phase 08 fixtures, no people)
+- [ ] **design (Muk)** Figma frames at **402 × 874** (spot-check 360 / 440) + desktop backdrop / side panel / phone-frame style (DESIGN.md §2.1, 10.9) + sample photo set for 4.7 (dog / cat daily photos for meals · walks · naps, handoff photos — pet at the door, car with / without a crate, empty room — fictional-brand treat labels = Phase 08 fixtures, no people or plates)
+- [ ] **design (Muk)** Scenario screens: inquiry thread + quote card, care request → checklist, checkout (consents + demo pay), entry-info lock card, trip screen (map + ETA + arrival cards), 5-second check, album by category, review, Life Record ([full-process.ko.md](full-process.ko.md))
 - [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 
 ---
@@ -47,6 +55,7 @@
 
 ## Completed
 
+- [x] **docs** Full Process scenario first: [full-process.ko.md](full-process.ko.md) (5 stages Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion, demo path "A Stay with PawNote"), architecture **D27–D34** (scenario-first, service type + transport = handoff place, server-side quote, consent templates + demo payment, timed entry-info unlock, Pet Transit, vision/embedding models, 5-second check memo), routes / API / notifications / env (`MODEL_EMBED`), new phases **03C** · **06B** · **07B** · **07C**, phases 03B–11 updated, migrations renumbered 004–013, Treat Safety Guard → P0 stretch after 7C, old 11.4 Q&A → 07B. Catalog check: Qwen2.5-VL not on Token Factory → MiniCPM-V-4.5; `Qwen/Qwen3-Embedding-8B` works with `dimensions: 1024`. Root README + docs/README.ko.md rewritten around the 5 stages (2026-10-01)
 - [x] **fix** Radio controls (`SegmentedControl`, `RoleCard`) expose the selected option to screen readers via `aria-checked` (react-native-web ignores `accessibilityState.checked`); e2e asserts it (2026-10-01)
 - [x] **3.5–3.8** Pet profiles + role profiles: owner Home `PetCard` list (🐶 / 🐱, "Dog · Maltese · 4 yrs · 3.2 kg", allergy chips) + Add pet; `/owner/pets/new` · `/owner/pets/[petId]` (`PetForm`: species locked after creation D22, name, breed, birthday, weight, allergy chips stored lowercase + duplicate check); pet insert uses a client UUID without `.select()` (pets_select reads `pets` through `is_owner_of`, which cannot see the row inserted by the same statement — architecture §6); sitter Today stub (3.7); `/profile` for both roles (owner: address, emergency contact, vet; sitter: bio, area, experience, home notes, home address via `get_my_sitter_profile`) + header Profile button; role areas now Stack (guard) over `(tabs)` so details have Back, `initialRouteName` for deep links; `Chip`, `SegmentedControl`, `ToastProvider`, `features/pets`, `features/profile`, `types/db.ts`, `expo-crypto`. Playwright `flows` project (auth 7 + pets 4 + profile 3) on an in-memory PostgREST mock; full local suite 87 passed. Live: sitter profile loads via RPC. Live: Bori (dog, Maltese, chicken) + Mochi (cat, Domestic Shorthair) added on the demo owner through the app and confirmed in the DB. **Phase 03 complete** — handoff-card address check moves to 3B (2026-10-01)
 - [x] **10.1 (accounts part, early)** `backend/scripts/seed_demo.py`: demo-owner.test (Jisoo) / demo-sitter.test (Mina) via Admin API (D19), idempotent refresh, `--check` read-only report of `profiles` + role rows; `DEMO_PASSWORD` in backend `.env.example` + architecture §4 (same value as `EXPO_PUBLIC_DEMO_PASSWORD`). Accounts are created by running the script (not by an agent). Rest of 10.1 (pets, bookings, tasks, Jun, sample feed, `--reset`) stays in Phase 10 (2026-10-01)
@@ -100,13 +109,17 @@
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | **done** (2026-10-01)                                                         |
-| 03B Bookings         | next (**3B.1**; DB + RPCs done in 02)                                          |
+| 03B Bookings         | next (**3B.0**; DB + RPCs done in 02)                                          |
+| 03C Agreements       | not started (Stage 3)                                                         |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
-| 06 Tasks             | not started                                                                   |
+| 06 Care request + checks | not started (Stage 2 · 4)                                                 |
+| 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
-| 08 Safety            | not started                                                                   |
-| 09 Caption AI        | not started                                                                   |
+| 07B Inquiry AI + RAG | not started (Stage 1)                                                         |
+| 07C Completion       | not started (Stage 5)                                                         |
+| 08 Safety            | P0 stretch — after 07C (D27)                                                  |
+| 09 Caption + album   | not started                                                                   |
 | 10 Demo & deploy     | not started                                                                   |
 | 11 P1                | not started                                                                   |
 | Onboarding UX        | spec done ([onboarding.ko.md](onboarding.ko.md)); code **OB.*** not started   |
@@ -122,6 +135,7 @@
 | Area                                      | Status    | Gap                                                 |
 | ----------------------------------------- | --------- | --------------------------------------------------- |
 | Blueprint + phases 00–11                  | ✅         | —                                                   |
+| Product flow (Full Process, 5 stages)     | ✅         | [full-process.ko.md](full-process.ko.md) · new phases 03C / 06B / 07B / 07C |
 | Hackathon rules + Devpost timing          | ✅         | Devpost **draft** on site = human (민식)              |
 | Env / secrets layout                      | ✅         | —                                                   |
 | Tavily / Nebius deploy / onboarding specs | ✅         | Tavily = 8.7 stretch (PR #18)                       |

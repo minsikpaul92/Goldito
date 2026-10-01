@@ -3,6 +3,7 @@
 > **Status:** product decision locked for P0 (Phase 06–07).  
 > **North star:** Sitter **care, snap, tap** — owner **learns without asking**.  
 > **English UI** (D1). Code & SQL: English.
+> **Full Process (D27):** 이 루프는 [full-process.ko.md](full-process.ko.md) **Stage 4-3 "5초 체크"**의 상세 스펙. 체크리스트 원본은 Stage 2 케어·투약 의뢰서(Phase 06 6.12–6.14)가 만든 `care_tasks` + `pet_cautions`.
 
 시터에게 필수인 **산책 · 밥 · 배변(똥/쉬) · 기분 · 짧은 에피소드**를 **탭(±사진)** 으로 기록하고, **체크 즉시 견주 알림**, 견주는 **히스토리(Activity)** 로 “언제 했는지” 확인한다. 저녁 **AI 알림장**은 같은 날 데이터를 **집계**만 한다.
 
@@ -33,13 +34,13 @@ Sitter never **must** type captions for these flows. Note check-in allows **≤1
 
 ## 3. Check-in kinds (`care_checkins`)
 
-Migration **`005_tasks.sql`** (Phase 06) adds:
+Migration **`007_care.sql`** (Phase 06) adds:
 
 | Column | Notes |
 | :--- | :--- |
 | `id`, `pet_id`, `created_by`, `created_at` | Standard |
-| `kind` | `meal` · `potty` · `mood` · `note` (P0). Same enum extensible later (`water`, …) |
-| `value` | Kind-specific: meal `all\|most\|little\|none`; potty `normal\|soft\|none`; mood `happy\|calm\|tired`; note → null |
+| `kind` | `meal` · `potty` · `walk` · `mood` · `note` (P0 — `walk` added for the 5-second check, D34). Same enum extensible later (`water`, …) |
+| `value` | Kind-specific: meal `all\|most\|little\|none`; potty `normal\|soft\|none`; walk `10\|20\|30\|45\|60` (minutes, dogs only — same species rule as D23); mood `happy\|calm\|tired`; note → null |
 | `note_text` | Required when `kind='note'`, else null, max 120 chars |
 | `media_id` | Optional → `media` |
 
@@ -90,7 +91,7 @@ Realtime + bell center (Phase 05). **Missed** tasks: owner sees ⚠️ on Care/A
 
 End-of-day Report screen:
 
-- **Quick chips** remain for **gap-fill** before Generate (meal/water/potty/mood/note) if sitter skipped check-ins.
+- **5-second check** (D34) = the Report screen chips: meal / potty / walk minutes / mood (+ water optional) for anything the sitter didn't check in, meds from today's medication task, an optional one-line memo, and up to 2 photos (described by Vision first).
 - **`source_snapshot`** adds `checkins: [{time, kind, value, note_text?, has_photo}]` from DB; **tasks** and **photos** as today.
 - AI must **not invent** events missing from snapshot + checkins + tasks.
 - Send → `report_sent` (unchanged).
