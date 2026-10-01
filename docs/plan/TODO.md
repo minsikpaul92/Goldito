@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **2.9** | Apply `001`–`003` to the hosted Supabase project (SQL Editor) + run `tests/rls_smoke.sql` | [phase-02.md](phases/phase-02.md) |
+| **1.6** | Web shell — desktop browsers show the app in a **402 × 874 phone frame** (same-origin iframe, URL sync, `?frame=0|1`) | [phase-01.md](phases/phase-01.md), architecture D25 |
 
 ---
 
@@ -25,7 +25,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **1.6** Web shell — desktop browsers show the app in a **402 × 874 phone frame** (same-origin iframe, URL sync, `?frame=0|1`) ([phase-01.md](phases/phase-01.md), architecture D25)
 - [ ] **1.7** Mouse = finger (`TouchEmulation`: drag scroll + momentum, no click after drag, horizontal wheel) + `/dev/gestures` + Playwright mouse tests in CI + PR template desktop checklist ([phase-01.md](phases/phase-01.md))
 - [ ] **3.0** Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10
 - [ ] **3.1–3.3** Auth screens + role routing
@@ -52,6 +51,7 @@
 
 ## Completed
 
+- [x] **2.9** Hosted Supabase: `001`–`003` applied (SQL Editor) + `rls_smoke.sql` passed after API table grants block in `003` (2026-10-01)
 - [x] **docs** D25 web display plan: desktop = 402 × 874 phone frame (same-origin iframe), mouse = finger layer, `pickMedia()` sample tray, Playwright mouse tests, side panel + split view (10.9–10.10), sitter desktop as post-hackathon roadmap. New tasks 1.6 · 1.7 · 4.7 · 10.9 · 10.10; DESIGN.md §2.1 · §2.2 · §7.7; architecture, phase-01/03/03B/04/06/08/10, onboarding, Devpost, playbook, CLAUDE.md, READMEs updated (2026-10-01)
 - [x] **docs** `DESIGN.md` interim design guide from `tokens.ts` (tokens, components, patterns, AI rules, open items for Muk); linked from CLAUDE.md (2026-10-01)
 - [x] **docs** New feature review: stickers + decorated report (11.8) and video mood (11.9) as P1; Pawstagram, pet map, sticker store, bark analysis → post-hackathon roadmap (plan README, root/ko README "What's next") (2026-10-01)

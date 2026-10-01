@@ -37,7 +37,7 @@ profiles 1─* notifications ─0..1 pets / bookings
 
 ## Smoke test
 
-**Hosted (task 2.9):** after `003`, paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
+**Hosted (task 2.9):** after `003` (includes API table grants at the end of the file), paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. If smoke fails with `permission denied for table pets`, run the **API table grants** section at the bottom of `003_functions_triggers.sql` (do not use a bare `grant update on all tables` — that allows changing `profiles.role` and breaks smoke). If smoke fails with `FAIL: user cannot change own role`, re-run that same grants section to restore column-level UPDATE rules. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
 
 **Local / CI:** plain Postgres 17 plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 

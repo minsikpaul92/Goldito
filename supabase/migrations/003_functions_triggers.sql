@@ -1249,3 +1249,39 @@ from authenticated;
 -- ---------------------------------------------------------------------------
 
 alter publication supabase_realtime add table public.notifications;
+
+-- ---------------------------------------------------------------------------
+-- API table grants (hosted Supabase SQL Editor)
+-- Local/CI applies supabase_stub.sql first (default privileges on new tables).
+-- Without SELECT/INSERT/DELETE grants, authenticated clients and rls_smoke fail with 42501.
+-- Do NOT grant table-wide UPDATE here — re-apply 002 column UPDATE rules below.
+-- ---------------------------------------------------------------------------
+
+grant usage on schema public to anon, authenticated, service_role;
+
+grant select, insert, delete on all tables in schema public to authenticated;
+grant select on all tables in schema public to anon;
+grant all on all tables in schema public to service_role;
+
+grant usage, select on all sequences in schema public to authenticated, service_role;
+
+-- Full-row UPDATE only where 002 has no column-level revoke.
+grant update on public.sitter_availability, public.pet_allergies, public.care_tasks
+  to authenticated;
+
+-- Column privileges (keep in sync with 002_rls_policies.sql)
+revoke update on public.pets, public.profiles, public.owner_profiles, public.sitter_profiles,
+  public.safety_checks, public.notifications from anon, authenticated;
+
+grant update (name, breed, birthdate, weight_kg, notes) on public.pets to authenticated;
+grant update (display_name) on public.profiles to authenticated;
+grant update (home_address, emergency_contact_name, emergency_contact_phone, vet_clinic_name,
+  vet_clinic_phone, notes) on public.owner_profiles to authenticated;
+grant update (bio, service_area, home_address, experience_years, home_notes, default_max_pets,
+  default_hours) on public.sitter_profiles to authenticated;
+grant update (acknowledged_at) on public.safety_checks to authenticated;
+grant update (read_at) on public.notifications to authenticated;
+
+revoke select on public.sitter_profiles from anon, authenticated;
+grant select (id, bio, service_area, experience_years, home_notes, default_max_pets,
+  default_hours, created_at, updated_at) on public.sitter_profiles to authenticated;

@@ -18,7 +18,7 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 
 > 2026-09-30: 아래 항목은 로컬 Postgres(PGlite · CI `supabase` job)에서 `rls_smoke.sql`로 확인. 첫 항목(호스팅 SQL Editor 적용)은 **2.9**.
 
-- [ ] `001`–`003` migration이 호스팅 Supabase SQL Editor에서 순서대로 오류 없이 적용 (2.9)
+- [x] `001`–`003` migration이 호스팅 Supabase SQL Editor에서 순서대로 오류 없이 적용 (2.9)
 - [x] 예약이 없는 시터는 남의 pet·feed·task를 조회 불가, 맡은 시간이 아니면 게시·완료 불가 (`supabase/tests/rls_smoke.sql`)
 - [x] 시터의 칸 정원(`max_pets`)을 넘는 예약 수락을 DB가 거부
 - [x] 같은 반려동물이 **겹치는 시간**에 두 시터에게 예약되지 않음 (`booking_pets` exclusion 제약). 12:00에 Mina → Jun처럼 이어서 맡기기는 가능
