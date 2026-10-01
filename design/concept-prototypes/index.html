@@ -5,41 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PawNote concepts</title>
 <style>
-  body{margin:0;padding:48px 20px;background:#F7F7F5;color:#1A1A1A;
+  body{margin:0;padding:3rem 1.25rem;background:#F7F7F5;color:#1A1A1A;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    display:flex;flex-direction:column;align-items:center;gap:28px}
-  h1{font-size:22px;margin:0}
-  p.sub{color:#5C5C5C;margin:0;text-align:center;max-width:480px;font-size:14px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;width:100%;max-width:760px}
-  a.card{display:block;text-decoration:none;color:inherit;background:#FFFFFF;border:1px solid #E5E5E0;
-    border-radius:16px;padding:20px;transition:transform .15s}
+    display:flex;flex-direction:column;align-items:center;gap:1.75rem}
+  h1{font-size:1.375rem;margin:0}
+  p.sub{color:#5C5C5C;margin:0;text-align:center;max-width:30rem;font-size:0.875rem;line-height:1.45}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(13.75rem,1fr));gap:1rem;width:100%;max-width:47.5rem}
+  a.card{display:flex;flex-direction:column;gap:0.625rem;text-decoration:none;color:inherit;background:#FFFFFF;
+    border:1px solid #E5E5E0;border-radius:1rem;padding:1.25rem;transition:transform .15s}
   a.card:hover{transform:translateY(-2px);border-color:#2D6A4F}
-  .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
-    color:#2D6A4F;background:#ECFDF3;border-radius:999px;padding:3px 10px;margin-bottom:10px}
-  h2{font-size:17px;margin:0 0 6px}
-  p.desc{font-size:13.5px;color:#5C5C5C;margin:0;line-height:1.45}
+  .tag{align-self:flex-start;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    color:#2D6A4F;background:#ECFDF3;border-radius:999px;padding:0.1875rem 0.625rem}
+  h2{font-size:1.0625rem;margin:0}
+  p.desc{font-size:0.84375rem;color:#5C5C5C;margin:0;line-height:1.45}
+  dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0.25rem 0.625rem;font-size:0.8125rem;line-height:1.4}
+  dt{font-weight:700;color:#1A1A1A}
+  dd{margin:0;color:#5C5C5C}
+  @media (prefers-reduced-motion: reduce){a.card{transition:none}a.card:hover{transform:none}}
 </style>
 </head>
 <body>
   <div>
     <h1 style="text-align:center">PawNote &mdash; 3 concepts</h1>
-    <p class="sub">Pet-photo accessible theming + a gamified status room. Same 3-step flow in each &mdash; only the design direction changes.</p>
+    <p class="sub">Same add-pet &rarr; photo theme &rarr; Home flow in each, then a working Home &middot; Feed &middot; Care &middot; Reports app. Each direction changes both the look (UI) and how screens behave (UX), so you can compare them side by side.</p>
   </div>
   <div class="grid">
     <a class="card" href="pawnote-concept-a-calm-core.html">
       <span class="tag">Lowest risk</span>
       <h2>A &middot; Calm Core</h2>
-      <p class="desc">Accent-only theming, static status card. Closest to PawNote's current trustworthy tone.</p>
+      <p class="desc">A calm family journal. Accent-only theming, serif headings, hairline rules.</p>
+      <dl>
+        <dt>Feed</dt><dd>Timeline list by time of day</dd>
+        <dt>Care</dt><dd>Plain checklist</dd>
+        <dt>Reports</dt><dd>Letter-style daily note</dd>
+      </dl>
     </a>
     <a class="card" href="pawnote-concept-b-full-tamagotchi.html">
       <span class="tag">Boldest</span>
       <h2>B &middot; Full Tamagotchi</h2>
-      <p class="desc">Full re-theme + an animated pixel-art room built live from your photo.</p>
+      <p class="desc">A playful game. Full re-theme, chunky rounded type, sticker outlines, animated pixel room.</p>
+      <dl>
+        <dt>Feed</dt><dd>Photo album grid with stickers</dd>
+        <dt>Care</dt><dd>Daily quests with an XP bar</dd>
+        <dt>Reports</dt><dd>Day recap stat cards</dd>
+      </dl>
     </a>
     <a class="card" href="pawnote-concept-c-balanced-skin.html">
       <span class="tag">Recommended</span>
       <h2>C &middot; Balanced Skin</h2>
-      <p class="desc">The real 11.10/11.12 mechanic, sized to sit inside a normal Home screen.</p>
+      <p class="desc">Warm, modern and photo-first. Soft tint, friendly sans, soft shadows, large photos.</p>
+      <dl>
+        <dt>Feed</dt><dd>Large photo cards with AI captions</dd>
+        <dt>Care</dt><dd>Schedule with &ldquo;Complete with photo&rdquo;</dd>
+        <dt>Reports</dt><dd>Summary card + highlights</dd>
+      </dl>
     </a>
   </div>
 </body>

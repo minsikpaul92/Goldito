@@ -1,301 +1,630 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Full Tamagotchi</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 
+/* Base 16px. App sizes are rem; 1-2px outlines and the phone DEVICE frame stay px. */
 :root{
-  --bg:#F7F7F5; --surface:#FFFFFF; --text:#1A1A1A; --text-muted:#5C5C5C;
+  --bg:#F7F7F5; --surface:#FFFFFF; --text:#231B12; --text-muted:#5E4B33;
   --border:#E5E5E0; --success:#067647; --success-bg:#ECFDF3;
   --error:#B42318; --error-bg:#FEF3F2;
   --frame-backdrop:#E8E8E3; --frame-bezel:#1A1A1A; --frame-shadow:rgba(26,26,26,.18);
-  --primary:#2D6A4F; --primary-foreground:#FFFFFF;
-  --tint-bg:#F7F7F5; --tint-surface:#FFFFFF; --tint-border:#E5E5E0;
-  --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
-  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --font-display:var(--font-body);
+  --primary:#2D6A4F; --primary-foreground:#FFFFFF; --primary-text:#2D6A4F;
+  /* Tinted theme tokens: defaults are a warm cream; keepTheme() re-tints all of them from the photo preset. */
+  --tint-bg:#FFF1D6; --tint-surface:#FFFDF7; --tint-soft:#FFE0A3; --tint-border:#D9B97A;
+  --outline:#231B12; --shadow-ink:#231B12;
+  /* Fixed game colors (same in every theme): XP/star yellow, sky, plants, meter fills. */
+  --pop:#FFD24A; --pop-ink:#2A1D00; --joy:#FF7AA2;
+  --sky:#9FD8FF; --night:#26336B; --moon:#F6F0C8; --leaf:#3E9B5A; --kibble:#B8743A;
+  --scrim:rgba(20,14,6,.45);
+  --radius-sm:.625rem; --radius-md:1rem; --radius-lg:1.375rem; --radius-xl:1.75rem;
+  --shadow-sticker:0 .1875rem 0 var(--shadow-ink);
+  --shadow-sticker-lg:0 .3125rem 0 var(--shadow-ink);
+  --font-body:"Nunito",ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:"Fredoka","Baloo 2",ui-rounded,"Arial Rounded MT Bold",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-pixel:"Press Start 2P",ui-monospace,"Courier New",monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
+    --bg:#15181A; --surface:#1E2225; --text:#FBF4E8; --text-muted:#CDBFA8;
     --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
     --error:#FF6B5E; --error-bg:#2E1512;
     --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-    --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+    --primary-text:#7FD3A8;
+    --tint-bg:#17140F; --tint-surface:#221D16; --tint-soft:#33291C; --tint-border:#5A4A33;
+    --outline:#7A6748; --shadow-ink:#000000;
+    --sky:#5C8FB8; --night:#141B3D; --scrim:rgba(0,0,0,.6);
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
+  --bg:#15181A; --surface:#1E2225; --text:#FBF4E8; --text-muted:#CDBFA8;
   --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
   --error:#FF6B5E; --error-bg:#2E1512;
   --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-  --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+  --primary-text:#7FD3A8;
+  --tint-bg:#17140F; --tint-surface:#221D16; --tint-soft:#33291C; --tint-border:#5A4A33;
+  --outline:#7A6748; --shadow-ink:#000000;
+  --sky:#5C8FB8; --night:#141B3D; --scrim:rgba(0,0,0,.6);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--frame-backdrop);color:var(--text);font-family:var(--font-body);
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding:32px 16px;gap:16px;min-height:100%}
-h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+  padding:2rem 1rem;gap:1rem;min-height:100%}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;font-weight:700}
 p{margin:0}
 img{max-width:100%}
-.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+button{font-family:inherit}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--primary-text);outline-offset:2px}
 
-.rig{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:402px}
-.rig-label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
-  font-weight:600}
+.rig{display:flex;flex-direction:column;align-items:center;gap:.625rem;width:100%;max-width:402px}
+.rig-label{font-family:var(--font-display);font-size:.8125rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-muted);font-weight:600;text-align:center}
 
+/* Device frame: fixed px on purpose (imitates a 402px phone). */
 .phone{width:402px;max-width:100%;background:var(--tint-bg);border-radius:40px;
   border:8px solid var(--frame-bezel);box-shadow:0 24px 48px var(--frame-shadow);
-  overflow:hidden;position:relative;display:flex;flex-direction:column;
-  height:826px;max-height:80vh}
+  overflow:hidden;overflow:clip;position:relative;display:flex;flex-direction:column;
+  height:826px;max-height:80vh;color:var(--text);transition:background-color .3s}
 .statusbar{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;
-  padding:10px 22px 4px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;
-  color:var(--text)}
-.statusbar .icons{display:flex;gap:4px;font-size:12px;opacity:.7}
-.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
-  padding:6px 20px 14px;border-bottom:1px solid var(--tint-border)}
-.brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
-.steps{display:flex;gap:6px}
-.step-dot{width:6px;height:6px;border-radius:50%;background:var(--tint-border)}
-.step-dot.active{background:var(--primary);width:16px;border-radius:3px}
-.back-btn{background:none;border:none;color:var(--primary);font-size:14px;font-weight:600;
-  cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
+  padding:.625rem 1.375rem .25rem;font-size:.8125rem;font-weight:800;font-variant-numeric:tabular-nums}
+.statusbar .icons{display:flex;gap:.25rem;font-size:.75rem;opacity:.75}
+.topbar{flex:0 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:.5rem;
+  padding:.375rem 1rem .75rem;border-bottom:2px dashed var(--tint-border)}
+.topbar>:first-child{justify-self:start;display:flex;align-items:center;min-width:0}
+.topbar>:last-child{justify-self:end;display:flex;align-items:center;gap:.5rem}
+.tb-center{display:flex;justify-content:center;min-width:0}
+.brand{display:flex;align-items:center;gap:.25rem;font-family:var(--font-display);font-weight:700;
+  font-size:1rem;white-space:nowrap;overflow:hidden}
+.steps{display:flex;gap:.375rem;align-items:center}
+.step-dot{width:.625rem;height:.625rem;border-radius:50%;background:var(--tint-surface);border:2px solid var(--outline)}
+.step-dot.active{background:var(--primary);width:1.5rem;border-radius:999px}
+.back-btn{background:none;border:none;color:var(--primary-text);font-family:var(--font-display);
+  font-size:1rem;font-weight:600;cursor:pointer;padding:.25rem .25rem;display:flex;align-items:center;gap:.25rem}
+.app-title{font-family:var(--font-display);font-weight:700;font-size:1.125rem;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:10.5rem}
+.xp-pill{display:flex;align-items:center;gap:.375rem;font-family:var(--font-pixel);font-size:.625rem;
+  background:var(--pop);color:var(--pop-ink);border:2px solid var(--outline);border-radius:999px;
+  padding:.3125rem .5625rem .3125rem .4375rem;box-shadow:var(--shadow-sticker);white-space:nowrap}
+.xp-pill .star{font-family:var(--font-body);font-size:.875rem;line-height:1}
+.xp-pill.bump{animation:tab-pop .4s ease}
+.notes-fab{flex:0 0 auto;width:2.125rem;height:2.125rem;border-radius:50%;
+  background:var(--tint-surface);border:2px solid var(--outline);box-shadow:var(--shadow-sticker);
+  display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;
+  color:var(--text);cursor:pointer;padding:0}
+.phone:not(.in-app) .xp-pill,.phone:not(.in-app) .app-title{display:none}
+.phone.in-app .back-btn,.phone.in-app .steps,.phone.in-app .brand{display:none}
+.phone[data-step="1"] .back-btn,.phone[data-step="2"] .brand{display:none}
+/* In the tabbed app the title is free text, so it takes the flexible middle instead of a strict 3-way split. */
+.phone.in-app .topbar{grid-template-columns:auto minmax(0,1fr) auto}
+.phone.in-app .app-title{max-width:none;text-align:center}
 
-.screen{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:18px 20px 90px;
-  display:flex;flex-direction:column;gap:18px}
-.screen[hidden]{display:none}
+.screen{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:1.125rem 1.125rem 1.75rem;
+  display:flex;flex-direction:column;gap:1.125rem}
+.phone.in-app .screen{padding-bottom:7.5rem}
+.screen[hidden],.view[hidden]{display:none}
+.view{display:flex;flex-direction:column;gap:1.125rem}
+h2{font-size:1.625rem;line-height:1.1}
+.view-head{display:flex;flex-direction:column;gap:.375rem}
+.status-line{font-size:.9375rem;color:var(--text-muted);line-height:1.45;font-weight:600}
+.hint{font-size:.8125rem;color:var(--text-muted);font-weight:700;text-align:center}
+.section-title{font-family:var(--font-display);font-size:.875rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--text-muted)}
 
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;font-weight:600;color:var(--text-muted)}
-.input{font-family:var(--font-body);font-size:16px;padding:12px 14px;border-radius:var(--radius-md);
-  border:1px solid var(--tint-border);background:var(--tint-surface);color:var(--text);width:100%}
-.input:focus{outline:2px solid var(--primary);outline-offset:1px}
+/* Shared sticker press: sinks onto its shadow */
+.chip,.btn,.mood-btn,.photo-thumb,.tile,.notes-fab,.tab{transition:transform .12s ease,box-shadow .12s ease,background-color .2s}
+.chip:active,.btn:not(:disabled):active,.mood-btn:active,.photo-thumb:active,.tile:active,.notes-fab:active{
+  transform:translateY(.1875rem);box-shadow:0 0 0 var(--shadow-ink)}
+.tab:active{transform:scale(.92)}
 
-.chip-row{display:flex;gap:8px;flex-wrap:wrap}
-.chip{font-family:var(--font-body);font-size:14px;font-weight:600;padding:9px 16px;
-  border-radius:999px;border:1px solid var(--tint-border);background:var(--tint-surface);
-  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px}
-.chip.active{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
+.field{display:flex;flex-direction:column;gap:.5rem}
+.field label,.field .label{font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--text)}
+.input{font-family:var(--font-body);font-size:1.0625rem;font-weight:700;padding:.8125rem 1rem;border-radius:var(--radius-md);
+  border:2px solid var(--outline);background:var(--tint-surface);color:var(--text);width:100%;
+  box-shadow:inset 0 -.1875rem 0 var(--tint-soft)}
+.input:focus{outline:2px solid var(--primary-text);outline-offset:2px}
 
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:2px solid transparent;
-  cursor:pointer;position:relative;background:var(--tint-surface)}
+.chip-row{display:flex;gap:.625rem;flex-wrap:wrap}
+.chip{font-family:var(--font-display);font-size:1.0625rem;font-weight:600;padding:.625rem 1.125rem;
+  border-radius:999px;border:2px solid var(--outline);background:var(--tint-surface);box-shadow:var(--shadow-sticker);
+  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:.375rem}
+.chip.active{background:var(--primary);color:var(--primary-foreground)}
+
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:2px solid var(--outline);
+  box-shadow:var(--shadow-sticker);cursor:pointer;position:relative;background:var(--tint-surface);padding:0}
 .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.photo-thumb.selected{border-color:var(--primary)}
+.photo-thumb.selected{outline:3px solid var(--primary-text);outline-offset:2px;transform:rotate(-3deg)}
+.photo-thumb.selected::after{content:"✓";position:absolute;top:.25rem;right:.25rem;width:1.5rem;height:1.5rem;
+  border-radius:50%;background:var(--primary);color:var(--primary-foreground);border:2px solid var(--outline);
+  display:flex;align-items:center;justify-content:center;font-size:.8125rem;font-weight:800}
 .photo-thumb.upload{display:flex;align-items:center;justify-content:center;flex-direction:column;
-  gap:4px;font-size:12px;color:var(--text-muted);border:2px dashed var(--tint-border);font-weight:600}
-.photo-thumb input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  gap:.25rem;font-family:var(--font-display);font-size:.875rem;color:var(--text);border-style:dashed;font-weight:600}
+.photo-thumb.upload .big{font-size:1.5rem}
+.photo-thumb.upload img{position:absolute;inset:0}
+.photo-thumb input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-thumb:focus-within{outline:2px solid var(--primary-text);outline-offset:2px}
 
-.btn{font-family:var(--font-body);font-size:16px;font-weight:600;padding:14px 20px;
-  border-radius:var(--radius-md);border:none;cursor:pointer;width:100%;
-  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.btn{font-family:var(--font-display);font-size:1.125rem;font-weight:600;padding:.875rem 1.25rem;
+  border-radius:var(--radius-lg);border:2px solid var(--outline);box-shadow:var(--shadow-sticker-lg);
+  cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:.5rem;line-height:1.2}
 .btn-primary{background:var(--primary);color:var(--primary-foreground)}
-.btn-primary:active{opacity:.9}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-secondary{background:var(--tint-surface);color:var(--text);border:1px solid var(--tint-border)}
-.btn-ghost{background:none;color:var(--primary);width:auto;padding:8px 4px}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-secondary{background:var(--tint-surface);color:var(--text)}
+.btn-pop{background:var(--pop);color:var(--pop-ink)}
+.btn-sm{font-size:.9375rem;padding:.5rem .875rem;width:auto;border-radius:var(--radius-md);box-shadow:var(--shadow-sticker)}
+.btn-ghost{background:none;border:none;box-shadow:none;color:var(--primary-text);width:auto;padding:.5rem .25rem;font-size:1rem}
 
-.card{background:var(--tint-surface);border:1px solid var(--tint-border);border-radius:var(--radius-lg);
-  padding:16px}
+.card{background:var(--tint-surface);border:2px solid var(--outline);border-radius:var(--radius-lg);
+  padding:1rem;box-shadow:var(--shadow-sticker-lg)}
 
-.extract-row{display:flex;align-items:center;gap:14px}
-.swatch{width:56px;height:56px;border-radius:var(--radius-md);flex:0 0 auto;
-  border:1px solid rgba(0,0,0,.08)}
-.swatch-lg{width:88px;height:88px;border-radius:20px;border:1px solid rgba(0,0,0,.08)}
-.arrow{color:var(--text-muted);font-size:20px}
-
-.contrast-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;
-  padding:6px 12px;border-radius:999px;background:var(--success-bg);color:var(--success);
-  font-variant-numeric:tabular-nums}
+/* Step 2 */
+.extract-row{display:flex;align-items:center;gap:.875rem}
+.swatch{width:3.5rem;height:3.5rem;border-radius:var(--radius-md);flex:0 0 auto;border:2px solid var(--outline)}
+.swatch-lg{width:5.5rem;height:5.5rem;border-radius:1.25rem;border:2px solid var(--outline);box-shadow:var(--shadow-sticker)}
+.swatch-cap{margin-top:.375rem;font-family:var(--font-display);font-size:.8125rem;font-weight:600;color:var(--text-muted)}
+.arrow{color:var(--text-muted);font-size:1.5rem;font-weight:800}
+.badge-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.875rem}
+.contrast-badge{display:inline-flex;align-items:center;gap:.375rem;font-family:var(--font-display);font-size:.875rem;font-weight:600;
+  padding:.3125rem .75rem;border-radius:999px;background:var(--success-bg);color:var(--success);
+  border:2px solid currentColor;font-variant-numeric:tabular-nums}
 .contrast-badge.fail{background:var(--error-bg);color:var(--error)}
 
-.pet-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
-.pet-chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:60px}
-.pet-chip img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid transparent}
-.pet-chip.active img{border-color:var(--primary)}
-.pet-chip span{font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:60px}
-.pet-chip.add{color:var(--text-muted)}
-.pet-chip.add .add-circle{width:52px;height:52px;border-radius:50%;border:1.5px dashed var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:20px}
+/* Home */
+.hello{display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center}
+.hello-avatar{width:3rem;height:3rem;border-radius:50%;object-fit:cover;border:2px solid var(--outline);
+  box-shadow:var(--shadow-sticker);background:var(--tint-surface)}
+.hello-title{font-family:var(--font-display);font-weight:600;font-size:1.0625rem;line-height:1.2}
+.hello-sub{font-size:.8125rem;font-weight:700;color:var(--text-muted);margin-top:.125rem}
+.live-stamp{font-family:var(--font-pixel);font-size:.625rem;background:var(--joy);color:var(--pop-ink);
+  border:2px solid var(--outline);border-radius:.375rem;padding:.3125rem .4375rem;transform:rotate(4deg);
+  box-shadow:var(--shadow-sticker);white-space:nowrap}
+.live-stamp::before{content:"● "}
 
-.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
-  color:var(--text-muted)}
+.room{padding:0;overflow:hidden;border-radius:var(--radius-xl)}
+.room-scene{position:relative;height:13.5rem;background:var(--tint-soft);border-bottom:2px solid var(--outline);overflow:hidden}
+.room-wall{position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.22) 50%,transparent 50%);
+  background-size:1.5rem 100%}
+.room-floor{position:absolute;left:0;right:0;bottom:0;height:32%;background-color:var(--tint-border);
+  border-top:2px solid var(--outline);
+  background-image:repeating-linear-gradient(90deg,transparent 0 2.75rem,rgba(0,0,0,.14) 2.75rem calc(2.75rem + 2px))}
+.room svg{position:absolute;display:block;shape-rendering:crispEdges}
+.win{top:1rem;left:1.125rem;width:4.5rem}
+.plant{right:1rem;bottom:28%;width:2.5rem}
+.bowl{left:1.25rem;bottom:.75rem;width:3rem;z-index:1}
+.px-frame{fill:var(--outline)} .px-sky{fill:var(--sky);transition:fill .4s} .px-sun{fill:var(--pop);transition:fill .4s}
+.px-cloud{fill:#FFFFFF} .px-star{fill:#FFFFFF;opacity:0} .px-leaf{fill:var(--leaf)} .px-pot,.px-bowl{fill:var(--primary)}
+.px-food{fill:var(--kibble);transition:opacity .3s}
+.rug{position:absolute;left:50%;bottom:.5rem;width:9rem;height:1.75rem;transform:translateX(-50%);
+  border-radius:50%;background:var(--primary);border:2px solid var(--outline)}
+.sprite-wrap{position:absolute;left:50%;bottom:1.375rem;width:6.5rem;height:6.5rem;margin-left:-3.25rem;z-index:2}
+.sprite-img{width:100%;height:100%;border-radius:.5rem;object-fit:cover;display:block;
+  image-rendering:pixelated;border:2px solid var(--outline);box-shadow:0 .25rem 0 var(--shadow-ink);background:var(--tint-surface)}
+.sprite-mood-badge{position:absolute;top:-.625rem;right:-.75rem;background:var(--tint-surface);
+  border:2px solid var(--outline);border-radius:50%;width:2.25rem;height:2.25rem;box-shadow:var(--shadow-sticker);
+  display:flex;align-items:center;justify-content:center;font-size:1.125rem;z-index:3}
+.speech{position:absolute;right:calc(100% + .5rem);bottom:62%;background:var(--tint-surface);color:var(--text);
+  border:2px solid var(--outline);border-radius:.625rem;padding:.4375rem .5rem;font-family:var(--font-pixel);
+  font-size:.625rem;white-space:nowrap;box-shadow:var(--shadow-sticker)}
+.speech::after{content:"";position:absolute;right:-.4375rem;bottom:.375rem;width:.625rem;height:.625rem;
+  background:var(--tint-surface);border-right:2px solid var(--outline);border-bottom:2px solid var(--outline);
+  transform:rotate(-45deg)}
+.room-fx{position:absolute;left:50%;top:-1.25rem;width:0;height:0}
+.room-fx span{position:absolute;font-family:var(--font-pixel);font-size:.875rem;color:var(--text);
+  animation:float-up 2.2s ease-in infinite;opacity:0}
+.room-fx span:nth-child(2){animation-delay:1.1s;left:1rem}
+.room-info{padding:.875rem 1rem 0;text-align:center;display:flex;flex-direction:column;gap:.25rem;align-items:center}
+.room-name{font-family:var(--font-display);font-weight:700;font-size:1.5rem;display:inline-flex;align-items:center;gap:.5rem}
+.lv{font-family:var(--font-pixel);font-size:.625rem;background:var(--primary);color:var(--primary-foreground);
+  padding:.3125rem .4375rem;border-radius:.375rem;border:2px solid var(--outline);white-space:nowrap}
+.meters{display:grid;gap:.5rem;padding:.875rem 1rem .75rem}
+.meter{display:grid;grid-template-columns:5.5rem 1fr;align-items:center;gap:.5rem;
+  font-family:var(--font-display);font-weight:600;font-size:.875rem;text-align:left}
+.segs{display:grid;grid-template-columns:repeat(5,1fr);gap:.25rem}
+.seg{height:.875rem;border:2px solid var(--outline);border-radius:.1875rem;background:var(--tint-bg);transition:background-color .3s}
+.seg.on{background:var(--meter,var(--pop))}
+.mood-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;padding:.25rem 1rem 1.125rem}
+.mood-btn{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.625rem .25rem;
+  border-radius:var(--radius-md);border:2px solid var(--outline);background:var(--tint-surface);
+  box-shadow:var(--shadow-sticker);cursor:pointer;font-family:var(--font-display);font-size:.875rem;font-weight:600;color:var(--text)}
+.mood-btn .emoji{font-size:1.5rem;line-height:1}
+.mood-btn[aria-pressed="true"]{background:var(--pop);color:var(--pop-ink);animation:tab-pop .35s ease}
 
-.hud-row{display:flex;gap:8px;flex-wrap:wrap}
-.hud-chip{font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px;
-  background:var(--tint-bg);border:1px solid var(--tint-border);display:flex;align-items:center;gap:5px}
+.room[data-mood="calm"] .sprite-img{animation:bob 2.6s ease-in-out infinite}
+.room[data-mood="happy"] .sprite-img{animation:hop .8s ease-in-out infinite}
+.room[data-mood="hungry"] .sprite-img{animation:wobble 1.1s ease-in-out infinite}
+.room[data-mood="hungry"] .px-food{opacity:0}
+.room[data-mood="hungry"] .bowl{animation:wobble .9s ease-in-out infinite}
+.room[data-mood="sleepy"] .sprite-img{animation:bob 4.5s ease-in-out infinite;filter:brightness(.85) saturate(.8)}
+.room[data-mood="sleepy"] .px-sky{fill:var(--night)}
+.room[data-mood="sleepy"] .px-sun{fill:var(--moon)}
+.room[data-mood="sleepy"] .px-cloud{opacity:0}
+.room[data-mood="sleepy"] .px-star{opacity:1}
+.room[data-mood="sleepy"] .room-scene::after{content:"";position:absolute;inset:0;background:rgba(20,24,70,.22);z-index:1;pointer-events:none}
 
-.mood-row{display:flex;gap:8px}
-.mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;
-  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:var(--tint-surface);
-  cursor:pointer;font-size:11px;font-weight:600;color:var(--text-muted)}
-.mood-btn .emoji{font-size:18px}
-.mood-btn.active{border-color:var(--primary);background:var(--tint-bg);color:var(--text)}
+.mini{display:flex;flex-direction:column;gap:.75rem}
+.mini-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.mini-title{font-family:var(--font-display);font-weight:600;font-size:1.125rem}
+.mini-count{font-family:var(--font-pixel);font-size:.625rem;color:var(--text);white-space:nowrap}
+.latest{display:grid;grid-template-columns:auto 1fr;gap:.875rem;align-items:center}
+.latest-img{width:4.75rem;height:4.75rem;border-radius:var(--radius-md);overflow:hidden;border:2px solid var(--outline);position:relative}
+.latest p{font-size:.875rem;line-height:1.4;font-weight:600}
+.latest .btn-sm{margin-top:.5rem}
 
-.tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);padding:10px 0 16px}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
-  font-weight:600;color:var(--text-muted)}
-.tab.active{color:var(--primary)}
-.tab .emoji{font-size:17px}
+/* Feed: album */
+.day-row{display:flex;align-items:center;gap:.625rem}
+.day-chip{font-family:var(--font-pixel);font-size:.625rem;background:var(--primary);color:var(--primary-foreground);
+  border:2px solid var(--outline);border-radius:.375rem;padding:.375rem .5rem;box-shadow:var(--shadow-sticker);transform:rotate(-2deg)}
+.day-count{font-family:var(--font-display);font-weight:600;font-size:.9375rem;color:var(--text-muted)}
+.album{display:grid;grid-template-columns:repeat(3,1fr);gap:.625rem}
+.tile{position:relative;aspect-ratio:1;border:2px solid var(--outline);border-radius:var(--radius-md);overflow:hidden;
+  background:var(--tint-surface);box-shadow:var(--shadow-sticker);padding:0;cursor:pointer;display:block;width:100%}
+.tile.featured{grid-column:span 2;grid-row:span 2}
+.tile img,.lb-photo img,.latest-img img{width:100%;height:100%;object-fit:cover;display:block}
+.v1 img{transform:scale(1.5);transform-origin:35% 35%}
+.v2 img{transform:scale(1.35);transform-origin:70% 60%}
+.v3 img{transform:scaleX(-1)}
+.v4 img{transform:scale(1.6) scaleX(-1);transform-origin:50% 30%}
+.stamp{position:absolute;left:.3125rem;bottom:.3125rem;display:inline-block;font-family:var(--font-display);font-weight:600;
+  font-size:.6875rem;line-height:1.2;padding:.1875rem .4375rem;border-radius:999px;border:2px solid var(--outline);
+  background:var(--pop);color:var(--pop-ink);transform:rotate(-4deg);white-space:nowrap;
+  max-width:calc(100% - .625rem);overflow:hidden;text-overflow:ellipsis}
+.stamp.alt{background:var(--primary);color:var(--primary-foreground);transform:rotate(3deg)}
+.stamp.plain{background:var(--tint-surface);color:var(--text)}
+/* Small tiles: let a long stamp wrap instead of truncating at large default font sizes. */
+.tile:not(.featured) .stamp{white-space:normal;text-overflow:clip;text-align:left;border-radius:.625rem}
+.tile.featured .stamp{font-size:.875rem;padding:.25rem .625rem;left:.5rem;bottom:.5rem}
+.tile .loved{position:absolute;top:.3125rem;right:.3125rem;width:1.5rem;height:1.5rem;border-radius:50%;
+  background:var(--tint-surface);border:2px solid var(--outline);font-size:.75rem;display:flex;align-items:center;justify-content:center}
 
-.notes-fab{flex:0 0 auto;width:30px;height:30px;border-radius:50%;
-  background:var(--tint-bg);border:1px solid var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
-  color:var(--primary);cursor:pointer;margin-left:10px}
-.notes-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);border-radius:20px 20px 0 0;padding:18px 20px 24px;
-  transform:translateY(100%);transition:transform .25s ease;z-index:6;max-height:70%;overflow-y:auto}
-.notes-sheet.open{transform:translateY(0)}
-.notes-sheet h3{font-size:16px;margin-bottom:4px}
-.notes-sheet .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--primary);
-  background:var(--tint-bg);border-radius:999px;padding:3px 10px;margin-bottom:8px}
-.notes-sheet ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:7px;
-  font-size:13.5px;color:var(--text-muted);line-height:1.45}
-.notes-sheet .close-notes{margin-top:16px}
-.notes-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;
+/* Lightbox + sheets (always inside the phone) */
+.lightbox{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--scrim)}
+.lightbox[hidden]{display:none}
+.lb-panel{width:100%;max-height:100%;overflow-y:auto;background:var(--tint-surface);border:2px solid var(--outline);
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-sticker-lg);padding:.875rem;display:flex;flex-direction:column;
+  gap:.625rem;animation:pop-in .3s cubic-bezier(.3,1.4,.5,1)}
+.lb-photo{position:relative;aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;border:2px solid var(--outline);flex:0 0 auto}
+.lb-photo .stamp{font-size:.9375rem;padding:.25rem .75rem;left:.625rem;bottom:.625rem}
+.lb-meta{font-family:var(--font-display);font-weight:600;font-size:.875rem;color:var(--text-muted)}
+.ai-tag{align-self:flex-start;display:inline-flex;align-items:center;gap:.25rem;font-family:var(--font-display);font-weight:600;
+  font-size:.8125rem;color:var(--primary-text);background:var(--tint-bg);border:2px solid var(--tint-border);border-radius:999px;padding:.125rem .625rem;white-space:nowrap}
+.lb-caption{font-size:1rem;line-height:1.5;font-weight:600}
+.lb-actions{display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-top:.25rem}
+.lb-actions .btn{width:100%}
+
+.toast{position:absolute;left:1rem;right:1rem;bottom:6.25rem;z-index:10;background:var(--text);color:var(--tint-bg);
+  border:2px solid var(--outline);border-radius:var(--radius-lg);padding:.75rem 1rem;font-family:var(--font-display);
+  font-weight:600;font-size:.9375rem;text-align:center;box-shadow:var(--shadow-sticker);
+  opacity:0;transform:translateY(1rem) scale(.96);transition:opacity .2s,transform .25s cubic-bezier(.3,1.4,.5,1);pointer-events:none}
+.phone:not(.in-app) .toast{bottom:1rem}
+.toast.show{opacity:1;transform:none}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:9;overflow:hidden}
+.particle{position:absolute;font-size:1.25rem;line-height:1;animation:burst .9s ease-out forwards}
+.xp-float{position:absolute;font-family:var(--font-pixel);font-size:.6875rem;background:var(--pop);color:var(--pop-ink);
+  border:2px solid var(--outline);border-radius:.375rem;padding:.25rem .375rem;white-space:nowrap;
+  animation:xp-rise 1.1s ease-out forwards}
+
+/* Care: quests */
+.xp-card{background:var(--primary);color:var(--primary-foreground);display:flex;flex-direction:column;gap:.625rem}
+.xp-card .row{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.xp-card h3{font-size:1.25rem}
+.xp-card .lv{background:var(--pop);color:var(--pop-ink)}
+.xp-card .nums{font-family:var(--font-pixel);font-size:.625rem;line-height:1.6}
+.xpbar{height:1.25rem;border:2px solid var(--outline);border-radius:999px;background:var(--tint-soft);overflow:hidden}
+.xpbar>i{display:block;height:100%;background-color:var(--pop);
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 .375rem,transparent .375rem .75rem);
+  border-right:2px solid var(--outline);transition:width .7s cubic-bezier(.3,1.4,.5,1)}
+.quests{display:flex;flex-direction:column;gap:.875rem}
+.quest{display:grid;grid-template-columns:auto 1fr auto;gap:.75rem;align-items:center;position:relative}
+.quest-icon{width:3rem;height:3rem;border-radius:.875rem;border:2px solid var(--outline);background:var(--tint-soft);
+  font-size:1.625rem;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.quest-title{font-family:var(--font-display);font-weight:600;font-size:1.0625rem;line-height:1.2}
+.quest-meta{font-size:.8125rem;color:var(--text-muted);font-weight:700;margin-top:.125rem;line-height:1.35}
+.quest-xp{display:inline-block;margin-top:.375rem;font-family:var(--font-pixel);font-size:.5625rem;background:var(--pop);
+  color:var(--pop-ink);padding:.25rem .375rem;border-radius:.25rem;border:2px solid var(--outline)}
+.quest.cleared{background:var(--tint-bg)}
+.quest.cleared .quest-icon{background:var(--success-bg)}
+.quest-done{background:var(--success-bg);color:var(--success);box-shadow:none;cursor:default;white-space:nowrap}
+.clear-stamp{position:absolute;right:.75rem;top:-.75rem;font-family:var(--font-pixel);font-size:.5625rem;background:var(--success-bg);
+  color:var(--success);border:2px solid currentColor;border-radius:.375rem;padding:.25rem .375rem;transform:rotate(6deg)}
+.quest.just .clear-stamp{animation:stamp .45s cubic-bezier(.3,1.6,.5,1)}
+.quest.just .quest-icon{animation:tab-pop .45s ease}
+.all-clear{background:var(--pop);color:var(--pop-ink);display:flex;flex-direction:column;gap:.625rem;text-align:center;
+  animation:pop-in .4s cubic-bezier(.3,1.4,.5,1)}
+.all-clear h3{font-size:1.25rem}
+.all-clear p{font-weight:700;font-size:.9375rem}
+
+/* Reports: day recap HUD */
+.recap-hero{background:var(--primary);color:var(--primary-foreground);display:grid;grid-template-columns:auto 1fr;gap:.875rem;align-items:center}
+.recap-hero img{width:4.5rem;height:4.5rem;image-rendering:pixelated;border-radius:.5rem;border:2px solid var(--outline);
+  background:var(--tint-surface);object-fit:cover;display:block}
+.recap-hero h3{font-size:1.25rem}
+.recap-hero .sub{font-size:.8125rem;font-weight:700;margin-top:.125rem}
+.stars{font-size:1.125rem;letter-spacing:.125rem;margin-top:.25rem}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.stat{padding:.875rem;display:flex;flex-direction:column;gap:.375rem;min-width:0}
+.stat .k{font-family:var(--font-display);font-weight:600;font-size:.875rem;color:var(--text-muted);display:flex;gap:.375rem;align-items:center}
+.stat .v{font-family:var(--font-display);font-weight:700;font-size:1.75rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:.875rem;color:var(--text-muted);font-weight:600}
+.stat .sub{font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.pips{display:flex;gap:.25rem}
+.pip{width:1rem;height:.875rem;border:2px solid var(--outline);border-radius:.1875rem;background:var(--tint-bg)}
+.pip.on{background:var(--pop)}
+.timeline .tl-row{display:grid;grid-template-columns:repeat(5,1fr);position:relative;margin-top:.75rem}
+.timeline .tl-row::before{content:"";position:absolute;left:10%;right:10%;top:1.25rem;border-top:2px dashed var(--tint-border)}
+.tl-slot{display:flex;flex-direction:column;align-items:center;gap:.375rem;position:relative}
+.tl-emoji{width:2.5rem;height:2.5rem;border-radius:.75rem;border:2px solid var(--outline);background:var(--tint-surface);
+  font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+.tl-slot.now .tl-emoji{background:var(--pop);animation:bob 2.4s ease-in-out infinite}
+.tl-time{font-family:var(--font-display);font-weight:600;font-size:.75rem;color:var(--text-muted)}
+.ai-note{display:flex;flex-direction:column;gap:.625rem}
+.ai-note .who{display:flex;align-items:center;gap:.625rem}
+.letter-avatar{width:2.5rem;height:2.5rem;border-radius:50%;border:2px solid var(--outline);background:var(--pop);color:var(--pop-ink);
+  font-family:var(--font-display);font-weight:700;font-size:1.125rem;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ai-note .name{font-family:var(--font-display);font-weight:600;font-size:1rem}
+.ai-note .role{font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.ai-note .ai-tag{margin-left:auto;align-self:center}
+.ai-note .body{font-size:1rem;line-height:1.55;font-weight:600}
+.ai-note .foot{font-size:.75rem;font-weight:700;color:var(--text-muted)}
+
+/* Floating pill tab bar (app only) */
+.tabbar{position:absolute;left:.75rem;right:.75rem;bottom:.75rem;z-index:4;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:.25rem;padding:.375rem;background:var(--tint-surface);border:2px solid var(--outline);border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-sticker-lg)}
+.tabbar[hidden]{display:none}
+.tab{display:flex;flex-direction:column;align-items:center;gap:.125rem;padding:.4375rem .25rem;border-radius:1.25rem;
+  border:2px solid transparent;background:none;color:var(--text-muted);font-family:var(--font-display);font-weight:600;
+  font-size:.75rem;cursor:pointer;min-width:0}
+.tab .emoji{font-size:1.375rem;line-height:1.1}
+.tab[aria-current="page"]{background:var(--primary);color:var(--primary-foreground);border-color:var(--outline);
+  box-shadow:0 .1875rem 0 var(--shadow-ink);animation:tab-pop .35s ease}
+
+/* Notes sheet */
+.notes-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--tint-surface);color:var(--text);
+  border-top:2px solid var(--outline);border-radius:1.5rem 1.5rem 0 0;padding:1.125rem 1.25rem 1.5rem;
+  transform:translateY(100%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;z-index:6;max-height:80%;overflow-y:auto}
+.notes-sheet.open{transform:translateY(0);visibility:visible;transition:transform .25s ease}
+.notes-sheet h3{font-size:1.25rem;margin-bottom:.25rem}
+.notes-sheet .tag{display:inline-block;font-family:var(--font-pixel);font-size:.5625rem;color:var(--pop-ink);
+  background:var(--pop);border:2px solid var(--outline);border-radius:.375rem;padding:.3125rem .5rem;margin-bottom:.625rem}
+.notes-sheet ul{margin:.625rem 0 0;padding-left:1.125rem;display:flex;flex-direction:column;gap:.5rem;
+  font-size:.875rem;color:var(--text);line-height:1.45}
+.notes-sheet li b{font-family:var(--font-display);font-weight:600}
+.notes-actions{display:flex;flex-direction:column;gap:.25rem;margin-top:1rem;align-items:stretch}
+.notes-actions .btn-ghost{align-self:center}
+.notes-backdrop{position:absolute;inset:0;background:var(--scrim);opacity:0;pointer-events:none;
   transition:opacity .2s;z-index:5}
 .notes-backdrop.open{opacity:1;pointer-events:auto}
 
-.status-line{font-size:14px;color:var(--text-muted);line-height:1.4}
-.pill-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em;color:var(--primary)}
-
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-
-
-.room-card{background:linear-gradient(180deg, var(--tint-surface), var(--tint-bg));
-  border:1px solid var(--tint-border);border-radius:24px;padding:22px 18px 20px;
-  position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center}
-.room-floor{position:absolute;left:0;right:0;bottom:0;height:46%;
-  background:repeating-linear-gradient(45deg, rgba(0,0,0,.035) 0 10px, transparent 10px 20px)}
-.sprite-wrap{position:relative;width:120px;height:120px;margin-bottom:10px;z-index:1}
-.sprite-img{width:120px;height:120px;border-radius:20px;object-fit:cover;
-  image-rendering:pixelated;box-shadow:0 10px 20px rgba(0,0,0,.14)}
-.sprite-img.bob{animation:bob 2.6s ease-in-out infinite}
-.sprite-mood-badge{position:absolute;top:-8px;right:-8px;background:var(--surface);
-  border:2px solid var(--tint-bg);border-radius:50%;width:32px;height:32px;
-  display:flex;align-items:center;justify-content:center;font-size:16px;z-index:2}
-.room-name{font-weight:700;font-size:18px;z-index:1;margin-top:2px}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.375rem)}}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1,1)}15%{transform:translateY(0) scale(1.06,.94)}
+  45%{transform:translateY(-1rem) scale(.96,1.04)}75%{transform:translateY(0) scale(1.04,.96)}}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+@keyframes float-up{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(.75rem,-2.25rem)}}
+@keyframes pop-in{0%{opacity:0;transform:scale(.85)}100%{opacity:1;transform:scale(1)}}
+@keyframes tab-pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes stamp{0%{opacity:0;transform:rotate(-20deg) scale(2.2)}100%{opacity:1;transform:rotate(6deg) scale(1)}}
+@keyframes burst{0%{opacity:1;transform:translate(-50%,-50%) scale(.4)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.1) rotate(var(--rot))}}
+@keyframes xp-rise{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-.75rem) scale(1.1)}
+  100%{opacity:0;transform:translate(-50%,-3rem) scale(1)}}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+  .room-fx{display:none}
+}
 
 </style>
 
 <div class="rig">
-  <div class="rig-label">Concept B of 3 &middot; Full Tamagotchi</div>
-  <div class="phone">
+  <div class="rig-label">Concept B of 3 &middot; Full Tamagotchi &middot; playful game</div>
+  <div class="phone" id="phone" data-step="1">
     <div class="notes-backdrop" id="notesBackdrop"></div>
     <div class="statusbar">
       <span id="clockTime">9:41</span>
-      <span class="icons">●●●● &nbsp; 📶 &nbsp; 🔋</span>
+      <span class="icons" aria-hidden="true">●●●● &nbsp; 📶 &nbsp; 🔋</span>
     </div>
     <div class="topbar">
-      <button class="back-btn" id="backBtn" style="visibility:hidden">&lsaquo; Back</button>
-      <div class="steps">
-        <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
-      </div>
-      <div style="display:flex;align-items:center">
+      <div>
         <div class="brand">🐾 PawNote</div>
+        <button class="back-btn" id="backBtn">&lsaquo; Back</button>
+        <div class="xp-pill" id="xpPill" title="Today's XP"><span class="star" aria-hidden="true">⭐</span><span id="xpPillNum">10</span> XP</div>
+      </div>
+      <div class="tb-center">
+        <div class="steps" id="stepDots" role="img" aria-label="Step 1 of 3">
+          <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+        </div>
+        <div class="app-title" id="appTitle">Home</div>
+      </div>
+      <div>
         <button class="notes-fab" id="notesFab" aria-label="About this version">ⓘ</button>
       </div>
     </div>
 
-    
 <div class="screen" data-step="1">
-  <div>
+  <div class="view-head">
     <h2>Add your pet</h2>
-    <p class="status-line">A few details, then we'll match PawNote to them.</p>
+    <p class="status-line">Name, species and a photo &mdash; we'll build their pixel room and color the whole app to match.</p>
   </div>
   <div class="field">
     <label for="nameInput">Pet's name</label>
-    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori">
+    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori" autocomplete="off">
   </div>
   <div class="field">
-    <label>Species</label>
-    <div class="chip-row">
-      <button class="chip species-chip active" data-species="dog">🐶 Dog</button>
-      <button class="chip species-chip" data-species="cat">🐱 Cat</button>
+    <span class="label" id="speciesLabel">Species</span>
+    <div class="chip-row" role="group" aria-labelledby="speciesLabel">
+      <button class="chip species-chip active" data-species="dog" aria-pressed="true">🐶 Dog</button>
+      <button class="chip species-chip" data-species="cat" aria-pressed="false">🐱 Cat</button>
     </div>
   </div>
   <div class="field">
-    <label>Photo</label>
-    <div class="photo-grid" id="photoGrid"></div>
+    <span class="label" id="photoLabel">Photo</span>
+    <div class="photo-grid" id="photoGrid" role="group" aria-labelledby="photoLabel"></div>
   </div>
   <button class="btn btn-primary" id="continueBtn">Continue</button>
 </div>
 
 <div class="screen" data-step="2" hidden>
-  <div>
+  <div class="view-head">
     <h2>Your app now matches <span id="petNamePreview">Bori</span> <span id="petEmojiPreview">🐶</span></h2>
-    <p class="status-line">We read the coat color from the photo and snap it to the nearest of a fixed set of accessible presets &mdash; never the raw photo color, so text always stays readable.</p>
+    <p class="status-line">We read the coat color from the photo and snap it to the nearest of a fixed set of accessible presets &mdash; never the raw photo color, so text always stays readable. The whole screen re-tints live.</p>
   </div>
   <div class="card">
     <div class="extract-row">
       <div>
         <div class="swatch" id="rawSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px">Detected</p>
+        <p class="swatch-cap">Detected</p>
       </div>
-      <div class="arrow">&rarr;</div>
+      <div class="arrow" aria-hidden="true">&rarr;</div>
       <div>
         <div class="swatch-lg" id="presetSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px" id="presetName">Forest</p>
+        <p class="swatch-cap" id="presetName">Forest</p>
       </div>
     </div>
-    <div style="margin-top:14px" class="contrast-badge" id="contrastBadge">&mdash;</div>
+    <div class="badge-row">
+      <div class="contrast-badge" id="contrastBadge">&mdash;</div>
+      <div class="contrast-badge" id="textContrastBadge">&mdash;</div>
+    </div>
   </div>
-  <button class="btn btn-secondary" id="tryAnotherBtn">Try another preset</button>
+  <button class="btn btn-secondary" id="tryAnotherBtn">🎲 Try another preset</button>
   <button class="btn btn-primary" id="keepBtn">Keep this look</button>
 </div>
 
+<div class="screen" data-step="3" id="appScreen" hidden>
 
-    <div class="screen" data-step="3" hidden>
-      
-<div class="pet-row" id="petRow">
-  <div class="pet-chip active"><img id="homePetChipImg" src="" alt=""><span id="homePetChipName">Bori</span></div>
-  <div class="pet-chip add"><div class="add-circle">+</div><span>Add pet</span></div>
-</div>
-<div class="room-card">
-  <div class="room-floor"></div>
-  <div class="sprite-wrap">
-    <img id="spriteImg" class="sprite-img bob" src="" alt="pixel pet sprite">
-    <div class="sprite-mood-badge" id="spriteMoodBadge">😌</div>
-  </div>
-  <div class="room-name" id="homePetName">Bori</div>
-  <p class="status-line" id="moodStatusLine" style="text-align:center">Calm and settled</p>
-  <div class="hud-row" style="justify-content:center;margin-top:10px">
-    <div class="hud-chip">🍽️ Fed</div>
-    <div class="hud-chip">💩 Potty ✓</div>
-    <div class="hud-chip">🐕 Walk &middot; 4:00 PM</div>
-  </div>
-  <div class="mood-row" style="margin-top:14px">
-    <button class="mood-btn" data-mood="happy"><span class="emoji">😊</span>Happy</button>
-    <button class="mood-btn active" data-mood="calm"><span class="emoji">😌</span>Calm</button>
-    <button class="mood-btn" data-mood="hungry"><span class="emoji">🍽️</span>Hungry</button>
-    <button class="mood-btn" data-mood="sleepy"><span class="emoji">😴</span>Sleepy</button>
-  </div>
-</div>
-<p class="status-line" style="font-size:12.5px;text-align:center">Tap a mood to see the room react.</p>
+  <section class="view" data-view="home" aria-labelledby="homeH">
+    <h2 class="visually-hidden" id="homeH">Home</h2>
+    <div class="hello">
+      <img class="hello-avatar" id="helloAvatar" src="" alt="">
+      <div>
+        <p class="hello-title" id="helloTitle">Bori is with Jisoo today</p>
+        <p class="hello-sub">In care 9:00 AM &ndash; 7:00 PM</p>
+      </div>
+      <span class="live-stamp">LIVE</span>
+    </div>
+    <div class="room card" id="room" data-mood="calm">
+      <div class="room-scene" aria-hidden="true">
+        <div class="room-wall"></div>
+        <svg class="win" viewBox="0 0 15 13">
+          <rect class="px-frame" width="15" height="13"/>
+          <rect class="px-sky" x="1" y="1" width="6" height="11"/><rect class="px-sky" x="8" y="1" width="6" height="11"/>
+          <rect class="px-cloud" x="2" y="7" width="4" height="1"/><rect class="px-cloud" x="3" y="6" width="2" height="1"/>
+          <rect class="px-sun" x="10" y="2" width="3" height="3"/>
+          <rect class="px-star" x="3" y="3" width="1" height="1"/><rect class="px-star" x="5" y="8" width="1" height="1"/>
+          <rect class="px-star" x="9" y="8" width="1" height="1"/><rect class="px-star" x="12" y="10" width="1" height="1"/>
+        </svg>
+        <svg class="plant" viewBox="0 0 10 14">
+          <rect class="px-leaf" x="4" y="0" width="2" height="8"/><rect class="px-leaf" x="1" y="2" width="3" height="2"/>
+          <rect class="px-leaf" x="6" y="3" width="3" height="2"/><rect class="px-leaf" x="2" y="5" width="2" height="2"/>
+          <rect class="px-frame" x="1" y="8" width="8" height="1"/><rect class="px-pot" x="2" y="9" width="6" height="5"/>
+        </svg>
+        <div class="room-floor"></div>
+        <div class="rug"></div>
+        <svg class="bowl" viewBox="0 0 12 7">
+          <rect class="px-food" x="2" y="0" width="8" height="2"/>
+          <rect class="px-frame" x="0" y="2" width="12" height="1"/>
+          <rect class="px-bowl" x="0" y="3" width="12" height="2"/><rect class="px-bowl" x="1" y="5" width="10" height="2"/>
+        </svg>
+        <div class="sprite-wrap">
+          <img id="spriteImg" class="sprite-img js-sprite" src="" alt="">
+          <div class="sprite-mood-badge" id="spriteMoodBadge">😌</div>
+          <div class="speech" id="speech">...</div>
+          <div class="room-fx" id="roomFx"></div>
+        </div>
+      </div>
+      <div class="room-info">
+        <div class="room-name"><span id="homePetName">Bori</span><span class="lv">LV 3</span></div>
+        <p class="status-line" id="moodStatusLine" aria-live="polite">Calm and settled</p>
+      </div>
+      <div class="meters" id="meters"></div>
+      <div class="mood-row" role="group" aria-label="Try a mood">
+        <button class="mood-btn" data-mood="happy" aria-pressed="false"><span class="emoji" aria-hidden="true">😊</span>Happy</button>
+        <button class="mood-btn" data-mood="calm" aria-pressed="true"><span class="emoji" aria-hidden="true">😌</span>Calm</button>
+        <button class="mood-btn" data-mood="hungry" aria-pressed="false"><span class="emoji" aria-hidden="true">🍽️</span>Hungry</button>
+        <button class="mood-btn" data-mood="sleepy" aria-pressed="false"><span class="emoji" aria-hidden="true">😴</span>Sleepy</button>
+      </div>
+    </div>
+    <p class="hint">Tap a mood to see the room react.</p>
+    <div class="card mini" id="homeQuest"></div>
+    <div class="card latest" id="homeLatest"></div>
+  </section>
 
+  <section class="view" data-view="feed" aria-labelledby="feedH" hidden>
+    <div class="view-head">
+      <h2 id="feedH">Album</h2>
+      <p class="status-line" id="feedSub">Jisoo shared photos today.</p>
+    </div>
+    <div class="day-row"><span class="day-chip">TODAY</span><span class="day-count" id="feedCount"></span></div>
+    <div class="album" id="album"></div>
+    <p class="hint">Tap any photo for its AI caption.</p>
+  </section>
+
+  <section class="view" data-view="care" aria-labelledby="careH" hidden>
+    <div class="view-head">
+      <h2 id="careH">Today's quests</h2>
+      <p class="status-line" id="careSub">Meds, walks and meals, cleared one by one.</p>
+    </div>
+    <div id="careBody" class="view"></div>
+  </section>
+
+  <section class="view" data-view="reports" aria-labelledby="reportsH" hidden>
+    <div class="view-head">
+      <h2 id="reportsH">Day recap</h2>
+      <p class="status-line" id="reportsSub"></p>
+    </div>
+    <div id="reportsBody" class="view"></div>
+  </section>
+
+</div>
+
+    <nav class="tabbar" id="tabbar" aria-label="Main" hidden>
+      <button class="tab" data-view="home" aria-current="page"><span class="emoji" aria-hidden="true">🏠</span><span>Home</span></button>
+      <button class="tab" data-view="feed"><span class="emoji" aria-hidden="true">📸</span><span>Feed</span></button>
+      <button class="tab" data-view="care"><span class="emoji" aria-hidden="true">🦴</span><span>Care</span></button>
+      <button class="tab" data-view="reports"><span class="emoji" aria-hidden="true">📊</span><span>Reports</span></button>
+    </nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbTitle" hidden>
+      <div class="lb-panel">
+        <div class="lb-photo" id="lbPhoto"><img id="lbImg" src="" alt=""><span class="stamp" id="lbStamp"></span></div>
+        <p class="lb-meta" id="lbTitle">1:40 PM &middot; from Jisoo</p>
+        <span class="ai-tag">✨ AI caption</span>
+        <p class="lb-caption" id="lbCaption"></p>
+        <div class="lb-actions">
+          <button class="btn btn-secondary btn-sm" id="lbLove" aria-pressed="false">🤍 Love it</button>
+          <button class="btn btn-primary btn-sm" id="lbClose">Close</button>
+        </div>
+      </div>
     </div>
 
-    
-<div class="tabbar">
-  <div class="tab active"><span class="emoji">🏠</span>Home</div>
-  <div class="tab"><span class="emoji">📷</span>Feed</div>
-  <div class="tab"><span class="emoji">💊</span>Care</div>
-  <div class="tab"><span class="emoji">📝</span>Reports</div>
-</div>
-
-
-    <div class="notes-sheet" id="notesSheet">
-      <span class="tag">Boldest</span>
-      <h3>Full Tamagotchi</h3>
-      <p class="status-line">Full re-theme + an animated pixel-art room built from the real uploaded photo &mdash; most literal read of the 8-bit status room spec.</p>
-      <ul><li>Theming: background, surface and accent all re-tint from the matched preset &mdash; the whole screen reflects the pet's coloring.</li>
-<li>Gamification: the uploaded photo is pixelated live (canvas downsample, no smoothing) into an idle-animated sprite in a decorated room, with a mood badge.</li>
-<li>Trade-off: highest demo impact and most literally matches pet-status-room.ko.md &mdash; but the most tension with DESIGN.md's “trustworthy, not a developer dashboard” rule, and the priciest to build for real (sprite assets, animation).</li></ul>
-      <button class="btn btn-secondary close-notes" id="closeNotes">Close</button>
+    <div class="notes-sheet" id="notesSheet" role="dialog" aria-modal="true" aria-labelledby="notesH">
+      <span class="tag">BOLDEST &middot; PLAYFUL GAME</span>
+      <h3 id="notesH">Full Tamagotchi</h3>
+      <p class="status-line">The whole app re-tints from the pet's photo and plays like a tiny care game: a pixel room on Home, a sticker album, quests with XP and a HUD-style day recap.</p>
+      <ul>
+        <li><b>Theme:</b> background, surfaces, outlines, text and accent are all derived from the snapped preset (light and dark), and every text pair is checked to &ge;&nbsp;4.5:1 &mdash; the pet's color is everywhere, not just on buttons.</li>
+        <li><b>Look:</b> Fredoka + Nunito, a pixel font only for HUD numbers, 2px ink outlines, hard &ldquo;sticker&rdquo; shadows and bouncy press states (motion turns off with reduced-motion).</li>
+        <li><b>Home:</b> the photo is pixelated live into a sprite that lives in a room and reacts to mood &mdash; night window when sleepy, empty bowl when hungry &mdash; with Joy / Food / Energy meters.</li>
+        <li><b>Feed:</b> an album grid with sticker stamps instead of a timeline; tap a photo for the AI caption.</li>
+        <li><b>Care:</b> meds, walk and meals become quests; Done fills the day's XP bar with a little burst. In the real app Jisoo taps Done with a photo &mdash; the owner just watches it fill.</li>
+        <li><b>Reports:</b> stat cards, a mood timeline and a short AI note from Jisoo that fill in live as quests clear.</li>
+        <li><b>Trade-offs:</b> highest delight and demo impact, and the most literal read of the 8-bit status room plan &mdash; but gamified meds can feel flippant to an anxious owner, a full re-tint weakens brand recognition across pets, it pulls hardest against DESIGN.md's calm, trustworthy tone, and sprites + animation are the priciest to build for real.</li>
+      </ul>
+      <div class="notes-actions">
+        <button class="btn btn-secondary" id="closeNotes">Close</button>
+        <button class="btn btn-ghost" id="restartBtn">↺ Restart the demo</button>
+      </div>
     </div>
+
+    <div class="fx" id="fx" aria-hidden="true"></div>
   </div>
 </div>
 
@@ -318,13 +647,20 @@ const PRESETS = [
   {name:"Rose",   hue:350, sat:48},
 ];
 const MOODS = [
-  {key:"happy",  emoji:"😊", label:"Happy"},
-  {key:"calm",   emoji:"😌", label:"Calm"},
-  {key:"hungry", emoji:"🍽️", label:"Hungry"},
-  {key:"sleepy", emoji:"😴", label:"Sleepy"},
+  {key:"happy",  emoji:"😊", label:"Happy",  say:"YAY!",   fx:["♥","♥"], meters:{joy:5, food:4, energy:4}},
+  {key:"calm",   emoji:"😌", label:"Calm",   say:"...",    fx:["♪"],     meters:{joy:4, food:4, energy:3}},
+  {key:"hungry", emoji:"🍽️", label:"Hungry", say:"SNACK?", fx:[],        meters:{joy:3, food:1, energy:3}},
+  {key:"sleepy", emoji:"😴", label:"Sleepy", say:"ZZZ",    fx:["z","Z"], meters:{joy:4, food:4, energy:1}},
+];
+const METERS = [
+  {key:"joy",    label:"❤️ Joy",    color:"var(--joy)"},
+  {key:"food",   label:"🍖 Food",   color:"var(--pop)"},
+  {key:"energy", label:"⚡ Energy", color:"var(--primary)"},
 ];
 const PIXEL_GRID = 16; // 0 = no pixelation
 const THEME_MODE = "full"; // accent | soft | full
+const SITTER = "Jisoo";
+const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function hslToHex(h,s,l){
   s/=100; l/=100;
@@ -381,6 +717,12 @@ function nearestPresetIndex(hue){
   });
   return best;
 }
+// Walk lightness (step -2 = darker, +2 = lighter) until text clears 4.5:1 on the given background.
+function shadeFor(h, s, l, againstHex, step){
+  let hex = hslToHex(h, s, l);
+  while(contrastRatio(hex, againstHex) < 4.5 && l > 2 && l < 98){ l += step; hex = hslToHex(h, s, l); }
+  return hex;
+}
 
 function sampleDominantHue(imgEl){
   const c = document.createElement("canvas");
@@ -413,25 +755,38 @@ function pixelate(imgEl, grid){
   return out.toDataURL("image/png");
 }
 
-const state = { step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm" };
+const state = {
+  step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm",
+  view:"home", themed:false, spriteSrc:null, quests:null, feed:[], loved:new Set(), thanked:false, lbIndex:null,
+};
 
 function $(sel){ return document.querySelector(sel); }
 function $all(sel){ return document.querySelectorAll(sel); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function petName(){ return (state.name || "").trim() || "Your pet"; }
+function isDog(){ return state.species === "dog"; }
 
+/* ---------- Onboarding ---------- */
 function renderPhotoGrid(){
   const grid = $("#photoGrid");
   grid.innerHTML = "";
   PETS.filter(p=>p.species===state.species).forEach(p=>{
-    const div = document.createElement("div");
-    div.className = "photo-thumb" + (state.photo && state.photo.id===p.id ? " selected" : "");
-    div.innerHTML = `<img src="${p.src}" alt="${p.breed} sample">`;
-    div.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
-    grid.appendChild(div);
+    const btn = document.createElement("button");
+    const selected = !!(state.photo && state.photo.id===p.id);
+    btn.type = "button";
+    btn.className = "photo-thumb" + (selected ? " selected" : "");
+    btn.setAttribute("aria-pressed", String(selected));
+    btn.innerHTML = `<img src="${p.src}" alt="${p.breed} sample photo">`;
+    btn.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
+    grid.appendChild(btn);
   });
-  const uploadDiv = document.createElement("div");
-  uploadDiv.className = "photo-thumb upload";
-  uploadDiv.innerHTML = `<span>📷</span><span>Upload</span><input type="file" accept="image/*" id="fileInput">`;
-  grid.appendChild(uploadDiv);
+  const upload = document.createElement("label");
+  const customSelected = !!(state.photo && state.photo.id==="custom");
+  upload.className = "photo-thumb upload" + (customSelected ? " selected" : "");
+  upload.innerHTML = customSelected
+    ? `<img src="${state.photo.src}" alt="Your uploaded photo"><input type="file" accept="image/*" id="fileInput" aria-label="Replace uploaded photo">`
+    : `<span class="big" aria-hidden="true">📷</span><span>Upload</span><input type="file" accept="image/*" id="fileInput" aria-label="Upload a photo">`;
+  grid.appendChild(upload);
   $("#fileInput").onchange = (e) => {
     const file = e.target.files[0];
     if(!file) return;
@@ -449,7 +804,11 @@ function updateContinueBtn(){
 }
 function selectSpecies(sp){
   state.species = sp;
-  $all(".species-chip").forEach(c=>c.classList.toggle("active", c.dataset.species===sp));
+  $all(".species-chip").forEach(c=>{
+    const on = c.dataset.species===sp;
+    c.classList.toggle("active", on);
+    c.setAttribute("aria-pressed", String(on));
+  });
   const first = PETS.find(p=>p.species===sp);
   if(!state.photo || state.photo.species !== sp) state.photo = state.photo && state.photo.id==="custom" ? state.photo : first;
   renderPhotoGrid();
@@ -459,9 +818,69 @@ function goToStep(n){
   state.step = n;
   $all(".screen").forEach(s=> s.hidden = Number(s.dataset.step) !== n);
   $all(".step-dot").forEach((d,i)=> d.classList.toggle("active", i === n-1));
-  $("#backBtn").style.visibility = n === 1 ? "hidden" : "visible";
+  $("#stepDots").setAttribute("aria-label", `Step ${Math.min(n,3)} of 3`);
+  $("#phone").dataset.step = n;
+  const inApp = n === 3;
+  $("#phone").classList.toggle("in-app", inApp);
+  $("#tabbar").hidden = !inApp;
+  if(n===1) resetTheme();
   if(n===2) runExtraction();
-  if(n===3) buildHome();
+  if(n===3){ buildApp(); showView("home"); }
+}
+
+/* ---------- Theme (full re-theme, light + dark aware) ---------- */
+function isDarkMode(){
+  const t = document.documentElement.dataset.theme;
+  if(t === "dark") return true;
+  if(t === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function themeTokens(preset){
+  const h = preset.hue, s = preset.sat;
+  const primary = colorForPreset(preset).hex;
+  if(isDarkMode()){
+    const soft = hslToHex(h, Math.min(s,34), 25);
+    return {
+      "--primary": primary,
+      "--tint-bg": hslToHex(h, Math.min(s,32), 11),
+      "--tint-surface": hslToHex(h, Math.min(s,28), 17),
+      "--tint-soft": soft,
+      "--tint-border": hslToHex(h, Math.min(s,30), 38),
+      "--outline": hslToHex(h, Math.min(s,30), 50),
+      "--shadow-ink": "#000000",
+      "--text": hslToHex(h, 25, 95),
+      "--text-muted": shadeFor(h, 18, 74, soft, 2),
+      "--primary-text": shadeFor(h, Math.min(s+12,70), 70, soft, 2),
+    };
+  }
+  const soft = hslToHex(h, Math.min(s+12,62), 80);
+  const ink = hslToHex(h, Math.min(s,35), 13);
+  return {
+    "--primary": primary,
+    "--tint-bg": hslToHex(h, Math.min(s+8,55), 88),
+    "--tint-surface": hslToHex(h, Math.min(s,40), 97),
+    "--tint-soft": soft,
+    "--tint-border": hslToHex(h, Math.min(s,35), 64),
+    "--outline": ink,
+    "--shadow-ink": ink,
+    "--text": ink,
+    "--text-muted": shadeFor(h, Math.min(s,28), 32, soft, -2),
+    "--primary-text": shadeFor(h, Math.min(s+6,70), 34, soft, -2),
+  };
+}
+function applyTheme(idx){
+  const tokens = themeTokens(PRESETS[idx]);
+  const keys = THEME_MODE === "accent" ? ["--primary","--primary-text"]
+    : THEME_MODE === "soft" ? Object.keys(tokens).filter(k => k !== "--tint-bg")
+    : Object.keys(tokens);
+  keys.forEach(k => document.documentElement.style.setProperty(k, tokens[k]));
+  state.themed = true;
+  return tokens;
+}
+function resetTheme(){
+  ["--primary","--primary-text","--tint-bg","--tint-surface","--tint-soft","--tint-border","--outline","--shadow-ink","--text","--text-muted"]
+    .forEach(k => document.documentElement.style.removeProperty(k));
+  state.themed = false;
 }
 
 function runExtraction(){
@@ -480,76 +899,382 @@ function renderExtraction(){
   const result = colorForPreset(preset);
   $("#rawSwatch").style.background = state.rawHex;
   $("#presetSwatch").style.background = result.hex;
-  $("#presetName").textContent = preset.name;
+  $("#presetName").textContent = `${preset.name} · ${state.presetIdx+1}/${PRESETS.length}`;
   $("#petNamePreview").textContent = state.name || "your pet";
-  const emoji = state.species === "dog" ? "🐶" : "🐱";
-  $("#petEmojiPreview").textContent = emoji;
+  $("#petEmojiPreview").textContent = isDog() ? "🐶" : "🐱";
   const badge = $("#contrastBadge");
-  badge.textContent = `${result.ratio.toFixed(1)}:1 · Passes AA ✓`;
+  badge.textContent = `Button ${result.ratio.toFixed(1)}:1 · Passes AA ✓`;
   badge.classList.toggle("fail", result.ratio < 4.5);
   state._currentHex = result.hex;
+  // Live full re-theme preview: the whole phone tints while you browse presets.
+  const t = applyTheme(state.presetIdx);
+  const textRatio = Math.min(contrastRatio(t["--text"], t["--tint-bg"]), contrastRatio(t["--text-muted"], t["--tint-soft"]));
+  const tb = $("#textContrastBadge");
+  tb.textContent = `Text ≥ ${textRatio.toFixed(1)}:1 ✓`;
+  tb.classList.toggle("fail", textRatio < 4.5);
 }
 function cyclePreset(){
   state.presetIdx = (state.presetIdx + 1) % PRESETS.length;
   renderExtraction();
 }
 function keepTheme(){
-  const hex = state._currentHex;
-  const preset = PRESETS[state.presetIdx];
-  document.documentElement.style.setProperty("--primary", hex);
-  if(THEME_MODE === "full" || THEME_MODE === "soft"){
-    const bgTint = hslToHex(preset.hue, Math.min(preset.sat,22), 97);
-    const surfaceTint = hslToHex(preset.hue, Math.min(preset.sat,18), 94);
-    const borderTint = hslToHex(preset.hue, Math.min(preset.sat,20), 88);
-    if(THEME_MODE === "full"){
-      document.documentElement.style.setProperty("--tint-bg", bgTint);
-    }
-    document.documentElement.style.setProperty("--tint-surface", surfaceTint);
-    document.documentElement.style.setProperty("--tint-border", borderTint);
-  }
+  applyTheme(state.presetIdx);
   goToStep(3);
 }
 
-function buildHome(){
-  const setIfPresent = (sel, prop, val) => { const el = $(sel); if(el) el[prop] = val; };
-  setIfPresent("#homePetName", "textContent", state.name || "Your pet");
-  setIfPresent("#homePetAvatar", "src", state.photo.src);
-  setIfPresent("#homePetChipImg", "src", state.photo.src);
-  setIfPresent("#homePetChipName", "textContent", state.name || "Pet");
-  const spriteImg = $("#spriteImg");
-  if(spriteImg){
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => { spriteImg.src = pixelate(img, PIXEL_GRID); };
-    img.src = state.photo.src;
-  }
-  setMood(state.mood, true);
+/* ---------- App shell ---------- */
+// Topbar shows who you're following; each page carries its own big heading.
+const appTitle = () => `${isDog() ? "🐶" : "🐱"} ${petName()}`;
+
+function buildApp(){
+  if(!state.quests) state.quests = makeQuests();
+  state.feed = buildFeed();
+  $all(".js-sprite").forEach(el => el.src = state.spriteSrc || state.photo.src);
+  const img = new Image();
+  img.onload = () => {
+    state.spriteSrc = pixelate(img, PIXEL_GRID);
+    $all(".js-sprite").forEach(el => el.src = state.spriteSrc);
+  };
+  img.src = state.photo.src;
+  updateXpPill(false);
 }
-function setMood(key, silent){
+function showView(key){
+  state.view = key;
+  $all(".view[data-view]").forEach(v => v.hidden = v.dataset.view !== key);
+  $all(".tab").forEach(t => {
+    if(t.dataset.view === key) t.setAttribute("aria-current","page");
+    else t.removeAttribute("aria-current");
+  });
+  $("#appTitle").textContent = appTitle();
+  $("#appScreen").scrollTop = 0;
+  if(key === "home") renderHome();
+  if(key === "feed") renderFeed();
+  if(key === "care") renderCare();
+  if(key === "reports") renderReports();
+}
+
+/* ---------- Home ---------- */
+function renderHome(){
+  const name = petName();
+  $("#homePetName").textContent = name;
+  $("#helloTitle").textContent = `${name} is with ${SITTER} today`;
+  $("#helloAvatar").src = state.photo.src;
+  $("#helloAvatar").alt = name;
+  setMood(state.mood);
+  const q = questStats();
+  $("#homeQuest").innerHTML = `
+    <div class="mini-head"><span class="mini-title">🗺️ Today's quests</span><span class="mini-count">${q.done}/${q.total} CLEAR</span></div>
+    <div class="xpbar" role="progressbar" aria-label="Day quest progress" aria-valuemin="0" aria-valuemax="${q.maxXp}" aria-valuenow="${q.xp}"><i style="width:${q.pct}%"></i></div>
+    <button class="btn btn-secondary btn-sm" data-go="care">${q.done === q.total ? "All clear — see quests" : `Next: ${esc(q.next.title)} · ${q.next.time}`}</button>`;
+  const latest = state.feed[0];
+  $("#homeLatest").innerHTML = `
+    <div class="latest-img ${latest.v}"><img src="${latest.src}" alt="${esc(latest.alt)}"></div>
+    <div><p>${esc(latest.caption)}</p><button class="btn btn-secondary btn-sm" data-go="feed">Open album · ${state.feed.length} photos</button></div>`;
+}
+function setMood(key){
   state.mood = key;
-  $all(".mood-btn").forEach(b=> b.classList.toggle("active", b.dataset.mood===key));
   const m = MOODS.find(x=>x.key===key);
-  const name = state.name || "Your pet";
+  const name = petName();
+  $all(".mood-btn").forEach(b=> b.setAttribute("aria-pressed", String(b.dataset.mood===key)));
+  $("#room").dataset.mood = key;
   const lines = {
     happy: `${name} is happy and playful right now ${m.emoji}`,
     calm: `${name} is calm and settled`,
     hungry: `${name} hasn't eaten in a while — might be hungry`,
     sleepy: `${name} is winding down for a nap`,
   };
-  const statusEl = $("#moodStatusLine");
-  if(statusEl) statusEl.textContent = lines[key];
-  const badge = $("#spriteMoodBadge");
-  if(badge) badge.textContent = m.emoji;
+  $("#moodStatusLine").textContent = lines[key];
+  $("#spriteMoodBadge").textContent = m.emoji;
+  $("#speech").textContent = m.say;
+  $("#roomFx").innerHTML = m.fx.map(g => `<span>${g}</span>`).join("");
+  $("#meters").innerHTML = METERS.map(mt => {
+    const v = m.meters[mt.key];
+    const segs = Array.from({length:5}, (_,i) => `<span class="seg${i < v ? " on" : ""}"></span>`).join("");
+    return `<div class="meter" role="img" aria-label="${mt.label.split(" ")[1]} ${v} of 5"><span aria-hidden="true">${mt.label}</span><span class="segs" style="--meter:${mt.color}" aria-hidden="true">${segs}</span></div>`;
+  }).join("");
+}
+
+/* ---------- Feed: album + lightbox ---------- */
+function buildFeed(){
+  const name = petName(), dog = isDog();
+  const others = PETS.filter(p => p.species === state.species && p.id !== state.photo.id);
+  const me = state.photo.src;
+  const pal = others[0], pal2 = others[1];
+  return [
+    {src:me, v:"", time:"1:40 PM", stamp:"Best nap ⭐", style:"", featured:true, alt:`${name} napping`,
+      caption:`${name} curled up on the blanket and napped for a full hour. Gentle snores the whole time 💤`},
+    {src:me, v:"v1", time:"12:20 PM", stamp:"Clean bowl ✨", style:"alt", alt:`${name} after lunch`,
+      caption:`Lunch gone in under two minutes. ${name} licked the bowl spotless, then asked for seconds.`},
+    pal ? {src:pal.src, v:"", time:"11:05 AM", stamp:"New pal 🤝", style:"plain", alt:"A playdate friend",
+      caption:`${name} met a new friend ${dog ? "at the park" : "by the window perch"} — lots of polite sniffing first 🐾`}
+        : {src:me, v:"v3", time:"11:05 AM", stamp:"Pose! 📸", style:"plain", alt:`${name} posing`,
+      caption:`${name} held a perfect pose for the camera. Treat well earned.`},
+    {src:me, v:"v2", time:"10:15 AM", stamp: dog ? "Zoomies 💨" : "Pounce 💨", style:"", alt:`${name} playing`,
+      caption: dog ? `Three laps around the yard before breakfast settled. ${name} was pure joy.` : `${name} stalked the feather toy and landed a perfect pounce.`},
+    pal2 ? {src:pal2.src, v:"v3", time:"9:40 AM", stamp:"Sunbeam ☀️", style:"alt", alt:"Another playdate friend",
+      caption:`${name}'s playdate buddy came by and they shared the sunny spot by the window ☀️`}
+         : {src:me, v:"v4", time:"9:40 AM", stamp:"Sunbeam ☀️", style:"alt", alt:`${name} in the sun`,
+      caption:`${name} found the sunniest spot by the window and kept watch on the birds ☀️`},
+    {src:me, v:"v3", time:"9:05 AM", stamp:"Hello! 👋", style:"plain", alt:`${name} arriving`,
+      caption:`Drop-off done! ${name} gave ${SITTER} a sniff hello and settled in fast.`},
+  ];
+}
+function renderFeed(){
+  const name = petName();
+  $("#feedSub").textContent = `${SITTER} shared ${state.feed.length} photos of ${name} today — newest first.`;
+  $("#feedCount").textContent = state.loved.size ? `${state.feed.length} photos · ${state.loved.size} ❤️` : `${state.feed.length} photos`;
+  $("#album").innerHTML = state.feed.map((p,i) => `
+    <button class="tile ${p.v}${p.featured ? " featured" : ""}" data-photo="${i}" aria-label="Open photo: ${esc(p.stamp)}, ${p.time}">
+      <img src="${p.src}" alt="">
+      <span class="stamp ${p.style}" aria-hidden="true">${esc(p.stamp)}</span>
+      ${state.loved.has(i) ? `<span class="loved" aria-hidden="true">❤️</span>` : ""}
+    </button>`).join("");
+}
+let lbReturnFocus = null;
+function openLightbox(i){
+  const p = state.feed[i];
+  state.lbIndex = i;
+  lbReturnFocus = document.activeElement;
+  $("#lbPhoto").className = `lb-photo ${p.v}`;
+  $("#lbImg").src = p.src;
+  $("#lbImg").alt = p.alt;
+  $("#lbStamp").className = `stamp ${p.style}`;
+  $("#lbStamp").textContent = p.stamp;
+  $("#lbTitle").textContent = `${p.time} · from ${SITTER}`;
+  $("#lbCaption").textContent = p.caption;
+  syncLove();
+  $("#lightbox").hidden = false;
+  $("#lbClose").focus();
+}
+function closeLightbox(){
+  if($("#lightbox").hidden) return;
+  $("#lightbox").hidden = true;
+  if(state.view === "feed") renderFeed();
+  const back = $(`.tile[data-photo="${state.lbIndex}"]`) || lbReturnFocus;
+  if(back && back.focus) back.focus();
+}
+function syncLove(){
+  const on = state.loved.has(state.lbIndex);
+  const b = $("#lbLove");
+  b.setAttribute("aria-pressed", String(on));
+  b.textContent = on ? "❤️ Loved" : "🤍 Love it";
+}
+function toggleLove(){
+  const i = state.lbIndex;
+  if(state.loved.has(i)) state.loved.delete(i);
+  else { state.loved.add(i); showToast(`${SITTER} will see your ❤️`); burstAt($("#lbLove"), 6, ["❤️","💛","✨"]); }
+  syncLove();
+}
+
+/* ---------- Care: quests + XP ---------- */
+function makeQuests(){
+  const dog = isDog();
+  return [
+    {id:"breakfast", emoji:"🍳", title:"Breakfast", detail:"1 cup kibble + a splash of warm water", time:"8:00 AM", xp:10, done:true},
+    {id:"meds", emoji:"💊", title: dog ? "Heartworm chew" : "Hairball gel", detail: dog ? "Hide it inside a treat" : "A pea-sized dab after lunch", time:"12:30 PM", xp:20, done:false},
+    {id:"walk", emoji: dog ? "🦮" : "🧶", title: dog ? "Afternoon walk" : "Play session", detail: dog ? "30 min loop, lots of sniff stops" : "15 min of wand-toy chasing", time:"4:00 PM", xp:30, done:false},
+    {id:"dinner", emoji:"🍲", title:"Dinner", detail:"1 cup kibble + fresh water", time:"6:30 PM", xp:10, done:false},
+  ];
+}
+function questStats(){
+  const qs = state.quests || [];
+  const done = qs.filter(q=>q.done).length;
+  const xp = qs.filter(q=>q.done).reduce((a,q)=>a+q.xp, 0);
+  const maxXp = qs.reduce((a,q)=>a+q.xp, 0);
+  return {done, total:qs.length, xp, maxXp, pct: maxXp ? Math.round(xp/maxXp*100) : 0, next: qs.find(q=>!q.done) || qs[qs.length-1]};
+}
+function updateXpPill(bump){
+  $("#xpPillNum").textContent = questStats().xp;
+  const pill = $("#xpPill");
+  if(bump && !REDUCED_MOTION){ pill.classList.remove("bump"); void pill.offsetWidth; pill.classList.add("bump"); }
+}
+function renderCare(fromPct, justId){
+  const name = petName();
+  const q = questStats();
+  $("#careSub").textContent = `${SITTER} clears these while ${name} is in care. Each one sends you a ping.`;
+  const startPct = fromPct == null ? q.pct : fromPct;
+  const allDone = q.done === q.total;
+  $("#careBody").innerHTML = `
+    <div class="card xp-card">
+      <div class="row"><h3>${esc(name)}'s day</h3><span class="lv">LV 3</span></div>
+      <div class="xpbar" role="progressbar" aria-label="Day quest XP" aria-valuemin="0" aria-valuemax="${q.maxXp}" aria-valuenow="${q.xp}"><i id="careBar" style="width:${startPct}%"></i></div>
+      <div class="row nums"><span>${q.done}/${q.total} CLEAR</span><span>${q.xp}/${q.maxXp} XP</span></div>
+    </div>
+    ${allDone ? `<div class="card all-clear">
+      <h3>All quests cleared! 🎉</h3>
+      <p>${esc(name)}'s day recap is ready to read.</p>
+      <button class="btn btn-secondary" data-go="reports" id="seeRecapBtn">See day recap</button>
+    </div>` : ""}
+    <div class="quests">
+      ${state.quests.map(t => `
+        <div class="card quest${t.done ? " cleared" : ""}${t.id === justId ? " just" : ""}">
+          <div class="quest-icon" aria-hidden="true">${t.emoji}</div>
+          <div>
+            <div class="quest-title">${esc(t.title)}</div>
+            <div class="quest-meta">${t.time} · ${esc(t.detail)}</div>
+            <span class="quest-xp">+${t.xp} XP</span>
+          </div>
+          ${t.done
+            ? `<span class="btn btn-sm quest-done" aria-label="${esc(t.title)} cleared">✓ Done</span><span class="clear-stamp" aria-hidden="true">CLEAR!</span>`
+            : `<button class="btn btn-primary btn-sm" data-quest="${t.id}" aria-label="Mark ${esc(t.title)} done">Done</button>`}
+        </div>`).join("")}
+    </div>
+    <p class="hint">In the real app ${SITTER} taps Done with a photo &mdash; try it here.</p>`;
+  if(startPct !== q.pct){
+    requestAnimationFrame(() => requestAnimationFrame(() => { const bar = $("#careBar"); if(bar) bar.style.width = q.pct + "%"; }));
+  }
+}
+function completeQuest(id, btn){
+  const quest = state.quests.find(q=>q.id===id);
+  if(!quest || quest.done) return;
+  const before = questStats().pct;
+  const pt = pointIn(btn);
+  quest.done = true;
+  renderCare(before, id);
+  updateXpPill(true);
+  const q = questStats();
+  burst(pt, q.done === q.total ? 16 : 9, ["⭐","✨","🐾"]);
+  floatXp(pt, `+${quest.xp} XP`);
+  if(q.done === q.total){
+    showToast(`All quests cleared! ${petName()}'s recap is ready 🎉`);
+    const recap = $("#seeRecapBtn"); if(recap) recap.focus();
+  } else {
+    showToast(`${quest.title} cleared · +${quest.xp} XP`);
+    const next = $("[data-quest]"); if(next) next.focus();
+  }
+}
+
+/* ---------- Reports: day recap HUD ---------- */
+function renderReports(){
+  const name = petName(), dog = isDog();
+  const byId = Object.fromEntries(state.quests.map(q=>[q.id,q]));
+  const meals = (byId.breakfast.done ? 1 : 0) + (byId.dinner.done ? 1 : 0);
+  const walked = byId.walk.done;
+  const q = questStats();
+  const stars = q.done >= q.total ? 3 : q.done >= 2 ? 2 : 1;
+  const today = new Date().toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"});
+  $("#reportsSub").textContent = `${today} · with ${SITTER} · ${q.done === q.total ? "final" : "fills in as quests clear"}`;
+  const nowMood = MOODS.find(m=>m.key===state.mood);
+  const timeline = [
+    {t:"9 AM", e:"😊", l:"Happy"}, {t:"11 AM", e:"😌", l:"Calm"}, {t:"1 PM", e:"😴", l:"Sleepy"},
+    {t:"3 PM", e:"😊", l:"Happy"}, {t:"Now", e:nowMood.emoji, l:nowMood.label, now:true},
+  ];
+  const pips = (n, of) => Array.from({length:of}, (_,i)=>`<span class="pip${i<n ? " on" : ""}"></span>`).join("");
+  $("#reportsBody").innerHTML = `
+    <div class="card recap-hero">
+      <img class="js-sprite" src="${state.spriteSrc || state.photo.src}" alt="Pixel ${esc(name)}">
+      <div>
+        <h3>${esc(name)}'s day</h3>
+        <p class="sub">${q.done}/${q.total} quests · ${q.xp} XP</p>
+        <div class="stars" role="img" aria-label="${stars} of 3 stars">${"⭐".repeat(stars)}${"☆".repeat(3-stars)}</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="card stat"><span class="k"><span aria-hidden="true">🍽️</span>Meals</span>
+        <span class="v">${meals}<small>/2</small></span><span class="pips" aria-hidden="true">${pips(meals,2)}</span></div>
+      <div class="card stat"><span class="k"><span aria-hidden="true">${dog ? "🦮" : "🧶"}</span>${dog ? "Walk" : "Play"}</span>
+        <span class="v">${walked ? (dog ? 32 : 15) : 0}<small> min</small></span><span class="sub">${walked ? "Done · 4:00 PM" : "Up next · 4:00 PM"}</span></div>
+      <div class="card stat"><span class="k"><span aria-hidden="true">👣</span>Steps</span>
+        <span class="v">${dog ? (walked ? "6,240" : "2,180") : (walked ? "2,950" : "1,120")}</span><span class="sub">${walked ? "Goal smashed" : (dog ? "Walk adds more" : "Play adds more")}</span></div>
+      <div class="card stat"><span class="k"><span aria-hidden="true">💊</span>Meds</span>
+        <span class="v">${byId.meds.done ? 1 : 0}<small>/1</small></span><span class="pips" aria-hidden="true">${pips(byId.meds.done ? 1 : 0,1)}</span></div>
+    </div>
+    <div class="card timeline">
+      <div class="section-title">Mood timeline</div>
+      <div class="tl-row">
+        ${timeline.map(s => `<div class="tl-slot${s.now ? " now" : ""}"><span class="tl-emoji" role="img" aria-label="${s.l}">${s.e}</span><span class="tl-time">${s.t}</span></div>`).join("")}
+      </div>
+    </div>
+    <div class="card ai-note">
+      <div class="who">
+        <span class="letter-avatar" aria-hidden="true">J</span>
+        <div><div class="name">${SITTER}</div><div class="role">Your sitter today</div></div>
+        <span class="ai-tag">✨ AI note</span>
+      </div>
+      <p class="body">${esc(recapNote())}</p>
+      <p class="foot">Drafted by AI from ${SITTER}'s taps and photos &middot; ${SITTER} checked it before sending.</p>
+      <button class="btn ${state.thanked ? "btn-secondary" : "btn-pop"} btn-sm" id="thanksBtn" ${state.thanked ? "disabled" : ""}>${state.thanked ? "Thanks sent ✓" : `Say thanks to ${SITTER} 💛`}</button>
+    </div>`;
+}
+function recapNote(){
+  const n = petName(), dog = isDog();
+  const byId = Object.fromEntries(state.quests.map(q=>[q.id,q]));
+  const med = dog ? "heartworm chew" : "hairball gel";
+  const play = dog ? "32-minute walk" : "15-minute play session";
+  if(state.quests.every(q=>q.done)){
+    return `${n} had a big, happy day! Both meals finished, the ${med} went down without a fuss, and the ${play} ended with a long sunny nap ☀️ See you at pick-up!`;
+  }
+  const parts = [];
+  if(byId.breakfast.done) parts.push("finished breakfast");
+  if(byId.meds.done) parts.push(`took the ${med} hidden in a treat`);
+  if(byId.walk.done) parts.push(`loved the ${play}`);
+  parts.push("had a cozy nap by the window");
+  const left = state.quests.filter(q=>!q.done).map(q=>q.title.toLowerCase());
+  const join = a => a.length > 1 ? a.slice(0,-1).join(", ") + " and " + a[a.length-1] : a[0];
+  return `So far so good! ${n} ${join(parts)}. Still to come: ${join(left)} — the full recap lands once every quest is cleared 🐾`;
+}
+
+/* ---------- FX, toast, notes ---------- */
+function pointIn(el){
+  const phone = $("#phone"), pr = phone.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return {x: r.left + r.width/2 - pr.left - phone.clientLeft, y: r.top + r.height/2 - pr.top - phone.clientTop};
+}
+function burst(pt, count, glyphs){
+  if(REDUCED_MOTION) return;
+  const fx = $("#fx");
+  for(let i=0;i<count;i++){
+    const s = document.createElement("span");
+    s.className = "particle";
+    s.textContent = glyphs[i % glyphs.length];
+    const ang = Math.PI*2*i/count + Math.random()*0.5;
+    const dist = 2.75 + Math.random()*2.5;
+    s.style.left = pt.x + "px"; s.style.top = pt.y + "px";
+    s.style.setProperty("--dx", (Math.cos(ang)*dist).toFixed(2) + "rem");
+    s.style.setProperty("--dy", (Math.sin(ang)*dist).toFixed(2) + "rem");
+    s.style.setProperty("--rot", Math.round(Math.random()*120-60) + "deg");
+    fx.appendChild(s);
+    setTimeout(() => s.remove(), 1000);
+  }
+}
+function burstAt(el, count, glyphs){ burst(pointIn(el), count, glyphs); }
+function floatXp(pt, text){
+  if(REDUCED_MOTION) return;
+  const s = document.createElement("span");
+  s.className = "xp-float";
+  s.textContent = text;
+  s.style.left = pt.x + "px"; s.style.top = (pt.y - 16) + "px";
+  $("#fx").appendChild(s);
+  setTimeout(() => s.remove(), 1200);
+}
+let toastTimer = null;
+function showToast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
 }
 
 function initNotes(){
   const fab = $("#notesFab"), sheet = $("#notesSheet"), backdrop = $("#notesBackdrop");
   if(!fab) return;
-  const open = () => { sheet.classList.add("open"); backdrop.classList.add("open"); };
+  const open = () => { sheet.classList.add("open"); backdrop.classList.add("open"); $("#closeNotes").focus(); };
   const close = () => { sheet.classList.remove("open"); backdrop.classList.remove("open"); };
   fab.onclick = open;
   backdrop.onclick = close;
-  $("#closeNotes").onclick = close;
+  $("#closeNotes").onclick = () => { close(); fab.focus(); };
+  $("#restartBtn").onclick = () => { close(); restart(); };
+  state._closeNotes = close;
+}
+function restart(){
+  closeLightbox();
+  Object.assign(state, {step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm",
+    view:"home", spriteSrc:null, quests:null, feed:[], loved:new Set(), thanked:false, lbIndex:null});
+  $("#nameInput").value = state.name;
+  selectSpecies("dog");
+  updateContinueBtn();
+  goToStep(1);
+  $("#phone").querySelector(".screen[data-step='1']").scrollTop = 0;
 }
 
 function initClock(){
@@ -558,7 +1283,6 @@ function initClock(){
   const tick = () => {
     const d = new Date();
     let h = d.getHours(), m = d.getMinutes();
-    const ap = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     el.textContent = `${h}:${String(m).padStart(2,"0")}`;
   };
@@ -575,6 +1299,34 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#tryAnotherBtn").onclick = cyclePreset;
   $("#keepBtn").onclick = keepTheme;
   $all(".mood-btn").forEach(b => b.onclick = () => setMood(b.dataset.mood));
+  $all(".tab").forEach(t => t.onclick = () => showView(t.dataset.view));
+  // Delegated clicks for rendered content inside the app screen.
+  $("#appScreen").addEventListener("click", (e) => {
+    const go = e.target.closest("[data-go]");
+    if(go){ showView(go.dataset.go); return; }
+    const tile = e.target.closest("[data-photo]");
+    if(tile){ openLightbox(Number(tile.dataset.photo)); return; }
+    const qb = e.target.closest("[data-quest]");
+    if(qb){ completeQuest(qb.dataset.quest, qb); return; }
+    if(e.target.closest("#thanksBtn") && !state.thanked){
+      const pt = pointIn(e.target.closest("#thanksBtn"));
+      state.thanked = true; renderReports();
+      burst(pt, 7, ["💛","✨"]);
+      showToast(`Thanks sent to ${SITTER} 💛`);
+    }
+  });
+  $("#lbClose").onclick = closeLightbox;
+  $("#lbLove").onclick = toggleLove;
+  $("#lightbox").addEventListener("click", (e) => { if(e.target.id === "lightbox") closeLightbox(); });
+  document.addEventListener("keydown", (e) => {
+    if(e.key !== "Escape") return;
+    if(!$("#lightbox").hidden) closeLightbox();
+    else if($("#notesSheet").classList.contains("open")) state._closeNotes();
+  });
+  // Keep the tinted theme correct if the OS flips light/dark mid-demo.
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if(state.themed && state.presetIdx != null) applyTheme(state.presetIdx);
+  });
   renderPhotoGrid();
   updateContinueBtn();
   $("#nameInput").value = state.name;

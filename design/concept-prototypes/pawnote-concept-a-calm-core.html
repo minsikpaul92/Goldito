@@ -1,287 +1,809 @@
+<!doctype html>
+<html lang="en">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calm Core</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap">
 <style>
 
+/* ---------- Tokens ----------
+   Calm Core: paper + ink are fixed. Only --primary (and its dark-mode twin
+   --primary-light) is derived from the pet photo. Sizes are rem (base 16px);
+   hairlines stay px; the phone DEVICE frame stays px because it imitates hardware. */
 :root{
-  --bg:#F7F7F5; --surface:#FFFFFF; --text:#1A1A1A; --text-muted:#5C5C5C;
-  --border:#E5E5E0; --success:#067647; --success-bg:#ECFDF3;
-  --error:#B42318; --error-bg:#FEF3F2;
-  --frame-backdrop:#E8E8E3; --frame-bezel:#1A1A1A; --frame-shadow:rgba(26,26,26,.18);
-  --primary:#2D6A4F; --primary-foreground:#FFFFFF;
-  --tint-bg:#F7F7F5; --tint-surface:#FFFFFF; --tint-border:#E5E5E0;
-  --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
-  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --font-display:var(--font-body);
+  --bg:#F6F2EA; --surface:#FBF8F2; --text:#24211D; --text-muted:#5F584E;
+  --border:#DCD3C4; --rule:#E6DFD3;
+  --success:#2F6B47; --success-bg:#E8F0E6;
+  --error:#A3301F; --error-bg:#F8E9E4;
+  --frame-backdrop:#E6E0D4; --frame-bezel:#1F1C18; --frame-shadow:rgba(36,33,29,.16);
+  --primary:#2D6A4F; --primary-foreground:#FFFFFF; --primary-light:#86C7A5;
+  --accent:var(--primary);           /* accent used for TEXT/strokes on paper */
+  --tint-bg:#F6F2EA; --tint-surface:#FBF8F2; --tint-border:#DCD3C4;
+  --radius-sm:0.25rem; --radius-md:0.375rem; --radius-lg:0.5rem;
+  --font-body:"Inter","Source Sans 3",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-display:"Fraunces","Newsreader",Georgia,"Times New Roman",serif;
+  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --scrim:rgba(24,21,18,.93); --hover:rgba(36,33,29,.04);
+  --gutter:1.25rem;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
-    --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
-    --error:#FF6B5E; --error-bg:#2E1512;
-    --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-    --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+    --bg:#191714; --surface:#211E1A; --text:#EFE9DF; --text-muted:#A79F92;
+    --border:#3A352E; --rule:#2E2A25;
+    --success:#6FCF97; --success-bg:#17271D;
+    --error:#FF8A78; --error-bg:#2E1915;
+    --frame-backdrop:#0E0D0B; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
+    --accent:var(--primary-light);
+    --tint-bg:#191714; --tint-surface:#211E1A; --tint-border:#3A352E;
+    --hover:rgba(239,233,223,.05);
   }
+  :root:not([data-theme="light"]) .accent-preview{--pv-accent:var(--pv-light)}
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
-  --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
-  --error:#FF6B5E; --error-bg:#2E1512;
-  --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-  --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+  --bg:#191714; --surface:#211E1A; --text:#EFE9DF; --text-muted:#A79F92;
+  --border:#3A352E; --rule:#2E2A25;
+  --success:#6FCF97; --success-bg:#17271D;
+  --error:#FF8A78; --error-bg:#2E1915;
+  --frame-backdrop:#0E0D0B; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
+  --accent:var(--primary-light);
+  --tint-bg:#191714; --tint-surface:#211E1A; --tint-border:#3A352E;
+  --hover:rgba(239,233,223,.05);
 }
+:root[data-theme="dark"] .accent-preview{--pv-accent:var(--pv-light)}
+
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--frame-backdrop);color:var(--text);font-family:var(--font-body);
+  font-size:1rem;line-height:1.45;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding:32px 16px;gap:16px;min-height:100%}
-h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+  padding:2rem 1rem;gap:1rem;min-height:100vh}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;font-weight:500;
+  font-optical-sizing:auto;letter-spacing:-0.01em}
 p{margin:0}
 img{max-width:100%}
-.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.ico{width:1.25rem;height:1.25rem;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round}
 
-.rig{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:402px}
-.rig-label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
-  font-weight:600}
+/* ---------- Rig + device (device dimensions intentionally px) ---------- */
+.rig{display:flex;flex-direction:column;align-items:center;gap:0.625rem;width:100%;max-width:402px}
+.rig-label{font-size:0.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);
+  font-weight:600;text-align:center}
+.rig-label em{font-family:var(--font-display);font-style:italic;text-transform:none;letter-spacing:0;
+  font-weight:400;font-size:0.875rem}
 
 .phone{width:402px;max-width:100%;background:var(--tint-bg);border-radius:40px;
   border:8px solid var(--frame-bezel);box-shadow:0 24px 48px var(--frame-shadow);
-  overflow:hidden;position:relative;display:flex;flex-direction:column;
-  height:826px;max-height:80vh}
+  overflow:hidden;overflow:clip;position:relative;display:flex;flex-direction:column;
+  height:826px;max-height:max(37.5rem, 86vh)}
 .statusbar{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;
-  padding:10px 22px 4px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:0.625rem 1.375rem 0.25rem;font-size:0.8125rem;font-weight:600;font-variant-numeric:tabular-nums;
   color:var(--text)}
-.statusbar .icons{display:flex;gap:4px;font-size:12px;opacity:.7}
-.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
-  padding:6px 20px 14px;border-bottom:1px solid var(--tint-border)}
-.brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
-.steps{display:flex;gap:6px}
-.step-dot{width:6px;height:6px;border-radius:50%;background:var(--tint-border)}
-.step-dot.active{background:var(--primary);width:16px;border-radius:3px}
-.back-btn{background:none;border:none;color:var(--primary);font-size:14px;font-weight:600;
-  cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
+.statusbar .icons{display:flex;gap:0.375rem;align-items:center;opacity:.75}
+.statusbar .icons svg{width:1.125rem;height:0.75rem}
 
-.screen{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:18px 20px 90px;
-  display:flex;flex-direction:column;gap:18px}
+/* Top bar: centered middle column (step dots during onboarding, masthead in app) */
+.topbar{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  padding:0.375rem 1.25rem 0.75rem;border-bottom:1px solid var(--tint-border);min-height:3rem}
+.topbar>:first-child{justify-self:start}
+.topbar>:last-child{justify-self:end}
+/* Three equal-weight slots: brand / Back on the left, step dots or masthead in the
+   middle, the info button on the right. Each view shows exactly one thing per slot. */
+.left-slot,.right-slot{display:flex;align-items:center;min-height:2.25rem}
+.brand{display:flex;align-items:center;gap:0.375rem;font-family:var(--font-display);font-weight:600;
+  font-size:1rem;letter-spacing:-0.01em}
+.brand .paw{width:1rem;height:1rem;color:var(--accent)}
+.masthead{display:none;align-items:center;gap:0.375rem;font-family:var(--font-display);font-weight:500;
+  font-size:1.25rem;letter-spacing:-0.01em;white-space:nowrap;background:none;border:none;padding:0.25rem 0.5rem;
+  cursor:pointer;color:var(--text);border-radius:var(--radius-md)}
+.masthead span{color:var(--accent)}
+.masthead .paw{width:1.0625rem;height:1.0625rem;color:var(--accent);transition:transform .3s var(--ease-spring)}
+.masthead:hover .paw{transform:rotate(-14deg) scale(1.1)}
+.center-slot{display:flex;justify-content:center}
+.steps{display:flex;gap:0.375rem}
+.step-dot{width:0.375rem;height:0.375rem;border-radius:0.1875rem;background:var(--tint-border);
+  transition:width .3s var(--ease-out), background .3s}
+.step-dot.active{background:var(--primary);width:1rem}
+.step-dot.done{background:var(--primary);opacity:.45}
+.back-btn{background:none;border:none;color:var(--accent);font-size:0.875rem;font-weight:600;
+  cursor:pointer;padding:0.375rem 0.5rem 0.375rem 0.125rem;margin-left:-0.25rem;display:flex;align-items:center;gap:0.125rem;
+  border-radius:var(--radius-md)}
+.back-btn:hover{background:var(--hover)}
+.back-btn .ico{width:1rem;height:1rem;transition:transform .2s var(--ease-out)}
+.back-btn:hover .ico{transform:translateX(-2px)}
+.notes-fab{flex:0 0 auto;width:2.25rem;height:2.25rem;border-radius:50%;
+  background:transparent;border:1px solid var(--tint-border);padding:0;
+  display:flex;align-items:center;justify-content:center;color:var(--accent);cursor:pointer;
+  transition:background .15s, border-color .15s}
+.notes-fab:hover{background:var(--hover);border-color:var(--accent)}
+.notes-fab .ico{width:1.125rem;height:1.125rem}
+.phone[data-view="step1"] .back-btn{display:none}
+.phone[data-view="step2"] .brand{display:none}
+.phone[data-view="app"] .left-slot>*{display:none}
+.phone[data-view="app"] .steps{display:none}
+.phone[data-view="app"] .masthead{display:flex}
+
+/* ---------- Screens ---------- */
+/* Vertical rhythm: 1.5rem between sections, 1.25rem side gutter, everything else from the
+   0.25rem scale. Onboarding pins its actions to the bottom so the primary button is always
+   in thumb reach, even on a 768px-tall laptop where the phone shrinks. */
+.screen{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:1.5rem var(--gutter) 2rem;
+  display:flex;flex-direction:column;gap:1.5rem;scrollbar-width:thin;scrollbar-color:var(--tint-border) transparent}
 .screen[hidden]{display:none}
+.screen.enter{animation:screenIn .26s var(--ease-out)}
+.screen.has-actions{padding-bottom:0}
+.actions{position:sticky;bottom:0;margin:auto calc(-1 * var(--gutter)) 0;display:flex;flex-direction:column;gap:0.625rem;
+  padding:1rem var(--gutter) 1.75rem;background:linear-gradient(to bottom, transparent, var(--tint-bg) 1rem);z-index:2}
+.actions::before{content:"";position:absolute;left:0;right:0;top:1rem;border-top:1px solid var(--tint-border);opacity:0;
+  transition:opacity .2s}
+.actions.raised::before{opacity:1}
+.actions>*{position:relative}
 
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;font-weight:600;color:var(--text-muted)}
-.input{font-family:var(--font-body);font-size:16px;padding:12px 14px;border-radius:var(--radius-md);
+.kicker{font-size:0.6875rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted)}
+.display{font-size:1.75rem;line-height:1.15}
+.page-head{display:flex;flex-direction:column;gap:0.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--tint-border)}
+.page-head .kicker{margin-bottom:-0.125rem}
+.meta-line{display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;color:var(--text-muted)}
+.meta-line .ico{width:1rem;height:1rem;color:var(--accent)}
+.lede{font-size:0.9375rem;color:var(--text-muted);line-height:1.5}
+.status-line{font-size:0.875rem;color:var(--text-muted);line-height:1.45}
+.fine{font-size:0.8125rem;color:var(--text-muted);line-height:1.45}
+/* Group labels carry the only rule above a list; lists never add a second top border. */
+.group-label{display:flex;align-items:center;gap:0.75rem;font-family:var(--font-display);font-style:italic;
+  font-size:1rem;color:var(--text);margin:0;font-weight:500}
+.group-label::after{content:"";flex:1;border-top:1px solid var(--tint-border)}
+.group-label .count{font-family:var(--font-body);font-style:normal;font-size:0.75rem;font-weight:600;
+  color:var(--text-muted);font-variant-numeric:tabular-nums}
+
+/* ---------- Onboarding ---------- */
+.field{display:flex;flex-direction:column;gap:0.375rem}
+.field label,.field .label{font-size:0.8125rem;font-weight:600;color:var(--text-muted)}
+.input{font-family:var(--font-body);font-size:1rem;padding:0.75rem 0.875rem;border-radius:var(--radius-md);
   border:1px solid var(--tint-border);background:var(--tint-surface);color:var(--text);width:100%}
-.input:focus{outline:2px solid var(--primary);outline-offset:1px}
+.input:hover{border-color:var(--border)}
+.input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.field-hint{font-size:0.75rem;color:var(--text-muted)}
 
-.chip-row{display:flex;gap:8px;flex-wrap:wrap}
-.chip{font-family:var(--font-body);font-size:14px;font-weight:600;padding:9px 16px;
-  border-radius:999px;border:1px solid var(--tint-border);background:var(--tint-surface);
-  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px}
+.chip-row{display:flex;gap:0.5rem;flex-wrap:wrap}
+.chip{font-family:var(--font-body);font-size:0.875rem;font-weight:600;padding:0.625rem 1.125rem;min-height:2.75rem;
+  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:var(--tint-surface);
+  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:0.375rem;
+  transition:background .15s, border-color .15s, color .15s, transform .12s}
+.chip:hover{border-color:var(--border)}
+.chip:active{transform:scale(.97)}
 .chip.active{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
 
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:2px solid transparent;
-  cursor:pointer;position:relative;background:var(--tint-surface)}
-.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.photo-thumb.selected{border-color:var(--primary)}
+/* One row of four: the samples plus Upload, so nothing is stranded on a second row. */
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem}
+.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:none;
+  cursor:pointer;position:relative;background:var(--tint-surface);padding:0;
+  box-shadow:0 0 0 1px var(--tint-border);transition:box-shadow .15s, transform .15s var(--ease-out)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s var(--ease-out)}
+.photo-thumb:hover img{transform:scale(1.05)}
+.photo-thumb:active{transform:scale(.97)}
+.photo-thumb.selected{box-shadow:0 0 0 2px var(--tint-bg), 0 0 0 4px var(--primary)}
+.photo-thumb .tick{position:absolute;right:0.25rem;bottom:0.25rem;width:1.25rem;height:1.25rem;border-radius:50%;
+  background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;
+  animation:pop .3s var(--ease-spring)}
+.photo-thumb .tick .ico{width:0.75rem;height:0.75rem;stroke-width:2.25}
 .photo-thumb.upload{display:flex;align-items:center;justify-content:center;flex-direction:column;
-  gap:4px;font-size:12px;color:var(--text-muted);border:2px dashed var(--tint-border);font-weight:600}
+  gap:0.25rem;font-size:0.75rem;color:var(--text-muted);box-shadow:none;border:1px dashed var(--border);font-weight:600}
+.photo-thumb.upload:hover{color:var(--accent);border-color:var(--accent)}
+.photo-thumb.upload.selected{border:none;box-shadow:0 0 0 2px var(--tint-bg), 0 0 0 4px var(--primary)}
 .photo-thumb input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 
-.btn{font-family:var(--font-body);font-size:16px;font-weight:600;padding:14px 20px;
+.btn{font-family:var(--font-body);font-size:1rem;font-weight:600;padding:0.875rem 1.25rem;min-height:3.25rem;
   border-radius:var(--radius-md);border:none;cursor:pointer;width:100%;
-  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+  display:flex;align-items:center;justify-content:center;gap:0.5rem;
+  transition:filter .15s, transform .12s var(--ease-out), background .3s, opacity .15s}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn .ico{width:1.125rem;height:1.125rem}
 .btn-primary{background:var(--primary);color:var(--primary-foreground)}
-.btn-primary:active{opacity:.9}
+.btn-primary:hover:not(:disabled){filter:brightness(1.08)}
 .btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-secondary{background:var(--tint-surface);color:var(--text);border:1px solid var(--tint-border)}
-.btn-ghost{background:none;color:var(--primary);width:auto;padding:8px 4px}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--tint-border)}
+.btn-secondary:hover{background:var(--hover);border-color:var(--border)}
+.btn-ghost{background:none;color:var(--accent);width:auto;padding:0.5rem 0.75rem;min-height:2.75rem}
+.btn-ghost:hover{background:var(--hover)}
+.btn-row{display:flex;flex-direction:column;gap:0.625rem}
 
-.card{background:var(--tint-surface);border:1px solid var(--tint-border);border-radius:var(--radius-lg);
-  padding:16px}
+.ruled{border-bottom:1px solid var(--tint-border);padding:0 0 1.5rem;
+  display:flex;flex-direction:column;gap:1rem}
+/* Swatch centers line up: the small coat swatch sits on the big preset swatch's midline. */
+.extract-row{display:grid;grid-template-columns:auto auto 1fr;align-items:start;gap:1rem}
+.swatch-col{display:flex;flex-direction:column;align-items:center;gap:0.5rem;margin-top:1rem}
+.extract-row .arrow{margin-top:2.125rem}
+.swatch-cap{font-size:0.75rem;color:var(--text-muted);font-weight:500}
+.swatch-cap b{display:block;color:var(--text);font-weight:600;font-size:0.875rem}
+.swatch{width:3.5rem;height:3.5rem;border-radius:var(--radius-md);flex:0 0 auto;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:background .4s}
+.swatch-lg{width:5.5rem;height:5.5rem;border-radius:var(--radius-lg);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+  transition:background .4s var(--ease-out)}
+.swatch-lg.bump{animation:bump .4s var(--ease-spring)}
+.arrow{color:var(--text-muted);display:flex}
+.preset-meta{display:flex;flex-direction:column;gap:0.5rem;align-items:flex-start;min-width:0}
+.preset-name{font-family:var(--font-display);font-size:1.5rem;line-height:1.1}
+/* Step 2 previews the candidate color before it is applied app-wide. */
+.screen[data-step="2"]{--pv:#2D6A4F;--pv-light:#86C7A5;--pv-accent:var(--pv)}
+.screen[data-step="2"] .btn-primary{background:var(--pv)}
 
-.extract-row{display:flex;align-items:center;gap:14px}
-.swatch{width:56px;height:56px;border-radius:var(--radius-md);flex:0 0 auto;
-  border:1px solid rgba(0,0,0,.08)}
-.swatch-lg{width:88px;height:88px;border-radius:20px;border:1px solid rgba(0,0,0,.08)}
-.arrow{color:var(--text-muted);font-size:20px}
-
-.contrast-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;
-  padding:6px 12px;border-radius:999px;background:var(--success-bg);color:var(--success);
+.contrast-badge{display:inline-flex;align-self:flex-start;align-items:center;gap:0.375rem;font-size:0.8125rem;font-weight:600;
+  padding:0.375rem 0.75rem;border-radius:var(--radius-sm);background:var(--success-bg);color:var(--success);
   font-variant-numeric:tabular-nums}
 .contrast-badge.fail{background:var(--error-bg);color:var(--error)}
 
-.pet-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
-.pet-chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:60px}
-.pet-chip img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid transparent}
-.pet-chip.active img{border-color:var(--primary)}
-.pet-chip span{font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:60px}
-.pet-chip.add{color:var(--text-muted)}
-.pet-chip.add .add-circle{width:52px;height:52px;border-radius:50%;border:1.5px dashed var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:20px}
+.accent-preview{display:flex;flex-direction:column;gap:0.625rem;font-size:0.875rem}
+.accent-preview .pv-row{display:flex;align-items:center;gap:0.625rem}
+.accent-preview .pv-check{width:1.25rem;height:1.25rem;border-radius:50%;background:var(--pv);
+  color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:background .4s}
+.accent-preview .pv-paw{width:1.25rem;height:1.25rem;color:var(--pv-accent);transition:color .4s}
+.accent-preview .pv-check .ico{width:0.875rem;height:0.875rem;stroke-width:2}
+.accent-preview .pv-link{color:var(--pv-accent);font-weight:600;transition:color .4s}
 
-.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
-  color:var(--text-muted)}
+/* ---------- Home ---------- */
+.status{display:flex;flex-direction:column;gap:1.25rem}
+.status-head{display:flex;gap:1rem;align-items:center}
+.avatar-wrap{position:relative;flex:0 0 auto}
+.avatar{width:4rem;height:4rem;border-radius:50%;object-fit:cover;display:block;
+  box-shadow:0 0 0 2px var(--tint-bg), 0 0 0 3px var(--accent)}
+.avatar-mood{position:absolute;right:-0.25rem;bottom:-0.125rem;width:1.625rem;height:1.625rem;border-radius:50%;
+  background:var(--tint-surface);box-shadow:0 0 0 1px var(--tint-border);display:flex;align-items:center;
+  justify-content:center;font-size:0.875rem;line-height:1}
+.avatar-mood.swap{animation:pop .35s var(--ease-spring)}
+.status-copy{display:flex;flex-direction:column;gap:0.25rem;min-width:0}
+.status-copy .kicker{color:var(--accent)}
+.status-text{font-family:var(--font-display);font-size:1.1875rem;line-height:1.3}
+.facts{margin:0;display:flex;flex-direction:column}
+.facts>div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:0.75rem 0;
+  border-top:1px solid var(--tint-border);font-size:0.875rem}
+.facts>div:last-child{border-bottom:1px solid var(--tint-border)}
+.facts dt{color:var(--text-muted)}
+.facts dd{margin:0;font-weight:500;text-align:right;font-variant-numeric:tabular-nums}
+.facts dd.next{color:var(--accent);font-weight:600}
+.facts dd.flash{animation:flash .9s var(--ease-out)}
 
-.hud-row{display:flex;gap:8px;flex-wrap:wrap}
-.hud-chip{font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px;
-  background:var(--tint-bg);border:1px solid var(--tint-border);display:flex;align-items:center;gap:5px}
+.mood-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem}
+.mood-btn{min-width:0;display:flex;flex-direction:column;align-items:center;gap:0.25rem;padding:0.625rem 0.25rem;min-height:3.75rem;
+  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:transparent;
+  cursor:pointer;font-size:0.75rem;font-weight:600;color:var(--text-muted);
+  transition:border-color .15s, background .15s, color .15s, transform .12s}
+.mood-btn:hover{background:var(--hover);color:var(--text)}
+.mood-btn:active{transform:scale(.96)}
+.mood-btn .emoji{font-size:1.25rem;line-height:1.2;display:block}
+.mood-btn.active{border-color:var(--primary);color:var(--text);box-shadow:inset 0 0 0 1px var(--primary);background:var(--tint-surface)}
+.mood-btn.active .emoji{animation:hop .45s var(--ease-spring)}
 
-.mood-row{display:flex;gap:8px}
-.mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;
-  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:var(--tint-surface);
-  cursor:pointer;font-size:11px;font-weight:600;color:var(--text-muted)}
-.mood-btn .emoji{font-size:18px}
-.mood-btn.active{border-color:var(--primary);background:var(--tint-bg);color:var(--text)}
+.latest{display:flex;align-items:center;gap:0.875rem;width:calc(100% + 1rem);margin:0 -0.5rem;text-align:left;cursor:pointer;
+  background:none;border:none;border-radius:var(--radius-md);
+  padding:0.75rem 0.5rem;color:var(--text);transition:background .15s}
+.latest:hover{background:var(--hover)}
+.latest img{width:3.25rem;height:3.25rem;border-radius:var(--radius-sm);object-fit:cover;flex:0 0 auto}
+.latest-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:0.25rem}
+.latest-line{font-size:0.9375rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.latest .kicker{color:var(--accent)}
+.latest>.ico{color:var(--text-muted);transition:transform .2s var(--ease-out)}
+.latest:hover>.ico{transform:translateX(3px);color:var(--accent)}
+.section-block{display:flex;flex-direction:column;gap:0.5rem}
 
-.tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);padding:10px 0 16px}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
-  font-weight:600;color:var(--text-muted)}
-.tab.active{color:var(--primary)}
-.tab .emoji{font-size:17px}
+/* ---------- Feed (timeline) ---------- */
+.feed-group{display:flex;flex-direction:column;gap:1rem}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.entry{display:grid;grid-template-columns:3.5rem 1fr;column-gap:0.875rem}
+.entry-time{font-size:0.75rem;font-weight:600;color:var(--text-muted);text-align:right;
+  font-variant-numeric:tabular-nums;padding-top:0.6875rem;white-space:nowrap}
+.entry-rail{position:relative;border-left:1px solid var(--tint-border);padding:0 0 0.75rem 0.625rem}
+.entry-rail::before{content:"";position:absolute;left:calc(-0.25rem - 0.5px);top:0.875rem;width:0.5rem;height:0.5rem;
+  border-radius:50%;background:var(--primary);box-shadow:0 0 0 3px var(--tint-bg)}
+.entry:last-child .entry-rail{padding-bottom:0}
+.entry-open{display:flex;gap:0.875rem;align-items:flex-start;width:100%;text-align:left;background:none;border:none;
+  border-radius:var(--radius-md);padding:0.5rem;cursor:zoom-in;color:var(--text);transition:background .15s}
+.entry-open:hover{background:var(--hover)}
+.entry-thumb{width:4rem;height:4rem;border-radius:var(--radius-sm);object-fit:cover;flex:0 0 auto;
+  transition:transform .25s var(--ease-out)}
+.entry-open:hover .entry-thumb{transform:scale(1.04)}
+.entry-text{min-width:0;display:flex;flex-direction:column;gap:0.375rem;padding-top:0.125rem}
+.entry-caption{font-size:0.9375rem;line-height:1.4}
+.entry-meta{font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:0.375rem}
+.entry-meta b{color:var(--accent);font-weight:600}
+.ai-tag{display:inline-flex;align-items:center;gap:0.25rem}
+.ai-tag .ico{width:0.75rem;height:0.75rem}
+.feed-end{display:flex;flex-direction:column;align-items:center;gap:0.5rem;text-align:center;font-family:var(--font-display);
+  font-style:italic;color:var(--text-muted);font-size:0.9375rem;padding:0.5rem 1rem 0}
+.feed-end .paw-trail-static{display:flex;gap:0.375rem;color:var(--tint-border)}
+.feed-end .paw-trail-static .paw{width:0.875rem;height:0.875rem}
+.feed-end .paw-trail-static .paw:nth-child(even){transform:translateY(-0.25rem) rotate(12deg)}
+.feed-end .paw-trail-static .paw:nth-child(odd){transform:rotate(-8deg)}
 
-.notes-fab{flex:0 0 auto;width:30px;height:30px;border-radius:50%;
-  background:var(--tint-bg);border:1px solid var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
-  color:var(--primary);cursor:pointer;margin-left:10px}
+/* Photo viewer (stays inside the phone; Close is always visible) */
+.viewer{position:absolute;inset:0;z-index:7;background:var(--scrim);display:flex;flex-direction:column;
+  -webkit-backdrop-filter:blur(14px) saturate(.8);backdrop-filter:blur(14px) saturate(.8);
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.viewer.open{opacity:1;pointer-events:auto}
+.viewer-top{display:flex;justify-content:space-between;align-items:center;padding:3.25rem 1rem 0.75rem;color:#F6F2EA}
+.viewer-top .when{font-size:0.8125rem;font-weight:600;letter-spacing:.04em}
+.viewer-close{width:2.5rem;height:2.5rem;border-radius:50%;border:1px solid rgba(246,242,234,.35);background:rgba(246,242,234,.08);
+  color:#F6F2EA;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s}
+.viewer-close:hover{background:rgba(246,242,234,.18)}
+.viewer figure{margin:0;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:1rem;padding:0 1rem 2rem}
+.viewer img{width:100%;max-height:60%;object-fit:cover;border-radius:var(--radius-lg);flex:0 1 auto;min-height:0;
+  transform:scale(.94);transition:transform .3s var(--ease-out)}
+.viewer.open img{transform:scale(1)}
+.viewer figcaption{color:#F6F2EA;font-family:var(--font-display);font-size:1.125rem;line-height:1.45}
+.viewer figcaption small{display:block;margin-top:0.375rem;font-family:var(--font-body);font-size:0.75rem;opacity:.75}
+.viewer-nav{display:flex;gap:0.625rem;padding:0 1rem 2rem}
+.viewer-nav .btn{background:rgba(246,242,234,.1);color:#F6F2EA;border:1px solid rgba(246,242,234,.25)}
+.viewer-nav .btn:hover{background:rgba(246,242,234,.18)}
+
+/* ---------- Care (checklist) ---------- */
+.progress{display:flex;flex-direction:column;gap:0.75rem}
+.progress-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0.25rem 1rem;font-size:0.875rem}
+.progress-top>span:first-child{white-space:nowrap}
+.progress-top b{font-family:var(--font-display);font-weight:500;font-size:1.375rem;font-variant-numeric:tabular-nums}
+.progress-track{height:2px;background:var(--tint-border);position:relative;margin:0.5rem 0 0.25rem}
+.progress-fill{position:absolute;left:0;top:0;bottom:0;background:var(--primary);transition:width .6s var(--ease-out)}
+/* A small paw rides the head of the progress line */
+.progress-paw{position:absolute;top:50%;width:1.125rem;height:1.125rem;margin:-0.5625rem 0 0 -0.5625rem;color:var(--accent);
+  background:var(--tint-bg);border-radius:50%;padding:0.0625rem;transition:left .6s var(--ease-out)}
+.progress-paw.step{animation:nudge .6s var(--ease-out)}
+.checklist{list-style:none;margin:0;padding:0}
+.check{display:flex;align-items:flex-start;gap:0.875rem;width:calc(100% + 1rem);margin:0 -0.5rem;text-align:left;background:none;border:none;
+  border-bottom:1px solid var(--tint-border);border-radius:0;padding:0.875rem 0.5rem;cursor:pointer;color:var(--text);
+  transition:background .15s}
+.check:hover{background:var(--hover)}
+.checklist li:last-child .check{border-bottom:none}
+.checklist li{transition:opacity .3s, transform .3s var(--ease-out)}
+.checklist li.leaving{opacity:0;transform:translateX(1rem)}
+.checklist li.arriving{animation:arrive .4s var(--ease-out)}
+.check-circle{position:relative;width:1.5rem;height:1.5rem;border-radius:50%;border:1.5px solid var(--accent);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;color:transparent;margin-top:0.0625rem;
+  transition:background .2s, border-color .2s, transform .15s}
+.check:hover .check-circle{transform:scale(1.06)}
+.check:hover[aria-checked="false"] .check-circle{color:var(--tint-border)}
+.check-circle .ico{width:0.875rem;height:0.875rem;stroke-width:2;stroke-dasharray:24;stroke-dashoffset:0}
+.check[aria-checked="true"] .check-circle{background:var(--primary);border-color:var(--primary);color:#fff}
+.check.popping .check-circle{animation:pop .4s var(--ease-spring)}
+.check.popping .check-circle .ico{animation:draw .35s .08s var(--ease-out) both}
+.check-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:0.125rem}
+.check-title{font-size:0.9375rem;font-weight:500}
+.check-meta{font-size:0.8125rem;color:var(--text-muted)}
+.check[aria-checked="true"] .check-title{color:var(--text-muted);text-decoration:line-through;
+  text-decoration-color:var(--border)}
+.check-when{font-size:0.75rem;font-weight:600;color:var(--text-muted);white-space:nowrap;
+  font-variant-numeric:tabular-nums;padding-top:0.125rem}
+.check[aria-checked="true"] .check-when{color:var(--success)}
+.kind{display:inline-block;font-size:0.625rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-right:0.375rem}
+.empty-line{display:flex;align-items:center;gap:0.625rem;font-size:0.9375rem;color:var(--text-muted);font-style:italic;
+  font-family:var(--font-display);padding:0.875rem 0}
+.empty-line .paw{width:1.125rem;height:1.125rem;color:var(--accent);flex:0 0 auto}
+
+/* ---------- Reports (letter) ---------- */
+.letter{display:flex;flex-direction:column;gap:1.5rem}
+.letter-head{display:flex;flex-direction:column;gap:0.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--tint-border)}
+.letter-meta{display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;color:var(--text-muted)}
+.draft-dot{width:0.5rem;height:0.5rem;border-radius:50%;background:var(--success);flex:0 0 auto;animation:breathe 2.4s ease-in-out infinite}
+.letter-body{font-family:var(--font-display);font-size:1.0625rem;line-height:1.6;display:flex;flex-direction:column;gap:1rem}
+.letter-body .salutation{font-style:italic}
+.highlights{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.highlights li{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 0;border-bottom:1px solid var(--tint-border);font-size:0.9375rem}
+.highlights li:last-child{border-bottom:none}
+.highlights li .paw{width:0.875rem;height:0.875rem;color:var(--accent);flex:0 0 auto;margin-top:0.25rem}
+.signoff{font-family:var(--font-display);font-size:1.0625rem;line-height:1.5}
+.signoff .sig{display:block;font-style:italic;font-size:1.375rem;color:var(--accent);margin-top:0.25rem}
+.letter-foot{display:flex;flex-direction:column;gap:1rem;padding-top:1.25rem;border-top:1px solid var(--tint-border)}
+.thanks{position:relative}
+.thanks.sent{background:var(--success);cursor:default}
+.thanks.sent:hover{filter:none}
+
+/* ---------- Tab bar (flex child, not absolute, so it survives font scaling) ---------- */
+.tabbar{flex:0 0 auto;display:flex;background:var(--tint-bg);border-top:1px solid var(--tint-border);
+  padding:0 0.5rem 1.5rem}
+.tabbar[hidden]{display:none}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-size:0.6875rem;
+  font-weight:600;color:var(--text-muted);background:none;border:none;cursor:pointer;min-height:3.25rem;
+  padding:0.625rem 0.25rem 0.25rem;position:relative;letter-spacing:.02em;transition:color .15s}
+.tab:hover{color:var(--text)}
+.tab::before{content:"";position:absolute;top:-1px;left:50%;width:0;height:2px;background:var(--primary);
+  transition:width .25s var(--ease-out), left .25s var(--ease-out)}
+.tab[aria-current="page"]{color:var(--accent)}
+.tab[aria-current="page"]::before{left:28%;width:44%}
+.tab .ico{width:1.375rem;height:1.375rem;transition:transform .2s var(--ease-spring)}
+.tab:active .ico{transform:scale(.9)}
+.tab[aria-current="page"] .ico{transform:translateY(-1px)}
+
+/* iOS-style home indicator: device chrome, so it sits above everything and ignores clicks */
+.home-indicator{position:absolute;left:50%;bottom:0.5rem;width:8.5rem;height:0.3125rem;margin-left:-4.25rem;
+  border-radius:999px;background:var(--text);opacity:.8;z-index:9;pointer-events:none}
+
+/* ---------- Notes sheet ---------- */
 .notes-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);border-radius:20px 20px 0 0;padding:18px 20px 24px;
-  transform:translateY(100%);transition:transform .25s ease;z-index:6;max-height:70%;overflow-y:auto}
-.notes-sheet.open{transform:translateY(0)}
-.notes-sheet h3{font-size:16px;margin-bottom:4px}
-.notes-sheet .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--primary);
-  background:var(--tint-bg);border-radius:999px;padding:3px 10px;margin-bottom:8px}
-.notes-sheet ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:7px;
-  font-size:13.5px;color:var(--text-muted);line-height:1.45}
-.notes-sheet .close-notes{margin-top:16px}
+  border-top:1px solid var(--tint-border);border-radius:1.25rem 1.25rem 0 0;padding:0 1.25rem 2.25rem;
+  transform:translateY(100%);transition:transform .32s var(--ease-out), visibility .32s;z-index:6;max-height:82%;overflow-y:auto;
+  visibility:hidden;box-shadow:0 -0.5rem 2rem rgba(0,0,0,.12)}
+.notes-sheet.open{transform:translateY(0);visibility:visible}
+/* Sticky head keeps Close visible however far the notes are scrolled */
+.sheet-head{position:sticky;top:0;z-index:1;background:var(--tint-surface);margin:0 -1.25rem;padding:0.625rem 1.25rem 0.75rem;
+  display:grid;grid-template-columns:1fr auto;align-items:start;gap:0.5rem 1rem;border-bottom:1px solid transparent;transition:border-color .2s}
+.sheet-head.raised{border-bottom-color:var(--tint-border)}
+.sheet-handle{grid-column:1 / -1;justify-self:center;width:2.25rem;height:0.25rem;border-radius:999px;background:var(--tint-border);margin-bottom:0.5rem}
+.sheet-close{width:2.25rem;height:2.25rem;border-radius:50%;border:1px solid var(--tint-border);background:transparent;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);transition:background .15s}
+.sheet-close:hover{background:var(--hover)}
+.notes-sheet h3{font-size:1.375rem}
+.notes-sheet .tag{display:block;font-size:0.6875rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:0.25rem}
+.notes-sheet .lede-notes{margin-top:0.25rem}
+.notes-sheet h4{margin:1rem 0 0;font-size:0.6875rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text-muted)}
+.notes-sheet ul{margin:0.5rem 0 0;padding-left:1.125rem;display:flex;flex-direction:column;gap:0.4375rem;
+  font-size:0.84375rem;color:var(--text-muted);line-height:1.45}
+.notes-sheet ul b{color:var(--text);font-weight:600}
+.notes-sheet .btn-row{margin-top:1.25rem}
 .notes-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;
   transition:opacity .2s;z-index:5}
 .notes-backdrop.open{opacity:1;pointer-events:auto}
 
-.status-line{font-size:14px;color:var(--text-muted);line-height:1.4}
-.pill-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em;color:var(--primary)}
+.live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+/* ---------- Paw micro-interactions ----------
+   One paw print (#i-paw, filled) in three moments, all in the pet's accent color:
+   1. Walk: prints step in one after another, alternating left/right, then fade (welcome).
+   2. Stamp: a paw thumps into the success toast (care check-off, thank-you sent).
+   3. Burst: small paws float up out of whatever you just tapped. */
+.paw{fill:currentColor;stroke:none;width:1rem;height:1rem;flex:0 0 auto}
 
+.toast{position:absolute;left:0.875rem;right:0.875rem;bottom:var(--toast-bottom,6.25rem);z-index:8;display:flex;align-items:center;gap:0.75rem;
+  padding:0.625rem 0.5rem 0.625rem 0.625rem;border-radius:var(--radius-lg);background:#24211D;color:#F6F2EA;
+  border:1px solid rgba(246,242,234,.1);box-shadow:0 0.75rem 1.75rem rgba(0,0,0,.22);
+  transform:translateY(0.75rem) scale(.98);opacity:0;pointer-events:none;transition:transform .35s var(--ease-spring), opacity .2s}
+.toast.show{transform:none;opacity:1;pointer-events:auto}
+.toast .stamp{width:2.25rem;height:2.25rem;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;
+  justify-content:center;flex:0 0 auto}
+.toast .stamp .paw{width:1.125rem;height:1.125rem;transform:rotate(-12deg)}
+.toast.show .stamp .paw{animation:stamp .55s var(--ease-spring)}
+.toast-text{flex:1;min-width:0;font-size:0.8125rem;line-height:1.35;color:rgba(246,242,234,.75)}
+.toast-text b{display:block;font-size:0.875rem;font-weight:600;color:#F6F2EA}
+.toast-undo{background:none;border:none;color:var(--primary-light);font-weight:600;font-size:0.875rem;padding:0.5rem 0.75rem;
+  border-radius:var(--radius-md);cursor:pointer;min-height:2.75rem}
+.toast-undo:hover{background:rgba(246,242,234,.08)}
+.toast-undo[hidden]{display:none}
+
+.burst{position:absolute;z-index:8;pointer-events:none;width:0;height:0}
+.burst .paw{position:absolute;left:-0.5625rem;top:-0.5625rem;width:1.125rem;height:1.125rem;color:var(--accent);
+  opacity:0;animation:burst 1s var(--ease-out) forwards;animation-delay:var(--d,0s);
+  filter:drop-shadow(0 0 2px var(--tint-bg))}
+
+.welcome{position:absolute;inset:0;z-index:8;background:var(--tint-bg);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:0.75rem;opacity:0;pointer-events:none;transition:opacity .35s var(--ease-out);text-align:center;padding:2rem}
+.welcome.show{opacity:1;pointer-events:auto}
+.welcome .walk{position:relative;width:13rem;height:9rem}
+.welcome .pp{position:absolute;width:1.625rem;height:1.625rem;color:var(--primary);opacity:0}
+.welcome.show .pp{animation:pawStep 1.3s var(--ease-out) forwards;animation-delay:var(--d)}
+.welcome h2{font-size:1.875rem;opacity:0}
+.welcome h2 span{color:var(--accent)}
+.welcome p{font-size:0.9375rem;color:var(--text-muted);opacity:0}
+.welcome.show h2{animation:rise .5s .7s var(--ease-out) forwards}
+.welcome.show p{animation:rise .5s .85s var(--ease-out) forwards}
+
+@keyframes pawStep{
+  0%{opacity:0;transform:rotate(var(--r,0deg)) scale(.3)}
+  14%{opacity:1;transform:rotate(var(--r,0deg)) scale(1.18)}
+  26%{transform:rotate(var(--r,0deg)) scale(1)}
+  72%{opacity:1}
+  100%{opacity:0;transform:rotate(var(--r,0deg)) scale(.92)}}
+@keyframes stamp{0%{transform:scale(2.1) rotate(-34deg);opacity:0}55%{transform:scale(.88) rotate(-8deg);opacity:1}100%{transform:scale(1) rotate(-12deg)}}
+@keyframes burst{0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0)}18%{opacity:1}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1) rotate(var(--r))}}
+@keyframes nudge{0%,100%{transform:scale(1)}40%{transform:scale(1.4) rotate(-14deg)}}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes draw{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+@keyframes bump{0%,100%{transform:scale(1)}40%{transform:scale(1.07)}}
+@keyframes hop{0%,100%{transform:none}40%{transform:translateY(-0.375rem) rotate(-8deg)}}
+@keyframes flash{0%{background:color-mix(in srgb, var(--primary) 16%, transparent)}100%{background:transparent}}
+@keyframes arrive{from{opacity:0;transform:translateY(-0.5rem)}to{opacity:1;transform:none}}
+@keyframes screenIn{from{opacity:0;transform:translateY(0.375rem)}to{opacity:1;transform:none}}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes rise{from{opacity:0;transform:translateY(0.5rem)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition:none !important;animation:none !important}
+  .welcome .pp,.welcome h2,.welcome p{opacity:1}
+}
 
 </style>
 
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/></symbol>
+    <symbol id="i-feed" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="m20.5 16-4.5-4.5L7 19"/></symbol>
+    <symbol id="i-care" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.8-5"/></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="m4 6.5 8 6 8-6"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5.5 12.5 4 4 9-9.5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5h3l1.5-2h7l1.5 2h3v10H4z"/><circle cx="12" cy="13.2" r="3.2"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11"/><path d="M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 4.5l1.6 4.4 4.4 1.6-4.4 1.6L12 16.5l-1.6-4.4L6 10.5l4.4-1.6z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="1.5"/><path d="M4 10h16"/><path d="M8.5 3.5v4"/><path d="M15.5 3.5v4"/></symbol>
+    <!-- Filled paw print: main pad + four toes -->
+    <symbol id="i-paw" viewBox="0 0 24 24"><ellipse cx="5.6" cy="10.4" rx="2.05" ry="2.6" transform="rotate(-20 5.6 10.4)"/><ellipse cx="9.4" cy="6.2" rx="2.1" ry="2.75" transform="rotate(-6 9.4 6.2)"/><ellipse cx="14.6" cy="6.2" rx="2.1" ry="2.75" transform="rotate(6 14.6 6.2)"/><ellipse cx="18.4" cy="10.4" rx="2.05" ry="2.6" transform="rotate(20 18.4 10.4)"/><path d="M12 11.6c-2.7 0-5.6 3.4-5.6 5.8 0 1.8 1.3 2.8 2.9 2.8 1.1 0 1.8-.55 2.7-.55s1.6.55 2.7.55c1.6 0 2.9-1 2.9-2.8 0-2.4-2.9-5.8-5.6-5.8z"/></symbol>
+  </defs>
+</svg>
+
 <div class="rig">
-  <div class="rig-label">Concept A of 3 &middot; Calm Core</div>
-  <div class="phone">
+  <div class="rig-label">Concept A of 3 &middot; Calm Core <em>&mdash; a trusted family journal</em></div>
+  <div class="phone" id="phone">
     <div class="notes-backdrop" id="notesBackdrop"></div>
     <div class="statusbar">
       <span id="clockTime">9:41</span>
-      <span class="icons">●●●● &nbsp; 📶 &nbsp; 🔋</span>
+      <span class="icons" aria-hidden="true">
+        <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx=".5" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx=".5" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx=".5" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx=".5" fill="currentColor"/></svg>
+        <svg viewBox="0 0 26 12"><rect x=".75" y=".75" width="21" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="3" width="15" height="6" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="1" fill="currentColor"/></svg>
+      </span>
     </div>
     <div class="topbar">
-      <button class="back-btn" id="backBtn" style="visibility:hidden">&lsaquo; Back</button>
-      <div class="steps">
-        <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+      <div class="left-slot">
+        <div class="brand"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg>PawNote</div>
+        <button class="back-btn" id="backBtn"><svg class="ico" aria-hidden="true"><use href="#i-left"/></svg>Back</button>
       </div>
-      <div style="display:flex;align-items:center">
-        <div class="brand">🐾 PawNote</div>
-        <button class="notes-fab" id="notesFab" aria-label="About this version">ⓘ</button>
+      <div class="center-slot">
+        <div class="steps" role="img" aria-label="Step 1 of 3" id="stepDots">
+          <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+        </div>
+        <button class="masthead" id="mastheadBtn" aria-label="PawNote, go to Home"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><b style="font-weight:inherit">Paw<span>Note</span></b></button>
+      </div>
+      <div class="right-slot">
+        <button class="notes-fab" id="notesFab" aria-label="About this version" aria-expanded="false" aria-controls="notesSheet"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg></button>
       </div>
     </div>
 
-    
-<div class="screen" data-step="1">
-  <div>
-    <h2>Add your pet</h2>
-    <p class="status-line">A few details, then we'll match PawNote to them.</p>
+<div class="screen has-actions" data-step="1">
+  <div class="page-head">
+    <p class="kicker">Setup &middot; 1 of 3</p>
+    <h1 class="display">Add your pet</h1>
+    <p class="lede">A few details, then PawNote takes its accent color from your pet's photo.</p>
   </div>
   <div class="field">
     <label for="nameInput">Pet's name</label>
-    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori">
+    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori" autocomplete="off" maxlength="20">
   </div>
   <div class="field">
-    <label>Species</label>
-    <div class="chip-row">
-      <button class="chip species-chip active" data-species="dog">🐶 Dog</button>
-      <button class="chip species-chip" data-species="cat">🐱 Cat</button>
+    <span class="label" id="speciesLabel">Species</span>
+    <div class="chip-row" role="group" aria-labelledby="speciesLabel">
+      <button class="chip species-chip active" data-species="dog" aria-pressed="true">🐶 Dog</button>
+      <button class="chip species-chip" data-species="cat" aria-pressed="false">🐱 Cat</button>
     </div>
   </div>
   <div class="field">
-    <label>Photo</label>
-    <div class="photo-grid" id="photoGrid"></div>
+    <span class="label" id="photoLabel">Photo</span>
+    <div class="photo-grid" id="photoGrid" role="group" aria-labelledby="photoLabel"></div>
+    <p class="field-hint">Pick a sample or upload your own. The color comes from the coat.</p>
   </div>
-  <button class="btn btn-primary" id="continueBtn">Continue</button>
+  <div class="actions">
+    <button class="btn btn-primary" id="continueBtn">Continue<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+  </div>
 </div>
 
-<div class="screen" data-step="2" hidden>
-  <div>
-    <h2>Your app now matches <span id="petNamePreview">Bori</span> <span id="petEmojiPreview">🐶</span></h2>
-    <p class="status-line">We read the coat color from the photo and snap it to the nearest of a fixed set of accessible presets &mdash; never the raw photo color, so text always stays readable.</p>
+<div class="screen has-actions" data-step="2" hidden>
+  <div class="page-head">
+    <p class="kicker">Setup &middot; 2 of 3</p>
+    <h1 class="display">PawNote, in <span id="petNamePreview">Bori</span>'s colors <span id="petEmojiPreview">🐶</span></h1>
+    <p class="lede">We read the coat color and snap it to the closest accessible preset, so text always stays readable.</p>
   </div>
-  <div class="card">
+  <div class="ruled">
     <div class="extract-row">
-      <div>
+      <div class="swatch-col">
         <div class="swatch" id="rawSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px">Detected</p>
+        <p class="swatch-cap">Coat</p>
       </div>
-      <div class="arrow">&rarr;</div>
-      <div>
-        <div class="swatch-lg" id="presetSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px" id="presetName">Forest</p>
+      <div class="arrow" aria-hidden="true"><svg class="ico"><use href="#i-arrow"/></svg></div>
+      <div class="preset-meta">
+        <div style="display:flex;align-items:center;gap:0.875rem">
+          <div class="swatch-lg" id="presetSwatch"></div>
+          <div>
+            <p class="swatch-cap">Preset</p>
+            <p class="preset-name" id="presetName">Forest</p>
+          </div>
+        </div>
       </div>
     </div>
-    <div style="margin-top:14px" class="contrast-badge" id="contrastBadge">&mdash;</div>
+    <div class="contrast-badge" id="contrastBadge" aria-live="polite">&mdash;</div>
   </div>
-  <button class="btn btn-secondary" id="tryAnotherBtn">Try another preset</button>
-  <button class="btn btn-primary" id="keepBtn">Keep this look</button>
+  <div class="accent-preview" id="accentPreview" aria-label="Accent preview">
+    <p class="kicker">Only the accent changes</p>
+    <div class="pv-row"><span class="pv-check"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg></span><span>Breakfast &middot; done 8:02 AM</span></div>
+    <div class="pv-row"><svg class="paw pv-paw" aria-hidden="true"><use href="#i-paw"/></svg><span class="pv-link">Read today's letter from Jisoo &rarr;</span></div>
+    <p class="fine">Paper, ink and rules stay the same for every pet.</p>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" id="tryAnotherBtn">Try another preset</button>
+    <button class="btn btn-primary" id="keepBtn">Keep this look</button>
+  </div>
 </div>
 
-
-    <div class="screen" data-step="3" hidden>
-      
-<div class="pet-row" id="petRow">
-  <div class="pet-chip active"><img id="homePetChipImg" src="" alt=""><span id="homePetChipName">Bori</span></div>
-  <div class="pet-chip add"><div class="add-circle">+</div><span>Add pet</span></div>
-</div>
-<div class="section-title">Today</div>
-<div class="card">
-  <div style="display:flex;gap:12px;align-items:center">
-    <img id="homePetAvatar" src="" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
-    <div>
-      <div style="font-weight:700;font-size:15px" id="homePetName">Bori</div>
-      <p class="status-line" id="moodStatusLine">Calm and settled</p>
+<!-- ===== App: Home ===== -->
+<div class="screen app-screen" data-tab="home" hidden>
+  <header class="page-head">
+    <p class="kicker js-date">Today</p>
+    <h1 class="display"><span class="js-name">Bori</span>'s day</h1>
+    <p class="lede">With Jisoo since 8:00 AM.</p>
+    <p class="meta-line"><svg class="ico" aria-hidden="true"><use href="#i-calendar"/></svg>Pick-up tomorrow &middot; 10:00 AM</p>
+  </header>
+  <section class="status" aria-label="Status right now">
+    <div class="status-head">
+      <div class="avatar-wrap">
+        <img id="homePetAvatar" class="avatar" src="" alt="">
+        <span class="avatar-mood" id="avatarMood" aria-hidden="true">😌</span>
+      </div>
+      <div class="status-copy">
+        <p class="kicker">Right now</p>
+        <p class="status-text" id="moodStatusLine" aria-live="polite">Calm and settled</p>
+      </div>
     </div>
-  </div>
-  <div class="hud-row" style="margin-top:14px">
-    <div class="hud-chip">🍽️ Fed &middot; 8:02 AM</div>
-    <div class="hud-chip">💩 Logged &middot; 11:15 AM</div>
-    <div class="hud-chip">🐕 Next: Walk &middot; 4:00 PM</div>
-  </div>
-  <div class="mood-row" style="margin-top:12px">
-    <button class="mood-btn" data-mood="happy"><span class="emoji">😊</span>Happy</button>
-    <button class="mood-btn active" data-mood="calm"><span class="emoji">😌</span>Calm</button>
-    <button class="mood-btn" data-mood="hungry"><span class="emoji">🍽️</span>Hungry</button>
-    <button class="mood-btn" data-mood="sleepy"><span class="emoji">😴</span>Sleepy</button>
+    <dl class="facts">
+      <div><dt id="factMealLabel">Breakfast</dt><dd id="factMeal">Fed &middot; 8:02 AM</dd></div>
+      <div><dt id="factBathLabel">Bathroom</dt><dd>Logged &middot; 11:15 AM</dd></div>
+      <div><dt>Next</dt><dd class="next" id="factNext">Walk &middot; 4:00 PM</dd></div>
+    </dl>
+    <div class="section-block">
+      <span class="label fine" id="moodLabel" style="font-weight:600">Preview a mood</span>
+      <div class="mood-row" role="group" aria-labelledby="moodLabel">
+        <button class="mood-btn" data-mood="happy" aria-pressed="false"><span class="emoji" aria-hidden="true">😊</span>Happy</button>
+        <button class="mood-btn active" data-mood="calm" aria-pressed="true"><span class="emoji" aria-hidden="true">😌</span>Calm</button>
+        <button class="mood-btn" data-mood="hungry" aria-pressed="false"><span class="emoji" aria-hidden="true">🍽️</span>Hungry</button>
+        <button class="mood-btn" data-mood="sleepy" aria-pressed="false"><span class="emoji" aria-hidden="true">😴</span>Sleepy</button>
+      </div>
+    </div>
+  </section>
+  <section class="section-block" aria-labelledby="latestLabel">
+    <h2 class="group-label" id="latestLabel">Latest from Jisoo</h2>
+    <button class="latest" id="latestBtn" aria-label="Open the feed">
+      <img id="latestThumb" src="" alt="">
+      <span class="latest-text">
+        <span class="kicker"><span id="latestTime">2:40 PM</span> &middot; AI caption</span>
+        <span class="latest-line" id="latestCaption">&hellip;</span>
+      </span>
+      <svg class="ico" aria-hidden="true"><use href="#i-right"/></svg>
+    </button>
+  </section>
+</div>
+
+<!-- ===== App: Feed ===== -->
+<div class="screen app-screen" data-tab="feed" hidden>
+  <header class="page-head">
+    <p class="kicker js-date">Today</p>
+    <h1 class="display">Feed</h1>
+    <p class="lede">Photos from Jisoo as the day goes. PawNote AI writes the captions, so Jisoo never types.</p>
+  </header>
+  <div id="feedGroups" style="display:flex;flex-direction:column;gap:1.5rem"></div>
+  <div class="feed-end">
+    <span class="paw-trail-static" aria-hidden="true"><svg class="paw"><use href="#i-paw"/></svg><svg class="paw"><use href="#i-paw"/></svg><svg class="paw"><use href="#i-paw"/></svg></span>
+    <p>That's all for now. Jisoo usually posts again around 5 PM.</p>
   </div>
 </div>
-<p class="status-line" style="font-size:12.5px">Tap a mood to preview how the status line updates &mdash; real data comes from sitter check-ins.</p>
 
+<!-- ===== App: Care ===== -->
+<div class="screen app-screen" data-tab="care" hidden>
+  <header class="page-head">
+    <p class="kicker js-date">Today</p>
+    <h1 class="display">Care</h1>
+    <p class="lede">The meds, meals and walks you set up. Tap an item to check it off, the way Jisoo will.</p>
+  </header>
+  <div class="progress">
+    <div class="progress-top"><span><b id="careCount">0 of 0</b> done</span><span class="fine" id="careNextHint"></span></div>
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="careFill" style="width:0%"></div>
+      <svg class="paw progress-paw" id="carePaw" style="left:0%"><use href="#i-paw"/></svg></div>
+  </div>
+  <section aria-labelledby="todoLabel" class="section-block">
+    <h2 class="group-label" id="todoLabel">To do <span class="count" id="todoCount"></span></h2>
+    <ul class="checklist" id="careTodo"></ul>
+  </section>
+  <section aria-labelledby="doneLabel" class="section-block">
+    <h2 class="group-label" id="doneLabel">Done <span class="count" id="doneCount"></span></h2>
+    <ul class="checklist" id="careDone"></ul>
+  </section>
+  <div class="live" id="careLive" aria-live="polite"></div>
+</div>
+
+<!-- ===== App: Reports ===== -->
+<div class="screen app-screen" data-tab="reports" hidden>
+  <article class="letter">
+    <header class="letter-head">
+      <p class="kicker">Daily report</p>
+      <h1 class="display js-date-long">Today</h1>
+      <p class="letter-meta"><span class="draft-dot" aria-hidden="true"></span>From Jisoo &middot; live draft, updates as the day goes</p>
+    </header>
+    <div class="letter-body" id="letterBody"></div>
+    <section class="section-block" aria-labelledby="hlLabel">
+      <h2 class="group-label" id="hlLabel">Highlights</h2>
+      <ul class="highlights" id="letterHighlights"></ul>
+    </section>
+    <p class="signoff">Warmly,<span class="sig">&mdash; Jisoo</span></p>
+    <div class="letter-foot">
+      <button class="btn btn-primary thanks" id="thanksBtn"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><span>Send Jisoo a thank-you paw</span></button>
+      <p class="fine" id="letterFoot">Drafted by PawNote AI from today's photos and check-ins. Jisoo reads it before it's sent.</p>
+    </div>
+  </article>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Main" hidden>
+  <button class="tab" data-tab="home" aria-current="page"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg>Home</button>
+  <button class="tab" data-tab="feed"><svg class="ico" aria-hidden="true"><use href="#i-feed"/></svg>Feed</button>
+  <button class="tab" data-tab="care"><svg class="ico" aria-hidden="true"><use href="#i-care"/></svg>Care</button>
+  <button class="tab" data-tab="reports"><svg class="ico" aria-hidden="true"><use href="#i-report"/></svg>Reports</button>
+</nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <span class="stamp"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg></span>
+      <span class="toast-text"><b id="toastTitle">Saved</b><span id="toastBody"></span></span>
+      <button class="toast-undo" id="toastUndo" hidden>Undo</button>
     </div>
 
-    
-<div class="tabbar">
-  <div class="tab active"><span class="emoji">🏠</span>Home</div>
-  <div class="tab"><span class="emoji">📷</span>Feed</div>
-  <div class="tab"><span class="emoji">💊</span>Care</div>
-  <div class="tab"><span class="emoji">📝</span>Reports</div>
-</div>
+    <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Photo" aria-hidden="true">
+      <div class="viewer-top">
+        <span class="when" id="viewerWhen"></span>
+        <button class="viewer-close" id="viewerClose" aria-label="Close photo"><svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <figure>
+        <img id="viewerImg" src="" alt="">
+        <figcaption><span id="viewerCaption"></span><small id="viewerMeta"></small></figcaption>
+      </figure>
+      <div class="viewer-nav">
+        <button class="btn" id="viewerPrev"><svg class="ico" aria-hidden="true"><use href="#i-left"/></svg>Earlier</button>
+        <button class="btn" id="viewerNext">Later<svg class="ico" aria-hidden="true"><use href="#i-right"/></svg></button>
+      </div>
+    </div>
 
+    <div class="welcome" id="welcome" aria-hidden="true">
+      <div class="walk" id="welcomeWalk"></div>
+      <h2>Welcome, <span id="welcomeName">Bori</span></h2>
+      <p>Your journal is ready.</p>
+    </div>
 
-    <div class="notes-sheet" id="notesSheet">
-      <span class="tag">Lowest risk</span>
-      <h3>Calm Core</h3>
-      <p class="status-line">Accent-only theming, a static status card &mdash; closest to PawNote's current trustworthy, low-clutter tone.</p>
-      <ul><li>Theming: only the primary accent swaps to the matched preset. Background and surface stay neutral, same as the app today.</li>
-<li>Gamification: a plain status card with icons + text, no animation &mdash; reads as a dashboard, not a toy.</li>
-<li>Trade-off: safest for an anxious-owner trust app, cheapest to build for real &mdash; but least memorable of the three.</li></ul>
-      <button class="btn btn-secondary close-notes" id="closeNotes">Close</button>
+    <div class="home-indicator" aria-hidden="true"></div>
+
+    <div class="notes-sheet" id="notesSheet" role="dialog" aria-labelledby="notesTitle">
+      <div class="sheet-head" id="sheetHead">
+        <span class="sheet-handle" aria-hidden="true"></span>
+        <div>
+          <span class="tag">Lowest risk &middot; family journal</span>
+          <h3 id="notesTitle">Calm Core</h3>
+        </div>
+        <button class="sheet-close" id="sheetClose" aria-label="Close notes"><svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </div>
+      <p class="status-line lede-notes">PawNote as a quiet, Kidsnote-style family journal: warm paper, serif headings, hairline rules instead of boxed cards. Only the accent color comes from your pet's photo.</p>
+      <h4>UI</h4>
+      <ul>
+        <li><b>Theming:</b> only <code>--primary</code> swaps to the matched preset (plus a lighter, contrast-checked twin for dark mode). Paper, ink and rules never change, so a photo can never hurt readability.</li>
+        <li><b>Type does the work:</b> Fraunces serif for headings and the letter, Inter for UI text, thin line icons, small radii, almost no shadows.</li>
+        <li><b>Status:</b> a static card &mdash; facts on ruled lines plus a mood line. No pet avatar game.</li>
+        <li><b>Paw moments:</b> one paw print, used sparingly &mdash; prints walk in on the welcome screen, a paw stamps into each success toast, and small paws float up when you check off care or thank Jisoo. All honor reduced-motion.</li>
+      </ul>
+      <h4>UX</h4>
+      <ul>
+        <li><b>Feed:</b> a vertical timeline grouped Morning / Afternoon &mdash; time on the rail, a small photo, one AI caption. Built for a 5-second check, not endless scrolling.</li>
+        <li><b>Photo viewer:</b> tap any feed entry to open the photo full-size, then step Earlier / Later.</li>
+        <li><b>Care:</b> a plain checklist. Pending first; checking an item stamps the time, shows a toast with Undo, and Home's &ldquo;Next&rdquo; line follows it.</li>
+        <li><b>Reports:</b> the daily report reads as a letter from Jisoo with three highlights. The warmth is in the words, not the chrome.</li>
+      </ul>
+      <h4>Trade-off</h4>
+      <ul>
+        <li>Most trustworthy for an anxious owner and the cheapest to build in Expo &mdash; but the least playful. The pet's personality lives only in photos and copy, so it may feel plain next to B and C.</li>
+      </ul>
+      <div class="btn-row">
+        <button class="btn btn-primary close-notes" id="closeNotes">Close</button>
+        <button class="btn btn-ghost" id="restartBtn" style="align-self:center">Start over from step 1</button>
+      </div>
     </div>
   </div>
 </div>
@@ -312,6 +834,8 @@ const MOODS = [
 ];
 const PIXEL_GRID = 0; // 0 = no pixelation
 const THEME_MODE = "accent"; // accent | soft | full
+const SITTER = "Jisoo";
+const DARK_PAPER = "#191714"; // dark-mode --bg; the light accent twin is checked against it
 
 function hslToHex(h,s,l){
   s/=100; l/=100;
@@ -360,6 +884,16 @@ function colorForPreset(preset){
   }
   return {hex, ratio, l};
 }
+// Dark-mode twin of the accent: same hue, lightened until it reads on dark paper.
+function lightColorForPreset(preset){
+  let l = 62;
+  let hex = hslToHex(preset.hue, preset.sat, l);
+  while(contrastRatio(hex, DARK_PAPER) < 4.5 && l < 92){
+    l += 2;
+    hex = hslToHex(preset.hue, preset.sat, l);
+  }
+  return hex;
+}
 function nearestPresetIndex(hue){
   let best=0, bestD=999;
   PRESETS.forEach((p,i)=>{
@@ -382,7 +916,17 @@ function sampleDominantHue(imgEl){
   r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
   const hsl = rgbToHsl(r,g,b);
   const rawHex = `#${r.toString(16).padStart(2,"0")}${g.toString(16).padStart(2,"0")}${b.toString(16).padStart(2,"0")}`;
-  return {hue: hsl.h, rawHex};
+  return {hue: hsl.h, sat: hsl.s, rawHex};
+}
+// White, grey and black coats average to a near-grey whose hue is noise (a white
+// Maltese on a pink blanket came out "Rose"). Below this saturation, pick a neutral.
+const NEUTRAL_SAT = 18;
+function presetIndexFor(hue, sat){
+  if(sat < NEUTRAL_SAT){
+    const warm = hue >= 10 && hue <= 70;
+    return PRESETS.findIndex(p => p.name === (warm ? "Umber" : "Slate"));
+  }
+  return nearestPresetIndex(hue);
 }
 
 function pixelate(imgEl, grid){
@@ -400,24 +944,85 @@ function pixelate(imgEl, grid){
   return out.toDataURL("image/png");
 }
 
-const state = { step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm" };
+const state = { step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm",
+  tab:"home", care:null };
 
 function $(sel){ return document.querySelector(sel); }
 function $all(sel){ return document.querySelectorAll(sel); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function petName(){ return (state.name || "").trim() || "Your pet"; }
+function fmtTime(d){
+  let h = d.getHours(); const m = d.getMinutes();
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2,"0")} ${ap}`;
+}
+const ICON = id => `<svg class="ico" aria-hidden="true"><use href="#${id}"/></svg>`;
 
+/* ---------- Mock content (uses the chosen pet) ---------- */
+function feedPhotos(){
+  // Chosen photo first; other sample photos of the same species fill extra feed slots.
+  const others = PETS.filter(p => p.species === state.species && p.id !== state.photo.id).map(p => p.src);
+  const pool = [state.photo.src, ...others];
+  return i => pool[i % pool.length];
+}
+function feedEntries(){
+  const n = esc(petName());
+  const pic = feedPhotos();
+  const dog = state.species === "dog";
+  return [
+    {group:"Morning", time:"8:05 AM", src:pic(0),
+      caption: dog ? `${n} finished breakfast and politely asked for seconds 🍽️` : `${n} ate breakfast slowly, then washed up on the sofa`},
+    {group:"Morning", time:"10:20 AM", src:pic(1),
+      caption: dog ? `Morning walk done &mdash; ${n} sniffed every tree on the block` : `Feather-wand session &mdash; ${n} caught it three times`},
+    {group:"Afternoon", time:"1:30 PM", src:pic(2),
+      caption: `${n} found the sunny spot by the window for a long nap ☀️`},
+    {group:"Afternoon", time:"2:40 PM", src:pic(0),
+      caption: dog ? `Brushed and settled &mdash; ${n} is very relaxed` : `Brushed and purring &mdash; ${n} is very relaxed`},
+  ];
+}
+function careSeed(){
+  const dog = state.species === "dog";
+  const items = dog ? [
+    {id:"meal-am", kind:"Meal", title:"Breakfast", detail:"1 cup kibble", due:"8:00 AM", doneAt:"8:02 AM"},
+    {id:"med-am",  kind:"Med",  title:"Joint supplement", detail:"1 chew with breakfast", due:"8:00 AM", doneAt:"8:04 AM"},
+    {id:"walk-pm", kind:"Walk", title:"Afternoon walk", detail:"30 min, harness on", due:"4:00 PM"},
+    {id:"meal-pm", kind:"Meal", title:"Dinner", detail:"1 cup kibble + warm water", due:"6:00 PM"},
+    {id:"med-pm",  kind:"Med",  title:"Ear drops", detail:"2 drops, left ear", due:"7:00 PM"},
+    {id:"walk-nt", kind:"Walk", title:"Last potty walk", detail:"10 min, around the block", due:"9:30 PM"},
+  ] : [
+    {id:"meal-am", kind:"Meal", title:"Breakfast", detail:"Half a can of wet food", due:"8:00 AM", doneAt:"8:03 AM"},
+    {id:"med-am",  kind:"Med",  title:"Hairball gel", detail:"1 inch on a paw", due:"8:00 AM", doneAt:"8:05 AM"},
+    {id:"play-pm", kind:"Play", title:"Play session", detail:"15 min wand toy (in place of a walk)", due:"4:00 PM"},
+    {id:"meal-pm", kind:"Meal", title:"Dinner", detail:"Half a can + a small scoop of kibble", due:"6:00 PM"},
+    {id:"litter",  kind:"Care", title:"Litter check", detail:"Scoop and top up", due:"7:00 PM"},
+    {id:"med-pm",  kind:"Med",  title:"Eye drops", detail:"1 drop, right eye", due:"9:00 PM"},
+  ];
+  return items.map((it, i) => ({...it, order:i, done: !!it.doneAt, doneSeq: it.doneAt ? i : null}));
+}
+let doneCounter = 100;
+
+/* ---------- Onboarding ---------- */
 function renderPhotoGrid(){
   const grid = $("#photoGrid");
   grid.innerHTML = "";
   PETS.filter(p=>p.species===state.species).forEach(p=>{
-    const div = document.createElement("div");
-    div.className = "photo-thumb" + (state.photo && state.photo.id===p.id ? " selected" : "");
-    div.innerHTML = `<img src="${p.src}" alt="${p.breed} sample">`;
-    div.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
-    grid.appendChild(div);
+    const btn = document.createElement("button");
+    const sel = state.photo && state.photo.id===p.id;
+    btn.type = "button";
+    btn.className = "photo-thumb" + (sel ? " selected" : "");
+    btn.setAttribute("aria-pressed", sel ? "true" : "false");
+    btn.innerHTML = `<img src="${p.src}" alt="${p.breed} sample">` + (sel ? `<span class="tick">${ICON("i-check")}</span>` : "");
+    btn.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
+    grid.appendChild(btn);
   });
-  const uploadDiv = document.createElement("div");
-  uploadDiv.className = "photo-thumb upload";
-  uploadDiv.innerHTML = `<span>📷</span><span>Upload</span><input type="file" accept="image/*" id="fileInput">`;
+  const uploadDiv = document.createElement("label");
+  uploadDiv.className = "photo-thumb upload" + (state.photo && state.photo.id==="custom" ? " selected" : "");
+  if(state.photo && state.photo.id === "custom"){
+    uploadDiv.innerHTML = `<img src="${state.photo.src}" alt="Your uploaded photo"><span class="tick">${ICON("i-check")}</span><input type="file" accept="image/*" id="fileInput" aria-label="Replace photo">`;
+  } else {
+    uploadDiv.innerHTML = `${ICON("i-camera")}<span>Upload</span><input type="file" accept="image/*" id="fileInput" aria-label="Upload a photo">`;
+  }
   grid.appendChild(uploadDiv);
   $("#fileInput").onchange = (e) => {
     const file = e.target.files[0];
@@ -436,28 +1041,70 @@ function updateContinueBtn(){
 }
 function selectSpecies(sp){
   state.species = sp;
-  $all(".species-chip").forEach(c=>c.classList.toggle("active", c.dataset.species===sp));
+  $all(".species-chip").forEach(c=>{
+    const on = c.dataset.species===sp;
+    c.classList.toggle("active", on);
+    c.setAttribute("aria-pressed", on ? "true" : "false");
+  });
   const first = PETS.find(p=>p.species===sp);
   if(!state.photo || state.photo.species !== sp) state.photo = state.photo && state.photo.id==="custom" ? state.photo : first;
   renderPhotoGrid();
 }
 
+/* ---------- Navigation ---------- */
+const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function currentScreen(){ return [...$all(".screen")].find(s => !s.hidden); }
+// The pinned action bar only shows its top rule when content is scrolling underneath it.
+function updateActionsRule(){
+  const s = currentScreen(); if(!s) return;
+  const bar = s.querySelector(".actions"); if(!bar) return;
+  bar.classList.toggle("raised", s.scrollTop + s.clientHeight < s.scrollHeight - 2);
+}
+function showView(){
+  const inApp = state.step === 3;
+  const phone = $("#phone");
+  phone.dataset.view = inApp ? "app" : `step${state.step}`;
+  $all(".screen").forEach(s => {
+    const visible = inApp ? s.dataset.tab === state.tab : Number(s.dataset.step) === state.step;
+    const wasHidden = s.hidden;
+    s.hidden = !visible;
+    if(visible){
+      s.scrollTop = 0;
+      if(wasHidden && !reduceMotion()){ s.classList.remove("enter"); void s.offsetWidth; s.classList.add("enter"); }
+    }
+  });
+  $("#tabbar").hidden = !inApp;
+  $all(".tab").forEach(t => {
+    if(t.dataset.tab === state.tab) t.setAttribute("aria-current", "page");
+    else t.removeAttribute("aria-current");
+  });
+  $all(".step-dot").forEach((d,i)=> {
+    d.classList.toggle("active", i === state.step-1);
+    d.classList.toggle("done", i < state.step-1);
+  });
+  $("#stepDots").setAttribute("aria-label", `Step ${state.step} of 3`);
+  hideToast();
+  requestAnimationFrame(updateActionsRule);
+}
 function goToStep(n){
   state.step = n;
-  $all(".screen").forEach(s=> s.hidden = Number(s.dataset.step) !== n);
-  $all(".step-dot").forEach((d,i)=> d.classList.toggle("active", i === n-1));
-  $("#backBtn").style.visibility = n === 1 ? "hidden" : "visible";
+  if(n===3) state.tab = "home";
+  showView();
   if(n===2) runExtraction();
-  if(n===3) buildHome();
+  if(n===3) buildApp();
+}
+function goToTab(tab){
+  state.tab = tab;
+  showView();
 }
 
 function runExtraction(){
   const img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
-    const {hue, rawHex} = sampleDominantHue(img);
+    const {hue, sat, rawHex} = sampleDominantHue(img);
     state.rawHex = rawHex;
-    state.presetIdx = nearestPresetIndex(hue);
+    state.presetIdx = presetIndexFor(hue, sat);
     renderExtraction();
   };
   img.src = state.photo.src;
@@ -465,16 +1112,23 @@ function runExtraction(){
 function renderExtraction(){
   const preset = PRESETS[state.presetIdx];
   const result = colorForPreset(preset);
+  const light = lightColorForPreset(preset);
   $("#rawSwatch").style.background = state.rawHex;
   $("#presetSwatch").style.background = result.hex;
   $("#presetName").textContent = preset.name;
   $("#petNamePreview").textContent = state.name || "your pet";
-  const emoji = state.species === "dog" ? "🐶" : "🐱";
-  $("#petEmojiPreview").textContent = emoji;
+  $("#petEmojiPreview").textContent = state.species === "dog" ? "🐶" : "🐱";
+  const pv = $('.screen[data-step="2"]');
+  pv.style.setProperty("--pv", result.hex);
+  pv.style.setProperty("--pv-light", light);
+  const sw = $("#presetSwatch");
+  if(!reduceMotion()){ sw.classList.remove("bump"); void sw.offsetWidth; sw.classList.add("bump"); }
   const badge = $("#contrastBadge");
-  badge.textContent = `${result.ratio.toFixed(1)}:1 · Passes AA ✓`;
-  badge.classList.toggle("fail", result.ratio < 4.5);
+  const pass = result.ratio >= 4.5;
+  badge.textContent = `${result.ratio.toFixed(1)}:1 with white text · ${pass ? "Passes AA ✓" : "Fails AA"}`;
+  badge.classList.toggle("fail", !pass);
   state._currentHex = result.hex;
+  state._currentLight = light;
 }
 function cyclePreset(){
   state.presetIdx = (state.presetIdx + 1) % PRESETS.length;
@@ -484,6 +1138,7 @@ function keepTheme(){
   const hex = state._currentHex;
   const preset = PRESETS[state.presetIdx];
   document.documentElement.style.setProperty("--primary", hex);
+  document.documentElement.style.setProperty("--primary-light", state._currentLight);
   if(THEME_MODE === "full" || THEME_MODE === "soft"){
     const bgTint = hslToHex(preset.hue, Math.min(preset.sat,22), 97);
     const surfaceTint = hslToHex(preset.hue, Math.min(preset.sat,18), 94);
@@ -494,15 +1149,89 @@ function keepTheme(){
     document.documentElement.style.setProperty("--tint-surface", surfaceTint);
     document.documentElement.style.setProperty("--tint-border", borderTint);
   }
-  goToStep(3);
+  playWelcome(() => goToStep(3));
+}
+
+/* Paw walk: prints step in along a gentle S-curve, alternating left and right feet,
+   then the greeting rises. Total ~1.9s; skipped entirely under reduced motion. */
+function playWelcome(done){
+  if(reduceMotion()){ done(); return; }
+  const w = $("#welcome"), walk = $("#welcomeWalk");
+  $("#welcomeName").textContent = petName();
+  const steps = 6;
+  walk.innerHTML = Array.from({length:steps}, (_, i) => {
+    const t = i / (steps - 1);
+    const x = 8 + t * 76;                                  // % across the stage
+    const y = 78 - t * 64 + Math.sin(t * Math.PI) * 6;     // rises left → right
+    const side = i % 2 ? -1 : 1;                           // alternate feet
+    const r = 58 + side * 10;                              // pointing up-right
+    // offset each foot perpendicular to the direction of travel
+    return `<svg class="paw pp" style="left:calc(${x}% + ${side * 0.35}rem);top:calc(${y}% + ${side * 0.6}rem);--r:${r}deg;--d:${(i * 0.14).toFixed(2)}s" aria-hidden="true"><use href="#i-paw"/></svg>`;
+  }).join("");
+  w.classList.add("show");
+  setTimeout(() => { done(); }, 1500);
+  setTimeout(() => { w.classList.remove("show"); }, 1900);
+}
+
+/* ---------- Toast + paw burst ---------- */
+let toastTimer = null, toastUndo = null;
+function showToast(title, body, undo){
+  const t = $("#toast");
+  const bar = $("#tabbar");
+  const phoneRect = $("#phone").getBoundingClientRect();
+  const offset = bar.hidden ? 32 : (phoneRect.bottom - bar.getBoundingClientRect().top) + 12;
+  t.style.setProperty("--toast-bottom", `${offset}px`);
+  $("#toastTitle").textContent = title;
+  $("#toastBody").textContent = body || "";
+  toastUndo = undo || null;
+  $("#toastUndo").hidden = !undo;
+  t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, undo ? 4000 : 2800);
+}
+function hideToast(){
+  clearTimeout(toastTimer);
+  const t = $("#toast"); if(t) t.classList.remove("show");
+  toastUndo = null;
+}
+// Small paws float up and out from the center of `el`.
+function pawBurst(el, count = 5){
+  if(reduceMotion() || !el) return;
+  const phone = $("#phone"), pr = phone.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const b = document.createElement("div");
+  b.className = "burst";
+  b.style.left = `${r.left + r.width / 2 - pr.left}px`;
+  b.style.top = `${r.top + r.height / 2 - pr.top}px`;
+  b.innerHTML = Array.from({length:count}, (_, i) => {
+    const a = (-90 + (i - (count - 1) / 2) * 32) * Math.PI / 180;
+    const dist = 2.75 + (i % 2) * 1;
+    const dx = (Math.cos(a) * dist).toFixed(2), dy = (Math.sin(a) * dist - 0.5).toFixed(2);
+    return `<svg class="paw" style="--dx:${dx}rem;--dy:${dy}rem;--r:${(i - 2) * 18}deg;--d:${(i * 0.04).toFixed(2)}s"><use href="#i-paw"/></svg>`;
+  }).join("");
+  phone.appendChild(b);
+  setTimeout(() => b.remove(), 1200);
+}
+
+/* ---------- App pages ---------- */
+function buildApp(){
+  if(!state.care || state.care.species !== state.species) state.care = {species:state.species, items:careSeed()};
+  const now = new Date();
+  const short = now.toLocaleDateString("en-US", {weekday:"long", month:"short", day:"numeric"});
+  const long = now.toLocaleDateString("en-US", {weekday:"long", month:"long", day:"numeric"});
+  $all(".js-date").forEach(el => el.textContent = `Today · ${short}`);
+  $all(".js-date-long").forEach(el => el.textContent = long);
+  $all(".js-name").forEach(el => el.textContent = petName());
+  buildHome();
+  renderFeed();
+  renderCare();
+  renderReport();
 }
 
 function buildHome(){
   const setIfPresent = (sel, prop, val) => { const el = $(sel); if(el) el[prop] = val; };
-  setIfPresent("#homePetName", "textContent", state.name || "Your pet");
+  setIfPresent("#homePetName", "textContent", petName());
   setIfPresent("#homePetAvatar", "src", state.photo.src);
-  setIfPresent("#homePetChipImg", "src", state.photo.src);
-  setIfPresent("#homePetChipName", "textContent", state.name || "Pet");
+  setIfPresent("#homePetAvatar", "alt", `Photo of ${petName()}`);
   const spriteImg = $("#spriteImg");
   if(spriteImg){
     const img = new Image();
@@ -510,33 +1239,264 @@ function buildHome(){
     img.onload = () => { spriteImg.src = pixelate(img, PIXEL_GRID); };
     img.src = state.photo.src;
   }
+  const entries = feedEntries();
+  const last = entries[entries.length-1];
+  $("#latestThumb").src = last.src;
+  $("#latestTime").textContent = last.time;
+  $("#latestCaption").innerHTML = last.caption;
+  $("#latestBtn").setAttribute("aria-label", `Latest from ${SITTER} at ${last.time}. Open the feed`);
   setMood(state.mood, true);
+  renderHomeFacts();
+}
+function renderHomeFacts(){
+  const items = state.care ? state.care.items : [];
+  const breakfast = items.find(i => i.id === "meal-am");
+  $("#factMeal").textContent = breakfast && breakfast.done ? `Fed · ${breakfast.doneAt}` : "Not yet";
+  const next = pendingItems()[0];
+  const nextEl = $("#factNext");
+  const text = next ? `${next.title} · ${next.due}` : "All done for today ✓";
+  if(nextEl.textContent !== text && nextEl.textContent.trim() && !reduceMotion()){
+    nextEl.classList.remove("flash"); void nextEl.offsetWidth; nextEl.classList.add("flash");
+  }
+  nextEl.textContent = text;
 }
 function setMood(key, silent){
   state.mood = key;
-  $all(".mood-btn").forEach(b=> b.classList.toggle("active", b.dataset.mood===key));
+  $all(".mood-btn").forEach(b=> {
+    const on = b.dataset.mood===key;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
   const m = MOODS.find(x=>x.key===key);
-  const name = state.name || "Your pet";
+  const name = petName();
   const lines = {
-    happy: `${name} is happy and playful right now ${m.emoji}`,
+    happy: `${name} is happy and playful`,
     calm: `${name} is calm and settled`,
-    hungry: `${name} hasn't eaten in a while — might be hungry`,
+    hungry: `${name} is eyeing the kitchen — dinner is at 6`,
     sleepy: `${name} is winding down for a nap`,
   };
   const statusEl = $("#moodStatusLine");
   if(statusEl) statusEl.textContent = lines[key];
-  const badge = $("#spriteMoodBadge");
-  if(badge) badge.textContent = m.emoji;
+  const badge = $("#avatarMood");
+  if(badge){
+    badge.textContent = m.emoji;
+    if(!silent && !reduceMotion()){ badge.classList.remove("swap"); void badge.offsetWidth; badge.classList.add("swap"); }
+  }
+  if(!silent) renderReport();
 }
 
+function renderFeed(){
+  const groups = {};
+  feedEntries().forEach((e, i) => (groups[e.group] = groups[e.group] || []).push({...e, i}));
+  const name = esc(petName());
+  $("#feedGroups").innerHTML = Object.entries(groups).map(([g, list]) => `
+    <section class="feed-group" aria-label="${g}">
+      <h2 class="group-label">${g} <span class="count">${list.length}</span></h2>
+      <ol class="timeline">
+        ${list.map(e => `
+          <li class="entry">
+            <time class="entry-time">${e.time}</time>
+            <div class="entry-rail">
+              <button class="entry-open" data-i="${e.i}" aria-label="Open photo from ${e.time}">
+                <img class="entry-thumb" src="${e.src}" alt="Photo of ${name}">
+                <span class="entry-text">
+                  <span class="entry-caption">${e.caption}</span>
+                  <span class="entry-meta"><b>${SITTER}</b> &middot; <span class="ai-tag">${ICON("i-spark")}AI caption</span></span>
+                </span>
+              </button>
+            </div>
+          </li>`).join("")}
+      </ol>
+    </section>`).join("");
+  $all(".entry-open").forEach(b => b.onclick = () => openViewer(Number(b.dataset.i)));
+}
+
+/* ---------- Photo viewer ---------- */
+let viewerIdx = 0, viewerReturn = null;
+function openViewer(i){
+  viewerReturn = document.activeElement;
+  viewerIdx = i;
+  renderViewer();
+  const v = $("#viewer");
+  v.classList.add("open");
+  v.setAttribute("aria-hidden", "false");
+  $("#viewerClose").focus();
+}
+function renderViewer(){
+  const list = feedEntries(), e = list[viewerIdx];
+  $("#viewerImg").src = e.src;
+  $("#viewerImg").alt = `Photo of ${petName()}`;
+  $("#viewerWhen").textContent = `${e.group} · ${e.time}`;
+  $("#viewerCaption").innerHTML = e.caption;
+  $("#viewerMeta").textContent = `${SITTER} · AI caption · ${viewerIdx + 1} of ${list.length}`;
+  $("#viewerPrev").disabled = viewerIdx === 0;
+  $("#viewerNext").disabled = viewerIdx === list.length - 1;
+  $("#viewerPrev").style.opacity = viewerIdx === 0 ? .4 : 1;
+  $("#viewerNext").style.opacity = viewerIdx === list.length - 1 ? .4 : 1;
+}
+function closeViewer(){
+  const v = $("#viewer");
+  if(!v.classList.contains("open")) return;
+  v.classList.remove("open");
+  v.setAttribute("aria-hidden", "true");
+  if(viewerReturn) viewerReturn.focus({preventScroll:true});
+}
+
+function pendingItems(){ return state.care.items.filter(i => !i.done).sort((a,b) => a.order - b.order); }
+function doneItems(){ return state.care.items.filter(i => i.done).sort((a,b) => a.doneSeq - b.doneSeq); }
+function careRow(it){
+  const when = it.done ? `Done · ${it.doneAt}` : `Due ${it.due}`;
+  return `<li><button class="check" role="checkbox" aria-checked="${it.done}" data-id="${it.id}">
+      <span class="check-circle">${ICON("i-check")}</span>
+      <span class="check-text">
+        <span class="check-title"><span class="kind">${it.kind}</span>${esc(it.title)}</span>
+        <span class="check-meta">${esc(it.detail)}</span>
+      </span>
+      <span class="check-when">${when}</span>
+    </button></li>`;
+}
+function renderCare(arrivedId){
+  const todo = pendingItems(), done = doneItems(), total = state.care.items.length;
+  const pawEmpty = `<svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg>`;
+  $("#careTodo").innerHTML = todo.length ? todo.map(careRow).join("") :
+    `<li class="empty-line">${pawEmpty}Everything is done. ${esc(petName())} is all set for tonight.</li>`;
+  $("#careDone").innerHTML = done.length ? done.map(careRow).join("") :
+    `<li class="empty-line">Nothing checked off yet.</li>`;
+  $("#todoCount").textContent = todo.length ? `${todo.length}` : "";
+  $("#doneCount").textContent = done.length ? `${done.length}` : "";
+  $("#careCount").textContent = `${done.length} of ${total}`;
+  const pct = Math.round(done.length/total*100);
+  $("#careFill").style.width = `${pct}%`;
+  $("#carePaw").style.left = `${pct}%`;
+  $("#careNextHint").textContent = todo.length ? `Next: ${todo[0].title}, ${todo[0].due}` : "All done for today";
+  $all("#careTodo .check, #careDone .check").forEach(b => b.onclick = () => toggleCare(b.dataset.id));
+  if(arrivedId && !reduceMotion()){
+    const row = document.querySelector(`.check[data-id="${arrivedId}"]`);
+    if(row) row.parentElement.classList.add("arriving");
+  }
+}
+let careBusy = false;
+function toggleCare(id, fromUndo){
+  const it = state.care.items.find(i => i.id === id);
+  if(!it || careBusy) return;
+  const btn = document.querySelector(`.check[data-id="${id}"]`);
+  const checking = !it.done;
+  const commit = () => {
+    it.done = checking;
+    if(checking){ it.doneAt = fmtTime(new Date()); it.doneSeq = doneCounter++; }
+    else { it.doneAt = null; it.doneSeq = null; }
+    renderCare(id);
+    renderHomeFacts();
+    renderReport();
+    $("#careLive").textContent = checking ? `${it.title} checked off at ${it.doneAt}` : `${it.title} moved back to to do`;
+    const again = document.querySelector(`.check[data-id="${id}"]`);
+    if(again) again.focus({preventScroll:true});
+    careBusy = false;
+    if(checking){
+      const left = pendingItems().length;
+      const name = petName();
+      const title = left ? `${it.title} logged` : `All done for ${name} today`;
+      const body = left ? `${it.doneAt} · ${name}'s family sees it now` : `${it.doneAt} · Jisoo's report will say so`;
+      showToast(title, body, fromUndo ? null : () => toggleCare(id, true));
+      const paw = $("#carePaw");
+      if(!reduceMotion()){ paw.classList.remove("step"); void paw.offsetWidth; paw.classList.add("step"); }
+    } else if(!fromUndo){
+      hideToast();
+    }
+  };
+  if(reduceMotion() || !btn){ careBusy = true; commit(); return; }
+  careBusy = true;
+  if(checking){
+    // 1) the circle fills and the check draws, 2) paws float up, 3) the row slides out
+    btn.setAttribute("aria-checked", "true");
+    btn.classList.add("popping");
+    pawBurst(btn.querySelector(".check-circle"), 5);
+    setTimeout(() => btn.parentElement.classList.add("leaving"), 380);
+    setTimeout(commit, 640);
+  } else {
+    btn.parentElement.classList.add("leaving");
+    setTimeout(commit, 260);
+  }
+}
+
+function renderReport(){
+  if(!state.care) return;
+  const n = esc(petName());
+  const dog = state.species === "dog";
+  const done = doneItems().length, total = state.care.items.length;
+  const next = pendingItems()[0];
+  const moodPhrase = {
+    happy: "in a playful mood and following me from room to room",
+    calm: "calm and settled on the blanket you packed",
+    hungry: "keeping a hopeful eye on the kitchen",
+    sleepy: "curled up and winding down for a nap",
+  }[state.mood];
+  const p1 = dog
+    ? `${n} had a gentle, happy day with me. Breakfast was gone in a minute, and on our morning walk ${n} stopped to sniff every single tree.`
+    : `${n} had a gentle, happy day with me. Breakfast went slowly and carefully, and our feather-wand game was a real success.`;
+  const p2 = `After lunch ${n} claimed the sunny spot by the window and napped for almost two hours ☀️ Right now ${n} is ${moodPhrase}.`;
+  const p3 = next
+    ? `${done} of ${total} care items are done so far &mdash; next up is ${esc(next.title.toLowerCase())} at ${next.due}. I'll keep you posted.`
+    : `All ${total} care items are done for today. ${n} is all set for a quiet night.`;
+  $("#letterBody").innerHTML = `
+    <p class="salutation">Dear ${n}'s family,</p>
+    <p>${p1}</p><p>${p2}</p><p>${p3}</p>`;
+  const hl = dog
+    ? [`Finished every bite of breakfast`, `Joint supplement taken with food`, `A long, sunny-window nap`]
+    : [`Ate breakfast and groomed after`, `Hairball gel taken without a fuss`, `A long, sunny-window nap`];
+  $("#letterHighlights").innerHTML = hl.map(h => `<li><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><span>${h}</span></li>`).join("");
+  $("#letterFoot").textContent = `Drafted by PawNote AI from ${feedEntries().length} photos and ${done} care check-ins. ${SITTER} reads it before it's sent.`;
+}
+
+/* ---------- Thank-you paw ---------- */
+let thanked = false;
+function sendThanks(){
+  const b = $("#thanksBtn");
+  if(thanked) return;
+  thanked = true;
+  pawBurst(b.querySelector(".paw"), 7);
+  b.classList.add("sent");
+  b.setAttribute("aria-disabled", "true");
+  b.querySelector("span").textContent = "Paw sent to Jisoo";
+  showToast("Thank-you paw sent", `Jisoo will see it with ${petName()}'s next update`);
+}
+function resetThanks(){
+  thanked = false;
+  const b = $("#thanksBtn");
+  b.classList.remove("sent");
+  b.removeAttribute("aria-disabled");
+  b.querySelector("span").textContent = "Send Jisoo a thank-you paw";
+}
+
+/* ---------- Notes sheet + restart ---------- */
 function initNotes(){
   const fab = $("#notesFab"), sheet = $("#notesSheet"), backdrop = $("#notesBackdrop");
   if(!fab) return;
-  const open = () => { sheet.classList.add("open"); backdrop.classList.add("open"); };
-  const close = () => { sheet.classList.remove("open"); backdrop.classList.remove("open"); };
+  const open = () => {
+    hideToast();
+    sheet.scrollTop = 0;
+    sheet.classList.add("open"); backdrop.classList.add("open"); fab.setAttribute("aria-expanded","true");
+    $("#sheetClose").focus({preventScroll:true});
+  };
+  const close = () => { sheet.classList.remove("open"); backdrop.classList.remove("open"); fab.setAttribute("aria-expanded","false"); };
   fab.onclick = open;
   backdrop.onclick = close;
   $("#closeNotes").onclick = close;
+  $("#sheetClose").onclick = close;
+  sheet.addEventListener("scroll", () => $("#sheetHead").classList.toggle("raised", sheet.scrollTop > 4));
+  $("#restartBtn").onclick = () => {
+    close();
+    ["--primary","--primary-light","--tint-bg","--tint-surface","--tint-border"].forEach(p => document.documentElement.style.removeProperty(p));
+    state.care = null; state.mood = "calm"; state.tab = "home";
+    resetThanks();
+    goToStep(1);
+    $("#nameInput").focus({preventScroll:true});
+  };
+  document.addEventListener("keydown", e => {
+    if(e.key !== "Escape") return;
+    if($("#viewer").classList.contains("open")) closeViewer();
+    else if(sheet.classList.contains("open")) close();
+  });
 }
 
 function initClock(){
@@ -545,7 +1505,6 @@ function initClock(){
   const tick = () => {
     const d = new Date();
     let h = d.getHours(), m = d.getMinutes();
-    const ap = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     el.textContent = `${h}:${String(m).padStart(2,"0")}`;
   };
@@ -562,10 +1521,24 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#tryAnotherBtn").onclick = cyclePreset;
   $("#keepBtn").onclick = keepTheme;
   $all(".mood-btn").forEach(b => b.onclick = () => setMood(b.dataset.mood));
+  $all(".tab").forEach(t => t.onclick = () => goToTab(t.dataset.tab));
+  $("#latestBtn").onclick = () => goToTab("feed");
+  $("#mastheadBtn").onclick = () => goToTab("home");
+  $("#thanksBtn").onclick = sendThanks;
+  $("#toastUndo").onclick = () => { const fn = toastUndo; hideToast(); if(fn) fn(); };
+  $("#viewerClose").onclick = closeViewer;
+  $("#viewer").addEventListener("click", e => { if(e.target.id === "viewer" || e.target.tagName === "FIGURE") closeViewer(); });
+  $("#viewerPrev").onclick = () => { if(viewerIdx > 0){ viewerIdx--; renderViewer(); } };
+  $("#viewerNext").onclick = () => { if(viewerIdx < feedEntries().length - 1){ viewerIdx++; renderViewer(); } };
+  $all(".screen").forEach(s => s.addEventListener("scroll", updateActionsRule, {passive:true}));
+  window.addEventListener("resize", updateActionsRule);
   renderPhotoGrid();
   updateContinueBtn();
   $("#nameInput").value = state.name;
   selectSpecies(state.species);
+  showView();
 });
 
 </script>
+</body>
+</html>

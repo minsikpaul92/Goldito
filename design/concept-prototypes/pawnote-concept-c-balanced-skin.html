@@ -1,298 +1,606 @@
+<!doctype html>
+<html lang="en">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Balanced Skin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 
+/* Concept C - Balanced Skin: warm modern, photo-first.
+   Sizes inside the app are rem (base 16px); the phone DEVICE (402px, bezel, outer radius) stays px. */
 :root{
-  --bg:#F7F7F5; --surface:#FFFFFF; --text:#1A1A1A; --text-muted:#5C5C5C;
-  --border:#E5E5E0; --success:#067647; --success-bg:#ECFDF3;
+  --bg:#F4F2EE; --surface:#FFFFFF; --text:#1F1B16; --text-muted:#5E5850;
+  --border:#E6E1D9; --success:#067647; --success-bg:#E7F6EC;
   --error:#B42318; --error-bg:#FEF3F2;
-  --frame-backdrop:#E8E8E3; --frame-bezel:#1A1A1A; --frame-shadow:rgba(26,26,26,.18);
-  --primary:#2D6A4F; --primary-foreground:#FFFFFF;
-  --tint-bg:#F7F7F5; --tint-surface:#FFFFFF; --tint-border:#E5E5E0;
-  --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
-  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --frame-backdrop:#E9E5DE; --frame-bezel:#1A1A1A; --frame-shadow:rgba(31,27,22,.20);
+  --primary:#2D6A4F; --primary-foreground:#FFFFFF; --primary-text:#2D6A4F; --primary-soft:#DCEDE3;
+  --tint-bg:#F4F2EE; --tint-surface:#FFFFFF; --tint-border:#E6E1D9;
+  --scrim:rgba(20,16,12,.38);
+  --ring:0 0 0 1px rgba(48,38,26,.04);
+  --shadow-1:0 1px 2px rgba(48,38,26,.06),0 .25rem .875rem rgba(48,38,26,.07);
+  --shadow-2:0 .125rem .375rem rgba(48,38,26,.08),0 .875rem 2rem rgba(48,38,26,.14);
+  --radius-sm:.75rem; --radius-md:1rem; --radius-lg:1.25rem; --radius-pill:999px;
+  --font-body:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --font-display:var(--font-body);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
-    --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
+    --bg:#121416; --surface:#1B1E21; --text:#F2F0EC; --text-muted:#A9A49C;
+    --border:#2C3034; --success:#3DD68C; --success-bg:#0F2A1E;
     --error:#FF6B5E; --error-bg:#2E1512;
-    --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-    --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+    --frame-backdrop:#0B0C0D; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
+    --primary:#6CCB9A; --primary-foreground:#0E1012; --primary-text:#6CCB9A; --primary-soft:#1F3329;
+    --tint-bg:#121416; --tint-surface:#1B1E21; --tint-border:#2C3034;
+    --scrim:rgba(0,0,0,.55);
+    --ring:0 0 0 1px rgba(255,255,255,.06);
+    --shadow-1:0 1px 2px rgba(0,0,0,.4),0 .375rem 1rem rgba(0,0,0,.28);
+    --shadow-2:0 .125rem .375rem rgba(0,0,0,.45),0 1rem 2.25rem rgba(0,0,0,.45);
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#15181A; --surface:#1E2225; --text:#F2F2F0; --text-muted:#9A9A95;
-  --border:#2A2E31; --success:#3DD68C; --success-bg:#0F2A1E;
+  --bg:#121416; --surface:#1B1E21; --text:#F2F0EC; --text-muted:#A9A49C;
+  --border:#2C3034; --success:#3DD68C; --success-bg:#0F2A1E;
   --error:#FF6B5E; --error-bg:#2E1512;
-  --frame-backdrop:#0C0D0E; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-  --tint-bg:#15181A; --tint-surface:#1E2225; --tint-border:#2A2E31;
+  --frame-backdrop:#0B0C0D; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
+  --primary:#6CCB9A; --primary-foreground:#0E1012; --primary-text:#6CCB9A; --primary-soft:#1F3329;
+  --tint-bg:#121416; --tint-surface:#1B1E21; --tint-border:#2C3034;
+  --scrim:rgba(0,0,0,.55);
+  --ring:0 0 0 1px rgba(255,255,255,.06);
+  --shadow-1:0 1px 2px rgba(0,0,0,.4),0 .375rem 1rem rgba(0,0,0,.28);
+  --shadow-2:0 .125rem .375rem rgba(0,0,0,.45),0 1rem 2.25rem rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--frame-backdrop);color:var(--text);font-family:var(--font-body);
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding:32px 16px;gap:16px;min-height:100%}
-h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+  padding:2rem 1rem;gap:1rem;min-height:100vh;line-height:1.45;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
 p{margin:0}
 img{max-width:100%}
+button{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 
-.rig{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:402px}
-.rig-label{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
-  font-weight:600}
+/* Icons: outline by default; --ico-fill / --ico-detail switch them to filled (active tab, liked). */
+.ico{width:1.25rem;height:1.25rem;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
 
+.rig{display:flex;flex-direction:column;align-items:center;gap:.75rem;width:100%;max-width:402px}
+.rig-label{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);
+  font-weight:700;text-align:center}
+
+/* Device frame: fixed px on purpose (imitates a 402px phone). */
 .phone{width:402px;max-width:100%;background:var(--tint-bg);border-radius:40px;
   border:8px solid var(--frame-bezel);box-shadow:0 24px 48px var(--frame-shadow);
-  overflow:hidden;position:relative;display:flex;flex-direction:column;
+  overflow:hidden;overflow:clip;position:relative;display:flex;flex-direction:column;
   height:826px;max-height:80vh}
 .statusbar{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;
-  padding:10px 22px 4px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;
+  padding:.625rem 1.5rem .25rem;font-size:.875rem;font-weight:700;font-variant-numeric:tabular-nums;
   color:var(--text)}
-.statusbar .icons{display:flex;gap:4px;font-size:12px;opacity:.7}
-.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
-  padding:6px 20px 14px;border-bottom:1px solid var(--tint-border)}
-.brand{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
-.steps{display:flex;gap:6px}
-.step-dot{width:6px;height:6px;border-radius:50%;background:var(--tint-border)}
-.step-dot.active{background:var(--primary);width:16px;border-radius:3px}
-.back-btn{background:none;border:none;color:var(--primary);font-size:14px;font-weight:600;
-  cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
+.statusbar .icons{display:flex;gap:.3rem;align-items:center}
+.statusbar .icons svg{height:.75rem;width:auto;fill:currentColor}
+.topbar{flex:0 0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;
+  padding:.375rem 1.25rem .75rem;border-bottom:1px solid var(--tint-border)}
+.topbar>:first-child{justify-self:start}
+.topbar>:last-child{justify-self:end}
+.topbar-start,.topbar-end{display:flex;align-items:center;gap:.5rem;min-width:0}
+.brand{display:flex;align-items:center;gap:.4rem;font-weight:800;font-size:1rem;letter-spacing:-.015em;
+  white-space:nowrap}
+.brand-mark{width:1.75rem;height:1.75rem;border-radius:.625rem;background:var(--primary);
+  color:var(--primary-foreground);display:grid;place-items:center;flex:0 0 auto}
+.brand-mark svg{width:1rem;height:1rem}
+.steps{display:flex;gap:.375rem}
+.step-dot{width:.375rem;height:.375rem;border-radius:var(--radius-pill);background:var(--tint-border);
+  transition:width .2s}
+.step-dot.active{background:var(--primary);width:1.125rem}
+.back-btn{background:none;border:none;color:var(--primary-text);font-size:.9375rem;font-weight:700;
+  cursor:pointer;padding:.25rem 0;display:flex;align-items:center;gap:.125rem}
+.back-btn .ico{width:1.125rem;height:1.125rem;stroke-width:2.2}
+.notes-fab{flex:0 0 auto;width:2rem;height:2rem;border-radius:50%;background:var(--primary-soft);
+  border:none;display:grid;place-items:center;color:var(--primary-text);cursor:pointer}
+.notes-fab .ico{width:1.125rem;height:1.125rem}
+.topbar [hidden]{display:none}
+.phone.in-app .steps{visibility:hidden}
+.phone.in-app .topbar{border-bottom-color:transparent;padding-bottom:.5rem}
 
-.screen{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:18px 20px 90px;
-  display:flex;flex-direction:column;gap:18px}
+.screen{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:1.25rem 1.25rem 2rem;
+  display:flex;flex-direction:column;gap:1.25rem;scrollbar-width:thin}
 .screen[hidden]{display:none}
+.app-screen{padding-top:.5rem;padding-bottom:7.5rem;gap:1.5rem}
 
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;font-weight:600;color:var(--text-muted)}
-.input{font-family:var(--font-body);font-size:16px;padding:12px 14px;border-radius:var(--radius-md);
-  border:1px solid var(--tint-border);background:var(--tint-surface);color:var(--text);width:100%}
+/* Page headings: strong weight contrast vs body */
+.page-head{display:flex;flex-direction:column;gap:.25rem}
+.eyebrow{font-size:.75rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--primary-text)}
+.page-title{font-size:1.75rem;font-weight:800;line-height:1.15;letter-spacing:-.03em}
+.page-sub{font-size:.9375rem;color:var(--text-muted);font-weight:500}
+.onb-title{font-size:1.625rem;font-weight:800;line-height:1.2;letter-spacing:-.025em;margin-bottom:.375rem}
+.home-head{flex-direction:row;align-items:center;gap:.875rem}
+.head-avatar{width:3.5rem;height:3.5rem;border-radius:50%;object-fit:cover;flex:0 0 auto;
+  box-shadow:0 0 0 3px var(--tint-bg),0 0 0 5px var(--primary)}
+
+.field{display:flex;flex-direction:column;gap:.5rem}
+.field-label{font-size:.875rem;font-weight:700;color:var(--text)}
+.input{font-family:var(--font-body);font-size:1rem;font-weight:600;padding:.875rem 1rem;border-radius:var(--radius-md);
+  border:1px solid var(--tint-border);background:var(--tint-surface);color:var(--text);width:100%;
+  box-shadow:var(--shadow-1)}
 .input:focus{outline:2px solid var(--primary);outline-offset:1px}
 
-.chip-row{display:flex;gap:8px;flex-wrap:wrap}
-.chip{font-family:var(--font-body);font-size:14px;font-weight:600;padding:9px 16px;
-  border-radius:999px;border:1px solid var(--tint-border);background:var(--tint-surface);
-  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:6px}
-.chip.active{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
+.chip-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{font-family:var(--font-body);font-size:.9375rem;font-weight:700;padding:.625rem 1.125rem;
+  border-radius:var(--radius-pill);border:none;background:var(--tint-surface);box-shadow:var(--ring),var(--shadow-1);
+  color:var(--text);cursor:pointer;display:flex;align-items:center;gap:.375rem}
+.chip.active{background:var(--primary);color:var(--primary-foreground)}
 
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:2px solid transparent;
-  cursor:pointer;position:relative;background:var(--tint-surface)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.625rem}
+.photo-thumb{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;border:none;padding:0;
+  cursor:pointer;position:relative;background:var(--tint-surface);box-shadow:var(--shadow-1)}
 .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.photo-thumb.selected{border-color:var(--primary)}
+.photo-thumb.selected{box-shadow:0 0 0 3px var(--primary),var(--shadow-1)}
+.photo-thumb.selected::after{content:"\2713";position:absolute;top:.375rem;right:.375rem;width:1.375rem;height:1.375rem;
+  border-radius:50%;background:var(--primary);color:var(--primary-foreground);display:grid;place-items:center;
+  font-size:.75rem;font-weight:800}
 .photo-thumb.upload{display:flex;align-items:center;justify-content:center;flex-direction:column;
-  gap:4px;font-size:12px;color:var(--text-muted);border:2px dashed var(--tint-border);font-weight:600}
+  gap:.25rem;font-size:.75rem;color:var(--text-muted);border:2px dashed var(--tint-border);font-weight:700;
+  background:transparent;box-shadow:none}
+.photo-thumb.upload .ico{width:1.5rem;height:1.5rem}
 .photo-thumb input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
 
-.btn{font-family:var(--font-body);font-size:16px;font-weight:600;padding:14px 20px;
-  border-radius:var(--radius-md);border:none;cursor:pointer;width:100%;
-  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
-.btn-primary{background:var(--primary);color:var(--primary-foreground)}
-.btn-primary:active{opacity:.9}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-secondary{background:var(--tint-surface);color:var(--text);border:1px solid var(--tint-border)}
-.btn-ghost{background:none;color:var(--primary);width:auto;padding:8px 4px}
+.btn{font-family:var(--font-body);font-size:1rem;font-weight:700;padding:.875rem 1.25rem;min-height:3.25rem;
+  border-radius:var(--radius-pill);border:none;cursor:pointer;width:100%;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+  transition:transform .12s ease,opacity .15s,box-shadow .15s}
+.btn:active{transform:scale(.98)}
+.btn .ico{width:1.125rem;height:1.125rem}
+.btn-primary{background:var(--primary);color:var(--primary-foreground);
+  box-shadow:0 .5rem 1.25rem -.625rem var(--primary)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none}
+.btn-secondary{background:var(--tint-surface);color:var(--text);box-shadow:var(--ring),var(--shadow-1)}
+.btn-tonal{background:var(--primary-soft);color:var(--primary-text)}
+.btn-tonal:disabled{cursor:progress}
+.btn-sm{font-size:.875rem;padding:.625rem 1rem;min-height:2.625rem}
+.link-btn{background:none;border:none;color:var(--primary-text);font-weight:700;font-size:.875rem;
+  cursor:pointer;padding:.25rem .125rem;display:inline-flex;align-items:center;gap:.125rem}
+.link-btn .ico{width:1rem;height:1rem;stroke-width:2.2}
+.spinner{width:1rem;height:1rem;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;
+  animation:spin .7s linear infinite;flex:0 0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.card{background:var(--tint-surface);border:1px solid var(--tint-border);border-radius:var(--radius-lg);
-  padding:16px}
+.card{background:var(--tint-surface);border-radius:var(--radius-lg);padding:1rem;
+  box-shadow:var(--ring),var(--shadow-1)}
 
-.extract-row{display:flex;align-items:center;gap:14px}
-.swatch{width:56px;height:56px;border-radius:var(--radius-md);flex:0 0 auto;
-  border:1px solid rgba(0,0,0,.08)}
-.swatch-lg{width:88px;height:88px;border-radius:20px;border:1px solid rgba(0,0,0,.08)}
-.arrow{color:var(--text-muted);font-size:20px}
-
-.contrast-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;
-  padding:6px 12px;border-radius:999px;background:var(--success-bg);color:var(--success);
-  font-variant-numeric:tabular-nums}
+/* Step 2: theme extraction */
+.extract-row{display:flex;align-items:center;gap:.875rem}
+.swatch{width:3.5rem;height:3.5rem;border-radius:var(--radius-md);flex:0 0 auto;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.swatch-lg{width:5.5rem;height:5.5rem;border-radius:1.25rem;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.swatch-cap{margin-top:.375rem;font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.arrow{color:var(--text-muted);font-size:1.25rem}
+.contrast-badge{display:inline-flex;align-items:center;gap:.375rem;font-size:.8125rem;font-weight:700;
+  padding:.375rem .75rem;border-radius:var(--radius-pill);background:var(--success-bg);color:var(--success);
+  font-variant-numeric:tabular-nums;margin-top:.875rem}
 .contrast-badge.fail{background:var(--error-bg);color:var(--error)}
+.theme-preview{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.875rem;padding-top:.875rem;
+  border-top:1px solid var(--tint-border)}
+.theme-preview .swatch-cap{width:100%;margin:0}
+.pv-pill,.pv-btn{display:inline-flex;align-items:center;gap:.375rem;padding:.4rem .875rem;
+  border-radius:var(--radius-pill);font-weight:700;font-size:.8125rem}
+.pv-pill{background:var(--pv-soft);color:var(--pv-text);--ico-fill:currentColor;--ico-detail:var(--pv-soft)}
+.pv-btn{background:var(--pv);color:var(--pv-fg)}
+.pv-pill .ico,.pv-btn .ico{width:1rem;height:1rem}
 
-.pet-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px}
-.pet-chip{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:60px}
-.pet-chip img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid transparent}
-.pet-chip.active img{border-color:var(--primary)}
-.pet-chip span{font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:60px}
-.pet-chip.add{color:var(--text-muted)}
-.pet-chip.add .add-circle{width:52px;height:52px;border-radius:50%;border:1.5px dashed var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:20px}
+/* Home: status card (kept from the 11.10/11.12 mechanic) */
+.status-card-balanced{background:var(--tint-surface)}
+.status-top{display:flex;gap:.875rem;align-items:center}
+.status-name{font-weight:800;font-size:1.0625rem;letter-spacing:-.01em}
+.status-line{font-size:.875rem;color:var(--text-muted);line-height:1.45}
+.pill-label{display:inline-flex;align-items:center;gap:.375rem;font-size:.6875rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--primary-text);margin-bottom:.125rem}
+.live-dot{width:.4375rem;height:.4375rem;border-radius:50%;background:var(--success);
+  box-shadow:0 0 0 3px var(--success-bg)}
+.sprite-wrap-sm{position:relative;width:4rem;height:4rem;flex:0 0 auto}
+.sprite-img-sm{width:4rem;height:4rem;border-radius:1rem;object-fit:cover;image-rendering:pixelated;
+  background:var(--primary-soft);display:block}
+.sprite-img-sm.bob{animation:bob 3.2s ease-in-out infinite}
+.sprite-mood-badge-sm{position:absolute;top:-.375rem;right:-.375rem;background:var(--tint-surface);
+  box-shadow:var(--shadow-1);border-radius:50%;width:1.5rem;height:1.5rem;
+  display:flex;align-items:center;justify-content:center;font-size:.75rem}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.375rem)}}
+.hud-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.875rem}
+.hud-chip{font-size:.8125rem;font-weight:600;padding:.375rem .75rem;border-radius:var(--radius-pill);
+  background:var(--primary-soft);color:var(--text);display:flex;align-items:center;gap:.3rem}
+.mood-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;margin-top:.75rem}
+.mood-btn{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:.625rem .25rem;min-width:0;
+  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:transparent;
+  cursor:pointer;font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.mood-btn .emoji{font-size:1.25rem;line-height:1.2}
+.mood-btn.active{background:var(--primary-soft);border-color:transparent;color:var(--text)}
 
-.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+.section{display:flex;flex-direction:column;gap:.75rem}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.section-title{font-size:1.125rem;font-weight:800;letter-spacing:-.02em}
+
+/* Shared photo crop: same pet photo, different framing */
+.ph{width:100%;height:100%;object-fit:cover;display:block;object-position:var(--pos,50% 50%);
+  transform:scale(var(--z,1));transform-origin:var(--pos,50% 50%);-webkit-user-drag:none;user-select:none}
+
+/* Home: today's photos strip (wheel + drag + visible peek) */
+.strip{display:flex;gap:.75rem;overflow-x:auto;scroll-snap-type:x proximity;margin:0 -1.25rem;
+  padding:.25rem 1.25rem .75rem;scroll-padding:0 1.25rem;scrollbar-width:thin;cursor:grab;
+  overscroll-behavior-x:contain}
+.strip.dragging{cursor:grabbing;scroll-snap-type:none;user-select:none}
+.strip-item{flex:0 0 auto;width:8.5rem;border:none;padding:0;background:none;cursor:pointer;scroll-snap-align:start;
+  text-align:left;display:flex;flex-direction:column;gap:.375rem;font:inherit;color:inherit}
+.strip.dragging .strip-item{cursor:grabbing}
+.strip-photo{display:block;width:100%;aspect-ratio:4/5;border-radius:var(--radius-md);overflow:hidden;
+  box-shadow:var(--shadow-1);background:var(--primary-soft)}
+.strip-time{font-size:.75rem;font-weight:700;color:var(--text-muted);padding-left:.125rem}
+
+.next-row{width:100%;display:flex;align-items:center;gap:.875rem;border:none;cursor:pointer;text-align:left;
+  font:inherit;color:var(--text)}
+.task-ico{width:2.75rem;height:2.75rem;border-radius:.875rem;background:var(--primary-soft);
+  display:grid;place-items:center;font-size:1.25rem;flex:0 0 auto}
+.next-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:.125rem}
+.next-text strong{font-size:1rem;font-weight:800}
+.next-text span{font-size:.8125rem;color:var(--text-muted);font-weight:500}
+.next-cta{display:inline-flex;align-items:center;gap:.125rem;font-size:.8125rem;font-weight:800;color:var(--primary-text);
+  flex:0 0 auto}
+.next-cta .ico{width:1rem;height:1rem;stroke-width:2.2}
+
+/* Feed */
+.feed-list{display:flex;flex-direction:column;gap:1.125rem}
+.post{padding:0;overflow:hidden}
+.post-head{display:flex;align-items:center;gap:.625rem;padding:.875rem 1rem}
+.avatar{width:2.375rem;height:2.375rem;border-radius:50%;background:var(--primary);color:var(--primary-foreground);
+  display:grid;place-items:center;font-weight:800;font-size:1rem;flex:0 0 auto}
+.post-who{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.3}
+.post-who strong{font-size:.9375rem;font-weight:800}
+.meta{font-size:.8125rem;color:var(--text-muted);font-weight:500}
+.new-badge{font-size:.6875rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:.25rem .5rem;border-radius:var(--radius-pill);background:var(--primary);color:var(--primary-foreground)}
+.post-photo{aspect-ratio:5/4;overflow:hidden;background:var(--primary-soft)}
+.post-body{padding:.875rem 1rem 1rem;display:flex;flex-direction:column;gap:.5rem}
+.ai-label{align-self:flex-start;display:inline-flex;align-items:center;gap:.3rem;font-size:.6875rem;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--primary-text);background:var(--primary-soft);
+  padding:.25rem .5625rem .25rem .4375rem;border-radius:var(--radius-pill)}
+.ai-label .ico{width:.875rem;height:.875rem}
+.post-caption{font-size:1rem;line-height:1.5;font-weight:500}
+.post-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-top:.125rem}
+.mood-chip{display:inline-flex;align-items:center;gap:.3rem;font-size:.8125rem;font-weight:700;
+  padding:.3rem .75rem;border-radius:var(--radius-pill);background:var(--tint-bg);color:var(--text);
+  box-shadow:inset 0 0 0 1px var(--tint-border)}
+.like-btn{display:inline-flex;align-items:center;gap:.375rem;background:none;border:none;cursor:pointer;
+  font-size:.875rem;font-weight:700;color:var(--text-muted);padding:.375rem .625rem;border-radius:var(--radius-pill)}
+.like-btn[aria-pressed="true"]{color:var(--primary-text);background:var(--primary-soft);--ico-fill:currentColor}
+.post.is-new{animation:pop .5s ease}
+@keyframes pop{from{transform:scale(.97);opacity:.4}to{transform:none;opacity:1}}
+.empty{display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;padding:2rem 1rem;
+  color:var(--text-muted);font-weight:600}
+
+/* Care */
+.role-chip{align-self:flex-start;display:inline-flex;gap:.4375rem;align-items:center;font-size:.8125rem;font-weight:700;
+  padding:.25rem .75rem .25rem .25rem;border-radius:var(--radius-pill);background:var(--tint-surface);
+  box-shadow:var(--ring),var(--shadow-1);margin-top:.5rem}
+.role-chip .avatar{width:1.5rem;height:1.5rem;font-size:.75rem}
+.progress-top{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;flex-wrap:wrap;
+  font-size:.875rem;font-weight:700}
+.progress-top span{color:var(--text-muted);font-weight:600;font-size:.8125rem}
+.bar{height:.5rem;border-radius:var(--radius-pill);background:var(--primary-soft);overflow:hidden;margin-top:.5rem}
+.bar>span{display:block;height:100%;background:var(--primary);border-radius:inherit;transition:width .4s ease}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem}
+/* Slim timeline rail (dot + line) keeps the card wide enough at large text sizes */
+.tl-item{display:grid;grid-template-columns:.875rem minmax(0,1fr);gap:.625rem;position:relative}
+.tl-rail{position:relative}
+.tl-rail::before{content:"";position:absolute;left:50%;top:0;bottom:-.75rem;width:2px;margin-left:-1px;
+  background:var(--tint-border)}
+.tl-item:last-child .tl-rail::before{bottom:auto;height:1.5rem}
+.tl-rail::after{content:"";position:absolute;left:50%;top:1.25rem;width:.75rem;height:.75rem;margin-left:-.375rem;
+  border-radius:50%;background:var(--tint-surface);box-shadow:inset 0 0 0 2px var(--tint-border)}
+.tl-item.done .tl-rail::after{background:var(--success);box-shadow:0 0 0 3px var(--success-bg)}
+.tl-item.next .tl-rail::after{background:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.task-text .task-time{font-size:.75rem;font-weight:800;letter-spacing:.02em;color:var(--primary-text);font-variant-numeric:tabular-nums}
+.tl-item.done .task-time,.tl-item.pending .task-time{color:var(--text-muted)}
+.task-card{display:flex;flex-direction:column;gap:.75rem}
+.task-top{display:flex;align-items:center;gap:.75rem}
+.task-text{flex:1;min-width:0}
+.task-text h3{font-size:1rem;font-weight:800}
+.task-text p{font-size:.8125rem;color:var(--text-muted);font-weight:500}
+.task-thumb{width:2rem;height:2rem;border-radius:.5rem;overflow:hidden;flex:0 0 auto;box-shadow:var(--shadow-1)}
+.task-done{display:flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:700;color:var(--success);
+  padding-top:.625rem;border-top:1px solid var(--tint-border)}
+.task-done .ico{width:1rem;height:1rem}
+.tl-item.done .task-ico{background:var(--success-bg)}
+.tl-item.next .task-card{box-shadow:0 0 0 2px var(--primary),var(--shadow-2)}
+.tl-item.flash .task-card{animation:pop .6s ease}
+
+/* Reports */
+.report-summary{padding:0;overflow:hidden}
+.rs-top{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:1.125rem;
+  background:var(--primary-soft)}
+.rs-top h2{font-size:1.375rem;font-weight:800;letter-spacing:-.02em}
+.rs-mood{display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.75rem;font-weight:800;
+  text-align:center;flex:0 0 auto}
+.rs-emoji{font-size:1.75rem;line-height:1;width:3.25rem;height:3.25rem;border-radius:50%;background:var(--tint-surface);
+  display:grid;place-items:center;box-shadow:var(--shadow-1)}
+.rs-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.stat{padding:.875rem .5rem 1rem;text-align:center;display:flex;flex-direction:column;gap:.125rem}
+.stat+.stat{border-left:1px solid var(--tint-border)}
+.stat strong{font-size:1.375rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;font-weight:600;color:var(--text-muted);line-height:1.3}
+.highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.625rem}
+.hl{margin:0;display:flex;flex-direction:column;gap:.375rem}
+.hl-photo{aspect-ratio:1;border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-1)}
+.hl figcaption{font-size:.75rem;font-weight:700;color:var(--text-muted)}
+.report-note{display:flex;flex-direction:column;gap:.75rem}
+.note-head{display:flex;align-items:center;gap:.625rem}
+.report-note p{font-size:.9375rem;line-height:1.6}
+.report-foot{display:flex;align-items:center;justify-content:center;gap:.375rem;font-size:.8125rem;font-weight:600;
   color:var(--text-muted)}
+.report-foot .ico{width:1rem;height:1rem}
 
-.hud-row{display:flex;gap:8px;flex-wrap:wrap}
-.hud-chip{font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:999px;
-  background:var(--tint-bg);border:1px solid var(--tint-border);display:flex;align-items:center;gap:5px}
-
-.mood-row{display:flex;gap:8px}
-.mood-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;
-  border-radius:var(--radius-md);border:1px solid var(--tint-border);background:var(--tint-surface);
-  cursor:pointer;font-size:11px;font-weight:600;color:var(--text-muted)}
-.mood-btn .emoji{font-size:18px}
-.mood-btn.active{border-color:var(--primary);background:var(--tint-bg);color:var(--text)}
-
+/* Bottom tab bar: full width, active = filled icon on a tinted pill */
 .tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);padding:10px 0 16px}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
-  font-weight:600;color:var(--text-muted)}
-.tab.active{color:var(--primary)}
-.tab .emoji{font-size:17px}
+  padding:.5rem .5rem 1rem;z-index:3;
+  box-shadow:0 -1px 0 var(--tint-border),0 -.5rem 1.5rem -1rem rgba(0,0,0,.25)}
+.tabbar[hidden]{display:none}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.75rem;font-weight:700;
+  color:var(--text-muted);background:none;border:none;cursor:pointer;padding:.25rem 0;min-width:0}
+.tab-pill{width:3.5rem;height:2rem;border-radius:var(--radius-pill);display:grid;place-items:center;
+  transition:background .2s}
+.tab .ico{width:1.375rem;height:1.375rem}
+.tab[aria-current="page"]{color:var(--primary-text);--ico-fill:currentColor;--ico-detail:var(--primary-soft)}
+.tab[aria-current="page"] .tab-pill{background:var(--primary-soft)}
 
-.notes-fab{flex:0 0 auto;width:30px;height:30px;border-radius:50%;
-  background:var(--tint-bg);border:1px solid var(--tint-border);
-  display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
-  color:var(--primary);cursor:pointer;margin-left:10px}
+/* In-phone toast */
+.toast{position:absolute;left:1rem;right:1rem;bottom:6.5rem;z-index:4;display:flex;align-items:center;gap:.75rem;
+  padding:.625rem .875rem .625rem .625rem;border-radius:1.125rem;background:var(--text);color:var(--bg);
+  box-shadow:var(--shadow-2);opacity:0;transform:translateY(.75rem) scale(.98);pointer-events:none;
+  transition:opacity .2s,transform .25s ease}
+.toast.show{opacity:1;transform:none}
+.toast-thumb{width:2.5rem;height:2.5rem;border-radius:.625rem;overflow:hidden;flex:0 0 auto;background:var(--primary)}
+.toast-thumb:empty{display:none}
+.toast strong{display:block;font-size:.9375rem;font-weight:800}
+.toast span{display:block;font-size:.8125rem;font-weight:500}
+
+/* Notes sheet */
 .notes-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--tint-surface);
-  border-top:1px solid var(--tint-border);border-radius:20px 20px 0 0;padding:18px 20px 24px;
-  transform:translateY(100%);transition:transform .25s ease;z-index:6;max-height:70%;overflow-y:auto}
-.notes-sheet.open{transform:translateY(0)}
-.notes-sheet h3{font-size:16px;margin-bottom:4px}
-.notes-sheet .tag{display:inline-block;font-size:11px;font-weight:700;color:var(--primary);
-  background:var(--tint-bg);border-radius:999px;padding:3px 10px;margin-bottom:8px}
-.notes-sheet ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:7px;
-  font-size:13.5px;color:var(--text-muted);line-height:1.45}
-.notes-sheet .close-notes{margin-top:16px}
-.notes-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;
+  border-radius:1.5rem 1.5rem 0 0;padding:.75rem 1.25rem 1.5rem;box-shadow:var(--shadow-2);
+  transform:translateY(100%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s .28s;
+  z-index:6;max-height:84%;overflow-y:auto}
+.notes-sheet.open{transform:translateY(0);visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s}
+.sheet-grab{width:2.5rem;height:.3125rem;border-radius:var(--radius-pill);background:var(--tint-border);margin:0 auto .875rem}
+.notes-sheet h3{font-size:1.25rem;font-weight:800;margin-bottom:.25rem;letter-spacing:-.02em}
+.notes-sheet h4{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-top:1rem}
+.notes-sheet .tag{display:inline-block;font-size:.6875rem;font-weight:800;color:var(--primary-text);
+  background:var(--primary-soft);border-radius:var(--radius-pill);padding:.1875rem .625rem;margin-bottom:.5rem}
+.notes-sheet ul{margin:.375rem 0 0;padding-left:1.125rem;display:flex;flex-direction:column;gap:.4375rem;
+  font-size:.875rem;color:var(--text-muted);line-height:1.45}
+.sheet-actions{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:1.25rem}
+.sheet-actions .btn{width:auto;flex:0 0 auto;padding-left:1.5rem;padding-right:1.5rem}
+.notes-backdrop{position:absolute;inset:0;background:var(--scrim);opacity:0;pointer-events:none;
   transition:opacity .2s;z-index:5}
 .notes-backdrop.open{opacity:1;pointer-events:auto}
 
-.status-line{font-size:14px;color:var(--text-muted);line-height:1.4}
-.pill-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.04em;color:var(--primary)}
-
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-
-
-.status-card-balanced{background:var(--tint-surface);border-color:var(--tint-border)}
-.sprite-wrap-sm{position:relative;width:64px;height:64px;flex:0 0 auto}
-.sprite-img-sm{width:64px;height:64px;border-radius:16px;object-fit:cover;image-rendering:pixelated}
-.sprite-img-sm.bob{animation:bob 3.2s ease-in-out infinite}
-.sprite-mood-badge-sm{position:absolute;top:-6px;right:-6px;background:var(--surface);
-  border:2px solid var(--tint-bg);border-radius:50%;width:22px;height:22px;
-  display:flex;align-items:center;justify-content:center;font-size:11px}
-
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important}
+}
 </style>
 
+<!-- Inline icon set (clean outline + filled/duotone states) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,none)" d="M4 10.4 12 4l8 6.4V19a1.5 1.5 0 0 1-1.5 1.5H15v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5H5.5A1.5 1.5 0 0 1 4 19z"/></symbol>
+  <symbol id="i-feed" viewBox="0 0 24 24"><rect style="fill:var(--ico-fill,none)" x="3.5" y="4.5" width="17" height="15" rx="3.5"/><circle style="stroke:var(--ico-detail,currentColor)" cx="9" cy="9.8" r="1.6"/><path style="stroke:var(--ico-detail,currentColor)" d="M4.5 17.2l4.4-4.1a1.2 1.2 0 0 1 1.6 0l2.2 2 2.4-2.2a1.2 1.2 0 0 1 1.6 0l2.8 2.6"/></symbol>
+  <symbol id="i-care" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,none)" d="M12 20.2s-7.6-4.6-7.6-10.3A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.6 2.7c0 5.7-7.6 10.3-7.6 10.3z"/><path style="stroke:var(--ico-detail,currentColor)" d="M9.2 12.3l1.9 1.9 3.7-3.7"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,none)" d="M7.5 3.5h6.8l4.2 4.2V19a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 6 19V5a1.5 1.5 0 0 1 1.5-1.5z"/><path style="stroke:var(--ico-detail,currentColor)" d="M9 12h6M9 15.5h4"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path fill="currentColor" fill-opacity=".22" d="M9.2 4.5h5.6l1.5 2.2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.7a2 2 0 0 1 2-2h2.7z"/><circle cx="12" cy="13.1" r="3.3"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M11 2.5l1.9 5.1 5.1 1.9-5.1 1.9L11 16.5l-1.9-5.1L4 9.5l5.1-1.9zM18.5 14.5l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle fill="currentColor" fill-opacity=".18" stroke="none" cx="12" cy="12" r="9.5"/><path stroke-width="2.4" d="M7.8 12.3l2.8 2.8 5.6-5.6"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path style="fill:var(--ico-fill,none)" d="M12 20s-7.5-4.5-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.5 12 20 12 20z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><path stroke-width="2.4" d="M12 11v6"/><circle fill="currentColor" stroke="none" cx="12" cy="7.3" r="1.4"/></symbol>
+  <symbol id="i-paw" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><ellipse cx="6.2" cy="10.4" rx="1.9" ry="2.4"/><ellipse cx="9.8" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="14.2" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="17.8" cy="10.4" rx="1.9" ry="2.4"/><path d="M12 11.2c-2.6 0-5.4 3.6-5.4 5.9 0 1.6 1.2 2.4 2.6 2.4 1.2 0 1.8-.6 2.8-.6s1.6.6 2.8.6c1.4 0 2.6-.8 2.6-2.4 0-2.3-2.8-5.9-5.4-5.9z"/></g></symbol>
+</svg>
+
 <div class="rig">
-  <div class="rig-label">Concept C of 3 &middot; Balanced Skin (recommended)</div>
-  <div class="phone">
+  <div class="rig-label">Concept C of 3 &middot; Balanced Skin &mdash; warm modern, photo-first (recommended)</div>
+  <div class="phone" id="phone">
     <div class="notes-backdrop" id="notesBackdrop"></div>
     <div class="statusbar">
       <span id="clockTime">9:41</span>
-      <span class="icons">●●●● &nbsp; 📶 &nbsp; 🔋</span>
+      <span class="icons" aria-hidden="true">
+        <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg viewBox="0 0 16 12"><path d="M8 2.2c2.4 0 4.6.9 6.3 2.4l1.2-1.3A10.9 10.9 0 0 0 8 .4C5.1.4 2.5 1.5.5 3.3l1.2 1.3A9.1 9.1 0 0 1 8 2.2zm0 3.6c1.4 0 2.7.5 3.7 1.4l1.2-1.3A7.3 7.3 0 0 0 8 4a7.3 7.3 0 0 0-4.9 1.9l1.2 1.3c1-.9 2.3-1.4 3.7-1.4zm0 3.5c-.6 0-1.2.2-1.6.6L8 11.6l1.6-1.7c-.4-.4-1-.6-1.6-.6z"/></svg>
+        <svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="17" height="8" rx="1.8"/><rect x="23.6" y="4" width="1.8" height="4" rx=".9" opacity=".45"/></svg>
+      </span>
     </div>
     <div class="topbar">
-      <button class="back-btn" id="backBtn" style="visibility:hidden">&lsaquo; Back</button>
-      <div class="steps">
+      <div class="topbar-start">
+        <button class="back-btn" id="backBtn" hidden><svg class="ico" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
+        <div class="brand" id="brandStart"><span class="brand-mark"><svg class="ico" aria-hidden="true"><use href="#i-paw"/></svg></span>PawNote</div>
+      </div>
+      <div class="steps" id="steps" role="img" aria-label="Step 1 of 3">
         <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
       </div>
-      <div style="display:flex;align-items:center">
-        <div class="brand">🐾 PawNote</div>
-        <button class="notes-fab" id="notesFab" aria-label="About this version">ⓘ</button>
+      <div class="topbar-end">
+        <button class="notes-fab" id="notesFab" aria-label="About this concept"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg></button>
       </div>
     </div>
 
-    
+<!-- Step 1: add pet -->
 <div class="screen" data-step="1">
   <div>
-    <h2>Add your pet</h2>
-    <p class="status-line">A few details, then we'll match PawNote to them.</p>
+    <h2 class="onb-title">Add your pet</h2>
+    <p class="page-sub">A few details, then we'll match PawNote to them.</p>
   </div>
   <div class="field">
-    <label for="nameInput">Pet's name</label>
-    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori">
+    <label class="field-label" for="nameInput">Pet's name</label>
+    <input class="input" id="nameInput" placeholder="e.g. Bori" value="Bori" autocomplete="off">
   </div>
   <div class="field">
-    <label>Species</label>
-    <div class="chip-row">
-      <button class="chip species-chip active" data-species="dog">🐶 Dog</button>
-      <button class="chip species-chip" data-species="cat">🐱 Cat</button>
+    <span class="field-label" id="speciesLabel">Species</span>
+    <div class="chip-row" role="group" aria-labelledby="speciesLabel">
+      <button class="chip species-chip active" data-species="dog" aria-pressed="true">🐶 Dog</button>
+      <button class="chip species-chip" data-species="cat" aria-pressed="false">🐱 Cat</button>
     </div>
   </div>
   <div class="field">
-    <label>Photo</label>
+    <span class="field-label">Photo</span>
     <div class="photo-grid" id="photoGrid"></div>
   </div>
   <button class="btn btn-primary" id="continueBtn">Continue</button>
 </div>
 
+<!-- Step 2: theme preview -->
 <div class="screen" data-step="2" hidden>
   <div>
-    <h2>Your app now matches <span id="petNamePreview">Bori</span> <span id="petEmojiPreview">🐶</span></h2>
-    <p class="status-line">We read the coat color from the photo and snap it to the nearest of a fixed set of accessible presets &mdash; never the raw photo color, so text always stays readable.</p>
+    <h2 class="onb-title">Your app now matches <span id="petNamePreview">Bori</span> <span id="petEmojiPreview">🐶</span></h2>
+    <p class="page-sub">We read the coat color from the photo and snap it to the nearest of a fixed set of accessible presets &mdash; never the raw photo color, so text always stays readable.</p>
   </div>
   <div class="card">
     <div class="extract-row">
       <div>
         <div class="swatch" id="rawSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px">Detected</p>
+        <p class="swatch-cap">Detected</p>
       </div>
-      <div class="arrow">&rarr;</div>
+      <div class="arrow" aria-hidden="true">&rarr;</div>
       <div>
         <div class="swatch-lg" id="presetSwatch"></div>
-        <p class="status-line" style="margin-top:6px;font-size:11px" id="presetName">Forest</p>
+        <p class="swatch-cap" id="presetName">Forest</p>
       </div>
     </div>
-    <div style="margin-top:14px" class="contrast-badge" id="contrastBadge">&mdash;</div>
+    <div class="contrast-badge" id="contrastBadge">&mdash;</div>
+    <div class="theme-preview" id="themePreview">
+      <p class="swatch-cap">How it carries through</p>
+      <span class="pv-pill"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg>Home</span>
+      <span class="pv-btn"><svg class="ico" aria-hidden="true"><use href="#i-camera"/></svg>Complete with photo</span>
+    </div>
   </div>
   <button class="btn btn-secondary" id="tryAnotherBtn">Try another preset</button>
   <button class="btn btn-primary" id="keepBtn">Keep this look</button>
 </div>
 
-
-    <div class="screen" data-step="3" hidden>
-      
-<div class="pet-row" id="petRow">
-  <div class="pet-chip active"><img id="homePetChipImg" src="" alt=""><span id="homePetChipName">Bori</span></div>
-  <div class="pet-chip add"><div class="add-circle">+</div><span>Add pet</span></div>
-</div>
-<div class="section-title">Today</div>
-<div class="card status-card-balanced">
-  <div style="display:flex;gap:14px;align-items:center">
-    <div class="sprite-wrap-sm">
-      <img id="spriteImg" class="sprite-img-sm bob" src="" alt="pixel pet sprite">
-      <div class="sprite-mood-badge-sm" id="spriteMoodBadge">😌</div>
+<!-- App: Home -->
+<div class="screen app-screen" data-tab="home" hidden>
+  <header class="page-head home-head">
+    <img class="head-avatar" id="homeAvatar" src="" alt="">
+    <div>
+      <p class="eyebrow" id="homeEyebrow">Today &middot; with Jisoo</p>
+      <h1 class="page-title" id="homeTitle">Bori's day</h1>
     </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:700;font-size:15px" id="homePetName">Bori</div>
-      <p class="status-line" id="moodStatusLine">Calm and settled</p>
+  </header>
+  <section class="card status-card-balanced" aria-label="Live status">
+    <div class="status-top">
+      <div class="sprite-wrap-sm">
+        <img id="spriteImg" class="sprite-img-sm bob" src="" alt="pixel pet sprite">
+        <div class="sprite-mood-badge-sm" id="spriteMoodBadge">😌</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <p class="pill-label"><span class="live-dot" aria-hidden="true"></span>Live status</p>
+        <div class="status-name" id="homePetName">Bori</div>
+        <p class="status-line" id="moodStatusLine">Calm and settled</p>
+      </div>
     </div>
-  </div>
-  <div class="hud-row" style="margin-top:14px">
-    <div class="hud-chip">🍽️ Fed &middot; 8:02 AM</div>
-    <div class="hud-chip">💩 Logged &middot; 11:15 AM</div>
-    <div class="hud-chip">🐕 Next: Walk &middot; 4:00 PM</div>
-  </div>
-  <div class="mood-row" style="margin-top:12px">
-    <button class="mood-btn" data-mood="happy"><span class="emoji">😊</span>Happy</button>
-    <button class="mood-btn active" data-mood="calm"><span class="emoji">😌</span>Calm</button>
-    <button class="mood-btn" data-mood="hungry"><span class="emoji">🍽️</span>Hungry</button>
-    <button class="mood-btn" data-mood="sleepy"><span class="emoji">😴</span>Sleepy</button>
-  </div>
+    <div class="hud-row" id="hudRow"></div>
+    <div class="mood-row" role="group" aria-label="Set mood">
+      <button class="mood-btn" data-mood="happy" aria-pressed="false"><span class="emoji">😊</span>Happy</button>
+      <button class="mood-btn active" data-mood="calm" aria-pressed="true"><span class="emoji">😌</span>Calm</button>
+      <button class="mood-btn" data-mood="hungry" aria-pressed="false"><span class="emoji">🍽️</span>Hungry</button>
+      <button class="mood-btn" data-mood="sleepy" aria-pressed="false"><span class="emoji">😴</span>Sleepy</button>
+    </div>
+  </section>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Today's photos</h2>
+      <button class="link-btn" data-goto="feed">See all<svg class="ico" aria-hidden="true"><use href="#i-chev"/></svg></button>
+    </div>
+    <div class="strip" id="photoStrip" tabindex="0" aria-label="Today's photos. Scroll sideways with the wheel or drag."></div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2 class="section-title">Next up</h2></div>
+    <button class="card next-row" id="nextRow"></button>
+  </section>
 </div>
-<p class="status-line" style="font-size:12.5px">Same mechanic as the real 11.10/11.12 spec, sized to sit inside a normal Home screen.</p>
 
+<!-- App: Feed -->
+<div class="screen app-screen" data-tab="feed" hidden>
+  <header class="page-head">
+    <p class="eyebrow">Album</p>
+    <h1 class="page-title">Feed</h1>
+    <p class="page-sub">Every photo from Jisoo arrives with a caption written by Nemotron.</p>
+  </header>
+  <div class="feed-list" id="feedList"></div>
+</div>
+
+<!-- App: Care (sitter view) -->
+<div class="screen app-screen" data-tab="care" hidden>
+  <header class="page-head">
+    <p class="eyebrow">Schedule</p>
+    <h1 class="page-title">Today's care</h1>
+    <p class="page-sub" id="careSub">Bori's routine, in order. One tap, one photo, no typing.</p>
+    <span class="role-chip"><span class="avatar" aria-hidden="true">J</span>Sitter view &middot; Jisoo</span>
+  </header>
+  <div class="card">
+    <div class="progress-top"><strong id="careProgressText">2 of 5 done</strong><span>Owner sees each one live</span></div>
+    <div class="bar" role="progressbar" aria-label="Tasks done" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2" id="careBarWrap"><span id="careBar" style="width:40%"></span></div>
+  </div>
+  <ol class="timeline" id="careList"></ol>
+</div>
+
+<!-- App: Reports -->
+<div class="screen app-screen" data-tab="reports" hidden>
+  <header class="page-head">
+    <p class="eyebrow">Daily report</p>
+    <h1 class="page-title">Reports</h1>
+    <p class="page-sub" id="reportSub">Bori's day, written up for you each evening.</p>
+  </header>
+  <div class="section" id="reportBody"></div>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Main" hidden>
+  <button class="tab" data-tab="home" aria-current="page"><span class="tab-pill"><svg class="ico" aria-hidden="true"><use href="#i-home"/></svg></span>Home</button>
+  <button class="tab" data-tab="feed"><span class="tab-pill"><svg class="ico" aria-hidden="true"><use href="#i-feed"/></svg></span>Feed</button>
+  <button class="tab" data-tab="care"><span class="tab-pill"><svg class="ico" aria-hidden="true"><use href="#i-care"/></svg></span>Care</button>
+  <button class="tab" data-tab="reports"><span class="tab-pill"><svg class="ico" aria-hidden="true"><use href="#i-report"/></svg></span>Reports</button>
+</nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <span class="toast-thumb" id="toastThumb"></span>
+      <div><strong id="toastTitle"></strong><span id="toastSub"></span></div>
     </div>
 
-    
-<div class="tabbar">
-  <div class="tab active"><span class="emoji">🏠</span>Home</div>
-  <div class="tab"><span class="emoji">📷</span>Feed</div>
-  <div class="tab"><span class="emoji">💊</span>Care</div>
-  <div class="tab"><span class="emoji">📝</span>Reports</div>
-</div>
-
-
-    <div class="notes-sheet" id="notesSheet">
+    <div class="notes-sheet" id="notesSheet" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+      <div class="sheet-grab" aria-hidden="true"></div>
       <span class="tag">Recommended</span>
-      <h3>Balanced Skin</h3>
-      <p class="status-line">The real 11.10/11.12 mechanic, applied as a soft accent + a small lively status card inside the normal Home layout.</p>
-      <ul><li>Theming: identical rule to the planned 11.10 feature &mdash; preset-snapped, contrast-checked, explicit Keep/alternate step &mdash; applied as a soft surface tint, not a full re-skin.</li>
-<li>Gamification: a small live pixel-art avatar with a gentle idle animation and mood states, sitting as one card inside Home rather than replacing it.</li>
-<li>Trade-off: least flashy of the three, but closest to something that could graduate straight into real code with the lowest redesign cost.</li></ul>
-      <button class="btn btn-secondary close-notes" id="closeNotes">Close</button>
+      <h3 id="notesTitle">C &middot; Balanced Skin</h3>
+      <p class="status-line">Warm, modern, photo-first. The real 11.10/11.12 mechanic as a soft tint, plus a small lively status card inside an otherwise normal Home.</p>
+      <h4>UI choices</h4>
+      <ul>
+        <li>Plus Jakarta Sans: heavy 800 headings over regular 500 body; large radii (cards 1.25rem, photos 1rem), soft layered shadows instead of borders, pill buttons.</li>
+        <li>Soft skin: the snapped preset tints the primary color, card surfaces, hairlines and pill states on every tab. The page background stays neutral so the photos carry the color.</li>
+        <li>Clean filled/duotone SVG icons; the active tab is a filled icon on a tinted pill.</li>
+      </ul>
+      <h4>UX choices</h4>
+      <ul>
+        <li>Home keeps the pixel status card, then a sideways "Today's photos" strip (wheel or drag) and one "Next up" row.</li>
+        <li>Feed: one big photo card per post with Jisoo, time, a mood chip and an "AI caption" label (Nemotron).</li>
+        <li>Care: a timed schedule where the next task gets the single primary "Complete with photo". Completing posts to Feed and confirms "Sent to owner".</li>
+        <li>Reports: summary first (mood + 3 stats), then highlights and Jisoo's AI-drafted note.</li>
+      </ul>
+      <h4>Trade-offs</h4>
+      <ul>
+        <li>Least flashy of the three: the pet's personality lives in one card and the photos, not the whole chrome.</li>
+        <li>Closest to shippable: the same tokens drive every screen, so redesign cost is lowest.</li>
+        <li>Demo shortcut: Care shows the sitter's side; the other tabs are the owner's view.</li>
+      </ul>
+      <div class="sheet-actions">
+        <button class="link-btn" id="restartBtn">Restart prototype</button>
+        <button class="btn btn-secondary btn-sm" id="closeNotes">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -323,6 +631,29 @@ const MOODS = [
 ];
 const PIXEL_GRID = 22; // 0 = no pixelation
 const THEME_MODE = "soft"; // accent | soft | full
+const SITTER = {name:"Jisoo", initial:"J"};
+const FRIEND = {dog:"Coco", cat:"Miso"};
+// Different framings of the same photo so one pet photo can fill a day of posts.
+const CROPS = [
+  {pos:"50% 45%", z:1}, {pos:"35% 35%", z:1.35}, {pos:"65% 55%", z:1.5},
+  {pos:"50% 30%", z:1.2}, {pos:"40% 60%", z:1.4},
+];
+const TASKS = {
+  dog: [
+    {id:"breakfast", time:"8:00 AM",  type:"meal", icon:"🍽️", title:"Breakfast",      detail:"1 cup kibble",               doneAt:"8:05 AM"},
+    {id:"med1",      time:"9:00 AM",  type:"med",  icon:"💊", title:"Allergy tablet", detail:"½ tablet, hidden in a treat", doneAt:"9:02 AM"},
+    {id:"walk",      time:"12:30 PM", type:"walk", icon:"🦮", title:"Midday walk",    detail:"30 min · harness on"},
+    {id:"med2",      time:"3:00 PM",  type:"med",  icon:"💧", title:"Ear drops",      detail:"2 drops each ear"},
+    {id:"dinner",    time:"6:00 PM",  type:"meal", icon:"🍖", title:"Dinner",         detail:"1 cup kibble + topper"},
+  ],
+  cat: [
+    {id:"breakfast", time:"8:00 AM",  type:"meal", icon:"🍽️", title:"Breakfast",      detail:"½ can wet food",             doneAt:"8:04 AM"},
+    {id:"med1",      time:"9:00 AM",  type:"med",  icon:"💊", title:"Hairball gel",   detail:"Pea-size, after breakfast",  doneAt:"9:03 AM"},
+    {id:"play",      time:"12:30 PM", type:"play", icon:"🧶", title:"Play session",   detail:"15 min · wand toy"},
+    {id:"litter",    time:"3:00 PM",  type:"care", icon:"💧", title:"Litter + water", detail:"Scoop box, refill fountain"},
+    {id:"dinner",    time:"6:00 PM",  type:"meal", icon:"🐟", title:"Dinner",         detail:"½ can wet food"},
+  ],
+};
 
 function hslToHex(h,s,l){
   s/=100; l/=100;
@@ -371,6 +702,13 @@ function colorForPreset(preset){
   }
   return {hex, ratio, l};
 }
+// Walk lightness (step < 0 darker, > 0 lighter) until the color reaches 4.5:1 against every background.
+function fitLightness(h, s, l, step, against){
+  let hex = hslToHex(h, s, l);
+  const ok = x => against.every(b => contrastRatio(x, b) >= 4.5);
+  while(!ok(hex) && l > 4 && l < 96){ l += step; hex = hslToHex(h, s, l); }
+  return hex;
+}
 function nearestPresetIndex(hue){
   let best=0, bestD=999;
   PRESETS.forEach((p,i)=>{
@@ -411,24 +749,57 @@ function pixelate(imgEl, grid){
   return out.toDataURL("image/png");
 }
 
-const state = { step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm" };
+const state = { step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null, mood:"calm",
+  tab:"home", tasks:[], posts:[], cropCursor:0 };
 
 function $(sel){ return document.querySelector(sel); }
 function $all(sel){ return document.querySelectorAll(sel); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function petName(){ return (state.name || "").trim() || "Your pet"; }
+function possessive(n){ return /s$/i.test(n) ? `${n}'` : `${n}'s`; }
+const ICON = name => `<svg class="ico" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+function photoHTML(p, alt){
+  return `<img class="ph" draggable="false" src="${p.src}" alt="${esc(alt)}" style="--pos:${p.pos};--z:${p.z}">`;
+}
+function isDark(){
+  const t = document.documentElement.dataset.theme;
+  return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+}
 
+// ---- time helpers (12-hour clock everywhere) ----
+function toMinutes(t){
+  const [hm, ap] = t.split(" "); let [h, m] = hm.split(":").map(Number);
+  if(ap === "PM" && h !== 12) h += 12;
+  if(ap === "AM" && h === 12) h = 0;
+  return h*60 + m;
+}
+function fromMinutes(min){
+  let h = Math.floor(min/60) % 24; const m = min % 60;
+  const ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2,"0")} ${ap}`;
+}
+function addMinutes(t, d){ return fromMinutes(toMinutes(t) + d); }
+
+// ---- onboarding ----
 function renderPhotoGrid(){
   const grid = $("#photoGrid");
   grid.innerHTML = "";
   PETS.filter(p=>p.species===state.species).forEach(p=>{
-    const div = document.createElement("div");
-    div.className = "photo-thumb" + (state.photo && state.photo.id===p.id ? " selected" : "");
-    div.innerHTML = `<img src="${p.src}" alt="${p.breed} sample">`;
-    div.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
-    grid.appendChild(div);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const sel = state.photo && state.photo.id===p.id;
+    btn.className = "photo-thumb" + (sel ? " selected" : "");
+    btn.setAttribute("aria-pressed", sel ? "true" : "false");
+    btn.innerHTML = `<img src="${p.src}" alt="${p.breed} sample">`;
+    btn.onclick = () => { state.photo = p; renderPhotoGrid(); updateContinueBtn(); };
+    grid.appendChild(btn);
   });
   const uploadDiv = document.createElement("div");
-  uploadDiv.className = "photo-thumb upload";
-  uploadDiv.innerHTML = `<span>📷</span><span>Upload</span><input type="file" accept="image/*" id="fileInput">`;
+  const custom = state.photo && state.photo.id === "custom";
+  uploadDiv.className = "photo-thumb upload" + (custom ? " selected" : "");
+  uploadDiv.innerHTML = custom
+    ? `<img src="${state.photo.src}" alt="Your uploaded photo"><input type="file" accept="image/*" id="fileInput" aria-label="Replace uploaded photo">`
+    : `${ICON("camera")}<span>Upload</span><input type="file" accept="image/*" id="fileInput" aria-label="Upload a photo">`;
   grid.appendChild(uploadDiv);
   $("#fileInput").onchange = (e) => {
     const file = e.target.files[0];
@@ -447,7 +818,10 @@ function updateContinueBtn(){
 }
 function selectSpecies(sp){
   state.species = sp;
-  $all(".species-chip").forEach(c=>c.classList.toggle("active", c.dataset.species===sp));
+  $all(".species-chip").forEach(c=>{
+    const on = c.dataset.species===sp;
+    c.classList.toggle("active", on); c.setAttribute("aria-pressed", on ? "true" : "false");
+  });
   const first = PETS.find(p=>p.species===sp);
   if(!state.photo || state.photo.species !== sp) state.photo = state.photo && state.photo.id==="custom" ? state.photo : first;
   renderPhotoGrid();
@@ -455,11 +829,18 @@ function selectSpecies(sp){
 
 function goToStep(n){
   state.step = n;
-  $all(".screen").forEach(s=> s.hidden = Number(s.dataset.step) !== n);
+  const inApp = n === 3;
+  $("#phone").classList.toggle("in-app", inApp);
+  $("#tabbar").hidden = !inApp;
+  $all(".screen[data-step]").forEach(s=> s.hidden = Number(s.dataset.step) !== n);
   $all(".step-dot").forEach((d,i)=> d.classList.toggle("active", i === n-1));
-  $("#backBtn").style.visibility = n === 1 ? "hidden" : "visible";
+  $("#steps").setAttribute("aria-label", `Step ${n} of 3`);
+  // Left slot: Back on step 2 only; the brand otherwise (step 1 and the tabbed app).
+  $("#backBtn").hidden = n !== 2;
+  $("#brandStart").hidden = n === 2;
   if(n===2) runExtraction();
-  if(n===3) buildHome();
+  if(inApp){ buildHome(); renderAll(); showTab("home"); }
+  else $all(".app-screen").forEach(s => s.hidden = true);
 }
 
 function runExtraction(){
@@ -483,55 +864,163 @@ function renderExtraction(){
   const emoji = state.species === "dog" ? "🐶" : "🐱";
   $("#petEmojiPreview").textContent = emoji;
   const badge = $("#contrastBadge");
-  badge.textContent = `${result.ratio.toFixed(1)}:1 · Passes AA ✓`;
-  badge.classList.toggle("fail", result.ratio < 4.5);
+  const pass = result.ratio >= 4.5;
+  badge.textContent = `${result.ratio.toFixed(1)}:1 with white text · ${pass ? "Passes AA ✓" : "Below AA"}`;
+  badge.classList.toggle("fail", !pass);
   state._currentHex = result.hex;
+  // Live preview of how the soft skin carries into the app (tab pill + primary button).
+  const set = buildThemeVars(preset, result)[isDark() ? "dark" : "light"];
+  const pv = $("#themePreview");
+  pv.style.setProperty("--pv", set["--primary"]);
+  pv.style.setProperty("--pv-fg", set["--primary-foreground"]);
+  pv.style.setProperty("--pv-soft", set["--primary-soft"] || set["--primary"]);
+  pv.style.setProperty("--pv-text", set["--primary-soft"] ? set["--primary-text"] : set["--primary-foreground"]);
 }
 function cyclePreset(){
+  if(state.presetIdx === null) return;
   state.presetIdx = (state.presetIdx + 1) % PRESETS.length;
   renderExtraction();
 }
-function keepTheme(){
-  const hex = state._currentHex;
-  const preset = PRESETS[state.presetIdx];
-  document.documentElement.style.setProperty("--primary", hex);
-  if(THEME_MODE === "full" || THEME_MODE === "soft"){
-    const bgTint = hslToHex(preset.hue, Math.min(preset.sat,22), 97);
-    const surfaceTint = hslToHex(preset.hue, Math.min(preset.sat,18), 94);
-    const borderTint = hslToHex(preset.hue, Math.min(preset.sat,20), 88);
-    if(THEME_MODE === "full"){
-      document.documentElement.style.setProperty("--tint-bg", bgTint);
-    }
-    document.documentElement.style.setProperty("--tint-surface", surfaceTint);
-    document.documentElement.style.setProperty("--tint-border", borderTint);
+
+// Builds light + dark token sets for the chosen preset. Every text/background pair is fitted to >= 4.5:1.
+function buildThemeVars(preset, result){
+  const h = preset.hue, s = preset.sat;
+  const lSoft = hslToHex(h, Math.min(s,44), 91);
+  const lSurface = hslToHex(h, Math.min(s,36), 97.5);
+  const light = {
+    "--primary": result.hex, "--primary-foreground": "#FFFFFF",
+    "--primary-soft": lSoft,
+    "--primary-text": fitLightness(h, s, result.l, -2, [lSoft, lSurface]),
+    "--tint-surface": lSurface,
+    "--tint-border": hslToHex(h, Math.min(s,22), 88),
+  };
+  const dSoft = hslToHex(h, Math.min(s,30), 18);
+  const dSurface = hslToHex(h, Math.min(s,14), 13);
+  const dPrimary = fitLightness(h, Math.max(s,40), 58, 2, [dSoft, dSurface, "#0E1012"]);
+  const dark = {
+    "--primary": dPrimary, "--primary-foreground": "#0E1012",
+    "--primary-soft": dSoft,
+    "--primary-text": dPrimary,
+    "--tint-surface": dSurface,
+    "--tint-border": hslToHex(h, Math.min(s,14), 23),
+  };
+  if(THEME_MODE === "full"){
+    light["--tint-bg"] = hslToHex(h, Math.min(s,22), 95);
+    dark["--tint-bg"] = hslToHex(h, Math.min(s,12), 8);
   }
+  if(THEME_MODE === "accent"){
+    ["--tint-surface","--tint-border","--primary-soft"].forEach(k => { delete light[k]; delete dark[k]; });
+  }
+  return {light, dark};
+}
+// Written as a <style> (not inline props) so the existing dark-mode blocks keep working.
+function applyThemeVars(vars){
+  let el = document.getElementById("themeVars");
+  if(!el){ el = document.createElement("style"); el.id = "themeVars"; document.head.appendChild(el); }
+  const decl = o => Object.entries(o).map(([k,v]) => `${k}:${v}`).join(";");
+  el.textContent = `:root{${decl(vars.light)}}`
+    + `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${decl(vars.dark)}}}`
+    + `:root[data-theme="dark"]{${decl(vars.dark)}}`;
+}
+function keepTheme(){
+  if(state.presetIdx === null) return;
+  const preset = PRESETS[state.presetIdx];
+  applyThemeVars(buildThemeVars(preset, colorForPreset(preset)));
+  seedDay();
   goToStep(3);
 }
 
+// ---- mock day data ----
+function captionFor(key, n){
+  const C = {
+    dog:{
+      breakfast:[`${n} finished breakfast in record time and is now on zoomies patrol 🐶`, "happy"],
+      med1:[`Tablet down, hidden in a treat. ${n} didn't suspect a thing.`, "calm"],
+      walk:[`${n} sniffed every single tree on the midday walk. 30 happy minutes 🐾`, "happy"],
+      med2:[`Ear drops done. ${n} got a treat and forgave everyone instantly.`, "calm"],
+      dinner:[`Dinner's gone! ${n} is doing the slow post-meal stretch.`, "sleepy"],
+      friend:[`${FRIEND.dog} dropped by for a sniff-around with ${n} at the park.`, "happy"],
+    },
+    cat:{
+      breakfast:[`${n} cleaned the whole bowl and is loafing in a sunbeam ☀️`, "calm"],
+      med1:[`Hairball gel done. ${n} took it like a pro.`, "calm"],
+      play:[`${n} caught the wand toy 12 times. The wand did not survive 🧶`, "happy"],
+      litter:[`Fresh water, clean box. ${n} inspected both and approved.`, "calm"],
+      dinner:[`Dinner served. ${n} is already eyeing the softest blanket.`, "sleepy"],
+      friend:[`${n} and ${FRIEND.cat} shared the window seat this morning.`, "calm"],
+    },
+  };
+  const [text, mood] = C[state.species][key];
+  return {text, mood};
+}
+function makePost(key, time, photo, alt){
+  const c = captionFor(key, petName());
+  return {id:key, key, time, photo, caption:c.text, mood:c.mood, liked:false, isNew:false, alt};
+}
+function sortPosts(){ state.posts.sort((a,b) => toMinutes(b.time) - toMinutes(a.time)); }
+function nextCrop(){ return CROPS[state.cropCursor++ % CROPS.length]; }
+function seedDay(){
+  const n = petName();
+  state.cropCursor = 0;
+  state.tasks = TASKS[state.species].map(t => ({...t, done: t.doneAt || null}));
+  state.posts = state.tasks.filter(t => t.done)
+    .map(t => makePost(t.id, t.done, {src:state.photo.src, ...nextCrop()}, `Photo of ${n}: ${t.title.toLowerCase()}`));
+  const friend = PETS.find(p => p.species === state.species && p.id !== state.photo.id);
+  if(friend){
+    state.posts.push(makePost("friend", "8:40 AM", {src:friend.src, ...CROPS[0]},
+      `${FRIEND[state.species]}, a ${friend.breed.toLowerCase()} friend`));
+  }
+  sortPosts();
+}
+
+// ---- app shell ----
+function showTab(tab){
+  state.tab = tab;
+  $all(".app-screen").forEach(s => s.hidden = s.dataset.tab !== tab);
+  $all(".tab").forEach(b => b.dataset.tab === tab ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+  const scr = document.querySelector(`.app-screen[data-tab="${tab}"]`);
+  if(scr) scr.scrollTop = 0;
+}
+function scrollToInScreen(tab, el){
+  const scr = document.querySelector(`.app-screen[data-tab="${tab}"]`);
+  if(!scr || !el) return;
+  scr.scrollTop += el.getBoundingClientRect().top - scr.getBoundingClientRect().top - 12;
+}
+function renderAll(){ renderHomeDynamic(); renderFeed(); renderCare(); renderReports(); }
+
 function buildHome(){
+  const n = petName();
   const setIfPresent = (sel, prop, val) => { const el = $(sel); if(el) el[prop] = val; };
-  setIfPresent("#homePetName", "textContent", state.name || "Your pet");
-  setIfPresent("#homePetAvatar", "src", state.photo.src);
-  setIfPresent("#homePetChipImg", "src", state.photo.src);
-  setIfPresent("#homePetChipName", "textContent", state.name || "Pet");
+  setIfPresent("#homePetName", "textContent", n);
+  setIfPresent("#homeAvatar", "src", state.photo.src);
+  setIfPresent("#homeAvatar", "alt", `Photo of ${n}`);
+  setIfPresent("#homeTitle", "textContent", `${possessive(n)} day`);
+  const weekday = new Date().toLocaleDateString("en-US", {weekday:"long"});
+  setIfPresent("#homeEyebrow", "textContent", `${weekday} · with ${SITTER.name}`);
+  setIfPresent("#careSub", "textContent", `${possessive(n)} routine, in order. One tap, one photo, no typing.`);
+  setIfPresent("#reportSub", "textContent", `${possessive(n)} day, written up for you each evening.`);
   const spriteImg = $("#spriteImg");
   if(spriteImg){
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => { spriteImg.src = pixelate(img, PIXEL_GRID); };
     img.src = state.photo.src;
+    spriteImg.alt = `Pixel avatar of ${n}`;
   }
   setMood(state.mood, true);
 }
 function setMood(key, silent){
   state.mood = key;
-  $all(".mood-btn").forEach(b=> b.classList.toggle("active", b.dataset.mood===key));
+  $all(".mood-btn").forEach(b=>{
+    const on = b.dataset.mood===key;
+    b.classList.toggle("active", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
   const m = MOODS.find(x=>x.key===key);
-  const name = state.name || "Your pet";
+  const name = petName();
   const lines = {
     happy: `${name} is happy and playful right now ${m.emoji}`,
     calm: `${name} is calm and settled`,
-    hungry: `${name} hasn't eaten in a while — might be hungry`,
+    hungry: `${name} hasn't eaten in a while, might be hungry`,
     sleepy: `${name} is winding down for a nap`,
   };
   const statusEl = $("#moodStatusLine");
@@ -540,14 +1029,202 @@ function setMood(key, silent){
   if(badge) badge.textContent = m.emoji;
 }
 
+function renderHomeDynamic(){
+  const n = petName();
+  const tasks = state.tasks;
+  const lastMeal = tasks.filter(t => t.type === "meal" && t.done).pop();
+  const meds = tasks.filter(t => t.type === "med");
+  const next = tasks.find(t => !t.done);
+  const chips = [
+    lastMeal ? `🍽️ Fed · ${lastMeal.done}` : `🍽️ Not fed yet`,
+    meds.length ? `💊 Meds ${meds.filter(t => t.done).length}/${meds.length}` : null,
+    next ? `${next.icon} Next: ${next.title} · ${next.time}` : `✅ All done today`,
+  ].filter(Boolean);
+  $("#hudRow").innerHTML = chips.map(c => `<span class="hud-chip">${esc(c)}</span>`).join("");
+
+  $("#photoStrip").innerHTML = state.posts.map(p =>
+    `<button type="button" class="strip-item" data-post="${p.id}" aria-label="Open ${esc(p.time)} photo in Feed">`
+    + `<span class="strip-photo">${photoHTML(p.photo, p.alt)}</span><span class="strip-time">${p.time}</span></button>`
+  ).join("");
+
+  const nr = $("#nextRow");
+  nr.dataset.task = next ? next.id : "";
+  nr.innerHTML = next
+    ? `<span class="task-ico" aria-hidden="true">${next.icon}</span>`
+      + `<span class="next-text"><strong>${esc(next.title)}</strong><span>${next.time} · ${esc(next.detail)}</span></span>`
+      + `<span class="next-cta">Care${ICON("chev")}</span>`
+    : `<span class="task-ico" aria-hidden="true">🎉</span>`
+      + `<span class="next-text"><strong>All done for today</strong><span>${SITTER.name} finished every task for ${esc(n)}</span></span>`;
+}
+
+function renderFeed(){
+  const list = $("#feedList");
+  if(!state.posts.length){
+    list.innerHTML = `<div class="card empty"><span aria-hidden="true">📷</span><p>No posts yet. ${SITTER.name} will share photos here.</p></div>`;
+    return;
+  }
+  list.innerHTML = state.posts.map(p => {
+    const m = MOODS.find(x => x.key === p.mood);
+    return `<article class="card post${p.isNew ? " is-new" : ""}" id="post-${p.id}">
+      <header class="post-head"><span class="avatar" aria-hidden="true">${SITTER.initial}</span>
+        <span class="post-who"><strong>${SITTER.name}</strong><span class="meta">Sitter · ${p.time}</span></span>
+        ${p.isNew ? `<span class="new-badge">New</span>` : ""}</header>
+      <div class="post-photo">${photoHTML(p.photo, p.alt)}</div>
+      <div class="post-body">
+        <span class="ai-label" title="Caption drafted by NVIDIA Nemotron">${ICON("sparkle")}AI caption · Nemotron</span>
+        <p class="post-caption">${esc(p.caption)}</p>
+        <div class="post-foot"><span class="mood-chip">${m.emoji} ${m.label}</span>
+          <button type="button" class="like-btn" data-like="${p.id}" aria-pressed="${p.liked}">${ICON("heart")}${p.liked ? "Loved" : "Love it"}</button></div>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function renderCare(){
+  const tasks = state.tasks;
+  const done = tasks.filter(t => t.done).length;
+  $("#careProgressText").textContent = `${done} of ${tasks.length} done`;
+  $("#careBar").style.width = `${Math.round(done / tasks.length * 100)}%`;
+  const wrap = $("#careBarWrap");
+  wrap.setAttribute("aria-valuemax", tasks.length); wrap.setAttribute("aria-valuenow", done);
+  const nextId = (tasks.find(t => !t.done) || {}).id;
+  $("#careList").innerHTML = tasks.map(t => {
+    const isNext = t.id === nextId;
+    const post = state.posts.find(p => p.key === t.id);
+    const thumb = post ? `<span class="task-thumb">${photoHTML(post.photo, `Photo sent for ${t.title}`)}</span>` : "";
+    const action = t.done
+      ? `<div class="task-done">${thumb}${ICON("check")}<span>Done · ${t.done} · sent to owner</span></div>`
+      : `<button type="button" class="btn ${isNext ? "btn-primary" : "btn-tonal"} btn-sm" data-complete="${t.id}">${ICON("camera")}Complete with photo</button>`;
+    return `<li class="tl-item ${t.done ? "done" : isNext ? "next" : "pending"}" id="task-${t.id}">
+      <div class="tl-rail" aria-hidden="true"></div>
+      <div class="card task-card">
+        <div class="task-top"><span class="task-ico" aria-hidden="true">${t.icon}</span>
+          <div class="task-text"><p class="task-time">${t.time}${isNext ? " · Up next" : ""}</p><h3>${esc(t.title)}</h3><p>${esc(t.detail)}</p></div></div>
+        ${action}
+      </div></li>`;
+  }).join("");
+}
+
+function completeTask(id){
+  const t = state.tasks.find(x => x.id === id);
+  if(!t || t.done) return;
+  const btn = document.querySelector(`[data-complete="${id}"]`);
+  if(btn){ btn.disabled = true; btn.innerHTML = `<span class="spinner" aria-hidden="true"></span>Sending photo…`; }
+  setTimeout(() => {
+    t.done = addMinutes(t.time, 3);
+    const photo = {src:state.photo.src, ...nextCrop()};
+    state.posts.forEach(p => p.isNew = false);
+    const post = makePost(t.id, t.done, photo, `Photo of ${petName()}: ${t.title.toLowerCase()}`);
+    post.isNew = true;
+    state.posts.push(post); sortPosts();
+    renderAll();
+    showToast("Sent to owner ✅", `${t.title} photo + AI caption posted to Feed`, photo);
+  }, 700);
+}
+
+let toastTimer;
+function showToast(title, sub, photo){
+  const el = $("#toast");
+  $("#toastThumb").innerHTML = photo ? photoHTML(photo, "") : "";
+  $("#toastTitle").textContent = title;
+  $("#toastSub").textContent = sub;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+function renderReports(){
+  const n = esc(petName());
+  const dog = state.species === "dog";
+  const date = new Date(Date.now() - 864e5).toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric"});
+  const photos = [0,2,1].map(i => ({src:state.photo.src, ...CROPS[i]}));
+  const hl = dog ? ["Park zoomies","Window nap","Treat time"] : ["Sunbeam loaf","Wand toy win","Slow blink"];
+  const stats = dog
+    ? [["2","Walks · 1h 10m"],["2/2","Meals"],["2/2","Meds on time"]]
+    : [["3","Play sessions"],["2/2","Meals"],["1/1","Meds on time"]];
+  const para = dog
+    ? `${n} had a lovely day! Our morning walk turned into a full tour of the park, and most of the afternoon went to napping by the window. Both meals finished and the tablet went down with a treat, no fuss at all. Ready for another good one tomorrow 🐾`
+    : `${n} had a cozy, easygoing day. Breakfast vanished fast, then came a long sunbeam nap and three rounds with the wand toy. The hairball gel went down without a fuss, and the evening ended with a slow blink my way. All good here 😺`;
+  $("#reportBody").innerHTML = `
+    <section class="card report-summary" aria-label="Report summary">
+      <div class="rs-top">
+        <div><p class="eyebrow">Latest report</p><h2>${date}</h2></div>
+        <div class="rs-mood"><span class="rs-emoji" aria-hidden="true">😊</span>Mostly happy</div>
+      </div>
+      <div class="rs-stats">${stats.map(([v,l]) => `<div class="stat"><strong>${v}</strong><span>${l}</span></div>`).join("")}</div>
+    </section>
+    <section class="section">
+      <h2 class="section-title">Highlights</h2>
+      <div class="highlights">${photos.map((p,i) => `<figure class="hl"><div class="hl-photo">${photoHTML(p, `${hl[i]} photo of ${petName()}`)}</div><figcaption>${hl[i]}</figcaption></figure>`).join("")}</div>
+    </section>
+    <section class="card report-note">
+      <div class="note-head"><span class="avatar" aria-hidden="true">${SITTER.initial}</span>
+        <span class="post-who"><strong>Note from ${SITTER.name}</strong><span class="meta">Sitter · reviewed before sending</span></span></div>
+      <span class="ai-label" title="Drafted by NVIDIA Nemotron from the day's photos and tasks">${ICON("sparkle")}AI draft · Nemotron</span>
+      <p>${para}</p>
+    </section>
+    <p class="report-foot">${ICON("clock")}Shared at 6:30 PM</p>`;
+}
+
+// ---- interactions ----
+function initStrip(){
+  const s = $("#photoStrip");
+  // Vertical mouse wheel scrolls the strip sideways while it still has room to move.
+  s.addEventListener("wheel", e => {
+    if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const max = s.scrollWidth - s.clientWidth;
+    if(max <= 0) return;
+    const next = Math.max(0, Math.min(max, s.scrollLeft + e.deltaY));
+    if(next !== s.scrollLeft){ e.preventDefault(); s.scrollLeft = next; }
+  }, {passive:false});
+  // Mouse drag = finger swipe.
+  let drag = null;
+  s.addEventListener("pointerdown", e => {
+    if(e.pointerType !== "mouse" || e.button !== 0) return;
+    drag = {x:e.clientX, left:s.scrollLeft, moved:false};
+  });
+  window.addEventListener("pointermove", e => {
+    if(!drag) return;
+    const dx = e.clientX - drag.x;
+    if(!drag.moved && Math.abs(dx) > 4){ drag.moved = true; s.classList.add("dragging"); }
+    if(drag.moved) s.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener("pointerup", () => {
+    if(!drag) return;
+    const moved = drag.moved; drag = null;
+    s.classList.remove("dragging");
+    if(moved){ s.dataset.justDragged = "1"; setTimeout(() => { delete s.dataset.justDragged; }, 0); }
+  });
+  s.addEventListener("click", e => {
+    if(s.dataset.justDragged){ e.preventDefault(); e.stopPropagation(); return; }
+    const item = e.target.closest(".strip-item");
+    if(!item) return;
+    showTab("feed");
+    scrollToInScreen("feed", document.getElementById(`post-${item.dataset.post}`));
+  });
+}
+
+let closeNotes = () => {};
 function initNotes(){
   const fab = $("#notesFab"), sheet = $("#notesSheet"), backdrop = $("#notesBackdrop");
   if(!fab) return;
-  const open = () => { sheet.classList.add("open"); backdrop.classList.add("open"); };
-  const close = () => { sheet.classList.remove("open"); backdrop.classList.remove("open"); };
+  const open = () => { sheet.scrollTop = 0; sheet.classList.add("open"); backdrop.classList.add("open"); $("#closeNotes").focus({preventScroll:true}); };
+  closeNotes = () => { sheet.classList.remove("open"); backdrop.classList.remove("open"); };
   fab.onclick = open;
-  backdrop.onclick = close;
-  $("#closeNotes").onclick = close;
+  backdrop.onclick = closeNotes;
+  $("#closeNotes").onclick = closeNotes;
+  document.addEventListener("keydown", e => { if(e.key === "Escape") closeNotes(); });
+}
+function restart(){
+  const el = document.getElementById("themeVars");
+  if(el) el.remove();
+  Object.assign(state, {step:1, name:"Bori", species:"dog", photo:PETS[0], presetIdx:null, rawHex:null,
+    mood:"calm", tab:"home", tasks:[], posts:[], cropCursor:0});
+  $("#nameInput").value = state.name;
+  selectSpecies("dog");
+  updateContinueBtn();
+  closeNotes();
+  goToStep(1);
 }
 
 function initClock(){
@@ -556,7 +1233,6 @@ function initClock(){
   const tick = () => {
     const d = new Date();
     let h = d.getHours(), m = d.getMinutes();
-    const ap = h >= 12 ? "PM" : "AM";
     h = h % 12 || 12;
     el.textContent = `${h}:${String(m).padStart(2,"0")}`;
   };
@@ -566,13 +1242,39 @@ function initClock(){
 document.addEventListener("DOMContentLoaded", () => {
   initClock();
   initNotes();
+  initStrip();
   $all(".species-chip").forEach(c=> c.onclick = () => selectSpecies(c.dataset.species));
   $("#nameInput").addEventListener("input", (e) => { state.name = e.target.value; updateContinueBtn(); });
   $("#continueBtn").onclick = () => goToStep(2);
   $("#backBtn").onclick = () => goToStep(state.step - 1);
   $("#tryAnotherBtn").onclick = cyclePreset;
   $("#keepBtn").onclick = keepTheme;
+  $("#restartBtn").onclick = restart;
   $all(".mood-btn").forEach(b => b.onclick = () => setMood(b.dataset.mood));
+  $all(".tab").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+  document.addEventListener("click", e => {
+    const g = e.target.closest("[data-goto]");
+    if(g) showTab(g.dataset.goto);
+  });
+  $("#nextRow").onclick = () => {
+    const id = $("#nextRow").dataset.task;
+    showTab("care");
+    const li = id && document.getElementById(`task-${id}`);
+    if(li){ scrollToInScreen("care", li); li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash"); }
+  };
+  $("#careList").addEventListener("click", e => {
+    const b = e.target.closest("[data-complete]");
+    if(b) completeTask(b.dataset.complete);
+  });
+  $("#feedList").addEventListener("click", e => {
+    const b = e.target.closest("[data-like]");
+    if(!b) return;
+    const p = state.posts.find(x => x.id === b.dataset.like);
+    if(!p) return;
+    p.liked = !p.liked;
+    b.setAttribute("aria-pressed", String(p.liked));
+    b.innerHTML = `${ICON("heart")}${p.liked ? "Loved" : "Love it"}`;
+  });
   renderPhotoGrid();
   updateContinueBtn();
   $("#nameInput").value = state.name;
