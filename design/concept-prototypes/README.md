@@ -32,6 +32,18 @@ All three share the same flow — add a pet (name, species, sample or uploaded p
 - **B and C — rebuilt and self-tested, but not yet given the same hands-on audit as A.** Next step: same pass (spacing, hover/press states, pinned primary actions, paw moments in each direction's own style — louder for B, softer for C).
 - After choosing a direction: turn it into tokens in `frontend/theme/tokens.ts` + `DESIGN.md`, and add a task to `docs/plan/TODO.md`.
 
+## Pending merge (read first)
+
+This work lives on branch **`design/pet-theme-concepts-audit`** (not on `playground/pet-theme-concepts`). While it was being made, mooque pushed `d89f649` "Add streak chip and sitter-side read-only view to Concept C" to `playground/pet-theme-concepts`. Both rewrote `pawnote-concept-c-balanced-skin.html`, so they conflict.
+
+- A, B, `index.html` and this README merge cleanly.
+- Concept C needs a decision: keep this rebuild and re-add mooque's streak chip + sitter read-only view on top (suggested), or keep mooque's version.
+
+```bash
+git fetch origin
+git checkout design/pet-theme-concepts-audit
+```
+
 ## Concept A audit (what was fixed)
 
 Tested in Edge with mouse only, in light mode, dark mode, at a 20px root font size, and on a 1366×768 laptop window. No console errors, nothing overflows the phone, and the top bar's middle item is 0px off-center on every screen.
