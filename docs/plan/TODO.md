@@ -40,8 +40,8 @@
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)) + **10.9** desktop side panel (Try demo, QR, hint) + **10.10 stretch** Split view (Owner + Sitter phones side by side) + mouse-only judge path e2e
-- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.10** pet-color app skin → **11.8** stickers + report card → **11.9** video mood → **11.2** notices · **11.11** Settings + What's New (CHANGELOG) · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
-- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 — can start any time
+- [ ] **11.x** P1 (after P0 is live), in order: **11.11** Settings + in-app patch notes (CHANGELOG) → **11.1** photo request → **11.10** pet skin → **11.12** 8bit Pet status room → **11.8** stickers + report card → **11.9** video mood → **11.2** notices · Tavily 11.3 if 8.7 slipped · P2 **11.7** SFT
+- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 + **8bit pixel pet sprites** (Maltese, generic cat, ≥3 mood/hunger states) for 11.12 — can start any time
 - [ ] **design (Muk)** Figma frames at **402 × 874** (spot-check 360 / 440) + desktop backdrop / side panel / phone-frame style (DESIGN.md §2.1, 10.9) + sample photo set for 4.7 (dog / cat daily photos, fictional-brand treat labels = Phase 08 fixtures, no people)
 - [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 

@@ -156,6 +156,8 @@ cd frontend && cp .env.example .env  # EXPO_PUBLIC_API_URL=http://localhost:8000
 
 ## 🔭 What's Next
 
+- **Settings & patch notes** — in-app **What's New** from [CHANGELOG](docs/CHANGELOG.md) (Phase 11.11).
+- **8-bit pet status room** — Tamagotchi-style Home dashboard: fed, potty, mood, next task; breed-based pixel pet (Phase 11.12).
 - **Decorated daily reports** — pet cut-out stickers and AI-picked themes turn each report into a keepsake card.
 - **Mood from video** — a short clip becomes a one-line mood note, based only on what the pet is visibly doing.
 - **Pawstagram** — a public feed where owners share their pets, and anyone can scroll for a dose of cute.

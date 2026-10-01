@@ -1,7 +1,7 @@
-# Phase 11 — P1: 사진 요청 · 펫 스킨 · 스티커 알림장 · 영상 기분 · 공지 (+ P2 Q&A)
+# Phase 11 — P1: 사진 요청 · 펫 스킨 · 8bit 상태방 · 스티커 · 영상 기분 · Settings · 공지 (+ P2 Q&A)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md). **P0(Phase 05–09)가 배포 URL에서 동작한 후에만** 시작 (예외: 사용자가 우선순위 변경).
-> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **순서: 11.1 → 11.10 → 11.8 → 11.9 → 11.2** (데모 영상·디자인 점수에 효과 큰 순). Tavily(11.3)는 Phase 08.7에서 끝났으면 생략.
+> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **권장 순서: 11.11 (Settings·패치노트) → 11.1 → 11.10 → 11.12 → 11.8 → 11.9 → 11.2** — 11.11은 작고 CHANGELOG 습관용; 11.12는 Phase 06 check-in 데이터 필요. Tavily(11.3)는 08.7에서 끝났으면 생략.
 
 ## Goal
 
@@ -15,6 +15,8 @@
 - [ ] 영상 업로드 → 캡션에 관찰 기반 기분 한 줄 ("looks relaxed and playful") — 의학적 판단 문구 없음
 - [ ] 세이프티 Tavily 출처 링크 — **08.7에서 끝났으면 생략**
 - [ ] Sitter 공지 작성 → owner 앱 실행 시 팝업 1회
+- [ ] **Settings → What's New**에서 in-app **패치노트** 확인 ([CHANGELOG.md](../../CHANGELOG.md))
+- [ ] Owner Home **8bit Pet status room** — 밥·배변·기분·다음 task 한눈에 ([pet-status-room.ko.md](../pet-status-room.ko.md))
 
 ---
 
@@ -31,7 +33,8 @@
 | 11.8 | **스티커 + AI 꾸밈 알림장 카드** | `pet_stickers(id, pet_id, media_id, created_by, created_at)` · `daily_reports.decor jsonb` (`{theme, stickers:[{kind:'pet'\|'preset', ref, x, y, scale, rotate}]}`) · RLS: `can_access_pet` select, owner/on-duty sitter insert | **누끼:** 피드 사진 길게 누르기 → "Make sticker" → Cloudinary 배경 제거 변환(`e_background_removal`, 애드온 — 무료 한도 확인. 막히면 백엔드 `rembg`) URL을 `pet_stickers`에 저장 (새 업로드 없음). **꾸밈:** `send_daily_report` 직전 `POST /api/ai/report-decor` (MODEL_FAST) — 알림장 본문 + 퀵탭 → `{theme: 'sunny'\|'cozy'\|'playful'\|'calm', preset_stickers[] (고정 목록에서만 선택)}` JSON, 배치는 서버 규칙(모서리·겹침 없음). 실패 시 `theme='calm'`, 스티커 없음 | Sitter: 전송 전 미리보기 카드 + **Shuffle** 버튼(재생성)만. Owner: 알림장 = 꾸민 카드 + **Save image** (공유용). 스티커·테마 에셋은 묵 제작 |
 | 11.9 | **영상 기분 한 줄** (Phase 09 확장) | `feed_posts.mood text null check in ('playful','relaxed','curious','sleepy','excited','uneasy')` | 영상 업로드 시 caption API가 Cloudinary `so_` 오프셋으로 프레임 3–4장 추출 → `MODEL_VISION`에 여러 장 입력 → 관찰 JSON `{activities[], body_language[], energy}` → `MODEL_FAST`가 캡션 + `mood` 생성. **짖음·오디오 분석 안 함** (공개 연구 정확도 3단계 분류 약 36–57% — 신뢰 불가). 프롬프트: 보이는 행동만, "looks/seems" 표현, 의학·통증 추정 금지. `uneasy`는 알림 강조 없이 캡션에만. 일일 `mood` 목록은 알림장 `source_snapshot` 입력에 포함 | 피드 카드에 mood 칩 (예: 🎾 Playful) |
 | 11.10 | **펫 털 색 스킨** (3.0 Theme provider 위에) | `pets.avatar_media_id uuid null references media` · `pets.theme text null` (프리셋 키, null = `default`) · `media.purpose`에 `'pet_avatar'` 추가 | Owner가 pet 프로필에서 사진 업로드 — `POST /api/media/sign`에 owner + `purpose='pet_avatar'` 허용(`is_owner_of(pet_id)`) → `POST /api/ai/pet-theme {pet_id, media_id}` → `MODEL_VISION`이 털 색 JSON `{coat_colors[], pattern, confidence}` → **서버 규칙으로 고정 프리셋 6–8개 중 가장 가까운 것 선택** (모델 hex를 그대로 UI에 쓰지 않음 — 대비·조명 오류 방지) → `pets.theme` 저장. 실패·저신뢰 → `default`. Owner는 프리셋 직접 변경 가능 | Pet 프로필 사진 + "Your app now matches Bori 🐶" 미리보기 → **Keep** / 다른 프리셋 선택. 앱 전체 스킨 = 선택된 pet 테마 (sitter 화면도 담당 pet 테마). 프리셋 팔레트는 디자이너 제작 |
-| 11.11 | **Settings · What's New (패치노트)** | - | 헤더 **Settings** (`/settings`): Account (email read-only, Log out) · **Profile** 링크 → `/profile` · Notifications (P1: in-app toggles stub OK) · **What's New** → in-app changelog ([`docs/CHANGELOG.md`](../../CHANGELOG.md) 파싱 또는 동일 내용 번들) · App version (`expo-constants`) · Privacy/Terms 링크(placeholder). 새 기능 ship 시 CHANGELOG에 날짜·bullet 추가 — 사용자가 "언제 뭐가 추가됐는지" 확인 | Settings list UI · What's New = 날짜 역순 섹션 (Keep a Changelog 형식) |
+| 11.11 | **Settings · What's New (패치노트)** | - | 헤더 **Settings** (`/settings`, owner·sitter 공통): **Account** (email read-only, Log out) · **Profile** → `/profile` · **Notifications** (P1 toggles stub OK) · **What's New** (필수) — [`docs/CHANGELOG.md`](../../CHANGELOG.md)를 빌드 시 JSON/MD로 번들하거나 앱 내 `assets/changelog.json` 동기화 · 날짜 역순 · `[Added]`/`[Fixed]` 섹션 · App version (`expo-constants`) · Privacy/Terms placeholder. **릴리스 규칙:** demo/prod 배포마다 CHANGELOG + What's New 동시 갱신 | Settings list · What's New 전용 scroll 화면 · unread dot (optional: `last_seen_changelog_version` in AsyncStorage) |
+| 11.12 | **8bit Pet status room** (Tamagotchi-style) | - (파생 상태만 — [pet-status-room.ko.md](../pet-status-room.ko.md)) | `get_pet_status` 또는 client `lib/petStatus.ts` — 오늘 check-ins + task_logs → fed/hungry, potty, mood, next task · **8bit sprite** by species+breed (demo: Maltese, generic cat) · mood/hunger → sprite state · tap → Activity | Owner `/(owner)/` Home 상단 **Pet room** 카드 · 디자이너: `frontend/assets/pixel-pets/` |
 | 11.4 | (P2) Q&A 1차 답변 | `messages(id, pet_id, sender_id, body, ai_generated bool, needs_sitter bool, created_at)` | owner 메시지 → `POST /api/ai/qa` (MODEL_FAST) — pet 프로필 + 오늘 source_snapshot만 근거. 확신 없으면 "Your sitter will reply soon." + sitter 알림 | 채팅 화면 1개 |
 
 ---
@@ -44,6 +47,8 @@
 4. 11.8: 사진 1장 → 스티커 생성 → 알림장 전송 → owner 화면에 꾸민 카드 (AI 테마 JSON 실패 시에도 카드 표시). 데모 영상 18:00 장면에 사용
 5. 11.9: 강아지·고양이 영상 각 2개 → 캡션과 mood가 화면 속 행동과 맞음 (팀 합의), 의학적 표현 0건
 6. 11.10: 털 색이 다른 강아지·고양이 사진 4장 → 3장 이상 맞는 프리셋, 모든 프리셋에서 텍스트 대비 ≥ 4.5:1, DANGER 모달 색은 스킨과 무관하게 동일
+7. 11.11: Settings → What's New에 최신 CHANGELOG 항목 · 앱 version 표시
+8. 11.12: sitter check-in 후 Home room HUD·sprite 상태 갱신 · Bori/Mochi ≥3 states
 
 ---
 
@@ -53,5 +58,5 @@
 - `backend/app/routers/ai_pet_theme.py`, `backend/app/ai/prompts/pet_theme/system.md` (11.10)
 - `backend/app/services/tavily.py`, `backend/app/routers/ai_report_decor.py`, `backend/app/routers/ai_qa.py`(P2)
 - `backend/app/ai/prompts/report_decor/system.md`, `prompts/caption/video_observe.md`
-- Frontend: Request photo 버튼, NoticeModal, Sitter notices/schedule 화면, `ReportCard`(꾸밈 렌더 + Save image), Make sticker 액션, mood 칩
-- 디자인(묵): 테마 4종 배경·프레임, 프리셋 스티커 세트 (앱 번들 에셋), 털 색 스킨 프리셋 6–8개 팔레트 (11.10)
+- Frontend: Request photo 버튼, NoticeModal, Sitter notices/schedule 화면, `ReportCard`(꾸밈 렌더 + Save image), Make sticker 액션, mood 칩, **`/settings` + What's New**, **`PetStatusRoom`** + `lib/petStatus.ts` (11.12)
+- 디자인: 테마 4종·스티커·스킨 팔레트 (11.8/10) · **8bit pixel pet sprites** — breed×mood states for demo breeds (11.12, [pet-status-room.ko.md](../pet-status-room.ko.md))
