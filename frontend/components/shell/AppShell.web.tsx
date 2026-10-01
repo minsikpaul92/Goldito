@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { tokens } from "../../theme/tokens";
 import { DeviceFrame } from "./DeviceFrame.web";
 import { TOUCH_PRIMARY_QUERY, readFrameOverride, resolvePresentation } from "./presentation";
+import { installTouchEmulation } from "./TouchEmulation.web";
 import { ShellContext } from "./useShell";
 
 type Props = {
@@ -54,6 +55,9 @@ export function AppShell({ children }: Props) {
     touchPrimary,
     override: canUseDOM ? readFrameOverride(window.location.search) : null,
   });
+
+  // Inside the frame, the mouse acts like a finger (task 1.7).
+  useEffect(() => (embedded ? installTouchEmulation() : undefined), [embedded]);
 
   if (presentation === "framed") {
     return (

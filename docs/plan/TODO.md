@@ -15,7 +15,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **1.7** | Mouse = finger (`TouchEmulation`: drag scroll + momentum, no click after drag, horizontal wheel) + `/dev/gestures` + Playwright mouse tests in CI + PR template desktop checklist | [phase-01.md](phases/phase-01.md), architecture D25 |
+| **3.0** | Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10 | [phase-03.md](phases/phase-03.md) |
 
 ---
 
@@ -25,7 +25,6 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **3.0** Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
@@ -50,6 +49,7 @@
 
 ## Completed
 
+- [x] **1.7** Mouse = finger: `TouchEmulation.web.ts` inside the frame iframe, mouse only — drag scroll with axis lock + momentum, no tap after a drag, wheel moves chip rows sideways (paged carousels keep the screen scrolling), paged photos settle on a page, no text selection / image drag, round touch cursor, hidden scrollbars, root-only overscroll containment. `/dev/gestures` lab (`EXPO_PUBLIC_DEV_ROUTES=1`), `color.overlay` token, Playwright (`frontend/e2e/`, Chromium · Firefox · WebKit × 1366 / 1440 / 1920 + touch phone 360 / 402 / 440) in CI, PR template desktop checklist. Local: Chromium + WebKit + phone 73 passed ×2 (momentum test Chromium-only; Firefox needs VC++ runtime this PC lacks — CI covers it). **Phase 01 complete** (2026-10-01)
 - [x] **1.6** Web shell: `components/shell/` (`AppShell` native/web, `DeviceFrame`, `presentation.ts`, `useShell`, `useLayoutMode`) — computers (mouse / trackpad, any window width) → 402 × 874 phone frame with the app in a same-origin iframe; touch phones / tablets → full screen. URL mirrored to the address bar (refresh / deep link / back work), `?frame=0|1`, short windows shrink height, narrower-than-phone windows scale the phone down; frame tokens in `tokens.ts`. Checked 1440×900 · 1366×768 · 1920×1080 · 493 narrow desktop pane (framed) · 375 touch (full screen) · 375 + `?frame=1` (scaled, click OK), wheel scroll + click in frame, `tsc` + `expo export` (2026-10-01)
 - [x] **docs** Plan B sitter care loop ([sitter-care-loop.ko.md](sitter-care-loop.ko.md)): check-ins, optional photo, Activity, notifications; phase-06/07/architecture updated; P1 **11.11** Settings + [CHANGELOG.md](../CHANGELOG.md) (2026-10-01)
 - [x] **2.9** Hosted Supabase: `001`–`003` applied (SQL Editor) + `rls_smoke.sql` passed after API table grants block in `003` (2026-10-01)
@@ -92,7 +92,7 @@
 | Phase                | Status                                                                        |
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
-| 01 Scaffold          | **done** (2026-09-29) · 1.6 done (2026-10-01) · **1.7** next (mouse = finger — D25) |
+| 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | not started                                                                   |
 | 03B Bookings         | not started (DB + RPCs done in 02)                                            |

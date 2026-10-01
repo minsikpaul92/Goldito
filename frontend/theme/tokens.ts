@@ -10,6 +10,8 @@ export const tokens = {
     border: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
+    /** Dimmed backdrop behind modals and sheets. */
+    overlay: "rgba(26, 26, 26, 0.4)",
     // Desktop phone frame only (DESIGN.md §2.1)
     frameBackdrop: "#E8E8E3",
     frameBezel: "#1A1A1A",

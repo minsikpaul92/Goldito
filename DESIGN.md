@@ -201,8 +201,10 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 | On a phone | With a mouse in the frame | Rule |
 | :--- | :--- | :--- |
 | Tap | Click | Works as-is (react-native-web fires `onPress` on click) |
-| Swipe to scroll | Wheel, trackpad, or click-drag | Click-drag scrolling with momentum comes from `TouchEmulation` (task 1.7) |
-| Swipe sideways (chips, photos, dates) | Drag, or plain wheel over the row | Use `HorizontalList` — the next item peeks in |
+| Swipe to scroll | Wheel, trackpad, or click-drag | Click-drag scrolling with momentum comes from `TouchEmulation` (`components/shell/`) — a drag never fires a tap |
+| Swipe sideways (chips, dates) | Drag, or plain wheel over the row | Use `HorizontalList` — the next item peeks in |
+| Swipe through paged photos (`pagingEnabled`) | Drag (past half a page, or a quick flick → next page) | The wheel keeps scrolling the screen over a carousel, so feeds never get stuck |
+| Custom drag gesture (slider, sticker placement) | — | Mark the area `dataSet={{ gestureOwner: "true" }}` so `TouchEmulation` leaves it alone |
 | Pull to refresh | Nothing (`RefreshControl` is a no-op on web) | Data updates via Realtime; add a refresh button if needed |
 | Long press | Works (hold 450 ms), but nobody finds it | Never the only way to do something |
 | Swipe back, swipe to delete, drag a sheet down | Not reliable on web | Always a visible back button, delete button, **Close** |
@@ -217,6 +219,8 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 - [ ] Modals, sheets, and toasts stay inside the phone
 - [ ] Layout holds at 360, 402, and 440 widths
 - [ ] Any new library supports web (check the platform list in Expo docs)
+
+`/dev/gestures` (with `EXPO_PUBLIC_DEV_ROUTES=1`) shows every pattern above in one screen, and the Playwright suite (`frontend/e2e/`) checks it with a mouse in CI. The same checklist is in the PR template.
 
 ---
 
