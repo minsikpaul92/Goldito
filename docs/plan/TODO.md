@@ -92,7 +92,7 @@
 | -------------------- | ----------------------------------------------------------------------------- |
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
 | 01 Scaffold          | **done** (2026-09-29) · **1.6–1.7 added** (2026-10-01, web shell + mouse — D25) |
-| 02 DB + RLS          | in progress (**2.9** hosted apply — SQL verified locally + CI)                |
+| 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | not started                                                                   |
 | 03B Bookings         | not started (DB + RPCs done in 02)                                            |
 | 04 Cloudinary (code) | not started                                                                   |
