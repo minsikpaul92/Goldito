@@ -183,6 +183,7 @@ PawNote/
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, P2 |
 | `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
+| `DEMO_PASSWORD` | 데모 계정 전용 비밀번호 — `scripts/seed_demo.py`가 사용, frontend `EXPO_PUBLIC_DEMO_PASSWORD`와 같은 값 (심사위원에게 공개되는 값, 실제 비밀번호 재사용 금지) | 10.1 (계정 부분은 2026-10-01 먼저) |
 
 ### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
 

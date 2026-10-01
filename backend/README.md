@@ -41,6 +41,25 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 # → {"id":"…","email":"…","role":"owner","display_name":"…"}
 ```
 
+## Demo accounts
+
+`scripts/seed_demo.py` creates (or refreshes) the two demo accounts used for testing now and by judges / **Try demo** later:
+
+| Email | Role | Name |
+| :--- | :--- | :--- |
+| `demo-owner@pawnote.test` | owner | Jisoo |
+| `demo-sitter@pawnote.test` | sitter | Mina |
+
+The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that will be shared with judges — never reuse a real password. `.test` addresses never receive mail.
+
+```bash
+cd backend
+.venv/Scripts/python -m scripts.seed_demo          # create / refresh (Windows; macOS/Linux: .venv/bin/python)
+.venv/Scripts/python -m scripts.seed_demo --check  # read-only report
+```
+
+It uses the Admin API with the service role (architecture D19); the signup trigger creates `profiles` + `owner_profiles` / `sitter_profiles`, and the script checks those rows. Pets, bookings, and tasks join it in Phase 10.1.
+
 ## Supabase service role usage
 
 The service role key bypasses RLS. FastAPI uses it only for the writes below, and must call `services/authz.py` → `assert_on_duty_for(pet_id)` (or an equivalent ownership check) first. Everything else goes through the Supabase client with the user's JWT.
