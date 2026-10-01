@@ -1,14 +1,8 @@
-import { Tabs } from "expo-router";
+import { RoleStack } from "../../components/RoleTabs";
 
-import { RoleTabs, tabIcon } from "../../components/RoleTabs";
+// A direct link or refresh on a detail screen still has the tabs underneath, so Back works.
+export const unstable_settings = { initialRouteName: "(tabs)" };
 
 export default function SitterLayout() {
-  return (
-    <RoleTabs role="sitter">
-      <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: tabIcon("sunny-outline") }} />
-      <Tabs.Screen name="tasks" options={{ title: "Tasks", tabBarIcon: tabIcon("checkbox-outline") }} />
-      <Tabs.Screen name="scan" options={{ title: "Scan", tabBarIcon: tabIcon("scan-outline") }} />
-      <Tabs.Screen name="report" options={{ title: "Report", tabBarIcon: tabIcon("create-outline") }} />
-    </RoleTabs>
-  );
+  return <RoleStack role="sitter" />;
 }

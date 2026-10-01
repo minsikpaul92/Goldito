@@ -1,11 +1,12 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** Header right side for both roles: dev role label, notifications bell (Phase 05), Log out. */
+/** Header right side for both roles: dev role label, notifications bell (Phase 05), Profile, Log out. */
 export function HeaderActions() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -20,6 +21,15 @@ export function HeaderActions() {
       <View accessibilityLabel="Notifications (coming soon)" style={styles.bell}>
         <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Profile"
+        onPress={() => router.push("/profile")}
+        style={styles.iconButton}
+        testID="open-profile"
+      >
+        <Ionicons name="person-circle-outline" size={theme.icon.md} color={theme.color.primary} />
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         onPress={() => void signOut()}
@@ -51,6 +61,12 @@ const makeStyles = (theme: Theme) =>
     },
     bell: {
       padding: theme.spacing.xs,
+    },
+    iconButton: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
     },
     logout: {
       minHeight: 44,

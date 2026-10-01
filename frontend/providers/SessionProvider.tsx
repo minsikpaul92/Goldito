@@ -29,6 +29,8 @@ type SessionState =
 type SessionValue = SessionState & {
   /** Load the profile again after an error. */
   reload: () => void;
+  /** Reflect a saved `profiles` change (e.g. display name) without refetching. */
+  patchProfile: (changes: Pick<Profile, "displayName">) => void;
   signOut: () => Promise<void>;
 };
 
@@ -107,12 +109,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (state.session) void load(state.session);
   }, [load, state.session]);
 
+  const patchProfile = useCallback((changes: Pick<Profile, "displayName">) => {
+    setState((prev) =>
+      prev.status === "signedIn" ? { ...prev, profile: { ...prev.profile, ...changes } } : prev,
+    );
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!isSupabaseConfigured) return;
     await getSupabase().auth.signOut();
   }, []);
 
-  const value = useMemo<SessionValue>(() => ({ ...state, reload, signOut }), [state, reload, signOut]);
+  const value = useMemo<SessionValue>(
+    () => ({ ...state, reload, patchProfile, signOut }),
+    [state, reload, patchProfile, signOut],
+  );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

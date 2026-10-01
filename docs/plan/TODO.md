@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3.5–3.8** | Owner pet profile (species dog/cat, allergies) + Home pet cards; sitter Today stub; role profiles (`/profile`, incl. sitter home address via `get_my_sitter_profile`) | [phase-03.md](phases/phase-03.md) |
+| **3B.1** | Sitter schedule `/sitter/schedule` — month calendar, day × slot (Morning · Afternoon · Overnight) open with own hours + capacity / blocked (`sitter_availability`) | [phase-03b.md](phases/phase-03b.md) |
 
 ---
 
@@ -26,7 +26,7 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-- [ ] **3B.1–3B.8** Sitter schedule (day × slot, own hours, capacity) + owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
+- [ ] **3B.2–3B.8** Owner "Your sitters" / whole-trip search + drop-off & pick-up time/place with negotiation + Received/Returned + cancel → Find a new sitter ([phase-03b.md](phases/phase-03b.md))
 - [ ] **OB.1–OB.3** Welcome + Login **Try demo** (owner/sitter) — [onboarding.ko.md](onboarding.ko.md); needs **10.1** seed for demo login DoD
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`004`)
@@ -47,6 +47,7 @@
 
 ## Completed
 
+- [x] **3.5–3.8** Pet profiles + role profiles: owner Home `PetCard` list (🐶 / 🐱, "Dog · Maltese · 4 yrs · 3.2 kg", allergy chips) + Add pet; `/owner/pets/new` · `/owner/pets/[petId]` (`PetForm`: species locked after creation D22, name, breed, birthday, weight, allergy chips stored lowercase + duplicate check); pet insert uses a client UUID without `.select()` (pets_select reads `pets` through `is_owner_of`, which cannot see the row inserted by the same statement — architecture §6); sitter Today stub (3.7); `/profile` for both roles (owner: address, emergency contact, vet; sitter: bio, area, experience, home notes, home address via `get_my_sitter_profile`) + header Profile button; role areas now Stack (guard) over `(tabs)` so details have Back, `initialRouteName` for deep links; `Chip`, `SegmentedControl`, `ToastProvider`, `features/pets`, `features/profile`, `types/db.ts`, `expo-crypto`. Playwright `flows` project (auth 7 + pets 4 + profile 3) on an in-memory PostgREST mock; full local suite 87 passed. Live: sitter profile loads via RPC. **Phase 03 complete** — live Bori/Mochi add on the demo owner pending; handoff-card address check moves to 3B (2026-10-01)
 - [x] **10.1 (accounts part, early)** `backend/scripts/seed_demo.py`: demo-owner.test (Jisoo) / demo-sitter.test (Mina) via Admin API (D19), idempotent refresh, `--check` read-only report of `profiles` + role rows; `DEMO_PASSWORD` in backend `.env.example` + architecture §4 (same value as `EXPO_PUBLIC_DEMO_PASSWORD`). Accounts are created by running the script (not by an agent). Rest of 10.1 (pets, bookings, tasks, Jun, sample feed, `--reset`) stays in Phase 10 (2026-10-01)
 - [x] **3.4** FastAPI JWT: `deps/auth.py` (`verify_supabase_jwt` — ES256/RS256 via project JWKS with 10 min key cache, legacy HS256 via `SUPABASE_JWT_SECRET`; aud `authenticated`, issuer, `exp`/`sub` required), `get_current_user` (role from `profiles` via service role, not token metadata), `require_role`, `deps/supabase.py` service client, `GET /api/me`; 502 → `upstream_error`. pytest 13 (no token / garbage / forged / expired / wrong aud·iss → 401, HS256 + ES256-via-JWKS → 200, other ES256 key → 401, metadata cannot change role, no profile → 403, require_role). Live: real JWKS fetch rejects unknown key, service-role `profiles` lookup works, CORS from :8081. backend README "Auth". **Live:** `/api/me` 200 with real ES256 tokens for demo owner (Jisoo) and sitter (Mina) (2026-10-01)
 - [x] **3.1–3.3** Auth + role routing: `lib/supabase.ts` (lazy `getSupabase()`, AsyncStorage, `getAuthStorageKey()`), `lib/authErrors.ts`, `SessionProvider` (session + `profiles` row; Try again / Log out on load error), `/login` + `/signup` (role cards → `options.data` role + display_name for the signup trigger), `/` gate, role areas `app/owner/` · `app/sitter/` with JS Tabs + stub tabs + header (dev role label, bell slot, Log out) — **D26** URL prefixes instead of `(owner)`/`(sitter)` groups (shared-route refresh picked the wrong role; docs updated). UI: `TextField`, `TextButton`, `EmptyState`, `LoadingView`, `RoleCard`, `icon` tokens. Check API screen → `/dev/health`. Playwright `auth` project with mocked Supabase (7 flows: gate, wrong password, owner/sitter tabs, reload keeps session, sitter blocked from /owner, tab click, sitter signup metadata, log out) + frame/phone specs updated — 80 passed locally. CI frontend job: mock Supabase env + step/job timeouts. **Live (hosted project):** seeded demo owner + sitter sign in, land on their own tabs, reload keeps the session, typing the other role's URL bounces back (2026-10-01)
@@ -97,8 +98,8 @@
 | 00 Prerequisites     | **done** (2026-09-29)                                                         |
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
-| 03 Auth              | in progress (3.0, 3.1–3.3, 3.4 done 2026-10-01; next 3.5–3.8)                 |
-| 03B Bookings         | not started (DB + RPCs done in 02)                                            |
+| 03 Auth              | **done** (2026-10-01) — live pet add on demo owner pending                    |
+| 03B Bookings         | next (**3B.1**; DB + RPCs done in 02)                                          |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |
 | 06 Tasks             | not started                                                                   |

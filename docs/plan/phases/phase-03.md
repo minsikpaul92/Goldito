@@ -46,7 +46,7 @@
 | 3.5 | Owner pet 프로필 | `/owner/index.tsx` 내 pet 카드 목록 + **Add pet**. `/owner/pets/new`, `/owner/pets/[petId]`: **species(필수, Dog / Cat 세그먼트 — 생성 후 변경 불가, D22)**, name(필수), breed, birthdate, weight, notes, **Allergies** chip 입력(추가/삭제 → `pet_allergies`, 소문자 저장). Owner 입력은 텍스트 허용 (sitter 원칙과 무관) | Bori(dog) + chicken, Mochi(cat) 저장 |
 | 3.6 | (삭제) | 이메일로 시터 배정은 기간 예약으로 대체 → [Phase 03B](phase-03b.md) | - |
 | 3.7 | Sitter Today 스텁 | `/sitter/index.tsx`: 빈 상태 "No bookings yet — open your availability so owners can find you." (실제 목록은 3B.8) | 표시 |
-| 3.8 | 내 프로필 (역할별) | 헤더 → **Profile** (`/profile`). Owner: home address, emergency contact, vet clinic → `owner_profiles`. Sitter: bio, service area, experience, home notes, **home address** → `sitter_profiles` (`get_my_sitter_profile`로 읽기). **P0에는 Settings 화면 없음** — 로그아웃 Profile/헤더. **Settings + What's New(패치노트)** → [11.11](phase-11.md) | 저장 확인 + handoff 카드 주소 |
+| 3.8 | 내 프로필 (역할별) | 헤더 → **Profile** (`/profile`). Owner: home address, emergency contact, vet clinic → `owner_profiles`. Sitter: bio, service area, experience, home notes, **home address** → `sitter_profiles` (`get_my_sitter_profile`로 읽기). **P0에는 Settings 화면 없음** — 로그아웃 Profile/헤더. **Settings + What's New(패치노트)** → [11.11](phase-11.md) | 저장 확인 + handoff 카드 주소 (카드는 3B — 3.8에서는 저장·`get_my_sitter_profile` 읽기까지) |
 ---
 
 ## Definition of Done (DoD)

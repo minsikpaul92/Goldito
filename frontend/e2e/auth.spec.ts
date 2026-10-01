@@ -1,16 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import { app } from "./helpers";
-import { OWNER, SITTER, mockSupabase, type MockUser } from "./supabaseMock";
+import { app, signIn } from "./helpers";
+import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Sign in, sign up, and role routing inside the desktop phone frame (phase-03 3.1–3.3).
-
-async function signIn(page: Page, user: MockUser) {
-  await page.goto("/login");
-  await app(page).getByTestId("login-email").fill(user.email);
-  await app(page).getByTestId("login-password").fill(user.password);
-  await app(page).getByRole("button", { name: "Sign in" }).click();
-}
 
 test.describe("auth and role routing", () => {
   test("signed-out visitors land on sign in", async ({ page }) => {

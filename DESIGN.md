@@ -153,17 +153,20 @@ System font for now (Figma will pick one family).
 | `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
+| `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
+| `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
+| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Bori is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
+| `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 
 ### Planned (build as needed, keep the same tokens)
 
 | Component | Notes |
 | :--- | :--- |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
-| `Chip` | `radius.sm`, `small` text. Allergens, task type, mood (🎾 Playful), slot (Morning / Afternoon / Overnight) |
-| `Toast` | Bottom, auto-hide 3 s. Success after actions ("Sent to Jisoo ✅"). **Never** used alone for DANGER |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
 | `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Feed · Care · Reports …, sitter: Today · Tasks · Scan · Report …) |
-| `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) |
+| `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |

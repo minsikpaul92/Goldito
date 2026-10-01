@@ -104,13 +104,14 @@ PawNote/
    ├─ app/                    # expo-router (§3)
    │  ├─ index.tsx            # 3.3 — 로그인/역할 보고 redirect
    │  ├─ (auth)/              # 3.1–3.2 — login, signup (로그인 상태면 `/`로)
-   │  ├─ owner/ · sitter/     # D26 — 역할별 JS Tabs (`/owner/*`, `/sitter/*`)
+   │  ├─ owner/ · sitter/     # D26 — `_layout.tsx` = 역할 가드 Stack, `(tabs)/` = JS Tabs (`/owner`, `/owner/feed` …), 상세는 Stack 위 (`owner/pets/new`, `owner/pets/[petId]`)
+   │  ├─ profile.tsx          # 3.8 — 역할별 프로필 (`/profile`, 두 역할 공통)
    │  └─ dev/                 # gestures.tsx (1.7), health.tsx (1.3) — EXPO_PUBLIC_DEV_ROUTES=1일 때만
    ├─ assets/demo/            # 4.7 — 샘플 사진 (강아지·고양이 일상, 가상 브랜드 간식 라벨 — PII 없음)
    ├─ components/shell/       # D25 — AppShell.tsx / AppShell.web.tsx, DeviceFrame.web.tsx, TouchEmulation.web.ts, presentation.ts, useLayoutMode.ts, useShell.ts (화면은 `useShell`·`useLayoutMode`만 import)
-   ├─ components/ui/          # Button, TextButton, TextField, Card, Screen, EmptyState, LoadingView, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
-   ├─ components/             # 도메인 컴포넌트 (RoleTabs, HeaderActions, RoleCard, FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker …)
-   ├─ features/<domain>/      # 화면별 데이터·상태 훅 use*.ts (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
+   ├─ components/ui/          # Button, TextButton, TextField, Card, Screen, EmptyState, LoadingView, Chip, SegmentedControl, Skeleton, Badge, Toast, AlertModal, Sheet, HorizontalList
+   ├─ components/             # 도메인 컴포넌트 (RoleTabs, HeaderActions, RoleCard, PetCard, PetForm, FeedCard, TaskRow, PetSwitcher, NotificationItem, MediaPicker …)
+   ├─ features/<domain>/      # 화면별 데이터·상태 (`pets/` petApi·useMyPets·petValidation, `profile/` profileApi) — use*.ts 훅 (route 파일은 얇게 — D25, 해커톤 후 시터 데스크톱 화면이 재사용)
    ├─ lib/
    │  ├─ supabase.ts          # getSupabase() — 첫 사용 시 생성(anon, AsyncStorage persist, `getAuthStorageKey()`)
    │  ├─ authErrors.ts        # Supabase Auth 에러 → 사람 문구
@@ -233,7 +234,7 @@ PawNote/
 | 동작 | 경로 | 부수효과 (트리거) |
 | :--- | :--- | :--- |
 | 가입 | Supabase Auth `signUp({options:{data:{role, display_name}}})` | `handle_new_user` → `profiles` + `owner_profiles`/`sitter_profiles` |
-| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS) | `guard_care_task_species` |
+| pet 생성/수정, 알레르기, care_tasks | Supabase client (owner RLS). **pet insert는 클라이언트가 `id`(UUID)를 만들고 `.select()` 없이** — `pets_select`가 같은 테이블을 읽는 함수(`is_owner_of`)로 판단해서, 같은 문장에서 넣은 행을 못 봐 `insert().select()`가 RLS에 막힐 수 있음 (3.5). 같은 패턴의 다른 테이블도 동일 | `guard_care_task_species` |
 | 스케줄 open(칸·시간·정원)/blocked | Supabase client `sitter_availability` (본인 RLS). 기간 일부 변경 = 새 open 행 insert (최근 행 우선) | 확정 칸과 겹치거나 정원이 확정 마리 수보다 작아지면 `guard_availability_change`가 거부 → 시터가 먼저 `cancel_booking`. **알림 없음** |
 | 단골 시터·스케줄 보기 | RPC `list_my_sitters()` / `get_sitter_schedule(sitter, from, to)` | - |
 | 시터 검색 | RPC `search_sitters(drop_off_at, pick_up_at, pet_count)` — 전체 가능 먼저, 일부 가능은 참고용 | - |

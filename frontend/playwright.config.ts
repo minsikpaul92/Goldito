@@ -39,7 +39,7 @@ export default defineConfig({
     ...browsers.flatMap((browser) =>
       viewports.map((viewport) => ({
         name: `${browser.name}-${viewport.width}x${viewport.height}`,
-        testIgnore: /(phone|auth)\.spec\.ts/,
+        testIgnore: /(phone|auth|pets|profile)\.spec\.ts/,
         use: { ...browser.device, viewport },
       })),
     ),
@@ -49,9 +49,9 @@ export default defineConfig({
       use: { ...devices["Pixel 7"] },
     },
     {
-      // Flow logic, not layout — one desktop browser is enough.
-      name: "auth",
-      testMatch: /auth\.spec\.ts/,
+      // App flows (auth, pets, profile) — logic, not layout, so one desktop browser is enough.
+      name: "flows",
+      testMatch: /(auth|pets|profile)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
   ],

@@ -8,9 +8,10 @@ type Props = {
   onPress: () => void;
   disabled?: boolean;
   style?: ViewStyle;
+  testID?: string;
 };
 
-export function Button({ label, onPress, disabled, style }: Props) {
+export function Button({ label, onPress, disabled, style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -18,6 +19,7 @@ export function Button({ label, onPress, disabled, style }: Props) {
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
+      testID={testID}
       style={({ pressed }) => [
         styles.base,
         disabled && styles.disabled,

@@ -1,5 +1,5 @@
-import { EmptyState } from "../../components/ui/EmptyState";
-import { Screen } from "../../components/ui/Screen";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { Screen } from "../../../components/ui/Screen";
 
 // Stub tab (phase-03): the real screen lands in Phase 06.
 export default function SitterTasks() {
