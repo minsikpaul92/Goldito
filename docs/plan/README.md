@@ -31,6 +31,7 @@ Two developers, ~4 weeks. Build in this order; P2 only if time allows.
 | **P1** | Photo request (owner → sitter) | — | — |
 | **P0** | Part-time boarding sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule view, whole-trip booking with drop-off/pick-up time & place (negotiable), cancel → rebook | — (marketplace-style) | — |
 | **P1** | Notices with popup · favorite sitters · recurring schedule patterns | Notices | — |
+| **P1** | Pet-color app skin: owner uploads a pet photo, app theme matches its coat (Phase 11.10; theme provider in 3.0) | — | Vision (coat colors) → preset theme |
 | **P1** | Pet cut-out stickers + AI-decorated daily report card (Phase 11.8) | Diary decorating | Nano picks theme & stickers |
 | **P1** | Video mood line from visible behavior — no bark/audio analysis (Phase 11.9) | — | Vision (multi-frame) + Nano |
 | **P2** | Private Q&A with AI first reply | — | Nano |

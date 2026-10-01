@@ -25,6 +25,7 @@
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
+- [ ] **3.0** Theme provider (`useTheme()` + preset map, `default` only) — base for pet-color skin 11.10
 - [ ] **3.1–3.3** Auth screens + role routing
 - [ ] **3.4** FastAPI JWT + `/api/me`
 - [ ] **3.5–3.8** Owner pet profile (species dog/cat) + allergies; sitter Today stub; role profiles incl. home address (`get_my_sitter_profile`)
@@ -38,8 +39,8 @@
 - [ ] **8.x** Safety check pipeline + modal + owner notify (`007`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **9.x** Auto caption on upload
 - [ ] **10.x** Seed + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md))
-- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.8** pet stickers + AI-decorated report card → **11.9** video mood line → **11.2** notices · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
-- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 — can start any time
+- [ ] **11.x** P1 (after P0 is live), in order: **11.1** photo request → **11.10** pet-color app skin → **11.8** pet stickers + AI-decorated report card → **11.9** video mood line → **11.2** notices · Tavily 11.3 only if 8.7 slipped · P2 idea **11.7** SFT on anonymized reports
+- [ ] **design (Muk)** Report card themes (4) + preset sticker set for 11.8 + coat-color skin presets (6–8 palettes, fixed status colors) for 3.0/11.10 — can start any time
 - [ ] **docs-figma** (optional) Figma ↔ code workflow note in frontend/README (Muk handoff)
 
 ---

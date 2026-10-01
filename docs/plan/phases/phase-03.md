@@ -38,6 +38,7 @@
 
 | ID | 작업 | 상세 | DoD |
 | :--- | :--- | :--- | :--- |
+| 3.0 | Theme provider (펫 스킨 대비) | `frontend/theme/themes.ts`: 테마 프리셋 맵(`default` + 털 색 프리셋 자리, 값은 디자이너 확정 전 임시). 테마가 바꾸는 키: `primary`, `primaryText`, `background`, `accent` / **고정 키**(테마 무관): `text`, `error`, `success`, `warning` — 위험 경고가 스킨에 묻히지 않게. `ThemeProvider` + `useTheme()` — `components/ui` 전부 `tokens` 직접 import 대신 `useTheme()` 사용. 이번엔 `default`만 (pet별 적용은 [11.10](phase-11.md)). `DESIGN.md` "For AI agents" 규칙을 `useTheme()` 기준으로 갱신 | 기존 화면 동일 렌더 + `themes.ts`에서 `primary` 바꾸면 Button 색 변경 |
 | 3.1 | Auth screens | `app/(auth)/login.tsx`, `signup.tsx`. `lib/supabase.ts` (anon key, `persistSession:true`). Supabase 에러 → 사람 문구 ("Wrong email or password") | 가입·로그인 |
 | 3.2 | Signup role | `signUp({email, password, options:{data:{role, display_name}}})` → 트리거가 `profiles` + `owner_profiles` 또는 `sitter_profiles` 생성 (클라이언트 insert 없음, D15·D21). Role 선택 UI: 큰 카드 2개 "I'm a pet owner" / "I'm a pet sitter" | DB에 role + 역할별 프로필 저장 |
 | 3.3 | Navigation guard | `SessionProvider`(session + profile 로드). `app/index.tsx`: 미로그인 → `/(auth)/login`, owner → `/(owner)`, sitter → `/(sitter)`. 각 group `_layout.tsx`에서 role 불일치 시 redirect | 직접 URL 입력해도 차단 |
@@ -68,6 +69,7 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 ## 산출물
 
 - `frontend/app/(auth)/*`, `frontend/app/(owner)/_layout.tsx` + `index.tsx` + `pets/*`, `frontend/app/(sitter)/_layout.tsx` + `index.tsx`
+- `frontend/theme/themes.ts`, `frontend/providers/ThemeProvider.tsx` (3.0)
 - `frontend/lib/supabase.ts`, `frontend/providers/SessionProvider.tsx`, `ToastProvider.tsx`, `PetProvider.tsx`
 - `backend/app/deps/auth.py`, `backend/app/deps/supabase.py`, `backend/app/routers/me.py`
 
