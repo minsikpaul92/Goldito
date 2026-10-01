@@ -69,6 +69,8 @@ test.describe("auth and role routing", () => {
     await page.goto("/signup");
     const signup = app(page);
     await signup.getByTestId("role-sitter").click();
+    await expect(signup.getByTestId("role-sitter")).toHaveAttribute("aria-checked", "true");
+    await expect(signup.getByTestId("role-owner")).toHaveAttribute("aria-checked", "false");
     await signup.getByTestId("signup-name").fill("Mina");
     await signup.getByTestId("signup-email").fill("mina@pawnote.test");
     await signup.getByTestId("signup-password").fill("care-snap-tap");

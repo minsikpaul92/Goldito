@@ -31,6 +31,9 @@ test.describe("owner pets", () => {
     await screen.getByRole("button", { name: "Add pet" }).click();
     await expect(page).toHaveURL(/\/owner\/pets\/new$/);
     await screen.getByTestId("pet-species-dog").click();
+    // Screen readers must hear which species is selected.
+    await expect(screen.getByTestId("pet-species-dog")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("pet-species-cat")).toHaveAttribute("aria-checked", "false");
     await screen.getByTestId("pet-name").fill("Bori");
     await screen.getByTestId("pet-breed").fill("Maltese");
     await screen.getByTestId("pet-birthdate").fill("2022-04-15");
