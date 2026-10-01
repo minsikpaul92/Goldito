@@ -129,7 +129,7 @@ PawNote/
 | `/(public)/welcome` | - | Welcome + **Try demo** (Owner / Sitter) · "Already have an account?" | Try demo | OB.1 ([onboarding.ko.md](../onboarding.ko.md)) |
 | `/(auth)/login` | - | Login | Sign in | 03 |
 | `/(auth)/signup` | - | Sign up (+ role 선택 1회) | Create account | 03 |
-| `/(owner)/` (tab: Home) | owner | My pets 카드 + 오늘 요약 | Add pet | 03 |
+| `/(owner)/` (tab: Home) | owner | My pets · **Pet status room (8bit, P1 11.12)** · 오늘 요약 | Add pet | 03 · 11.12 |
 | `/(owner)/pets/new`, `/(owner)/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) | Save | 03 |
 | `/(owner)/bookings`, `/(owner)/bookings/new`, `/(owner)/bookings/[bookingId]`, `/(owner)/sitters/[sitterId]` | owner | 예약 목록 / 단골 스케줄 확인·검색·요청 / 상세·재예약 / 시터 스케줄 | Book care | 03B |
 | `/profile` | both | 역할별 프로필 편집 (주소·bio 등) — **Settings 아님** | Save | 03 |

@@ -9,7 +9,8 @@ The in-app **Settings → What's New** screen (Phase 11.11) reads this file (or 
 ### Planned (documented, not shipped)
 
 - Sitter care loop Plan B: quick check-ins (meal, potty, mood, note), optional photo on tasks, owner Activity history ([plan/sitter-care-loop.ko.md](plan/sitter-care-loop.ko.md))
-- Settings screen with patch notes (11.11)
+- Settings screen with in-app patch notes — **Settings → What's New** (11.11)
+- 8-bit Pet status room on Owner Home — Tamagotchi-style fed/mood/potty (11.12)
 
 ## [0.0.0] — hackathon scaffold
 
