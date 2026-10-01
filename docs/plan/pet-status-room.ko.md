@@ -27,6 +27,7 @@ Derive **`PetStatusSnapshot`** on the client or via RPC `get_pet_status(p_pet, p
 | **Mood** | Latest `mood` check-in; P1 optional latest feed `mood` chip (11.9) | `happy` / `calm` / `tired` → sprite variant |
 | **Care** | Pending/missed `task_logs` (walk, med) | Next due task label under sprite |
 | **Episode** | Latest `note` check-in (optional one-liner under sprite) | Truncate 40 chars |
+| **Streak** (stretch) | Consecutive days with no `hungry`/`needs_potty` flag, derived from the same `care_checkins`/`task_logs` history already queried for Activity (Phase 06) | "On time 4 days running 🔥" — reset to 0 on a missed day, no new table |
 
 Rules live in one module (`lib/petStatus.ts`) — tunable without schema churn.
 
@@ -40,6 +41,7 @@ Rules live in one module (`lib/petStatus.ts`) — tunable without schema churn.
 | **Sprite** | **8-bit pixel art** — idle animation (2–4 frames). States: `happy`, `calm`, `tired`, `hungry`, `sleepy` (map from snapshot) |
 | **Breed mapping** | P1 demo: **2–3 dog breeds** (e.g. Maltese, Golden, Shiba) + **1 cat** from `pets.breed` / species fallback. Unknown breed → generic dog/cat sprite |
 | **HUD** | Icon row: 🍽️ fed / ⚠️ hungry · 💩 potty · 😊 mood · 🦮 next task — same data as text under sprite |
+| **Streak chip** (stretch) | Small secondary chip near the HUD row, only shown when streak ≥ 2 days — never blocks or replaces the day's actual status |
 | **Style** | Retro palette (limited colors), optional CRT/scanline **off** by default for readability; fits [DESIGN.md](../../DESIGN.md) tokens for chrome around the “device bezel” |
 
 **Sitter:** optional read-only mini status on Today for assigned pet (same snapshot, no room chrome) — stretch.
