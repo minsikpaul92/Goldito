@@ -46,6 +46,7 @@ Demo priority: the **"A Day with PawNote"** flow in the main README must work en
 | **Pet-friendly map** — restaurants, stores, parks that allow pets | Outside the care loop; Google Places `allowsDogs` exists but is dogs-only, highest-cost field tier, and cannot be used as a search filter |
 | **Sticker / emoji / skin store** (business model) | Presented in README / Devpost as the monetization path; no payments built |
 | **Bark / vocal emotion analysis** | Public research reaches ~36–57% on 3-class emotion — not reliable enough to show owners |
+| **Sitter desktop web** — sitters plan schedules and write reports faster on a computer (sidebar layout); owners stay on the phone | Lowest priority. The hackathon build only frames the phone app on desktop (architecture D25); screens use `useLayoutMode()` and JS `Tabs` so this layout can be added later |
 
 ---
 
@@ -94,6 +95,7 @@ Seulgi: Nemotron pipeline → FastAPI routers
 - Every AI call goes through Token Factory — Nemotron for reasoning and reports, MiniCPM-V for vision (captions, labels). See [model-ids.md](phases/notes/model-ids.md).
 - Real customer data is anonymized before it touches prompts, the repo, or the video.
 - Demo stays online and free until **Dec 15**; test accounts for owner and sitter.
+- Judges use computers: on desktop the demo runs inside a **402 × 874 phone frame** and everything works with a mouse, sample photos included (architecture D25, [DESIGN.md §7.7](../../DESIGN.md#77-works-with-a-mouse)).
 - Video < 3 min, public YouTube, English audio covering Nemotron + Token Factory, no copyrighted music.
 
 **Prize targets:** Best Apps and Agents Track or Overall · Best Use of Tavily · Most Valuable Feedback · Toronto City Winner (attended Builders & Brews Toronto, Sep 29).

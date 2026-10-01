@@ -91,7 +91,7 @@
 
 - `frontend/app/(sitter)/schedule.tsx`, `frontend/app/(sitter)/bookings/index.tsx`, `[bookingId].tsx`
 - `frontend/app/(owner)/bookings/index.tsx`, `new.tsx`, `[bookingId].tsx`, `frontend/app/(owner)/sitters/[sitterId].tsx`
-- `frontend/components/SlotCalendar.tsx`, `HandoffCard.tsx`, `HandoffPicker.tsx`, `BookingCard.tsx`, `SitterCard.tsx`
+- `frontend/components/SlotCalendar.tsx`, `HandoffCard.tsx`, `HandoffPicker.tsx`, `BookingCard.tsx`, `SitterCard.tsx` — 날짜·시간 선택은 직접 만든 UI (웹 미지원 `@react-native-community/datetimepicker` 금지), 기간은 시작일·종료일 **두 번 탭** (드래그 선택 없음), 시트는 Close 버튼 필수 — 데스크톱 프레임에서 마우스로 동작 ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse), D25)
 - `frontend/lib/bookings.ts` (RPC 래퍼)
 
 ---

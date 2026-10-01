@@ -25,6 +25,7 @@
 - [ ] **YouTube 영상** 3분 미만, 공개, **영어** 음성 (Nemotron + Token Factory + Nebius AI Cloud 사용 설명)
 - [ ] **설명** (영어): 무엇을 만들었는지, 왜, 어떻게 동작하는지
 - [ ] **테스트 계정** (로그인 필요 시 Devpost 설명란에)
+- [ ] 설명란에 한 줄: *"Open the demo on a computer — it runs inside a phone frame (click = tap, drag or scroll = swipe). Use **Try demo**; sample photos are built in, no camera needed."* ([onboarding.ko.md](../plan/onboarding.ko.md) judge checklist, D25)
 - [ ] **Nebius / NVIDIA 피드백** (필수 항목 — Token Factory, **AI Cloud(Serverless Endpoint)**, 모델별)
 - [ ] 데모는 **12-15(심사 종료)** 까지 무료 접속 유지
 

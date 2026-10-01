@@ -161,6 +161,7 @@ cd frontend && cp .env.example .env  # EXPO_PUBLIC_API_URL=http://localhost:8000
 - **Pawstagram** — a public feed where owners share their pets, and anyone can scroll for a dose of cute.
 - **Pet-friendly map** — cafés, stores, and parks that welcome pets.
 - **Business model** — free core app; paid sticker packs, emoji, and report skins.
+- **Sitter desktop** — sitters plan schedules and send daily reports faster from a computer; owners stay on their phone.
 
 ---
 

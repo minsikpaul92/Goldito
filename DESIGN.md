@@ -28,11 +28,43 @@ PawNote is a private care app for **dogs and cats**. Owners hand their pet to a 
 
 ## 2. Layout
 
-- **Mobile-first, single column.** Content max width **480 px**, centered (`Screen` component). Design frames at **390 px** wide.
+- **Mobile-first, single column.** Content max width **480 px**, centered (`Screen` component).
+- **Design frame: 402 × 874** (iPhone 17 class, the current base iPhone). Layouts are fluid and must work from **360 to 440 px** wide (small Android → Pro Max). Check 360 / 402 / 440.
 - **8 px grid.** All spacing comes from `tokens.spacing`.
 - Screen padding: `spacing.md` (16). Gap between cards: `spacing.md`. Inside a card: `spacing.md`.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
 - Dev builds show a small role label (**Owner** / **Sitter**) in the header.
+
+### 2.1 Desktop browsers (judges): phone frame
+
+Judges open the demo URL on a computer. They must get the same experience as on a phone ([architecture D25](docs/plan/phases/architecture.ko.md)).
+
+| Where the app runs | What renders |
+| :--- | :--- |
+| Native app, phone browser (width < 768) | The app, full screen |
+| Desktop browser (width ≥ 768) | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
+| `?frame=0` / `?frame=1` | Force the frame off (video recording, debugging) / on |
+| `?view=split` (Phase 10.10, stretch) | Owner and Sitter phones side by side |
+
+- The frame holds the **same app in a same-origin iframe**. Inside it, everything behaves like a real 402 px phone: modals, sheets, `useWindowDimensions`, media queries.
+- The frame is a generic CSS phone (rounded body, status bar with the time, home indicator). No real device images or brand marks.
+- On short windows (laptops at 1366 × 768, Windows at 125–150 % scaling) the frame keeps its width and **only gets shorter** (min 600). Never `transform: scale`.
+- Inside the frame, the mouse acts like a finger — see [§7.7](#77-works-with-a-mouse).
+
+| Token | Value | Use |
+| :--- | :--- | :--- |
+| `layout.frameWidth` **(proposed)** | 402 | Phone frame screen width (task 1.6) |
+| `layout.frameHeight` **(proposed)** | 874 | Phone frame screen height (max) |
+| `breakpoint.framed` **(proposed)** | 768 | Desktop browser at or above this → phone frame |
+| `breakpoint.expanded` **(proposed)** | 1024 | Reserved for the sitter desktop layout (§2.2) |
+
+### 2.2 Later: sitter desktop (post-hackathon, lowest priority)
+
+After the hackathon, **sitters only** get a full desktop layout for heavy work (schedule, daily reports). Owners stay in the phone frame. Build screens now so this stays cheap:
+
+- Screens branch only on `useLayoutMode()` (`'compact'` | `'expanded'`), never on `Platform.OS` or raw width numbers. During the hackathon it is always `'compact'`.
+- Tabs use expo-router `Tabs` (JS), not `NativeTabs`, so they can move to a left sidebar later (`tabBarPosition: 'left'`).
+- Route files stay thin; data and state live in hooks (`features/<domain>/use*.ts`) that a desktop view can reuse.
 
 ---
 
@@ -122,6 +154,10 @@ System font for now (Figma will pick one family).
 | `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
 | `Skeleton` | Gray blocks while loading; matches the final layout |
+| `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
+| `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
+| `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
+| `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it |
 
 ---
 
@@ -157,6 +193,30 @@ Always explain what will appear and who adds it.
 - At most **2 emoji** per message; none in buttons except the status ones above.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
 
+### 7.7 Works with a mouse
+
+Judges use a computer, so every action must work with a mouse and a trackpad inside the phone frame (§2.1).
+
+| On a phone | With a mouse in the frame | Rule |
+| :--- | :--- | :--- |
+| Tap | Click | Works as-is (react-native-web fires `onPress` on click) |
+| Swipe to scroll | Wheel, trackpad, or click-drag | Click-drag scrolling with momentum comes from `TouchEmulation` (task 1.7) |
+| Swipe sideways (chips, photos, dates) | Drag, or plain wheel over the row | Use `HorizontalList` — the next item peeks in |
+| Pull to refresh | Nothing (`RefreshControl` is a no-op on web) | Data updates via Realtime; add a refresh button if needed |
+| Long press | Works (hold 450 ms), but nobody finds it | Never the only way to do something |
+| Swipe back, swipe to delete, drag a sheet down | Not reliable on web | Always a visible back button, delete button, **Close** |
+| Camera | Most desktops have none | `pickMedia()` sample tray (`MediaPicker`) |
+| Date / time pickers | `@react-native-community/datetimepicker` has no web support | Build our own (chips, steppers, `SlotCalendar`) |
+
+**Desktop check for every screen PR** (phone frame, mouse only, 1366 × 768):
+
+- [ ] Every action works by click; nothing is gesture-only
+- [ ] Wheel and drag scrolling work; horizontal rows move
+- [ ] The primary action is visible; nothing is cut off at the bottom
+- [ ] Modals, sheets, and toasts stay inside the phone
+- [ ] Layout holds at 360, 402, and 440 widths
+- [ ] Any new library supports web (check the platform list in Expo docs)
+
 ---
 
 ## 8. Imagery & icons
@@ -164,6 +224,7 @@ Always explain what will appear and who adds it.
 - Real pet photos are the hero; keep chrome minimal around them.
 - Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
 - Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.
+- Sample photos for the demo tray (Phase 04.7): dog and cat daily photos plus treat labels with fictional brands (the same label images as the Phase 08 test fixtures). No people, faces, or addresses.
 
 ---
 
@@ -184,6 +245,8 @@ Always explain what will appear and who adds it.
 4. Follow §7 patterns: one primary action, no sitter text fields, loud DANGER, empty states with copy.
 5. Show both dogs and cats in placeholder content.
 6. If a screen has a Figma frame, the Figma frame wins over this file.
+7. The UI must work inside the desktop phone frame with a mouse (§2.1, §7.7): no gesture-only actions, no pull-to-refresh-only updates, no native-only libraries (date/time pickers, swipeable rows).
+8. Branch layout only with `useLayoutMode()` — no `Platform.OS` or width numbers in screens. Pick photos only through `pickMedia()`.
 
 ---
 
@@ -198,3 +261,6 @@ Everything above is a placeholder until these are decided.
 - [ ] Button variants, Chip, Toast, AlertModal, EmptyState, TabBar, ProposalCard, ReportCard
 - [ ] Report themes (4) + preset sticker set (Phase 11.8)
 - [ ] Welcome / Login screens ([#13](https://github.com/minsikpaul92/PawNote/issues/13))
+- [ ] Figma frames at **402 × 874**; spot-check at 360 and 440
+- [ ] Desktop backdrop, side panel, and phone-frame style (§2.1)
+- [ ] Sample photo set for the demo tray: dog / cat daily photos + treat labels with fictional brands (§8)

@@ -28,6 +28,7 @@ Rules:
 - Match existing conventions once they exist.
 - No secrets in git; use .env.example only.
 - English for code, comments, UI copy, and AI output (architecture D1).
+- UI must work inside the desktop phone frame with a mouse (architecture D25, DESIGN.md §7.7): no gesture-only actions, no web-unsupported libraries, photos only via pickMedia().
 - Do not commit unless I ask.
 
 Read before coding:
@@ -68,6 +69,8 @@ Output:
 | 1.2 | `backend`: FastAPI app, `/health`, CORS, pydantic settings | 1.1 | `curl localhost:8000/health` → 200 |
 | 1.3 | `frontend`: Expo (tabs or stack), web 실행 | 1.1 | `npx expo start --web` 동작 |
 | 1.4 | 루트 `.gitignore` 보강 (`.env`, `data/raw/`) | 1.1 | |
+| 1.6 | Web shell: 데스크톱 폰 프레임 402 × 874 (iframe, D25) | 1.3 | 데스크톱 = 프레임, 폰 = 전체 화면, `?frame=0` |
+| 1.7 | `TouchEmulation` + `/dev/gestures` + Playwright 마우스 테스트 (CI) | 1.6 | CI 통과, 드래그 스크롤·클릭 = 탭 |
 
 ### AI 프롬프트 — 1.1 모노레포 scaffold
 
@@ -100,6 +103,38 @@ Scaffold Expo TypeScript app in frontend/ with a single Home screen showing "Paw
 Use expo-constants or env for EXPO_PUBLIC_API_URL.
 
 DoD: web loads and health check shows ok when backend runs.
+```
+
+### AI 프롬프트 — 1.6 Web shell (데스크톱 폰 프레임)
+
+```text
+Implement the web shell from architecture D25 and phase-01 task 1.6.
+- components/shell/AppShell.tsx (native: return children) and AppShell.web.tsx.
+- presentation.ts resolvePresentation(): direct when inside an iframe, ?frame=0, or width < 768; framed when ?frame=1 or width >= 768.
+- framed: render only a backdrop + DeviceFrame.web.tsx + a same-origin <iframe> of the current path+search (set src once). No providers or routes in the outer page.
+- DeviceFrame: generic CSS phone, screen 402 x 874, status bar + home indicator outside the iframe, height shrinks to fit short windows (min 600), never transform: scale, no real device images.
+- Inside the iframe, mirror route changes to the parent with window.parent.history.replaceState.
+- useLayoutMode() returns 'compact' for now; useShell() exposes { embedded }.
+- Add layout.frameWidth/frameHeight and breakpoint.framed/expanded to theme/tokens.ts.
+- Mount AppShell outside every provider in app/_layout.tsx.
+
+DoD: phase-01 1.6 DoD column (desktop 1440x900 framed, 375 wide full screen, refresh keeps route, 1366x768 not cut off).
+```
+
+### AI 프롬프트 — 1.7 마우스 = 손가락 + 테스트
+
+```text
+Implement phase-01 task 1.7.
+- components/shell/TouchEmulation.web.ts, active only inside the iframe and only for pointerType 'mouse':
+  drag-to-scroll with axis lock (6px) and momentum on the nearest scrollable ancestor; block the next click after a drag
+  (window capture phase — react-native-web fires onPress on DOM click); vertical wheel scrolls horizontal-only rows;
+  user-select none and no image drag (except inputs); round touch-like cursor; hidden scrollbars; overscroll-behavior contain.
+  Skip inputs and elements with data-gesture-owner.
+- app/dev/gestures.tsx behind EXPO_PUBLIC_DEV_ROUTES=1: long list, chip row, paged photos, pressable rows, overlay modal, toast, text input.
+- Playwright in frontend/e2e (Chromium, WebKit, Firefox x 1366x768, 1440x900, 1920x1080), mouse only. Add to the CI frontend job against a static server of `expo export -p web`.
+- Add .github/pull_request_template.md with the DESIGN.md §7.7 desktop checklist.
+
+DoD: CI green; phone-browser touch scrolling unchanged.
 ```
 
 ---
@@ -174,6 +209,7 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 | 4.1 | `POST /api/media/sign` signed upload params | 3.3, 0.2 | 프론트가 secret 없이 업로드 |
 | 4.2 | 업로드 완료 후 `media` row + URL 반환 | 4.1 | DB에 public_id 저장 |
 | 4.3 | 프론트: 이미지 picker → Cloudinary → 콜백 | 4.1 | 웹에서 파일 선택 동작 |
+| 4.7 | `pickMedia()` + 샘플 사진 트레이 (데스크톱·데모 계정, D25) | 4.3, 1.6 | 데스크톱에서 샘플 → 같은 업로드 파이프 |
 
 ### AI 프롬프트 — 4.1–4.2
 
@@ -334,6 +370,7 @@ DoD: sitter upload only; caption appears automatically.
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
 | 10.3 | 배포: Vercel(front) + Nebius AI Cloud Serverless Endpoint(backend, D18 — Render는 긴급 fallback) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
+| 10.9–10.10 | 데스크톱 옆 안내 패널 · (stretch) Split view — 번호는 [phase-10](phases/phase-10.md) 기준 | 10.3 | 마우스만으로 심사 경로 |
 
 ### AI 프롬프트 — 10.1 seed
 
@@ -392,6 +429,8 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [ ] 1.1 monorepo
 - [ ] 1.2 FastAPI health
 - [ ] 1.3 Expo web
+- [ ] 1.6 web shell (desktop phone frame)
+- [ ] 1.7 mouse = finger + Playwright
 
 ### Phase 2
 - [x] 2.1–2.6 migrations
@@ -405,6 +444,7 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 
 ### Phase 4
 - [ ] 4.1–4.3 Cloudinary
+- [ ] 4.7 pickMedia + sample tray
 
 ### Phase 5 — Feed
 - [ ] 5.1 sitter post
@@ -436,6 +476,7 @@ DoD: fresh DB can demo full day flow in 15 minutes.
 - [ ] 10.2 README run
 - [ ] 10.3 deploy
 - [ ] 10.4 test accounts
+- [ ] 10.9 desktop side panel · 10.10 split view (stretch)
 
 ---
 

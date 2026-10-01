@@ -102,10 +102,12 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 심사위원 **체크리스트 (Devpost / README에 복붙 가능):**
 
-1. Open demo URL → Welcome (또는 Login)
-2. **Try demo as Sitter** → Today / Tasks → complete med with photo
-3. Log out → **Try demo as Owner** → Feed / notifications / report read
-4. (Optional) Scan tab → safety demo
+1. Open demo URL — on a computer it appears in a phone frame (**click = tap, drag or scroll = swipe**); on a phone it opens full screen → Welcome (또는 Login)
+2. **Try demo as Sitter** → Today / Tasks → complete med with photo (pick a sample photo — no camera needed)
+3. Log out → **Try demo as Owner** → Feed / notifications / report read (10.10 Split view가 있으면: **Show both phones** → 두 역할을 한 화면에서)
+4. (Optional) Scan tab → sample **chicken jerky** label → DANGER
+
+> 데스크톱 프레임·마우스 조작·샘플 트레이는 [architecture D25](phases/architecture.ko.md) · [DESIGN.md §2.1·§7.7](../../DESIGN.md#21-desktop-browsers-judges-phone-frame).
 
 ---
 
@@ -117,10 +119,12 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 2. **Login** — Demo block 레이아웃 (Owner / Sitter)
 3. **Signup role cards** — Intro step 2와 토큰 통일 (색·타이포·illustration style)
 4. **Empty states** (1장): sitter “No bookings yet”, owner “No posts yet”
+5. **데스크톱 화면** (심사위원이 PC로 보는 첫 화면): 배경 + 폰 프레임(402 × 874) 스타일 + 옆 안내 패널(소개 한 줄, Try demo, QR, 힌트) — [DESIGN.md §2.1](../../DESIGN.md#21-desktop-browsers-judges-phone-frame), Phase 10.9
+6. **샘플 사진 세트** (샘플 트레이 4.7): 강아지·고양이 일상 사진 + 가상 브랜드 간식 라벨 (Phase 08 픽스처와 동일) — 사람·주소 없음
 
 ### 5.2 UX 원칙 (CLAUDE.md와 동일)
 
-- Mobile-first, single column (phone-width web demo)
+- Mobile-first, single column (phone-width web demo) — 디자인 프레임 **402 × 874**, 데스크톱에서는 같은 크기의 폰 프레임 안에 표시 (D25)
 - Kidsnote familiarity — warm, album/timeline, not admin dashboard
 - One primary action per screen on Welcome: default **Try demo as Sitter** (데모 스토리는 sitter 액션부터 시작하기 쉬움)
 - Danger (safety)는 별도 — 온보딩에서 과장하지 않음
@@ -139,7 +143,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | :--- | :--- | :--- | :--- |
 | **OB.1** | 라우트: 미로그인 `/` → welcome (intro_seen 옵션은 OB.4) | Phase 03.3 | 로그아웃 후 welcome 노출 |
 | **OB.2** | Welcome UI (3 step + CTA) | OB.1, 묵 와이어 | EN 카피, Sign in / Sign up 링크 |
-| **OB.3** | Login demo buttons → 시드 계정 자동 로그인 | Phase 10.1 시드, 03.1 login | Owner/Sitter 각 200, Bori visible |
+| **OB.3** | Login demo buttons → 시드 계정 자동 로그인 · `/login?demo=sitter`·`?demo=owner` 쿼리도 같은 동작 (10.9 옆 패널·10.10 Split view가 사용) | Phase 10.1 시드, 03.1 login | Owner/Sitter 각 200, Bori visible |
 | **OB.4** | (선택) intro_seen skip | OB.2 | 두 번째 방문 login 직행 |
 | **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist |
 
@@ -153,6 +157,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 - [ ] 공개 데모 URL에서 **로그인 없이** Welcome(또는 Login demo block) 경로 설명 가능
 - [ ] **Try demo as Owner / Sitter** 한 탭(또는 한 클릭)으로 시드 세션 진입
+- [ ] 데스크톱 브라우저에서 폰 프레임 안의 Welcome → Try demo → 체크리스트 1–4를 **마우스만으로** 완주 (D25)
 - [ ] Devpost·README에 테스트 계정 + **3~5단계 judge path** 영어
 - [ ] Sign up 역할 UI와 Welcome “two roles” **카피·톤 일치**
 - [ ] 실 PII·개인 계정을 온보딩/시드에 넣지 않음
