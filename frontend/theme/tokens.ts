@@ -7,9 +7,12 @@ export const tokens = {
     textMuted: "#5C5C5C",
     primary: "#2D6A4F",
     primaryText: "#FFFFFF",
+    /** Soft tint for highlights (selected chip background, badges). Text on it uses `text`. */
+    accent: "#D8F3DC",
     border: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
+    warning: "#B54708",
     /** Dimmed backdrop behind modals and sheets. */
     overlay: "rgba(26, 26, 26, 0.4)",
     // Desktop phone frame only (DESIGN.md §2.1)

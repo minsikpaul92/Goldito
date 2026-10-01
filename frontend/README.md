@@ -26,6 +26,8 @@ Start the backend on port 8000 first, then tap **Check API** on the home screen 
 
 See [architecture §2](../docs/plan/phases/architecture.ko.md#2-리포-구조-최종-형태): role groups `(owner)` / `(sitter)`, `lib/supabase.ts`, `lib/api.ts`, UI kit under `components/ui/`.
 
+Design values come from `useTheme()` / `useThemedStyles()` (`providers/ThemeProvider.tsx`): base values in `theme/tokens.ts`, skin presets in `theme/themes.ts` (only `default` until Phase 11.10). See [DESIGN.md](../DESIGN.md) "For AI agents".
+
 ## Desktop browsers
 
 On a computer (mouse / trackpad) the app renders inside a **402 × 874 phone frame** at any window width — the same app in a same-origin iframe, so inside it everything behaves like a 402 px phone. Narrow windows keep the frame (scaled down if narrower than the phone). Phone / tablet browsers (touch) and native builds are unchanged. See [architecture D25](../docs/plan/phases/architecture.ko.md) and [DESIGN.md §2.1 · §7.7](../DESIGN.md#21-desktop-browsers-judges-phone-frame).

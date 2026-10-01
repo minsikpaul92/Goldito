@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { StyleSheet, View, ViewStyle } from "react-native";
 
-import { tokens } from "../../theme/tokens";
+import { useThemedStyles } from "../../providers/ThemeProvider";
+import { Theme } from "../../theme/themes";
 
 type Props = {
   children: ReactNode;
@@ -9,15 +10,17 @@ type Props = {
 };
 
 export function Card({ children, style }: Props) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: tokens.color.surface,
-    borderRadius: tokens.radius.lg,
-    padding: tokens.spacing.md,
-    borderWidth: 1,
-    borderColor: tokens.color.border,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: theme.color.surface,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
+  });

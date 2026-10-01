@@ -5,9 +5,12 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Screen } from "../components/ui/Screen";
 import { getApiBaseUrl, getHealth } from "../lib/api";
-import { tokens } from "../theme/tokens";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
+import { Theme } from "../theme/themes";
 
 export default function HomeScreen() {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,7 +35,7 @@ export default function HomeScreen() {
         <Text style={styles.label}>Backend</Text>
         <Text style={styles.url}>{apiUrl ?? "(EXPO_PUBLIC_API_URL not set)"}</Text>
         <Button label="Check API" onPress={onCheckApi} disabled={loading} style={styles.button} />
-        {loading ? <ActivityIndicator style={styles.spinner} color={tokens.color.primary} /> : null}
+        {loading ? <ActivityIndicator style={styles.spinner} color={theme.color.primary} /> : null}
         {statusMessage ? (
           <Text
             style={[
@@ -48,45 +51,46 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: {
-    fontSize: tokens.fontSize.title,
-    fontWeight: "700",
-    color: tokens.color.text,
-    marginBottom: tokens.spacing.xs,
-  },
-  subtitle: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.textMuted,
-    marginBottom: tokens.spacing.lg,
-  },
-  card: {
-    gap: tokens.spacing.sm,
-  },
-  label: {
-    fontSize: tokens.fontSize.small,
-    fontWeight: "600",
-    color: tokens.color.textMuted,
-    textTransform: "uppercase",
-  },
-  url: {
-    fontSize: tokens.fontSize.small,
-    color: tokens.color.text,
-  },
-  button: {
-    marginTop: tokens.spacing.sm,
-  },
-  spinner: {
-    marginTop: tokens.spacing.sm,
-  },
-  status: {
-    marginTop: tokens.spacing.sm,
-    fontSize: tokens.fontSize.body,
-  },
-  statusOk: {
-    color: tokens.color.success,
-  },
-  statusErr: {
-    color: tokens.color.error,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    title: {
+      fontSize: theme.fontSize.title,
+      fontWeight: "700",
+      color: theme.color.text,
+      marginBottom: theme.spacing.xs,
+    },
+    subtitle: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      gap: theme.spacing.sm,
+    },
+    label: {
+      fontSize: theme.fontSize.small,
+      fontWeight: "600",
+      color: theme.color.textMuted,
+      textTransform: "uppercase",
+    },
+    url: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.text,
+    },
+    button: {
+      marginTop: theme.spacing.sm,
+    },
+    spinner: {
+      marginTop: theme.spacing.sm,
+    },
+    status: {
+      marginTop: theme.spacing.sm,
+      fontSize: theme.fontSize.body,
+    },
+    statusOk: {
+      color: theme.color.success,
+    },
+    statusErr: {
+      color: theme.color.error,
+    },
+  });

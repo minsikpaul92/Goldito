@@ -114,8 +114,9 @@ PawNote/
    │  ├─ cloudinary.ts        # uploadMedia(), thumbUrl(), videoPosterUrl()
    │  ├─ feed.ts              # createFeedPost() — Phase 05/06/09 공용
    │  └─ time.ts              # APP_TIMEZONE 표시 포맷
-   ├─ providers/              # SessionProvider, PetProvider(선택된 pet), ToastProvider, NotificationsProvider(Realtime)
-   ├─ theme/tokens.ts         # 색·간격(8px)·radius·타이포·layout·breakpoint — 묵 Figma 토큰으로 교체
+   ├─ providers/              # ThemeProvider(useTheme · useThemedStyles, 3.0), SessionProvider, PetProvider(선택된 pet), ToastProvider, NotificationsProvider(Realtime)
+   ├─ theme/tokens.ts         # 기본값: 색·간격(8px)·radius·타이포·layout·breakpoint — 묵 Figma 토큰으로 교체
+   ├─ theme/themes.ts         # 스킨 프리셋 (`default` + 11.10 털 색) — primary·primaryText·background·accent만 변경, 상태 색 고정
    └─ types/db.ts             # Supabase 테이블 타입 (수동 or supabase gen types)
 ```
 

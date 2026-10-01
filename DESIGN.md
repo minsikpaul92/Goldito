@@ -1,7 +1,7 @@
 # PawNote — Design Guide
 
 > **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
-> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts). When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` first, then this file.
+> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` / `themes.ts` first, then this file.
 >
 > Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
 > Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
@@ -71,20 +71,22 @@ After the hackathon, **sitters only** get a full desktop layout for heavy work (
 
 ## 3. Color
 
-Use the token name in code, never a hex value.
+Use the token name in code (`theme.color.primary` from `useTheme()`), never a hex value.
 
-| Token | Value | Use |
-| :--- | :--- | :--- |
-| `background` | `#F7F7F5` | App background behind cards |
-| `surface` | `#FFFFFF` | Cards, sheets, modals |
-| `text` | `#1A1A1A` | Primary text |
-| `textMuted` | `#5C5C5C` | Secondary text, timestamps, helper copy |
-| `primary` | `#2D6A4F` | Primary buttons, active tab, links, checkmarks |
-| `primaryText` | `#FFFFFF` | Text/icons on `primary` |
-| `border` | `#E5E5E0` | Card borders, dividers, input outlines |
-| `success` | `#067647` | Done states, SAFE result |
-| `error` | `#B42318` | Form/API errors, **DANGER** safety result |
-| `warning` **(proposed)** | `#B54708` | WARNING safety result, "needs your OK" handoff badge |
+| Token | Value | Skin? | Use |
+| :--- | :--- | :--- | :--- |
+| `background` | `#F7F7F5` | ✅ | App background behind cards |
+| `surface` | `#FFFFFF` | | Cards, sheets, modals |
+| `text` | `#1A1A1A` | 🔒 fixed | Primary text |
+| `textMuted` | `#5C5C5C` | | Secondary text, timestamps, helper copy |
+| `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
+| `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
+| `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
+| `border` | `#E5E5E0` | | Card borders, dividers, input outlines |
+| `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
+| `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
+| `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
+| `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
 | `warningSurface` **(proposed)** | `#FFFAEB` | Background of warning banners |
 | `errorSurface` **(proposed)** | `#FEF3F2` | Background of DANGER modal body / error banners |
 | `successSurface` **(proposed)** | `#ECFDF3` | Background of SAFE result / success toast |
@@ -92,6 +94,10 @@ Use the token name in code, never a hex value.
 Rules:
 - `error` red is reserved for real problems (failed actions, DANGER). Do not use red for decoration or "cancel" buttons.
 - Status is never color-only — always pair color with an icon or text (e.g. ⚠️ + "Contains chicken").
+
+### 3.1 Themes (pet skins)
+
+A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
 ---
 
@@ -244,9 +250,9 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 
 ## For AI agents
 
-1. Import values from `frontend/theme/tokens.ts`. **Never hardcode** hex colors, font sizes, or spacing numbers.
+1. Read design values through `useTheme()` / `useThemedStyles(makeStyles)` from `frontend/providers/ThemeProvider.tsx` — in screens and `components/ui`, never import `tokens` directly (only `components/shell/` does, because it renders outside the provider). **Never hardcode** hex colors, font sizes, or spacing numbers. Pattern: a module-level `const makeStyles = (theme: Theme) => StyleSheet.create({...})`, then `const styles = useThemedStyles(makeStyles)` in the component.
 2. Wrap screens in `Screen`; group content in `Card`; use `Button` for actions. Extend these before creating new primitives.
-3. If you need a **(proposed)** token, add it to `tokens.ts` in the same change and mention it in the PR.
+3. If you need a **(proposed)** token, add it to `tokens.ts` in the same change and mention it in the PR. A new color that skins should change also goes into `SkinColors` in `themes.ts`; status colors never do (§3.1).
 4. Follow §7 patterns: one primary action, no sitter text fields, loud DANGER, empty states with copy.
 5. Show both dogs and cats in placeholder content.
 6. If a screen has a Figma frame, the Figma frame wins over this file.
