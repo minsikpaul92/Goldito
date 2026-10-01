@@ -1,7 +1,7 @@
 # PawNote — Design Guide
 
-> **Status: interim draft.** Values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) until Muk's Figma lands.
-> When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` first, then this file.
+> **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
+> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts). When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` first, then this file.
 >
 > Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
 > Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
@@ -163,7 +163,7 @@ Always explain what will appear and who adds it.
 
 - Real pet photos are the hero; keep chrome minimal around them.
 - Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
-- Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from Muk.
+- Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.
 
 ---
 
@@ -187,7 +187,9 @@ Always explain what will appear and who adds it.
 
 ---
 
-## Open items for Muk (Figma)
+## Open items for the designer (Figma)
+
+Everything above is a placeholder until these are decided.
 
 - [ ] Font family and final type scale (incl. `subtitle`)
 - [ ] Final palette, including `warning` and the `*Surface` tints
