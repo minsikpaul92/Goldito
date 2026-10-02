@@ -16,7 +16,7 @@ Every feature must pass both tests:
 
 Sitter inputs should be limited to: **take a photo, tap a button** (plus an optional one-line memo on the 5-second check). AI and automation do the rest.
 
-**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D42). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
+**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D43). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
 
 ---
 

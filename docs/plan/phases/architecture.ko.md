@@ -3,7 +3,7 @@
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
 > 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
 > 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
-> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D42). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
+> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D43). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
 
 ---
 
@@ -45,7 +45,7 @@
 | D32 | Pet Transit (실시간 이동) | 이동하는 쪽이 **Start trip** → `trips`에 **마지막 위치 1개만** 갱신(경로 이력 저장 안 함, 끝나면 위치 null) → 상대방은 Realtime(`postgres_changes` on `trips`, RLS = 예약 당사자)으로 구독. ETA = 직선거리 × 1.3 ÷ 속도(차 30 km/h, 도보 4.5 km/h) — 라우팅 API 없음. 도착 = 목적지 150 m 안 → `trip_arrived`. 목적지 좌표 = 프로필의 `home_lat/home_lng`("Use my current location" 또는 시드 가상 좌표, 지오코딩 없음). 지도 = **보기 전용** Leaflet + OpenStreetMap(웹, 자동 맞춤 + ± 버튼, 드래그 팬 없음 — D25 마우스 규칙). 위치 소스 = 폰은 실제 GPS, **데스크톱·데모 계정은 Simulate trip**(가상 경로 재생) | 심사위원 PC에는 움직이는 GPS가 없음, 위치는 이동 중 당사자에게만 |
 | D33 | Vision · 임베딩 모델 | 시나리오의 Qwen-2.5-VL은 Token Factory 카탈로그에 **없음** (2026-10-01 `GET /v1/models`) → 사진 분석(캡션·분류·인수인계 체크·알림장 사진)은 **`openbmb/MiniCPM-V-4_5`** (이미지 입력 대안: `moonshotai/Kimi-K2.6`). RAG 임베딩 = **`Qwen/Qwen3-Embedding-8B`** (카탈로그 유일 임베딩, `dimensions: 1024` 동작 확인) → Supabase **pgvector** `knowledge_chunks vector(1024)` (HNSW), service role 전용. 검색 범위는 항상 그 시터·그 반려동물·그 견주로 필터 | 카탈로그 기준 ([model-ids.md](notes/model-ids.md)). 1024차원이면 pgvector 인덱스 한도(2000) 안 |
 | D34 | 시터 5초 체크 | 시터 입력 = 칩(식사·배변·산책 분·투약) + 사진 ≤ 2 + **선택 메모 1줄(≤ 120자)**. 필수 텍스트 입력은 여전히 없음 (§8-3) | 시나리오의 "짧은 메모" — 알림장 에피소드의 재료 (D38에서 "AI가 먼저 쓰고 시터는 수정·추가만 선택"으로 보강) |
-| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/voice.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `voice_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 P2 비교 실험(11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.ko.md#5-시나리오를-앱으로-옮기며-정한-것-d27d42-요약) |
+| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/voice.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `voice_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 보여주기용(D43, 11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.ko.md#5-시나리오를-앱으로-옮기며-정한-것-d27d42-요약) |
 | D36 | 시터 승인 · AI 고지 | 기본 = 수동 승인(Send 즉시 발송). 자동 발송 = 시터 옵션 + 책임 동의 모달(`sitter_profiles.ai_reply_mode`, `ai_consent_at`). 견주 화면에는 시터 메시지로 표시(메시지별 AI 라벨 없음), 약관·온보딩 1회 고지, 자동 모드 프로필 1줄. "AI냐"는 질문에 사람이라고 답하지 않음 | 승인한 메시지는 시터의 메시지 |
 | D37 | 사람 속도 전달 | 자동 발송·데모 영상에만: `inquiry_messages.visible_at`(미래 시각) + 읽음/입력 중 연출. 서버는 즉시 생성·저장하고 **공개 시각만 늦춤**(서버리스 sleep 금지). 지연 공식·메시지 구조 = 슬기 TBD. 알림장·캡션·수동 승인은 지연 없음 | 서버리스 요청 수명에 안전 |
 | D38 | 시터 글쓰기 제로 | 칩·사진·의도 칩 → AI 문장 생성. 수정·추가는 선택 | UX 원칙 5 |
@@ -53,6 +53,7 @@
 | D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
 | D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막, 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
 | D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
+| D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
 
 ---
 

@@ -113,7 +113,8 @@ Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken.").
 - [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
 - [x] Fine-tuning: wizard offers Gemma-4-E4B-it, no Nemotron (2026-10-02)
 - [x] Gemma-4-E4B-it offers **LoRA fine-tuning** in the wizard's Training type step (2026-10-02) — use LoRA for the voice tuning (style only, cheaper, less forgetting)
-- [ ] Can the LoRA adapter be served without a Dedicated Endpoint? Check the `Gemma-4-E4B-it` page in the Model catalog: if "Public endpoint" is "Not available", LoRA serving also needs a Dedicated Endpoint (the shared `-LoRa` price entries exist only for base models that are on the public API)
+- [x] LoRA serving for Gemma 4: the price list has only Gemma-4 *Fine-tuning* SKUs (no Input/Output or `-LoRa` serving SKUs), so a tuned Gemma 4 most likely needs a Dedicated Endpoint. Per the fine-tuning docs, serverless LoRA deploy is listed only for Llama-3.1-8B-Instruct and Llama-3.3-70B-Instruct; Qwen3-14B/32B are trainable but not on that list, so a Chinese model does not fix serving (2026-10-02)
+- **Decision (D43):** SFT is a showcase only — the app runtime uses Nemotron + style card + few-shot; no serving of a tuned model (phase-11 11.7)
 - [ ] Tone: compare Nemotron-3 Nano / Super / gpt-oss-120b / gemma-3-27b-it on the same few-shot voice prompt (07B.8), blind-rated by the sitter
 
 - [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)

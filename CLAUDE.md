@@ -17,7 +17,7 @@ Every feature must pass:
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D42).
+**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D43).
 
 **Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
 
@@ -207,7 +207,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27); Pet Transit (06B) is the last P0 item before deploy (D41). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT idea 11.7) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
+The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27); Pet Transit (06B) is the last P0 item before deploy (D41). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 

@@ -16,7 +16,7 @@
 
 펫시터가 하는 입력은 **사진 찍기, 버튼 탭**뿐 (5초 체크의 선택 메모 1줄 정도). 나머지는 AI와 자동화가 처리합니다.
 
-**제품 흐름 (정본):** [full-process.ko.md](full-process.ko.md) — 5단계 **문의 → 사전 미팅 → 예약 확정 → 돌봄 & 이동 → 완료** (architecture D27–D42). Rover 예약 × 키즈노트 케어 × Uber 이동, 타이핑은 AI 에이전트가.
+**제품 흐름 (정본):** [full-process.ko.md](full-process.ko.md) — 5단계 **문의 → 사전 미팅 → 예약 확정 → 돌봄 & 이동 → 완료** (architecture D27–D43). Rover 예약 × 키즈노트 케어 × Uber 이동, 타이핑은 AI 에이전트가.
 
 ---
 
