@@ -79,12 +79,12 @@ PawNote/
 │  │  ├─ 005_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
 │  │  ├─ 006_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
 │  │  ├─ 007_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
-│  │  ├─ 008_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표)
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
 │  │  ├─ 012_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch
-│  │  └─ 013_p1.sql                   # Phase 11 (P1)
+│  │  ├─ 013_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막이라 번호도 뒤 (D41)
+│  │  └─ 014_p1.sql                   # Phase 11 (P1)
 │  │                                  # 번호 = 적용 순서. 작업 순서가 바뀌면 다음 빈 번호를 쓰고 이 목록을 고친다
 │  └─ tests/rls_smoke.sql     # 역할 전환 RLS 확인 쿼리
 ├─ backend/

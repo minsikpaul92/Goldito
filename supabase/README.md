@@ -17,12 +17,12 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `005_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
 | `006_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
 | `007_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
-| `008_transit.sql` | 06B | Trips (last position only), handoff photo checks, home coordinates |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_safety.sql` | 08 (stretch) | Safety checks + DANGER owner notify |
-| `013_p1.sql` | 11 | Photo request, notices (P1) |
+| `013_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
+| `014_p1.sql` | 11 | Photo request, notices (P1) |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

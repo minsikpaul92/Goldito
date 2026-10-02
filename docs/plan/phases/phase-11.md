@@ -22,7 +22,7 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ## 작업 상세
 
-| ID | 기능 | DB (`013_p1.sql`) | 동작 | UI |
+| ID | 기능 | DB (`014_p1.sql`) | 동작 | UI |
 | :--- | :--- | :--- | :--- | :--- |
 | 11.1 | 사진 요청 | `photo_requests(id, pet_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select `is_sitter_of(pet_id)` (확정 예약 기간) | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter Today 상단 노란 배너 → 탭 → pet 피드 + Photo |
 | 11.2 | 공지 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)` (근무일은 P0 `sitter_availability`로 이동) | owner는 확정 예약이 있는 시터의 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업). Owner: 팝업 |
@@ -36,6 +36,7 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 | 11.11 | **Settings · What's New (패치노트)** | - | 헤더 **Settings** (`/settings`, owner·sitter 공통): **Account** (email read-only, Log out) · **Profile** → `/profile` · **Notifications** (P1 toggles stub OK) · **What's New** (필수) — [`docs/CHANGELOG.md`](../../CHANGELOG.md)를 빌드 시 JSON/MD로 번들하거나 앱 내 `assets/changelog.json` 동기화 · 날짜 역순 · `[Added]`/`[Fixed]` 섹션 · App version (`expo-constants`) · Privacy/Terms placeholder. **릴리스 규칙:** demo/prod 배포마다 CHANGELOG + What's New 동시 갱신 | Settings list · What's New 전용 scroll 화면 · unread dot (optional: `last_seen_changelog_version` in AsyncStorage) |
 | 11.12 | **8bit Pet status room** (Tamagotchi-style) | - (파생 상태만 — [pet-status-room.ko.md](../pet-status-room.ko.md)) | `get_pet_status` 또는 client `lib/petStatus.ts` — 오늘 check-ins + task_logs → fed/hungry, potty, mood, next task · **8bit sprite** by species+breed (demo: Maltese, generic cat) · mood/hunger → sprite state · tap → Activity | Owner `/owner/` Home 상단 **Pet room** 카드 · 디자이너: `frontend/assets/pixel-pets/` |
 | 11.13 | **말투 학습 루프 고도화** (D35) | - | 7B.8/7B.9가 쌓는 `tone_samples`를 활용: ① 시터 설정에 **수정 비율 추이**(주간 edit ratio) 표시 — 데모 지표 "수정 비율 42% → 9%" ② 주 1회 Nemotron이 수정 내역(초안 vs 최종본)을 요약해 **스타일 가이드 개정안**을 제안 → 시터가 Accept / Skip ③ 알림장·캡션처럼 수정 없이 나가는 출력에는 시터용 👍/👎 + 사유 칩(Too long · Too formal · Wrong info · Not my style) — 문의 답장은 승인·수정 행동이 이미 신호이므로 불필요. 누적 쌍이 충분하면 11.7 SFT 입력으로 사용(KTO는 약 1천~5천 개 양질 예시 필요, 해커톤 범위 밖) | 설정에 edit ratio 그래프, 스타일 가이드 개정 카드 |
+| 11.14 | **확정 후 서비스 방식 변경 요청** (D40) | - | 03B 3B.5의 변경 제안 카드를 서비스 방식(Boarding ↔ House sitting)까지 확장: 요청 → 상대 승인 시 `service_type` 변경(+ 장소·동의서·견적 재계산, 이미 결제했다면 차액은 해커톤 후), 거부 시 변경 요청만 취소·예약 유지 | 변경 요청 카드에 서비스 방식 선택 |
 
 ---
 
@@ -54,7 +55,7 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ## 산출물
 
-- `supabase/migrations/013_p1.sql`
+- `supabase/migrations/014_p1.sql`
 - `backend/app/routers/ai_pet_theme.py`, `backend/app/ai/prompts/pet_theme/system.md` (11.10)
 - `backend/app/services/tavily.py`, `backend/app/routers/ai_report_decor.py`
 - `backend/app/ai/prompts/report_decor/system.md`, `prompts/caption/video_observe.md`

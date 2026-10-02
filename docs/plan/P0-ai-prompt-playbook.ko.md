@@ -320,7 +320,7 @@ DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 He
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 6B.1 | `008_transit.sql` — trips (마지막 위치만), handoff_checks, home 좌표, start/update/end RPC | 03C | rls_smoke L |
+| 6B.1 | `013_transit.sql` — trips (마지막 위치만), handoff_checks, home 좌표, start/update/end RPC | 03C | rls_smoke L |
 | 6B.2–6B.4 | `lib/location.ts` (GPS / Simulate) · TripMap(보기 전용) · 도착 카드 | 6B.1, 05 | 두 창에서 ETA 3초 안 |
 | 6B.5 | `POST /api/ai/handoff-check` (슬기) | 7.1, 04 | 샘플 4장 기대 결과 |
 | 6B.6–6B.7 | `complete_handoff(p_check)` 연결 · Playwright | 6B.5 | photo verified 알림 |
@@ -329,7 +329,7 @@ DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 He
 
 ```text
 Implement Pet Transit per docs/plan/phases/phase-06b.md and architecture D32:
-- supabase/migrations/008_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
+- supabase/migrations/013_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
 - frontend/lib/location.ts: one source for real GPS (expo-location / navigator.geolocation) and "Simulate the drive" (assets/demo/routes/*.json at 10×), posting every 5 s
 - TripMap.web.tsx: Leaflet + OSM, dragging/scrollWheelZoom/touchZoom off, ± buttons, fit both markers, OSM attribution; native TripMap.tsx = distance + ETA card
 - Trip screen for both roles + arrival cards (EntryInfoCard from 03C for the sitter, the sitter's place for the owner)
