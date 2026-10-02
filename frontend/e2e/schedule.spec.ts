@@ -133,7 +133,7 @@ test.describe("sitter schedule", () => {
     await screen.getByTestId("schedule-save").click();
 
     const conflicts = screen.getByTestId("schedule-conflicts");
-    await expect(conflicts).toContainText("This overlaps Jisoo's booking (");
+    await expect(conflicts).toContainText("This overlaps Chloe's booking (");
     await expect(conflicts).toContainText("Cancel that booking?");
     expect(db.sitter_availability).toHaveLength(1);
     await expect(screen.getByTestId("schedule-save")).toBeDisabled();

@@ -17,7 +17,7 @@ export function ownerBadge(b: OwnerBooking): Badge {
   return { label: "Requested", tone: "info" };
 }
 
-/** "Mina's place" / "My place" / the note — the address itself stays hidden (D31). */
+/** "Lucy's place" / "My place" / the note — the address itself stays hidden (D31). */
 export function placeLabel(type: LocationType, note: string | null, sitterName: string): string {
   if (type === "sitter_home") return `${sitterName}'s place`;
   if (type === "owner_home") return "My place";

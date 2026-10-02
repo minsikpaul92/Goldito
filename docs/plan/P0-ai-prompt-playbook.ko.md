@@ -243,7 +243,7 @@ Implement Meet & Greet per docs/plan/phases/phase-03b.md 3B.9 and 3B.11 (archite
 - 004_booking_options.sql: meet_greet_status (not_needed / required / proposed / agreed / done / skip_requested / skipped), set by request_booking — required only when this owner and sitter have never met (no earlier booking with a finished handoff and no finished Meet & Greet); meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_link, meet_greet_event_id, proposed_by / skip_requested_by; owner_profiles.meet_spots and sitter_profiles.meet_spots (up to 3 labels each)
 - RPCs: propose_meet_greet, respond_meet_greet, complete_meet_greet, request_skip_meet_greet, respond_skip_meet_greet (decline → cancel_booking with reason 'meet_greet_declined'), get_meet_greet_options; respond_booking(accept) raises meet_greet_required until the status is not_needed, done, or skipped
 - FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the PawNote Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
-- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Mina says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
+- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Lucy says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
 
 DoD: the phase-03b Goal checklist (first-time, in person, video, skip accepted, skip declined, repeat pair) passes in two browser windows; pytest mocks Google.
 ```
@@ -395,7 +395,7 @@ DoD: the phase-07 Goal checklist and hallucination tests pass; a chip the sitter
 ### 슬기 전용 AI 프롬프트 — 7.4 Few-shot
 
 ```text
-Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (English, D1), and PROMPT.md describing rules. No PII. Placeholder names like "Bori". These 3 are the fallback when a sitter has no tone_samples yet (D35).
+Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (English, D1), and PROMPT.md describing rules. No PII. Placeholder names like "Max". These 3 are the fallback when a sitter has no tone_samples yet (D35).
 ```
 
 ---
@@ -438,7 +438,7 @@ DoD: backend/tests/test_inquiry.py cases a–k pass with a mocked model; live ca
 | 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 03B (Returned — 06B 사진 체크는 붙으면 추가) | rls_smoke N |
 | 7C.2–7C.3 | 귀가 리포트 · Stay summary · 리뷰 UI | 7C.1 | 1회 제한 |
 | 7C.4 | `POST /api/ai/life-record` + RAG 인덱싱 (슬기) | 7B.2, 07 | 환각 테스트 3회 |
-| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Jun 요청 카드에 Mina 기록 |
+| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Paul 요청 카드에 Lucy 기록 |
 
 ### 슬기 전용 AI 프롬프트 — 7C.4
 
@@ -503,7 +503,7 @@ DoD: sitter upload only; caption appears automatically.
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Bori(dog)/Mochi(cat) + 시나리오 데이터(요금·정책·가상 출입 정보·좌표·지난 Life Record) |
+| 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Max(dog)/Mochi(cat) + 시나리오 데이터(요금·정책·가상 출입 정보·좌표·지난 Life Record) |
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
 | 10.3 | 배포: Vercel(front) + Nebius AI Cloud Serverless Endpoint(backend, D18 — Render는 긴급 fallback) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
@@ -515,11 +515,11 @@ DoD: sitter upload only; caption appears automatically.
 Create scripts/seed_demo.sql or Python using service role:
 - Users: demo-owner@pawnote.test, demo-sitter@pawnote.test (password from env DEMO_PASSWORD — never committed; phase-10 10.1)
 - Confirmed booking in progress: bookings + booking_pets + booking_slots + agreed booking_handoffs (see rls_smoke.sql _t_booking)
-- Dog Bori with chicken allergy, one medication task 8am, walk 10:30
+- Dog Max with chicken allergy, one medication task 8am, walk 10:30
 - Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
 
-- Scenario data (phase-10 10.1): Mina rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Jun + Life Records + review, RAG indexing
+- Scenario data (phase-10 10.1): Lucy rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Paul + Life Records + review, RAG indexing
 
 DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ```

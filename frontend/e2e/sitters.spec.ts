@@ -5,12 +5,12 @@ import { MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Owner "Your sitters" + a sitter's profile and month schedule (phase-03b 3B.2).
 
-const JUN: MockUser = {
+const PAUL: MockUser = {
   id: "00000000-0000-4000-8000-000000000003",
-  email: "jun@pawnote.test",
+  email: "paul@pawnote.test",
   password: "nap-time",
   role: "sitter",
-  displayName: "Jun",
+  displayName: "Paul",
 };
 
 /** `YYYY-MM-DD` for day `n` of next month in the app timezone (always in the future). */
@@ -30,7 +30,7 @@ const OTHER_BOOKING = "00000000-0000-4000-8000-0000000000e2";
 
 test.describe("your sitters", () => {
   test("an owner opens a sitter they booked and reads their month", async ({ page }) => {
-    const { db } = await mockSupabase(page, [OWNER, SITTER, JUN]);
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL]);
     db.sitter_profiles.push({
       id: SITTER.id,
       bio: "Retired vet tech who loves small dogs and shy cats.",
@@ -49,16 +49,16 @@ test.describe("your sitters", () => {
         responded_at: "2026-09-01T00:00:00Z",
         created_at: "2026-08-30T00:00:00Z",
       },
-      // Jun declined → not one of "your sitters".
+      // Paul declined → not one of "your sitters".
       {
         id: "00000000-0000-4000-8000-0000000000e3",
         owner_id: OWNER.id,
-        sitter_id: JUN.id,
+        sitter_id: PAUL.id,
         status: "declined",
         responded_at: null,
         created_at: "2026-08-31T00:00:00Z",
       },
-      // Another owner's booking fills Mina's morning on day 11.
+      // Another owner's booking fills Lucy's morning on day 11.
       {
         id: OTHER_BOOKING,
         owner_id: "00000000-0000-4000-8000-0000000000aa",
@@ -103,14 +103,14 @@ test.describe("your sitters", () => {
     await expect(screen.getByText("Your sitters")).toBeVisible();
     await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(1);
 
-    const card = screen.getByTestId("sitter-card-Mina");
+    const card = screen.getByTestId("sitter-card-Lucy");
     await expect(card).toContainText("North York · 3 yrs experience");
     await expect(card).toContainText("1 booking with you");
     await expect(card).toContainText("House sitting");
     await card.click();
 
     await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
-    await expect(screen.getByTestId("sitter-name")).toHaveText("Mina");
+    await expect(screen.getByTestId("sitter-name")).toHaveText("Lucy");
     await expect(screen.getByText("Fenced yard, no other pets.")).toBeVisible();
     await expect(screen.getByTestId("sitter-service-house_sitting")).toBeVisible();
     await expect(screen.getByText("12 Maple St")).toHaveCount(0);
@@ -127,7 +127,7 @@ test.describe("your sitters", () => {
 
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Full · 8:00 AM–12:00 PM");
-    await expect(screen.getByTestId("sitter-day")).not.toContainText("Jisoo");
+    await expect(screen.getByTestId("sitter-day")).not.toContainText("Chloe");
   });
 
   test("an unknown sitter link shows a friendly empty state", async ({ page }) => {

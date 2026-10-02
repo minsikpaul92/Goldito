@@ -284,7 +284,7 @@ export default function BookCare() {
         <Card style={styles.section}>
           <TextField
             label="Note for the sitter (optional)"
-            placeholder="e.g. Bori gets anxious with loud noises"
+            placeholder="e.g. Max gets anxious with loud noises"
             value={note}
             onChangeText={setNote}
             maxLength={500}

@@ -74,7 +74,7 @@ Tap row → detail modal (photo full size). No edit/delete for owner in P0.
 | Type | Trigger | Owner title (examples) |
 | :--- | :--- | :--- |
 | `task_done` | `complete_task_log` | Existing type-specific copy (walk, med, feeding, …) |
-| `care_checkin` | `log_care_checkin` | e.g. “Bori had a meal 🍽️”, “Potty update for Bori”, “Mochi seems calm 😌”, “Note from your sitter” |
+| `care_checkin` | `log_care_checkin` | e.g. “Max had a meal 🍽️”, “Potty update for Max”, “Mochi seems calm 😌”, “Note from your sitter” |
 
 Realtime + bell center (Phase 05). **Missed** tasks: owner sees ⚠️ on Care/Activity; **no** separate `task_missed` push in P0 (unchanged).
 
@@ -100,7 +100,7 @@ End-of-day Report screen:
 
 ## 9. Demo / DoD scope (keep shippable)
 
-P0 demo must show for **one dog (Bori)**:
+P0 demo must show for **one dog (Max)**:
 
 1. Owner registers walk + feeding times.
 2. Sitter **Mark done** walk without photo → owner notification + Activity.

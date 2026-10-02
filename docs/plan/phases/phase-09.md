@@ -40,7 +40,7 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 9.1 | caption endpoint | `routers/ai_caption.py`: `assert_on_duty_for`, media가 해당 pet 소유인지 확인, pet name·species 로드 → `prompts/caption/system.md` + user `[image, "Pet: Bori (dog)"]` → reasoning off, `max_tokens` 80, temperature 0.8. 후처리: 따옴표·`<think>` 제거, 200자 초과 시 첫 2문장. 모델 에러/타임아웃 → **200 + `source:"fallback"`**, caption `"{name} had a lovely moment today 🐾"` (프론트는 분기 불필요) |
+| 9.1 | caption endpoint | `routers/ai_caption.py`: `assert_on_duty_for`, media가 해당 pet 소유인지 확인, pet name·species 로드 → `prompts/caption/system.md` + user `[image, "Pet: Max (dog)"]` → reasoning off, `max_tokens` 80, temperature 0.8. 후처리: 따옴표·`<think>` 제거, 200자 초과 시 첫 2문장. 모델 에러/타임아웃 → **200 + `source:"fallback"`**, caption `"{name} had a lovely moment today 🐾"` (프론트는 분기 불필요) |
 | 9.2 | Integrate upload | `lib/feed.ts`에 `postPhoto({petId, file})` = `uploadMedia` → `api.post('/api/ai/caption')` → `createFeedPost`. Phase 05의 고정 캡션 호출부 교체 |
 | 9.3 | Loading UX | 업로드 즉시 sitter 피드 상단에 임시 카드(로컬 썸네일 + skeleton "Writing a caption…"), 완료 시 실제 카드로 교체 + 토스트 |
 | 9.5 | 분류 + 앨범 | 캡션과 같은 호출에서 `category` (`chat_json` — `{caption, category}`; 허용 값 밖이면 `other`). Owner Feed 상단 SegmentedControl **Timeline · Album** — Album = `feed_posts` (+ 06 task·check-in 사진, 07 report 사진)을 로컬 날짜별 → category별 3열 썸네일, 탭 → 상세 모달. 빈 분류는 숨김 |

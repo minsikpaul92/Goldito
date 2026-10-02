@@ -70,11 +70,11 @@ PawNote는 사람들이 이미 믿고 쓰는 세 가지 경험을 합치고, 타
 - **타임라인 앨범:** 사진마다 AI 캡션 + 날짜별 식사·산책·낮잠 분류 (키즈노트 앨범처럼)
 - **간식 세이프티 가드** *(stretch)*: 성분표를 찍으면 Nemotron Ultra가 알레르기·숨은 성분(예: "동물성 지방" 속 닭고기)을 급여 전에 잡아냅니다.
 
-> *"Bori took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
+> *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
 > — 칩 몇 개, 사진 2장, 시터의 짧은 한 줄로 만든 AI 알림장 (앱 출력은 영어, D1)
 
 ### ⑤ 완료 — 무사 귀가, 그리고 기억하는 기록
-- 마지막 인계는 사진과 함께 *"Bori is home safe 🏠"* 리포트로 끝나고, 감사 인사와 **★ 5점 리뷰** 요청이 갑니다.
+- 마지막 인계는 사진과 함께 *"Max is home safe 🏠"* 리포트로 끝나고, 감사 인사와 **★ 5점 리뷰** 요청이 갑니다.
 - Nemotron이 이번 돌봄 전체(체크인·할 일·알림장·인계 사진 확인)를 반려동물의 **Life Record**로 정리합니다: 식습관, 배변 특성, 약 반응, 행동, 주의사항.
 - Life Record는 **RAG 지식 베이스**에 저장됩니다. 다음 예약에서는 **새 시터여도** AI 답장, 체크리스트, 시터 요청 카드가 이미 그 반려동물을 알고 있습니다.
 
@@ -99,21 +99,21 @@ PawNote의 AI는 에이전트처럼 움직입니다. 돌봄 중 일이 생기면
 
 ## 🗓️ PawNote와 함께하는 한 번의 돌봄 (데모 경로)
 
-추수감사절 연휴: 지수가 **보리**(강아지·말티즈·닭고기 알레르기)와 **모찌**(고양이)를 시터 미나에게 맡깁니다.
+추수감사절 연휴: 클로이가 **맥스**(강아지·말티즈·닭고기 알레르기)와 **모찌**(고양이)를 시터 루시에게 맡깁니다.
 
 ```
-월 22:40  ① 지수가 10/9–12 문의 (미나는 자동 발송 모드) → 입력 중 → 약 30초 뒤 답장: 가능, 추수감사절·두 번째 반려동물 요금 포함 총액,
-             "보리는 약을 간식에 넣어 주면 잘 먹는다고 기록돼 있어요 — 그렇게 할게요"
+월 22:40  ① 클로이가 10/9–12 문의 (루시는 자동 발송 모드) → 입력 중 → 약 30초 뒤 답장: 가능, 추수감사절·두 번째 반려동물 요금 포함 총액,
+             "맥스는 약을 간식에 넣어 주면 잘 먹는다고 기록돼 있어요 — 그렇게 할게요"
 화        ② 예약 요청 → 케어 의뢰서 → AI 체크리스트 → 첫 만남이라 영상 Meet & Greet (Google Meet 링크·캘린더 초대)
              → 맡기기: 시터가 데리러 감, 찾기: 견주가 데리러 감
-수        ③ 미나 수락 → 지수 동의서 5개 서명 → 결제(데모) → 미나 집 주소·방문자 주차 해제
-금 05:30     픽업 2시간 전 미나에게 출입 정보 해제 → 지수에게 알림
-금 07:30  ④ 미나 Start trip (위치 공유 동의 화면에서 Allow) → 지수가 ETA 확인 → 도착 시 Buzzer·Lockbox 카드
+수        ③ 루시 수락 → 클로이 동의서 5개 서명 → 결제(데모) → 루시 집 주소·방문자 주차 해제
+금 05:30     픽업 2시간 전 루시에게 출입 정보 해제 → 클로이에게 알림
+금 07:30  ④ 루시 Start trip (위치 공유 동의 화면에서 Allow) → 클로이가 ETA 확인 → 도착 시 Buzzer·Lockbox 카드
              → 차 안 크레이트 사진 → ✅ "Pick-up complete — care has started"
-금 18:00     하루 기록·사진 2장 → AI 칩 제안 → 미나가 한 줄 추가 → AI 알림장 → 미나 승인 → 게시
+금 18:00     하루 기록·사진 2장 → AI 칩 제안 → 루시가 한 줄 추가 → AI 알림장 → 루시 승인 → 게시
              · 앨범이 식사·산책·낮잠으로 정리
-월 17:00  ⑤ 지수 출발(미나가 ETA 확인) → 방문자 주차 카드 → 귀가 사진
-             → "Bori and Mochi are home safe 🏠" → ★★★★★ → 다음 시터를 위한 Life Record 갱신
+월 17:00  ⑤ 클로이 출발(루시가 ETA 확인) → 방문자 주차 카드 → 귀가 사진
+             → "Max and Mochi are home safe 🏠" → ★★★★★ → 다음 시터를 위한 Life Record 갱신
 ```
 
 컴퓨터에서는 폰 프레임 안에서 돌아갑니다 — **클릭 = 탭, 드래그·스크롤 = 스와이프**. 샘플 사진과 **Simulate the drive** 버튼이 내장돼 있어 카메라·GPS 없이도 전부 재현됩니다.

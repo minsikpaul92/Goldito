@@ -10,7 +10,7 @@
 
 - [ ] owner 1, sitter 1 가입·로그인 성공, 새로고침 후 세션 유지
 - [ ] 역할별 다른 탭 레이아웃 (Owner: Home·Feed·Care·Reports / Sitter: Today·Tasks·Scan·Report — 미구현 탭은 EmptyState 스텁)
-- [ ] Owner: 강아지 "Bori" 생성 + 알레르기 `chicken` + 고양이 "Mochi" 생성 → Home에 두 마리 카드 (종 아이콘 🐶 / 🐱)
+- [ ] Owner: 강아지 "Max" 생성 + 알레르기 `chicken` + 고양이 "Mochi" 생성 → Home에 두 마리 카드 (종 아이콘 🐶 / 🐱)
 - [ ] Sitter: 예약이 없으면 Today에 "No bookings yet" 빈 상태 (예약 연동은 03B)
 - [ ] `curl -H "Authorization: Bearer <access_token>" /api/me` → 200 + role
 
@@ -43,7 +43,7 @@
 | 3.2 | Signup role | `signUp({email, password, options:{data:{role, display_name}}})` → 트리거가 `profiles` + `owner_profiles` 또는 `sitter_profiles` 생성 (클라이언트 insert 없음, D15·D21). Role 선택 UI: 큰 카드 2개 "I'm a pet owner" / "I'm a pet sitter" | DB에 role + 역할별 프로필 저장 |
 | 3.3 | Navigation guard | `SessionProvider`(session + profile 로드). `app/index.tsx`: 미로그인 → `/login`, owner → `/owner`, sitter → `/sitter`. 각 역할 폴더 `_layout.tsx`(`app/owner`·`app/sitter` — D26, `components/RoleTabs.tsx`)에서 미로그인 → `/login`, role 불일치 → 자기 홈. 탭은 expo-router **JS `Tabs`** (NativeTabs 아님 — D25, 해커톤 후 시터 데스크톱 사이드바 `tabBarPosition: 'left'`) | 직접 URL 입력해도 차단 · 데스크톱 프레임에서 마우스로 탭 이동 |
 | 3.4 | FastAPI JWT | `deps/auth.py`: JWKS 검증(PyJWT + `PyJWKClient`, 캐시), audience `authenticated`, 실패 시 HS256 secret fallback (D14). `get_current_user` → `{id, email}` + service client로 profile(role, display_name) 조회. `require_role("sitter")` dependency. `routers/me.py` | 유효 200 / 무효·만료 401 |
-| 3.5 | Owner pet 프로필 | `/owner/index.tsx` 내 pet 카드 목록 + **Add pet**. `/owner/pets/new`, `/owner/pets/[petId]`: **species(필수, Dog / Cat 세그먼트 — 생성 후 변경 불가, D22)**, name(필수), breed, birthdate, weight, notes, **Allergies** chip 입력(추가/삭제 → `pet_allergies`, 소문자 저장). Owner 입력은 텍스트 허용 (sitter 원칙과 무관) | Bori(dog) + chicken, Mochi(cat) 저장 |
+| 3.5 | Owner pet 프로필 | `/owner/index.tsx` 내 pet 카드 목록 + **Add pet**. `/owner/pets/new`, `/owner/pets/[petId]`: **species(필수, Dog / Cat 세그먼트 — 생성 후 변경 불가, D22)**, name(필수), breed, birthdate, weight, notes, **Allergies** chip 입력(추가/삭제 → `pet_allergies`, 소문자 저장). Owner 입력은 텍스트 허용 (sitter 원칙과 무관) | Max(dog) + chicken, Mochi(cat) 저장 |
 | 3.6 | (삭제) | 이메일로 시터 배정은 기간 예약으로 대체 → [Phase 03B](phase-03b.md) | - |
 | 3.7 | Sitter Today 스텁 | `/sitter/index.tsx`: 빈 상태 "No bookings yet — open your availability so owners can find you." (실제 목록은 3B.8) | 표시 |
 | 3.8 | 내 프로필 (역할별) | 헤더 → **Profile** (`/profile`). Owner: home address, emergency contact, vet clinic → `owner_profiles`. Sitter: bio, service area, experience, home notes, **home address** → `sitter_profiles` (`get_my_sitter_profile`로 읽기). **P0에는 Settings 화면 없음** — 로그아웃 Profile/헤더. **Settings + What's New(패치노트)** → [11.11](phase-11.md) | 저장 확인 + handoff 카드 주소 (카드는 3B — 3.8에서는 저장·`get_my_sitter_profile` 읽기까지) |

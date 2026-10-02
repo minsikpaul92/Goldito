@@ -17,9 +17,9 @@ export type MockUser = {
 export const OWNER: MockUser = {
   id: "00000000-0000-4000-8000-000000000001",
   email: "owner@pawnote.test",
-  password: "bori-and-mochi",
+  password: "max-and-mochi",
   role: "owner",
-  displayName: "Jisoo",
+  displayName: "Chloe",
 };
 
 export const SITTER: MockUser = {
@@ -27,7 +27,7 @@ export const SITTER: MockUser = {
   email: "sitter@pawnote.test",
   password: "care-snap-tap",
   role: "sitter",
-  displayName: "Mina",
+  displayName: "Lucy",
 };
 
 function base64url(value: object): string {

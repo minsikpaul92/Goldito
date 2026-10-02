@@ -71,11 +71,11 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 - **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day, KidsNote-style.
 - **Treat Safety Guard** *(stretch)*: scan a treat label, and Nemotron Ultra catches allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
 
-> *"Bori took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
+> *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
 > — an AI daily note built from a few chips, two photos, and one short line from the sitter
 
 ### ⑤ Completion — home safe, and a record that remembers
-- The final handoff comes with a photo and a *"Bori is home safe 🏠"* report, then a thank-you and a **5-star review** request.
+- The final handoff comes with a photo and a *"Max is home safe 🏠"* report, then a thank-you and a **5-star review** request.
 - Nemotron turns the whole stay — check-ins, tasks, daily notes, handoff checks — into the pet's **Life Record**: eating habits, potty patterns, medication response, behavior, and cautions.
 - The Life Record is stored in a **RAG knowledge base**. On the next booking, even with a **new sitter**, the AI reply, the checklist, and the sitter's request card already know the pet.
 
@@ -100,21 +100,21 @@ Prices, dates, and entry codes never come from the model: the server supplies th
 
 ## 🗓️ A Stay with PawNote (demo path)
 
-Thanksgiving weekend: Jisoo leaves **Bori** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Mina.
+Thanksgiving weekend: Chloe leaves **Max** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Lucy.
 
 ```
-Mon 22:40  ① Jisoo asks Mina about Oct 9–12 → Mina's auto-send is on → "Mina is typing…" and a reply ~30 s
-              later: available, total incl. the Thanksgiving and second-pet rates, "Bori takes her pill best in a treat — happy to do that"
+Mon 22:40  ① Chloe asks Lucy about Oct 9–12 → Lucy's auto-send is on → "Lucy is typing…" and a reply ~30 s
+              later: available, total incl. the Thanksgiving and second-pet rates, "Max takes her pill best in a treat — happy to do that"
 Tue        ② Booking request → care request → AI checklist → first stay together, so a video Meet & Greet
               (Google Meet link + calendar invite) → drop-off: Sitter drives, pick-up: Owner drives
-Wed        ③ Mina accepts → Jisoo signs 5 consents → pays (demo) → Mina's address + visitor parking unlock
-Fri 05:30     Entry info unlocks for Mina (2 h before pick-up) → Jisoo is notified
-Fri 07:30  ④ Mina starts the trip (taps Allow on the location screen) → Jisoo watches the ETA → buzzer + lockbox card on arrival
-              → photo of Bori's crate in the car → ✅ "Pick-up complete — care has started"
-Fri 18:00     Suggested chips from the day + 2 photos → Mina adds one short line → AI daily note → she approves
+Wed        ③ Lucy accepts → Chloe signs 5 consents → pays (demo) → Lucy's address + visitor parking unlock
+Fri 05:30     Entry info unlocks for Lucy (2 h before pick-up) → Chloe is notified
+Fri 07:30  ④ Lucy starts the trip (taps Allow on the location screen) → Chloe watches the ETA → buzzer + lockbox card on arrival
+              → photo of Max's crate in the car → ✅ "Pick-up complete — care has started"
+Fri 18:00     Suggested chips from the day + 2 photos → Lucy adds one short line → AI daily note → she approves
               → posted · album sorted into Meals · Walks · Naps
-Mon 17:00  ⑤ Jisoo drives over (Mina sees the ETA) → visitor parking card → return photo
-              → "Bori and Mochi are home safe 🏠" → ★★★★★ → Life Record updated for the next sitter
+Mon 17:00  ⑤ Chloe drives over (Lucy sees the ETA) → visitor parking card → return photo
+              → "Max and Mochi are home safe 🏠" → ★★★★★ → Life Record updated for the next sitter
 ```
 
 On a computer, the demo runs inside a phone frame — **click = tap, drag or scroll = swipe**. Sample photos and a **Simulate the drive** button are built in, so no camera or GPS is needed.

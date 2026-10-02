@@ -38,7 +38,7 @@
 
 | 화면 | Route | 역할 | 핵심 액션 | 상태 문구 |
 | :--- | :--- | :--- | :--- | :--- |
-| Sitter Pet 피드 | `/sitter/pets/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Bori's day." |
+| Sitter Pet 피드 | `/sitter/pets/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Max's day." |
 | Owner Feed | `/owner/feed` | owner | 스크롤 / 탭 → 상세 | empty: "No posts yet — your sitter will share photos here." |
 | 알림 센터 | `/owner/notifications`, `/sitter/notifications` | 둘 다 | 탭 → 이동 | empty: "You're all caught up." |
 

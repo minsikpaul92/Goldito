@@ -8,12 +8,12 @@
 
 하루의 **피드 캡션 + 완료/누락 task + `care_checkins`(식사·배변·산책·기분·note) + Report 화면 5초 체크(AI 칩 제안 중 시터가 고른 칩 + 짧은 메모(선택) + 사진 ≤ 2 — D38)**만을 근거로 Nemotron **Super**가 **따뜻한 영어 알림장 초안**을 만들고, 펫시터는 **미리보기를 승인(Send)**해야 게시되고, 견주는 **읽기 전용**으로 받는다. 사진은 Vision(`MODEL_VISION`)이 먼저 한 줄 묘사 + 에피소드 칩 1–2개로 바꾼다 (7.7 `/api/ai/report-chips`). (Plan B: [sitter-care-loop.ko.md](../sitter-care-loop.ko.md))
 
-> 목표 문장 예 (시나리오 4-4, 영어): *"Bori took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
+> 목표 문장 예 (시나리오 4-4, 영어): *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
 
 ### Goal 달성 기준
 
 - [ ] `POST /api/ai/daily-report` → `daily_reports` status=draft (같은 날 재생성 시 덮어쓰기)
-- [ ] Sitter: Report 화면에서 사진 2장(그중 1장 = 공원에서 다람쥐를 보는 Bori, 샘플 `walk_squirrel`) → **칩 제안** — 하루 기록에서 ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task), 사진에서 "🐿️ Watching a squirrel" · "🌳 Park walk" → 틀린 칩 1개 끄기 → 짧은 메모(선택) "She got so excited" → **Generate** → 시터 말투 미리보기 → **Send**(승인 = 게시) → status=sent + owner `report_sent` 알림
+- [ ] Sitter: Report 화면에서 사진 2장(그중 1장 = 공원에서 다람쥐를 보는 Max, 샘플 `walk_squirrel`) → **칩 제안** — 하루 기록에서 ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task), 사진에서 "🐿️ Watching a squirrel" · "🌳 Park walk" → 틀린 칩 1개 끄기 → 짧은 메모(선택) "She got so excited" → **Generate** → 시터 말투 미리보기 → **Send**(승인 = 게시) → status=sent + owner `report_sent` 알림
 - [ ] 칩 제안이 틀려도(예: 공원 사진을 nap으로 봄) 시터가 끄면 알림장에 안 들어감 · 사진 0장·메모 없이도 하루 기록 칩만으로 생성 · 승인 전에는 견주에게 안 보임
 - [ ] Owner: Reports 탭에서 날짜별 목록 + 본문 + 그날 사진 스트립
 - [ ] **환각 방지:** `source_snapshot`에 없는 산책/투약/식사 내용이 report에 없음 (수동 테스트 3회)
@@ -47,24 +47,24 @@
 | 7.1 | Nebius client + test script | 슬기 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **호출 지표 로그**(architecture §9: TTFT·전체 지연·토큰 수)를 `nebius.py`에 포함하고, 테스트 스크립트가 role별 5회 호출해 **TTFT/지연 중앙값 표**를 `notes/model-ids.md`에 남김 (README 피드백 근거). **Phase 01 끝나면 바로 시작 가능** |
 | 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
-| 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편 (그 시터의 `tone_samples`가 아직 없을 때 쓰는 기본 예시, D35), 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Bori" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
+| 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편 (그 시터의 `tone_samples`가 아직 없을 때 쓰는 기본 예시, D35), 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Max" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
 | 7.5 | send RPC | 민식 | `009_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
 | 7.7 | 칩 제안 `POST /api/ai/report-chips` (D38) | 슬기·민식 | 서버가 그날 check-in·task로 기본 칩을 만들고(모델 없음, 이미 check-in한 값은 그대로), 사진(≤ 2)은 `MODEL_VISION` + `prompts/report_chips/system.md`가 `{description, chips:[≤ 2 짧은 문구]}` (보이는 것만, 의학 판단 금지). 그날 피드 사진의 09 캡션도 칩 후보로. 응답 `{chips:[{id, kind, label, source, media_id?}], photos:[{media_id, description}]}` — 사진 묘사는 draft `inputs`에 저장해 7.2가 재사용(중복 호출 없음). 사진 칩이 20 s 안에 안 오면 하루 기록 칩만. 화면은 칩을 켜고 끄는 토글 + 하루 기록 칩 값 수정 |
 
 ### 7.2 집계 → 프롬프트 → 저장
 
-1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **그날 중 이 시터가 맡은 시간** (맡긴 시각 ~ 찾는 시각과 그날의 교집합 — 09:00–12:00만 맡았으면 그 사이의 task·사진만). 오전 Mina·오후 Jun이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
+1. `assert_on_duty_for(pet_id)` (오늘 이 pet의 칸을 맡음). 집계 범위 = **그날 중 이 시터가 맡은 시간** (맡긴 시각 ~ 찾는 시각과 그날의 교집합 — 09:00–12:00만 맡았으면 그 사이의 task·사진만). 오전 Lucy·오후 Paul이면 각자 자기 알림장 1개 (phase-02 `unique(pet_id, report_date, sitter_id)`).
 2. 기존 report가 `sent`면 **409** `report_already_sent`.
 3. `source_snapshot` 생성 (이 JSON이 **모델 입력의 전부** — `chips`는 시터가 켜 둔 칩만, `sitter_note`는 짧은 메모이고 없으면 null):
    ```json
    {
-     "pet": {"species": "dog", "name": "Bori", "breed": "Maltese", "age_years": 4},
+     "pet": {"species": "dog", "name": "Max", "breed": "Maltese", "age_years": 4},
      "date": "2026-10-15",
      "tasks": [{"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
                {"type": "walk", "title": "Walk", "due": "10:30", "status": "done", "completed_at": "10:52"}],
-     "photos": [{"time": "10:55", "caption": "Bori sniffing autumn leaves with a wagging tail", "source": "feed"},
-                {"time": "17:40", "caption": "Bori looking up at a squirrel on a tree", "source": "report"}],
+     "photos": [{"time": "10:55", "caption": "Max sniffing autumn leaves with a wagging tail", "source": "feed"},
+                {"time": "17:40", "caption": "Max looking up at a squirrel on a tree", "source": "report"}],
      "checkins": [{"time": "08:15", "kind": "meal", "value": "all", "has_photo": false},
                   {"time": "11:02", "kind": "potty", "value": "normal", "has_photo": false},
                   {"time": "14:30", "kind": "mood", "value": "happy", "has_photo": false},

@@ -125,7 +125,7 @@
 - **역할:** 시터 본인 — 1인칭, 그 시터의 말투 (D35 말투 레이어: 스타일 카드 + 같은 시터의 과거 글 top-k)
 - **Few-shot:** 같은 시터의 `tone_samples` top-k — 없을 때만 실제 최고 만족도 일지 3편 (**익명화**)
 - **원칙:**
-  1. 기계적 보고 금지 — ❌ "Completed a 40-minute walk." → ⭕ "Bori wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛" (출력은 영어, D1)
+  1. 기계적 보고 금지 — ❌ "Completed a 40-minute walk." → ⭕ "Max wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛" (출력은 영어, D1)
   2. 대변 상태, 식사·물 섭취를 자연스럽게
   3. 사진 속 표정/행동 묘사
   4. 입력에 없는 일을 지어내지 말 것
@@ -141,13 +141,13 @@
   "matched_allergens": ["닭고기", "밀"],
   "detected_ingredients": ["가수분해 닭고기분말", "소맥분", "글리세린"],
   "unknown_ingredients": [],
-  "warning_message": "보리의 등록 알레르기 성분인 '닭고기'가 검출되었습니다. 급여하지 마세요."
+  "warning_message": "맥스의 등록 알레르기 성분인 '닭고기'가 검출되었습니다. 급여하지 마세요."
 }
 ```
 
 ### D. 문의 자동 답장 (Nano + RAG) — Stage 1, Phase 07B
 - 입력: 서버가 모은 JSON뿐 — 시터 가능 여부, `quote_booking` 결과, 반려동물 프로필, 시터 공개 프로필, RAG 상위 5개(시터 정책·Life Record·지난 문의·케어 의뢰서)
-- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Mina will confirm" + `needs_sitter`
+- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Lucy will confirm" + `needs_sitter`
 - 시터 1인칭 말투 초안(D35) → 시터가 **Send** / Edit / Regenerate로 승인(D36). 자동 발송은 시터가 켜는 옵션 + 사람 속도(D37)
 
 ### E. 케어 플랜 (Super) — Stage 2, Phase 06
@@ -165,7 +165,7 @@
 
 실무 few-shot 원본은 **영어**입니다. 3년치 데이터에는 견주 PII가 들어 있으므로, 프롬프트·리포·영상에 쓰기 **전에** 익명화(이름·연락처·실견명 등)만 하면 됩니다. 언어 번역은 하지 않습니다.
 
-- 제거·치환: 견주 이름, 전화번호, 주소, 이메일, SNS 계정, 정확한 위치, 강아지 실명 (→ "보리"처럼 일관된 가명)
+- 제거·치환: 견주 이름, 전화번호, 주소, 이메일, SNS 계정, 정확한 위치, 강아지 실명 (→ "맥스"처럼 일관된 가명)
 - 데모용 사진 속 사람 얼굴 제거
 - **말투**(호칭, 이모지, 문장 스타일)는 유지 — 그게 핵심 가치
 - 원본 데이터는 **리포에 올리지 않기** (`data/raw/`를 `.gitignore`에), 익명화된 Few-shot 샘플만 커밋

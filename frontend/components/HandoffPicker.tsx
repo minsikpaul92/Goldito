@@ -18,7 +18,7 @@ type Props = {
   onChange: (value: HandoffDraft) => void;
   /** Earliest day the − button reaches (today for drop-off, the drop-off day for pick-up). */
   minDay: string;
-  /** "Mina" once a sitter is picked, else "the sitter". */
+  /** "Lucy" once a sitter is picked, else "the sitter". */
   sitterName: string | null;
 };
 
