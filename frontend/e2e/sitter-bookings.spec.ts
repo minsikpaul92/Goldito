@@ -47,6 +47,7 @@ function seed(db: MockDb, meetGreet: string) {
       status: "proposed",
       proposed_by: OWNER.id,
       completed_at: null,
+      created_at: "2026-10-02T18:00:00Z",
     },
     {
       id: "h-pick",
@@ -59,6 +60,7 @@ function seed(db: MockDb, meetGreet: string) {
       status: "proposed",
       proposed_by: OWNER.id,
       completed_at: null,
+      created_at: "2026-10-02T18:00:00Z",
     },
   );
 }
@@ -120,10 +122,10 @@ test.describe("sitter requests", () => {
     await card.click();
 
     await screen.getByTestId("suggest-drop_off").click();
-    await expect(screen.getByTestId("suggest-time-value")).toHaveText("7:00 AM");
-    for (let i = 0; i < 6; i++) await screen.getByTestId("suggest-time-plus").click();
-    await expect(screen.getByTestId("suggest-time-value")).toHaveText("8:30 AM");
-    await screen.getByTestId("suggest-send").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("7:00 AM");
+    for (let i = 0; i < 6; i++) await screen.getByTestId("change-time-plus").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("8:30 AM");
+    await screen.getByTestId("change-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("New time sent to Chloe");
     expect(db.proposals).toEqual([{ p_booking: BOOKING, p_kind: "drop_off", p_at: "2030-10-05T12:30:00.000Z" }]);

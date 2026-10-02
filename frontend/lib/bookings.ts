@@ -160,6 +160,19 @@ type HandoffRow = {
   status: "proposed" | "agreed" | "rejected" | "superseded";
   proposed_by: string;
   completed_at: string | null;
+  created_at: string;
+};
+
+export type HandoffKind = HandoffRow["kind"];
+
+/** One offer in the back-and-forth for a handoff, oldest first (3B.5 history line). */
+export type ProposalStep = {
+  id: string;
+  at: string;
+  locationType: LocationType;
+  note: string | null;
+  proposedBy: string;
+  status: HandoffRow["status"];
 };
 
 export type Handoff = {
@@ -188,10 +201,29 @@ export type BookingSummary = {
   pickUp: Handoff | null;
   /** The sitter suggested another time and is waiting for the owner. */
   sitterSuggested: boolean;
+  /** Every offer per handoff, oldest first. */
+  history: Record<HandoffKind, ProposalStep[]>;
+  /** The open offer per handoff (waiting for someone's OK), if any. */
+  pending: Record<HandoffKind, ProposalStep | null>;
   createdAt: string;
 };
 
 export type OwnerBooking = BookingSummary;
+
+/** "You: 7:00 AM → Lucy: 8:30 AM → You: 8:00 AM" for a handoff with more than one offer. */
+export function historyLine(b: BookingSummary, kind: HandoffKind, me: string, format: (iso: string) => string): string | null {
+  const steps = b.history[kind];
+  if (steps.length < 2) return null;
+  return steps
+    .map((s) => `${s.proposedBy === me ? "You" : s.proposedBy === b.ownerId ? b.ownerName : b.sitterName}: ${format(s.at)}`)
+    .join(" → ");
+}
+
+/** My newest offer for a confirmed booking was declined, so the agreed time stayed. */
+export function declinedChange(b: BookingSummary, kind: HandoffKind, me: string): boolean {
+  const last = b.history[kind][b.history[kind].length - 1];
+  return b.status === "confirmed" && !!last && last.proposedBy === me && last.status === "rejected";
+}
 
 /** Accept works only once a first-time pair met or both agreed to skip (D44, 004). */
 export function meetGreetBlocksAccept(b: BookingSummary): boolean {
@@ -224,7 +256,8 @@ const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
-  "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, completed_at)";
+  "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
+  "completed_at, created_at)";
 
 type BookingRow = {
   id: string;
@@ -240,8 +273,24 @@ type BookingRow = {
   booking_pets?: { pets: { name: string; species: "dog" | "cat" } | null }[] | null;
 };
 
+function toStep(h: HandoffRow): ProposalStep {
+  return {
+    id: h.id,
+    at: h.scheduled_at,
+    locationType: h.location_type,
+    note: h.location_note,
+    proposedBy: h.proposed_by,
+    status: h.status,
+  };
+}
+
 function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary {
-  const handoffs = b.booking_handoffs ?? [];
+  const handoffs = [...(b.booking_handoffs ?? [])].sort((x, y) => x.created_at.localeCompare(y.created_at));
+  const steps = (kind: HandoffKind) => handoffs.filter((h) => h.kind === kind).map(toStep);
+  const open = (kind: HandoffKind) =>
+    b.status === "requested" || b.status === "confirmed"
+      ? (steps(kind).find((s) => s.status === "proposed") ?? null)
+      : null;
   return {
     id: b.id,
     status: b.status,
@@ -256,6 +305,8 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     pickUp: currentHandoff(handoffs, "pick_up", b.status),
     sitterSuggested:
       b.status === "requested" && handoffs.some((h) => h.status === "proposed" && h.proposed_by === b.sitter_id),
+    history: { drop_off: steps("drop_off"), pick_up: steps("pick_up") },
+    pending: { drop_off: open("drop_off"), pick_up: open("pick_up") },
     createdAt: b.created_at,
   };
 }
@@ -332,9 +383,22 @@ export async function respondBooking(bookingId: string, accept: boolean): Promis
   }
 }
 
-/** propose_handoff — a new time for one handoff; the place stays (p_location_type omitted). */
-export async function proposeHandoff(bookingId: string, kind: "drop_off" | "pick_up", at: string): Promise<void> {
-  const { error } = await getSupabase().rpc("propose_handoff", { p_booking: bookingId, p_kind: kind, p_at: at });
+/**
+ * propose_handoff — a new time (and optionally a new place) for one handoff. Without
+ * `place` the place stays as it is (p_location_type omitted, 003).
+ */
+export async function proposeHandoff(
+  bookingId: string,
+  kind: HandoffKind,
+  at: string,
+  place?: { locationType: LocationType; note: string | null },
+): Promise<void> {
+  const args: Record<string, unknown> = { p_booking: bookingId, p_kind: kind, p_at: at };
+  if (place) {
+    args.p_location_type = place.locationType;
+    args.p_note = place.note;
+  }
+  const { error } = await getSupabase().rpc("propose_handoff", args);
   if (error) {
     throw new BookingError(
       error.message,
@@ -342,6 +406,33 @@ export async function proposeHandoff(bookingId: string, kind: "drop_off" | "pick
       error.details ?? null,
     );
   }
+}
+
+/**
+ * respond_handoff — answer the other side's offer. Declining before the booking is
+ * confirmed ends the request (owner → cancelled, sitter → declined); after it, the agreed
+ * time stays (003).
+ */
+export async function respondHandoff(handoffId: string, accept: boolean): Promise<void> {
+  const { error } = await getSupabase().rpc("respond_handoff", { p_handoff: handoffId, p_accept: accept });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't answer this change. Try again."),
+      error.details ?? null,
+    );
+  }
+}
+
+/** Real addresses for a confirmed booking, until 24 h after pick-up (get_handoff_details, 003). */
+export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
+  const { data, error } = await getSupabase().rpc("get_handoff_details", { p_booking: bookingId });
+  if (error) return {};
+  const out: Partial<Record<HandoffKind, string>> = {};
+  for (const row of (data ?? []) as { kind: HandoffKind; address: string | null }[]) {
+    if (row.address) out[row.kind] = row.address;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

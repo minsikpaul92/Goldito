@@ -84,7 +84,12 @@ export default function OwnerBookings() {
               Your bookings
             </Text>
             {state.bookings.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} viewer="owner" />
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                viewer="owner"
+                onPress={() => router.push(`/owner/bookings/${booking.id}`)}
+              />
             ))}
           </View>
         ) : null}

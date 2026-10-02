@@ -353,8 +353,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         scheduled_at: at,
         location_type: type,
         location_note: note,
+        within_sitter_hours: true,
         status: "proposed",
         proposed_by: me,
+        completed_at: null,
+        created_at: created,
       });
     }
     for (const petId of args.p_pets) db.booking_pets.push({ booking_id: id, pet_id: petId });
@@ -409,14 +412,59 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: booking.id,
       kind: args.p_kind,
       scheduled_at: args.p_at,
-      location_type: base?.location_type ?? "sitter_home",
-      location_note: base?.location_note ?? null,
+      // A time-only offer keeps the place (p_location_type omitted, 003).
+      location_type: args.p_location_type ?? base?.location_type ?? "sitter_home",
+      location_note: args.p_location_type ? (args.p_note ?? null) : (base?.location_note ?? null),
       within_sitter_hours: true,
       status: "proposed",
       proposed_by: me,
       completed_at: null,
+      created_at: new Date().toISOString(),
     });
     return json(route, 200, id);
+  }
+
+  if (path === "rpc/respond_handoff") {
+    // respond_handoff (003): the other side answers; declining before confirm ends the request.
+    const { p_handoff, p_accept } = request.postDataJSON();
+    db.responses.push({ p_handoff, p_accept });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const h = db.booking_handoffs.find((x) => x.id === p_handoff);
+    const booking = h && db.bookings.find((b) => b.id === h.booking_id);
+    if (!h || !booking || ![booking.owner_id, booking.sitter_id].includes(me) || h.proposed_by === me) {
+      return fail("not_allowed");
+    }
+    if (h.status !== "proposed") return fail("invalid_status");
+    if (!p_accept) {
+      h.status = "rejected";
+      if (booking.status === "requested") booking.status = me === booking.sitter_id ? "declined" : "cancelled";
+      return route.fulfill({ status: 204 });
+    }
+    for (const x of db.booking_handoffs) {
+      if (x.booking_id === h.booking_id && x.kind === h.kind && x.status === "agreed") x.status = "superseded";
+    }
+    h.status = "agreed";
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/get_handoff_details") {
+    // Agreed handoffs with the real address, confirmed bookings only (003).
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking || booking.status !== "confirmed") return json(route, 400, { code: "P0001", message: "invalid_status" });
+    const address = (h: Row) =>
+      h.location_type === "sitter_home"
+        ? (db.sitter_profiles.find((p) => p.id === booking.sitter_id)?.home_address ?? null)
+        : h.location_type === "owner_home"
+          ? (db.owner_profiles.find((p) => p.id === booking.owner_id)?.home_address ?? null)
+          : h.location_note;
+    return json(
+      route,
+      200,
+      db.booking_handoffs
+        .filter((h) => h.booking_id === booking.id && h.status === "agreed")
+        .map((h) => ({ handoff_id: h.id, kind: h.kind, scheduled_at: h.scheduled_at, address: address(h) })),
+    );
   }
 
   if (path === "rpc/cancel_booking") {

@@ -18,7 +18,17 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   if (b.status === "cancelled") {
     return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
   }
-  if (b.status === "confirmed") return [{ label: "Confirmed", tone: "success" }];
+  if (b.status === "confirmed") {
+    const me = viewer === "owner" ? b.ownerId : b.sitterId;
+    const open = [b.pending.drop_off, b.pending.pick_up].filter((p) => p !== null);
+    const badges: Badge[] = [{ label: "Confirmed", tone: "success" }];
+    if (open.some((p) => p.proposedBy !== me)) {
+      badges.push({ label: `${viewer === "owner" ? b.sitterName : b.ownerName} suggested a change`, tone: "warning" });
+    } else if (open.length > 0) {
+      badges.push({ label: "Change pending", tone: "muted" });
+    }
+    return badges;
+  }
 
   if (viewer === "owner") {
     return [b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" }];

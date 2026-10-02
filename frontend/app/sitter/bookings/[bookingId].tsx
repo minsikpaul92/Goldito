@@ -3,38 +3,47 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../components/BookingCard";
+import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
+import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Chip } from "../../../components/ui/Chip";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { Sheet } from "../../../components/ui/Sheet";
-import { Stepper } from "../../../components/ui/Stepper";
 import { TextButton } from "../../../components/ui/TextButton";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { addDays, formatDay, formatTime, isoToZoned, shiftTime, zonedToIso } from "../../../features/schedule/dates";
+import { formatDay, formatTime } from "../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   BookingSummary,
+  HandoffKind,
   PetCare,
+  declinedChange,
   getBooking,
+  getHandoffAddresses,
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
   respondBooking,
+  respondHandoff,
 } from "../../../lib/bookings";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
-type Kind = "drop_off" | "pick_up";
+const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; booking: BookingSummary; pets: PetCare[] }
+  | {
+      status: "ready";
+      booking: BookingSummary;
+      pets: PetCare[];
+      addresses: Partial<Record<HandoffKind, string>>;
+    }
   | { status: "missing" }
   | { status: "error"; message: string };
 
@@ -47,11 +56,12 @@ function firstSlot(detail: string | null): string | null {
   return `${formatDay(day)} ${SLOT_LABEL[slot] ?? slot ?? ""}`.trim();
 }
 
-/** Human copy for the RPC errors this screen can hit (phase-03b 3B.4). */
+/** Human copy for the RPC errors this screen can hit (phase-03b 3B.4–3B.5). */
 function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
   if (error.code === "meet_greet_required") return `Meet ${owner} first — or agree to skip the Meet & Greet.`;
+  if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
     const slot = firstSlot(error.detail);
     return slot ? `You no longer have room on ${slot}.` : "You no longer have room for these dates.";
@@ -60,9 +70,10 @@ function actionError(error: unknown, owner: string): string {
 }
 
 /**
- * Sitter booking detail (phase-03b 3B.4): owner, pets with allergies and care tasks, the
- * two handoffs; for a request **Accept** / Suggest another time / Decline. Received /
- * Returned land in 3B.6, Meet & Greet scheduling in 3B.9.
+ * Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks,
+ * the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time /
+ * Decline. The owner's offers: Accept / Suggest another time / Decline. Confirmed:
+ * **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
  */
 export default function SitterBookingDetail() {
   const styles = useThemedStyles(makeStyles);
@@ -72,7 +83,7 @@ export default function SitterBookingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
-  const [suggest, setSuggest] = useState<{ kind: Kind; day: string; time: string } | null>(null);
+  const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
     if (!bookingId) return;
@@ -82,8 +93,11 @@ export default function SitterBookingDetail() {
         setState({ status: "missing" });
         return;
       }
-      const pets = await loadPetCare(booking.pets.flatMap((p) => (p.id ? [p.id] : [])));
-      setState({ status: "ready", booking, pets });
+      const [pets, addresses] = await Promise.all([
+        loadPetCare(booking.pets.flatMap((p) => (p.id ? [p.id] : []))),
+        booking.status === "confirmed" ? getHandoffAddresses(booking.id) : Promise.resolve({}),
+      ]);
+      setState({ status: "ready", booking, pets, addresses });
     } catch (err) {
       setState({ status: "error", message: (err as Error).message });
     }
@@ -114,7 +128,7 @@ export default function SitterBookingDetail() {
     );
   }
 
-  const { booking, pets } = state;
+  const { booking, pets, addresses } = state;
   const owner = booking.ownerName;
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
@@ -136,23 +150,14 @@ export default function SitterBookingDetail() {
     }
   };
 
-  const openSuggest = (kind: Kind) => {
-    const h = kind === "drop_off" ? booking.dropOff : booking.pickUp;
-    if (!h) return;
-    setError(null);
-    setSuggest({ kind, ...isoToZoned(h.at) });
+  const send = (change: HandoffChange) => {
+    setSheet(null);
+    void run(() => proposeHandoff(booking.id, change.kind, change.at, change.place), `New time sent to ${owner}`);
   };
 
-  const sendSuggestion = () => {
-    if (!suggest) return;
-    const at = zonedToIso(suggest.day, suggest.time);
-    setSuggest(null);
-    void run(() => proposeHandoff(booking.id, suggest.kind, at), `New time sent to ${owner}`);
-  };
-
-  const handoffNote = (kind: Kind) => {
+  const handoffNote = (kind: HandoffKind) => {
     const h = kind === "drop_off" ? booking.dropOff : booking.pickUp;
-    if (!h || !h.pending) return null;
+    if (!isRequest || !h || !h.pending || showsProposal(booking, "sitter", kind)) return null;
     if (h.proposedBy === booking.sitterId) return `You suggested this — waiting for ${owner}.`;
     return h.withinSitterHours ? null : "Custom time — outside your hours, needs your OK.";
   };
@@ -175,14 +180,31 @@ export default function SitterBookingDetail() {
         {meetFirst ? (
           <Card style={styles.block} testID="meet-first">
             <Text style={styles.label}>First stay together — meet first</Text>
-            <Text style={styles.muted}>
-              {`Meet ${owner} first — or agree to skip the Meet & Greet.`}
-            </Text>
+            <Text style={styles.muted}>{`Meet ${owner} first — or agree to skip the Meet & Greet.`}</Text>
           </Card>
         ) : null}
 
+        {KINDS.filter((kind) => showsProposal(booking, "sitter", kind)).map((kind) => (
+          <ProposalCard
+            key={kind}
+            booking={booking}
+            viewer="sitter"
+            kind={kind}
+            busy={busy}
+            onAccept={(id) => void run(() => respondHandoff(id, true), `New time agreed with ${owner}`)}
+            onSuggest={(k) => setSheet({ key: Date.now(), kind: k, mode: "suggest" })}
+            onDecline={(id) =>
+              void run(
+                () => respondHandoff(id, false),
+                isRequest ? "Request declined" : `${owner} keeps the original time`,
+                isRequest ? () => router.back() : undefined,
+              )
+            }
+          />
+        ))}
+
         <Card style={styles.block}>
-          {(["drop_off", "pick_up"] as Kind[]).map((kind) => {
+          {KINDS.map((kind) => {
             const note = handoffNote(kind);
             const h = kind === "drop_off" ? booking.dropOff : booking.pickUp;
             return (
@@ -190,15 +212,35 @@ export default function SitterBookingDetail() {
                 <Text style={styles.body}>
                   {handoffLine(kind === "drop_off" ? "Drop-off" : "Pick-up", h, booking, "sitter")}
                 </Text>
+                {addresses[kind] ? <Text style={styles.muted}>{`📍 ${addresses[kind]}`}</Text> : null}
                 {note ? <Text style={styles.warning}>{note}</Text> : null}
+                {declinedChange(booking, kind, booking.sitterId) ? (
+                  <Text style={styles.warning} testID={`declined-${kind}`}>{`${owner} kept the original time.`}</Text>
+                ) : null}
               </View>
             );
           })}
           {isRequest ? (
             <View style={styles.row}>
-              <TextButton label="Suggest drop-off time" onPress={() => openSuggest("drop_off")} testID="suggest-drop_off" />
-              <TextButton label="Suggest pick-up time" onPress={() => openSuggest("pick_up")} testID="suggest-pick_up" />
+              <TextButton
+                label="Suggest drop-off time"
+                onPress={() => setSheet({ key: Date.now(), kind: "drop_off", mode: "suggest" })}
+                testID="suggest-drop_off"
+              />
+              <TextButton
+                label="Suggest pick-up time"
+                onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "suggest" })}
+                testID="suggest-pick_up"
+              />
             </View>
+          ) : null}
+          {booking.status === "confirmed" ? (
+            <TextButton
+              label="Change time or place"
+              onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
+              style={styles.left}
+              testID="change-booking"
+            />
           ) : null}
         </Card>
 
@@ -247,6 +289,21 @@ export default function SitterBookingDetail() {
         </View>
       ) : null}
 
+      {sheet ? (
+        <HandoffChangeSheet
+          key={sheet.key}
+          visible
+          booking={booking}
+          viewer="sitter"
+          initialKind={sheet.kind}
+          allowPlace={sheet.mode === "change"}
+          title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
+          submitLabel={`Send to ${owner}`}
+          onSubmit={send}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
+
       <Sheet
         visible={confirmDecline}
         title={`Decline ${owner}'s request?`}
@@ -264,44 +321,6 @@ export default function SitterBookingDetail() {
         }
       >
         <Text style={styles.body}>{`${owner} gets a notice and can find another sitter.`}</Text>
-      </Sheet>
-
-      <Sheet
-        visible={!!suggest}
-        title={suggest?.kind === "pick_up" ? "Suggest a pick-up time" : "Suggest a drop-off time"}
-        onClose={() => setSuggest(null)}
-        testID="suggest-sheet"
-        footer={<Button label={`Send to ${owner}`} onPress={sendSuggestion} testID="suggest-send" />}
-      >
-        {suggest ? (
-          <>
-            <SegmentedControl
-              options={[
-                { value: "drop_off", label: "Drop-off" },
-                { value: "pick_up", label: "Pick-up" },
-              ]}
-              value={suggest.kind}
-              onChange={(kind) => openSuggest(kind)}
-            />
-            <View style={styles.row}>
-              <Stepper
-                label="Suggested day"
-                value={formatDay(suggest.day)}
-                onDecrease={() => setSuggest({ ...suggest, day: addDays(suggest.day, -1) })}
-                onIncrease={() => setSuggest({ ...suggest, day: addDays(suggest.day, 1) })}
-                testID="suggest-day"
-              />
-              <Stepper
-                label="Suggested time"
-                value={formatTime(suggest.time)}
-                onDecrease={() => setSuggest({ ...suggest, time: shiftTime(suggest.time, -15) })}
-                onIncrease={() => setSuggest({ ...suggest, time: shiftTime(suggest.time, 15) })}
-                testID="suggest-time"
-              />
-            </View>
-            <Text style={styles.muted}>The place stays the same. {owner} can accept or suggest another time.</Text>
-          </>
-        ) : null}
       </Sheet>
     </View>
   );
@@ -359,6 +378,10 @@ const makeStyles = (theme: Theme) =>
       flexDirection: "row",
       flexWrap: "wrap",
       gap: theme.spacing.sm,
+    },
+    left: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 0,
     },
     footer: {
       gap: theme.spacing.xs,
