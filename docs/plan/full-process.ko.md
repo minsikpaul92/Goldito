@@ -1,6 +1,6 @@
 # PawNote 전체 서비스 흐름 (Full Process) — 제품 흐름 정본
 
-> **Status:** 2026-10-01 확정 (architecture **D27–D34**), 2026-10-02 보강 (**D35–D42**: 시터 말투 레이어 · 시터 승인 · 사람 속도 전달 · 모델 정책 · 변경 요청 · 위치 동의 · mood meter). 팀 시나리오 "PawNote Full Process"(PDF, 리포에 넣지 않음)를 앱 설계로 옮긴 문서입니다. 원문의 "PetNote"는 PawNote입니다.
+> **Status:** 2026-10-01 확정 (architecture **D27–D34**), 2026-10-02 보강 (**D35–D43**: 시터 말투 레이어 · 시터 승인 · 사람 속도 전달 · 모델 정책 · 변경 요청 · 위치 동의 · mood meter · SFT는 보여주기용). 팀 시나리오 "PawNote Full Process"(PDF, 리포에 넣지 않음)를 앱 설계로 옮긴 문서입니다. 원문의 "PetNote"는 PawNote입니다.
 > **이 문서가 제품 흐름의 정본입니다.** 루트 README(심사위원용), 데모 영상, Phase 순서([phases/README.ko.md](phases/README.ko.md)), [TODO.md](TODO.md)가 이 흐름을 따릅니다. 스키마·API 세부는 phase 문서와 [architecture.ko.md](phases/architecture.ko.md)가 정본입니다.
 > **UI·AI 출력은 영어** (D1). 아래 영어 문구는 화면 카피 초안입니다.
 
@@ -244,7 +244,7 @@ Oct 9, 2026
 | :--- | :--- | :--- | :--- |
 | ① | 22:40 Jisoo가 Mina에게 문의 (Mina는 자동 발송 모드) → 읽음 "1" 사라짐 → "Mina is typing…" → **약 30초 뒤 답장**(Mina의 말투·1인칭): 가능, 견적(공휴일·2마리 할증 포함), "Bori's Life Record says she takes her pill in a treat — happy to do that". 초안 생성 자체는 몇 초 | Owner 스레드 · Sitter 알림 | 07B (+03C 견적, 07C 기록) |
 | ② | 케어·투약 의뢰서 → AI 체크리스트 → 확인 · Meet & Greet 영상 통화 Done · 맡기기 = **Sitter drives**, 찾기 = **Owner drives** | Owner Care · 예약 상세 | 06 · 03B |
-| ③ | Mina 수락 → Checkout: 견적 → 동의서 4개 서명 → **Pay (demo)** → Mina 집 주소·Visitor parking·짐 체크리스트 열림 | Owner Checkout | 03C |
+| ③ | Mina 수락 → Checkout: 견적 → 동의서 5개 서명 (`emergency_vet` · `cohabitation` · `handoff_rules` · `home_access` · `safe_return`) → **Pay (demo)** → Mina 집 주소·Visitor parking·짐 체크리스트 열림 | Owner Checkout | 03C |
 | ④-a | 픽업 2시간 전 출입 정보 해제(Jisoo 알림) → Mina **Start trip** → **위치 공유 동의 화면** → Jisoo가 지도·ETA 확인 → 도착 시 Buzzer·Lockbox 카드 → 차량 사진 → Vision ✅ → "Pick-up complete — care has started" | Sitter Trip · Owner Trip | 06B · 03C |
 | ④-b | 5초 체크 + 사진 2장 → AI 알림장 → Send · 앨범이 Meals/Walks/Naps로 정리 | Sitter Report · Owner Reports/Feed | 06 · 07 · 09 · 05 |
 | ⑤ | Jisoo **Start trip**(Owner drives) → Mina가 ETA 확인 → "Jisoo has arrived" + Jisoo에게 Visitor parking 안내 → 귀가 사진 → "Bori is home safe 🏠" → ★★★★★ → Life Record 갱신 | Owner/Sitter Trip · Review · Life Record | 06B · 07C |

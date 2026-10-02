@@ -85,12 +85,12 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 Thanksgiving weekend: Jisoo leaves **Bori** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Mina.
 
 ```
-Mon 22:40  ① Jisoo asks Mina about Oct 9–12 → PawNote AI replies in seconds: available, total incl. the
-              Thanksgiving and second-pet rates, "Bori takes her pill best in a treat — happy to do that"
+Mon 22:40  ① Jisoo asks Mina about Oct 9–12 → Mina's auto-send is on → read receipt, typing, and a reply ~30 s
+              later: available, total incl. the Thanksgiving and second-pet rates, "Bori takes her pill best in a treat — happy to do that"
 Tue        ② Care request → AI checklist → video Meet & Greet → drop-off: Sitter drives, pick-up: Owner drives
 Wed        ③ Mina accepts → Jisoo signs 5 consents → pays (demo) → Mina's address + visitor parking unlock
 Fri 05:30     Entry info unlocks for Mina (2 h before pick-up) → Jisoo is notified
-Fri 07:30  ④ Mina starts the trip → Jisoo watches the ETA → buzzer + lockbox card on arrival
+Fri 07:30  ④ Mina starts the trip (taps Allow on the location screen) → Jisoo watches the ETA → buzzer + lockbox card on arrival
               → photo of Bori's crate in the car → ✅ "Pick-up complete — care has started"
 Fri 18:00     5-second check + 2 photos → AI daily note → sent · album sorted into Meals · Walks · Naps
 Mon 17:00  ⑤ Jisoo drives over (Mina sees the ETA) → visitor parking card → return photo
