@@ -13,10 +13,11 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `001_initial_schema.sql` | 02 | 17 tables: `profiles` + `owner_profiles` / `sitter_profiles`, `sitter_availability`, `bookings` / `booking_pets` (who has which pet when — no overlaps) / `booking_slots` (capacity: pet × day × slot) / `booking_handoffs` (drop-off & pick-up time, place, agreement), `pets` (dog/cat), allergies, tasks, media, feed, reports, safety, notifications |
 | `002_rls_policies.sql` | 02 | Policy helpers (`is_owner_of`, `is_sitter_of`, `is_on_duty_for`, `can_view_pet_profile`, …), RLS by owner / sitter role, column grants |
 | `003_functions_triggers.sql` | 02 | Signup → profiles, species guard, schedule/booking/handoff RPCs, overlap guard, read RPCs, execute privileges, Realtime |
-| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet (first-time pairs, skip consent, meeting spots, Meet link), media purposes |
-| `005_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
-| `006_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
-| `007_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
+| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet columns + Accept guard (first-time pairs, meeting spots, Meet link), media purposes |
+| `005_meet_greet.sql` | 03B | Meet & Greet RPCs: propose / respond / complete, skip request / answer (decline cancels), both sides' meeting spots |
+| `006_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
+| `007_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
+| `008_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
@@ -79,6 +80,8 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `invalid_location`, `location_note_required` | Unknown place type / "Somewhere else" without a note |
 | `invalid_service`, `service_not_offered` | Service type is not `boarding`/`house_sitting` / the sitter does not offer it (`sitter_profiles.services`) |
 | `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |
+| `invalid_mode`, `place_required`, `place_too_long` | Meet & Greet is not `in_person`/`video` / in person without a place / place over 120 characters |
+| `meet_greet_not_yet` | Marking the Meet & Greet done before its agreed time |
 | `sitter_unavailable` | A slot is full or closed — detail = `YYYY-MM-DD slot, …`, or `no_open_slot` |
 | `pet_already_booked` | The pet already has a sitter (or a pending request) for overlapping hours |
 | `handoff_pending` | The sitter's own counter-offer is waiting for the owner |

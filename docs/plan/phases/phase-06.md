@@ -34,7 +34,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| `care_checkins` + `log_care_checkin` · `complete_task_log` **optional media** (`007_care.sql`) | RRULE |
+| `care_checkins` + `log_care_checkin` · `complete_task_log` **optional media** (`008_care.sql`) | RRULE |
 | 케어·투약 의뢰서 → `POST /api/ai/care-plan` 초안 → 견주 확인 → `care_requests`·`care_tasks`·`pet_cautions` | 의뢰서 사진(손글씨) OCR, 다국어 의뢰서 |
 | Owner Activity timeline · Sitter quick check-ins | missed → owner push |
 | Scheduled task CRUD · ensure logs · D17 reminder | 서버 푸시 리마인더 (6.7 stretch) |
@@ -82,7 +82,7 @@
 
 ## 산출물
 
-- `supabase/migrations/007_care.sql` — `care_checkins`(kind에 `walk` 포함 — value = 분), `care_requests`, `pet_cautions`, RLS, RPCs (`ensure_today_task_logs`, `complete_task_log`, `log_care_checkin`, `list_pet_activity` or view)
+- `supabase/migrations/008_care.sql` — `care_checkins`(kind에 `walk` 포함 — value = 분), `care_requests`, `pet_cautions`, RLS, RPCs (`ensure_today_task_logs`, `complete_task_log`, `log_care_checkin`, `list_pet_activity` or view)
 - `frontend/app/owner/tasks.tsx` (Activity segment), `/sitter/tasks.tsx`, `/sitter/index.tsx` (quick check-ins), `TaskRow`, `QuickCheckInBar`, `ActivityTimeline`, `useDueReminder.ts`
 - `frontend/app/owner/pets/[petId]/care-request.tsx`, `ChecklistCard`, `HeadsUpCard`
 - `backend/app/routers/ai_care_plan.py`, `backend/app/schemas/care_plan.py`, `backend/app/ai/prompts/care_plan/system.md`

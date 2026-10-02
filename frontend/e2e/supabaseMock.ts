@@ -135,6 +135,8 @@ export type MockDb = {
   /** respond_booking / propose_handoff calls with their parameters. */
   responses: Row[];
   proposals: Row[];
+  /** Meet & Greet RPC calls: { fn, ...params }. */
+  meetGreetCalls: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -162,6 +164,7 @@ function createMockDb(): MockDb {
     care_tasks: [],
     responses: [],
     proposals: [],
+    meetGreetCalls: [],
   };
 }
 
@@ -243,6 +246,77 @@ function callerId(authorization: string | undefined): string | null {
   } catch {
     return null;
   }
+}
+
+/** Meet & Greet RPCs (005): the same state machine, minus notifications. */
+function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null, db: MockDb) {
+  db.meetGreetCalls.push({ fn, ...args });
+  const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+  const b = db.bookings.find((x) => x.id === args.p_booking);
+  if (!b || ![b.owner_id, b.sitter_id].includes(me)) return fail("not_allowed");
+
+  if (fn === "get_meet_greet_options") {
+    return json(route, 200, {
+      owner_name: "Chloe",
+      owner_spots: db.owner_profiles.find((p) => p.id === b.owner_id)?.meet_spots ?? [],
+      sitter_name: "Lucy",
+      sitter_spots: db.sitter_profiles.find((p) => p.id === b.sitter_id)?.meet_spots ?? [],
+    });
+  }
+  if (b.status !== "requested") return fail("invalid_status");
+  const status = String(b.meet_greet_status ?? "not_needed");
+  const done = () => route.fulfill({ status: 204 });
+
+  switch (fn) {
+    case "propose_meet_greet": {
+      if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
+      if (Date.parse(String(args.p_at)) <= Date.now()) return fail("invalid_window");
+      Object.assign(b, {
+        meet_greet_status: "proposed",
+        meet_greet_mode: args.p_mode,
+        meet_greet_at: args.p_at,
+        meet_greet_place: args.p_mode === "in_person" ? args.p_place : null,
+        meet_greet_link: null,
+        meet_greet_proposed_by: me,
+        meet_greet_skip_requested_by: null,
+      });
+      return done();
+    }
+    case "respond_meet_greet": {
+      if (status !== "proposed") return fail("invalid_status");
+      if (b.meet_greet_proposed_by === me) return fail("not_allowed");
+      if (args.p_accept) b.meet_greet_status = "agreed";
+      else
+        Object.assign(b, {
+          meet_greet_status: "required",
+          meet_greet_mode: null,
+          meet_greet_at: null,
+          meet_greet_place: null,
+          meet_greet_proposed_by: null,
+        });
+      return done();
+    }
+    case "complete_meet_greet": {
+      if (status !== "agreed") return fail("invalid_status");
+      if (Date.now() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
+      b.meet_greet_status = "done";
+      return done();
+    }
+    case "request_skip_meet_greet": {
+      if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      Object.assign(b, { meet_greet_status: "skip_requested", meet_greet_skip_requested_by: me });
+      return done();
+    }
+    case "respond_skip_meet_greet": {
+      if (status !== "skip_requested") return fail("invalid_status");
+      if (b.meet_greet_skip_requested_by === me) return fail("not_allowed");
+      if (args.p_accept) b.meet_greet_status = "skipped";
+      else Object.assign(b, { status: "cancelled", cancel_reason: "meet_greet_declined", cancelled_by: me });
+      return done();
+    }
+  }
+  return fail("not_mocked");
 }
 
 /** `col=eq.value`, `col=lte.value`, `col=gte.value` and `col=in.(a,b)` filters. */
@@ -422,6 +496,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date().toISOString(),
     });
     return json(route, 200, id);
+  }
+
+  if (path.startsWith("rpc/") && path.includes("meet_greet")) {
+    return handleMeetGreet(route, path.slice(4), request.postDataJSON(), me, db);
   }
 
   if (path === "rpc/respond_handoff") {

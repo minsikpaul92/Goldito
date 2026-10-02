@@ -113,7 +113,7 @@
 - `frontend/app/owner/bookings/index.tsx`, `new.tsx`, `[bookingId].tsx`, `frontend/app/owner/sitters/[sitterId].tsx`
 - `frontend/components/SlotCalendar.tsx`, `HandoffCard.tsx`, `HandoffPicker.tsx`, `BookingCard.tsx`, `SitterCard.tsx` — 날짜·시간 선택은 직접 만든 UI (웹 미지원 `@react-native-community/datetimepicker` 금지), 기간은 시작일·종료일 **두 번 탭** (드래그 선택 없음), 시트는 Close 버튼 필수 — 데스크톱 프레임에서 마우스로 동작 ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse), D25)
 - `frontend/lib/bookings.ts` (RPC 래퍼)
-- `supabase/migrations/004_booking_options.sql` (3B.0 · 3B.9), `frontend/components/MeetGreetCard.tsx`, `MeetGreetSheet.tsx`
+- `supabase/migrations/004_booking_options.sql` (3B.0), `005_meet_greet.sql` (3B.9), `frontend/components/MeetGreetCard.tsx`, `MeetGreetSheet.tsx`
 - `backend/app/services/google_meet.py`, `backend/app/routers/meet_greet.py`, `backend/tests/test_meet_greet.py` (Google 호출은 mock) (3B.11)
 
 ---

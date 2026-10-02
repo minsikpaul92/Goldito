@@ -34,7 +34,7 @@ Sitter never **must** type captions for these flows. Note check-in allows **≤1
 
 ## 3. Check-in kinds (`care_checkins`)
 
-Migration **`007_care.sql`** (Phase 06) adds:
+Migration **`008_care.sql`** (Phase 06) adds:
 
 | Column | Notes |
 | :--- | :--- |
@@ -116,5 +116,5 @@ Cat (Mochi): litter task + potty check-in optional in same demo script.
 ## 10. Related docs
 
 - Implementation detail: [phase-06.md](phases/phase-06.md), [phase-07.md](phases/phase-07.md)
-- Schema columns in DB: [phase-02.md](phases/phase-02.md) (updated when `007_care.sql` lands)
+- Schema columns in DB: [phase-02.md](phases/phase-02.md) (updated when `008_care.sql` lands)
 - Routes & notification types: [architecture.ko.md](phases/architecture.ko.md)

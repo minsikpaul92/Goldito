@@ -90,7 +90,7 @@ test.describe("sitter requests", () => {
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));
-    await expect(screen.getByTestId("meet-first")).toContainText("Meet Chloe first — or agree to skip the Meet & Greet.");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet Chloe first — or agree to skip the Meet & Greet.");
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("Custom time — outside your hours, needs your OK.");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("chicken");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("8:00 AM · Breakfast");

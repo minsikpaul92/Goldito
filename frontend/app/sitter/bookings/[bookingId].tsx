@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../components/BookingCard";
 import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
+import { MeetGreetCard } from "../../../components/MeetGreetCard";
 import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -177,12 +178,7 @@ export default function SitterBookingDetail() {
           </View>
         </Card>
 
-        {meetFirst ? (
-          <Card style={styles.block} testID="meet-first">
-            <Text style={styles.label}>First stay together — meet first</Text>
-            <Text style={styles.muted}>{`Meet ${owner} first — or agree to skip the Meet & Greet.`}</Text>
-          </Card>
-        ) : null}
+        <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
 
         {KINDS.filter((kind) => showsProposal(booking, "sitter", kind)).map((kind) => (
           <ProposalCard

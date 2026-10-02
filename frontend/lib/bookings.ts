@@ -196,6 +196,7 @@ export type BookingSummary = {
   sitterName: string;
   serviceType: ServiceType;
   meetGreetStatus: MeetGreetStatus;
+  meetGreet: MeetGreet;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;
   pickUp: Handoff | null;
@@ -206,6 +207,16 @@ export type BookingSummary = {
   /** The open offer per handoff (waiting for someone's OK), if any. */
   pending: Record<HandoffKind, ProposalStep | null>;
   createdAt: string;
+};
+
+/** Meet & Greet plan on a first-time booking (004 columns, 005 RPCs). */
+export type MeetGreet = {
+  mode: "in_person" | "video" | null;
+  at: string | null;
+  place: string | null;
+  link: string | null;
+  proposedBy: string | null;
+  skipRequestedBy: string | null;
 };
 
 export type OwnerBooking = BookingSummary;
@@ -253,7 +264,8 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 }
 
 const BOOKING_COLUMNS =
-  "id, status, owner_id, sitter_id, service_type, meet_greet_status, created_at, " +
+  "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
+  "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -266,6 +278,12 @@ type BookingRow = {
   sitter_id: string;
   service_type: ServiceType | null;
   meet_greet_status: MeetGreetStatus | null;
+  meet_greet_mode: "in_person" | "video" | null;
+  meet_greet_at: string | null;
+  meet_greet_place: string | null;
+  meet_greet_link: string | null;
+  meet_greet_proposed_by: string | null;
+  meet_greet_skip_requested_by: string | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -300,6 +318,14 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     sitterName: b.sitter?.display_name ?? "Your sitter",
     serviceType: b.service_type ?? "boarding",
     meetGreetStatus: b.meet_greet_status ?? "not_needed",
+    meetGreet: {
+      mode: b.meet_greet_mode ?? null,
+      at: b.meet_greet_at ?? null,
+      place: b.meet_greet_place ?? null,
+      link: b.meet_greet_link ?? null,
+      proposedBy: b.meet_greet_proposed_by ?? null,
+      skipRequestedBy: b.meet_greet_skip_requested_by ?? null,
+    },
     pets,
     dropOff: currentHandoff(handoffs, "drop_off", b.status),
     pickUp: currentHandoff(handoffs, "pick_up", b.status),

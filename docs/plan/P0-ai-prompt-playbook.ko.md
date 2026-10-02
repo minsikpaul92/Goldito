@@ -215,7 +215,7 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 ### AI 프롬프트 — 3C SQL (견적·결제·해제)
 
 ```text
-Implement supabase/migrations/005_agreements.sql per docs/plan/phases/phase-03c.md (3C.1, 3C.3–3C.5) and architecture D29–D31:
+Implement supabase/migrations/006_agreements.sql per docs/plan/phases/phase-03c.md (3C.1, 3C.3–3C.5) and architecture D29–D31:
 - sitter_rates, holidays (Ontario 2026–2027), quote_booking(p_sitter, p_service, p_drop_off_at, p_pick_up_at, p_pet_count) returning the breakdown JSON — no AI involved
 - booking_consents + required_consents(p_booking); pay_booking_demo(p_booking) → paid_at + price_snapshot, error codes consents_missing / already_paid
 - owner_home_access (owner-only RLS) + get_home_access(p_booking): paid, booked sitter, window = first owner_home handoff − 2 h … stay end; access_reveals + access_unlocked notification once
@@ -309,7 +309,7 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 ```text
 Implement medication/walk tasks:
 - OwnerTaskScreen: create care_task with a species-allowed type (medication, feeding, play, sleep + walk for dogs / litter for cats), title, dose optional, scheduled_time, repeat daily
-- RPC ensure_today_task_logs(p_pet) in 007_care.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
+- RPC ensure_today_task_logs(p_pet) in 008_care.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
 - SitterTasksScreen: list pending task_logs for today; primary **Mark done** (no photo), secondary **Done with photo** via pickMedia() → complete_task_log(p_task_log, p_media_id default null); a feed_post is created only when a photo is attached (Plan B — docs/plan/sitter-care-loop.ko.md)
 - Notify owner on completion (task_done), with or without a photo
 

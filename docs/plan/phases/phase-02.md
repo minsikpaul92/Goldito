@@ -41,7 +41,7 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 
 | 포함 | 제외 |
 | :--- | :--- |
-| P0 테이블 17개 + 인덱스 + RLS + 헬퍼 함수 + 가입 트리거 + 종별 task 가드 + 예약 RPC(단골·스케줄·검색·요청·응답·취소) + 인수인계 협의 RPC + 겹침 가드 + 조회 RPC(예약 반려동물·내 시터 프로필) | 기능별 RPC·알림 트리거 (각 Phase의 migration — 03B→`004`, 03C→`005`, 05→`006`, 06→`007`, 07→`009`, 07B→`010`, 07C→`011`, 06B→`012`, 08→`013`, 11→`014`; architecture §2) |
+| P0 테이블 17개 + 인덱스 + RLS + 헬퍼 함수 + 가입 트리거 + 종별 task 가드 + 예약 RPC(단골·스케줄·검색·요청·응답·취소) + 인수인계 협의 RPC + 겹침 가드 + 조회 RPC(예약 반려동물·내 시터 프로필) | 기능별 RPC·알림 트리거 (각 Phase의 migration — 03B→`004` · `005`, 03C→`006`, 05→`007`, 06→`008`, 07→`009`, 07B→`010`, 07C→`011`, 06B→`012`, 08→`013`, 11→`014`; architecture §2) |
 | `rls_smoke.sql` + 로컬/CI용 `supabase_stub.sql` | 시드 데이터 (Phase 10) · P1 (Phase 11: 즐겨찾기 시터, 반복 근무 패턴) |
 | | 방문 돌봄(시터가 견주 집에서 돌봄) — P0는 **보딩**만. 지도·주소 검증 — P0 장소는 텍스트 |
 
@@ -288,7 +288,7 @@ has_current_booking_with(other uuid) → confirmed 예약이 있고 agreed pick_
 | `propose_handoff(p_booking uuid, p_kind text, p_at timestamptz, p_location_type text default null, p_note text default null)` | RPC security definer | 호출자 = 그 예약의 견주 또는 시터, status in (`requested`,`confirmed`), 해당 handoff가 아직 `completed_at is null` (아니면 `'handoff_completed'`), `p_at >= now()`. `p_location_type`을 생략하면 현재 제안(없으면 agreed)의 장소·메모를 이어받음. 기존 `proposed` 행 → `superseded`, 새 `proposed` 행 insert → **상대방**에게 `handoff_proposed` ("Paul suggested drop-off at 8:30 AM"). 확정 예약이면 새 시각이 걸치는 칸 자리도 재확인 |
 | `respond_handoff(p_handoff uuid, p_accept boolean)` | RPC security definer | 호출자 = 제안하지 않은 쪽 (역제안은 `propose_handoff`로 — 횟수 제한 없음). 수락: 기존 agreed → `superseded`, 이 행 → `agreed`, 확정 예약이면 자리 재확인 후 `booking_pets`·`booking_slots` 재계산 → 제안자에게 `handoff_agreed`. 거절: 이 행 `rejected` → **예약이 `requested`면 예약 종료** (시터 거절 → `declined`, 견주 거절 → `cancelled`, 상대방에게 `booking_declined`/`booking_cancelled`) / **`confirmed`면 기존 agreed 유지**, 제안자에게 `handoff_declined` |
 | `complete_handoff(p_booking uuid, p_kind text)` | RPC security definer | 호출자 = 시터, agreed 행에 `completed_at = now()`. `drop_off`는 agreed 시각 2시간 전부터(`'handoff_too_early'`), `pick_up`은 drop_off Received 후에만(`'drop_off_not_completed'`) → 견주에게 `pet_dropped_off` ("Max and Mochi arrived at Lucy's 🏠") / `pet_picked_up` ("Max and Mochi are on the way home 👋") |
-| `get_handoff_details(p_booking uuid)` | RPC security definer | 확정 예약 당사자에게, agreed pick_up + 24시간까지(`'booking_finished'`) agreed 인수인계 + **실제 주소** (`sitter_home`이면 시터 `home_address`, `owner_home`이면 견주 `home_address`, `other`면 `location_note`). **변경 예정 (D31, Phase 03C `005_agreements.sql`):** 조건이 "확정" → "결제(`paid_at`)"로, 시터 집 Visitor parking·로비 안내·짐 체크리스트 추가 |
+| `get_handoff_details(p_booking uuid)` | RPC security definer | 확정 예약 당사자에게, agreed pick_up + 24시간까지(`'booking_finished'`) agreed 인수인계 + **실제 주소** (`sitter_home`이면 시터 `home_address`, `owner_home`이면 견주 `home_address`, `other`면 `location_note`). **변경 예정 (D31, Phase 03C `006_agreements.sql`):** 조건이 "확정" → "결제(`paid_at`)"로, 시터 집 Visitor parking·로비 안내·짐 체크리스트 추가 |
 
 ### 조회 · 기타
 

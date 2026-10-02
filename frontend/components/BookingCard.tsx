@@ -31,7 +31,11 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   }
 
   if (viewer === "owner") {
-    return [b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" }];
+    const owner: Badge[] = [
+      b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" },
+    ];
+    if (meetGreetBlocksAccept(b)) owner.push({ label: "Meet first", tone: "info" });
+    return owner;
   }
   const badges: Badge[] = [];
   if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "muted" });

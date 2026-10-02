@@ -79,9 +79,10 @@ PawNote/
 │  │  ├─ 002_rls_policies.sql
 │  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·예약 RPC·충돌 트리거·realtime (Phase 02)
 │  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet — 첫 만남 판단·건너뛰기·장소·Meet 링크, 양쪽 meet_spots)
-│  │  ├─ 005_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
-│  │  ├─ 006_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
-│  │  ├─ 007_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
+│  │  ├─ 005_meet_greet.sql           # Phase 03B 3B.9 (Meet & Greet RPC — 제안·응답·완료·건너뛰기, 양쪽 장소)
+│  │  ├─ 006_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
+│  │  ├─ 007_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
+│  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
@@ -301,7 +302,7 @@ PawNote/
 | 받았음 / 돌려줬음 | RPC `complete_handoff` (시터) | owner `pet_dropped_off` / `pet_picked_up` |
 | 예약 요청 / 응답 / 취소 | RPC `request_booking`(첫 만남이면 `meet_greet_status='required'`) / `respond_booking`(첫 만남이면 M&G done·skipped 뒤에만 수락 — `meet_greet_required`) / `cancel_booking` (취소는 맡기기 전만) | 상대방에게 `booking_*` 알림 |
 | 예약 반려동물 · 내 시터 프로필 조회 | RPC `get_booking_pets(booking)` / `get_my_sitter_profile()` | - |
-| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = `cancel_booking`, reason `meet_greet_declined`) / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
+| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = 예약 취소, reason `meet_greet_declined` — 문구는 "…would like to meet first") / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` (거절이면 `meet_greet_declined`) · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
 | 문의 보내기 | Supabase client insert `inquiries` + 첫 `inquiry_messages`(owner) → 프론트가 FastAPI `/api/ai/inquiry-reply` 호출 (07B) | AI 초안 insert 시 시터 `inquiry_received` · 시터가 보냈거나 자동 발송이 공개된 시점에 견주 `inquiry_replied` (§7, D36·D37) |
 | 견적 | RPC `quote_booking(sitter, service_type, drop_off_at, pick_up_at, pet_count)` — 읽기 전용, 문의 답변·Checkout 공용 (03C, D29) | - |
 | 동의서 서명 · 데모 결제 | Supabase client insert `booking_consents` (견주 RLS) → RPC `pay_booking_demo(booking)` — 필요한 동의서가 다 있어야 함 (`consents_missing`) (03C) | 시터 `booking_paid` |
@@ -332,6 +333,7 @@ PawNote/
 | `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Lucy replied 💬" | `/owner/inquiries/[id]` |
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/sitter/bookings` |
 | `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Chloe suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
+| `meet_greet_declined` | 제안자 | `respond_meet_greet` 거절 (3B.9) | "Lucy can't make that Meet & Greet — suggest another time" | 예약 상세 (다시 **Schedule Meet & Greet**) |
 | `meet_greet_skip_requested` | 상대방 | `request_skip_meet_greet` RPC (03B, D44) | "Chloe would like to skip the Meet & Greet. Continue the booking without meeting first?" | 예약 상세 (**Continue** / **Decline — cancels the booking**) |
 | `meet_greet_skipped` | 요청자 | `respond_skip_meet_greet` 수락 | "Lucy is OK to skip the Meet & Greet — your booking continues" | 예약 상세 |
 | `meet_greet_link_ready` | 양쪽 | `/api/meet-greet/video-link` (3B.11, D45) | "Video Meet & Greet on Oct 6, 7:00 PM — join with Google Meet" | 예약 상세 (**Join Google Meet**) |

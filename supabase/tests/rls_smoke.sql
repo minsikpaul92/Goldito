@@ -923,4 +923,175 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Meet & Greet (005, phase-03b 3B.9, D44): propose / respond / done, skip accepted /
+-- declined. First-time pairs: Chloe ↔ Nora (the 'requested' fixture) and Joy ↔ Nora.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  toto constant uuid := '00000000-0000-4000-8000-0000000000c4';
+  v_a uuid := _t_get('requested');
+  v_b uuid;
+  v_err text;
+  r record;
+begin
+  perform _t_meet(v_a, 'required');
+
+  -- Proposals are checked
+  perform _t_as(chloe);
+  begin
+    perform propose_meet_greet(v_a, 'in_person', now() + interval '1 day', '  ');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'place_required', '3B.9: in person needs a place');
+  begin
+    perform propose_meet_greet(v_a, 'video', now() - interval '1 hour');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_window', '3B.9: a Meet & Greet in the past is rejected');
+  begin
+    perform propose_meet_greet(v_a, 'phone', now() + interval '1 day');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_mode', '3B.9: only in person or video');
+
+  -- In person: propose → the other side declines → back to required
+  perform propose_meet_greet(v_a, 'in_person', now() + interval '1 day', 'Trinity Bellwoods — north gate');
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'proposed' and meet_greet_place = 'Trinity Bellwoods — north gate'
+      and meet_greet_proposed_by = chloe from public.bookings where id = v_a),
+    '3B.9: in-person proposal stored');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = nora and type = 'meet_greet_proposed'
+      and title like 'Chloe suggested meeting at Trinity Bellwoods — north gate on %'),
+    '3B.9: the other side gets meet_greet_proposed');
+  perform _t_as(chloe);
+  begin
+    perform respond_meet_greet(v_a, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3B.9: the proposer cannot accept their own Meet & Greet');
+  perform _t_as(lucy);
+  begin
+    perform respond_meet_greet(v_a, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3B.9: an outsider cannot answer');
+  perform _t_as(nora);
+  perform respond_meet_greet(v_a, false);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'required' and meet_greet_mode is null and meet_greet_at is null
+      from public.bookings where id = v_a),
+    '3B.9: a declined Meet & Greet goes back to required');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'meet_greet_declined'),
+    '3B.9: the proposer hears about the decline');
+
+  -- Video: Nora proposes, Chloe agrees, done only once the time has come, then Accept works
+  perform _t_as(nora);
+  perform propose_meet_greet(v_a, 'video', now() + interval '2 days');
+  perform _t_as(chloe);
+  perform respond_meet_greet(v_a, true);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'agreed' and meet_greet_mode = 'video' and meet_greet_place is null
+      from public.bookings where id = v_a),
+    '3B.9: video Meet & Greet agreed');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = nora and type = 'meet_greet_agreed'),
+    '3B.9: the proposer gets meet_greet_agreed');
+  perform _t_as(nora);
+  begin
+    perform respond_booking(v_a, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'meet_greet_required', '3B.9: Accept still waits while the Meet & Greet is only agreed');
+  begin
+    perform complete_meet_greet(v_a);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'meet_greet_not_yet', '3B.9: Done only after the meeting time');
+  perform _t_as(null);
+  update public.bookings set meet_greet_at = now() - interval '1 hour' where id = v_a;
+  perform _t_as(chloe);
+  perform complete_meet_greet(v_a);
+  perform _t_as(lucy);
+  begin
+    select * into r from get_meet_greet_options(v_a);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3B.9: meeting spots are only for the two parties');
+  perform _t_as(nora);
+  select * into r from get_meet_greet_options(v_a);
+  perform _t_ok(r.owner_name = 'Chloe' and r.owner_spots = '{"Trinity Bellwoods — north gate"}'
+      and r.sitter_spots = '{}',
+    '3B.9: both sides'' meeting spots for the In person sheet');
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  select nora, 'open', app_today() + 38, app_today() + 43, s, '00:00', '23:59', 3
+  from unnest(array['morning', 'afternoon']::care_slot[]) s;
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (nora, 'open', app_today() + 38, app_today() + 43, 'overnight', '18:00', '08:00', 3);
+  perform respond_booking(v_a, true);
+  perform _t_as(null);
+  perform _t_ok((select status = 'confirmed' and meet_greet_status = 'done' from public.bookings where id = v_a),
+    '3B.9: after the Meet & Greet is done the sitter can accept');
+
+  -- Skip accepted: Joy asks, Nora continues without meeting
+  v_b := _t_booking(joy, nora, array[toto], now() + interval '50 days', now() + interval '51 days', 'requested');
+  perform _t_meet(v_b, 'required');
+  perform _t_as(joy);
+  perform request_skip_meet_greet(v_b);
+  begin
+    perform respond_skip_meet_greet(v_b, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3B.9: the one who asked to skip cannot answer it');
+  perform _t_as(nora);
+  perform respond_skip_meet_greet(v_b, true);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'skipped' and status = 'requested' from public.bookings where id = v_b),
+    '3B.9: skip accepted → skipped, the request goes on');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = nora and type = 'meet_greet_skip_requested')
+      and exists (select 1 from public.notifications where user_id = joy and type = 'meet_greet_skipped'),
+    '3B.9: skip request and answer are notified');
+
+  -- Skip declined: the booking is cancelled and the owner is told to find a new sitter
+  v_b := _t_booking(joy, nora, array[coco], now() + interval '60 days', now() + interval '61 days', 'requested');
+  perform _t_meet(v_b, 'required');
+  perform _t_as(joy);
+  perform request_skip_meet_greet(v_b);
+  perform _t_as(nora);
+  perform respond_skip_meet_greet(v_b, false);
+  perform _t_as(null);
+  perform _t_ok((select status = 'cancelled' and cancel_reason = 'meet_greet_declined' and cancelled_by = nora
+      from public.bookings where id = v_b),
+    '3B.9: declining the skip cancels the booking');
+  perform _t_ok(not exists (select 1 from public.booking_pets where booking_id = v_b and active),
+    '3B.9: the cancelled booking frees the pet');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = joy and type = 'booking_cancelled'
+      -- The Nora fixture has no display_name, so the signup trigger used the email prefix.
+      and title = 'nora would like to meet first, so this booking was cancelled'),
+    '3B.9: the owner is told the sitter wants to meet first');
+  perform _t_as(joy);
+  begin
+    perform propose_meet_greet(v_b, 'video', now() + interval '1 day');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_status', '3B.9: no Meet & Greet on a cancelled booking');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
