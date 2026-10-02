@@ -118,6 +118,12 @@ export type MockDb = {
   pet_allergies: Row[];
   owner_profiles: Row[];
   sitter_profiles: Row[];
+  sitter_availability: Row[];
+  bookings: Row[];
+  /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
+  booking_slots: Row[];
+  /** cancel_booking calls: { p_booking, p_reason }. */
+  cancellations: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -128,7 +134,74 @@ function emptyRow(id: string, fields: string[]): Row {
 }
 
 function createMockDb(): MockDb {
-  return { pets: [], pet_allergies: [], owner_profiles: [], sitter_profiles: [] };
+  return {
+    pets: [],
+    pet_allergies: [],
+    owner_profiles: [],
+    sitter_profiles: [],
+    sitter_availability: [],
+    bookings: [],
+    booking_slots: [],
+    cancellations: [],
+  };
+}
+
+const SLOT_NAMES = ["morning", "afternoon", "overnight"];
+
+function* daysBetween(from: string, to: string) {
+  for (let d = new Date(`${from}T00:00:00Z`); d.toISOString().slice(0, 10) <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+    yield d.toISOString().slice(0, 10);
+  }
+}
+
+function coversDay(row: Row, day: string): boolean {
+  return String(row.start_date) <= day && day <= String(row.end_date);
+}
+
+/** Confirmed pets in a sitter's day × slot. */
+function usedSpots(db: MockDb, sitterId: string, day: string, slot: string): string[] {
+  const confirmed = new Set(
+    db.bookings.filter((b) => b.sitter_id === sitterId && b.status === "confirmed").map((b) => String(b.id)),
+  );
+  return db.booking_slots
+    .filter((s) => confirmed.has(String(s.booking_id)) && s.day === day && s.slot === slot)
+    .map((s) => String(s.booking_id));
+}
+
+/** get_sitter_schedule (003): newest open row sets hours and spots, any blocked row closes the slot. */
+function sitterSchedule(db: MockDb, sitterId: string, from: string, to: string): Row[] {
+  const rows = db.sitter_availability.filter((r) => r.sitter_id === sitterId);
+  const out: Row[] = [];
+  for (const day of daysBetween(from, to)) {
+    for (const slot of SLOT_NAMES) {
+      const here = rows.filter((r) => r.slot === slot && coversDay(r, day));
+      const blocked = here.some((r) => r.kind === "blocked");
+      const open = here
+        .filter((r) => r.kind === "open")
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+      const remaining = open ? Math.max(Number(open.max_pets) - usedSpots(db, sitterId, day, slot).length, 0) : 0;
+      out.push({
+        day,
+        slot,
+        starts_at: open ? `${open.starts_at}:00` : null,
+        ends_at: open ? `${open.ends_at}:00` : null,
+        state: blocked ? "blocked" : !open ? "closed" : remaining === 0 ? "full" : "open",
+        remaining: blocked || !open ? 0 : remaining,
+      });
+    }
+  }
+  return out;
+}
+
+/** guard_availability_change (003), blocks only: a block over a confirmed booking is refused. */
+function blockConflicts(db: MockDb, inserted: Row[]): string[] {
+  const ids = new Set<string>();
+  for (const row of inserted.filter((r) => r.kind === "blocked")) {
+    for (const day of daysBetween(String(row.start_date), String(row.end_date))) {
+      for (const id of usedSpots(db, String(row.sitter_id), day, String(row.slot))) ids.add(id);
+    }
+  }
+  return [...ids];
 }
 
 /** Role rows the signup trigger would have created (phase-02 handle_new_user). */
@@ -153,12 +226,16 @@ function callerId(authorization: string | undefined): string | null {
   }
 }
 
-/** `col=eq.value` and `col=in.(a,b)` filters. */
+/** `col=eq.value`, `col=lte.value`, `col=gte.value` and `col=in.(a,b)` filters. */
 function matches(row: Row, params: URLSearchParams): boolean {
   for (const [key, raw] of params) {
     if (["select", "order", "limit", "offset", "columns"].includes(key)) continue;
     if (raw.startsWith("eq.")) {
       if (String(row[key]) !== raw.slice(3)) return false;
+    } else if (raw.startsWith("lte.")) {
+      if (!(String(row[key]) <= raw.slice(4))) return false;
+    } else if (raw.startsWith("gte.")) {
+      if (!(String(row[key]) >= raw.slice(4))) return false;
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
@@ -193,6 +270,20 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return respond(route, db.sitter_profiles.filter((row) => row.id === me), wantsObject);
   }
 
+  if (path === "rpc/get_sitter_schedule") {
+    const { p_sitter, p_from, p_to } = request.postDataJSON();
+    return json(route, 200, sitterSchedule(db, p_sitter, p_from, p_to));
+  }
+
+  if (path === "rpc/cancel_booking") {
+    const { p_booking, p_reason } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    booking.status = "cancelled";
+    db.cancellations.push({ p_booking, p_reason });
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "profiles") {
     if (method === "PATCH") {
       const user = users.find((u) => u.id === me && matches({ id: u.id }, params));
@@ -218,6 +309,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           .map((a) => ({ id: a.id, allergen: a.allergen })),
       }));
     }
+    if (path === "bookings" && (params.get("select") ?? "").includes("owner:profiles")) {
+      rows = rows.map((b) => ({
+        ...b,
+        owner: { display_name: users.find((u) => u.id === b.owner_id)?.displayName ?? null },
+      }));
+    }
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
@@ -233,6 +330,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }));
     if (path === "pets" && inserted.some((row) => row.owner_id !== me)) {
       return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+    }
+    if (path === "sitter_availability") {
+      if (inserted.some((row) => row.sitter_id !== me)) {
+        return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+      }
+      const conflicts = blockConflicts(db, inserted);
+      if (conflicts.length > 0) {
+        return json(route, 400, { code: "P0001", message: "overlaps_confirmed_booking", details: conflicts.join(",") });
+      }
     }
     if (path === "pet_allergies") {
       for (const row of inserted) {

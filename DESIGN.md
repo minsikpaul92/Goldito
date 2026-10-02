@@ -112,6 +112,7 @@ System font for now (Figma will pick one family).
 | `fontSize.subtitle` **(proposed)** | 18 | 600 | Card titles, section headers |
 | `fontSize.body` | 16 | 400 / 600 for buttons | Body text, buttons, list rows |
 | `fontSize.small` | 14 | 400 | Timestamps, helper text, chips |
+| `fontSize.caption` **(proposed)** | 11 | 600 | Slot letters (M · A · N) inside `SlotCalendar` day cells only |
 
 - Line height ≈ 1.4 × size.
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO").
@@ -148,7 +149,7 @@ System font for now (Figma will pick one family).
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
-| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen |
+| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
 | `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
 | `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
@@ -158,6 +159,10 @@ System font for now (Figma will pick one family).
 | `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Bori is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
+| `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |
+| `Stepper` | − value + (44 × 44 buttons) — times in 30-min steps and counts; the stand-in for native pickers (§7.7) |
+| `CheckRow` | Checkbox + label (+ hint line) as one 44-tall click target; `aria-checked` for screen readers |
+| `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
 
 ### Planned (build as needed, keep the same tokens)
 
@@ -182,7 +187,6 @@ System font for now (Figma will pick one family).
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Mina · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout |
-| `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
 | `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
 | `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it — they may only use `useShell()` (`{ embedded }`) and `useLayoutMode()` |
