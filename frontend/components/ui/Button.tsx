@@ -7,12 +7,15 @@ type Props = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  /** `secondary` = white + border, for a second button next to the one primary (DESIGN.md §6). */
+  variant?: "primary" | "secondary";
   style?: ViewStyle;
   testID?: string;
 };
 
-export function Button({ label, onPress, disabled, style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const secondary = variant === "secondary";
 
   return (
     <Pressable
@@ -22,12 +25,13 @@ export function Button({ label, onPress, disabled, style, testID }: Props) {
       testID={testID}
       style={({ pressed }) => [
         styles.base,
+        secondary && styles.secondary,
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
         style,
       ]}
     >
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, secondary && styles.secondaryLabel]}>{label}</Text>
     </Pressable>
   );
 }
@@ -39,7 +43,13 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: theme.spacing.sm + 4,
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.primary,
       alignItems: "center",
+    },
+    secondary: {
+      backgroundColor: theme.color.surface,
+      borderColor: theme.color.border,
     },
     pressed: {
       opacity: 0.9,
@@ -51,5 +61,8 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.primaryText,
       fontSize: theme.fontSize.body,
       fontWeight: "600",
+    },
+    secondaryLabel: {
+      color: theme.color.primary,
     },
   });

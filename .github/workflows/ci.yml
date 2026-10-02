@@ -74,6 +74,8 @@ jobs:
           EXPO_PUBLIC_DEV_ROUTES: "1"
           EXPO_PUBLIC_SUPABASE_URL: http://127.0.0.1:4173/supabase-mock
           EXPO_PUBLIC_SUPABASE_ANON_KEY: e2e-anon-key
+          # Test-only value so the login Try demo buttons render (OB.3); the mock accepts it.
+          EXPO_PUBLIC_DEMO_PASSWORD: e2e-demo-password
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:

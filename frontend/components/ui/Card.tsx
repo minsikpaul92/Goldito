@@ -7,11 +7,16 @@ import { Theme } from "../../theme/themes";
 type Props = {
   children: ReactNode;
   style?: ViewStyle;
+  testID?: string;
 };
 
-export function Card({ children, style }: Props) {
+export function Card({ children, style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <View style={[styles.card, style]} testID={testID}>
+      {children}
+    </View>
+  );
 }
 
 const makeStyles = (theme: Theme) =>

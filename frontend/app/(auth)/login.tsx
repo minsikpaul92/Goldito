@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
@@ -8,6 +8,8 @@ import { Screen } from "../../components/ui/Screen";
 import { TextButton } from "../../components/ui/TextButton";
 import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
+import { DEMO_ACCOUNTS, DEMO_PASSWORD, isDemoEnabled, isDemoRole } from "../../lib/demo";
+import { Role } from "../../providers/SessionProvider";
 import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -19,20 +21,43 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const params = useLocalSearchParams<{ demo?: string }>();
+  const demoTried = useRef(false);
+
   const canSubmit = isSupabaseConfigured && email.trim() !== "" && password !== "" && !submitting;
 
-  async function signIn() {
-    if (!canSubmit) return;
+  async function signInWith(emailValue: string, passwordValue: string) {
     setSubmitting(true);
     setError(null);
     const { error: authError } = await getSupabase().auth.signInWithPassword({
-      email: email.trim(),
-      password,
+      email: emailValue.trim(),
+      password: passwordValue,
     });
     setSubmitting(false);
     // On success the session changes and the (auth) layout sends the user on.
     if (authError) setError(describeAuthError(authError));
   }
+
+  function signIn() {
+    if (canSubmit) void signInWith(email, password);
+  }
+
+  // Try demo (OB.3): fill the seeded account so the judge sees what happens, then sign in.
+  function tryDemo(role: Role) {
+    if (!isDemoEnabled || !isSupabaseConfigured || submitting) return;
+    const { email: demoEmail } = DEMO_ACCOUNTS[role];
+    setEmail(demoEmail);
+    setPassword(DEMO_PASSWORD);
+    void signInWith(demoEmail, DEMO_PASSWORD);
+  }
+
+  // /login?demo=owner|sitter does the same (desktop side panel 10.9, split view 10.10).
+  useEffect(() => {
+    if (demoTried.current || !isDemoRole(params.demo)) return;
+    demoTried.current = true;
+    tryDemo(params.demo);
+    // Once per visit; tryDemo only reads constants and state setters.
+  }, [params.demo]);
 
   return (
     <Screen contentStyle={styles.content}>
@@ -68,7 +93,7 @@ export default function LoginScreen() {
           secureTextEntry
           autoComplete="current-password"
           textContentType="password"
-          onSubmitEditing={() => void signIn()}
+          onSubmitEditing={signIn}
           testID="login-password"
         />
         {error ? (
@@ -76,10 +101,37 @@ export default function LoginScreen() {
             {error}
           </Text>
         ) : null}
-        <Button label={submitting ? "Signing in…" : "Sign in"} onPress={() => void signIn()} disabled={!canSubmit} />
+        <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} />
       </View>
 
       <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
+
+      {isDemoEnabled ? (
+        <Card style={styles.demo} testID="demo-block">
+          <Text style={styles.demoTitle}>Try the demo</Text>
+          <Text style={styles.subtitle}>
+            For judges: sign in to a ready-made account — Bori (chicken allergy) is already set up.
+          </Text>
+          <View style={styles.demoButtons}>
+            <Button
+              label="Demo owner"
+              variant="secondary"
+              onPress={() => tryDemo("owner")}
+              disabled={submitting || !isSupabaseConfigured}
+              style={styles.demoButton}
+              testID="demo-owner"
+            />
+            <Button
+              label="Demo sitter"
+              variant="secondary"
+              onPress={() => tryDemo("sitter")}
+              disabled={submitting || !isSupabaseConfigured}
+              style={styles.demoButton}
+              testID="demo-sitter"
+            />
+          </View>
+        </Card>
+      ) : null}
     </Screen>
   );
 }
@@ -113,5 +165,20 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    demo: {
+      gap: theme.spacing.sm,
+    },
+    demoTitle: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.text,
+    },
+    demoButtons: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    demoButton: {
+      flex: 1,
     },
   });

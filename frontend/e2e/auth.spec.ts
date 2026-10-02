@@ -101,6 +101,30 @@ test.describe("auth and role routing", () => {
     expect(signups).toEqual([{ email: "mina@pawnote.test", role: "sitter", display_name: "Mina" }]);
   });
 
+  test("Try demo buttons sign in to the seeded owner and sitter (OB.3)", async ({ page }) => {
+    // Same strings as lib/demo.ts; the password is the CI build's test-only EXPO_PUBLIC_DEMO_PASSWORD.
+    const demoOwner = { ...OWNER, email: "demo-owner@pawnote.test", password: "e2e-demo-password" };
+    const demoSitter = { ...SITTER, email: "demo-sitter@pawnote.test", password: "e2e-demo-password" };
+    await mockSupabase(page, [demoOwner, demoSitter]);
+
+    await page.goto("/login");
+    const screen = app(page);
+    await expect(screen.getByTestId("demo-block")).toContainText("Try the demo");
+    await screen.getByTestId("demo-owner").click();
+    await expect(page).toHaveURL(/\/owner$/);
+
+    await screen.getByTestId("log-out").click();
+    await expect(page).toHaveURL(/\/login$/);
+    await screen.getByTestId("demo-sitter").click();
+    await expect(page).toHaveURL(/\/sitter$/);
+
+    // The query does the same (desktop side panel, split view).
+    await screen.getByTestId("log-out").click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.goto("/login?demo=owner");
+    await expect(page).toHaveURL(/\/owner$/);
+  });
+
   test("log out returns to sign in", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
