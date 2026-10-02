@@ -16,7 +16,7 @@ Every feature must pass both tests:
 
 Sitter inputs should be limited to: **take a photo, tap a button** (plus an optional one-line memo on the 5-second check). AI and automation do the rest.
 
-**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D34). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
+**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D42). Rover booking × Kidsnote care × Uber trips, with an AI agent doing the typing.
 
 ---
 
@@ -26,7 +26,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 | Priority | Stage | Feature | Inspired by | AI | Phase |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **P0** | ① Inquiry | Owner asks a sitter (service type, dates, pets, a question) → AI replies on the sitter's behalf in < 1 min, grounded in the calendar, server-side quote (holiday + multi-pet rates), sitter policy, Life Record (RAG) | Rover fast replies | Nano + Qwen3 Embedding | 07B (03C quote) |
+| **P0** | ① Inquiry | Owner asks a sitter (service type, dates, pets, a question) → AI drafts the reply in the sitter's own voice within seconds (sitter sends with one tap, or opts in to auto-send), grounded in the calendar, server-side quote (holiday + multi-pet rates), sitter policy, Life Record (RAG) | Rover fast replies | Nano + Qwen3 Embedding | 07B (03C quote) |
 | **P0** | ② Meet & Greet | Care & medication request → AI mission checklist + Heads-up · Meet & Greet (in person / video) · transport mode (Owner drives / Sitter drives) | Kidsnote medication request | Super | 06, 03B |
 | **P0** | ③ Booking | Part-time sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule, whole-trip booking with drop-off/pick-up time & place (negotiable), Boarding / House sitting, cancel → rebook | Marketplace | — | 03B |
 | **P0** | ③ Booking | Quote → Canada-first consent templates → **demo payment** → sitter home info after payment · owner entry info unlocks 2 h before | — | — (rules) | 03C |

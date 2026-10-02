@@ -3,7 +3,7 @@
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
 > 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
 > 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
-> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D34). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
+> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D42). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
 
 ---
 
@@ -44,7 +44,15 @@
 | D31 | 조건부 보안 해제 | ① **견주 집 출입 정보** `owner_home_access`(lockbox 코드·buzzer·fob·출입 순서·시터 주차) — 견주 본인 RLS만. 시터는 RPC `get_home_access(booking)`로만, 조건 = 결제 완료 + 그 예약의 시터 + 견주 집에서 하는 인수인계(또는 house sitting 시작) **2시간 전 ~ 예약 종료(찾기 완료)**. 밖이면 `access_locked` + `unlocks_at`. 처음 열 때 `access_reveals` 기록 + 견주 알림 `access_unlocked`. ② **시터 집 정보**(주소·Visitor parking·로비 안내·짐 체크리스트) — 결제 직후 견주에게, 찾은 뒤 24시간까지 (`get_handoff_details` 조건을 "확정"에서 "결제"로). ③ 출입 정보는 **RAG·AI 프롬프트·알림 본문·로그에 넣지 않음** | 시나리오 "결제 후에도 바로 공개 안 함", 최소 노출 |
 | D32 | Pet Transit (실시간 이동) | 이동하는 쪽이 **Start trip** → `trips`에 **마지막 위치 1개만** 갱신(경로 이력 저장 안 함, 끝나면 위치 null) → 상대방은 Realtime(`postgres_changes` on `trips`, RLS = 예약 당사자)으로 구독. ETA = 직선거리 × 1.3 ÷ 속도(차 30 km/h, 도보 4.5 km/h) — 라우팅 API 없음. 도착 = 목적지 150 m 안 → `trip_arrived`. 목적지 좌표 = 프로필의 `home_lat/home_lng`("Use my current location" 또는 시드 가상 좌표, 지오코딩 없음). 지도 = **보기 전용** Leaflet + OpenStreetMap(웹, 자동 맞춤 + ± 버튼, 드래그 팬 없음 — D25 마우스 규칙). 위치 소스 = 폰은 실제 GPS, **데스크톱·데모 계정은 Simulate trip**(가상 경로 재생) | 심사위원 PC에는 움직이는 GPS가 없음, 위치는 이동 중 당사자에게만 |
 | D33 | Vision · 임베딩 모델 | 시나리오의 Qwen-2.5-VL은 Token Factory 카탈로그에 **없음** (2026-10-01 `GET /v1/models`) → 사진 분석(캡션·분류·인수인계 체크·알림장 사진)은 **`openbmb/MiniCPM-V-4_5`** (이미지 입력 대안: `moonshotai/Kimi-K2.6`). RAG 임베딩 = **`Qwen/Qwen3-Embedding-8B`** (카탈로그 유일 임베딩, `dimensions: 1024` 동작 확인) → Supabase **pgvector** `knowledge_chunks vector(1024)` (HNSW), service role 전용. 검색 범위는 항상 그 시터·그 반려동물·그 견주로 필터 | 카탈로그 기준 ([model-ids.md](notes/model-ids.md)). 1024차원이면 pgvector 인덱스 한도(2000) 안 |
-| D34 | 시터 5초 체크 | 시터 입력 = 칩(식사·배변·산책 분·투약) + 사진 ≤ 2 + **선택 메모 1줄(≤ 120자)**. 필수 텍스트 입력은 여전히 없음 (§8-3) | 시나리오의 "짧은 메모" — 알림장 에피소드의 재료 |
+| D34 | 시터 5초 체크 | 시터 입력 = 칩(식사·배변·산책 분·투약) + 사진 ≤ 2 + **선택 메모 1줄(≤ 120자)**. 필수 텍스트 입력은 여전히 없음 (§8-3) | 시나리오의 "짧은 메모" — 알림장 에피소드의 재료 (D38에서 "AI가 먼저 쓰고 시터는 수정·추가만 선택"으로 보강) |
+| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/voice.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `voice_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 P2 비교 실험(11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.ko.md#5-시나리오를-앱으로-옮기며-정한-것-d27d42-요약) |
+| D36 | 시터 승인 · AI 고지 | 기본 = 수동 승인(Send 즉시 발송). 자동 발송 = 시터 옵션 + 책임 동의 모달(`sitter_profiles.ai_reply_mode`, `ai_consent_at`). 견주 화면에는 시터 메시지로 표시(메시지별 AI 라벨 없음), 약관·온보딩 1회 고지, 자동 모드 프로필 1줄. "AI냐"는 질문에 사람이라고 답하지 않음 | 승인한 메시지는 시터의 메시지 |
+| D37 | 사람 속도 전달 | 자동 발송·데모 영상에만: `inquiry_messages.visible_at`(미래 시각) + 읽음/입력 중 연출. 서버는 즉시 생성·저장하고 **공개 시각만 늦춤**(서버리스 sleep 금지). 지연 공식·메시지 구조 = 슬기 TBD. 알림장·캡션·수동 승인은 지연 없음 | 서버리스 요청 수명에 안전 |
+| D38 | 시터 글쓰기 제로 | 칩·사진·의도 칩 → AI 문장 생성. 수정·추가는 선택 | UX 원칙 5 |
+| D39 | 모델 정책 | 미국 모델 우선·NVIDIA 모델 우선, 중국 모델은 대안 없음/가성비 큰 차이일 때만 + `model-ids.md`에 이유 기록. 예외: 임베딩 Qwen3-Embedding, 비전 MiniCPM-V(NVIDIA 비전 모델 검증 후 교체). NVIDIA가 양자화만 한 중국 모델(GLM·MiniMax·Qwen NVFP4)은 NVIDIA 모델로 치지 않음 | 해커톤 트랙 + 선호 |
+| D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
+| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막, 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
+| D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
 
 ---
 
@@ -180,7 +188,7 @@ PawNote/
 | `/sitter/` (tab: Today) | sitter | 담당 pet · 오늘 인수인계(Trip 진입) · **Heads-up**(주의사항) · **Quick check-ins**(meal/potty/walk/mood/note) · due 배너 · (08) **Scan a treat** 버튼 | Mark done / check-in | 03(스텁) → 03B → 06 |
 | `/sitter/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
 | `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | **Inquiries** · Requests · Upcoming · Past / 요청 카드(서비스·이동 방식·의뢰서·Life Record 요약)·Meet & Greet·인수인계·출입 정보 잠금 카드 | Accept | 03B (+03C·07B·07C) |
-| `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — AI가 대신 보낸 답 + **Looks good 👍** | Looks good | 07B |
+| `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + 경고 문구 + **Send** · Edit/Add · Regenerate (D36) | Send | 07B |
 | `/sitter/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/sitter/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) — 의뢰서 체크리스트 | **Mark done** / Done with photo | 06 |
 | `/sitter/scan` (Today 버튼 → Stack) | sitter | Treat scanner | **Scan label** | 08 (stretch) |
@@ -241,7 +249,7 @@ PawNote/
 - Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
 - 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
 - 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
-- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (시나리오 "1분 안" — 목표 p50 < 10s), care-plan 45s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 프론트 fetch 타임아웃은 여기에 +5s.
+- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 프론트 fetch 타임아웃은 여기에 +5s.
 - 예약 단위 권한: `services/authz.py`에 `assert_booking_party(booking_id)`(견주 또는 시터) / `assert_booked_sitter(booking_id, from_hours_before=2)`(인수인계 사진 — 맡기기 2시간 전부터)를 둔다.
 - 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
 
@@ -307,8 +315,8 @@ PawNote/
 
 | type | 수신자 | 생성 위치 | 제목 예 (EN) | 탭 시 이동 |
 | :--- | :--- | :--- | :--- | :--- |
-| `inquiry_received` | sitter | AI 답변 insert (07B) | "Jisoo asked about Oct 9–12 — PawNote replied for you" | `/sitter/inquiries/[id]` |
-| `inquiry_replied` | owner | AI 답변 insert (07B) | "Mina's assistant replied 💬" | `/owner/inquiries/[id]` |
+| `inquiry_received` | sitter | AI 초안 insert (07B, D36) | "Jisoo asked about Oct 9–12 — your draft reply is ready" | `/sitter/inquiries/[id]` |
+| `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Mina replied 💬" | `/owner/inquiries/[id]` |
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/sitter/bookings` |
 | `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Jisoo suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
 | `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Jisoo signed and paid — Oct 9–12 is all set ✅" | `/sitter/bookings/[id]` |
@@ -340,7 +348,7 @@ PawNote/
 
 1. **상태 4종 필수:** loading(Skeleton) · empty(EmptyState 문구) · error(재시도 버튼) · success(Toast).
 2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
-3. **sitter 필수 텍스트 입력 금지 (P0)** — 예외(모두 선택): 5초 체크·check-in 메모 1줄(≤ 120, D34), 알림장 전송 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름)는 허용.
+3. **sitter 필수 텍스트 입력 금지 (P0, D38 — AI가 칩·사진에서 문장을 먼저 만들고 시터는 수정·추가만 선택)** — 예외(모두 선택): 5초 체크·check-in 메모 1줄(≤ 120, D34), 알림장 전송 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름)는 허용.
 4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
 5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Upload from computer**. 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
 6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
@@ -361,6 +369,7 @@ PawNote/
 - 프롬프트 원문은 코드에 하드코딩하지 않고 `app/ai/prompts/**`의 파일에서 로드 (슬기가 코드 수정 없이 튜닝).
 - 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
 - **근거 고정 (D27–D29):** 모델 입력은 서버가 모은 JSON뿐 (스케줄·견적·펫 프로필·RAG 검색 결과·그날 기록). 가격·날짜·가능 여부·시간은 **입력 값을 그대로** 쓰게 하고, 응답 후 서버가 숫자를 다시 대조한다 (07B — 입력에 없는 금액이 나오면 견적 카드만 두고 문장은 재생성 1회, 또 실패하면 고정 문구 "Mina will confirm the details soon."). 출입 정보(D31)는 어떤 프롬프트에도 넣지 않는다.
+- **말투 레이어 (D35):** 견주에게 보이는 자연어를 만드는 엔드포인트(inquiry-reply · daily-report · caption)는 프롬프트를 직접 조립하지 않고 `voice.compose(sitter_id, intent, facts)`를 거친다 — 스타일 가이드 + 시터의 `voice_samples` top-k(few-shot) + 서버 근거 JSON. 1인칭("I"), 자리표시자(`{PRICE}`·`{DATE}`)는 서버가 채우고 숫자는 근거 JSON과 대조한다(D29). 안전 경고·동의서·견적 숫자는 고정 문구로 레이어를 거치지 않는다. 시터의 승인·수정·재생성은 `voice_samples`에 기록(자동 발송은 학습에서 제외). 견주 메시지는 저장 전 익명화.
 - **임베딩 (D33):** `embed(texts)` — `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM`(1024), 배치 ≤ 16. 검색은 SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, 범위 필터 먼저). 출처 `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. 같은 `(source_type, source_id)`는 덮어쓰기.
 - **호출 지표 로그:** `chat()`/`chat_json()`마다 구조화 로그 1줄 — `{role, model, endpoint, ttft_ms, latency_ms, prompt_tokens, completion_tokens, retried, ok}` (TTFT는 스트리밍 첫 토큰 기준, 스트리밍 불가 모델은 null). 프롬프트·응답 본문은 남기지 않음. Phase 10 README의 **Token Factory / Nemotron 피드백**(필수·채점 항목)과 Most Valuable Feedback에 모델별 중앙값 표로 사용.
 

@@ -393,7 +393,7 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 | 7B.1 | `010_inquiries_rag.sql` — pgvector, inquiries, inquiry_messages, knowledge_chunks, match_knowledge | 03C | rls_smoke M |
 | 7B.2 | `nebius.embed()` + `services/rag.py` (index / search) | 7.1 | 재인덱싱 중복 없음 |
 | 7B.3–7B.4 | `POST /api/ai/inquiry-reply` + prompt (슬기) | 7B.1–7B.2, 3C.1 | 근거 테스트 a–f |
-| 7B.5–7B.6 | Owner 문의 시트·스레드 · Sitter Inquiries + Looks good · 정책 편집 | 05, 7B.3 | 마우스만으로 문의 → 답 → 요청 |
+| 7B.5–7B.6 | Owner 문의 시트·스레드 · Sitter Inquiries + 초안 Send/Edit · 정책 편집 | 05, 7B.3 | 마우스만으로 문의 → 답 → 요청 |
 | 7B.7 | latency 지표 (p50 < 10 s) | 7B.3 | model-ids.md 기록 |
 
 ### 슬기 전용 AI 프롬프트 — 7B.2–7B.4

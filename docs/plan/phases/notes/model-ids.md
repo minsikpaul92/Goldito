@@ -87,7 +87,32 @@ Phase 00 DoD for Nebius: **met** (catalog + role mapping + one Fast + one Vision
 
 Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken."). Use 1024 — pgvector HNSW indexes support up to 2000 dims.
 
+## Model policy (D39) and NVIDIA catalog check (2026-10-02)
+
+**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (no NVIDIA embedding in the catalog) and `openbmb/MiniCPM-V-4_5` (until an NVIDIA vision model is usable on our project key).
+
+**Console "Model catalog" (provider = NVIDIA) vs. our API key (`GET /v1/models`, both base URLs, 2026-10-02):**
+
+| Console catalog entry | Origin | Modality (catalog) | Visible to our API key? |
+| :--- | :--- | :--- | :--- |
+| Nemotron-3-Nano-30B-A3B / NVIDIA-Nemotron-3-Nano-30B-A3B, Nemotron-3-Super-120b-a12b, Nemotron-3-Ultra-550b-a55b, Nemotron-3.5-Lightning | NVIDIA | text | **yes** (in use) |
+| **Nemotron-Nano-V2-12b** | NVIDIA | **vision** | **no** — guessed ID `nvidia/Nemotron-Nano-V2-12b` returns 404; need the exact ID from the catalog page |
+| **Cosmos3-Super-Reasoner** (33B, $0.1 in / $0.3 out per 1M, eu-north1) | NVIDIA (check the model card for its base model) | **vision** (video reasoning) | **no** — guessed ID `nvidia/Cosmos3-Super-Reasoner` returns 404 |
+| **Nemotron-3-Nano-Omni** | NVIDIA | catalog says text-to-text (name says Omni) | **no** — guessed ID 404; read the model card for real input types |
+| Llama-3_1-Nemotron-Ultra-253B-v1 | Llama-based, NVIDIA-tuned | text | not listed on our key |
+| GLM-4.7-NVFP4, MiniMax-M2.5/M2.7-NVFP4, Qwen3.5-397B-A17B-NVFP4 | **Chinese originals**, only quantized by NVIDIA | text | not counted as NVIDIA models |
+
+**Next (Seulgi / Minsik):** open each vision model in the console catalog, copy the exact model ID and region, test with the Cloudinary-style base64 image (same call as the 0.3 smoke), then compare against MiniCPM-V on the 6B.5 / 9.1 samples. If they are not enabled on our project, ask a Nebius mentor. Result goes into the table above and D33/D39.
+
+**Fine-tuning (11.7):** the fine-tuning wizard lists `google/gemma-4-E4B-it` (Full fine-tuning, $0.40 / 1M tokens, 8K context). The catalog shows a "Fine-tuning" badge on every NVIDIA model including 550B Ultra, which looks generic — search "Nemotron" in the wizard to confirm. Tuned models are served only on Dedicated Endpoints (L40S $2/GPU-hour, H100 $4.7). Account balance on 2026-10-02: $125.
+
+**Fun mood meter (11.9 / D42):** `agentmish/dog-emotion-classifier-v2` — Apache-2.0, ViT-base, 85.6% accuracy on its small eval set, no training-dataset license stated. `Dewa/dog_emotion_v2` has no license tag, do not use.
+
 ## Open questions (Phase 07.1 / 08 spike)
+
+- [ ] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): exact IDs, enabled on our project?, caption + handoff + label OCR quality vs MiniCPM-V
+- [ ] Fine-tuning: does the wizard offer a Nemotron model? Gemma 4 LoRA + serverless `-LoRa` serving?
+- [ ] Tone: compare Nemotron-3 Nano / Super / gpt-oss-120b / gemma-3-27b-it on the same few-shot voice prompt (07B.8), blind-rated by the sitter
 
 - [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)
 - [ ] MiniCPM: ingredient list JSON reliability on label photos

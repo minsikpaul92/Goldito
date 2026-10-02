@@ -1,6 +1,6 @@
 # Phase 00 — 사전 준비 (Prerequisites)
 
-> 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D34, env 마스터 §4)
+> 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D42, env 마스터 §4)
 
 ## Goal
 

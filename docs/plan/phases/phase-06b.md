@@ -2,6 +2,9 @@
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — **D28 이동 방식**, **D31 출입 정보**, **D32 Pet Transit**, **D33 Vision**, UX §8-9·10, 알림 §7
 > 제품 흐름: [full-process.ko.md — Stage 4 (4-1, 4-2)](../full-process.ko.md#stage-4--care--uber-style-pet-transit--ai-스마트-알림장-핵심-실행-단계)
+> **순서 변경 (D41, 2026-10-02):** 이 Phase는 **P0 큐의 맨 마지막**(Phase 7C·08 뒤, Phase 10 배포 직전)에 만든다. 인수인계 Received/Returned는 03B로 이미 동작하므로 이 Phase가 늦어져도 앞 단계는 막히지 않는다. 심사에서는 **데모 영상**(Simulate trip)으로 이동을 보여주고, 웹 데모 URL의 Simulate trip 버튼은 유지한다.
+> **위치 공유 동의 (D41):** Start trip → **앱 동의 화면**("Share your live location with Mina until you arrive?" — 누구에게·언제까지, 도착하면 자동 종료) → Allow 후에만 브라우저/OS 위치 권한 팝업. P0 웹은 **화면이 켜진 동안만** 공유(iOS·Android 웹은 백그라운드 불가). 출시(네이티브 앱)에서는 위치 권한을 미리 동의받아 이동 중 계속 공유. 동의 거부 시 대안 흐름은 [full-process §9](../full-process.ko.md#9-열린-질문--tbd-2026-10-02) #4 결정 후 정한다.
+> **비용 근거:** 이동 30분 · 5초 간격 ≈ 720 메시지(전송 + 수신) → Supabase Realtime Free(동시 연결 200, 월 200만 메시지) 안에서 월 2,700회 이상 이동 가능. 지도 = Leaflet + OSM 타일 (데모 수준 무료).
 
 ## Goal
 
@@ -14,6 +17,7 @@
 - [ ] Mina: 차량 안 사진(샘플 `car_crate_ok`) → Vision `ok` (crate ✅ restraint ✅) → **Received** → Jisoo "Pick-up complete — care has started 🚗 · photo verified"
 - [ ] 샘플 `car_no_crate` → `warning` "Couldn't see a crate or seatbelt" → **Retake** / **Continue anyway**(이유 칩: "Crate is in the trunk" 등) → Received 가능, 견주 알림에 photo verified 없음
 - [ ] **Owner drives (찾기):** Jisoo **Start trip** → Mina 화면 지도·ETA → 도착 → Mina "Jisoo has arrived 🚗" / Jisoo **Mina's place** 카드(Visitor parking · 로비 안내) → Mina 귀가 사진(`return`) → **Returned** → Jisoo "Bori and Mochi are home safe 🏠"
+- [ ] **Start trip**을 누르면 위치 공유 동의 화면이 먼저 뜨고, Allow 전에는 위치가 전송되지 않음 (Simulate trip도 같은 동의 화면을 탐 — 데모 영상 장면)
 - [ ] 이동이 끝나면 `trips.last_lat/last_lng = null`, 상대방 화면 지도 사라짐. 예약 당사자 아닌 계정은 `trips` 행이 안 보임
 - [ ] 데스크톱 프레임 + 마우스만으로 위 전부 (Simulate trip, 샘플 사진 트레이)
 
@@ -50,6 +54,7 @@
 | `/profile` | both | **Home location** — "Use my current location" (폰) / 데모 계정은 시드 좌표 표시 | Save |
 
 - **Simulate trip** (데모 계정 또는 `useShell().embedded`): Start trip 시트에 "Use my real location" / **Simulate the drive (demo)** — `frontend/assets/demo/routes/*.json`의 가상 경로(공원·교차로 수준 좌표, 실제 주소 아님)를 10배속으로 재생, 같은 `update_trip_position`을 탄다 (가짜 결과 없음, D32).
+- 비전 모델: 현재 `openbmb/MiniCPM-V-4_5`. D39(NVIDIA 우선)에 따라 `Nemotron-Nano-V2-12b` · `Cosmos3-Super-Reasoner`가 프로젝트에서 활성화되면 6B.5 spike에서 같은 샘플로 비교해 교체 ([model-ids.md](notes/model-ids.md)).
 - 사진 체크 문구: ok → "Looks good — Bori is visible and secured ✅" / warning → "Couldn't see a crate or seatbelt. Retake, or continue and tell Jisoo why." / unchecked(AI 실패) → "Photo saved — we couldn't check it this time."
 
 ---

@@ -40,7 +40,7 @@
 
 | # | Stage | 액션 | 검증 (상대방 화면) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | Inquiry | Owner: Mina 프로필 → **Ask about a stay** (Boarding · 2마리 · 연휴 포함) | 10초 안 AI 답 + 견적 카드(공휴일·다두) + Life Record 출처 칩 / Sitter 알림 "PawNote replied for you" | 07B · 03C |
+| 1 | Inquiry | Owner: Mina 프로필 → **Ask about a stay** (Boarding · 2마리 · 연휴 포함) | Mina(자동 발송 모드) 읽음 "1" → typing → 약 30초 뒤 시터 말투 답장 + 견적 카드(공휴일·다두) + Life Record 출처 칩 / Sitter 알림 "your draft reply is ready" | 07B · 03C |
 | 2 | Meet & Greet | Owner: **Care request** → AI 체크리스트 → Save · Meet & Greet(Video) 제안 → Sitter Accept → Done · 맡기기 = Sitter drives, 찾기 = Owner drives로 **Request booking** | Sitter 요청 카드: 🚙/🚗 · Heads-up · From Bori's Life Record | 06 · 03B |
 | 3 | Booking | Sitter **Accept** → Owner **Checkout**: 견적 → 동의서 → **Pay (demo)** | Owner: Mina's place · Visitor parking · 짐 체크리스트 / Sitter: "Jisoo signed and paid" · 출입 정보 🔒 "Unlocks …" | 03C |
 | 4a | Transit | (시드 시각 = 픽업 2시간 안) Sitter **Show code** → **Start trip → Simulate the drive** | Owner `access_unlocked` · 지도·ETA · "Mina has arrived" → Sitter 차량 샘플 사진 → Vision ✅ → **Received** → Owner "Pick-up complete — care has started · photo verified" | 06B |
