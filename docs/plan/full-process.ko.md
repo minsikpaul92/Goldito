@@ -207,7 +207,7 @@ Oct 9, 2026
 | 1. Inquiry | 빠른 대화 응대 | — | 펫 기본 프로필 연동 | RAG + 시터 말투 초안 → 시터 승인 (자동 모드는 사람 속도) — Nemotron Nano + Qwen3 Embedding |
 | 2. Meet & Greet | 돌봄 요구사항 정의 | 이동 주체 선택 (Owner / Sitter drives) | 케어·투약 의뢰서 | 의뢰서 → 시터 미션 체크리스트 — Nemotron Super |
 | 3. Booking | 결제 및 보안 서약 | Visitor parking 안내 | 안전·귀가 동의서 | 돌봄 2시간 전 Lockbox 코드 보안 해제 (서버 규칙) |
-| 4. Care & Transit | 이동 트래킹 & 돌봄 보고 | 실시간 GPS 라이브 지도 & ETA | 등하원 알림 & 스마트 알림장 | 차량 안전·사진 분석 — MiniCPM-V-4.5 (NVIDIA 비전 모델 검증 후 교체, D39) · 시터 말투 알림장 — Nemotron Super |
+| 4. Care & Transit | 이동 트래킹 & 돌봄 보고 | 실시간 GPS 라이브 지도 & ETA | 등하원 알림 & 스마트 알림장 | 차량 안전·사진 분석 — MiniCPM-V-4.5 (D39) · 시터 말투 알림장 — Nemotron Super |
 | 5. Completion | 후기 및 데이터 저장 | — | 펫 생활기록부 | 대화·돌봄 데이터 → Life Record → RAG DB 자동 축적 — Nemotron Super + Qwen3 Embedding |
 
 ---
@@ -228,7 +228,7 @@ Oct 9, 2026
 | D36 | 시터 승인 · AI 고지 | 기본 = 시터가 초안을 승인해 보내는 **수동 승인**(누르는 즉시 발송, 지연 없음). **자동 발송**은 시터가 옵션으로 켜며, 켤 때 책임 동의 모달. 메시지마다 AI 라벨은 없고 약관·온보딩에 1회 고지, 자동 모드는 프로필 한 줄. 견주가 AI인지 물으면 부인하지 않고 시터에게 알림 | 승인한 메시지는 시터의 메시지. 사람이 안 본 자동 발송만 추가 고지 |
 | D37 | 사람 속도 전달 | 자동 발송과 데모 영상에만 적용: 읽음 "1" → 사라짐(5~10초) → 입력 중 → 답장(10~15초), 총 약 30초. 글자 수별 지연 공식·메시지 구조는 **슬기가 정함 (TBD)**. 알림장·캡션·수동 승인에는 적용 안 함 | 사람이 읽고 쓴 느낌. 업계 관행이지 Airbnb 공식 정책은 아님 |
 | D38 | 시터 글쓰기 제로 | 칩·사진·의도 칩만으로 AI가 문장 생성. 시터는 **수정·추가를 선택적으로** 할 수 있음 (D34 메모 1줄은 이 수정·추가 칸으로 흡수) | "Care, snap, tap" |
-| D39 | 모델 정책 | **미국 모델 우선, NVIDIA 모델 우선.** 중국 모델은 대안이 없거나 가성비 차이가 클 때만(기록 필수). 현재 예외: 임베딩 Qwen3-Embedding(확정, 다른 임베딩 비교 안 함), 비전 MiniCPM-V(NVIDIA 비전 모델 `Nemotron-Nano-V2-12b`·`Cosmos3-Super-Reasoner` 활성화·검증 후 교체). Provider가 NVIDIA인 NVFP4 양자화 모델 중 GLM·MiniMax·Qwen은 원본이 중국 모델이라 "NVIDIA 우선"에 해당하지 않음 | 해커톤 트랙(Nemotron) + 선호. [model-ids.md](phases/notes/model-ids.md) |
+| D39 | 모델 정책 | **미국 모델 우선, NVIDIA 모델 우선.** 중국 모델은 대안이 없거나 가성비 차이가 클 때만(기록 필수). 현재 예외: 임베딩 Qwen3-Embedding(확정, 다른 임베딩 비교 안 함), 비전 MiniCPM-V(확정 — NVIDIA 비전 모델 `Nemotron-Nano-V2-12b`·`Cosmos3-Super-Reasoner`·`Nemotron-3-Nano-Omni`는 Dedicated Endpoint 전용이라 상시 서비스 비용이 $48~113/일). Provider가 NVIDIA인 NVFP4 양자화 모델 중 GLM·MiniMax·Qwen은 원본이 중국 모델이라 "NVIDIA 우선"에 해당하지 않음 | 해커톤 트랙(Nemotron) + 선호. [model-ids.md](phases/notes/model-ids.md) |
 | D40 | 확정 후 변경 요청 | 서비스·이동 방식은 예약 확정 시 고정. 견주·시터 누구나 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
 | D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의 화면(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만, **06B는 P0 맨 마지막**, 심사는 **데모 영상**. 출시 때 네이티브 앱에서 위치 권한을 미리 동의 | 무료 스택(Supabase Realtime Free + 브라우저 Geolocation + OSM) 안에서 가능 |
 | D42 | Fun mood meter (P1) | 재미용 문구 필수, 보이는 행동 태그 + 프레임 비율로 서버 계산, 부정 감정 퍼센트 금지. 모델 후보 = 비전 모델 태그 추출(A) + Apache-2.0 이미지 분류기 `agentmish/dog-emotion-classifier-v2`(B). 비용·라이선스 문제 시 제외 가능 | 임팩트용 비핵심 기능 |
@@ -268,7 +268,7 @@ Oct 9, 2026
 
 - 실결제(Stripe 등)·환불·세금, 법률 검토를 거친 동의서
 - 도로 경로 기반 ETA(라우팅 API)·주소 자동완성·지오코딩, **백그라운드 위치 추적**(네이티브 앱에서 사전 동의 후 — D41)
-- 시터 말투 SFT 파인튜닝 상시 서빙(Dedicated Endpoint 비용), RFT(강화 파인튜닝) — P2 실험 ([phase-11.md](phases/phase-11.md) 11.7)
+- 시터 말투 SFT 파인튜닝 상시 서빙(Dedicated Endpoint 비용) — P2 실험 ([phase-11.md](phases/phase-11.md) 11.7). RFT(강화 파인튜닝)는 신청하지 않음
 - Drop-in(짧은 방문) 전용 정원 계산 — P0는 house sitting도 보딩과 같은 칸 정원으로 계산
 - 실제 마켓플레이스(Rover 등) 문의 연동 — P0는 앱 안 문의만
 - AI 에이전트의 도구 호출(tool calling) 방식 응답 — P0는 서버가 근거를 모아 한 번 호출 (7.1 spike에서 지원 여부만 기록)
@@ -284,8 +284,8 @@ Oct 9, 2026
 | 3 | 자동 발송(옵션)을 P0 후반으로 당길지 P1로 둘지 | 민식 | 데모 장면 ①이 자동 모드를 쓰므로 P0 후반 필요. 제안: 7B.10을 P0 후반, 책임 동의 모달 포함 |
 | 4 | 위치 공유 **동의 거부** 시 대안 (수동 ETA 칩 등) | 민식·묵 | 06B 착수 전 |
 | 5 | 말투 학습 데이터: 3년치 대화 건수·익명화 완료 시점·`{PRICE}`/`{DATE}` 자리표시자 규칙 | 슬기 | 익명화 후 `data/raw/`는 git 금지. 학습·검증·시험 분할 |
-| 6 | **SFT 대상 모델**: Gemma-4-E4B-it (콘솔 확인: Full fine-tuning, $0.40/1M tokens) vs Nemotron-3-Nano (카탈로그에 Fine-tuning 배지가 있으나 마법사에서 확인 필요) | 민식 | 서빙은 Dedicated Endpoint만 → L40S 시간당 $2 → 녹화·평가 때만 켬. 상시 서비스는 few-shot |
-| 7 | **NVIDIA 비전 모델** 활성화 (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) — 콘솔 카탈로그에는 있으나 프로젝트 API 키의 `/v1/models`에는 없음 | 민식 | 정확한 모델 ID 확인 또는 멘토에게 활성화 요청 |
+| 6 | ✅ **SFT 대상 모델 확정: Gemma-4-E4B-it** (콘솔 마법사에서 확인, Full fine-tuning, $0.40/1M tokens). Nemotron 모델은 마법사에 없고 모델 페이지에서도 파인튜닝 "Not available" | — | 서빙은 Dedicated Endpoint만 → L40S 시간당 $2 → 녹화·평가 때만 켬. 상시 서비스는 few-shot. 남은 확인: Training type에서 LoRA 옵션 여부 |
+| 7 | ✅ **NVIDIA 비전 모델은 쓰지 않음.** 3종 모두 Dedicated Endpoint 전용(Public 없음, 파인튜닝 없음) → 상시 비용 $48~113/일 → 비전은 MiniCPM-V 유지 | — | 해커톤 후 예산이 생기면 재검토 |
 | 8 | Nebius **zero-retention** 모드 사용 여부, 익명화 데이터의 제3자(Nebius) 처리 고지 | 슬기 | 익명화 정책 문서에 포함 |
 | 9 | mood meter B안(분류기)의 **학습 데이터셋 라이선스** | 슬기 | 모델 카드에 학습 데이터 미기재 → 불확실하면 A안(태그 추출)만 |
-| 10 | RFT 연구 프로그램 신청 (선택, 승인 시에만 실험) | 민식 | 일정에 넣지 않음 |
+| 10 | ✅ RFT 연구 프로그램은 신청하지 않음 | — | 2026-10-02 결정 |

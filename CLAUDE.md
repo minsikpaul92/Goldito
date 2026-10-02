@@ -33,7 +33,7 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (NVIDIA vision model once verified), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
+| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
 

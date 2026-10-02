@@ -54,7 +54,7 @@
 | `/profile` | both | **Home location** — "Use my current location" (폰) / 데모 계정은 시드 좌표 표시 | Save |
 
 - **Simulate trip** (데모 계정 또는 `useShell().embedded`): Start trip 시트에 "Use my real location" / **Simulate the drive (demo)** — `frontend/assets/demo/routes/*.json`의 가상 경로(공원·교차로 수준 좌표, 실제 주소 아님)를 10배속으로 재생, 같은 `update_trip_position`을 탄다 (가짜 결과 없음, D32).
-- 비전 모델: 현재 `openbmb/MiniCPM-V-4_5`. D39(NVIDIA 우선)에 따라 `Nemotron-Nano-V2-12b` · `Cosmos3-Super-Reasoner`가 프로젝트에서 활성화되면 6B.5 spike에서 같은 샘플로 비교해 교체 ([model-ids.md](notes/model-ids.md)).
+- 비전 모델: `openbmb/MiniCPM-V-4_5` 확정. NVIDIA 비전 모델(`Nemotron-Nano-V2-12b` · `Cosmos3-Super-Reasoner`)은 Dedicated Endpoint 전용이라 상시 비용($48~113/일)이 예산을 넘어 쓰지 않는다 ([model-ids.md](notes/model-ids.md), D39).
 - 사진 체크 문구: ok → "Looks good — Bori is visible and secured ✅" / warning → "Couldn't see a crate or seatbelt. Retake, or continue and tell Jisoo why." / unchecked(AI 실패) → "Photo saved — we couldn't check it this time."
 
 ---
