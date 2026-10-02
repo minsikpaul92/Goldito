@@ -17,7 +17,7 @@ Every feature must pass:
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D34).
+**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D43).
 
 **Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
 
@@ -33,7 +33,7 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision, Qwen3 Embedding for RAG (Supabase pgvector) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
+| AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
 
@@ -75,7 +75,7 @@ Owner                                  Sitter
 2. **One primary action per screen** — e.g. sitter task row → big "Complete with photo".
 3. **Feedback loops** — loading skeleton → success toast → owner notification (visible in demo).
 4. **Danger is loud** — safety `DANGER`: red modal, must acknowledge; do not use subtle toasts only.
-5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: a one-line memo on the 5-second check (D34), edit before sending a report, a short inquiry reply, the sitter's policy text (written once).
+5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: edit/add on an AI-written sentence (5-second check D34 · D38, report before sending, inquiry draft before Send), the sitter's policy text (written once). All owner-facing AI text is in the sitter's first-person tone (D35); the sitter approves every reply unless auto-send is opted in (D36).
 6. **Kidsnote familiarity** — timeline feed, checkmarks on meds, warm report tone (AI), not a developer dashboard.
 
 ### When implementing UI
@@ -199,7 +199,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 
 | Feature | Phases |
 | :--- | :--- |
-| ① Inquiry — AI auto-reply + RAG | 07B (quote: 03C) |
+| ① Inquiry — AI draft in the sitter's tone + approval + RAG | 07B (quote: 03C) |
 | ② Meet & Greet — care request → checklist, Meet & Greet, transport mode | 06, 03B |
 | ③ Booking — schedule, request, consents, demo payment, timed unlock | 02, 03B, 03C (P1 polish: 11) |
 | ④ Care & Pet Transit — live trip, photo check, 5-second check, daily report, feed & album | 04, 05, 06, 06B, 07, 09 |
@@ -207,7 +207,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT idea 11.7) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
+The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27); Pet Transit (06B) is the last P0 item before deploy (D41). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 

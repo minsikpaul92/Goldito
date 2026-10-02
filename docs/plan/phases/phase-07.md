@@ -1,6 +1,7 @@
 # Phase 07 — 알림장 AI (Daily Report)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D1 영어, **D34 5초 체크**, AI 규칙 §9, API 계약 §5
+> **말투 레이어 (D35 · D38):** 알림장 본문은 `tone.compose()`(07B 7B.8)를 거쳐 시터 1인칭 말투로 쓰고, 칩·사진 요약에서 AI가 문장을 먼저 만든다 (시터는 수정·추가만 선택). 알림장은 시터가 Send하는 즉시 나가며 사람 속도 지연은 없다 (D37).
 > 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4-3·4-4 — 시터 5초 체크 + 사진 2장 → AI 스마트 알림장
 
 ## Goal

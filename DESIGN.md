@@ -171,7 +171,7 @@ System font for now (Figma will pick one family).
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
-| `MessageBubble` | Inquiry thread (07B). AI replies carry a small "Auto-reply from Mina's PawNote assistant" label and source chips ("From Bori's Life Record") — never styled as if the sitter typed it |
+| `MessageBubble` | Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message (no per-message AI label, D36) with source chips ("From Bori's Life Record") and the quote card. The sitter's draft view carries the warning "AI drafts can be wrong. You're responsible for what you send." Auto-send mode shows a read marker, then "Mina is typing…" (D37) |
 | `QuoteCard` | Price breakdown (03C): nights × rate, extra pet, holiday lines, **Total** in bold, currency. Same component in the inquiry thread and checkout |
 | `ConsentCard` | One consent: title, 3-line summary, **Read full text**, checkbox. Footer note "Demo template — not legal advice" |
 | `EntryInfoCard` | Owner's entry info for the sitter (03C). Locked: 🔒 + "Unlocks Oct 9, 5:30 AM". Unlocked: **Show code** button, code hides again after 10 s. Never on a toast or notification |
@@ -194,7 +194,7 @@ Each screen has at most one filled `primary` button. Everything else is secondar
 Sitter task row → big **Complete with photo**. Owner booking → **Request booking**.
 
 ### 7.2 No typing for sitters (P0)
-No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: chips + up to 2 photos + an optional one-line memo → Generate → Send (D34). Optional edit before Send is OK. Inquiries: the AI replies first; the sitter just taps **Looks good 👍**. See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
+No caption box, no long report typing. Sitters tap: **Today quick check-ins** (meal, potty, walk minutes, mood, note) and scheduled tasks (**Mark done** or with photo). Report screen = the **5-second check**: chips + up to 2 photos + an optional one-line memo → Generate → Send (D34). Optional edit before Send is OK. Inquiries: the AI drafts the reply in the sitter's tone; the sitter just taps **Send** (Edit / Add / Regenerate are optional, D36 · D38). See [sitter-care-loop.ko.md](docs/plan/sitter-care-loop.ko.md).
 
 Owners may type where it saves the sitter work: the inquiry question, the care & medication request, and their name on consents.
 

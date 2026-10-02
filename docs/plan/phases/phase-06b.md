@@ -2,6 +2,9 @@
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — **D28 이동 방식**, **D31 출입 정보**, **D32 Pet Transit**, **D33 Vision**, UX §8-9·10, 알림 §7
 > 제품 흐름: [full-process.ko.md — Stage 4 (4-1, 4-2)](../full-process.ko.md#stage-4--care--uber-style-pet-transit--ai-스마트-알림장-핵심-실행-단계)
+> **순서 변경 (D41, 2026-10-02):** 이 Phase는 **P0 큐의 맨 마지막**(Phase 7C·08 뒤, Phase 10 배포 직전)에 만든다. 인수인계 Received/Returned는 03B로 이미 동작하므로 이 Phase가 늦어져도 앞 단계는 막히지 않는다. 심사에서는 **데모 영상**(Simulate trip)으로 이동을 보여주고, 웹 데모 URL의 Simulate trip 버튼은 유지한다.
+> **위치 공유 동의 (D41):** Start trip → **앱 동의 화면**("Share your live location with Mina until you arrive?" — 누구에게·언제까지, 도착하면 자동 종료) → Allow 후에만 브라우저/OS 위치 권한 팝업. P0 웹은 **화면이 켜진 동안만** 공유(iOS·Android 웹은 백그라운드 불가). 출시(네이티브 앱)에서는 위치 권한을 미리 동의받아 이동 중 계속 공유. 동의 거부 시 대안 흐름은 [full-process §9](../full-process.ko.md#9-열린-질문--tbd-2026-10-02) #4 결정 후 정한다.
+> **비용 근거:** 이동 30분 · 5초 간격 ≈ 720 메시지(전송 + 수신) → Supabase Realtime Free(동시 연결 200, 월 200만 메시지) 안에서 월 2,700회 이상 이동 가능. 지도 = Leaflet + OSM 타일 (데모 수준 무료).
 
 ## Goal
 
@@ -14,6 +17,7 @@
 - [ ] Mina: 차량 안 사진(샘플 `car_crate_ok`) → Vision `ok` (crate ✅ restraint ✅) → **Received** → Jisoo "Pick-up complete — care has started 🚗 · photo verified"
 - [ ] 샘플 `car_no_crate` → `warning` "Couldn't see a crate or seatbelt" → **Retake** / **Continue anyway**(이유 칩: "Crate is in the trunk" 등) → Received 가능, 견주 알림에 photo verified 없음
 - [ ] **Owner drives (찾기):** Jisoo **Start trip** → Mina 화면 지도·ETA → 도착 → Mina "Jisoo has arrived 🚗" / Jisoo **Mina's place** 카드(Visitor parking · 로비 안내) → Mina 귀가 사진(`return`) → **Returned** → Jisoo "Bori and Mochi are home safe 🏠"
+- [ ] **Start trip**을 누르면 위치 공유 동의 화면이 먼저 뜨고, Allow 전에는 위치가 전송되지 않음 (Simulate trip도 같은 동의 화면을 탐 — 데모 영상 장면)
 - [ ] 이동이 끝나면 `trips.last_lat/last_lng = null`, 상대방 화면 지도 사라짐. 예약 당사자 아닌 계정은 `trips` 행이 안 보임
 - [ ] 데스크톱 프레임 + 마우스만으로 위 전부 (Simulate trip, 샘플 사진 트레이)
 
@@ -50,6 +54,7 @@
 | `/profile` | both | **Home location** — "Use my current location" (폰) / 데모 계정은 시드 좌표 표시 | Save |
 
 - **Simulate trip** (데모 계정 또는 `useShell().embedded`): Start trip 시트에 "Use my real location" / **Simulate the drive (demo)** — `frontend/assets/demo/routes/*.json`의 가상 경로(공원·교차로 수준 좌표, 실제 주소 아님)를 10배속으로 재생, 같은 `update_trip_position`을 탄다 (가짜 결과 없음, D32).
+- 비전 모델: `openbmb/MiniCPM-V-4_5` 확정. NVIDIA 비전 모델(`Nemotron-Nano-V2-12b` · `Cosmos3-Super-Reasoner`)은 Dedicated Endpoint 전용이라 상시 비용($48~113/일)이 예산을 넘어 쓰지 않는다 ([model-ids.md](notes/model-ids.md), D39).
 - 사진 체크 문구: ok → "Looks good — Bori is visible and secured ✅" / warning → "Couldn't see a crate or seatbelt. Retake, or continue and tell Jisoo why." / unchecked(AI 실패) → "Photo saved — we couldn't check it this time."
 
 ---
@@ -58,7 +63,7 @@
 
 | ID | 작업 | 상세 | DoD |
 | :--- | :--- | :--- | :--- |
-| 6B.1 | DB `008_transit.sql` | `owner_profiles`·`sitter_profiles`에 `home_lat double precision`, `home_lng double precision` (본인 RLS; 상대방에게는 아래 RPC로만). `trips(id, booking_id → bookings cascade, handoff_kind text check in ('drop_off','pick_up'), traveler_id → profiles, status text check in ('en_route','arrived','completed','cancelled'), dest_lat, dest_lng, last_lat null, last_lng null, last_at null, eta_at null, distance_m int null, simulated boolean default false, started_at, arrived_at, ended_at)` · unique(booking_id, handoff_kind) where status in ('en_route','arrived') · RLS select = 예약 당사자, 쓰기는 RPC만 · Realtime publication 추가. RPC: `start_trip(p_booking, p_kind, p_simulated)` — 호출자 = 이동하는 쪽(장소 `sitter_home`이면 견주, `owner_home`이면 시터, `other`면 둘 다 가능), 결제 완료(03C), agreed 시각 2시간 전부터, 목적지 = 장소 좌표(`other`는 null → 지도 없이 ETA 생략) → 상대방 `trip_started`. `update_trip_position(p_trip, p_lat, p_lng)` — 호출자 = traveler, 1초 이내 중복 무시, 거리·ETA 계산(D32), 150 m 안이면 status `arrived` + `arrived_at` + 양쪽 `trip_arrived`(1회). `end_trip(p_trip, p_cancel boolean default false)` — 위치 null, `completed`/`cancelled` | rls_smoke L: 제3자 select 0행, 다른 사람 update 거부 |
+| 6B.1 | DB `013_transit.sql` | `owner_profiles`·`sitter_profiles`에 `home_lat double precision`, `home_lng double precision` (본인 RLS; 상대방에게는 아래 RPC로만). `trips(id, booking_id → bookings cascade, handoff_kind text check in ('drop_off','pick_up'), traveler_id → profiles, status text check in ('en_route','arrived','completed','cancelled'), dest_lat, dest_lng, last_lat null, last_lng null, last_at null, eta_at null, distance_m int null, simulated boolean default false, started_at, arrived_at, ended_at)` · unique(booking_id, handoff_kind) where status in ('en_route','arrived') · RLS select = 예약 당사자, 쓰기는 RPC만 · Realtime publication 추가. RPC: `start_trip(p_booking, p_kind, p_simulated)` — 호출자 = 이동하는 쪽(장소 `sitter_home`이면 견주, `owner_home`이면 시터, `other`면 둘 다 가능), 결제 완료(03C), agreed 시각 2시간 전부터, 목적지 = 장소 좌표(`other`는 null → 지도 없이 ETA 생략) → 상대방 `trip_started`. `update_trip_position(p_trip, p_lat, p_lng)` — 호출자 = traveler, 1초 이내 중복 무시, 거리·ETA 계산(D32), 150 m 안이면 status `arrived` + `arrived_at` + 양쪽 `trip_arrived`(1회). `end_trip(p_trip, p_cancel boolean default false)` — 위치 null, `completed`/`cancelled` | rls_smoke L: 제3자 select 0행, 다른 사람 update 거부 |
 | 6B.2 | `lib/location.ts` | `startLocationSource({mode:'gps'\|'simulate', route?}) → stop()` — gps: `expo-location` foreground watch (웹은 `navigator.geolocation.watchPosition`), 5초 간격 `update_trip_position`. 권한 거부 → "Location is off — the other person won't see the map" + **Simulate** 제안(데모만). simulate: 경로 JSON 재생. 화면이 닫혀도 같은 탭이면 계속(앱 수준 provider `TripProvider`) | 실제 폰 1회 + 데스크톱 simulate |
 | 6B.3 | TripMap + Trip 화면 | `components/TripMap.web.tsx` — Leaflet + OSM 타일(`© OpenStreetMap contributors` 표기), `dragging:false, scrollWheelZoom:false, touchZoom:false`, ± 버튼만, 마커 2개 자동 맞춤. 네이티브 `TripMap.tsx`는 지도 없이 거리·ETA 카드 (해커톤 후 지도). Realtime 구독 `trips` (booking_id 필터) → 마커·ETA 갱신 | 1.7 마우스 테스트: 지도 위 드래그가 화면 스크롤로 동작 |
 | 6B.4 | 도착 안내 카드 | 시터(Sitter drives): `get_home_access` → **EntryInfoCard**(03C) — Buzzer 1-tap = `tel:` 링크(견주 전화, 데모는 가짜 번호) + buzzer 코드, Lockbox **Show code**. 견주(Owner drives): `get_handoff_details` → Mina's place(주소·Visitor parking·로비 안내) | 도착 시 자동 표시 |
@@ -89,7 +94,7 @@
 
 ## 산출물
 
-- `supabase/migrations/008_transit.sql`, `supabase/tests/rls_smoke.sql` (L)
+- `supabase/migrations/013_transit.sql`, `supabase/tests/rls_smoke.sql` (L)
 - `backend/app/routers/ai_handoff_check.py`, `backend/app/schemas/handoff_check.py`, `backend/app/ai/prompts/handoff_check/system.md`
 - `frontend/lib/location.ts`, `frontend/providers/TripProvider.tsx`, `frontend/components/TripMap.web.tsx` / `TripMap.tsx`, `frontend/app/{owner,sitter}/bookings/[bookingId]/trip.tsx`, `frontend/assets/demo/{routes,handoff}/*`
 - 의존성: `leaflet` (웹 전용 import), `expo-location`

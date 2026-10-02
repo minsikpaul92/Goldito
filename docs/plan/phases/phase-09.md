@@ -1,6 +1,7 @@
 # Phase 09 — 피드 AI 캡션 + 타임라인 앨범 분류 (Caption & Album)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D11–D12, **D33 Vision**, AI 규칙 §9
+> **말투 레이어 (D35):** 캡션 문장은 `tone.compose()`(07B 7B.8)로 시터 말투를 따른다. 분류 태그(meal·walk·nap·play)와 사람 속도 지연은 해당 없음 (D37). Vision 모델은 MiniCPM-V-4.5로 확정 (NVIDIA 비전 모델은 Dedicated Endpoint 전용 — D39).
 > 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4-5 — 업로드 사진을 AI가 식사·산책·휴식 등으로 분류해 KidsNote식 날짜별 앨범에 저장
 
 ## Goal

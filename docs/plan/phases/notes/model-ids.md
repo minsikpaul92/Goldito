@@ -87,7 +87,35 @@ Phase 00 DoD for Nebius: **met** (catalog + role mapping + one Fast + one Vision
 
 Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken."). Use 1024 — pgvector HNSW indexes support up to 2000 dims.
 
+## Model policy (D39) and NVIDIA catalog check (2026-10-02)
+
+**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (**final, decided 2026-10-02 — no NVIDIA embedding in the catalog, already verified at 1024 dims, no other embedding model will be evaluated**) and `openbmb/MiniCPM-V-4_5` (**final for the hackathon, decided 2026-10-02** — the NVIDIA vision models are Dedicated-Endpoint-only, see below).
+
+**Console "Model catalog" (provider = NVIDIA) vs. our API key (`GET /v1/models`, both base URLs, 2026-10-02):**
+
+| Console catalog entry | Origin | Modality (catalog) | Visible to our API key? |
+| :--- | :--- | :--- | :--- |
+| Nemotron-3-Nano-30B-A3B / NVIDIA-Nemotron-3-Nano-30B-A3B, Nemotron-3-Super-120b-a12b, Nemotron-3-Ultra-550b-a55b, Nemotron-3.5-Lightning | NVIDIA | text | **yes** (in use) |
+| **Nemotron-Nano-V2-12b** | NVIDIA | **vision** | **no** — console model page (2026-10-02): **Dedicated endpoint only**, public endpoint not available, no fine-tuning |
+| **Cosmos3-Super-Reasoner** (33B FP16) | NVIDIA (check the model card for its base model) | **vision** (video reasoning) | **no** — **Dedicated endpoint only**, public endpoint not available, no fine-tuning (the per-token price-list entry does not make it callable on the shared API) |
+| **Nemotron-3-Nano-Omni** | NVIDIA | catalog says text-to-text (name says Omni) | **no** — **Dedicated endpoint only**, no fine-tuning |
+| Llama-3_1-Nemotron-Ultra-253B-v1 | Llama-based, NVIDIA-tuned | text | not listed on our key |
+| GLM-4.7-NVFP4, MiniMax-M2.5/M2.7-NVFP4, Qwen3.5-397B-A17B-NVFP4 | **Chinese originals**, only quantized by NVIDIA | text | not counted as NVIDIA models |
+
+**Decision (2026-10-02): keep `openbmb/MiniCPM-V-4_5` for vision.** The three NVIDIA vision/omni models can only be deployed as Dedicated Endpoints. An always-on endpoint costs L40S $2/GPU-hour (about $48/day; enough for the 12B model) or H100 $4.7/GPU-hour (about $113/day; needed for the 33B FP16 Cosmos model) — more than the $125 balance over the weeks the demo must stay up. A short-lived endpoint just to record the demo video is possible later (not planned).
+
+**Fine-tuning (11.7):** confirmed in the console — `google/gemma-4-E4B-it` appears in the fine-tuning wizard (LoRA or Full fine-tuning, $0.40 / 1M tokens, 8K context); **Nemotron models do not appear, and their model pages show Full / LoRA fine-tuning "Not available"** (the catalog's generic "Fine-tuning" badge is misleading). So the SFT candidate is **Gemma-4-E4B-it (LoRA)** — **showcase only, not wired into the app (D43)**. A tuned Gemma 4 most likely needs a Dedicated Endpoint (L40S $2/GPU-hour, H100 $4.7). Account balance on 2026-10-02: $125. RFT is not being pursued (no application).
+
+**Fun mood meter (11.9 / D42):** `agentmish/dog-emotion-classifier-v2` — Apache-2.0, ViT-base, 85.6% accuracy on its small eval set, no training-dataset license stated. `Dewa/dog_emotion_v2` has no license tag, do not use.
+
 ## Open questions (Phase 07.1 / 08 spike)
+
+- [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
+- [x] Fine-tuning: wizard offers Gemma-4-E4B-it, no Nemotron (2026-10-02)
+- [x] Gemma-4-E4B-it offers **LoRA fine-tuning** in the wizard's Training type step (2026-10-02) — use LoRA for the tone tuning (style only, cheaper, less forgetting)
+- [x] LoRA serving for Gemma 4: the price list has only Gemma-4 *Fine-tuning* SKUs (no Input/Output or `-LoRa` serving SKUs), so a tuned Gemma 4 most likely needs a Dedicated Endpoint. Per the fine-tuning docs, serverless LoRA deploy is listed only for Llama-3.1-8B-Instruct and Llama-3.3-70B-Instruct; Qwen3-14B/32B are trainable but not on that list, so a Chinese model does not fix serving (2026-10-02)
+- **Decision (D43):** SFT is a showcase only — the app runtime uses Nemotron + style card + few-shot; no serving of a tuned model (phase-11 11.7)
+- [ ] Tone: compare Nemotron-3 Nano / Super / gpt-oss-120b / gemma-3-27b-it on the same few-shot tone prompt (07B.8), blind-rated by the sitter
 
 - [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)
 - [ ] MiniCPM: ingredient list JSON reliability on label photos
