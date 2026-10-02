@@ -47,6 +47,25 @@
 
 **service_role**, Cloudinary secret, Nebius key, **TAVILY_API_KEY**는 frontend에 **넣지 마세요.**
 
+### Vercel (frontend 배포 — 10.4를 2026-10-02에 앞당김)
+
+빌드 설정은 [`frontend/vercel.json`](../../frontend/vercel.json)에 있습니다: `npm ci` → `npx expo export -p web` → `dist/`, 모든 경로 → `index.html` (새로고침·딥링크), `Content-Security-Policy: frame-ancestors 'self'` (데스크톱 폰 프레임이 같은 도메인 iframe — `X-Frame-Options: DENY` 금지, D25).
+
+1. Vercel → **Add New → Project** → GitHub `minsikpaul92/PawNote` Import
+2. **Root Directory = `frontend`** (Framework Preset은 vercel.json이 덮어씀 — "Other")
+3. **Environment Variables** (Production · Preview 둘 다):
+
+| 변수 | 값 |
+| :--- | :--- |
+| `EXPO_PUBLIC_SUPABASE_URL` · `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 로컬 `frontend/.env`와 동일 (anon/publishable만) |
+| `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
+| `EXPO_PUBLIC_DEMO_PASSWORD` | 데모 계정 비밀번호 (데모 전용 값) |
+| `EXPO_PUBLIC_API_URL` | 백엔드 배포 전(3B.11 직전까지)에는 비워 둠 — 지금 앱 화면은 Supabase만 씀 |
+| `EXPO_PUBLIC_DEV_ROUTES` | **설정하지 않음** (dev 화면은 로컬·CI만) |
+
+4. Deploy → main = Production, 다른 브랜치·PR = Preview URL (PR 코멘트). `EXPO_PUBLIC_*`는 **빌드 시점**에 번들에 들어가므로 값을 바꾸면 Redeploy.
+5. Supabase는 비밀번호 로그인만 쓰므로 Auth URL 설정은 필수 아님 (메일 링크·OAuth를 쓰게 되면 Authentication → URL Configuration에 Vercel 도메인 추가).
+
 ---
 
 ## 팀 공유 (1Password 없이)
