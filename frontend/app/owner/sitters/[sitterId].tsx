@@ -1,0 +1,204 @@
+import { useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+
+import { STATE_LABEL, SlotCalendar } from "../../../components/SlotCalendar";
+import { Card } from "../../../components/ui/Card";
+import { Chip } from "../../../components/ui/Chip";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { LoadingView } from "../../../components/ui/LoadingView";
+import { Screen } from "../../../components/ui/Screen";
+import { addMonths, appToday, formatDay, formatTime, monthEnd, monthStart } from "../../../features/schedule/dates";
+import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../features/schedule/scheduleApi";
+import { SERVICE_LABEL, SitterProfileView, getSitterProfile, sitterMeta } from "../../../features/sitters/sitterApi";
+import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { Theme } from "../../../theme/themes";
+
+type ProfileState =
+  | { status: "loading" }
+  | { status: "ready"; sitter: SitterProfileView }
+  | { status: "missing" }
+  | { status: "error"; message: string };
+
+/** "Morning: Open · 8:00 AM–12:00 PM · 2 spots left" — never who else booked. */
+function slotLine(label: string, s: DaySlot | undefined): string {
+  const state = s?.state ?? "closed";
+  if (state !== "open" && state !== "full") return `${label}: ${STATE_LABEL.closed}`;
+  const hours = s?.startsAt && s.endsAt ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
+  const spots = state === "full" ? "" : ` · ${s?.remaining === 1 ? "1 spot" : `${s?.remaining} spots`} left`;
+  return `${label}: ${STATE_LABEL[state]}${hours}${spots}`;
+}
+
+/**
+ * A sitter as owners see them (phase-03b 3B.2): intro + month schedule from
+ * get_sitter_schedule (own hours, open / full / closed, spots left). Book this sitter → 3B.3.
+ */
+export default function SitterProfileScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { sitterId } = useLocalSearchParams<{ sitterId: string }>();
+  const today = useMemo(() => appToday(), []);
+
+  const [profile, setProfile] = useState<ProfileState>({ status: "loading" });
+  const [month, setMonth] = useState(() => monthStart(today));
+  const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [day, setDay] = useState<string | null>(null);
+
+  const loadProfile = useCallback(async () => {
+    if (!sitterId) return;
+    try {
+      const sitter = await getSitterProfile(sitterId);
+      setProfile(sitter ? { status: "ready", sitter } : { status: "missing" });
+    } catch (error) {
+      setProfile({ status: "error", message: (error as Error).message });
+    }
+  }, [sitterId]);
+
+  const loadSchedule = useCallback(async () => {
+    if (!sitterId) return;
+    setScheduleError(null);
+    try {
+      setSlots(await loadSitterMonth(sitterId, monthStart(month), monthEnd(month)));
+    } catch (error) {
+      setScheduleError((error as Error).message);
+    }
+  }, [sitterId, month]);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
+
+  useEffect(() => {
+    void loadSchedule();
+  }, [loadSchedule]);
+
+  const changeMonth = (n: number) => {
+    setDay(null);
+    setSlots(null);
+    setMonth((m) => addMonths(m, n));
+  };
+
+  if (profile.status === "loading") return <LoadingView />;
+
+  if (profile.status === "missing") {
+    return (
+      <Screen>
+        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left PawNote." />
+      </Screen>
+    );
+  }
+
+  if (profile.status === "error") {
+    return (
+      <Screen>
+        <EmptyState
+          emoji="🐾"
+          title="Couldn't load this sitter"
+          message={profile.message}
+          action={{ label: "Try again", onPress: () => void loadProfile() }}
+        />
+      </Screen>
+    );
+  }
+
+  const { sitter } = profile;
+  const meta = sitterMeta(sitter);
+
+  return (
+    <Screen contentStyle={styles.content}>
+      <Card style={styles.intro}>
+        <Text accessibilityRole="header" style={styles.name} testID="sitter-name">
+          {sitter.displayName}
+        </Text>
+        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+        <View style={styles.chips}>
+          {sitter.services.map((service) => (
+            <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
+          ))}
+        </View>
+        {sitter.bio ? <Text style={styles.body}>{sitter.bio}</Text> : null}
+        {sitter.homeNotes ? (
+          <View style={styles.block}>
+            <Text style={styles.label}>About their home</Text>
+            <Text style={styles.body}>{sitter.homeNotes}</Text>
+          </View>
+        ) : null}
+      </Card>
+
+      <View style={styles.block}>
+        <Text accessibilityRole="header" style={styles.label}>
+          Schedule
+        </Text>
+        <SlotCalendar
+          month={month}
+          today={today}
+          slots={slots ?? new Map()}
+          selection={day ? { from: day, to: day } : null}
+          onSelectDay={setDay}
+          onPrevMonth={() => changeMonth(-1)}
+          onNextMonth={() => changeMonth(1)}
+          canGoPrev={month > monthStart(today)}
+        />
+        {scheduleError ? (
+          <EmptyState
+            emoji="📅"
+            title="Couldn't load the schedule"
+            message={scheduleError}
+            action={{ label: "Try again", onPress: () => void loadSchedule() }}
+          />
+        ) : null}
+      </View>
+
+      <Card>
+        {day && slots ? (
+          <View style={styles.block} testID="sitter-day">
+            <Text style={styles.label}>{formatDay(day)}</Text>
+            {SLOTS.map(({ slot, label }) => (
+              <Text key={slot} style={styles.body} testID={`sitter-day-${slot}`}>
+                {slotLine(label, slots.get(slotKey(day, slot)))}
+              </Text>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.meta}>Tap a day to see {sitter.displayName}'s hours and open spots.</Text>
+        )}
+      </Card>
+    </Screen>
+  );
+}
+
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    content: {
+      gap: theme.spacing.md,
+    },
+    intro: {
+      gap: theme.spacing.sm,
+    },
+    name: {
+      fontSize: theme.fontSize.title,
+      fontWeight: "700",
+      color: theme.color.text,
+    },
+    meta: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+    },
+    chips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
+    },
+    block: {
+      gap: theme.spacing.xs,
+    },
+    label: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.text,
+    },
+    body: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+    },
+  });

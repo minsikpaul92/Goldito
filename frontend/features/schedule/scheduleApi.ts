@@ -18,8 +18,20 @@ export type DaySlot = {
   state: SlotState;
   startsAt: string | null;
   endsAt: string | null;
+  /** Sitter's own view only (from their availability rows); null for owners. */
   capacity: number | null;
   booked: number;
+  /** Spots still free for more pets (owners see this, never who booked). */
+  remaining: number;
+};
+
+type ScheduleRpcRow = {
+  day: string;
+  slot: CareSlot;
+  starts_at: string | null;
+  ends_at: string | null;
+  state: SlotState;
+  remaining: number;
 };
 
 /** `sitter_availability` row (phase-02). For a day × slot the newest open row wins; any blocked row closes it. */
@@ -120,14 +132,7 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
 
   const rows = (availability.data ?? []) as AvailabilityRow[];
   const slots = new Map<string, DaySlot>();
-  for (const item of (schedule.data ?? []) as {
-    day: string;
-    slot: CareSlot;
-    starts_at: string | null;
-    ends_at: string | null;
-    state: SlotState;
-    remaining: number;
-  }[]) {
+  for (const item of (schedule.data ?? []) as ScheduleRpcRow[]) {
     const open = newestOpenRow(rows, item.day, item.slot);
     const capacity = open?.max_pets ?? null;
     slots.set(slotKey(item.day, item.slot), {
@@ -138,9 +143,39 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
       endsAt: item.ends_at ? shortTime(item.ends_at) : null,
       capacity,
       booked: item.state === "open" || item.state === "full" ? Math.max((capacity ?? 0) - item.remaining, 0) : 0,
+      remaining: item.remaining,
     });
   }
   return { slots, rows };
+}
+
+/**
+ * A sitter's month as an owner sees it (3B.2): hours, open / full / closed and spots left.
+ * Blocked shows as closed — why a day is closed is the sitter's business.
+ */
+export async function loadSitterMonth(sitterId: string, from: string, to: string): Promise<Map<string, DaySlot>> {
+  const { data, error } = await getSupabase().rpc("get_sitter_schedule", {
+    p_sitter: sitterId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) fail("load this sitter's schedule");
+  const slots = new Map<string, DaySlot>();
+  for (const item of (data ?? []) as ScheduleRpcRow[]) {
+    const state: SlotState = item.state === "blocked" ? "closed" : item.state;
+    const open = state === "open" || state === "full";
+    slots.set(slotKey(item.day, item.slot), {
+      day: item.day,
+      slot: item.slot,
+      state,
+      startsAt: open && item.starts_at ? shortTime(item.starts_at) : null,
+      endsAt: open && item.ends_at ? shortTime(item.ends_at) : null,
+      capacity: null,
+      booked: 0,
+      remaining: open ? item.remaining : 0,
+    });
+  }
+  return slots;
 }
 
 /**

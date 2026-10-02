@@ -275,6 +275,32 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, sitterSchedule(db, p_sitter, p_from, p_to));
   }
 
+  if (path === "rpc/list_my_sitters") {
+    // Sitters with a confirmed booking (or one confirmed and later cancelled) — 003/004.
+    const counted = db.bookings.filter(
+      (b) => b.owner_id === me && (b.status === "confirmed" || (b.status === "cancelled" && b.responded_at)),
+    );
+    const sitterIds = [...new Set(counted.map((b) => String(b.sitter_id)))];
+    return json(
+      route,
+      200,
+      sitterIds.map((id) => {
+        const details = db.sitter_profiles.find((p) => p.id === id) ?? {};
+        const mine = counted.filter((b) => b.sitter_id === id);
+        return {
+          sitter_id: id,
+          display_name: users.find((u) => u.id === id)?.displayName ?? null,
+          bio: details.bio ?? null,
+          service_area: details.service_area ?? null,
+          experience_years: details.experience_years ?? null,
+          services: details.services ?? ["boarding"],
+          booking_count: mine.length,
+          last_booking_at: mine.map((b) => String(b.created_at ?? "")).sort().pop() ?? null,
+        };
+      }),
+    );
+  }
+
   if (path === "rpc/cancel_booking") {
     const { p_booking, p_reason } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));

@@ -10,6 +10,7 @@ export default function OwnerLayout() {
     <RoleStack role="owner">
       <Stack.Screen name="pets/new" options={{ title: "Add a pet" }} />
       <Stack.Screen name="pets/[petId]" options={{ title: "Pet profile" }} />
+      <Stack.Screen name="sitters/[sitterId]" options={{ title: "Sitter" }} />
     </RoleStack>
   );
 }
