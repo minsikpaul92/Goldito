@@ -450,6 +450,26 @@ export async function respondHandoff(handoffId: string, accept: boolean): Promis
   }
 }
 
+/** How early the sitter may tap Received before the agreed drop-off (complete_handoff, 003). */
+export const CHECK_IN_WINDOW_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * complete_handoff (sitter) — Received from 2 h before the agreed drop-off, Returned after
+ * Received. The owner gets `pet_dropped_off` / `pet_picked_up` (3B.6).
+ */
+export async function completeHandoff(bookingId: string, kind: HandoffKind): Promise<void> {
+  const { error } = await getSupabase().rpc("complete_handoff", { p_booking: bookingId, p_kind: kind });
+  if (error) {
+    const copy: Record<string, string> = {
+      handoff_too_early: "You can check in from 2 hours before drop-off.",
+      drop_off_not_completed: "Tap Received first.",
+      handoff_completed: "That handoff is already checked.",
+      handoff_missing: "There's no agreed time for this handoff yet.",
+    };
+    throw new BookingError(error.message, copy[error.message] ?? bookingErrorMessage(error.message, "Couldn't save. Try again."));
+  }
+}
+
 /** Real addresses for a confirmed booking, until 24 h after pick-up (get_handoff_details, 003). */
 export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
   const { data, error } = await getSupabase().rpc("get_handoff_details", { p_booking: bookingId });

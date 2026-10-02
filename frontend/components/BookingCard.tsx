@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { formatInstant } from "../features/schedule/dates";
+import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -55,7 +55,10 @@ export function placeLabel(type: LocationType, note: string | null, b: BookingSu
 
 export function handoffLine(label: string, h: Handoff | null, b: BookingSummary, viewer: Viewer): string {
   if (!h) return `${label}: —`;
-  return `${label} ${formatInstant(h.at)} · ${placeLabel(h.locationType, h.note, b, viewer)}`;
+  const done = h.completedAt
+    ? ` · ✓ ${label === "Drop-off" ? "Received" : "Returned"} ${formatTime(isoToZoned(h.completedAt).time)}`
+    : "";
+  return `${label} ${formatInstant(h.at)} · ${placeLabel(h.locationType, h.note, b, viewer)}${done}`;
 }
 
 type Props = {

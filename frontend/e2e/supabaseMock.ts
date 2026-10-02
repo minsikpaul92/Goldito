@@ -137,6 +137,8 @@ export type MockDb = {
   proposals: Row[];
   /** Meet & Greet RPC calls: { fn, ...params }. */
   meetGreetCalls: Row[];
+  /** complete_handoff calls. */
+  completions: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -165,6 +167,7 @@ function createMockDb(): MockDb {
     responses: [],
     proposals: [],
     meetGreetCalls: [],
+    completions: [],
   };
 }
 
@@ -500,6 +503,27 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path.startsWith("rpc/") && path.includes("meet_greet")) {
     return handleMeetGreet(route, path.slice(4), request.postDataJSON(), me, db);
+  }
+
+  if (path === "rpc/complete_handoff") {
+    // complete_handoff (003): sitter, confirmed, Received from 2 h before drop-off, Returned after it.
+    const { p_booking, p_kind } = request.postDataJSON();
+    db.completions.push({ p_booking, p_kind });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const booking = db.bookings.find((b) => b.id === p_booking && b.sitter_id === me);
+    if (!booking) return fail("not_allowed");
+    if (booking.status !== "confirmed") return fail("invalid_status");
+    const agreed = (kind: string) =>
+      db.booking_handoffs.find((h) => h.booking_id === p_booking && h.kind === kind && h.status === "agreed");
+    const h = agreed(p_kind);
+    if (!h) return fail("handoff_missing");
+    if (h.completed_at) return fail("handoff_completed");
+    if (p_kind === "drop_off" && Date.now() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
+      return fail("handoff_too_early");
+    }
+    if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
+    h.completed_at = new Date().toISOString();
+    return route.fulfill({ status: 204 });
   }
 
   if (path === "rpc/respond_handoff") {

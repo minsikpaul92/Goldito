@@ -15,13 +15,15 @@ import { Screen } from "../../../components/ui/Screen";
 import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { formatDay, formatTime } from "../../../features/schedule/dates";
+import { formatDay, formatInstant, formatTime } from "../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   BookingSummary,
+  CHECK_IN_WINDOW_MS,
   HandoffKind,
   PetCare,
+  completeHandoff,
   declinedChange,
   getBooking,
   getHandoffAddresses,
@@ -135,6 +137,9 @@ export default function SitterBookingDetail() {
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
   const canAccept = isRequest && !meetFirst && !waiting && !busy;
+  // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
+  const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
+  const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -282,6 +287,39 @@ export default function SitterBookingDetail() {
             testID="accept-booking"
           />
           <TextButton label="Decline" danger onPress={() => setConfirmDecline(true)} testID="decline-booking" />
+        </View>
+      ) : null}
+
+      {booking.status === "confirmed" ? (
+        <View style={styles.footer} testID="handoff-check">
+          {!booking.dropOff?.completedAt ? (
+            <>
+              {checkInFrom && Date.now() < checkInFrom ? (
+                <Text style={styles.muted}>{`You can check in from ${formatInstant(new Date(checkInFrom).toISOString())}.`}</Text>
+              ) : null}
+              <Button
+                label={busy ? "Saving…" : "Received"}
+                onPress={() =>
+                  void run(() => completeHandoff(booking.id, "drop_off"), `${petNames} checked in — ${owner} gets a notice`)
+                }
+                disabled={busy || !checkInFrom || Date.now() < checkInFrom}
+                testID="handoff-received"
+              />
+            </>
+          ) : !booking.pickUp?.completedAt ? (
+            <Button
+              label={busy ? "Saving…" : "Returned"}
+              onPress={() =>
+                void run(() => completeHandoff(booking.id, "pick_up"), `${petNames} on the way home — ${owner} gets a notice`)
+              }
+              disabled={busy}
+              testID="handoff-returned"
+            />
+          ) : (
+            <Text style={styles.muted} testID="stay-complete">
+              Stay complete 🐾
+            </Text>
+          )}
         </View>
       ) : null}
 
