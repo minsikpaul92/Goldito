@@ -1,6 +1,6 @@
 -- PawNote RLS + booking smoke test (Phase 02 DoD 2)
 --
--- Run after 001–003 in the Supabase SQL Editor (as postgres), or locally with
+-- Run after all migrations (001–004) in the Supabase SQL Editor (as postgres), or locally with
 -- tests/supabase_stub.sql first (see supabase/README.md). Everything runs in one transaction
 -- and is rolled back, so no data is left behind.
 -- Success = the script finishes without error ("PASS: ..." notices for each check).
@@ -86,8 +86,15 @@ begin
 end;
 $$;
 
+-- Stand-in for the Meet & Greet RPCs (3B.9): mark a first-time pair's meeting done / skipped
+-- so the sitter can accept (D44).
+create function public._t_meet(p_booking uuid, p_status text default 'done') returns void
+language sql security definer set search_path = public as $$
+  update bookings set meet_greet_status = p_status where id = p_booking
+$$;
+
 grant execute on function public._t_put(text, uuid), public._t_get(text), public._t_as(uuid, text),
-  public._t_ok(boolean, text) to authenticated, anon;
+  public._t_ok(boolean, text), public._t_meet(uuid, text) to authenticated, anon;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (signup trigger creates profiles)
@@ -487,7 +494,17 @@ begin
   perform _t_ok((select count(*) from public.booking_handoffs
       where booking_id = v_a and status = 'proposed' and within_sitter_hours) = 2,
     'A: two in-hours handoff proposals');
+  perform _t_ok((select service_type = 'boarding' and meet_greet_status = 'required'
+      from public.bookings where id = v_a),
+    'A: boarding by default; first stay together needs a Meet & Greet');
   perform _t_as(mina);
+  begin
+    perform respond_booking(v_a, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'meet_greet_required', 'A: sitter cannot accept a first-time pair before meeting');
+  perform _t_meet(v_a);
   perform respond_booking(v_a, true, 'See you!');
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed', 'A: booking confirmed');
@@ -504,6 +521,8 @@ begin
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
   v_h := request_booking(mina, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
+  perform _t_meet(v_b);
+  perform _t_meet(v_h);
   perform _t_as(mina);
   perform respond_booking(v_b, true);
   begin
@@ -551,6 +570,7 @@ begin
   perform _t_as(jisoo);
   v_a := request_booking(jun, array[bori], local_ts(d + 10, '07:00'), 'sitter_home', null,
     local_ts(d + 10, '16:00'), 'sitter_home', null, null);
+  perform _t_meet(v_a);
   perform _t_ok((select within_sitter_hours from public.booking_handoffs
       where booking_id = v_a and kind = 'drop_off' and status = 'proposed') = false,
     'C: 07:00 drop-off is stored as a custom time (outside Jun''s hours)');
@@ -596,6 +616,8 @@ begin
   perform _t_as(hana);
   v_a := request_booking(jun, array[coco], local_ts(d + 12, '10:00'), 'sitter_home', null,
     local_ts(d + 12, '15:00'), 'sitter_home', null, null);
+  perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
+    'C″: a pair that already had a stay (Hana ↔ Jun) skips the Meet & Greet');
   perform _t_as(jun);
   v_h := propose_handoff(v_a, 'pick_up', local_ts(d + 12, '14:00'));
   perform _t_as(hana);
@@ -704,6 +726,7 @@ begin
   perform _t_ok(r.covered_slots < r.total_slots, 'E: sitter without overnights shows as partly available');
   v_b := request_booking(sora, array[bori, mochi], local_ts(d, '09:30'), 'sitter_home', null,
     local_ts(d + 3, '19:30'), 'owner_home', null, null, v_a);
+  perform _t_meet(v_b, 'skipped');
   perform _t_as(sora);
   perform respond_booking(v_b, true);
   perform _t_as(null);
@@ -744,6 +767,152 @@ begin
   insert into public.daily_reports (pet_id, sitter_id, report_date, body)
   values (coco, mina, d + 14, 'Morning report'), (coco, jun, d + 14, 'Afternoon report');
   perform _t_ok(true, 'F: one daily report per sitter for the same day');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Booking options (004, phase-03b 3B.0): service type, sitter services, Meet & Greet
+-- state, meeting spots, media purposes. Runs after A–H (Jisoo ↔ Mina met in A).
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  jisoo constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  mina constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  sora constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  bori constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  d constant date := app_today() + 30;
+  v_a uuid;
+  v_err text;
+  n int;
+  r record;
+begin
+  -- House sitting needs the sitter to offer it; both handoffs move to the owner's home
+  perform _t_as(jisoo);
+  begin
+    perform request_booking(mina, array[bori], local_ts(d + 18, '09:00'), 'sitter_home', null,
+      local_ts(d + 18, '11:00'), 'sitter_home', null, null, null, 'house_sitting');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '3B.0: sitters offer boarding only by default');
+  begin
+    perform request_booking(mina, array[bori], local_ts(d + 18, '09:00'), 'sitter_home', null,
+      local_ts(d + 18, '11:00'), 'sitter_home', null, null, null, 'dog_walking');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_service', '3B.0: unknown service type is rejected');
+
+  perform _t_as(mina);
+  begin
+    update public.sitter_profiles set services = '{}' where id = mina;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: a sitter must offer at least one service');
+  begin
+    update public.sitter_profiles set services = '{boarding,dog_walking}' where id = mina;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: services are boarding / house_sitting only');
+  update public.sitter_profiles set services = '{boarding,house_sitting}' where id = mina;
+
+  perform _t_as(jisoo);
+  v_a := request_booking(mina, array[bori], local_ts(d + 18, '09:00'), 'sitter_home', null,
+    local_ts(d + 18, '11:00'), 'other', 'Trinity Bellwoods', null, null, 'house_sitting');
+  perform _t_as(null);
+  perform _t_ok((select service_type from public.bookings where id = v_a) = 'house_sitting',
+    '3B.0: house sitting booking stored');
+  perform _t_ok((select count(*) from public.booking_handoffs
+      where booking_id = v_a and location_type = 'owner_home' and location_note is null) = 2,
+    '3B.0: house sitting fixes both handoffs to the owner''s home');
+  perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
+    '3B.0: a pair whose Meet & Greet was done (even on a cancelled booking) does not meet again');
+
+  -- A skipped Meet & Greet is not a meeting: Jisoo ↔ Sora are still first-time. Declining works.
+  perform _t_as(jisoo);
+  v_a := request_booking(sora, array[mochi], local_ts(d + 19, '09:00'), 'sitter_home', null,
+    local_ts(d + 19, '11:00'), 'sitter_home', null, null);
+  perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'required',
+    '3B.0: after a skipped Meet & Greet the pair still has not met');
+  perform _t_as(sora);
+  perform respond_booking(v_a, false, 'Fully booked that week');
+  perform _t_as(null);
+  perform _t_ok((select status from public.bookings where id = v_a) = 'declined',
+    '3B.0: sitter can decline before the Meet & Greet');
+
+  -- Search results carry the sitter's services
+  perform _t_as(jisoo);
+  select * into r from search_sitters(local_ts(d + 20, '09:00'), local_ts(d + 20, '11:00'), 1) s
+  where s.sitter_id = mina;
+  perform _t_ok(r.services = '{boarding,house_sitting}', '3B.0: search_sitters returns services');
+  select * into r from list_my_sitters() s where s.sitter_id = sora;
+  perform _t_ok(r.services = '{boarding}', '3B.0: list_my_sitters returns services');
+
+  -- Preferred meeting spots: ≤ 3 labels of ≤ 60 chars; sitter spots are not in the public list
+  update public.owner_profiles set meet_spots = '{"Trinity Bellwoods — north gate"}' where id = jisoo;
+  perform _t_ok((select meet_spots from public.owner_profiles where id = jisoo)
+      = '{"Trinity Bellwoods — north gate"}', '3B.0: owner saves a meeting spot');
+  begin
+    update public.owner_profiles set meet_spots = '{a,b,c,d}' where id = jisoo;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: at most 3 meeting spots');
+  begin
+    update public.owner_profiles set meet_spots = array[repeat('x', 61)] where id = jisoo;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: meeting spot label is at most 60 characters');
+  begin
+    update public.owner_profiles set meet_spots = '{" "}' where id = jisoo;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: blank meeting spot is rejected');
+
+  perform _t_as(mina);
+  update public.sitter_profiles set meet_spots = '{"Christie Pits — east entrance"}' where id = mina;
+  perform _t_ok((select meet_spots from get_my_sitter_profile()) = '{"Christie Pits — east entrance"}',
+    '3B.0: sitter reads own meeting spots');
+  perform _t_as(jisoo);
+  perform _t_ok((select services from public.sitter_profiles where id = mina) = '{boarding,house_sitting}',
+    '3B.0: owners can read sitter services');
+  begin
+    select count(*) into n from (select meet_spots from public.sitter_profiles) s;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '3B.0: sitter meeting spots are not in the public sitter list');
+
+  -- Media purposes for the daily report (07) and handoff photo check (06B)
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose) values
+    (bori, mina, 'smoke/bori-report', 'image', 'report'),
+    (bori, mina, 'smoke/bori-handoff', 'image', 'handoff');
+  begin
+    insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (bori, mina, 'smoke/bori-other', 'image', 'selfie');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '3B.0: media purpose is still checked');
+
+  -- The new request_booking signature is not open to anon (plain timestamps: local_ts is
+  -- not granted to anon either, and would fail first)
+  perform _t_as(null, 'anon');
+  begin
+    perform request_booking(mina, array[bori], now() + interval '60 days', 'sitter_home', null,
+      now() + interval '61 days', 'sitter_home', null, null, null, 'boarding');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '3B.0: anon cannot call request_booking');
+  perform _t_as(null);
 end;
 $$;
 

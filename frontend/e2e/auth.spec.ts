@@ -1,9 +1,28 @@
-import { expect, test } from "@playwright/test";
+import { Page, expect, test } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Sign in, sign up, and role routing inside the desktop phone frame (phase-03 3.1–3.3).
+
+// Bottom tabs per role (phase-03b 3B.0, architecture §3).
+const OWNER_TABS = ["Home", "Bookings", "Feed", "Care", "Reports"];
+const SITTER_TABS = ["Today", "Bookings", "Tasks", "Report"];
+
+/** Exactly these tabs, in order, and no label cut off in height or width. */
+async function expectTabs(page: Page, labels: string[]) {
+  const tabs = app(page).getByRole("tab");
+  await expect(tabs).toHaveCount(labels.length);
+  for (const [i, name] of labels.entries()) {
+    const label = tabs.nth(i).getByText(name, { exact: true });
+    await expect(label).toBeVisible();
+    // The library default bar height cut labels off on web; five tabs must also fit 402 px.
+    const clipped = await label.evaluate(
+      (el) => el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1,
+    );
+    expect(clipped, `${name} tab label is clipped`).toBe(false);
+  }
+}
 
 test.describe("auth and role routing", () => {
   test("signed-out visitors land on sign in", async ({ page }) => {
@@ -27,15 +46,8 @@ test.describe("auth and role routing", () => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
-    for (const tab of ["Feed", "Care", "Reports"]) {
-      await expect(app(page).getByText(tab, { exact: true }).first()).toBeVisible();
-    }
+    await expectTabs(page, OWNER_TABS);
     await expect(app(page).getByText("No pets yet")).toBeVisible();
-
-    // Tab labels must not be squeezed (the library default bar height cut them off on web).
-    const label = app(page).getByRole("tab").getByText("Reports", { exact: true });
-    const clipped = await label.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
-    expect(clipped).toBe(false);
 
     await page.reload();
     await expect(page).toHaveURL(/\/owner$/);
@@ -46,9 +58,9 @@ test.describe("auth and role routing", () => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
-    for (const tab of ["Tasks", "Scan", "Report"]) {
-      await expect(app(page).getByText(tab, { exact: true }).first()).toBeVisible();
-    }
+    await expectTabs(page, SITTER_TABS);
+    // The treat scanner opens from a Today button (Phase 08), not a tab.
+    await expect(app(page).getByRole("tab").getByText("Scan", { exact: true })).toHaveCount(0);
 
     await page.goto("/owner/tasks");
     await expect(page).toHaveURL(/\/sitter$/);
@@ -59,9 +71,18 @@ test.describe("auth and role routing", () => {
     await mockSupabase(page, [SITTER]);
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
-    await app(page).getByText("Scan", { exact: true }).last().click();
-    await expect(page).toHaveURL(/\/sitter\/scan$/);
-    await expect(app(page).getByText("Treat scanner")).toBeVisible();
+    await app(page).getByRole("tab").getByText("Bookings", { exact: true }).click();
+    await expect(page).toHaveURL(/\/sitter\/bookings$/);
+    await expect(app(page).getByText("No requests yet")).toBeVisible();
+  });
+
+  test("an owner opens the Bookings tab with a mouse click", async ({ page }) => {
+    await mockSupabase(page, [OWNER]);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await app(page).getByRole("tab").getByText("Bookings", { exact: true }).click();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+    await expect(app(page).getByText("No bookings yet")).toBeVisible();
   });
 
   test("signing up as a sitter sends the role and opens the sitter area", async ({ page }) => {
