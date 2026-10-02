@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3B.11 (live)** | Connect the real Google Meet link: Minsik finishes the Google setup ([env-setup.ko.md § Google Meet](env-setup.ko.md) — OAuth consent In production, Web client, refresh token via OAuth Playground) → values in `backend/.env` → run the backend locally (or deploy: Nebius Serverless Endpoint) → live check: video Meet & Greet accepted → link on both phones within 3 s, Calendar invite, cancel deletes the event; spike: can both join straight from the invite (full-process §9 #14) | [phase-03b.md](phases/phase-03b.md) |
+| **3B PR** | Phase 03B wrap-up — open the phase PR (`feat/phase-03b-bookings`), let CI run ruff + pytest + Playwright + **rls_smoke on Postgres** (the SQL changes of 004/005 have only run on the hosted DB so far), fix anything CI finds, update the PR body for the whole phase, merge after Minsik's OK. Then the Vercel chore PR | [phase-03b.md](phases/phase-03b.md) |
 
 ---
 
@@ -28,7 +28,8 @@
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **3B.11** Google Meet link via the Google Calendar API (3B.11, D45; Minsik sets up the Google account + OAuth first) ([phase-03b.md](phases/phase-03b.md))
+- [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
+- [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`, Claude builds it) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
 - [ ] **3C.1–3C.7** `quote_booking` (rates + Ontario holidays + extra pet) · consent templates + sign · **Pay (demo)** · sitter home info after payment · owner entry info unlocks 2 h before (`006`) ([phase-03c.md](phases/phase-03c.md))
 - [ ] **OB.1–OB.2** Welcome route + UI — [onboarding.ko.md](onboarding.ko.md) (OB.3 Try demo done early, 2026-10-02)
@@ -56,6 +57,7 @@
 
 ## Completed
 
+- [x] **3B.11 (live Google)** Minsik set up the Google Cloud project (Calendar API, consent screen External in **Testing** + his account as test user — In production needs a homepage / privacy page on our own domain, see Up next) and put the OAuth client + refresh token in `backend/.env`. Live check through `GoogleCalendarMeetClient`: event with a **meet.google.com** link → reschedule keeps the **same link** → delete → second delete OK. Found and fixed: back-to-back writes get `403 rateLimitExceeded` → exponential backoff (1 / 2 / 4 s) + Google's reason in errors; a repeat delete is `410` → treated as already gone. `SupabaseBookingStore` read checked on the demo booking (names, pets, emails, `.test` → no invites). pytest 31 ✓, ruff ✓ (2026-10-02)
 - [x] **3B.11 (code, Google mocked)** `app/services/google_meet.py` — Calendar API v3 over httpx with the PawNote account's refresh token (token cached), `events.insert` with `conferenceDataVersion=1` + `hangoutsMeet` create request (stable request id per booking × time, re-reads a "pending" conference), `patch` on reschedule (same link), `delete` (404 = already gone); `POST /api/meet-greet/video-link` (party only — 404 otherwise; 409 unless video + agreed; idempotent `existing`; reschedule patches the kept event; `pending` saves the event without notices; 503 `not_configured` → app fallback; 502 on Google errors) saves link + event id with the service role and sends both sides `meet_greet_link_ready`; `POST …/video-link/release` deletes the event once the booking ended or the meeting moved in person. Invites skip `.test` addresses and `MEET_INVITE_ATTENDEES=false`. Config + `.env.example` Google vars, `tzdata` dependency (zoneinfo on Windows / slim images), 409/503 error codes. App: Accept on a video Meet & Greet requests the link, "Get the Meet link" retry, release after cancel / skip decline / switch to in person. pytest 29 ✓ (16 new), ruff ✓, Playwright 67 ✓ (first-load flake passes on rerun). Python 3.12 venv via uv on this PC (2026-10-02)
 - [x] **3B.10** Service type + transport UI: Book care **Service** first (🏠 Boarding / 🔑 House sitting; house sitting fixes both handoffs to "🔑 Lucy comes to my place" / "🔑 At my place" and sends `owner_home` + `p_service_type`), sitters without the service show "Doesn't offer house sitting" and can't be picked, rebook keeps the service; `BookingCard` shows the service next to the pets and a transport line ("🚗 You drive over · 🚙 Lucy brings them home" / "🔑 Lucy cares for them at your place", sitter wording on their side); `/profile` sitter **Services you offer** (≥ 1, "Pick at least one service.") and both sides **Preferred meeting spots** (3 fields, ≤ 60 chars, trimmed, no repeats, "never a home address"). Playwright: house sitting booking + 2 profile flows. Local: tsc ✓, Playwright 67 ✓ (one known flaky first-load test passes on rerun) (2026-10-02)
 - [x] **3B.8** Sitter Today: **Requests (N)** shortcut → Bookings, **Now caring** (received and not returned, or inside the agreed stay — one card per owner, several homes fine, "Until Oct 8, 5:00 PM"), **Today** (drop-offs / pick-ups due today: time · kind · pets · owner · place), **Upcoming** (next 5 drop-offs); each card opens the booking; empty state keeps "Open your schedule". Playwright `today.spec.ts`. Local: tsc ✓, Playwright 64 ✓ (2026-10-02)
@@ -127,7 +129,7 @@
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | **done** (2026-10-01)                                                         |
-| 03B Bookings         | in progress — 3B.0–3B.10 done (2026-10-02), next **3B.11** (needs Minsik's Google setup) |
+| 03B Bookings         | 3B.0–3B.11 done (2026-10-02) — next: **phase PR** (CI incl. rls_smoke) → merge |
 | 03C Agreements       | not started (Stage 3)                                                         |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |

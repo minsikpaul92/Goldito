@@ -319,7 +319,7 @@ def test_client_reschedule_delete_and_errors() -> None:
         if request.method == "PATCH":
             return httpx.Response(200, json={"id": "evt-9", "hangoutLink": MEET})
         if request.method == "DELETE":
-            return httpx.Response(404)  # already gone is fine
+            return httpx.Response(410)  # Google: "Resource has been deleted" - already gone is fine
         return httpx.Response(500)
 
     client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
@@ -331,12 +331,48 @@ def test_client_reschedule_delete_and_errors() -> None:
     assert sum(1 for r in seen if r.url.host == "oauth2.googleapis.com") == 1
 
 
+def test_client_backs_off_when_google_rate_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(google_meet, "RATE_LIMIT_WAIT_S", 0)
+    calls = {"patch": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "at-1", "expires_in": 3600})
+        calls["patch"] += 1
+        if calls["patch"] < 3:
+            # What Google answers to back-to-back writes on one calendar.
+            return httpx.Response(
+                403, json={"error": {"message": "Rate Limit Exceeded", "errors": [{"reason": "rateLimitExceeded"}]}}
+            )
+        return httpx.Response(200, json={"id": "evt-9", "hangoutLink": MEET})
+
+    client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
+    assert client.reschedule("evt-9", start=AT, timezone="America/Toronto").link == MEET
+    assert calls["patch"] == 3
+
+
+def test_client_gives_up_after_retries_and_says_why(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(google_meet, "RATE_LIMIT_WAIT_S", 0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "at-1", "expires_in": 3600})
+        return httpx.Response(403, json={"error": {"message": "Rate Limit Exceeded", "errors": [{"reason": "rateLimitExceeded"}]}})
+
+    client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
+    with pytest.raises(GoogleMeetError, match="rateLimitExceeded"):
+        client.reschedule("evt-9", start=AT, timezone="America/Toronto")
+
+
 def test_client_needs_the_google_settings() -> None:
     with pytest.raises(GoogleMeetError):
         GoogleCalendarMeetClient(Settings(GOOGLE_OAUTH_CLIENT_ID=None))
 
 
 def test_router_reads_the_real_client_only_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Empty env vars win over a real backend/.env with Google values.
+    for key in ("GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_REFRESH_TOKEN"):
+        monkeypatch.setenv(key, "")
     get_settings.cache_clear()
     assert get_meet_client() is None
     monkeypatch.setattr(meet_greet, "_meet_client", lambda: "client")

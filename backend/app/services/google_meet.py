@@ -20,6 +20,9 @@ EVENT_MINUTES = 30
 # Meet links are usually ready at once; when the conference is still "pending", look again.
 PENDING_RETRIES = 3
 PENDING_WAIT_S = 1.0
+# Calendar's per-calendar write limit: exponential backoff, 1 s → 2 s → 4 s.
+RATE_LIMIT_RETRIES = 3
+RATE_LIMIT_WAIT_S = 1.0
 
 
 class GoogleMeetError(Exception):
@@ -57,6 +60,28 @@ def _meet_link(event: dict) -> str | None:
         if entry.get("entryPointType") == "video" and entry.get("uri"):
             return entry["uri"]
     return None
+
+
+def _rate_limited(response: httpx.Response) -> bool:
+    if response.status_code == 429:
+        return True
+    if response.status_code != 403:
+        return False
+    try:
+        errors = (response.json().get("error") or {}).get("errors") or []
+    except ValueError:
+        return False
+    return any(e.get("reason") in ("rateLimitExceeded", "userRateLimitExceeded") for e in errors)
+
+
+def _reason(response: httpx.Response) -> str:
+    """", rateLimitExceeded: …" from a Google error body, for logs (never secrets)."""
+    try:
+        error = response.json().get("error") or {}
+    except ValueError:
+        return ""
+    reasons = ",".join(e.get("reason", "") for e in error.get("errors") or [] if e.get("reason"))
+    return f", {reasons}: {error.get('message', '')}" if reasons or error.get("message") else ""
 
 
 def _pending(event: dict) -> bool:
@@ -100,20 +125,25 @@ class GoogleCalendarMeetClient:
 
     def _call(self, method: str, path: str, *, params: dict | None = None, json: dict | None = None) -> dict:
         url = f"{CALENDAR_URL}/{self._settings.google_calendar_id}/events{path}"
-        try:
-            response = self._http.request(
-                method,
-                url,
-                params=params,
-                json=json,
-                headers={"Authorization": f"Bearer {self._access_token()}"},
-            )
-        except httpx.HTTPError as exc:
-            raise GoogleMeetError("Could not reach Google") from exc
-        if response.status_code == 404 and method == "DELETE":
-            return {}  # already gone
+        for attempt in range(RATE_LIMIT_RETRIES + 1):
+            try:
+                response = self._http.request(
+                    method,
+                    url,
+                    params=params,
+                    json=json,
+                    headers={"Authorization": f"Bearer {self._access_token()}"},
+                )
+            except httpx.HTTPError as exc:
+                raise GoogleMeetError("Could not reach Google") from exc
+            # Back-to-back writes to one calendar get "rateLimitExceeded" — back off and retry.
+            if not _rate_limited(response) or attempt == RATE_LIMIT_RETRIES:
+                break
+            time.sleep(RATE_LIMIT_WAIT_S * 2**attempt)
+        if response.status_code in (404, 410) and method == "DELETE":
+            return {}  # already gone (410 = deleted before)
         if response.status_code >= 300:
-            raise GoogleMeetError(f"Google Calendar {method} failed ({response.status_code})")
+            raise GoogleMeetError(f"Google Calendar {method} failed ({response.status_code}{_reason(response)})")
         return response.json() if response.content else {}
 
     def _settle(self, event: dict) -> MeetEvent:
