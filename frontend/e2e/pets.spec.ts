@@ -7,21 +7,21 @@ import { OWNER, mockSupabase, type MockDb } from "./supabaseMock";
 
 function seedBori(db: MockDb) {
   db.pets.push({
-    id: "pet-bori",
+    id: "pet-max",
     owner_id: OWNER.id,
     species: "dog",
-    name: "Bori",
+    name: "Max",
     breed: "Maltese",
     birthdate: null,
     weight_kg: null,
     notes: null,
     created_at: "2026-10-01T09:00:00Z",
   });
-  db.pet_allergies.push({ id: "allergy-chicken", pet_id: "pet-bori", allergen: "chicken" });
+  db.pet_allergies.push({ id: "allergy-chicken", pet_id: "pet-max", allergen: "chicken" });
 }
 
 test.describe("owner pets", () => {
-  test("adds Bori (dog, chicken allergy) and Mochi (cat) and shows both on Home", async ({ page }) => {
+  test("adds Max (dog, chicken allergy) and Mochi (cat) and shows both on Home", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
@@ -34,7 +34,7 @@ test.describe("owner pets", () => {
     // Screen readers must hear which species is selected.
     await expect(screen.getByTestId("pet-species-dog")).toHaveAttribute("aria-checked", "true");
     await expect(screen.getByTestId("pet-species-cat")).toHaveAttribute("aria-checked", "false");
-    await screen.getByTestId("pet-name").fill("Bori");
+    await screen.getByTestId("pet-name").fill("Max");
     await screen.getByTestId("pet-breed").fill("Maltese");
     await screen.getByTestId("pet-birthdate").fill("2022-04-15");
     await screen.getByTestId("pet-weight").fill("3.2");
@@ -44,12 +44,12 @@ test.describe("owner pets", () => {
     await screen.getByTestId("pet-save").click();
 
     await expect(page).toHaveURL(/\/owner$/);
-    await expect(screen.getByTestId("toast")).toContainText("Bori is added");
-    const bori = screen.getByTestId("pet-card-Bori");
-    await expect(bori).toContainText("🐶");
-    await expect(bori).toContainText("Dog · Maltese");
-    await expect(bori).toContainText("3.2 kg");
-    await expect(bori).toContainText("chicken");
+    await expect(screen.getByTestId("toast")).toContainText("Max is added");
+    const max = screen.getByTestId("pet-card-Max");
+    await expect(max).toContainText("🐶");
+    await expect(max).toContainText("Dog · Maltese");
+    await expect(max).toContainText("3.2 kg");
+    await expect(max).toContainText("chicken");
 
     await screen.getByRole("button", { name: "Add pet" }).click();
     await screen.getByTestId("pet-species-cat").click();
@@ -61,7 +61,7 @@ test.describe("owner pets", () => {
     await expect(screen.getByTestId("pet-card-Mochi")).toContainText("🐱");
     await expect(screen.getByTestId("pet-card-Mochi")).toContainText("Cat · Domestic Shorthair");
     expect(db.pets.map((pet) => [pet.name, pet.species, pet.owner_id])).toEqual([
-      ["Bori", "dog", OWNER.id],
+      ["Max", "dog", OWNER.id],
       ["Mochi", "cat", OWNER.id],
     ]);
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["chicken"]);
@@ -73,9 +73,9 @@ test.describe("owner pets", () => {
     await signIn(page, OWNER);
     const screen = app(page);
 
-    await screen.getByTestId("pet-card-Bori").click();
-    await expect(page).toHaveURL(/\/owner\/pets\/pet-bori$/);
-    await expect(screen.getByTestId("pet-name")).toHaveValue("Bori");
+    await screen.getByTestId("pet-card-Max").click();
+    await expect(page).toHaveURL(/\/owner\/pets\/pet-max$/);
+    await expect(screen.getByTestId("pet-name")).toHaveValue("Max");
     await expect(screen.getByTestId("pet-species-cat")).toBeDisabled();
     await expect(screen.getByText("Species can't be changed after the pet is added.")).toBeVisible();
 
@@ -86,8 +86,8 @@ test.describe("owner pets", () => {
     await screen.getByTestId("pet-save").click();
 
     await expect(page).toHaveURL(/\/owner$/);
-    await expect(screen.getByTestId("pet-card-Bori")).toContainText("Maltipoo");
-    await expect(screen.getByTestId("pet-card-Bori")).toContainText("beef");
+    await expect(screen.getByTestId("pet-card-Max")).toContainText("Maltipoo");
+    await expect(screen.getByTestId("pet-card-Max")).toContainText("beef");
     expect(db.pets[0].species).toBe("dog");
     expect(db.pet_allergies.map((a) => a.allergen)).toEqual(["beef"]);
   });
@@ -122,10 +122,10 @@ test.describe("owner pets", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
 
-    await page.goto("/owner/pets/pet-bori");
-    await expect(app(page).getByTestId("pet-name")).toHaveValue("Bori");
+    await page.goto("/owner/pets/pet-max");
+    await expect(app(page).getByTestId("pet-name")).toHaveValue("Max");
     await page.reload();
-    await expect(app(page).getByTestId("pet-name")).toHaveValue("Bori");
-    await expect(page).toHaveURL(/\/owner\/pets\/pet-bori$/);
+    await expect(app(page).getByTestId("pet-name")).toHaveValue("Max");
+    await expect(page).toHaveURL(/\/owner\/pets\/pet-max$/);
   });
 });

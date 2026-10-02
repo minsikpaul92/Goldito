@@ -6,7 +6,10 @@ import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** Header right side for both roles: dev role label, notifications bell (Phase 05), Profile, Log out. */
+/**
+ * Header right side for both roles: dev role label, notifications bell (Phase 05),
+ * Schedule (sitters, 3B.1), Profile, Log out.
+ */
 export function HeaderActions() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -21,6 +24,17 @@ export function HeaderActions() {
       <View accessibilityLabel="Notifications (coming soon)" style={styles.bell}>
         <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
       </View>
+      {profile?.role === "sitter" ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Schedule"
+          onPress={() => router.push("/sitter/schedule")}
+          style={styles.iconButton}
+          testID="open-schedule"
+        >
+          <Ionicons name="calendar-outline" size={theme.icon.sm} color={theme.color.primary} />
+        </Pressable>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Profile"

@@ -138,7 +138,7 @@ test.describe("mouse acts like a finger", () => {
   test("text fields still take typing", async ({ page }) => {
     const input = app(page).getByTestId("lab-input");
     await input.click();
-    await page.keyboard.type("Bori");
-    await expect(input).toHaveValue("Bori");
+    await page.keyboard.type("Max");
+    await expect(input).toHaveValue("Max");
   });
 });

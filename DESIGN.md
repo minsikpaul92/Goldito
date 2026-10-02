@@ -112,6 +112,7 @@ System font for now (Figma will pick one family).
 | `fontSize.subtitle` **(proposed)** | 18 | 600 | Card titles, section headers |
 | `fontSize.body` | 16 | 400 / 600 for buttons | Body text, buttons, list rows |
 | `fontSize.small` | 14 | 400 | Timestamps, helper text, chips |
+| `fontSize.caption` **(proposed)** | 11 | 600 | Slot letters (M · A · N) inside `SlotCalendar` day cells only |
 
 - Line height ≈ 1.4 × size.
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO").
@@ -148,16 +149,25 @@ System font for now (Figma will pick one family).
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
-| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen |
+| `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
 | `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
 | `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 | `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
 | `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
-| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Bori is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
+| `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |
+| `Stepper` | − value + (44 × 44 buttons) — times in 30-min steps and counts; the stand-in for native pickers (§7.7) |
+| `CheckRow` | Checkbox + label (+ hint line) as one 44-tall click target; `aria-checked` for screen readers |
+| `SitterCard` (`components/`) | "Your sitters" row (3B.2): initial on `accent`, name, area · years, note ("2 bookings with you"), service chips (🏠 Boarding / 🔑 House sitting); tap → sitter profile |
+| `HandoffPicker` (`components/`) | Book care drop-off / pick-up (3B.3): day stepper (± 1 day), time stepper (± 15 min), place as radio rows = who drives (🚗 I'll drive — at Lucy's place / 🚙 Lucy picks up — at my place / 📍 Somewhere else + "Where to meet") |
+| `BookingCard` (`components/`) | Owner booking row (3B.3): sitter, pets with species emoji, drop-off / pick-up time · place label (never the address), status badge with text (Requested · Time suggested by Lucy · Confirmed · Declined · Cancelled — find a new sitter) |
+| `ProposalCard` (`components/`) | One open handoff offer (3B.5), `warning` border: the other side's "Lucy suggested a new drop-off · Oct 5, 10:00 AM · Lucy's place" with **Accept** (filled) + Suggest another time + Decline (`danger` link), or my own "Change pending — until Lucy agrees, it stays at …"; history line "You: 9:30 AM → Lucy: 10:00 AM" |
+| `HandoffChangeSheet` (`components/`) | Sheet for a new handoff time (Drop-off / Pick-up switch, day ± 1, time ± 15 min); after confirm also the place (radio rows) — **Change time or place** |
+| `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
 
 ### Planned (build as needed, keep the same tokens)
 
@@ -169,20 +179,18 @@ System font for now (Figma will pick one family).
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
-| `ProposalCard` | Handoff negotiation: time + place + **Accept** / **Suggest another time** / **Decline** |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
-| `MessageBubble` | Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message (no per-message AI label, D36) with source chips ("From Bori's Life Record") and the quote card. The sitter's draft view carries the warning "AI drafts can be wrong. You're responsible for what you send." Auto-send mode shows "Mina is typing…", then the reply (D37); a read marker appears only when the sitter really opens the thread |
+| `MessageBubble` | Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message (no per-message AI label, D36) with source chips ("From Max's Life Record") and the quote card. The sitter's draft view carries the warning "AI drafts can be wrong. You're responsible for what you send." Auto-send mode shows "Lucy is typing…", then the reply (D37); a read marker appears only when the sitter really opens the thread |
 | `QuoteCard` | Price breakdown (03C): nights × rate, extra pet, holiday lines, **Total** in bold, currency. Same component in the inquiry thread and checkout |
-| `MeetGreetCard` | Booking detail, first-time pairs only (03B, D44). States: to schedule (**Schedule Meet & Greet** · **Skip Meet & Greet**) → proposed → set (in person: spot + time / video: **Join Google Meet** opens a new tab + **Add to calendar**) → **Done**. A skip request shows the other side **Continue without meeting** and **Decline — cancels the booking** |
+| `MeetGreetCard` (`components/`, built in 3B.9 with `MeetGreetSheet`) | Booking detail, first-time pairs only (03B, D44). Done / skipped collapse to one muted line; once agreed a local "Go over together" checklist (Care needs · Quirks · Route · Handoff · Heads-up). States: to schedule (**Schedule Meet & Greet** · **Skip Meet & Greet**) → proposed → set (in person: spot + time / video: **Join Google Meet** opens a new tab + **Add to calendar**) → **Done**. A skip request shows the other side **Continue without meeting** and **Decline — cancels the booking** |
 | `ChipSuggestions` | Report screen (07, D38). AI-suggested chips in two rows: from today's records and from photos. Tap to turn a chip off or on, tap a value to change it. Wrong suggestions are expected, so turning one off is a single tap |
 | `ConsentCard` | One consent: title, 3-line summary, **Read full text**, checkbox. Footer note "Demo template — not legal advice" |
 | `EntryInfoCard` | Owner's entry info for the sitter (03C). Locked: 🔒 + "Unlocks Oct 9, 5:30 AM". Unlocked: **Show code** button, code hides again after 10 s. Never on a toast or notification |
 | `ChecklistCard` | AI checklist preview from a care request (06): editable rows (time · title · dose), delete, Heads-up chips |
 | `TripMap` (web) | View-only Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination, **±** buttons only, no drag-pan (drags scroll the screen, §7.7). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
-| `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Mina · Oct 9–12") |
+| `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Lucy · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout |
-| `Sheet` | Bottom sheet inside the app. Always has a visible **Close** / **Done**; tapping the backdrop closes it (never for DANGER). Never requires dragging |
 | `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
 | `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it — they may only use `useShell()` (`{ embedded }`) and `useLayoutMode()` |
@@ -210,7 +218,7 @@ Safety result modal:
 | :--- | :--- | :--- |
 | **DANGER** | Full-screen, `error` header, ⚠️, pet name in the message, matched allergen / toxic chips | Only via **"I understand — don't feed"** (no tap-outside, no X) |
 | **WARNING** | `warning` header, hidden-source explanation, "Ask the owner first" | Normal close |
-| **SAFE** | `success` header, "Looks safe for Bori ✅" | Normal close |
+| **SAFE** | `success` header, "Looks safe for Max ✅" | Normal close |
 
 ### 7.5 Empty states
 Always explain what will appear and who adds it.
@@ -219,7 +227,7 @@ Always explain what will appear and who adds it.
 - Bookings: "No bookings yet. Check your sitters' schedules to plan a trip."
 
 ### 7.6 Copy & emoji
-- Short, warm, specific. Use the pet's name ("Bori had breakfast on time 🍽️").
+- Short, warm, specific. Use the pet's name ("Max had breakfast on time 🍽️").
 - At most **2 emoji** per message; none in buttons except the status ones above.
 - Times shown in the app timezone (America/Toronto) with AM/PM.
 

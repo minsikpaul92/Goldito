@@ -10,7 +10,7 @@ Owner **Home** (or Care top) shows one screen like a **Tamagotchi / Digimon v-pe
 
 | Who | Want |
 | :--- | :--- |
-| Owner | Open PawNote and **see Bori’s state now** without scrolling Activity or asking the sitter |
+| Owner | Open PawNote and **see Max’s state now** without scrolling Activity or asking the sitter |
 | Owner | Feel emotional connection (retro 8-bit room, pet reacts to today’s care) |
 | Sitter | (Indirect) Owner sees updates from check-ins/tasks already logged — no extra sitter work |
 
@@ -58,7 +58,7 @@ Rules live in one module (`lib/petStatus.ts`) — tunable without schema churn.
 
 1. Owner Home shows **Pet status room** for selected pet (PetSwitcher).
 2. After sitter logs meal + mood check-ins (Phase 06), room updates within one refresh / Realtime invalidate.
-3. At least **Bori (Maltese)** + **Mochi (cat)** sprites with **3+ visual states** each.
+3. At least **Max (Maltese)** + **Mochi (cat)** sprites with **3+ visual states** each.
 4. Tap room → Owner Activity (Phase 06).
 
 ---

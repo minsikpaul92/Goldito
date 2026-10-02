@@ -17,9 +17,9 @@ export type MockUser = {
 export const OWNER: MockUser = {
   id: "00000000-0000-4000-8000-000000000001",
   email: "owner@pawnote.test",
-  password: "bori-and-mochi",
+  password: "max-and-mochi",
   role: "owner",
-  displayName: "Jisoo",
+  displayName: "Chloe",
 };
 
 export const SITTER: MockUser = {
@@ -27,7 +27,7 @@ export const SITTER: MockUser = {
   email: "sitter@pawnote.test",
   password: "care-snap-tap",
   role: "sitter",
-  displayName: "Mina",
+  displayName: "Lucy",
 };
 
 function base64url(value: object): string {
@@ -118,6 +118,27 @@ export type MockDb = {
   pet_allergies: Row[];
   owner_profiles: Row[];
   sitter_profiles: Row[];
+  sitter_availability: Row[];
+  bookings: Row[];
+  /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
+  booking_slots: Row[];
+  /** cancel_booking calls: { p_booking, p_reason }. */
+  cancellations: Row[];
+  booking_handoffs: Row[];
+  booking_pets: Row[];
+  /** What rpc/search_sitters returns (rows in the 004 shape); calls land in `searches`. */
+  search_results: Row[];
+  searches: Row[];
+  /** request_booking calls with their parameters. */
+  requests: Row[];
+  care_tasks: Row[];
+  /** respond_booking / propose_handoff calls with their parameters. */
+  responses: Row[];
+  proposals: Row[];
+  /** Meet & Greet RPC calls: { fn, ...params }. */
+  meetGreetCalls: Row[];
+  /** complete_handoff calls. */
+  completions: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -128,7 +149,84 @@ function emptyRow(id: string, fields: string[]): Row {
 }
 
 function createMockDb(): MockDb {
-  return { pets: [], pet_allergies: [], owner_profiles: [], sitter_profiles: [] };
+  return {
+    pets: [],
+    pet_allergies: [],
+    owner_profiles: [],
+    sitter_profiles: [],
+    sitter_availability: [],
+    bookings: [],
+    booking_slots: [],
+    cancellations: [],
+    booking_handoffs: [],
+    booking_pets: [],
+    search_results: [],
+    searches: [],
+    requests: [],
+    care_tasks: [],
+    responses: [],
+    proposals: [],
+    meetGreetCalls: [],
+    completions: [],
+  };
+}
+
+const SLOT_NAMES = ["morning", "afternoon", "overnight"];
+
+function* daysBetween(from: string, to: string) {
+  for (let d = new Date(`${from}T00:00:00Z`); d.toISOString().slice(0, 10) <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+    yield d.toISOString().slice(0, 10);
+  }
+}
+
+function coversDay(row: Row, day: string): boolean {
+  return String(row.start_date) <= day && day <= String(row.end_date);
+}
+
+/** Confirmed pets in a sitter's day × slot. */
+function usedSpots(db: MockDb, sitterId: string, day: string, slot: string): string[] {
+  const confirmed = new Set(
+    db.bookings.filter((b) => b.sitter_id === sitterId && b.status === "confirmed").map((b) => String(b.id)),
+  );
+  return db.booking_slots
+    .filter((s) => confirmed.has(String(s.booking_id)) && s.day === day && s.slot === slot)
+    .map((s) => String(s.booking_id));
+}
+
+/** get_sitter_schedule (003): newest open row sets hours and spots, any blocked row closes the slot. */
+function sitterSchedule(db: MockDb, sitterId: string, from: string, to: string): Row[] {
+  const rows = db.sitter_availability.filter((r) => r.sitter_id === sitterId);
+  const out: Row[] = [];
+  for (const day of daysBetween(from, to)) {
+    for (const slot of SLOT_NAMES) {
+      const here = rows.filter((r) => r.slot === slot && coversDay(r, day));
+      const blocked = here.some((r) => r.kind === "blocked");
+      const open = here
+        .filter((r) => r.kind === "open")
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+      const remaining = open ? Math.max(Number(open.max_pets) - usedSpots(db, sitterId, day, slot).length, 0) : 0;
+      out.push({
+        day,
+        slot,
+        starts_at: open ? `${open.starts_at}:00` : null,
+        ends_at: open ? `${open.ends_at}:00` : null,
+        state: blocked ? "blocked" : !open ? "closed" : remaining === 0 ? "full" : "open",
+        remaining: blocked || !open ? 0 : remaining,
+      });
+    }
+  }
+  return out;
+}
+
+/** guard_availability_change (003), blocks only: a block over a confirmed booking is refused. */
+function blockConflicts(db: MockDb, inserted: Row[]): string[] {
+  const ids = new Set<string>();
+  for (const row of inserted.filter((r) => r.kind === "blocked")) {
+    for (const day of daysBetween(String(row.start_date), String(row.end_date))) {
+      for (const id of usedSpots(db, String(row.sitter_id), day, String(row.slot))) ids.add(id);
+    }
+  }
+  return [...ids];
 }
 
 /** Role rows the signup trigger would have created (phase-02 handle_new_user). */
@@ -153,12 +251,87 @@ function callerId(authorization: string | undefined): string | null {
   }
 }
 
-/** `col=eq.value` and `col=in.(a,b)` filters. */
+/** Meet & Greet RPCs (005): the same state machine, minus notifications. */
+function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null, db: MockDb) {
+  db.meetGreetCalls.push({ fn, ...args });
+  const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+  const b = db.bookings.find((x) => x.id === args.p_booking);
+  if (!b || ![b.owner_id, b.sitter_id].includes(me)) return fail("not_allowed");
+
+  if (fn === "get_meet_greet_options") {
+    return json(route, 200, {
+      owner_name: "Chloe",
+      owner_spots: db.owner_profiles.find((p) => p.id === b.owner_id)?.meet_spots ?? [],
+      sitter_name: "Lucy",
+      sitter_spots: db.sitter_profiles.find((p) => p.id === b.sitter_id)?.meet_spots ?? [],
+    });
+  }
+  if (b.status !== "requested") return fail("invalid_status");
+  const status = String(b.meet_greet_status ?? "not_needed");
+  const done = () => route.fulfill({ status: 204 });
+
+  switch (fn) {
+    case "propose_meet_greet": {
+      if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
+      if (Date.parse(String(args.p_at)) <= Date.now()) return fail("invalid_window");
+      Object.assign(b, {
+        meet_greet_status: "proposed",
+        meet_greet_mode: args.p_mode,
+        meet_greet_at: args.p_at,
+        meet_greet_place: args.p_mode === "in_person" ? args.p_place : null,
+        meet_greet_link: null,
+        meet_greet_proposed_by: me,
+        meet_greet_skip_requested_by: null,
+      });
+      return done();
+    }
+    case "respond_meet_greet": {
+      if (status !== "proposed") return fail("invalid_status");
+      if (b.meet_greet_proposed_by === me) return fail("not_allowed");
+      if (args.p_accept) b.meet_greet_status = "agreed";
+      else
+        Object.assign(b, {
+          meet_greet_status: "required",
+          meet_greet_mode: null,
+          meet_greet_at: null,
+          meet_greet_place: null,
+          meet_greet_proposed_by: null,
+        });
+      return done();
+    }
+    case "complete_meet_greet": {
+      if (status !== "agreed") return fail("invalid_status");
+      if (Date.now() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
+      b.meet_greet_status = "done";
+      return done();
+    }
+    case "request_skip_meet_greet": {
+      if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      Object.assign(b, { meet_greet_status: "skip_requested", meet_greet_skip_requested_by: me });
+      return done();
+    }
+    case "respond_skip_meet_greet": {
+      if (status !== "skip_requested") return fail("invalid_status");
+      if (b.meet_greet_skip_requested_by === me) return fail("not_allowed");
+      if (args.p_accept) b.meet_greet_status = "skipped";
+      else Object.assign(b, { status: "cancelled", cancel_reason: "meet_greet_declined", cancelled_by: me });
+      return done();
+    }
+  }
+  return fail("not_mocked");
+}
+
+/** `col=eq.value`, `col=lte.value`, `col=gte.value` and `col=in.(a,b)` filters. */
 function matches(row: Row, params: URLSearchParams): boolean {
   for (const [key, raw] of params) {
     if (["select", "order", "limit", "offset", "columns"].includes(key)) continue;
     if (raw.startsWith("eq.")) {
       if (String(row[key]) !== raw.slice(3)) return false;
+    } else if (raw.startsWith("lte.")) {
+      if (!(String(row[key]) <= raw.slice(4))) return false;
+    } else if (raw.startsWith("gte.")) {
+      if (!(String(row[key]) >= raw.slice(4))) return false;
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
@@ -193,6 +366,222 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return respond(route, db.sitter_profiles.filter((row) => row.id === me), wantsObject);
   }
 
+  if (path === "rpc/get_sitter_schedule") {
+    const { p_sitter, p_from, p_to } = request.postDataJSON();
+    return json(route, 200, sitterSchedule(db, p_sitter, p_from, p_to));
+  }
+
+  if (path === "rpc/list_my_sitters") {
+    // Sitters with a confirmed booking (or one confirmed and later cancelled) — 003/004.
+    const counted = db.bookings.filter(
+      (b) => b.owner_id === me && (b.status === "confirmed" || (b.status === "cancelled" && b.responded_at)),
+    );
+    const sitterIds = [...new Set(counted.map((b) => String(b.sitter_id)))];
+    return json(
+      route,
+      200,
+      sitterIds.map((id) => {
+        const details = db.sitter_profiles.find((p) => p.id === id) ?? {};
+        const mine = counted.filter((b) => b.sitter_id === id);
+        return {
+          sitter_id: id,
+          display_name: users.find((u) => u.id === id)?.displayName ?? null,
+          bio: details.bio ?? null,
+          service_area: details.service_area ?? null,
+          experience_years: details.experience_years ?? null,
+          services: details.services ?? ["boarding"],
+          booking_count: mine.length,
+          last_booking_at: mine.map((b) => String(b.created_at ?? "")).sort().pop() ?? null,
+        };
+      }),
+    );
+  }
+
+  if (path === "rpc/search_sitters") {
+    db.searches.push(request.postDataJSON());
+    return json(route, 200, db.search_results);
+  }
+
+  if (path === "rpc/request_booking") {
+    // request_booking (004): booking + two proposed handoffs + pets. Errors can be forced
+    // by setting `request_error` on the sitter's search row.
+    const args = request.postDataJSON();
+    db.requests.push(args);
+    const forced = db.search_results.find((r) => r.sitter_id === args.p_sitter)?.request_error;
+    if (forced) return json(route, 400, { code: "P0001", message: forced, details: null });
+    const id = crypto.randomUUID();
+    const created = new Date().toISOString();
+    db.bookings.push({
+      id,
+      owner_id: me,
+      sitter_id: args.p_sitter,
+      status: "requested",
+      service_type: args.p_service_type ?? "boarding",
+      created_at: created,
+    });
+    for (const [kind, at, type, note] of [
+      ["drop_off", args.p_drop_off_at, args.p_drop_off_location_type, args.p_drop_off_note],
+      ["pick_up", args.p_pick_up_at, args.p_pick_up_location_type, args.p_pick_up_note],
+    ]) {
+      db.booking_handoffs.push({
+        id: crypto.randomUUID(),
+        booking_id: id,
+        kind,
+        scheduled_at: at,
+        location_type: type,
+        location_note: note,
+        within_sitter_hours: true,
+        status: "proposed",
+        proposed_by: me,
+        completed_at: null,
+        created_at: created,
+      });
+    }
+    for (const petId of args.p_pets) db.booking_pets.push({ booking_id: id, pet_id: petId });
+    return json(route, 200, id);
+  }
+
+  if (path === "rpc/get_booking_pets") {
+    const { p_booking } = request.postDataJSON();
+    const rows = db.booking_pets
+      .filter((bp) => bp.booking_id === p_booking)
+      .map((bp) => db.pets.find((p) => p.id === bp.pet_id))
+      .filter((p): p is Row => !!p)
+      .map((p) => ({ pet_id: p.id, name: p.name, species: p.species, breed: p.breed ?? null }));
+    return json(route, 200, rows);
+  }
+
+  if (path === "rpc/respond_booking") {
+    // respond_booking (003 + 004 guard): decline ends it; accept needs the Meet & Greet and no
+    // pending sitter counter-offer, then agrees the owner's proposals.
+    const args = request.postDataJSON();
+    db.responses.push(args);
+    const booking = db.bookings.find((b) => b.id === args.p_booking && b.sitter_id === me);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    if (!booking) return fail("not_allowed");
+    if (booking.status !== "requested") return fail("invalid_status");
+    const open = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.status === "proposed");
+    if (!args.p_accept) {
+      booking.status = "declined";
+      for (const h of open) h.status = "rejected";
+      return route.fulfill({ status: 204 });
+    }
+    if (!["not_needed", "done", "skipped", undefined].includes(booking.meet_greet_status as string | undefined)) {
+      return fail("meet_greet_required");
+    }
+    if (open.some((h) => h.proposed_by === me)) return fail("handoff_pending");
+    booking.status = "confirmed";
+    for (const h of open) h.status = "agreed";
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/propose_handoff") {
+    const args = request.postDataJSON();
+    db.proposals.push(args);
+    const booking = db.bookings.find((b) => b.id === args.p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    const current = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === args.p_kind);
+    const base = current.find((h) => h.status === "proposed") ?? current.find((h) => h.status === "agreed");
+    for (const h of current) if (h.status === "proposed") h.status = "superseded";
+    const id = crypto.randomUUID();
+    db.booking_handoffs.push({
+      id,
+      booking_id: booking.id,
+      kind: args.p_kind,
+      scheduled_at: args.p_at,
+      // A time-only offer keeps the place (p_location_type omitted, 003).
+      location_type: args.p_location_type ?? base?.location_type ?? "sitter_home",
+      location_note: args.p_location_type ? (args.p_note ?? null) : (base?.location_note ?? null),
+      within_sitter_hours: true,
+      status: "proposed",
+      proposed_by: me,
+      completed_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, id);
+  }
+
+  if (path.startsWith("rpc/") && path.includes("meet_greet")) {
+    return handleMeetGreet(route, path.slice(4), request.postDataJSON(), me, db);
+  }
+
+  if (path === "rpc/complete_handoff") {
+    // complete_handoff (003): sitter, confirmed, Received from 2 h before drop-off, Returned after it.
+    const { p_booking, p_kind } = request.postDataJSON();
+    db.completions.push({ p_booking, p_kind });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const booking = db.bookings.find((b) => b.id === p_booking && b.sitter_id === me);
+    if (!booking) return fail("not_allowed");
+    if (booking.status !== "confirmed") return fail("invalid_status");
+    const agreed = (kind: string) =>
+      db.booking_handoffs.find((h) => h.booking_id === p_booking && h.kind === kind && h.status === "agreed");
+    const h = agreed(p_kind);
+    if (!h) return fail("handoff_missing");
+    if (h.completed_at) return fail("handoff_completed");
+    if (p_kind === "drop_off" && Date.now() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
+      return fail("handoff_too_early");
+    }
+    if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
+    h.completed_at = new Date().toISOString();
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/respond_handoff") {
+    // respond_handoff (003): the other side answers; declining before confirm ends the request.
+    const { p_handoff, p_accept } = request.postDataJSON();
+    db.responses.push({ p_handoff, p_accept });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const h = db.booking_handoffs.find((x) => x.id === p_handoff);
+    const booking = h && db.bookings.find((b) => b.id === h.booking_id);
+    if (!h || !booking || ![booking.owner_id, booking.sitter_id].includes(me) || h.proposed_by === me) {
+      return fail("not_allowed");
+    }
+    if (h.status !== "proposed") return fail("invalid_status");
+    if (!p_accept) {
+      h.status = "rejected";
+      if (booking.status === "requested") booking.status = me === booking.sitter_id ? "declined" : "cancelled";
+      return route.fulfill({ status: 204 });
+    }
+    for (const x of db.booking_handoffs) {
+      if (x.booking_id === h.booking_id && x.kind === h.kind && x.status === "agreed") x.status = "superseded";
+    }
+    h.status = "agreed";
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/get_handoff_details") {
+    // Agreed handoffs with the real address, confirmed bookings only (003).
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking || booking.status !== "confirmed") return json(route, 400, { code: "P0001", message: "invalid_status" });
+    const address = (h: Row) =>
+      h.location_type === "sitter_home"
+        ? (db.sitter_profiles.find((p) => p.id === booking.sitter_id)?.home_address ?? null)
+        : h.location_type === "owner_home"
+          ? (db.owner_profiles.find((p) => p.id === booking.owner_id)?.home_address ?? null)
+          : h.location_note;
+    return json(
+      route,
+      200,
+      db.booking_handoffs
+        .filter((h) => h.booking_id === booking.id && h.status === "agreed")
+        .map((h) => ({ handoff_id: h.id, kind: h.kind, scheduled_at: h.scheduled_at, address: address(h) })),
+    );
+  }
+
+  if (path === "rpc/cancel_booking") {
+    const { p_booking, p_reason } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    const received = db.booking_handoffs.some(
+      (h) => h.booking_id === p_booking && h.kind === "drop_off" && h.status === "agreed" && h.completed_at,
+    );
+    if (received) return json(route, 400, { code: "P0001", message: "booking_in_progress", details: null });
+    Object.assign(booking, { status: "cancelled", cancelled_by: me, cancel_reason: p_reason });
+    db.cancellations.push({ p_booking, p_reason });
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "profiles") {
     if (method === "PATCH") {
       const user = users.find((u) => u.id === me && matches({ id: u.id }, params));
@@ -218,6 +607,31 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           .map((a) => ({ id: a.id, allergen: a.allergen })),
       }));
     }
+    const select = params.get("select") ?? "";
+    if (path === "pets" && select.includes("care_tasks(")) {
+      rows = rows.map((pet) => ({ ...pet, care_tasks: db.care_tasks.filter((t) => t.pet_id === pet.id) }));
+    }
+    if (path === "bookings") {
+      const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
+      rows = rows.map((b) => ({
+        ...b,
+        ...(select.includes("owner:profiles") ? { owner: name(b.owner_id) } : {}),
+        ...(select.includes("sitter:profiles") ? { sitter: name(b.sitter_id) } : {}),
+        ...(select.includes("booking_handoffs(")
+          ? { booking_handoffs: db.booking_handoffs.filter((h) => h.booking_id === b.id) }
+          : {}),
+        ...(select.includes("booking_pets(")
+          ? {
+              booking_pets: db.booking_pets
+                .filter((bp) => bp.booking_id === b.id)
+                .map((bp) => {
+                  const pet = db.pets.find((p) => p.id === bp.pet_id);
+                  return { pets: pet ? { name: pet.name, species: pet.species } : null };
+                }),
+            }
+          : {}),
+      }));
+    }
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
@@ -233,6 +647,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }));
     if (path === "pets" && inserted.some((row) => row.owner_id !== me)) {
       return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+    }
+    if (path === "sitter_availability") {
+      if (inserted.some((row) => row.sitter_id !== me)) {
+        return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+      }
+      const conflicts = blockConflicts(db, inserted);
+      if (conflicts.length > 0) {
+        return json(route, 400, { code: "P0001", message: "overlaps_confirmed_booking", details: conflicts.join(",") });
+      }
     }
     if (path === "pet_allergies") {
       for (const row of inserted) {

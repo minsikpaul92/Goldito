@@ -23,9 +23,9 @@ const devRoutesEnabled = process.env.EXPO_PUBLIC_DEV_ROUTES === "1";
 
 const CHIPS = ["Meal", "Water", "Potty", "Walk", "Nap", "Play", "Treat", "Litter", "Meds", "Bath", "Brush", "Cuddle"];
 const PAGES: { label: string; tone: keyof Theme["color"] }[] = [
-  { label: "Bori at the park", tone: "primary" },
+  { label: "Max at the park", tone: "primary" },
   { label: "Mochi napping", tone: "textMuted" },
-  { label: "Bori's dinner", tone: "success" },
+  { label: "Max's dinner", tone: "success" },
   { label: "Mochi on the sofa", tone: "text" },
 ];
 const ROWS = Array.from({ length: 30 }, (_, i) => `Row ${i + 1}`);

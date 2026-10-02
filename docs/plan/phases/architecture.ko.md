@@ -79,9 +79,10 @@ PawNote/
 │  │  ├─ 002_rls_policies.sql
 │  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·예약 RPC·충돌 트리거·realtime (Phase 02)
 │  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet — 첫 만남 판단·건너뛰기·장소·Meet 링크, 양쪽 meet_spots)
-│  │  ├─ 005_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
-│  │  ├─ 006_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
-│  │  ├─ 007_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
+│  │  ├─ 005_meet_greet.sql           # Phase 03B 3B.9 (Meet & Greet RPC — 제안·응답·완료·건너뛰기, 양쪽 장소)
+│  │  ├─ 006_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
+│  │  ├─ 007_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
+│  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
@@ -207,7 +208,7 @@ PawNote/
 
 - 탭: owner `Home · Bookings · Feed · Care · Reports`, sitter `Today · Bookings · Tasks · Report` (D27 — 예약·문의가 흐름의 시작이라 탭으로. Scan은 탭이 아니라 Today 버튼, 3B.0에서 변경). 알림 벨은 두 역할 모두 헤더 우측 (unread badge). 탭은 expo-router **JS `Tabs`** (NativeTabs 아님 — D25: 해커톤 후 시터 데스크톱에서 `tabBarPosition: 'left'`로 사이드바 전환).
 - 웹 쿼리 (D25, 모든 route 공통): `?frame=0` 폰 프레임 끄기 · `?frame=1` 강제로 켜기 · `?view=split` Owner·Sitter 폰 나란히 (10.10 stretch).
-- pet이 여러 마리면 `PetProvider`의 선택값을 모든 탭이 공유 (헤더 PetSwitcher, 종 아이콘 🐶/🐱). 데모는 2마리(Bori 강아지, Mochi 고양이).
+- pet이 여러 마리면 `PetProvider`의 선택값을 모든 탭이 공유 (헤더 PetSwitcher, 종 아이콘 🐶/🐱). 데모는 2마리(Max 강아지, Mochi 고양이).
 - 역할 영역은 **URL 접두사 폴더** `app/owner/`·`app/sitter/` (D26) — 그룹 `(owner)`/`(sitter)`가 아님. 역할 가드는 `components/RoleTabs.tsx`: 미로그인 → `/login`, 다른 역할 → 자기 홈(`/owner` ↔ `/sitter`). `(auth)` 그룹은 로그인 상태면 `/`로.
 
 ---
@@ -301,7 +302,7 @@ PawNote/
 | 받았음 / 돌려줬음 | RPC `complete_handoff` (시터) | owner `pet_dropped_off` / `pet_picked_up` |
 | 예약 요청 / 응답 / 취소 | RPC `request_booking`(첫 만남이면 `meet_greet_status='required'`) / `respond_booking`(첫 만남이면 M&G done·skipped 뒤에만 수락 — `meet_greet_required`) / `cancel_booking` (취소는 맡기기 전만) | 상대방에게 `booking_*` 알림 |
 | 예약 반려동물 · 내 시터 프로필 조회 | RPC `get_booking_pets(booking)` / `get_my_sitter_profile()` | - |
-| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = `cancel_booking`, reason `meet_greet_declined`) / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
+| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = 예약 취소, reason `meet_greet_declined` — 문구는 "…would like to meet first") / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` (거절이면 `meet_greet_declined`) · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
 | 문의 보내기 | Supabase client insert `inquiries` + 첫 `inquiry_messages`(owner) → 프론트가 FastAPI `/api/ai/inquiry-reply` 호출 (07B) | AI 초안 insert 시 시터 `inquiry_received` · 시터가 보냈거나 자동 발송이 공개된 시점에 견주 `inquiry_replied` (§7, D36·D37) |
 | 견적 | RPC `quote_booking(sitter, service_type, drop_off_at, pick_up_at, pet_count)` — 읽기 전용, 문의 답변·Checkout 공용 (03C, D29) | - |
 | 동의서 서명 · 데모 결제 | Supabase client insert `booking_consents` (견주 RLS) → RPC `pay_booking_demo(booking)` — 필요한 동의서가 다 있어야 함 (`consents_missing`) (03C) | 시터 `booking_paid` |
@@ -328,33 +329,34 @@ PawNote/
 
 | type | 수신자 | 생성 위치 | 제목 예 (EN) | 탭 시 이동 |
 | :--- | :--- | :--- | :--- | :--- |
-| `inquiry_received` | sitter | AI 초안 insert (07B, D36) | "Jisoo asked about Oct 9–12 — your draft reply is ready" | `/sitter/inquiries/[id]` |
-| `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Mina replied 💬" | `/owner/inquiries/[id]` |
+| `inquiry_received` | sitter | AI 초안 insert (07B, D36) | "Chloe asked about Oct 9–12 — your draft reply is ready" | `/sitter/inquiries/[id]` |
+| `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Lucy replied 💬" | `/owner/inquiries/[id]` |
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/sitter/bookings` |
-| `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Jisoo suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
-| `meet_greet_skip_requested` | 상대방 | `request_skip_meet_greet` RPC (03B, D44) | "Jisoo would like to skip the Meet & Greet. Continue the booking without meeting first?" | 예약 상세 (**Continue** / **Decline — cancels the booking**) |
-| `meet_greet_skipped` | 요청자 | `respond_skip_meet_greet` 수락 | "Mina is OK to skip the Meet & Greet — your booking continues" | 예약 상세 |
+| `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Chloe suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
+| `meet_greet_declined` | 제안자 | `respond_meet_greet` 거절 (3B.9) | "Lucy can't make that Meet & Greet — suggest another time" | 예약 상세 (다시 **Schedule Meet & Greet**) |
+| `meet_greet_skip_requested` | 상대방 | `request_skip_meet_greet` RPC (03B, D44) | "Chloe would like to skip the Meet & Greet. Continue the booking without meeting first?" | 예약 상세 (**Continue** / **Decline — cancels the booking**) |
+| `meet_greet_skipped` | 요청자 | `respond_skip_meet_greet` 수락 | "Lucy is OK to skip the Meet & Greet — your booking continues" | 예약 상세 |
 | `meet_greet_link_ready` | 양쪽 | `/api/meet-greet/video-link` (3B.11, D45) | "Video Meet & Greet on Oct 6, 7:00 PM — join with Google Meet" | 예약 상세 (**Join Google Meet**) |
-| `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Jisoo signed and paid — Oct 9–12 is all set ✅" | `/sitter/bookings/[id]` |
-| `access_unlocked` | owner | `get_home_access` 첫 공개 (03C) | "Mina can now see your entry info (2 h before pick-up)" | 예약 상세 |
-| `trip_started` | 상대방 | `start_trip` RPC (06B) | "Mina is on the way — ETA 7:42 AM 🚗" | Trip 화면 |
-| `trip_arrived` | 상대방 | `update_trip_position` 150 m 안 (06B) | "Jisoo has arrived 🚗" | Trip 화면 |
-| `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC · `booking_declined`는 확정 전 협의에서 시터가 거절할 때 `respond_handoff`도 | "Mina confirmed your booking for Bori and Mochi 🎉" | `/owner/bookings/[id]` |
-| `handoff_proposed` | 상대방 | `propose_handoff` RPC | "Jun suggested drop-off at 8:30 AM" | 예약 상세 |
-| `handoff_agreed` | 제안자 | `respond_handoff` RPC | "Jisoo agreed to pick-up at 8:00 PM" | 예약 상세 |
-| `handoff_declined` | 제안자 | `respond_handoff` RPC (확정 후 변경 거절) | "Mina declined the pick-up change" | 예약 상세 |
-| `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | 장소별: "Bori and Mochi checked in at Mina's ✅" / Sitter drives: "Pick-up complete — care has started 🚗" / 찾기: "Bori and Mochi are home safe 🏠" (사진 체크가 있으면 "· photo verified") | 예약 상세 |
-| `review_requested` | owner | 찾기 완료 트리거 (07C) | "Thanks for trusting Mina! How was Bori's stay? ⭐" | `/owner/bookings/[id]/review` |
-| `review_received` | sitter | `reviews` insert 트리거 (07C) | "Jisoo left you 5 stars ⭐" | `/sitter/bookings/[id]` |
-| `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Bori's Life Record was updated 📒" | `/owner/pets/[id]/record` |
-| `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Mina would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
-| `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/owner/feed` |
-| `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/owner/tasks` (Activity) |
+| `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Chloe signed and paid — Oct 9–12 is all set ✅" | `/sitter/bookings/[id]` |
+| `access_unlocked` | owner | `get_home_access` 첫 공개 (03C) | "Lucy can now see your entry info (2 h before pick-up)" | 예약 상세 |
+| `trip_started` | 상대방 | `start_trip` RPC (06B) | "Lucy is on the way — ETA 7:42 AM 🚗" | Trip 화면 |
+| `trip_arrived` | 상대방 | `update_trip_position` 150 m 안 (06B) | "Chloe has arrived 🚗" | Trip 화면 |
+| `booking_confirmed` / `booking_declined` | owner | `respond_booking` RPC · `booking_declined`는 확정 전 협의에서 시터가 거절할 때 `respond_handoff`도 | "Lucy confirmed your booking for Max and Mochi 🎉" | `/owner/bookings/[id]` |
+| `handoff_proposed` | 상대방 | `propose_handoff` RPC | "Paul suggested drop-off at 8:30 AM" | 예약 상세 |
+| `handoff_agreed` | 제안자 | `respond_handoff` RPC | "Chloe agreed to pick-up at 8:00 PM" | 예약 상세 |
+| `handoff_declined` | 제안자 | `respond_handoff` RPC (확정 후 변경 거절) | "Lucy declined the pick-up change" | 예약 상세 |
+| `pet_dropped_off` / `pet_picked_up` | owner | `complete_handoff` RPC | 장소별: "Max and Mochi checked in at Lucy's ✅" / Sitter drives: "Pick-up complete — care has started 🚗" / 찾기: "Max and Mochi are home safe 🏠" (사진 체크가 있으면 "· photo verified") | 예약 상세 |
+| `review_requested` | owner | 찾기 완료 트리거 (07C) | "Thanks for trusting Lucy! How was Max's stay? ⭐" | `/owner/bookings/[id]/review` |
+| `review_received` | sitter | `reviews` insert 트리거 (07C) | "Chloe left you 5 stars ⭐" | `/sitter/bookings/[id]` |
+| `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
+| `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Lucy can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Lucy would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
+| `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Max 📸" | `/owner/feed` |
+| `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/tasks` (Activity) |
 | `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/tasks` (Activity) |
-| `report_sent` | owner | `send_daily_report` RPC | "Today's report for Bori is here 📝" | `/owner/reports/[id]` |
-| `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) — 08 stretch | "Blocked a risky treat for Bori ⚠️" | `/owner/notifications` |
-| `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Bori's walk is due at 10:30" | `/sitter/tasks` |
-| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Bori" | `/sitter/pets/[id]` |
+| `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/reports/[id]` |
+| `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) — 08 stretch | "Blocked a risky treat for Max ⚠️" | `/owner/notifications` |
+| `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Max's walk is due at 10:30" | `/sitter/tasks` |
+| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Max" | `/sitter/pets/[id]` |
 
 프론트: `NotificationsProvider`가 `notifications` Realtime(INSERT, `user_id=eq.<me>`)을 구독 → 토스트 + unread 카운트 갱신 + type별 쿼리 invalidate (예: `feed_post` → 피드 리페치).
 
@@ -370,7 +372,7 @@ PawNote/
 6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
 7. 개발 빌드에만 헤더에 `Owner`/`Sitter` 역할 라벨 표시 (`APP_ENV !== 'production'`).
 8. **마우스로 전부 동작 (D25):** 제스처 전용 기능 금지 (스와이프 뒤로가기·삭제, 시트 끌어내리기, 길게 누르기, 당겨서 새로고침 — 웹 `RefreshControl`은 동작 안 함). 항상 보이는 버튼을 둔다. 웹 미지원 라이브러리 금지 (예: `@react-native-community/datetimepicker` → 직접 만든 선택 UI). 화면 PR마다 [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 데스크톱 체크.
-9. **지도는 보기 전용 (D32):** 자동 맞춤(이동하는 쪽 + 목적지) + ± 버튼, 드래그 팬·핀치 없음 — 프레임 안 마우스 드래그는 스크롤로 쓰임(1.7). 위치 공유 중이면 화면 상단에 "Sharing your location with Mina until you arrive" 항상 표시.
+9. **지도는 보기 전용 (D32):** 자동 맞춤(이동하는 쪽 + 목적지) + ± 버튼, 드래그 팬·핀치 없음 — 프레임 안 마우스 드래그는 스크롤로 쓰임(1.7). 위치 공유 중이면 화면 상단에 "Sharing your location with Lucy until you arrive" 항상 표시.
 10. **민감 정보 카드 (D31):** 출입 정보는 잠김 상태에서 "Unlocks Oct 9, 5:30 AM" + 자물쇠 아이콘만, 열려도 코드는 **Show code** 탭 후 표시.
 11. **외부 링크는 새 탭 (D45):** Google Meet 링크는 폰 프레임(iframe) 안에서 열지 않고 새 탭으로 연다 (`Linking.openURL` → 웹은 `window.open`). Meet는 다른 사이트 안에 넣을 수 없다.
 
@@ -385,7 +387,7 @@ PawNote/
 - Nemotron reasoning 모드: 캡션·알림장은 reasoning **off**(속도), 세이프티 reasoning 단계는 **on** (7.1에서 모델별 토글 방식 확인 후 `nebius.py`에 기록).
 - 프롬프트 원문은 코드에 하드코딩하지 않고 `app/ai/prompts/**`의 파일에서 로드 (슬기가 코드 수정 없이 튜닝).
 - 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
-- **근거 고정 (D27–D29):** 모델 입력은 서버가 모은 JSON뿐 (스케줄·견적·펫 프로필·RAG 검색 결과·그날 기록). 가격·날짜·가능 여부·시간은 **입력 값을 그대로** 쓰게 하고, 응답 후 서버가 숫자를 다시 대조한다 (07B — 입력에 없는 금액이 나오면 견적 카드만 두고 문장은 재생성 1회, 또 실패하면 고정 문구 "Mina will confirm the details soon."). 출입 정보(D31)는 어떤 프롬프트에도 넣지 않는다.
+- **근거 고정 (D27–D29):** 모델 입력은 서버가 모은 JSON뿐 (스케줄·견적·펫 프로필·RAG 검색 결과·그날 기록). 가격·날짜·가능 여부·시간은 **입력 값을 그대로** 쓰게 하고, 응답 후 서버가 숫자를 다시 대조한다 (07B — 입력에 없는 금액이 나오면 견적 카드만 두고 문장은 재생성 1회, 또 실패하면 고정 문구 "Lucy will confirm the details soon."). 출입 정보(D31)는 어떤 프롬프트에도 넣지 않는다.
 - **말투 레이어 (D35):** 견주에게 보이는 자연어를 만드는 엔드포인트(inquiry-reply · daily-report · caption)는 프롬프트를 직접 조립하지 않고 `tone.compose(sitter_id, intent, facts)`를 거친다 — 스타일 가이드 + 시터의 `tone_samples` top-k(few-shot) + 서버 근거 JSON. 1인칭("I"), 자리표시자(`{PRICE}`·`{DATE}`)는 서버가 채우고 숫자는 근거 JSON과 대조한다(D29). 안전 경고·동의서·견적 숫자는 고정 문구로 레이어를 거치지 않는다. 시터의 승인·수정·재생성은 `tone_samples`에 기록(자동 발송은 학습에서 제외). 견주 메시지는 저장 전 익명화.
 - **임베딩 (D33):** `embed(texts)` — `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM`(1024), 배치 ≤ 16. 검색은 SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, 범위 필터 먼저). 출처 `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. 같은 `(source_type, source_id)`는 덮어쓰기. **출처별 검색 범위:** `sitter_policy` = 그 시터 · `life_record`·`care_request` = 그 반려동물(새 시터와도 공유 — 문의 시트에서 안내, 07B) · `inquiry` = 그 견주 **그리고** 그 시터가 모두 일치할 때만, 견주 메시지만 인덱싱 (다른 시터와 나눈 대화·금액이 새 시터의 초안에 섞이지 않게).
 - **칩 제안 (D38):** `report-chips`는 하루 기록 칩을 서버가 DB에서 만들고(모델 없음), 사진 칩만 `MODEL_VISION`이 사진당 1–2개 짧은 문구로 제안한다. 칩은 제안일 뿐이고, 시터가 고른 칩과 메모만 알림장 입력이 된다 (끈 칩은 입력에서 빠짐).

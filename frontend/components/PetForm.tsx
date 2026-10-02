@@ -92,7 +92,7 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
         label="Name"
         value={values.name}
         onChangeText={(text) => set("name", text)}
-        placeholder="Bori"
+        placeholder="Max"
         error={errors.name}
         testID="pet-name"
       />

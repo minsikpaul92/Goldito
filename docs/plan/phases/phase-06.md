@@ -13,11 +13,11 @@
 
 - [ ] Owner: **Care request**에 의뢰서 붙여넣기 → **Make a checklist** → 미리보기 "Feeding · 8:00 AM · 1 cup kibble", "Medication · 2:00 PM · Skin pill ×1 — in a treat", Heads-up 2개 → 1개 시각 수정 → **Save checklist** → `care_tasks` + `pet_cautions`
 - [ ] Mochi(고양이) 의뢰서에 "walk at 5 PM" → 미리보기에서 "Walks are for dogs — skipped" (species 규칙, D23)
-- [ ] Owner: Care에서 Bori 08:00 med + 10:30 walk, Mochi 12:00 litter 직접 등록도 가능 · species별 type 제한
+- [ ] Owner: Care에서 Max 08:00 med + 10:30 walk, Mochi 12:00 litter 직접 등록도 가능 · species별 type 제한
 - [ ] Sitter: Tasks에 오늘 `task_logs` 자동 생성 · due 배너(±5m~+60m)
 - [ ] Sitter: task **Mark done**(사진 없음) → owner `task_done` + Activity · **Done with photo** → + feed_post(선택)
 - [ ] Sitter: Today **Quick check-ins** (5초 체크) — Meal / Potty / **Walk (10·20·30·45·60 min)** / Mood / Note(1줄) → 즉시 `care_checkin` 알림 + Activity (±사진)
-- [ ] Sitter: Today 상단 **Heads-up** 카드 ("Text Jisoo instead of knocking", "No other dogs on walks")
+- [ ] Sitter: Today 상단 **Heads-up** 카드 ("Text Chloe instead of knocking", "No other dogs on walks")
 - [ ] Owner: Care **Activity** — 오늘+7일 타임라인(task 완료 + check-in + 사진 있으면 썸네일)
 - [ ] Care 탭: task ✅/⏳/⚠️ missed (D9)
 
@@ -34,7 +34,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| `care_checkins` + `log_care_checkin` · `complete_task_log` **optional media** (`007_care.sql`) | RRULE |
+| `care_checkins` + `log_care_checkin` · `complete_task_log` **optional media** (`008_care.sql`) | RRULE |
 | 케어·투약 의뢰서 → `POST /api/ai/care-plan` 초안 → 견주 확인 → `care_requests`·`care_tasks`·`pet_cautions` | 의뢰서 사진(손글씨) OCR, 다국어 의뢰서 |
 | Owner Activity timeline · Sitter quick check-ins | missed → owner push |
 | Scheduled task CRUD · ensure logs · D17 reminder | 서버 푸시 리마인더 (6.7 stretch) |
@@ -58,7 +58,7 @@
 | 6.10 | Sitter Today quick row | Meal (4 chips) · Poop (3) · **Walk** (10·20·30·45·60 min — dogs only, D23) · Mood (3) · **Note** (optional 1-line sheet ≤120) · each: tap = check-in; optional photo button before submit |
 | 6.11 | Owner Activity UI | `list_pet_activity(p_pet, p_from, p_to)` RPC or client merge: done task_logs + checkins (+ optional feed) · 7-day default |
 | 6.12 | `POST /api/ai/care-plan` (슬기) | `routers/ai_care_plan.py`: `assert_owner_of(pet_id)` → 펫(종·이름·알레르기) + 기존 `care_tasks` + (07C 이후) 최신 Life Record `heads_up` → `MODEL_REPORT`(Super) + `prompts/care_plan/system.md` → `chat_json` `CarePlan {tasks:[{type, time "HH:MM", title, dose?, notes?}], cautions:[str], skipped:[{text, reason}]}`. 서버 검증: type ∈ species 허용 목록(D23 — 아니면 skipped로 이동), 시각 형식, 중복(같은 type·시각) 제거. **저장 안 함** (초안만). 45 s 타임아웃 → 422 `ai_timeout` + "Try again, or add tasks one by one." |
-| 6.13 | Care request UI | `/owner/pets/[petId]/care-request`: 큰 텍스트 칸(placeholder = 예시 의뢰서) → **Make a checklist** → `ChecklistCard` 미리보기(행마다 시각·제목·용량 수정, 삭제) + Heads-up 칩 → **Save checklist** = Supabase insert `care_requests(id, pet_id, raw_text, generated jsonb, created_by)` + `care_tasks` 여러 행 + `pet_cautions(id, pet_id, text, source 'owner'\|'ai', active)`. 저장 후 07B RAG 인덱싱 호출 (`care_request`). 진입: Pet profile **Care request** · 예약 상세 "Add care instructions for Mina" |
+| 6.13 | Care request UI | `/owner/pets/[petId]/care-request`: 큰 텍스트 칸(placeholder = 예시 의뢰서) → **Make a checklist** → `ChecklistCard` 미리보기(행마다 시각·제목·용량 수정, 삭제) + Heads-up 칩 → **Save checklist** = Supabase insert `care_requests(id, pet_id, raw_text, generated jsonb, created_by)` + `care_tasks` 여러 행 + `pet_cautions(id, pet_id, text, source 'owner'\|'ai', active)`. 저장 후 07B RAG 인덱싱 호출 (`care_request`). 진입: Pet profile **Care request** · 예약 상세 "Add care instructions for Lucy" |
 | 6.14 | Heads-up 표시 | 시터 Today 상단·요청 카드(03B)·Trip 도착 카드(06B)에 `pet_cautions` (active) — 최대 3개 + "See all". RLS: 견주 CRUD, 요청 받은 시터·담당 시터 select (pets 규칙과 같음) |
 
 ### 피드·알림 (Plan B)
@@ -82,7 +82,7 @@
 
 ## 산출물
 
-- `supabase/migrations/007_care.sql` — `care_checkins`(kind에 `walk` 포함 — value = 분), `care_requests`, `pet_cautions`, RLS, RPCs (`ensure_today_task_logs`, `complete_task_log`, `log_care_checkin`, `list_pet_activity` or view)
+- `supabase/migrations/008_care.sql` — `care_checkins`(kind에 `walk` 포함 — value = 분), `care_requests`, `pet_cautions`, RLS, RPCs (`ensure_today_task_logs`, `complete_task_log`, `log_care_checkin`, `list_pet_activity` or view)
 - `frontend/app/owner/tasks.tsx` (Activity segment), `/sitter/tasks.tsx`, `/sitter/index.tsx` (quick check-ins), `TaskRow`, `QuickCheckInBar`, `ActivityTimeline`, `useDueReminder.ts`
 - `frontend/app/owner/pets/[petId]/care-request.tsx`, `ChecklistCard`, `HeadsUpCard`
 - `backend/app/routers/ai_care_plan.py`, `backend/app/schemas/care_plan.py`, `backend/app/ai/prompts/care_plan/system.md`

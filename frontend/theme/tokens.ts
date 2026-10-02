@@ -36,6 +36,8 @@ export const tokens = {
     title: 24,
     body: 16,
     small: 14,
+    /** (proposed) Tiny labels inside dense grids, e.g. slot letters in SlotCalendar. */
+    caption: 11,
   },
   /** Icon / emoji sizes: header + inline (sm), cards (md), empty states (hero). */
   icon: {

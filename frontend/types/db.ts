@@ -26,6 +26,8 @@ export type OwnerProfile = {
   emergency_contact_phone: string | null;
   vet_clinic_name: string | null;
   vet_clinic_phone: string | null;
+  /** Up to 3 public places for a first Meet & Greet (004, D44). */
+  meet_spots: string[];
 };
 
 /** What the sitter sees of their own row via `get_my_sitter_profile()` (includes home_address). */
@@ -35,4 +37,7 @@ export type SitterProfile = {
   experience_years: number | null;
   home_notes: string | null;
   home_address: string | null;
+  /** At least one of boarding / house_sitting (004, D28). */
+  services: ("boarding" | "house_sitting")[];
+  meet_spots: string[];
 };

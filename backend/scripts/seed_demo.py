@@ -33,8 +33,8 @@ class DemoUser:
 
 
 DEMO_USERS = (
-    DemoUser("demo-owner@pawnote.test", "owner", "Jisoo"),
-    DemoUser("demo-sitter@pawnote.test", "sitter", "Mina"),
+    DemoUser("demo-owner@pawnote.test", "owner", "Chloe"),
+    DemoUser("demo-sitter@pawnote.test", "sitter", "Lucy"),
 )
 
 

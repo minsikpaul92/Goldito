@@ -71,7 +71,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | :--- | :--- |
 | 이메일·비밀번호 | Supabase signIn |
 | **Demo block** | 카드 또는 버튼 2개: Owner / Sitter — 탭 시 `demo-owner@pawnote.test` / `demo-sitter@pawnote.test` + `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 공개값, architecture §4 — service key 금지) 자동 채움 후 로그인 |
-| 힌트 | “For judges: use Try demo — Bori (chicken allergy) is already set up.” |
+| 힌트 | “For judges: use Try demo — Max (chicken allergy) is already set up.” |
 | 링크 | Create account → signup |
 
 > Demo 이메일·비번은 **공개 데모 전용** (`*.test` 도메인). Phase 10 `seed_demo.py`와 README·Devpost와 **동일 문자열** 유지.
@@ -85,8 +85,8 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 | 역할 | 첫 진입 | P0 |
 | :--- | :--- | :--- |
-| Owner | Home에 Bori 카드·오늘 요약 (시드) | Empty state 카피만 명확히 |
-| Sitter | Today에 Bori + Heads-up + 오늘 인수인계(Trip) 카드 (Phase 06·06B 이후) | 상황별 primary 1개 (Start trip → Received → 체크) |
+| Owner | Home에 Max 카드·오늘 요약 (시드) | Empty state 카피만 명확히 |
+| Sitter | Today에 Max + Heads-up + 오늘 인수인계(Trip) 카드 (Phase 06·06B 이후) | 상황별 primary 1개 (Start trip → Received → 체크) |
 
 **풀 튜토리얼(coach marks)은 P0 제외.** Empty state + 데모 데이터로 충분.
 
@@ -96,14 +96,14 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 | 항목 | 내용 |
 | :--- | :--- |
-| 시드 | [phase-10.md](phases/phase-10.md) `seed_demo.py`: owner, sitter, Bori, chicken, med/walk, 샘플 피드 |
+| 시드 | [phase-10.md](phases/phase-10.md) `seed_demo.py`: owner, sitter, Max, chicken, med/walk, 샘플 피드 |
 | 공개 문서 | 루트 README **Test accounts** + Devpost 설명란 (이메일·비번·“click Try demo on login”) |
 | `--relative` | 영상 촬영용 med/walk 시간 — 온보딩 UX와 무관, README에만 명시 |
 
 심사위원 **체크리스트 (Devpost / README에 복붙 가능):**
 
 1. Open demo URL — on a computer it appears in a phone frame (**click = tap, drag or scroll = swipe**); on a phone it opens full screen → Welcome (또는 Login). 10.10 Split view가 있으면 **Show both phones** → 두 역할을 한 화면에서
-2. **Try demo as Owner** → Bookings → Mina → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
+2. **Try demo as Owner** → Bookings → Lucy → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
 3. **Try demo as Sitter** → Bookings → today's pick-up → **Show code** → **Start trip → Simulate the drive** → sample car photo → **Received** (Stage ④ — the owner sees the live ETA and "care has started")
 4. Sitter → Report → 5-second check + 2 sample photos → **Generate → Send**; Owner → Reports / Feed **Album**
 5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Today → **Scan a treat** → `chicken_jerky` → DANGER
@@ -144,7 +144,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | :--- | :--- | :--- | :--- |
 | **OB.1** | 라우트: 미로그인 `/` → welcome (intro_seen 옵션은 OB.4) | Phase 03.3 | 로그아웃 후 welcome 노출 |
 | **OB.2** | Welcome UI (3 step + CTA) | OB.1, 묵 와이어 | EN 카피, Sign in / Sign up 링크 |
-| **OB.3** | Login demo buttons → 시드 계정 자동 로그인 · `/login?demo=sitter`·`?demo=owner` 쿼리도 같은 동작 (10.9 옆 패널·10.10 Split view가 사용) | Phase 10.1 시드, 03.1 login | Owner/Sitter 각 200, Bori visible |
+| **OB.3** | Login demo buttons → 시드 계정 자동 로그인 · `/login?demo=sitter`·`?demo=owner` 쿼리도 같은 동작 (10.9 옆 패널·10.10 Split view가 사용) | Phase 10.1 시드, 03.1 login | Owner/Sitter 각 200, Max visible |
 | **OB.4** | (선택) intro_seen skip | OB.2 | 두 번째 방문 login 직행 |
 | **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist |
 
@@ -186,7 +186,7 @@ P1에서 intro_seen, Welcome 일러스트 polish, “Request photo” 스텝을 
 
 **CTA:** “Try demo as Sitter” / “Try demo as Owner” / “Sign in” / “Create account”
 
-**Login demo hint:** “Demo accounts include Bori (Maltese, allergic to chicken) and Mochi (cat), booked with Mina for Thanksgiving weekend.”
+**Login demo hint:** “Demo accounts include Max (Maltese, allergic to chicken) and Mochi (cat), booked with Lucy for Thanksgiving weekend.”
 
 ---
 

@@ -20,7 +20,7 @@
 
 - [Phase 07.1](phase-07.md) Nebius client (`chat_json`)
 - [Phase 04](phase-04.md) `uploadMedia({purpose:'safety_label'})`, `fetch_as_data_url`
-- Bori `pet_allergies = chicken` (Phase 03.5)
+- Max `pet_allergies = chicken` (Phase 03.5)
 
 ---
 
@@ -82,8 +82,8 @@ POST /api/ai/safety-check {pet_id, media_id}
 | 8.1 | Router + pydantic models (`VisionResult`, `SafetyResult`) | invalid JSON → retry x1 → 502 `ai_invalid_output` |
 | 8.2 | Vision step + `prompts/safety/vision_system.md` | 영어·다국어 라벨 모두 영어 성분명으로 정규화 |
 | 8.3 | Reasoning step + `prompts/safety/reasoning_system.md` (hidden allergen 예시 표, toxic 목록) + 서버 override (step 5) | 샘플 3종 기대 결과 일치 |
-| 8.4 | TreatScannerScreen `/sitter/scan` (Today **Scan a treat** 버튼 → Stack) | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Bori…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
-| 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Bori ✅" |
+| 8.4 | TreatScannerScreen `/sitter/scan` (Today **Scan a treat** 버튼 → Stack) | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Max…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
+| 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Max ✅" |
 | 8.6 | Notify owner | `013_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
 | 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.ko.md](../tavily.ko.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
 
@@ -95,7 +95,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 | :--- | :--- |
 | `chicken_jerky.jpg` | DANGER (chicken) |
 | `animal_fat_biscuit.jpg` | WARNING (hidden: animal fat) |
-| `sweet_potato_chew.jpg` | SAFE (Bori) |
+| `sweet_potato_chew.jpg` | SAFE (Max) |
 | `lily_scented_cat_treat.jpg` | DANGER (Mochi — lilies, cat-toxic) |
 
 ---

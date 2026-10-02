@@ -159,7 +159,7 @@ client.chat.completions.create(
 - **Role:** the sitter themself — first person, in the sitter's own voice (D35 tone layer: style card + the same sitter's past writing, top-k).
 - **Few-shot:** the same sitter's `tone_samples` top-k; 3 top-rated real reports (**anonymized**) only as the default when there are none.
 - **Rules:**
-  1. No robotic reporting. ❌ "Completed a 40-minute walk." ⭕ "Bori wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛"
+  1. No robotic reporting. ❌ "Completed a 40-minute walk." ⭕ "Max wagged her tail the whole way on our 40-minute walk in the sunshine! 🐶💛"
   2. Naturally mention stool condition, food, and water intake.
   3. Describe the pet's expression/behavior from the photos.
   4. Never invent events not present in the input.
@@ -175,13 +175,13 @@ client.chat.completions.create(
   "matched_allergens": ["chicken", "wheat"],
   "detected_ingredients": ["hydrolyzed chicken powder", "wheat flour", "glycerin"],
   "unknown_ingredients": [],
-  "warning_message": "Chicken, a registered allergen for Bori, was detected. Do not feed."
+  "warning_message": "Chicken, a registered allergen for Max, was detected. Do not feed."
 }
 ```
 
 ### D. Inquiry auto-reply (Nano + RAG) — Stage 1, Phase 07B
 - Input: server-collected JSON only — sitter availability, `quote_booking` result, pet profiles, sitter public profile, top-5 RAG chunks (sitter policy, Life Record, past questions, care request).
-- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Mina will confirm" + `needs_sitter`.
+- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Lucy will confirm" + `needs_sitter`.
 - A first-person draft in the sitter's voice (D35); the sitter approves it with **Send** / Edit / Regenerate (D36). Auto-send is a sitter opt-in with human pacing (D37).
 
 ### E. Care plan (Super) — Stage 2, Phase 06
@@ -199,7 +199,7 @@ client.chat.completions.create(
 
 The 3-year dataset contains real owners' personal data. It must be anonymized **before** it is used in prompts, committed, or shown in the video.
 
-- Remove or replace: owner names, phone numbers, addresses, emails, social handles, exact locations, real pet names (→ consistent pseudonyms like "Bori", "Mochi").
+- Remove or replace: owner names, phone numbers, addresses, emails, social handles, exact locations, real pet names (→ consistent pseudonyms like "Max", "Mochi").
 - Remove faces of people in photos used for demos.
 - Keep the **tone** (nicknames, emojis, sentence style) — that's the value.
 - Keep raw data **out of the repo** (`data/raw/` in `.gitignore`); commit only anonymized few-shot samples.

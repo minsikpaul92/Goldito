@@ -63,6 +63,23 @@ class Settings(BaseSettings):
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
 
+    # Video Meet & Greet (3B.11, D45): the PawNote Google account creates Calendar events
+    # with a Google Meet link. The refresh token comes from one consent by that account.
+    google_oauth_client_id: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_ID")
+    google_oauth_client_secret: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_SECRET")
+    google_oauth_refresh_token: str | None = Field(default=None, alias="GOOGLE_OAUTH_REFRESH_TOKEN")
+    google_calendar_id: str = Field(default="primary", alias="GOOGLE_CALENDAR_ID")
+    # false = links only, no invite emails (demo `.test` addresses never get one anyway).
+    meet_invite_attendees: bool = Field(default=True, alias="MEET_INVITE_ATTENDEES")
+
+    @property
+    def google_meet_configured(self) -> bool:
+        return bool(
+            self.google_oauth_client_id
+            and self.google_oauth_client_secret
+            and self.google_oauth_refresh_token
+        )
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

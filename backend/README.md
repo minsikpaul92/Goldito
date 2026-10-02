@@ -47,8 +47,8 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 
 | Email | Role | Name |
 | :--- | :--- | :--- |
-| `demo-owner@pawnote.test` | owner | Jisoo |
-| `demo-sitter@pawnote.test` | sitter | Mina |
+| `demo-owner@pawnote.test` | owner | Chloe |
+| `demo-sitter@pawnote.test` | sitter | Lucy |
 
 The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that will be shared with judges — never reuse a real password. `.test` addresses never receive mail.
 

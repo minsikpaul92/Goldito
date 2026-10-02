@@ -86,7 +86,7 @@ Phase 00 DoD for Nebius: **met** (catalog + role mapping + one Fast + one Vision
 | us-central1 | `Qwen/Qwen3-Embedding-8B` | 1024 | **200** — 1024 dims |
 | eu-north1 gateway | `Qwen/Qwen3-Embedding-8B` | default / 1024 | **200** — 4096 / 1024 dims |
 
-Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken."). Use 1024 — pgvector HNSW indexes support up to 2000 dims.
+Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). Use 1024 — pgvector HNSW indexes support up to 2000 dims.
 
 ## Model policy (D39) and NVIDIA catalog check (2026-10-02)
 

@@ -20,8 +20,8 @@ SITTER_ID = "00000000-0000-4000-8000-000000000002"
 NO_PROFILE_ID = "00000000-0000-4000-8000-000000000009"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Jisoo"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Mina"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
 }
 
 
@@ -115,7 +115,7 @@ def test_me_with_valid_legacy_hs256_token_returns_profile(client: TestClient) ->
         "id": OWNER_ID,
         "email": "owner@pawnote.test",
         "role": "owner",
-        "display_name": "Jisoo",
+        "display_name": "Chloe",
     }
 
 

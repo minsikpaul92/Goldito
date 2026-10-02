@@ -290,7 +290,7 @@ as $$
   from public.booking_pets where booking_id = p_booking
 $$;
 
--- "Bori", "Bori and Mochi", "Bori, Coco and Mochi"
+-- "Max", "Max and Mochi", "Coco, Max and Mochi"
 create or replace function public.booking_pet_names(p_booking uuid)
 returns text
 language plpgsql

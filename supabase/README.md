@@ -13,10 +13,11 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `001_initial_schema.sql` | 02 | 17 tables: `profiles` + `owner_profiles` / `sitter_profiles`, `sitter_availability`, `bookings` / `booking_pets` (who has which pet when — no overlaps) / `booking_slots` (capacity: pet × day × slot) / `booking_handoffs` (drop-off & pick-up time, place, agreement), `pets` (dog/cat), allergies, tasks, media, feed, reports, safety, notifications |
 | `002_rls_policies.sql` | 02 | Policy helpers (`is_owner_of`, `is_sitter_of`, `is_on_duty_for`, `can_view_pet_profile`, …), RLS by owner / sitter role, column grants |
 | `003_functions_triggers.sql` | 02 | Signup → profiles, species guard, schedule/booking/handoff RPCs, overlap guard, read RPCs, execute privileges, Realtime |
-| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet (first-time pairs, skip consent, meeting spots, Meet link), media purposes |
-| `005_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
-| `006_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
-| `007_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
+| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet columns + Accept guard (first-time pairs, meeting spots, Meet link), media purposes |
+| `005_meet_greet.sql` | 03B | Meet & Greet RPCs: propose / respond / complete, skip request / answer (decline cancels), both sides' meeting spots |
+| `006_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
+| `007_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
+| `008_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
@@ -44,7 +45,7 @@ profiles 1─* notifications ─0..1 pets / bookings
 
 ## Smoke test
 
-**Hosted (task 2.9):** after `003` (includes API table grants at the end of the file), paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. If smoke fails with `permission denied for table pets`, run the **API table grants** section at the bottom of `003_functions_triggers.sql` (do not use a bare `grant update on all tables` — that allows changing `profiles.role` and breaks smoke). If smoke fails with `FAIL: user cannot change own role`, re-run that same grants section to restore column-level UPDATE rules. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
+**Hosted (task 2.9):** after the latest migration (`003` includes API table grants at the end of the file; `004` adds column grants for its new profile columns), paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. If smoke fails with `permission denied for table pets`, run the **API table grants** section at the bottom of `003_functions_triggers.sql` (do not use a bare `grant update on all tables` — that allows changing `profiles.role` and breaks smoke). If smoke fails with `FAIL: user cannot change own role`, re-run that same grants section to restore column-level UPDATE rules — and then the **Column grants** lines at the end of `004_booking_options.sql`, which that section would otherwise drop. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
 
 **Local / CI:** plain Postgres 17 plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 
@@ -61,7 +62,9 @@ psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 
 ## Client rules
 
-- **`sitter_profiles`:** always list columns — `select('*')` fails because `home_address` is not readable. The sitter reads their own address with `rpc('get_my_sitter_profile')`; booking parties get addresses from `rpc('get_handoff_details')`.
+- **`sitter_profiles`:** always list columns — `select('*')` fails because `home_address` and `meet_spots` are not readable. The sitter reads their own address and meeting spots with `rpc('get_my_sitter_profile')`; booking parties get addresses from `rpc('get_handoff_details')`. `services` is readable by everyone (search shows "Doesn't offer house sitting").
+- **Service type (004):** `request_booking(..., p_service_type)` — `boarding` (default) or `house_sitting`; house sitting stores both handoffs as `owner_home` whatever place was sent.
+- **Meet & Greet (004, D44):** `request_booking` sets `bookings.meet_greet_status` to `required` for a first-time pair (no earlier booking that reached the drop-off and no done Meet & Greet), else `not_needed`. `respond_booking` accepts only when it is `not_needed`, `done` or `skipped`.
 - **Booking pets on cards:** use `rpc('get_booking_pets', { p_booking })` — the pets table hides a pet from the sitter once the booking has ended.
 - **Writes:** bookings, handoffs, `booking_pets`, `booking_slots` change only through the RPCs in `003`.
 
@@ -75,6 +78,10 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `invalid_window` | Pick-up not after drop-off, drop-off in the past, trip over 31 days (schedule over 92 days) |
 | `invalid_status`, `invalid_kind` | Booking is not in a state that allows this / handoff kind is not `drop_off`/`pick_up` |
 | `invalid_location`, `location_note_required` | Unknown place type / "Somewhere else" without a note |
+| `invalid_service`, `service_not_offered` | Service type is not `boarding`/`house_sitting` / the sitter does not offer it (`sitter_profiles.services`) |
+| `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |
+| `invalid_mode`, `place_required`, `place_too_long` | Meet & Greet is not `in_person`/`video` / in person without a place / place over 120 characters |
+| `meet_greet_not_yet` | Marking the Meet & Greet done before its agreed time |
 | `sitter_unavailable` | A slot is full or closed — detail = `YYYY-MM-DD slot, …`, or `no_open_slot` |
 | `pet_already_booked` | The pet already has a sitter (or a pending request) for overlapping hours |
 | `handoff_pending` | The sitter's own counter-offer is waiting for the owner |

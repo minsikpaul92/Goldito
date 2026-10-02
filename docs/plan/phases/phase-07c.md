@@ -5,15 +5,15 @@
 
 ## Goal
 
-마지막 인수인계(**Returned** — 03B. 06B가 붙으면 귀가 사진 체크도)와 함께 견주에게 **"Bori is home safe 🏠"** 최종 리포트가 가고, 이어서 **감사 인사 + ★ 5점 리뷰** 요청이 간다. 동시에 이번 돌봄의 데이터(check-in·task·알림장·인수인계 체크·시터 메모·문의 대화·세이프티 경고)를 AI(Super)가 **Pet Life Record**(식습관 · 배변 · 약 반응 · 행동 · 알레르기·주의사항 · 시터 팁)로 정리해 저장하고 **RAG에 인덱싱**한다. 다음 예약에서는 **다른 시터여도** 요청 카드의 "From Bori's Life Record", 문의 AI 답(07B), 케어 체크리스트 초안(06)이 이 기록을 불러온다.
+마지막 인수인계(**Returned** — 03B. 06B가 붙으면 귀가 사진 체크도)와 함께 견주에게 **"Max is home safe 🏠"** 최종 리포트가 가고, 이어서 **감사 인사 + ★ 5점 리뷰** 요청이 간다. 동시에 이번 돌봄의 데이터(check-in·task·알림장·인수인계 체크·시터 메모·문의 대화·세이프티 경고)를 AI(Super)가 **Pet Life Record**(식습관 · 배변 · 약 반응 · 행동 · 알레르기·주의사항 · 시터 팁)로 정리해 저장하고 **RAG에 인덱싱**한다. 다음 예약에서는 **다른 시터여도** 요청 카드의 "From Max's Life Record", 문의 AI 답(07B), 케어 체크리스트 초안(06)이 이 기록을 불러온다.
 
 ### Goal 달성 기준
 
-- [ ] Mina **Returned** → Jisoo "Bori and Mochi are home safe 🏠" (06B 이후에는 귀가 사진이 ok면 "· photo verified") → 예약 상세에 **Stay summary** 카드(기간 · 알림장 수 · 사진 수 · 완료 task 수 · 마지막 알림장 첫 문장)
-- [ ] 바로 뒤 Jisoo `review_requested` "Thanks for trusting Mina! How was Bori's stay? ⭐" → ★5 + (선택) 코멘트 → Mina `review_received` → Mina 시터 프로필 평균 별점·후기 수 갱신
-- [ ] Returned 후 1분 안 `life_record_updated` → `/owner/pets/[Bori]/record`: "Eats: finishes 1 cup in the morning · Meds: takes the skin pill best inside a treat · Potty: twice a day, normal · Behavior: excited by squirrels, calm indoors · Heads-up: chicken allergy, text instead of knocking" + 이번 돌봄 출처 링크
+- [ ] Lucy **Returned** → Chloe "Max and Mochi are home safe 🏠" (06B 이후에는 귀가 사진이 ok면 "· photo verified") → 예약 상세에 **Stay summary** 카드(기간 · 알림장 수 · 사진 수 · 완료 task 수 · 마지막 알림장 첫 문장)
+- [ ] 바로 뒤 Chloe `review_requested` "Thanks for trusting Lucy! How was Max's stay? ⭐" → ★5 + (선택) 코멘트 → Lucy `review_received` → Lucy 시터 프로필 평균 별점·후기 수 갱신
+- [ ] Returned 후 1분 안 `life_record_updated` → `/owner/pets/[Max]/record`: "Eats: finishes 1 cup in the morning · Meds: takes the skin pill best inside a treat · Potty: twice a day, normal · Behavior: excited by squirrels, calm indoors · Heads-up: chicken allergy, text instead of knocking" + 이번 돌봄 출처 링크
 - [ ] 기록에 없는 일(예: 산책을 안 했는데 "loves long walks")이 없음 (환각 테스트 3회)
-- [ ] Jun이 다음 달 Bori 예약 요청을 받으면 요청 카드에 **From Bori's Life Record** 요약 (지난 시터 Mina 기록) · 07B 답이 이 기록을 출처로 씀
+- [ ] Paul이 다음 달 Max 예약 요청을 받으면 요청 카드에 **From Max's Life Record** 요약 (지난 시터 Lucy 기록) · 07B 답이 이 기록을 출처로 씀
 - [ ] Life Record·RAG 어디에도 lockbox·buzzer·주소 없음 (D31)
 
 ---
@@ -42,9 +42,9 @@
 | Route | 역할 | 화면 | 주 액션 |
 | :--- | :--- | :--- | :--- |
 | `/owner/bookings/[bookingId]` (완료 상태) | owner | **Stay summary** · 귀가 사진 · **Leave a review** (아직 안 했으면) | Leave a review |
-| `/owner/bookings/[bookingId]/review` | owner | "How was Bori and Mochi's stay with Mina?" · **StarRating**(탭 1–5, 마우스 클릭) · 코멘트(선택) | **Send review** |
-| `/owner/pets/[petId]/record` | owner | **LifeRecordCard** 6칸(Eats · Meds · Potty · Behavior · Heads-up · Sitter tips) — 최신 기록 기준, 항목마다 출처 "From Mina · Oct 9–12" · 아래 지난 돌봄 목록 | 읽기 |
-| `/sitter/bookings/[bookingId]` · 요청 카드 (03B 확장) | sitter | **From Bori's Life Record** 접힘 카드 (요청 받은 시터 ~ 예약 끝날 때까지) | — |
+| `/owner/bookings/[bookingId]/review` | owner | "How was Max and Mochi's stay with Lucy?" · **StarRating**(탭 1–5, 마우스 클릭) · 코멘트(선택) | **Send review** |
+| `/owner/pets/[petId]/record` | owner | **LifeRecordCard** 6칸(Eats · Meds · Potty · Behavior · Heads-up · Sitter tips) — 최신 기록 기준, 항목마다 출처 "From Lucy · Oct 9–12" · 아래 지난 돌봄 목록 | 읽기 |
+| `/sitter/bookings/[bookingId]` · 요청 카드 (03B 확장) | sitter | **From Max's Life Record** 접힘 카드 (요청 받은 시터 ~ 예약 끝날 때까지) | — |
 | `/owner/sitters/[sitterId]` (03B 확장) | owner | ★ 4.9 · 12 reviews + 최근 코멘트 3개 | Book this sitter |
 
 ---
@@ -58,7 +58,7 @@
 | 7C.3 | 리뷰 UI | 민식 | `StarRating`(버튼 5개, 키보드·마우스), 보낸 뒤 읽기 전용. 시터 프로필·검색 카드에 평균 별점 | 1회 제한 |
 | 7C.4 | `POST /api/ai/life-record` | 슬기 | `routers/ai_life_record.py`: `assert_booking_party(booking)` + 찾기 완료 확인 · 반려동물마다 `source_snapshot` = 그 예약 구간의 check-ins · task_logs(완료·누락) · daily_reports 본문 · handoff_checks findings(06B가 아직 없으면 생략) · safety_checks 요약(08 있으면) · 시터 메모 · 문의 메시지(견주 질문만) · 이전 최신 Life Record(있으면) — **출입 정보·주소 키 없음** → `MODEL_REPORT`(Super) + `prompts/life_record/system.md` → `chat_json` `LifeRecord {eats, meds, potty, behavior, heads_up:[str], sitter_tips:[str], changed_since_last:[str]}` (각 항목 ≤ 2문장, 근거 없으면 null) → insert + `rag.index_source('life_record', record_id, 텍스트화, scope pet+owner)` → 견주 `life_record_updated`. 프론트가 Returned 직후 호출(멱등 — 이미 있으면 반환), 실패 시 예약 상세 **Retry** | 환각 테스트 3회 · 멱등 |
 | 7C.5 | Life Record UI | 민식 | 위 화면 + `LifeRecordCard` (07B 출처 칩·03B 요청 카드에서 재사용) | 데스크톱 마우스 확인 |
-| 7C.6 | 다음 예약 연결 | 민식·슬기 | 03B 요청 카드·예약 상세에 최신 기록 요약. 07B `rag.search`에 life_record 포함(이미 범위 필터), 06 `care-plan` 입력에 최신 기록 `heads_up` 전달 → 체크리스트 초안 주의사항 자동 제안 | Jun 요청 카드에 Mina 기록 |
+| 7C.6 | 다음 예약 연결 | 민식·슬기 | 03B 요청 카드·예약 상세에 최신 기록 요약. 07B `rag.search`에 life_record 포함(이미 범위 필터), 06 `care-plan` 입력에 최신 기록 `heads_up` 전달 → 체크리스트 초안 주의사항 자동 제안 | Paul 요청 카드에 Lucy 기록 |
 
 ### 프롬프트 규칙 (`prompts/life_record/system.md`, 영어)
 
@@ -71,7 +71,7 @@
 
 ## Definition of Done (DoD)
 
-1. Goal 달성 기준 수동 시나리오 통과 (Mina 완료 → 리뷰 → 기록 → Jun 요청 카드)
+1. Goal 달성 기준 수동 시나리오 통과 (Lucy 완료 → 리뷰 → 기록 → Paul 요청 카드)
 2. `pytest`: life-record 비당사자 403, 찾기 전 409 `stay_not_finished`, 멱등, snapshot에 금지 키 없음
 3. 환각 테스트: (a) 산책 0회 → walk 관련 행동 문장 없음 (b) 약 task 없음 → meds null (c) 이전 기록과 충돌 → changed_since_last에 표시
 4. rls_smoke N 통과 · 리뷰 1회 제한
