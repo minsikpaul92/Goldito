@@ -42,15 +42,15 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 ```
  ① Inquiry ──> ② Meet & Greet ──> ③ Booking ──> ④ Care & Pet Transit ──> ⑤ Completion
  AI drafts in    care request       consents,      live trip · 5-second      home safe · review ·
- sitter's voice → checklist        payment,       check · AI daily note     Pet Life Record → RAG
+ sitter's tone → checklist        payment,       check · AI daily note     Pet Life Record → RAG
                                    timed unlock                                       │
       ▲                                                                               │
       └──────────────── the next stay starts with everything PawNote learned ─────────┘
 ```
 
-### ① Inquiry — a reply in the sitter's own voice
+### ① Inquiry — a reply in the sitter's own writing style
 - The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question.
-- **PawNote AI drafts the reply in seconds, in the sitter's own voice** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, with a clear responsibility prompt — so a busy or sleeping sitter still answers first.
+- **PawNote AI drafts the reply in seconds, in the sitter's own writing style** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, with a clear responsibility prompt — so a busy or sleeping sitter still answers first.
 - Prices are calculated by the server, never by the model — the reply and the checkout always show the same numbers.
 
 ### ② Meet & Greet — the care request becomes a checklist
@@ -66,7 +66,7 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 ### ④ Care & Pet Transit — live trips, 5-second checks, AI daily notes
 - **Uber-style transit:** whoever is driving taps **Start trip**; the other side sees a live map and ETA. On arrival the owner gets visitor-parking directions, and the sitter gets the buzzer and lockbox card.
 - **Photo check-in:** the sitter snaps one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt). The owner gets *"Pick-up complete — care has started · photo verified."*
-- **5-second check:** Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅, an optional one-line memo, and two photos. **Nemotron writes the daily note** in a warm sitter's voice, using only what actually happened.
+- **5-second check:** Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅, an optional one-line memo, and two photos. **Nemotron writes the daily note** in a warm sitter's tone, using only what actually happened.
 - **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day, KidsNote-style.
 - **Treat Safety Guard** *(stretch)*: scan a treat label, and Nemotron Ultra catches allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
 
@@ -107,7 +107,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 | Stage | AI task | Model ID | Why |
 | :--- | :--- | :--- | :--- |
-| ① Inquiry | Reply draft in the sitter's voice, grounded in the sitter's calendar, server-side quote, house policy, and the pet's Life Record | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast enough to answer in seconds; facts and prices come from the server |
+| ① Inquiry | Reply draft in the sitter's tone, grounded in the sitter's calendar, server-side quote, house policy, and the pet's Life Record | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast enough to answer in seconds; facts and prices come from the server |
 | ① ⑤ Retrieval | Embeddings for the RAG knowledge base (Life Records, policies, past questions) | `Qwen/Qwen3-Embedding-8B` (1024-dim) | The embedding model on Token Factory; stored in Supabase pgvector |
 | ② Meet & Greet | Care & medication request → structured mission checklist | `nvidia/nemotron-3-super-120b-a12b` | Reliable structure for times, doses, and cautions |
 | ④ Transit | Handoff photo check — pet visible, crate or seatbelt in the car | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory |

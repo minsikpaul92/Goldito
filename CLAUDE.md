@@ -75,7 +75,7 @@ Owner                                  Sitter
 2. **One primary action per screen** — e.g. sitter task row → big "Complete with photo".
 3. **Feedback loops** — loading skeleton → success toast → owner notification (visible in demo).
 4. **Danger is loud** — safety `DANGER`: red modal, must acknowledge; do not use subtle toasts only.
-5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: edit/add on an AI-written sentence (5-second check D34 · D38, report before sending, inquiry draft before Send), the sitter's policy text (written once). All owner-facing AI text is in the sitter's first-person voice (D35); the sitter approves every reply unless auto-send is opted in (D36).
+5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: edit/add on an AI-written sentence (5-second check D34 · D38, report before sending, inquiry draft before Send), the sitter's policy text (written once). All owner-facing AI text is in the sitter's first-person tone (D35); the sitter approves every reply unless auto-send is opted in (D36).
 6. **Kidsnote familiarity** — timeline feed, checkmarks on meds, warm report tone (AI), not a developer dashboard.
 
 ### When implementing UI
@@ -199,7 +199,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 
 | Feature | Phases |
 | :--- | :--- |
-| ① Inquiry — AI draft in the sitter's voice + approval + RAG | 07B (quote: 03C) |
+| ① Inquiry — AI draft in the sitter's tone + approval + RAG | 07B (quote: 03C) |
 | ② Meet & Greet — care request → checklist, Meet & Greet, transport mode | 06, 03B |
 | ③ Booking — schedule, request, consents, demo payment, timed unlock | 02, 03B, 03C (P1 polish: 11) |
 | ④ Care & Pet Transit — live trip, photo check, 5-second check, daily report, feed & album | 04, 05, 06, 06B, 07, 09 |

@@ -26,7 +26,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 | Priority | Stage | Feature | Inspired by | AI | Phase |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **P0** | ① Inquiry | Owner asks a sitter (service type, dates, pets, a question) → AI drafts the reply in the sitter's own voice within seconds (sitter sends with one tap, or opts in to auto-send), grounded in the calendar, server-side quote (holiday + multi-pet rates), sitter policy, Life Record (RAG) | Rover fast replies | Nano + Qwen3 Embedding | 07B (03C quote) |
+| **P0** | ① Inquiry | Owner asks a sitter (service type, dates, pets, a question) → AI drafts the reply in the sitter's own writing style within seconds (sitter sends with one tap, or opts in to auto-send), grounded in the calendar, server-side quote (holiday + multi-pet rates), sitter policy, Life Record (RAG) | Rover fast replies | Nano + Qwen3 Embedding | 07B (03C quote) |
 | **P0** | ② Meet & Greet | Care & medication request → AI mission checklist + Heads-up · Meet & Greet (in person / video) · transport mode (Owner drives / Sitter drives) | Kidsnote medication request | Super | 06, 03B |
 | **P0** | ③ Booking | Part-time sitters: schedule by day × slot (own hours, capacity), regular-sitter schedule, whole-trip booking with drop-off/pick-up time & place (negotiable), Boarding / House sitting, cancel → rebook | Marketplace | — | 03B |
 | **P0** | ③ Booking | Quote → Canada-first consent templates → **demo payment** → sitter home info after payment · owner entry info unlocks 2 h before | — | — (rules) | 03C |
