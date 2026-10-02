@@ -107,11 +107,12 @@ export default function LoginScreen() {
       <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
 
       {isDemoEnabled ? (
-        <Card style={styles.demo} testID="demo-block">
-          <Text style={styles.demoTitle}>Try the demo</Text>
-          <Text style={styles.subtitle}>
-            For judges: sign in to a ready-made account — Bori (chicken allergy) is already set up.
-          </Text>
+        <View style={styles.demo} testID="demo-block">
+          <View style={styles.divider}>
+            <View style={styles.line} />
+            <Text style={styles.dividerText}>or try a demo</Text>
+            <View style={styles.line} />
+          </View>
           <View style={styles.demoButtons}>
             <Button
               label="Demo owner"
@@ -130,7 +131,7 @@ export default function LoginScreen() {
               testID="demo-sitter"
             />
           </View>
-        </Card>
+        </View>
       ) : null}
     </Screen>
   );
@@ -167,12 +168,21 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.error,
     },
     demo: {
+      gap: theme.spacing.md,
+    },
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: theme.spacing.sm,
     },
-    demoTitle: {
-      fontSize: theme.fontSize.body,
-      fontWeight: "600",
-      color: theme.color.text,
+    line: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.color.border,
+    },
+    dividerText: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
     },
     demoButtons: {
       flexDirection: "row",

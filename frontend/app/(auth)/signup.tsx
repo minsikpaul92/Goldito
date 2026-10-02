@@ -1,6 +1,7 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { RoleCard } from "../../components/RoleCard";
 import { Button } from "../../components/ui/Button";
@@ -11,20 +12,33 @@ import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
 import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 const MIN_PASSWORD_LENGTH = 6;
+// Shape only (name@domain.tld) — whether the inbox exists is Supabase "Confirm email".
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** Back to where the visitor came from, or to sign in on a direct link. */
+function goBack() {
+  if (router.canGoBack()) router.back();
+  else router.replace("/login");
+}
 
 export default function SignupScreen() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [role, setRole] = useState<Role | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Shown as soon as the second password is typed, not only on submit.
+  const mismatch = confirm !== "" && confirm !== password ? "Passwords don't match." : null;
 
   const canSubmit =
     isSupabaseConfigured &&
@@ -32,10 +46,15 @@ export default function SignupScreen() {
     name.trim() !== "" &&
     email.trim() !== "" &&
     password !== "" &&
+    confirm === password &&
     !submitting;
 
   async function createAccount() {
     if (!canSubmit || !role) return;
+    if (!EMAIL_SHAPE.test(email.trim())) {
+      setError("Enter a valid email address, like you@example.com.");
+      return;
+    }
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(`Use a password with at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
@@ -62,6 +81,18 @@ export default function SignupScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back"
+        onPress={goBack}
+        hitSlop={theme.spacing.sm}
+        style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+        testID="signup-back"
+      >
+        <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
+        <Text style={styles.backText}>Back</Text>
+      </Pressable>
+
       <View style={styles.header}>
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>First, how will you use PawNote?</Text>
@@ -122,8 +153,19 @@ export default function SignupScreen() {
           secureTextEntry
           autoComplete="new-password"
           textContentType="newPassword"
-          onSubmitEditing={() => void createAccount()}
           testID="signup-password"
+        />
+        <TextField
+          label="Confirm password"
+          value={confirm}
+          onChangeText={setConfirm}
+          placeholder="Type it again"
+          secureTextEntry
+          autoComplete="new-password"
+          textContentType="newPassword"
+          error={mismatch}
+          onSubmitEditing={() => void createAccount()}
+          testID="signup-confirm"
         />
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="signup-error">
@@ -148,9 +190,23 @@ const makeStyles = (theme: Theme) =>
     content: {
       gap: theme.spacing.lg,
     },
+    back: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      minHeight: 44,
+      gap: theme.spacing.xs,
+    },
+    pressed: {
+      opacity: 0.6,
+    },
+    backText: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.primary,
+    },
     header: {
       gap: theme.spacing.xs,
-      marginTop: theme.spacing.lg,
     },
     title: {
       fontSize: theme.fontSize.title,
