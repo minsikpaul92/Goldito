@@ -49,6 +49,20 @@
 
 ---
 
+## Google Meet (3B.11, D45) — backend만
+
+영상 Meet & Greet 링크는 **PawNote Google 계정**이 Calendar 이벤트를 만들어 생깁니다. 아래를 한 번만 하면 됩니다 (값이 비어 있으면 앱은 시각 + .ics로만 동작).
+
+1. Google Cloud 프로젝트에서 **Google Calendar API** 사용 설정 (APIs & Services → Library)
+2. **OAuth consent screen** (Google Auth Platform) → Get started: App name `PawNote`, support email, **Audience = External**, contact email → Create
+3. **Data Access** → Add or remove scopes → `https://www.googleapis.com/auth/calendar.events` 추가 → Save
+4. **Audience** → Publishing status **Publish app** → **In production** (Testing이면 refresh token이 7일 뒤 만료). "Google hasn't verified this app" 경고는 우리 계정 하나만 쓰므로 괜찮음
+5. **Clients** (또는 Credentials → Create credentials → OAuth client ID) → **Web application**, 이름 `PawNote backend`, Authorized redirect URI `https://developers.google.com/oauthplayground` → Create → **Client ID / Client secret** 복사
+6. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) → 오른쪽 위 ⚙️ → **Use your own OAuth credentials** 체크 → ID / secret 붙여넣기 → Step 1에 `https://www.googleapis.com/auth/calendar.events` 입력 → **Authorize APIs** → **이벤트를 만들 PawNote Google 계정**으로 로그인 → (경고) Advanced → Go to PawNote → Allow → Step 2 **Exchange authorization code for tokens** → **Refresh token** 복사
+7. `backend/.env` (배포 후에는 Nebius Endpoint env): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
+
+---
+
 ## 팀 공유 (1Password 없이)
 
 - **Supabase / Cloudinary:** 대시보드 **팀 초대**

@@ -17,7 +17,9 @@ import {
   completeMeetGreet,
   getMeetGreetOptions,
   proposeMeetGreet,
+  releaseVideoLink,
   requestSkipMeetGreet,
+  requestVideoLink,
   respondMeetGreet,
   respondSkipMeetGreet,
 } from "../lib/meetGreet";
@@ -86,7 +88,11 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
 
   const send = (mode: MeetGreetMode, at: string, place: string | null) => {
     setSheet(null);
-    void run(() => proposeMeetGreet(booking.id, mode, at, place), `Meet & Greet sent to ${other}`);
+    void run(async () => {
+      await proposeMeetGreet(booking.id, mode, at, place);
+      // Moving a video call in person drops its Calendar event (a new video time keeps it).
+      if (mode === "in_person" && mg.mode === "video") await releaseVideoLink(booking.id);
+    }, `Meet & Greet sent to ${other}`);
   };
 
   if (status === "done" || status === "skipped" || !open) {
@@ -135,7 +141,13 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
         <Text style={styles.body}>{summary}</Text>
         <Button
           label="Accept"
-          onPress={() => void run(() => respondMeetGreet(booking.id, true), `Meet & Greet set with ${other}`)}
+          onPress={() =>
+            void run(async () => {
+              await respondMeetGreet(booking.id, true);
+              // Video: the Google Meet link is made right away (3B.11); without Google it stays time + .ics.
+              if (mg.mode === "video") await requestVideoLink(booking.id);
+            }, `Meet & Greet set with ${other}`)
+          }
           disabled={busy}
           testID="meet-accept"
         />
@@ -164,7 +176,18 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
               testID="meet-join"
             />
           ) : (
-            <Text style={styles.muted}>The Google Meet link shows up here soon.</Text>
+            <View style={styles.links}>
+              <Text style={styles.muted}>No Google Meet link yet — the time and calendar file still work.</Text>
+              <TextButton
+                label="Get the Meet link"
+                onPress={() =>
+                  void run(async () => {
+                    if (!(await requestVideoLink(booking.id))) throw new Error("The Google Meet link isn't ready yet. Try again later.");
+                  }, "Google Meet link ready")
+                }
+                testID="meet-link-retry"
+              />
+            </View>
           )
         ) : null}
         <Text style={styles.label}>Go over together</Text>
@@ -272,7 +295,10 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
             label="Decline and cancel the booking"
             onPress={() => {
               setConfirm(null);
-              void run(() => respondSkipMeetGreet(booking.id, false), "Booking cancelled");
+              void run(async () => {
+                await respondSkipMeetGreet(booking.id, false);
+                await releaseVideoLink(booking.id);
+              }, "Booking cancelled");
             }}
             testID="meet-decline-confirm"
           />

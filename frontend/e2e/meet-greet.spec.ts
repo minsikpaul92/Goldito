@@ -114,7 +114,7 @@ test.describe("meet & greet", () => {
     });
     const screen = await openDetail(page, OWNER);
     await expect(screen.getByTestId("meet-greet")).toContainText("Video · Oct 4, 7:00 PM");
-    await expect(screen.getByTestId("meet-greet")).toContainText("The Google Meet link shows up here soon.");
+    await expect(screen.getByTestId("meet-greet")).toContainText("No Google Meet link yet");
     await expect(screen.getByTestId("meet-join")).toHaveCount(0);
 
     db.bookings[0].meet_greet_link = "https://meet.google.com/abc-defg-hij";

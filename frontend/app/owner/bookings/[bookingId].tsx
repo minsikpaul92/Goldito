@@ -16,6 +16,7 @@ import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
+import { releaseVideoLink } from "../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
@@ -246,7 +247,11 @@ export default function OwnerBookingDetail() {
             label="Cancel booking"
             onPress={() => {
               setConfirmCancel(false);
-              void run(() => cancelBooking(booking.id, "Owner cancelled"), "Booking cancelled");
+              void run(async () => {
+                await cancelBooking(booking.id, "Owner cancelled");
+                // A video Meet & Greet's Calendar event goes with the booking (3B.11).
+                await releaseVideoLink(booking.id);
+              }, "Booking cancelled");
             }}
             testID="cancel-confirm"
           />

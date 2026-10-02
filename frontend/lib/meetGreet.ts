@@ -1,3 +1,4 @@
+import { getApiBaseUrl } from "./api";
 import { BookingError, BookingSummary, bookingErrorMessage } from "./bookings";
 import { getSupabase } from "./supabase";
 
@@ -61,6 +62,39 @@ export async function getMeetGreetOptions(bookingId: string): Promise<MeetSpots>
     sitterName: row.sitter_name,
     sitterSpots: row.sitter_spots ?? [],
   };
+}
+
+/** FastAPI call with the user's Supabase token; null when the backend can't help (no URL, not set up, down). */
+async function backend(path: string, bookingId: string): Promise<{ link: string | null; status: string } | null> {
+  const base = getApiBaseUrl();
+  if (!base) return null;
+  const { data } = await getSupabase().auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return null;
+  try {
+    const response = await fetch(`${base}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ booking_id: bookingId }),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as { link: string | null; status: string };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ask FastAPI for the Google Meet link of an agreed video Meet & Greet (3B.11, D45). Safe to
+ * call again; returns null while Google isn't set up — the card then keeps the time + .ics.
+ */
+export async function requestVideoLink(bookingId: string): Promise<string | null> {
+  return (await backend("/api/meet-greet/video-link", bookingId))?.link ?? null;
+}
+
+/** Best effort: drop the Calendar event once the booking ended or the meeting moved in person. */
+export async function releaseVideoLink(bookingId: string): Promise<void> {
+  await backend("/api/meet-greet/video-link/release", bookingId);
 }
 
 function icsStamp(date: Date): string {
