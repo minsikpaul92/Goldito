@@ -1,7 +1,7 @@
 # Phase 11 — P1: 사진 요청 · 펫 스킨 · 8bit 상태방 · 스티커 · 영상 기분 · Settings · 공지 (+ P2 SFT)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md). **P0 시나리오 코어(5단계 — [full-process.ko.md](../full-process.ko.md))가 배포 URL에서 동작한 후에만** 시작 (예외: 사용자가 우선순위 변경). 구 11.4 P2 Q&A는 **Stage 1 문의 AI [07B](phase-07b.md)로 흡수** (D27).
-> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **권장 순서: 11.11 (Settings·패치노트) → 11.1 → 11.10 → 11.12 → 11.8 → 11.9 → 11.2** — 11.11은 작고 CHANGELOG 습관용; 11.12는 Phase 06 check-in 데이터 필요. Tavily(11.3)는 08.7에서 끝났으면 생략.
+> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **권장 순서: 11.11 (Settings·패치노트) → 11.1 → 11.10 → 11.12 → 11.8 → 11.9 → 11.13 → 11.14 → 11.2** (TODO와 같음) — 11.11은 작고 CHANGELOG 습관용; 11.12는 Phase 06 check-in 데이터 필요. Tavily(11.3)는 08.7에서 끝났으면 생략. P2 11.7(SFT)은 보여주기용 (D43).
 
 ## Goal
 

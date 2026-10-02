@@ -13,11 +13,11 @@ Every feature must pass:
 
 | Owner | Sitter |
 | :--- | :--- |
-| **Learn without asking.** Updates arrive proactively. | **Care, snap, tap.** No report typing, no repetitive DMs. |
+| **Learn without asking.** Updates arrive proactively. | **Care, snap, tap.** Near-zero report typing (pick AI chips, add a short note if needed), no repetitive DMs. |
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D43).
+**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D46).
 
 **Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
 
@@ -33,6 +33,7 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
+| Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; PawNote Google account OAuth — D45) |
 | AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
@@ -63,7 +64,7 @@ Owner                                  Sitter
   Trip (live map + ETA, arrival card)    Trip (Start trip, arrival card, photo check)
   Feed / Album (by day + category)       Pet feed upload
   Care request → checklist · Activity    Today's tasks + 5-second check + photo
-  Daily report (read)                    Report generate → send
+  Daily report (read)                    Report: AI chips + short note → approve
   Review · Pet Life Record               Schedule · policies · rates
   Notifications                          (stretch) Treat scanner (safety)
   (P1) Photo request                     (P1) Notices
@@ -75,7 +76,7 @@ Owner                                  Sitter
 2. **One primary action per screen** — e.g. sitter task row → big "Complete with photo".
 3. **Feedback loops** — loading skeleton → success toast → owner notification (visible in demo).
 4. **Danger is loud** — safety `DANGER`: red modal, must acknowledge; do not use subtle toasts only.
-5. **No required sitter text fields for P0** — no caption box, no report textarea. Optional only: edit/add on an AI-written sentence (5-second check D34 · D38, report before sending, inquiry draft before Send), the sitter's policy text (written once). All owner-facing AI text is in the sitter's first-person tone (D35); the sitter approves every reply unless auto-send is opted in (D36).
+5. **No required sitter text fields for P0 (near-zero typing, D38)** — no caption box, no required report textarea. The AI suggests chips from the day's check-ins and photos; the sitter picks them. Optional only: a short note on the daily report (≤ 200 chars), edits to an AI draft before it goes out (report, inquiry), the sitter's policy text and meeting spots (written once). All owner-facing AI text is in the sitter's first-person tone (D35); the sitter approves every reply unless auto-send is opted in (D36).
 6. **Kidsnote familiarity** — timeline feed, checkmarks on meds, warm report tone (AI), not a developer dashboard.
 
 ### When implementing UI
@@ -153,8 +154,8 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 → 01 → 02 → 03 → 03B → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 (P1)`  
-After **07.1** (Nebius client), **07 / 08 / 09** can parallelize (Seulgi vs Minsik) but TODO must list **one** "Current focus" per agent session.
+`00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
+After **07.1** (Nebius client), Seulgi's AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5) runs in parallel with Minsik's app queue, but TODO must list **one** "Current focus" per agent session.
 
 ### Coding discipline
 
@@ -207,7 +208,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-The scenario core (03B → 07C) comes first; the treat safety guard (08, + Tavily 8.7) is a P0 stretch after it (D27); Pet Transit (06B) is the last P0 item before deploy (D41). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
+The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 
@@ -221,7 +222,8 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/care-plan` | Stage 2 — care & medication request → checklist draft |
 | `POST /api/ai/handoff-check` | Stage 4 — handoff photo check (pet visible, crate / seatbelt) |
 | `POST /api/ai/caption` | Stage 4 — feed auto-caption + album category |
-| `POST /api/ai/daily-report` | Stage 4 — report draft from the 5-second check + photos |
+| `POST /api/ai/report-chips` | Stage 4 — chip suggestions from the day's check-ins, tasks, and photos; the sitter keeps or turns off each (D38) |
+| `POST /api/ai/daily-report` | Stage 4 — report draft from the chips the sitter kept, an optional short note, and photos; posted only after the sitter approves |
 | `POST /api/ai/life-record` | Stage 5 — stay → Pet Life Record + RAG indexing |
 | `POST /api/ai/safety-check` | Stretch — label photo → JSON safety (+ Tavily sources, 8.7) |
 

@@ -79,4 +79,4 @@ Playbook §11
 
 ## 다음 Phase
 
-→ [Phase 07C — 완료 · Life Record](phase-07c.md) → [Phase 10 — 데모·배포](phase-10.md)
+→ [Phase 07C — 완료 · Life Record](phase-07c.md) → [Phase 06B — Pet Transit](phase-06b.md) → (08 stretch) → [Phase 10 — 데모·배포](phase-10.md)

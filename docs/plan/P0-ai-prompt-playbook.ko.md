@@ -11,9 +11,9 @@
 
 ## 0. 어디부터? (추천 순서 한 줄)
 
-**사람(계정·키) → DB 스키마 → 백엔드 뼈대 → 프론트 뼈대 → 인증·역할 → 예약·Meet & Greet(03B) → 견적·동의서·데모 결제(03C) → Cloudinary 업로드 → 피드·알림 → 케어 의뢰서·5초 체크(06) → Pet Transit(06B) → 알림장(07) → 문의 AI·RAG(07B) → 캡션·앨범(09) → 완료·Life Record(07C) → 시드·데모·배포 → (stretch) 세이프티**
+**사람(계정·키) → DB 스키마 → 백엔드 뼈대 → 프론트 뼈대 → 인증·역할 → 예약·Meet & Greet(03B) → 견적·동의서·데모 결제(03C) → Cloudinary 업로드 → 피드·알림 → 케어 의뢰서·5초 체크(06) → 알림장(07) → 문의 AI·RAG(07B) → 캡션·앨범(09) → 완료·Life Record(07C) → Pet Transit(06B — P0 맨 마지막, D41) → (stretch) 세이프티(08) → 시드·데모·배포(10)**
 
-AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 기능은 **붙일 데이터(예약·피드·체크인)가 먼저** 있어야 합니다. 슬기의 AI 백엔드(7.1 → 7B → 6.12 → 6B.5 → 7.2 → 9.1 → 7C.4)는 병렬로 진행합니다.
+AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 기능은 **붙일 데이터(예약·피드·체크인)가 먼저** 있어야 합니다. 슬기의 AI 백엔드(7.1 → 7B → 6.12 → 7.2·7.7 → 9.1 → 7C.4 → 6B.5)는 병렬로 진행합니다 (6B.5는 마지막 — D41).
 
 ---
 
@@ -209,7 +209,7 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 | :--- | :--- | :--- | :--- |
 | 3B.0 | 탭 변경 + `004_booking_options.sql` (service_type, services, Meet & Greet, media purpose) | 03 | 탭 라벨 안 잘림 |
 | 3B.1–3B.8 | 스케줄 · 단골·검색 · 요청 · 협의 · Received/Returned · 취소·재예약 | 3B.0 | [phase-03b](phases/phase-03b.md) Goal |
-| 3B.9–3B.10 | Meet & Greet · 서비스·이동 방식 UI | 3B.3 | 제안 → 수락 → Done |
+| 3B.9–3B.11 | Meet & Greet(첫 만남만 — 대면 장소·건너뛰기 동의, D44) · 서비스·이동 방식 UI · Google Meet 링크(D45) | 3B.3 | 제안 → 수락 → Done / 건너뛰기 거부 = 취소 / 영상 수락 → Meet 링크 |
 | 3C.1–3C.7 | `quote_booking` · 동의서 · `pay_booking_demo` · 시터 집 정보 · 출입 정보 2시간 전 해제 | 3B | rls_smoke I–K |
 
 ### AI 프롬프트 — 3C SQL (견적·결제·해제)
@@ -234,6 +234,18 @@ Sitter booking detail: EntryInfoCard (locked → "Unlocks …", unlocked → Sho
 Mouse-only inside the phone frame (DESIGN.md §7.7). English copy. "Demo template — not legal advice" footer.
 
 DoD: Pay is disabled until every required consent is signed; Playwright flow covers it.
+```
+
+### AI 프롬프트 — 3B.9·3B.11 Meet & Greet
+
+```text
+Implement Meet & Greet per docs/plan/phases/phase-03b.md 3B.9 and 3B.11 (architecture D44–D45):
+- 004_booking_options.sql: meet_greet_status (not_needed / required / proposed / agreed / done / skip_requested / skipped), set by request_booking — required only when this owner and sitter have never met (no earlier booking with a finished handoff and no finished Meet & Greet); meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_link, meet_greet_event_id, proposed_by / skip_requested_by; owner_profiles.meet_spots and sitter_profiles.meet_spots (up to 3 labels each)
+- RPCs: propose_meet_greet, respond_meet_greet, complete_meet_greet, request_skip_meet_greet, respond_skip_meet_greet (decline → cancel_booking with reason 'meet_greet_declined'), get_meet_greet_options; respond_booking(accept) raises meet_greet_required until the status is not_needed, done, or skipped
+- FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the PawNote Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
+- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Mina says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
+
+DoD: the phase-03b Goal checklist (first-time, in person, video, skip accepted, skip declined, repeat pair) passes in two browser windows; pytest mocks Google.
 ```
 
 ---
@@ -288,7 +300,7 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 | :--- | :--- | :--- | :--- |
 | 6.1 | Owner: `care_tasks` CRUD (약/산책, 시간) | 3.2 | DB 반영 |
 | 6.2 | `ensure_today_task_logs` RPC — 화면 진입 시 자동, 멱등 (수동 버튼 없음, phase-06 6.2) | 6.1 | sitter todo list |
-| 6.3 | Sitter: due task → 완료 + **인증 사진** → task_log done | 4.3, 6.2 | optional feed_post link |
+| 6.3 | Sitter: due task → **Mark done** (사진은 선택 — Plan B) → task_log done | 4.3, 6.2 | 사진이 있을 때만 feed_post |
 | 6.4 | 완료 시 owner notification | 6.3 | |
 | 6.5 | 인앱 리마인더 배너 (phase-06) · stretch 6.7 Serverless Job | 6.2 | |
 
@@ -298,10 +310,10 @@ DoD: sitter posts photo, owner sees it within realtime or refresh; notification 
 Implement medication/walk tasks:
 - OwnerTaskScreen: create care_task with a species-allowed type (medication, feeding, play, sleep + walk for dogs / litter for cats), title, dose optional, scheduled_time, repeat daily
 - RPC ensure_today_task_logs(p_pet) in 007_care.sql, called automatically when the screen opens (idempotent) — phase-06 6.2
-- SitterTasksScreen: list pending task_logs for today, Complete opens camera/upload, marks done, links media_id, creates feed_post optional with caption "Medication done" / "Walk done"
-- Notify owner on completion
+- SitterTasksScreen: list pending task_logs for today; primary **Mark done** (no photo), secondary **Done with photo** via pickMedia() → complete_task_log(p_task_log, p_media_id default null); a feed_post is created only when a photo is attached (Plan B — docs/plan/sitter-care-loop.ko.md)
+- Notify owner on completion (task_done), with or without a photo
 
-DoD: owner creates 8am medication, sitter completes with photo, owner gets notification and sees task done state.
+DoD: owner creates an 8am medication; the sitter marks it done without a photo (notification + Activity, no feed card), then completes another task with a sample photo (notification + feed card).
 ```
 
 ### AI 프롬프트 — 6.12–6.14 케어·투약 의뢰서 (Stage 2)
@@ -316,11 +328,11 @@ DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 He
 
 ---
 
-## 8B. Phase 6B — Pet Transit (Stage 4)
+## 8B. Phase 6B — Pet Transit (Stage 4) — 만드는 순서는 P0 맨 마지막 (D41)
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 6B.1 | `013_transit.sql` — trips (마지막 위치만), handoff_checks, home 좌표, start/update/end RPC | 03C | rls_smoke L |
+| 6B.1 | `012_transit.sql` — trips (마지막 위치만), handoff_checks, home 좌표, start/update/end RPC | 03C | rls_smoke L |
 | 6B.2–6B.4 | `lib/location.ts` (GPS / Simulate) · TripMap(보기 전용) · 도착 카드 | 6B.1, 05 | 두 창에서 ETA 3초 안 |
 | 6B.5 | `POST /api/ai/handoff-check` (슬기) | 7.1, 04 | 샘플 4장 기대 결과 |
 | 6B.6–6B.7 | `complete_handoff(p_check)` 연결 · Playwright | 6B.5 | photo verified 알림 |
@@ -329,7 +341,7 @@ DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 He
 
 ```text
 Implement Pet Transit per docs/plan/phases/phase-06b.md and architecture D32:
-- supabase/migrations/013_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
+- supabase/migrations/012_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
 - frontend/lib/location.ts: one source for real GPS (expo-location / navigator.geolocation) and "Simulate the drive" (assets/demo/routes/*.json at 10×), posting every 5 s
 - TripMap.web.tsx: Leaflet + OSM, dragging/scrollWheelZoom/touchZoom off, ± buttons, fit both markers, OSM attribution; native TripMap.tsx = distance + ETA card
 - Trip screen for both roles + arrival cards (EntryInfoCard from 03C for the sitter, the sitter's place for the owner)
@@ -349,39 +361,41 @@ Implement POST /api/ai/handoff-check per phase-06b 6B.5: assert_booked_sitter(bo
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 7.1 | `backend/app/ai/nebius_client.py` 모델별 base_url | 0.3 | hello world chat |
+| 7.1 | `backend/app/services/nebius.py` — 모델별 base_url, `chat`·`chat_json`·`embed`, 호출 지표 로그 | 0.3 | role별 hello world + TTFT·지연 중앙값 표 |
 | 7.2 | `POST /api/ai/daily-report` 입력: pet_id, date | 5.x, 6.x | draft JSON |
 | 7.3 | Sitter: 초안 미리보기 → Send → `daily_reports.sent` | 7.2 | Owner 읽기 |
 | 7.4 | Few-shot 파일 `backend/app/ai/prompts/daily_report/` (익명화 샘플) | 슬기 | git에 샘플만 |
+| 7.7 | `POST /api/ai/report-chips` — 하루 기록 칩(서버) + 사진 칩(Vision) (D38) | 7.1, 06 | 사진 2장 → 칩 2–4개, 끈 칩은 알림장에 없음 |
 
 ### AI 프롬프트 — 7.1 Nebius 클라이언트
 
 ```text
-Implement backend/app/services/nebius.py:
-- OpenAI-compatible clients map model id -> base_url (eu-north1 vs us-central1 per docs/plan/README.ko.md)
-- chat_completion(model, messages, **kwargs)
-- Unit test mock or skip if no key
+Implement backend/app/services/nebius.py per docs/plan/phases/phase-07.md 7.1 and architecture §9:
+- OpenAI-compatible clients cached per base URL; model role (MODEL_FAST / MODEL_REPORT / MODEL_SAFETY / MODEL_VISION / MODEL_EMBED) -> (model id, base URL) from env
+- chat(role, messages, **kw), chat_json(role, messages, schema) with the strip-<think> / first-JSON-block / one-retry rules, embed(texts) with dimensions=MODEL_EMBED_DIM
+- One structured metrics log line per call: role, model, endpoint, ttft_ms, latency_ms, tokens, retried, ok (no prompt or response text)
+- Unit tests mock the client or skip without NEBIUS_API_KEY
 
-DoD: script scripts/test_nebius.py prints response from nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B.
+DoD: scripts/test_nebius.py calls every role 5 times (vision with one sample image) and writes the TTFT / latency median table to docs/plan/phases/notes/model-ids.md.
 ```
 
 ### AI 프롬프트 — 7.2–7.3 알림장 API + UI
 
 ```text
-POST /api/ai/daily-report { pet_id, date }:
-- Gather today's feed_post captions, completed task_logs summaries (server-side Supabase service role)
-- Call nvidia/nemotron-3-super-120b-a12b with system prompt from docs/plan (warm pet sitter, no fabrication)
+POST /api/ai/daily-report { pet_id, date, inputs, media_ids? } per docs/plan/phases/phase-07.md 7.2:
+- Build source_snapshot server-side (service role): the day's tasks, feed captions, care_checkins, the chips the sitter kept from POST /api/ai/report-chips (7.7), the sitter's optional short note, and the report photo descriptions saved by 7.7 (no second vision call)
+- Compose the prompt through tone.compose() (the sitter's style card + the same sitter's past reports, D35; few_shot.json only as the fallback) and call MODEL_REPORT (Super); facts only from source_snapshot
 - Save daily_reports status draft
-- Sitter UI: Generate report button, edit optional single textarea, Send sets status sent and notifies owner
-- Owner UI: DailyReportScreen read-only
+- Sitter UI: up to 2 photos → suggested chips (turn off wrong ones, fix values) → optional short note (≤ 200 chars) → Generate → review → Send (send_daily_report) posts it and notifies the owner (D38)
+- Owner UI: Reports list + read-only detail
 
-DoD: end of day flow produces a warm English report from real today's data only.
+DoD: the phase-07 Goal checklist and hallucination tests pass; a chip the sitter turned off never shows up, and a report can be sent with no note.
 ```
 
 ### 슬기 전용 AI 프롬프트 — 7.4 Few-shot
 
 ```text
-Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (English, D1), and PROMPT.md describing rules. No PII. Placeholder names like "Bori".
+Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json with 3 anonymized example reports (English, D1), and PROMPT.md describing rules. No PII. Placeholder names like "Bori". These 3 are the fallback when a sitter has no tone_samples yet (D35).
 ```
 
 ---
@@ -392,9 +406,13 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 | :--- | :--- | :--- | :--- |
 | 7B.1 | `010_inquiries_rag.sql` — pgvector, inquiries, inquiry_messages, knowledge_chunks, match_knowledge | 03C | rls_smoke M |
 | 7B.2 | `nebius.embed()` + `services/rag.py` (index / search) | 7.1 | 재인덱싱 중복 없음 |
-| 7B.3–7B.4 | `POST /api/ai/inquiry-reply` + prompt (슬기) | 7B.1–7B.2, 3C.1 | 근거 테스트 a–f |
+| 7B.3–7B.4 | `POST /api/ai/inquiry-reply` + prompt (슬기) | 7B.1–7B.2, 3C.1 | 근거 테스트 a–k |
 | 7B.5–7B.6 | Owner 문의 시트·스레드 · Sitter Inquiries + 초안 Send/Edit · 정책 편집 | 05, 7B.3 | 마우스만으로 문의 → 답 → 요청 |
 | 7B.7 | latency 지표 (p50 < 10 s) | 7B.3 | model-ids.md 기록 |
+| 7B.8 | 말투 레이어 `tone.compose()` + `tone_samples` (슬기, D35) | 7B.2 | 샘플 시터 2명의 초안 말투가 다르고 숫자는 서버 값 |
+| 7B.9 | 시터 승인 UX(Send · Edit/Add · Regenerate) + 학습 기록 (D36 · D38) | 7B.6, 7B.8 | 수정 후 발송 → edit_ratio 기록, 견주 화면에 AI 라벨 없음 |
+| 7B.10 | 자동 발송(대기 없이 바로) + 사람 속도 전달(입력 중 → 답장, 읽음은 실제 열람만) (D36–D37 — 지연 공식은 슬기) | 7B.9 | 자동 모드 약 30초 연출, 수동은 즉시 |
+| 7B.11 | (선택) tool calling 문의 에이전트 (D46) — 7.1에서 동작할 때만 | 7.1, 7B.3 | 근거 테스트 a–k 그대로 통과 |
 
 ### 슬기 전용 AI 프롬프트 — 7B.2–7B.4
 
@@ -405,8 +423,10 @@ Implement the inquiry auto-reply per docs/plan/phases/phase-07b.md and architect
 - Number check: any $ amount or date in reply must exist in the grounding JSON, else regenerate once, else fixed fallback text
 - Grounding JSON must never contain addresses, lockbox, buzzer, or other owners' data (unit test)
 - Idempotent: return the existing AI message if one exists
+- The reply is a first-person draft in the sitter's voice through tone.compose() (7B.8, D35); it stays a draft (status 'draft') until the sitter sends it, unless auto-send is on (7B.10, D36–D37)
+- Index only the owner's inquiry messages, scoped to that owner AND that sitter (architecture §9) — another sitter must never retrieve them
 
-DoD: backend/tests/test_inquiry.py cases a–f pass with a mocked model; live call p50 < 10 s logged.
+DoD: backend/tests/test_inquiry.py cases a–k pass with a mocked model; live call p50 < 10 s logged.
 ```
 
 ---
@@ -415,7 +435,7 @@ DoD: backend/tests/test_inquiry.py cases a–f pass with a mocked model; live ca
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 6B | rls_smoke N |
+| 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 03B (Returned — 06B 사진 체크는 붙으면 추가) | rls_smoke N |
 | 7C.2–7C.3 | 귀가 리포트 · Stay summary · 리뷰 UI | 7C.1 | 1회 제한 |
 | 7C.4 | `POST /api/ai/life-record` + RAG 인덱싱 (슬기) | 7B.2, 07 | 환각 테스트 3회 |
 | 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Jun 요청 카드에 Mina 기록 |
@@ -428,7 +448,7 @@ Implement POST /api/ai/life-record {booking_id} per phase-07c 7C.4: booking part
 
 ---
 
-## 10. Phase 8 — 간식 세이프티 가드 (P0 stretch — 시나리오 코어 뒤, D27)
+## 10. Phase 8 — 간식 세이프티 가드 (P0 stretch — 06B 뒤 시간이 남을 때, D27·D41)
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
@@ -510,10 +530,10 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 
 | 동시에 가능 | 민식 (Cursor) | 슬기 (Cursor) |
 | :--- | :--- | :--- |
-| Week 1 | Phase 1–3 ✅, 03B 예약 | 7.1 Nebius client + `embed()`, 데이터 익명화, 7.4 few-shot |
+| Week 1 | Phase 1–3 ✅, 03B 예약 (Meet & Greet · 3B.11 Google Meet 포함) | 7.1 Nebius client + `embed()`, 데이터 익명화, 7.4 few-shot |
 | Week 2 | 03C · 04 · 05 | 07B 문의 AI + RAG 백엔드, 6.12 care-plan |
-| Week 3 | 06 · 06B · 07 UI | 6B.5 handoff-check, 7.2 알림장, 9.1 캡션·분류 |
-| Week 4 | 07B UI · 09 · 07C · 10 | 7C.4 Life Record, 프롬프트 튜닝 · (stretch) 8.1–8.3 |
+| Week 3 | 06 · 07 UI | 7.2 알림장 · 7.7 칩 제안, 9.1 캡션·분류 |
+| Week 4 | 07B UI · 09 · 07C · 06B (P0 맨 마지막, D41) · (stretch 08) · 10 | 7C.4 Life Record, 6B.5 handoff-check, 프롬프트 튜닝 · (stretch) 8.1–8.3 |
 | 합류 지점 | `/api/ai/*` contract OpenAPI or README | FastAPI 라우터에 붙이기 |
 
 **API 계약을 먼저 고정**하면 병렬이 쉽습니다. Phase 7 시작 전에 `backend/docs/openapi-ai.yaml` 또는 README 표:
@@ -525,7 +545,8 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 | POST /api/ai/handoff-check | `{ booking_id, kind, check_type, media_id }` | `{ check_id, status, findings, message, model, latency_ms }` |
 | POST /api/ai/caption | `{ pet_id, media_id }` | `{ caption, category, source, model, latency_ms }` |
 | POST /api/ai/life-record | `{ booking_id }` | `{ records, model, latency_ms }` |
-| POST /api/ai/daily-report | `{ pet_id, date, inputs }` | `{ report_id, body, status, model, latency_ms }` |
+| POST /api/ai/report-chips | `{ pet_id, date, media_ids? }` | `{ chips, photos, model, latency_ms }` |
+| POST /api/ai/daily-report | `{ pet_id, date, inputs, chips, note?, media_ids? }` | `{ report_id, body, status, model, latency_ms }` |
 | POST /api/ai/safety-check | `{ pet_id, media_id }` | SafetyCheck JSON (phase-08) |
 
 > 정본은 [architecture §5 엔드포인트 계약](phases/architecture.ko.md#엔드포인트-계약-전체).
@@ -545,17 +566,17 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ## 15. 마스터 Todo 체크리스트 (복사용)
 
 ### Phase 0
-- [ ] 0.1 Supabase
-- [ ] 0.2 Cloudinary
-- [ ] 0.3 Nebius models 확인
-- [ ] 0.5 .env
+- [x] 0.1 Supabase
+- [x] 0.2 Cloudinary
+- [x] 0.3 Nebius models 확인
+- [x] 0.5 .env
 
 ### Phase 1
-- [ ] 1.1 monorepo
-- [ ] 1.2 FastAPI health
-- [ ] 1.3 Expo web
-- [ ] 1.6 web shell (desktop phone frame)
-- [ ] 1.7 mouse = finger + Playwright
+- [x] 1.1 monorepo
+- [x] 1.2 FastAPI health
+- [x] 1.3 Expo web
+- [x] 1.6 web shell (desktop phone frame)
+- [x] 1.7 mouse = finger + Playwright
 
 ### Phase 2
 - [x] 2.1–2.6 migrations
@@ -571,7 +592,8 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ### Phase 3B · 3C — Stage 2–3
 - [ ] 3B.0 tabs + 004 migration
 - [ ] 3B.1–3B.8 schedule · booking · handoff · cancel
-- [ ] 3B.9–3B.10 Meet & Greet · service / transport
+- [ ] 3B.9–3B.10 Meet & Greet (first-time only, spots, skip consent) · service / transport
+- [ ] 3B.11 Google Meet link (Google Calendar API)
 - [ ] 3C.1–3C.7 quote · consents · demo pay · timed unlock
 
 ### Phase 4
@@ -586,22 +608,17 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ### Phase 6 — Care request + checks
 - [ ] 6.1 owner CRUD tasks
 - [ ] 6.2 task_logs today
-- [ ] 6.3 complete + photo
+- [ ] 6.3 Mark done (photo optional)
 - [ ] 6.4 notify owner
 - [ ] 6.8–6.11 check-ins (walk minutes) + Activity
 - [ ] 6.12–6.14 care request → AI checklist + Heads-up
-
-### Phase 6B — Pet Transit
-- [ ] 6B.1 trips migration
-- [ ] 6B.2–6B.4 location · map · arrival cards
-- [ ] 6B.5 handoff-check (Seulgi)
-- [ ] 6B.6–6B.7 handoff wiring + e2e
 
 ### Phase 7 — Report AI
 - [ ] 7.1 nebius client
 - [ ] 7.2 daily-report API
 - [ ] 7.3 send UI
 - [ ] 7.4 few-shot (슬기)
+- [ ] 7.7 report chips (AI suggestions)
 
 ### Phase 7B — Inquiry AI + RAG
 - [ ] 7B.1 migration (pgvector)
@@ -609,6 +626,10 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 - [ ] 7B.3–7B.4 inquiry-reply + prompt
 - [ ] 7B.5–7B.6 owner / sitter UI
 - [ ] 7B.7 latency
+- [ ] 7B.8 tone layer (Seulgi)
+- [ ] 7B.9 sitter approval UX + learning log
+- [ ] 7B.10 auto-send + human pacing
+- [ ] 7B.11 (optional) tool-calling inquiry agent
 
 ### Phase 9 — Caption AI + album
 - [ ] 9.1–9.2 auto caption
@@ -619,6 +640,12 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 - [ ] 7C.2–7C.3 home-safe report + review
 - [ ] 7C.4 life-record (Seulgi)
 - [ ] 7C.5–7C.6 Life Record UI + next booking
+
+### Phase 6B — Pet Transit (P0 last — right after 7C, D41)
+- [ ] 6B.1 trips migration (`012`)
+- [ ] 6B.2–6B.4 location · map · arrival cards
+- [ ] 6B.5 handoff-check (Seulgi)
+- [ ] 6B.6–6B.7 handoff wiring + e2e
 
 ### Phase 8 — Safety (stretch)
 - [ ] 8.1–8.3 pipeline

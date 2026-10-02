@@ -3,7 +3,7 @@
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
 > 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
 > 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
-> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D43). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
+> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D46). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
 
 ---
 
@@ -45,15 +45,18 @@
 | D32 | Pet Transit (실시간 이동) | 이동하는 쪽이 **Start trip** → `trips`에 **마지막 위치 1개만** 갱신(경로 이력 저장 안 함, 끝나면 위치 null) → 상대방은 Realtime(`postgres_changes` on `trips`, RLS = 예약 당사자)으로 구독. ETA = 직선거리 × 1.3 ÷ 속도(차 30 km/h, 도보 4.5 km/h) — 라우팅 API 없음. 도착 = 목적지 150 m 안 → `trip_arrived`. 목적지 좌표 = 프로필의 `home_lat/home_lng`("Use my current location" 또는 시드 가상 좌표, 지오코딩 없음). 지도 = **보기 전용** Leaflet + OpenStreetMap(웹, 자동 맞춤 + ± 버튼, 드래그 팬 없음 — D25 마우스 규칙). 위치 소스 = 폰은 실제 GPS, **데스크톱·데모 계정은 Simulate trip**(가상 경로 재생) | 심사위원 PC에는 움직이는 GPS가 없음, 위치는 이동 중 당사자에게만 |
 | D33 | Vision · 임베딩 모델 | 시나리오의 Qwen-2.5-VL은 Token Factory 카탈로그에 **없음** (2026-10-01 `GET /v1/models`) → 사진 분석(캡션·분류·인수인계 체크·알림장 사진)은 **`openbmb/MiniCPM-V-4_5`** (이미지 입력 대안: `moonshotai/Kimi-K2.6`). RAG 임베딩 = **`Qwen/Qwen3-Embedding-8B`** (카탈로그 유일 임베딩, `dimensions: 1024` 동작 확인) → Supabase **pgvector** `knowledge_chunks vector(1024)` (HNSW), service role 전용. 검색 범위는 항상 그 시터·그 반려동물·그 견주로 필터 | 카탈로그 기준 ([model-ids.md](notes/model-ids.md)). 1024차원이면 pgvector 인덱스 한도(2000) 안 |
 | D34 | 시터 5초 체크 | 시터 입력 = 칩(식사·배변·산책 분·투약) + 사진 ≤ 2 + **선택 메모 1줄(≤ 120자)**. 필수 텍스트 입력은 여전히 없음 (§8-3) | 시나리오의 "짧은 메모" — 알림장 에피소드의 재료 (D38에서 "AI가 먼저 쓰고 시터는 수정·추가만 선택"으로 보강) |
-| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/tone.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `tone_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 보여주기용(D43, 11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.ko.md#5-시나리오를-앱으로-옮기며-정한-것-d27d42-요약) |
-| D36 | 시터 승인 · AI 고지 | 기본 = 수동 승인(Send 즉시 발송). 자동 발송 = 시터 옵션 + 책임 동의 모달(`sitter_profiles.ai_reply_mode`, `ai_consent_at`). 견주 화면에는 시터 메시지로 표시(메시지별 AI 라벨 없음), 약관·온보딩 1회 고지, 자동 모드 프로필 1줄. "AI냐"는 질문에 사람이라고 답하지 않음 | 승인한 메시지는 시터의 메시지 |
-| D37 | 사람 속도 전달 | 자동 발송·데모 영상에만: `inquiry_messages.visible_at`(미래 시각) + 읽음/입력 중 연출. 서버는 즉시 생성·저장하고 **공개 시각만 늦춤**(서버리스 sleep 금지). 지연 공식·메시지 구조 = 슬기 TBD. 알림장·캡션·수동 승인은 지연 없음 | 서버리스 요청 수명에 안전 |
-| D38 | 시터 글쓰기 제로 | 칩·사진·의도 칩 → AI 문장 생성. 수정·추가는 선택 | UX 원칙 5 |
+| D35 | 시터 말투 레이어 | 견주에게 보이는 자연어 AI 출력(문의 답장·알림장·캡션)은 **시터 1인칭 말투**. `backend/app/ai/tone.py` 한 곳에서 합성: 스타일 가이드 + 같은 시터의 `tone_samples` top-k(few-shot, `MODEL_EMBED` 검색). 시드 = 익명화한 3년 대화(영어), 이후 시터의 그대로 보냄 / 수정 / 다시 생성을 기록해 갱신(수정 비율이 지표). **고정 문구(안전 경고·견적 숫자·동의서)는 제외**, 숫자는 `{PRICE}`·`{DATE}` 자리표시자 후 서버 채움. SFT는 보여주기용(D43, 11.7) | 모델 교체 없이 시터별 말투. 상세 [full-process §5](../full-process.ko.md#5-시나리오를-앱으로-옮기며-정한-것-d27d46-요약) |
+| D36 | 시터 승인 · AI 고지 | 기본 = 수동 승인(Send 즉시 발송). 자동 발송 = 시터 옵션 + 책임 동의 모달(`sitter_profiles.ai_reply_mode`, `ai_consent_at`), 켜면 대기 없이 바로 사람 속도로(2026-10-02). 견주 화면에는 시터 메시지로 표시(메시지별 AI 라벨 없음), 약관·온보딩 1회 고지, 자동 모드 프로필 1줄. "AI냐"는 질문에 사람이라고 답하지 않음 | 승인한 메시지는 시터의 메시지 |
+| D37 | 사람 속도 전달 | 자동 발송·데모 영상에만: `inquiry_messages.visible_at`(미래 시각) + 입력 중 연출. 읽음 표시는 `read_at`(시터가 실제로 연 시각)에만 — 가짜 읽음 없음(2026-10-02). 서버는 즉시 생성·저장하고 **공개 시각만 늦춤**(서버리스 sleep 금지). 지연 공식·메시지 구조 = 슬기 TBD. 알림장·캡션·수동 승인은 지연 없음 | 서버리스 요청 수명에 안전 |
+| D38 | 시터 글쓰기 거의 제로 (2026-10-02 개정) | 알림장: AI가 하루 기록·사진에서 칩 제안(`/api/ai/report-chips`) → 시터가 고르고(틀린 칩은 끔) 짧은 메모(선택, ≤ 200자) → AI가 시터 말투로 작성 → 시터 승인 후 게시. 문의: 의도 칩 + Send. 메모·수정은 언제나 선택 | UX 원칙 5 — 사진 분석은 부족하거나 틀릴 수 있음 |
 | D39 | 모델 정책 | 미국 모델 우선·NVIDIA 모델 우선, 중국 모델은 대안 없음/가성비 큰 차이일 때만 + `model-ids.md`에 이유 기록. 예외: 임베딩 Qwen3-Embedding(**확정 2026-10-02, 다른 임베딩 모델은 비교하지 않음**), 비전 MiniCPM-V(**확정** — NVIDIA 비전 모델 3종은 Dedicated Endpoint 전용이라 상시 비용이 $48~113/일). NVIDIA가 양자화만 한 중국 모델(GLM·MiniMax·Qwen NVFP4)은 NVIDIA 모델로 치지 않음 | 해커톤 트랙 + 선호 |
 | D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
-| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막, 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
+| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
 | D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
 | D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
+| D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
+| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = PawNote Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
+| D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
 
 ---
 
@@ -75,17 +78,17 @@ PawNote/
 │  │  ├─ 001_initial_schema.sql
 │  │  ├─ 002_rls_policies.sql
 │  │  ├─ 003_functions_triggers.sql   # 헬퍼·가입 트리거·예약 RPC·충돌 트리거·realtime (Phase 02)
-│  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet)
+│  │  ├─ 004_booking_options.sql      # Phase 03B (service_type, services, Meet & Greet — 첫 만남 판단·건너뛰기·장소·Meet 링크, 양쪽 meet_spots)
 │  │  ├─ 005_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
 │  │  ├─ 006_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
 │  │  ├─ 007_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
-│  │  ├─ 012_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch
-│  │  ├─ 013_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막이라 번호도 뒤 (D41)
+│  │  ├─ 012_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막 (D41)
+│  │  ├─ 013_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch, 06B 뒤 시간이 남을 때
 │  │  └─ 014_p1.sql                   # Phase 11 (P1)
-│  │                                  # 번호 = 적용 순서. 작업 순서가 바뀌면 다음 빈 번호를 쓰고 이 목록을 고친다
+│  │                                  # 번호 = 적용 순서. 작업 순서가 바뀌면 다음 빈 번호를 쓰고 이 목록을 고친다 (008은 번호 정리 때 생긴 빈칸 — 쓰지 않음)
 │  └─ tests/rls_smoke.sql     # 역할 전환 RLS 확인 쿼리
 ├─ backend/
 │  ├─ requirements.txt
@@ -103,14 +106,17 @@ PawNote/
 │  │  │  ├─ cloudinary.py     # sign params, delivery URL, fetch image → base64
 │  │  │  ├─ nebius.py         # model role → (model_id, base_url), chat(), chat_json(), embed()
 │  │  │  ├─ rag.py            # 07B — chunk → embed → knowledge_chunks upsert, match_knowledge 검색
+│  │  │  ├─ google_meet.py    # 3B.11 — refresh token → Calendar 이벤트 + Meet 링크 (D45)
 │  │  │  └─ timeutil.py       # APP_TIMEZONE 기준 today/day range
 │  │  ├─ routers/
 │  │  │  ├─ health.py         # GET /health
 │  │  │  ├─ me.py             # GET /api/me
+│  │  │  ├─ meet_greet.py     # POST /api/meet-greet/video-link (3B.11, D45)
 │  │  │  ├─ media.py          # POST /api/media/sign, /api/media/complete
 │  │  │  ├─ ai_caption.py     # POST /api/ai/caption
 │  │  │  ├─ ai_daily_report.py# POST /api/ai/daily-report
 │  │  │  ├─ ai_care_plan.py   # POST /api/ai/care-plan (06)
+│  │  │  ├─ ai_report_chips.py # POST /api/ai/report-chips (07, D38)
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
@@ -122,6 +128,7 @@ PawNote/
 │  │     ├─ handoff_check/{system.md}
 │  │     ├─ inquiry/{system.md}
 │  │     ├─ life_record/{system.md}
+│  │     ├─ report_chips/{system.md}
 │  │     ├─ daily_report/{PROMPT.md, system.md, few_shot.json}
 │  │     └─ safety/{vision_system.md, reasoning_system.md}
 │  ├─ scripts/
@@ -174,13 +181,13 @@ PawNote/
 | `/owner/pets/new`, `/owner/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) · **Care request** · **Life Record** 진입 | Save | 03 |
 | `/owner/pets/[petId]/care-request` | owner | 케어·투약 의뢰서 (메모처럼 작성) → AI 체크리스트 미리보기 → 확인 (Stage 2) | **Save checklist** | 06 |
 | `/owner/pets/[petId]/record` | owner | Pet Life Record — 식습관·배변·약 반응·행동·주의사항 + 지난 돌봄 목록 (Stage 5) | 읽기 | 07C |
-| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | 예약·문의 목록 / 서비스 방식·단골 스케줄·검색·요청(이동 방식) / 상세(Meet & Greet·인수인계·재예약) / 시터 프로필·스케줄·별점 + **Ask about a stay** | Book care | 03B (+07B 문의) |
+| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | 예약·문의 목록 / 서비스 방식·단골 스케줄·검색·요청(이동 방식) / 상세(첫 만남 Meet & Greet — 대면 장소·Google Meet·건너뛰기 동의, D44 — ·인수인계·재예약) / 시터 프로필·스케줄·별점 + **Ask about a stay** | Book care | 03B (+07B 문의) |
 | `/owner/inquiries/[inquiryId]` | owner | 문의 스레드 — AI 자동 답변 + 견적 카드 (Stage 1) | **Request booking** | 07B |
 | `/owner/bookings/[bookingId]/checkout` | owner | 견적 → 동의서 서명 → **Pay (demo)** → 시터 집 정보·짐 체크리스트 (Stage 3) | **Pay** | 03C |
 | `/owner/home-access` | owner | 내 집 출입 정보 (lockbox·buzzer·fob·출입 순서) — "Only shown to your sitter 2 hours before" | Save | 03C |
 | `/owner/bookings/[bookingId]/trip`, `/sitter/bookings/[bookingId]/trip` | both | 실시간 이동 — 보기 전용 지도·ETA·도착 카드(Visitor parking / Buzzer·Lockbox)·사진 체크 (Stage 4) | **Start trip** / 사진 → **Received·Returned** | 06B |
 | `/owner/bookings/[bookingId]/review` | owner | ★ 1–5 + 코멘트(선택) (Stage 5) | **Send review** | 07C |
-| `/profile` | both | 역할별 프로필 편집 (주소·bio 등) — **Settings 아님** | Save | 03 |
+| `/profile` | both | 역할별 프로필 편집 (주소·bio·**선호 만남 장소 ≤ 3** 등, D44) — **Settings 아님** | Save | 03 (+03B) |
 | `/settings` | both | 계정·알림·앱 정보 · **What's New**(패치노트) | — | **11.11 (P1)** |
 | `/owner/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
 | `/owner/tasks` (tab: Care) | owner | Task 등록 + 오늘 상태 · **Activity** 히스토리 (Plan B) | Add task | 06 |
@@ -193,7 +200,7 @@ PawNote/
 | `/sitter/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/sitter/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) — 의뢰서 체크리스트 | **Mark done** / Done with photo | 06 |
 | `/sitter/scan` (Today 버튼 → Stack) | sitter | Treat scanner | **Scan label** | 08 (stretch) |
-| `/sitter/report` (tab: Report) | sitter | **5초 체크**(칩 + 사진 ≤ 2 + 메모 1줄) → Generate → (편집) → Send | **Send report** | 07 |
+| `/sitter/report` (tab: Report) | sitter | **5초 체크**(사진 ≤ 2 → AI 칩 제안 → 고르기 + 짧은 메모 선택 — D38) → Generate → (편집) → 승인(Send) = 게시 | **Send report** | 07 |
 | `/sitter/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
 | `/dev/gestures` | - | 마우스 동작 테스트 화면 (긴 목록·가로 줄·모달·토스트·입력창). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만, 링크 없음 | - | 1.7 |
 | `/dev/health` | - | Backend `GET /health` 확인 (Check API — 1.3 화면을 `/`에서 옮김). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만 | Check API | 1.3 → 3.3 |
@@ -221,12 +228,14 @@ PawNote/
 | `SUPABASE_JWT_SECRET` | (레거시 HS256 프로젝트만, 비워도 됨) | 03 |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | | 04 |
 | `NEBIUS_API_KEY` | (secret) | 07 |
-| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `openbmb/MiniCPM-V-4_5` / us-central1 URL (0.3 확정 — Nano Omni는 카탈로그에 없음, [model-ids.md](notes/model-ids.md)) | 08, 09 |
+| `MODEL_VISION` / `MODEL_VISION_BASE_URL` | `openbmb/MiniCPM-V-4_5` / us-central1 URL (확정 — NVIDIA 비전 모델은 Dedicated Endpoint 전용이라 공용 API에 없음, D39 · [model-ids.md](notes/model-ids.md)) | 08, 09 |
 | `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, 07B 문의 답변 |
 | `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33 — `dimensions` 파라미터 동작 확인 2026-10-01) | 07B RAG, 07C Life Record |
 | `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | PawNote Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events`, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
+| `GOOGLE_CALENDAR_ID` / `MEET_INVITE_ATTENDEES` | `primary` / `true` (`false`면 링크만 만들고 초대 메일 없음 — 데모 `.test` 계정은 항상 생략) | 3B.11 |
 | `DEMO_PASSWORD` | 데모 계정 전용 비밀번호 — `scripts/seed_demo.py`가 사용, frontend `EXPO_PUBLIC_DEMO_PASSWORD`와 같은 값 (심사위원에게 공개되는 값, 실제 비밀번호 재사용 금지) | 10.1 (계정 부분은 2026-10-01 먼저) |
 
 ### frontend/.env (모두 공개값 — `EXPO_PUBLIC_` 접두사)
@@ -250,7 +259,7 @@ PawNote/
 - Base: `/health`(무인증), 나머지 `/api/*`는 **`Authorization: Bearer <supabase access_token>` 필수**.
 - 인가: service-role로 DB에 접근하는 라우터는 반드시 `services/authz.py`의 `assert_on_duty_for`(시터 — 오늘이 확정 예약 기간 안) / `assert_owner_of`를 먼저 호출 (service role은 RLS를 우회하므로).
 - 에러 형식: `{"detail": "<human message>", "code": "<snake_case>"}` — 코드 예: `unauthorized`(401), `forbidden`(403), `not_found`(404), `invalid_input`(422), `ai_timeout`(504), `ai_invalid_output`(502), `upstream_error`(502).
-- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 프론트 fetch 타임아웃은 여기에 +5s.
+- 타임아웃 (서버→Nebius): caption 20s, handoff-check 20s, inquiry-reply 45s (초안 생성 기준 — 목표 p50 < 10s, 사람 속도 지연 D37은 이 타임아웃과 별개), care-plan 45s, report-chips 30s, daily-report 60s, life-record 60s, safety 90s (vision 30 + reasoning 60). 서버→Google Calendar(meet video-link) 15s. 프론트 fetch 타임아웃은 여기에 +5s.
 - 예약 단위 권한: `services/authz.py`에 `assert_booking_party(booking_id)`(견주 또는 시터) / `assert_booked_sitter(booking_id, from_hours_before=2)`(인수인계 사진 — 맡기기 2시간 전부터)를 둔다.
 - 모든 AI 응답에 `model`(사용한 model id)과 `latency_ms` 포함 → 피드백 로그·데모 설명에 사용.
 
@@ -261,19 +270,21 @@ PawNote/
 | GET | `/health` | - | - | `{status:"ok"}` | 01 |
 | GET | `/health/deep` | - | - | `{status:"ok", db:"ok"}` (Supabase `select 1`) — keep-alive 전용 | 10 |
 | GET | `/api/me` | any | - | `{id, email, role, display_name}` | 03 |
+| POST | `/api/meet-greet/video-link` | 예약 당사자 (영상 M&G가 agreed) | `{booking_id}` | `{meet_url, calendar_event_id, starts_at}` — 멱등(이미 있으면 그대로), Google 실패 → 502 `upstream_error`(화면은 .ics·링크 붙여넣기 fallback) | 3B.11 (D45) |
 | POST | `/api/media/sign` | on-duty sitter (`handoff`은 booked sitter — 맡기기 2시간 전부터) | `{pet_id, resource_type:"image"\|"video", purpose, booking_id?}` — purpose `feed`·`task_proof`·`report`·`handoff`·`safety_label` | `{cloud_name, api_key, timestamp, signature, folder, upload_url}` | 04 |
 | POST | `/api/media/complete` | 위와 같음 | `{pet_id, public_id, resource_type, purpose, width?, height?, duration?}` | `{media_id, public_id, secure_url, thumb_url}` | 04 |
 | POST | `/api/ai/inquiry-reply` | 문의 당사자 (견주가 보낸 직후 프론트가 호출) | `{inquiry_id}` | `{message_id, body, can_host, needs_sitter, quote, sources:[{type, id}], model, latency_ms}` — `quote`는 `quote_booking` 결과 그대로 (D29) | 07B |
 | POST | `/api/ai/care-plan` | owner of pet | `{pet_id, text}` (≤ 2000자) | `{tasks:[{type, time, title, dose?, notes?}], cautions:[str], model, latency_ms}` — **초안만**, 저장은 견주 확인 후 Supabase (§6) | 06 |
 | POST | `/api/ai/handoff-check` | booked sitter | `{booking_id, kind:"drop_off"\|"pick_up", check_type:"pet_checkin"\|"vehicle_safety"\|"return", media_id}` | `{check_id, status:"ok"\|"warning", findings:{pet_visible, crate_visible?, restraint_visible?}, message, model, latency_ms}` — 실패·타임아웃이면 `status:"unchecked"` (인수인계는 계속 가능) | 06B |
 | POST | `/api/ai/caption` | on-duty sitter | `{pet_id, media_id}` | `{caption, category:"meal"\|"walk"\|"nap"\|"play"\|"other", source:"ai"\|"fallback", model, latency_ms}` | 09 |
-| POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?, note?}, media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}` | 07 |
+| POST | `/api/ai/report-chips` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", media_ids?:[≤2]}` | `{chips:[{id, kind, label, source:"checkin"\|"task"\|"photo", media_id?}], photos:[{media_id, description}], model, latency_ms}` — 하루 기록 칩은 서버가 DB에서(모델 없음), 사진 칩만 `MODEL_VISION`. 사진 묘사는 draft에 저장해 daily-report가 재사용 | 07 (7.7, D38) |
+| POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?}, chips:[시터가 고른 칩], note?:(≤ 200자), media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}` — 게시는 시터 승인(`send_daily_report`) 뒤 | 07 |
 | POST | `/api/ai/life-record` | booking party (찾기 완료 후) | `{booking_id}` | `{records:[{pet_id, record_id, summary}], model, latency_ms}` + RAG 인덱싱 | 07C |
 | POST | `/api/ai/safety-check` | on-duty sitter | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 (stretch) |
 | POST | `/api/ai/pet-theme` | owner of pet | `{pet_id, media_id}` | `{theme, coat_colors[], confidence, model, latency_ms}` (실패·저신뢰 시 `theme:"default"`) | 11.10 (P1) |
 | POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (실패 시 `theme:"calm"`, `[]`) | 11.8 (P1) |
 
-> 알림장 **전송**, task **완료**, 피드 **게시**, 견적·동의·결제·출입 정보 해제·이동 위치·리뷰는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6). FastAPI는 AI·Cloudinary·RAG 인덱싱만.
+> 알림장 **전송**, task **완료**, 피드 **게시**, 견적·동의·결제·출입 정보 해제·이동 위치·리뷰는 FastAPI가 아니라 Supabase(RLS/RPC)로 처리합니다 (§6). FastAPI는 AI·Cloudinary·RAG 인덱싱·Google Meet 링크만.
 
 ---
 
@@ -288,10 +299,10 @@ PawNote/
 | 시터 검색 | RPC `search_sitters(drop_off_at, pick_up_at, pet_count)` — 전체 가능 먼저, 일부 가능은 참고용 | - |
 | 인수인계 시각·장소 제안 / 응답 | RPC `propose_handoff` / `respond_handoff` | 상대방 `handoff_proposed` / 제안자 `handoff_agreed` |
 | 받았음 / 돌려줬음 | RPC `complete_handoff` (시터) | owner `pet_dropped_off` / `pet_picked_up` |
-| 예약 요청 / 응답 / 취소 | RPC `request_booking` / `respond_booking` / `cancel_booking` (취소는 맡기기 전만) | 상대방에게 `booking_*` 알림 |
+| 예약 요청 / 응답 / 취소 | RPC `request_booking`(첫 만남이면 `meet_greet_status='required'`) / `respond_booking`(첫 만남이면 M&G done·skipped 뒤에만 수락 — `meet_greet_required`) / `cancel_booking` (취소는 맡기기 전만) | 상대방에게 `booking_*` 알림 |
 | 예약 반려동물 · 내 시터 프로필 조회 | RPC `get_booking_pets(booking)` / `get_my_sitter_profile()` | - |
-| Meet & Greet 제안 / 응답 / 완료 | RPC `propose_meet_greet` / `respond_meet_greet` / `complete_meet_greet` (03B) | 상대방 `meet_greet_proposed` / 제안자 `meet_greet_agreed` |
-| 문의 보내기 | Supabase client insert `inquiries` + 첫 `inquiry_messages`(owner) → 프론트가 FastAPI `/api/ai/inquiry-reply` 호출 (07B) | AI 메시지 insert 시 시터 `inquiry_received`, 견주 `inquiry_replied` |
+| Meet & Greet (첫 만남만, D44) 제안 / 응답 / 완료 / 건너뛰기 | RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` / `respond_meet_greet` / `complete_meet_greet` / `request_skip_meet_greet` / `respond_skip_meet_greet`(거부 = `cancel_booking`, reason `meet_greet_declined`) / `get_meet_greet_options`(양쪽 `meet_spots`) (03B). 영상이면 수락 직후 FastAPI `/api/meet-greet/video-link` (3B.11) | 상대방 `meet_greet_proposed` · 제안자 `meet_greet_agreed` · 상대방 `meet_greet_skip_requested` · 요청자 `meet_greet_skipped` · 거부 시 `booking_cancelled` · 양쪽 `meet_greet_link_ready` |
+| 문의 보내기 | Supabase client insert `inquiries` + 첫 `inquiry_messages`(owner) → 프론트가 FastAPI `/api/ai/inquiry-reply` 호출 (07B) | AI 초안 insert 시 시터 `inquiry_received` · 시터가 보냈거나 자동 발송이 공개된 시점에 견주 `inquiry_replied` (§7, D36·D37) |
 | 견적 | RPC `quote_booking(sitter, service_type, drop_off_at, pick_up_at, pet_count)` — 읽기 전용, 문의 답변·Checkout 공용 (03C, D29) | - |
 | 동의서 서명 · 데모 결제 | Supabase client insert `booking_consents` (견주 RLS) → RPC `pay_booking_demo(booking)` — 필요한 동의서가 다 있어야 함 (`consents_missing`) (03C) | 시터 `booking_paid` |
 | 출입 정보 | 견주: Supabase client upsert `owner_home_access` (본인 RLS) / 시터: RPC `get_home_access(booking)` (D31 시간 조건) | 처음 열 때 `access_reveals` + 견주 `access_unlocked` |
@@ -304,7 +315,8 @@ PawNote/
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
 | 피드 게시 | Supabase client insert `feed_posts` (sitter RLS) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
 | task 완료 | RPC `complete_task_log(task_log_id, media_id)` → 내부에서 feed_post도 생성 | owner `task_done` |
-| 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert) | - |
+| 알림장 칩 제안 | FastAPI `/api/ai/report-chips` (하루 기록 칩 + 사진 칩, 사진 묘사는 draft에 저장) | - |
+| 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert — 고른 칩·메모·사진 묘사만 입력) | - |
 | 알림장 전송 | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
 | 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER면 owner `safety_danger` |
 | 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (sitter RLS) | - |
@@ -320,6 +332,9 @@ PawNote/
 | `inquiry_replied` | owner | 시터 메시지가 보이는 시점(`status='sent'`, `visible_at <= now()`) | "Mina replied 💬" | `/owner/inquiries/[id]` |
 | `booking_requested` | sitter | `request_booking` RPC | "New booking request: Oct 5 – Oct 12" | `/sitter/bookings` |
 | `meet_greet_proposed` / `meet_greet_agreed` | 상대방 / 제안자 | Meet & Greet RPC (03B) | "Jisoo suggested a video Meet & Greet on Oct 6, 7:00 PM" | 예약 상세 |
+| `meet_greet_skip_requested` | 상대방 | `request_skip_meet_greet` RPC (03B, D44) | "Jisoo would like to skip the Meet & Greet. Continue the booking without meeting first?" | 예약 상세 (**Continue** / **Decline — cancels the booking**) |
+| `meet_greet_skipped` | 요청자 | `respond_skip_meet_greet` 수락 | "Mina is OK to skip the Meet & Greet — your booking continues" | 예약 상세 |
+| `meet_greet_link_ready` | 양쪽 | `/api/meet-greet/video-link` (3B.11, D45) | "Video Meet & Greet on Oct 6, 7:00 PM — join with Google Meet" | 예약 상세 (**Join Google Meet**) |
 | `booking_paid` | sitter | `pay_booking_demo` RPC (03C) | "Jisoo signed and paid — Oct 9–12 is all set ✅" | `/sitter/bookings/[id]` |
 | `access_unlocked` | owner | `get_home_access` 첫 공개 (03C) | "Mina can now see your entry info (2 h before pick-up)" | 예약 상세 |
 | `trip_started` | 상대방 | `start_trip` RPC (06B) | "Mina is on the way — ETA 7:42 AM 🚗" | Trip 화면 |
@@ -332,7 +347,7 @@ PawNote/
 | `review_requested` | owner | 찾기 완료 트리거 (07C) | "Thanks for trusting Mina! How was Bori's stay? ⭐" | `/owner/bookings/[id]/review` |
 | `review_received` | sitter | `reviews` insert 트리거 (07C) | "Jisoo left you 5 stars ⭐" | `/sitter/bookings/[id]` |
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Bori's Life Record was updated 📒" | `/owner/pets/[id]/record` |
-| `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
+| `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Mina can't take Bori and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Mina would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Bori 📸" | `/owner/feed` |
 | `task_done` | owner | `complete_task_log` RPC | type별: "Bori had breakfast on time 🍽️" / "Bori is asleep 😴" / "Bori's medication is done 💊" | `/owner/tasks` (Activity) |
 | `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/tasks` (Activity) |
@@ -349,7 +364,7 @@ PawNote/
 
 1. **상태 4종 필수:** loading(Skeleton) · empty(EmptyState 문구) · error(재시도 버튼) · success(Toast).
 2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
-3. **sitter 필수 텍스트 입력 금지 (P0, D38 — AI가 칩·사진에서 문장을 먼저 만들고 시터는 수정·추가만 선택)** — 예외(모두 선택): 5초 체크·check-in 메모 1줄(≤ 120, D34), 알림장 전송 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름)는 허용.
+3. **sitter 필수 텍스트 입력 금지 (P0, D38 — 글쓰기 거의 제로: AI가 하루 기록·사진에서 칩을 제안하고 시터는 고르기 + 짧은 메모만 선택)** — 예외(모두 선택): 알림장 짧은 메모(≤ 200, D38), check-in 메모 1줄(≤ 120, D34), 알림장 게시 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서·선호 만남 장소(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름·선호 만남 장소)는 허용.
 4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
 5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Upload from computer**. 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
 6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
@@ -357,6 +372,7 @@ PawNote/
 8. **마우스로 전부 동작 (D25):** 제스처 전용 기능 금지 (스와이프 뒤로가기·삭제, 시트 끌어내리기, 길게 누르기, 당겨서 새로고침 — 웹 `RefreshControl`은 동작 안 함). 항상 보이는 버튼을 둔다. 웹 미지원 라이브러리 금지 (예: `@react-native-community/datetimepicker` → 직접 만든 선택 UI). 화면 PR마다 [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 데스크톱 체크.
 9. **지도는 보기 전용 (D32):** 자동 맞춤(이동하는 쪽 + 목적지) + ± 버튼, 드래그 팬·핀치 없음 — 프레임 안 마우스 드래그는 스크롤로 쓰임(1.7). 위치 공유 중이면 화면 상단에 "Sharing your location with Mina until you arrive" 항상 표시.
 10. **민감 정보 카드 (D31):** 출입 정보는 잠김 상태에서 "Unlocks Oct 9, 5:30 AM" + 자물쇠 아이콘만, 열려도 코드는 **Show code** 탭 후 표시.
+11. **외부 링크는 새 탭 (D45):** Google Meet 링크는 폰 프레임(iframe) 안에서 열지 않고 새 탭으로 연다 (`Linking.openURL` → 웹은 `window.open`). Meet는 다른 사이트 안에 넣을 수 없다.
 
 ---
 
@@ -371,7 +387,8 @@ PawNote/
 - 입력에 실제 PII 금지. 로그에 이미지 base64 출력 금지.
 - **근거 고정 (D27–D29):** 모델 입력은 서버가 모은 JSON뿐 (스케줄·견적·펫 프로필·RAG 검색 결과·그날 기록). 가격·날짜·가능 여부·시간은 **입력 값을 그대로** 쓰게 하고, 응답 후 서버가 숫자를 다시 대조한다 (07B — 입력에 없는 금액이 나오면 견적 카드만 두고 문장은 재생성 1회, 또 실패하면 고정 문구 "Mina will confirm the details soon."). 출입 정보(D31)는 어떤 프롬프트에도 넣지 않는다.
 - **말투 레이어 (D35):** 견주에게 보이는 자연어를 만드는 엔드포인트(inquiry-reply · daily-report · caption)는 프롬프트를 직접 조립하지 않고 `tone.compose(sitter_id, intent, facts)`를 거친다 — 스타일 가이드 + 시터의 `tone_samples` top-k(few-shot) + 서버 근거 JSON. 1인칭("I"), 자리표시자(`{PRICE}`·`{DATE}`)는 서버가 채우고 숫자는 근거 JSON과 대조한다(D29). 안전 경고·동의서·견적 숫자는 고정 문구로 레이어를 거치지 않는다. 시터의 승인·수정·재생성은 `tone_samples`에 기록(자동 발송은 학습에서 제외). 견주 메시지는 저장 전 익명화.
-- **임베딩 (D33):** `embed(texts)` — `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM`(1024), 배치 ≤ 16. 검색은 SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, 범위 필터 먼저). 출처 `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. 같은 `(source_type, source_id)`는 덮어쓰기.
+- **임베딩 (D33):** `embed(texts)` — `MODEL_EMBED`, `dimensions=MODEL_EMBED_DIM`(1024), 배치 ≤ 16. 검색은 SQL `match_knowledge(query_embedding, p_sitter, p_pets[], p_owner, k)` (cosine, 범위 필터 먼저). 출처 `source_type`: `sitter_policy` · `life_record` · `inquiry` · `care_request`. 같은 `(source_type, source_id)`는 덮어쓰기. **출처별 검색 범위:** `sitter_policy` = 그 시터 · `life_record`·`care_request` = 그 반려동물(새 시터와도 공유 — 문의 시트에서 안내, 07B) · `inquiry` = 그 견주 **그리고** 그 시터가 모두 일치할 때만, 견주 메시지만 인덱싱 (다른 시터와 나눈 대화·금액이 새 시터의 초안에 섞이지 않게).
+- **칩 제안 (D38):** `report-chips`는 하루 기록 칩을 서버가 DB에서 만들고(모델 없음), 사진 칩만 `MODEL_VISION`이 사진당 1–2개 짧은 문구로 제안한다. 칩은 제안일 뿐이고, 시터가 고른 칩과 메모만 알림장 입력이 된다 (끈 칩은 입력에서 빠짐).
 - **호출 지표 로그:** `chat()`/`chat_json()`마다 구조화 로그 1줄 — `{role, model, endpoint, ttft_ms, latency_ms, prompt_tokens, completion_tokens, retried, ok}` (TTFT는 스트리밍 첫 토큰 기준, 스트리밍 불가 모델은 null). 프롬프트·응답 본문은 남기지 않음. Phase 10 README의 **Token Factory / Nemotron 피드백**(필수·채점 항목)과 Most Valuable Feedback에 모델별 중앙값 표로 사용.
 
 ---
