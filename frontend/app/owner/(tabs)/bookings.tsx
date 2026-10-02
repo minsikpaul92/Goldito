@@ -84,7 +84,7 @@ export default function OwnerBookings() {
               Your bookings
             </Text>
             {state.bookings.map((booking) => (
-              <BookingCard key={booking.id} booking={booking} />
+              <BookingCard key={booking.id} booking={booking} viewer="owner" />
             ))}
           </View>
         ) : null}

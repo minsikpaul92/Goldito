@@ -131,6 +131,10 @@ export type MockDb = {
   searches: Row[];
   /** request_booking calls with their parameters. */
   requests: Row[];
+  care_tasks: Row[];
+  /** respond_booking / propose_handoff calls with their parameters. */
+  responses: Row[];
+  proposals: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -155,6 +159,9 @@ function createMockDb(): MockDb {
     search_results: [],
     searches: [],
     requests: [],
+    care_tasks: [],
+    responses: [],
+    proposals: [],
   };
 }
 
@@ -354,6 +361,64 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/get_booking_pets") {
+    const { p_booking } = request.postDataJSON();
+    const rows = db.booking_pets
+      .filter((bp) => bp.booking_id === p_booking)
+      .map((bp) => db.pets.find((p) => p.id === bp.pet_id))
+      .filter((p): p is Row => !!p)
+      .map((p) => ({ pet_id: p.id, name: p.name, species: p.species, breed: p.breed ?? null }));
+    return json(route, 200, rows);
+  }
+
+  if (path === "rpc/respond_booking") {
+    // respond_booking (003 + 004 guard): decline ends it; accept needs the Meet & Greet and no
+    // pending sitter counter-offer, then agrees the owner's proposals.
+    const args = request.postDataJSON();
+    db.responses.push(args);
+    const booking = db.bookings.find((b) => b.id === args.p_booking && b.sitter_id === me);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    if (!booking) return fail("not_allowed");
+    if (booking.status !== "requested") return fail("invalid_status");
+    const open = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.status === "proposed");
+    if (!args.p_accept) {
+      booking.status = "declined";
+      for (const h of open) h.status = "rejected";
+      return route.fulfill({ status: 204 });
+    }
+    if (!["not_needed", "done", "skipped", undefined].includes(booking.meet_greet_status as string | undefined)) {
+      return fail("meet_greet_required");
+    }
+    if (open.some((h) => h.proposed_by === me)) return fail("handoff_pending");
+    booking.status = "confirmed";
+    for (const h of open) h.status = "agreed";
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/propose_handoff") {
+    const args = request.postDataJSON();
+    db.proposals.push(args);
+    const booking = db.bookings.find((b) => b.id === args.p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    const current = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === args.p_kind);
+    const base = current.find((h) => h.status === "proposed") ?? current.find((h) => h.status === "agreed");
+    for (const h of current) if (h.status === "proposed") h.status = "superseded";
+    const id = crypto.randomUUID();
+    db.booking_handoffs.push({
+      id,
+      booking_id: booking.id,
+      kind: args.p_kind,
+      scheduled_at: args.p_at,
+      location_type: base?.location_type ?? "sitter_home",
+      location_note: base?.location_note ?? null,
+      within_sitter_hours: true,
+      status: "proposed",
+      proposed_by: me,
+      completed_at: null,
+    });
+    return json(route, 200, id);
+  }
+
   if (path === "rpc/cancel_booking") {
     const { p_booking, p_reason } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
@@ -389,6 +454,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       }));
     }
     const select = params.get("select") ?? "";
+    if (path === "pets" && select.includes("care_tasks(")) {
+      rows = rows.map((pet) => ({ ...pet, care_tasks: db.care_tasks.filter((t) => t.pet_id === pet.id) }));
+    }
     if (path === "bookings") {
       const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
       rows = rows.map((b) => ({

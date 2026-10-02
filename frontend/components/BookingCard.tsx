@@ -1,75 +1,117 @@
-import { StyleSheet, Text, View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { formatInstant } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
-import { Handoff, LocationType, OwnerBooking } from "../lib/bookings";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-type Badge = { label: string; tone: "info" | "warning" | "success" | "muted" };
+export type Viewer = "owner" | "sitter";
 
-/** Owner-side status badge (phase-03b screens table). */
-export function ownerBadge(b: OwnerBooking): Badge {
-  if (b.status === "confirmed") return { label: "Confirmed", tone: "success" };
-  if (b.status === "declined") return { label: "Declined", tone: "muted" };
-  if (b.status === "cancelled") return { label: "Cancelled — find a new sitter", tone: "muted" };
-  if (b.sitterSuggested) return { label: `Time suggested by ${b.sitterName}`, tone: "warning" };
-  return { label: "Requested", tone: "info" };
+type Tone = "info" | "warning" | "success" | "muted";
+type Badge = { label: string; tone: Tone };
+
+/** Status badges per side (phase-03b screens table). Text always says it — never color alone. */
+export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
+  if (b.status === "declined") return [{ label: "Declined", tone: "muted" }];
+  if (b.status === "cancelled") {
+    return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
+  }
+  if (b.status === "confirmed") return [{ label: "Confirmed", tone: "success" }];
+
+  if (viewer === "owner") {
+    return [b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" }];
+  }
+  const badges: Badge[] = [];
+  if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "muted" });
+  const custom = [b.dropOff, b.pickUp].some((h) => h && h.pending && !h.withinSitterHours);
+  if (custom && !b.sitterSuggested) badges.push({ label: "Custom time — needs your OK", tone: "warning" });
+  if (meetGreetBlocksAccept(b)) badges.push({ label: "Meet first", tone: "info" });
+  if (badges.length === 0) badges.push({ label: "New request", tone: "info" });
+  return badges;
 }
 
-/** "Lucy's place" / "My place" / the note — the address itself stays hidden (D31). */
-export function placeLabel(type: LocationType, note: string | null, sitterName: string): string {
-  if (type === "sitter_home") return `${sitterName}'s place`;
-  if (type === "owner_home") return "My place";
-  return note ?? "Somewhere else";
+/** Where a handoff happens, from the viewer's side — the address itself stays hidden (D31). */
+export function placeLabel(type: LocationType, note: string | null, b: BookingSummary, viewer: Viewer): string {
+  if (type === "other") return note ?? "Somewhere else";
+  if (type === "sitter_home") return viewer === "sitter" ? "Your place" : `${b.sitterName}'s place`;
+  return viewer === "owner" ? "My place" : `${b.ownerName}'s place`;
 }
 
-function handoffLine(label: string, h: Handoff | null, sitterName: string): string {
+export function handoffLine(label: string, h: Handoff | null, b: BookingSummary, viewer: Viewer): string {
   if (!h) return `${label}: —`;
-  return `${label} ${formatInstant(h.at)} · ${placeLabel(h.locationType, h.note, sitterName)}`;
+  return `${label} ${formatInstant(h.at)} · ${placeLabel(h.locationType, h.note, b, viewer)}`;
 }
 
-/** Owner booking row: sitter, pets, drop-off / pick-up, status badge (never color alone — text says it). */
-export function BookingCard({ booking }: { booking: OwnerBooking }) {
+type Props = {
+  booking: BookingSummary;
+  viewer: Viewer;
+  onPress?: () => void;
+};
+
+/** Booking row: the other person, pets, drop-off / pick-up, status badges. */
+export function BookingCard({ booking, viewer, onPress }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const badge = ownerBadge(booking);
+  const badges = bookingBadges(booking, viewer);
   const pets = booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ");
+  const who = viewer === "owner" ? booking.sitterName : booking.ownerName;
 
   return (
-    <View style={styles.card} testID={`booking-card-${booking.id}`}>
-      <View style={styles.header}>
-        <Text style={styles.sitter}>{booking.sitterName}</Text>
-        <View style={[styles.badge, styles[`badge_${badge.tone}`]]}>
-          <Text style={[styles.badgeText, styles[`badgeText_${badge.tone}`]]}>{badge.label}</Text>
+    <Pressable
+      accessibilityRole={onPress ? "button" : undefined}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      testID={`booking-card-${booking.id}`}
+    >
+      <View style={styles.body}>
+        <Text style={styles.who}>{who}</Text>
+        <View style={styles.badges}>
+          {badges.map((badge) => (
+            <View key={badge.label} style={[styles.badge, styles[`badge_${badge.tone}`]]}>
+              <Text style={[styles.badgeText, styles[`badgeText_${badge.tone}`]]}>{badge.label}</Text>
+            </View>
+          ))}
         </View>
+        {pets ? <Text style={styles.pets}>{pets}</Text> : null}
+        <Text style={styles.line}>{handoffLine("Drop-off", booking.dropOff, booking, viewer)}</Text>
+        <Text style={styles.line}>{handoffLine("Pick-up", booking.pickUp, booking, viewer)}</Text>
       </View>
-      {pets ? <Text style={styles.pets}>{pets}</Text> : null}
-      <Text style={styles.line}>{handoffLine("Drop-off", booking.dropOff, booking.sitterName)}</Text>
-      <Text style={styles.line}>{handoffLine("Pick-up", booking.pickUp, booking.sitterName)}</Text>
-    </View>
+      {onPress ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} /> : null}
+    </Pressable>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: {
-      gap: theme.spacing.xs,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
       padding: theme.spacing.md,
       borderRadius: theme.radius.lg,
       borderWidth: 1,
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: theme.spacing.sm,
+    pressed: {
+      opacity: 0.8,
     },
-    sitter: {
+    body: {
+      flex: 1,
+      gap: theme.spacing.xs,
+    },
+    who: {
       fontSize: theme.fontSize.body,
       fontWeight: "600",
       color: theme.color.text,
+    },
+    badges: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
     },
     pets: {
       fontSize: theme.fontSize.small,
@@ -80,7 +122,6 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.textMuted,
     },
     badge: {
-      flexShrink: 1,
       paddingVertical: 2,
       paddingHorizontal: theme.spacing.sm,
       borderRadius: theme.radius.sm,
