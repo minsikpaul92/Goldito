@@ -89,7 +89,7 @@ Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken.").
 
 ## Model policy (D39) and NVIDIA catalog check (2026-10-02)
 
-**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (no NVIDIA embedding in the catalog) and `openbmb/MiniCPM-V-4_5` (until an NVIDIA vision model is usable on our project key).
+**Policy:** prefer US-made models, and NVIDIA models wherever a feature allows it. Chinese-origin models are allowed only when there is no US/NVIDIA alternative or the cost/quality gap is large — record the reason here. Current exceptions: `Qwen/Qwen3-Embedding-8B` (**final, decided 2026-10-02 — no NVIDIA embedding in the catalog, already verified at 1024 dims, no other embedding model will be evaluated**) and `openbmb/MiniCPM-V-4_5` (until an NVIDIA vision model is usable on our project key).
 
 **Console "Model catalog" (provider = NVIDIA) vs. our API key (`GET /v1/models`, both base URLs, 2026-10-02):**
 
