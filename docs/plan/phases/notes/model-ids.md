@@ -18,11 +18,12 @@
 | **Treat safety — read label** | 08 | `POST /api/ai/safety-check` (step 1) | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision/OCR:** ingredient label photo → structured ingredient list + product name. |
 | **Treat safety — reason** | 08 | same (step 2) | `MODEL_SAFETY` | `nvidia/Nemotron-3-Ultra-550b-a55b` | **Text reasoning:** allergens, hidden sources (e.g. poultry in “animal fat”), DANGER/WARNING/SAFE JSON. |
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed + the 5-second check (report photos described by `MODEL_VISION` first). |
+| **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
 | **Pet Life Record** (Stage 5) | 07C | `POST /api/ai/life-record` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Long-context summary of a whole stay; only recorded facts, null when no evidence. |
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 
-**Not in catalog (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — was in early docs; **replace with MiniCPM-V-4_5** until/unless omni appears in your project’s model list. **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
+**Not on the shared API (do not rely on for demo):** `nvidia/nemotron-3-nano-omni` — dedicated endpoint only (2026-10-02, see the NVIDIA catalog check below); **vision stays MiniCPM-V-4_5** unless omni ever appears in your project’s model list. **Qwen-2.5-VL** (named in the team's Full Process scenario) is not in the catalog either (2026-10-01).
 
 **Image-input models in the catalog (2026-10-01, `architecture.modality = text+image->text`):** `openbmb/MiniCPM-V-4_5` (both base URLs) and `moonshotai/Kimi-K2.6` (both) — plus `moonshotai/Kimi-K3`, `zai-org/GLM-5.3-Flash`, `deepseek-ai/DeepSeek-V4.1-Flash` on the eu-north1 gateway only. Default stays MiniCPM-V-4.5 (smoke-tested); compare Kimi-K2.6 in the 6B.5 spike only if handoff checks are unreliable. No NVIDIA vision or embedding model is listed.
 
@@ -41,7 +42,7 @@ OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token F
 
 Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in [phase-08.md](../phase-08.md).
 
-**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Ultra and Super. Mention both in README feedback and demo script.
+**Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Nano (inquiry replies) and Super (checklists, reports, Life Records); Ultra runs only in the Phase 08 safety stretch. Mention Nemotron and MiniCPM in README feedback and the demo script.
 
 ---
 

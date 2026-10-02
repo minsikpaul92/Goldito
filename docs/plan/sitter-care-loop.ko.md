@@ -14,7 +14,7 @@
 | Path | When | Sitter UI | Owner |
 | :--- | :--- | :--- | :--- |
 | **Scheduled task** | Owner registered `care_tasks` (med, walk, feeding, litter, play, sleep) with a time | Tasks / Today “Next up” → **Mark done** or **Done with photo** | `task_done` notification + Activity row + optional feed card |
-| **Ad-hoc check-in** | Any time, any count per day (meal, potty, mood, note) | Today **Quick check-ins** chips | `care_checkin` notification + Activity row + optional feed if photo |
+| **Ad-hoc check-in** | Any time, any count per day (meal, potty, walk, mood, note) | Today **Quick check-ins** chips | `care_checkin` notification + Activity row + optional feed if photo |
 
 Both paths write **timestamped rows** the owner can scroll in **Activity**.
 
@@ -91,7 +91,7 @@ Realtime + bell center (Phase 05). **Missed** tasks: owner sees ⚠️ on Care/A
 
 End-of-day Report screen:
 
-- **5-second check** (D34) = the Report screen chips: meal / potty / walk minutes / mood (+ water optional) for anything the sitter didn't check in, meds from today's medication task, an optional one-line memo, and up to 2 photos (described by Vision first).
+- **5-second check** (D34 · D38) = AI-suggested chips on the Report screen: from today's check-ins and tasks (meal / potty / walk minutes / mood / meds; + water optional) and from up to 2 photos (Vision episode chips, `/api/ai/report-chips`). The sitter turns off wrong chips, fills anything missing, may add a short note (≤ 200 chars), then Generate → review → approve (Send) to post.
 - **`source_snapshot`** adds `checkins: [{time, kind, value, note_text?, has_photo}]` from DB; **tasks** and **photos** as today.
 - AI must **not invent** events missing from snapshot + checkins + tasks.
 - Send → `report_sent` (unchanged).
@@ -116,5 +116,5 @@ Cat (Mochi): litter task + potty check-in optional in same demo script.
 ## 10. Related docs
 
 - Implementation detail: [phase-06.md](phases/phase-06.md), [phase-07.md](phases/phase-07.md)
-- Schema columns in DB: [phase-02.md](phases/phase-02.md) (updated when `005` lands)
+- Schema columns in DB: [phase-02.md](phases/phase-02.md) (updated when `007_care.sql` lands)
 - Routes & notification types: [architecture.ko.md](phases/architecture.ko.md)

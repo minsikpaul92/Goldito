@@ -13,15 +13,15 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `001_initial_schema.sql` | 02 | 17 tables: `profiles` + `owner_profiles` / `sitter_profiles`, `sitter_availability`, `bookings` / `booking_pets` (who has which pet when — no overlaps) / `booking_slots` (capacity: pet × day × slot) / `booking_handoffs` (drop-off & pick-up time, place, agreement), `pets` (dog/cat), allergies, tasks, media, feed, reports, safety, notifications |
 | `002_rls_policies.sql` | 02 | Policy helpers (`is_owner_of`, `is_sitter_of`, `is_on_duty_for`, `can_view_pet_profile`, …), RLS by owner / sitter role, column grants |
 | `003_functions_triggers.sql` | 02 | Signup → profiles, species guard, schedule/booking/handoff RPCs, overlap guard, read RPCs, execute privileges, Realtime |
-| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet, media purposes |
+| `004_booking_options.sql` | 03B | Service type (boarding / house sitting), sitter services, Meet & Greet (first-time pairs, skip consent, meeting spots, Meet link), media purposes |
 | `005_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
 | `006_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
 | `007_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
-| `012_safety.sql` | 08 (stretch) | Safety checks + DANGER owner notify |
-| `013_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
+| `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
+| `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.

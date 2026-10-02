@@ -1,7 +1,7 @@
 # Phase 08 — 간식 세이프티 가드 (Safety)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, AI 규칙 §9, UX 규칙 §8-4
-> **우선순위 (D27, 2026-10-01):** 시나리오([full-process.ko.md](../full-process.ko.md))에는 없는 기능 → Stage 4 돌봄 중 보조 안전장치로 두고 **시나리오 코어(03B–07C) 뒤 P0 stretch**. 시간이 없으면 Phase 10 이후 P1. 진입은 탭이 아니라 sitter Today의 **Scan a treat** 버튼 → `/sitter/scan` (3B.0에서 Scan 탭 제거)
+> **우선순위 (D27, 2026-10-01):** 시나리오([full-process.ko.md](../full-process.ko.md))에는 없는 기능 → Stage 4 돌봄 중 보조 안전장치로 두고 **시나리오 코어(03B–07C)와 06B(P0 맨 마지막) 뒤, 시간이 남을 때만 하는 P0 stretch** (2026-10-02). 시간이 없으면 Phase 10 이후 P1. 진입은 탭이 아니라 sitter Today의 **Scan a treat** 버튼 → `/sitter/scan` (3B.0에서 Scan 탭 제거)
 
 ## Goal
 
@@ -11,7 +11,7 @@
 
 - [ ] `POST /api/ai/safety-check {pet_id, media_id}` → pydantic-valid JSON
 - [ ] 알레르기 매칭(예: chicken ← "hydrolyzed poultry protein") 시 `DANGER` + 영어 `warning_message`
-- [ ] Sitter Scan 탭 + 결과 모달 (DANGER는 "I understand — don't feed" 전 닫기 불가)
+- [ ] Sitter Today **Scan a treat** 버튼 → `/sitter/scan` + 결과 모달 (DANGER는 "I understand — don't feed" 전 닫기 불가)
 - [ ] `safety_checks` 저장 + DANGER 시 owner `safety_danger` 알림
 
 ---
@@ -31,7 +31,7 @@
 | 2-step: vision extract → reasoning | - |
 | **8.7 (stretch) Tavily 웹 근거** — 8.1–8.6 DoD 후 바로 | - |
 | JSON schema + 1 retry | 바코드 스캔 |
-| 트리거 `notify_safety_danger` (`012_safety.sql`) | 자동 구매 차단 |
+| 트리거 `notify_safety_danger` (`013_safety.sql`) | 자동 구매 차단 |
 | 스캔 기록 목록 (최근 10개) | owner 측 스캔 기능 |
 
 ---
@@ -84,7 +84,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 | 8.3 | Reasoning step + `prompts/safety/reasoning_system.md` (hidden allergen 예시 표, toxic 목록) + 서버 override (step 5) | 샘플 3종 기대 결과 일치 |
 | 8.4 | TreatScannerScreen `/sitter/scan` (Today **Scan a treat** 버튼 → Stack) | 큰 **Scan a treat label** 버튼 → 업로드 → 2단계 진행 표시 "Reading label…" → "Checking for Bori…" → 결과 모달. 에러·재촬영. 하단 최근 스캔 10개 |
 | 8.5 | 결과 모달 `components/ui/AlertModal` | DANGER: 빨간 전체 화면, ⚠️ 아이콘, warning_message, matched·toxic 칩, 버튼 "I understand — don't feed" → `acknowledged_at` update. WARNING: 주황, hidden_sources 설명, "Ask owner first" 안내. SAFE: 초록, "Looks safe for Bori ✅" |
-| 8.6 | Notify owner | `012_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
+| 8.6 | Notify owner | `013_safety.sql`: `after insert on safety_checks when (new.safety_status='DANGER')` → owner `safety_danger`, title "Blocked a risky treat for {name} ⚠️" |
 | 8.7 | **(Stretch) Tavily 웹 근거** — [tavily.ko.md](../tavily.ko.md) 검색 규칙 | `services/tavily.py`: 성분마다 키워드 쿼리 ≤ 3개(`"{ingredient} toxic {species}s"`, `"{ingredient} {allergen} derived"`) + 신뢰 도메인 필터, 제품명 있으면 리콜 쿼리 1회(`topic="news"`, 최근 1년). 결과 요약을 Ultra 재판단에 추가. 모달 WARNING/DANGER에 **Sources** (도메인 + 링크). `animal_fat_biscuit.jpg`로 Tavily 호출 로그 + 출처 1개 이상 = **Best Use of Tavily 요건(런타임 호출)** |
 
 ### 테스트 샘플 (`backend/tests/fixtures/labels/`, 직접 촬영 or 생성한 라벨 — 상표 가림)
@@ -114,7 +114,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 
 - `backend/app/routers/ai_safety.py`, `backend/app/schemas/safety.py`, `backend/app/ai/prompts/safety/*`
 - `frontend/app/sitter/scan.tsx`, `frontend/components/ui/AlertModal.tsx`
-- `supabase/migrations/012_safety.sql`
+- `supabase/migrations/013_safety.sql`
 
 ---
 
@@ -126,4 +126,4 @@ Playbook §10 — (8.1–8.3) / (8.4–8.6)
 
 ## 다음 Phase
 
-→ [Phase 10 — 데모·배포](phase-10.md) (08은 07C 뒤 stretch — D27)
+→ [Phase 10 — 데모·배포](phase-10.md) (08은 06B 뒤 시간이 남을 때만 하는 stretch — D27·D41)

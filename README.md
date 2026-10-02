@@ -50,13 +50,14 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 
 ### ① Inquiry — a reply in the sitter's own writing style
 - The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question.
-- **PawNote AI drafts the reply in seconds, in the sitter's own writing style** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, with a clear responsibility prompt — so a busy or sleeping sitter still answers first.
+- **PawNote AI drafts the reply in seconds, in the sitter's own writing style** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, which answers right away at a human pace after a clear responsibility prompt — so a busy or sleeping sitter still answers first.
 - Prices are calculated by the server, never by the model — the reply and the checkout always show the same numbers.
 
 ### ② Meet & Greet — the care request becomes a checklist
 - The owner writes a **care & medication request** like a note: *"8 AM — 1 cup of kibble · 2 PM — skin pill in a treat · No knocking — text me · Keep other dogs away on walks."*
 - Nemotron turns it into the sitter's **mission checklist** (timed tasks) and **Heads-up** cards. The owner reviews it before saving.
-- Owner and sitter set an in-person or video **Meet & Greet**, and choose how the pet travels: **Owner drives** or **Sitter drives**.
+- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at one of the spots either of them saved, or on video: PawNote creates a **Google Meet** link and calendar invite the moment they agree on a time. Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. Repeat clients skip this step.
+- They choose how the pet travels: **Owner drives** or **Sitter drives**.
 
 ### ③ Booking — consents, payment, and secrets that unlock on time
 - **Consent forms** are generated for the chosen options, Canada-first: 24-hour emergency vet authorization, lockbox / condo buzzer and fob use, sharing space with other pets, and safe-return rules.
@@ -66,12 +67,12 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 ### ④ Care & Pet Transit — live trips, 5-second checks, AI daily notes
 - **Uber-style transit:** whoever is driving taps **Start trip**; the other side sees a live map and ETA. On arrival the owner gets visitor-parking directions, and the sitter gets the buzzer and lockbox card.
 - **Photo check-in:** the sitter snaps one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt). The owner gets *"Pick-up complete — care has started · photo verified."*
-- **5-second check:** Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅, an optional one-line memo, and two photos. **Nemotron writes the daily note** in a warm sitter's tone, using only what actually happened.
+- **5-second check:** PawNote suggests chips from the day's check-ins and photos — Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅ · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short note if they want. **Nemotron writes the daily note** in the sitter's own voice from only those facts, and it is posted once the sitter approves it.
 - **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day, KidsNote-style.
 - **Treat Safety Guard** *(stretch)*: scan a treat label, and Nemotron Ultra catches allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
 
 > *"Bori took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
-> — an AI daily note built from four taps, a memo, and two photos
+> — an AI daily note built from a few chips, two photos, and one short line from the sitter
 
 ### ⑤ Completion — home safe, and a record that remembers
 - The final handoff comes with a photo and a *"Bori is home safe 🏠"* report, then a thank-you and a **5-star review** request.
@@ -80,19 +81,38 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 
 ---
 
+## 🤖 The PawNote Agent
+
+PawNote's AI works like an agent. Each event in a stay triggers it; it gathers the facts it needs, acts, and remembers. A person approves anything that reaches the other side.
+
+| When this happens | The agent | A person decides |
+| :--- | :--- | :--- |
+| An owner asks about a stay | Checks the calendar, gets the server's quote, searches the pet's Life Record, and drafts a reply in the sitter's voice | The sitter taps **Send**, or turns on auto-send |
+| The owner writes a care request | Turns it into timed tasks and Heads-up cards | The owner reviews and saves |
+| A handoff photo is taken | Checks that the pet is there and secured in the car | Advice only — the sitter can continue |
+| The day ends | Suggests chips from check-ins and photos, then writes the daily note | The sitter fixes the chips, adds a line, and approves |
+| The stay ends | Writes the pet's Life Record and indexes it for next time | The owner reads it |
+| The next inquiry arrives | Retrieves that Life Record, so even a new sitter starts informed | — |
+
+Prices, dates, and entry codes never come from the model: the server supplies them, and the agent only writes around them.
+
+---
+
 ## 🗓️ A Stay with PawNote (demo path)
 
 Thanksgiving weekend: Jisoo leaves **Bori** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Mina.
 
 ```
-Mon 22:40  ① Jisoo asks Mina about Oct 9–12 → Mina's auto-send is on → read receipt, typing, and a reply ~30 s
+Mon 22:40  ① Jisoo asks Mina about Oct 9–12 → Mina's auto-send is on → "Mina is typing…" and a reply ~30 s
               later: available, total incl. the Thanksgiving and second-pet rates, "Bori takes her pill best in a treat — happy to do that"
-Tue        ② Care request → AI checklist → video Meet & Greet → drop-off: Sitter drives, pick-up: Owner drives
+Tue        ② Booking request → care request → AI checklist → first stay together, so a video Meet & Greet
+              (Google Meet link + calendar invite) → drop-off: Sitter drives, pick-up: Owner drives
 Wed        ③ Mina accepts → Jisoo signs 5 consents → pays (demo) → Mina's address + visitor parking unlock
 Fri 05:30     Entry info unlocks for Mina (2 h before pick-up) → Jisoo is notified
 Fri 07:30  ④ Mina starts the trip (taps Allow on the location screen) → Jisoo watches the ETA → buzzer + lockbox card on arrival
               → photo of Bori's crate in the car → ✅ "Pick-up complete — care has started"
-Fri 18:00     5-second check + 2 photos → AI daily note → sent · album sorted into Meals · Walks · Naps
+Fri 18:00     Suggested chips from the day + 2 photos → Mina adds one short line → AI daily note → she approves
+              → posted · album sorted into Meals · Walks · Naps
 Mon 17:00  ⑤ Jisoo drives over (Mina sees the ETA) → visitor parking card → return photo
               → "Bori and Mochi are home safe 🏠" → ★★★★★ → Life Record updated for the next sitter
 ```
@@ -116,7 +136,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 | ④ Treat guard *(stretch)* | Allergen & hidden-ingredient reasoning | `nvidia/Nemotron-3-Ultra-550b-a55b` | Safety-critical → strongest reasoning |
 | ⑤ Completion | Stay → Pet Life Record (eating, potty, meds, behavior, cautions) | `nvidia/nemotron-3-super-120b-a12b` | Long-context summarizing that only uses recorded facts |
 
-¹ `nvidia/nemotron-3-nano-omni` is in the Nebius cookbook but not in the Token Factory catalog (checked 2026-10-01), so vision uses MiniCPM-V-4.5. Reasoning, writing, and replies stay on Nemotron.
+¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02), and keeping one running through judging would cost more than our credits — so vision uses MiniCPM-V-4.5 on the shared API. Reasoning, writing, and replies stay on Nemotron.
 
 **Other Nebius services**
 - **Nebius AI Cloud — Serverless Endpoint** — hosts the FastAPI backend (Render only as an emergency fallback).
@@ -130,6 +150,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 - **Entry info unlocks on time.** Lockbox and buzzer codes are readable only by the booked sitter, from 2 hours before the visit until the stay ends, and the owner is notified when they open. They never enter AI prompts or the RAG knowledge base.
 - **Location only while moving.** Trips share one live position, only with the other person on the booking, and stop when you arrive. No route history is stored.
+- **Video Meet & Greets run on Google Meet.** PawNote shares only the owner's and sitter's account emails with Google, to send the calendar invite.
 - **The AI never invents facts.** Prices, dates, and availability come from the database; daily notes and Life Records use only what was recorded that day.
 - **No real personal data.** Demo accounts, pets, addresses, and codes are fictional; real messages used for tone are anonymized before they reach a prompt.
 
@@ -153,6 +174,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
           │     ├── Nemotron Ultra  → treat safety reasoning (stretch)
           │     ├── MiniCPM-V       → handoff checks, captions, album sorting
           │     └── Qwen3 Embedding → RAG retrieval
+          ├── Google Calendar → Google Meet links + invites (video Meet & Greet)
           ├── OpenStreetMap → trip map (view only)
           └── Tavily       → ingredient / recall web search (safety stretch)
 ```
@@ -165,8 +187,9 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 | Media | Cloudinary |
 | AI | NVIDIA Nemotron + MiniCPM-V (vision) + Qwen3 Embedding on Nebius Token Factory |
 | Maps | Leaflet + OpenStreetMap |
+| Video Meet & Greet | Google Meet (via the Google Calendar API) |
 | Web search | Tavily |
-| Notifications | Supabase Realtime (web) · Expo Notifications (mobile) |
+| Notifications | Supabase Realtime in-app alerts (web demo) · Expo push notifications (native apps, after the hackathon) |
 
 ---
 

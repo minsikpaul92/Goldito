@@ -55,7 +55,7 @@
 | 6.7 | (Stretch) 서버 `task_due` | 변경 없음 |
 | 6.8 | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
 | 6.9 | `log_care_checkin` RPC | on-duty 검사 · insert check-in · owner `care_checkin` notification (kind별 title) · optional `media_id` → feed_post (고정 캡션 또는 note excerpt) |
-| 6.10 | Sitter Today quick row | Meal (4 chips) · Poop (3) · Mood (3) · **Note** (1-line sheet ≤120) · each: tap = check-in; optional photo button before submit |
+| 6.10 | Sitter Today quick row | Meal (4 chips) · Poop (3) · **Walk** (10·20·30·45·60 min — dogs only, D23) · Mood (3) · **Note** (optional 1-line sheet ≤120) · each: tap = check-in; optional photo button before submit |
 | 6.11 | Owner Activity UI | `list_pet_activity(p_pet, p_from, p_to)` RPC or client merge: done task_logs + checkins (+ optional feed) · 7-day default |
 | 6.12 | `POST /api/ai/care-plan` (슬기) | `routers/ai_care_plan.py`: `assert_owner_of(pet_id)` → 펫(종·이름·알레르기) + 기존 `care_tasks` + (07C 이후) 최신 Life Record `heads_up` → `MODEL_REPORT`(Super) + `prompts/care_plan/system.md` → `chat_json` `CarePlan {tasks:[{type, time "HH:MM", title, dose?, notes?}], cautions:[str], skipped:[{text, reason}]}`. 서버 검증: type ∈ species 허용 목록(D23 — 아니면 skipped로 이동), 시각 형식, 중복(같은 type·시각) 제거. **저장 안 함** (초안만). 45 s 타임아웃 → 422 `ai_timeout` + "Try again, or add tasks one by one." |
 | 6.13 | Care request UI | `/owner/pets/[petId]/care-request`: 큰 텍스트 칸(placeholder = 예시 의뢰서) → **Make a checklist** → `ChecklistCard` 미리보기(행마다 시각·제목·용량 수정, 삭제) + Heads-up 칩 → **Save checklist** = Supabase insert `care_requests(id, pet_id, raw_text, generated jsonb, created_by)` + `care_tasks` 여러 행 + `pet_cautions(id, pet_id, text, source 'owner'\|'ai', active)`. 저장 후 07B RAG 인덱싱 호출 (`care_request`). 진입: Pet profile **Care request** · 예약 상세 "Add care instructions for Mina" |
@@ -97,4 +97,4 @@ Playbook §8 — extend with check-in RPC + Activity (see [sitter-care-loop.ko.m
 
 ## 다음 Phase
 
-→ [Phase 06B — Pet Transit](phase-06b.md) → [Phase 07 — 알림장 AI](phase-07.md)
+→ [Phase 07 — 알림장 AI](phase-07.md) ([Phase 06B — Pet Transit](phase-06b.md)은 P0 맨 마지막 — D41)
