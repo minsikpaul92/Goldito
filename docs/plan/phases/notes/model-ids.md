@@ -112,7 +112,8 @@ Input: one fictional sentence ("Bori is a Maltese who is allergic to chicken.").
 
 - [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
 - [x] Fine-tuning: wizard offers Gemma-4-E4B-it, no Nemotron (2026-10-02)
-- [ ] Gemma 4 LoRA option and serverless `-LoRa` serving after training? (check in the wizard's Training type step)
+- [x] Gemma-4-E4B-it offers **LoRA fine-tuning** in the wizard's Training type step (2026-10-02) — use LoRA for the voice tuning (style only, cheaper, less forgetting)
+- [ ] Can the LoRA adapter be served without a Dedicated Endpoint? Check the `Gemma-4-E4B-it` page in the Model catalog: if "Public endpoint" is "Not available", LoRA serving also needs a Dedicated Endpoint (the shared `-LoRa` price entries exist only for base models that are on the public API)
 - [ ] Tone: compare Nemotron-3 Nano / Super / gpt-oss-120b / gemma-3-27b-it on the same few-shot voice prompt (07B.8), blind-rated by the sitter
 
 - [ ] MiniCPM: English caption quality on **real pet** photos (not app icon)

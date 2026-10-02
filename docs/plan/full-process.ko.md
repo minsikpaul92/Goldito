@@ -284,7 +284,7 @@ Oct 9, 2026
 | 3 | 자동 발송(옵션)을 P0 후반으로 당길지 P1로 둘지 | 민식 | 데모 장면 ①이 자동 모드를 쓰므로 P0 후반 필요. 제안: 7B.10을 P0 후반, 책임 동의 모달 포함 |
 | 4 | 위치 공유 **동의 거부** 시 대안 (수동 ETA 칩 등) | 민식·묵 | 06B 착수 전 |
 | 5 | 말투 학습 데이터: 3년치 대화 건수·익명화 완료 시점·`{PRICE}`/`{DATE}` 자리표시자 규칙 | 슬기 | 익명화 후 `data/raw/`는 git 금지. 학습·검증·시험 분할 |
-| 6 | ✅ **SFT 대상 모델 확정: Gemma-4-E4B-it** (콘솔 마법사에서 확인, Full fine-tuning, $0.40/1M tokens). Nemotron 모델은 마법사에 없고 모델 페이지에서도 파인튜닝 "Not available" | — | 서빙은 Dedicated Endpoint만 → L40S 시간당 $2 → 녹화·평가 때만 켬. 상시 서비스는 few-shot. 남은 확인: Training type에서 LoRA 옵션 여부 |
+| 6 | ✅ **SFT 대상 모델 확정: Gemma-4-E4B-it** (콘솔 마법사에서 확인, Full fine-tuning, $0.40/1M tokens). Nemotron 모델은 마법사에 없고 모델 페이지에서도 파인튜닝 "Not available" | — | 학습 방식 = **LoRA** (마법사에서 확인). 서빙은 Dedicated Endpoint만일 가능성이 높음 → L40S 시간당 $2 → 녹화·평가 때만 켬. 상시 서비스는 few-shot. 남은 확인: 카탈로그 Gemma-4-E4B-it 페이지의 Public endpoint가 "Not available"인지 (그러면 LoRA도 Dedicated 필요) |
 | 7 | ✅ **NVIDIA 비전 모델은 쓰지 않음.** 3종 모두 Dedicated Endpoint 전용(Public 없음, 파인튜닝 없음) → 상시 비용 $48~113/일 → 비전은 MiniCPM-V 유지 | — | 해커톤 후 예산이 생기면 재검토 |
 | 8 | Nebius **zero-retention** 모드 사용 여부, 익명화 데이터의 제3자(Nebius) 처리 고지 | 슬기 | 익명화 정책 문서에 포함 |
 | 9 | mood meter B안(분류기)의 **학습 데이터셋 라이선스** | 슬기 | 모델 카드에 학습 데이터 미기재 → 불확실하면 A안(태그 추출)만 |
