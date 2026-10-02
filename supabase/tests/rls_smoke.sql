@@ -494,17 +494,11 @@ begin
   perform _t_ok((select count(*) from public.booking_handoffs
       where booking_id = v_a and status = 'proposed' and within_sitter_hours) = 2,
     'A: two in-hours handoff proposals');
-  perform _t_ok((select service_type = 'boarding' and meet_greet_status = 'required'
+  -- Mina received Bori + Mochi in the 'current' fixture (permissions block), so they have met.
+  perform _t_ok((select service_type = 'boarding' and meet_greet_status = 'not_needed'
       from public.bookings where id = v_a),
-    'A: boarding by default; first stay together needs a Meet & Greet');
+    'A: boarding by default; a pair that already had a drop-off skips the Meet & Greet');
   perform _t_as(mina);
-  begin
-    perform respond_booking(v_a, true);
-    v_err := null;
-  exception when others then v_err := sqlerrm;
-  end;
-  perform _t_ok(v_err = 'meet_greet_required', 'A: sitter cannot accept a first-time pair before meeting');
-  perform _t_meet(v_a);
   perform respond_booking(v_a, true, 'See you!');
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed', 'A: booking confirmed');
@@ -521,9 +515,19 @@ begin
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
   v_h := request_booking(mina, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
+  -- Hana ↔ Mina have never met: Accept waits for the Meet & Greet (D44).
+  perform _t_ok((select count(*) from public.bookings
+      where id in (v_b, v_h) and meet_greet_status = 'required') = 2,
+    'B: first stay together needs a Meet & Greet');
+  perform _t_as(mina);
+  begin
+    perform respond_booking(v_b, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'meet_greet_required', 'B: sitter cannot accept a first-time pair before meeting');
   perform _t_meet(v_b);
   perform _t_meet(v_h);
-  perform _t_as(mina);
   perform respond_booking(v_b, true);
   begin
     perform respond_booking(v_h, true);
@@ -739,6 +743,8 @@ begin
     local_ts(d + 14, '12:00'), 'other', 'Jun picks up at Mina''s', null);
   v_b := request_booking(jun, array[coco], local_ts(d + 14, '12:00'), 'other', 'Mina''s place',
     local_ts(d + 14, '17:00'), 'sitter_home', null, null);
+  perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
+    'F: a pair whose Meet & Greet was done (in B) does not meet again');
   perform _t_as(mina);
   perform respond_booking(v_a, true);
   perform _t_as(jun);
@@ -772,7 +778,8 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Booking options (004, phase-03b 3B.0): service type, sitter services, Meet & Greet
--- state, meeting spots, media purposes. Runs after A–H (Jisoo ↔ Mina met in A).
+-- state, meeting spots, media purposes. Runs after A–H (Jisoo ↔ Mina met in the
+-- 'current' fixture).
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -830,7 +837,7 @@ begin
       where booking_id = v_a and location_type = 'owner_home' and location_note is null) = 2,
     '3B.0: house sitting fixes both handoffs to the owner''s home');
   perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
-    '3B.0: a pair whose Meet & Greet was done (even on a cancelled booking) does not meet again');
+    '3B.0: a pair that already met does not meet again');
 
   -- A skipped Meet & Greet is not a meeting: Jisoo ↔ Sora are still first-time. Declining works.
   perform _t_as(jisoo);
