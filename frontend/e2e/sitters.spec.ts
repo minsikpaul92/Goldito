@@ -41,11 +41,31 @@ test.describe("your sitters", () => {
       services: ["boarding", "house_sitting"],
     });
     db.bookings.push(
-      { id: MINA_BOOKING, owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", responded_at: "2026-09-01T00:00:00Z" },
+      {
+        id: MINA_BOOKING,
+        owner_id: OWNER.id,
+        sitter_id: SITTER.id,
+        status: "confirmed",
+        responded_at: "2026-09-01T00:00:00Z",
+        created_at: "2026-08-30T00:00:00Z",
+      },
       // Jun declined → not one of "your sitters".
-      { id: "00000000-0000-4000-8000-0000000000e3", owner_id: OWNER.id, sitter_id: JUN.id, status: "declined", responded_at: null },
+      {
+        id: "00000000-0000-4000-8000-0000000000e3",
+        owner_id: OWNER.id,
+        sitter_id: JUN.id,
+        status: "declined",
+        responded_at: null,
+        created_at: "2026-08-31T00:00:00Z",
+      },
       // Another owner's booking fills Mina's morning on day 11.
-      { id: OTHER_BOOKING, owner_id: "00000000-0000-4000-8000-0000000000aa", sitter_id: SITTER.id, status: "confirmed" },
+      {
+        id: OTHER_BOOKING,
+        owner_id: "00000000-0000-4000-8000-0000000000aa",
+        sitter_id: SITTER.id,
+        status: "confirmed",
+        created_at: "2026-09-02T00:00:00Z",
+      },
     );
     db.sitter_availability.push(
       {

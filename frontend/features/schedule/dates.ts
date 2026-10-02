@@ -109,6 +109,55 @@ export function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
+/** Wall-clock parts of an instant in the app timezone. */
+function zonedParts(date: Date): { day: string; time: string } {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: APP_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(date)
+      .map((p) => [p.type, p.value]),
+  );
+  return { day: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+
+/** Minutes the app timezone is ahead of UTC at that instant (Toronto: −240 / −300). */
+function offsetMinutes(date: Date): number {
+  const { day, time } = zonedParts(date);
+  const [y, m, d] = day.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  return Math.round((Date.UTC(y, m - 1, d, h, mi) - Math.floor(date.getTime() / 60_000) * 60_000) / 60_000);
+}
+
+/** Toronto wall clock (day + "HH:MM") → ISO instant for timestamptz RPC params. */
+export function zonedToIso(day: string, time: string): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  const guess = Date.UTC(y, m - 1, d, h, mi);
+  let utc = guess - offsetMinutes(new Date(guess)) * 60_000;
+  // Near a DST switch the offset at the real instant can differ from the guess's.
+  const second = offsetMinutes(new Date(utc));
+  utc = guess - second * 60_000;
+  return new Date(utc).toISOString();
+}
+
+/** ISO instant → Toronto day + "HH:MM". */
+export function isoToZoned(iso: string): { day: string; time: string } {
+  return zonedParts(new Date(iso));
+}
+
+/** ISO instant → "Oct 5, 9:30 AM" in the app timezone. */
+export function formatInstant(iso: string): string {
+  const { day, time } = isoToZoned(iso);
+  return `${formatDay(day)}, ${formatTime(time)}`;
+}
+
 /** "HH:MM" `step` minutes later or earlier, wrapping around midnight. */
 export function shiftTime(time: string, step: number): string {
   const total = (((timeToMinutes(time) + step) % 1440) + 1440) % 1440;

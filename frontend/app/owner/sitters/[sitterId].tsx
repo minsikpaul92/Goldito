@@ -1,8 +1,9 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { STATE_LABEL, SlotCalendar } from "../../../components/SlotCalendar";
+import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Chip } from "../../../components/ui/Chip";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -105,70 +106,89 @@ export default function SitterProfileScreen() {
   const meta = sitterMeta(sitter);
 
   return (
-    <Screen contentStyle={styles.content}>
-      <Card style={styles.intro}>
-        <Text accessibilityRole="header" style={styles.name} testID="sitter-name">
-          {sitter.displayName}
-        </Text>
-        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
-        <View style={styles.chips}>
-          {sitter.services.map((service) => (
-            <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
-          ))}
-        </View>
-        {sitter.bio ? <Text style={styles.body}>{sitter.bio}</Text> : null}
-        {sitter.homeNotes ? (
-          <View style={styles.block}>
-            <Text style={styles.label}>About their home</Text>
-            <Text style={styles.body}>{sitter.homeNotes}</Text>
-          </View>
-        ) : null}
-      </Card>
-
-      <View style={styles.block}>
-        <Text accessibilityRole="header" style={styles.label}>
-          Schedule
-        </Text>
-        <SlotCalendar
-          month={month}
-          today={today}
-          slots={slots ?? new Map()}
-          selection={day ? { from: day, to: day } : null}
-          onSelectDay={setDay}
-          onPrevMonth={() => changeMonth(-1)}
-          onNextMonth={() => changeMonth(1)}
-          canGoPrev={month > monthStart(today)}
-        />
-        {scheduleError ? (
-          <EmptyState
-            emoji="📅"
-            title="Couldn't load the schedule"
-            message={scheduleError}
-            action={{ label: "Try again", onPress: () => void loadSchedule() }}
-          />
-        ) : null}
-      </View>
-
-      <Card>
-        {day && slots ? (
-          <View style={styles.block} testID="sitter-day">
-            <Text style={styles.label}>{formatDay(day)}</Text>
-            {SLOTS.map(({ slot, label }) => (
-              <Text key={slot} style={styles.body} testID={`sitter-day-${slot}`}>
-                {slotLine(label, slots.get(slotKey(day, slot)))}
-              </Text>
+    <View style={styles.root}>
+      <Screen contentStyle={styles.content}>
+        <Card style={styles.intro}>
+          <Text accessibilityRole="header" style={styles.name} testID="sitter-name">
+            {sitter.displayName}
+          </Text>
+          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          <View style={styles.chips}>
+            {sitter.services.map((service) => (
+              <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
             ))}
           </View>
-        ) : (
-          <Text style={styles.meta}>Tap a day to see {sitter.displayName}'s hours and open spots.</Text>
-        )}
-      </Card>
-    </Screen>
+          {sitter.bio ? <Text style={styles.body}>{sitter.bio}</Text> : null}
+          {sitter.homeNotes ? (
+            <View style={styles.block}>
+              <Text style={styles.label}>About their home</Text>
+              <Text style={styles.body}>{sitter.homeNotes}</Text>
+            </View>
+          ) : null}
+        </Card>
+  
+        <View style={styles.block}>
+          <Text accessibilityRole="header" style={styles.label}>
+            Schedule
+          </Text>
+          <SlotCalendar
+            month={month}
+            today={today}
+            slots={slots ?? new Map()}
+            selection={day ? { from: day, to: day } : null}
+            onSelectDay={setDay}
+            onPrevMonth={() => changeMonth(-1)}
+            onNextMonth={() => changeMonth(1)}
+            canGoPrev={month > monthStart(today)}
+          />
+          {scheduleError ? (
+            <EmptyState
+              emoji="📅"
+              title="Couldn't load the schedule"
+              message={scheduleError}
+              action={{ label: "Try again", onPress: () => void loadSchedule() }}
+            />
+          ) : null}
+        </View>
+  
+        <Card>
+          {day && slots ? (
+            <View style={styles.block} testID="sitter-day">
+              <Text style={styles.label}>{formatDay(day)}</Text>
+              {SLOTS.map(({ slot, label }) => (
+                <Text key={slot} style={styles.body} testID={`sitter-day-${slot}`}>
+                  {slotLine(label, slots.get(slotKey(day, slot)))}
+                </Text>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.meta}>Tap a day to see {sitter.displayName}'s hours and open spots.</Text>
+          )}
+        </Card>
+      </Screen>
+      <View style={styles.footer}>
+        <Button
+          label={`Book ${sitter.displayName}`}
+          onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
+          testID="book-this-sitter"
+        />
+      </View>
+    </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.color.background,
+    },
+    footer: {
+      padding: theme.spacing.md,
+      maxWidth: 480,
+      width: "100%",
+      alignSelf: "center",
+    },
     content: {
       gap: theme.spacing.md,
     },

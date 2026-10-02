@@ -10,26 +10,30 @@ type Props = {
   hint?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  /** One-of-many choice (radio semantics and icon) instead of a checkbox. */
+  radio?: boolean;
+  disabled?: boolean;
   testID?: string;
 };
 
-/** Checkbox with its label as one big click target. */
-export function CheckRow({ label, hint, checked, onChange, testID }: Props) {
+/** Checkbox (or radio) with its label as one big click target. */
+export function CheckRow({ label, hint, checked, onChange, radio, disabled, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
   return (
     <Pressable
-      accessibilityRole="checkbox"
+      accessibilityRole={radio ? "radio" : "checkbox"}
       // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
       aria-checked={checked}
       accessibilityLabel={label}
-      onPress={() => onChange(!checked)}
-      style={styles.row}
+      disabled={disabled}
+      onPress={() => onChange(radio ? true : !checked)}
+      style={[styles.row, disabled && styles.disabled]}
       testID={testID}
     >
       <Ionicons
-        name={checked ? "checkbox" : "square-outline"}
+        name={radio ? (checked ? "radio-button-on" : "radio-button-off") : checked ? "checkbox" : "square-outline"}
         size={theme.icon.sm}
         color={checked ? theme.color.primary : theme.color.textMuted}
       />
@@ -51,6 +55,9 @@ const makeStyles = (theme: Theme) =>
     },
     text: {
       flex: 1,
+    },
+    disabled: {
+      opacity: 0.5,
     },
     label: {
       fontSize: theme.fontSize.body,

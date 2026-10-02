@@ -124,6 +124,13 @@ export type MockDb = {
   booking_slots: Row[];
   /** cancel_booking calls: { p_booking, p_reason }. */
   cancellations: Row[];
+  booking_handoffs: Row[];
+  booking_pets: Row[];
+  /** What rpc/search_sitters returns (rows in the 004 shape); calls land in `searches`. */
+  search_results: Row[];
+  searches: Row[];
+  /** request_booking calls with their parameters. */
+  requests: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -143,6 +150,11 @@ function createMockDb(): MockDb {
     bookings: [],
     booking_slots: [],
     cancellations: [],
+    booking_handoffs: [],
+    booking_pets: [],
+    search_results: [],
+    searches: [],
+    requests: [],
   };
 }
 
@@ -301,6 +313,47 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     );
   }
 
+  if (path === "rpc/search_sitters") {
+    db.searches.push(request.postDataJSON());
+    return json(route, 200, db.search_results);
+  }
+
+  if (path === "rpc/request_booking") {
+    // request_booking (004): booking + two proposed handoffs + pets. Errors can be forced
+    // by setting `request_error` on the sitter's search row.
+    const args = request.postDataJSON();
+    db.requests.push(args);
+    const forced = db.search_results.find((r) => r.sitter_id === args.p_sitter)?.request_error;
+    if (forced) return json(route, 400, { code: "P0001", message: forced, details: null });
+    const id = crypto.randomUUID();
+    const created = new Date().toISOString();
+    db.bookings.push({
+      id,
+      owner_id: me,
+      sitter_id: args.p_sitter,
+      status: "requested",
+      service_type: args.p_service_type ?? "boarding",
+      created_at: created,
+    });
+    for (const [kind, at, type, note] of [
+      ["drop_off", args.p_drop_off_at, args.p_drop_off_location_type, args.p_drop_off_note],
+      ["pick_up", args.p_pick_up_at, args.p_pick_up_location_type, args.p_pick_up_note],
+    ]) {
+      db.booking_handoffs.push({
+        id: crypto.randomUUID(),
+        booking_id: id,
+        kind,
+        scheduled_at: at,
+        location_type: type,
+        location_note: note,
+        status: "proposed",
+        proposed_by: me,
+      });
+    }
+    for (const petId of args.p_pets) db.booking_pets.push({ booking_id: id, pet_id: petId });
+    return json(route, 200, id);
+  }
+
   if (path === "rpc/cancel_booking") {
     const { p_booking, p_reason } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
@@ -335,10 +388,26 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           .map((a) => ({ id: a.id, allergen: a.allergen })),
       }));
     }
-    if (path === "bookings" && (params.get("select") ?? "").includes("owner:profiles")) {
+    const select = params.get("select") ?? "";
+    if (path === "bookings") {
+      const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
       rows = rows.map((b) => ({
         ...b,
-        owner: { display_name: users.find((u) => u.id === b.owner_id)?.displayName ?? null },
+        ...(select.includes("owner:profiles") ? { owner: name(b.owner_id) } : {}),
+        ...(select.includes("sitter:profiles") ? { sitter: name(b.sitter_id) } : {}),
+        ...(select.includes("booking_handoffs(")
+          ? { booking_handoffs: db.booking_handoffs.filter((h) => h.booking_id === b.id) }
+          : {}),
+        ...(select.includes("booking_pets(")
+          ? {
+              booking_pets: db.booking_pets
+                .filter((bp) => bp.booking_id === b.id)
+                .map((bp) => {
+                  const pet = db.pets.find((p) => p.id === bp.pet_id);
+                  return { pets: pet ? { name: pet.name, species: pet.species } : null };
+                }),
+            }
+          : {}),
       }));
     }
     if ((params.get("order") ?? "").startsWith("created_at")) {
