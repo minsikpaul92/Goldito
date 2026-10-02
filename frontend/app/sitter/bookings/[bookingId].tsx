@@ -20,6 +20,7 @@ import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   BookingSummary,
+  cancelBooking,
   CHECK_IN_WINDOW_MS,
   HandoffKind,
   PetCare,
@@ -86,6 +87,7 @@ export default function SitterBookingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -320,8 +322,30 @@ export default function SitterBookingDetail() {
               Stay complete 🐾
             </Text>
           )}
+          {!booking.dropOff?.completedAt ? (
+            <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />
+          ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmCancel}
+        title="Cancel this booking?"
+        onClose={() => setConfirmCancel(false)}
+        testID="cancel-sheet"
+        footer={
+          <Button
+            label="Cancel booking"
+            onPress={() => {
+              setConfirmCancel(false);
+              void run(() => cancelBooking(booking.id, "Sitter cancelled"), "Booking cancelled");
+            }}
+            testID="cancel-confirm"
+          />
+        }
+      >
+        <Text style={styles.body}>{`${owner} gets a notice and can find a new sitter.`}</Text>
+      </Sheet>
 
       {sheet ? (
         <HandoffChangeSheet

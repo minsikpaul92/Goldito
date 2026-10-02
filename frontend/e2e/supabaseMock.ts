@@ -573,7 +573,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const { p_booking, p_reason } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
     if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
-    booking.status = "cancelled";
+    const received = db.booking_handoffs.some(
+      (h) => h.booking_id === p_booking && h.kind === "drop_off" && h.status === "agreed" && h.completed_at,
+    );
+    if (received) return json(route, 400, { code: "P0001", message: "booking_in_progress", details: null });
+    Object.assign(booking, { status: "cancelled", cancelled_by: me, cancel_reason: p_reason });
     db.cancellations.push({ p_booking, p_reason });
     return route.fulfill({ status: 204 });
   }

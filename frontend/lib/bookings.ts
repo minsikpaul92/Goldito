@@ -197,6 +197,9 @@ export type BookingSummary = {
   serviceType: ServiceType;
   meetGreetStatus: MeetGreetStatus;
   meetGreet: MeetGreet;
+  /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
+  cancelledBy: string | null;
+  cancelReason: string | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;
   pickUp: Handoff | null;
@@ -265,7 +268,8 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
-  "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, created_at, " +
+  "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, " +
+  "created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -284,6 +288,8 @@ type BookingRow = {
   meet_greet_link: string | null;
   meet_greet_proposed_by: string | null;
   meet_greet_skip_requested_by: string | null;
+  cancelled_by: string | null;
+  cancel_reason: string | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -326,6 +332,8 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
       proposedBy: b.meet_greet_proposed_by ?? null,
       skipRequestedBy: b.meet_greet_skip_requested_by ?? null,
     },
+    cancelledBy: b.cancelled_by ?? null,
+    cancelReason: b.cancel_reason ?? null,
     pets,
     dropOff: currentHandoff(handoffs, "drop_off", b.status),
     pickUp: currentHandoff(handoffs, "pick_up", b.status),

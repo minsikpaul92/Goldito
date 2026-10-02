@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -13,11 +13,13 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { Sheet } from "../../../components/ui/Sheet";
+import { TextButton } from "../../../components/ui/TextButton";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   BookingSummary,
+  cancelBooking,
   HandoffKind,
   declinedChange,
   getBooking,
@@ -37,11 +39,21 @@ type State =
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 
-function actionError(error: unknown, sitter: string): string {
+function actionError(error: unknown, sitter: string, pets: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "sitter_unavailable") return `${sitter} no longer has room for that time. Try another one.`;
   if (error.code === "handoff_completed") return "That handoff already happened.";
+  if (error.code === "booking_in_progress") return `${pets} is already with ${sitter} — change the pick-up time instead.`;
   return error.message;
+}
+
+/** Why a booking ended, from the owner's side. */
+function endedNote(b: BookingSummary): string | null {
+  if (b.status === "declined") return `${b.sitterName} can't take this one.`;
+  if (b.status !== "cancelled") return null;
+  if (b.cancelReason === "meet_greet_declined") return `${b.sitterName} would like to meet first, so this booking was cancelled.`;
+  if (b.cancelledBy === b.sitterId) return `${b.sitterName} cancelled this booking.`;
+  return "You cancelled this booking.";
 }
 
 /**
@@ -58,6 +70,7 @@ export default function OwnerBookingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
   const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const load = useCallback(async () => {
     if (!bookingId) return;
@@ -102,6 +115,10 @@ export default function OwnerBookingDetail() {
   const { booking, addresses } = state;
   const sitter = booking.sitterName;
   const open = booking.status === "requested" || booking.status === "confirmed";
+  const petNames = booking.pets.map((p) => p.name).join(" & ") || "Your pet";
+  // Cancel only before the pets are handed over (cancel_booking, 003).
+  const canCancel = open && !booking.dropOff?.completedAt;
+  const ended = endedNote(booking);
 
   const run = async (action: () => Promise<void>, done: string) => {
     setBusy(true);
@@ -111,7 +128,7 @@ export default function OwnerBookingDetail() {
       toast.show(done);
       await load();
     } catch (err) {
-      setError(actionError(err, sitter));
+      setError(actionError(err, sitter, petNames));
     } finally {
       setBusy(false);
     }
@@ -146,6 +163,13 @@ export default function OwnerBookingDetail() {
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>
+
+        {ended ? (
+          <Card style={styles.block} testID="booking-ended">
+            <Text style={styles.label}>{ended}</Text>
+            <Text style={styles.muted}>Same pets, times and places — pick another sitter.</Text>
+          </Card>
+        ) : null}
 
         <MeetGreetCard booking={booking} viewer="owner" onChanged={load} />
 
@@ -189,16 +213,47 @@ export default function OwnerBookingDetail() {
         ) : null}
       </Screen>
 
-      {booking.status === "confirmed" ? (
+      {booking.status === "confirmed" || canCancel || ended ? (
         <View style={styles.footer}>
-          <Button
-            label="Change time or place"
-            onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
-            disabled={busy || !open}
-            testID="change-booking"
-          />
+          {ended ? (
+            <Button
+              label="Find a new sitter"
+              onPress={() => router.push(`/owner/bookings/new?rebook=${booking.id}`)}
+              testID="find-new-sitter"
+            />
+          ) : null}
+          {booking.status === "confirmed" ? (
+            <Button
+              label="Change time or place"
+              onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
+              disabled={busy || !open}
+              testID="change-booking"
+            />
+          ) : null}
+          {canCancel ? (
+            <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />
+          ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmCancel}
+        title="Cancel this booking?"
+        onClose={() => setConfirmCancel(false)}
+        testID="cancel-sheet"
+        footer={
+          <Button
+            label="Cancel booking"
+            onPress={() => {
+              setConfirmCancel(false);
+              void run(() => cancelBooking(booking.id, "Owner cancelled"), "Booking cancelled");
+            }}
+            testID="cancel-confirm"
+          />
+        }
+      >
+        <Text style={styles.body}>{`${sitter} gets a notice. You can book again any time.`}</Text>
+      </Sheet>
 
       {sheet ? (
         <HandoffChangeSheet
@@ -257,6 +312,11 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "700",
       color: theme.color.text,
     },
+    label: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.text,
+    },
     body: {
       fontSize: theme.fontSize.body,
       color: theme.color.text,
@@ -284,6 +344,7 @@ const makeStyles = (theme: Theme) =>
       gap: 2,
     },
     footer: {
+      gap: theme.spacing.xs,
       padding: theme.spacing.md,
       maxWidth: 480,
       width: "100%",

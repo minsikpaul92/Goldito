@@ -13,9 +13,16 @@ import { TextButton } from "../../../components/ui/TextButton";
 import { TextField } from "../../../components/ui/TextField";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { useMyPets } from "../../../features/pets/useMyPets";
-import { addDays, appToday, formatTime, zonedToIso } from "../../../features/schedule/dates";
+import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
 import { MySitter, listMySitters } from "../../../features/sitters/sitterApi";
-import { BookingError, SitterMatch, coversWholeTrip, requestBooking, searchSitters } from "../../../lib/bookings";
+import {
+  BookingError,
+  SitterMatch,
+  coversWholeTrip,
+  getBooking,
+  requestBooking,
+  searchSitters,
+} from "../../../lib/bookings";
 import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
@@ -62,7 +69,7 @@ export default function BookCare() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
-  const params = useLocalSearchParams<{ sitter?: string }>();
+  const params = useLocalSearchParams<{ sitter?: string; rebook?: string }>();
   const { status: petStatus, pets } = useMyPets();
   const today = useMemo(() => appToday(), []);
 
@@ -86,11 +93,30 @@ export default function BookCare() {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [rebookedFrom, setRebookedFrom] = useState<string | null>(null);
 
-  // One pet → picked for you.
+  // One pet → picked for you (unless a rebook already filled the pets in).
   useEffect(() => {
-    if (pets.length === 1) setPetIds([pets[0].id]);
-  }, [pets]);
+    if (pets.length === 1 && !params.rebook) setPetIds([pets[0].id]);
+  }, [pets, params.rebook]);
+
+  // Find a new sitter (3B.7): same pets, times and places as the cancelled booking.
+  useEffect(() => {
+    if (!params.rebook) return;
+    getBooking(params.rebook)
+      .then((old) => {
+        if (!old) return;
+        setRebookedFrom(old.id);
+        setPetIds(old.pets.flatMap((p) => (p.id ? [p.id] : [])));
+        const fill = (h: typeof old.dropOff, set: (d: HandoffDraft) => void) => {
+          if (!h) return;
+          set({ ...isoToZoned(h.at), locationType: h.locationType, note: h.note ?? "" });
+        };
+        fill(old.dropOff, setDropOff);
+        fill(old.pickUp, setPickUp);
+      })
+      .catch(() => undefined);
+  }, [params.rebook]);
 
   useEffect(() => {
     listMySitters()
@@ -153,6 +179,7 @@ export default function BookCare() {
         dropOff: { at: dropIso, locationType: dropOff.locationType, note: dropOff.note.trim() || null },
         pickUp: { at: pickIso, locationType: pickUp.locationType, note: pickUp.note.trim() || null },
         note: note.trim() || null,
+        rebookedFrom,
       });
       toast.show(`Request sent to ${chosen.displayName} 📨`);
       router.replace("/owner/bookings");
@@ -202,6 +229,12 @@ export default function BookCare() {
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
+        {rebookedFrom ? (
+          <Text style={styles.hint} testID="rebook-note">
+            Finding a new sitter — same pets, times and places as before. Change anything you like.
+          </Text>
+        ) : null}
+
         <Card style={styles.section}>
           <Text accessibilityRole="header" style={styles.title}>
             Who's staying?
