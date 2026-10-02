@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../components/ui/Button";
+import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
@@ -33,10 +34,35 @@ const SITTER_FIELDS: FieldSpec[] = [
   { key: "home_address", label: "Home address", placeholder: "Shown only to owners with a confirmed booking" },
 ];
 
+const MAX_SPOTS = 3;
+
+type Service = "boarding" | "house_sitting";
+
+const SERVICES: { value: Service; label: string; hint: string }[] = [
+  { value: "boarding", label: "🏠 Boarding", hint: "Pets stay at your place" },
+  { value: "house_sitting", label: "🔑 House sitting", hint: "You care for them at the owner's place" },
+];
+
+/** Text fields only — services and meeting spots have their own controls. */
 function toDraft(profile: RoleProfile): Draft {
   return Object.fromEntries(
-    Object.entries(profile.fields).map(([key, value]) => [key, value == null ? "" : String(value)]),
+    Object.entries(profile.fields)
+      .filter(([, value]) => !Array.isArray(value))
+      .map(([key, value]) => [key, value == null ? "" : String(value)]),
   );
+}
+
+function padSpots(spots: string[]): string[] {
+  return [...spots, "", "", ""].slice(0, MAX_SPOTS);
+}
+
+/** Trimmed, non-empty, no repeats (004 check: ≤ 3 labels of ≤ 60 chars). */
+function cleanSpots(spots: string[]): string[] {
+  const out: string[] = [];
+  for (const s of spots.map((x) => x.trim()).filter(Boolean)) {
+    if (!out.some((o) => o.toLowerCase() === s.toLowerCase())) out.push(s);
+  }
+  return out.slice(0, MAX_SPOTS);
 }
 
 /** Role profile (phase-03 3.8). Settings + What's New are a separate screen in P1 (11.11). */
@@ -51,6 +77,8 @@ export default function ProfileScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [spots, setSpots] = useState<string[]>(padSpots([]));
+  const [services, setServices] = useState<Service[]>(["boarding"]);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -61,6 +89,8 @@ export default function ProfileScreen() {
       .then((result) => {
         setLoaded(result);
         setDraft(toDraft(result));
+        setSpots(padSpots(result.fields.meet_spots));
+        if (result.role === "sitter") setServices(result.fields.services);
       })
       .catch((error: Error) => setLoadError(error.message));
     // Load once per user; later name edits are local until saved.
@@ -89,6 +119,8 @@ export default function ProfileScreen() {
     if (loaded.role === "sitter" && experience && !/^\d{1,2}$/.test(experience)) {
       found.experience_years = "Enter whole years, e.g. 3.";
     }
+    if (loaded.role === "sitter" && services.length === 0) found.services = "Pick at least one service.";
+    const meetSpots = cleanSpots(spots);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -106,6 +138,7 @@ export default function ProfileScreen() {
               emergency_contact_phone: value("emergency_contact_phone"),
               vet_clinic_name: value("vet_clinic_name"),
               vet_clinic_phone: value("vet_clinic_phone"),
+              meet_spots: meetSpots,
             },
           }
         : {
@@ -116,6 +149,8 @@ export default function ProfileScreen() {
               experience_years: experience ? Number(experience) : null,
               home_notes: value("home_notes"),
               home_address: value("home_address"),
+              services,
+              meet_spots: meetSpots,
             },
           };
 
@@ -158,6 +193,39 @@ export default function ProfileScreen() {
           testID={`profile-${field.key}`}
         />
       ))}
+      {loaded.role === "sitter" ? (
+        <View style={styles.group} testID="profile-services">
+          <Text style={styles.groupTitle}>Services you offer</Text>
+          {SERVICES.map((s) => (
+            <CheckRow
+              key={s.value}
+              label={s.label}
+              hint={s.hint}
+              checked={services.includes(s.value)}
+              onChange={(on) => setServices((cur) => (on ? [...cur, s.value] : cur.filter((x) => x !== s.value)))}
+              testID={`profile-service-${s.value}`}
+            />
+          ))}
+          {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
+        </View>
+      ) : null}
+      <View style={styles.group} testID="profile-spots">
+        <Text style={styles.groupTitle}>Preferred meeting spots (optional)</Text>
+        <Text style={styles.muted}>
+          Up to 3 public places for a first Meet & Greet — a park gate or a café, never a home address.
+        </Text>
+        {spots.map((spot, i) => (
+          <TextField
+            key={i}
+            label={`Spot ${i + 1}`}
+            value={spot}
+            onChangeText={(text) => setSpots((cur) => cur.map((s, k) => (k === i ? text : s)))}
+            placeholder={i === 0 ? "e.g. Christie Pits — east entrance" : undefined}
+            maxLength={60}
+            testID={`profile-spot-${i + 1}`}
+          />
+        ))}
+      </View>
       <View style={styles.privacy}>
         <Text style={styles.hint}>
           {profile.role === "owner"
@@ -185,6 +253,18 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "600",
       color: theme.color.textMuted,
       textTransform: "uppercase",
+    },
+    group: {
+      gap: theme.spacing.sm,
+    },
+    groupTitle: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "600",
+      color: theme.color.text,
+    },
+    muted: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
     },
     privacy: {
       padding: theme.spacing.sm,

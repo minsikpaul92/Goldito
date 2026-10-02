@@ -3,7 +3,7 @@ import { Role } from "../../providers/SessionProvider";
 import { OwnerProfile, SitterProfile } from "../../types/db";
 
 const OWNER_COLUMNS =
-  "home_address, emergency_contact_name, emergency_contact_phone, vet_clinic_name, vet_clinic_phone";
+  "home_address, emergency_contact_name, emergency_contact_phone, vet_clinic_name, vet_clinic_phone, meet_spots";
 
 export type RoleProfile =
   | { role: "owner"; fields: OwnerProfile }
@@ -22,7 +22,8 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
   if (role === "owner") {
     const { data, error } = await supabase.from("owner_profiles").select(OWNER_COLUMNS).eq("id", userId).single();
     if (error || !data) fail("load your profile");
-    return { role, fields: data as OwnerProfile };
+    const row = data as OwnerProfile;
+    return { role, fields: { ...row, meet_spots: row.meet_spots ?? [] } };
   }
   const { data, error } = await supabase.rpc("get_my_sitter_profile").maybeSingle();
   if (error || !data) fail("load your profile");
@@ -35,6 +36,8 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
       experience_years: row.experience_years,
       home_notes: row.home_notes,
       home_address: row.home_address,
+      services: row.services ?? ["boarding"],
+      meet_spots: row.meet_spots ?? [],
     },
   };
 }

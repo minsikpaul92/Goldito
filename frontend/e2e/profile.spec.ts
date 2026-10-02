@@ -63,6 +63,44 @@ test.describe("profile", () => {
     expect(row).toMatchObject({ service_area: "North York", experience_years: 3, home_address: "12 Maple St" });
   });
 
+  test("a sitter picks services and meeting spots; at least one service is required", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    const screen = app(page);
+    await screen.getByTestId("open-profile").click();
+
+    // New sitters offer boarding by default (004).
+    await expect(screen.getByTestId("profile-service-boarding")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("profile-service-boarding").click();
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByText("Pick at least one service.")).toBeVisible();
+
+    await screen.getByTestId("profile-service-house_sitting").click();
+    await screen.getByTestId("profile-spot-1").fill("Christie Pits — east entrance");
+    await screen.getByTestId("profile-spot-2").fill("  christie pits — east entrance ");
+    await screen.getByTestId("profile-save").click();
+    await expect(page).toHaveURL(/\/sitter$/);
+    expect(db.sitter_profiles.find((r) => r.id === SITTER.id)).toMatchObject({
+      services: ["house_sitting"],
+      meet_spots: ["Christie Pits — east entrance"],
+    });
+  });
+
+  test("an owner saves preferred meeting spots", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER]);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    await screen.getByTestId("open-profile").click();
+    await expect(screen.getByTestId("profile-services")).toHaveCount(0);
+    await screen.getByTestId("profile-spot-1").fill("Trinity Bellwoods — north gate");
+    await screen.getByTestId("profile-save").click();
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.owner_profiles.find((r) => r.id === OWNER.id)?.meet_spots).toEqual(["Trinity Bellwoods — north gate"]);
+  });
+
   test("signed-out visitors cannot open the profile", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await page.goto("/profile");

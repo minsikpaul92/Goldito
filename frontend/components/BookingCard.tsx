@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
+import { SERVICE_LABEL } from "../features/sitters/sitterApi";
 import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -53,6 +54,32 @@ export function placeLabel(type: LocationType, note: string | null, b: BookingSu
   return viewer === "owner" ? "My place" : `${b.ownerName}'s place`;
 }
 
+/**
+ * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Lucy brings them home". House
+ * sitting has no drive — the sitter comes to the owner's home.
+ */
+export function transportLine(b: BookingSummary, viewer: Viewer): string | null {
+  if (b.serviceType === "house_sitting") {
+    return viewer === "owner" ? `🔑 ${b.sitterName} cares for them at your place` : `🔑 You care for them at ${b.ownerName}'s place`;
+  }
+  const you = viewer === "owner" ? "You" : b.ownerName;
+  const sitter = viewer === "sitter" ? "You" : b.sitterName;
+  const part = (kind: "drop_off" | "pick_up", h: Handoff | null) => {
+    if (!h) return null;
+    if (h.locationType === "other") return `📍 Meet ${kind === "drop_off" ? "for drop-off" : "for pick-up"}`;
+    if (kind === "drop_off") {
+      return h.locationType === "sitter_home"
+        ? `🚗 ${you} drive${you === "You" ? "" : "s"} over`
+        : `🚙 ${sitter} pick${sitter === "You" ? "" : "s"} up`;
+    }
+    return h.locationType === "sitter_home"
+      ? `🚗 ${you} pick${you === "You" ? "" : "s"} up`
+      : `🚙 ${sitter} bring${sitter === "You" ? "" : "s"} them home`;
+  };
+  const parts = [part("drop_off", b.dropOff), part("pick_up", b.pickUp)].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 export function handoffLine(label: string, h: Handoff | null, b: BookingSummary, viewer: Viewer): string {
   if (!h) return `${label}: —`;
   const done = h.completedAt
@@ -74,6 +101,7 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
   const badges = bookingBadges(booking, viewer);
   const pets = booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ");
   const who = viewer === "owner" ? booking.sitterName : booking.ownerName;
+  const transport = transportLine(booking, viewer);
 
   return (
     <Pressable
@@ -92,9 +120,14 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
             </View>
           ))}
         </View>
-        {pets ? <Text style={styles.pets}>{pets}</Text> : null}
+        {pets ? <Text style={styles.pets}>{`${pets}  ·  ${SERVICE_LABEL[booking.serviceType]}`}</Text> : null}
         <Text style={styles.line}>{handoffLine("Drop-off", booking.dropOff, booking, viewer)}</Text>
         <Text style={styles.line}>{handoffLine("Pick-up", booking.pickUp, booking, viewer)}</Text>
+        {transport ? (
+          <Text style={styles.line} testID={`transport-${booking.id}`}>
+            {transport}
+          </Text>
+        ) : null}
       </View>
       {onPress ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} /> : null}
     </Pressable>

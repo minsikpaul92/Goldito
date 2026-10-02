@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3B.10** | Service type + transport UI — Book care ⓪ **Service** (🏠 Boarding / 🔑 House sitting → both handoffs fixed to My place, "Doesn't offer house sitting" for sitters without it), service + transport labels on cards / details, `/profile` sitter **Services offered** checkboxes + both sides **Preferred meeting spots** (≤ 3, public places) | [phase-03b.md](phases/phase-03b.md) |
+| **3B.11** | Video Meet & Greet — Google Meet link (D45): **human first** (PawNote Google account + Cloud project + Calendar API + OAuth consent **In production** + refresh token in backend env), then `services/google_meet.py` + `POST /api/meet-greet/video-link` (pytest mocks Google) + backend deploy (Nebius Serverless Endpoint, decided: right before 3B.11) + `.env.example` / env-setup Google vars; app shows **Join Google Meet** once the link exists (UI done in 3B.9) | [phase-03b.md](phases/phase-03b.md) |
 
 ---
 
@@ -56,6 +56,7 @@
 
 ## Completed
 
+- [x] **3B.10** Service type + transport UI: Book care **Service** first (🏠 Boarding / 🔑 House sitting; house sitting fixes both handoffs to "🔑 Lucy comes to my place" / "🔑 At my place" and sends `owner_home` + `p_service_type`), sitters without the service show "Doesn't offer house sitting" and can't be picked, rebook keeps the service; `BookingCard` shows the service next to the pets and a transport line ("🚗 You drive over · 🚙 Lucy brings them home" / "🔑 Lucy cares for them at your place", sitter wording on their side); `/profile` sitter **Services you offer** (≥ 1, "Pick at least one service.") and both sides **Preferred meeting spots** (3 fields, ≤ 60 chars, trimmed, no repeats, "never a home address"). Playwright: house sitting booking + 2 profile flows. Local: tsc ✓, Playwright 67 ✓ (one known flaky first-load test passes on rerun) (2026-10-02)
 - [x] **3B.8** Sitter Today: **Requests (N)** shortcut → Bookings, **Now caring** (received and not returned, or inside the agreed stay — one card per owner, several homes fine, "Until Oct 8, 5:00 PM"), **Today** (drop-offs / pick-ups due today: time · kind · pets · owner · place), **Upcoming** (next 5 drop-offs); each card opens the booking; empty state keeps "Open your schedule". Playwright `today.spec.ts`. Local: tsc ✓, Playwright 64 ✓ (2026-10-02)
 - [x] **3B.7** Cancel + Find a new sitter: **Cancel booking** (danger link + confirm sheet) on the owner and sitter details until the drop-off is received (`cancel_booking`, reason "Owner cancelled" / "Sitter cancelled"; `booking_in_progress` → "Max & Mochi is already with Lucy — change the pick-up time instead."); ended bookings show why ("Lucy cancelled this booking." / "…would like to meet first…" / "You cancelled…" / declined) + **Find a new sitter** → `/owner/bookings/new?rebook=<id>` with pets, times and places filled in and a "Finding a new sitter" note → `request_booking(p_rebooked_from)`. Summary now carries `cancelled_by` / `cancel_reason`. Playwright `rebook.spec.ts` (3) + mock (cancel reason, in-progress guard). Local: tsc ✓, Playwright 63 ✓ (2026-10-02)
 - [x] **3B.6** Handoff check: sitter booking detail footer **Received** (enabled from 2 h before the agreed drop-off, "You can check in from Oct 5, 7:30 AM." before that) → **Returned** → "Stay complete 🐾" via `complete_handoff` (owner gets `pet_dropped_off` / `pet_picked_up`); handoff lines on both sides show "✓ Received 9:32 AM" / "✓ Returned …"; finished stays move to Past; copy for `handoff_too_early` · `drop_off_not_completed` · `handoff_completed`. Playwright `handoff.spec.ts` (3) + mock. Hosted: 004 + 005 applied, smoke ✓ (Minsik). Local: tsc ✓, Playwright 60 ✓ (2026-10-02)
@@ -125,7 +126,7 @@
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | **done** (2026-10-01)                                                         |
-| 03B Bookings         | in progress — 3B.0–3B.9 done (2026-10-02), next **3B.10**, then 3B.11           |
+| 03B Bookings         | in progress — 3B.0–3B.10 done (2026-10-02), next **3B.11** (needs Minsik's Google setup) |
 | 03C Agreements       | not started (Stage 3)                                                         |
 | 04 Cloudinary (code) | not started                                                                   |
 | 05 Feed              | not started                                                                   |

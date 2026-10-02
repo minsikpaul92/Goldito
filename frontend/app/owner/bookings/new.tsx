@@ -9,12 +9,13 @@ import { CheckRow } from "../../../components/ui/CheckRow";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { TextButton } from "../../../components/ui/TextButton";
 import { TextField } from "../../../components/ui/TextField";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
-import { MySitter, listMySitters } from "../../../features/sitters/sitterApi";
+import { MySitter, SERVICE_LABEL, ServiceType, listMySitters } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   SitterMatch,
@@ -90,6 +91,7 @@ export default function BookCare() {
   const [search, setSearch] = useState<Search>({ status: "idle" });
   const [sitterId, setSitterId] = useState<string | null>(params.sitter ?? null);
   const [showPartial, setShowPartial] = useState(false);
+  const [service, setService] = useState<ServiceType>("boarding");
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -107,6 +109,7 @@ export default function BookCare() {
       .then((old) => {
         if (!old) return;
         setRebookedFrom(old.id);
+        setService(old.serviceType);
         setPetIds(old.pets.flatMap((p) => (p.id ? [p.id] : [])));
         const fill = (h: typeof old.dropOff, set: (d: HandoffDraft) => void) => {
           if (!h) return;
@@ -153,13 +156,17 @@ export default function BookCare() {
   const otherWhole = others.filter(coversWholeTrip);
   const otherPartial = others.filter((m) => !coversWholeTrip(m));
 
-  // A pick only counts while that sitter still covers the whole trip.
+  // A sitter can be picked when they cover the whole trip and offer the chosen service (D28).
+  const offers = (m: SitterMatch | undefined) => !!m && m.services.includes(service);
+  const pickable = (m: SitterMatch | undefined) => !!m && coversWholeTrip(m) && offers(m);
   const chosen = sitterId ? matchFor(sitterId) : undefined;
-  const chosenOk = !!chosen && coversWholeTrip(chosen);
-  const sitterName = chosenOk ? chosen.displayName : null;
+  const chosenOk = pickable(chosen) && !!chosen;
+  const sitterName = chosenOk && chosen ? chosen.displayName : null;
+  const houseSitting = service === "house_sitting";
 
   const placeProblem =
-    (dropOff.locationType === "other" && !dropOff.note.trim()) || (pickUp.locationType === "other" && !pickUp.note.trim())
+    !houseSitting &&
+    ((dropOff.locationType === "other" && !dropOff.note.trim()) || (pickUp.locationType === "other" && !pickUp.note.trim()))
       ? "Tell the sitter where to meet."
       : null;
 
@@ -169,16 +176,22 @@ export default function BookCare() {
   };
 
   const send = async () => {
-    if (!chosenOk || problem || placeProblem) return;
+    if (!chosenOk || !chosen || problem || placeProblem) return;
     setSending(true);
     setSendError(null);
+    // House sitting happens at home: both handoffs are owner_home (request_booking enforces it too).
+    const place = (h: HandoffDraft) =>
+      houseSitting
+        ? { locationType: "owner_home" as const, note: null }
+        : { locationType: h.locationType, note: h.note.trim() || null };
     try {
       await requestBooking({
         sitterId: chosen.sitterId,
         petIds,
-        dropOff: { at: dropIso, locationType: dropOff.locationType, note: dropOff.note.trim() || null },
-        pickUp: { at: pickIso, locationType: pickUp.locationType, note: pickUp.note.trim() || null },
+        dropOff: { at: dropIso, ...place(dropOff) },
+        pickUp: { at: pickIso, ...place(pickUp) },
         note: note.trim() || null,
+        serviceType: service,
         rebookedFrom,
       });
       toast.show(`Request sent to ${chosen.displayName} 📨`);
@@ -218,9 +231,9 @@ export default function BookCare() {
       key={id}
       radio
       label={name}
-      hint={fitLines(match, dropOff, pickUp, name)}
-      checked={sitterId === id && !!match && coversWholeTrip(match)}
-      disabled={!match || !coversWholeTrip(match)}
+      hint={match && !offers(match) ? "Doesn't offer house sitting" : fitLines(match, dropOff, pickUp, name)}
+      checked={sitterId === id && pickable(match)}
+      disabled={!pickable(match)}
       onChange={() => setSitterId(id)}
       testID={`pick-sitter-${name}`}
     />
@@ -234,6 +247,26 @@ export default function BookCare() {
             Finding a new sitter — same pets, times and places as before. Change anything you like.
           </Text>
         ) : null}
+
+        <Card style={styles.section}>
+          <Text accessibilityRole="header" style={styles.title}>
+            Service
+          </Text>
+          <SegmentedControl
+            options={[
+              { value: "boarding", label: SERVICE_LABEL.boarding },
+              { value: "house_sitting", label: SERVICE_LABEL.house_sitting },
+            ]}
+            value={service}
+            onChange={setService}
+            testID="service"
+          />
+          <Text style={styles.hint}>
+            {houseSitting
+              ? "The sitter cares for them at your place — drop-off and pick-up happen at home."
+              : "Your pets stay at the sitter's place."}
+          </Text>
+        </Card>
 
         <Card style={styles.section}>
           <Text accessibilityRole="header" style={styles.title}>
@@ -256,6 +289,7 @@ export default function BookCare() {
             value={dropOff}
             minDay={today}
             sitterName={sitterName}
+            fixedPlace={houseSitting ? `🔑 ${sitterName ?? "The sitter"} comes to my place` : undefined}
             onChange={(value) => {
               setDropOff(value);
               // Keep the pick-up after the drop-off when the drop-off moves past it.
@@ -265,7 +299,14 @@ export default function BookCare() {
         </Card>
 
         <Card style={styles.section}>
-          <HandoffPicker kind="pick_up" value={pickUp} minDay={dropOff.day} sitterName={sitterName} onChange={setPickUp} />
+          <HandoffPicker
+            kind="pick_up"
+            value={pickUp}
+            minDay={dropOff.day}
+            sitterName={sitterName}
+            fixedPlace={houseSitting ? "🔑 At my place" : undefined}
+            onChange={setPickUp}
+          />
         </Card>
 
         <Card style={styles.section}>
@@ -294,9 +335,11 @@ export default function BookCare() {
                   {otherWhole.map((m) => sitterOption(m.sitterId, m.displayName, m))}
                 </>
               ) : null}
-              {!matches.some(coversWholeTrip) ? (
+              {!matches.some(pickable) ? (
                 <Text style={styles.hint} testID="no-whole-trip">
-                  No sitter is free for your whole trip. Try other dates or times.
+                  {houseSitting
+                    ? "No sitter offers house sitting for your whole trip. Try other dates or Boarding."
+                    : "No sitter is free for your whole trip. Try other dates or times."}
                 </Text>
               ) : null}
               {otherPartial.length > 0 ? (

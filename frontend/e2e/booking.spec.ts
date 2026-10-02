@@ -173,6 +173,39 @@ test.describe("book care", () => {
     await expect(page).toHaveURL(/\/owner\/bookings\/new$/);
   });
 
+  test("house sitting fixes both handoffs at home and skips sitters who don't offer it", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
+    seed(db, [pet(MAX, "Max", "dog")]);
+    const paul = db.search_results.find((r) => r.sitter_id === PAUL.id);
+    if (paul) Object.assign(paul, { services: ["boarding", "house_sitting"], drop_off_within_hours: true });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/bookings/new");
+    const screen = app(page);
+
+    await screen.getByTestId("service-house_sitting").click();
+    await expect(screen.getByTestId("drop_off-place-fixed")).toContainText("comes to my place");
+    await expect(screen.getByTestId("pick_up-place-fixed")).toHaveText("🔑 At my place");
+    await expect(screen.getByTestId("drop_off-place-sitter_home")).toHaveCount(0);
+
+    await expect(screen.getByTestId("pick-sitter-Lucy")).toContainText("Doesn't offer house sitting");
+    await expect(screen.getByTestId("pick-sitter-Lucy")).toHaveAttribute("aria-disabled", "true");
+    await screen.getByTestId("pick-sitter-Paul").click();
+    await expect(screen.getByTestId("drop_off-place-fixed")).toHaveText("🔑 Paul comes to my place");
+    await screen.getByTestId("request-booking").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Request sent to Paul");
+    expect(db.requests[0]).toMatchObject({
+      p_sitter: PAUL.id,
+      p_service_type: "house_sitting",
+      p_drop_off_location_type: "owner_home",
+      p_pick_up_location_type: "owner_home",
+    });
+    const card = screen.getByTestId(`booking-card-${db.bookings.at(-1)?.id}`);
+    await expect(card).toContainText("🔑 House sitting");
+    await expect(card).toContainText("Paul cares for them at your place");
+  });
+
   test("Book this sitter picks the sitter for you", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
     seed(db, [pet(MAX, "Max", "dog")]);

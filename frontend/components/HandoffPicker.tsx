@@ -20,6 +20,8 @@ type Props = {
   minDay: string;
   /** "Lucy" once a sitter is picked, else "the sitter". */
   sitterName: string | null;
+  /** House sitting: the place is fixed (both handoffs at the owner's home, D28) — show this instead of the choice. */
+  fixedPlace?: string;
 };
 
 /** Where the pets change hands = who drives (D28): sitter_home = Owner drives, owner_home = Sitter drives. */
@@ -40,7 +42,7 @@ function placeOptions(kind: Props["kind"], sitter: string | null): { value: Loca
 }
 
 /** Day (± 1 day), time (± 15 min) and place for one handoff — no native pickers (DESIGN.md §7.7). */
-export function HandoffPicker({ kind, value, onChange, minDay, sitterName }: Props) {
+export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixedPlace }: Props) {
   const styles = useThemedStyles(makeStyles);
   const title = kind === "drop_off" ? "Drop-off" : "Pick-up";
   const set = (change: Partial<HandoffDraft>) => onChange({ ...value, ...change });
@@ -67,19 +69,25 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName }: Pro
           testID={`${kind}-time`}
         />
       </View>
-      <View accessibilityRole="radiogroup">
-        {placeOptions(kind, sitterName).map((option) => (
-          <CheckRow
-            key={option.value}
-            radio
-            label={option.label}
-            checked={value.locationType === option.value}
-            onChange={() => set({ locationType: option.value })}
-            testID={`${kind}-place-${option.value}`}
-          />
-        ))}
-      </View>
-      {value.locationType === "other" ? (
+      {fixedPlace ? (
+        <Text style={styles.fixed} testID={`${kind}-place-fixed`}>
+          {fixedPlace}
+        </Text>
+      ) : (
+        <View accessibilityRole="radiogroup">
+          {placeOptions(kind, sitterName).map((option) => (
+            <CheckRow
+              key={option.value}
+              radio
+              label={option.label}
+              checked={value.locationType === option.value}
+              onChange={() => set({ locationType: option.value })}
+              testID={`${kind}-place-${option.value}`}
+            />
+          ))}
+        </View>
+      )}
+      {!fixedPlace && value.locationType === "other" ? (
         <TextField
           label="Where to meet"
           placeholder="e.g. Trinity Bellwoods Park, north gate"
@@ -107,5 +115,9 @@ const makeStyles = (theme: Theme) =>
       flexDirection: "row",
       flexWrap: "wrap",
       gap: theme.spacing.md,
+    },
+    fixed: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
     },
   });
