@@ -1,7 +1,7 @@
 # PawNote — Active TODO
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
-> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03B → `feat/phase-03b-bookings` (draft PR when the first task lands).
+> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Phase 03C → `feat/phase-03c-agreements` (draft PR when the first task lands).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D46 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3B PR** | Phase 03B wrap-up — open the phase PR (`feat/phase-03b-bookings`), let CI run ruff + pytest + Playwright + **rls_smoke on Postgres** (the SQL changes of 004/005 have only run on the hosted DB so far), fix anything CI finds, update the PR body for the whole phase, merge after Minsik's OK. Then the Vercel chore PR | [phase-03b.md](phases/phase-03b.md) |
+| **3C.2** | 동의서 템플릿 + 서명 — `booking_consents` · `required_consents(p_booking)` · templates.ts (5 kinds) | [phase-03c.md](phases/phase-03c.md) |
 
 ---
 
@@ -31,7 +31,7 @@
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`, Claude builds it) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **3C.1–3C.7** `quote_booking` (rates + Ontario holidays + extra pet) · consent templates + sign · **Pay (demo)** · sitter home info after payment · owner entry info unlocks 2 h before (`006`) ([phase-03c.md](phases/phase-03c.md))
+- [ ] **3C.3–3C.7** **Pay (demo)** · sitter home info after payment · owner entry info unlocks 2 h before · Checkout UI · rls_smoke I–K (`006`) ([phase-03c.md](phases/phase-03c.md))
 - [ ] **OB.1–OB.2** Welcome route + UI — [onboarding.ko.md](onboarding.ko.md) (OB.3 Try demo done early, 2026-10-02)
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed; handoff + report samples)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`007`)
@@ -57,6 +57,8 @@
 
 ## Completed
 
+- [x] **3C.1** `006_agreements.sql`: `sitter_rates` · Ontario `holidays` 2026–2027 (Thanksgiving 2026-10-12) · `quote_booking` (nights/days, extra pet %, holiday surcharge, cents) — Goal boarding 2 pets Oct 9–12 = **$268.13 CAD**; rates must match `sitter_profiles.services`. rls_smoke 3C.1 section (boarding+Thanksgiving / house sitting / daycare + service_not_offered). Local Docker Postgres smoke ✓ (2026-10-03)
+- [x] **3B PR** Phase 03B merged (`feat/phase-03b-bookings` → #38) + Vercel frontend chore (#39); CI rls_smoke on Postgres (2026-10-02)
 - [x] **3B.11 (live Google)** Minsik set up the Google Cloud project (Calendar API, consent screen External in **Testing** + his account as test user — In production needs a homepage / privacy page on our own domain, see Up next) and put the OAuth client + refresh token in `backend/.env`. Live check through `GoogleCalendarMeetClient`: event with a **meet.google.com** link → reschedule keeps the **same link** → delete → second delete OK. Found and fixed: back-to-back writes get `403 rateLimitExceeded` → exponential backoff (1 / 2 / 4 s) + Google's reason in errors; a repeat delete is `410` → treated as already gone. `SupabaseBookingStore` read checked on the demo booking (names, pets, emails, `.test` → no invites). pytest 31 ✓, ruff ✓ (2026-10-02)
 - [x] **3B.11 (code, Google mocked)** `app/services/google_meet.py` — Calendar API v3 over httpx with the PawNote account's refresh token (token cached), `events.insert` with `conferenceDataVersion=1` + `hangoutsMeet` create request (stable request id per booking × time, re-reads a "pending" conference), `patch` on reschedule (same link), `delete` (404 = already gone); `POST /api/meet-greet/video-link` (party only — 404 otherwise; 409 unless video + agreed; idempotent `existing`; reschedule patches the kept event; `pending` saves the event without notices; 503 `not_configured` → app fallback; 502 on Google errors) saves link + event id with the service role and sends both sides `meet_greet_link_ready`; `POST …/video-link/release` deletes the event once the booking ended or the meeting moved in person. Invites skip `.test` addresses and `MEET_INVITE_ATTENDEES=false`. Config + `.env.example` Google vars, `tzdata` dependency (zoneinfo on Windows / slim images), 409/503 error codes. App: Accept on a video Meet & Greet requests the link, "Get the Meet link" retry, release after cancel / skip decline / switch to in person. pytest 29 ✓ (16 new), ruff ✓, Playwright 67 ✓ (first-load flake passes on rerun). Python 3.12 venv via uv on this PC (2026-10-02)
 - [x] **3B.10** Service type + transport UI: Book care **Service** first (🏠 Boarding / 🔑 House sitting; house sitting fixes both handoffs to "🔑 Lucy comes to my place" / "🔑 At my place" and sends `owner_home` + `p_service_type`), sitters without the service show "Doesn't offer house sitting" and can't be picked, rebook keeps the service; `BookingCard` shows the service next to the pets and a transport line ("🚗 You drive over · 🚙 Lucy brings them home" / "🔑 Lucy cares for them at your place", sitter wording on their side); `/profile` sitter **Services you offer** (≥ 1, "Pick at least one service.") and both sides **Preferred meeting spots** (3 fields, ≤ 60 chars, trimmed, no repeats, "never a home address"). Playwright: house sitting booking + 2 profile flows. Local: tsc ✓, Playwright 67 ✓ (one known flaky first-load test passes on rerun) (2026-10-02)

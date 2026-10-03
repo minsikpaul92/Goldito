@@ -1,6 +1,6 @@
 -- PawNote RLS + booking smoke test (Phase 02 DoD 2)
 --
--- Run after all migrations (001–004) in the Supabase SQL Editor (as postgres), or locally with
+-- Run after all migrations (001–006) in the Supabase SQL Editor (as postgres), or locally with
 -- tests/supabase_stub.sql first (see supabase/README.md). Everything runs in one transaction
 -- and is rolled back, so no data is left behind.
 -- Success = the script finishes without error ("PASS: ..." notices for each check).
@@ -1090,6 +1090,100 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'invalid_status', '3B.9: no Meet & Greet on a cancelled booking');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Quote (006, phase-03c 3C.1, D29): rates + Ontario holidays + quote_booking
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  q jsonb;
+  v_err text;
+  -- Goal example: boarding Oct 9 07:30 → Oct 12 17:00 Toronto, 2 pets, Thanksgiving Oct 12.
+  v_drop timestamptz := ('2026-10-09 07:30:00'::timestamp at time zone app_timezone());
+  v_pick timestamptz := ('2026-10-12 17:00:00'::timestamp at time zone app_timezone());
+  v_hs_drop timestamptz := ('2026-10-05 09:00:00'::timestamp at time zone app_timezone());
+  v_hs_pick timestamptz := ('2026-10-08 17:00:00'::timestamp at time zone app_timezone());
+  v_day_drop timestamptz := ('2026-10-10 08:00:00'::timestamp at time zone app_timezone());
+  v_day_pick timestamptz := ('2026-10-10 18:00:00'::timestamp at time zone app_timezone());
+begin
+  -- Lucy: Boarding $55 · House sitting $70 · Daycare $35 · +50% · +25% (Goal)
+  perform _t_as(null);
+  update public.sitter_profiles
+  set services = array['boarding', 'house_sitting']
+  where id = lucy;
+
+  perform _t_as(lucy);
+  insert into public.sitter_rates (
+    sitter_id, boarding_nightly, house_sitting_nightly, daycare_daily,
+    extra_pet_pct, holiday_pct
+  ) values (lucy, 55.00, 70.00, 35.00, 50, 25);
+
+  -- Boarding · 2 pets · Thanksgiving (phase-03c Goal): $268.13 CAD
+  perform _t_as(chloe);
+  q := quote_booking(lucy, 'boarding', v_drop, v_pick, 2);
+  perform _t_ok(
+    (q->>'nights')::int = 3
+    and (q->>'days')::int = 3
+    and (q->>'unit_price')::numeric = 55.00
+    and (q->>'base')::numeric = 165.00
+    and (q->>'extra_pets')::numeric = 82.50
+    and (q->>'holiday_surcharge')::numeric = 20.63
+    and (q->>'total')::numeric = 268.13
+    and q->>'currency' = 'CAD'
+    and q->'holiday_days' = '[{"day":"2026-10-12","name":"Thanksgiving Day"}]'::jsonb,
+    '3C.1: boarding 2 pets + Thanksgiving = $268.13');
+
+  -- House sitting · 1 pet · no holiday in Oct 5–8
+  q := quote_booking(lucy, 'house_sitting', v_hs_drop, v_hs_pick, 1);
+  perform _t_ok(
+    (q->>'nights')::int = 3
+    and (q->>'unit_price')::numeric = 70.00
+    and (q->>'base')::numeric = 210.00
+    and (q->>'extra_pets')::numeric = 0
+    and (q->>'holiday_surcharge')::numeric = 0
+    and (q->>'total')::numeric = 210.00
+    and q->'holiday_days' = '[]'::jsonb,
+    '3C.1: house sitting 1 pet = $210.00');
+
+  -- Daycare · same day · 2 pets
+  q := quote_booking(lucy, 'daycare', v_day_drop, v_day_pick, 2);
+  perform _t_ok(
+    (q->>'nights')::int = 0
+    and (q->>'days')::int = 1
+    and (q->>'unit_price')::numeric = 35.00
+    and (q->>'base')::numeric = 35.00
+    and (q->>'extra_pets')::numeric = 17.50
+    and (q->>'holiday_surcharge')::numeric = 0
+    and (q->>'total')::numeric = 52.50,
+    '3C.1: daycare same day 2 pets = $52.50');
+
+  -- Paul has no rates → service_not_offered
+  begin
+    q := quote_booking(paul, 'boarding', v_drop, v_pick, 1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '3C.1: no rates → service_not_offered');
+
+  -- House sitting rate without the service in the profile is rejected on insert
+  perform _t_as(null);
+  update public.sitter_profiles set services = array['boarding'] where id = paul;
+  perform _t_as(paul);
+  begin
+    insert into public.sitter_rates (sitter_id, house_sitting_nightly)
+    values (paul, 60.00);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '3C.1: rates must match offered services');
+
   perform _t_as(null);
 end;
 $$;
