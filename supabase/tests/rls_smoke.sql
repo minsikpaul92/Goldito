@@ -1548,6 +1548,16 @@ begin
   select count(*) into n from public.owner_home_access where owner_id = chloe;
   perform _t_ok(n = 0, '3C.5 K: sitter RLS cannot read owner_home_access');
 
+  -- 3C.7 polish: unlock notice must never echo lockbox / buzzer codes (DoD #3)
+  perform _t_ok(
+    not exists (
+      select 1 from public.notifications n
+      where n.booking_id = v_id and n.type = 'access_unlocked'
+        and (coalesce(n.title, '') || ' ' || coalesce(n.body, ''))
+          ~* '(0000|#1204|Buzz 1204|lockbox left)'
+    ),
+    '3C.7: access_unlocked notice has no entry codes');
+
   perform _t_as(null);
 end;
 $$;

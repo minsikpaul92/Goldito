@@ -98,6 +98,23 @@ export async function mockSupabase(page: Page, initialUsers: MockUser[]) {
     if (url.pathname.endsWith("/logout")) {
       return route.fulfill({ status: 204 });
     }
+    if (url.pathname.endsWith("/user")) {
+      // auth.getUser() — used by signConsent / saveOwnerHomeAccess (03C).
+      const auth = request.headers().authorization ?? "";
+      const token = auth.replace(/^Bearer /, "");
+      const payload = token.split(".")[1];
+      let sub: string | null = null;
+      try {
+        sub = payload
+          ? (JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { sub?: string }).sub ?? null
+          : null;
+      } catch {
+        sub = null;
+      }
+      const user = users.find((u) => u.id === sub);
+      if (!user) return json(route, 401, { msg: "Invalid JWT" });
+      return json(route, 200, { user: sessionFor(user).user });
+    }
     return json(route, 404, { msg: `Not mocked: ${request.method()} ${url.pathname}` });
   });
 
@@ -139,6 +156,12 @@ export type MockDb = {
   meetGreetCalls: Row[];
   /** complete_handoff calls. */
   completions: Row[];
+  /** Owner consent signatures (03C). */
+  booking_consents: Row[];
+  /** Owner entry codes (03C) — sitters only via get_home_access. */
+  owner_home_access: Row[];
+  /** pay_booking_demo calls. */
+  payments: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -168,7 +191,40 @@ function createMockDb(): MockDb {
     proposals: [],
     meetGreetCalls: [],
     completions: [],
+    booking_consents: [],
+    owner_home_access: [],
+    payments: [],
   };
+}
+
+/** Fixed quote shape matching Goal boarding 2 pets + Thanksgiving (3C.1 / Checkout). */
+export const DEMO_QUOTE = {
+  service: "boarding",
+  nights: 3,
+  days: 0,
+  unit_price: 55,
+  base: 165,
+  extra_pets: 82.5,
+  holiday_days: [{ day: "2026-10-12", name: "Thanksgiving" }],
+  holiday_surcharge: 20.63,
+  total: 268.13,
+  currency: "CAD",
+  rate_version: "e2e",
+};
+
+function requiredKinds(db: MockDb, bookingId: string): string[] {
+  const booking = db.bookings.find((b) => b.id === bookingId);
+  if (!booking) return [];
+  const kinds = ["emergency_vet", "safe_return"];
+  if (booking.service_type === "boarding") kinds.push("handoff_rules", "cohabitation");
+  const ownerHome = db.booking_handoffs.some(
+    (h) =>
+      h.booking_id === bookingId &&
+      h.location_type === "owner_home" &&
+      (h.status === "proposed" || h.status === "agreed"),
+  );
+  if (booking.service_type === "house_sitting" || ownerHome) kinds.push("home_access");
+  return kinds;
 }
 
 const SLOT_NAMES = ["morning", "afternoon", "overnight"];
@@ -593,6 +649,74 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return route.fulfill({ status: 204 });
   }
 
+  if (path === "rpc/quote_booking") {
+    return json(route, 200, DEMO_QUOTE);
+  }
+
+  if (path === "rpc/required_consents") {
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    return json(route, 200, requiredKinds(db, p_booking));
+  }
+
+  if (path === "rpc/pay_booking_demo") {
+    // pay_booking_demo (006): owner, confirmed, unpaid, all consents → paid_at + snapshot.
+    const { p_booking } = request.postDataJSON();
+    db.payments.push({ p_booking });
+    const fail = (message: string, details: string | null = null) =>
+      json(route, 400, { code: "P0001", message, details });
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    if (!booking || booking.owner_id !== me) return fail("not_allowed");
+    if (booking.status !== "confirmed") return fail("invalid_status");
+    if (booking.paid_at) return fail("already_paid");
+    const required = requiredKinds(db, p_booking);
+    const signed = new Set(
+      db.booking_consents.filter((c) => c.booking_id === p_booking).map((c) => String(c.kind)),
+    );
+    const missing = required.filter((k) => !signed.has(k));
+    if (missing.length > 0) return fail("consents_missing", missing.join(","));
+    booking.paid_at = new Date().toISOString();
+    booking.price_snapshot = DEMO_QUOTE;
+    return json(route, 200, DEMO_QUOTE);
+  }
+
+  if (path === "rpc/get_home_access") {
+    const { p_booking } = request.postDataJSON();
+    const fail = (message: string, details: string | null = null) =>
+      json(route, 400, { code: "P0001", message, details });
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    if (!booking || booking.sitter_id !== me) return fail("forbidden");
+    if (!booking.paid_at) return fail("not_paid");
+    const needs =
+      booking.service_type === "house_sitting" ||
+      db.booking_handoffs.some(
+        (h) => h.booking_id === p_booking && h.location_type === "owner_home" && h.status === "agreed",
+      );
+    if (!needs) return fail("forbidden");
+    const drop = db.booking_handoffs.find(
+      (h) =>
+        h.booking_id === p_booking &&
+        h.status === "agreed" &&
+        (booking.service_type === "house_sitting" || h.location_type === "owner_home"),
+    );
+    const unlockAt = drop ? Date.parse(String(drop.scheduled_at)) - 2 * 3_600_000 : Date.now();
+    if (Date.now() < unlockAt) {
+      return fail("access_locked", JSON.stringify({ unlocks_at: new Date(unlockAt).toISOString() }));
+    }
+    const access = db.owner_home_access.find((r) => r.owner_id === booking.owner_id);
+    return json(route, 200, [
+      {
+        entry_steps: access?.entry_steps ?? null,
+        lockbox_code: access?.lockbox_code ?? null,
+        buzzer: access?.buzzer ?? null,
+        fob_notes: access?.fob_notes ?? null,
+        sitter_parking: access?.sitter_parking ?? null,
+        first_revealed_at: new Date().toISOString(),
+      },
+    ]);
+  }
+
   if (path === "profiles") {
     if (method === "PATCH") {
       const user = users.find((u) => u.id === me && matches({ id: u.id }, params));
@@ -654,8 +778,25 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const inserted: Row[] = (Array.isArray(body) ? body : [body]).map((row: Row): Row => ({
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
+      ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
       ...row,
     }));
+    if (path === "booking_consents") {
+      for (const row of inserted) {
+        const dupe = db.booking_consents.some((c) => c.booking_id === row.booking_id && c.kind === row.kind);
+        if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
+        if (row.signer_id !== me) {
+          return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        }
+      }
+    }
+    if (path === "owner_home_access") {
+      for (const row of inserted) {
+        if (row.owner_id !== me) {
+          return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        }
+      }
+    }
     if (path === "pets" && inserted.some((row) => row.owner_id !== me)) {
       return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
     }
