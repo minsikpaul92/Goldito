@@ -1188,4 +1188,94 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Consents (006, phase-03c 3C.2, D30): required_consents + booking_consents RLS
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_board uuid;
+  v_house uuid;
+  v_kinds text[];
+  v_err text;
+  n int;
+  v_signed_at timestamptz;
+begin
+  -- Boarding (sitter_home handoffs): emergency_vet, safe_return, handoff_rules, cohabitation
+  v_board := _t_booking(chloe, lucy, array[max],
+    now() + interval '20 days', now() + interval '23 days', 'confirmed');
+  perform _t_as(chloe);
+  v_kinds := required_consents(v_board);
+  perform _t_ok(v_kinds = array['emergency_vet', 'safe_return', 'handoff_rules', 'cohabitation'],
+    '3C.2: boarding requires 4 consents');
+
+  insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+  values (v_board, 'emergency_vet', '1', chloe, 'Chloe',
+    jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet'));
+  select signed_at into v_signed_at from public.booking_consents
+    where booking_id = v_board and kind = 'emergency_vet';
+  perform _t_ok(v_signed_at is not null, '3C.2: owner signature stores signed_at');
+
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_board, 'emergency_vet', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23505', '3C.2: same kind cannot be signed twice');
+
+  begin
+    update public.booking_consents set signer_name = 'Changed' where booking_id = v_board;
+    get diagnostics n = row_count;
+    v_err := null;
+  exception when others then
+    v_err := sqlstate;
+    n := -1;
+  end;
+  perform _t_ok(n = 0 or v_err = '42501', '3C.2: signatures are read-only after signing');
+
+  perform _t_as(lucy);
+  select count(*) into n from public.booking_consents where booking_id = v_board;
+  perform _t_ok(n = 1, '3C.2: sitter can read owner signatures');
+
+  perform _t_as(paul);
+  select count(*) into n from public.booking_consents where booking_id = v_board;
+  perform _t_ok(n = 0, '3C.2: outsider cannot read consents');
+  begin
+    v_kinds := required_consents(v_board);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.2: outsider cannot call required_consents');
+
+  -- House sitting → home_access instead of boarding-only kinds
+  perform _t_as(null);
+  v_house := _t_booking(joy, paul, array[coco],
+    now() + interval '70 days', now() + interval '72 days', 'confirmed');
+  update public.bookings set service_type = 'house_sitting' where id = v_house;
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_house;
+
+  perform _t_as(joy);
+  v_kinds := required_consents(v_house);
+  perform _t_ok(v_kinds = array['emergency_vet', 'safe_return', 'home_access'],
+    '3C.2: house sitting requires home_access');
+
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_house, 'safe_return', '1', paul, 'Paul');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '3C.2: only the owner can sign');
+
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

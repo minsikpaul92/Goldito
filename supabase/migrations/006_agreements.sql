@@ -247,4 +247,104 @@ to authenticated, service_role;
 
 revoke execute on function public.sitter_rates_match_services() from authenticated;
 
+-- ---------------------------------------------------------------------------
+-- 3C.2 — Consent templates (fixed English copy in the app) + signatures
+-- ---------------------------------------------------------------------------
+
+create table public.booking_consents (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid not null references public.bookings (id) on delete cascade,
+  kind text not null check (kind in (
+    'emergency_vet', 'safe_return', 'handoff_rules', 'cohabitation', 'home_access'
+  )),
+  version text not null,
+  signer_id uuid not null references public.profiles (id) on delete cascade,
+  signer_name text not null check (char_length(trim(signer_name)) between 1 and 80),
+  details jsonb not null default '{}'::jsonb,
+  signed_at timestamptz not null default now(),
+  unique (booking_id, kind)
+);
+
+create index booking_consents_booking_id_idx on public.booking_consents (booking_id);
+
+-- Kinds the owner must sign before demo pay (D30). Same rules as the app templates.
+create or replace function public.required_consents(p_booking uuid)
+returns text[]
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid;
+  v_sitter uuid;
+  v_service text;
+  v_kinds text[] := array['emergency_vet', 'safe_return'];
+  v_owner_home boolean;
+begin
+  if auth.uid() is null then
+    raise exception 'not_authenticated';
+  end if;
+
+  select b.owner_id, b.sitter_id, b.service_type
+    into v_owner, v_sitter, v_service
+  from public.bookings b
+  where b.id = p_booking;
+
+  if v_owner is null then
+    raise exception 'not_allowed';
+  end if;
+  if auth.uid() is distinct from v_owner and auth.uid() is distinct from v_sitter then
+    raise exception 'not_allowed';
+  end if;
+
+  if v_service = 'boarding' then
+    v_kinds := v_kinds || array['handoff_rules', 'cohabitation'];
+  end if;
+
+  select exists (
+    select 1 from public.booking_handoffs h
+    where h.booking_id = p_booking
+      and h.location_type = 'owner_home'
+      and h.status in ('proposed', 'agreed')
+  ) into v_owner_home;
+
+  if v_service = 'house_sitting' or v_owner_home then
+    v_kinds := v_kinds || array['home_access'];
+  end if;
+
+  return v_kinds;
+end;
+$$;
+
+alter table public.booking_consents enable row level security;
+
+-- Owner signs; both parties can read. Signatures are immutable (no update/delete policies).
+create policy booking_consents_select on public.booking_consents
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.bookings b
+      where b.id = booking_id
+        and auth.uid() in (b.owner_id, b.sitter_id)
+    )
+  );
+
+create policy booking_consents_insert on public.booking_consents
+  for insert to authenticated
+  with check (
+    signer_id = (select auth.uid())
+    and exists (
+      select 1 from public.bookings b
+      where b.id = booking_id
+        and b.owner_id = auth.uid()
+    )
+  );
+
+grant select, insert on public.booking_consents to authenticated;
+grant all on public.booking_consents to service_role;
+
+revoke execute on function public.required_consents(uuid) from public, anon;
+grant execute on function public.required_consents(uuid) to authenticated, service_role;
+
 notify pgrst, 'reload schema';

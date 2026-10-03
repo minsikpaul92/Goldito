@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3C.2** | 동의서 템플릿 + 서명 — `booking_consents` · `required_consents(p_booking)` · templates.ts (5 kinds) | [phase-03c.md](phases/phase-03c.md) |
+| **3C.3** | 데모 결제 — `pay_booking_demo` · `paid_at` · `price_snapshot` · `booking_paid` 알림 | [phase-03c.md](phases/phase-03c.md) |
 
 ---
 
@@ -31,7 +31,7 @@
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`, Claude builds it) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **3C.3–3C.7** **Pay (demo)** · sitter home info after payment · owner entry info unlocks 2 h before · Checkout UI · rls_smoke I–K (`006`) ([phase-03c.md](phases/phase-03c.md))
+- [ ] **3C.4–3C.7** sitter home info after payment · owner entry info unlocks 2 h before · Checkout UI · rls_smoke I–K (`006`) ([phase-03c.md](phases/phase-03c.md))
 - [ ] **OB.1–OB.2** Welcome route + UI — [onboarding.ko.md](onboarding.ko.md) (OB.3 Try demo done early, 2026-10-02)
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed; handoff + report samples)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`007`)
@@ -57,6 +57,7 @@
 
 ## Completed
 
+- [x] **3C.2** `booking_consents` + `required_consents` (boarding 4 / house sitting + home_access) · RLS owner sign / both read / immutable · `templates.ts` 5 kinds + `agreementsApi.ts`. rls_smoke 3C.2 ✓; hosted applied via Supabase MCP (2026-10-03)
 - [x] **3C.1** `006_agreements.sql`: `sitter_rates` · Ontario `holidays` 2026–2027 (Thanksgiving 2026-10-12) · `quote_booking` (nights/days, extra pet %, holiday surcharge, cents) — Goal boarding 2 pets Oct 9–12 = **$268.13 CAD**; rates must match `sitter_profiles.services`. rls_smoke 3C.1 section (boarding+Thanksgiving / house sitting / daycare + service_not_offered). Local Docker Postgres smoke ✓ (2026-10-03)
 - [x] **3B PR** Phase 03B merged (`feat/phase-03b-bookings` → #38) + Vercel frontend chore (#39); CI rls_smoke on Postgres (2026-10-02)
 - [x] **3B.11 (live Google)** Minsik set up the Google Cloud project (Calendar API, consent screen External in **Testing** + his account as test user — In production needs a homepage / privacy page on our own domain, see Up next) and put the OAuth client + refresh token in `backend/.env`. Live check through `GoogleCalendarMeetClient`: event with a **meet.google.com** link → reschedule keeps the **same link** → delete → second delete OK. Found and fixed: back-to-back writes get `403 rateLimitExceeded` → exponential backoff (1 / 2 / 4 s) + Google's reason in errors; a repeat delete is `410` → treated as already gone. `SupabaseBookingStore` read checked on the demo booking (names, pets, emails, `.test` → no invites). pytest 31 ✓, ruff ✓ (2026-10-02)
