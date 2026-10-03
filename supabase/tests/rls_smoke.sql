@@ -1421,4 +1421,135 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Home access unlock (006, phase-03c 3C.5 / I–K, D31)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_id uuid;
+  r record;
+  v_err text;
+  v_detail text;
+  n int;
+begin
+  -- I: before pay — get_home_access blocked; owner can save codes privately
+  perform _t_as(chloe);
+  insert into public.owner_home_access (owner_id, entry_steps, lockbox_code, buzzer, fob_notes, sitter_parking)
+  values (chloe, '1. Buzz 1204  2. Lockbox left of door', '0000', '#1204', 'Fob on key hook', 'Street parking OK')
+  on conflict (owner_id) do update set
+    entry_steps = excluded.entry_steps,
+    lockbox_code = excluded.lockbox_code,
+    buzzer = excluded.buzzer,
+    fob_notes = excluded.fob_notes,
+    sitter_parking = excluded.sitter_parking;
+
+  perform _t_as(null);
+  v_id := _t_booking(chloe, lucy, array[max],
+    now() + interval '90 days', now() + interval '93 days', 'confirmed');
+  update public.booking_handoffs set location_type = 'owner_home'
+    where booking_id = v_id and kind = 'drop_off';
+
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', '3C.5 I: access hidden before pay');
+
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_id;
+  -- Drop-off still > 2 h away
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '5 hours'
+  where booking_id = v_id and kind = 'drop_off';
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '3 days'
+  where booking_id = v_id and kind = 'pick_up';
+
+  -- J: T−2h before → access_locked with unlocks_at
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'access_locked' and v_detail like '%unlocks_at%',
+    '3C.5 J: locked before T−2h with unlocks_at');
+
+  perform _t_as(null);
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '1 hour'
+  where booking_id = v_id and kind = 'drop_off';
+
+  perform _t_as(lucy);
+  select * into r from get_home_access(v_id);
+  perform _t_ok(r.lockbox_code = '0000' and r.buzzer = '#1204',
+    '3C.5 J: codes return inside the window');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1,
+    '3C.5 J: first reveal recorded once');
+  perform _t_ok((select count(*) from public.notifications
+      where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+    '3C.5 J: owner notified once');
+
+  perform _t_as(lucy);
+  select * into r from get_home_access(v_id);
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1
+      and (select count(*) from public.notifications
+        where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+    '3C.5 J: second open does not re-notify');
+
+  -- K: other sitter forbidden; after pick-up completed → locked_since
+  perform _t_as(paul);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '3C.5 K: other sitter forbidden');
+
+  perform _t_as(chloe);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '3C.5 K: owner cannot call get_home_access');
+
+  perform _t_as(null);
+  update public.booking_handoffs
+  set completed_at = now() - interval '1 minute'
+  where booking_id = v_id and kind = 'pick_up';
+
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'access_locked' and v_detail like '%locked_since%',
+    '3C.5 K: locked again after pick-up completed');
+
+  -- Paul cannot read Chloe's owner_home_access row directly
+  perform _t_as(paul);
+  select count(*) into n from public.owner_home_access where owner_id = chloe;
+  perform _t_ok(n = 0, '3C.5 K: sitter RLS cannot read owner_home_access');
+
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

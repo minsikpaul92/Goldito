@@ -16,6 +16,9 @@ const MESSAGES: Record<string, string> = {
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
+  access_locked: "Entry info isn't available yet — or the stay has ended.",
+  forbidden: "You can't view this entry info.",
+  not_paid: "Addresses unlock after checkout.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -100,6 +103,89 @@ export async function payBookingDemo(bookingId: string): Promise<PriceQuote> {
     );
   }
   return asQuote(data);
+}
+
+/** Owner entry codes — never shown except via get_home_access to the booked sitter (D31). */
+export type HomeAccess = {
+  entrySteps: string | null;
+  lockboxCode: string | null;
+  buzzer: string | null;
+  fobNotes: string | null;
+  sitterParking: string | null;
+  firstRevealedAt: string;
+};
+
+export type HomeAccessLocked = {
+  locked: true;
+  unlocksAt: string | null;
+  lockedSince: string | null;
+};
+
+export async function getHomeAccess(
+  bookingId: string,
+): Promise<HomeAccess | HomeAccessLocked> {
+  const { data, error } = await getSupabase().rpc("get_home_access", { p_booking: bookingId });
+  if (error) {
+    if (error.message === "access_locked") {
+      let unlocksAt: string | null = null;
+      let lockedSince: string | null = null;
+      try {
+        const detail = JSON.parse(error.details ?? "{}") as {
+          unlocks_at?: string;
+          locked_since?: string;
+        };
+        unlocksAt = detail.unlocks_at ?? null;
+        lockedSince = detail.locked_since ?? null;
+      } catch {
+        /* detail may be plain text in some clients */
+      }
+      return { locked: true, unlocksAt, lockedSince };
+    }
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't load entry info."),
+      error.details ?? null,
+    );
+  }
+  const rows = (data ?? []) as {
+    entry_steps: string | null;
+    lockbox_code: string | null;
+    buzzer: string | null;
+    fob_notes: string | null;
+    sitter_parking: string | null;
+    first_revealed_at: string;
+  }[];
+  const row = rows[0];
+  if (!row) throw new Error("Couldn't load entry info.");
+  return {
+    entrySteps: row.entry_steps,
+    lockboxCode: row.lockbox_code,
+    buzzer: row.buzzer,
+    fobNotes: row.fob_notes,
+    sitterParking: row.sitter_parking,
+    firstRevealedAt: row.first_revealed_at,
+  };
+}
+
+export async function saveOwnerHomeAccess(fields: {
+  entrySteps: string | null;
+  lockboxCode: string | null;
+  buzzer: string | null;
+  fobNotes: string | null;
+  sitterParking: string | null;
+}): Promise<void> {
+  const { data: userData, error: userError } = await getSupabase().auth.getUser();
+  if (userError || !userData.user) throw new Error("Couldn't confirm you are signed in.");
+  const row = {
+    owner_id: userData.user.id,
+    entry_steps: fields.entrySteps,
+    lockbox_code: fields.lockboxCode,
+    buzzer: fields.buzzer,
+    fob_notes: fields.fobNotes,
+    sitter_parking: fields.sitterParking,
+  };
+  const { error } = await getSupabase().from("owner_home_access").upsert(row, { onConflict: "owner_id" });
+  if (error) throw new Error("Couldn't save your entry info. Try again.");
 }
 
 // ---------------------------------------------------------------------------

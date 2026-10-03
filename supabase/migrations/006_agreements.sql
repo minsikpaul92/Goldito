@@ -530,4 +530,178 @@ $$;
 revoke execute on function public.get_handoff_details(uuid) from public, anon;
 grant execute on function public.get_handoff_details(uuid) to authenticated, service_role;
 
+-- ---------------------------------------------------------------------------
+-- 3C.5 — Owner entry info: unlock 2 h before arrival, lock after pick-up (D31)
+-- ---------------------------------------------------------------------------
+
+create table public.owner_home_access (
+  owner_id uuid primary key references public.profiles (id) on delete cascade,
+  entry_steps text,
+  lockbox_code text,
+  buzzer text,
+  fob_notes text,
+  sitter_parking text,
+  updated_at timestamptz not null default now()
+);
+
+create table public.access_reveals (
+  booking_id uuid primary key references public.bookings (id) on delete cascade,
+  sitter_id uuid not null references public.profiles (id) on delete cascade,
+  first_revealed_at timestamptz not null default now()
+);
+
+alter table public.owner_home_access enable row level security;
+alter table public.access_reveals enable row level security;
+
+-- Owner only — sitters never read this table directly (RPC only).
+create policy owner_home_access_select on public.owner_home_access
+  for select to authenticated
+  using (owner_id = (select auth.uid()));
+
+create policy owner_home_access_insert on public.owner_home_access
+  for insert to authenticated
+  with check (owner_id = (select auth.uid()) and public.my_role() = 'owner');
+
+create policy owner_home_access_update on public.owner_home_access
+  for update to authenticated
+  using (owner_id = (select auth.uid()))
+  with check (owner_id = (select auth.uid()));
+
+-- Reveals are written by get_home_access (security definer); no client policies.
+create policy access_reveals_select on public.access_reveals
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.bookings b
+      where b.id = booking_id and auth.uid() in (b.owner_id, b.sitter_id)
+    )
+  );
+
+create trigger owner_home_access_set_updated_at
+  before update on public.owner_home_access
+  for each row execute function public.set_updated_at();
+
+grant select, insert, update on public.owner_home_access to authenticated;
+grant select on public.access_reveals to authenticated;
+grant all on public.owner_home_access to service_role;
+grant all on public.access_reveals to service_role;
+
+-- Window: [first owner_home (or drop-off for house sitting) − 2 h, pick-up completed_at or scheduled_at].
+create or replace function public.get_home_access(p_booking uuid)
+returns table (
+  entry_steps text,
+  lockbox_code text,
+  buzzer text,
+  fob_notes text,
+  sitter_parking text,
+  first_revealed_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  b public.bookings;
+  v_unlock_at timestamptz;
+  v_lock_at timestamptz;
+  v_needs_access boolean;
+  v_sitter_name text;
+  v_row public.owner_home_access%rowtype;
+  v_reveal timestamptz;
+  v_is_new boolean := false;
+begin
+  if auth.uid() is null then
+    raise exception 'not_authenticated';
+  end if;
+
+  select * into b from public.bookings where id = p_booking;
+  if not found then
+    raise exception 'forbidden';
+  end if;
+  if auth.uid() is distinct from b.sitter_id then
+    raise exception 'forbidden';
+  end if;
+  if b.status <> 'confirmed' then
+    raise exception 'invalid_status';
+  end if;
+  if b.paid_at is null then
+    raise exception 'not_paid';
+  end if;
+
+  v_needs_access := b.service_type = 'house_sitting'
+    or exists (
+      select 1 from public.booking_handoffs h
+      where h.booking_id = p_booking
+        and h.location_type = 'owner_home'
+        and h.status = 'agreed'
+    );
+  if not v_needs_access then
+    raise exception 'forbidden';
+  end if;
+
+  -- Unlock from the first relevant arrival: earliest agreed owner_home handoff,
+  -- or drop-off when house sitting (care starts at the owner's place).
+  select min(h.scheduled_at) - interval '2 hours'
+    into v_unlock_at
+  from public.booking_handoffs h
+  where h.booking_id = p_booking
+    and h.status = 'agreed'
+    and (
+      h.location_type = 'owner_home'
+      or (b.service_type = 'house_sitting' and h.kind = 'drop_off')
+    );
+
+  select coalesce(p.completed_at, p.scheduled_at)
+    into v_lock_at
+  from public.booking_handoffs p
+  where p.booking_id = p_booking and p.kind = 'pick_up' and p.status = 'agreed';
+
+  if v_unlock_at is null or v_lock_at is null then
+    raise exception 'handoff_missing';
+  end if;
+
+  if now() < v_unlock_at then
+    raise exception 'access_locked'
+      using detail = json_build_object('unlocks_at', v_unlock_at)::text;
+  end if;
+  if now() >= v_lock_at then
+    raise exception 'access_locked'
+      using detail = json_build_object('locked_since', v_lock_at)::text;
+  end if;
+
+  select * into v_row from public.owner_home_access where owner_id = b.owner_id;
+  if not found then
+    -- No codes saved yet — still "open" window, empty fields.
+    v_row.owner_id := b.owner_id;
+  end if;
+
+  select ar.first_revealed_at into v_reveal
+  from public.access_reveals ar where ar.booking_id = p_booking;
+
+  if v_reveal is null then
+    insert into public.access_reveals (booking_id, sitter_id, first_revealed_at)
+    values (p_booking, b.sitter_id, now())
+    returning first_revealed_at into v_reveal;
+    v_is_new := true;
+
+    select display_name into v_sitter_name from public.profiles where id = b.sitter_id;
+    perform public.notify_user(
+      b.owner_id, 'access_unlocked',
+      format('%s can now see your entry info (2 h before arrival)',
+        coalesce(v_sitter_name, 'Your sitter')),
+      'Codes stay available until pick-up is done. They are never sent in messages.',
+      null, p_booking, p_booking
+    );
+  end if;
+
+  return query
+  select v_row.entry_steps, v_row.lockbox_code, v_row.buzzer, v_row.fob_notes,
+    v_row.sitter_parking, v_reveal;
+end;
+$$;
+
+revoke execute on function public.get_home_access(uuid) from public, anon;
+grant execute on function public.get_home_access(uuid) to authenticated, service_role;
+
 notify pgrst, 'reload schema';
