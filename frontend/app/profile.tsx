@@ -7,6 +7,7 @@ import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
+import { TextButton } from "../components/ui/TextButton";
 import { TextField } from "../components/ui/TextField";
 import { RoleProfile, loadRoleProfile, saveProfile } from "../features/profile/profileApi";
 import { homeFor, useSession } from "../providers/SessionProvider";
@@ -79,6 +80,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [spots, setSpots] = useState<string[]>(padSpots([]));
   const [services, setServices] = useState<Service[]>(["boarding"]);
+  const [attempt, setAttempt] = useState(0);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -122,7 +124,10 @@ export default function ProfileScreen() {
     if (loaded.role === "sitter" && services.length === 0) found.services = "Pick at least one service.";
     const meetSpots = cleanSpots(spots);
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      setAttempt((n) => n + 1);
+      return;
+    }
 
     const value = (key: string) => {
       const trimmed = (draft[key] ?? "").trim();
@@ -171,13 +176,29 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen contentStyle={styles.content}>
+    <Screen
+      contentStyle={styles.content}
+      footer={
+        <>
+          {saveError ? (
+            <Text accessibilityRole="alert" style={styles.error}>
+              {saveError}
+            </Text>
+          ) : null}
+          <Button label="Save" onPress={() => void save()} loading={saving} testID="profile-save" />
+        </>
+      }
+    >
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
       <TextField
         label="Your name"
         value={displayName}
-        onChangeText={setDisplayName}
+        onChangeText={(text) => {
+          setDisplayName(text);
+          setErrors((prev) => ({ ...prev, display_name: "" }));
+        }}
         error={errors.display_name}
+        shakeKey={attempt}
         testID="profile-display_name"
       />
       {fields.map((field) => (
@@ -185,11 +206,15 @@ export default function ProfileScreen() {
           key={field.key}
           label={`${field.label} (optional)`}
           value={draft[field.key] ?? ""}
-          onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+          onChangeText={(text) => {
+            setDraft((prev) => ({ ...prev, [field.key]: text }));
+            setErrors((prev) => ({ ...prev, [field.key]: "" }));
+          }}
           placeholder={field.placeholder}
           multiline={field.multiline}
           inputMode={field.numeric ? "numeric" : undefined}
           error={errors[field.key]}
+          shakeKey={attempt}
           testID={`profile-${field.key}`}
         />
       ))}
@@ -233,12 +258,7 @@ export default function ProfileScreen() {
             : "Your home address is shared only with owners who have a confirmed booking with you."}
         </Text>
       </View>
-      {saveError ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {saveError}
-        </Text>
-      ) : null}
-      <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
+      <TextButton label="Log out" onPress={() => void session.signOut()} style={styles.logout} testID="log-out" />
     </Screen>
   );
 }
@@ -278,5 +298,8 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    logout: {
+      alignSelf: "center",
     },
   });

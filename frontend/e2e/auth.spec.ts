@@ -143,12 +143,14 @@ test.describe("auth and role routing", () => {
     await screen.getByTestId("demo-owner").click();
     await expect(page).toHaveURL(/\/owner$/);
 
+    await screen.getByTestId("open-profile").click();
     await screen.getByTestId("log-out").click();
     await expect(page).toHaveURL(/\/login$/);
     await screen.getByTestId("demo-sitter").click();
     await expect(page).toHaveURL(/\/sitter$/);
 
     // The query does the same (desktop side panel, split view).
+    await screen.getByTestId("open-profile").click();
     await screen.getByTestId("log-out").click();
     await expect(page).toHaveURL(/\/login$/);
     await page.goto("/login?demo=owner");
@@ -159,6 +161,8 @@ test.describe("auth and role routing", () => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
+    // Log out lives at the bottom of Profile, not in every tab header.
+    await app(page).getByTestId("open-profile").click();
     await app(page).getByTestId("log-out").click();
     await expect(page).toHaveURL(/\/login$/);
 

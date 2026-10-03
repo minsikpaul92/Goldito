@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { PressableScale } from "./PressableScale";
 
 type Props = {
   /** Read by screen readers with the buttons: "Morning start earlier". */
@@ -32,16 +33,16 @@ export function Stepper({
   const styles = useThemedStyles(makeStyles);
 
   const button = (icon: "remove" | "add", onPress: () => void, enabled: boolean, name: string, id: string) => (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${label} ${name}`}
       disabled={!enabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, !enabled && styles.disabled, pressed && enabled && styles.pressed]}
+      style={[styles.button, !enabled && styles.disabled]}
       testID={testID ? `${testID}-${id}` : undefined}
     >
       <Ionicons name={icon} size={theme.icon.sm} color={theme.color.primary} />
-    </Pressable>
+    </PressableScale>
   );
 
   return (
@@ -63,17 +64,14 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.xs,
     },
     button: {
-      width: 44,
-      height: 44,
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: theme.radius.md,
       borderWidth: 1,
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
-    },
-    pressed: {
-      backgroundColor: theme.color.accent,
     },
     disabled: {
       opacity: 0.4,

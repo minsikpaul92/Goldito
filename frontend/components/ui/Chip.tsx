@@ -1,35 +1,38 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { AppearIn } from "./AppearIn";
+import { PressableScale } from "./PressableScale";
 
 type Props = {
   label: string;
   /** Shows a remove button (allergy editing). */
   onRemove?: () => void;
+  /** Just added: pops in once. */
+  justAdded?: boolean;
   testID?: string;
 };
 
-export function Chip({ label, onRemove, testID }: Props) {
+export function Chip({ label, onRemove, justAdded = false, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <View style={styles.chip} testID={testID}>
+    <AppearIn enabled={justAdded} pop style={styles.chip} testID={testID}>
       <Text style={styles.label}>{label}</Text>
       {onRemove ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Remove ${label}`}
           onPress={onRemove}
           hitSlop={theme.spacing.sm}
-          style={styles.remove}
         >
           <Ionicons name="close" size={theme.fontSize.small} color={theme.color.textMuted} />
-        </Pressable>
+        </PressableScale>
       ) : null}
-    </View>
+    </AppearIn>
   );
 }
 
@@ -49,8 +52,5 @@ const makeStyles = (theme: Theme) =>
     label: {
       fontSize: theme.fontSize.small,
       color: theme.color.text,
-    },
-    remove: {
-      padding: 2,
     },
   });

@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { RoleCard } from "../../components/RoleCard";
 import { Button } from "../../components/ui/Button";
@@ -14,6 +14,7 @@ import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../.
 import { Role } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { PressableScale } from "../../components/ui/PressableScale";
 
 const MIN_PASSWORD_LENGTH = 6;
 // Shape only (name@domain.tld) — whether the inbox exists is Supabase "Confirm email".
@@ -81,19 +82,20 @@ export default function SignupScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel="Back"
         onPress={goBack}
         hitSlop={theme.spacing.sm}
-        style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+        style={[styles.back]}
         testID="signup-back"
       >
         <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
         <Text style={styles.backText}>Back</Text>
-      </Pressable>
+      </PressableScale>
 
       <View style={styles.header}>
+        <Text style={styles.brand}>🐾 PawNote</Text>
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>First, how will you use PawNote?</Text>
       </View>
@@ -174,9 +176,10 @@ export default function SignupScreen() {
         ) : null}
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         <Button
-          label={submitting ? "Creating account…" : "Create account"}
+          label="Create account"
           onPress={() => void createAccount()}
-          disabled={!canSubmit}
+          disabled={!canSubmit && !submitting}
+          loading={submitting}
         />
       </View>
 
@@ -188,6 +191,7 @@ export default function SignupScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: {
+      paddingTop: theme.spacing.xl,
       gap: theme.spacing.lg,
     },
     back: {
@@ -197,9 +201,6 @@ const makeStyles = (theme: Theme) =>
       minHeight: 44,
       gap: theme.spacing.xs,
     },
-    pressed: {
-      opacity: 0.6,
-    },
     backText: {
       fontSize: theme.fontSize.body,
       fontWeight: "600",
@@ -207,6 +208,11 @@ const makeStyles = (theme: Theme) =>
     },
     header: {
       gap: theme.spacing.xs,
+    },
+    brand: {
+      fontSize: theme.fontSize.body,
+      fontWeight: "700",
+      color: theme.color.primary,
     },
     title: {
       fontSize: theme.fontSize.title,

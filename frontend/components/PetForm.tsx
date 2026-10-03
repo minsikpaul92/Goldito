@@ -3,7 +3,10 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "./ui/Button";
 import { Chip } from "./ui/Chip";
+import { Field } from "./ui/Field";
+import { Screen } from "./ui/Screen";
 import { SegmentedControl } from "./ui/SegmentedControl";
+import { Stack } from "./ui/Stack";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 import { PetInput } from "../features/pets/petApi";
@@ -26,7 +29,7 @@ type Props = {
   onSubmit: (input: PetInput) => Promise<void>;
 };
 
-/** Pet profile fields for Add pet and Pet profile (phase-03 3.5). Owners may type here. */
+/** Add pet / Pet profile screen body (phase-03 3.5): fields, with Save pinned in the footer. Owners may type here. */
 export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [values, setValues] = useState<PetFormValues>(initial);
@@ -35,9 +38,13 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
   const [allergyError, setAllergyError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
   function set<K extends keyof PetFormValues>(key: K, value: PetFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+    // The error goes away as soon as the owner edits that field.
+    setErrors((prev) => (key in prev ? { ...prev, [key]: undefined } : prev));
   }
 
   function addAllergy() {
@@ -52,6 +59,7 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
       return;
     }
     set("allergens", [...values.allergens, allergen]);
+    setJustAdded(allergen);
     setAllergyDraft("");
     setAllergyError(null);
   }
@@ -59,7 +67,10 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
   async function submit() {
     const { errors: found, input } = validatePet(values);
     setErrors(found);
-    if (!input) return;
+    if (!input) {
+      setAttempt((n) => n + 1);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -71,129 +82,125 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
   }
 
   return (
-    <View style={styles.form}>
-      <View style={styles.field}>
-        <Text style={styles.label}>Species</Text>
-        <SegmentedControl<Species>
-          options={[
-            { value: "dog", label: "🐶 Dog" },
-            { value: "cat", label: "🐱 Cat" },
-          ]}
-          value={values.species}
-          onChange={(species) => set("species", species)}
-          disabled={editing}
-          testID="pet-species"
+    <Screen
+      footer={
+        <>
+          {saveError ? (
+            <Text accessibilityRole="alert" style={styles.error}>
+              {saveError}
+            </Text>
+          ) : null}
+          <Button label={submitLabel} onPress={() => void submit()} loading={saving} testID="pet-save" />
+        </>
+      }
+    >
+      <Stack gap="md">
+        <Field
+          label="Species"
+          hint={editing ? "Species can't be changed after the pet is added." : null}
+          error={errors.species}
+          shakeKey={attempt}
+        >
+          <SegmentedControl<Species>
+            options={[
+              { value: "dog", label: "🐶 Dog" },
+              { value: "cat", label: "🐱 Cat" },
+            ]}
+            value={values.species}
+            onChange={(species) => set("species", species)}
+            disabled={editing}
+            testID="pet-species"
+          />
+        </Field>
+
+        <TextField
+          label="Name"
+          value={values.name}
+          onChangeText={(text) => set("name", text)}
+          placeholder="e.g. Max"
+          error={errors.name}
+          shakeKey={attempt}
+          testID="pet-name"
         />
-        {editing ? <Text style={styles.hint}>Species can't be changed after the pet is added.</Text> : null}
-        {errors.species ? <Text style={styles.error}>{errors.species}</Text> : null}
-      </View>
+        <TextField
+          label="Breed (optional)"
+          value={values.breed}
+          onChangeText={(text) => set("breed", text)}
+          placeholder={values.species === "cat" ? "e.g. Domestic Shorthair" : "e.g. Maltese"}
+          testID="pet-breed"
+        />
+        <TextField
+          label="Birthday (optional)"
+          value={values.birthdate}
+          onChangeText={(text) => set("birthdate", text)}
+          placeholder="YYYY-MM-DD, e.g. 2022-04-15"
+          inputMode="numeric"
+          error={errors.birthdate}
+          shakeKey={attempt}
+          testID="pet-birthdate"
+        />
+        <TextField
+          label="Weight in kg (optional)"
+          value={values.weight}
+          onChangeText={(text) => set("weight", text)}
+          placeholder="e.g. 3.2"
+          inputMode="decimal"
+          keyboardType="decimal-pad"
+          error={errors.weight}
+          shakeKey={attempt}
+          testID="pet-weight"
+        />
 
-      <TextField
-        label="Name"
-        value={values.name}
-        onChangeText={(text) => set("name", text)}
-        placeholder="Max"
-        error={errors.name}
-        testID="pet-name"
-      />
-      <TextField
-        label="Breed (optional)"
-        value={values.breed}
-        onChangeText={(text) => set("breed", text)}
-        placeholder={values.species === "cat" ? "Domestic Shorthair" : "Maltese"}
-        testID="pet-breed"
-      />
-      <TextField
-        label="Birthday (optional)"
-        value={values.birthdate}
-        onChangeText={(text) => set("birthdate", text)}
-        placeholder="YYYY-MM-DD"
-        inputMode="numeric"
-        error={errors.birthdate}
-        testID="pet-birthdate"
-      />
-      <TextField
-        label="Weight in kg (optional)"
-        value={values.weight}
-        onChangeText={(text) => set("weight", text)}
-        placeholder="3.2"
-        inputMode="decimal"
-        keyboardType="decimal-pad"
-        error={errors.weight}
-        testID="pet-weight"
-      />
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Allergies</Text>
-        <Text style={styles.hint}>The treat scanner checks labels against these.</Text>
-        {values.allergens.length > 0 ? (
-          <View style={styles.chips}>
-            {values.allergens.map((allergen) => (
-              <Chip
-                key={allergen}
-                label={allergen}
-                onRemove={() => set("allergens", values.allergens.filter((a) => a !== allergen))}
-                testID={`allergy-${allergen}`}
+        <Field label="Allergies" hint="The treat scanner checks labels against these.">
+          {values.allergens.length > 0 ? (
+            <View style={styles.chips}>
+              {values.allergens.map((allergen) => (
+                <Chip
+                  key={allergen}
+                  label={allergen}
+                  justAdded={allergen === justAdded}
+                  onRemove={() => set("allergens", values.allergens.filter((a) => a !== allergen))}
+                  testID={`allergy-${allergen}`}
+                />
+              ))}
+            </View>
+          ) : null}
+          <View style={styles.allergyRow}>
+            <View style={styles.allergyInput}>
+              <TextField
+                label="Add an allergy"
+                hideLabel
+                value={allergyDraft}
+                onChangeText={(text) => {
+                  setAllergyDraft(text);
+                  setAllergyError(null);
+                }}
+                onSubmitEditing={addAllergy}
+                placeholder="Add an allergy, e.g. chicken"
+                autoCapitalize="none"
+                error={allergyError}
+                testID="pet-allergy-input"
               />
-            ))}
+            </View>
+            <TextButton label="Add" onPress={addAllergy} testID="pet-allergy-add" />
           </View>
-        ) : null}
-        <View style={styles.allergyRow}>
-          <View style={styles.allergyInput}>
-            <TextField
-              label="Add an allergy"
-              value={allergyDraft}
-              onChangeText={(text) => {
-                setAllergyDraft(text);
-                setAllergyError(null);
-              }}
-              onSubmitEditing={addAllergy}
-              placeholder="chicken"
-              autoCapitalize="none"
-              error={allergyError}
-              testID="pet-allergy-input"
-            />
-          </View>
-          <TextButton label="Add" onPress={addAllergy} testID="pet-allergy-add" />
-        </View>
-      </View>
+        </Field>
 
-      <TextField
-        label="Notes (optional)"
-        value={values.notes}
-        onChangeText={(text) => set("notes", text)}
-        placeholder="Shy with strangers, loves belly rubs"
-        multiline
-        testID="pet-notes"
-      />
-
-      {saveError ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {saveError}
-        </Text>
-      ) : null}
-      <Button label={saving ? "Saving…" : submitLabel} onPress={() => void submit()} disabled={saving} testID="pet-save" />
-    </View>
+        <TextField
+          label="Notes (optional)"
+          value={values.notes}
+          onChangeText={(text) => set("notes", text)}
+          placeholder="e.g. Shy with strangers, loves belly rubs"
+          multiline
+          testID="pet-notes"
+        />
+      </Stack>
+    </Screen>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    form: {
-      gap: theme.spacing.md,
-    },
-    field: {
-      gap: theme.spacing.xs,
-    },
-    label: {
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.textMuted,
-    },
-    hint: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-    },
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
@@ -206,7 +213,7 @@ const makeStyles = (theme: Theme) =>
     },
     allergyRow: {
       flexDirection: "row",
-      alignItems: "flex-end",
+      alignItems: "flex-start",
       gap: theme.spacing.sm,
     },
     allergyInput: {

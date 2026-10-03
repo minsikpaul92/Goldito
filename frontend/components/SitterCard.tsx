@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Chip } from "./ui/Chip";
 import { SERVICE_LABEL, SitterSummary, sitterMeta } from "../features/sitters/sitterApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { PressableScale } from "./ui/PressableScale";
 
 type Props = {
   sitter: SitterSummary;
@@ -20,11 +21,11 @@ export function SitterCard({ sitter, note, onPress }: Props) {
   const meta = sitterMeta(sitter);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={[sitter.displayName, meta, note].filter(Boolean).join(", ")}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={[styles.card]}
       testID={`sitter-card-${sitter.displayName}`}
     >
       <View style={styles.avatar}>
@@ -41,7 +42,7 @@ export function SitterCard({ sitter, note, onPress }: Props) {
         </View>
       </View>
       <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -56,9 +57,6 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
-    },
-    pressed: {
-      opacity: 0.8,
     },
     avatar: {
       width: theme.spacing.xl + theme.spacing.lg,

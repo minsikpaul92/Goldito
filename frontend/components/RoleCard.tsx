@@ -1,9 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ComponentProps } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { PressableScale } from "./ui/PressableScale";
 
 type Props = {
   icon: ComponentProps<typeof Ionicons>["name"];
@@ -20,7 +21,7 @@ export function RoleCard({ icon, title, description, selected, onPress, testID }
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Pressable
+    <PressableScale
       testID={testID}
       accessibilityRole="radio"
       aria-checked={selected}
@@ -37,7 +38,7 @@ export function RoleCard({ icon, title, description, selected, onPress, testID }
         size={theme.icon.sm}
         color={selected ? theme.color.primary : theme.color.border}
       />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -60,7 +61,7 @@ const makeStyles = (theme: Theme) =>
     },
     text: {
       flex: 1,
-      gap: 2,
+      gap: theme.spacing.xs,
     },
     title: {
       fontSize: theme.fontSize.body,

@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { placeLabel } from "../../../components/BookingCard";
 import { Card } from "../../../components/ui/Card";
@@ -13,6 +13,7 @@ import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bo
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
+import { PressableScale } from "../../../components/ui/PressableScale";
 
 type State =
   | { status: "loading" }
@@ -105,14 +106,14 @@ export default function SitterToday() {
   return (
     <Screen contentStyle={styles.content}>
       {requests > 0 ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           onPress={() => router.push("/sitter/bookings")}
-          style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
+          style={[styles.requests]}
           testID="today-requests"
         >
           <Text style={styles.requestsText}>{`📬 Requests (${requests}) — tap to answer`}</Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
 
       {caring.length > 0 ? (
@@ -121,13 +122,13 @@ export default function SitterToday() {
             Now caring
           </Text>
           {caring.map((b) => (
-            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)}>
+            <PressableScale key={b.id} accessibilityRole="button" onPress={() => open(b)}>
               <Card style={styles.card}>
                 <Text style={styles.title}>{`${b.ownerName}'s ${b.pets.length > 1 ? "pets" : "pet"}`}</Text>
                 <Text style={styles.body}>{pets(b)}</Text>
                 {b.pickUp ? <Text style={styles.muted}>{`Until ${formatInstant(b.pickUp.at)}`}</Text> : null}
               </Card>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       ) : null}
@@ -140,7 +141,7 @@ export default function SitterToday() {
           {due.map(({ booking: b, kind, at }) => {
             const h = kind === "drop_off" ? b.dropOff : b.pickUp;
             return (
-              <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)}>
+              <PressableScale key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)}>
                 <Card style={styles.card}>
                   <Text style={styles.title}>
                     {`${formatTime(isoToZoned(at).time)} · ${kind === "drop_off" ? "Drop-off" : "Pick-up"}`}
@@ -148,7 +149,7 @@ export default function SitterToday() {
                   <Text style={styles.body}>{`${pets(b)} · ${b.ownerName}`}</Text>
                   {h ? <Text style={styles.muted}>{placeLabel(h.locationType, h.note, b, "sitter")}</Text> : null}
                 </Card>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -160,12 +161,12 @@ export default function SitterToday() {
             Upcoming
           </Text>
           {upcoming.map((b) => (
-            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)}>
+            <PressableScale key={b.id} accessibilityRole="button" onPress={() => open(b)}>
               <Card style={styles.card}>
                 <Text style={styles.title}>{`${b.ownerName} · ${b.dropOff ? formatInstant(b.dropOff.at) : ""}`}</Text>
                 <Text style={styles.body}>{pets(b)}</Text>
               </Card>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       ) : null}
@@ -213,8 +214,5 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: "600",
       color: theme.color.primary,
-    },
-    pressed: {
-      opacity: 0.8,
     },
   });

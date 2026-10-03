@@ -1,22 +1,27 @@
 import { router } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { useRef } from "react";
 
 import { PetCard } from "../../../components/PetCard";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { Stack } from "../../../components/ui/Stack";
 import { useMyPets } from "../../../features/pets/useMyPets";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { Theme } from "../../../theme/themes";
 
 /** Owner Home: my pets (phase-03 3.5). Today's summary and the pet room arrive later. */
 export default function OwnerHome() {
-  const styles = useThemedStyles(makeStyles);
   const { status, pets, error, reload } = useMyPets();
   const addPet = () => router.push("/owner/pets/new");
+  // Pets already shown on this Home. A pet that appears later (just added) animates in once.
+  const seen = useRef<Set<string> | null>(null);
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
+
+  const firstLoad = seen.current === null;
+  const isNew = (id: string) => !firstLoad && !seen.current?.has(id);
+  const justAdded = new Set(pets.filter((pet) => isNew(pet.id)).map((pet) => pet.id));
+  if (status === "ready") seen.current = new Set(pets.map((pet) => pet.id));
 
   if (status === "error" && pets.length === 0) {
     return (
@@ -45,32 +50,17 @@ export default function OwnerHome() {
   }
 
   return (
-    <View style={styles.root}>
-      <Screen contentStyle={styles.list}>
+    <Screen footer={<Button label="Add pet" onPress={addPet} />}>
+      <Stack gap="md">
         {pets.map((pet) => (
-          <PetCard key={pet.id} pet={pet} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
+          <PetCard
+            key={pet.id}
+            pet={pet}
+            justAdded={justAdded.has(pet.id)}
+            onPress={() => router.push(`/owner/pets/${pet.id}`)}
+          />
         ))}
-      </Screen>
-      <View style={styles.footer}>
-        <Button label="Add pet" onPress={addPet} />
-      </View>
-    </View>
+      </Stack>
+    </Screen>
   );
 }
-
-const makeStyles = (theme: Theme) =>
-  StyleSheet.create({
-    root: {
-      flex: 1,
-      backgroundColor: theme.color.background,
-    },
-    list: {
-      gap: theme.spacing.md,
-    },
-    footer: {
-      padding: theme.spacing.md,
-      maxWidth: 480,
-      width: "100%",
-      alignSelf: "center",
-    },
-  });

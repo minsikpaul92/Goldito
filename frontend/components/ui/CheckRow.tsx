@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { PressableScale } from "./PressableScale";
 
 type Props = {
   label: string;
@@ -22,7 +23,7 @@ export function CheckRow({ label, hint, checked, onChange, radio, disabled, test
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole={radio ? "radio" : "checkbox"}
       // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
       aria-checked={checked}
@@ -41,7 +42,7 @@ export function CheckRow({ label, hint, checked, onChange, radio, disabled, test
         <Text style={styles.label}>{label}</Text>
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
