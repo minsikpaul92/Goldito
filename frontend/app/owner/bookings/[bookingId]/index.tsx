@@ -2,39 +2,47 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { bookingBadges, handoffLine } from "../../../components/BookingCard";
-import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
-import { MeetGreetCard } from "../../../components/MeetGreetCard";
-import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import { Chip } from "../../../components/ui/Chip";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
-import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
-import { releaseVideoLink } from "../../../lib/meetGreet";
+import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
+import { MeetGreetCard } from "../../../../components/MeetGreetCard";
+import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import { CheckRow } from "../../../../components/ui/CheckRow";
+import { Chip } from "../../../../components/ui/Chip";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
+import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
   cancelBooking,
   HandoffKind,
+  HandoffPlace,
   declinedChange,
   getBooking,
-  getHandoffAddresses,
+  getHandoffDetails,
   proposeHandoff,
   respondHandoff,
-} from "../../../lib/bookings";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useToast } from "../../../providers/ToastProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../lib/bookings";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useToast } from "../../../../providers/ToastProvider";
+import { Theme } from "../../../../theme/themes";
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; booking: BookingSummary; addresses: Partial<Record<HandoffKind, string>> }
+  | {
+      status: "ready";
+      booking: BookingSummary;
+      addresses: Partial<Record<HandoffKind, string>>;
+      places: Partial<Record<HandoffKind, HandoffPlace>>;
+      packChecks: Record<string, boolean>;
+    }
   | { status: "missing" }
   | { status: "error"; message: string };
 
@@ -81,8 +89,22 @@ export default function OwnerBookingDetail() {
         setState({ status: "missing" });
         return;
       }
-      const addresses = booking.status === "confirmed" ? await getHandoffAddresses(booking.id) : {};
-      setState({ status: "ready", booking, addresses });
+      const placesResult =
+        booking.status === "confirmed" && booking.paidAt
+          ? await getHandoffDetails(booking.id)
+          : { places: {}, error: null as string | null };
+      const addresses: Partial<Record<HandoffKind, string>> = {};
+      for (const kind of Object.keys(placesResult.places) as HandoffKind[]) {
+        const addr = placesResult.places[kind]?.address;
+        if (addr) addresses[kind] = addr;
+      }
+      setState((prev) => ({
+        status: "ready",
+        booking,
+        addresses,
+        places: placesResult.places,
+        packChecks: prev.status === "ready" ? prev.packChecks : {},
+      }));
     } catch (err) {
       setState({ status: "error", message: (err as Error).message });
     }
@@ -113,13 +135,22 @@ export default function OwnerBookingDetail() {
     );
   }
 
-  const { booking, addresses } = state;
+  const { booking, addresses, places, packChecks } = state;
   const sitter = booking.sitterName;
   const open = booking.status === "requested" || booking.status === "confirmed";
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "Your pet";
   // Cancel only before the pets are handed over (cancel_booking, 003).
   const canCancel = open && !booking.dropOff?.completedAt;
   const ended = endedNote(booking);
+  const needsCheckout = booking.status === "confirmed" && !booking.paidAt;
+  const placeNotes =
+    Object.values(places).find((p) => p && (p.visitorParking || p.lobbyNotes || p.packingList?.length)) ?? null;
+  const packing = placeNotes?.packingList ?? [];
+  // Address may be on a different handoff than the place-notes row.
+  const sitterAddress =
+    placeNotes?.address ??
+    Object.values(places).find((p) => p?.address)?.address ??
+    null;
 
   const run = async (action: () => Promise<void>, done: string) => {
     setBusy(true);
@@ -169,6 +200,53 @@ export default function OwnerBookingDetail() {
           <Card style={styles.block} testID="booking-ended">
             <Text style={styles.label}>{ended}</Text>
             <Text style={styles.muted}>Same pets, times and places — pick another sitter.</Text>
+          </Card>
+        ) : null}
+
+        {needsCheckout ? (
+          <Card style={styles.block} testID="checkout-banner">
+            <Text style={styles.label}>{`${sitter} accepted! Finish booking →`}</Text>
+            <Text style={styles.muted}>Review the quote, sign the consents, and pay (demo — no card).</Text>
+            <Button
+              label="Finish booking"
+              onPress={() => router.push(`/owner/bookings/${booking.id}/checkout`)}
+              testID="open-checkout"
+            />
+          </Card>
+        ) : null}
+
+        {booking.paidAt ? <Chip label="Paid" /> : null}
+
+        {sitterAddress || placeNotes?.visitorParking || placeNotes?.lobbyNotes ? (
+          <Card style={styles.block} testID="sitter-place-card">
+            <Text style={styles.label}>{`${sitter}'s place`}</Text>
+            {sitterAddress ? <Text style={styles.body}>{`📍 ${sitterAddress}`}</Text> : null}
+            {placeNotes?.visitorParking ? (
+              <Text style={styles.muted}>{`Parking: ${placeNotes.visitorParking}`}</Text>
+            ) : null}
+            {placeNotes?.lobbyNotes ? <Text style={styles.muted}>{placeNotes.lobbyNotes}</Text> : null}
+          </Card>
+        ) : null}
+
+        {packing.length > 0 ? (
+          <Card style={styles.block} testID="packing-list">
+            <Text style={styles.label}>{`Pack for ${petNames}`}</Text>
+            <Text style={styles.muted}>Local checklist — not saved.</Text>
+            {packing.map((item) => (
+              <CheckRow
+                key={item}
+                label={item}
+                checked={Boolean(packChecks[item])}
+                onChange={(v) =>
+                  setState((s) =>
+                    s.status === "ready"
+                      ? { ...s, packChecks: { ...s.packChecks, [item]: v } }
+                      : s,
+                  )
+                }
+                testID={`pack-${item}`}
+              />
+            ))}
           </Card>
         ) : null}
 

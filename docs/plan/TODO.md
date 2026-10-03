@@ -16,7 +16,7 @@
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **3C.6** | Checkout UI + EntryInfoCard — QuoteCard · ConsentCard · Pay (demo) · 잠금/해제 카드 | [phase-03c.md](phases/phase-03c.md) |
+| **3C.7** | Playwright Checkout flow (consent missing → Pay disabled) · smoke polish (`006`) | [phase-03c.md](phases/phase-03c.md) |
 
 ---
 
@@ -31,7 +31,6 @@
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`, Claude builds it) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **3C.7** Playwright Checkout flow (consent missing → Pay disabled) · smoke polish (`006`) ([phase-03c.md](phases/phase-03c.md))
 - [ ] **OB.1–OB.2** Welcome route + UI — [onboarding.ko.md](onboarding.ko.md) (OB.3 Try demo done early, 2026-10-02)
 - [ ] **4.x** Cloudinary sign/complete + `uploadMedia()` + **4.7** `pickMedia()` sample photo tray (desktop frame / demo accounts — no camera needed; handoff + report samples)
 - [ ] **5.x** Care feed + owner timeline + notifications center (`007`)
@@ -57,6 +56,7 @@
 
 ## Completed
 
+- [x] **3C.6** Checkout UI: QuoteCard · ConsentCard · `/checkout` (quote → consents → name → Pay demo) · owner detail "Finish booking" banner + Lucy's place / packing after pay · `EntryInfoCard` on sitter detail · `/owner/home-access` + Profile link · sitter place notes on Profile (2026-10-03)
 - [x] **3C.5** `owner_home_access` (owner RLS) · `get_home_access` window [arrival−2h, pick-up done/time] · `access_reveals` + `access_unlocked` once · `access_locked` / `forbidden`. smoke I–K ✓; hosted MCP (2026-10-03)
 - [x] **3C.4** `sitter_profiles` visitor_parking / lobby_notes / packing_list · `get_handoff_details` requires `paid_at` (`not_paid`) and returns place notes for sitter_home. smoke ✓; hosted MCP (2026-10-03)
 - [x] **3C.3** `pay_booking_demo` (no Stripe): `paid_at` + `price_snapshot` from `quote_booking`, `consents_missing` / `already_paid`, sitter `booking_paid`. FE `quoteBooking` / `payBookingDemo`. rls_smoke ✓; hosted via MCP (2026-10-03)
