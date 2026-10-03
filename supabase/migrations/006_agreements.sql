@@ -447,4 +447,87 @@ $$;
 revoke execute on function public.pay_booking_demo(uuid) from public, anon;
 grant execute on function public.pay_booking_demo(uuid) to authenticated, service_role;
 
+-- ---------------------------------------------------------------------------
+-- 3C.4 — Sitter place notes + addresses only after demo pay (D31)
+-- ---------------------------------------------------------------------------
+
+alter table public.sitter_profiles
+  add column if not exists visitor_parking text,
+  add column if not exists lobby_notes text,
+  add column if not exists packing_list text[] not null
+    default '{food,bed or cushion,medications,leash,favorite toy}';
+
+-- Sitter edits their own place notes; not in the public sitter list (like home_address).
+grant update (visitor_parking, lobby_notes, packing_list) on public.sitter_profiles to authenticated;
+
+-- Return type grows → drop first (003 signature).
+drop function if exists public.get_handoff_details(uuid);
+
+-- Agreed handoffs with the real address + sitter place notes, only after paid_at,
+-- until 24 h after the agreed pick-up.
+create function public.get_handoff_details(p_booking uuid)
+returns table (
+  handoff_id uuid,
+  kind text,
+  scheduled_at timestamptz,
+  location_type text,
+  address text,
+  visitor_parking text,
+  lobby_notes text,
+  packing_list text[],
+  completed_at timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  b public.bookings;
+begin
+  select * into b from public.bookings where id = p_booking;
+  if not found or auth.uid() is null or auth.uid() not in (b.owner_id, b.sitter_id) then
+    raise exception 'not_allowed';
+  end if;
+  if b.status <> 'confirmed' then
+    raise exception 'invalid_status';
+  end if;
+  if b.paid_at is null then
+    raise exception 'not_paid';
+  end if;
+  if not exists (
+    select 1 from public.booking_handoffs p
+    where p.booking_id = p_booking and p.kind = 'pick_up' and p.status = 'agreed'
+      and p.scheduled_at + interval '24 hours' > now()
+  ) then
+    raise exception 'booking_finished';
+  end if;
+
+  return query
+  select h.id, h.kind, h.scheduled_at, h.location_type,
+    case h.location_type
+      when 'sitter_home' then (select sp.home_address from public.sitter_profiles sp where sp.id = b.sitter_id)
+      when 'owner_home' then (select op.home_address from public.owner_profiles op where op.id = b.owner_id)
+      else h.location_note
+    end,
+    case when h.location_type = 'sitter_home' then (
+      select sp.visitor_parking from public.sitter_profiles sp where sp.id = b.sitter_id
+    ) end,
+    case when h.location_type = 'sitter_home' then (
+      select sp.lobby_notes from public.sitter_profiles sp where sp.id = b.sitter_id
+    ) end,
+    case when h.location_type = 'sitter_home' then (
+      select sp.packing_list from public.sitter_profiles sp where sp.id = b.sitter_id
+    ) end,
+    h.completed_at
+  from public.booking_handoffs h
+  where h.booking_id = p_booking and h.status = 'agreed'
+  order by h.kind;
+end;
+$$;
+
+revoke execute on function public.get_handoff_details(uuid) from public, anon;
+grant execute on function public.get_handoff_details(uuid) to authenticated, service_role;
+
 notify pgrst, 'reload schema';

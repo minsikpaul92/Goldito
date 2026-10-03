@@ -40,4 +40,8 @@ export type SitterProfile = {
   /** At least one of boarding / house_sitting (004, D28). */
   services: ("boarding" | "house_sitting")[];
   meet_spots: string[];
+  /** Shared with the owner only after demo pay (03C). */
+  visitor_parking: string | null;
+  lobby_notes: string | null;
+  packing_list: string[] | null;
 };

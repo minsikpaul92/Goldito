@@ -564,13 +564,48 @@ export async function completeHandoff(bookingId: string, kind: HandoffKind): Pro
   }
 }
 
-/** Real addresses for a confirmed booking, until 24 h after pick-up (get_handoff_details, 003). */
-export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
+/** Real addresses + sitter place notes after demo pay, until 24 h after pick-up (3C.4). */
+export type HandoffPlace = {
+  address: string | null;
+  visitorParking: string | null;
+  lobbyNotes: string | null;
+  packingList: string[] | null;
+};
+
+export async function getHandoffDetails(
+  bookingId: string,
+): Promise<{ places: Partial<Record<HandoffKind, HandoffPlace>>; error: string | null }> {
   const { data, error } = await getSupabase().rpc("get_handoff_details", { p_booking: bookingId });
-  if (error) return {};
+  if (error) {
+    if (error.message === "not_paid") return { places: {}, error: "not_paid" };
+    if (error.message === "booking_finished") return { places: {}, error: "booking_finished" };
+    return { places: {}, error: error.message };
+  }
+  const places: Partial<Record<HandoffKind, HandoffPlace>> = {};
+  for (const row of (data ?? []) as {
+    kind: HandoffKind;
+    address: string | null;
+    visitor_parking: string | null;
+    lobby_notes: string | null;
+    packing_list: string[] | null;
+  }[]) {
+    places[row.kind] = {
+      address: row.address,
+      visitorParking: row.visitor_parking,
+      lobbyNotes: row.lobby_notes,
+      packingList: row.packing_list,
+    };
+  }
+  return { places, error: null };
+}
+
+/** @deprecated Prefer getHandoffDetails — kept for existing booking screens. */
+export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
+  const { places } = await getHandoffDetails(bookingId);
   const out: Partial<Record<HandoffKind, string>> = {};
-  for (const row of (data ?? []) as { kind: HandoffKind; address: string | null }[]) {
-    if (row.address) out[row.kind] = row.address;
+  for (const kind of Object.keys(places) as HandoffKind[]) {
+    const addr = places[kind]?.address;
+    if (addr) out[kind] = addr;
   }
   return out;
 }

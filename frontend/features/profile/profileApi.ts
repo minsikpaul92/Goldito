@@ -38,6 +38,9 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
       home_address: row.home_address,
       services: row.services ?? ["boarding"],
       meet_spots: row.meet_spots ?? [],
+      visitor_parking: row.visitor_parking ?? null,
+      lobby_notes: row.lobby_notes ?? null,
+      packing_list: row.packing_list ?? null,
     },
   };
 }

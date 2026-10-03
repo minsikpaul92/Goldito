@@ -550,13 +550,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/get_handoff_details") {
-    // Agreed handoffs with the real address, confirmed bookings only (003).
+    // Agreed handoffs with the real address after demo pay (3C.4), confirmed only.
     const { p_booking } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
     if (!booking || booking.status !== "confirmed") return json(route, 400, { code: "P0001", message: "invalid_status" });
+    if (!booking.paid_at) return json(route, 400, { code: "P0001", message: "not_paid" });
+    const sitter = db.sitter_profiles.find((p) => p.id === booking.sitter_id);
     const address = (h: Row) =>
       h.location_type === "sitter_home"
-        ? (db.sitter_profiles.find((p) => p.id === booking.sitter_id)?.home_address ?? null)
+        ? (sitter?.home_address ?? null)
         : h.location_type === "owner_home"
           ? (db.owner_profiles.find((p) => p.id === booking.owner_id)?.home_address ?? null)
           : h.location_note;
@@ -565,7 +567,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       200,
       db.booking_handoffs
         .filter((h) => h.booking_id === booking.id && h.status === "agreed")
-        .map((h) => ({ handoff_id: h.id, kind: h.kind, scheduled_at: h.scheduled_at, address: address(h) })),
+        .map((h) => ({
+          handoff_id: h.id,
+          kind: h.kind,
+          scheduled_at: h.scheduled_at,
+          location_type: h.location_type,
+          address: address(h),
+          visitor_parking: h.location_type === "sitter_home" ? (sitter?.visitor_parking ?? null) : null,
+          lobby_notes: h.location_type === "sitter_home" ? (sitter?.lobby_notes ?? null) : null,
+          packing_list: h.location_type === "sitter_home" ? (sitter?.packing_list ?? null) : null,
+        })),
     );
   }
 

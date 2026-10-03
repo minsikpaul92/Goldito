@@ -270,6 +270,15 @@ begin
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
+  perform _t_ok(v_err = 'not_paid', '3C.4: unpaid past booking still gated by not_paid');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() - interval '7 days' where id = _t_get('finished');
+  perform _t_as(allen);
+  begin
+    perform get_handoff_details(_t_get('finished'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
   perform _t_ok(v_err = 'booking_finished', 'addresses are hidden after the booking ends');
   perform _t_ok((select count(*) from get_booking_pets(_t_get('finished'))) = 1,
     'past booking still lists its pets');
@@ -689,6 +698,9 @@ begin
     'D′: time-only counter-offer keeps the proposed place');
   perform _t_as(chloe);
   perform respond_handoff(v_h, true);
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_a;
+  perform _t_as(chloe);
   perform _t_ok((select address from get_handoff_details(v_a) where kind = 'drop_off') = '100 Example St',
     'D′: owner sees sitter address for the confirmed booking');
   perform _t_as(lucy);
@@ -1357,6 +1369,53 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'not_allowed', '3C.3: outsider cannot pay');
+
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Paid address gate (006, phase-03c 3C.4, D31)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  v_id uuid;
+  r record;
+  v_err text;
+begin
+  perform _t_as(null);
+  update public.sitter_profiles
+  set visitor_parking = 'Visitor spot B-12',
+      lobby_notes = 'Buzz 1204',
+      packing_list = array['food', 'leash']
+  where id = lucy;
+
+  v_id := _t_booking(chloe, lucy, array[max],
+    now() + interval '80 days', now() + interval '83 days', 'confirmed');
+
+  perform _t_as(chloe);
+  begin
+    select * into r from get_handoff_details(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', '3C.4: address hidden before demo pay');
+
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_id;
+
+  perform _t_as(chloe);
+  select * into r from get_handoff_details(v_id) where kind = 'drop_off';
+  perform _t_ok(
+    r.address = '100 Example St'
+    and r.visitor_parking = 'Visitor spot B-12'
+    and r.lobby_notes = 'Buzz 1204'
+    and r.packing_list = array['food', 'leash'],
+    '3C.4: after pay, sitter home + packing list return');
 
   perform _t_as(null);
 end;
