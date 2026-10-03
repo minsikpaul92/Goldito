@@ -77,15 +77,24 @@ jobs:
           # Test-only value so the login Try demo buttons render (OB.3); the mock accepts it.
           EXPO_PUBLIC_DEMO_PASSWORD: e2e-demo-password
       - name: Cache Playwright browsers
+        id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install Playwright browsers
         # A stuck browser/apt download once hung this step; fail fast and re-run instead.
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         timeout-minutes: 8
         run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install Playwright system libraries (browsers come from the cache)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 8
+        run: npx playwright install-deps chromium firefox webkit
       - name: Playwright (desktop phone frame + mouse)
+        env:
+          # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
+          PW_FRAME_VIEWPORTS: ${{ github.event_name == 'push' && 'all' || '1366' }}
         run: npx playwright test
       - name: Upload Playwright traces
         if: failure()

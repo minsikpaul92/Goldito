@@ -14,11 +14,15 @@ const browsers = [
   { name: "webkit", device: devices["Desktop Safari"] },
 ];
 
-const viewports = [
+const allViewports = [
   { width: 1366, height: 768 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
 ];
+
+// PW_FRAME_VIEWPORTS=1366 runs the frame checks at one size (CI on PRs); unset or "all" runs every size.
+const only = process.env.PW_FRAME_VIEWPORTS;
+const viewports = only && only !== "all" ? allViewports.filter((v) => String(v.width) === only) : allViewports;
 
 export default defineConfig({
   testDir: "./e2e",
