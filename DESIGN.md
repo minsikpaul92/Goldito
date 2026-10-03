@@ -134,9 +134,23 @@ System font for now (Figma will pick one family).
 | `icon.sm` | 22 | Header and inline icons, radio marks |
 | `icon.md` | 28 | Icons inside cards (role cards) |
 | `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
+| `layout.touchTarget` | 44 | Minimum size of anything tappable (44 × 44) |
+| `layout.contentMaxWidth` | 480 | Content column width on wide screens (`Screen`) |
 
 - Cards use a 1 px `border`, no heavy shadows.
-- Minimum touch target: **44 × 44**.
+- Minimum touch target: **44 × 44** — use `layout.touchTarget`, never a literal 44.
+
+### 5.1 Motion
+
+| Token | Value | Use |
+| :--- | :--- | :--- |
+| `motion.fast` | 120 ms | Press in / out |
+| `motion.base` | 240 ms | Things appearing (toast, a new card, a chip added) |
+| `motion.slow` | 420 ms | Rare, larger moments (welcome) |
+| `motion.pressScale` | 0.97 | Pressed size for every tappable |
+| `motion.pressOpacity` | 0.85 | Pressed opacity for every tappable |
+
+See [§7.8](#78-motion-and-press-feel) for the rules.
 
 ---
 
@@ -146,17 +160,21 @@ System font for now (Figma will pick one family).
 
 | Component | Rules |
 | :--- | :--- |
-| `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
+| `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width `layout.contentMaxWidth`. Optional `footer` pins the screen's one primary action to the bottom (toasts sit above it) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
-| `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
+| `Button` | `primary` fill or `secondary` (white + `border`), `radius.md`, 600 weight. `loading` keeps the color and label and adds a spinner (no double submit); `disabled` is neutral — `border` fill + `textMuted` label, never a faded brand color |
+| `PressableScale` | The one press feel: every tappable (buttons, cards, chips, segments, tabs, header icons) is built on it — scale `motion.pressScale` + opacity `motion.pressOpacity` over `motion.fast`. Screens never set their own pressed styles |
+| `Stack` | Vertical or horizontal group with a `spacing` gap — use it instead of per-element margins |
+| `Field` | Label + control + hint or error line; `TextField` is built on it |
+| `AppearIn` | Fades / pops a new element in over `motion.base` (a pet just added, an allergy chip) |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
-| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
+| `TextField` | Label above (`hideLabel` for visually hidden), `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below, optional `hint`. A failed submit shakes the field (`shakeKey`); the error clears as soon as the user edits. Placeholders start with "e.g." so they never look like answers |
 | `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 | `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
 | `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
-| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `Toast` (`useToast()`) | Bottom, above the tab bar and above a `Screen` footer, slides in over `motion.base`, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 | `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |
@@ -173,7 +191,7 @@ System font for now (Figma will pick one family).
 
 | Component | Notes |
 | :--- | :--- |
-| `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
+| `Button` variants | `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
 | `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Bookings · Feed · Care · Reports, sitter: Today · Bookings · Tasks · Report) |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
@@ -260,6 +278,12 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 - [ ] Any new library supports web (check the platform list in Expo docs)
 
 `/dev/gestures` (with `EXPO_PUBLIC_DEV_ROUTES=1`) shows every pattern above in one screen, and the Playwright suite (`frontend/e2e/`) checks it with a mouse in CI. The same checklist is in the PR template.
+
+### 7.8 Motion and press feel
+- **One press feel.** Everything tappable uses `PressableScale`; no screen-specific pressed styles.
+- **Reduce motion is a contract.** With the OS setting on, scale and movement turn off (opacity changes only); nothing depends on an animation finishing.
+- **Motion follows the user.** Animate in response to something the user did (a tap, a save), never as decoration on load.
+- **Disabled vs loading.** Disabled = can't be used yet, neutral gray. Loading = working on it, keeps the brand color with a spinner.
 
 ---
 
