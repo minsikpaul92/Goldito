@@ -1278,4 +1278,88 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Demo pay (006, phase-03c 3C.3, D30): pay_booking_demo — no Stripe
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  v_pay uuid;
+  v_kind text;
+  v_quote jsonb;
+  v_err text;
+  v_detail text;
+begin
+  -- Confirmed boarding with Lucy rates already seeded in 3C.1
+  v_pay := _t_booking(chloe, lucy, array[max, mochi],
+    ('2026-10-09 07:30:00'::timestamp at time zone app_timezone()),
+    ('2026-10-12 17:00:00'::timestamp at time zone app_timezone()),
+    'confirmed');
+
+  perform _t_as(chloe);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'consents_missing', '3C.3: pay without consents → consents_missing');
+  perform _t_ok(v_detail like '%emergency_vet%', '3C.3: consents_missing lists the kinds');
+
+  -- Sign every required kind
+  foreach v_kind in array required_consents(v_pay) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+    values (v_pay, v_kind, '1', chloe, 'Chloe',
+      case v_kind
+        when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Chloe')
+        else '{}'::jsonb
+      end);
+  end loop;
+
+  v_quote := pay_booking_demo(v_pay);
+  perform _t_ok(
+    (v_quote->>'total')::numeric = 268.13
+    and (select paid_at is not null and price_snapshot->>'total' = '268.13' from public.bookings where id = v_pay),
+    '3C.3: demo pay freezes $268.13 and sets paid_at');
+  perform _t_as(null);
+  perform _t_ok(exists (
+      select 1 from public.notifications
+      where user_id = lucy and type = 'booking_paid' and booking_id = v_pay),
+    '3C.3: sitter gets booking_paid');
+
+  perform _t_as(chloe);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_paid', '3C.3: second pay → already_paid');
+
+  perform _t_as(lucy);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.3: sitter cannot pay');
+
+  perform _t_as(paul);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.3: outsider cannot pay');
+
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

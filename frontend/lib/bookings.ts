@@ -13,6 +13,9 @@ const MESSAGES: Record<string, string> = {
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
   location_note_required: "Tell the sitter where to meet.",
   service_not_offered: "This sitter doesn't offer that service.",
+  consents_missing: "Sign every consent before paying.",
+  already_paid: "This booking is already paid.",
+  handoff_missing: "Agree on drop-off and pick-up times first.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -37,6 +40,66 @@ export async function cancelBooking(bookingId: string, reason: string | null): P
   if (error) {
     throw new Error(bookingErrorMessage(error.message, "Couldn't cancel this booking. Try again."));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Checkout quote + demo pay (03C — no Stripe)
+// ---------------------------------------------------------------------------
+
+function asQuote(raw: unknown): PriceQuote {
+  const q = raw as PriceQuote;
+  return {
+    ...q,
+    unit_price: Number(q.unit_price),
+    base: Number(q.base),
+    extra_pets: Number(q.extra_pets),
+    holiday_surcharge: Number(q.holiday_surcharge),
+    total: Number(q.total),
+    nights: Number(q.nights),
+    days: Number(q.days),
+    holiday_days: q.holiday_days ?? [],
+  };
+}
+
+/** Read-only quote for Checkout / inquiry card (same RPC Checkout freezes at pay). */
+export async function quoteBooking(input: {
+  sitterId: string;
+  serviceType: ServiceType | "daycare";
+  dropOffAt: string;
+  pickUpAt: string;
+  petCount: number;
+}): Promise<PriceQuote> {
+  const { data, error } = await getSupabase().rpc("quote_booking", {
+    p_sitter: input.sitterId,
+    p_service: input.serviceType,
+    p_drop_off_at: input.dropOffAt,
+    p_pick_up_at: input.pickUpAt,
+    p_pet_count: input.petCount,
+  });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't load the price. Try again."),
+      error.details ?? null,
+    );
+  }
+  return asQuote(data);
+}
+
+/**
+ * Demo checkout (D30): no card. Requires confirmed booking + every required consent signed.
+ * Returns the frozen price_snapshot.
+ */
+export async function payBookingDemo(bookingId: string): Promise<PriceQuote> {
+  const { data, error } = await getSupabase().rpc("pay_booking_demo", { p_booking: bookingId });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't complete the demo payment. Try again."),
+      error.details ?? null,
+    );
+  }
+  return asQuote(data);
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +213,21 @@ export type MeetGreetStatus =
   | "skip_requested"
   | "skipped";
 
+/** Server quote from quote_booking / price_snapshot (03C, D29). */
+export type PriceQuote = {
+  service: string;
+  nights: number;
+  days: number;
+  unit_price: number;
+  base: number;
+  extra_pets: number;
+  holiday_days: { day: string; name: string }[];
+  holiday_surcharge: number;
+  total: number;
+  currency: string;
+  rate_version: string;
+};
+
 type HandoffRow = {
   id: string;
   kind: "drop_off" | "pick_up";
@@ -200,6 +278,10 @@ export type BookingSummary = {
   /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
   cancelledBy: string | null;
   cancelReason: string | null;
+  /** Set by pay_booking_demo (03C). Null until checkout finishes. */
+  paidAt: string | null;
+  /** Quote frozen at demo pay — same shape as quote_booking. */
+  priceSnapshot: PriceQuote | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;
   pickUp: Handoff | null;
@@ -269,7 +351,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
   "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, " +
-  "created_at, " +
+  "paid_at, price_snapshot, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -290,6 +372,8 @@ type BookingRow = {
   meet_greet_skip_requested_by: string | null;
   cancelled_by: string | null;
   cancel_reason: string | null;
+  paid_at: string | null;
+  price_snapshot: PriceQuote | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -334,6 +418,8 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     },
     cancelledBy: b.cancelled_by ?? null,
     cancelReason: b.cancel_reason ?? null,
+    paidAt: b.paid_at ?? null,
+    priceSnapshot: b.price_snapshot ?? null,
     pets,
     dropOff: currentHandoff(handoffs, "drop_off", b.status),
     pickUp: currentHandoff(handoffs, "pick_up", b.status),

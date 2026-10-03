@@ -79,7 +79,10 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `invalid_status`, `invalid_kind` | Booking is not in a state that allows this / handoff kind is not `drop_off`/`pick_up` |
 | `invalid_location`, `location_note_required` | Unknown place type / "Somewhere else" without a note |
 | `invalid_service`, `service_not_offered` | Service type is not `boarding`/`house_sitting` (or `daycare` for `quote_booking`) / the sitter has no matching rate or `sitter_profiles.services` entry |
-| `invalid_pet_count` | `quote_booking` pet count is missing or less than 1 |
+| `invalid_pet_count` | `quote_booking` / `pay_booking_demo` pet count is missing or less than 1 |
+| `consents_missing` | Demo pay before every required consent is signed — detail = missing kinds |
+| `already_paid` | `pay_booking_demo` called again on a booking that already has `paid_at` |
+| `not_paid` | Address / entry info requested before demo pay (03C.4+) |
 | `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |
 | `invalid_mode`, `place_required`, `place_too_long` | Meet & Greet is not `in_person`/`video` / in person without a place / place over 120 characters |
 | `meet_greet_not_yet` | Marking the Meet & Greet done before its agreed time |

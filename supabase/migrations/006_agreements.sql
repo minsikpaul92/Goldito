@@ -347,4 +347,104 @@ grant all on public.booking_consents to service_role;
 revoke execute on function public.required_consents(uuid) from public, anon;
 grant execute on function public.required_consents(uuid) to authenticated, service_role;
 
+-- ---------------------------------------------------------------------------
+-- 3C.3 — Demo pay (no Stripe): paid_at + price snapshot + sitter notice
+-- ---------------------------------------------------------------------------
+
+alter table public.bookings
+  add column if not exists paid_at timestamptz,
+  add column if not exists price_snapshot jsonb;
+
+-- Owner confirms checkout: all required consents signed → stamp payment.
+create or replace function public.pay_booking_demo(p_booking uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  b public.bookings%rowtype;
+  v_owner_name text;
+  v_drop public.booking_handoffs%rowtype;
+  v_pick public.booking_handoffs%rowtype;
+  v_pets int;
+  v_required text[];
+  v_missing text[];
+  v_quote jsonb;
+begin
+  if auth.uid() is null then
+    raise exception 'not_authenticated';
+  end if;
+
+  select * into b from public.bookings where id = p_booking for update;
+  if not found then
+    raise exception 'not_allowed';
+  end if;
+  if b.owner_id is distinct from auth.uid() then
+    raise exception 'not_allowed';
+  end if;
+  if b.status is distinct from 'confirmed' then
+    raise exception 'invalid_status';
+  end if;
+  if b.paid_at is not null then
+    raise exception 'already_paid';
+  end if;
+
+  v_required := public.required_consents(p_booking);
+  select coalesce(array_agg(k order by k), '{}')
+    into v_missing
+  from unnest(v_required) k
+  where not exists (
+    select 1 from public.booking_consents c
+    where c.booking_id = p_booking and c.kind = k
+  );
+  if coalesce(cardinality(v_missing), 0) > 0 then
+    raise exception 'consents_missing' using detail = array_to_string(v_missing, ',');
+  end if;
+
+  v_drop := public.current_handoff(p_booking, 'drop_off');
+  v_pick := public.current_handoff(p_booking, 'pick_up');
+  if v_drop.id is null or v_pick.id is null then
+    raise exception 'handoff_missing';
+  end if;
+
+  select count(*)::int into v_pets
+  from public.booking_pets bp
+  where bp.booking_id = p_booking and bp.active;
+
+  if v_pets < 1 then
+    raise exception 'invalid_pet_count';
+  end if;
+
+  v_quote := public.quote_booking(
+    b.sitter_id, b.service_type, v_drop.scheduled_at, v_pick.scheduled_at, v_pets
+  );
+
+  update public.bookings
+  set paid_at = now(),
+      price_snapshot = v_quote,
+      updated_at = now()
+  where id = p_booking;
+
+  select display_name into v_owner_name from public.profiles where id = b.owner_id;
+
+  perform public.notify_user(
+    b.sitter_id, 'booking_paid',
+    format('%s signed and paid — %s is all set ✅',
+      coalesce(v_owner_name, 'The owner'),
+      public.fmt_date_range(b.start_date, b.end_date)),
+    format('%s · $%s %s (demo)',
+      public.booking_pet_names(p_booking),
+      v_quote->>'total',
+      coalesce(v_quote->>'currency', 'CAD')),
+    null, p_booking, p_booking
+  );
+
+  return v_quote;
+end;
+$$;
+
+revoke execute on function public.pay_booking_demo(uuid) from public, anon;
+grant execute on function public.pay_booking_demo(uuid) to authenticated, service_role;
+
 notify pgrst, 'reload schema';
