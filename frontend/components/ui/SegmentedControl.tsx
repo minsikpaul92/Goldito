@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { PressableScale } from "./PressableScale";
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -29,7 +30,7 @@ export function SegmentedControl<T extends string>({
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <Pressable
+          <PressableScale
             key={option.value}
             accessibilityRole="radio"
             aria-checked={selected}
@@ -39,7 +40,7 @@ export function SegmentedControl<T extends string>({
             style={[styles.segment, selected && styles.selected, disabled && !selected && styles.dimmed]}
           >
             <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>
@@ -54,7 +55,7 @@ const makeStyles = (theme: Theme) =>
     },
     segment: {
       flex: 1,
-      minHeight: 44,
+      minHeight: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: theme.radius.md,

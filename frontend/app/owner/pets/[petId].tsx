@@ -51,7 +51,7 @@ export default function PetProfileScreen() {
 
   const { pet } = state;
   return (
-    <Screen>
+    <>
       <Stack.Screen options={{ title: pet.name }} />
       <PetForm
         key={pet.id}
@@ -64,6 +64,6 @@ export default function PetProfileScreen() {
           router.back();
         }}
       />
-    </Screen>
+    </>
   );
 }

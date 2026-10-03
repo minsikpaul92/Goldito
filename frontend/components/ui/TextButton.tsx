@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import { StyleSheet, Text, ViewStyle } from "react-native";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { PressableScale } from "./PressableScale";
 
 type Props = {
   label: string;
@@ -18,28 +19,26 @@ export function TextButton({ label, onPress, danger, disabled, style, testID }: 
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
+      aria-disabled={!!disabled}
       disabled={disabled}
       onPress={onPress}
       testID={testID}
-      style={({ pressed }) => [styles.base, pressed && styles.pressed, disabled && styles.disabled, style]}
+      style={[styles.base, disabled && styles.disabled, style]}
     >
       <Text style={[styles.label, danger && styles.danger]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     base: {
-      minHeight: 44,
+      minHeight: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: theme.spacing.sm,
-    },
-    pressed: {
-      opacity: 0.6,
     },
     disabled: {
       opacity: 0.4,

@@ -8,7 +8,7 @@ export default function SitterReport() {
       <EmptyState
         emoji="📝"
         title="Daily report"
-        message="Send the owner a warm end-of-day note in a few taps."
+        message="When a pet is in your care, you send the owner a warm end-of-day note here in a few taps — no typing."
       />
     </Screen>
   );

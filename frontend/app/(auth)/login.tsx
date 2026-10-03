@@ -101,7 +101,7 @@ export default function LoginScreen() {
             {error}
           </Text>
         ) : null}
-        <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} />
+        <Button label="Sign in" onPress={signIn} disabled={!canSubmit && !submitting} loading={submitting} />
       </View>
 
       <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
@@ -140,7 +140,7 @@ export default function LoginScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: {
-      justifyContent: "center",
+      paddingTop: theme.spacing.xl,
       gap: theme.spacing.lg,
     },
     header: {

@@ -1,19 +1,20 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { PressableScale } from "./ui/PressableScale";
 
 /**
  * Header right side for both roles: dev role label, notifications bell (Phase 05),
- * Schedule (sitters, 3B.1), Profile, Log out.
+ * Schedule (sitters, 3B.1), Profile. Log out lives in Profile.
  */
 export function HeaderActions() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { profile, signOut } = useSession();
+  const { profile } = useSession();
 
   return (
     <View style={styles.row}>
@@ -25,7 +26,7 @@ export function HeaderActions() {
         <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
       </View>
       {profile?.role === "sitter" ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel="Schedule"
           onPress={() => router.push("/sitter/schedule")}
@@ -33,9 +34,9 @@ export function HeaderActions() {
           testID="open-schedule"
         >
           <Ionicons name="calendar-outline" size={theme.icon.sm} color={theme.color.primary} />
-        </Pressable>
+        </PressableScale>
       ) : null}
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel="Profile"
         onPress={() => router.push("/profile")}
@@ -43,15 +44,7 @@ export function HeaderActions() {
         testID="open-profile"
       >
         <Ionicons name="person-circle-outline" size={theme.icon.md} color={theme.color.primary} />
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void signOut()}
-        style={styles.logout}
-        testID="log-out"
-      >
-        <Text style={styles.logoutText}>Log out</Text>
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -65,7 +58,7 @@ const makeStyles = (theme: Theme) =>
       paddingRight: theme.spacing.md,
     },
     roleLabel: {
-      paddingVertical: 2,
+      paddingVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.sm,
       borderRadius: theme.radius.sm,
       backgroundColor: theme.color.accent,
@@ -77,19 +70,9 @@ const makeStyles = (theme: Theme) =>
       padding: theme.spacing.xs,
     },
     iconButton: {
-      minWidth: 44,
-      minHeight: 44,
+      minWidth: theme.layout.touchTarget,
+      minHeight: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
-    },
-    logout: {
-      minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.xs,
-    },
-    logoutText: {
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.primary,
     },
   });

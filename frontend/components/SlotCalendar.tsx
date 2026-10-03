@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { dayOfMonth, formatDay, formatMonth, monthGrid } from "../features/schedule/dates";
 import { DaySlot, SLOTS, SlotState, slotKey } from "../features/schedule/scheduleApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { PressableScale } from "./ui/PressableScale";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -52,7 +53,7 @@ export function SlotCalendar({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel="Previous month"
           disabled={!canGoPrev}
@@ -61,11 +62,11 @@ export function SlotCalendar({
           testID="calendar-prev"
         >
           <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
-        </Pressable>
+        </PressableScale>
         <Text accessibilityRole="header" style={styles.month} testID="calendar-month">
           {formatMonth(month)}
         </Text>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel="Next month"
           onPress={onNextMonth}
@@ -73,7 +74,7 @@ export function SlotCalendar({
           testID="calendar-next"
         >
           <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.primary} />
-        </Pressable>
+        </PressableScale>
       </View>
 
       <View style={styles.week}>
@@ -93,7 +94,7 @@ export function SlotCalendar({
             const states = SLOTS.map(({ slot }) => slots.get(slotKey(day, slot))?.state ?? "closed");
             const label = `${formatDay(day)}: ${SLOTS.map((s, k) => `${s.label} ${STATE_LABEL[states[k]].toLowerCase()}`).join(", ")}`;
             return (
-              <Pressable
+              <PressableScale
                 key={day}
                 accessibilityRole="button"
                 accessibilityLabel={label}
@@ -111,7 +112,7 @@ export function SlotCalendar({
                     </View>
                   ))}
                 </View>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </View>
@@ -142,8 +143,8 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "space-between",
     },
     navButton: {
-      width: 44,
-      height: 44,
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
     },

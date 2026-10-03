@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
@@ -7,6 +7,7 @@ import { SERVICE_LABEL } from "../features/sitters/sitterApi";
 import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { PressableScale } from "./ui/PressableScale";
 
 export type Viewer = "owner" | "sitter";
 
@@ -104,11 +105,11 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
   const transport = transportLine(booking, viewer);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole={onPress ? "button" : undefined}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={[styles.card]}
       testID={`booking-card-${booking.id}`}
     >
       <View style={styles.body}>
@@ -130,7 +131,7 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
         ) : null}
       </View>
       {onPress ? <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} /> : null}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -145,9 +146,6 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
-    },
-    pressed: {
-      opacity: 0.8,
     },
     body: {
       flex: 1,

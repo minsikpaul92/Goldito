@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { AppearIn } from "./AppearIn";
 import { Button } from "./Button";
 
 type Props = {
@@ -17,9 +18,11 @@ export function EmptyState({ emoji, title, message, action }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
-        {emoji}
-      </Text>
+      <AppearIn pop>
+        <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
+          {emoji}
+        </Text>
+      </AppearIn>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       {action ? <Button label={action.label} onPress={action.onPress} style={styles.action} /> : null}

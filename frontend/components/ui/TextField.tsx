@@ -1,22 +1,27 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, TextInputProps, View } from "react-native";
+import { StyleSheet, TextInput, TextInputProps } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { Field } from "./Field";
 
 type Props = Omit<TextInputProps, "style"> & {
   label: string;
+  /** Read by screen readers but not drawn (when a group label already says it). */
+  hideLabel?: boolean;
+  hint?: string | null;
   error?: string | null;
+  /** Bump on each submit attempt; the field shakes once if it has an error. */
+  shakeKey?: number;
 };
 
-export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Props) {
+export function TextField({ label, hideLabel, hint, error, shakeKey, onFocus, onBlur, ...inputProps }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+    <Field label={hideLabel ? undefined : label} hint={hint} error={error} shakeKey={shakeKey}>
       <TextInput
         accessibilityLabel={label}
         placeholderTextColor={theme.color.textMuted}
@@ -31,25 +36,16 @@ export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Prop
         style={[styles.input, focused && styles.inputFocused, error ? styles.inputError : null]}
         {...inputProps}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-    </View>
+    </Field>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    field: {
-      gap: theme.spacing.xs,
-    },
-    label: {
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.textMuted,
-    },
     input: {
-      minHeight: 44,
-      paddingVertical: theme.spacing.sm + 2,
-      paddingHorizontal: theme.spacing.sm + 4,
+      minHeight: theme.layout.touchTarget,
+      paddingVertical: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.md,
       borderWidth: 1,
       borderColor: theme.color.border,
@@ -62,9 +58,5 @@ const makeStyles = (theme: Theme) =>
     },
     inputError: {
       borderColor: theme.color.error,
-    },
-    error: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.error,
     },
   });

@@ -51,6 +51,19 @@ export const tokens = {
     frameHeight: 874,
     /** Bottom tab bar. The library default (49) squeezes the label on web. */
     tabBarHeight: 60,
+    /** Minimum size of anything tappable (DESIGN.md §9). */
+    touchTarget: 44,
+    /** Content column width on wide screens (`Screen`). */
+    contentMaxWidth: 480,
+  },
+  /** Durations in ms. All motion goes through `components/ui/PressableScale` / `AppearIn` / `motion.ts`. */
+  motion: {
+    fast: 120,
+    base: 240,
+    slow: 420,
+    /** Pressed scale and opacity for every tappable (one press feel). */
+    pressScale: 0.97,
+    pressOpacity: 0.85,
   },
   breakpoint: {
     /** Reserved for the post-hackathon sitter desktop layout. */
