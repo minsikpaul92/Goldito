@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../components/BookingCard";
+import { EntryInfoCard } from "../../../components/EntryInfoCard";
 import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../components/MeetGreetCard";
 import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
@@ -187,6 +188,16 @@ export default function SitterBookingDetail() {
         </Card>
 
         <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
+
+        <EntryInfoCard
+          bookingId={booking.id}
+          visible={
+            booking.status === "confirmed" &&
+            (booking.serviceType === "house_sitting" ||
+              booking.dropOff?.locationType === "owner_home" ||
+              booking.pickUp?.locationType === "owner_home")
+          }
+        />
 
         {KINDS.filter((kind) => showsProposal(booking, "sitter", kind)).map((kind) => (
           <ProposalCard

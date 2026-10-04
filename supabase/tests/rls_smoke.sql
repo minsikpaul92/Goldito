@@ -1,6 +1,6 @@
 -- PawNote RLS + booking smoke test (Phase 02 DoD 2)
 --
--- Run after all migrations (001–004) in the Supabase SQL Editor (as postgres), or locally with
+-- Run after all migrations (001–006) in the Supabase SQL Editor (as postgres), or locally with
 -- tests/supabase_stub.sql first (see supabase/README.md). Everything runs in one transaction
 -- and is rolled back, so no data is left behind.
 -- Success = the script finishes without error ("PASS: ..." notices for each check).
@@ -265,6 +265,15 @@ begin
   perform _t_ok(n = 0, 'sitter loses owner contacts 24 h after pick-up');
   select count(*) into n from public.profiles where id = joy;
   perform _t_ok(n = 1, 'past sitter still sees the owner''s display name');
+  begin
+    perform get_handoff_details(_t_get('finished'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', '3C.4: unpaid past booking still gated by not_paid');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() - interval '7 days' where id = _t_get('finished');
+  perform _t_as(allen);
   begin
     perform get_handoff_details(_t_get('finished'));
     v_err := null;
@@ -689,6 +698,9 @@ begin
     'D′: time-only counter-offer keeps the proposed place');
   perform _t_as(chloe);
   perform respond_handoff(v_h, true);
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_a;
+  perform _t_as(chloe);
   perform _t_ok((select address from get_handoff_details(v_a) where kind = 'drop_off') = '100 Example St',
     'D′: owner sees sitter address for the confirmed booking');
   perform _t_as(lucy);
@@ -1090,6 +1102,462 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'invalid_status', '3B.9: no Meet & Greet on a cancelled booking');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Quote (006, phase-03c 3C.1, D29): rates + Ontario holidays + quote_booking
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  q jsonb;
+  v_err text;
+  -- Goal example: boarding Oct 9 07:30 → Oct 12 17:00 Toronto, 2 pets, Thanksgiving Oct 12.
+  v_drop timestamptz := ('2026-10-09 07:30:00'::timestamp at time zone app_timezone());
+  v_pick timestamptz := ('2026-10-12 17:00:00'::timestamp at time zone app_timezone());
+  v_hs_drop timestamptz := ('2026-10-05 09:00:00'::timestamp at time zone app_timezone());
+  v_hs_pick timestamptz := ('2026-10-08 17:00:00'::timestamp at time zone app_timezone());
+  v_day_drop timestamptz := ('2026-10-10 08:00:00'::timestamp at time zone app_timezone());
+  v_day_pick timestamptz := ('2026-10-10 18:00:00'::timestamp at time zone app_timezone());
+begin
+  -- Lucy: Boarding $55 · House sitting $70 · Daycare $35 · +50% · +25% (Goal)
+  perform _t_as(null);
+  update public.sitter_profiles
+  set services = array['boarding', 'house_sitting']
+  where id = lucy;
+
+  perform _t_as(lucy);
+  insert into public.sitter_rates (
+    sitter_id, boarding_nightly, house_sitting_nightly, daycare_daily,
+    extra_pet_pct, holiday_pct
+  ) values (lucy, 55.00, 70.00, 35.00, 50, 25);
+
+  -- Boarding · 2 pets · Thanksgiving (phase-03c Goal): $268.13 CAD
+  perform _t_as(chloe);
+  q := quote_booking(lucy, 'boarding', v_drop, v_pick, 2);
+  perform _t_ok(
+    (q->>'nights')::int = 3
+    and (q->>'days')::int = 3
+    and (q->>'unit_price')::numeric = 55.00
+    and (q->>'base')::numeric = 165.00
+    and (q->>'extra_pets')::numeric = 82.50
+    and (q->>'holiday_surcharge')::numeric = 20.63
+    and (q->>'total')::numeric = 268.13
+    and q->>'currency' = 'CAD'
+    and q->'holiday_days' = '[{"day":"2026-10-12","name":"Thanksgiving Day"}]'::jsonb,
+    '3C.1: boarding 2 pets + Thanksgiving = $268.13');
+
+  -- House sitting · 1 pet · no holiday in Oct 5–8
+  q := quote_booking(lucy, 'house_sitting', v_hs_drop, v_hs_pick, 1);
+  perform _t_ok(
+    (q->>'nights')::int = 3
+    and (q->>'unit_price')::numeric = 70.00
+    and (q->>'base')::numeric = 210.00
+    and (q->>'extra_pets')::numeric = 0
+    and (q->>'holiday_surcharge')::numeric = 0
+    and (q->>'total')::numeric = 210.00
+    and q->'holiday_days' = '[]'::jsonb,
+    '3C.1: house sitting 1 pet = $210.00');
+
+  -- Daycare · same day · 2 pets
+  q := quote_booking(lucy, 'daycare', v_day_drop, v_day_pick, 2);
+  perform _t_ok(
+    (q->>'nights')::int = 0
+    and (q->>'days')::int = 1
+    and (q->>'unit_price')::numeric = 35.00
+    and (q->>'base')::numeric = 35.00
+    and (q->>'extra_pets')::numeric = 17.50
+    and (q->>'holiday_surcharge')::numeric = 0
+    and (q->>'total')::numeric = 52.50,
+    '3C.1: daycare same day 2 pets = $52.50');
+
+  -- Paul has no rates → service_not_offered
+  begin
+    q := quote_booking(paul, 'boarding', v_drop, v_pick, 1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '3C.1: no rates → service_not_offered');
+
+  -- House sitting rate without the service in the profile is rejected on insert
+  perform _t_as(null);
+  update public.sitter_profiles set services = array['boarding'] where id = paul;
+  perform _t_as(paul);
+  begin
+    insert into public.sitter_rates (sitter_id, house_sitting_nightly)
+    values (paul, 60.00);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '3C.1: rates must match offered services');
+
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Consents (006, phase-03c 3C.2, D30): required_consents + booking_consents RLS
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_board uuid;
+  v_house uuid;
+  v_kinds text[];
+  v_err text;
+  n int;
+  v_signed_at timestamptz;
+begin
+  -- Boarding (sitter_home handoffs): emergency_vet, safe_return, handoff_rules, cohabitation
+  v_board := _t_booking(chloe, lucy, array[max],
+    now() + interval '20 days', now() + interval '23 days', 'confirmed');
+  perform _t_as(chloe);
+  v_kinds := required_consents(v_board);
+  perform _t_ok(v_kinds = array['emergency_vet', 'safe_return', 'handoff_rules', 'cohabitation'],
+    '3C.2: boarding requires 4 consents');
+
+  insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+  values (v_board, 'emergency_vet', '1', chloe, 'Chloe',
+    jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet'));
+  select signed_at into v_signed_at from public.booking_consents
+    where booking_id = v_board and kind = 'emergency_vet';
+  perform _t_ok(v_signed_at is not null, '3C.2: owner signature stores signed_at');
+
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_board, 'emergency_vet', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23505', '3C.2: same kind cannot be signed twice');
+
+  begin
+    update public.booking_consents set signer_name = 'Changed' where booking_id = v_board;
+    get diagnostics n = row_count;
+    v_err := null;
+  exception when others then
+    v_err := sqlstate;
+    n := -1;
+  end;
+  perform _t_ok(n = 0 or v_err = '42501', '3C.2: signatures are read-only after signing');
+
+  perform _t_as(lucy);
+  select count(*) into n from public.booking_consents where booking_id = v_board;
+  perform _t_ok(n = 1, '3C.2: sitter can read owner signatures');
+
+  perform _t_as(paul);
+  select count(*) into n from public.booking_consents where booking_id = v_board;
+  perform _t_ok(n = 0, '3C.2: outsider cannot read consents');
+  begin
+    v_kinds := required_consents(v_board);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.2: outsider cannot call required_consents');
+
+  -- House sitting → home_access instead of boarding-only kinds
+  perform _t_as(null);
+  v_house := _t_booking(joy, paul, array[coco],
+    now() + interval '70 days', now() + interval '72 days', 'confirmed');
+  update public.bookings set service_type = 'house_sitting' where id = v_house;
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_house;
+
+  perform _t_as(joy);
+  v_kinds := required_consents(v_house);
+  perform _t_ok(v_kinds = array['emergency_vet', 'safe_return', 'home_access'],
+    '3C.2: house sitting requires home_access');
+
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_house, 'safe_return', '1', paul, 'Paul');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '3C.2: only the owner can sign');
+
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Demo pay (006, phase-03c 3C.3, D30): pay_booking_demo — no Stripe
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  v_pay uuid;
+  v_kind text;
+  v_quote jsonb;
+  v_err text;
+  v_detail text;
+begin
+  -- Confirmed boarding with Lucy rates already seeded in 3C.1
+  v_pay := _t_booking(chloe, lucy, array[max, mochi],
+    ('2026-10-09 07:30:00'::timestamp at time zone app_timezone()),
+    ('2026-10-12 17:00:00'::timestamp at time zone app_timezone()),
+    'confirmed');
+
+  perform _t_as(chloe);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'consents_missing', '3C.3: pay without consents → consents_missing');
+  perform _t_ok(v_detail like '%emergency_vet%', '3C.3: consents_missing lists the kinds');
+
+  -- Sign every required kind
+  foreach v_kind in array required_consents(v_pay) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+    values (v_pay, v_kind, '1', chloe, 'Chloe',
+      case v_kind
+        when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Chloe')
+        else '{}'::jsonb
+      end);
+  end loop;
+
+  v_quote := pay_booking_demo(v_pay);
+  perform _t_ok(
+    (v_quote->>'total')::numeric = 268.13
+    and (select paid_at is not null and price_snapshot->>'total' = '268.13' from public.bookings where id = v_pay),
+    '3C.3: demo pay freezes $268.13 and sets paid_at');
+  perform _t_as(null);
+  perform _t_ok(exists (
+      select 1 from public.notifications
+      where user_id = lucy and type = 'booking_paid' and booking_id = v_pay),
+    '3C.3: sitter gets booking_paid');
+
+  perform _t_as(chloe);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_paid', '3C.3: second pay → already_paid');
+
+  perform _t_as(lucy);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.3: sitter cannot pay');
+
+  perform _t_as(paul);
+  begin
+    v_quote := pay_booking_demo(v_pay);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '3C.3: outsider cannot pay');
+
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Paid address gate (006, phase-03c 3C.4, D31)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  v_id uuid;
+  r record;
+  v_err text;
+begin
+  perform _t_as(null);
+  update public.sitter_profiles
+  set visitor_parking = 'Visitor spot B-12',
+      lobby_notes = 'Buzz 1204',
+      packing_list = array['food', 'leash']
+  where id = lucy;
+
+  v_id := _t_booking(chloe, lucy, array[max],
+    now() + interval '80 days', now() + interval '83 days', 'confirmed');
+
+  perform _t_as(chloe);
+  begin
+    select * into r from get_handoff_details(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', '3C.4: address hidden before demo pay');
+
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_id;
+
+  perform _t_as(chloe);
+  select * into r from get_handoff_details(v_id) where kind = 'drop_off';
+  perform _t_ok(
+    r.address = '100 Example St'
+    and r.visitor_parking = 'Visitor spot B-12'
+    and r.lobby_notes = 'Buzz 1204'
+    and r.packing_list = array['food', 'leash'],
+    '3C.4: after pay, sitter home + packing list return');
+
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Home access unlock (006, phase-03c 3C.5 / I–K, D31)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_id uuid;
+  r record;
+  v_err text;
+  v_detail text;
+  n int;
+begin
+  -- I: before pay — get_home_access blocked; owner can save codes privately
+  perform _t_as(chloe);
+  insert into public.owner_home_access (owner_id, entry_steps, lockbox_code, buzzer, fob_notes, sitter_parking)
+  values (chloe, '1. Buzz 1204  2. Lockbox left of door', '0000', '#1204', 'Fob on key hook', 'Street parking OK')
+  on conflict (owner_id) do update set
+    entry_steps = excluded.entry_steps,
+    lockbox_code = excluded.lockbox_code,
+    buzzer = excluded.buzzer,
+    fob_notes = excluded.fob_notes,
+    sitter_parking = excluded.sitter_parking;
+
+  perform _t_as(null);
+  v_id := _t_booking(chloe, lucy, array[max],
+    now() + interval '90 days', now() + interval '93 days', 'confirmed');
+  update public.booking_handoffs set location_type = 'owner_home'
+    where booking_id = v_id and kind = 'drop_off';
+
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', '3C.5 I: access hidden before pay');
+
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_id;
+  -- Drop-off still > 2 h away
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '5 hours'
+  where booking_id = v_id and kind = 'drop_off';
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '3 days'
+  where booking_id = v_id and kind = 'pick_up';
+
+  -- J: T−2h before → access_locked with unlocks_at
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'access_locked' and v_detail like '%unlocks_at%',
+    '3C.5 J: locked before T−2h with unlocks_at');
+
+  perform _t_as(null);
+  update public.booking_handoffs
+  set scheduled_at = now() + interval '1 hour'
+  where booking_id = v_id and kind = 'drop_off';
+
+  perform _t_as(lucy);
+  select * into r from get_home_access(v_id);
+  perform _t_ok(r.lockbox_code = '0000' and r.buzzer = '#1204',
+    '3C.5 J: codes return inside the window');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1,
+    '3C.5 J: first reveal recorded once');
+  perform _t_ok((select count(*) from public.notifications
+      where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+    '3C.5 J: owner notified once');
+
+  perform _t_as(lucy);
+  select * into r from get_home_access(v_id);
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1
+      and (select count(*) from public.notifications
+        where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+    '3C.5 J: second open does not re-notify');
+
+  -- K: other sitter forbidden; after pick-up completed → locked_since
+  perform _t_as(paul);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '3C.5 K: other sitter forbidden');
+
+  perform _t_as(chloe);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '3C.5 K: owner cannot call get_home_access');
+
+  perform _t_as(null);
+  update public.booking_handoffs
+  set completed_at = now() - interval '1 minute'
+  where booking_id = v_id and kind = 'pick_up';
+
+  perform _t_as(lucy);
+  begin
+    select * into r from get_home_access(v_id);
+    v_err := null;
+    v_detail := null;
+  exception when others then
+    get stacked diagnostics v_err = message_text, v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'access_locked' and v_detail like '%locked_since%',
+    '3C.5 K: locked again after pick-up completed');
+
+  -- Paul cannot read Chloe's owner_home_access row directly
+  perform _t_as(paul);
+  select count(*) into n from public.owner_home_access where owner_id = chloe;
+  perform _t_ok(n = 0, '3C.5 K: sitter RLS cannot read owner_home_access');
+
+  -- 3C.7 polish: unlock notice must never echo lockbox / buzzer codes (DoD #3)
+  perform _t_ok(
+    not exists (
+      select 1 from public.notifications n
+      where n.booking_id = v_id and n.type = 'access_unlocked'
+        and (coalesce(n.title, '') || ' ' || coalesce(n.body, ''))
+          ~* '(0000|#1204|Buzz 1204|lockbox left)'
+    ),
+    '3C.7: access_unlocked notice has no entry codes');
+
   perform _t_as(null);
 end;
 $$;

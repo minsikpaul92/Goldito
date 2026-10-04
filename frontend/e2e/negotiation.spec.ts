@@ -27,6 +27,7 @@ function seed(db: MockDb, status: string, steps: Step[]) {
     status,
     service_type: "boarding",
     meet_greet_status: "not_needed",
+    paid_at: status === "confirmed" ? "2026-10-02T18:00:00Z" : null,
     created_at: "2026-10-02T18:00:00Z",
   });
   db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });

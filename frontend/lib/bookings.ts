@@ -13,6 +13,12 @@ const MESSAGES: Record<string, string> = {
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
   location_note_required: "Tell the sitter where to meet.",
   service_not_offered: "This sitter doesn't offer that service.",
+  consents_missing: "Sign every consent before paying.",
+  already_paid: "This booking is already paid.",
+  handoff_missing: "Agree on drop-off and pick-up times first.",
+  access_locked: "Entry info isn't available yet — or the stay has ended.",
+  forbidden: "You can't view this entry info.",
+  not_paid: "Addresses unlock after checkout.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -37,6 +43,149 @@ export async function cancelBooking(bookingId: string, reason: string | null): P
   if (error) {
     throw new Error(bookingErrorMessage(error.message, "Couldn't cancel this booking. Try again."));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Checkout quote + demo pay (03C — no Stripe)
+// ---------------------------------------------------------------------------
+
+function asQuote(raw: unknown): PriceQuote {
+  const q = raw as PriceQuote;
+  return {
+    ...q,
+    unit_price: Number(q.unit_price),
+    base: Number(q.base),
+    extra_pets: Number(q.extra_pets),
+    holiday_surcharge: Number(q.holiday_surcharge),
+    total: Number(q.total),
+    nights: Number(q.nights),
+    days: Number(q.days),
+    holiday_days: q.holiday_days ?? [],
+  };
+}
+
+/** Read-only quote for Checkout / inquiry card (same RPC Checkout freezes at pay). */
+export async function quoteBooking(input: {
+  sitterId: string;
+  serviceType: ServiceType | "daycare";
+  dropOffAt: string;
+  pickUpAt: string;
+  petCount: number;
+}): Promise<PriceQuote> {
+  const { data, error } = await getSupabase().rpc("quote_booking", {
+    p_sitter: input.sitterId,
+    p_service: input.serviceType,
+    p_drop_off_at: input.dropOffAt,
+    p_pick_up_at: input.pickUpAt,
+    p_pet_count: input.petCount,
+  });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't load the price. Try again."),
+      error.details ?? null,
+    );
+  }
+  return asQuote(data);
+}
+
+/**
+ * Demo checkout (D30): no card. Requires confirmed booking + every required consent signed.
+ * Returns the frozen price_snapshot.
+ */
+export async function payBookingDemo(bookingId: string): Promise<PriceQuote> {
+  const { data, error } = await getSupabase().rpc("pay_booking_demo", { p_booking: bookingId });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't complete the demo payment. Try again."),
+      error.details ?? null,
+    );
+  }
+  return asQuote(data);
+}
+
+/** Owner entry codes — never shown except via get_home_access to the booked sitter (D31). */
+export type HomeAccess = {
+  entrySteps: string | null;
+  lockboxCode: string | null;
+  buzzer: string | null;
+  fobNotes: string | null;
+  sitterParking: string | null;
+  firstRevealedAt: string;
+};
+
+export type HomeAccessLocked = {
+  locked: true;
+  unlocksAt: string | null;
+  lockedSince: string | null;
+};
+
+export async function getHomeAccess(
+  bookingId: string,
+): Promise<HomeAccess | HomeAccessLocked> {
+  const { data, error } = await getSupabase().rpc("get_home_access", { p_booking: bookingId });
+  if (error) {
+    if (error.message === "access_locked") {
+      let unlocksAt: string | null = null;
+      let lockedSince: string | null = null;
+      try {
+        const detail = JSON.parse(error.details ?? "{}") as {
+          unlocks_at?: string;
+          locked_since?: string;
+        };
+        unlocksAt = detail.unlocks_at ?? null;
+        lockedSince = detail.locked_since ?? null;
+      } catch {
+        /* detail may be plain text in some clients */
+      }
+      return { locked: true, unlocksAt, lockedSince };
+    }
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't load entry info."),
+      error.details ?? null,
+    );
+  }
+  const rows = (data ?? []) as {
+    entry_steps: string | null;
+    lockbox_code: string | null;
+    buzzer: string | null;
+    fob_notes: string | null;
+    sitter_parking: string | null;
+    first_revealed_at: string;
+  }[];
+  const row = rows[0];
+  if (!row) throw new Error("Couldn't load entry info.");
+  return {
+    entrySteps: row.entry_steps,
+    lockboxCode: row.lockbox_code,
+    buzzer: row.buzzer,
+    fobNotes: row.fob_notes,
+    sitterParking: row.sitter_parking,
+    firstRevealedAt: row.first_revealed_at,
+  };
+}
+
+export async function saveOwnerHomeAccess(fields: {
+  entrySteps: string | null;
+  lockboxCode: string | null;
+  buzzer: string | null;
+  fobNotes: string | null;
+  sitterParking: string | null;
+}): Promise<void> {
+  const { data: userData, error: userError } = await getSupabase().auth.getUser();
+  if (userError || !userData.user) throw new Error("Couldn't confirm you are signed in.");
+  const row = {
+    owner_id: userData.user.id,
+    entry_steps: fields.entrySteps,
+    lockbox_code: fields.lockboxCode,
+    buzzer: fields.buzzer,
+    fob_notes: fields.fobNotes,
+    sitter_parking: fields.sitterParking,
+  };
+  const { error } = await getSupabase().from("owner_home_access").upsert(row, { onConflict: "owner_id" });
+  if (error) throw new Error("Couldn't save your entry info. Try again.");
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +299,21 @@ export type MeetGreetStatus =
   | "skip_requested"
   | "skipped";
 
+/** Server quote from quote_booking / price_snapshot (03C, D29). */
+export type PriceQuote = {
+  service: string;
+  nights: number;
+  days: number;
+  unit_price: number;
+  base: number;
+  extra_pets: number;
+  holiday_days: { day: string; name: string }[];
+  holiday_surcharge: number;
+  total: number;
+  currency: string;
+  rate_version: string;
+};
+
 type HandoffRow = {
   id: string;
   kind: "drop_off" | "pick_up";
@@ -200,6 +364,10 @@ export type BookingSummary = {
   /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
   cancelledBy: string | null;
   cancelReason: string | null;
+  /** Set by pay_booking_demo (03C). Null until checkout finishes. */
+  paidAt: string | null;
+  /** Quote frozen at demo pay — same shape as quote_booking. */
+  priceSnapshot: PriceQuote | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;
   pickUp: Handoff | null;
@@ -269,7 +437,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
   "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, " +
-  "created_at, " +
+  "paid_at, price_snapshot, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -290,6 +458,8 @@ type BookingRow = {
   meet_greet_skip_requested_by: string | null;
   cancelled_by: string | null;
   cancel_reason: string | null;
+  paid_at: string | null;
+  price_snapshot: PriceQuote | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -334,6 +504,8 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     },
     cancelledBy: b.cancelled_by ?? null,
     cancelReason: b.cancel_reason ?? null,
+    paidAt: b.paid_at ?? null,
+    priceSnapshot: b.price_snapshot ?? null,
     pets,
     dropOff: currentHandoff(handoffs, "drop_off", b.status),
     pickUp: currentHandoff(handoffs, "pick_up", b.status),
@@ -478,13 +650,48 @@ export async function completeHandoff(bookingId: string, kind: HandoffKind): Pro
   }
 }
 
-/** Real addresses for a confirmed booking, until 24 h after pick-up (get_handoff_details, 003). */
-export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
+/** Real addresses + sitter place notes after demo pay, until 24 h after pick-up (3C.4). */
+export type HandoffPlace = {
+  address: string | null;
+  visitorParking: string | null;
+  lobbyNotes: string | null;
+  packingList: string[] | null;
+};
+
+export async function getHandoffDetails(
+  bookingId: string,
+): Promise<{ places: Partial<Record<HandoffKind, HandoffPlace>>; error: string | null }> {
   const { data, error } = await getSupabase().rpc("get_handoff_details", { p_booking: bookingId });
-  if (error) return {};
+  if (error) {
+    if (error.message === "not_paid") return { places: {}, error: "not_paid" };
+    if (error.message === "booking_finished") return { places: {}, error: "booking_finished" };
+    return { places: {}, error: error.message };
+  }
+  const places: Partial<Record<HandoffKind, HandoffPlace>> = {};
+  for (const row of (data ?? []) as {
+    kind: HandoffKind;
+    address: string | null;
+    visitor_parking: string | null;
+    lobby_notes: string | null;
+    packing_list: string[] | null;
+  }[]) {
+    places[row.kind] = {
+      address: row.address,
+      visitorParking: row.visitor_parking,
+      lobbyNotes: row.lobby_notes,
+      packingList: row.packing_list,
+    };
+  }
+  return { places, error: null };
+}
+
+/** @deprecated Prefer getHandoffDetails — kept for existing booking screens. */
+export async function getHandoffAddresses(bookingId: string): Promise<Partial<Record<HandoffKind, string>>> {
+  const { places } = await getHandoffDetails(bookingId);
   const out: Partial<Record<HandoffKind, string>> = {};
-  for (const row of (data ?? []) as { kind: HandoffKind; address: string | null }[]) {
-    if (row.address) out[row.kind] = row.address;
+  for (const kind of Object.keys(places) as HandoffKind[]) {
+    const addr = places[kind]?.address;
+    if (addr) out[kind] = addr;
   }
   return out;
 }

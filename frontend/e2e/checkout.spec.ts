@@ -1,0 +1,107 @@
+import { expect, test } from "@playwright/test";
+
+import { app, signIn } from "./helpers";
+import { DEMO_QUOTE, MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+
+// Checkout (phase-03c 3C.7): quote → consents → Pay (demo). One missing consent keeps Pay off.
+
+const BOOKING = "00000000-0000-4000-8000-0000000000e1";
+const MAX = "00000000-0000-4000-8000-0000000000c1";
+
+const KINDS = ["emergency_vet", "safe_return", "handoff_rules", "cohabitation"] as const;
+
+function seedUnpaid(db: MockDb) {
+  db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: "Maltese", notes: null });
+  db.sitter_profiles.push({
+    id: SITTER.id,
+    home_address: "100 Example St",
+    visitor_parking: "Visitor spot B-12",
+    lobby_notes: "Buzz 1204",
+    packing_list: ["food", "bed or cushion", "medications"],
+  });
+  db.bookings.push({
+    id: BOOKING,
+    owner_id: OWNER.id,
+    sitter_id: SITTER.id,
+    status: "confirmed",
+    service_type: "boarding",
+    meet_greet_status: "done",
+    paid_at: null,
+    price_snapshot: null,
+    created_at: "2026-10-02T18:00:00Z",
+  });
+  db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });
+  for (const [kind, at] of [
+    ["drop_off", "2030-10-09T11:30:00.000Z"],
+    ["pick_up", "2030-10-12T21:00:00.000Z"],
+  ] as const) {
+    db.booking_handoffs.push({
+      id: `h-${kind}`,
+      booking_id: BOOKING,
+      kind,
+      scheduled_at: at,
+      location_type: "sitter_home",
+      location_note: null,
+      within_sitter_hours: true,
+      status: "agreed",
+      proposed_by: OWNER.id,
+      completed_at: null,
+      created_at: "2026-10-02T18:00:00Z",
+    });
+  }
+}
+
+test.describe("checkout", () => {
+  test("Pay stays disabled until every consent is checked", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("checkout-banner")).toContainText("Lucy accepted");
+    await screen.getByTestId("open-checkout").click();
+    await expect(screen.getByTestId("checkout-title")).toContainText("Finish booking with Lucy");
+    await expect(screen.getByTestId("quote-total")).toContainText(`$${DEMO_QUOTE.total.toFixed(2)}`);
+
+    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+
+    // Leave one consent unchecked — Pay must stay off (3C.7 DoD).
+    for (const kind of KINDS.slice(0, -1)) {
+      await screen.getByTestId(`consent-${kind}-check`).click();
+      await expect(screen.getByTestId(`consent-${kind}-check`)).toHaveAttribute("aria-checked", "true");
+    }
+    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    expect(db.payments).toHaveLength(0);
+  });
+
+  test("checking every consent and Pay completes demo checkout", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("checkout-quote")).toBeVisible();
+    for (const kind of KINDS) {
+      await screen.getByTestId(`consent-${kind}-check`).click();
+    }
+    await screen.getByTestId("checkout-signer").fill("Chloe");
+    await expect(screen.getByTestId("checkout-pay")).toBeEnabled();
+    await screen.getByTestId("checkout-pay").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("You're all set");
+    expect(db.payments).toEqual([{ p_booking: BOOKING }]);
+    expect(db.booking_consents).toHaveLength(KINDS.length);
+    expect(db.bookings[0].paid_at).toBeTruthy();
+    expect(db.bookings[0].price_snapshot).toEqual(DEMO_QUOTE);
+
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByText("Paid", { exact: true })).toBeVisible();
+    await expect(screen.getByTestId("checkout-banner")).toHaveCount(0);
+    await expect(screen.getByTestId("sitter-place-card")).toContainText("100 Example St");
+    await expect(screen.getByTestId("packing-list")).toContainText("food");
+  });
+});

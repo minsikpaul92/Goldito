@@ -7,6 +7,7 @@ import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
+import { TextButton } from "../components/ui/TextButton";
 import { TextField } from "../components/ui/TextField";
 import { RoleProfile, loadRoleProfile, saveProfile } from "../features/profile/profileApi";
 import { homeFor, useSession } from "../providers/SessionProvider";
@@ -32,6 +33,14 @@ const SITTER_FIELDS: FieldSpec[] = [
   { key: "experience_years", label: "Years of experience", numeric: true },
   { key: "home_notes", label: "About your home", placeholder: "Yard, other pets, stairs…", multiline: true },
   { key: "home_address", label: "Home address", placeholder: "Shown only to owners with a confirmed booking" },
+  { key: "visitor_parking", label: "Visitor parking", placeholder: "e.g. Spot B-12 behind the building" },
+  { key: "lobby_notes", label: "Lobby / door notes", placeholder: "Buzz #1204, then left at the end of the hall", multiline: true },
+  {
+    key: "packing_list",
+    label: "Packing list for owners",
+    placeholder: "One item per line — food, bed, meds…",
+    multiline: true,
+  },
 ];
 
 const MAX_SPOTS = 3;
@@ -47,9 +56,20 @@ const SERVICES: { value: Service; label: string; hint: string }[] = [
 function toDraft(profile: RoleProfile): Draft {
   return Object.fromEntries(
     Object.entries(profile.fields)
-      .filter(([, value]) => !Array.isArray(value))
-      .map(([key, value]) => [key, value == null ? "" : String(value)]),
+      .filter(([, value]) => value == null || typeof value === "string" || typeof value === "number" || Array.isArray(value))
+      .filter(([key]) => key !== "services" && key !== "meet_spots")
+      .map(([key, value]) => {
+        if (Array.isArray(value)) return [key, value.join("\n")];
+        return [key, value == null ? "" : String(value)];
+      }),
   );
+}
+
+function packingListFromDraft(text: string): string[] {
+  return text
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 function padSpots(spots: string[]): string[] {
@@ -128,6 +148,7 @@ export default function ProfileScreen() {
       const trimmed = (draft[key] ?? "").trim();
       return trimmed === "" ? null : trimmed;
     };
+    const packing = packingListFromDraft(draft.packing_list ?? "");
     const next: RoleProfile =
       loaded.role === "owner"
         ? {
@@ -151,6 +172,9 @@ export default function ProfileScreen() {
               home_address: value("home_address"),
               services,
               meet_spots: meetSpots,
+              visitor_parking: value("visitor_parking"),
+              lobby_notes: value("lobby_notes"),
+              packing_list: packing.length > 0 ? packing : [],
             },
           };
 
@@ -193,6 +217,19 @@ export default function ProfileScreen() {
           testID={`profile-${field.key}`}
         />
       ))}
+      {loaded.role === "owner" ? (
+        <View style={styles.group} testID="profile-entry-info">
+          <Text style={styles.groupTitle}>Entry info for sitters</Text>
+          <Text style={styles.muted}>
+            Lockbox, buzzer, and steps — shown only from 2 hours before they arrive at your place.
+          </Text>
+          <TextButton
+            label="Edit entry info"
+            onPress={() => router.push("/owner/home-access")}
+            testID="profile-home-access"
+          />
+        </View>
+      ) : null}
       {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-services">
           <Text style={styles.groupTitle}>Services you offer</Text>
@@ -230,7 +267,7 @@ export default function ProfileScreen() {
         <Text style={styles.hint}>
           {profile.role === "owner"
             ? "Your address and emergency contact are shared only with the sitter of a confirmed booking."
-            : "Your home address is shared only with owners who have a confirmed booking with you."}
+            : "Your home address and place notes are shared only with owners who have paid for a booking with you."}
         </Text>
       </View>
       {saveError ? (
