@@ -21,6 +21,8 @@ type NotificationsValue = {
   feedRevision: number;
   /** Bumps on Diary-related types — Live/history can subscribe (stub until 06–07). */
   diaryRevision: number;
+  /** Bumps on any INSERT — notification center soft-refetches while open. */
+  inboxRevision: number;
   /** Re-query unread (e.g. after marking read in 5.5). */
   refreshUnread: () => Promise<void>;
 };
@@ -28,8 +30,8 @@ type NotificationsValue = {
 const NotificationsContext = createContext<NotificationsValue | null>(null);
 
 /**
- * Realtime `notifications` INSERT for the signed-in user (phase-05 5.4).
- * Toast + unread badge; `feed_post` invalidates Feed (and Diary revision for later Live).
+ * Realtime `notifications` INSERT for the signed-in user (phase-05 5.4–5.5).
+ * Toast + unread badge; type-specific revisions for Feed / Diary / inbox list.
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -39,6 +41,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [feedRevision, setFeedRevision] = useState(0);
   const [diaryRevision, setDiaryRevision] = useState(0);
+  const [inboxRevision, setInboxRevision] = useState(0);
 
   const refreshUnread = useCallback(async () => {
     if (!userId || !isSupabaseConfigured) {
@@ -76,6 +79,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           if (!active) return;
           const row = payload.new as NotificationRow;
           setUnreadCount((n) => n + 1);
+          setInboxRevision((r) => r + 1);
           if (row.title) toast.show(row.title);
           if (row.type === "feed_post") {
             setFeedRevision((r) => r + 1);
@@ -94,8 +98,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [userId, refreshUnread, toast]);
 
   const value = useMemo<NotificationsValue>(
-    () => ({ unreadCount, feedRevision, diaryRevision, refreshUnread }),
-    [unreadCount, feedRevision, diaryRevision, refreshUnread],
+    () => ({ unreadCount, feedRevision, diaryRevision, inboxRevision, refreshUnread }),
+    [unreadCount, feedRevision, diaryRevision, inboxRevision, refreshUnread],
   );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;

@@ -1,29 +1,43 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useNotifications } from "../providers/NotificationsProvider";
+import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 /**
- * Header bell with unread badge (phase-05 5.4). Tap → notification center lands in 5.5.
+ * Header bell with unread badge. Tap opens the role's notification center (5.5).
  */
 export function NotificationBell() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { profile } = useSession();
   const { unreadCount } = useNotifications();
   const label =
     unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications";
 
+  const openCenter = () => {
+    if (profile?.role === "owner") router.push("/owner/notifications");
+    else if (profile?.role === "sitter") router.push("/sitter/notifications");
+  };
+
   return (
-    <View accessibilityLabel={label} style={styles.wrap} testID="notification-bell">
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={openCenter}
+      style={styles.wrap}
+      testID="notification-bell"
+    >
       <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
       {unreadCount > 0 ? (
         <View style={styles.badge} testID="notification-badge">
           <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : String(unreadCount)}</Text>
         </View>
       ) : null}
-    </View>
+    </Pressable>
   );
 }
 
