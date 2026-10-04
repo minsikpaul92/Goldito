@@ -182,7 +182,8 @@ grant all on public.care_checkins to service_role;
 
 -- The 5-second check (6.9): one tap per check-in, an optional short memo for anything special,
 -- an optional photo. Only the sitter inside the care window. The owner gets a `care_checkin`
--- notice (the memo is its body); a photo (media purpose `task_proof`, the sitter's own upload for
+-- notice: with no memo typed, a preset line ("Max ate everything 🍽️"); with a memo, only the
+-- memo ("Max: Left the chicken bits…") — never both. A photo (media purpose `task_proof`, the sitter's own upload for
 -- this pet) also makes a shared feed post — captioned like a task photo, so it sends no second
 -- `feed_post` notice (notify_feed_post skips caption_source 'task').
 create or replace function public.log_care_checkin(
@@ -241,7 +242,11 @@ begin
     when 'mood' then format('%s seems %s', v_pet_name, p_value)
     else format('Note from your sitter about %s', v_pet_name)
   end || ' ' || v_emoji;
-  perform public.notify_user(v_owner, 'care_checkin', v_title, v_note, p_pet, null, v_row.id);
+  -- A typed memo replaces the preset line (the pet's name stays so the notice makes sense alone).
+  perform public.notify_user(
+    v_owner, 'care_checkin', case when v_note is null then v_title else format('%s: %s', v_pet_name, v_note) end,
+    null, p_pet, null, v_row.id
+  );
 
   if p_media_id is not null then
     insert into public.feed_posts

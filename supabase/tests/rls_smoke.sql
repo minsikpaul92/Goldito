@@ -1957,12 +1957,12 @@ begin
     (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
      where n.user_id = chloe and n.type = 'care_checkin' and c.kind = 'meal' and c.value = 'all'
        and n.title like 'Max ate everything%' and n.body is null) >= 1,
-    '6.9: the owner is told "Max ate everything 🍽️"');
+    '6.9: no memo typed → the preset line, "Max ate everything 🍽️"');
   perform _t_ok(
     (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
      where n.user_id = chloe and n.type = 'care_checkin' and c.value = 'little'
-       and n.body = 'Left the chicken bits, sniffed and walked off') = 1,
-    '6.9: the memo travels in the notice body');
+       and n.title = 'Max: Left the chicken bits, sniffed and walked off' and n.body is null) = 1,
+    '6.9: a typed memo replaces the preset line (memo only)');
   perform _t_ok(not exists (select 1 from public.feed_posts fp
       join public.care_checkins c on c.pet_id = fp.pet_id and c.media_id = fp.media_id),
     '6.9: no photo → no feed post');
