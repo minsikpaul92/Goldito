@@ -278,7 +278,11 @@ export default function SitterPetFeed() {
         onClose={() => setViewerPostId(null)}
         onNearEnd={() => void loadMore()}
         currentUserId={currentUserId}
-        onRequestDelete={(id) => setPendingDeleteId(id)}
+        onRequestDelete={(id) => {
+          // Reopen on this post if the delete is cancelled (the viewer hides behind the sheet).
+          setViewerPostId(id);
+          setPendingDeleteId(id);
+        }}
       />
 
       <Sheet
@@ -298,7 +302,7 @@ export default function SitterPetFeed() {
         }
       >
         <Text style={styles.deleteBody}>
-          {`This removes it from the album. ${pet.ownerName} won't see it anymore.`}
+          {`This deletes the photo for good. ${pet.ownerName} won't see it anymore.`}
         </Text>
       </Sheet>
     </View>

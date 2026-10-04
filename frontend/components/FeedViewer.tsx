@@ -1,16 +1,5 @@
-import { createElement, useCallback, useEffect, useRef, useState } from "react";
-import {
-  Image,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Image, Modal, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { deliveryUrl, videoPosterUrl, videoUrl } from "../lib/cloudinary";
@@ -30,12 +19,13 @@ type Props = {
   onRequestDelete?: (postId: string) => void;
 };
 
+const SWIPE_DISTANCE = 50;
+
 /**
- * Instagram-style post viewer: full-screen, horizontal swipe for prev/next.
- * Uses ScrollView + contentOffset (not FlatList) so web opens on the tapped post —
- * FlatList initialScrollIndex / scrollToOffset was stuck at index 0, so photos
- * opened the first video and viewability flipped activeId to that video.
- * (5.10: open-at-index still flaky on Expo web Safari — tracked in TODO.)
+ * Instagram-style post viewer: full-screen, swipe / arrow keys / arrow buttons for prev/next.
+ * Renders ONLY the active post (5.10): a horizontal pager mounted every page and could not
+ * open on the tapped index on Expo web (Safari), so a video at index 0 played instead.
+ * The active post is tracked by id, so a Load more that grows `posts` never moves the viewer.
  */
 export function FeedViewer({
   visible,
@@ -48,87 +38,72 @@ export function FeedViewer({
 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<ScrollView>(null);
-  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [activeId, setActiveId] = useState<string | null>(initialPostId);
   const nearEndSent = useRef(false);
-  const settling = useRef(false);
 
-  const startIndex = Math.max(
-    0,
-    initialPostId ? posts.findIndex((p) => p.id === initialPostId) : 0,
-  );
-  const { width, height } = pageSize;
-  const ready = width > 0 && height > 0;
-
-  useEffect(() => {
-    if (!visible) {
-      nearEndSent.current = false;
-      settling.current = false;
-      return;
-    }
+  // Open on the tapped post each time the viewer opens (or a different post is requested).
+  // Reset during render, not in an effect, so the first frame never shows a stale post
+  // (index 0 is often a video that would start playing).
+  const openKey = visible ? initialPostId : null;
+  const [seenKey, setSeenKey] = useState(openKey);
+  if (seenKey !== openKey) {
+    setSeenKey(openKey);
     setActiveId(initialPostId);
-  }, [visible, initialPostId]);
+    nearEndSent.current = false;
+  }
 
-  // RN Web often ignores contentOffset on mount — force the tapped page.
-  useEffect(() => {
-    if (!visible || !ready || !initialPostId) return;
-    const x = startIndex * width;
-    settling.current = true;
-    setActiveId(posts[startIndex]?.id ?? initialPostId);
-    // Double rAF: wait for ScrollView children to lay out on web.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollRef.current?.scrollTo({ x, y: 0, animated: false });
-        setTimeout(() => {
-          settling.current = false;
-        }, 50);
-      });
-    });
-  }, [visible, ready, initialPostId, startIndex, width, posts]);
+  const currentId = seenKey !== openKey ? initialPostId : activeId;
+  const found = posts.findIndex((p) => p.id === currentId);
+  const index = found >= 0 ? found : 0;
+  const activePost: FeedTimelinePost | undefined = posts[index];
 
-  const indexFromOffset = useCallback(
-    (offsetX: number) =>
-      Math.max(0, Math.min(posts.length - 1, Math.round(offsetX / Math.max(width, 1)))),
-    [posts.length, width],
-  );
-
-  const syncActive = useCallback(
-    (offsetX: number) => {
-      const index = indexFromOffset(offsetX);
-      const id = posts[index]?.id;
+  const go = useCallback(
+    (delta: number) => {
+      const next = Math.max(0, Math.min(posts.length - 1, index + delta));
+      const id = posts[next]?.id;
       if (id) setActiveId(id);
-      if (onNearEnd && !nearEndSent.current && index >= posts.length - 2) {
+      if (onNearEnd && !nearEndSent.current && next >= posts.length - 2) {
         nearEndSent.current = true;
         onNearEnd();
       }
     },
-    [indexFromOffset, onNearEnd, posts],
+    [index, onNearEnd, posts],
   );
 
-  const snapToNearest = useCallback(
-    (offsetX: number) => {
-      if (!ready || settling.current) return;
-      const index = indexFromOffset(offsetX);
-      settling.current = true;
-      scrollRef.current?.scrollTo({ x: index * width, y: 0, animated: true });
-      syncActive(index * width);
-      setTimeout(() => {
-        settling.current = false;
-      }, 280);
-    },
-    [indexFromOffset, ready, syncActive, width],
+  // A new page arrived (Load more) — allow the next near-end request.
+  useEffect(() => {
+    nearEndSent.current = false;
+  }, [posts.length]);
+
+  const goRef = useRef(go);
+  goRef.current = go;
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) =>
+          Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        onPanResponderRelease: (_e, g) => {
+          if (g.dx <= -SWIPE_DISTANCE) goRef.current(1);
+          else if (g.dx >= SWIPE_DISTANCE) goRef.current(-1);
+        },
+      }),
+    [],
   );
 
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    snapToNearest(e.nativeEvent.contentOffset.x);
-  };
+  useEffect(() => {
+    if (Platform.OS !== "web" || !visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") goRef.current(1);
+      else if (e.key === "ArrowLeft") goRef.current(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [visible]);
 
-  if (!visible || !initialPostId || posts.length === 0) return null;
+  if (!visible || !initialPostId || !activePost) return null;
 
-  const activePost = posts.find((p) => p.id === activeId) ?? posts[startIndex];
   // Parent only wires onRequestDelete for authors (sitter feed). RLS still blocks non-authors.
-  const canDelete = !!onRequestDelete && !!activePost;
+  const canDelete = !!onRequestDelete;
 
   return (
     <Modal
@@ -138,47 +113,34 @@ export function FeedViewer({
       onRequestClose={onClose}
       testID="feed-viewer"
     >
-      <View
-        style={styles.root}
-        onLayout={(e) => {
-          const { width: w, height: h } = e.nativeEvent.layout;
-          if (w !== pageSize.width || h !== pageSize.height) {
-            setPageSize({ width: w, height: h });
-          }
-        }}
-      >
-        {ready ? (
-          <ScrollView
-            key={`viewer-${initialPostId}-${width}`}
-            ref={scrollRef}
-            horizontal
-            pagingEnabled
-            bounces={false}
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            // Critical on web: open on the tapped page (FlatList ignored this).
-            contentOffset={{ x: startIndex * width, y: 0 }}
-            onMomentumScrollEnd={onScrollEnd}
-            onScrollEndDrag={onScrollEnd}
-            onScroll={(e) => {
-              // Keep active in sync while dragging so the wrong video never autoplays.
-              if (!settling.current) syncActive(e.nativeEvent.contentOffset.x);
-            }}
-            scrollEventThrottle={16}
-            style={{ width, height }}
-            contentContainerStyle={{ height }}
+      <View style={styles.root} {...pan.panHandlers}>
+        <ViewerPage
+          key={activePost.id}
+          post={activePost}
+          bottomInset={insets.bottom}
+        />
+
+        {index > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Previous"
+            onPress={() => go(-1)}
+            style={[styles.arrow, styles.arrowLeft]}
+            testID="feed-viewer-prev"
           >
-            {posts.map((item) => (
-              <ViewerPage
-                key={item.id}
-                post={item}
-                height={height}
-                width={width}
-                active={item.id === activeId}
-                bottomInset={insets.bottom}
-              />
-            ))}
-          </ScrollView>
+            <Text style={styles.closeLabel}>‹</Text>
+          </Pressable>
+        ) : null}
+        {index < posts.length - 1 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Next"
+            onPress={() => go(1)}
+            style={[styles.arrow, styles.arrowRight]}
+            testID="feed-viewer-next"
+          >
+            <Text style={styles.closeLabel}>›</Text>
+          </Pressable>
         ) : null}
 
         <Pressable
@@ -191,7 +153,7 @@ export function FeedViewer({
           <Text style={styles.closeLabel}>✕</Text>
         </Pressable>
 
-        {canDelete && activePost ? (
+        {canDelete ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Delete"
@@ -207,19 +169,7 @@ export function FeedViewer({
   );
 }
 
-function ViewerPage({
-  post,
-  height,
-  width,
-  active,
-  bottomInset,
-}: {
-  post: FeedTimelinePost;
-  height: number;
-  width: number;
-  active: boolean;
-  bottomInset: number;
-}) {
+function ViewerPage({ post, bottomInset }: { post: FeedTimelinePost; bottomInset: number }) {
   const styles = useThemedStyles(makeStyles);
   const isVideo = post.media.resourceType === "video";
   const imageUri = isVideo
@@ -229,14 +179,10 @@ function ViewerPage({
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    setPaused(false);
-  }, [post.id]);
-
-  useEffect(() => {
     if (Platform.OS !== "web" || !isVideo) return;
     const el = videoRef.current;
     if (!el) return;
-    if (active && !paused) {
+    if (!paused) {
       el.muted = false;
       void el.play().catch(() => {
         el.muted = true;
@@ -250,11 +196,11 @@ function ViewerPage({
         /* ignore */
       }
     }
-  }, [active, isVideo, paused, post.id]);
+  }, [isVideo, paused]);
 
   return (
     <View
-      style={[styles.page, { height, width }, Platform.OS === "web" ? ({ touchAction: "pan-x" } as object) : null]}
+      style={[styles.page, Platform.OS === "web" ? ({ touchAction: "pan-y" } as object) : null]}
       testID={`feed-viewer-page-${post.id}`}
     >
       <Pressable
@@ -264,7 +210,7 @@ function ViewerPage({
         onPress={() => isVideo && setPaused((p) => !p)}
         style={styles.mediaFrame}
       >
-        {isVideo && Platform.OS === "web" && active
+        {isVideo && Platform.OS === "web"
           ? createElement("video", {
               ref: (el: HTMLVideoElement | null) => {
                 videoRef.current = el;
@@ -281,7 +227,7 @@ function ViewerPage({
                 objectFit: "contain",
                 backgroundColor: "#000",
                 pointerEvents: "none",
-                touchAction: "pan-x",
+                touchAction: "pan-y",
               },
               "data-testid": "feed-viewer-video",
             })
@@ -318,9 +264,23 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: "#000",
     },
     page: {
+      flex: 1,
       backgroundColor: "#000",
       justifyContent: "center",
     },
+    arrow: {
+      position: "absolute",
+      top: "50%",
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(0,0,0,0.45)",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 4,
+    },
+    arrowLeft: { left: theme.spacing.sm },
+    arrowRight: { right: theme.spacing.sm },
     mediaFrame: {
       flex: 1,
       width: "100%",
