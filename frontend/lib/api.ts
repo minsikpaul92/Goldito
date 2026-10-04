@@ -1,3 +1,5 @@
+import { getSupabase } from "./supabase";
+
 const DEFAULT_API_URL = "http://localhost:8000";
 
 export function getApiBaseUrl(): string | null {
@@ -54,6 +56,54 @@ export async function getHealth(): Promise<HealthResult> {
       message: `Cannot reach API at ${url}. Is the backend running? Check the URL and CORS_ORIGINS.`,
     };
   }
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(message: string, status: number, code: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/** Authenticated JSON POST — Bearer = current Supabase session. */
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const base = getApiBaseUrl();
+  if (!base) {
+    throw new ApiError("API URL is not set.", 0, "not_configured");
+  }
+  const {
+    data: { session },
+  } = await getSupabase().auth.getSession();
+  if (!session?.access_token) {
+    throw new ApiError("Sign in to continue.", 401, "unauthorized");
+  }
+  const response = await fetch(`${base}${path.startsWith("/") ? path : `/${path}`}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  let payload: { detail?: string; code?: string } = {};
+  try {
+    payload = (await response.json()) as { detail?: string; code?: string };
+  } catch {
+    // non-JSON
+  }
+  if (!response.ok) {
+    throw new ApiError(
+      payload.detail || response.statusText || "Request failed.",
+      response.status,
+      payload.code || "http_error",
+    );
+  }
+  return payload as T;
 }
 
 export { DEFAULT_API_URL };

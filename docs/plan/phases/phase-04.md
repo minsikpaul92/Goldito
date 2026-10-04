@@ -39,6 +39,8 @@ Do **not** leave sub-10 MB originals uncompressed; light normalize everything fo
 | Incoming (optional) | Cap duration `so_0,du_30` / limit resolution if signed upload supports it; delivery `q_auto` |
 | Sample tray (4.7) | Still photos for P0; sample **videos** stay Phase **11.9** unless a short demo clip is added later |
 
+**Trim method (decided 2026-10-04): Cloudinary trims, not the browser.** The trim sheet only picks `trim_start` / `trim_duration` (≤ 30 s). `/api/media/sign` validates them (`start ≥ 0`, `0 < duration ≤ 30`) and signs `so_{start},du_{duration}` in the incoming transformation, so Cloudinary stores only the chosen part (verified live: `so_10,du_20` on a 35 s clip → 20 s starting at 10 s). The client cannot change the signed value. The full file is still uploaded, so the 100 MB cap applies to the original.
+
 Trim + compress live in `pickMedia()` / `MediaPicker` (4.7). Mouse must work in the phone frame (DESIGN.md §7.7).
 
 ## Goal

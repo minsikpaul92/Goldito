@@ -23,6 +23,35 @@ pytest -q   # auth tests use their own test keys — no real project needed
 
 Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost:8081`, `http://localhost:19006`).
 
+## Media upload (Phase 04) — manual check
+
+Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty for (`is_on_duty_for`).
+
+1. Get a sitter token (sign in as demo sitter in the app, then from the browser console on the phone frame page):  
+   `JSON.parse(localStorage.getItem("pawnote-auth")).access_token`
+2. Sign:
+   ```bash
+   curl -s localhost:8000/api/media/sign \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"pet_id":"'$PET_ID'","resource_type":"image","purpose":"feed"}'
+   ```
+3. Upload to the returned `upload_url` with FormData fields `file`, `api_key`, `timestamp`, `signature`, `folder`, `transformation` (same values as the sign response — `transformation` is signed, so dropping it gives `401 Invalid Signature`). Cloudinary then stores a normalized original: photos `c_limit,w_2000/q_auto`, videos `so_0,du_30/c_limit,w_1280,h_1280/q_auto`. For a trimmed video, pass `trim_start` / `trim_duration` (seconds, duration ≤ 30) on `/sign`; the signed transformation becomes `so_{start},du_{duration}/…` and Cloudinary keeps only that part.
+4. Complete:
+   ```bash
+   curl -s localhost:8000/api/media/complete \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"pet_id":"'$PET_ID'","public_id":"pawnote/'$PET_ID'/feed/…","resource_type":"image","purpose":"feed"}'
+   ```
+5. Confirm a `media` row in Supabase (`cloudinary_public_id`, `purpose`).
+
+Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (normalize → sign → Cloudinary → complete). Normalize (`frontend/lib/mediaNormalize.ts`): photos are always resized to a 2000 px long edge (JPEG ~0.8, under 10 MB); videos over 30 s need a trim (`trim` on `uploadMedia`, or `VideoTooLongError` if none).
+
+App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / file dialog / trim sheet via `MediaPickerProvider`. Dev screen: `/sitter/dev-upload` (needs `EXPO_PUBLIC_DEV_ROUTES=1`) — Pick photo / Pick video → upload → Retry on failure. Removed in Phase 05.
+
+### Images for the model (D12)
+
+`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for MiniCPM-V. It raises `ValueError` for ids outside `pawnote/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
+
 ## Auth (who may call what)
 
 **Frontend → Supabase directly with the anon key + RLS** for reads and simple writes. **Frontend → FastAPI with the user's Supabase access token** (`Authorization: Bearer <token>`) for Cloudinary signing, AI, and anything that needs the service role. FastAPI verifies the token first, then may use the service role.
