@@ -52,7 +52,7 @@
 | 6.5 | missed / late | D9 파생 (변경 없음) |
 | 6.6 | `useDueReminder` | scheduled task만 (변경 없음) |
 | 6.7 | (Stretch) 서버 `task_due` | 변경 없음 |
-| 6.8 | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
+| 6.8 ✅ | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
 | 6.9 | `log_care_checkin` RPC | on-duty · insert · owner `care_checkin` · optional media → feed_post (+ Diary) |
 | 6.10 | Sitter Home quick row | Meal · Poop · Walk · Mood · Note — Home 대시보드 (구 Today, D47b) |
 | 6.11 | Owner Diary activity | `list_pet_activity` … → **`/owner/diary`** (구 Care Activity) |

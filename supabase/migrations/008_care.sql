@@ -117,3 +117,64 @@ $$;
 
 revoke execute on function public.complete_task_log(uuid, uuid) from public, anon;
 grant execute on function public.complete_task_log(uuid, uuid) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- 5-second check-ins (6.8): meal · potty · walk · mood · note, one tap each (D34, sitter-care-loop §3).
+-- Rows are written by log_care_checkin (6.9, security definer: it also notifies the owner and can
+-- attach a photo), so there is no insert policy — like task_logs, clients only read.
+-- ---------------------------------------------------------------------------
+
+create table public.care_checkins (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid not null references public.pets (id) on delete cascade,
+  created_by uuid references public.profiles (id) on delete set null,
+  kind text not null check (kind in ('meal', 'potty', 'walk', 'mood', 'note')),
+  value text,
+  note_text text,
+  media_id uuid references public.media (id) on delete set null,
+  created_at timestamptz not null default now(),
+  constraint care_checkins_value_chk check (
+    (kind = 'meal' and value in ('all', 'most', 'little', 'none'))
+    or (kind = 'potty' and value in ('normal', 'soft', 'none'))
+    or (kind = 'walk' and value in ('10', '20', '30', '45', '60'))
+    or (kind = 'mood' and value in ('happy', 'calm', 'tired'))
+    or (kind = 'note' and value is null)
+  ),
+  -- The episode line: required for a note, absent otherwise, at most 120 characters.
+  constraint care_checkins_note_chk check (
+    (kind = 'note' and note_text is not null and char_length(btrim(note_text)) between 1 and 120)
+    or (kind <> 'note' and note_text is null)
+  )
+);
+
+create index care_checkins_pet_created_idx on public.care_checkins (pet_id, created_at desc);
+
+-- Same species rule as walk tasks (D23): walks are for dogs.
+create or replace function public.guard_care_checkin_species()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.kind = 'walk' and exists (select 1 from public.pets p where p.id = new.pet_id and p.species = 'cat') then
+    raise exception 'checkin_not_allowed_for_species';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger care_checkins_species_guard
+  before insert or update of kind, pet_id on public.care_checkins
+  for each row execute function public.guard_care_checkin_species();
+
+alter table public.care_checkins enable row level security;
+
+-- Owner and the sitter in the care window read, exactly like task_logs and feed posts.
+create policy care_checkins_select on public.care_checkins
+  for select to authenticated
+  using (public.can_access_pet(pet_id));
+
+revoke all on public.care_checkins from anon, authenticated;
+grant select on public.care_checkins to authenticated;
+grant all on public.care_checkins to service_role;

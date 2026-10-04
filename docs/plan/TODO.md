@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **6.8** | `care_checkins` table + RLS (`008_care.sql`) — start of the 5-second check-in track (6.8 → 6.9 → 6.10) | [phase-06.md](phases/phase-06.md) |
+| **6.9** | `log_care_checkin(p_pet, p_kind, p_value, p_note_text, p_media_id)` (`008_care.sql`) — insert, owner `care_checkin` notice, optional photo → feed | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -74,6 +74,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **6.8** `care_checkins` in `008_care.sql`: `kind` meal · potty · walk · mood · note, `value` checked per kind (meal all/most/little/none · potty normal/soft/none · walk 10/20/30/45/60 · mood happy/calm/tired · note none), `note_text` required for a note only and ≤ 120 chars, optional `media_id`, index (pet_id, created_at desc); trigger refuses a walk check-in for a cat (D23). RLS: **select only** (`can_access_pet` — owner + sitter in the care window); no client insert / update / delete, `anon` has no access — rows come from `log_care_checkin` (6.9). rls_smoke 6.8 (16 checks; 238 PASS, 0 fail) on disposable Postgres 17. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
 - [x] **6.3 follow-up (Minsik's call)** Photo flow for tasks: **Done with photo** → pick a sample / **Choose from library** / **Take photo** → **preview** → one tap **Use photo & mark done** uploads the `task_proof` and completes the task (button shows "Uploading photo…"); **Retake** returns to the picker, nothing uploaded or completed before confirming. `pickMedia({ confirm, confirmLabel })` + `MediaConfirm`. A real phone now gets a Take photo / Choose from library sheet instead of going straight to the camera (it could not pick from the library before). Playwright: confirm, retake, phone camera (Pixel 7); stabilised three flaky specs (wait for sign-in, retrying assertion, visible-only locators); flows 84 ✓ ×4, `tsc` ✓ (2026-10-04)
 - [x] **6.3** Sitter Home **Today's tasks** (`TodayTasks`): on Home (and on every return to it) each in-care pet's day is opened with `ensure_today_task_logs`, tasks join their `care_tasks` row, sorted by time; **Next up** line; per task **Mark done** (no photo) and **📷 Done with photo** (`pickMedia` → `task_proof` upload → `complete_task_log`) with toast "{task} done ✅ {owner} was told"; ✅ Done / ⏳ Pending / ⚠️ Missed badge (D9, shared `statusLabel`); calm errors for `not_on_duty` / `not_in_care_window` / `already_done` / `invalid_media`; quiet empty line. `careApi` `ensureTodayTaskLogs` · `completeTaskLog`. Sitter Diary stays a later task (6.11). Playwright `sitter-tasks.spec.ts` (4) + mock RPCs; flows 82 ✓, `tsc` ✓ (2026-10-04)
 - [x] **6.4** `complete_task_log(p_task_log, p_media_id default null)` in `008_care.sql`: only the sitter inside the care window (`not_in_care_window`), refuses a second completion (`already_done`), a photo must be the sitter's own `task_proof` upload for that pet (`invalid_media`; a rejected call leaves the log pending). Always sends the owner a type-specific `task_done` notice ("Max had breakfast on time 🍽️" · "Max's medication is done 💊" · "Max had a walk 🦮" …, tap → Diary). With a photo it also makes a **shared** feed post (`caption_source='task'`, task caption, `task_log_id` set) and no extra `feed_post` notice (the 5.3 trigger skips task posts). rls_smoke 6.4 (11 checks; 224 PASS, 0 fail) on disposable Postgres 17. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
@@ -183,7 +184,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
 | 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
-| 06 Care request + checks | in progress — **6.1 – 6.4** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.3** done; next **6.8** |
+| 06 Care request + checks | in progress — **6.1 – 6.4** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.8** done; next **6.9** |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |

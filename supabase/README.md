@@ -19,7 +19,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `007_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
 | `007b_feed_posts_realtime.sql` | 05 | `feed_posts` in the Realtime publication (owner Feed refetch on delete); idempotent. Numbered `007b` because `008` is reserved for care |
 | `007c_feed_visibility.sql` | 05 | `feed_posts.posted_by` (author) + `visibility` (shared / private), owner posts, author-only delete, private media hidden from the other party, `feed_post` notices only for shared posts (sitter post → owner, owner post → on-duty sitter) |
-| `008_care.sql` | 06 | `ensure_today_task_logs` (6.2), `complete_task_log` with optional photo (6.4); later: check-ins, care requests, cautions |
+| `008_care.sql` | 06 | `ensure_today_task_logs` (6.2), `complete_task_log` with optional photo (6.4), `care_checkins` table + RLS (6.8); later: check-ins, care requests, cautions |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |

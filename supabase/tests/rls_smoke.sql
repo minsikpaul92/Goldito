@@ -1800,6 +1800,88 @@ begin
     (select count(*) from public.feed_posts where task_log_id = _t_get('log_pill')) = 1,
     '6.4: the owner sees the task photo in the feed');
 
+  -- Phase 06 (6.8): care_checkins
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo2') returning id into v_id;
+  insert into public.care_checkins (pet_id, kind, value) values (v_id, 'meal', 'all');
+  insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '30');
+  insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', 'Watched a squirrel for ten minutes');
+  insert into public.care_checkins (pet_id, kind, value) values (max, 'mood', 'happy');
+  perform _t_ok(true, '6.8: valid check-ins of every shape insert');
+
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'meal', 'a lot');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: value must fit the kind');
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '15');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: walk minutes are 10 / 20 / 30 / 45 / 60');
+  begin
+    insert into public.care_checkins (pet_id, kind) values (v_id, 'note');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a note needs its line');
+  begin
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', 'extra');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: only a note carries text');
+  begin
+    insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a note is at most 120 characters');
+  begin
+    insert into public.care_checkins (pet_id, kind, value)
+    values ('00000000-0000-4000-8000-0000000000c2', 'walk', '20');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.8: no walk check-in for a cat (D23)');
+
+  -- RLS: read only, owner and the sitter in the window.
+  perform _t_as(lucy);
+  begin
+    insert into public.care_checkins (pet_id, created_by, kind, value) values (max, lucy, 'mood', 'calm');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: clients cannot insert directly (log_care_checkin writes)');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 0,
+    '6.8: a sitter with no booking for the pet reads nothing');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = max and kind = 'mood') >= 1,
+    '6.8: the sitter in the care window reads the pet''s check-ins');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 3,
+    '6.8: the owner reads her pet''s check-ins');
+  begin
+    update public.care_checkins set value = 'none' where pet_id = v_id and kind = 'meal';
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: nobody edits a check-in from the client');
+  begin
+    delete from public.care_checkins where pet_id = v_id;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: nobody deletes one from the client');
+  perform _t_as(null, 'anon');
+  begin
+    perform count(*) from public.care_checkins;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: anon cannot read check-ins');
+
   perform _t_as(null);
 end;
 $$;
