@@ -3,7 +3,7 @@
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
 > 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
 > 결정을 바꾸면 이 문서의 §1 결정 로그부터 고치고, 영향받는 phase 문서를 함께 수정합니다.
-> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D46). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
+> **제품 흐름(5단계: Inquiry → Meet & Greet → Booking → Care & Transit → Completion)의 정본은 [full-process.ko.md](../full-process.ko.md)** (D27–D47). 이 문서는 그 흐름을 구현하는 구조·규칙을 정합니다.
 
 ---
 
@@ -57,6 +57,8 @@
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
 | D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = PawNote Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
 | D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
+| D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood`. **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. **Sitter 탭은 D47b(제안) — 민식 확인 후 확정** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
+| D47b | Sitter 탭 IA (**제안**) | Sitter도 **5탭:** `Today · Bookings · Feed · Diary · Mood`. **Today** = 오늘 돌봄 허브(구 Tasks·Quick check-in 흡수). **Bookings** = 요청·Meet & Greet. **Feed** = 앨범에 **+ Photo**. **Diary** = 맡은 펫 스테이 로그 작성 + 저녁 칩 알림장 승인(구 Report 흡수). **Mood** = Owner와 같은 도구. Treat scan은 Today 버튼(08). Settings = 헤더 Profile. (대안: Tasks를 탭으로 남기고 Mood만 Today 버튼 — 확인 전엔 FE는 Owner만 D47 적용) | Owner와 어휘·대칭 맞춤 |
 
 ---
 
@@ -188,27 +190,32 @@ PawNote/
 | `/owner/home-access` | owner | 내 집 출입 정보 (lockbox·buzzer·fob·출입 순서) — "Only shown to your sitter 2 hours before" | Save | 03C |
 | `/owner/bookings/[bookingId]/trip`, `/sitter/bookings/[bookingId]/trip` | both | 실시간 이동 — 보기 전용 지도·ETA·도착 카드(Visitor parking / Buzzer·Lockbox)·사진 체크 (Stage 4) | **Start trip** / 사진 → **Received·Returned** | 06B |
 | `/owner/bookings/[bookingId]/review` | owner | ★ 1–5 + 코멘트(선택) (Stage 5) | **Send review** | 07C |
-| `/profile` | both | 역할별 프로필 편집 (주소·bio·**선호 만남 장소 ≤ 3** 등, D44) — **Settings 아님** | Save | 03 (+03B) |
-| `/settings` | both | 계정·알림·앱 정보 · **What's New**(패치노트) | — | **11.11 (P1)** |
-| `/owner/feed` (tab: Feed) | owner | 선택 pet 타임라인 (PetSwitcher) | 스크롤 | 05 |
-| `/owner/tasks` (tab: Care) | owner | Task 등록 + 오늘 상태 · **Activity** 히스토리 (Plan B) | Add task | 06 |
-| `/owner/reports` , `/owner/reports/[reportId]` (tab: Reports) | owner | 알림장 목록 / 읽기 | 읽기 | 07 |
+| `/profile` | both | 역할별 프로필 + **Settings**(계정·알림·What's New — 11.11을 여기로; D47). 주소·bio·**선호 만남 장소 ≤ 3** 등 (D44) | Save | 03 (+03B · 11.11) |
+| `/settings` | both | *(deprecated as tab)* → `/profile` Settings 섹션으로 흡수 (D47). 딥링크 호환 시 redirect | — | 11.11 |
+| `/owner/feed` (tab: Feed) | owner | **영구 앨범** — 펫 칩 멀티토글(선택/해제) · 3열 그리드 → 상세 (D47). 오너·시터 게시 | 스크롤 / 탭 | 05 (+09 분류) |
+| `/owner/diary` (tab: Diary) | owner | **돌봄 일기** — Live(On air) 시 시터 업데이트 시간순; 히스토리(펫·시터·날짜). 사진 있는 항목 → Feed 미러 (D47). 구 `/owner/reports` | 읽기 / 쓰기 | 05–07 |
+| `/owner/diary/[entryId]` | owner | Diary 항목 상세 (알림장·체크·사진 묶음) | 읽기 | 07 |
+| `/owner/mood` (tab: Mood) | owner | 사진/영상 → 기분 (Fun only, D42). P0는 플레이스홀더 | Snap / pick | 11.9 (stub now) |
+| `/owner/pets/[petId]` (Care request) | owner | 구 Care 탭 내용 — 투약·산책 의뢰는 **펫 디테일**에서 (D47, 추후 디테일). 라우트 `/owner/pets/[petId]/care-request` 유지 | Save checklist | 06 |
 | `/owner/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/sitter/` (tab: Today) | sitter | 담당 pet · 오늘 인수인계(Trip 진입) · **Heads-up**(주의사항) · **Quick check-ins**(meal/potty/walk/mood/note) · due 배너 · (08) **Scan a treat** 버튼 | Mark done / check-in | 03(스텁) → 03B → 06 |
+| `/sitter/` (tab: Today) | sitter | 담당 pet · 오늘 인수인계(Trip) · Heads-up · **Quick check-ins** · due 배너 · (D47b) Tasks 흡수 · (08) Scan | Mark done / check-in | 03 → 06 |
 | `/sitter/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
-| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | **Inquiries** · Requests · Upcoming · Past / 요청 카드(서비스·이동 방식·의뢰서·Life Record 요약)·Meet & Greet·인수인계·출입 정보 잠금 카드 | Accept | 03B (+03C·07B·07C) |
-| `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + 경고 문구 + **Send** · Edit/Add · Regenerate (D36) | Send | 07B |
+| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | **Inquiries** · Requests · Upcoming · Past / 요청 카드·Meet & Greet·인수인계·출입 잠금 | Accept | 03B (+03C·07B·07C) |
+| `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + **Send** (D36) | Send | 07B |
+| `/sitter/feed` (tab: Feed, D47b) | sitter | 맡은 펫 앨범 업로드 진입 (pet 피드 / + Photo). 확정 전엔 `/sitter/pets/[petId]`로도 충분 | **+ Photo** | 05 |
 | `/sitter/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
-| `/sitter/tasks` (tab: Tasks) | sitter | 오늘 task_logs (pending 먼저) — 의뢰서 체크리스트 | **Mark done** / Done with photo | 06 |
+| `/sitter/diary` (tab: Diary, D47b) | sitter | 스테이 로그 + 저녁 칩 알림장 승인(구 Report·Tasks 요약). 확정 전 구 `/sitter/tasks`·`/sitter/report` 유지 가능 | **Send** / Mark done | 06–07 |
+| `/sitter/mood` (tab: Mood, D47b) | sitter | Owner와 동일 Mood 도구 | Snap / pick | 11.9 |
+| `/sitter/tasks` | sitter | *(D47b 확정 시 Today/Diary로 흡수)* 오늘 task_logs | **Mark done** | 06 |
 | `/sitter/scan` (Today 버튼 → Stack) | sitter | Treat scanner | **Scan label** | 08 (stretch) |
-| `/sitter/report` (tab: Report) | sitter | **5초 체크**(사진 ≤ 2 → AI 칩 제안 → 고르기 + 짧은 메모 선택 — D38) → Generate → (편집) → 승인(Send) = 게시 | **Send report** | 07 |
+| `/sitter/report` | sitter | *(D47b 확정 시 Diary로 흡수)* 5초 체크 → 칩 → Send (D38) | **Send report** | 07 |
 | `/sitter/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
 | `/dev/gestures` | - | 마우스 동작 테스트 화면 (긴 목록·가로 줄·모달·토스트·입력창). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만, 링크 없음 | - | 1.7 |
 | `/dev/health` | - | Backend `GET /health` 확인 (Check API — 1.3 화면을 `/`에서 옮김). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만 | Check API | 1.3 → 3.3 |
 
-- 탭: owner `Home · Bookings · Feed · Care · Reports`, sitter `Today · Bookings · Tasks · Report` (D27 — 예약·문의가 흐름의 시작이라 탭으로. Scan은 탭이 아니라 Today 버튼, 3B.0에서 변경). 알림 벨은 두 역할 모두 헤더 우측 (unread badge). 탭은 expo-router **JS `Tabs`** (NativeTabs 아님 — D25: 해커톤 후 시터 데스크톱에서 `tabBarPosition: 'left'`로 사이드바 전환).
+- 탭 (D47): owner **`Home · Bookings · Feed · Diary · Mood`**. sitter는 당분간 `Today · Bookings · Tasks · Report` 유지, **제안 D47b** = `Today · Bookings · Feed · Diary · Mood` (민식 확인 후 FE 전환). Scan은 탭이 아니라 Today 버튼(08). 알림 벨 = 헤더 우측; **Settings = 헤더 아바타 Profile**. 탭은 expo-router **JS `Tabs`** (D25).
 - 웹 쿼리 (D25, 모든 route 공통): `?frame=0` 폰 프레임 끄기 · `?frame=1` 강제로 켜기 · `?view=split` Owner·Sitter 폰 나란히 (10.10 stretch).
-- pet이 여러 마리면 `PetProvider`의 선택값을 모든 탭이 공유 (헤더 PetSwitcher, 종 아이콘 🐶/🐱). 데모는 2마리(Max 강아지, Mochi 고양이).
+- Owner Feed 펫 필터 = **멀티토글 칩**(선택/해제; 0이면 안내 또는 기본 전체). Diary·Mood도 같은 펫 집합을 쓸 수 있음. 데모는 2마리(Max 강아지, Mochi 고양이).
 - 역할 영역은 **URL 접두사 폴더** `app/owner/`·`app/sitter/` (D26) — 그룹 `(owner)`/`(sitter)`가 아님. 역할 가드는 `components/RoleTabs.tsx`: 미로그인 → `/login`, 다른 역할 → 자기 홈(`/owner` ↔ `/sitter`). `(auth)` 그룹은 로그인 상태면 `/`로.
 
 ---
@@ -351,9 +358,9 @@ PawNote/
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Lucy can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Lucy would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
 | `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Max 📸" | `/owner/feed` |
-| `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/tasks` (Activity) |
-| `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/tasks` (Activity) |
-| `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/reports/[id]` |
+| `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
+| `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/diary` |
+| `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/diary` (entry) |
 | `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) — 08 stretch | "Blocked a risky treat for Max ⚠️" | `/owner/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Max's walk is due at 10:30" | `/sitter/tasks` |
 | `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Max" | `/sitter/pets/[id]` |

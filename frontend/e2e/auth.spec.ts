@@ -6,7 +6,7 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 // Sign in, sign up, and role routing inside the desktop phone frame (phase-03 3.1–3.3).
 
 // Bottom tabs per role (phase-03b 3B.0, architecture §3).
-const OWNER_TABS = ["Home", "Bookings", "Feed", "Care", "Reports"];
+const OWNER_TABS = ["Home", "Bookings", "Feed", "Diary", "Mood"];
 const SITTER_TABS = ["Today", "Bookings", "Tasks", "Report"];
 
 /** Exactly these tabs, in order, and no label cut off in height or width. */
@@ -64,7 +64,7 @@ test.describe("auth and role routing", () => {
     // The treat scanner opens from a Today button (Phase 08), not a tab.
     await expect(app(page).getByRole("tab").getByText("Scan", { exact: true })).toHaveCount(0);
 
-    await page.goto("/owner/tasks");
+    await page.goto("/owner/diary");
     await expect(page).toHaveURL(/\/sitter$/);
     await expect(app(page).getByText("No bookings yet")).toBeVisible();
   });

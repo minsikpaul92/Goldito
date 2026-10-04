@@ -39,10 +39,11 @@
 | 화면 | Route | 역할 | 핵심 액션 | 상태 문구 |
 | :--- | :--- | :--- | :--- | :--- |
 | Sitter Pet 피드 | `/sitter/pets/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Max's day." |
-| Owner Feed | `/owner/feed` | owner | 스크롤 / 탭 → 상세 | empty: "No posts yet — your sitter will share photos here." |
+| Owner Feed | `/owner/feed` | owner | 그리드 · 펫 멀티토글 · 탭 → 상세 | empty: "No posts yet — your sitter will share photos here." |
+| Owner Diary | `/owner/diary` | owner | Live / 히스토리 (펫·시터·날짜); 사진 → Feed 미러 (D47) | empty: "When a stay is on, updates show up here live." |
 | 알림 센터 | `/owner/notifications`, `/sitter/notifications` | 둘 다 | 탭 → 이동 | empty: "You're all caught up." |
 
-FeedCard: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 시간("2h ago"), sitter 이름, (06 이후) task 뱃지 "💊 Medication" / "🦮 Walk".
+FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 시간("2h ago"), 작성자(sitter/owner), (06 이후) task 뱃지.
 
 ---
 
@@ -70,9 +71,10 @@ FeedCard: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 시간("2h ago"
 
 ## 산출물
 
-- `frontend/app/sitter/pets/[petId].tsx`, `frontend/app/owner/feed.tsx`, `frontend/app/(*)/notifications.tsx`
+- `frontend/app/sitter/pets/[petId].tsx`, `frontend/app/owner/feed.tsx`, `frontend/app/owner/(tabs)/diary.tsx`, `frontend/app/(*)/notifications.tsx`
 - `frontend/components/FeedCard.tsx`, `NotificationBell.tsx`, `frontend/providers/NotificationsProvider.tsx`, `frontend/lib/feed.ts`
 - `supabase/migrations/007_feed_notifications.sql`
+- Owner tabs D47: Feed = album; stay Live stream lives under **Diary** (not a separate Care Live tab)
 
 ---
 
