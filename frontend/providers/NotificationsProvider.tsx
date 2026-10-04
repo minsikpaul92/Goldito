@@ -30,8 +30,9 @@ type NotificationsValue = {
 const NotificationsContext = createContext<NotificationsValue | null>(null);
 
 /**
- * Realtime `notifications` INSERT for the signed-in user (phase-05 5.4–5.5).
- * Toast + unread badge; type-specific revisions for Feed / Diary / inbox list.
+ * Realtime for the signed-in user (phase-05 5.4–5.5 · 5.7):
+ * - `notifications` INSERT → toast + unread + type revisions
+ * - `feed_posts` DELETE → feedRevision (owner album drops deleted photos live)
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -87,6 +88,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           } else if (DIARY_NOTIFICATION_TYPES.has(row.type)) {
             setDiaryRevision((r) => r + 1);
           }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "feed_posts",
+        },
+        () => {
+          // RLS limits events to pets the viewer can access (can_access_pet).
+          if (!active) return;
+          setFeedRevision((r) => r + 1);
         },
       )
       .subscribe();

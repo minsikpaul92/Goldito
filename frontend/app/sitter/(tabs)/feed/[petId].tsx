@@ -1,26 +1,29 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { createElement, useCallback, useEffect, useState } from "react";
-import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { FeedCard } from "../../../components/FeedCard";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
-import { UploadError, thumbUrl, uploadMedia, videoPosterUrl, videoUrl } from "../../../lib/cloudinary";
+import { FeedCard } from "../../../../components/FeedCard";
+import { FeedViewer } from "../../../../components/FeedViewer";
+import { Button } from "../../../../components/ui/Button";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { UploadError, uploadMedia } from "../../../../lib/cloudinary";
 import {
   FALLBACK_CAPTION,
   FEED_PAGE_SIZE,
   FeedTimelinePost,
   createFeedPost,
-  formatFeedTime,
+  deleteFeedPost,
   listFeedPosts,
-} from "../../../lib/feed";
-import { pickMedia } from "../../../lib/media";
-import { getSupabase } from "../../../lib/supabase";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useToast } from "../../../providers/ToastProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../lib/feed";
+import { pickMedia } from "../../../../lib/media";
+import { getSupabase } from "../../../../lib/supabase";
+import { useSession } from "../../../../providers/SessionProvider";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useToast } from "../../../../providers/ToastProvider";
+import { Theme } from "../../../../theme/themes";
 
 type PetInfo = { id: string; name: string; ownerName: string };
 
@@ -30,20 +33,24 @@ type FeedState =
   | { status: "error"; message: string; posts: FeedTimelinePost[]; hasMore: boolean };
 
 /**
- * Sitter pet feed (phase-05): timeline + **+ Photo** FAB → pickMedia → uploadMedia → createFeedPost.
- * No caption field (D38). Toast: "Shared with {owner} 🐾".
+ * Sitter pet feed (phase-05): 3-col album + **+ Photo** FAB → pickMedia → uploadMedia → createFeedPost.
+ * No caption field (D38). Toast: "Shared with {owner} 🐾". Author can Delete from viewer (5.7).
  */
 export default function SitterPetFeed() {
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const session = useSession();
+  const currentUserId = session.status === "signedIn" ? session.profile.id : null;
 
   const [pet, setPet] = useState<PetInfo | null>(null);
   const [petError, setPetError] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [selected, setSelected] = useState<FeedTimelinePost | null>(null);
+  const [viewerPostId, setViewerPostId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadPet = useCallback(async () => {
     if (!petId) return;
@@ -145,6 +152,26 @@ export default function SitterPetFeed() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!pendingDeleteId || deleting) return;
+    const id = pendingDeleteId;
+    setDeleting(true);
+    try {
+      await deleteFeedPost(id);
+      setPendingDeleteId(null);
+      setViewerPostId(null);
+      setFeed((prev) => {
+        if (prev.status === "loading") return prev;
+        return { ...prev, posts: prev.posts.filter((p) => p.id !== id) };
+      });
+      toast.show("Photo deleted");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't delete this photo. Try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!petId) {
     return (
       <View style={styles.safe}>
@@ -193,6 +220,8 @@ export default function SitterPetFeed() {
         <FlatList
           data={posts}
           keyExtractor={(item) => item.id}
+          numColumns={3}
+          columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
           contentContainerStyle={[styles.list, posts.length === 0 && !uploading && styles.listEmpty]}
           onEndReached={() => void loadMore()}
           onEndReachedThreshold={0.4}
@@ -223,7 +252,11 @@ export default function SitterPetFeed() {
               />
             ) : null
           }
-          renderItem={({ item }) => <FeedCard post={item} onPress={() => setSelected(item)} />}
+          renderItem={({ item }) => (
+            <View style={styles.cell}>
+              <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+            </View>
+          )}
         />
       )}
 
@@ -238,38 +271,35 @@ export default function SitterPetFeed() {
         <Text style={styles.fabLabel}>{uploading ? "…" : "+ Photo"}</Text>
       </Pressable>
 
-      <Sheet visible={selected != null} title={selected?.caption ?? "Photo"} onClose={() => setSelected(null)}>
-        {selected ? (
-          <View style={styles.detail}>
-            {selected.media.resourceType === "video" && Platform.OS === "web" ? (
-              createElement("video", {
-                src: videoUrl(selected.media.publicId),
-                controls: true,
-                playsInline: true,
-                style: {
-                  width: "100%",
-                  aspectRatio: "4 / 3",
-                  backgroundColor: "#000",
-                  borderRadius: 12,
-                },
-              })
-            ) : (
-              <Image
-                source={{
-                  uri:
-                    selected.media.resourceType === "video"
-                      ? videoPosterUrl(selected.media.publicId, 800)
-                      : thumbUrl(selected.media.publicId, 800),
-                }}
-                style={styles.detailImage}
-                accessibilityIgnoresInvertColors
-              />
-            )}
-            <Text style={styles.detailMeta}>
-              {selected.sitterName} · {formatFeedTime(selected.createdAt)}
-            </Text>
-          </View>
-        ) : null}
+      <FeedViewer
+        visible={viewerPostId != null && pendingDeleteId == null}
+        posts={posts}
+        initialPostId={viewerPostId}
+        onClose={() => setViewerPostId(null)}
+        onNearEnd={() => void loadMore()}
+        currentUserId={currentUserId}
+        onRequestDelete={(id) => setPendingDeleteId(id)}
+      />
+
+      <Sheet
+        visible={pendingDeleteId != null}
+        title="Delete this photo?"
+        onClose={() => {
+          if (!deleting) setPendingDeleteId(null);
+        }}
+        testID="feed-delete-sheet"
+        footer={
+          <Button
+            label={deleting ? "Deleting…" : "Delete photo"}
+            disabled={deleting}
+            onPress={() => void confirmDelete()}
+            testID="feed-delete-confirm"
+          />
+        }
+      >
+        <Text style={styles.deleteBody}>
+          {`This removes it from the album. ${pet.ownerName} won't see it anymore.`}
+        </Text>
       </Sheet>
     </View>
   );
@@ -282,12 +312,19 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.background,
     },
     list: {
-      padding: theme.spacing.md,
+      padding: theme.spacing.sm,
       paddingBottom: theme.spacing.xl * 3,
-      gap: theme.spacing.md,
     },
     listEmpty: {
       flexGrow: 1,
+    },
+    row: {
+      gap: 2,
+      marginBottom: 2,
+    },
+    cell: {
+      flex: 1,
+      maxWidth: "33.333%",
     },
     skeleton: {
       backgroundColor: theme.color.surface,
@@ -296,14 +333,16 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       overflow: "hidden",
       marginBottom: theme.spacing.md,
+      alignSelf: "flex-start",
+      width: "33%",
     },
     skeletonMedia: {
       width: "100%",
-      aspectRatio: 4 / 3,
+      aspectRatio: 1,
       backgroundColor: theme.color.border,
     },
     skeletonText: {
-      padding: theme.spacing.md,
+      padding: theme.spacing.sm,
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
@@ -336,17 +375,9 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "700",
       color: theme.color.primaryText,
     },
-    detail: {
-      gap: theme.spacing.sm,
-    },
-    detailImage: {
-      width: "100%",
-      aspectRatio: 4 / 3,
-      borderRadius: theme.radius.md,
-      backgroundColor: theme.color.border,
-    },
-    detailMeta: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
+    deleteBody: {
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+      lineHeight: theme.fontSize.body * 1.4,
     },
   });

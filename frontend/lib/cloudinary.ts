@@ -140,20 +140,32 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
   }
 }
 
+/** Square crop for Instagram-style album cells. */
 export function thumbUrl(publicId: string, w = 400): string {
   const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
   if (!cloud) return "";
-  return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,c_fill,w_${w},h_${w}/${publicId}`;
+  return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,c_fill,g_auto,w_${w},h_${w}/${publicId}`;
+}
+
+/** Full photo for the expand sheet — fits inside the frame, no crop. */
+export function deliveryUrl(publicId: string, w = 1200): string {
+  const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
+  if (!cloud) return "";
+  return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,c_limit,w_${w}/${publicId}`;
 }
 
 export function videoPosterUrl(publicId: string, w = 400): string {
   const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
   if (!cloud) return "";
-  return `https://res.cloudinary.com/${cloud}/video/upload/so_0,f_jpg,w_${w}/${publicId}.jpg`;
+  return `https://res.cloudinary.com/${cloud}/video/upload/so_0,f_jpg,q_auto:good,c_fill,g_auto,w_${w},h_${w}/${publicId}.jpg`;
 }
 
-export function videoUrl(publicId: string): string {
+/**
+ * Stream a video. Cap long edge at `maxHeight` (default 1080) so fullscreen looks sharp
+ * when the source is HD; q_auto:good avoids muddy q_auto on small cells.
+ */
+export function videoUrl(publicId: string, maxHeight = 1080): string {
   const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
   if (!cloud) return "";
-  return `https://res.cloudinary.com/${cloud}/video/upload/q_auto/${publicId}`;
+  return `https://res.cloudinary.com/${cloud}/video/upload/f_auto,q_auto:good,c_limit,h_${maxHeight}/${publicId}`;
 }

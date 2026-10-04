@@ -84,7 +84,7 @@ Trim + compress live in `pickMedia()` / `MediaPicker` (4.7). Mouse must work in 
 | 4.4 | URL helper | `thumbUrl(publicId, w=400)` → `https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto,c_fill,w_400,h_400/{publicId}`, `videoPosterUrl(publicId)` → `…/video/upload/so_0,f_jpg,w_400/{publicId}.jpg`, `videoUrl(publicId)` → `…/video/upload/q_auto/{publicId}` |
 | 4.5 | Normalize + limits | See **Media normalize policy** above. Photos: always client long-edge + &lt;10 MB; sign request may include incoming transform params (or upload preset). Video: always client compress; duration ≤ 30 s after trim. Soft alert only if compress still fails Free limits. |
 | 4.6 | Backend service | `services/cloudinary.py`: `sign()`, `delivery_url()`, `fetch_as_data_url(public_id, resource_type)` (D12 — Phase 08/09용, `w_1024,f_jpg` 변환본 다운로드 → base64). Wire incoming transform defaults into `sign()` / upload params as needed. |
-| 4.7 | `pickMedia()` + 샘플 사진 트레이 + **video trim** (D25) | `lib/media.ts` `pickMedia({purpose, mediaTypes}) → File \| null` — **모든 화면의 미디어 선택은 이 함수만**. 네이티브: `expo-image-picker` 카메라/앨범. 모바일 웹: `capture` 입력. **데스크톱 프레임(`useShell().embedded`) 또는 데모 계정:** `components/MediaPicker.tsx` 시트 — purpose별 샘플(`feed`·`task_proof`·`report`: 강아지·고양이 일상(밥·산책·낮잠 — 09 분류 데모, + `walk_squirrel` 공원에서 다람쥐를 보는 강아지 — 07 알림장 에피소드가 사진에서 나오게, D38) / `handoff`: Phase 06B 픽스처와 같은 사진 — `dog_at_door`, `car_crate_ok`, `car_no_crate`, `empty_room` / `safety_label`: Phase 08 픽스처와 같은 라벨 — `chicken_jerky`(DANGER), `animal_fat_biscuit`(WARNING), `sweet_potato_chew`(SAFE), `lily_scented_cat_treat`(DANGER, Mochi)) + **Upload from computer** (+ 폰이면 **Take photo**). 샘플은 `frontend/assets/demo/`의 정적 이미지를 Blob으로 읽어 **`uploadMedia()`를 그대로** 탐 → AI가 실제로 분석 (가짜 결과 없음). 샘플은 직접 촬영·생성 또는 CC0, 가상 브랜드(상표 가림), 사람·주소 없음. 시트는 Close 버튼 + 클릭만으로 선택. **Video:** if duration &gt; 30 s → trim sheet (drag window ≤ 30 s, shorter OK) → export → compress → `uploadMedia()`. |
+| 4.7 | `pickMedia()` + 샘플 사진 트레이 + **video trim** (D25) | `lib/media.ts` `pickMedia({purpose, mediaTypes}) → File \| null` — **모든 화면의 미디어 선택은 이 함수만**. 네이티브: `expo-image-picker` 카메라/앨범. 모바일 웹: `capture` 입력. **데스크톱 프레임(`useShell().embedded`) 또는 데모 계정:** `components/MediaPicker.tsx` 시트 — purpose별 샘플(`feed`·`task_proof`·`report`: 강아지·고양이 일상(밥·산책·낮잠 — 09 분류 데모, + `walk_squirrel` 공원에서 다람쥐를 보는 강아지 — 07 알림장 에피소드가 사진에서 나오게, D38) / `handoff`: Phase 06B 픽스처와 같은 사진 — `dog_at_door`, `car_crate_ok`, `car_no_crate`, `empty_room` / `safety_label`: Phase 08 픽스처와 같은 라벨 — `chicken_jerky`(DANGER), `animal_fat_biscuit`(WARNING), `sweet_potato_chew`(SAFE), `lily_scented_cat_treat`(DANGER, Mochi)) + **Choose from library** (+ 폰이면 **Take photo**). 샘플은 `frontend/assets/demo/`의 정적 이미지를 Blob으로 읽어 **`uploadMedia()`를 그대로** 탐 → AI가 실제로 분석 (가짜 결과 없음). 샘플은 직접 촬영·생성 또는 CC0, 가상 브랜드(상표 가림), 사람·주소 없음. 시트는 Close 버튼 + 클릭만으로 선택. **Video:** if duration &gt; 30 s → trim sheet (drag window ≤ 30 s, shorter OK) → export → compress → `uploadMedia()`. |
 
 ---
 
@@ -94,7 +94,7 @@ Trim + compress live in `pickMedia()` / `MediaPicker` (4.7). Mouse must work in 
 2. 업로드 실패 시(네트워크 끊기) Retry 버튼으로 재시도 가능
 3. video 1건 성공 + `videoPosterUrl`이 이미지로 열림
 4. `pytest`: 폴더 prefix 불일치 public_id → 422, 비담당 sitter → 403
-5. 데스크톱 프레임에서 마우스만으로: 샘플 사진 선택 → 업로드 → `media` row 생성 · **Upload from computer**도 동작 (4.7)
+5. 데스크톱 프레임에서 마우스만으로: 샘플 사진 선택 → 업로드 → `media` row 생성 · **Choose from library**도 동작 (4.7)
 
 ---
 

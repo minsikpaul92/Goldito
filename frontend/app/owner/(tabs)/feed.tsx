@@ -1,19 +1,17 @@
-import { createElement, useCallback, useEffect, useState } from "react";
-import { FlatList, Image, Platform, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FeedCard } from "../../../components/FeedCard";
+import { FeedViewer } from "../../../components/FeedViewer";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
-import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
 import { useMyPets } from "../../../features/pets/useMyPets";
-import { thumbUrl, videoPosterUrl, videoUrl } from "../../../lib/cloudinary";
 import {
   FEED_PAGE_SIZE,
   FeedTimelinePost,
-  formatFeedTime,
   listFeedPosts,
 } from "../../../lib/feed";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
@@ -26,8 +24,8 @@ type FeedState =
   | { status: "error"; message: string; posts: FeedTimelinePost[]; hasMore: boolean };
 
 /**
- * Owner Feed tab (phase-05 5.2): newest posts for the selected pet, Cloudinary thumbs,
- * Load more / onEndReached. Detail sheet plays video on web (demo target).
+ * Owner Feed tab (phase-05): Instagram 3-col album.
+ * ▶ = play in cell; tap photo = full-screen viewer with vertical swipe.
  */
 export default function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
@@ -36,7 +34,7 @@ export default function OwnerFeed() {
   const [petId, setPetId] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selected, setSelected] = useState<FeedTimelinePost | null>(null);
+  const [viewerPostId, setViewerPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (pets.length === 0) {
@@ -61,7 +59,6 @@ export default function OwnerFeed() {
         setFeed((prev) => ({
           status: "error",
           message: (error as Error).message,
-          // Soft / append keep the cards the user already sees.
           posts: (append || soft) && prev.status !== "loading" ? prev.posts : [],
           hasMore: false,
         }));
@@ -78,7 +75,6 @@ export default function OwnerFeed() {
     void loadPage(0, false);
   }, [petId, petsStatus, loadPage]);
 
-  // Soft refetch when a feed_post notification arrives (5.4) — keep current cards until the new page lands.
   useEffect(() => {
     if (!petId || feedRevision === 0) return;
     void loadPage(0, false, true);
@@ -132,6 +128,8 @@ export default function OwnerFeed() {
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
+        numColumns={3}
+        columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
         contentContainerStyle={[styles.list, posts.length === 0 && styles.listEmpty]}
         onEndReached={() => void loadMore()}
         onEndReachedThreshold={0.4}
@@ -173,53 +171,22 @@ export default function OwnerFeed() {
             />
           ) : null
         }
-        renderItem={({ item }) => <FeedCard post={item} onPress={() => setSelected(item)} />}
-        ItemSeparatorComponent={() => <View style={styles.gap} />}
+        renderItem={({ item }) => (
+          <View style={styles.cell}>
+            <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+          </View>
+        )}
         testID="owner-feed-list"
       />
 
-      <Sheet
-        visible={selected != null}
-        title={selected?.sitterName ?? "Photo"}
-        onClose={() => setSelected(null)}
-        testID="feed-detail"
-      >
-        {selected ? <FeedDetail post={selected} /> : null}
-      </Sheet>
+      <FeedViewer
+        visible={viewerPostId != null}
+        posts={posts}
+        initialPostId={viewerPostId}
+        onClose={() => setViewerPostId(null)}
+        onNearEnd={() => void loadMore()}
+      />
     </SafeAreaView>
-  );
-}
-
-function FeedDetail({ post }: { post: FeedTimelinePost }) {
-  const styles = useThemedStyles(makeStyles);
-  const isVideo = post.media.resourceType === "video";
-  const imageUri = isVideo
-    ? videoPosterUrl(post.media.publicId, 800)
-    : thumbUrl(post.media.publicId, 800);
-
-  return (
-    <View style={styles.detail} testID="feed-detail-body">
-      {isVideo && Platform.OS === "web" ? (
-        createElement("video", {
-          src: videoUrl(post.media.publicId),
-          controls: true,
-          playsInline: true,
-          style: {
-            width: "100%",
-            maxHeight: 360,
-            borderRadius: 12,
-            backgroundColor: "#000",
-          },
-          "data-testid": "feed-detail-video",
-        })
-      ) : imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.detailImage} accessibilityIgnoresInvertColors />
-      ) : null}
-      {post.caption ? <Text style={styles.detailCaption}>{post.caption}</Text> : null}
-      <Text style={styles.detailMeta}>
-        {post.sitterName} · {formatFeedTime(post.createdAt)}
-      </Text>
-    </View>
   );
 }
 
@@ -231,7 +198,7 @@ const makeStyles = (theme: Theme) =>
     },
     list: {
       flexGrow: 1,
-      padding: theme.spacing.md,
+      padding: theme.spacing.sm,
       maxWidth: 480,
       width: "100%",
       alignSelf: "center",
@@ -241,25 +208,14 @@ const makeStyles = (theme: Theme) =>
     },
     petSwitch: {
       marginBottom: theme.spacing.md,
+      paddingHorizontal: theme.spacing.xs,
     },
-    gap: {
-      height: theme.spacing.md,
+    row: {
+      gap: 2,
+      marginBottom: 2,
     },
-    detail: {
-      gap: theme.spacing.sm,
-    },
-    detailImage: {
-      width: "100%",
-      aspectRatio: 4 / 3,
-      borderRadius: theme.radius.md,
-      backgroundColor: theme.color.border,
-    },
-    detailCaption: {
-      fontSize: theme.fontSize.body,
-      color: theme.color.text,
-    },
-    detailMeta: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
+    cell: {
+      flex: 1,
+      maxWidth: "33.333%",
     },
   });

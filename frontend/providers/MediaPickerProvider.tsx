@@ -58,7 +58,7 @@ const hasTouchCamera = () =>
 
 /**
  * Mounted once at the app root. Gives `pickMedia()` its UI (phase-04 4.7):
- * - desktop frame or demo account → sample tray + Upload from computer (+ Take photo on phones)
+ * - desktop frame or demo account → sample tray + Choose from library (+ Take photo on phones)
  * - a real phone → the system camera / library dialog straight away
  * Videos over 30 s open the trim sheet before `pickMedia()` resolves.
  * Web only for now; native needs `expo-image-picker` and a native trim sheet.

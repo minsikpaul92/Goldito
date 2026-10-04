@@ -13,15 +13,16 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-06.md](phases/phase-06.md) (6.1) · [sitter-care-loop.ko.md](sitter-care-loop.ko.md).
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) Follow-up (**5.8**).
 
 | Step | Action |
 | :--- | :--- |
-| 1 | New branch from `main` after Phase 05 PR merges — or continue if still on `feat/phase-05-feed` until PR merges; prefer `feat/phase-06-care` from latest `main` |
-| 2 | **Current focus = 6.1 only** — Owner Care request UI on pet detail → one commit → update this file |
-| 3 | Do not skip ahead to 6.12 AI until the DB/UI loop for tasks is in place |
+| 1 | Stay on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) for feed polish |
+| 2 | **Current focus = 5.8 only** — visibility / owner posts / Share with owner → one commit → update this file |
+| 3 | **5.10** stays deferred (viewer open-at-wrong-index on Expo web) — do not block on it |
+| 4 | After 5.8–5.9 (or when pausing polish): move focus to **6.1** on `feat/phase-06-care` from latest `main` |
 
-**Phase 05 complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)): 5.1–5.6 · sitter +Photo · demo tray · notifications · `007` hosted.
+**Phase 05 core (5.1–5.6) + 5.7 delete done**; remaining polish = 5.8–5.10.
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
@@ -36,7 +37,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **6.1** | Owner care tasks UI — Care request on pet detail | [phase-06.md](phases/phase-06.md) |
+| **5.8** | Feed visibility + owner posts + sitter "Share with owner" | [phase-05.md](phases/phase-05.md) Follow-up |
 
 ---
 
@@ -48,7 +49,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past + Profile Earnings (later)
+- [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
+- [ ] **5.9–5.10 Feed album polish** (after 5.8): **5.9** notify only when shared · **5.10 NEEDS FIX** FeedViewer on Expo web — tapping a photo opens/plays the first video (index 0) instead of that photo; attempts on `feat/phase-05-feed` did not stick in Safari (2026-10-04)
+- [ ] **6.1** Owner care tasks UI — Care request on pet detail ([phase-06.md](phases/phase-06.md)) — after Phase 05 polish chunk or when focus moves
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
@@ -76,7 +79,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
-- [x] **Phase 05 complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)
+- [x] **5.7** Author-only delete: `deleteFeedPost` + FeedViewer **Delete** (sitter only) → confirm Sheet → toast + grid refresh; owner Feed has no Delete. RLS `feed_posts_delete`. `tsc` ✓ (2026-10-04). **5.10** viewer open-at-index still deferred.
+- [x] **Phase 05 core complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)
 - [x] **5.6** Remove `/sitter/dev-upload`; Playwright `media-picker` retargeted to `/sitter/pets/[petId]` **+ Photo** FAB; mock `feed_posts`/`media` + pet owner embed. `tsc` ✓ (2026-10-04)
 - [x] **demo tray** Real photos (carrot / park / complaining) + `play_fetch.mp4`; dropped `walk_squirrel` placeholder (2026-10-04)
 - [x] **5.x sitter +Photo** `/sitter/pets/[petId]`: timeline + **+ Photo** FAB → `pickMedia` → `uploadMedia(feed)` → `createFeedPost(FALLBACK_CAPTION)` · uploading skeleton · toast `Shared with {owner} 🐾` · empty "tap + to share {name}'s day". Sitter Feed tab lists in-care pets; Home **Now caring** pet chips → pet feed. `caringPets` helper. `tsc` ✓ (2026-10-04)

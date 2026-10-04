@@ -129,7 +129,7 @@ export default function SitterHome() {
                       key={p.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Share photos of ${p.name}`}
-                      onPress={() => router.push(`/sitter/pets/${p.id}`)}
+                      onPress={() => router.push(`/sitter/feed/${p.id}`)}
                       style={({ pressed }) => [styles.petChip, pressed && styles.pressed]}
                       testID={`caring-pet-${p.id}`}
                     >

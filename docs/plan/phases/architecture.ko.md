@@ -202,8 +202,8 @@ PawNote/
 | `/sitter/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
 | `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | Inquiries · Requests · Upcoming · **Past**(돌봄 히스토리). 추후 Past/Earnings 진입 | Accept | 03B (+03C·07B·07C) |
 | `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + **Send** (D36) | Send | 07B |
-| `/sitter/feed` (tab: Feed) | sitter | 맡은 펫 앨범 · + Photo (`/sitter/pets/[petId]`와 연결) | **+ Photo** | 05 |
-| `/sitter/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
+| `/sitter/feed` (tab: Feed) | sitter | 맡은 펫 앨범 · + Photo (`/sitter/feed/[petId]`와 연결) | **+ Photo** | 05 |
+| `/sitter/feed/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
 | `/sitter/diary` (tab: Diary) | sitter | 스테이 로그 + 저녁 칩 알림장(구 Report·Tasks) | **Send** / Mark done | 06–07 |
 | `/sitter/mood` (tab: Mood) | sitter | Owner와 동일 Mood 도구 | Snap / pick | 11.9 |
 | `/sitter/tasks`, `/sitter/report` | sitter | *(removed as tabs — redirect to Home / Diary)* | — | legacy |
@@ -363,7 +363,7 @@ PawNote/
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/diary` (entry) |
 | `safety_danger` | owner | 트리거 on `safety_checks` insert (`safety_status='DANGER'`) — 08 stretch | "Blocked a risky treat for Max ⚠️" | `/owner/notifications` |
 | `task_due` (stretch) | sitter | Serverless Job / APScheduler (6.7) | "Max's walk is due at 10:30" | `/sitter/tasks` |
-| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Max" | `/sitter/pets/[id]` |
+| `photo_request` (P1) | sitter | Phase 11 | "Owner asked for a photo of Max" | `/sitter/feed/[id]` |
 
 프론트: `NotificationsProvider`가 `notifications` Realtime(INSERT, `user_id=eq.<me>`)을 구독 → 토스트 + unread 카운트 갱신 + type별 쿼리 invalidate (예: `feed_post` → 피드 리페치).
 
@@ -375,7 +375,7 @@ PawNote/
 2. **1화면 1 주 액션** — §3 표의 "주 액션"만 primary 버튼.
 3. **sitter 필수 텍스트 입력 금지 (P0, D38 — 글쓰기 거의 제로: AI가 하루 기록·사진에서 칩을 제안하고 시터는 고르기 + 짧은 메모만 선택)** — 예외(모두 선택): 알림장 짧은 메모(≤ 200, D38), check-in 메모 1줄(≤ 120, D34), 알림장 게시 전 본문 편집, 인수인계 제안 메모 1줄, 문의 스레드 짧은 답, 시터 정책 문서·선호 만남 장소(프로필, 한 번 작성). 견주 텍스트(문의 질문·케어 의뢰서·동의서 서명 이름·선호 만남 장소)는 허용.
 4. **DANGER 모달**은 빨간 전체 모달, "I understand — don't feed" 버튼 누르기 전 닫기 불가 (backdrop/ESC 무시).
-5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Upload from computer**. 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
+5. **사진 선택:** 모든 화면은 `pickMedia()`(4.7)만 사용. 네이티브 = `expo-image-picker` 카메라/앨범, 모바일 웹 = `capture` 입력, **데스크톱 프레임·데모 계정 = 샘플 사진 트레이 + Choose from library**(시스템 파일/갤러리 피커 — 폰·웹 데모 동일 문구, "Upload from computer" 금지). 샘플도 `uploadMedia()`를 그대로 타서 AI가 실제로 분석.
 6. 모든 사용자 문구는 영어 (D1). Empty state 예: "No posts yet — your sitter will share photos here."
 7. 개발 빌드에만 헤더에 `Owner`/`Sitter` 역할 라벨 표시 (`APP_ENV !== 'production'`).
 8. **마우스로 전부 동작 (D25):** 제스처 전용 기능 금지 (스와이프 뒤로가기·삭제, 시트 끌어내리기, 길게 누르기, 당겨서 새로고침 — 웹 `RefreshControl`은 동작 안 함). 항상 보이는 버튼을 둔다. 웹 미지원 라이브러리 금지 (예: `@react-native-community/datetimepicker` → 직접 만든 선택 UI). 화면 PR마다 [DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 데스크톱 체크.

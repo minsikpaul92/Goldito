@@ -1,69 +1,166 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { createElement, useEffect, useRef, useState } from "react";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { formatFeedTime, type FeedTimelinePost } from "../lib/feed";
-import { thumbUrl, videoPosterUrl } from "../lib/cloudinary";
+import { thumbUrl, videoPosterUrl, videoUrl } from "../lib/cloudinary";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
   post: FeedTimelinePost;
-  onPress: () => void;
+  /** Open the full-screen viewer. */
+  onOpen: () => void;
 };
 
-/** Kidsnote-style feed card: 4:3 thumb, caption, relative time, sitter name (phase-05). */
-export function FeedCard({ post, onPress }: Props) {
+/**
+ * Instagram-style album cell.
+ * - Tap photo / playing video → full-screen viewer
+ * - ▶ / ❚❚ = play·pause in the cell; ✕ = back to poster
+ * - No native controls (no ⋯ / scrubber)
+ */
+export function FeedCard({ post, onOpen }: Props) {
   const styles = useThemedStyles(makeStyles);
   const isVideo = post.media.resourceType === "video";
-  const uri = isVideo
+  const poster = isVideo
     ? videoPosterUrl(post.media.publicId, 400)
     : thumbUrl(post.media.publicId, 400);
+  const [playingInline, setPlayingInline] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    setPlayingInline(false);
+    setPaused(false);
+  }, [post.id]);
+
+  useEffect(() => {
+    if (!playingInline || !videoRef.current) return;
+    const el = videoRef.current;
+    const onEnded = () => {
+      setPlayingInline(false);
+      setPaused(false);
+    };
+    el.addEventListener("ended", onEnded);
+    if (paused) {
+      el.pause();
+    } else {
+      void el.play().catch(() => {
+        el.muted = true;
+        void el.play();
+      });
+    }
+    return () => el.removeEventListener("ended", onEnded);
+  }, [playingInline, paused]);
+
+  const stopInline = () => {
+    videoRef.current?.pause();
+    setPlayingInline(false);
+    setPaused(false);
+  };
+
+  const expand = () => {
+    stopInline();
+    onOpen();
+  };
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${post.caption ?? "Photo"} from ${post.sitterName}, ${formatFeedTime(post.createdAt)}`}
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-      testID={`feed-card-${post.id}`}
-    >
-      <View style={styles.media}>
-        {uri ? (
-          <Image source={{ uri }} style={styles.image} accessibilityIgnoresInvertColors />
-        ) : (
-          <View style={[styles.image, styles.placeholder]} />
-        )}
-        {isVideo ? (
-          <View style={styles.playBadge} accessibilityElementsHidden>
-            <Text style={styles.playIcon}>▶</Text>
-          </View>
-        ) : null}
-      </View>
-      {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
-      <Text style={styles.meta}>
-        {post.sitterName} · {formatFeedTime(post.createdAt)}
-      </Text>
-    </Pressable>
+    <View style={styles.card} testID={`feed-card-${post.id}`}>
+      {isVideo && playingInline && Platform.OS === "web" ? (
+        <>
+          {createElement("video", {
+            ref: (el: HTMLVideoElement | null) => {
+              videoRef.current = el;
+            },
+            // Inline preview can stay lighter; fullscreen uses 1080.
+            src: videoUrl(post.media.publicId, 720),
+            controls: false,
+            playsInline: true,
+            "webkit-playsinline": "true",
+            autoPlay: true,
+            preload: "auto",
+            style: {
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              backgroundColor: "#000",
+              pointerEvents: "none",
+            },
+            "data-testid": `feed-inline-video-${post.id}`,
+          })}
+          {/* Tap the video (not ✕ / play) → expand. Siblings only — no nested buttons. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open full screen"
+            onPress={expand}
+            style={StyleSheet.absoluteFill}
+            testID={`feed-inline-open-${post.id}`}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Stop and show thumbnail"
+            onPress={stopInline}
+            style={[styles.cornerBtn, styles.cornerLeft]}
+            testID={`feed-inline-stop-${post.id}`}
+          >
+            <Text style={styles.cornerIcon}>✕</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={paused ? "Play" : "Pause"}
+            onPress={() => setPaused((p) => !p)}
+            style={styles.playBadge}
+            testID={`feed-inline-toggle-${post.id}`}
+          >
+            <Text style={styles.playIcon}>{paused ? "▶" : "❚❚"}</Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${post.caption ?? "Photo"} from ${post.sitterName}, ${formatFeedTime(post.createdAt)}`}
+            onPress={onOpen}
+            style={StyleSheet.absoluteFill}
+          >
+            {poster ? (
+              <Image
+                source={{ uri: poster }}
+                style={styles.image}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <View style={[styles.image, styles.placeholder]} />
+            )}
+          </Pressable>
+          {isVideo ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Play video here"
+              hitSlop={8}
+              onPress={() => {
+                setPaused(false);
+                setPlayingInline(true);
+              }}
+              style={styles.playBadge}
+              testID={`feed-play-${post.id}`}
+            >
+              <Text style={styles.playIcon}>▶</Text>
+            </Pressable>
+          ) : null}
+        </>
+      )}
+    </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: {
-      backgroundColor: theme.color.surface,
-      borderRadius: theme.radius.lg,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      overflow: "hidden",
-      gap: theme.spacing.sm,
-      paddingBottom: theme.spacing.sm,
-    },
-    pressed: {
-      opacity: 0.85,
-    },
-    media: {
-      width: "100%",
-      aspectRatio: 4 / 3,
+      flex: 1,
+      aspectRatio: 1,
       backgroundColor: theme.color.border,
+      overflow: "hidden",
       position: "relative",
     },
     image: {
@@ -75,28 +172,38 @@ const makeStyles = (theme: Theme) =>
     },
     playBadge: {
       position: "absolute",
-      right: theme.spacing.sm,
-      bottom: theme.spacing.sm,
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      right: theme.spacing.xs,
+      bottom: theme.spacing.xs,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       backgroundColor: theme.color.overlay,
       alignItems: "center",
       justifyContent: "center",
+      zIndex: 3,
     },
     playIcon: {
       color: theme.color.primaryText,
-      fontSize: theme.fontSize.small,
-      marginLeft: 2,
+      fontSize: 11,
+      marginLeft: 1,
     },
-    caption: {
-      fontSize: theme.fontSize.body,
-      color: theme.color.text,
-      paddingHorizontal: theme.spacing.md,
+    cornerBtn: {
+      position: "absolute",
+      top: theme.spacing.xs,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: theme.color.overlay,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 3,
     },
-    meta: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-      paddingHorizontal: theme.spacing.md,
+    cornerLeft: {
+      left: theme.spacing.xs,
+    },
+    cornerIcon: {
+      color: theme.color.primaryText,
+      fontSize: 13,
+      fontWeight: "700",
     },
   });

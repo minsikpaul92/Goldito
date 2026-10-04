@@ -11,7 +11,10 @@ export default function SitterTabsLayout() {
         name="bookings"
         options={{ title: "Bookings", tabBarIcon: tabIcon("calendar-outline") }}
       />
-      <Tabs.Screen name="feed" options={{ title: "Feed", tabBarIcon: tabIcon("images-outline") }} />
+      <Tabs.Screen
+        name="feed"
+        options={{ title: "Feed", headerShown: false, tabBarIcon: tabIcon("images-outline") }}
+      />
       <Tabs.Screen name="diary" options={{ title: "Diary", tabBarIcon: tabIcon("book-outline") }} />
       <Tabs.Screen name="mood" options={{ title: "Mood", tabBarIcon: tabIcon("happy-outline") }} />
     </RoleTabs>

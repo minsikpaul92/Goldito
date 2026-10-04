@@ -1,7 +1,7 @@
 /**
  * `pickMedia()` — the ONLY way any screen picks a photo or video (phase-04 4.7, D25).
  *
- * The UI (sample tray, "Upload from computer", video trim sheet) lives in
+ * The UI (sample tray, "Choose from library", video trim sheet) lives in
  * `MediaPickerProvider`, mounted once at the app root. Screens just call:
  *
  *   const picked = await pickMedia({ purpose: "feed" });

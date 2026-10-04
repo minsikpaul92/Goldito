@@ -187,6 +187,9 @@ begin
   perform _t_ok(exists (select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'),
     'notifications is in the realtime publication');
+  perform _t_ok(exists (select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'feed_posts'),
+    '5.7: feed_posts is in the realtime publication (owner refetch on delete)');
 end;
 $$;
 

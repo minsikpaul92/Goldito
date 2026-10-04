@@ -27,7 +27,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Sitter pet 피드 + 업로드 FAB (`/sitter/feed` · `/sitter/pets/[petId]`) | 앨범 날짜 필터·풀 그리드 폴리시 (P1) |
+| Sitter pet 피드 + 업로드 FAB (`/sitter/feed` · `/sitter/feed/[petId]`) | 앨범 날짜 필터·풀 그리드 폴리시 (P1) |
 | Owner Feed (쿼리·카드·멀티토글·상세) | AI caption·분류 + 날짜별 앨범 묶기 (09) |
 | Diary 탭 stub + Live는 5.4 알림과 연동 가능 (풀 Diary UI는 06–07) | Diary 작성 풀 UX (오너 글쓰기 — follow-up) |
 | 트리거 `notify_feed_post` (`007`) + `feed_posts.category` null | Push (Expo) — 웹 토스트만 |
@@ -39,7 +39,7 @@
 
 | 화면 | Route | 역할 | 핵심 액션 | 상태 문구 |
 | :--- | :--- | :--- | :--- | :--- |
-| Sitter Pet 피드 | `/sitter/pets/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Max's day." |
+| Sitter Pet 피드 | `/sitter/feed/[petId]` | sitter | **+ Photo** FAB → 업로드 중 카드 skeleton → 성공 토스트 "Shared with {owner} 🐾" | empty: "No posts yet — tap + to share Max's day." |
 | Owner Feed | `/owner/feed` | owner | 그리드 · 펫 멀티토글 · 탭 → 상세 | empty: "No posts yet — your sitter will share photos here." |
 | Owner Diary | `/owner/diary` | owner | Live / 히스토리 (펫·시터·날짜); 사진 → Feed 미러 (D47) | empty: "When a stay is on, updates show up here live." |
 | 알림 센터 | `/owner/notifications`, `/sitter/notifications` | 둘 다 | 탭 → 이동 | empty: "You're all caught up." |
@@ -58,7 +58,32 @@ FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 �
 | 5.4 | Realtime subscribe | `NotificationsProvider` … `feed_post`면 Feed(+ Diary Live) 리페치. 로그인 시 unread count |
 | 5.5 | 알림 센터 | 최근 50개 … architecture §7 "탭 시 이동" (`feed_post` → `/owner/feed`, 이후 Diary 항목도 `/owner/diary`) |
 | 5.6 | Dev 화면 정리 | Phase 04 `dev-upload` 제거 — 실업로드는 Sitter Feed / pet FAB |
-| 5.x follow-up | Sitter upload path | `/sitter/pets/[petId]` + Photo → `uploadMedia` → `createFeedPost` (Goal 1). Diary Live 목록 UI는 06–07 |
+| 5.x follow-up | Sitter upload path | `/sitter/feed/[petId]` + Photo → `uploadMedia` → `createFeedPost` (Goal 1). Diary Live 목록 UI는 06–07 |
+
+---
+
+## Follow-up (post-05, not started) — Feed delete · visibility · viewer open bug
+
+> Documented 2026-10-04 after Phase 05 manual test. **Do not implement until Current focus allows** (after 06 or as a small `feat/feed-album-polish` chunk). Spec wins over ad-hoc UI.
+
+### Product rules
+
+1. **Delete = author only.** The person who posted can remove the post; the other role cannot.
+2. **Today (schema):** `feed_posts.sitter_id` is the only author. RLS already has `feed_posts_delete` (`sitter_id = auth.uid()`) — **UI is missing**.
+3. **Later (when owners post):** introduce a real author (`posted_by` / keep role column) and delete policy = `posted_by = auth.uid()`. Cascade: deleting a post should not leave orphan care-critical media if still referenced elsewhere; prefer delete `feed_posts` row + Cloudinary cleanup only when `media` is unused.
+4. **Visibility (related, same epic):** stay-default is a **shared album**. Options to add with schema:
+   - Sitter upload: **Share with owner** (default on) → if off, post is sitter-only (no owner notify / not in owner Feed).
+   - Owner upload: **owner-only** by default; optional **Visible to sitter** while on duty (Kidsnote-style family album vs private scrapbook).
+5. **UX:** Full-screen viewer → **Delete** (danger text button) → confirm sheet ("Delete this photo?") → toast → close viewer + grid refresh. Optional later: long-press on grid cell. No delete on the sample tray.
+
+### Tasks (proposed IDs)
+
+| ID | Work |
+| :--- | :--- |
+| **5.7** | Sitter delete UI on own posts (viewer + confirm); wire existing RLS; hide Delete for non-authors — **done** (`deleteFeedPost`, FeedViewer Delete, confirm Sheet on sitter pet feed) |
+| **5.8** | Schema: `visibility` / owner-as-author + RLS select/insert; sitter "Share with owner" chip at upload; owner Feed FAB for own posts |
+| **5.9** | Notifications: only fire `feed_post` when shared with the other party |
+| **5.10** | **NEEDS FIX** — `FeedViewer` on Expo web: tap photo → full-screen shows/plays post at index 0 (often a video) instead of the tapped post. Repro: sitter Feed → Max → tap white-dog photo → hallway video plays. `initialPostId` is correct; open-at-index fails on web (`FlatList` then `ScrollView`+`contentOffset`+`scrollTo` still wrong in Safari, 2026-10-04). Likely fix: render only the active page (no horizontal pager on web), or a pager that does not mount/play other videos until scrolled to. DoD: tap photo → that photo; tap video → that video plays. |
 
 ---
 
@@ -73,7 +98,7 @@ FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 �
 
 ## 산출물
 
-- `frontend/app/sitter/pets/[petId].tsx`, `frontend/app/owner/feed.tsx`, `frontend/app/owner/(tabs)/diary.tsx`, `frontend/app/(*)/notifications.tsx`
+- `frontend/app/sitter/(tabs)/feed/[petId].tsx`, `frontend/app/owner/feed.tsx`, `frontend/app/owner/(tabs)/diary.tsx`, `frontend/app/(*)/notifications.tsx`
 - `frontend/components/FeedCard.tsx`, `NotificationBell.tsx`, `frontend/providers/NotificationsProvider.tsx`, `frontend/lib/feed.ts`
 - `supabase/migrations/007_feed_notifications.sql`
 - Owner tabs D47: Feed = album; stay Live stream lives under **Diary** (not a separate Care Live tab)

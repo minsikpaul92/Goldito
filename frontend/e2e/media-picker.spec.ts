@@ -97,7 +97,7 @@ async function setup(page: Page, options: { failSignOnce?: boolean } = {}): Prom
 
   await signIn(page, SITTER);
   await app(page).getByRole("heading", { name: "Home" }).waitFor();
-  await page.goto(`/sitter/pets/${PET_ID}`);
+  await page.goto(`/sitter/feed/${PET_ID}`);
   await app(page).getByTestId("feed-add-photo").waitFor();
   return calls;
 }
@@ -127,12 +127,12 @@ test.describe("pickMedia", () => {
     expect(calls.complete[0]).toMatchObject({ pet_id: PET_ID, purpose: "feed", resource_type: "image" });
   });
 
-  test("Upload from computer resizes a big photo to a 2000 px long edge", async ({ page }) => {
+  test("Choose from library resizes a big photo to a 2000 px long edge", async ({ page }) => {
     const calls = await setup(page);
 
     await app(page).getByTestId("feed-add-photo").click();
     const chooser = page.waitForEvent("filechooser");
-    await app(page).getByTestId("media-upload-computer").click();
+    await app(page).getByTestId("media-choose-library").click();
     const png = await page.evaluate(async () => {
       const canvas = document.createElement("canvas");
       canvas.width = 4000;
@@ -157,7 +157,7 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     const chooser = page.waitForEvent("filechooser");
-    await app(page).getByTestId("media-upload-computer").click();
+    await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-35s.webm"));
 
     await expect(app(page).getByTestId("trim-sheet")).toBeVisible();
@@ -190,7 +190,7 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     const chooser = page.waitForEvent("filechooser");
-    await app(page).getByTestId("media-upload-computer").click();
+    await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-35s.webm"));
     await expect(app(page).getByTestId("trim-sheet")).toBeVisible();
 
@@ -206,7 +206,7 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("feed-add-photo").click();
     const chooser = page.waitForEvent("filechooser");
-    await app(page).getByTestId("media-upload-computer").click();
+    await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-10s.webm"));
 
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");

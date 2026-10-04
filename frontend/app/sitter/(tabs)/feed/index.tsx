@@ -2,16 +2,16 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Card } from "../../../components/ui/Card";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { caringPetsFromBookings } from "../../../features/feed/caringPets";
-import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { listSitterBookings } from "../../../lib/bookings";
-import { useSession } from "../../../providers/SessionProvider";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { Theme } from "../../../theme/themes";
+import { Card } from "../../../../components/ui/Card";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { caringPetsFromBookings } from "../../../../features/feed/caringPets";
+import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
+import { listSitterBookings } from "../../../../lib/bookings";
+import { useSession } from "../../../../providers/SessionProvider";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { Theme } from "../../../../theme/themes";
 
 type State =
   | { status: "loading" }
@@ -19,7 +19,7 @@ type State =
   | { status: "error"; message: string };
 
 /**
- * Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/pets/[petId]` (+ Photo FAB).
+ * Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/feed/[petId]` (+ Photo FAB).
  */
 export default function SitterFeed() {
   const styles = useThemedStyles(makeStyles);
@@ -79,7 +79,7 @@ export default function SitterFeed() {
           key={pet.id}
           accessibilityRole="button"
           accessibilityLabel={`${pet.name}, share photos`}
-          onPress={() => router.push(`/sitter/pets/${pet.id}`)}
+          onPress={() => router.push(`/sitter/feed/${pet.id}`)}
           style={({ pressed }) => pressed && styles.pressed}
           testID={`sitter-feed-pet-${pet.id}`}
         >

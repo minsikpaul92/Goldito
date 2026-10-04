@@ -84,16 +84,18 @@ function asFeedPost(row: FeedPostRow): FeedPost {
 }
 
 function asTimelinePost(row: TimelineRow): FeedTimelinePost | null {
-  if (!row.media) return null;
+  const mediaRaw = row.media as MediaEmbed | MediaEmbed[] | null;
+  const media = Array.isArray(mediaRaw) ? mediaRaw[0] : mediaRaw;
+  if (!media?.cloudinary_public_id || !media.resource_type) return null;
   return {
     ...asFeedPost(row),
     media: {
-      id: row.media.id,
-      publicId: row.media.cloudinary_public_id,
-      resourceType: row.media.resource_type,
-      width: row.media.width,
-      height: row.media.height,
-      durationS: row.media.duration_s == null ? null : Number(row.media.duration_s),
+      id: media.id,
+      publicId: media.cloudinary_public_id,
+      resourceType: media.resource_type,
+      width: media.width,
+      height: media.height,
+      durationS: media.duration_s == null ? null : Number(media.duration_s),
     },
     sitterName: row.sitter?.display_name ?? "Your sitter",
   };
@@ -126,6 +128,32 @@ export async function createFeedPost(input: CreateFeedPostInput): Promise<FeedPo
   }
 
   return asFeedPost(data as FeedPostRow);
+}
+
+/**
+ * Delete one feed_posts row. RLS `feed_posts_delete` allows only the author
+ * (`sitter_id = auth.uid()`). Does not remove Cloudinary / media rows (5.7).
+ */
+export async function deleteFeedPost(postId: string): Promise<void> {
+  const { data: userData, error: userError } = await getSupabase().auth.getUser();
+  if (userError || !userData.user) {
+    throw new Error("Couldn't confirm you are signed in.");
+  }
+
+  const { data, error } = await getSupabase()
+    .from("feed_posts")
+    .delete()
+    .eq("id", postId)
+    .eq("sitter_id", userData.user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Couldn't delete this photo. Try again.");
+  }
+  if (!data) {
+    throw new Error("You can only delete photos you posted.");
+  }
 }
 
 /**
