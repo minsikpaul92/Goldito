@@ -161,7 +161,7 @@ export function FeedViewer({
             style={[styles.deleteBtn, { top: Math.max(insets.top, 12) }]}
             testID="feed-viewer-delete"
           >
-            <Text style={styles.deleteLabel}>Delete</Text>
+            <Text style={styles.deleteLabel}>🗑️</Text>
           </Pressable>
         ) : null}
       </View>

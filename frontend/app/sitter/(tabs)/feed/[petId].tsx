@@ -308,7 +308,7 @@ export default function SitterPetFeed() {
         testID="feed-delete-sheet"
         footer={
           <Button
-            label={deleting ? "Deleting…" : "Delete photo"}
+            label={deleting ? "…" : "🗑️"}
             disabled={deleting}
             onPress={() => void confirmDelete()}
             testID="feed-delete-confirm"
