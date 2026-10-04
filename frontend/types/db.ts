@@ -45,3 +45,18 @@ export type SitterProfile = {
   lobby_notes: string | null;
   packing_list: string[] | null;
 };
+
+/** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */
+export type CaptionSource = "ai" | "fallback" | "task";
+
+/** One Kidsnote-style feed card (1 post = 1 media, D10). */
+export type FeedPostRow = {
+  id: string;
+  pet_id: string;
+  sitter_id: string;
+  media_id: string;
+  caption: string | null;
+  caption_source: CaptionSource | null;
+  task_log_id: string | null;
+  created_at: string;
+};
