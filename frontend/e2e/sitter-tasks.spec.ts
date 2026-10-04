@@ -25,7 +25,8 @@ test.describe("sitter today's tasks", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("today-tasks")).toBeVisible();
-    await expect(screen.getByText("Joint pill")).toBeVisible();
+    // exact: the "Next up: … · Joint pill" line may repeat the title (depends on the time of day).
+    await expect(screen.getByText("Joint pill", { exact: true })).toBeVisible();
     expect(db.task_logs).toHaveLength(2);
     await expect(screen.getByText("Paused play")).toHaveCount(0);
     await expect(screen.getByTestId("tasks-next")).toContainText("Next up: Max");
