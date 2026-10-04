@@ -1,4 +1,8 @@
 import { apiPost } from "./api";
+import { prepareForUpload } from "./mediaNormalize";
+import { UploadError, type UploadStep } from "./uploadError";
+
+export { UploadError, VideoTooLongError, type UploadStep } from "./uploadError";
 
 export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label";
 export type ResourceType = "image" | "video";
@@ -19,18 +23,6 @@ export type UploadMediaResult = {
   thumbUrl: string;
 };
 
-export type UploadStep = "sign" | "upload" | "complete";
-
-export class UploadError extends Error {
-  readonly step: UploadStep;
-
-  constructor(step: UploadStep, message: string) {
-    super(message);
-    this.name = "UploadError";
-    this.step = step;
-  }
-}
-
 type SignResponse = {
   cloud_name: string;
   api_key: string;
@@ -38,6 +30,8 @@ type SignResponse = {
   signature: string;
   folder: string;
   upload_url: string;
+  /** Incoming transformation — signed, so it must be sent back unchanged. */
+  transformation: string;
 };
 
 type CompleteResponse = {
@@ -47,9 +41,6 @@ type CompleteResponse = {
   thumb_url: string;
 };
 
-const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
-const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
-
 function guessResourceType(file: File | Blob, explicit?: ResourceType): ResourceType {
   if (explicit) return explicit;
   const type = "type" in file ? file.type : "";
@@ -57,21 +48,14 @@ function guessResourceType(file: File | Blob, explicit?: ResourceType): Resource
   return "image";
 }
 
-function assertSize(file: File | Blob, resourceType: ResourceType): void {
-  const max = resourceType === "video" ? VIDEO_MAX_BYTES : IMAGE_MAX_BYTES;
-  if (file.size > max) {
-    const label = resourceType === "video" ? "50MB" : "10MB";
-    throw new UploadError("upload", `Please pick a smaller file (max ${label}).`);
-  }
-}
-
 /**
- * Sign → Cloudinary direct upload → complete (media row).
- * Callers show Toast + Retry on UploadError.
+ * Normalize (resize photo / check video) → sign → Cloudinary direct upload → complete (media row).
+ * Callers show Toast + Retry on UploadError. A video over 30 s throws VideoTooLongError
+ * (a subclass) so the trim sheet in 4.7 can offer a window instead of a dead end.
  */
 export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaResult> {
   const resourceType = guessResourceType(input.file, input.resourceType);
-  assertSize(input.file, resourceType);
+  const file = await prepareForUpload(input.file, resourceType);
 
   let sign: SignResponse;
   try {
@@ -88,12 +72,13 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
 
   const form = new FormData();
   const filename =
-    "name" in input.file && typeof input.file.name === "string" ? input.file.name : "upload.jpg";
-  form.append("file", input.file, filename);
+    "name" in file && typeof file.name === "string" ? file.name : "upload.jpg";
+  form.append("file", file, filename);
   form.append("api_key", sign.api_key);
   form.append("timestamp", String(sign.timestamp));
   form.append("signature", sign.signature);
   form.append("folder", sign.folder);
+  form.append("transformation", sign.transformation);
 
   let publicId: string;
   let width: number | undefined;

@@ -9,7 +9,8 @@ from pydantic import BaseModel, Field
 
 from app.deps.auth import CurrentUser, require_role
 from app.deps.supabase import get_service_client
-from app.services import authz, cloudinary as cloudinary_service
+from app.services import authz
+from app.services import cloudinary as cloudinary_service
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
@@ -31,6 +32,7 @@ class SignResponse(BaseModel):
     signature: str
     folder: str
     upload_url: str
+    transformation: str
 
 
 class CompleteRequest(BaseModel):
@@ -102,6 +104,7 @@ def sign_upload(
         signature=params.signature,
         folder=params.folder,
         upload_url=params.upload_url,
+        transformation=params.transformation,
     )
 
 

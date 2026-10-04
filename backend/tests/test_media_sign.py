@@ -9,7 +9,8 @@ import pytest
 from app.config import get_settings
 from app.deps.auth import Profile, get_profile_lookup
 from app.main import app
-from app.services import authz, cloudinary as cloudinary_service
+from app.services import authz
+from app.services import cloudinary as cloudinary_service
 from fastapi.testclient import TestClient
 
 SUPABASE_URL = "https://example.supabase.co"
@@ -119,6 +120,7 @@ def test_sign_returns_folder_and_signature(client: TestClient, monkeypatch: pyte
             signature="sig-abc",
             folder=f"pawnote/{kwargs['pet_id']}/{kwargs['purpose']}",
             upload_url="https://api.cloudinary.com/v1_1/pawnote-test/image/upload",
+            transformation=cloudinary_service.INCOMING_IMAGE,
         ),
     )
     response = client.post(
@@ -132,6 +134,7 @@ def test_sign_returns_folder_and_signature(client: TestClient, monkeypatch: pyte
     assert body["signature"] == "sig-abc"
     assert body["upload_url"].endswith("/image/upload")
     assert body["cloud_name"] == "pawnote-test"
+    assert body["transformation"] == cloudinary_service.INCOMING_IMAGE
 
 
 def test_handoff_requires_booking_id(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -179,6 +182,7 @@ def test_handoff_uses_booked_sitter_check(client: TestClient, monkeypatch: pytes
             signature="s",
             folder=f"pawnote/{kwargs['pet_id']}/handoff",
             upload_url="https://api.cloudinary.com/v1_1/pawnote-test/image/upload",
+            transformation=cloudinary_service.INCOMING_IMAGE,
         ),
     )
     booking_id = str(uuid4())
@@ -196,3 +200,53 @@ def test_handoff_uses_booked_sitter_check(client: TestClient, monkeypatch: pytes
     assert called["booking_id"] == booking_id
     assert called["pet_id"] == PET_ID
     assert called["from_hours_before"] == 2
+
+
+def _expected_signature(params: dict) -> str:
+    import cloudinary.utils
+
+    return cloudinary.utils.api_sign_request(params, "cloudinary-api-secret-for-tests")
+
+
+def test_sign_image_signs_incoming_transformation() -> None:
+    """Stored originals are normalized on upload: long edge 2000 px, q_auto, never f_auto."""
+    params = cloudinary_service.sign(pet_id=PET_ID, purpose="feed", resource_type="image")
+    assert params.transformation == "c_limit,w_2000/q_auto"
+    assert "f_auto" not in params.transformation
+    assert params.signature == _expected_signature(
+        {
+            "folder": params.folder,
+            "timestamp": params.timestamp,
+            "transformation": params.transformation,
+        }
+    )
+    # A client that drops or edits the transformation can no longer match the signature.
+    assert params.signature != _expected_signature(
+        {"folder": params.folder, "timestamp": params.timestamp}
+    )
+
+
+def test_sign_video_caps_duration_and_resolution() -> None:
+    params = cloudinary_service.sign(pet_id=PET_ID, purpose="report", resource_type="video")
+    assert params.transformation == "so_0,du_30/c_limit,w_1280,h_1280/q_auto"
+    assert params.upload_url.endswith("/video/upload")
+    assert params.signature == _expected_signature(
+        {
+            "folder": params.folder,
+            "timestamp": params.timestamp,
+            "transformation": params.transformation,
+        }
+    )
+
+
+def test_sign_endpoint_returns_incoming_transformation(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+    response = client.post(
+        "/api/media/sign",
+        headers={"Authorization": f"Bearer {sitter_token()}"},
+        json={"pet_id": PET_ID, "resource_type": "video", "purpose": "feed"},
+    )
+    assert response.status_code == 200
+    assert response.json()["transformation"] == cloudinary_service.INCOMING_VIDEO

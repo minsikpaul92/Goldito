@@ -11,6 +11,13 @@ from app.config import get_settings
 PURPOSES = ("feed", "task_proof", "report", "handoff", "safety_label")
 RESOURCE_TYPES = ("image", "video")
 
+# Incoming transformations (Media normalize policy, phase-04). Applied to the stored original
+# at upload time; delivery URLs still use f_auto,q_auto. Never f_auto on incoming.
+INCOMING_IMAGE = "c_limit,w_2000/q_auto"
+# Safety net behind the client trim/compress: first 30 s, long edge <= 1280 px.
+INCOMING_VIDEO = "so_0,du_30/c_limit,w_1280,h_1280/q_auto"
+INCOMING_TRANSFORMATIONS = {"image": INCOMING_IMAGE, "video": INCOMING_VIDEO}
+
 
 @dataclass(frozen=True)
 class SignParams:
@@ -20,6 +27,7 @@ class SignParams:
     signature: str
     folder: str
     upload_url: str
+    transformation: str
 
 
 def _configured() -> tuple[str, str, str]:
@@ -42,7 +50,11 @@ def media_folder(pet_id: str, purpose: str) -> str:
 
 
 def sign(*, pet_id: str, purpose: str, resource_type: str) -> SignParams:
-    """Sign folder + timestamp for a direct browser upload (no API secret in the client)."""
+    """Sign folder + incoming transformation + timestamp for a direct browser upload.
+
+    The client must send exactly these values (`folder`, `timestamp`, `transformation`) or the
+    signature will not match. The API secret never leaves the server.
+    """
     if purpose not in PURPOSES:
         raise ValueError(f"unsupported purpose: {purpose}")
     if resource_type not in RESOURCE_TYPES:
@@ -50,8 +62,9 @@ def sign(*, pet_id: str, purpose: str, resource_type: str) -> SignParams:
     cloud, key, secret = _configured()
     folder = media_folder(pet_id, purpose)
     timestamp = int(time())
+    transformation = INCOMING_TRANSFORMATIONS[resource_type]
     signature = cloudinary.utils.api_sign_request(
-        {"folder": folder, "timestamp": timestamp},
+        {"folder": folder, "timestamp": timestamp, "transformation": transformation},
         secret,
     )
     upload_url = f"https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload"
@@ -62,6 +75,7 @@ def sign(*, pet_id: str, purpose: str, resource_type: str) -> SignParams:
         signature=signature,
         folder=folder,
         upload_url=upload_url,
+        transformation=transformation,
     )
 
 

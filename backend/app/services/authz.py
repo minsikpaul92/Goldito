@@ -1,6 +1,6 @@
 """Authorization helpers for service-role routes (architecture §5)."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import httpx
@@ -111,9 +111,9 @@ def assert_booked_sitter(
         )
     agreed = datetime.fromisoformat(drop["agreed_at"].replace("Z", "+00:00"))
     if agreed.tzinfo is None:
-        agreed = agreed.replace(tzinfo=timezone.utc)
+        agreed = agreed.replace(tzinfo=UTC)
     earliest = agreed - timedelta(hours=from_hours_before)
-    if datetime.now(timezone.utc) < earliest:
+    if datetime.now(UTC) < earliest:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Handoff photos unlock 2 hours before drop-off.",

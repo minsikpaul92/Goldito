@@ -15,14 +15,7 @@
 
 Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-04.md](phases/phase-04.md) (Handoff + **Media normalize policy**) → [DESIGN.md](../../DESIGN.md) §7.8–7.9 if touching UI.
 
-| Step | Action |
-| :--- | :--- |
-| 1 | Merge docs PR **[#44](https://github.com/minsikpaul92/PawNote/pull/44)** (`docs/phase-04-queue`) if still open — TODO + media policy must be on `main` |
-| 2 | `git checkout feat/phase-04-media && git fetch origin && git rebase origin/main` (OB #43 already on main) |
-| 3 | Open **draft** Phase 04 PR from `feat/phase-04-media` if none exists; push |
-| 4 | Work **Current focus** below (one task → verify → commit → update this file) |
-
-**Already on `feat/phase-04-media` (not main):** sign + complete + authz + `uploadMedia()` + URL helpers + pytest — **partial**. Old client size checks do **not** yet match Media normalize policy (always resize photos; video trim UI = 4.7).
+Phase 04 branch `feat/phase-04-media` is rebased on `main` and its draft PR is open: [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) (docs PR #44 merged). Work **Current focus** below (one task → verify → commit → update this file).
 
 **Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` (privacy page / Google In production) — keep separate from Phase 04.
 
@@ -32,12 +25,10 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Current focus (one task only)
 
-> After step 1–3 in **Next session** above.
-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **4.5** | Align code with **Media normalize policy** — always client long-edge photos (&lt;10 MB); wire Cloudinary **incoming** on sign/upload; keep delivery `f_auto,q_auto`. (Video trim UI → 4.7; here: duration/compress helpers or clear hooks.) | [phase-04.md](phases/phase-04.md) |
+| **4.6** | `cloudinary.fetch_as_data_url()` for AI vision (D12) — download the `w_1024,f_jpg` version → base64; used by Phase 08/09. | [phase-04.md](phases/phase-04.md) |
 
 ---
 
@@ -49,7 +40,6 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **4.6** `cloudinary.fetch_as_data_url()` for AI vision (D12)
 - [ ] **4.7** `pickMedia()` + sample tray + video **trim ≤ 30 s** (drag window) + client compress + `/sitter/dev-upload` — [phase-04.md](phases/phase-04.md) Media normalize policy
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
@@ -79,7 +69,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
-- [x] **4.1–4.4 (code on `feat/phase-04-media` only)** Cloudinary `POST /api/media/sign` + `/complete` · `authz` · FE `uploadMedia()` + URL helpers · pytest — **not on main**; rebase + Phase 04 draft PR still needed (2026-10-04)
+- [x] **4.5** Media normalize policy: `sign()` signs a Cloudinary **incoming** transformation (photo `c_limit,w_2000/q_auto`, video `so_0,du_30/c_limit,w_1280,h_1280/q_auto`; never `f_auto`) and `/sign` returns it; FE `lib/mediaNormalize.ts` — photos always resized to a 2000 px long edge (JPEG 0.8, no upscale, shrink until < 10 MB), video `prepareVideo()` checks ≤ 30 s (`VideoTooLongError` = hook for the 4.7 trim sheet) and the 100 MB hard cap; `uploadMedia()` normalizes first and sends `transformation`; `UploadError` moved to `lib/uploadError.ts` (new step `prepare`). Old 10/50 MB reject removed. pytest 40 ✓ (signature includes transformation), ruff ✓ (4 earlier lint errors fixed), `tsc` ✓. Chromium: 14.6 MB 4000×3000 → 1.3 MB 2000×1500, 800×600 not upscaled, 35 s video → `VideoTooLongError`. Live Cloudinary: 3000 px → stored 2000 px, 35 s → 30 s, missing `transformation` → 401 Invalid Signature; test assets deleted (2026-10-04)
+- [x] **4.1–4.4** Cloudinary `POST /api/media/sign` + `/complete` · `authz` · FE `uploadMedia()` + URL helpers · pytest — on `feat/phase-04-media`, draft [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) (2026-10-04)
 - [x] **OB.1–OB.2** Welcome: `/` → `/welcome` · role tours + `BackLink` + media placeholders · logout → Welcome · Playwright · [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) **merged** (2026-10-04). OB.3 Try demo was done early. OB.4 deferred (see Up next).
 - [x] **Phase 03C complete** — quote · consents · demo pay · timed unlock · Checkout UI · Playwright + smoke I–K (2026-10-03)
 - [x] **3C.7** Playwright `checkout.spec.ts` (consent missing → Pay disabled; full demo pay → Paid + place/packing) · mock `quote_booking` / `required_consents` / `pay_booking_demo` / `auth.getUser` · smoke: access_unlocked never echoes codes (2026-10-03)
@@ -164,7 +155,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03 Auth              | **done** (2026-10-01)                                                         |
 | 03B Bookings         | 3B.0–3B.11 done (2026-10-02) — next: **phase PR** (CI incl. rls_smoke) → merge |
 | 03C Agreements       | not started (Stage 3)                                                         |
-| 04 Cloudinary (code) | not started                                                                   |
+| 04 Cloudinary (code) | 4.1–4.5 done (2026-10-04) — draft PR #45; next 4.6 → 4.7                      |
 | 05 Feed              | not started                                                                   |
 | 06 Care request + checks | not started (Stage 2 · 4)                                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
