@@ -1,7 +1,7 @@
 # PawNote — Active TODO
 
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
-> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). Onboarding → `feat/onboarding-welcome` ([PR #43](https://github.com/minsikpaul92/PawNote/pull/43)). Phase 04 → `feat/phase-04-media` (open draft PR after #43 merges; rebase onto `main`).
+> **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D46 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
@@ -11,14 +11,33 @@
 
 ---
 
+## Next session — start here (2026-10-04)
+
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-04.md](phases/phase-04.md) (Handoff + **Media normalize policy**) → [DESIGN.md](../../DESIGN.md) §7.8–7.9 if touching UI.
+
+| Step | Action |
+| :--- | :--- |
+| 1 | Merge docs PR **[#44](https://github.com/minsikpaul92/PawNote/pull/44)** (`docs/phase-04-queue`) if still open — TODO + media policy must be on `main` |
+| 2 | `git checkout feat/phase-04-media && git fetch origin && git rebase origin/main` (OB #43 already on main) |
+| 3 | Open **draft** Phase 04 PR from `feat/phase-04-media` if none exists; push |
+| 4 | Work **Current focus** below (one task → verify → commit → update this file) |
+
+**Already on `feat/phase-04-media` (not main):** sign + complete + authz + `uploadMedia()` + URL helpers + pytest — **partial**. Old client size checks do **not** yet match Media normalize policy (always resize photos; video trim UI = 4.7).
+
+**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` (privacy page / Google In production) — keep separate from Phase 04.
+
+**Cloudinary Free (MCP):** 25 credits/mo · image upload max 10 MB · video max 100 MB · use Cloudinary MCP if available.
+
+---
+
 ## Current focus (one task only)
 
-> **Gate:** Merge [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) (OB.1–OB.2) before continuing Phase 04 on `feat/phase-04-media` (rebase onto latest `main` first).
+> After step 1–3 in **Next session** above.
 
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **4.6** | `cloudinary.fetch_as_data_url()` for AI vision (D12) — [phase-04.md](phases/phase-04.md) | [phase-04.md](phases/phase-04.md) |
+| **4.5** | Align code with **Media normalize policy** — always client long-edge photos (&lt;10 MB); wire Cloudinary **incoming** on sign/upload; keep delivery `f_auto,q_auto`. (Video trim UI → 4.7; here: duration/compress helpers or clear hooks.) | [phase-04.md](phases/phase-04.md) |
 
 ---
 
@@ -30,7 +49,8 @@
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **4.7** `pickMedia()` + sample tray + video **trim ≤ 30 s** + client compress + `/sitter/dev-upload` (desktop frame / demo; samples hit `uploadMedia()`) — media policy in [phase-04.md](phases/phase-04.md)
+- [ ] **4.6** `cloudinary.fetch_as_data_url()` for AI vision (D12)
+- [ ] **4.7** `pickMedia()` + sample tray + video **trim ≤ 30 s** (drag window) + client compress + `/sitter/dev-upload` — [phase-04.md](phases/phase-04.md) Media normalize policy
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
@@ -59,8 +79,8 @@
 
 ## Completed
 
-- [x] **4.1–4.5 (started on `feat/phase-04-media`, not on main yet)** Cloudinary `POST /api/media/sign` + `/complete` · `authz` · FE `uploadMedia()` + URL helpers · pytest — rebase/PR after #43 merges (2026-10-04)
-- [x] **OB.1–OB.2** Welcome: `/` → `/welcome` · role tours + `BackLink` + media placeholders · logout → Welcome · Playwright · [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) (2026-10-04). OB.3 Try demo was done early. OB.4 deferred (see Up next).
+- [x] **4.1–4.4 (code on `feat/phase-04-media` only)** Cloudinary `POST /api/media/sign` + `/complete` · `authz` · FE `uploadMedia()` + URL helpers · pytest — **not on main**; rebase + Phase 04 draft PR still needed (2026-10-04)
+- [x] **OB.1–OB.2** Welcome: `/` → `/welcome` · role tours + `BackLink` + media placeholders · logout → Welcome · Playwright · [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) **merged** (2026-10-04). OB.3 Try demo was done early. OB.4 deferred (see Up next).
 - [x] **Phase 03C complete** — quote · consents · demo pay · timed unlock · Checkout UI · Playwright + smoke I–K (2026-10-03)
 - [x] **3C.7** Playwright `checkout.spec.ts` (consent missing → Pay disabled; full demo pay → Paid + place/packing) · mock `quote_booking` / `required_consents` / `pay_booking_demo` / `auth.getUser` · smoke: access_unlocked never echoes codes (2026-10-03)
 - [x] **3C.6** Checkout UI: QuoteCard · ConsentCard · `/checkout` (quote → consents → name → Pay demo) · owner detail "Finish booking" banner + Lucy's place / packing after pay · `EntryInfoCard` on sitter detail · `/owner/home-access` + Profile link · sitter place notes on Profile (2026-10-03)

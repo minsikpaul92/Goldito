@@ -2,15 +2,18 @@
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, API 계약 §5
 
-## Handoff (2026-10-04)
+## Handoff (2026-10-04) — for the next agent session
 
 | Item | Status |
 | :--- | :--- |
-| Branch | `feat/phase-04-media` — **rebase onto `main` after [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) (OB) merges**, then open/keep the phase draft PR |
-| **4.1–4.5** | Done on that branch (not on `main` yet): `POST /api/media/sign` · `/complete` · `services/authz.py` · `services/cloudinary.sign` · FE `apiPost` + `uploadMedia()` + thumb/video URL helpers · size checks · `tests/test_media_sign.py` · README manual steps |
-| **Current focus** | **4.6** `fetch_as_data_url()` (D12) → then **4.7** `pickMedia()` + sample tray + `/sitter/dev-upload` |
-| Env | `CLOUDINARY_*` in `backend/.env`; `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` in frontend (delivery URLs) |
-| Onboarding | OB.1–OB.2 in #43; **OB.4 intro_seen deferred** — do not block this phase |
+| OB | [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) **merged** to `main` |
+| Docs queue | [PR #44](https://github.com/minsikpaul92/PawNote/pull/44) (`docs/phase-04-queue`) — merge first so TODO + this policy land on `main` |
+| Branch | `feat/phase-04-media` — rebase onto latest `main`, then **draft** Phase 04 PR |
+| **4.1–4.4** | On branch only (not main): `POST /api/media/sign` · `/complete` · `services/authz.py` · `services/cloudinary.sign` · FE `apiPost` + `uploadMedia()` + thumb/video URL helpers · `tests/test_media_sign.py` · README curl steps |
+| **4.5** | **Current focus** — implement **Media normalize policy** below (old “reject if &gt;10 MB / &gt;30 s” is outdated) |
+| Then | **4.6** `fetch_as_data_url` → **4.7** `pickMedia` + sample tray + **video trim ≤ 30 s** + `/sitter/dev-upload` |
+| Env | `CLOUDINARY_*` in `backend/.env`; `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` in frontend |
+| Skip | OB.4 `intro_seen` (deferred). Privacy/`/privacy` stash is separate (Google OAuth In production) |
 
 ## Media normalize policy (2026-10-04)
 
