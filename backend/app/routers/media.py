@@ -7,7 +7,7 @@ import cloudinary.api
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 
-from app.deps.auth import CurrentUser, require_role
+from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz
 from app.services import cloudinary as cloudinary_service
@@ -70,7 +70,15 @@ def _authorize_media(
     purpose: Purpose,
     booking_id: UUID | None,
 ) -> None:
-    if purpose == "handoff":
+    if user.role == "owner":
+        # Owners add their own feed photos (5.8); every other purpose belongs to the sitter.
+        if purpose != "feed":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Owners can only upload feed photos.",
+            )
+        authz.assert_owner_of(user, pet_id)
+    elif purpose == "handoff":
         if booking_id is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -84,7 +92,7 @@ def _authorize_media(
 @router.post("/sign", response_model=SignResponse)
 def sign_upload(
     body: SignRequest,
-    user: CurrentUser = Depends(require_role("sitter")),
+    user: CurrentUser = Depends(get_current_user),
 ) -> SignResponse:
     _authorize_media(
         user, pet_id=body.pet_id, purpose=body.purpose, booking_id=body.booking_id
@@ -123,7 +131,7 @@ def sign_upload(
 @router.post("/complete", response_model=CompleteResponse)
 def complete_upload(
     body: CompleteRequest,
-    user: CurrentUser = Depends(require_role("sitter")),
+    user: CurrentUser = Depends(get_current_user),
 ) -> CompleteResponse:
     _authorize_media(
         user, pet_id=body.pet_id, purpose=body.purpose, booking_id=body.booking_id

@@ -758,7 +758,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   if (method === "GET" || method === "HEAD") {
     // RLS: notifications are private to their user.
     let rows = table.filter(
-      (row) => matches(row, params) && (path !== "notifications" || row.user_id === me),
+      (row) =>
+        matches(row, params) &&
+        (path !== "notifications" || row.user_id === me) &&
+        // RLS: a private post is only visible to its author (5.8).
+        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private"),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -781,7 +785,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "feed_posts" && select.includes("media")) {
       rows = rows.map((post) => {
         const media = db.media.find((m) => m.id === post.media_id) ?? null;
-        const sitter = users.find((u) => u.id === post.sitter_id);
+        const author = users.find((u) => u.id === post.posted_by);
         return {
           ...post,
           media: media
@@ -794,7 +798,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
                 duration_s: media.duration_s ?? null,
               }
             : null,
-          sitter: { display_name: sitter?.displayName ?? "Your sitter" },
+          author: { display_name: author?.displayName ?? "Someone" },
         };
       });
     }
@@ -836,6 +840,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
       ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
+      ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...row,
     }));
     if (path === "booking_consents") {

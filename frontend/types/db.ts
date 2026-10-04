@@ -50,10 +50,17 @@ export type SitterProfile = {
 export type CaptionSource = "ai" | "fallback" | "task";
 
 /** One Kidsnote-style feed card (1 post = 1 media, D10). */
+export type FeedVisibility = "shared" | "private";
+
 export type FeedPostRow = {
   id: string;
   pet_id: string;
-  sitter_id: string;
+  /** Set for sitter posts only; owner posts have none. */
+  sitter_id: string | null;
+  /** The real author (sitter or owner) — only they can delete. */
+  posted_by: string;
+  /** shared = owner + on-duty sitter; private = author only (5.8). */
+  visibility: FeedVisibility;
   media_id: string;
   caption: string | null;
   caption_source: CaptionSource | null;

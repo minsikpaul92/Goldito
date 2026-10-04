@@ -31,6 +31,8 @@ async function setup(page: Page, user: MockUser) {
       id: post(i),
       pet_id: PET_ID,
       sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+      visibility: "shared",
       media_id: media(i),
       caption: `Caption ${i}`,
       caption_source: "fallback",

@@ -84,6 +84,8 @@ PawNote/
 │  │  ├─ 005_meet_greet.sql           # Phase 03B 3B.9 (Meet & Greet RPC — 제안·응답·완료·건너뛰기, 양쪽 장소)
 │  │  ├─ 006_agreements.sql           # Phase 03C (요금·공휴일·quote_booking, 동의서, 데모 결제, 출입 정보 해제)
 │  │  ├─ 007_feed_notifications.sql   # Phase 05 (+ feed_posts.category — 09가 채움)
+│  │  ├─ 007b_feed_posts_realtime.sql  # feed_posts Realtime (008은 care 예약이라 b/c 접미사)
+│  │  ├─ 007c_feed_visibility.sql      # posted_by + visibility(shared/private), 오너 게시
 │  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
@@ -321,7 +323,7 @@ PawNote/
 | Life Record | FastAPI `/api/ai/life-record` (service role insert `pet_life_records` + `knowledge_chunks`) (07C) | 견주 `life_record_updated` |
 | 오늘 task_logs 생성 | RPC `ensure_today_task_logs(pet_id)` — 화면 진입 시 자동 호출, 멱등 | - |
 | 미디어 등록 | FastAPI `/api/media/complete` (service role) | - |
-| 피드 게시 | Supabase client insert `feed_posts` (sitter RLS) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
+| 피드 게시 | Supabase client insert `feed_posts` (시터 on-duty 또는 펫 owner RLS, `posted_by`·`visibility`) — `lib/feed.ts` | `notify_feed_post` → owner `feed_post` (task 연결 post는 제외) |
 | task 완료 | RPC `complete_task_log(task_log_id, media_id)` → 내부에서 feed_post도 생성 | owner `task_done` |
 | 알림장 칩 제안 | FastAPI `/api/ai/report-chips` (하루 기록 칩 + 사진 칩, 사진 묘사는 draft에 저장) | - |
 | 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert — 고른 칩·메모·사진 묘사만 입력) | - |
@@ -357,7 +359,7 @@ PawNote/
 | `review_received` | sitter | `reviews` insert 트리거 (07C) | "Chloe left you 5 stars ⭐" | `/sitter/bookings/[id]` |
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Lucy can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Lucy would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
-| `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null`) | "New photo of Max 📸" | `/owner/feed` |
+| `feed_post` | owner | 트리거 on `feed_posts` insert (`task_log_id is null` · `visibility = 'shared'` · 시터 게시) | "New photo of Max 📸" | `/owner/feed` |
 | `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
 | `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/diary` |
 | `report_sent` | owner | `send_daily_report` RPC | "Today's report for Max is here 📝" | `/owner/diary` (entry) |

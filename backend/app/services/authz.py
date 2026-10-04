@@ -55,6 +55,29 @@ def assert_on_duty_for(user: CurrentUser, pet_id: UUID) -> None:
         )
 
 
+def assert_owner_of(user: CurrentUser, pet_id: UUID) -> None:
+    """Owner may write feed media for their own pet (any time, no booking needed)."""
+    if user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action is for owners.",
+        )
+    result = (
+        get_service_client()
+        .table("pets")
+        .select("id")
+        .eq("id", str(pet_id))
+        .eq("owner_id", user.id)
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="That is not your pet.",
+        )
+
+
 def assert_booked_sitter(
     user: CurrentUser,
     booking_id: UUID,

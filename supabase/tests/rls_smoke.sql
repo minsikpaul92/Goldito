@@ -1579,6 +1579,83 @@ begin
   end;
   perform _t_ok(v_err = '23514', '5.3: feed_posts.category check');
 
+  -- Phase 05 (5.8): visibility + owner posts
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose) values
+    (max, lucy, 'smoke/max-private', 'image', 'feed'),
+    (max, chloe, 'smoke/max-owner-private', 'image', 'feed'),
+    (max, chloe, 'smoke/max-owner-shared', 'image', 'feed');
+  perform _t_put('m_priv', (select id from public.media where cloudinary_public_id = 'smoke/max-private'));
+  perform _t_put('m_opriv', (select id from public.media where cloudinary_public_id = 'smoke/max-owner-private'));
+  perform _t_put('m_oshared', (select id from public.media where cloudinary_public_id = 'smoke/max-owner-shared'));
+
+  perform _t_as(lucy);
+  insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
+  values (max, lucy, _t_get('m_priv'), 'private');
+  select count(*) into n from public.feed_posts where media_id = _t_get('m_priv');
+  perform _t_ok(n = 1, '5.8: author sees her own private post');
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
+    values (max, lucy, _t_get('media_bori'), 'hidden');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '5.8: visibility check');
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, media_id)
+    values (max, lucy, _t_get('m_oshared'));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '5.8: cannot attach media someone else uploaded');
+  perform _t_as(null);
+  perform _t_ok(not exists (
+      select 1 from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_priv')),
+    '5.8: private post sends no owner notification');
+
+  perform _t_as(chloe);
+  select count(*) into n from public.feed_posts where media_id = _t_get('m_priv');
+  perform _t_ok(n = 0, '5.8: owner cannot see the sitter''s private post');
+  select count(*) into n from public.media where id = _t_get('m_priv');
+  perform _t_ok(n = 0, '5.8: owner cannot read the private post''s media row');
+  insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
+  values (max, null, _t_get('m_opriv'), 'private');
+  insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
+  values (max, null, _t_get('m_oshared'), 'shared');
+  perform _t_ok(true, '5.8: owner can post for her own pet');
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, media_id)
+    values (max, lucy, _t_get('media_bori'));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err in ('42501', '23514'), '5.8: owner cannot post as the sitter');
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, media_id)
+    values (coco, null, _t_get('media_coco'));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '5.8: owner cannot post for another owner''s pet');
+  delete from public.feed_posts where media_id = _t_get('media_bori');
+  get diagnostics n = row_count;
+  perform _t_ok(n = 0, '5.8: owner cannot delete the sitter''s post');
+
+  perform _t_as(lucy);
+  select count(*) into n from public.feed_posts where media_id = _t_get('m_opriv');
+  perform _t_ok(n = 0, '5.8: sitter cannot see the owner''s private post');
+  select count(*) into n from public.media where id = _t_get('m_opriv');
+  perform _t_ok(n = 0, '5.8: sitter cannot read the owner''s private media row');
+  select count(*) into n from public.feed_posts where media_id = _t_get('m_oshared');
+  perform _t_ok(n = 1, '5.8: sitter on duty sees the owner''s shared post');
+  delete from public.feed_posts where media_id = _t_get('m_oshared');
+  get diagnostics n = row_count;
+  perform _t_ok(n = 0, '5.8: sitter cannot delete the owner''s post');
+  delete from public.feed_posts where media_id = _t_get('m_priv');
+  get diagnostics n = row_count;
+  perform _t_ok(n = 1, '5.8: author deletes her own post');
+
   perform _t_as(null);
 end;
 $$;

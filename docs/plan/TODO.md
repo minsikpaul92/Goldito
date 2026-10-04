@@ -18,11 +18,11 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | Step | Action |
 | :--- | :--- |
 | 1 | Stay on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) for feed polish |
-| 2 | **Current focus = 5.8 only** — visibility / owner posts / Share with owner → one commit → update this file |
+| 2 | **Current focus = 5.9 only** — notify the on-duty sitter when the owner shares a post → one commit → update this file |
 | 3 | **5.10** done (viewer renders only the active post) — see Completed |
 | 4 | After 5.8–5.9 (or when pausing polish): move focus to **6.1** on `feat/phase-06-care` from latest `main` |
 
-**Phase 05 core (5.1–5.6) + 5.7 delete + 5.10 viewer done**; remaining polish = 5.8–5.9.
+**Phase 05 core (5.1–5.6) + 5.7 delete + 5.8 visibility + 5.10 viewer done**; remaining polish = 5.9.
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
@@ -37,7 +37,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.8** | Feed visibility + owner posts + sitter "Share with owner" | [phase-05.md](phases/phase-05.md) Follow-up |
+| **5.9** | Notify the on-duty sitter when the owner shares a post (`feed_post` → sitter, tap → pet feed) | [phase-05.md](phases/phase-05.md) Follow-up |
 
 ---
 
@@ -50,7 +50,6 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
 - [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
-- [ ] **5.9 Feed album polish** (after 5.8): notify only when shared with the other party
 - [ ] **6.1** Owner care tasks UI — Care request on pet detail ([phase-06.md](phases/phase-06.md)) — after Phase 05 polish chunk or when focus moves
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
@@ -79,6 +78,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.8** Feed visibility + owner posts: `007c_feed_visibility.sql` — `feed_posts.posted_by` (real author, backfilled; delete = author only), `visibility` `shared`/`private`, `sitter_id` null for owner posts; select = author or (shared + `can_access_pet`); insert = sitter on duty or the pet's owner, media must be the poster's own `feed` upload (closes "attach any media of that pet"); `media_select` hides a private post's media row from the other party (`media_hidden_from_me`, security definer); `notify_feed_post` fires only for a sitter's shared post, so a private post never notifies. Backend: owners may sign/complete `feed` photos for their own pets (`assert_owner_of`); `DELETE /api/feed/{id}` checks `posted_by`. App: sitter **Share with {owner}** chip (default on → off = "Only you", toast "Saved just for you 🔒"); owner Feed **+ Photo** with **Visible to sitter** chip (default off) and own-post Delete; 🔒 badge on private cells; viewer Delete only on your own posts. rls_smoke 5.8 section (15 checks) on disposable Postgres 17 ✓ (200 PASS, 0 fail), pytest 82 ✓, ruff ✓, Playwright flows 72 ✓, `tsc` ✓. **Hosted:** apply `007b` then `007c` (human) (2026-10-04)
 - [x] **5.10 + Phase 04/05 review fixes** FeedViewer renders only the active post (swipe · arrows · ←/→ keys; active post tracked by id so Load more never moves it; first frame never shows a stale video; cancelled delete reopens on the same post). Delete now goes through `DELETE /api/feed/{id}` (author-only): removes the Cloudinary file + `media` row unless another post / task log / safety check still uses it, so the sheet's "deletes the photo for good" is true. `/api/media/complete` is idempotent (same `public_id` → same row, other user → 409) and trusts Cloudinary's width/height/duration. `007_feed_posts_realtime.sql` → `007b_…` and idempotent (008 stays reserved for care). Feed toasts coalesce (“3 new photos 📸”). New Playwright `feed.spec.ts` (viewer index · arrows · author delete + cancel · notification center) + mock honors `order=….desc`, HEAD count, per-user notifications. pytest 80 ✓, ruff ✓, Playwright flows 70 ✓, `tsc` ✓ (2026-10-04)
 - [x] **5.7** Author-only delete: `deleteFeedPost` + FeedViewer **Delete** (sitter only) → confirm Sheet → toast + grid refresh; owner Feed has no Delete. RLS `feed_posts_delete`. `tsc` ✓ (2026-10-04). **5.10** viewer open-at-index still deferred.
 - [x] **Phase 05 core complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)

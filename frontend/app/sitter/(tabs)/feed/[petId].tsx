@@ -7,6 +7,7 @@ import { FeedViewer } from "../../../../components/FeedViewer";
 import { Button } from "../../../../components/ui/Button";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
+import { ShareToggle } from "../../../../components/ShareToggle";
 import { Sheet } from "../../../../components/ui/Sheet";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { UploadError, uploadMedia } from "../../../../lib/cloudinary";
@@ -51,6 +52,8 @@ export default function SitterPetFeed() {
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // "Share with owner" — on by default; off keeps the post sitter-only (5.8).
+  const [shareWithOwner, setShareWithOwner] = useState(true);
 
   const loadPet = useCallback(async () => {
     if (!petId) return;
@@ -136,8 +139,10 @@ export default function SitterPetFeed() {
         mediaId: uploaded.mediaId,
         caption: FALLBACK_CAPTION,
         captionSource: "fallback",
+        role: "sitter",
+        visibility: shareWithOwner ? "shared" : "private",
       });
-      toast.show(`Shared with ${pet.ownerName} 🐾`);
+      toast.show(shareWithOwner ? `Shared with ${pet.ownerName} 🐾` : "Saved just for you 🔒");
       await loadPage(0, false, true);
     } catch (err) {
       const message =
@@ -260,16 +265,25 @@ export default function SitterPetFeed() {
         />
       )}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Add photo"
-        disabled={uploading}
-        onPress={() => void sharePhoto()}
-        style={({ pressed }) => [styles.fab, (pressed || uploading) && styles.fabPressed]}
-        testID="feed-add-photo"
-      >
-        <Text style={styles.fabLabel}>{uploading ? "…" : "+ Photo"}</Text>
-      </Pressable>
+      <View style={styles.fabRow}>
+        <ShareToggle
+          label={`Share with ${pet.ownerName}`}
+          on={shareWithOwner}
+          onToggle={() => setShareWithOwner((v) => !v)}
+          disabled={uploading}
+          testID="feed-share-toggle"
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add photo"
+          disabled={uploading}
+          onPress={() => void sharePhoto()}
+          style={({ pressed }) => [styles.fab, (pressed || uploading) && styles.fabPressed]}
+          testID="feed-add-photo"
+        >
+          <Text style={styles.fabLabel}>{uploading ? "…" : "+ Photo"}</Text>
+        </Pressable>
+      </View>
 
       <FeedViewer
         visible={viewerPostId != null && pendingDeleteId == null}
@@ -350,10 +364,15 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
-    fab: {
+    fabRow: {
       position: "absolute",
       right: theme.spacing.md,
       bottom: theme.spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+    },
+    fab: {
       minHeight: 48,
       paddingHorizontal: theme.spacing.md,
       borderRadius: 24,

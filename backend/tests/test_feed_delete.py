@@ -7,7 +7,7 @@ from app.services import cloudinary as cloudinary_service
 
 from tests import test_media_sign as base
 from tests.fakes import FakeDB
-from tests.test_media_sign import PET_ID, SITTER_ID, owner_token, sitter_token
+from tests.test_media_sign import OWNER_ID, PET_ID, SITTER_ID, owner_token, sitter_token
 
 POST_ID = "00000000-0000-4000-8000-0000000000b1"
 OTHER_POST_ID = "00000000-0000-4000-8000-0000000000b2"
@@ -24,7 +24,7 @@ def make_db(**extra) -> FakeDB:
         feed_posts=[
             {
                 "id": POST_ID,
-                "sitter_id": SITTER_ID,
+                "posted_by": SITTER_ID,
                 "media_id": MEDIA_ID,
                 "media": {"cloudinary_public_id": PUBLIC_ID, "resource_type": "image"},
             },
@@ -61,6 +61,15 @@ def test_author_delete_removes_post_file_and_media_row(client, monkeypatch, dest
     assert db.tables["media"] == []
 
 
+def test_owner_can_delete_their_own_post(client, monkeypatch, destroyed) -> None:
+    db = make_db()
+    db.tables["feed_posts"][0]["posted_by"] = OWNER_ID
+    monkeypatch.setattr(feed, "get_service_client", lambda: db)
+    response = delete(client, owner_token())
+    assert response.status_code == 200
+    assert db.tables["feed_posts"] == []
+
+
 def test_other_user_cannot_delete(client, monkeypatch, destroyed) -> None:
     db = make_db()
     monkeypatch.setattr(feed, "get_service_client", lambda: db)
@@ -76,7 +85,7 @@ def test_missing_post_is_404(client, monkeypatch, destroyed) -> None:
 
 
 def test_media_still_used_by_another_post_is_kept(client, monkeypatch, destroyed) -> None:
-    db = make_db(feed_posts=[{"id": OTHER_POST_ID, "sitter_id": SITTER_ID, "media_id": MEDIA_ID}])
+    db = make_db(feed_posts=[{"id": OTHER_POST_ID, "posted_by": SITTER_ID, "media_id": MEDIA_ID}])
     monkeypatch.setattr(feed, "get_service_client", lambda: db)
     response = delete(client, sitter_token())
     assert response.json() == {"deleted": True, "media_removed": False}

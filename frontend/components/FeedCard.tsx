@@ -118,7 +118,7 @@ export function FeedCard({ post, onOpen }: Props) {
         <>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${post.caption ?? "Photo"} from ${post.sitterName}, ${formatFeedTime(post.createdAt)}`}
+            accessibilityLabel={`${post.caption ?? "Photo"} from ${post.authorName}, ${formatFeedTime(post.createdAt)}`}
             onPress={onOpen}
             style={StyleSheet.absoluteFill}
           >
@@ -133,6 +133,11 @@ export function FeedCard({ post, onOpen }: Props) {
               <View style={[styles.image, styles.placeholder]} />
             )}
           </Pressable>
+          {post.visibility === "private" ? (
+            <View style={styles.lockBadge} pointerEvents="none" testID={`feed-private-${post.id}`}>
+              <Text style={styles.cornerIcon}>🔒</Text>
+            </View>
+          ) : null}
           {isVideo ? (
             <Pressable
               accessibilityRole="button"
@@ -197,6 +202,18 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
       zIndex: 3,
+    },
+    lockBadge: {
+      position: "absolute",
+      top: theme.spacing.xs,
+      left: theme.spacing.xs,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: theme.color.overlay,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2,
     },
     cornerLeft: {
       left: theme.spacing.xs,

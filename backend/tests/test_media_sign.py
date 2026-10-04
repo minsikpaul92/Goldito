@@ -81,15 +81,52 @@ def owner_token() -> str:
     )
 
 
-def test_sign_requires_sitter(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+def test_owner_cannot_sign_non_feed_purposes(client: TestClient) -> None:
     response = client.post(
         "/api/media/sign",
         headers={"Authorization": f"Bearer {owner_token()}"},
-        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "feed"},
+        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "task_proof"},
     )
     assert response.status_code == 403
     assert response.json()["code"] == "forbidden"
+
+
+def test_owner_signs_feed_photo_for_own_pet(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    owners_pets = {PET_ID}
+
+    def check(user, pet_id):
+        from fastapi import HTTPException, status
+
+        if str(pet_id) not in owners_pets:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That is not your pet.")
+
+    monkeypatch.setattr(authz, "assert_owner_of", check)
+    monkeypatch.setattr(
+        cloudinary_service,
+        "sign",
+        lambda **kw: SimpleNamespace(
+            cloud_name="c",
+            api_key="k",
+            timestamp=1,
+            signature="s",
+            folder=f"pawnote/{kw['pet_id']}/{kw['purpose']}",
+            upload_url="u",
+            transformation="t",
+        ),
+    )
+    headers = {"Authorization": f"Bearer {owner_token()}"}
+    ok = client.post(
+        "/api/media/sign",
+        headers=headers,
+        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "feed"},
+    )
+    assert ok.status_code == 200
+    other = client.post(
+        "/api/media/sign",
+        headers=headers,
+        json={"pet_id": str(uuid4()), "resource_type": "image", "purpose": "feed"},
+    )
+    assert other.status_code == 403
 
 
 def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:

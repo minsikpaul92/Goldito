@@ -13,7 +13,7 @@ type Props = {
   initialPostId: string | null;
   onClose: () => void;
   onNearEnd?: () => void;
-  /** When set, author-only Delete shows for the active post (5.7). */
+  /** Author-only Delete shows on posts this user posted (5.7). */
   currentUserId?: string | null;
   /** Parent opens a confirm sheet (outside this Modal) then deletes. */
   onRequestDelete?: (postId: string) => void;
@@ -33,7 +33,7 @@ export function FeedViewer({
   initialPostId,
   onClose,
   onNearEnd,
-  currentUserId: _currentUserId,
+  currentUserId,
   onRequestDelete,
 }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -102,8 +102,8 @@ export function FeedViewer({
 
   if (!visible || !initialPostId || !activePost) return null;
 
-  // Parent only wires onRequestDelete for authors (sitter feed). RLS still blocks non-authors.
-  const canDelete = !!onRequestDelete;
+  // Delete shows only on the viewer's own posts; the backend and RLS enforce it too.
+  const canDelete = !!onRequestDelete && !!currentUserId && activePost.postedBy === currentUserId;
 
   return (
     <Modal
@@ -250,7 +250,8 @@ function ViewerPage({ post, bottomInset }: { post: FeedTimelinePost; bottomInset
       <View style={[styles.captionBar, { paddingBottom: Math.max(bottomInset, 16) }]} pointerEvents="none">
         {post.caption ? <Text style={styles.caption}>{post.caption}</Text> : null}
         <Text style={styles.meta}>
-          {post.sitterName} · {formatFeedTime(post.createdAt)}
+          {post.authorName} · {formatFeedTime(post.createdAt)}
+          {post.visibility === "private" ? " · 🔒 Only you" : ""}
         </Text>
       </View>
     </View>

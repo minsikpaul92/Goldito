@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { app, box, center, drag, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
+import type { MockDb, MockUser } from "./supabaseMock";
 
 // pickMedia() via Sitter pet feed + Photo FAB (phase-05 5.6 — /sitter/dev-upload removed).
 // Backend and Cloudinary are mocked (EXPO_PUBLIC_API_URL → test server).
@@ -17,11 +18,14 @@ type Calls = {
   complete: Record<string, unknown>[];
 };
 
-async function setup(page: Page, options: { failSignOnce?: boolean } = {}): Promise<Calls> {
+async function setup(
+  page: Page,
+  options: { failSignOnce?: boolean; user?: MockUser } = {},
+): Promise<Calls & { db: MockDb }> {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
 
-  const calls: Calls = { sign: [], upload: [], complete: [] };
+  const calls: Calls & { db: MockDb } = { sign: [], upload: [], complete: [], db };
   let failed = false;
 
   await page.route("**/api/media/sign", async (route) => {
@@ -95,9 +99,10 @@ async function setup(page: Page, options: { failSignOnce?: boolean } = {}): Prom
     });
   });
 
-  await signIn(page, SITTER);
+  const user = options.user ?? SITTER;
+  await signIn(page, user);
   await app(page).getByRole("heading", { name: "Home" }).waitFor();
-  await page.goto(`/sitter/feed/${PET_ID}`);
+  await page.goto(user.role === "owner" ? "/owner/feed" : `/sitter/feed/${PET_ID}`);
   await app(page).getByTestId("feed-add-photo").waitFor();
   return calls;
 }
@@ -227,5 +232,98 @@ test.describe("pickMedia", () => {
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
     expect(calls.sign).toHaveLength(2);
     expect(calls.complete).toHaveLength(1);
+  });
+});
+
+test.describe("feed visibility (5.8)", () => {
+  test("sitter shares with the owner by default; the chip keeps a post sitter-only", async ({ page }) => {
+    const calls = await setup(page);
+
+    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "true");
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    expect(calls.db.feed_posts).toHaveLength(1);
+    expect(calls.db.feed_posts[0]).toMatchObject({
+      visibility: "shared",
+      sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+    });
+
+    await app(page).getByTestId("feed-share-toggle").click();
+    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "false");
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-meal").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    expect(calls.db.feed_posts[1]).toMatchObject({ visibility: "private", posted_by: SITTER.id });
+    await expect(
+      app(page).locator("[data-testid^='feed-private-']"),
+    ).toHaveCount(1);
+  });
+
+  test("owner posts privately by default, can make a post visible to the sitter, and deletes only their own", async ({
+    page,
+  }) => {
+    const calls = await setup(page, { user: OWNER });
+    calls.db.media.push({
+      id: "22222222-2222-4222-8222-222222222222",
+      pet_id: PET_ID,
+      cloudinary_public_id: `pawnote/${PET_ID}/feed/sitter`,
+      resource_type: "image",
+      purpose: "feed",
+    });
+    calls.db.feed_posts.push({
+      id: "33333333-3333-4333-8333-333333333333",
+      pet_id: PET_ID,
+      sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+      visibility: "shared",
+      media_id: "22222222-2222-4222-8222-222222222222",
+      caption: "From Lucy",
+      caption_source: "fallback",
+      task_log_id: null,
+      created_at: new Date(Date.now() - 3_600_000).toISOString(),
+    });
+    // A sitter-private post must never show up for the owner.
+    calls.db.feed_posts.push({
+      id: "44444444-4444-4444-8444-444444444444",
+      pet_id: PET_ID,
+      sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+      visibility: "private",
+      media_id: "22222222-2222-4222-8222-222222222222",
+      caption: "Lucy only",
+      caption_source: "fallback",
+      task_log_id: null,
+      created_at: new Date().toISOString(),
+    });
+    await page.reload();
+    await app(page).getByTestId("feed-add-photo").waitFor();
+    await expect(app(page).getByTestId("feed-card-33333333-3333-4333-8333-333333333333")).toBeVisible();
+    await expect(app(page).getByTestId("feed-card-44444444-4444-4444-8444-444444444444")).toHaveCount(0);
+
+    // Default: Only you.
+    await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "false");
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-walk").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Saved just for you");
+    expect(calls.sign[0]).toMatchObject({ pet_id: PET_ID, purpose: "feed" });
+    const mine = calls.db.feed_posts.find((p) => p.posted_by === OWNER.id)!;
+    expect(mine).toMatchObject({ visibility: "private", sitter_id: null });
+
+    await app(page).getByTestId("feed-share-toggle").click();
+    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("sample-nap").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with your sitter");
+    expect(calls.db.feed_posts.filter((p) => p.posted_by === OWNER.id && p.visibility === "shared")).toHaveLength(1);
+
+    // No Delete on the sitter's post; Delete on my own.
+    await app(page).getByTestId("feed-card-33333333-3333-4333-8333-333333333333").click();
+    await expect(app(page).getByTestId("feed-viewer")).toBeVisible();
+    await expect(app(page).getByTestId("feed-viewer-delete")).toHaveCount(0);
+    await app(page).getByTestId("feed-viewer-close").click();
+
+    await app(page).getByTestId(`feed-card-${mine.id}`).click();
+    await expect(app(page).getByTestId("feed-viewer-delete")).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
 import { ApiError, apiDelete } from "./api";
 import { getSupabase } from "./supabase";
-import type { CaptionSource, FeedPostRow, MediaResourceType } from "../types/db";
+import type { Role } from "../providers/SessionProvider";
+import type { CaptionSource, FeedPostRow, FeedVisibility, MediaResourceType } from "../types/db";
 
 /**
  * Feed post insert + owner/sitter timeline query (Phase 05).
@@ -8,7 +9,7 @@ import type { CaptionSource, FeedPostRow, MediaResourceType } from "../types/db"
  * Phase 09 plugs AI caption in front of createFeedPost; Phase 06 may pass captionSource='task'.
  */
 
-export type { CaptionSource };
+export type { CaptionSource, FeedVisibility };
 
 /** Phase 05 default until Phase 09 AI captions land. */
 export const FALLBACK_CAPTION = "A moment from today's care 🐾";
@@ -21,12 +22,18 @@ export type CreateFeedPostInput = {
   mediaId: string;
   caption: string;
   captionSource: CaptionSource;
+  /** Who is posting: sitter posts carry `sitter_id`, owner posts don't. */
+  role: Role;
+  /** Sitter default `shared`; owner default `private` (5.8). */
+  visibility: FeedVisibility;
 };
 
 export type FeedPost = {
   id: string;
   petId: string;
-  sitterId: string;
+  sitterId: string | null;
+  postedBy: string;
+  visibility: FeedVisibility;
   mediaId: string;
   caption: string | null;
   captionSource: CaptionSource | null;
@@ -43,19 +50,19 @@ export type FeedMedia = {
   durationS: number | null;
 };
 
-/** One timeline card: post + media + sitter display name. */
+/** One timeline card: post + media + author display name. */
 export type FeedTimelinePost = FeedPost & {
   media: FeedMedia;
-  sitterName: string;
+  authorName: string;
 };
 
 const FEED_COLUMNS =
-  "id, pet_id, sitter_id, media_id, caption, caption_source, task_log_id, created_at";
+  "id, pet_id, sitter_id, posted_by, visibility, media_id, caption, caption_source, task_log_id, created_at";
 
 const TIMELINE_SELECT =
   `${FEED_COLUMNS}, ` +
   "media (id, cloudinary_public_id, resource_type, width, height, duration_s), " +
-  "sitter:profiles!feed_posts_sitter_id_fkey (display_name)";
+  "author:profiles!feed_posts_posted_by_fkey (display_name)";
 
 type MediaEmbed = {
   id: string;
@@ -68,7 +75,7 @@ type MediaEmbed = {
 
 type TimelineRow = FeedPostRow & {
   media: MediaEmbed | null;
-  sitter: { display_name: string } | null;
+  author: { display_name: string } | null;
 };
 
 function asFeedPost(row: FeedPostRow): FeedPost {
@@ -76,6 +83,8 @@ function asFeedPost(row: FeedPostRow): FeedPost {
     id: row.id,
     petId: row.pet_id,
     sitterId: row.sitter_id,
+    postedBy: row.posted_by,
+    visibility: row.visibility,
     mediaId: row.media_id,
     caption: row.caption,
     captionSource: row.caption_source,
@@ -98,13 +107,13 @@ function asTimelinePost(row: TimelineRow): FeedTimelinePost | null {
       height: media.height,
       durationS: media.duration_s == null ? null : Number(media.duration_s),
     },
-    sitterName: row.sitter?.display_name ?? "Your sitter",
+    authorName: row.author?.display_name ?? "Someone",
   };
 }
 
 /**
- * Insert one feed_posts row (1 post = 1 media, D10). Caller must be the on-duty
- * sitter; caption comes from the caller (fallback today, AI in Phase 09).
+ * Insert one feed_posts row (1 post = 1 media, D10). The on-duty sitter or the pet's owner
+ * posts (RLS checks which); caption comes from the caller (fallback today, AI in Phase 09).
  */
 export async function createFeedPost(input: CreateFeedPostInput): Promise<FeedPost> {
   const { data: userData, error: userError } = await getSupabase().auth.getUser();
@@ -116,7 +125,9 @@ export async function createFeedPost(input: CreateFeedPostInput): Promise<FeedPo
     .from("feed_posts")
     .insert({
       pet_id: input.petId,
-      sitter_id: userData.user.id,
+      posted_by: userData.user.id,
+      sitter_id: input.role === "sitter" ? userData.user.id : null,
+      visibility: input.visibility,
       media_id: input.mediaId,
       caption: input.caption,
       caption_source: input.captionSource,

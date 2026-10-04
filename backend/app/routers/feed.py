@@ -42,12 +42,12 @@ def delete_feed_post(
     post_id: UUID,
     user: CurrentUser = Depends(get_current_user),
 ) -> DeleteFeedPostResponse:
-    """Author-only. Removes the post, then the photo itself (Cloudinary + media row) unless
+    """Author-only (sitter or owner). Removes the post, then the photo itself (Cloudinary + media row) unless
     something else still uses it, so "Delete" really deletes the file."""
     db = get_service_client()
     found = (
         db.table("feed_posts")
-        .select("id, sitter_id, media_id, media(cloudinary_public_id, resource_type)")
+        .select("id, posted_by, media_id, media(cloudinary_public_id, resource_type)")
         .eq("id", str(post_id))
         .limit(1)
         .execute()
@@ -55,7 +55,7 @@ def delete_feed_post(
     if not found.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found.")
     post = found.data[0]
-    if post["sitter_id"] != user.id:
+    if post["posted_by"] != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete photos you posted.",
