@@ -41,6 +41,7 @@ Every feature must pass:
 **Source of truth docs:**
 
 - Product: `README.md`, `docs/README.ko.md`
+- **Feature status + test scenarios:** `docs/plan/test-guide.ko.md`
 - **Product flow (5 stages, demo path):** `docs/plan/full-process.ko.md`
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
@@ -177,6 +178,7 @@ When a task is **done** (DoD met):
 2. Set **Current focus** to exactly **one** next task ID (e.g. `1.2 FastAPI health`).
 3. If the whole phase is done, note `Phase N complete` in **Completed** and set focus to first task of phase N+1.
 4. If you discovered new work, add it to **Up next** with a short ID — do not silently expand scope in the same task.
+5. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3 — new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
 If TODO.md and phase docs disagree, **phase Goal/DoD wins**; fix TODO to match.
 
