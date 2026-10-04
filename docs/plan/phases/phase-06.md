@@ -47,7 +47,7 @@
 | :--- | :--- | :--- |
 | 6.1 ✅ | Owner care tasks UI | **펫 디테일 / Care request**에서 등록·오늘 상태 (구 `/owner/tasks` Care 탭 — D47). Activity 히스토리는 **Diary** |
 | 6.2 ✅ | `ensure_today_task_logs` | 기존 spec 유지 (003 헬퍼, 멱등) |
-| 6.3 | Sitter tasks on Home/Diary | missed → pending → done · **Mark done** · **Done with photo** · Home "Next up" (구 `/sitter/tasks` 탭 제거, D47b) |
+| 6.3 ✅ | Sitter tasks on Home/Diary | missed → pending → done · **Mark done** · **Done with photo** · Home "Next up" (구 `/sitter/tasks` 탭 제거, D47b) |
 | 6.4 ✅ | `complete_task_log(p_task_log, p_media_id uuid default null)` | `in_care_window` 검사 · done 갱신 · **`task_done` 항상** · `media_id` 있을 때만 `feed_post` + task 캡션 (`caption_source='task'`) — Diary에도 행 |
 | 6.5 | missed / late | D9 파생 (변경 없음) |
 | 6.6 | `useDueReminder` | scheduled task만 (변경 없음) |

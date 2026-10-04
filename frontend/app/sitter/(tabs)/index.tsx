@@ -3,12 +3,13 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { placeLabel } from "../../../components/BookingCard";
+import { TodayTasks } from "../../../components/TodayTasks";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { TextButton } from "../../../components/ui/TextButton";
-import { isCaring } from "../../../features/feed/caringPets";
+import { caringPetsFromBookings, isCaring } from "../../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { appToday, formatInstant, formatTime, isoToZoned } from "../../../features/schedule/dates";
 import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bookings";
@@ -97,6 +98,11 @@ export default function SitterHome() {
   }
 
   const open = (b: BookingSummary) => router.push(`/sitter/bookings/${b.id}`);
+  const caringPets = caringPetsFromBookings(confirmed, now).map((p) => ({
+    id: p.id,
+    name: p.name,
+    ownerName: p.ownerName,
+  }));
 
   return (
     <Screen contentStyle={styles.content}>
@@ -110,6 +116,8 @@ export default function SitterHome() {
           <Text style={styles.requestsText}>{`📬 Requests (${requests}) — tap to answer`}</Text>
         </Pressable>
       ) : null}
+
+      <TodayTasks pets={caringPets} />
 
       {caring.length > 0 ? (
         <View style={styles.section} testID="today-caring">

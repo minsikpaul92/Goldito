@@ -1,5 +1,7 @@
 import type { Page, Route } from "@playwright/test";
 
+import { addDays, appToday, zonedToIso } from "../features/schedule/dates";
+
 /**
  * Fake Supabase Auth + `profiles` for e2e (no real project, no secrets).
  * The e2e build points EXPO_PUBLIC_SUPABASE_URL at the test server itself, so every
@@ -158,6 +160,8 @@ export type MockDb = {
   meetGreetCalls: Row[];
   /** complete_handoff calls. */
   completions: Row[];
+  /** complete_task_log calls (phase 06). */
+  taskCompletions: Row[];
   /** Owner consent signatures (03C). */
   booking_consents: Row[];
   /** Owner entry codes (03C) — sitters only via get_home_access. */
@@ -199,6 +203,7 @@ function createMockDb(): MockDb {
     proposals: [],
     meetGreetCalls: [],
     completions: [],
+    taskCompletions: [],
     booking_consents: [],
     owner_home_access: [],
     payments: [],
@@ -704,6 +709,71 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     booking.paid_at = new Date().toISOString();
     booking.price_snapshot = DEMO_QUOTE;
     return json(route, 200, DEMO_QUOTE);
+  }
+
+  if (path === "rpc/ensure_today_task_logs") {
+    const { p_pet } = request.postDataJSON();
+    const today = appToday();
+    for (const task of db.care_tasks.filter((t) => t.pet_id === p_pet && t.active)) {
+      const due = zonedToIso(today, String(task.scheduled_time).slice(0, 5));
+      if (!db.task_logs.some((l) => l.task_id === task.id && l.due_at === due)) {
+        db.task_logs.push({
+          id: crypto.randomUUID(),
+          task_id: task.id,
+          pet_id: p_pet,
+          due_at: due,
+          status: "pending",
+          completed_at: null,
+          media_id: null,
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+    const start = zonedToIso(today, "00:00");
+    const end = zonedToIso(addDays(today, 1), "00:00");
+    return json(
+      route,
+      200,
+      db.task_logs.filter((l) => l.pet_id === p_pet && String(l.due_at) >= start && String(l.due_at) < end),
+    );
+  }
+
+  if (path === "rpc/complete_task_log") {
+    const { p_task_log, p_media_id } = request.postDataJSON();
+    db.taskCompletions.push({ p_task_log, p_media_id });
+    const log = db.task_logs.find((l) => l.id === p_task_log);
+    if (!log) return json(route, 400, { code: "P0001", message: "task_log_not_found" });
+    if (log.status === "done") return json(route, 400, { code: "P0001", message: "already_done" });
+    Object.assign(log, { status: "done", completed_at: new Date().toISOString(), completed_by: me, media_id: p_media_id });
+    const pet = db.pets.find((p) => p.id === log.pet_id);
+    const task = db.care_tasks.find((t) => t.id === log.task_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "task_done",
+      title: `${pet?.name} finished ${task?.title}`,
+      body: null,
+      pet_id: log.pet_id,
+      booking_id: null,
+      ref_id: log.id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    if (p_media_id) {
+      db.feed_posts.push({
+        id: crypto.randomUUID(),
+        pet_id: log.pet_id,
+        sitter_id: me,
+        posted_by: me,
+        visibility: "shared",
+        media_id: p_media_id,
+        caption: `${task?.title} — done`,
+        caption_source: "task",
+        task_log_id: log.id,
+        created_at: new Date().toISOString(),
+      });
+    }
+    return json(route, 200, log);
   }
 
   if (path === "rpc/get_home_access") {

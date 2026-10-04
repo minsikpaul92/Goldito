@@ -79,3 +79,37 @@ export async function deleteCareTask(taskId: string): Promise<void> {
   const { error } = await getSupabase().from("care_tasks").delete().eq("id", taskId);
   if (error) fail("delete this task");
 }
+
+const RPC_MESSAGES: Record<string, string> = {
+  not_on_duty: "You can open today's tasks once you're on duty for this pet.",
+  not_in_care_window: "Tasks open once the stay has started.",
+  already_done: "That task is already marked done.",
+  invalid_media: "That photo can't be used for this task. Pick another.",
+  task_log_not_found: "That task is no longer there. Pull to refresh.",
+};
+
+function rpcMessage(error: { message: string }, fallback: string): string {
+  const key = Object.keys(RPC_MESSAGES).find((k) => error.message.includes(k));
+  return key ? RPC_MESSAGES[key] : fallback;
+}
+
+/** Sitter opens a pet's tasks: creates today's logs if needed (idempotent) and returns them (6.2). */
+export async function ensureTodayTaskLogs(petId: string): Promise<TaskLogRow[]> {
+  const { data, error } = await getSupabase().rpc("ensure_today_task_logs", { p_pet: petId });
+  if (error) {
+    throw new Error(rpcMessage(error, "Couldn't load today's tasks. Check your connection and try again."));
+  }
+  return (data ?? []) as TaskLogRow[];
+}
+
+/**
+ * Mark a task done (6.4). With `mediaId` (a `task_proof` upload) the owner also gets a feed
+ * photo; the owner is notified either way.
+ */
+export async function completeTaskLog(logId: string, mediaId: string | null): Promise<void> {
+  const { error } = await getSupabase().rpc("complete_task_log", {
+    p_task_log: logId,
+    p_media_id: mediaId,
+  });
+  if (error) throw new Error(rpcMessage(error, "Couldn't mark this done. Check your connection and try again."));
+}

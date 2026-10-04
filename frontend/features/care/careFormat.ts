@@ -1,4 +1,5 @@
 import type { CareTaskRow, CareTaskType, Species, TaskLogRow } from "../../types/db";
+import { formatInstant } from "../schedule/dates";
 
 export const CARE_TYPES: { type: CareTaskType; emoji: string; label: string }[] = [
   { type: "medication", emoji: "💊", label: "Medication" },
@@ -47,4 +48,18 @@ export function sortTasks(tasks: CareTaskRow[]): CareTaskRow[] {
     (a, b) =>
       Number(b.active) - Number(a.active) || a.scheduled_time.localeCompare(b.scheduled_time),
   );
+}
+
+/** Badge text for a task's state today; null while it is only scheduled. */
+export function statusLabel(status: TodayStatus): string | null {
+  switch (status.kind) {
+    case "done":
+      return `✅ Done ${formatInstant(status.at).split(", ")[1]}`;
+    case "pending":
+      return "⏳ Pending";
+    case "missed":
+      return "⚠️ Missed";
+    default:
+      return null;
+  }
 }

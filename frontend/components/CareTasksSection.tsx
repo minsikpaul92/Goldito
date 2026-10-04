@@ -12,11 +12,11 @@ import {
 import {
   careTypeMeta,
   sortTasks,
+  statusLabel,
   todayStatus,
   typesForSpecies,
-  type TodayStatus,
 } from "../features/care/careFormat";
-import { formatInstant, formatTime, shiftTime } from "../features/schedule/dates";
+import { formatTime, shiftTime } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
@@ -42,19 +42,6 @@ const TITLE_MAX = 60;
 const DOSE_MAX = 60;
 const NOTES_MAX = 200;
 const TIME_STEP = 15;
-
-function statusLabel(status: TodayStatus): string | null {
-  switch (status.kind) {
-    case "done":
-      return `✅ Done ${formatInstant(status.at).split(", ")[1]}`;
-    case "pending":
-      return "⏳ Pending";
-    case "missed":
-      return "⚠️ Missed";
-    default:
-      return null;
-  }
-}
 
 /**
  * Owner's care tasks on the pet detail screen (phase-06 6.1): what the sitter should do each

@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **6.3** | Sitter tasks on Home / Diary — today's `task_logs` (calls `ensure_today_task_logs` on open), **Mark done** · **Done with photo** (`pickMedia` → `task_proof` → `complete_task_log`), Home "Next up" | [phase-06.md](phases/phase-06.md) |
+| **6.8** | `care_checkins` table + RLS (`008_care.sql`) — start of the 5-second check-in track (6.8 → 6.9 → 6.10) | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -74,6 +74,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **6.3** Sitter Home **Today's tasks** (`TodayTasks`): on Home (and on every return to it) each in-care pet's day is opened with `ensure_today_task_logs`, tasks join their `care_tasks` row, sorted by time; **Next up** line; per task **Mark done** (no photo) and **📷 Done with photo** (`pickMedia` → `task_proof` upload → `complete_task_log`) with toast "{task} done ✅ {owner} was told"; ✅ Done / ⏳ Pending / ⚠️ Missed badge (D9, shared `statusLabel`); calm errors for `not_on_duty` / `not_in_care_window` / `already_done` / `invalid_media`; quiet empty line. `careApi` `ensureTodayTaskLogs` · `completeTaskLog`. Sitter Diary stays a later task (6.11). Playwright `sitter-tasks.spec.ts` (4) + mock RPCs; flows 82 ✓, `tsc` ✓ (2026-10-04)
 - [x] **6.4** `complete_task_log(p_task_log, p_media_id default null)` in `008_care.sql`: only the sitter inside the care window (`not_in_care_window`), refuses a second completion (`already_done`), a photo must be the sitter's own `task_proof` upload for that pet (`invalid_media`; a rejected call leaves the log pending). Always sends the owner a type-specific `task_done` notice ("Max had breakfast on time 🍽️" · "Max's medication is done 💊" · "Max had a walk 🦮" …, tap → Diary). With a photo it also makes a **shared** feed post (`caption_source='task'`, task caption, `task_log_id` set) and no extra `feed_post` notice (the 5.3 trigger skips task posts). rls_smoke 6.4 (11 checks; 224 PASS, 0 fail) on disposable Postgres 17. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
 - [x] **6.2** `008_care.sql` — `ensure_today_task_logs(p_pet)` (security definer, on-duty sitter only → `not_on_duty`): today's (D8) `task_logs` for active tasks whose time falls inside the sitter's care window, idempotent (`unique(task_id, due_at)` + `on conflict do nothing`), non-repeating tasks get one log, returns today's logs for the pet. rls_smoke 6.2 (10 checks; 213 PASS, 0 fail) on disposable Postgres 17. Also fixed the 6.1 badge to D9 (missed = pending **60 min** after its time). Playwright flows ✓. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
 - [x] **6.1** Owner care tasks on the pet detail screen: `CareTasksSection` under the pet form — list (emoji · name · time · every day · dose · note), **Add task** sheet (type pills filtered by species — no walks for cats / litter for dogs, D23 — name prefilled from the type, dose for medication, time stepper in 15 min, optional note), **Pause / Resume**, **Delete** with a confirm sheet, today's badge (✅ Done / ⏳ Pending / ⚠️ Missed once the sitter side writes `task_logs`, D9). `features/care/` (`careApi`, `careFormat`), `CareTaskRow` / `TaskLogRow` types. No migration (002/003 already give the owner insert / update / delete + species guard). Playwright `care-tasks.spec.ts` (5) + mock (`task_logs`, species guard). Playwright flows 78 ✓, `tsc` ✓ (2026-10-04)
@@ -181,7 +182,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
 | 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
-| 06 Care request + checks | in progress — **6.1 · 6.2 · 6.4** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.4** done; next **6.3** |
+| 06 Care request + checks | in progress — **6.1 – 6.4** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.3** done; next **6.8** |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |
