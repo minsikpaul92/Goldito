@@ -18,12 +18,12 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | Step | Action |
 | :--- | :--- |
 | 1 | On `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — `git pull` |
-| 2 | **Current focus = 5.3 only** — `supabase/migrations/007_feed_notifications.sql` (`notify_feed_post` + `feed_posts.category`) → apply/verify → one commit → update this file |
-| 3 | Do not start 5.4+ / Feed grid polish / sitter +Photo UI in the same session unless focus moves |
+| 2 | **Current focus = 5.4 only** — `NotificationsProvider` (Realtime subscribe, unread count, `feed_post` toast + Feed refetch) → one commit → update this file |
+| 3 | Do not start 5.5+ / Feed grid polish / sitter +Photo UI in the same session unless focus moves |
 
-**Done on this branch so far:** 5.1 `createFeedPost` · 5.2 Owner Feed list · **D47/D47b tab IA** (both roles Home·Bookings·Feed·Diary·Mood).
+**Done on this branch so far:** 5.1 `createFeedPost` · 5.2 Owner Feed list · **D47/D47b tab IA** · **5.3** `007_feed_notifications.sql` + smoke.
 
-**After 5.3 (queue):** 5.4 NotificationsProvider (toast + Feed/Diary refetch) → 5.5 알림 센터 → **sitter +Photo path** (pet feed FAB; unblocks live demo) → 5.6 remove `dev-upload` → then Phase 06 (Care request in pet detail, Home check-ins, Diary activity).
+**After 5.4 (queue):** 5.5 알림 센터 → **sitter +Photo path** (pet feed FAB; unblocks live demo) → 5.6 remove `dev-upload` → then Phase 06 (Care request in pet detail, Home check-ins, Diary activity).
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
@@ -38,7 +38,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.3** | `007_feed_notifications.sql` — `notify_feed_post` trigger + `feed_posts.category` | [phase-05.md](phases/phase-05.md) |
+| **5.4** | `NotificationsProvider` — Realtime `notifications`, unread count, `feed_post` toast + Feed refetch | [phase-05.md](phases/phase-05.md) |
 
 ---
 
@@ -79,6 +79,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.3** `007_feed_notifications.sql`: `feed_posts.category` (`meal`/`walk`/`nap`/`play`/`other`); trigger `notify_feed_post` (`security definer`, skip when `task_log_id` set) → owner `type='feed_post'`, `ref_id`, title `New photo of {pet} 📸`. `rls_smoke` 5.3 checks + scenario G excludes `feed_post`. Docker Postgres smoke ✓; hosted applied via Supabase MCP (2026-10-04).
 - [x] **docs D47 · D47b** Both roles `Home · Bookings · Feed · Diary · Mood`; Feed album + multi-pet toggle; Diary Live + photo→Feed; Care→pet detail; Settings/Earnings→Profile; sitter Home dashboard; phases 05–08/10/11 + CLAUDE + DESIGN + onboarding + welcome; FE tabs + e2e (2026-10-04)
 - [x] **5.2** Owner timeline: `listFeedPosts(petId, {offset, limit})` joins `media` + sitter `display_name`, `FEED_PAGE_SIZE=20`; `FeedCard` (4:3 thumb / video poster + ▶); `/owner/feed` FlatList + pet SegmentedControl + Load more / onEndReached + detail Sheet (web `<video>`). Empty: "No posts yet — your sitter will share photos here." `tsc` ✓ (2026-10-04)
 - [x] **5.1** `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` — inserts `feed_posts` (sitter RLS / on-duty); `FALLBACK_CAPTION` = `"A moment from today's care 🐾"` + `caption_source='fallback'`; `FeedPostRow` / `CaptionSource` in `types/db.ts`. No UI yet (5.2+). AI caption stays Phase 09. `tsc` ✓. Do not remove `/sitter/dev-upload` until 5.6 (2026-10-04)

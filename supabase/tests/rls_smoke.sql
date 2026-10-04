@@ -1,6 +1,6 @@
 -- PawNote RLS + booking smoke test (Phase 02 DoD 2)
 --
--- Run after all migrations (001–006) in the Supabase SQL Editor (as postgres), or locally with
+-- Run after all migrations (001–007) in the Supabase SQL Editor (as postgres), or locally with
 -- tests/supabase_stub.sql first (see supabase/README.md). Everything runs in one transaction
 -- and is rolled back, so no data is left behind.
 -- Success = the script finishes without error ("PASS: ..." notices for each check).
@@ -287,6 +287,14 @@ begin
   perform _t_as(lucy);
   insert into public.feed_posts (pet_id, sitter_id, media_id) values (max, lucy, _t_get('media_bori'));
   perform _t_ok(true, 'on-duty sitter can post');
+  perform _t_as(null);
+  perform _t_ok(
+    (select title from public.notifications n
+     join public.feed_posts fp on fp.id = n.ref_id
+     where n.user_id = chloe and n.type = 'feed_post' and fp.pet_id = max
+     order by n.created_at desc limit 1) = 'New photo of Max 📸',
+    '5.3: feed post → owner feed_post notification');
+  perform _t_as(lucy);
   select count(*) into n from public.owner_profiles where id = chloe;
   perform _t_ok(n = 1, 'confirmed sitter can see owner profile');
   perform _t_ok(in_care_window(max, now()), 'in_care_window true during care');
@@ -485,7 +493,7 @@ begin
   -- G: opening a schedule notifies nobody
   perform _t_as(null);
   perform _t_ok((select count(*) from public.notifications where user_id in (chloe, joy)
-      and type not in ('pet_dropped_off', 'pet_picked_up')) = 0,
+      and type not in ('pet_dropped_off', 'pet_picked_up', 'feed_post')) = 0,
     'G: opening a schedule sends no owner notifications');
 
   -- A: in-hours drop-off & pick-up at sitter's home → request → accept → confirmed
@@ -1557,6 +1565,16 @@ begin
           ~* '(0000|#1204|Buzz 1204|lockbox left)'
     ),
     '3C.7: access_unlocked notice has no entry codes');
+
+  -- Phase 05 (5.3): feed_posts.category
+  perform _t_as(lucy);
+  begin
+    insert into public.feed_posts (pet_id, sitter_id, media_id, category)
+    values (max, lucy, _t_get('media_bori'), 'not_a_category');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '5.3: feed_posts.category check');
 
   perform _t_as(null);
 end;
