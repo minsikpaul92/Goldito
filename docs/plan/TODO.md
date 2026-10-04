@@ -13,13 +13,20 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-04.md](phases/phase-04.md) (Handoff + **Media normalize policy**) → [DESIGN.md](../../DESIGN.md) §7.8–7.9 if touching UI.
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (Goal + 5.1 DoD) → [DESIGN.md](../../DESIGN.md) if touching UI.
 
-Phase 04 is complete on `feat/phase-04-media` ([PR #45](https://github.com/minsikpaul92/PawNote/pull/45)). Next: Phase 05 — open a new phase branch from latest `main` after merging #45 (or continue if asked).
+| Step | Action |
+| :--- | :--- |
+| 1 | `git checkout main && git pull origin main` — Phase 04 is **merged** ([PR #45](https://github.com/minsikpaul92/PawNote/pull/45) → `7fb80e9`) |
+| 2 | Create phase branch: `git checkout -b feat/phase-05-feed` (first Phase 05 task) |
+| 3 | Open **draft** Phase 05 PR after the first commit (`gh pr create --draft`) |
+| 4 | Work **Current focus** only (5.1) → verify → one commit → update this file |
 
-**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` (privacy page / Google In production) — keep separate from feature work.
+**Product stage:** Stage **4** Care (Kidsnote-style feed). **5.1 only** = `createFeedPost` helper + fallback caption — no full UI yet (5.2+). Reuse Phase 04 `uploadMedia()` / `pickMedia()`; caption AI stays Phase 09.
 
-**Cloudinary Free (MCP):** 25 credits/mo · image upload max 10 MB · video max 100 MB · use Cloudinary MCP if available.
+**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05. Do not remove `/sitter/dev-upload` until **5.6**.
+
+**Demo note:** hosted Chloe↔Lucy booking was shifted on-duty (drop-off Received) for media upload testing — re-check times if the stay window expired before live feed tests.
 
 ---
 
@@ -154,10 +161,10 @@ Phase 04 is complete on `feat/phase-04-media` ([PR #45](https://github.com/minsi
 | 01 Scaffold          | **done** (2026-09-29) · 1.6–1.7 web shell + mouse done (2026-10-01, D25)       |
 | 02 DB + RLS          | **done** (2026-10-01) · hosted apply + smoke (2.9)                              |
 | 03 Auth              | **done** (2026-10-01)                                                         |
-| 03B Bookings         | 3B.0–3B.11 done (2026-10-02) — next: **phase PR** (CI incl. rls_smoke) → merge |
-| 03C Agreements       | not started (Stage 3)                                                         |
-| 04 Cloudinary (code) | **done** (2026-10-04) — draft PR #45; next Phase 05                           |
-| 05 Feed              | not started                                                                   |
+| 03B Bookings         | **done** (2026-10-02)                                                         |
+| 03C Agreements       | **done** (2026-10-03)                                                         |
+| 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
+| 05 Feed              | next — start **5.1** on `feat/phase-05-feed`                                  |
 | 06 Care request + checks | not started (Stage 2 · 4)                                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
@@ -167,7 +174,7 @@ Phase 04 is complete on `feat/phase-04-media` ([PR #45](https://github.com/minsi
 | 09 Caption + album   | not started                                                                   |
 | 10 Demo & deploy     | not started                                                                   |
 | 11 P1                | not started                                                                   |
-| Onboarding UX        | spec done ([onboarding.ko.md](onboarding.ko.md)); code **OB.*** not started   |
+| Onboarding UX        | OB.1–OB.3 done; OB.4 deferred; OB.5 with Phase 10                             |
 
 
 ---
