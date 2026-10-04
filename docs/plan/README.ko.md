@@ -205,10 +205,11 @@
 이유: Supabase 무료 저장 공간은 사진·영상을 담기에 부족합니다. Cloudinary 무료 플랜은 크레딧 기반 저장·전송량과 자동 압축을 제공합니다. (현재 무료 한도는 [cloudinary.com/pricing](https://cloudinary.com/pricing)에서 확인)
 
 - **업로드:** 클라이언트가 FastAPI에서 **서명(signed upload)**을 받아 Cloudinary로 직접 업로드 → 백엔드는 `public_id`만 Supabase에 저장
-- **압축:** `f_auto,q_auto`로 전송 (WebP/AVIF 등 포맷 자동, 화질 자동)
+- **사진 정규화 (전부):** 클라 긴 변 ~2000px(+ 필요 시 &lt;10 MB까지) → 업로드 **incoming** (`c_limit,w_2000`, `q_auto`) → 전송 시 `f_auto,q_auto` — Free 플랜 이미지 업로드 한도 **10 MB**
+- **영상:** 최대 **30초** (더 짧아도 OK). 그보다 길면 **트림 UI**로 ≤30초 구간 선택 → 클라 압축(≈720p) 후 업로드. Free 영상 한도 **100 MB**
 - **썸네일:** 피드 그리드용 `c_fill,w_400,h_400`, 영상 썸네일은 `so_0` + `.jpg`
-- **영상:** 업로드 시 길이·용량 제한, 웹 재생용 변환은 Cloudinary가 처리
 - **보안:** 강아지별 폴더 분리, API secret은 클라이언트에 노출 금지
+- **상세:** [phases/phase-04.md](phases/phase-04.md) § Media normalize policy
 
 ---
 
