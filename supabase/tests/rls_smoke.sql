@@ -1727,6 +1727,79 @@ begin
   select count(*) into n from public.task_logs where pet_id = v_id;
   perform _t_ok(n = 1, '6.2: the owner sees the logs of her unbooked pet');
 
+  -- Phase 06 (6.4): complete_task_log
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (max, lucy, 'smoke/proof-pill', 'image', 'task_proof');
+  perform _t_put('m_proof', (select id from public.media where cloudinary_public_id = 'smoke/proof-pill'));
+  perform _t_put('log_bf', (select id from public.task_logs where task_id = _t_get('task_bori')));
+  perform _t_put('log_pill', (select id from public.task_logs where task_id = _t_get('task_once')));
+
+  perform _t_as(chloe);
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.4: the owner cannot complete a task');
+  perform _t_as(paul);
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.4: a sitter outside the care window cannot complete it');
+
+  perform _t_as(lucy);
+  begin
+    perform complete_task_log(_t_get('log_bf'), _t_get('media_bori'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_media', '6.4: media must be a task_proof upload');
+  perform _t_ok((select status from public.task_logs where id = _t_get('log_bf')) = 'pending',
+    '6.4: a rejected completion leaves the log pending');
+
+  perform complete_task_log(_t_get('log_bf'));
+  perform _t_ok(
+    (select status = 'done' and completed_by = lucy and completed_at is not null and media_id is null
+     from public.task_logs where id = _t_get('log_bf')),
+    '6.4: Mark done without a photo');
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_done', '6.4: completing twice is refused');
+
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.notifications
+     where user_id = chloe and type = 'task_done' and ref_id = _t_get('log_bf')
+       and title like 'Max had breakfast%') = 1,
+    '6.4: the owner gets a task_done notice');
+  perform _t_ok(not exists (select 1 from public.feed_posts where task_log_id = _t_get('log_bf')),
+    '6.4: no photo → no feed post');
+
+  perform _t_as(lucy);
+  perform complete_task_log(_t_get('log_pill'), _t_get('m_proof'));
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.feed_posts
+     where task_log_id = _t_get('log_pill') and caption_source = 'task' and visibility = 'shared'
+       and media_id = _t_get('m_proof') and posted_by = lucy) = 1,
+    '6.4: with a photo → a shared feed post with a task caption');
+  perform _t_ok(
+    (select count(*) from public.notifications where user_id = chloe and ref_id = _t_get('log_pill')
+       and type = 'task_done') = 1
+    and not exists (select 1 from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
+       where n.type = 'feed_post' and fp.task_log_id = _t_get('log_pill')),
+    '6.4: task_done only — no extra feed_post notice for a task photo');
+  perform _t_as(chloe);
+  perform _t_ok(
+    (select count(*) from public.feed_posts where task_log_id = _t_get('log_pill')) = 1,
+    '6.4: the owner sees the task photo in the feed');
+
   perform _t_as(null);
 end;
 $$;

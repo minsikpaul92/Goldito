@@ -41,3 +41,79 @@ $$;
 
 revoke execute on function public.ensure_today_task_logs(uuid) from public, anon;
 grant execute on function public.ensure_today_task_logs(uuid) to authenticated, service_role;
+
+-- Complete one of today's tasks (6.4). Only the sitter in the care window. The owner always
+-- gets a `task_done` notice; a photo (media purpose `task_proof`, the sitter's own upload for this
+-- pet) also makes a shared feed post with a task caption — and no second `feed_post` notice,
+-- because notify_feed_post skips posts that carry a task_log_id (Plan B, sitter-care-loop §4).
+create or replace function public.complete_task_log(p_task_log uuid, p_media_id uuid default null)
+returns public.task_logs
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_log public.task_logs;
+  v_task public.care_tasks;
+  v_pet_name text;
+  v_owner uuid;
+  v_title text;
+  v_emoji text;
+  v_on_time text;
+begin
+  select * into v_log from public.task_logs where id = p_task_log for update;
+  if not found then
+    raise exception 'task_log_not_found';
+  end if;
+  if not public.in_care_window(v_log.pet_id, now()) then
+    raise exception 'not_in_care_window';
+  end if;
+  if v_log.status = 'done' then
+    raise exception 'already_done';
+  end if;
+  if p_media_id is not null and not exists (
+    select 1 from public.media m
+    where m.id = p_media_id
+      and m.pet_id = v_log.pet_id
+      and m.uploaded_by = auth.uid()
+      and m.purpose = 'task_proof'
+  ) then
+    raise exception 'invalid_media';
+  end if;
+
+  select * into v_task from public.care_tasks where id = v_log.task_id;
+  select p.name, p.owner_id into v_pet_name, v_owner from public.pets p where p.id = v_log.pet_id;
+
+  update public.task_logs
+  set status = 'done', completed_at = now(), completed_by = auth.uid(), media_id = p_media_id
+  where id = v_log.id
+  returning * into v_log;
+
+  v_on_time := case when now() <= v_log.due_at + interval '60 minutes' then ' on time' else '' end;
+  v_emoji := case v_task.type
+    when 'medication' then '💊' when 'walk' then '🦮' when 'feeding' then '🍽️'
+    when 'litter' then '🧹' when 'play' then '🎾' else '😴' end;
+  v_title := case v_task.type
+    when 'medication' then format('%s''s medication is done%s %s', v_pet_name, v_on_time, v_emoji)
+    when 'walk' then format('%s had a walk%s %s', v_pet_name, v_on_time, v_emoji)
+    when 'feeding' then format('%s had %s%s %s', v_pet_name, lower(v_task.title), v_on_time, v_emoji)
+    when 'litter' then format('%s''s litter box is clean %s', v_pet_name, v_emoji)
+    when 'play' then format('%s had playtime%s %s', v_pet_name, v_on_time, v_emoji)
+    else format('%s is asleep %s', v_pet_name, v_emoji)
+  end;
+  perform public.notify_user(v_owner, 'task_done', v_title, null, v_log.pet_id, null, v_log.id);
+
+  if p_media_id is not null then
+    insert into public.feed_posts
+      (pet_id, sitter_id, posted_by, media_id, caption, caption_source, task_log_id, visibility)
+    values
+      (v_log.pet_id, auth.uid(), auth.uid(), p_media_id,
+       format('%s %s — done', v_emoji, v_task.title), 'task', v_log.id, 'shared');
+  end if;
+
+  return v_log;
+end;
+$$;
+
+revoke execute on function public.complete_task_log(uuid, uuid) from public, anon;
+grant execute on function public.complete_task_log(uuid, uuid) to authenticated, service_role;
