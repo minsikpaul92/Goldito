@@ -37,6 +37,7 @@ export function TodayTasks({ pets }: { pets: PetRef[] }) {
   const toast = useToast();
   const [state, setState] = useState<State>({ status: "loading" });
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const petKey = pets.map((p) => p.id).join(",");
   const petsById = useMemo(() => new Map(pets.map((p) => [p.id, p])), [pets]);
@@ -77,8 +78,13 @@ export function TodayTasks({ pets }: { pets: PetRef[] }) {
     try {
       let mediaId: string | null = null;
       if (withPhoto) {
-        const picked = await pickMedia({ purpose: "task_proof" });
+        const picked = await pickMedia({
+          purpose: "task_proof",
+          confirm: true,
+          confirmLabel: "Use photo & mark done",
+        });
         if (!picked) return;
+        setUploading(true);
         const uploaded = await uploadMedia({
           petId: item.pet.id,
           purpose: "task_proof",
@@ -94,6 +100,7 @@ export function TodayTasks({ pets }: { pets: PetRef[] }) {
       toast.show(error instanceof UploadError || error instanceof Error ? error.message : "Try again.");
     } finally {
       setBusyId(null);
+      setUploading(false);
     }
   };
 
@@ -163,7 +170,7 @@ export function TodayTasks({ pets }: { pets: PetRef[] }) {
                   testID={`task-done-${item.log.id}`}
                 />
                 <Button
-                  label="📷 Done with photo"
+                  label={busy && uploading ? "Uploading photo…" : "📷 Done with photo"}
                   variant="secondary"
                   disabled={busyId != null}
                   onPress={() => void finish(item, true)}

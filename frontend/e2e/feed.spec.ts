@@ -143,7 +143,7 @@ test.describe("Notification center", () => {
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
 
     await expect(app(page).getByTestId("notification-badge").first()).toHaveText("2");
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByTestId("notifications-center")).toBeVisible();
 
     await app(page).getByTestId(`notification-${n(0)}`).click();
@@ -151,8 +151,8 @@ test.describe("Notification center", () => {
     expect(db.notifications.find((x) => x.id === n(0))?.read_at).toBeTruthy();
     await expect(app(page).getByTestId("notification-badge").first()).toHaveText("1");
 
-    await app(page).getByTestId("notification-bell").last().click();
-    await app(page).getByTestId("mark-all-read").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
+    await app(page).locator("[data-testid='mark-all-read']:visible").click();
     await expect(app(page).getByTestId("notification-badge")).toHaveCount(0);
     expect(db.notifications.every((x) => x.read_at)).toBe(true);
   });
@@ -174,7 +174,7 @@ test.describe("Notification center", () => {
     });
     await signIn(page, SITTER);
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await app(page).getByTestId(`notification-${n(7)}`).click();
     await expect(page).toHaveURL(new RegExp(`/sitter/feed/${PET_ID}`));
     await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
@@ -184,7 +184,7 @@ test.describe("Notification center", () => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByText("You're all caught up.")).toBeVisible();
   });
 });

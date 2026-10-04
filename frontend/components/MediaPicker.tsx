@@ -77,8 +77,6 @@ export function MediaPicker({
             ))}
           </View>
         </View>
-      ) : withImage || withVideo ? (
-        <Text style={styles.note}>No samples for this kind of upload yet.</Text>
       ) : null}
 
       <View style={styles.actions}>

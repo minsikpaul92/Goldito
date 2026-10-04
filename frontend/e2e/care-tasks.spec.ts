@@ -16,6 +16,8 @@ async function setup(page: Page, petId = MAX) {
     { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" },
   );
   await signIn(page, OWNER);
+  // Let sign-in finish before navigating, or the jump can cut the session short (flaky otherwise).
+  await app(page).getByRole("heading", { name: "Home" }).waitFor();
   await page.goto(`/owner/pets/${petId}`);
   await app(page).getByTestId("care-tasks").waitFor();
   return db;
