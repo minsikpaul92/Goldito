@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
-from app.routers import health, me, meet_greet
+from app.routers import health, me, media, meet_greet
 
 settings = get_settings()
 
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(me.router)
 app.include_router(meet_greet.router)
+app.include_router(media.router)
 
 
 @app.exception_handler(StarletteHTTPException)

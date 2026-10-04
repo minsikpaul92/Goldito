@@ -23,6 +23,29 @@ pytest -q   # auth tests use their own test keys — no real project needed
 
 Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost:8081`, `http://localhost:19006`).
 
+## Media upload (Phase 04) — manual check
+
+Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty for (`is_on_duty_for`).
+
+1. Get a sitter token (sign in as demo sitter in the app, then from the browser console on the phone frame page):  
+   `JSON.parse(localStorage.getItem("pawnote-auth")).access_token`
+2. Sign:
+   ```bash
+   curl -s localhost:8000/api/media/sign \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"pet_id":"'$PET_ID'","resource_type":"image","purpose":"feed"}'
+   ```
+3. Upload to the returned `upload_url` with FormData fields `file`, `api_key`, `timestamp`, `signature`, `folder` (same values as the sign response).
+4. Complete:
+   ```bash
+   curl -s localhost:8000/api/media/complete \
+     -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"pet_id":"'$PET_ID'","public_id":"pawnote/'$PET_ID'/feed/…","resource_type":"image","purpose":"feed"}'
+   ```
+5. Confirm a `media` row in Supabase (`cloudinary_public_id`, `purpose`).
+
+Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (sign → Cloudinary → complete).
+
 ## Auth (who may call what)
 
 **Frontend → Supabase directly with the anon key + RLS** for reads and simple writes. **Frontend → FastAPI with the user's Supabase access token** (`Authorization: Bearer <token>`) for Cloudinary signing, AI, and anything that needs the service role. FastAPI verifies the token first, then may use the service role.
