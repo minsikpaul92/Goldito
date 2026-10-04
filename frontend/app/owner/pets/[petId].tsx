@@ -1,12 +1,14 @@
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
+import { CareTasksSection } from "../../../components/CareTasksSection";
 import { PetForm } from "../../../components/PetForm";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { getPet, updatePet } from "../../../features/pets/petApi";
 import { petToFormValues } from "../../../features/pets/petValidation";
+import { useSession } from "../../../providers/SessionProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Pet } from "../../../types/db";
 
@@ -15,6 +17,7 @@ type State = { status: "loading" } | { status: "ready"; pet: Pet } | { status: "
 export default function PetProfileScreen() {
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const toast = useToast();
+  const session = useSession();
   const [state, setState] = useState<State>({ status: "loading" });
 
   const load = useCallback(async () => {
@@ -64,6 +67,7 @@ export default function PetProfileScreen() {
           router.back();
         }}
       />
+      {session.status === "signedIn" ? <CareTasksSection pet={pet} userId={session.profile.id} /> : null}
     </Screen>
   );
 }

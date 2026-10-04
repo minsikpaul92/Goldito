@@ -149,6 +149,8 @@ export type MockDb = {
   /** request_booking calls with their parameters. */
   requests: Row[];
   care_tasks: Row[];
+  /** Today's instances of care tasks (phase 06). */
+  task_logs: Row[];
   /** respond_booking / propose_handoff calls with their parameters. */
   responses: Row[];
   proposals: Row[];
@@ -192,6 +194,7 @@ function createMockDb(): MockDb {
     searches: [],
     requests: [],
     care_tasks: [],
+    task_logs: [],
     responses: [],
     proposals: [],
     meetGreetCalls: [],
@@ -857,6 +860,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         if (row.owner_id !== me) {
           return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
         }
+      }
+    }
+    if (path === "care_tasks") {
+      for (const row of inserted) {
+        const pet = db.pets.find((p) => p.id === row.pet_id);
+        if (!pet || pet.owner_id !== me) {
+          return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        }
+        if ((row.type === "walk" && pet.species === "cat") || (row.type === "litter" && pet.species === "dog")) {
+          return json(route, 400, { code: "P0001", message: "task_type_not_allowed_for_species" });
+        }
+        Object.assign(row, { active: true, repeat_daily: true });
       }
     }
     if (path === "pets" && inserted.some((row) => row.owner_id !== me)) {
