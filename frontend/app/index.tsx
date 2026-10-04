@@ -8,14 +8,14 @@ import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** "/" decides where to go: sign in, or the signed-in role's home (phase-03 3.3). */
+/** "/" decides where to go: Welcome (OB.1), or the signed-in role's home (phase-03 3.3). */
 export default function Index() {
   const session = useSession();
 
   if (session.status === "loading") return <LoadingView />;
   if (session.status === "error") return <ProfileError />;
   if (session.status === "signedIn") return <Redirect href={homeFor(session.profile.role)} />;
-  return <Redirect href="/login" />;
+  return <Redirect href="/welcome" />;
 }
 
 function ProfileError() {

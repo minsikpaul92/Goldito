@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Screen } from "../../components/ui/Screen";
@@ -61,78 +62,82 @@ export default function LoginScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.brand}>🐾 PawNote</Text>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Sign in to see today's care updates.</Text>
-      </View>
+      <BackLink onPress={() => router.push("/welcome")} testID="login-back" />
 
-      {!isSupabaseConfigured ? (
-        <Card>
-          <Text style={styles.error}>{SUPABASE_NOT_CONFIGURED}</Text>
-        </Card>
-      ) : null}
-
-      <View style={styles.form}>
-        <TextField
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          inputMode="email"
-          textContentType="emailAddress"
-          testID="login-email"
-        />
-        <TextField
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="current-password"
-          textContentType="password"
-          onSubmitEditing={signIn}
-          testID="login-password"
-        />
-        {error ? (
-          <Text accessibilityRole="alert" style={styles.error} testID="login-error">
-            {error}
-          </Text>
-        ) : null}
-        <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} />
-      </View>
-
-      <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
-
-      {isDemoEnabled ? (
-        <View style={styles.demo} testID="demo-block">
-          <View style={styles.divider}>
-            <View style={styles.line} />
-            <Text style={styles.dividerText}>or try a demo</Text>
-            <View style={styles.line} />
-          </View>
-          <View style={styles.demoButtons}>
-            <Button
-              label="Demo owner"
-              variant="secondary"
-              onPress={() => tryDemo("owner")}
-              disabled={submitting || !isSupabaseConfigured}
-              style={styles.demoButton}
-              testID="demo-owner"
-            />
-            <Button
-              label="Demo sitter"
-              variant="secondary"
-              onPress={() => tryDemo("sitter")}
-              disabled={submitting || !isSupabaseConfigured}
-              style={styles.demoButton}
-              testID="demo-sitter"
-            />
-          </View>
+      <View style={styles.body}>
+        <View style={styles.header}>
+          <Text style={styles.brand}>🐾 PawNote</Text>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Sign in to see today's care updates.</Text>
         </View>
-      ) : null}
+
+        {!isSupabaseConfigured ? (
+          <Card>
+            <Text style={styles.error}>{SUPABASE_NOT_CONFIGURED}</Text>
+          </Card>
+        ) : null}
+
+        <View style={styles.form}>
+          <TextField
+            label="Email"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            inputMode="email"
+            textContentType="emailAddress"
+            testID="login-email"
+          />
+          <TextField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoComplete="current-password"
+            textContentType="password"
+            onSubmitEditing={signIn}
+            testID="login-password"
+          />
+          {error ? (
+            <Text accessibilityRole="alert" style={styles.error} testID="login-error">
+              {error}
+            </Text>
+          ) : null}
+          <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} />
+        </View>
+
+        <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />
+
+        {isDemoEnabled ? (
+          <View style={styles.demo} testID="demo-block">
+            <View style={styles.divider}>
+              <View style={styles.line} />
+              <Text style={styles.dividerText}>or try a demo</Text>
+              <View style={styles.line} />
+            </View>
+            <View style={styles.demoButtons}>
+              <Button
+                label="Demo owner"
+                variant="secondary"
+                onPress={() => tryDemo("owner")}
+                disabled={submitting || !isSupabaseConfigured}
+                style={styles.demoButton}
+                testID="demo-owner"
+              />
+              <Button
+                label="Demo sitter"
+                variant="secondary"
+                onPress={() => tryDemo("sitter")}
+                disabled={submitting || !isSupabaseConfigured}
+                style={styles.demoButton}
+                testID="demo-sitter"
+              />
+            </View>
+          </View>
+        ) : null}
+      </View>
     </Screen>
   );
 }
@@ -140,6 +145,10 @@ export default function LoginScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: {
+      gap: theme.spacing.sm,
+    },
+    body: {
+      flexGrow: 1,
       justifyContent: "center",
       gap: theme.spacing.lg,
     },

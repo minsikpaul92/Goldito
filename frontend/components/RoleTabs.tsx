@@ -39,7 +39,7 @@ type StackProps = {
 /**
  * Stack for one role area (`app/owner/_layout.tsx`, `app/sitter/_layout.tsx`): the tabs
  * plus detail screens pushed on top with a back button. Guarded — signed-out users go to
- * sign in, the other role goes to its own home, so typing /owner as a sitter lands on
+ * Welcome (OB.1), the other role goes to its own home, so typing /owner as a sitter lands on
  * /sitter (phase-03 3.3, architecture D26).
  */
 export function RoleStack({ role, children }: StackProps) {
@@ -47,7 +47,7 @@ export function RoleStack({ role, children }: StackProps) {
   const session = useSession();
 
   if (session.status === "loading") return <LoadingView />;
-  if (session.status !== "signedIn") return <Redirect href="/login" />;
+  if (session.status !== "signedIn") return <Redirect href="/welcome" />;
   if (session.profile.role !== role) return <Redirect href={homeFor(session.profile.role)} />;
 
   return (
