@@ -31,11 +31,14 @@ export type TodayStatus =
   | { kind: "missed" }
   | { kind: "done"; at: string };
 
-/** Today's state of a task (D9: missed = still pending after its time). */
+/** D9: a pending task counts as missed 60 minutes after its time. */
+const MISSED_AFTER_MS = 60 * 60_000;
+
+/** Today's state of a task (D9, derived — never stored). */
 export function todayStatus(log: TaskLogRow | undefined, now = Date.now()): TodayStatus {
   if (!log) return { kind: "scheduled" };
   if (log.status === "done") return { kind: "done", at: log.completed_at ?? log.due_at };
-  return new Date(log.due_at).getTime() < now ? { kind: "missed" } : { kind: "pending" };
+  return now > new Date(log.due_at).getTime() + MISSED_AFTER_MS ? { kind: "missed" } : { kind: "pending" };
 }
 
 /** Earliest first, paused tasks last. */

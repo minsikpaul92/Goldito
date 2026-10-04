@@ -1670,6 +1670,63 @@ begin
   get diagnostics n = row_count;
   perform _t_ok(n = 1, '5.8: author deletes her own post');
 
+  -- Phase 06 (6.2): ensure_today_task_logs
+  perform _t_as(chloe);
+  begin
+    perform ensure_today_task_logs(max);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '6.2: the owner cannot create task logs');
+  perform _t_as(paul);
+  begin
+    perform ensure_today_task_logs(max);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '6.2: a sitter who is not on duty cannot create task logs');
+
+  perform _t_as(chloe);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time, active)
+  values (max, 'play', 'Paused play', '17:00', false);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time, repeat_daily)
+  values (max, 'medication', 'One-off pill', '12:00', false)
+  returning id into v_id;
+  perform _t_put('task_once', v_id);
+
+  perform _t_as(lucy);
+  select count(*) into n from ensure_today_task_logs(max);
+  perform _t_ok(n = 2, '6.2: logs for the active tasks only (Breakfast + one-off pill, not the paused one)');
+  select count(*) into n from ensure_today_task_logs(max);
+  perform _t_ok(n = 2, '6.2: calling again is idempotent');
+  perform _t_ok(
+    (select due_at from public.task_logs where task_id = _t_get('task_bori'))
+      = local_ts(app_today(), '08:00'),
+    '6.2: due_at is today at the task time in the app timezone');
+  perform _t_ok(
+    (select count(*) from public.task_logs where task_id = _t_get('task_once')) = 1,
+    '6.2: a non-repeating task gets one log');
+  perform _t_ok(
+    (select count(*) from ensure_today_task_logs('00000000-0000-4000-8000-0000000000c2')) = 1,
+    '6.2: each pet gets its own logs (Mochi: litter box)');
+
+  perform _t_as(chloe);
+  select count(*) into n from public.task_logs where pet_id = max;
+  perform _t_ok(n = 2, '6.2: the owner reads the logs through RLS');
+  -- A pet nobody has booked: only its owner reads its logs (later scenarios hand Max to
+  -- different sitters, so Max is not a stable "no access" pet).
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo') returning id into v_id;
+  insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Dinner', '18:00');
+  insert into public.task_logs (task_id, pet_id, due_at)
+  select id, v_id, local_ts(app_today(), '18:00') from public.care_tasks where pet_id = v_id;
+  perform _t_as(lucy);
+  select count(*) into n from public.task_logs where pet_id = v_id;
+  perform _t_ok(n = 0, '6.2: a sitter with no booking for the pet cannot read the logs');
+  perform _t_as(chloe);
+  select count(*) into n from public.task_logs where pet_id = v_id;
+  perform _t_ok(n = 1, '6.2: the owner sees the logs of her unbooked pet');
+
   perform _t_as(null);
 end;
 $$;

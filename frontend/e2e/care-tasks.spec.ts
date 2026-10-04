@@ -119,12 +119,14 @@ test.describe("care tasks", () => {
     db.care_tasks.push(
       { id: "t-done", pet_id: MAX, type: "feeding", title: "Breakfast", dose: null, scheduled_time: "08:00:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:00:00Z" },
       { id: "t-missed", pet_id: MAX, type: "walk", title: "Walk", dose: null, scheduled_time: "09:00:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:01:00Z" },
+      { id: "t-grace", pet_id: MAX, type: "play", title: "Fetch", dose: null, scheduled_time: "09:40:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:03:00Z" },
       { id: "t-later", pet_id: MAX, type: "sleep", title: "Nap", dose: null, scheduled_time: "10:00:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:02:00Z" },
     );
     const iso = (offsetMin: number) => new Date(now + offsetMin * 60_000).toISOString();
     db.task_logs.push(
       { id: "l1", task_id: "t-done", pet_id: MAX, due_at: iso(-60), status: "done", completed_at: iso(-50) },
-      { id: "l2", task_id: "t-missed", pet_id: MAX, due_at: iso(-30), status: "pending", completed_at: null },
+      { id: "l2", task_id: "t-missed", pet_id: MAX, due_at: iso(-90), status: "pending", completed_at: null },
+      { id: "l4", task_id: "t-grace", pet_id: MAX, due_at: iso(-20), status: "pending", completed_at: null },
       { id: "l3", task_id: "t-later", pet_id: MAX, due_at: iso(30), status: "pending", completed_at: null },
     );
     await page.reload();
@@ -132,5 +134,7 @@ test.describe("care tasks", () => {
     await expect(screen.getByTestId("care-status-t-done")).toContainText("✅ Done");
     await expect(screen.getByTestId("care-status-t-missed")).toHaveText("⚠️ Missed");
     await expect(screen.getByTestId("care-status-t-later")).toHaveText("⏳ Pending");
+    // D9: 20 minutes late is still pending; missed starts after 60 minutes.
+    await expect(screen.getByTestId("care-status-t-grace")).toHaveText("⏳ Pending");
   });
 });

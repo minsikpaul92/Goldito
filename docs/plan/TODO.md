@@ -18,7 +18,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | Step | Action |
 | :--- | :--- |
 | 1 | **Phase 05 is complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — merge is Minsik's call (squash, delete branch) |
-| 2 | **Human (Minsik): apply `007b` then `007c` on the hosted DB** (SQL Editor), then `rls_smoke.sql` — until then the hosted app cannot read `posted_by` / `visibility` |
+| 2 | **Human (Minsik): apply `007b`, `007c`, then `008` on the hosted DB** (SQL Editor), then `rls_smoke.sql` — until then the hosted app cannot read `posted_by` / `visibility` |
 | 3 | Phase 06 runs on `feat/phase-06-care`, **branched from `feat/phase-05-feed`** (Phase 05 isn't merged yet). After PR #47 is squash-merged: `git fetch && git rebase --onto origin/main <last Phase 05 commit> feat/phase-06-care` and retarget the Phase 06 PR to `main` |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **6.2** | `ensure_today_task_logs` (`008_care.sql` starts here) — idempotent today's task logs | [phase-06.md](phases/phase-06.md) |
+| **6.4** | `complete_task_log(p_task_log, p_media_id default null)` (`008_care.sql`) — done + `task_done`; photo → `feed_post`. Taken **before 6.3** because the sitter Home UI (6.3) needs this RPC | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -74,6 +74,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **6.2** `008_care.sql` — `ensure_today_task_logs(p_pet)` (security definer, on-duty sitter only → `not_on_duty`): today's (D8) `task_logs` for active tasks whose time falls inside the sitter's care window, idempotent (`unique(task_id, due_at)` + `on conflict do nothing`), non-repeating tasks get one log, returns today's logs for the pet. rls_smoke 6.2 (10 checks; 213 PASS, 0 fail) on disposable Postgres 17. Also fixed the 6.1 badge to D9 (missed = pending **60 min** after its time). Playwright flows ✓. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
 - [x] **6.1** Owner care tasks on the pet detail screen: `CareTasksSection` under the pet form — list (emoji · name · time · every day · dose · note), **Add task** sheet (type pills filtered by species — no walks for cats / litter for dogs, D23 — name prefilled from the type, dose for medication, time stepper in 15 min, optional note), **Pause / Resume**, **Delete** with a confirm sheet, today's badge (✅ Done / ⏳ Pending / ⚠️ Missed once the sitter side writes `task_logs`, D9). `features/care/` (`careApi`, `careFormat`), `CareTaskRow` / `TaskLogRow` types. No migration (002/003 already give the owner insert / update / delete + species guard). Playwright `care-tasks.spec.ts` (5) + mock (`task_logs`, species guard). Playwright flows 78 ✓, `tsc` ✓ (2026-10-04)
 - [x] **5.9 · Phase 05 complete** `feed_post` notices go to the other party and only for shared posts: owner's shared post → the sitter(s) on duty for that pet (title "{owner} shared a photo of {pet} 📸", one per sitter, tap → `/sitter/feed/[petId]`); sitter's shared post → owner (5.3); private posts notify nobody. Folded into `007c` (not applied anywhere yet). Sitter pet feed refetches on `feedRevision`. rls_smoke 5.9 (3 checks; 203 PASS, 0 fail), Playwright flows 73 ✓, pytest 82 ✓, `tsc` ✓. **Hosted: apply `007b` → `007c`** (2026-10-04)
 - [x] **5.8** Feed visibility + owner posts: `007c_feed_visibility.sql` — `feed_posts.posted_by` (real author, backfilled; delete = author only), `visibility` `shared`/`private`, `sitter_id` null for owner posts; select = author or (shared + `can_access_pet`); insert = sitter on duty or the pet's owner, media must be the poster's own `feed` upload (closes "attach any media of that pet"); `media_select` hides a private post's media row from the other party (`media_hidden_from_me`, security definer); `notify_feed_post` fires only for a sitter's shared post, so a private post never notifies. Backend: owners may sign/complete `feed` photos for their own pets (`assert_owner_of`); `DELETE /api/feed/{id}` checks `posted_by`. App: sitter **Share with {owner}** chip (default on → off = "Only you", toast "Saved just for you 🔒"); owner Feed **+ Photo** with **Visible to sitter** chip (default off) and own-post Delete; 🔒 badge on private cells; viewer 🗑️ (trash) button only on your own posts. rls_smoke 5.8 section (15 checks) on disposable Postgres 17 ✓ (200 PASS, 0 fail), pytest 82 ✓, ruff ✓, Playwright flows 72 ✓, `tsc` ✓. **Hosted:** apply `007b` then `007c` (human) (2026-10-04)
@@ -179,7 +180,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
 | 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
-| 06 Care request + checks | in progress — **6.1** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); next **6.2** |
+| 06 Care request + checks | in progress — **6.1–6.2** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); next **6.4** then 6.3 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |
