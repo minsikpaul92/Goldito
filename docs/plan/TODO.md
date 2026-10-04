@@ -27,20 +27,6 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 **Demo note:** re-check Chloe↔Lucy on-duty window before live upload tests.
 
---- | :--- |
-| 1 | Stay on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) for feed polish |
-| 2 | **Current focus = 5.9 only** — notify the on-duty sitter when the owner shares a post → one commit → update this file |
-| 3 | **5.10** done (viewer renders only the active post) — see Completed |
-| 4 | After 5.8–5.9 (or when pausing polish): move focus to **6.1** on `feat/phase-06-care` from latest `main` |
-
-**Phase 05 core (5.1–5.6) + 5.7 delete + 5.8 visibility + 5.10 viewer done**; remaining polish = 5.9.
-
-**IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
-
-**Do not:** revive OB.4. **Stash:** keep `wip privacy oauth docs` separate.
-
-**Demo note:** re-check Chloe↔Lucy on-duty window before live upload tests.
-
 ---
 
 ## Current focus (one task only)
