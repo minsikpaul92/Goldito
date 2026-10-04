@@ -153,6 +153,8 @@ export type MockDb = {
   care_tasks: Row[];
   /** Today's instances of care tasks (phase 06). */
   task_logs: Row[];
+  /** log_care_checkin rows (phase 06). */
+  care_checkins: Row[];
   /** respond_booking / propose_handoff calls with their parameters. */
   responses: Row[];
   proposals: Row[];
@@ -199,6 +201,7 @@ function createMockDb(): MockDb {
     requests: [],
     care_tasks: [],
     task_logs: [],
+    care_checkins: [],
     responses: [],
     proposals: [],
     meetGreetCalls: [],
@@ -736,6 +739,42 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       200,
       db.task_logs.filter((l) => l.pet_id === p_pet && String(l.due_at) >= start && String(l.due_at) < end),
     );
+  }
+
+  if (path === "rpc/log_care_checkin") {
+    const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
+    const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
+    const pet = db.pets.find((p) => p.id === p_pet);
+    if (p_kind === "note" && !note) return json(route, 400, { code: "P0001", message: "note_required" });
+    if (p_kind === "walk" && pet?.species === "cat") {
+      return json(route, 400, { code: "P0001", message: "checkin_not_allowed_for_species" });
+    }
+    const row = {
+      id: crypto.randomUUID(),
+      pet_id: p_pet,
+      created_by: me,
+      kind: p_kind,
+      value: p_kind === "note" ? null : p_value,
+      note_text: note,
+      media_id: p_media_id,
+      created_at: new Date().toISOString(),
+    };
+    db.care_checkins.push(row);
+    // Same rule as the SQL: preset line, or only the typed memo.
+    const preset = `${pet?.name} ${p_kind} ${p_value ?? ""}`.trim();
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "care_checkin",
+      title: note ? `${pet?.name}: ${note}` : preset,
+      body: null,
+      pet_id: p_pet,
+      booking_id: null,
+      ref_id: row.id,
+      read_at: null,
+      created_at: row.created_at,
+    });
+    return json(route, 200, row);
   }
 
   if (path === "rpc/complete_task_log") {

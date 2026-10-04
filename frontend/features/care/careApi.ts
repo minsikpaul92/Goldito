@@ -1,5 +1,5 @@
 import { getSupabase } from "../../lib/supabase";
-import type { CareTaskRow, CareTaskType, TaskLogRow } from "../../types/db";
+import type { CareCheckinKind, CareTaskRow, CareTaskType, TaskLogRow } from "../../types/db";
 import { addDays, appToday, zonedToIso } from "../schedule/dates";
 
 const TASK_COLUMNS =
@@ -86,6 +86,8 @@ const RPC_MESSAGES: Record<string, string> = {
   already_done: "That task is already marked done.",
   invalid_media: "That photo can't be used for this task. Pick another.",
   task_log_not_found: "That task is no longer there. Pull to refresh.",
+  note_required: "Type a note first.",
+  checkin_not_allowed_for_species: "That check-in doesn't fit this pet.",
 };
 
 function rpcMessage(error: { message: string }, fallback: string): string {
@@ -112,4 +114,27 @@ export async function completeTaskLog(logId: string, mediaId: string | null): Pr
     p_media_id: mediaId,
   });
   if (error) throw new Error(rpcMessage(error, "Couldn't mark this done. Check your connection and try again."));
+}
+
+export type CheckinInput = {
+  petId: string;
+  kind: CareCheckinKind;
+  /** Kind-specific tap value (meal `all`…, walk minutes…); null for a note. */
+  value: string | null;
+  /** Optional memo (≤ 120). With one, the owner gets only the memo; without, a preset line. */
+  note: string | null;
+  /** A `task_proof` upload, optional. */
+  mediaId: string | null;
+};
+
+/** One-tap check-in (6.9): meal · potty · walk · mood · note. The owner is told right away. */
+export async function logCareCheckin(input: CheckinInput): Promise<void> {
+  const { error } = await getSupabase().rpc("log_care_checkin", {
+    p_pet: input.petId,
+    p_kind: input.kind,
+    p_value: input.value,
+    p_note_text: input.note,
+    p_media_id: input.mediaId,
+  });
+  if (error) throw new Error(rpcMessage(error, "Couldn't send this. Check your connection and try again."));
 }

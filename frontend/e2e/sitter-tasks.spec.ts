@@ -1,107 +1,16 @@
 import { devices, expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
+import { caring, mockUpload as mockUploadFor, task as fixtureTask } from "./careFixtures";
 import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Sitter Home: today's tasks, Mark done, Done with photo (phase-06 6.3).
 
-const HOUR = 3_600_000;
 const PET = "00000000-0000-4000-8000-0000000000aa";
-
-function caringMax(db: MockDb) {
-  const now = Date.now();
-  db.pets.push({ id: PET, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
-  db.bookings.push({
-    id: "b1",
-    owner_id: OWNER.id,
-    sitter_id: SITTER.id,
-    status: "confirmed",
-    service_type: "boarding",
-    meet_greet_status: "not_needed",
-    created_at: "2026-10-02T18:00:00Z",
-  });
-  db.booking_pets.push({ booking_id: "b1", pet_id: PET });
-  for (const [kind, at] of [
-    ["drop_off", now - 24 * HOUR],
-    ["pick_up", now + 48 * HOUR],
-  ] as const) {
-    db.booking_handoffs.push({
-      id: `b1-${kind}`,
-      booking_id: "b1",
-      kind,
-      scheduled_at: new Date(at).toISOString(),
-      location_type: "sitter_home",
-      location_note: null,
-      within_sitter_hours: true,
-      status: "agreed",
-      proposed_by: OWNER.id,
-      completed_at: kind === "drop_off" ? new Date(at).toISOString() : null,
-      created_at: "2026-10-02T18:00:00Z",
-    });
-  }
-}
-
-function task(id: string, type: string, title: string, time: string, extra: object = {}) {
-  return {
-    id,
-    pet_id: PET,
-    type,
-    title,
-    dose: null,
-    scheduled_time: time,
-    repeat_daily: true,
-    notes: null,
-    active: true,
-    created_at: "2026-10-01T10:00:00Z",
-    ...extra,
-  };
-}
-
-
-/** Mocks sign → Cloudinary → complete for a task_proof photo; returns the sign requests. */
-async function mockUpload(page: Page, db: MockDb) {
-  const sign: Record<string, unknown>[] = [];
-  await page.route("**/api/media/sign", (route) => {
-    const body = route.request().postDataJSON();
-    sign.push(body);
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        cloud_name: "pawnote-test",
-        api_key: "1",
-        timestamp: 1,
-        signature: "s",
-        folder: `pawnote/${body.pet_id}/${body.purpose}`,
-        upload_url: "http://127.0.0.1:4173/cloudinary-mock/image/upload",
-        transformation: "c_limit,w_2000/q_auto",
-      }),
-    });
-  });
-  await page.route("**/cloudinary-mock/**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ public_id: `pawnote/${PET}/task_proof/abc`, width: 10, height: 10 }),
-    }),
-  );
-  await page.route("**/api/media/complete", (route) => {
-    db.media.push({
-      id: "media-proof",
-      pet_id: PET,
-      cloudinary_public_id: `pawnote/${PET}/task_proof/abc`,
-      resource_type: "image",
-      purpose: "task_proof",
-    });
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ media_id: "media-proof", public_id: "x", secure_url: "x", thumb_url: "" }),
-    });
-  });
-  return sign;
-}
+const MAX = { id: PET, name: "Max", species: "dog" } as const;
+const caringMax = (db: MockDb) => caring(db, [MAX]);
+const task = (id: string, type: string, title: string, time: string, extra: object = {}) =>
+  fixtureTask(PET, id, type, title, time, extra);
 
 test.describe("sitter today's tasks", () => {
   test("opening Home creates today's logs and shows what is next", async ({ page }) => {
@@ -148,7 +57,7 @@ test.describe("sitter today's tasks", () => {
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
 
-    const sign = await mockUpload(page, db);
+    const sign = await mockUploadFor(page, db, PET);
 
     await signIn(page, SITTER);
     const screen = app(page);
@@ -173,7 +82,7 @@ test.describe("sitter today's tasks", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
-    const sign = await mockUpload(page, db);
+    const sign = await mockUploadFor(page, db, PET);
     await signIn(page, SITTER);
     const screen = app(page);
     await screen.locator("[data-testid^='task-photo-']").first().click();
@@ -208,7 +117,7 @@ test.describe("on a phone", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
-    const sign = await mockUpload(page, db);
+    const sign = await mockUploadFor(page, db, PET);
     // A touch phone runs the app full screen (no phone-frame iframe), so use `page` directly.
     await page.goto("/login");
     await page.getByTestId("login-email").fill(SITTER.email);

@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { placeLabel } from "../../../components/BookingCard";
+import { QuickCheckIn } from "../../../components/QuickCheckIn";
 import { TodayTasks } from "../../../components/TodayTasks";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -102,6 +103,7 @@ export default function SitterHome() {
     id: p.id,
     name: p.name,
     ownerName: p.ownerName,
+    species: p.species,
   }));
 
   return (
@@ -118,6 +120,17 @@ export default function SitterHome() {
       ) : null}
 
       <TodayTasks pets={caringPets} />
+
+      {caringPets.length > 0 ? (
+        <View style={styles.section} testID="quick-checkin">
+          <Text accessibilityRole="header" style={styles.heading}>
+            Quick check-in
+          </Text>
+          {caringPets.map((p) => (
+            <QuickCheckIn key={p.id} pet={p} />
+          ))}
+        </View>
+      ) : null}
 
       {caring.length > 0 ? (
         <View style={styles.section} testID="today-caring">

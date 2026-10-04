@@ -48,6 +48,8 @@ export type SitterProfile = {
 
 export type CareTaskType = "medication" | "walk" | "feeding" | "litter" | "play" | "sleep";
 
+export type CareCheckinKind = "meal" | "potty" | "walk" | "mood" | "note";
+
 /** One repeating task the owner asks the sitter to do (care_tasks, phase-06). */
 export type CareTaskRow = {
   id: string;
