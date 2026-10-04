@@ -914,6 +914,31 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    // Diary reads (phase 06 6.11): embeds PostgREST would resolve from the foreign keys.
+    const mediaOf = (id: unknown) => {
+      const m = db.media.find((x) => x.id === id);
+      return m
+        ? { id: m.id, cloudinary_public_id: m.cloudinary_public_id, resource_type: m.resource_type }
+        : null;
+    };
+    const nameOf = (id: unknown) => {
+      const u = users.find((x) => x.id === id);
+      return u ? { display_name: u.displayName } : null;
+    };
+    if (path === "task_logs" && select.includes("care_tasks")) {
+      rows = rows.map((log) => {
+        const task = db.care_tasks.find((t) => t.id === log.task_id);
+        return {
+          ...log,
+          care_tasks: task ? { type: task.type, title: task.title } : null,
+          media: mediaOf(log.media_id),
+          completed: nameOf(log.completed_by),
+        };
+      });
+    }
+    if (path === "care_checkins" && select.includes("media")) {
+      rows = rows.map((c) => ({ ...c, media: mediaOf(c.media_id), by: nameOf(c.created_by) }));
+    }
     if (path === "bookings") {
       const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
       rows = rows.map((b) => ({
