@@ -239,10 +239,11 @@ Notification types, recipients, and where each is created: **[architecture §7 n
 Why: Supabase free storage is too small for photos and videos. Cloudinary's free plan gives credit-based storage/bandwidth plus automatic compression. (Check current free-plan limits at [cloudinary.com/pricing](https://cloudinary.com/pricing).)
 
 - **Upload:** client requests a **signed upload** signature from FastAPI → uploads directly to Cloudinary → backend stores only `public_id` in Supabase.
-- **Compression:** deliver with `f_auto,q_auto` (auto format like WebP/AVIF, auto quality).
+- **Photos (all):** client long-edge ~2000px (and &lt;10 MB if needed) → upload **incoming** normalize → deliver with `f_auto,q_auto`. Free plan max image upload **10 MB**.
+- **Video:** max **30 s** (shorter OK); if longer, **trim UI** then client compress (~720p) before upload. Free max video **100 MB**.
 - **Thumbnails:** `c_fill,w_400,h_400` for feed grid; video poster via `so_0` + `.jpg`.
-- **Video:** limit length/size on upload; Cloudinary transcodes for web playback.
 - **Privacy:** use a dedicated folder per pet; don't expose the API secret to the client.
+- **Detail:** [phases/phase-04.md](phases/phase-04.md) § Media normalize policy
 
 ---
 
