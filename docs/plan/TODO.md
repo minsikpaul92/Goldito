@@ -17,9 +17,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | Step | Action |
 | :--- | :--- |
-| 1 | **Phase 05 is complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — merge is Minsik's call (squash, delete branch) |
-| 2 | **Hosted DB is up to date** (applied via Supabase MCP, 2026-10-04): `007c_feed_visibility`, `008_care_6_2_to_6_8`, `008b_checkin_memo_and_log_rpc` (`007b` was already there as `feed_posts_realtime`). Later `008` additions go in as small named migrations (`008c_…`) |
-| 3 | Phase 06 runs on `feat/phase-06-care`, **branched from `feat/phase-05-feed`** (Phase 05 isn't merged yet). After PR #47 is squash-merged: `git fetch && git rebase --onto origin/main <last Phase 05 commit> feat/phase-06-care` and retarget the Phase 06 PR to `main` |
+| 1 | **Phase 05 is merged** ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47), squash `ae35035`, 2026-10-04) |
+| 2 | **Hosted DB is up to date** (Supabase MCP, 2026-10-04): `007c_feed_visibility`, `008_care_6_2_to_6_8`, `008b_checkin_memo_and_log_rpc`, `008c_checkin_preset_or_memo` (`007b` was already there as `feed_posts_realtime`). Later `008` additions go in as small named migrations (`008d_…`) |
+| 3 | Phase 06 runs on `feat/phase-06-care` ([PR #48](https://github.com/minsikpaul92/PawNote/pull/48), now based on `main`) |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
