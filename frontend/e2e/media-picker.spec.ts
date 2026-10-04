@@ -90,10 +90,11 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("dev-pick-photo").click();
     await expect(app(page).getByTestId("media-picker")).toBeVisible();
-    // Four placeholder samples for a feed upload, each a plain click.
-    for (const id of ["meal", "walk", "nap", "walk_squirrel"]) {
+    // Three photo samples for a photo-only pick (video sample only when video is allowed).
+    for (const id of ["meal", "walk", "nap"]) {
       await expect(app(page).getByTestId(`sample-${id}`)).toBeVisible();
     }
+    await expect(app(page).getByTestId("sample-play_fetch")).toHaveCount(0);
     await app(page).getByTestId("sample-walk").click();
 
     await expect(app(page).getByTestId("dev-done")).toBeVisible();

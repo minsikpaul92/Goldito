@@ -37,13 +37,13 @@ export function MediaPicker({
   const withVideo = mediaTypes.includes("video");
   const withImage = mediaTypes.includes("image");
   const title = withVideo && withImage ? "Add a photo or video" : withVideo ? "Add a video" : "Add a photo";
-  const showSamples = withImage && samples.length > 0;
+  const showSamples = samples.length > 0;
 
   return (
     <Sheet visible={visible} title={title} onClose={onClose} testID="media-picker">
       {showSamples ? (
         <View>
-          <Text style={styles.heading}>Sample photos</Text>
+          <Text style={styles.heading}>{withVideo && !withImage ? "Sample videos" : "Sample photos"}</Text>
           <View style={styles.grid}>
             {samples.map((sample) => (
               <Pressable
@@ -56,7 +56,13 @@ export function MediaPicker({
               >
                 {/* The wrapper owns the 4:3 box: react-native-web's Image keeps its file height. */}
                 <View style={styles.thumb}>
-                  <Image source={sample.source} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  {sample.kind === "video" ? (
+                    <View style={[StyleSheet.absoluteFill, styles.videoThumb]}>
+                      <Text style={styles.videoBadge}>▶ video</Text>
+                    </View>
+                  ) : (
+                    <Image source={sample.source} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  )}
                 </View>
                 <Text numberOfLines={1} style={styles.tileLabel}>
                   {sample.label}
@@ -65,8 +71,8 @@ export function MediaPicker({
             ))}
           </View>
         </View>
-      ) : withImage ? (
-        <Text style={styles.note}>No sample photos for this kind of upload yet.</Text>
+      ) : withImage || withVideo ? (
+        <Text style={styles.note}>No samples for this kind of upload yet.</Text>
       ) : null}
 
       <View style={styles.actions}>
@@ -112,6 +118,16 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
       borderWidth: 1,
       borderColor: theme.color.border,
+    },
+    videoThumb: {
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.text,
+    },
+    videoBadge: {
+      fontSize: theme.fontSize.small,
+      fontWeight: "600",
+      color: theme.color.primaryText,
     },
     tileLabel: {
       fontSize: theme.fontSize.small,

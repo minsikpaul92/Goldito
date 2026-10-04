@@ -135,7 +135,10 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
     try {
       const uri = Asset.fromModule(sample.source).uri;
       const blob = await (await fetch(uri)).blob();
-      await settle(new File([blob], `${sample.id}.jpg`, { type: blob.type || "image/jpeg" }));
+      const kind = sample.kind ?? "image";
+      const ext = kind === "video" ? "mp4" : "jpg";
+      const type = kind === "video" ? blob.type || "video/mp4" : blob.type || "image/jpeg";
+      await settle(new File([blob], `${sample.id}.${ext}`, { type }));
     } catch {
       toast.show("Could not load that sample. Try again.");
     }
@@ -160,7 +163,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
       <MediaPicker
         visible={tray !== null}
         mediaTypes={tray?.mediaTypes ?? ["image"]}
-        samples={tray ? samplesFor(tray.purpose) : []}
+        samples={tray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
         canTakePhoto={hasTouchCamera()}
         onPickSample={onPickSample}
         onUpload={onUpload}
