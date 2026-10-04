@@ -60,3 +60,18 @@ export type FeedPostRow = {
   task_log_id: string | null;
   created_at: string;
 };
+
+export type MediaResourceType = "image" | "video";
+
+/** media row fields the feed timeline needs (Cloudinary delivery via public_id). */
+export type MediaRow = {
+  id: string;
+  pet_id: string;
+  cloudinary_public_id: string;
+  resource_type: MediaResourceType;
+  purpose: string;
+  width: number | null;
+  height: number | null;
+  duration_s: number | null;
+  created_at: string;
+};

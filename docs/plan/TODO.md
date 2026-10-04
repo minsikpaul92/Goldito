@@ -13,17 +13,17 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (Goal + 5.2 DoD) → [DESIGN.md](../../DESIGN.md) if touching UI.
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (Goal + 5.3 DoD) → architecture §7 for notification types.
 
 | Step | Action |
 | :--- | :--- |
-| 1 | On `feat/phase-05-feed` (draft Phase 05 PR already open) — `git pull` if needed |
-| 2 | Work **Current focus** only (5.2) → verify → one commit → update this file |
-| 3 | Do not start 5.3+ in the same session |
+| 1 | On `feat/phase-05-feed` (draft [PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — `git pull` if needed |
+| 2 | Work **Current focus** only (5.3) → verify → one commit → update this file |
+| 3 | Do not start 5.4+ in the same session |
 
-**Product stage:** Stage **4** Care (Kidsnote-style feed). **5.2** = Owner timeline query (`feed_posts` + `media`, pagination). `createFeedPost` (5.1) is done — reuse it from the upload path when UI lands (5.2+ / pet feed). Caption AI stays Phase 09.
+**Product stage:** Stage **4** Care. **5.3** = `007_feed_notifications.sql` — `notify_feed_post` trigger + `feed_posts.category` null column. Owner timeline (5.2) and `createFeedPost` (5.1) are done. Do not remove `/sitter/dev-upload` until **5.6**.
 
-**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05. Do not remove `/sitter/dev-upload` until **5.6**.
+**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05.
 
 **Demo note:** hosted Chloe↔Lucy booking was shifted on-duty (drop-off Received) for media upload testing — re-check times if the stay window expired before live feed tests.
 
@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.2** | Owner timeline query — `feed_posts` join `media`, order `created_at` desc, `range(0,19)` + Load more | [phase-05.md](phases/phase-05.md) |
+| **5.3** | `007_feed_notifications.sql` — `notify_feed_post` trigger + `feed_posts.category` | [phase-05.md](phases/phase-05.md) |
 
 ---
 
@@ -51,7 +51,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **5.3–5.6** `007` notify trigger · Realtime + NotificationsProvider · 알림 센터 · remove `/sitter/dev-upload` (`007`)
+- [ ] **5.4–5.6** Realtime + NotificationsProvider · 알림 센터 · remove `/sitter/dev-upload` (`007`)
 - [ ] **6.x** Care request → AI mission checklist (6.12–6.14) + 5-second check-ins (walk minutes) + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `008`)
 - [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) + `embed()` — Seulgi (can start right after Phase 01)
 - [ ] **7.2–7.5 · 7.7** Daily report AI (Super): **7.7** chip suggestions from the day's records + ≤ 2 photos (`/api/ai/report-chips`); the sitter keeps or turns off chips, adds an optional short note, and approves before it posts (D38) (`009`)
@@ -74,6 +74,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.2** Owner timeline: `listFeedPosts(petId, {offset, limit})` joins `media` + sitter `display_name`, `FEED_PAGE_SIZE=20`; `FeedCard` (4:3 thumb / video poster + ▶); `/owner/feed` FlatList + pet SegmentedControl + Load more / onEndReached + detail Sheet (web `<video>`). Empty: "No posts yet — your sitter will share photos here." `tsc` ✓ (2026-10-04)
 - [x] **5.1** `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` — inserts `feed_posts` (sitter RLS / on-duty); `FALLBACK_CAPTION` = `"A moment from today's care 🐾"` + `caption_source='fallback'`; `FeedPostRow` / `CaptionSource` in `types/db.ts`. No UI yet (5.2+). AI caption stays Phase 09. `tsc` ✓. Do not remove `/sitter/dev-upload` until 5.6 (2026-10-04)
 - [x] **4.7** `pickMedia()` + sample tray + video trim ≤ 30 s (Cloudinary cuts via signed `so_/du_`) + `/sitter/dev-upload`: `lib/media.ts` · `MediaPicker` · `VideoTrimSheet.web` (QuickTime-style drag window, mouse + arrows) · `MediaPickerProvider` · `assets/demo/` placeholders (meal · walk · nap · walk_squirrel; handoff / safety_label empty until 06B / 08) · sign accepts `trim_start` / `trim_duration` · Playwright media-picker 7/7 ✓ · pytest 73 ✓ · ruff ✓ · `tsc` ✓ (e2e excluded from app tsconfig). Live: tray + sample → sign 403 on-duty (expected until Received) + Retry. Removed in Phase 05 (2026-10-04)
 - [x] **4.6** `cloudinary.fetch_as_data_url(public_id, resource_type)` (D12): downloads `c_limit,w_1024,f_jpg` (video: `so_0,…` poster frame) and returns `data:image/jpeg;base64,…`; `vision_url()` builds the URL; only `pawnote/…` ids are accepted (no `..`, `?`, `#`, dots, other hosts → `ValueError`); network / non-200 / non-image / empty or > 5 MB → `MediaFetchError` (callers fall back, e.g. `unchecked`). It does **not** check ownership — the AI router must (06B · 08 · 09). pytest 61 ✓ (21 new, httpx MockTransport), ruff ✓. Live Cloudinary: 3000×2000 → 1024×682, 400×300 stays 400×300, video → first-frame JPEG, missing → `MediaFetchError`; test assets deleted (2026-10-04)
@@ -164,7 +165,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03B Bookings         | **done** (2026-10-02)                                                         |
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
-| 05 Feed              | in progress — **5.1** done on `feat/phase-05-feed`; next **5.2**              |
+| 05 Feed              | in progress — **5.1–5.2** done on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)); next **5.3** |
 | 06 Care request + checks | not started (Stage 2 · 4)                                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
