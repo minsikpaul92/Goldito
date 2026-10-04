@@ -45,3 +45,54 @@ export type SitterProfile = {
   lobby_notes: string | null;
   packing_list: string[] | null;
 };
+
+/** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */
+export type CaptionSource = "ai" | "fallback" | "task";
+
+/** One Kidsnote-style feed card (1 post = 1 media, D10). */
+export type FeedVisibility = "shared" | "private";
+
+export type FeedPostRow = {
+  id: string;
+  pet_id: string;
+  /** Set for sitter posts only; owner posts have none. */
+  sitter_id: string | null;
+  /** The real author (sitter or owner) — only they can delete. */
+  posted_by: string;
+  /** shared = owner + on-duty sitter; private = author only (5.8). */
+  visibility: FeedVisibility;
+  media_id: string;
+  caption: string | null;
+  caption_source: CaptionSource | null;
+  task_log_id: string | null;
+  created_at: string;
+};
+
+export type MediaResourceType = "image" | "video";
+
+/** media row fields the feed timeline needs (Cloudinary delivery via public_id). */
+export type MediaRow = {
+  id: string;
+  pet_id: string;
+  cloudinary_public_id: string;
+  resource_type: MediaResourceType;
+  purpose: string;
+  width: number | null;
+  height: number | null;
+  duration_s: number | null;
+  created_at: string;
+};
+
+/** notifications row (Realtime INSERT → toast + badge; center in 5.5). */
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  pet_id: string | null;
+  booking_id: string | null;
+  type: string;
+  ref_id: string | null;
+  title: string;
+  body: string | null;
+  read_at: string | null;
+  created_at: string;
+};

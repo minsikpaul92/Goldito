@@ -7,7 +7,7 @@ import cloudinary.api
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 
-from app.deps.auth import CurrentUser, require_role
+from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz
 from app.services import cloudinary as cloudinary_service
@@ -70,7 +70,15 @@ def _authorize_media(
     purpose: Purpose,
     booking_id: UUID | None,
 ) -> None:
-    if purpose == "handoff":
+    if user.role == "owner":
+        # Owners add their own feed photos (5.8); every other purpose belongs to the sitter.
+        if purpose != "feed":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Owners can only upload feed photos.",
+            )
+        authz.assert_owner_of(user, pet_id)
+    elif purpose == "handoff":
         if booking_id is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -84,7 +92,7 @@ def _authorize_media(
 @router.post("/sign", response_model=SignResponse)
 def sign_upload(
     body: SignRequest,
-    user: CurrentUser = Depends(require_role("sitter")),
+    user: CurrentUser = Depends(get_current_user),
 ) -> SignResponse:
     _authorize_media(
         user, pet_id=body.pet_id, purpose=body.purpose, booking_id=body.booking_id
@@ -123,7 +131,7 @@ def sign_upload(
 @router.post("/complete", response_model=CompleteResponse)
 def complete_upload(
     body: CompleteRequest,
-    user: CurrentUser = Depends(require_role("sitter")),
+    user: CurrentUser = Depends(get_current_user),
 ) -> CompleteResponse:
     _authorize_media(
         user, pet_id=body.pet_id, purpose=body.purpose, booking_id=body.booking_id
@@ -150,9 +158,10 @@ def complete_upload(
             detail="Cloudinary resource not found.",
         ) from exc
 
-    width = body.width if body.width is not None else resource.get("width")
-    height = body.height if body.height is not None else resource.get("height")
-    duration = body.duration if body.duration is not None else resource.get("duration")
+    # Trust what Cloudinary stored over what the client says about the file.
+    width = resource.get("width") or body.width
+    height = resource.get("height") or body.height
+    duration = resource.get("duration") or body.duration
     secure_url = resource.get("secure_url") or cloudinary_service.delivery_url(
         body.public_id, resource_type=body.resource_type
     )
@@ -161,6 +170,35 @@ def complete_upload(
         if body.resource_type == "video"
         else cloudinary_service.thumb_url(body.public_id)
     )
+
+    db = get_service_client()
+    # Retrying /complete for the same upload returns the same media row (no duplicates).
+    try:
+        existing = (
+            db.table("media")
+            .select("id, uploaded_by, pet_id")
+            .eq("cloudinary_public_id", body.public_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not save media row.",
+        ) from exc
+    if existing.data:
+        found = existing.data[0]
+        if found["uploaded_by"] != user.id or found["pet_id"] != str(body.pet_id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This upload is already registered.",
+            )
+        return CompleteResponse(
+            media_id=found["id"],
+            public_id=body.public_id,
+            secure_url=secure_url,
+            thumb_url=thumb,
+        )
 
     row = {
         "pet_id": str(body.pet_id),
@@ -173,7 +211,7 @@ def complete_upload(
         "duration_s": duration,
     }
     try:
-        inserted = get_service_client().table("media").insert(row).execute()
+        inserted = db.table("media").insert(row).execute()
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,

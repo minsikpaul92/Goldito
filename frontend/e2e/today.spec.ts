@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { app, signIn } from "./helpers";
 import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Sitter Today (phase-03b 3B.8): Now caring · Today · Upcoming · Requests shortcut.
+// Sitter Home dashboard (D47b / was Today 3B.8): Now caring · Today handoffs · Upcoming · Requests.
 
 const JOY: MockUser = {
   id: "00000000-0000-4000-8000-000000000005",

@@ -1,31 +1,32 @@
 import type { MediaPurpose } from "./cloudinary";
+import type { MediaKind } from "./media";
 
 /**
- * Sample photos for the desktop frame and demo accounts (no camera there — D25, phase-04 4.7).
- * A sample is read as a Blob and goes through the SAME `uploadMedia()` path as a real photo,
+ * Sample media for the desktop frame and demo accounts (no camera there — D25, phase-04 4.7).
+ * A sample is read as a Blob and goes through the SAME `uploadMedia()` path as a real pick,
  * so the AI really analyzes it (no fake results).
  *
- * The current images are PLACEHOLDERS (labelled "PLACEHOLDER SAMPLE"). Muk replaces the files in
- * `assets/demo/` with real dog / cat photos using the same names — no code change needed.
- * No people, no addresses, fictional brands only.
- *
- * `handoff` (dog_at_door · car_crate_ok · car_no_crate · empty_room) and `safety_label`
- * (chicken_jerky · animal_fat_biscuit · sweet_potato_chew · lily_scented_cat_treat) must be the
- * same photos as the Phase 06B / 08 fixtures, so those samples are added with those phases.
+ * Photos/video live in `assets/demo/`. No people or addresses.
+ * `handoff` / `safety_label` samples land with Phase 06B / 08.
  */
 export type DemoSample = {
   id: string;
   label: string;
-  /** `require()` of the bundled image. */
+  /** `require()` of the bundled image or short video. */
   source: number;
+  kind?: MediaKind;
 };
 
 const DAILY: DemoSample[] = [
-  { id: "meal", label: "Breakfast", source: require("../assets/demo/meal.jpg") },
-  { id: "walk", label: "Walk", source: require("../assets/demo/walk.jpg") },
-  { id: "nap", label: "Nap", source: require("../assets/demo/nap.jpg") },
-  // Max watching a squirrel — the daily note's episode comes from a photo (D38).
-  { id: "walk_squirrel", label: "Squirrel in the park", source: require("../assets/demo/walk_squirrel.jpg") },
+  { id: "meal", label: "Carrot snack", source: require("../assets/demo/meal.jpg") },
+  { id: "walk", label: "Park day", source: require("../assets/demo/walk.jpg") },
+  { id: "nap", label: "Complaining", source: require("../assets/demo/nap.jpg") },
+  {
+    id: "play_fetch",
+    label: "Fetch play",
+    source: require("../assets/demo/play_fetch.mp4"),
+    kind: "video",
+  },
 ];
 
 const SAMPLES: Record<MediaPurpose, DemoSample[]> = {
@@ -36,6 +37,8 @@ const SAMPLES: Record<MediaPurpose, DemoSample[]> = {
   safety_label: [],
 };
 
-export function samplesFor(purpose: MediaPurpose): DemoSample[] {
-  return SAMPLES[purpose];
+export function samplesFor(purpose: MediaPurpose, mediaTypes?: MediaKind[]): DemoSample[] {
+  const all = SAMPLES[purpose];
+  if (!mediaTypes || mediaTypes.length === 0) return all;
+  return all.filter((s) => mediaTypes.includes(s.kind ?? "image"));
 }

@@ -106,7 +106,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 2. **Try demo as Owner** → Bookings → Lucy → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
 3. **Try demo as Sitter** → Bookings → today's pick-up → **Show code** → **Start trip → Simulate the drive** → sample car photo → **Received** (Stage ④ — the owner sees the live ETA and "care has started")
 4. Sitter → Report → 5-second check + 2 sample photos → **Generate → Send**; Owner → Reports / Feed **Album**
-5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Today → **Scan a treat** → `chicken_jerky` → DANGER
+5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Home → **Scan a treat** → `chicken_jerky` → DANGER
 
 > 데스크톱 프레임·마우스 조작·샘플 트레이는 [architecture D25](phases/architecture.ko.md) · [DESIGN.md §2.1·§7.7](../../DESIGN.md#21-desktop-browsers-judges-phone-frame).
 

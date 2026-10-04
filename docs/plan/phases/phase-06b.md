@@ -50,7 +50,7 @@
 | :--- | :--- | :--- | :--- |
 | `/sitter/bookings/[bookingId]/trip` · `/owner/bookings/[bookingId]/trip` | both | 상단 배너(이동 중일 때 항상) "Sharing your location with Chloe until you arrive" · **TripMap**(보기 전용, 이동하는 쪽 + 목적지 자동 맞춤, ± 버튼) · **ETA** 큰 글씨 "ETA 7:42 AM · 3.2 km" · 상태 줄 (On the way → Arrived) · 도착 후 카드: 시터 = **EntryInfoCard**(Sitter drives) / 견주 = **Lucy's place**(Owner drives) · 인계 단계: **Take a photo** → 체크 결과 → **Received** / **Returned** | 상황별 1개: **Start trip** → **Take a photo** → **Received/Returned** |
 | 예약 상세 (03B) | both | 인수인계 카드에 **Start trip** (이동하는 쪽 = D28, 인수인계 2시간 전부터) / 상대방은 이동 중이면 **Track Lucy** | Start trip |
-| Owner Home / Sitter Today | both | 진행 중 이동 카드 "Lucy is on the way · ETA 7:42" → 탭 = Trip 화면 | — |
+| Owner Home / Sitter Home | both | 진행 중 이동 카드 "Lucy is on the way · ETA 7:42" → 탭 = Trip 화면 | — |
 | `/profile` | both | **Home location** — "Use my current location" (폰) / 데모 계정은 시드 좌표 표시 | Save |
 
 - **Simulate trip** (데모 계정 또는 `useShell().embedded`): Start trip 시트에 "Use my real location" / **Simulate the drive (demo)** — `frontend/assets/demo/routes/*.json`의 가상 경로(공원·교차로 수준 좌표, 실제 주소 아님)를 10배속으로 재생, 같은 `update_trip_position`을 탄다 (가짜 결과 없음, D32).

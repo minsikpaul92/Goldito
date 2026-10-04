@@ -177,7 +177,7 @@ System font for now (Figma will pick one family).
 | :--- | :--- |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; tab names follow the route map in [architecture §3](docs/plan/phases/architecture.ko.md) (owner: Home · Bookings · Feed · Care · Reports, sitter: Today · Bookings · Tasks · Report) |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b**: both **Home · Bookings · Feed · Diary · Mood**. Settings (and sitter Earnings later) = header Profile |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
@@ -193,7 +193,7 @@ System font for now (Figma will pick one family).
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Lucy · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout |
-| `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: camera / library. Desktop frame and demo accounts: sample photo tray + **Upload from computer** |
+| `MediaPicker` | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: **Take photo** + **Choose from library**. Desktop frame and demo accounts: sample tray + **Choose from library** (opens the system file/gallery picker — same label on web demo and phones; never "Upload from computer") |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
 | `AppShell` / `DeviceFrame` (web) | Phone frame on desktop (§2.1). Lives in `components/shell/`; screens never import it — they may only use `useShell()` (`{ embedded }`) and `useLayoutMode()` |
 

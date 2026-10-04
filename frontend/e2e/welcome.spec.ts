@@ -39,7 +39,7 @@ test.describe("welcome", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test("sitter tour Try demo lands on Today", async ({ page }) => {
+  test("sitter tour Try demo lands on Home", async ({ page }) => {
     const demoSitter = { ...SITTER, email: "demo-sitter@pawnote.test", password: "e2e-demo-password" };
     await mockSupabase(page, [OWNER, demoSitter]);
     await page.goto("/welcome/sitter");

@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { NotificationBell } from "./NotificationBell";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -20,10 +21,7 @@ export function HeaderActions() {
       {__DEV__ && profile ? (
         <Text style={styles.roleLabel}>{profile.role === "owner" ? "Owner" : "Sitter"}</Text>
       ) : null}
-      {/* Notification center arrives in Phase 05; the bell keeps its place in the header. */}
-      <View accessibilityLabel="Notifications (coming soon)" style={styles.bell}>
-        <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
-      </View>
+      <NotificationBell />
       {profile?.role === "sitter" ? (
         <Pressable
           accessibilityRole="button"
@@ -72,9 +70,6 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       fontWeight: "600",
       color: theme.color.text,
-    },
-    bell: {
-      padding: theme.spacing.xs,
     },
     iconButton: {
       minWidth: 44,

@@ -3,7 +3,7 @@
 > **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 > **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
-**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D46 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
+**Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
 **Supplementary docs:** [onboarding.ko.md](onboarding.ko.md) · [tavily.ko.md](tavily.ko.md) · [env-setup.ko.md](env-setup.ko.md) · [Devpost](../hackathon/devpost-submission.ko.md)
 
@@ -13,20 +13,19 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (Goal + 5.1 DoD) → [DESIGN.md](../../DESIGN.md) if touching UI.
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-06.md](phases/phase-06.md).
 
 | Step | Action |
 | :--- | :--- |
-| 1 | `git checkout main && git pull origin main` — Phase 04 is **merged** ([PR #45](https://github.com/minsikpaul92/PawNote/pull/45) → `7fb80e9`) |
-| 2 | Create phase branch: `git checkout -b feat/phase-05-feed` (first Phase 05 task) |
-| 3 | Open **draft** Phase 05 PR after the first commit (`gh pr create --draft`) |
-| 4 | Work **Current focus** only (5.1) → verify → one commit → update this file |
+| 1 | **Phase 05 is complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — merge is Minsik's call (squash, delete branch) |
+| 2 | **Human (Minsik): apply `007b` then `007c` on the hosted DB** (SQL Editor), then `rls_smoke.sql` — until then the hosted app cannot read `posted_by` / `visibility` |
+| 3 | After the merge: `git pull origin main`, create `feat/phase-06-care` from it, **Current focus = 6.1** |
 
-**Product stage:** Stage **4** Care (Kidsnote-style feed). **5.1 only** = `createFeedPost` helper + fallback caption — no full UI yet (5.2+). Reuse Phase 04 `uploadMedia()` / `pickMedia()`; caption AI stays Phase 09.
+**IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
-**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05. Do not remove `/sitter/dev-upload` until **5.6**.
+**Do not:** revive OB.4. **Stash:** keep `wip privacy oauth docs` separate.
 
-**Demo note:** hosted Chloe↔Lucy booking was shifted on-duty (drop-off Received) for media upload testing — re-check times if the stay window expired before live feed tests.
+**Demo note:** re-check Chloe↔Lucy on-duty window before live upload tests.
 
 ---
 
@@ -35,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.1** | `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` — fallback caption only (AI in Phase 09) | [phase-05.md](phases/phase-05.md) |
+| **6.1** | Owner care tasks UI — Care request on pet detail | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -47,12 +46,12 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
+- [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **5.2–5.6** Owner timeline · `007` notify trigger · Realtime + NotificationsProvider · 알림 센터 · remove `/sitter/dev-upload` (`007`)
 - [ ] **6.x** Care request → AI mission checklist (6.12–6.14) + 5-second check-ins (walk minutes) + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `008`)
 - [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) + `embed()` — Seulgi (can start right after Phase 01)
 - [ ] **7.2–7.5 · 7.7** Daily report AI (Super): **7.7** chip suggestions from the day's records + ≤ 2 photos (`/api/ai/report-chips`); the sitter keeps or turns off chips, adds an optional short note, and approves before it posts (D38) (`009`)
@@ -75,6 +74,20 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.9 · Phase 05 complete** `feed_post` notices go to the other party and only for shared posts: owner's shared post → the sitter(s) on duty for that pet (title "{owner} shared a photo of {pet} 📸", one per sitter, tap → `/sitter/feed/[petId]`); sitter's shared post → owner (5.3); private posts notify nobody. Folded into `007c` (not applied anywhere yet). Sitter pet feed refetches on `feedRevision`. rls_smoke 5.9 (3 checks; 203 PASS, 0 fail), Playwright flows 73 ✓, pytest 82 ✓, `tsc` ✓. **Hosted: apply `007b` → `007c`** (2026-10-04)
+- [x] **5.8** Feed visibility + owner posts: `007c_feed_visibility.sql` — `feed_posts.posted_by` (real author, backfilled; delete = author only), `visibility` `shared`/`private`, `sitter_id` null for owner posts; select = author or (shared + `can_access_pet`); insert = sitter on duty or the pet's owner, media must be the poster's own `feed` upload (closes "attach any media of that pet"); `media_select` hides a private post's media row from the other party (`media_hidden_from_me`, security definer); `notify_feed_post` fires only for a sitter's shared post, so a private post never notifies. Backend: owners may sign/complete `feed` photos for their own pets (`assert_owner_of`); `DELETE /api/feed/{id}` checks `posted_by`. App: sitter **Share with {owner}** chip (default on → off = "Only you", toast "Saved just for you 🔒"); owner Feed **+ Photo** with **Visible to sitter** chip (default off) and own-post Delete; 🔒 badge on private cells; viewer 🗑️ (trash) button only on your own posts. rls_smoke 5.8 section (15 checks) on disposable Postgres 17 ✓ (200 PASS, 0 fail), pytest 82 ✓, ruff ✓, Playwright flows 72 ✓, `tsc` ✓. **Hosted:** apply `007b` then `007c` (human) (2026-10-04)
+- [x] **5.10 + Phase 04/05 review fixes** FeedViewer renders only the active post (swipe · arrows · ←/→ keys; active post tracked by id so Load more never moves it; first frame never shows a stale video; cancelled delete reopens on the same post). Delete now goes through `DELETE /api/feed/{id}` (author-only): removes the Cloudinary file + `media` row unless another post / task log / safety check still uses it, so the sheet's "deletes the photo for good" is true. `/api/media/complete` is idempotent (same `public_id` → same row, other user → 409) and trusts Cloudinary's width/height/duration. `007_feed_posts_realtime.sql` → `007b_…` and idempotent (008 stays reserved for care). Feed toasts coalesce (“3 new photos 📸”). New Playwright `feed.spec.ts` (viewer index · arrows · author delete + cancel · notification center) + mock honors `order=….desc`, HEAD count, per-user notifications. pytest 80 ✓, ruff ✓, Playwright flows 70 ✓, `tsc` ✓ (2026-10-04)
+- [x] **5.7** Author-only delete: `deleteFeedPost` + FeedViewer **Delete** (sitter only) → confirm Sheet → toast + grid refresh; owner Feed has no Delete. RLS `feed_posts_delete`. `tsc` ✓ (2026-10-04). **5.10** viewer open-at-index still deferred.
+- [x] **Phase 05 core complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)
+- [x] **5.6** Remove `/sitter/dev-upload`; Playwright `media-picker` retargeted to `/sitter/pets/[petId]` **+ Photo** FAB; mock `feed_posts`/`media` + pet owner embed. `tsc` ✓ (2026-10-04)
+- [x] **demo tray** Real photos (carrot / park / complaining) + `play_fetch.mp4`; dropped `walk_squirrel` placeholder (2026-10-04)
+- [x] **5.x sitter +Photo** `/sitter/pets/[petId]`: timeline + **+ Photo** FAB → `pickMedia` → `uploadMedia(feed)` → `createFeedPost(FALLBACK_CAPTION)` · uploading skeleton · toast `Shared with {owner} 🐾` · empty "tap + to share {name}'s day". Sitter Feed tab lists in-care pets; Home **Now caring** pet chips → pet feed. `caringPets` helper. `tsc` ✓ (2026-10-04)
+- [x] **5.5** Notification center: `/owner/notifications` · `/sitter/notifications` — last 50, tap → mark read + route (`feed_post` → `/owner/feed`, diary types → `/owner/diary`, booking types → booking detail); **Mark all as read**; empty "You're all caught up."; bell opens center; `inboxRevision` soft-refetch. `tsc` ✓ (2026-10-04)
+- [x] **5.4** `NotificationsProvider`: Realtime INSERT on `notifications` (`user_id=eq.me`) → toast + unread +1; `feed_post` bumps `feedRevision` (Owner Feed soft refetch) + `diaryRevision` (for later Live). `NotificationBell` badge (9+). `countUnreadNotifications` on sign-in. e2e mock `notifications` + `is.null` / count headers. `tsc` ✓ (2026-10-04)
+- [x] **5.3** `007_feed_notifications.sql`: `feed_posts.category` (`meal`/`walk`/`nap`/`play`/`other`); trigger `notify_feed_post` (`security definer`, skip when `task_log_id` set) → owner `type='feed_post'`, `ref_id`, title `New photo of {pet} 📸`. `rls_smoke` 5.3 checks + scenario G excludes `feed_post`. Docker Postgres smoke ✓; hosted applied via Supabase MCP (2026-10-04).
+- [x] **docs D47 · D47b** Both roles `Home · Bookings · Feed · Diary · Mood`; Feed album + multi-pet toggle; Diary Live + photo→Feed; Care→pet detail; Settings/Earnings→Profile; sitter Home dashboard; phases 05–08/10/11 + CLAUDE + DESIGN + onboarding + welcome; FE tabs + e2e (2026-10-04)
+- [x] **5.2** Owner timeline: `listFeedPosts(petId, {offset, limit})` joins `media` + sitter `display_name`, `FEED_PAGE_SIZE=20`; `FeedCard` (4:3 thumb / video poster + ▶); `/owner/feed` FlatList + pet SegmentedControl + Load more / onEndReached + detail Sheet (web `<video>`). Empty: "No posts yet — your sitter will share photos here." `tsc` ✓ (2026-10-04)
+- [x] **5.1** `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` — inserts `feed_posts` (sitter RLS / on-duty); `FALLBACK_CAPTION` = `"A moment from today's care 🐾"` + `caption_source='fallback'`; `FeedPostRow` / `CaptionSource` in `types/db.ts`. No UI yet (5.2+). AI caption stays Phase 09. `tsc` ✓. Do not remove `/sitter/dev-upload` until 5.6 (2026-10-04)
 - [x] **4.7** `pickMedia()` + sample tray + video trim ≤ 30 s (Cloudinary cuts via signed `so_/du_`) + `/sitter/dev-upload`: `lib/media.ts` · `MediaPicker` · `VideoTrimSheet.web` (QuickTime-style drag window, mouse + arrows) · `MediaPickerProvider` · `assets/demo/` placeholders (meal · walk · nap · walk_squirrel; handoff / safety_label empty until 06B / 08) · sign accepts `trim_start` / `trim_duration` · Playwright media-picker 7/7 ✓ · pytest 73 ✓ · ruff ✓ · `tsc` ✓ (e2e excluded from app tsconfig). Live: tray + sample → sign 403 on-duty (expected until Received) + Retry. Removed in Phase 05 (2026-10-04)
 - [x] **4.6** `cloudinary.fetch_as_data_url(public_id, resource_type)` (D12): downloads `c_limit,w_1024,f_jpg` (video: `so_0,…` poster frame) and returns `data:image/jpeg;base64,…`; `vision_url()` builds the URL; only `pawnote/…` ids are accepted (no `..`, `?`, `#`, dots, other hosts → `ValueError`); network / non-200 / non-image / empty or > 5 MB → `MediaFetchError` (callers fall back, e.g. `unchecked`). It does **not** check ownership — the AI router must (06B · 08 · 09). pytest 61 ✓ (21 new, httpx MockTransport), ruff ✓. Live Cloudinary: 3000×2000 → 1024×682, 400×300 stays 400×300, video → first-frame JPEG, missing → `MediaFetchError`; test assets deleted (2026-10-04)
 - [x] **4.5** Media normalize policy: `sign()` signs a Cloudinary **incoming** transformation (photo `c_limit,w_2000/q_auto`, video `so_0,du_30/c_limit,w_1280,h_1280/q_auto`; never `f_auto`) and `/sign` returns it; FE `lib/mediaNormalize.ts` — photos always resized to a 2000 px long edge (JPEG 0.8, no upscale, shrink until < 10 MB), video `prepareVideo()` checks ≤ 30 s (`VideoTooLongError` = hook for the 4.7 trim sheet) and the 100 MB hard cap; `uploadMedia()` normalizes first and sends `transformation`; `UploadError` moved to `lib/uploadError.ts` (new step `prepare`). Old 10/50 MB reject removed. pytest 40 ✓ (signature includes transformation), ruff ✓ (4 earlier lint errors fixed), `tsc` ✓. Chromium: 14.6 MB 4000×3000 → 1.3 MB 2000×1500, 800×600 not upscaled, 35 s video → `VideoTooLongError`. Live Cloudinary: 3000 px → stored 2000 px, 35 s → 30 s, missing `transformation` → 401 Invalid Signature; test assets deleted (2026-10-04)
@@ -164,8 +177,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03B Bookings         | **done** (2026-10-02)                                                         |
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
-| 05 Feed              | next — start **5.1** on `feat/phase-05-feed`                                  |
-| 06 Care request + checks | not started (Stage 2 · 4)                                                 |
+| 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
+| 06 Care request + checks | next — **6.1** (after the Phase 05 merge)                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |

@@ -81,15 +81,52 @@ def owner_token() -> str:
     )
 
 
-def test_sign_requires_sitter(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+def test_owner_cannot_sign_non_feed_purposes(client: TestClient) -> None:
     response = client.post(
         "/api/media/sign",
         headers={"Authorization": f"Bearer {owner_token()}"},
-        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "feed"},
+        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "task_proof"},
     )
     assert response.status_code == 403
     assert response.json()["code"] == "forbidden"
+
+
+def test_owner_signs_feed_photo_for_own_pet(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    owners_pets = {PET_ID}
+
+    def check(user, pet_id):
+        from fastapi import HTTPException, status
+
+        if str(pet_id) not in owners_pets:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That is not your pet.")
+
+    monkeypatch.setattr(authz, "assert_owner_of", check)
+    monkeypatch.setattr(
+        cloudinary_service,
+        "sign",
+        lambda **kw: SimpleNamespace(
+            cloud_name="c",
+            api_key="k",
+            timestamp=1,
+            signature="s",
+            folder=f"pawnote/{kw['pet_id']}/{kw['purpose']}",
+            upload_url="u",
+            transformation="t",
+        ),
+    )
+    headers = {"Authorization": f"Bearer {owner_token()}"}
+    ok = client.post(
+        "/api/media/sign",
+        headers=headers,
+        json={"pet_id": PET_ID, "resource_type": "image", "purpose": "feed"},
+    )
+    assert ok.status_code == 200
+    other = client.post(
+        "/api/media/sign",
+        headers=headers,
+        json={"pet_id": str(uuid4()), "resource_type": "image", "purpose": "feed"},
+    )
+    assert other.status_code == 403
 
 
 def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -328,3 +365,63 @@ def test_sign_endpoint_rejects_bad_trim(
         json={"pet_id": PET_ID, "resource_type": resource_type, "purpose": "feed", **trim},
     )
     assert response.status_code == 422
+
+
+def _complete_body() -> dict:
+    return {
+        "pet_id": PET_ID,
+        "public_id": f"pawnote/{PET_ID}/feed/abc",
+        "resource_type": "image",
+        "purpose": "feed",
+        "width": 1,
+        "height": 1,
+    }
+
+
+def test_complete_is_idempotent_and_prefers_cloudinary_size(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.routers import media
+
+    from tests.fakes import FakeDB
+
+    db = FakeDB(media=[])
+    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+    monkeypatch.setattr(media, "get_service_client", lambda: db)
+    monkeypatch.setattr(media.cloudinary.api, "resource", lambda *_a, **_k: {"width": 2000, "height": 1500})
+    headers = {"Authorization": f"Bearer {sitter_token()}"}
+
+    first = client.post("/api/media/complete", headers=headers, json=_complete_body())
+    second = client.post("/api/media/complete", headers=headers, json=_complete_body())
+    assert first.status_code == second.status_code == 200
+    assert first.json()["media_id"] == second.json()["media_id"]
+    assert len(db.tables["media"]) == 1
+    assert (db.tables["media"][0]["width"], db.tables["media"][0]["height"]) == (2000, 1500)
+
+
+def test_complete_conflicts_when_another_user_registered_it(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.routers import media
+
+    from tests.fakes import FakeDB
+
+    db = FakeDB(
+        media=[
+            {
+                "id": "m1",
+                "uploaded_by": "someone-else",
+                "pet_id": PET_ID,
+                "cloudinary_public_id": f"pawnote/{PET_ID}/feed/abc",
+            }
+        ]
+    )
+    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+    monkeypatch.setattr(media, "get_service_client", lambda: db)
+    monkeypatch.setattr(media.cloudinary.api, "resource", lambda *_a, **_k: {})
+    response = client.post(
+        "/api/media/complete",
+        headers={"Authorization": f"Bearer {sitter_token()}"},
+        json=_complete_body(),
+    )
+    assert response.status_code == 409

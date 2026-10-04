@@ -1,4 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Asset } from "expo-asset";
+import { createElement, useEffect, useState } from "react";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DemoSample } from "../lib/demoSamples";
 import { MediaKind } from "../lib/media";
@@ -21,7 +23,8 @@ type Props = {
 
 /**
  * The picker sheet behind `pickMedia()` (DESIGN.md §6 MediaPicker): sample photos for the
- * desktop frame and demo accounts, plus Upload from computer. Everything is a click.
+ * desktop frame and demo accounts, plus **Choose from library** (file / gallery picker).
+ * Everything is a click.
  */
 export function MediaPicker({
   visible,
@@ -37,13 +40,13 @@ export function MediaPicker({
   const withVideo = mediaTypes.includes("video");
   const withImage = mediaTypes.includes("image");
   const title = withVideo && withImage ? "Add a photo or video" : withVideo ? "Add a video" : "Add a photo";
-  const showSamples = withImage && samples.length > 0;
+  const showSamples = samples.length > 0;
 
   return (
     <Sheet visible={visible} title={title} onClose={onClose} testID="media-picker">
       {showSamples ? (
         <View>
-          <Text style={styles.heading}>Sample photos</Text>
+          <Text style={styles.heading}>{withVideo && !withImage ? "Sample videos" : "Sample photos"}</Text>
           <View style={styles.grid}>
             {samples.map((sample) => (
               <Pressable
@@ -54,9 +57,18 @@ export function MediaPicker({
                 style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
                 testID={`sample-${sample.id}`}
               >
-                {/* The wrapper owns the 4:3 box: react-native-web's Image keeps its file height. */}
+                {/* Fixed square; contain so portrait samples are not cropped/pixel-zoomed. */}
                 <View style={styles.thumb}>
-                  <Image source={sample.source} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  {sample.kind === "video" ? (
+                    <SampleVideoThumb source={sample.source} styles={styles} />
+                  ) : (
+                    <Image
+                      source={sample.source}
+                      style={styles.thumbImage}
+                      resizeMode="contain"
+                      accessibilityIgnoresInvertColors
+                    />
+                  )}
                 </View>
                 <Text numberOfLines={1} style={styles.tileLabel}>
                   {sample.label}
@@ -65,8 +77,8 @@ export function MediaPicker({
             ))}
           </View>
         </View>
-      ) : withImage ? (
-        <Text style={styles.note}>No sample photos for this kind of upload yet.</Text>
+      ) : withImage || withVideo ? (
+        <Text style={styles.note}>No samples for this kind of upload yet.</Text>
       ) : null}
 
       <View style={styles.actions}>
@@ -74,13 +86,81 @@ export function MediaPicker({
           <Button label="Take photo" onPress={onTakePhoto} variant="secondary" testID="media-take-photo" />
         ) : null}
         <Button
-          label="Upload from computer"
+          label="Choose from library"
           onPress={onUpload}
           variant="secondary"
-          testID="media-upload-computer"
+          testID="media-choose-library"
         />
       </View>
     </Sheet>
+  );
+}
+
+function SampleVideoThumb({
+  source,
+  styles,
+}: {
+  source: number;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  const [uri, setUri] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        // RN-web has no Image.resolveAssetSource — same path as MediaPickerProvider.
+        const asset = Asset.fromModule(source);
+        await asset.downloadAsync();
+        if (!cancelled) setUri(asset.localUri ?? asset.uri);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [source]);
+
+  // Safari often leaves <video preload=metadata> black until a frame is decoded —
+  // seek a hair past 0 so the tray shows the first frame.
+  const onMeta = (el: HTMLVideoElement | null) => {
+    if (!el) return;
+    const paint = () => {
+      try {
+        if (el.currentTime < 0.05) el.currentTime = 0.05;
+      } catch {
+        /* ignore seek errors before ready */
+      }
+    };
+    el.addEventListener("loadedmetadata", paint, { once: true });
+    el.addEventListener("loadeddata", paint, { once: true });
+  };
+
+  if (Platform.OS === "web" && uri && !failed) {
+    return createElement("video", {
+      ref: onMeta,
+      // #t=0.1 hints browsers to decode near the start for a poster-like frame.
+      src: `${uri}#t=0.1`,
+      muted: true,
+      playsInline: true,
+      "webkit-playsinline": "true",
+      preload: "auto",
+      style: {
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        backgroundColor: "#1A1A1A",
+      },
+      onError: () => setFailed(true),
+    });
+  }
+
+  return (
+    <View style={[StyleSheet.absoluteFill, styles.videoThumb]}>
+      <Text style={styles.videoBadge}>▶ video</Text>
+    </View>
   );
 }
 
@@ -98,7 +178,7 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.sm,
     },
     tile: {
-      width: "48%",
+      width: "31%",
       gap: theme.spacing.xs,
     },
     pressed: {
@@ -106,12 +186,28 @@ const makeStyles = (theme: Theme) =>
     },
     thumb: {
       width: "100%",
-      aspectRatio: 4 / 3,
+      aspectRatio: 1,
       overflow: "hidden",
       borderRadius: theme.radius.sm,
-      backgroundColor: theme.color.accent,
+      backgroundColor: theme.color.surface,
       borderWidth: 1,
       borderColor: theme.color.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    thumbImage: {
+      width: "100%",
+      height: "100%",
+    },
+    videoThumb: {
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.text,
+    },
+    videoBadge: {
+      fontSize: theme.fontSize.small,
+      fontWeight: "600",
+      color: theme.color.primaryText,
     },
     tileLabel: {
       fontSize: theme.fontSize.small,

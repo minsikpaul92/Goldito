@@ -17,7 +17,7 @@ Every feature must pass:
 
 **Product benchmark:** **Rover** (booking, fast replies) × Korean **Kidsnote** (medication request, check-in/out, daily report 알림장, album) × **Uber** (live trips). We adapt that loop for **dogs and cats** + **NVIDIA Nemotron** on **Nebius Token Factory**.
 
-**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D46).
+**Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
 **Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
 
@@ -58,18 +58,19 @@ Think in **two apps in one codebase** — role after login:
 
 ```
 Owner                                  Sitter
-  Home (my pets, next booking)           Today (pets in my care, Heads-up, check-ins)
-  Bookings (inquiry → AI reply,          Bookings (inquiries, requests, Meet & Greet,
-    request, Meet & Greet, checkout)       entry-info lock card)
-  Trip (live map + ETA, arrival card)    Trip (Start trip, arrival card, photo check)
-  Feed / Album (by day + category)       Pet feed upload
-  Care request → checklist · Activity    Today's tasks + 5-second check + photo
-  Daily report (read)                    Report: AI chips + short note → approve
-  Review · Pet Life Record               Schedule · policies · rates
-  Notifications                          (stretch) Treat scanner (safety)
-  (P1) Photo request                     (P1) Notices
+  Home (pets, next booking;              Home (dashboard: in-care pets OR
+    Care request → pet detail later;       pending requests · upcoming ·
+    later: 8bit status)                    drop/pick by time; later: tamagotchi)
+  Bookings (inquiry → checkout)          Bookings (requests · M&G · Past history)
+  Trip (live map + ETA)                  Trip (Start trip, photo check)
+  Feed (album, multi-pet toggle)         Feed (+ Photo → album)
+  Diary (Live + history; photo→Feed)     Diary (stay log + evening chips)
+  Mood (fun mood from clip)              Mood (same tool)
+  Profile → Settings                     Profile → Settings · Earnings (later)
+  Notifications (bell)                   Treat scanner from Home (08)
 ```
 
+Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 ### UX principles
 
 1. **Mobile-first, single column** — max comfort on phone-width web demo. Design frame **402 × 874**; on desktop browsers the app runs inside a phone frame and **every action must work with a mouse** (click = tap, drag/wheel = swipe) — `DESIGN.md` §2.1 · §7.7, architecture D25.
@@ -241,4 +242,4 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 ---
 
-*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook. If you change process, update this file and `docs/plan/TODO.md` together.*
+*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook, **D47 / D47b** both roles Home · Bookings · Feed · Diary · Mood. If you change process, update this file and `docs/plan/TODO.md` together.*

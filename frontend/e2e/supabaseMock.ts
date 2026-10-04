@@ -162,6 +162,11 @@ export type MockDb = {
   owner_home_access: Row[];
   /** pay_booking_demo calls. */
   payments: Row[];
+  /** Unread / Realtime notices (Phase 05) — empty in e2e unless a test seeds rows. */
+  notifications: Row[];
+  /** Feed posts + media rows (Phase 05 upload path). */
+  feed_posts: Row[];
+  media: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -194,6 +199,9 @@ function createMockDb(): MockDb {
     booking_consents: [],
     owner_home_access: [],
     payments: [],
+    notifications: [],
+    feed_posts: [],
+    media: [],
   };
 }
 
@@ -391,19 +399,33 @@ function matches(row: Row, params: URLSearchParams): boolean {
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
+    } else if (raw === "is.null") {
+      if (row[key] != null) return false;
+    } else if (raw === "not.is.null") {
+      if (row[key] == null) return false;
     }
   }
   return true;
 }
 
-function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200) {
+function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200, count?: number) {
   if (wantsObject) {
     if (rows.length !== 1) {
       return json(route, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" });
     }
     return json(route, status, rows[0]);
   }
-  return json(route, status, rows);
+  const headers: Record<string, string> = {};
+  if (count != null) {
+    headers["content-range"] =
+      count === 0 ? "*/0" : `0-${Math.max(rows.length - 1, 0)}/${count}`;
+  }
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers,
+    body: JSON.stringify(rows),
+  });
 }
 
 async function handleRest(route: Route, users: MockUser[], db: MockDb) {
@@ -732,8 +754,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const table = db[path as keyof MockDb];
   if (!table) return json(route, 404, { message: `Not mocked: ${method} ${path}` });
 
-  if (method === "GET") {
-    let rows = table.filter((row) => matches(row, params));
+  // supabase-js `head: true` (unread count) sends HEAD; answer like GET.
+  if (method === "GET" || method === "HEAD") {
+    // RLS: notifications are private to their user.
+    let rows = table.filter(
+      (row) =>
+        matches(row, params) &&
+        (path !== "notifications" || row.user_id === me) &&
+        // RLS: a private post is only visible to its author (5.8).
+        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private"),
+    );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
         ...pet,
@@ -745,6 +775,32 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const select = params.get("select") ?? "";
     if (path === "pets" && select.includes("care_tasks(")) {
       rows = rows.map((pet) => ({ ...pet, care_tasks: db.care_tasks.filter((t) => t.pet_id === pet.id) }));
+    }
+    if (path === "pets" && select.includes("owner:profiles")) {
+      rows = rows.map((pet) => ({
+        ...pet,
+        owner: { display_name: users.find((u) => u.id === pet.owner_id)?.displayName ?? null },
+      }));
+    }
+    if (path === "feed_posts" && select.includes("media")) {
+      rows = rows.map((post) => {
+        const media = db.media.find((m) => m.id === post.media_id) ?? null;
+        const author = users.find((u) => u.id === post.posted_by);
+        return {
+          ...post,
+          media: media
+            ? {
+                id: media.id,
+                cloudinary_public_id: media.cloudinary_public_id,
+                resource_type: media.resource_type,
+                width: media.width ?? null,
+                height: media.height ?? null,
+                duration_s: media.duration_s ?? null,
+              }
+            : null,
+          author: { display_name: author?.displayName ?? "Someone" },
+        };
+      });
     }
     if (path === "bookings") {
       const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
@@ -769,8 +825,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+      // Feed + notifications are read newest first (`order=created_at.desc`).
+      if ((path === "feed_posts" || path === "notifications") && params.get("order")!.endsWith(".desc")) {
+        rows.reverse();
+      }
     }
-    return respond(route, rows, wantsObject);
+    const wantsCount = (headers.prefer ?? "").includes("count=");
+    return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
   }
 
   if (method === "POST") {
@@ -779,6 +840,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       id: crypto.randomUUID(),
       created_at: new Date().toISOString(),
       ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
+      ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...row,
     }));
     if (path === "booking_consents") {
@@ -827,7 +889,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pets" && "species" in changes) {
       return json(route, 403, { code: "42501", message: "permission denied for column species" });
     }
-    for (const row of table.filter((r) => matches(r, params))) Object.assign(row, changes);
+    for (const row of table.filter(
+      (r) => matches(r, params) && (path !== "notifications" || r.user_id === me),
+    )) {
+      Object.assign(row, changes);
+    }
     return route.fulfill({ status: 204 });
   }
 

@@ -3,6 +3,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { AppShell } from "../components/shell/AppShell";
 import { MediaPickerProvider } from "../providers/MediaPickerProvider";
+import { NotificationsProvider } from "../providers/NotificationsProvider";
 import { SessionProvider } from "../providers/SessionProvider";
 import { ThemeProvider } from "../providers/ThemeProvider";
 import { ToastProvider } from "../providers/ToastProvider";
@@ -17,15 +18,17 @@ export default function RootLayout() {
       <ThemeProvider>
         <SessionProvider>
           <ToastProvider>
-            <MediaPickerProvider>
-              <StatusBar style="dark" />
-              {/* Role areas draw their own headers; only shared screens use this stack header. */}
-              <Stack screenOptions={{ headerShown: false, headerShadowVisible: false }}>
-                <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
-                <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
-                <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />
-              </Stack>
-            </MediaPickerProvider>
+            <NotificationsProvider>
+              <MediaPickerProvider>
+                <StatusBar style="dark" />
+                {/* Role areas draw their own headers; only shared screens use this stack header. */}
+                <Stack screenOptions={{ headerShown: false, headerShadowVisible: false }}>
+                  <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
+                  <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
+                  <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />
+                </Stack>
+              </MediaPickerProvider>
+            </NotificationsProvider>
           </ToastProvider>
         </SessionProvider>
       </ThemeProvider>

@@ -58,7 +58,7 @@ const hasTouchCamera = () =>
 
 /**
  * Mounted once at the app root. Gives `pickMedia()` its UI (phase-04 4.7):
- * - desktop frame or demo account → sample tray + Upload from computer (+ Take photo on phones)
+ * - desktop frame or demo account → sample tray + Choose from library (+ Take photo on phones)
  * - a real phone → the system camera / library dialog straight away
  * Videos over 30 s open the trim sheet before `pickMedia()` resolves.
  * Web only for now; native needs `expo-image-picker` and a native trim sheet.
@@ -135,7 +135,10 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
     try {
       const uri = Asset.fromModule(sample.source).uri;
       const blob = await (await fetch(uri)).blob();
-      await settle(new File([blob], `${sample.id}.jpg`, { type: blob.type || "image/jpeg" }));
+      const kind = sample.kind ?? "image";
+      const ext = kind === "video" ? "mp4" : "jpg";
+      const type = kind === "video" ? blob.type || "video/mp4" : blob.type || "image/jpeg";
+      await settle(new File([blob], `${sample.id}.${ext}`, { type }));
     } catch {
       toast.show("Could not load that sample. Try again.");
     }
@@ -160,7 +163,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
       <MediaPicker
         visible={tray !== null}
         mediaTypes={tray?.mediaTypes ?? ["image"]}
-        samples={tray ? samplesFor(tray.purpose) : []}
+        samples={tray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
         canTakePhoto={hasTouchCamera()}
         onPickSample={onPickSample}
         onUpload={onUpload}
