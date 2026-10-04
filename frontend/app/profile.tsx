@@ -118,7 +118,7 @@ export default function ProfileScreen() {
   }, [profile?.id, profile?.role]);
 
   if (session.status === "loading") return <LoadingView />;
-  if (!profile) return <Redirect href="/login" />;
+  if (!profile) return <Redirect href="/welcome" />;
   if (loadError) {
     return (
       <Screen>

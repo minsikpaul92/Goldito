@@ -104,6 +104,6 @@ test.describe("profile", () => {
   test("signed-out visitors cannot open the profile", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await page.goto("/profile");
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 });

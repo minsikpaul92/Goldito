@@ -19,10 +19,10 @@ const MIN_PASSWORD_LENGTH = 6;
 // Shape only (name@domain.tld) — whether the inbox exists is Supabase "Confirm email".
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-/** Back to where the visitor came from, or to sign in on a direct link. */
+/** Back to where the visitor came from, or Welcome on a direct link (OB.1). */
 function goBack() {
   if (router.canGoBack()) router.back();
-  else router.replace("/login");
+  else router.replace("/welcome");
 }
 
 export default function SignupScreen() {

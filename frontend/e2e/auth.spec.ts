@@ -25,14 +25,16 @@ async function expectTabs(page: Page, labels: string[]) {
 }
 
 test.describe("auth and role routing", () => {
-  test("signed-out visitors land on sign in", async ({ page }) => {
+  test("signed-out visitors land on Welcome", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await page.goto("/");
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(app(page).getByRole("button", { name: "Sign in" })).toBeVisible();
+    await expect(page).toHaveURL(/\/welcome$/);
+    await expect(app(page).getByTestId("welcome")).toBeVisible();
+    await expect(app(page).getByTestId("welcome-sign-in")).toBeVisible();
 
+    // Deep links into a role area still gate to Welcome when signed out (OB.1).
     await page.goto("/owner/feed");
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 
   test("a wrong password shows a human message", async ({ page }) => {
@@ -125,10 +127,10 @@ test.describe("auth and role routing", () => {
 
     await screen.getByTestId("signup-back").click();
     await expect(page).toHaveURL(/\/login$/);
-    // A direct link has nothing to go back to → sign in.
+    // A direct link has nothing to go back to → Welcome (OB.1).
     await page.goto("/signup");
     await screen.getByTestId("signup-back").click();
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 
   test("Try demo buttons sign in to the seeded owner and sitter (OB.3)", async ({ page }) => {
@@ -144,25 +146,26 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/owner$/);
 
     await screen.getByTestId("log-out").click();
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
+    await page.goto("/login");
     await screen.getByTestId("demo-sitter").click();
     await expect(page).toHaveURL(/\/sitter$/);
 
     // The query does the same (desktop side panel, split view).
     await screen.getByTestId("log-out").click();
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
     await page.goto("/login?demo=owner");
     await expect(page).toHaveURL(/\/owner$/);
   });
 
-  test("log out returns to sign in", async ({ page }) => {
+  test("log out returns to Welcome", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await app(page).getByTestId("log-out").click();
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
 
     await page.goto("/owner");
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 });
