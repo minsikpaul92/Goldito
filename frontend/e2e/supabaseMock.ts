@@ -164,6 +164,9 @@ export type MockDb = {
   payments: Row[];
   /** Unread / Realtime notices (Phase 05) — empty in e2e unless a test seeds rows. */
   notifications: Row[];
+  /** Feed posts + media rows (Phase 05 upload path). */
+  feed_posts: Row[];
+  media: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -197,6 +200,8 @@ function createMockDb(): MockDb {
     owner_home_access: [],
     payments: [],
     notifications: [],
+    feed_posts: [],
+    media: [],
   };
 }
 
@@ -762,6 +767,32 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const select = params.get("select") ?? "";
     if (path === "pets" && select.includes("care_tasks(")) {
       rows = rows.map((pet) => ({ ...pet, care_tasks: db.care_tasks.filter((t) => t.pet_id === pet.id) }));
+    }
+    if (path === "pets" && select.includes("owner:profiles")) {
+      rows = rows.map((pet) => ({
+        ...pet,
+        owner: { display_name: users.find((u) => u.id === pet.owner_id)?.displayName ?? null },
+      }));
+    }
+    if (path === "feed_posts" && select.includes("media")) {
+      rows = rows.map((post) => {
+        const media = db.media.find((m) => m.id === post.media_id) ?? null;
+        const sitter = users.find((u) => u.id === post.sitter_id);
+        return {
+          ...post,
+          media: media
+            ? {
+                id: media.id,
+                cloudinary_public_id: media.cloudinary_public_id,
+                resource_type: media.resource_type,
+                width: media.width ?? null,
+                height: media.height ?? null,
+                duration_s: media.duration_s ?? null,
+              }
+            : null,
+          sitter: { display_name: sitter?.displayName ?? "Your sitter" },
+        };
+      });
     }
     if (path === "bookings") {
       const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });

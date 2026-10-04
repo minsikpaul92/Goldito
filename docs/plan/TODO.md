@@ -13,17 +13,15 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (5.6).
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-06.md](phases/phase-06.md) (6.1) · [sitter-care-loop.ko.md](sitter-care-loop.ko.md).
 
 | Step | Action |
 | :--- | :--- |
-| 1 | On `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — `git pull` |
-| 2 | **Current focus = 5.6 only** — remove `/sitter/dev-upload` (real upload is pet FAB) → one commit → update this file |
-| 3 | Then Phase 06 (Care request in pet detail, Home check-ins, Diary activity)
+| 1 | New branch from `main` after Phase 05 PR merges — or continue if still on `feat/phase-05-feed` until PR merges; prefer `feat/phase-06-care` from latest `main` |
+| 2 | **Current focus = 6.1 only** — Owner Care request UI on pet detail → one commit → update this file |
+| 3 | Do not skip ahead to 6.12 AI until the DB/UI loop for tasks is in place |
 
-**Done on this branch so far:** 5.1–5.5 · sitter +Photo path · **D47/D47b** · `007` hosted via MCP.
-
-**After 5.6 (queue):** Phase 06.
+**Phase 05 complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)): 5.1–5.6 · sitter +Photo · demo tray · notifications · `007` hosted.
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
@@ -38,7 +36,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.6** | Remove `/sitter/dev-upload` — sitter +Photo is the real path | [phase-05.md](phases/phase-05.md) |
+| **6.1** | Owner care tasks UI — Care request on pet detail | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -56,7 +54,6 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for PawNote + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **Phase 06** Care request → AI mission checklist + check-ins + Diary activity (`008`)
 - [ ] **6.x** Care request → AI mission checklist (6.12–6.14) + 5-second check-ins (walk minutes) + optional-photo tasks + Activity history ([sitter-care-loop.ko.md](sitter-care-loop.ko.md), `008`)
 - [ ] **7.1** Nebius client + `test_nebius.py` + per-call metrics log (TTFT, latency, tokens → median table for README feedback) + `embed()` — Seulgi (can start right after Phase 01)
 - [ ] **7.2–7.5 · 7.7** Daily report AI (Super): **7.7** chip suggestions from the day's records + ≤ 2 photos (`/api/ai/report-chips`); the sitter keeps or turns off chips, adds an optional short note, and approves before it posts (D38) (`009`)
@@ -79,6 +76,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **Phase 05 complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)
+- [x] **5.6** Remove `/sitter/dev-upload`; Playwright `media-picker` retargeted to `/sitter/pets/[petId]` **+ Photo** FAB; mock `feed_posts`/`media` + pet owner embed. `tsc` ✓ (2026-10-04)
+- [x] **demo tray** Real photos (carrot / park / complaining) + `play_fetch.mp4`; dropped `walk_squirrel` placeholder (2026-10-04)
 - [x] **5.x sitter +Photo** `/sitter/pets/[petId]`: timeline + **+ Photo** FAB → `pickMedia` → `uploadMedia(feed)` → `createFeedPost(FALLBACK_CAPTION)` · uploading skeleton · toast `Shared with {owner} 🐾` · empty "tap + to share {name}'s day". Sitter Feed tab lists in-care pets; Home **Now caring** pet chips → pet feed. `caringPets` helper. `tsc` ✓ (2026-10-04)
 - [x] **5.5** Notification center: `/owner/notifications` · `/sitter/notifications` — last 50, tap → mark read + route (`feed_post` → `/owner/feed`, diary types → `/owner/diary`, booking types → booking detail); **Mark all as read**; empty "You're all caught up."; bell opens center; `inboxRevision` soft-refetch. `tsc` ✓ (2026-10-04)
 - [x] **5.4** `NotificationsProvider`: Realtime INSERT on `notifications` (`user_id=eq.me`) → toast + unread +1; `feed_post` bumps `feedRevision` (Owner Feed soft refetch) + `diaryRevision` (for later Live). `NotificationBell` badge (9+). `countUnreadNotifications` on sign-in. e2e mock `notifications` + `is.null` / count headers. `tsc` ✓ (2026-10-04)

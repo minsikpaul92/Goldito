@@ -46,7 +46,7 @@ Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty 
 
 Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (normalize → sign → Cloudinary → complete). Normalize (`frontend/lib/mediaNormalize.ts`): photos are always resized to a 2000 px long edge (JPEG ~0.8, under 10 MB); videos over 30 s need a trim (`trim` on `uploadMedia`, or `VideoTooLongError` if none).
 
-App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / file dialog / trim sheet via `MediaPickerProvider`. Dev screen: `/sitter/dev-upload` (needs `EXPO_PUBLIC_DEV_ROUTES=1`) — Pick photo / Pick video → upload → Retry on failure. Removed in Phase 05.
+App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / file dialog / trim sheet via `MediaPickerProvider`. Sitter upload: `/sitter/pets/[petId]` **+ Photo** FAB → `uploadMedia` → `createFeedPost`.
 
 ### Images for the model (D12)
 
