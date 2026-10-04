@@ -162,6 +162,8 @@ export type MockDb = {
   owner_home_access: Row[];
   /** pay_booking_demo calls. */
   payments: Row[];
+  /** Unread / Realtime notices (Phase 05) — empty in e2e unless a test seeds rows. */
+  notifications: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -194,6 +196,7 @@ function createMockDb(): MockDb {
     booking_consents: [],
     owner_home_access: [],
     payments: [],
+    notifications: [],
   };
 }
 
@@ -391,19 +394,33 @@ function matches(row: Row, params: URLSearchParams): boolean {
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
+    } else if (raw === "is.null") {
+      if (row[key] != null) return false;
+    } else if (raw === "not.is.null") {
+      if (row[key] == null) return false;
     }
   }
   return true;
 }
 
-function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200) {
+function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200, count?: number) {
   if (wantsObject) {
     if (rows.length !== 1) {
       return json(route, 406, { code: "PGRST116", message: "JSON object requested, multiple (or no) rows returned" });
     }
     return json(route, status, rows[0]);
   }
-  return json(route, status, rows);
+  const headers: Record<string, string> = {};
+  if (count != null) {
+    headers["content-range"] =
+      count === 0 ? "*/0" : `0-${Math.max(rows.length - 1, 0)}/${count}`;
+  }
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    headers,
+    body: JSON.stringify(rows),
+  });
 }
 
 async function handleRest(route: Route, users: MockUser[], db: MockDb) {
@@ -770,7 +787,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
     }
-    return respond(route, rows, wantsObject);
+    const wantsCount = (headers.prefer ?? "").includes("count=");
+    return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
   }
 
   if (method === "POST") {

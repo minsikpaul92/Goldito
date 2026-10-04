@@ -17,6 +17,7 @@ import {
   listFeedPosts,
 } from "../../../lib/feed";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useNotifications } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type FeedState =
@@ -30,6 +31,7 @@ type FeedState =
  */
 export default function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
+  const { feedRevision } = useNotifications();
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
   const [petId, setPetId] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
@@ -45,9 +47,9 @@ export default function OwnerFeed() {
   }, [pets]);
 
   const loadPage = useCallback(
-    async (offset: number, append: boolean) => {
+    async (offset: number, append: boolean, soft = false) => {
       if (!petId) return;
-      if (!append) setFeed({ status: "loading" });
+      if (!append && !soft) setFeed({ status: "loading" });
       try {
         const page = await listFeedPosts(petId, { offset, limit: FEED_PAGE_SIZE });
         setFeed((prev) => {
@@ -59,7 +61,8 @@ export default function OwnerFeed() {
         setFeed((prev) => ({
           status: "error",
           message: (error as Error).message,
-          posts: append && prev.status !== "loading" ? prev.posts : [],
+          // Soft / append keep the cards the user already sees.
+          posts: (append || soft) && prev.status !== "loading" ? prev.posts : [],
           hasMore: false,
         }));
       }
@@ -74,6 +77,12 @@ export default function OwnerFeed() {
     }
     void loadPage(0, false);
   }, [petId, petsStatus, loadPage]);
+
+  // Soft refetch when a feed_post notification arrives (5.4) — keep current cards until the new page lands.
+  useEffect(() => {
+    if (!petId || feedRevision === 0) return;
+    void loadPage(0, false, true);
+  }, [feedRevision, petId, loadPage]);
 
   const loadMore = useCallback(async () => {
     if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;

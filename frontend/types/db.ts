@@ -75,3 +75,17 @@ export type MediaRow = {
   duration_s: number | null;
   created_at: string;
 };
+
+/** notifications row (Realtime INSERT → toast + badge; center in 5.5). */
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  pet_id: string | null;
+  booking_id: string | null;
+  type: string;
+  ref_id: string | null;
+  title: string;
+  body: string | null;
+  read_at: string | null;
+  created_at: string;
+};
