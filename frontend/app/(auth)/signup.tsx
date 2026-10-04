@@ -1,9 +1,9 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { RoleCard } from "../../components/RoleCard";
+import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Screen } from "../../components/ui/Screen";
@@ -12,7 +12,7 @@ import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
 import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
-import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 const MIN_PASSWORD_LENGTH = 6;
@@ -26,7 +26,6 @@ function goBack() {
 }
 
 export default function SignupScreen() {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [role, setRole] = useState<Role | null>(null);
   const [name, setName] = useState("");
@@ -81,17 +80,7 @@ export default function SignupScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Back"
-        onPress={goBack}
-        hitSlop={theme.spacing.sm}
-        style={({ pressed }) => [styles.back, pressed && styles.pressed]}
-        testID="signup-back"
-      >
-        <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
-        <Text style={styles.backText}>Back</Text>
-      </Pressable>
+      <BackLink onPress={goBack} testID="signup-back" />
 
       <View style={styles.header}>
         <Text style={styles.title}>Create your account</Text>
@@ -189,21 +178,6 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: {
       gap: theme.spacing.lg,
-    },
-    back: {
-      flexDirection: "row",
-      alignItems: "center",
-      alignSelf: "flex-start",
-      minHeight: 44,
-      gap: theme.spacing.xs,
-    },
-    pressed: {
-      opacity: 0.6,
-    },
-    backText: {
-      fontSize: theme.fontSize.body,
-      fontWeight: "600",
-      color: theme.color.primary,
     },
     header: {
       gap: theme.spacing.xs,

@@ -147,6 +147,8 @@ System font for now (Figma will pick one family).
 | Component | Rules |
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
+| `BackLink` | Standard back control: `chevron-back` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
+| `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Muk’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
@@ -261,6 +263,26 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 
 `/dev/gestures` (with `EXPO_PUBLIC_DEV_ROUTES=1`) shows every pattern above in one screen, and the Playwright suite (`frontend/e2e/`) checks it with a mouse in CI. The same checklist is in the PR template.
 
+### 7.8 Back navigation
+
+Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components/ui/BackLink.tsx`):
+
+- Visual: Ionicons `chevron-back` + the word **Back** (same row, `primary` color).
+- Placement: top of the screen (or the tour top bar), left-aligned, 44 px min hit area.
+- Behavior: go to the previous step or parent route (e.g. Login → `/welcome`, onboarding step 0 → role landing). Prefer `router.push` / `replace` to a known parent over inventing a second marketing link.
+- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How PawNote works”) for the same job.
+
+### 7.9 Welcome / role onboarding
+
+Public intro for **signed-out** visitors (`/welcome`, `/welcome/owner`, `/welcome/sitter`). Spec: [onboarding.ko.md](docs/plan/onboarding.ko.md).
+
+| Rule | Detail |
+| :--- | :--- |
+| Who sees it | **Signed-out only.** `(public)` layout redirects signed-in users away. After **Sign out**, Welcome shows again (OB.1). Optional `intro_seen` skip is P1 (OB.4) — not P0. |
+| Layout | One phone-height step, **no scroll**: top `BackLink` + progress · full title/body (do **not** clip with `numberOfLines`) · media column fills leftover height · footer CTA + dots |
+| Media | `MediaPlaceholder` fills the leftover column (photo-sized area, no large empty bands). Real demo stills/clips replace it later; keep the dashed brief until then |
+| Exit to auth | Last step → Sign in / Try demo / Create account → existing `/login` · `/signup` (login keeps `BackLink` → `/welcome`) |
+
 ---
 
 ## 8. Imagery & icons
@@ -284,7 +306,7 @@ Judges use a computer, so every action must work with a mouse and a trackpad ins
 ## For AI agents
 
 1. Read design values through `useTheme()` / `useThemedStyles(makeStyles)` from `frontend/providers/ThemeProvider.tsx` — in screens and `components/ui`, never import `tokens` directly (only `components/shell/` does, because it renders outside the provider). **Never hardcode** hex colors, font sizes, or spacing numbers. Pattern: a module-level `const makeStyles = (theme: Theme) => StyleSheet.create({...})`, then `const styles = useThemedStyles(makeStyles)` in the component.
-2. Wrap screens in `Screen`; group content in `Card`; use `Button` for actions. Extend these before creating new primitives.
+2. Wrap screens in `Screen`; group content in `Card`; use `Button` for actions; use `BackLink` for back (§7.8). Extend these before creating new primitives.
 3. If you need a **(proposed)** token, add it to `tokens.ts` in the same change and mention it in the PR. A new color that skins should change also goes into `SkinColors` in `themes.ts`; status colors never do (§3.1).
 4. Follow §7 patterns: one primary action, no sitter text fields, loud DANGER, empty states with copy.
 5. Show both dogs and cats in placeholder content.
