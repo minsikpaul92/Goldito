@@ -46,6 +46,10 @@ Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty 
 
 Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (normalize → sign → Cloudinary → complete). Normalize (`frontend/lib/mediaNormalize.ts`): photos are always resized to a 2000 px long edge (JPEG ~0.8, under 10 MB); videos over 30 s throw `VideoTooLongError` for the trim sheet (4.7).
 
+### Images for the model (D12)
+
+`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for MiniCPM-V. It raises `ValueError` for ids outside `pawnote/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
+
 ## Auth (who may call what)
 
 **Frontend → Supabase directly with the anon key + RLS** for reads and simple writes. **Frontend → FastAPI with the user's Supabase access token** (`Authorization: Bearer <token>`) for Cloudinary signing, AI, and anything that needs the service role. FastAPI verifies the token first, then may use the service role.

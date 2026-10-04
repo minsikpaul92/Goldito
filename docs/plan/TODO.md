@@ -28,7 +28,7 @@ Phase 04 branch `feat/phase-04-media` is rebased on `main` and its draft PR is o
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **4.6** | `cloudinary.fetch_as_data_url()` for AI vision (D12) — download the `w_1024,f_jpg` version → base64; used by Phase 08/09. | [phase-04.md](phases/phase-04.md) |
+| **4.7** | `pickMedia()` + sample photo tray (desktop frame / demo accounts) + video trim ≤ 30 s (QuickTime-style drag window; **decided: Cloudinary trims** — `/api/media/sign` takes `trim_start` / `trim_duration`, the server validates them and signs `so_{start},du_{len}` in the incoming transformation) + `/sitter/dev-upload` | [phase-04.md](phases/phase-04.md) |
 
 ---
 
@@ -40,7 +40,6 @@ Phase 04 branch `feat/phase-04-media` is rebased on `main` and its draft PR is o
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **4.7** `pickMedia()` + sample tray + video **trim ≤ 30 s** (drag window) + client compress + `/sitter/dev-upload` — [phase-04.md](phases/phase-04.md) Media normalize policy
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
@@ -69,6 +68,7 @@ Phase 04 branch `feat/phase-04-media` is rebased on `main` and its draft PR is o
 
 ## Completed
 
+- [x] **4.6** `cloudinary.fetch_as_data_url(public_id, resource_type)` (D12): downloads `c_limit,w_1024,f_jpg` (video: `so_0,…` poster frame) and returns `data:image/jpeg;base64,…`; `vision_url()` builds the URL; only `pawnote/…` ids are accepted (no `..`, `?`, `#`, dots, other hosts → `ValueError`); network / non-200 / non-image / empty or > 5 MB → `MediaFetchError` (callers fall back, e.g. `unchecked`). It does **not** check ownership — the AI router must (06B · 08 · 09). pytest 61 ✓ (21 new, httpx MockTransport), ruff ✓. Live Cloudinary: 3000×2000 → 1024×682, 400×300 stays 400×300, video → first-frame JPEG, missing → `MediaFetchError`; test assets deleted (2026-10-04)
 - [x] **4.5** Media normalize policy: `sign()` signs a Cloudinary **incoming** transformation (photo `c_limit,w_2000/q_auto`, video `so_0,du_30/c_limit,w_1280,h_1280/q_auto`; never `f_auto`) and `/sign` returns it; FE `lib/mediaNormalize.ts` — photos always resized to a 2000 px long edge (JPEG 0.8, no upscale, shrink until < 10 MB), video `prepareVideo()` checks ≤ 30 s (`VideoTooLongError` = hook for the 4.7 trim sheet) and the 100 MB hard cap; `uploadMedia()` normalizes first and sends `transformation`; `UploadError` moved to `lib/uploadError.ts` (new step `prepare`). Old 10/50 MB reject removed. pytest 40 ✓ (signature includes transformation), ruff ✓ (4 earlier lint errors fixed), `tsc` ✓. Chromium: 14.6 MB 4000×3000 → 1.3 MB 2000×1500, 800×600 not upscaled, 35 s video → `VideoTooLongError`. Live Cloudinary: 3000 px → stored 2000 px, 35 s → 30 s, missing `transformation` → 401 Invalid Signature; test assets deleted (2026-10-04)
 - [x] **4.1–4.4** Cloudinary `POST /api/media/sign` + `/complete` · `authz` · FE `uploadMedia()` + URL helpers · pytest — on `feat/phase-04-media`, draft [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) (2026-10-04)
 - [x] **OB.1–OB.2** Welcome: `/` → `/welcome` · role tours + `BackLink` + media placeholders · logout → Welcome · Playwright · [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) **merged** (2026-10-04). OB.3 Try demo was done early. OB.4 deferred (see Up next).
@@ -155,7 +155,7 @@ Phase 04 branch `feat/phase-04-media` is rebased on `main` and its draft PR is o
 | 03 Auth              | **done** (2026-10-01)                                                         |
 | 03B Bookings         | 3B.0–3B.11 done (2026-10-02) — next: **phase PR** (CI incl. rls_smoke) → merge |
 | 03C Agreements       | not started (Stage 3)                                                         |
-| 04 Cloudinary (code) | 4.1–4.5 done (2026-10-04) — draft PR #45; next 4.6 → 4.7                      |
+| 04 Cloudinary (code) | 4.1–4.6 done (2026-10-04) — draft PR #45; next 4.7                            |
 | 05 Feed              | not started                                                                   |
 | 06 Care request + checks | not started (Stage 2 · 4)                                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |

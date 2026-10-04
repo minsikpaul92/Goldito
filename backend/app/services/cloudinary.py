@@ -1,10 +1,13 @@
 """Cloudinary signed upload + delivery helpers (phase-04)."""
 
+import base64
+import re
 from dataclasses import dataclass
 from time import time
 
 import cloudinary
 import cloudinary.utils
+import httpx
 
 from app.config import get_settings
 
@@ -91,3 +94,61 @@ def thumb_url(public_id: str, *, w: int = 400) -> str:
 def video_poster_url(public_id: str, *, w: int = 400) -> str:
     cloud, _, _ = _configured()
     return f"https://res.cloudinary.com/{cloud}/video/upload/so_0,f_jpg,w_{w}/{public_id}.jpg"
+
+
+# --- AI vision input (architecture D12) -------------------------------------------------
+# The model server may not be able to fetch external URLs, so the backend downloads a small
+# JPEG from Cloudinary and hands the model a base64 data URL.
+VISION_TRANSFORM = "c_limit,w_1024,f_jpg"  # c_limit: never upscale a small photo
+VISION_VIDEO_TRANSFORM = "so_0," + VISION_TRANSFORM  # poster frame of a video
+VISION_FETCH_TIMEOUT_S = 10.0
+VISION_MAX_BYTES = 5 * 1024 * 1024  # a 1024 px JPEG is far below this; guards a bad response
+
+# Our public ids are `pawnote/<pet_id>/<purpose>/<random>` — nothing else may reach the URL.
+_PUBLIC_ID_RE = re.compile(r"^pawnote/[A-Za-z0-9_\-]+(?:/[A-Za-z0-9_\-]+)+$")
+
+
+class MediaFetchError(RuntimeError):
+    """Could not load an image for the model. Callers decide the fallback (e.g. `unchecked`)."""
+
+
+def vision_url(public_id: str, resource_type: str = "image") -> str:
+    """Cloudinary URL of the 1024 px JPEG the model sees (a video gives its first frame)."""
+    if resource_type not in RESOURCE_TYPES:
+        raise ValueError(f"unsupported resource_type: {resource_type}")
+    if not _PUBLIC_ID_RE.fullmatch(public_id):
+        raise ValueError("public_id must be a pawnote/ media id")
+    if resource_type == "video":
+        return delivery_url(public_id, resource_type="video", transform=VISION_VIDEO_TRANSFORM) + ".jpg"
+    return delivery_url(public_id, transform=VISION_TRANSFORM)
+
+
+def fetch_as_data_url(
+    public_id: str,
+    resource_type: str = "image",
+    *,
+    http: httpx.Client | None = None,
+) -> str:
+    """Download the model-sized JPEG and return it as `data:image/jpeg;base64,...`.
+
+    Only fetches; it does not check that the caller may see this media. The AI router must
+    confirm the media belongs to the pet / booking first (authz, phase 06B · 08 · 09).
+    Raises ValueError for a bad id, MediaFetchError when the image cannot be loaded.
+    """
+    url = vision_url(public_id, resource_type)
+    client = http or httpx.Client(timeout=VISION_FETCH_TIMEOUT_S)
+    try:
+        response = client.get(url)
+    except httpx.HTTPError as exc:
+        raise MediaFetchError("Could not reach Cloudinary.") from exc
+    finally:
+        if http is None:
+            client.close()
+    if response.status_code != 200:
+        raise MediaFetchError(f"Cloudinary returned {response.status_code} for this media.")
+    if not response.headers.get("content-type", "").startswith("image/"):
+        raise MediaFetchError("Cloudinary did not return an image.")
+    body = response.content
+    if not body or len(body) > VISION_MAX_BYTES:
+        raise MediaFetchError("The image is empty or too large for the model.")
+    return "data:image/jpeg;base64," + base64.b64encode(body).decode("ascii")
