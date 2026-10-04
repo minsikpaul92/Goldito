@@ -13,21 +13,23 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (Goal + 5.3 DoD) → architecture §7 for notification types.
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) (5.3) → architecture **D47 / D47b** + §7 notifications.
 
 | Step | Action |
 | :--- | :--- |
-| 1 | On `feat/phase-05-feed` (draft [PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — `git pull` if needed |
-| 2 | Work **Current focus** only (5.3) → verify → one commit → update this file |
-| 3 | Do not start 5.4+ in the same session |
+| 1 | On `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — `git pull` |
+| 2 | **Current focus = 5.3 only** — `supabase/migrations/007_feed_notifications.sql` (`notify_feed_post` + `feed_posts.category`) → apply/verify → one commit → update this file |
+| 3 | Do not start 5.4+ / Feed grid polish / sitter +Photo UI in the same session unless focus moves |
 
-**Product stage:** Stage **4** Care. **5.3** = `007_feed_notifications.sql` — `notify_feed_post` trigger + `feed_posts.category` null column. Owner timeline (5.2) and `createFeedPost` (5.1) are done. Do not remove `/sitter/dev-upload` until **5.6**.
+**Done on this branch so far:** 5.1 `createFeedPost` · 5.2 Owner Feed list · **D47/D47b tab IA** (both roles Home·Bookings·Feed·Diary·Mood).
 
-**IA (D47 · D47b, 2026-10-04):** Both roles `Home · Bookings · Feed · Diary · Mood`. Sitter Home = in-care pets **or** pending requests · upcoming · drop/pick by time; later tamagotchi. Earnings/history later: Bookings Past + Profile Earnings — not a 6th tab. Feed multi-pet toggle · Diary photo→Feed · Care→pet detail · Settings→Profile.
+**After 5.3 (queue):** 5.4 NotificationsProvider (toast + Feed/Diary refetch) → 5.5 알림 센터 → **sitter +Photo path** (pet feed FAB; unblocks live demo) → 5.6 remove `dev-upload` → then Phase 06 (Care request in pet detail, Home check-ins, Diary activity).
 
-**Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05.
+**IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
-**Demo note:** hosted Chloe↔Lucy booking was shifted on-duty (drop-off Received) for media upload testing — re-check times if the stay window expired before live feed tests.
+**Do not:** revive OB.4. **Stash:** keep `wip privacy oauth docs` separate. Do not remove `/sitter/dev-upload` until **5.6**.
+
+**Demo note:** re-check Chloe↔Lucy on-duty window before live upload tests.
 
 ---
 
@@ -77,6 +79,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **docs D47 · D47b** Both roles `Home · Bookings · Feed · Diary · Mood`; Feed album + multi-pet toggle; Diary Live + photo→Feed; Care→pet detail; Settings/Earnings→Profile; sitter Home dashboard; phases 05–08/10/11 + CLAUDE + DESIGN + onboarding + welcome; FE tabs + e2e (2026-10-04)
 - [x] **5.2** Owner timeline: `listFeedPosts(petId, {offset, limit})` joins `media` + sitter `display_name`, `FEED_PAGE_SIZE=20`; `FeedCard` (4:3 thumb / video poster + ▶); `/owner/feed` FlatList + pet SegmentedControl + Load more / onEndReached + detail Sheet (web `<video>`). Empty: "No posts yet — your sitter will share photos here." `tsc` ✓ (2026-10-04)
 - [x] **5.1** `lib/feed.ts` `createFeedPost({petId, mediaId, caption, captionSource})` — inserts `feed_posts` (sitter RLS / on-duty); `FALLBACK_CAPTION` = `"A moment from today's care 🐾"` + `caption_source='fallback'`; `FeedPostRow` / `CaptionSource` in `types/db.ts`. No UI yet (5.2+). AI caption stays Phase 09. `tsc` ✓. Do not remove `/sitter/dev-upload` until 5.6 (2026-10-04)
 - [x] **4.7** `pickMedia()` + sample tray + video trim ≤ 30 s (Cloudinary cuts via signed `so_/du_`) + `/sitter/dev-upload`: `lib/media.ts` · `MediaPicker` · `VideoTrimSheet.web` (QuickTime-style drag window, mouse + arrows) · `MediaPickerProvider` · `assets/demo/` placeholders (meal · walk · nap · walk_squirrel; handoff / safety_label empty until 06B / 08) · sign accepts `trim_start` / `trim_duration` · Playwright media-picker 7/7 ✓ · pytest 73 ✓ · ruff ✓ · `tsc` ✓ (e2e excluded from app tsconfig). Live: tray + sample → sign 403 on-duty (expected until Received) + Retry. Removed in Phase 05 (2026-10-04)

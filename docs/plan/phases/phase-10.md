@@ -46,7 +46,7 @@
 | 4a | Transit | (시드 시각 = 픽업 2시간 안) Sitter **Show code** → **Start trip → Simulate the drive** | Owner `access_unlocked` · 지도·ETA · "Lucy has arrived" → Sitter 차량 샘플 사진 → Vision ✅ → **Received** → Owner "Pick-up complete — care has started · photo verified" | 06B |
 | 4b | Care | Sitter: Today 체크인(Walk 20 min) · 사진 **+ Photo** · Report: 사진 2장 → **칩 제안**(틀린 칩 1개 끄기) + 짧은 메모 → **Generate → 승인(Send)** | Owner 토스트·Activity · 피드 AI 캡션 · **Album** 분류 · Reports 알림장 | 06 · 05 · 09 · 07 |
 | 5 | Completion | Owner **Start trip**(Owner drives) → Simulate → Sitter 귀가 사진 → **Returned** | Sitter "Chloe has arrived" / Owner Visitor parking 카드 → "home safe 🏠" → ★ 리뷰 → "Life Record updated" | 06B · 07C |
-| (+) | Stretch | Sitter Today **Scan a treat** → `chicken_jerky` 샘플 | 빨간 DANGER 모달 / Owner "Blocked a risky treat" | 08 |
+| (+) | Stretch | Sitter Home **Scan a treat** → `chicken_jerky` 샘플 | 빨간 DANGER 모달 / Owner "Blocked a risky treat" | 08 |
 
 녹화·심사는 아무 시간에나 가능해야 함 → `seed_demo.py --relative`: 확정·결제된 예약의 픽업(맡기기) = **now + 90분**(출입 정보가 이미 열린 상태), 찾기 = now + 3일, med = now+2분, walk = now+6분. 장면 1–3을 새로 보여 줄 때는 `--fresh-inquiry`로 Chloe ↔ Lucy를 **처음 만나는 사이**로 되돌린다 (둘 사이 예약을 지워 장면 ②의 Meet & Greet가 뜨게 — D44). 라이브 심사 경로(OB.5)는 장면 ①·④ 중심이고, Meet & Greet는 영상으로 보여 준다. 영상은 3분 미만이므로 장면 ①의 약 30초 사람 속도 구간은 편집에서 빨리 감고 "~30 s later" 자막으로 표시한다 (앱 동작은 그대로).
 

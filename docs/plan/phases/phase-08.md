@@ -11,7 +11,7 @@
 
 - [ ] `POST /api/ai/safety-check {pet_id, media_id}` → pydantic-valid JSON
 - [ ] 알레르기 매칭(예: chicken ← "hydrolyzed poultry protein") 시 `DANGER` + 영어 `warning_message`
-- [ ] Sitter Today **Scan a treat** 버튼 → `/sitter/scan` + 결과 모달 (DANGER는 "I understand — don't feed" 전 닫기 불가)
+- [ ] Sitter Home **Scan a treat** 버튼 → `/sitter/scan` + 결과 모달 (DANGER는 "I understand — don't feed" 전 닫기 불가)
 - [ ] `safety_checks` 저장 + DANGER 시 owner `safety_danger` 알림
 
 ---

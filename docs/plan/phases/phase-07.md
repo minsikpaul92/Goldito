@@ -15,7 +15,7 @@
 - [ ] `POST /api/ai/daily-report` → `daily_reports` status=draft (같은 날 재생성 시 덮어쓰기)
 - [ ] Sitter: Report 화면에서 사진 2장(그중 1장 = 공원에서 다람쥐를 보는 Max, 샘플 `walk_squirrel`) → **칩 제안** — 하루 기록에서 ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task), 사진에서 "🐿️ Watching a squirrel" · "🌳 Park walk" → 틀린 칩 1개 끄기 → 짧은 메모(선택) "She got so excited" → **Generate** → 시터 말투 미리보기 → **Send**(승인 = 게시) → status=sent + owner `report_sent` 알림
 - [ ] 칩 제안이 틀려도(예: 공원 사진을 nap으로 봄) 시터가 끄면 알림장에 안 들어감 · 사진 0장·메모 없이도 하루 기록 칩만으로 생성 · 승인 전에는 견주에게 안 보임
-- [ ] Owner: Reports 탭에서 날짜별 목록 + 본문 + 그날 사진 스트립
+- [ ] Owner: **Diary** 탭에서 날짜별 알림장 목록 + 본문 + 그날 사진 스트립 (구 Reports, D47)
 - [ ] **환각 방지:** `source_snapshot`에 없는 산책/투약/식사 내용이 report에 없음 (수동 테스트 3회)
 
 ---
@@ -92,9 +92,9 @@
 
 | 화면 | Route | 내용 |
 | :--- | :--- | :--- |
-| Sitter Report | `/sitter/report` | ① 오늘 요약(완료 task · check-in 수 · 사진) ② **Add photos** (≤ 2, `pickMedia` — purpose `report`) ③ **Suggested for today** — AI 칩 제안(7.7): 하루 기록 칩(Meal · Potty · Walk(분) · Mood · Meds — 이미 check-in한 값·medication task 상태로 채움) + 사진 칩(에피소드). 탭해서 끄기·켜기, 값은 탭으로 수정 ④ (선택) **짧은 메모** ≤ 200자 — "Anything else today?" ⑤ **Generate report** → skeleton "Writing today's report…" → 본문 미리보기 (탭하면 편집) ⑥ **Send to {owner}** (주 액션 = 승인·게시) → 토스트 "Report sent 📝". 이미 sent면 읽기 전용 + "Sent at 18:02" |
-| Owner Reports | `/owner/reports` | 날짜 역순 카드(첫 문장 미리보기). empty: "Your sitter's daily report will appear here each evening." |
-| Owner Report 상세 | `/owner/reports/[reportId]` | 날짜, 본문, 그날 feed 사진 가로 스트립, 완료 task 체크리스트 (source_snapshot 기반) |
+| Sitter Diary (evening note) | `/sitter/diary` | ① 오늘 요약 ② Add photos ≤ 2 ③ Suggested chips (7.7) ④ 짧은 메모 ⑤ Generate → preview ⑥ **Send to {owner}** (구 `/sitter/report`, D47b) |
+| Owner Diary | `/owner/diary` | Live + 히스토리; 알림장 카드(첫 문장 미리보기). empty: "When a stay is on, updates show up here live." |
+| Owner Diary entry | `/owner/diary/[entryId]` | 날짜, 본문, 사진 스트립, task 체크리스트 (구 `/owner/reports/[reportId]`) |
 
 ---
 
@@ -114,7 +114,7 @@
 - `backend/app/services/nebius.py`, `backend/scripts/test_nebius.py`
 - `backend/app/routers/ai_daily_report.py`, `backend/app/schemas/daily_report.py`, `backend/app/routers/ai_report_chips.py`, `backend/app/ai/prompts/report_chips/system.md`, `frontend/components/ChipSuggestions.tsx` (7.7)
 - `backend/app/ai/prompts/daily_report/{system.md, few_shot.json, PROMPT.md}`
-- `frontend/app/sitter/report.tsx`, `frontend/app/owner/reports/*`
+- `frontend/app/sitter/diary.tsx` (evening note), `frontend/app/owner/diary.tsx` (+ `[entryId]`)
 - `supabase/migrations/009_reports.sql`
 
 ---

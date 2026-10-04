@@ -6,9 +6,9 @@ const STEPS: TourStep[] = [
     body: "Care needs, allergies, reports, and bookings live in the app. Spend your energy on the animals, not typing the same update five times.",
     media: {
       kind: "image",
-      title: "Sitter Today — pets in care",
+      title: "Sitter Home — pets in care",
       brief:
-        "Still of Lucy’s Today: Max & Mochi “Now caring,” Heads-up allergy chip (chicken), today’s drop-off/pick-up row. No real phone numbers.",
+        "Still of Lucy’s Home: Max & Mochi “Now caring,” Heads-up allergy chip (chicken), today’s drop-off/pick-up row. No real phone numbers.",
     },
   },
   {

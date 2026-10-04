@@ -254,7 +254,7 @@ Oct 9, 2026
 | # | 장면 | 화면 (역할) | Phase |
 | :--- | :--- | :--- | :--- |
 | ① | 22:40 Chloe가 Lucy에게 문의 (Lucy는 자동 발송 모드) → "Lucy is typing…" → **약 30초 뒤 답장**(Lucy의 말투·1인칭): 가능, 견적(공휴일·2마리 할증 포함), "Max's Life Record says she takes her pill in a treat — happy to do that". 초안 생성 자체는 몇 초 → Chloe **Request booking**(문의 내용 자동 입력 — 맡기기 Sitter drives · 찾기 Owner drives) | Owner 스레드 · Sitter 알림 | 07B (+03C 견적, 07C 기록) · 03B |
-| ② | 케어·투약 의뢰서 → AI 체크리스트 → 확인 · 처음 만나는 사이라 **Meet & Greet**: 영상 통화(Oct 6, 7:00 PM) 제안 → Lucy 수락 → **Google Meet 링크 자동 생성**(양쪽 카드 + 캘린더 초대) → 통화 후 Done · 이동 방식 확인(맡기기 = **Sitter drives**, 찾기 = **Owner drives**) | Owner Care · 예약 상세 | 06 · 03B |
+| ② | 케어·투약 의뢰서 → AI 체크리스트 → 확인 · 처음 만나는 사이라 **Meet & Greet**: 영상 통화(Oct 6, 7:00 PM) 제안 → Lucy 수락 → **Google Meet 링크 자동 생성**(양쪽 카드 + 캘린더 초대) → 통화 후 Done · 이동 방식 확인(맡기기 = **Sitter drives**, 찾기 = **Owner drives**) | Owner Care request (펫 디테일, D47) · 예약 상세 | 06 · 03B |
 | ③ | Lucy 수락 → Checkout: 견적 → 동의서 5개 서명 (`emergency_vet` · `cohabitation` · `handoff_rules` · `home_access` · `safe_return`) → **Pay (demo)** → Lucy 집 주소·Visitor parking·짐 체크리스트 열림 | Owner Checkout | 03C |
 | ④-a | 픽업 2시간 전 출입 정보 해제(Chloe 알림) → Lucy **Start trip** → **위치 공유 동의 화면** → Chloe가 지도·ETA 확인 → 도착 시 Buzzer·Lockbox 카드 → 차량 사진 → Vision ✅ → "Pick-up complete — care has started" | Sitter Trip · Owner Trip | 06B · 03C |
 | ④-b | 사진 2장 → **AI 칩 제안**(틀린 칩 1개 끄기) + 짧은 메모 "She got so excited" → AI 알림장 → Lucy 승인 → 게시 · 앨범이 Meals/Walks/Naps로 정리 | Sitter Report · Owner Reports/Feed | 06 · 07 · 09 · 05 |
