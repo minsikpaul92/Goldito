@@ -7,6 +7,8 @@ import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { TextButton } from "../../../components/ui/TextButton";
+import { isCaring } from "../../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { appToday, formatInstant, formatTime, isoToZoned } from "../../../features/schedule/dates";
 import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bookings";
@@ -22,12 +24,6 @@ type State =
 type Due = { booking: BookingSummary; kind: HandoffKind; at: string };
 
 const pets = (b: BookingSummary) => b.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ");
-
-/** Pets with this sitter right now: received and not returned, or inside the agreed stay. */
-function isCaring(b: BookingSummary, now: number): boolean {
-  if (b.status !== "confirmed" || !b.dropOff || !b.pickUp || b.pickUp.completedAt) return false;
-  return !!b.dropOff.completedAt || (Date.parse(b.dropOff.at) <= now && now < Date.parse(b.pickUp.at));
-}
 
 /**
  * Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty,
@@ -121,13 +117,30 @@ export default function SitterHome() {
             Now caring
           </Text>
           {caring.map((b) => (
-            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)}>
-              <Card style={styles.card}>
-                <Text style={styles.title}>{`${b.ownerName}'s ${b.pets.length > 1 ? "pets" : "pet"}`}</Text>
-                <Text style={styles.body}>{pets(b)}</Text>
-                {b.pickUp ? <Text style={styles.muted}>{`Until ${formatInstant(b.pickUp.at)}`}</Text> : null}
-              </Card>
-            </Pressable>
+            <Card key={b.id} style={styles.card}>
+              <Text style={styles.title}>{`${b.ownerName}'s ${b.pets.length > 1 ? "pets" : "pet"}`}</Text>
+              <Text style={styles.body}>{pets(b)}</Text>
+              {b.pickUp ? <Text style={styles.muted}>{`Until ${formatInstant(b.pickUp.at)}`}</Text> : null}
+              <View style={styles.caringActions}>
+                {b.pets
+                  .filter((p) => p.id)
+                  .map((p) => (
+                    <Pressable
+                      key={p.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Share photos of ${p.name}`}
+                      onPress={() => router.push(`/sitter/pets/${p.id}`)}
+                      style={({ pressed }) => [styles.petChip, pressed && styles.pressed]}
+                      testID={`caring-pet-${p.id}`}
+                    >
+                      <Text style={styles.petChipText}>
+                        {SPECIES_EMOJI[p.species]} {p.name} · + Photo
+                      </Text>
+                    </Pressable>
+                  ))}
+                <TextButton label="Booking details" onPress={() => open(b)} testID={`caring-booking-${b.id}`} />
+              </View>
+            </Card>
           ))}
         </View>
       ) : null}
@@ -188,6 +201,26 @@ const makeStyles = (theme: Theme) =>
     },
     card: {
       gap: theme.spacing.xs,
+    },
+    caringActions: {
+      marginTop: theme.spacing.xs,
+      gap: theme.spacing.xs,
+      alignItems: "flex-start",
+    },
+    petChip: {
+      minHeight: 44,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.color.accent,
+      borderWidth: 1,
+      borderColor: theme.color.primary,
+    },
+    petChipText: {
+      fontSize: theme.fontSize.small,
+      fontWeight: "600",
+      color: theme.color.primary,
     },
     title: {
       fontSize: theme.fontSize.body,
