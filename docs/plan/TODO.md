@@ -19,10 +19,10 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | :--- | :--- |
 | 1 | Stay on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) for feed polish |
 | 2 | **Current focus = 5.8 only** — visibility / owner posts / Share with owner → one commit → update this file |
-| 3 | **5.10** stays deferred (viewer open-at-wrong-index on Expo web) — do not block on it |
+| 3 | **5.10** done (viewer renders only the active post) — see Completed |
 | 4 | After 5.8–5.9 (or when pausing polish): move focus to **6.1** on `feat/phase-06-care` from latest `main` |
 
-**Phase 05 core (5.1–5.6) + 5.7 delete done**; remaining polish = 5.8–5.10.
+**Phase 05 core (5.1–5.6) + 5.7 delete + 5.10 viewer done**; remaining polish = 5.8–5.9.
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
 - [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
-- [ ] **5.9–5.10 Feed album polish** (after 5.8): **5.9** notify only when shared · **5.10 NEEDS FIX** FeedViewer on Expo web — tapping a photo opens/plays the first video (index 0) instead of that photo; attempts on `feat/phase-05-feed` did not stick in Safari (2026-10-04)
+- [ ] **5.9 Feed album polish** (after 5.8): notify only when shared with the other party
 - [ ] **6.1** Owner care tasks UI — Care request on pet detail ([phase-06.md](phases/phase-06.md)) — after Phase 05 polish chunk or when focus moves
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
@@ -79,6 +79,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.10 + Phase 04/05 review fixes** FeedViewer renders only the active post (swipe · arrows · ←/→ keys; active post tracked by id so Load more never moves it; first frame never shows a stale video; cancelled delete reopens on the same post). Delete now goes through `DELETE /api/feed/{id}` (author-only): removes the Cloudinary file + `media` row unless another post / task log / safety check still uses it, so the sheet's "deletes the photo for good" is true. `/api/media/complete` is idempotent (same `public_id` → same row, other user → 409) and trusts Cloudinary's width/height/duration. `007_feed_posts_realtime.sql` → `007b_…` and idempotent (008 stays reserved for care). Feed toasts coalesce (“3 new photos 📸”). New Playwright `feed.spec.ts` (viewer index · arrows · author delete + cancel · notification center) + mock honors `order=….desc`, HEAD count, per-user notifications. pytest 80 ✓, ruff ✓, Playwright flows 70 ✓, `tsc` ✓ (2026-10-04)
 - [x] **5.7** Author-only delete: `deleteFeedPost` + FeedViewer **Delete** (sitter only) → confirm Sheet → toast + grid refresh; owner Feed has no Delete. RLS `feed_posts_delete`. `tsc` ✓ (2026-10-04). **5.10** viewer open-at-index still deferred.
 - [x] **Phase 05 core complete** — feed album · notifications · sitter +Photo · demo tray · removed `dev-upload` (2026-10-04)
 - [x] **5.6** Remove `/sitter/dev-upload`; Playwright `media-picker` retargeted to `/sitter/pets/[petId]` **+ Photo** FAB; mock `feed_posts`/`media` + pet owner embed. `tsc` ✓ (2026-10-04)
@@ -179,7 +180,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03B Bookings         | **done** (2026-10-02)                                                         |
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
-| 05 Feed              | in progress — **5.1–5.2** done on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)); next **5.3** |
+| 05 Feed              | in progress — **5.1–5.7 + 5.10** done on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)); next **5.8** · 5.9 |
 | 06 Care request + checks | not started (Stage 2 · 4)                                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |

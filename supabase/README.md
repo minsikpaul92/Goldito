@@ -17,6 +17,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `005_meet_greet.sql` | 03B | Meet & Greet RPCs: propose / respond / complete, skip request / answer (decline cancels), both sides' meeting spots |
 | `006_agreements.sql` | 03C | Rates, Ontario holidays, `quote_booking`, consents, demo payment, owner entry info + timed unlock |
 | `007_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
+| `007b_feed_posts_realtime.sql` | 05 | `feed_posts` in the Realtime publication (owner Feed refetch on delete); idempotent. Numbered `007b` because `008` is reserved for care |
 | `008_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |

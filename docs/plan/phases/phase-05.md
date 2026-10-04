@@ -83,7 +83,7 @@ FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 �
 | **5.7** | Sitter delete UI on own posts (viewer + confirm); wire existing RLS; hide Delete for non-authors — **done** (`deleteFeedPost`, FeedViewer Delete, confirm Sheet on sitter pet feed) |
 | **5.8** | Schema: `visibility` / owner-as-author + RLS select/insert; sitter "Share with owner" chip at upload; owner Feed FAB for own posts |
 | **5.9** | Notifications: only fire `feed_post` when shared with the other party |
-| **5.10** | **NEEDS FIX** — `FeedViewer` on Expo web: tap photo → full-screen shows/plays post at index 0 (often a video) instead of the tapped post. Repro: sitter Feed → Max → tap white-dog photo → hallway video plays. `initialPostId` is correct; open-at-index fails on web (`FlatList` then `ScrollView`+`contentOffset`+`scrollTo` still wrong in Safari, 2026-10-04). Likely fix: render only the active page (no horizontal pager on web), or a pager that does not mount/play other videos until scrolled to. DoD: tap photo → that photo; tap video → that video plays. |
+| **5.10** | **done** — `FeedViewer` renders only the active post (swipe, ‹ › buttons, ←/→ keys); tracked by post id, so Load more never moves it; a tapped photo opens that photo, a tapped video plays that video. Playwright `feed.spec.ts`. |
 
 ---
 

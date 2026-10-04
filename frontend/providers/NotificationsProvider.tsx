@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -29,10 +30,13 @@ type NotificationsValue = {
 
 const NotificationsContext = createContext<NotificationsValue | null>(null);
 
+/** Photos shared within this window show one toast ("3 new photos 📸") instead of one each. */
+const FEED_TOAST_WINDOW_MS = 1200;
+
 /**
  * Realtime for the signed-in user (phase-05 5.4–5.5 · 5.7):
  * - `notifications` INSERT → toast + unread + type revisions
- * - `feed_posts` DELETE → feedRevision (owner album drops deleted photos live)
+ * - `feed_posts` DELETE → feedRevision (owner album drops deleted photos live; unfiltered by RLS)
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -43,6 +47,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [feedRevision, setFeedRevision] = useState(0);
   const [diaryRevision, setDiaryRevision] = useState(0);
   const [inboxRevision, setInboxRevision] = useState(0);
+  const feedBurst = useRef<{ count: number; title: string; timer: ReturnType<typeof setTimeout> } | null>(
+    null,
+  );
 
   const refreshUnread = useCallback(async () => {
     if (!userId || !isSupabaseConfigured) {
@@ -81,12 +88,27 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           const row = payload.new as NotificationRow;
           setUnreadCount((n) => n + 1);
           setInboxRevision((r) => r + 1);
-          if (row.title) toast.show(row.title);
           if (row.type === "feed_post") {
+            if (feedBurst.current) {
+              feedBurst.current.count += 1;
+            } else {
+              const burst = {
+                count: 1,
+                title: row.title,
+                timer: setTimeout(() => {
+                  const done = feedBurst.current;
+                  feedBurst.current = null;
+                  if (!done) return;
+                  toast.show(done.count === 1 ? done.title : `${done.count} new photos 📸`);
+                }, FEED_TOAST_WINDOW_MS),
+              };
+              feedBurst.current = burst;
+            }
             setFeedRevision((r) => r + 1);
             setDiaryRevision((r) => r + 1);
-          } else if (DIARY_NOTIFICATION_TYPES.has(row.type)) {
-            setDiaryRevision((r) => r + 1);
+          } else {
+            if (row.title) toast.show(row.title);
+            if (DIARY_NOTIFICATION_TYPES.has(row.type)) setDiaryRevision((r) => r + 1);
           }
         },
       )
@@ -98,7 +120,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           table: "feed_posts",
         },
         () => {
-          // RLS limits events to pets the viewer can access (can_access_pet).
+          // Supabase does not apply RLS to DELETE events: every signed-in client gets this
+          // (primary key only). A refetch is harmless, and the refetch itself is RLS-scoped.
           if (!active) return;
           setFeedRevision((r) => r + 1);
         },
@@ -107,6 +130,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      if (feedBurst.current) clearTimeout(feedBurst.current.timer);
+      feedBurst.current = null;
       void supabase.removeChannel(channel);
     };
   }, [userId, refreshUnread, toast]);

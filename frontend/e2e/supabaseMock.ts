@@ -754,8 +754,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const table = db[path as keyof MockDb];
   if (!table) return json(route, 404, { message: `Not mocked: ${method} ${path}` });
 
-  if (method === "GET") {
-    let rows = table.filter((row) => matches(row, params));
+  // supabase-js `head: true` (unread count) sends HEAD; answer like GET.
+  if (method === "GET" || method === "HEAD") {
+    // RLS: notifications are private to their user.
+    let rows = table.filter(
+      (row) => matches(row, params) && (path !== "notifications" || row.user_id === me),
+    );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
         ...pet,
@@ -817,6 +821,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+      // Feed + notifications are read newest first (`order=created_at.desc`).
+      if ((path === "feed_posts" || path === "notifications") && params.get("order")!.endsWith(".desc")) {
+        rows.reverse();
+      }
     }
     const wantsCount = (headers.prefer ?? "").includes("count=");
     return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
@@ -876,7 +884,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pets" && "species" in changes) {
       return json(route, 403, { code: "42501", message: "permission denied for column species" });
     }
-    for (const row of table.filter((r) => matches(r, params))) Object.assign(row, changes);
+    for (const row of table.filter(
+      (r) => matches(r, params) && (path !== "notifications" || r.user_id === me),
+    )) {
+      Object.assign(row, changes);
+    }
     return route.fulfill({ status: 204 });
   }
 
