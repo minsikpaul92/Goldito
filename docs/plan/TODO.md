@@ -23,7 +23,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 **Product stage:** Stage **4** Care. **5.3** = `007_feed_notifications.sql` — `notify_feed_post` trigger + `feed_posts.category` null column. Owner timeline (5.2) and `createFeedPost` (5.1) are done. Do not remove `/sitter/dev-upload` until **5.6**.
 
-**IA (D47, 2026-10-04):** Owner tabs `Home · Bookings · Feed · Diary · Mood`. Feed = permanent album (multi-pet toggle); Diary = Live stay log + history (photo → also Feed); Care request → Home pet detail (later); Settings → header Profile. Sitter **D47b proposed** `Today · Bookings · Feed · Diary · Mood` — confirm before changing FE (still Tasks · Report for now).
+**IA (D47 · D47b, 2026-10-04):** Both roles `Home · Bookings · Feed · Diary · Mood`. Sitter Home = in-care pets **or** pending requests · upcoming · drop/pick by time; later tamagotchi. Earnings/history later: Bookings Past + Profile Earnings — not a 6th tab. Feed multi-pet toggle · Diary photo→Feed · Care→pet detail · Settings→Profile.
 
 **Do not:** revive OB.4 `intro_seen` (deferred). **Stash:** `git stash list` may still have `wip privacy oauth docs` — keep separate from Phase 05.
 
@@ -48,8 +48,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
-- [ ] **human (Minsik) D47b** Confirm sitter tabs: proposed `Today · Bookings · Feed · Diary · Mood` (Tasks→Today, Report→Diary) vs keep Tasks+Report
-- [ ] **IA follow-ups (after D47)** Feed multi-pet toggle chips · Diary Live/On-air + filters · Diary photo → Feed mirror · Mood stub polish · Care request in pet detail · Profile Settings section (11.11)
+- [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past + Profile Earnings (later)
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)

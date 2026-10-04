@@ -30,11 +30,11 @@ function isCaring(b: BookingSummary, now: number): boolean {
 }
 
 /**
- * Sitter Today (phase-03b 3B.8): **Now caring** (by owner — several homes are fine),
- * **Today** (drop-offs and pick-ups due today), **Upcoming**, and a shortcut to new
- * requests. Check-ins and tasks join in Phase 06.
+ * Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty,
+ * else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time.
+ * Tamagotchi / 8bit status joins later (11.12). Check-ins in Phase 06.
  */
-export default function SitterToday() {
+export default function SitterHome() {
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const sitterId = profile?.id;

@@ -57,8 +57,8 @@
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
 | D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = PawNote Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
 | D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
-| D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood`. **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. **Sitter 탭은 D47b(제안) — 민식 확인 후 확정** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
-| D47b | Sitter 탭 IA (**제안**) | Sitter도 **5탭:** `Today · Bookings · Feed · Diary · Mood`. **Today** = 오늘 돌봄 허브(구 Tasks·Quick check-in 흡수). **Bookings** = 요청·Meet & Greet. **Feed** = 앨범에 **+ Photo**. **Diary** = 맡은 펫 스테이 로그 작성 + 저녁 칩 알림장 승인(구 Report 흡수). **Mood** = Owner와 같은 도구. Treat scan은 Today 버튼(08). Settings = 헤더 Profile. (대안: Tasks를 탭으로 남기고 Mood만 Today 버튼 — 확인 전엔 FE는 Owner만 D47 적용) | Owner와 어휘·대칭 맞춤 |
+| D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood`. **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. Sitter = **D47b** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
+| D47b | Sitter 탭 IA (**확정**) | Sitter **5탭:** `Home · Bookings · Feed · Diary · Mood` (Owner와 대칭; 구 Today→**Home**). **Home** = 대시보드: (A) 지금 케어 중이면 그 펫 정보·퀵액션 중심 · (B) 아니면 **승인 대기 요청** · **Upcoming** · **drop-off/pick-up 시간순**. 추후 케어 중 **다마고치/8bit status**(11.12). 구 Tasks는 Home(할 일)·Diary(완료 기록)로 흡수. **Bookings** = 요청·Meet & Greet·Past. **Feed** = + Photo. **Diary** = 스테이 로그 + 저녁 칩 알림장(구 Report). **Mood** = Owner와 동일. Treat scan = Home 버튼(08). Settings = Profile. **수익·돌봄 히스토리(추후):** 탭 추가 없음 — Bookings **Past**(스테이·견주별) + Profile **Earnings / payouts** 섹션(데모 pay 금액·기간 요약). 활동 디테일은 Diary 필터 | Owner 대칭 + 시터 대시보드 (2026-10-04 민식) |
 
 ---
 
@@ -198,22 +198,22 @@ PawNote/
 | `/owner/mood` (tab: Mood) | owner | 사진/영상 → 기분 (Fun only, D42). P0는 플레이스홀더 | Snap / pick | 11.9 (stub now) |
 | `/owner/pets/[petId]` (Care request) | owner | 구 Care 탭 내용 — 투약·산책 의뢰는 **펫 디테일**에서 (D47, 추후 디테일). 라우트 `/owner/pets/[petId]/care-request` 유지 | Save checklist | 06 |
 | `/owner/notifications` (header bell) | owner | 알림 센터 | 탭 → 해당 화면 | 05 |
-| `/sitter/` (tab: Today) | sitter | 담당 pet · 오늘 인수인계(Trip) · Heads-up · **Quick check-ins** · due 배너 · (D47b) Tasks 흡수 · (08) Scan | Mark done / check-in | 03 → 06 |
+| `/sitter/` (tab: Home) | sitter | **대시보드 (D47b):** 케어 중 → 펫 카드·퀵액션 · 아니면 Requests(미승인) · Upcoming · drop/pick **시간순**. 추후 다마고치(11.12). Tasks/check-in 흡수 · (08) Scan | Open booking / check-in | 03 → 06 |
 | `/sitter/schedule` | sitter | 스케줄 캘린더 (날짜 × 칸 open + 시간 + 정원 / blocked) | Save | 03B |
-| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | **Inquiries** · Requests · Upcoming · Past / 요청 카드·Meet & Greet·인수인계·출입 잠금 | Accept | 03B (+03C·07B·07C) |
+| `/sitter/bookings` (tab: Bookings), `/sitter/bookings/[bookingId]` | sitter | Inquiries · Requests · Upcoming · **Past**(돌봄 히스토리). 추후 Past/Earnings 진입 | Accept | 03B (+03C·07B·07C) |
 | `/sitter/inquiries/[inquiryId]` | sitter | 문의 스레드 — 말투 초안 + **Send** (D36) | Send | 07B |
-| `/sitter/feed` (tab: Feed, D47b) | sitter | 맡은 펫 앨범 업로드 진입 (pet 피드 / + Photo). 확정 전엔 `/sitter/pets/[petId]`로도 충분 | **+ Photo** | 05 |
+| `/sitter/feed` (tab: Feed) | sitter | 맡은 펫 앨범 · + Photo (`/sitter/pets/[petId]`와 연결) | **+ Photo** | 05 |
 | `/sitter/pets/[petId]` | sitter | Pet 피드 (sitter 뷰) | **+ Photo** (FAB) | 05 |
-| `/sitter/diary` (tab: Diary, D47b) | sitter | 스테이 로그 + 저녁 칩 알림장 승인(구 Report·Tasks 요약). 확정 전 구 `/sitter/tasks`·`/sitter/report` 유지 가능 | **Send** / Mark done | 06–07 |
-| `/sitter/mood` (tab: Mood, D47b) | sitter | Owner와 동일 Mood 도구 | Snap / pick | 11.9 |
-| `/sitter/tasks` | sitter | *(D47b 확정 시 Today/Diary로 흡수)* 오늘 task_logs | **Mark done** | 06 |
-| `/sitter/scan` (Today 버튼 → Stack) | sitter | Treat scanner | **Scan label** | 08 (stretch) |
-| `/sitter/report` | sitter | *(D47b 확정 시 Diary로 흡수)* 5초 체크 → 칩 → Send (D38) | **Send report** | 07 |
+| `/sitter/diary` (tab: Diary) | sitter | 스테이 로그 + 저녁 칩 알림장(구 Report·Tasks) | **Send** / Mark done | 06–07 |
+| `/sitter/mood` (tab: Mood) | sitter | Owner와 동일 Mood 도구 | Snap / pick | 11.9 |
+| `/sitter/tasks`, `/sitter/report` | sitter | *(removed as tabs — redirect to Home / Diary)* | — | legacy |
+| `/sitter/scan` (Home 버튼 → Stack) | sitter | Treat scanner | **Scan label** | 08 (stretch) |
 | `/sitter/notifications` (header bell) | sitter | 알림 센터 | 탭 → 해당 화면 | 05 |
+| `/profile` (Earnings, 추후) | sitter | Profile **Earnings** — 받은 금액·기간 요약 (데모 pay). 스테이 목록은 Bookings Past | — | P1 / 10+ |
 | `/dev/gestures` | - | 마우스 동작 테스트 화면 (긴 목록·가로 줄·모달·토스트·입력창). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만, 링크 없음 | - | 1.7 |
 | `/dev/health` | - | Backend `GET /health` 확인 (Check API — 1.3 화면을 `/`에서 옮김). `EXPO_PUBLIC_DEV_ROUTES=1`일 때만 | Check API | 1.3 → 3.3 |
 
-- 탭 (D47): owner **`Home · Bookings · Feed · Diary · Mood`**. sitter는 당분간 `Today · Bookings · Tasks · Report` 유지, **제안 D47b** = `Today · Bookings · Feed · Diary · Mood` (민식 확인 후 FE 전환). Scan은 탭이 아니라 Today 버튼(08). 알림 벨 = 헤더 우측; **Settings = 헤더 아바타 Profile**. 탭은 expo-router **JS `Tabs`** (D25).
+- 탭 (D47 · D47b): owner·sitter 모두 **`Home · Bookings · Feed · Diary · Mood`**. Scan = Home 버튼(08). 알림 벨 = 헤더; **Settings · (sitter) Earnings** = 헤더 Profile. 탭은 expo-router **JS `Tabs`** (D25).
 - 웹 쿼리 (D25, 모든 route 공통): `?frame=0` 폰 프레임 끄기 · `?frame=1` 강제로 켜기 · `?view=split` Owner·Sitter 폰 나란히 (10.10 stretch).
 - Owner Feed 펫 필터 = **멀티토글 칩**(선택/해제; 0이면 안내 또는 기본 전체). Diary·Mood도 같은 펫 집합을 쓸 수 있음. 데모는 2마리(Max 강아지, Mochi 고양이).
 - 역할 영역은 **URL 접두사 폴더** `app/owner/`·`app/sitter/` (D26) — 그룹 `(owner)`/`(sitter)`가 아님. 역할 가드는 `components/RoleTabs.tsx`: 미로그인 → `/login`, 다른 역할 → 자기 홈(`/owner` ↔ `/sitter`). `(auth)` 그룹은 로그인 상태면 `/`로.

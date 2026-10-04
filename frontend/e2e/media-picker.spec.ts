@@ -78,7 +78,7 @@ async function setup(page: Page, options: { failSignOnce?: boolean } = {}): Prom
   });
 
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: "Today" }).waitFor();
+  await app(page).getByRole("heading", { name: "Home" }).waitFor();
   await page.goto("/sitter/dev-upload");
   await app(page).getByTestId("dev-pick-photo").waitFor();
   return calls;

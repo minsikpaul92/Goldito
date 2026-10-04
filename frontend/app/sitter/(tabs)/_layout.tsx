@@ -2,17 +2,18 @@ import { Tabs } from "expo-router";
 
 import { RoleTabs, tabIcon } from "../../../components/RoleTabs";
 
-// Treat scanner is not a tab: it opens from a Today button in Phase 08 (architecture §3).
+/** Sitter tabs — D47b: Home · Bookings · Feed · Diary · Mood. Scan = Home button (08). */
 export default function SitterTabsLayout() {
   return (
     <RoleTabs>
-      <Tabs.Screen name="index" options={{ title: "Today", tabBarIcon: tabIcon("sunny-outline") }} />
+      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: tabIcon("home-outline") }} />
       <Tabs.Screen
         name="bookings"
         options={{ title: "Bookings", tabBarIcon: tabIcon("calendar-outline") }}
       />
-      <Tabs.Screen name="tasks" options={{ title: "Tasks", tabBarIcon: tabIcon("checkbox-outline") }} />
-      <Tabs.Screen name="report" options={{ title: "Report", tabBarIcon: tabIcon("create-outline") }} />
+      <Tabs.Screen name="feed" options={{ title: "Feed", tabBarIcon: tabIcon("images-outline") }} />
+      <Tabs.Screen name="diary" options={{ title: "Diary", tabBarIcon: tabIcon("book-outline") }} />
+      <Tabs.Screen name="mood" options={{ title: "Mood", tabBarIcon: tabIcon("happy-outline") }} />
     </RoleTabs>
   );
 }

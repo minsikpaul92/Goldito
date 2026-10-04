@@ -177,7 +177,7 @@ System font for now (Figma will pick one family).
 | :--- | :--- |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47**: owner **Home · Bookings · Feed · Diary · Mood**; sitter today `Today · Bookings · Tasks · Report` (proposed D47b: Today · Bookings · Feed · Diary · Mood). Settings = header Profile, not a tab |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b**: both **Home · Bookings · Feed · Diary · Mood**. Settings (and sitter Earnings later) = header Profile |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |

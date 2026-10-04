@@ -58,23 +58,19 @@ Think in **two apps in one codebase** — role after login:
 
 ```
 Owner                                  Sitter
-  Home (my pets, next booking;           Today (pets in my care, Heads-up, check-ins;
-    Care request → pet detail later)       Tasks absorbed — D47b proposed)
-  Bookings (inquiry → AI reply,          Bookings (inquiries, requests, Meet & Greet,
-    request, Meet & Greet, checkout)       entry-info lock card)
-  Trip (live map + ETA, arrival card)    Trip (Start trip, arrival card, photo check)
-  Feed (permanent album, grid;           Feed (+ Photo → album; D47b)
-    owner + sitter posts; multi-pet toggle)
-  Diary (Live On-air stay log +          Diary (stay log + evening chips; was Report)
-    history by pet/sitter/date;
-    photo → also Feed)
-  Mood (fun mood from photo/video)       Mood (same tool; D47b)
-  Profile header → Settings              Profile header → Settings
-  Notifications (bell)                   (stretch) Treat scanner from Today
-  (P1) Photo request                     (P1) Notices
+  Home (pets, next booking;              Home (dashboard: in-care pets OR
+    Care request → pet detail later;       pending requests · upcoming ·
+    later: 8bit status)                    drop/pick by time; later: tamagotchi)
+  Bookings (inquiry → checkout)          Bookings (requests · M&G · Past history)
+  Trip (live map + ETA)                  Trip (Start trip, photo check)
+  Feed (album, multi-pet toggle)         Feed (+ Photo → album)
+  Diary (Live + history; photo→Feed)     Diary (stay log + evening chips)
+  Mood (fun mood from clip)              Mood (same tool)
+  Profile → Settings                     Profile → Settings · Earnings (later)
+  Notifications (bell)                   Treat scanner from Home (08)
 ```
 
-Tab bar (D47): owner `Home · Bookings · Feed · Diary · Mood`. Sitter today still `Today · Bookings · Tasks · Report` until D47b is confirmed.
+Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 ### UX principles
 
 1. **Mobile-first, single column** — max comfort on phone-width web demo. Design frame **402 × 874**; on desktop browsers the app runs inside a phone frame and **every action must work with a mouse** (click = tap, drag/wheel = swipe) — `DESIGN.md` §2.1 · §7.7, architecture D25.
@@ -246,4 +242,4 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 ---
 
-*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook, **D47 Owner tabs** (Feed · Diary · Mood). If you change process, update this file and `docs/plan/TODO.md` together.*
+*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook, **D47 / D47b** both roles Home · Bookings · Feed · Diary · Mood. If you change process, update this file and `docs/plan/TODO.md` together.*
