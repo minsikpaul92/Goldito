@@ -140,10 +140,11 @@ create table public.care_checkins (
     or (kind = 'mood' and value in ('happy', 'calm', 'tired'))
     or (kind = 'note' and value is null)
   ),
-  -- The episode line: required for a note, absent otherwise, at most 120 characters.
+  -- The episode line (≤ 120 characters): required for a `note` check-in, optional on any other
+  -- ("only if something special happened") — never an empty string.
   constraint care_checkins_note_chk check (
-    (kind = 'note' and note_text is not null and char_length(btrim(note_text)) between 1 and 120)
-    or (kind <> 'note' and note_text is null)
+    note_text is null and kind <> 'note'
+    or note_text is not null and char_length(btrim(note_text)) between 1 and 120
   )
 );
 
@@ -178,3 +179,80 @@ create policy care_checkins_select on public.care_checkins
 revoke all on public.care_checkins from anon, authenticated;
 grant select on public.care_checkins to authenticated;
 grant all on public.care_checkins to service_role;
+
+-- The 5-second check (6.9): one tap per check-in, an optional short memo for anything special,
+-- an optional photo. Only the sitter inside the care window. The owner gets a `care_checkin`
+-- notice (the memo is its body); a photo (media purpose `task_proof`, the sitter's own upload for
+-- this pet) also makes a shared feed post — captioned like a task photo, so it sends no second
+-- `feed_post` notice (notify_feed_post skips caption_source 'task').
+create or replace function public.log_care_checkin(
+  p_pet uuid,
+  p_kind text,
+  p_value text default null,
+  p_note_text text default null,
+  p_media_id uuid default null
+)
+returns public.care_checkins
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.care_checkins;
+  v_pet_name text;
+  v_owner uuid;
+  v_note text := nullif(btrim(coalesce(p_note_text, '')), '');
+  v_title text;
+  v_emoji text;
+begin
+  if not public.in_care_window(p_pet, now()) then
+    raise exception 'not_in_care_window';
+  end if;
+  if p_kind = 'note' and v_note is null then
+    raise exception 'note_required';
+  end if;
+  if p_media_id is not null and not exists (
+    select 1 from public.media m
+    where m.id = p_media_id
+      and m.pet_id = p_pet
+      and m.uploaded_by = auth.uid()
+      and m.purpose = 'task_proof'
+  ) then
+    raise exception 'invalid_media';
+  end if;
+
+  -- Value / length / species rules live in the table (checks + trigger) and surface as errors.
+  insert into public.care_checkins (pet_id, created_by, kind, value, note_text, media_id)
+  values (p_pet, auth.uid(), p_kind, case when p_kind = 'note' then null else p_value end, v_note, p_media_id)
+  returning * into v_row;
+
+  select p.name, p.owner_id into v_pet_name, v_owner from public.pets p where p.id = p_pet;
+
+  v_emoji := case p_kind
+    when 'meal' then '🍽️' when 'potty' then '💩' when 'walk' then '🦮' when 'mood' then '😊' else '📝' end;
+  v_title := case p_kind
+    when 'meal' then case p_value
+      when 'all' then format('%s ate everything', v_pet_name)
+      when 'most' then format('%s ate most of the meal', v_pet_name)
+      when 'little' then format('%s ate a little', v_pet_name)
+      else format('%s skipped the meal', v_pet_name) end
+    when 'potty' then format('Potty update for %s: %s', v_pet_name, p_value)
+    when 'walk' then format('%s had a %s-minute walk', v_pet_name, p_value)
+    when 'mood' then format('%s seems %s', v_pet_name, p_value)
+    else format('Note from your sitter about %s', v_pet_name)
+  end || ' ' || v_emoji;
+  perform public.notify_user(v_owner, 'care_checkin', v_title, v_note, p_pet, null, v_row.id);
+
+  if p_media_id is not null then
+    insert into public.feed_posts
+      (pet_id, sitter_id, posted_by, media_id, caption, caption_source, visibility)
+    values
+      (p_pet, auth.uid(), auth.uid(), p_media_id, coalesce(v_note, v_title), 'task', 'shared');
+  end if;
+
+  return v_row;
+end;
+$$;
+
+revoke execute on function public.log_care_checkin(uuid, text, text, text, uuid) from public, anon;
+grant execute on function public.log_care_checkin(uuid, text, text, text, uuid) to authenticated, service_role;

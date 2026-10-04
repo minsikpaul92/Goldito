@@ -18,7 +18,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | Step | Action |
 | :--- | :--- |
 | 1 | **Phase 05 is complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — merge is Minsik's call (squash, delete branch) |
-| 2 | **Human (Minsik): apply `007b`, `007c`, then `008` on the hosted DB** (SQL Editor), then `rls_smoke.sql` — until then the hosted app cannot read `posted_by` / `visibility` |
+| 2 | **Hosted DB is up to date** (applied via Supabase MCP, 2026-10-04): `007c_feed_visibility`, `008_care_6_2_to_6_8`, `008b_checkin_memo_and_log_rpc` (`007b` was already there as `feed_posts_realtime`). Later `008` additions go in as small named migrations (`008c_…`) |
 | 3 | Phase 06 runs on `feat/phase-06-care`, **branched from `feat/phase-05-feed`** (Phase 05 isn't merged yet). After PR #47 is squash-merged: `git fetch && git rebase --onto origin/main <last Phase 05 commit> feat/phase-06-care` and retarget the Phase 06 PR to `main` |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **6.9** | `log_care_checkin(p_pet, p_kind, p_value, p_note_text, p_media_id)` (`008_care.sql`) — insert, owner `care_checkin` notice, optional photo → feed | [phase-06.md](phases/phase-06.md) |
+| **6.10** | Sitter Home quick check-in row — Meal · Potty · Walk · Mood · Note, one tap each; **optional** short memo for anything special (≤ 120 chars); optional photo (`log_care_checkin`) | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -74,6 +74,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **6.9** `log_care_checkin(p_pet, p_kind, p_value, p_note_text default null, p_media_id default null)` in `008_care.sql`: sitter in the care window only (`not_in_care_window`); **one tap needs no memo, but any check-in may carry a ≤ 120-char memo** for something special (Minsik's call — the table now allows `note_text` on every kind, trimmed, blank → none); a `note` check-in still needs its line (`note_required`); value / species rules come from the table (`23514`, `checkin_not_allowed_for_species`); photo must be the sitter's `task_proof` upload (`invalid_media`). Owner gets a `care_checkin` notice ("Max ate everything 🍽️" · "Max had a 30-minute walk 🦮" · "Mochi seems calm 😊" …) with the memo as its body. A photo makes a shared feed post and no second `feed_post` notice (`notify_feed_post` skips `caption_source = 'task'`). rls_smoke 6.9 (15 checks; 255 PASS, 0 fail). **Applied to the hosted DB** with `007c` and `008` through Supabase MCP and re-checked there (columns, backfill of 3 existing posts, policies, grants, trigger, function privileges) (2026-10-04)
 - [x] **6.8** `care_checkins` in `008_care.sql`: `kind` meal · potty · walk · mood · note, `value` checked per kind (meal all/most/little/none · potty normal/soft/none · walk 10/20/30/45/60 · mood happy/calm/tired · note none), `note_text` required for a note only and ≤ 120 chars, optional `media_id`, index (pet_id, created_at desc); trigger refuses a walk check-in for a cat (D23). RLS: **select only** (`can_access_pet` — owner + sitter in the care window); no client insert / update / delete, `anon` has no access — rows come from `log_care_checkin` (6.9). rls_smoke 6.8 (16 checks; 238 PASS, 0 fail) on disposable Postgres 17. **Hosted: apply `007b` → `007c` → `008`** (2026-10-04)
 - [x] **6.3 follow-up (Minsik's call)** Photo flow for tasks: **Done with photo** → pick a sample / **Choose from library** / **Take photo** → **preview** → one tap **Use photo & mark done** uploads the `task_proof` and completes the task (button shows "Uploading photo…"); **Retake** returns to the picker, nothing uploaded or completed before confirming. `pickMedia({ confirm, confirmLabel })` + `MediaConfirm`. A real phone now gets a Take photo / Choose from library sheet instead of going straight to the camera (it could not pick from the library before). Playwright: confirm, retake, phone camera (Pixel 7); stabilised three flaky specs (wait for sign-in, retrying assertion, visible-only locators); flows 84 ✓ ×4, `tsc` ✓ (2026-10-04)
 - [x] **6.3** Sitter Home **Today's tasks** (`TodayTasks`): on Home (and on every return to it) each in-care pet's day is opened with `ensure_today_task_logs`, tasks join their `care_tasks` row, sorted by time; **Next up** line; per task **Mark done** (no photo) and **📷 Done with photo** (`pickMedia` → `task_proof` upload → `complete_task_log`) with toast "{task} done ✅ {owner} was told"; ✅ Done / ⏳ Pending / ⚠️ Missed badge (D9, shared `statusLabel`); calm errors for `not_on_duty` / `not_in_care_window` / `already_done` / `invalid_media`; quiet empty line. `careApi` `ensureTodayTaskLogs` · `completeTaskLog`. Sitter Diary stays a later task (6.11). Playwright `sitter-tasks.spec.ts` (4) + mock RPCs; flows 82 ✓, `tsc` ✓ (2026-10-04)
@@ -184,7 +185,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
 | 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
-| 06 Care request + checks | in progress — **6.1 – 6.4** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.8** done; next **6.9** |
+| 06 Care request + checks | in progress — **6.1 – 6.4 · 6.8 · 6.9** done on `feat/phase-06-care` (branched from `feat/phase-05-feed`); **6.9** done; next **6.10** |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |

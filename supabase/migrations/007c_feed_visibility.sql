@@ -72,7 +72,8 @@ create policy feed_posts_delete on public.feed_posts
   for delete to authenticated
   using (posted_by = (select auth.uid()));
 
--- Notices go to the other party and only for shared posts (private never notifies):
+-- Notices go to the other party and only for shared posts (private never notifies; a task or
+-- check-in photo already has its own notice, so caption_source 'task' posts send none):
 --   sitter post → the pet's owner (5.3)
 --   owner post  → the sitter(s) on duty for that pet right now (5.9)
 create or replace function public.notify_feed_post()
@@ -133,5 +134,5 @@ drop trigger notify_feed_post on public.feed_posts;
 create trigger notify_feed_post
   after insert on public.feed_posts
   for each row
-  when (new.task_log_id is null and new.visibility = 'shared')
+  when (new.task_log_id is null and new.visibility = 'shared' and new.caption_source is distinct from 'task')
   execute function public.notify_feed_post();

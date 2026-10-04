@@ -1827,12 +1827,20 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '6.8: a note needs its line');
+  insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', 'Hid under the bed');
+  perform _t_ok(true, '6.8: any check-in may carry a short memo');
   begin
-    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', 'extra');
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', '   ');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
-  perform _t_ok(v_err = '23514', '6.8: only a note carries text');
+  perform _t_ok(v_err = '23514', '6.8: a memo is never an empty string');
+  begin
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'meal', 'all', repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a memo is at most 120 characters on any kind');
   begin
     insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', repeat('x', 121));
     v_err := null;
@@ -1860,7 +1868,7 @@ begin
   perform _t_ok((select count(*) from public.care_checkins where pet_id = max and kind = 'mood') >= 1,
     '6.8: the sitter in the care window reads the pet''s check-ins');
   perform _t_as(chloe);
-  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 3,
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 4,
     '6.8: the owner reads her pet''s check-ins');
   begin
     update public.care_checkins set value = 'none' where pet_id = v_id and kind = 'meal';
@@ -1881,6 +1889,101 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', '6.8: anon cannot read check-ins');
+
+  -- Phase 06 (6.9): log_care_checkin
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (max, lucy, 'smoke/proof-checkin', 'image', 'task_proof');
+  perform _t_put('m_checkin', (select id from public.media where cloudinary_public_id = 'smoke/proof-checkin'));
+
+  perform _t_as(chloe);
+  begin
+    perform log_care_checkin(max, 'meal', 'all');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.9: the owner cannot log a check-in');
+  perform _t_as('00000000-0000-4000-8000-0000000000b3');
+  begin
+    perform log_care_checkin(max, 'meal', 'all');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.9: a sitter outside the care window cannot');
+
+  perform _t_as(lucy);
+  perform log_care_checkin(max, 'meal', 'all');
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = max and kind = 'meal' and value = 'all'
+       and created_by = lucy and note_text is null and media_id is null) = 1,
+    '6.9: one tap, no memo');
+  perform log_care_checkin(max, 'mood', 'tired', '   ');
+  perform _t_ok(
+    (select note_text from public.care_checkins where pet_id = max and kind = 'mood' and value = 'tired') is null,
+    '6.9: a blank memo is dropped');
+  perform log_care_checkin(max, 'meal', 'little', ' Left the chicken bits, sniffed and walked off ');
+  perform _t_ok(
+    (select note_text from public.care_checkins where pet_id = max and value = 'little')
+      = 'Left the chicken bits, sniffed and walked off',
+    '6.9: something special → a trimmed memo on the check-in');
+  perform log_care_checkin(max, 'note', null, 'Watched a squirrel for ten minutes');
+  begin
+    perform log_care_checkin(max, 'note', null, '  ');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'note_required', '6.9: a note check-in needs its line');
+  begin
+    perform log_care_checkin(max, 'meal', 'plenty');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.9: a value that does not fit the kind is refused');
+  begin
+    perform log_care_checkin('00000000-0000-4000-8000-0000000000c2', 'walk', '20');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.9: no walk check-in for a cat');
+  begin
+    perform log_care_checkin(max, 'meal', 'all', null, _t_get('media_bori'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_media', '6.9: the photo must be a task_proof upload');
+
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.user_id = chloe and n.type = 'care_checkin' and c.kind = 'meal' and c.value = 'all'
+       and n.title like 'Max ate everything%' and n.body is null) >= 1,
+    '6.9: the owner is told "Max ate everything 🍽️"');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.user_id = chloe and n.type = 'care_checkin' and c.value = 'little'
+       and n.body = 'Left the chicken bits, sniffed and walked off') = 1,
+    '6.9: the memo travels in the notice body');
+  perform _t_ok(not exists (select 1 from public.feed_posts fp
+      join public.care_checkins c on c.pet_id = fp.pet_id and c.media_id = fp.media_id),
+    '6.9: no photo → no feed post');
+
+  perform _t_as(lucy);
+  perform log_care_checkin(max, 'meal', 'most', null, _t_get('m_checkin'));
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.feed_posts
+     where media_id = _t_get('m_checkin') and caption_source = 'task' and visibility = 'shared'
+       and posted_by = lucy and task_log_id is null) = 1,
+    '6.9: with a photo → a shared feed post');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
+     where n.type = 'feed_post' and fp.media_id = _t_get('m_checkin')) = 0
+    and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.type = 'care_checkin' and c.media_id = _t_get('m_checkin')) = 1,
+    '6.9: a check-in photo sends the care_checkin notice only');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.feed_posts where media_id = _t_get('m_checkin')) = 1,
+    '6.9: the owner sees the check-in photo in the feed');
 
   perform _t_as(null);
 end;

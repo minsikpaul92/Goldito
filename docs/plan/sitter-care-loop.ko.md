@@ -41,7 +41,7 @@ Migration **`008_care.sql`** (Phase 06) adds:
 | `id`, `pet_id`, `created_by`, `created_at` | Standard |
 | `kind` | `meal` · `potty` · `walk` · `mood` · `note` (P0 — `walk` added for the 5-second check, D34). Same enum extensible later (`water`, …) |
 | `value` | Kind-specific: meal `all\|most\|little\|none`; potty `normal\|soft\|none`; walk `10\|20\|30\|45\|60` (minutes, dogs only — same species rule as D23); mood `happy\|calm\|tired`; note → null |
-| `note_text` | Required when `kind='note'`, else null, max 120 chars |
+| `note_text` | Required when `kind='note'`; **optional on any other kind** ("only if something special happened" — one tap needs no memo); never empty, max 120 chars |
 | `media_id` | Optional → `media` |
 
 RLS: insert/select like task completion — on-duty sitter for `pet_id`; owner read via `can_access_pet` / history RPC.
