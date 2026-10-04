@@ -62,8 +62,8 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | 3 · One stay | ① Ask → ② Care request → ③ Book & sign → ④ Live trip + daily note → ⑤ Home safe + Life Record (README 5단계) | 데모·영상과 동일 스토리 |
 | Footer CTA | Primary: **Try demo as Sitter** · Secondary: **Try demo as Owner** · Text: **Sign in** · **Create account** | 모바일 단일 컬럼, CTA 1개 primary |
 
-- **Skip:** “Skip to sign in” (작은 링크) — 재방문·개발용.
-- **Persist (선택 P1):** `localStorage` `pawnote_intro_seen=1` → 다음부터 `/` → login 직행.
+- **Skip:** Welcome footer **Sign in** (재방문·개발용). 별도 “Skip intro” 링크는 필수는 아님.
+- **Persist (OB.4, deferred):** `localStorage` `pawnote_intro_seen=1` → 다음부터 `/` → login 직행. **해커톤 P0에서는 하지 않음** — 심사·데모는 Welcome을 매번(또는 로그아웃 후) 보여주는 편이 낫고, Phase 04+ 큐를 막지 않음. 여유 있을 때 또는 Phase 11 polish.
 
 ### 3.2 Login (기존 Phase 03 확장)
 
@@ -145,8 +145,8 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | **OB.1** | 라우트: 미로그인 `/` → welcome (intro_seen 옵션은 OB.4) | Phase 03.3 | 로그아웃 후 welcome 노출 |
 | **OB.2** | Welcome UI (3 step + CTA) | OB.1, 묵 와이어 | EN 카피, Sign in / Sign up 링크 |
 | **OB.3** | Login demo buttons → 시드 계정 자동 로그인 · `/login?demo=sitter`·`?demo=owner` 쿼리도 같은 동작 (10.9 옆 패널·10.10 Split view가 사용) | Phase 10.1 시드, 03.1 login | Owner/Sitter 각 200, Max visible |
-| **OB.4** | (선택) intro_seen skip | OB.2 | 두 번째 방문 login 직행 |
-| **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist |
+| **OB.4** | (deferred) intro_seen skip | OB.2 | 두 번째 방문 login 직행 — **P0 제외**, Phase 04와 무관 |
+| **OB.5** | README + Devpost 문구 | OB.3, 10.2 | Test accounts + judge checklist (Phase 10) |
 
 `/(public)/welcome`은 [architecture §3 라우트 맵](phases/architecture.ko.md#3-화면--라우트-맵-최종-형태)에 반영됨 (OB.1).
 
@@ -172,7 +172,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 - Owner 가입 후 forced pet setup wizard (시드 데모가 우선)
 - 한국어 UI (D1: EN only)
 
-P1에서 intro_seen, Welcome 일러스트 polish, “Request photo” 스텝을 Intro에 한 줄 추가 등은 [Phase 11](phases/phase-11.md) 폴리싱과 함께 검토.
+**Deferred / P1 polish:** OB.4 `intro_seen`, Welcome 일러스트, Intro에 “Request photo” 한 줄 등 — [Phase 11](phases/phase-11.md) 또는 시간 남을 때. **다음 앱 큐는 Phase 04** ([TODO.md](TODO.md), [phase-04.md](phases/phase-04.md)).
 
 ---
 

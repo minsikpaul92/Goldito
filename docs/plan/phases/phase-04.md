@@ -2,6 +2,16 @@
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, API 계약 §5
 
+## Handoff (2026-10-04)
+
+| Item | Status |
+| :--- | :--- |
+| Branch | `feat/phase-04-media` — **rebase onto `main` after [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) (OB) merges**, then open/keep the phase draft PR |
+| **4.1–4.5** | Done on that branch (not on `main` yet): `POST /api/media/sign` · `/complete` · `services/authz.py` · `services/cloudinary.sign` · FE `apiPost` + `uploadMedia()` + thumb/video URL helpers · size checks · `tests/test_media_sign.py` · README manual steps |
+| **Current focus** | **4.6** `fetch_as_data_url()` (D12) → then **4.7** `pickMedia()` + sample tray + `/sitter/dev-upload` |
+| Env | `CLOUDINARY_*` in `backend/.env`; `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` in frontend (delivery URLs) |
+| Onboarding | OB.1–OB.2 in #43; **OB.4 intro_seen deferred** — do not block this phase |
+
 ## Goal
 
 펫시터 앱에서 **API secret을 노출하지 않고** 사진·영상을 Cloudinary에 업로드하고, **`media` 테이블에 public_id를 저장**해 이후 피드(05)·인증 사진(06)·인수인계 사진 체크(06B)·5초 체크 사진(07)·AI vision(09)·성분표(08)에서 **같은 헬퍼 하나**로 재사용한다.
