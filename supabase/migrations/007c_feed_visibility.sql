@@ -72,10 +72,66 @@ create policy feed_posts_delete on public.feed_posts
   for delete to authenticated
   using (posted_by = (select auth.uid()));
 
--- Owner notice only for a sitter's shared post (owner → sitter notice comes with 5.9).
+-- Notices go to the other party and only for shared posts (private never notifies):
+--   sitter post → the pet's owner (5.3)
+--   owner post  → the sitter(s) on duty for that pet right now (5.9)
+create or replace function public.notify_feed_post()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_owner uuid;
+  v_pet_name text;
+  v_owner_name text;
+  r record;
+begin
+  select p.owner_id, p.name, pr.display_name into v_owner, v_pet_name, v_owner_name
+  from public.pets p
+  join public.profiles pr on pr.id = p.owner_id
+  where p.id = new.pet_id;
+
+  if new.sitter_id is not null then
+    perform public.notify_user(
+      v_owner,
+      'feed_post',
+      format('New photo of %s 📸', v_pet_name),
+      null,
+      new.pet_id,
+      null,
+      new.id
+    );
+  else
+    for r in
+      select distinct on (b.sitter_id) b.sitter_id, b.id as booking_id
+      from public.bookings b
+      join public.booking_pets bp on bp.booking_id = b.id and bp.pet_id = new.pet_id and bp.active
+      where b.status = 'confirmed'
+        and exists (
+          select 1 from public.care_window(new.pet_id, b.sitter_id) w
+          where now() between lower(w) - interval '30 minutes' and upper(w) + interval '2 hours'
+        )
+    loop
+      perform public.notify_user(
+        r.sitter_id,
+        'feed_post',
+        format('%s shared a photo of %s 📸', v_owner_name, v_pet_name),
+        null,
+        new.pet_id,
+        r.booking_id,
+        new.id
+      );
+    end loop;
+  end if;
+
+  return new;
+end;
+$$;
+
 drop trigger notify_feed_post on public.feed_posts;
 create trigger notify_feed_post
   after insert on public.feed_posts
   for each row
-  when (new.task_log_id is null and new.visibility = 'shared' and new.sitter_id is not null)
+  when (new.task_log_id is null and new.visibility = 'shared')
   execute function public.notify_feed_post();

@@ -13,10 +13,21 @@
 
 ## Next session — start here (2026-10-04)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-05.md](phases/phase-05.md) Follow-up (**5.8**).
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-06.md](phases/phase-06.md).
 
 | Step | Action |
 | :--- | :--- |
+| 1 | **Phase 05 is complete** on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) — merge is Minsik's call (squash, delete branch) |
+| 2 | **Human (Minsik): apply `007b` then `007c` on the hosted DB** (SQL Editor), then `rls_smoke.sql` — until then the hosted app cannot read `posted_by` / `visibility` |
+| 3 | After the merge: `git pull origin main`, create `feat/phase-06-care` from it, **Current focus = 6.1** |
+
+**IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
+
+**Do not:** revive OB.4. **Stash:** keep `wip privacy oauth docs` separate.
+
+**Demo note:** re-check Chloe↔Lucy on-duty window before live upload tests.
+
+--- | :--- |
 | 1 | Stay on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)) for feed polish |
 | 2 | **Current focus = 5.9 only** — notify the on-duty sitter when the owner shares a post → one commit → update this file |
 | 3 | **5.10** done (viewer renders only the active post) — see Completed |
@@ -37,7 +48,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **5.9** | Notify the on-duty sitter when the owner shares a post (`feed_post` → sitter, tap → pet feed) | [phase-05.md](phases/phase-05.md) Follow-up |
+| **6.1** | Owner care tasks UI — Care request on pet detail | [phase-06.md](phases/phase-06.md) |
 
 ---
 
@@ -50,7 +61,6 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). Seulgi's AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) run in parallel with Minsik's app queue — one Current focus per agent session.
 
 - [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
-- [ ] **6.1** Owner care tasks UI — Care request on pet detail ([phase-06.md](phases/phase-06.md)) — after Phase 05 polish chunk or when focus moves
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
@@ -78,6 +88,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **5.9 · Phase 05 complete** `feed_post` notices go to the other party and only for shared posts: owner's shared post → the sitter(s) on duty for that pet (title "{owner} shared a photo of {pet} 📸", one per sitter, tap → `/sitter/feed/[petId]`); sitter's shared post → owner (5.3); private posts notify nobody. Folded into `007c` (not applied anywhere yet). Sitter pet feed refetches on `feedRevision`. rls_smoke 5.9 (3 checks; 203 PASS, 0 fail), Playwright flows 73 ✓, pytest 82 ✓, `tsc` ✓. **Hosted: apply `007b` → `007c`** (2026-10-04)
 - [x] **5.8** Feed visibility + owner posts: `007c_feed_visibility.sql` — `feed_posts.posted_by` (real author, backfilled; delete = author only), `visibility` `shared`/`private`, `sitter_id` null for owner posts; select = author or (shared + `can_access_pet`); insert = sitter on duty or the pet's owner, media must be the poster's own `feed` upload (closes "attach any media of that pet"); `media_select` hides a private post's media row from the other party (`media_hidden_from_me`, security definer); `notify_feed_post` fires only for a sitter's shared post, so a private post never notifies. Backend: owners may sign/complete `feed` photos for their own pets (`assert_owner_of`); `DELETE /api/feed/{id}` checks `posted_by`. App: sitter **Share with {owner}** chip (default on → off = "Only you", toast "Saved just for you 🔒"); owner Feed **+ Photo** with **Visible to sitter** chip (default off) and own-post Delete; 🔒 badge on private cells; viewer 🗑️ (trash) button only on your own posts. rls_smoke 5.8 section (15 checks) on disposable Postgres 17 ✓ (200 PASS, 0 fail), pytest 82 ✓, ruff ✓, Playwright flows 72 ✓, `tsc` ✓. **Hosted:** apply `007b` then `007c` (human) (2026-10-04)
 - [x] **5.10 + Phase 04/05 review fixes** FeedViewer renders only the active post (swipe · arrows · ←/→ keys; active post tracked by id so Load more never moves it; first frame never shows a stale video; cancelled delete reopens on the same post). Delete now goes through `DELETE /api/feed/{id}` (author-only): removes the Cloudinary file + `media` row unless another post / task log / safety check still uses it, so the sheet's "deletes the photo for good" is true. `/api/media/complete` is idempotent (same `public_id` → same row, other user → 409) and trusts Cloudinary's width/height/duration. `007_feed_posts_realtime.sql` → `007b_…` and idempotent (008 stays reserved for care). Feed toasts coalesce (“3 new photos 📸”). New Playwright `feed.spec.ts` (viewer index · arrows · author delete + cancel · notification center) + mock honors `order=….desc`, HEAD count, per-user notifications. pytest 80 ✓, ruff ✓, Playwright flows 70 ✓, `tsc` ✓ (2026-10-04)
 - [x] **5.7** Author-only delete: `deleteFeedPost` + FeedViewer **Delete** (sitter only) → confirm Sheet → toast + grid refresh; owner Feed has no Delete. RLS `feed_posts_delete`. `tsc` ✓ (2026-10-04). **5.10** viewer open-at-index still deferred.
@@ -180,8 +191,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | 03B Bookings         | **done** (2026-10-02)                                                         |
 | 03C Agreements       | **done** (2026-10-03)                                                         |
 | 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/PawNote/pull/45) merged |
-| 05 Feed              | in progress — **5.1–5.7 + 5.10** done on `feat/phase-05-feed` ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47)); next **5.8** · 5.9 |
-| 06 Care request + checks | not started (Stage 2 · 4)                                                 |
+| 05 Feed              | **done** (2026-10-04) — [PR #47](https://github.com/minsikpaul92/PawNote/pull/47) awaiting merge; hosted `007b` + `007c` pending (human) |
+| 06 Care request + checks | next — **6.1** (after the Phase 05 merge)                                 |
 | 06B Pet Transit      | not started (Stage 4)                                                         |
 | 07 Report AI         | not started                                                                   |
 | 07B Inquiry AI + RAG | not started (Stage 1)                                                         |

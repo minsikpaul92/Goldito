@@ -21,6 +21,7 @@ import {
 } from "../../../../lib/feed";
 import { pickMedia } from "../../../../lib/media";
 import { getSupabase } from "../../../../lib/supabase";
+import { useNotifications } from "../../../../providers/NotificationsProvider";
 import { useSession } from "../../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
@@ -43,6 +44,7 @@ export default function SitterPetFeed() {
   const toast = useToast();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
+  const { feedRevision } = useNotifications();
 
   const [pet, setPet] = useState<PetInfo | null>(null);
   const [petError, setPetError] = useState<string | null>(null);
@@ -108,6 +110,12 @@ export default function SitterPetFeed() {
     if (!petId) return;
     void loadPage(0, false);
   }, [petId, loadPage]);
+
+  // The owner shared a photo (5.9) or a post was deleted — refetch without a spinner.
+  useEffect(() => {
+    if (!petId || feedRevision === 0) return;
+    void loadPage(0, false, true);
+  }, [feedRevision, petId, loadPage]);
 
   const loadMore = useCallback(async () => {
     if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;

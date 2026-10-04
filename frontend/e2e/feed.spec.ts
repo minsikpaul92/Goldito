@@ -157,6 +157,29 @@ test.describe("Notification center", () => {
     expect(db.notifications.every((x) => x.read_at)).toBe(true);
   });
 
+  test("a sitter's feed_post notice opens that pet's feed", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    db.notifications.push({
+      id: n(7),
+      user_id: SITTER.id,
+      type: "feed_post",
+      title: "Chloe shared a photo of Max 📸",
+      body: null,
+      pet_id: PET_ID,
+      booking_id: null,
+      ref_id: null,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).getByTestId(`notification-${n(7)}`).click();
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${PET_ID}`));
+    await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
+  });
+
   test("empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);

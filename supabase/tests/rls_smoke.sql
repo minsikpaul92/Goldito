@@ -1624,6 +1624,20 @@ begin
   insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
   values (max, null, _t_get('m_oshared'), 'shared');
   perform _t_ok(true, '5.8: owner can post for her own pet');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications n
+      join public.feed_posts fp on fp.id = n.ref_id
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id = lucy) = 1,
+    '5.9: owner''s shared post notifies the on-duty sitter');
+  perform _t_ok((select count(*) from public.notifications n
+      join public.feed_posts fp on fp.id = n.ref_id
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id <> lucy) = 0,
+    '5.9: nobody else is notified (not the other sitter, not the owner)');
+  perform _t_ok(not exists (select 1 from public.notifications n
+      join public.feed_posts fp on fp.id = n.ref_id
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_opriv')),
+    '5.9: owner''s private post notifies nobody');
+  perform _t_as(chloe);
   begin
     insert into public.feed_posts (pet_id, sitter_id, media_id)
     values (max, lucy, _t_get('media_bori'));

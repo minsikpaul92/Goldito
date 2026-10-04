@@ -82,7 +82,7 @@ FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 �
 | :--- | :--- |
 | **5.7** | Sitter delete UI on own posts (viewer + confirm); wire existing RLS; hide Delete for non-authors — **done** (`deleteFeedPost`, FeedViewer Delete, confirm Sheet on sitter pet feed) |
 | **5.8** | **done** — `007c_feed_visibility.sql`: `posted_by` + `visibility` (`shared` / `private`), owner posts (`sitter_id` null), author-only delete, private media row hidden from the other party, private posts never notify. Sitter chip **Share with {owner}** (default on); owner **+ Photo** with **Visible to sitter** (default off). |
-| **5.9** | Notifications for the other direction: when the owner shares a post (`visibility = shared`) the on-duty sitter gets a `feed_post` notice (tap → `/sitter/feed/[petId]`). Sitter → owner already fires only for shared posts (5.8). |
+| **5.9** | **done** — owner's shared post → `feed_post` notice to the on-duty sitter(s) (tap → `/sitter/feed/[petId]`); sitter's shared post → owner; private → nobody. In `007c`. |
 | **5.10** | **done** — `FeedViewer` renders only the active post (swipe, ‹ › buttons, ←/→ keys); tracked by post id, so Load more never moves it; a tapped photo opens that photo, a tapped video plays that video. Playwright `feed.spec.ts`. |
 
 ---
