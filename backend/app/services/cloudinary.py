@@ -17,9 +17,38 @@ RESOURCE_TYPES = ("image", "video")
 # Incoming transformations (Media normalize policy, phase-04). Applied to the stored original
 # at upload time; delivery URLs still use f_auto,q_auto. Never f_auto on incoming.
 INCOMING_IMAGE = "c_limit,w_2000/q_auto"
-# Safety net behind the client trim/compress: first 30 s, long edge <= 1280 px.
-INCOMING_VIDEO = "so_0,du_30/c_limit,w_1280,h_1280/q_auto"
+MAX_VIDEO_SECONDS = 30
+# Long edge <= 1280 px; the first part (`so_…,du_…`) is the trim and is built per upload.
+_INCOMING_VIDEO_TAIL = "c_limit,w_1280,h_1280/q_auto"
+# Without a user trim: the first 30 s (safety net behind the client check).
+INCOMING_VIDEO = f"so_0,du_{MAX_VIDEO_SECONDS}/{_INCOMING_VIDEO_TAIL}"
 INCOMING_TRANSFORMATIONS = {"image": INCOMING_IMAGE, "video": INCOMING_VIDEO}
+
+
+def _seconds(value: float) -> str:
+    """`10.0` -> `10`, `10.456` -> `10.46` (Cloudinary accepts decimal seconds)."""
+    return f"{round(value, 2):g}"
+
+
+def incoming_transformation(
+    resource_type: str,
+    *,
+    trim_start: float | None = None,
+    trim_duration: float | None = None,
+) -> str:
+    """Incoming transformation for a signed upload. A video trim is picked by the user in the
+    trim sheet; the numbers are checked here, then signed, so the client cannot change them."""
+    if resource_type not in RESOURCE_TYPES:
+        raise ValueError(f"unsupported resource_type: {resource_type}")
+    if trim_start is None and trim_duration is None:
+        return INCOMING_TRANSFORMATIONS[resource_type]
+    if resource_type != "video":
+        raise ValueError("trim only applies to videos")
+    start = 0.0 if trim_start is None else trim_start
+    duration = float(MAX_VIDEO_SECONDS) if trim_duration is None else trim_duration
+    if not (start >= 0 and 0 < duration <= MAX_VIDEO_SECONDS):
+        raise ValueError(f"trim must start at 0 or later and last 1..{MAX_VIDEO_SECONDS} seconds")
+    return f"so_{_seconds(start)},du_{_seconds(duration)}/{_INCOMING_VIDEO_TAIL}"
 
 
 @dataclass(frozen=True)
@@ -52,7 +81,14 @@ def media_folder(pet_id: str, purpose: str) -> str:
     return f"pawnote/{pet_id}/{purpose}"
 
 
-def sign(*, pet_id: str, purpose: str, resource_type: str) -> SignParams:
+def sign(
+    *,
+    pet_id: str,
+    purpose: str,
+    resource_type: str,
+    trim_start: float | None = None,
+    trim_duration: float | None = None,
+) -> SignParams:
     """Sign folder + incoming transformation + timestamp for a direct browser upload.
 
     The client must send exactly these values (`folder`, `timestamp`, `transformation`) or the
@@ -65,7 +101,9 @@ def sign(*, pet_id: str, purpose: str, resource_type: str) -> SignParams:
     cloud, key, secret = _configured()
     folder = media_folder(pet_id, purpose)
     timestamp = int(time())
-    transformation = INCOMING_TRANSFORMATIONS[resource_type]
+    transformation = incoming_transformation(
+        resource_type, trim_start=trim_start, trim_duration=trim_duration
+    )
     signature = cloudinary.utils.api_sign_request(
         {"folder": folder, "timestamp": timestamp, "transformation": transformation},
         secret,

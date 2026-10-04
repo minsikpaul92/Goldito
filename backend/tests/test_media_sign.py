@@ -250,3 +250,81 @@ def test_sign_endpoint_returns_incoming_transformation(
     )
     assert response.status_code == 200
     assert response.json()["transformation"] == cloudinary_service.INCOMING_VIDEO
+
+
+def test_sign_video_trim_is_signed() -> None:
+    """The user's trim window ends up in the signed incoming transformation."""
+    params = cloudinary_service.sign(
+        pet_id=PET_ID, purpose="feed", resource_type="video", trim_start=10, trim_duration=20.5
+    )
+    assert params.transformation == "so_10,du_20.5/c_limit,w_1280,h_1280/q_auto"
+    assert params.signature == _expected_signature(
+        {
+            "folder": params.folder,
+            "timestamp": params.timestamp,
+            "transformation": params.transformation,
+        }
+    )
+
+
+def test_sign_video_trim_defaults_fill_the_missing_side() -> None:
+    only_start = cloudinary_service.incoming_transformation("video", trim_start=4)
+    assert only_start.startswith("so_4,du_30/")
+    only_len = cloudinary_service.incoming_transformation("video", trim_duration=12)
+    assert only_len.startswith("so_0,du_12/")
+
+
+@pytest.mark.parametrize(
+    ("start", "duration"),
+    [(-1, 10), (0, 0), (0, 31), (5, -2)],
+)
+def test_sign_rejects_out_of_range_trim(start: float, duration: float) -> None:
+    with pytest.raises(ValueError):
+        cloudinary_service.incoming_transformation(
+            "video", trim_start=start, trim_duration=duration
+        )
+
+
+def test_sign_rejects_trim_on_images() -> None:
+    with pytest.raises(ValueError):
+        cloudinary_service.incoming_transformation("image", trim_duration=10)
+
+
+def test_sign_endpoint_passes_trim_through(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+    response = client.post(
+        "/api/media/sign",
+        headers={"Authorization": f"Bearer {sitter_token()}"},
+        json={
+            "pet_id": PET_ID,
+            "resource_type": "video",
+            "purpose": "feed",
+            "trim_start": 12,
+            "trim_duration": 18,
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["transformation"].startswith("so_12,du_18/")
+
+
+@pytest.mark.parametrize(
+    ("resource_type", "trim"),
+    [
+        ("video", {"trim_duration": 31}),  # over the 30 s limit
+        ("video", {"trim_duration": 0}),
+        ("video", {"trim_start": -3, "trim_duration": 10}),
+        ("image", {"trim_duration": 10}),  # trim is for videos only
+    ],
+)
+def test_sign_endpoint_rejects_bad_trim(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, resource_type: str, trim: dict
+) -> None:
+    monkeypatch.setattr(authz, "assert_on_duty_for", lambda *_a, **_k: None)
+    response = client.post(
+        "/api/media/sign",
+        headers={"Authorization": f"Bearer {sitter_token()}"},
+        json={"pet_id": PET_ID, "resource_type": resource_type, "purpose": "feed", **trim},
+    )
+    assert response.status_code == 422

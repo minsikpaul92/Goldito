@@ -57,6 +57,7 @@ async def validation_exception_handler(
         content={
             "detail": "Invalid request body or parameters.",
             "code": "invalid_input",
-            "errors": exc.errors(),
+            # `ctx` can hold the original exception object, which is not JSON serializable.
+            "errors": [{k: v for k, v in err.items() if k != "ctx"} for err in exc.errors()],
         },
     )

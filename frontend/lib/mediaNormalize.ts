@@ -17,6 +17,9 @@ export const IMAGE_QUALITY = 0.8;
 export const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 export const VIDEO_MAX_SECONDS = 30;
+
+/** The part of a long video to keep, in seconds — chosen in the trim sheet, cut by Cloudinary. */
+export type VideoTrim = { start: number; duration: number };
 /** Cloudinary Free hard limit. 4.7 compresses toward a softer ~50 MB goal before upload. */
 export const VIDEO_MAX_BYTES = 100 * 1024 * 1024;
 /** Container rounding: a "30 s" clip often reports 30.0x. Incoming `du_30` caps it anyway. */
@@ -165,14 +168,21 @@ export function readVideoDuration(file: Blob): Promise<number | null> {
 }
 
 /**
- * Check a video against the policy. Over 30 s → `VideoTooLongError` (the trim sheet in 4.7
- * catches it and re-submits the trimmed clip). Client re-encode (≤ 720p, bitrate cap) plugs
- * in here in 4.7, before the size check.
+ * Check a video against the policy. With a `trim` (from the trim sheet) the kept part must be
+ * ≤ 30 s and the file's own length no longer matters. Without one, a video over 30 s throws
+ * `VideoTooLongError` (`pickMedia()` normally opens the trim sheet before that happens).
+ * Client re-encode (≤ 720p, bitrate cap) is not built yet: Cloudinary caps the long edge.
  */
-export async function prepareVideo(file: Blob): Promise<Blob> {
-  const duration = await readVideoDuration(file);
-  if (duration !== null && duration > VIDEO_MAX_SECONDS + VIDEO_DURATION_SLACK_S) {
-    throw new VideoTooLongError(duration);
+export async function prepareVideo(file: Blob, trim?: VideoTrim): Promise<Blob> {
+  if (trim) {
+    if (!(trim.start >= 0) || !(trim.duration > 0) || trim.duration > VIDEO_MAX_SECONDS) {
+      throw new UploadError("prepare", `Pick a part up to ${VIDEO_MAX_SECONDS} seconds.`);
+    }
+  } else {
+    const duration = await readVideoDuration(file);
+    if (duration !== null && duration > VIDEO_MAX_SECONDS + VIDEO_DURATION_SLACK_S) {
+      throw new VideoTooLongError(duration);
+    }
   }
   if (file.size >= VIDEO_MAX_BYTES) {
     throw new UploadError("prepare", `This video is too big (max ${mb(VIDEO_MAX_BYTES)} MB).`);
@@ -183,6 +193,7 @@ export async function prepareVideo(file: Blob): Promise<Blob> {
 export function prepareForUpload(
   file: Blob,
   resourceType: "image" | "video",
+  trim?: VideoTrim,
 ): Promise<File | Blob> {
-  return resourceType === "video" ? prepareVideo(file) : normalizeImage(file);
+  return resourceType === "video" ? prepareVideo(file, trim) : normalizeImage(file);
 }

@@ -5,7 +5,7 @@ from uuid import UUID
 
 import cloudinary.api
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.deps.auth import CurrentUser, require_role
 from app.deps.supabase import get_service_client
@@ -23,6 +23,16 @@ class SignRequest(BaseModel):
     resource_type: ResourceType
     purpose: Purpose
     booking_id: UUID | None = None
+    # Video trim picked in the app (seconds). Cloudinary keeps only this part (phase-04 4.7).
+    trim_start: float | None = Field(default=None, ge=0, le=86_400)
+    trim_duration: float | None = Field(default=None, gt=0, le=cloudinary_service.MAX_VIDEO_SECONDS)
+
+    @model_validator(mode="after")
+    def trim_is_video_only(self) -> "SignRequest":
+        has_trim = self.trim_start is not None or self.trim_duration is not None
+        if has_trim and self.resource_type != "video":
+            raise ValueError("trim only applies to videos")
+        return self
 
 
 class SignResponse(BaseModel):
@@ -85,6 +95,8 @@ def sign_upload(
             pet_id=str(body.pet_id),
             purpose=body.purpose,
             resource_type=body.resource_type,
+            trim_start=body.trim_start,
+            trim_duration=body.trim_duration,
         )
     except RuntimeError as exc:
         raise HTTPException(

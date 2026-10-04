@@ -1,8 +1,9 @@
 import { apiPost } from "./api";
-import { prepareForUpload } from "./mediaNormalize";
+import { prepareForUpload, type VideoTrim } from "./mediaNormalize";
 import { UploadError, type UploadStep } from "./uploadError";
 
 export { UploadError, VideoTooLongError, type UploadStep } from "./uploadError";
+export type { VideoTrim } from "./mediaNormalize";
 
 export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label";
 export type ResourceType = "image" | "video";
@@ -14,7 +15,11 @@ export type UploadMediaInput = {
   /** Required when purpose is handoff. */
   bookingId?: string;
   resourceType?: ResourceType;
+  /** Video only: keep this part (≤ 30 s). Cloudinary cuts it during upload. */
+  trim?: VideoTrim;
 };
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export type UploadMediaResult = {
   mediaId: string;
@@ -55,7 +60,7 @@ function guessResourceType(file: File | Blob, explicit?: ResourceType): Resource
  */
 export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaResult> {
   const resourceType = guessResourceType(input.file, input.resourceType);
-  const file = await prepareForUpload(input.file, resourceType);
+  const file = await prepareForUpload(input.file, resourceType, input.trim);
 
   let sign: SignResponse;
   try {
@@ -64,6 +69,13 @@ export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaR
       resource_type: resourceType,
       purpose: input.purpose,
       booking_id: input.bookingId ?? null,
+      ...(input.trim && resourceType === "video"
+        ? {
+            trim_start: round2(input.trim.start),
+            // Round down so 29.999 never becomes 30.001 (the server rejects > 30).
+            trim_duration: Math.floor(input.trim.duration * 100) / 100,
+          }
+        : {}),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not get upload signature.";

@@ -35,7 +35,7 @@ Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty 
      -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
      -d '{"pet_id":"'$PET_ID'","resource_type":"image","purpose":"feed"}'
    ```
-3. Upload to the returned `upload_url` with FormData fields `file`, `api_key`, `timestamp`, `signature`, `folder`, `transformation` (same values as the sign response — `transformation` is signed, so dropping it gives `401 Invalid Signature`). Cloudinary then stores a normalized original: photos `c_limit,w_2000/q_auto`, videos `so_0,du_30/c_limit,w_1280,h_1280/q_auto`.
+3. Upload to the returned `upload_url` with FormData fields `file`, `api_key`, `timestamp`, `signature`, `folder`, `transformation` (same values as the sign response — `transformation` is signed, so dropping it gives `401 Invalid Signature`). Cloudinary then stores a normalized original: photos `c_limit,w_2000/q_auto`, videos `so_0,du_30/c_limit,w_1280,h_1280/q_auto`. For a trimmed video, pass `trim_start` / `trim_duration` (seconds, duration ≤ 30) on `/sign`; the signed transformation becomes `so_{start},du_{duration}/…` and Cloudinary keeps only that part.
 4. Complete:
    ```bash
    curl -s localhost:8000/api/media/complete \
@@ -44,7 +44,9 @@ Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty 
    ```
 5. Confirm a `media` row in Supabase (`cloudinary_public_id`, `purpose`).
 
-Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (normalize → sign → Cloudinary → complete). Normalize (`frontend/lib/mediaNormalize.ts`): photos are always resized to a 2000 px long edge (JPEG ~0.8, under 10 MB); videos over 30 s throw `VideoTooLongError` for the trim sheet (4.7).
+Frontend helper: `frontend/lib/cloudinary.ts` → `uploadMedia()` (normalize → sign → Cloudinary → complete). Normalize (`frontend/lib/mediaNormalize.ts`): photos are always resized to a 2000 px long edge (JPEG ~0.8, under 10 MB); videos over 30 s need a trim (`trim` on `uploadMedia`, or `VideoTooLongError` if none).
+
+App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / file dialog / trim sheet via `MediaPickerProvider`. Dev screen: `/sitter/dev-upload` (needs `EXPO_PUBLIC_DEV_ROUTES=1`) — Pick photo / Pick video → upload → Retry on failure. Removed in Phase 05.
 
 ### Images for the model (D12)
 
