@@ -71,7 +71,16 @@ export class ApiError extends Error {
 }
 
 /** Authenticated JSON POST — Bearer = current Supabase session. */
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+export function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return apiRequest<T>("POST", path, body);
+}
+
+/** Authenticated DELETE — Bearer = current Supabase session. */
+export function apiDelete<T>(path: string): Promise<T> {
+  return apiRequest<T>("DELETE", path);
+}
+
+async function apiRequest<T>(method: "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
   const base = getApiBaseUrl();
   if (!base) {
     throw new ApiError("API URL is not set.", 0, "not_configured");
@@ -83,12 +92,12 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     throw new ApiError("Sign in to continue.", 401, "unauthorized");
   }
   const response = await fetch(`${base}${path.startsWith("/") ? path : `/${path}`}`, {
-    method: "POST",
+    method,
     headers: {
       Authorization: `Bearer ${session.access_token}`,
-      "Content-Type": "application/json",
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
     },
-    body: JSON.stringify(body),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   let payload: { detail?: string; code?: string } = {};
   try {

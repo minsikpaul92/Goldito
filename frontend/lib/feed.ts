@@ -1,3 +1,4 @@
+import { ApiError, apiDelete } from "./api";
 import { getSupabase } from "./supabase";
 import type { CaptionSource, FeedPostRow, MediaResourceType } from "../types/db";
 
@@ -131,28 +132,18 @@ export async function createFeedPost(input: CreateFeedPostInput): Promise<FeedPo
 }
 
 /**
- * Delete one feed_posts row. RLS `feed_posts_delete` allows only the author
- * (`sitter_id = auth.uid()`). Does not remove Cloudinary / media rows (5.7).
+ * Delete one post and its photo file. Goes through the backend (author-only) so the Cloudinary
+ * asset and `media` row are removed too, unless another record still uses them (5.7).
  */
 export async function deleteFeedPost(postId: string): Promise<void> {
-  const { data: userData, error: userError } = await getSupabase().auth.getUser();
-  if (userError || !userData.user) {
-    throw new Error("Couldn't confirm you are signed in.");
-  }
-
-  const { data, error } = await getSupabase()
-    .from("feed_posts")
-    .delete()
-    .eq("id", postId)
-    .eq("sitter_id", userData.user.id)
-    .select("id")
-    .maybeSingle();
-
-  if (error) {
+  try {
+    await apiDelete(`/api/feed/${postId}`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) {
+      throw new Error("You can only delete photos you posted.");
+    }
+    if (error instanceof ApiError && error.status === 404) return; // already gone
     throw new Error("Couldn't delete this photo. Try again.");
-  }
-  if (!data) {
-    throw new Error("You can only delete photos you posted.");
   }
 }
 

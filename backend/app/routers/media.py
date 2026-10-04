@@ -150,9 +150,10 @@ def complete_upload(
             detail="Cloudinary resource not found.",
         ) from exc
 
-    width = body.width if body.width is not None else resource.get("width")
-    height = body.height if body.height is not None else resource.get("height")
-    duration = body.duration if body.duration is not None else resource.get("duration")
+    # Trust what Cloudinary stored over what the client says about the file.
+    width = resource.get("width") or body.width
+    height = resource.get("height") or body.height
+    duration = resource.get("duration") or body.duration
     secure_url = resource.get("secure_url") or cloudinary_service.delivery_url(
         body.public_id, resource_type=body.resource_type
     )
@@ -161,6 +162,35 @@ def complete_upload(
         if body.resource_type == "video"
         else cloudinary_service.thumb_url(body.public_id)
     )
+
+    db = get_service_client()
+    # Retrying /complete for the same upload returns the same media row (no duplicates).
+    try:
+        existing = (
+            db.table("media")
+            .select("id, uploaded_by, pet_id")
+            .eq("cloudinary_public_id", body.public_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not save media row.",
+        ) from exc
+    if existing.data:
+        found = existing.data[0]
+        if found["uploaded_by"] != user.id or found["pet_id"] != str(body.pet_id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This upload is already registered.",
+            )
+        return CompleteResponse(
+            media_id=found["id"],
+            public_id=body.public_id,
+            secure_url=secure_url,
+            thumb_url=thumb,
+        )
 
     row = {
         "pet_id": str(body.pet_id),
@@ -173,7 +203,7 @@ def complete_upload(
         "duration_s": duration,
     }
     try:
-        inserted = get_service_client().table("media").insert(row).execute()
+        inserted = db.table("media").insert(row).execute()
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
