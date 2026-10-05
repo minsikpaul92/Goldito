@@ -33,28 +33,32 @@ export function ErrorDialogProvider({ children }: { children: ReactNode }) {
   return (
     <Context.Provider value={value}>
       {children}
-      <Modal visible={dialog !== null} transparent animationType="fade" onRequestClose={close}>
-        <View style={styles.backdrop}>
-          <View accessibilityRole="alert" accessibilityViewIsModal style={styles.card} testID="error-dialog">
-            <Text style={styles.title}>{dialog?.title ?? "That didn't go through"}</Text>
-            <Text style={styles.message} testID="error-dialog-message">
-              {dialog?.message}
-            </Text>
-            {dialog?.onRetry ? (
-              <Button
-                label="Try again"
-                onPress={() => {
-                  const retry = dialog.onRetry;
-                  close();
-                  retry?.();
-                }}
-                testID="error-dialog-retry"
-              />
-            ) : null}
-            <TextButton label="Close" onPress={close} testID="error-dialog-close" />
+      {/* Mounted only while shown: a Modal mounted later sits on top of the sheets already open
+          (react-native-web stacks modals by mount time), so the dialog is never hidden behind one. */}
+      {dialog ? (
+        <Modal visible transparent animationType="fade" onRequestClose={close}>
+          <View style={styles.backdrop}>
+            <View accessibilityRole="alert" accessibilityViewIsModal style={styles.card} testID="error-dialog">
+              <Text style={styles.title}>{dialog.title ?? "That didn't go through"}</Text>
+              <Text style={styles.message} testID="error-dialog-message">
+                {dialog.message}
+              </Text>
+              {dialog.onRetry ? (
+                <Button
+                  label="Try again"
+                  onPress={() => {
+                    const retry = dialog.onRetry;
+                    close();
+                    retry?.();
+                  }}
+                  testID="error-dialog-retry"
+                />
+              ) : null}
+              <TextButton label="Close" onPress={close} testID="error-dialog-close" />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      ) : null}
     </Context.Provider>
   );
 }

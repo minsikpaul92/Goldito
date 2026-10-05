@@ -61,11 +61,20 @@ export function task(petId: string, id: string, type: string, title: string, tim
 }
 
 /** Mocks sign → Cloudinary → complete for a task_proof photo; returns the sign requests. */
-export async function mockUpload(page: Page, db: MockDb, petId: string) {
+export async function mockUpload(page: Page, db: MockDb, petId: string, options: { failSignOnce?: boolean } = {}) {
   const sign: Record<string, unknown>[] = [];
+  let failed = false;
   await page.route("**/api/media/sign", (route) => {
     const body = route.request().postDataJSON();
     sign.push(body);
+    if (options.failSignOnce && !failed) {
+      failed = true;
+      return route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({ detail: "Could not reach Supabase to verify the token." }),
+      });
+    }
     return route.fulfill({
       status: 200,
       contentType: "application/json",

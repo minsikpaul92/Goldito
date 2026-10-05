@@ -73,6 +73,8 @@ export type TaskLogRow = {
   due_at: string;
   status: "pending" | "done";
   completed_at: string | null;
+  /** The sitter's memo when finishing (008d). */
+  note_text?: string | null;
 };
 
 /** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */

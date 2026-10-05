@@ -778,19 +778,26 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/complete_task_log") {
-    const { p_task_log, p_media_id } = request.postDataJSON();
-    db.taskCompletions.push({ p_task_log, p_media_id });
+    const { p_task_log, p_media_id, p_note_text } = request.postDataJSON();
+    db.taskCompletions.push({ p_task_log, p_media_id, p_note_text });
+    const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
     const log = db.task_logs.find((l) => l.id === p_task_log);
     if (!log) return json(route, 400, { code: "P0001", message: "task_log_not_found" });
     if (log.status === "done") return json(route, 400, { code: "P0001", message: "already_done" });
-    Object.assign(log, { status: "done", completed_at: new Date().toISOString(), completed_by: me, media_id: p_media_id });
+    Object.assign(log, {
+      status: "done",
+      completed_at: new Date().toISOString(),
+      completed_by: me,
+      media_id: p_media_id,
+      note_text: note,
+    });
     const pet = db.pets.find((p) => p.id === log.pet_id);
     const task = db.care_tasks.find((t) => t.id === log.task_id);
     db.notifications.push({
       id: crypto.randomUUID(),
       user_id: pet?.owner_id,
       type: "task_done",
-      title: `${pet?.name} finished ${task?.title}`,
+      title: note ? `${pet?.name}: ${note}` : `${pet?.name} finished ${task?.title}`,
       body: null,
       pet_id: log.pet_id,
       booking_id: null,
@@ -806,7 +813,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         posted_by: me,
         visibility: "shared",
         media_id: p_media_id,
-        caption: `${task?.title} — done`,
+        caption: note ?? `${task?.title} — done`,
         caption_source: "task",
         task_log_id: log.id,
         created_at: new Date().toISOString(),
@@ -963,7 +970,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "feed_posts" || path === "notifications") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "feed_posts" || path === "notifications" || path === "care_checkins") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }

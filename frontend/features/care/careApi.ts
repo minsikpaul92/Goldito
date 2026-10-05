@@ -33,7 +33,7 @@ export async function listTodayTaskLogs(petId: string): Promise<TaskLogRow[]> {
   const today = appToday();
   const { data, error } = await getSupabase()
     .from("task_logs")
-    .select("id, task_id, pet_id, due_at, status, completed_at")
+    .select("id, task_id, pet_id, due_at, status, completed_at, note_text")
     .eq("pet_id", petId)
     .gte("due_at", zonedToIso(today, "00:00"))
     .lte("due_at", zonedToIso(addDays(today, 1), "00:00"));
@@ -118,12 +118,13 @@ export async function ensureTodayTaskLogs(petId: string): Promise<TaskLogRow[]> 
 
 /**
  * Mark a task done (6.4). With `mediaId` (a `task_proof` upload) the owner also gets a feed
- * photo; the owner is notified either way.
+ * photo. With a `note` the owner gets only that memo; without, a preset line.
  */
-export async function completeTaskLog(logId: string, mediaId: string | null): Promise<void> {
+export async function completeTaskLog(logId: string, mediaId: string | null, note: string | null): Promise<void> {
   const { error } = await getSupabase().rpc("complete_task_log", {
     p_task_log: logId,
     p_media_id: mediaId,
+    p_note_text: note,
   });
   if (error) throw new Error(rpcMessage(error, "Couldn't mark this done. Check your connection and try again."));
 }
@@ -149,4 +150,30 @@ export async function logCareCheckin(input: CheckinInput): Promise<void> {
     p_media_id: input.mediaId,
   });
   if (error) throw new Error(rpcMessage(error, "Couldn't send this. Check your connection and try again."));
+}
+
+export type SentCheckin = {
+  id: string;
+  kind: CareCheckinKind;
+  value: string | null;
+  note: string | null;
+  at: string;
+};
+
+/** What the sitter already sent for this pet today (RLS: the sitter in the care window reads it). */
+export async function listTodayCheckins(petId: string): Promise<SentCheckin[]> {
+  const { data, error } = await getSupabase()
+    .from("care_checkins")
+    .select("id, kind, value, note_text, created_at")
+    .eq("pet_id", petId)
+    .gte("created_at", zonedToIso(appToday(), "00:00"))
+    .order("created_at", { ascending: false });
+  if (error) fail("load today's check-ins");
+  return (data ?? []).map((r) => ({
+    id: r.id as string,
+    kind: r.kind as CareCheckinKind,
+    value: r.value as string | null,
+    note: r.note_text as string | null,
+    at: r.created_at as string,
+  }));
 }

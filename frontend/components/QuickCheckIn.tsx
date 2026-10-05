@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { logCareCheckin } from "../features/care/careApi";
+import { SentCheckin, listTodayCheckins, logCareCheckin } from "../features/care/careApi";
 import { MEMO_MAX, groupsFor } from "../features/care/checkinOptions";
+import { checkinLabel } from "../features/diary/diaryApi";
+import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { UploadError, uploadMedia } from "../lib/cloudinary";
 import { pickMedia, type PickedMedia } from "../lib/media";
+import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
@@ -25,13 +28,37 @@ type Props = {
 export function QuickCheckIn({ pet }: Props) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const errorDialog = useErrorDialog();
+  const [sent, setSent] = useState<SentCheckin[]>([]);
+  /** The tap that just went through (`meal:all`) — shows ✓ and stays locked for a moment, so a
+   * double tap can't send it twice. */
+  const [justSent, setJustSent] = useState<string | null>(null);
+  const [sendingKey, setSendingKey] = useState<string | null>(null);
+  const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [memo, setMemo] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const loadSent = useCallback(async () => {
+    try {
+      setSent(await listTodayCheckins(pet.id));
+    } catch {
+      // The strip is a convenience; a failed refresh must not block sending.
+    }
+  }, [pet.id]);
+
+  useEffect(() => {
+    void loadSent();
+    return () => {
+      if (lockTimer.current) clearTimeout(lockTimer.current);
+    };
+  }, [loadSent]);
+
   const send = async (kind: CareCheckinKind, value: string | null) => {
     if (sending) return;
+    const key = `${kind}:${value ?? ""}`;
+    if (key === justSent) return;
     const note = memo.trim() || null;
     if (kind === "note" && !note) {
       setError("Type a note first.");
@@ -39,6 +66,7 @@ export function QuickCheckIn({ pet }: Props) {
     }
     setError(null);
     setSending(true);
+    setSendingKey(key);
     try {
       let mediaId: string | null = null;
       if (photo) {
@@ -54,10 +82,19 @@ export function QuickCheckIn({ pet }: Props) {
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
       setMemo("");
       setPhoto(null);
+      setJustSent(key);
+      if (lockTimer.current) clearTimeout(lockTimer.current);
+      lockTimer.current = setTimeout(() => setJustSent(null), 4000);
+      void loadSent();
     } catch (e) {
-      toast.show(e instanceof UploadError || e instanceof Error ? e.message : "Try again.");
+      errorDialog.show({
+        title: "Not sent",
+        message: e instanceof UploadError || e instanceof Error ? e.message : "Try again.",
+        onRetry: () => void send(kind, value),
+      });
     } finally {
       setSending(false);
+      setSendingKey(null);
     }
   };
 
@@ -75,19 +112,30 @@ export function QuickCheckIn({ pet }: Props) {
         <View key={group.kind} style={styles.group}>
           <Text style={styles.groupLabel}>{`${group.emoji} ${group.label}`}</Text>
           <View style={styles.pills}>
-            {group.options.map((option) => (
-              <Pressable
-                key={option.value}
-                accessibilityRole="button"
-                accessibilityLabel={`${group.label}: ${option.label}`}
-                disabled={sending}
-                onPress={() => void send(group.kind, option.value)}
-                style={({ pressed }) => [styles.pill, (pressed || sending) && styles.pillPressed]}
-                testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
-              >
-                <Text style={styles.pillText}>{option.label}</Text>
-              </Pressable>
-            ))}
+            {group.options.map((option) => {
+              const key = `${group.kind}:${option.value}`;
+              const isSent = justSent === key;
+              const isSending = sendingKey === key;
+              return (
+                <Pressable
+                  key={option.value}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${group.label}: ${option.label}${isSent ? " (sent)" : ""}`}
+                  disabled={sending || isSent}
+                  onPress={() => void send(group.kind, option.value)}
+                  style={({ pressed }) => [
+                    styles.pill,
+                    isSent && styles.pillSent,
+                    (pressed || (sending && !isSending)) && styles.pillPressed,
+                  ]}
+                  testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
+                >
+                  <Text style={[styles.pillText, isSent && styles.pillTextSent]}>
+                    {isSending ? "…" : isSent ? `✓ ${option.label}` : option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
       ))}
@@ -127,6 +175,20 @@ export function QuickCheckIn({ pet }: Props) {
           <Text style={styles.pillText}>📝 Send as a note</Text>
         </Pressable>
       </View>
+      {sent.length > 0 ? (
+        <View style={styles.sentBox} testID={`checkin-sent-${pet.id}`}>
+          <Text style={styles.groupLabel}>{`Sent to ${pet.ownerName} today`}</Text>
+          {sent.slice(0, 4).map((c) => {
+            const { emoji, label } = checkinLabel(c.kind, c.value);
+            return (
+              <Text key={c.id} style={styles.sentLine} testID={`checkin-sent-item-${c.id}`}>
+                {`${emoji} ${label}${c.note ? ` · “${c.note}”` : ""} · ${formatTime(isoToZoned(c.at).time)}`}
+              </Text>
+            );
+          })}
+          {sent.length > 4 ? <Text style={styles.groupLabel}>{`+ ${sent.length - 4} earlier`}</Text> : null}
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -149,6 +211,10 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     pillPressed: { opacity: 0.6 },
+    pillSent: { backgroundColor: theme.color.primary },
+    pillTextSent: { color: theme.color.primaryText },
+    sentBox: { gap: 2, paddingTop: theme.spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.color.border },
+    sentLine: { fontSize: theme.fontSize.small, color: theme.color.text },
     pillText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
     extras: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs, alignItems: "center" },
     noteButton: { backgroundColor: theme.color.surface },

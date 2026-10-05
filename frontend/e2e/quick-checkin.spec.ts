@@ -30,6 +30,56 @@ test.describe("quick check-in", () => {
     expect(db.notifications.find((n) => n.type === "care_checkin")?.title).toBe("Max meal all");
   });
 
+  test("the tapped button shows ✓ and locks (no double send); today's sent list shows it", async ({ page }) => {
+    const db = await setup(page);
+    const screen = app(page);
+    const all = screen.getByTestId(tid(MAX, "meal", "all"));
+    await all.click();
+    await expect(all).toHaveText("✓ All");
+    await expect(all).toBeDisabled();
+    await all.click({ force: true }).catch(() => undefined); // a second tap must do nothing
+    await page.waitForTimeout(300);
+    expect(db.care_checkins).toHaveLength(1);
+
+    // Other buttons still work, and the list says what went to Chloe.
+    await screen.getByTestId(tid(MAX, "mood", "calm")).click();
+    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Sent to Chloe today");
+    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Fed · All");
+    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Mood · Calm");
+    expect(db.care_checkins).toHaveLength(2);
+
+    // The lock is short: the same button can be sent again after a few seconds.
+    await expect(all).toHaveText("All", { timeout: 6000 });
+  });
+
+  test("a failure stays on screen in a dialog; Try again sends it", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [MAX]);
+    let failed = false;
+    await page.route("**/rest/v1/rpc/log_care_checkin", (route) => {
+      if (failed) return route.fallback();
+      failed = true;
+      return route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ code: "P0001", message: "not_in_care_window" }),
+      });
+    });
+    await signIn(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId("quick-checkin").waitFor();
+
+    await screen.getByTestId(tid(MAX, "meal", "most")).click();
+    await expect(screen.getByTestId("error-dialog-message")).toContainText("Tasks open once the stay has started.");
+    expect(db.care_checkins).toHaveLength(0);
+    await page.waitForTimeout(3500);
+    await expect(screen.getByTestId("error-dialog")).toBeVisible();
+
+    await screen.getByTestId("error-dialog-retry").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    expect(db.care_checkins).toHaveLength(1);
+  });
+
   test("a typed memo replaces the preset, then clears", async ({ page }) => {
     const db = await setup(page);
     const screen = app(page);

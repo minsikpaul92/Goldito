@@ -180,31 +180,39 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      <MediaPicker
-        visible={tray !== null}
-        mediaTypes={tray?.mediaTypes ?? ["image"]}
-        samples={tray && useTray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
-        canTakePhoto={hasTouchCamera()}
-        onPickSample={onPickSample}
-        onUpload={onUpload}
-        onTakePhoto={onTakePhoto}
-        onClose={() => finish(null)}
-      />
-      <MediaConfirm
-        visible={confirming !== null}
-        file={confirming?.file ?? null}
-        confirmLabel={current.current?.options.confirmLabel ?? "Use this photo"}
-        onConfirm={() => confirming && finish(confirming)}
-        onRetake={onRetake}
-        onClose={() => finish(null)}
-      />
-      <VideoTrimSheet
-        visible={trimming !== null}
-        file={trimming?.file ?? null}
-        duration={trimming?.duration ?? 0}
-        onConfirm={onTrimConfirm}
-        onCancel={() => finish(null)}
-      />
+      {/* Each sheet is mounted only while shown: a Modal mounted later stacks on top of sheets that
+          are already open (e.g. the Done popup), so the picker is never hidden behind one. */}
+      {tray ? (
+        <MediaPicker
+          visible
+          mediaTypes={tray.mediaTypes}
+          samples={useTray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
+          canTakePhoto={hasTouchCamera()}
+          onPickSample={onPickSample}
+          onUpload={onUpload}
+          onTakePhoto={onTakePhoto}
+          onClose={() => finish(null)}
+        />
+      ) : null}
+      {confirming ? (
+        <MediaConfirm
+          visible
+          file={confirming.file}
+          confirmLabel={current.current?.options.confirmLabel ?? "Use this photo"}
+          onConfirm={() => finish(confirming)}
+          onRetake={onRetake}
+          onClose={() => finish(null)}
+        />
+      ) : null}
+      {trimming ? (
+        <VideoTrimSheet
+          visible
+          file={trimming.file}
+          duration={trimming.duration}
+          onConfirm={onTrimConfirm}
+          onCancel={() => finish(null)}
+        />
+      ) : null}
     </>
   );
 }
