@@ -2,6 +2,7 @@ import { useFocusEffect, router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { NoticeDetail, NoticeThumb } from "../../components/NoticeDetail";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
@@ -18,6 +19,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../lib/notifications";
+import { DETAIL_TYPES, useNoticeMedia } from "./noticeMedia";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
@@ -43,6 +45,8 @@ export function NotificationsCenter({ role }: { role: Role }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [clearing, setClearing] = useState(false);
   const errorDialog = useErrorDialog();
+  const noticeMedia = useNoticeMedia(list.status === "loading" ? null : list.items);
+  const [detail, setDetail] = useState<AppNotification | null>(null);
 
   const load = useCallback(async (soft = false) => {
     if (!soft) setList({ status: "loading" });
@@ -142,7 +146,18 @@ export function NotificationsCenter({ role }: { role: Role }) {
         // Still try to navigate.
       }
     }
+    if (DETAIL_TYPES.has(notice.type) && (noticeMedia[notice.id] || notice.body)) {
+      setDetail(notice);
+      return;
+    }
     const href = hrefForNotification(notice, role);
+    if (href) router.push(href);
+  };
+
+  const closeDetail = () => {
+    const notice = detail;
+    setDetail(null);
+    const href = notice ? hrefForNotification(notice, role) : null;
     if (href) router.push(href);
   };
 
@@ -205,10 +220,17 @@ export function NotificationsCenter({ role }: { role: Role }) {
                   {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
                   <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
                 </View>
+                {noticeMedia[item.id] ? <NoticeThumb media={noticeMedia[item.id]} /> : null}
               </View>
             </Pressable>
           </SwipeToDelete>
         )}
+      />
+      <NoticeDetail
+        notice={detail}
+        media={detail ? (noticeMedia[detail.id] ?? null) : null}
+        next={detail?.type === "feed_post" ? "See in Feed" : role === "owner" ? "See in History" : "Continue"}
+        onClose={closeDetail}
       />
       <Sheet
         visible={confirmClear}

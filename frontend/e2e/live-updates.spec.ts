@@ -65,7 +65,7 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId(`live-${nid(1)}`)).toBeVisible();
 
     await screen.getByTestId("open-history").click();
-    await expect(page).toHaveURL(/\/owner\/history$/);
+    await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
     await expect(screen.getByText("Mood · Calm")).toBeVisible();
     expect(db.care_checkins).toHaveLength(1);
   });
@@ -95,7 +95,7 @@ test.describe("owner live updates", () => {
     expect(db.notifications.some((x) => x.id === nid(5))).toBe(true);
 
     await screen.getByTestId(`live-${nid(5)}`).click();
-    await expect(page).toHaveURL(/\/owner\/history$/);
+    await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
 
   test("with nothing new Home says so; the Diary tab waits for the sitter's written diary", async ({ page }) => {
@@ -108,6 +108,39 @@ test.describe("owner live updates", () => {
     await page.goto("/owner/diary");
     await expect(app(page).getByText("When your sitter writes up the day", { exact: false })).toBeVisible();
     await app(page).getByRole("button", { name: "Open History" }).click();
-    await expect(page).toHaveURL(/\/owner\/history$/);
+    await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
+  });
+
+  test("a notice with a photo and memo shows a thumbnail, opens big, and closing goes to that pet's History", async ({ page }) => {
+    const MOCHI = "00000000-0000-4000-8000-0000000000bb";
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push(
+      { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" },
+      { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" },
+    );
+    db.media.push({ id: "m-nap", pet_id: MOCHI, cloudinary_public_id: `pawnote/${MOCHI}/task_proof/m-nap`, resource_type: "image", purpose: "task_proof" });
+    db.care_tasks.push({ id: "t-nap", pet_id: MOCHI, type: "sleep", title: "Nap", scheduled_time: "13:00:00", active: true });
+    db.task_logs.push({ id: "l-nap", task_id: "t-nap", pet_id: MOCHI, due_at: ago(30), status: "done", completed_at: ago(20), completed_by: SITTER.id, media_id: "m-nap" });
+    const base = { user_id: OWNER.id, pet_id: MOCHI, booking_id: null, read_at: null };
+    db.notifications.push(
+      { ...base, id: nid(1), type: "task_done", title: "Mochi is asleep 😴", body: "Curled up on the blanket", ref_id: "l-nap", created_at: ago(20) },
+      { ...base, id: nid(2), type: "care_checkin", title: "Mochi seems calm 😊", body: null, ref_id: null, created_at: ago(10) },
+    );
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("live-updates").waitFor();
+
+    // Only the notice that came with a photo has a thumbnail.
+    await expect(screen.getByTestId(`live-${nid(1)}`).getByTestId("notice-thumb")).toBeVisible();
+    await expect(screen.getByTestId(`live-${nid(2)}`).getByTestId("notice-thumb")).toHaveCount(0);
+
+    await screen.getByTestId(`live-${nid(1)}`).click();
+    await expect(screen.getByTestId("notice-detail-photo")).toBeVisible();
+    await expect(screen.getByTestId("notice-detail-memo")).toHaveText("Curled up on the blanket");
+    await expect(page).toHaveURL(/\/owner$/); // still Home while the photo is open
+
+    await screen.getByTestId("notice-detail-next").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/history\\?pet=${MOCHI}$`));
+    await expect(screen.getByTestId("diary-pet").getByRole("radio", { name: "Mochi" })).toHaveAttribute("aria-checked", "true");
   });
 });

@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 
@@ -28,6 +29,8 @@ export default function OwnerHistory() {
   const styles = useThemedStyles(makeStyles);
   const { diaryRevision } = useNotifications();
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
+  // A notice opens this screen on the pet it is about (`?pet=`).
+  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
   const [petId, setPetId] = useState<string | null>(null);
   const [state, setState] = useState<State>({ status: "loading" });
 
@@ -36,8 +39,9 @@ export default function OwnerHistory() {
       setPetId(null);
       return;
     }
-    setPetId((current) => (current && pets.some((p) => p.id === current) ? current : pets[0].id));
-  }, [pets]);
+    const wanted = petParam && pets.some((p) => p.id === petParam) ? petParam : null;
+    setPetId((current) => wanted ?? (current && pets.some((p) => p.id === current) ? current : pets[0].id));
+  }, [pets, petParam]);
 
   const load = useCallback(
     async (soft = false) => {

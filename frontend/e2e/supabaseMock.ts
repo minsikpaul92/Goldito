@@ -991,6 +991,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    if (path === "task_logs" && select.includes("media") && !select.includes("care_tasks")) {
+      rows = rows.map((log) => ({ ...log, media: mediaOf(log.media_id) }));
+    }
     if (path === "care_checkins" && select.includes("media")) {
       rows = rows.map((c) => ({ ...c, media: mediaOf(c.media_id), by: nameOf(c.created_by) }));
     }

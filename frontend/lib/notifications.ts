@@ -120,12 +120,13 @@ export function hrefForNotification(
 
   switch (notice.type) {
     case "feed_post":
-      if (role === "owner") return "/owner/feed";
+      if (role === "owner") return notice.petId ? `/owner/feed?pet=${notice.petId}` : "/owner/feed";
       return notice.petId ? `/sitter/feed/${notice.petId}` : "/sitter/feed";
     case "task_done":
     case "care_checkin":
       // The record of what the sitter did lives in History; the written diary is a later feature.
-      return role === "owner" ? "/owner/history" : null;
+      if (role !== "owner") return null;
+      return notice.petId ? `/owner/history?pet=${notice.petId}` : "/owner/history";
     case "report_sent":
       return role === "owner" ? "/owner/diary" : null;
     case "booking_requested":

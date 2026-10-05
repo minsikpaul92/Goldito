@@ -2,6 +2,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { DETAIL_TYPES, useNoticeMedia } from "../features/notifications/noticeMedia";
 import { formatFeedTime } from "../lib/feed";
 import {
   AppNotification,
@@ -15,6 +16,7 @@ import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { NoticeDetail, NoticeThumb } from "./NoticeDetail";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
 
@@ -34,6 +36,8 @@ export function LiveUpdates() {
   const errorDialog = useErrorDialog();
   const { inboxRevision, refreshUnread } = useNotifications();
   const [items, setItems] = useState<AppNotification[] | null>(null);
+  const media = useNoticeMedia(items);
+  const [detail, setDetail] = useState<AppNotification | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -88,7 +92,19 @@ export function LiveUpdates() {
         // Still open it.
       }
     }
+    // A photo and/or a memo opens big first; closing it carries on to History / Feed.
+    if (DETAIL_TYPES.has(notice.type) && (media[notice.id] || notice.body)) {
+      setDetail(notice);
+      return;
+    }
     const href = hrefForNotification(notice, "owner");
+    if (href) router.push(href);
+  };
+
+  const closeDetail = () => {
+    const notice = detail;
+    setDetail(null);
+    const href = notice ? hrefForNotification(notice, "owner") : null;
     if (href) router.push(href);
   };
 
@@ -138,6 +154,7 @@ export function LiveUpdates() {
               {n.body ? <Text style={styles.memo}>{n.body}</Text> : null}
               <Text style={styles.time}>{formatFeedTime(n.createdAt)}</Text>
             </View>
+            {media[n.id] ? <NoticeThumb media={media[n.id]} /> : null}
           </Pressable>
         </SwipeToDelete>
         {index === 0 ? (
@@ -162,6 +179,12 @@ export function LiveUpdates() {
           testID="live-more"
         />
       ) : null}
+      <NoticeDetail
+        notice={detail}
+        media={detail ? (media[detail.id] ?? null) : null}
+        next={detail?.type === "feed_post" ? "See in Feed" : "See in History"}
+        onClose={closeDetail}
+      />
     </View>
   );
 }
