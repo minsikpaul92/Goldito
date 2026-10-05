@@ -18,7 +18,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 | Step | Action |
 | :--- | :--- |
 | 1 | **Phase 05 is merged** ([PR #47](https://github.com/minsikpaul92/PawNote/pull/47), squash `ae35035`, 2026-10-04) |
-| 2 | **Hosted DB is up to date** (Supabase MCP, 2026-10-04): `007c_feed_visibility`, `008_care_6_2_to_6_8`, `008b_checkin_memo_and_log_rpc`, `008c_checkin_preset_or_memo`, `008d_task_memo_and_edit_reset`, `008e_memo_rides_with_what_was_done` (`007b` was already there as `feed_posts_realtime`). Later `008` additions go in as small named migrations (`008d_…`) |
+| 2 | **Hosted DB is up to date** (Supabase MCP, 2026-10-04): `007c_feed_visibility`, `008_care_6_2_to_6_8`, `008b_checkin_memo_and_log_rpc`, `008c_checkin_preset_or_memo`, `008d_task_memo_and_edit_reset`, `008e_memo_rides_with_what_was_done`, `008f_care_requests_and_cautions` (`007b` was already there as `feed_posts_realtime`). Later `008` additions go in as small named migrations (`008d_…`) |
 | 3 | Phase 06 runs on `feat/phase-06-care` ([PR #48](https://github.com/minsikpaul92/PawNote/pull/48), now based on `main`) |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.

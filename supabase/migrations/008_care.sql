@@ -301,3 +301,111 @@ $$;
 
 revoke execute on function public.log_care_checkin(uuid, text, text, text, uuid) from public, anon;
 grant execute on function public.log_care_checkin(uuid, text, text, text, uuid) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- Care request (6.13): the owner's note, the checklist it became, and the Heads-ups.
+--   care_requests  the note as written (owner-only: it can say private things)
+--   care_tasks     gains request_id — which request a task came from (set null if the request goes)
+--   pet_cautions   short "be careful" lines the sitter sees as Heads-up cards (owner edits them)
+-- Saved by save_care_request in ONE transaction, so a failure never leaves half a checklist.
+-- ---------------------------------------------------------------------------
+
+create table public.care_requests (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid not null references public.pets (id) on delete cascade,
+  created_by uuid references public.profiles (id) on delete set null,
+  raw_text text not null check (char_length(btrim(raw_text)) between 1 and 2000),
+  model text,
+  created_at timestamptz not null default now()
+);
+
+create index care_requests_pet_created_idx on public.care_requests (pet_id, created_at desc);
+
+alter table public.care_tasks
+  add column request_id uuid references public.care_requests (id) on delete set null;
+
+create table public.pet_cautions (
+  id uuid primary key default gen_random_uuid(),
+  pet_id uuid not null references public.pets (id) on delete cascade,
+  request_id uuid references public.care_requests (id) on delete set null,
+  text text not null check (char_length(btrim(text)) between 1 and 100),
+  active boolean not null default true,
+  created_by uuid references public.profiles (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create index pet_cautions_pet_idx on public.pet_cautions (pet_id) where active;
+
+alter table public.care_requests enable row level security;
+alter table public.pet_cautions enable row level security;
+
+create policy care_requests_select on public.care_requests
+  for select to authenticated using (public.is_owner_of(pet_id));
+create policy care_requests_delete on public.care_requests
+  for delete to authenticated using (public.is_owner_of(pet_id));
+
+-- Same audience as care_tasks: the owner, the sitter in the care window, and a sitter deciding on a request.
+create policy pet_cautions_select on public.pet_cautions
+  for select to authenticated using (public.can_view_pet_profile(pet_id));
+create policy pet_cautions_insert on public.pet_cautions
+  for insert to authenticated with check (public.is_owner_of(pet_id));
+create policy pet_cautions_update on public.pet_cautions
+  for update to authenticated using (public.is_owner_of(pet_id)) with check (public.is_owner_of(pet_id));
+create policy pet_cautions_delete on public.pet_cautions
+  for delete to authenticated using (public.is_owner_of(pet_id));
+
+revoke all on public.care_requests, public.pet_cautions from anon, authenticated;
+grant select, delete on public.care_requests to authenticated;
+grant select, insert, update, delete on public.pet_cautions to authenticated;
+grant all on public.care_requests, public.pet_cautions to service_role;
+
+create or replace function public.save_care_request(
+  p_pet uuid,
+  p_text text,
+  p_model text,
+  p_tasks jsonb,
+  p_cautions text[]
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_request uuid;
+  v_task jsonb;
+  v_caution text;
+begin
+  if not public.is_owner_of(p_pet) then
+    raise exception 'forbidden';
+  end if;
+  if jsonb_typeof(p_tasks) is distinct from 'array'
+     or jsonb_array_length(p_tasks) > 12
+     or coalesce(array_length(p_cautions, 1), 0) > 8 then
+    raise exception 'too_many_items';
+  end if;
+
+  insert into public.care_requests (pet_id, created_by, raw_text, model)
+  values (p_pet, auth.uid(), p_text, p_model)
+  returning id into v_request;
+
+  -- care_tasks' own checks (types, species guard) apply: any bad row rolls the whole save back.
+  for v_task in select * from jsonb_array_elements(p_tasks) loop
+    insert into public.care_tasks
+      (pet_id, type, title, dose, scheduled_time, notes, repeat_daily, created_by, request_id)
+    values
+      (p_pet, v_task->>'type', btrim(v_task->>'title'), nullif(btrim(v_task->>'dose'), ''),
+       (v_task->>'time')::time, nullif(btrim(v_task->>'notes'), ''), true, auth.uid(), v_request);
+  end loop;
+
+  foreach v_caution in array coalesce(p_cautions, '{}') loop
+    insert into public.pet_cautions (pet_id, request_id, text, created_by)
+    values (p_pet, v_request, btrim(v_caution), auth.uid());
+  end loop;
+
+  return v_request;
+end;
+$$;
+
+revoke execute on function public.save_care_request(uuid, text, text, jsonb, text[]) from public, anon;
+grant execute on function public.save_care_request(uuid, text, text, jsonb, text[]) to authenticated, service_role;

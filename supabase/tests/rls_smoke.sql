@@ -2055,6 +2055,81 @@ begin
   perform _t_as(lucy);
   perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
 
+  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go
+  perform _t_as(chloe);
+  v_id := save_care_request(
+    max,
+    'Meals: 8:00 AM — 1 cup of kibble. Heads-up: text instead of knocking.',
+    'nvidia/test-model',
+    '[{"type":"feeding","time":"08:00","title":"Breakfast","dose":"1 cup of kibble","notes":null},
+      {"type":"medication","time":"14:00","title":"Skin pill","dose":"1 skin pill with a treat"}]'::jsonb,
+    array['Text instead of knocking', 'Keep other dogs away on walks']);
+  perform _t_put('req_saved', v_id);
+  perform _t_ok((select count(*) from public.care_tasks where request_id = v_id) = 2,
+    '6.13: the checklist rows are saved with the request');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = v_id and active) = 2,
+    '6.13: the Heads-ups are saved with the request');
+  perform _t_ok((select scheduled_time from public.care_tasks where request_id = v_id and type = 'medication') = '14:00',
+    '6.13: times arrive as clock times');
+  perform _t_ok((select count(*) from public.care_requests where id = v_id and model = 'nvidia/test-model') = 1,
+    '6.13: the note is kept as written');
+
+  begin
+    perform save_care_request(
+      '00000000-0000-4000-8000-0000000000c2', 'walk', null,
+      '[{"type":"feeding","time":"07:00","title":"Breakfast"},{"type":"walk","time":"17:00","title":"Walk"}]'::jsonb,
+      array['Close the door gently']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'task_type_not_allowed_for_species', '6.13: a walk for a cat is refused…');
+  perform _t_ok(
+    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
+    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
+    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000c2'
+         and title in ('Breakfast', 'Walk') and created_at > now() - interval '1 minute') = 0,
+    '6.13: …and the whole save is rolled back (no request, no cautions, no half a checklist)');
+
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, (select array_agg('c' || g) from generate_series(1, 9) g));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'too_many_items', '6.13: more than 8 Heads-ups is refused');
+
+  perform _t_as(lucy);
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.13: a sitter cannot write a care request');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 2,
+    '6.13: the sitter in the care window sees the Heads-ups');
+  perform _t_ok((select count(*) from public.care_requests) = 0,
+    '6.13: …but not the owner''s note as written');
+  begin
+    insert into public.pet_cautions (pet_id, text) values (max, 'Sitter wrote this');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.13: a sitter cannot add a Heads-up');
+  update public.pet_cautions set active = false where request_id = _t_get('req_saved');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and not active) = 0,
+    '6.13: …or switch one off');
+
+  perform _t_as(chloe);
+  update public.pet_cautions set active = false
+  where request_id = _t_get('req_saved') and text = 'Keep other dogs away on walks';
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and active) = 1,
+    '6.13: the owner switches a Heads-up off');
+  delete from public.pet_cautions where request_id = _t_get('req_saved') and not active;
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 1,
+    '6.13: …and deletes it');
+  delete from public.care_requests where id = _t_get('req_saved');
+  perform _t_ok((select count(*) from public.care_tasks where request_id is null and title = 'Skin pill') = 1,
+    '6.13: deleting the note keeps the tasks it created (request_id → null)');
+
   perform _t_as(null);
 end;
 $$;
