@@ -163,6 +163,19 @@ test.describe("care checklist (no stay)", () => {
     await expect(screen.getByTestId("save-state")).toHaveText("✓ All changes saved");
   });
 
+  test("leaving the screen right after an edit still saves it", async ({ page }) => {
+    const { db } = await setup(page);
+    const screen = await openBuilder(page);
+    await screen.getByTestId("line-kind-meal").click();
+    await screen.getByTestId("line-add").click();
+    await screen.getByTestId("care-request-make").click();
+    await expect(screen.getByTestId("save-state")).toHaveText("✓ All changes saved");
+    const key = (await screen.locator("[data-testid^='draft-title-']").getAttribute("data-testid"))!.replace("draft-title-", "");
+    await screen.getByTestId(`draft-title-${key}`).fill("Supper");
+    await page.goBack(); // before the autosave pause is over
+    await expect.poll(() => db.care_tasks.map((t) => t.title)).toEqual(["Supper"]);
+  });
+
   test("the helper tidies a line; when it is down the owner's own words stay and nothing breaks", async ({ page }) => {
     const { setPlan, calls } = await setup(page, {
       plan: { tasks: [{ type: "feeding", time: "08:00", title: "Breakfast", dose: "1 cup of kibble", notes: "Warm it first" }], cautions: [], skipped: [], model: "m", latency_ms: 1 },

@@ -128,6 +128,7 @@ export default function CareRequestScreen() {
           }
         }
         setSync("saved");
+        if (latest.current === d) dirty.current = false;
       } catch (error) {
         setSync("idle");
         errorDialog.show({
@@ -148,10 +149,23 @@ export default function CareRequestScreen() {
   );
   const latest = useRef<Draft | null>(null);
   latest.current = draft;
+  // Edits not saved yet: leaving the screen inside the 400 ms pause must still save them.
+  const dirty = useRef(false);
+  const runSyncRef = useRef(runSync);
+  runSyncRef.current = runSync;
+  const requestModeRef = useRef(requestMode);
+  requestModeRef.current = requestMode;
+  useEffect(
+    () => () => {
+      if (dirty.current && latest.current && !requestModeRef.current) void runSyncRef.current(latest.current);
+    },
+    [],
+  );
 
   // Checklist mode: every change is saved a moment after it is made.
   useEffect(() => {
     if (!draft || requestMode) return;
+    dirty.current = true;
     setSync("saving");
     const timer = setTimeout(() => void runSync(draft), 400);
     return () => clearTimeout(timer);
