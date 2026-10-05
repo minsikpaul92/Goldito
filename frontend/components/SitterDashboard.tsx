@@ -2,7 +2,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { listTodayCheckins } from "../features/care/careApi";
+import { PetCaution, listPetCautions, listTodayCheckins } from "../features/care/careApi";
 import { careTypeMeta, todayStatus } from "../features/care/careFormat";
 import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, useTodayTasks } from "../features/care/useTodayTasks";
@@ -15,6 +15,7 @@ import { DueBanner } from "./DueBanner";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
+import { Sheet } from "./ui/Sheet";
 
 /**
  * The sitter's Home while a stay is on: one screen, no scrolling — today's numbers, the next task
@@ -26,6 +27,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const { state, reload } = useTodayTasks(taskPets);
   const [finishing, setFinishing] = useState<TaskItem | null>(null);
   const [checkins, setCheckins] = useState<number | null>(null);
+  const [cautions, setCautions] = useState<PetCaution[]>([]);
+  const [showCautions, setShowCautions] = useState(false);
 
   const petKey = pets.map((p) => p.id).join(",");
   useFocusEffect(
@@ -33,6 +36,9 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
       let live = true;
       void Promise.all(pets.map((p) => listTodayCheckins(p.id).catch(() => [])))
         .then((lists) => live && setCheckins(lists.reduce((n, l) => n + l.length, 0)))
+        .catch(() => undefined);
+      void listPetCautions(pets.map((p) => p.id))
+        .then((list) => live && setCautions(list))
         .catch(() => undefined);
       return () => {
         live = false;
@@ -52,6 +58,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
     for (const p of pets) groups.set(p.ownerName, [...(groups.get(p.ownerName) ?? []), p]);
     return [...groups.entries()];
   }, [pets]);
+
+  const petName = (id: string) => pets.find((p) => p.id === id)?.name ?? "";
 
   const stat = (label: string, value: string, id: string) => (
     <View style={styles.stat} testID={id} accessibilityLabel={`${label} ${value}`}>
@@ -78,6 +86,22 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         {stat("Check-ins", checkins == null ? "—" : String(checkins), "stat-checkins")}
         {stat("Pets in care", String(pets.length), "stat-pets")}
       </View>
+
+      {/* The owner's Heads-ups for the pets in care: one line here, all of them one tap away. */}
+      {cautions.length > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Heads-up: ${cautions.length} things to watch out for`}
+          onPress={() => setShowCautions(true)}
+          style={({ pressed }) => [styles.headsUp, pressed && styles.pressed]}
+          testID="headsup-compact"
+        >
+          <Text style={styles.headsUpText} numberOfLines={1}>
+            {`⚠️ ${petName(cautions[0].petId)}: ${cautions[0].text}`}
+          </Text>
+          <Text style={styles.headsUpMore}>{cautions.length > 1 ? `+${cautions.length - 1}` : "›"}</Text>
+        </Pressable>
+      ) : null}
 
       {/* Something due (or overdue) takes the place of the "Next up" card, so Home stays one screen. */}
       {reminder.current ? (
@@ -137,6 +161,21 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         {shortcut("📅 Bookings", () => router.push("/sitter/bookings"), "shortcut-bookings")}
       </View>
 
+      <Sheet visible={showCautions} title="Heads-up" onClose={() => setShowCautions(false)} testID="headsup-sheet">
+        {pets
+          .filter((p) => cautions.some((c) => c.petId === p.id))
+          .map((p) => (
+            <View key={p.id} style={styles.headsUpGroup}>
+              <Text style={styles.nextTitle}>{`${SPECIES_EMOJI[p.species]} ${p.name} — from ${p.ownerName}`}</Text>
+              {cautions
+                .filter((c) => c.petId === p.id)
+                .map((c) => (
+                  <Text key={c.id} style={styles.headsUpLine}>{`• ${c.text}`}</Text>
+                ))}
+            </View>
+          ))}
+      </Sheet>
+
       <TaskDoneSheet item={finishing} onClose={() => setFinishing(null)} onDone={() => void reload()} />
     </View>
   );
@@ -175,6 +214,21 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.primary,
     },
     petChipText: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.primary },
+    headsUp: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.warning,
+      backgroundColor: theme.color.accent,
+    },
+    headsUpText: { flex: 1, fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
+    headsUpMore: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    headsUpGroup: { gap: 2, marginBottom: theme.spacing.sm },
+    headsUpLine: { fontSize: theme.fontSize.body, color: theme.color.text },
     shortcuts: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     shortcut: {
       width: "48.5%",

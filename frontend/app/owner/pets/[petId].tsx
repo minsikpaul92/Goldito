@@ -2,6 +2,7 @@ import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
 import { CareTasksSection } from "../../../components/CareTasksSection";
+import { HeadsUpSection } from "../../../components/HeadsUpSection";
 import { PetForm } from "../../../components/PetForm";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -68,6 +69,7 @@ export default function PetProfileScreen() {
         }}
       />
       {session.status === "signedIn" ? <CareTasksSection pet={pet} userId={session.profile.id} /> : null}
+      {session.status === "signedIn" ? <HeadsUpSection pet={pet} userId={session.profile.id} /> : null}
     </Screen>
   );
 }

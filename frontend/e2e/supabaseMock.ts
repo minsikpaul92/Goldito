@@ -934,6 +934,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       }));
     }
     const select = params.get("select") ?? "";
+    if (path === "pets" && select.includes("pet_cautions(")) {
+      rows = rows.map((pet) => ({
+        ...pet,
+        pet_cautions: db.pet_cautions.filter((c) => c.pet_id === pet.id),
+      }));
+    }
     if (path === "pets" && select.includes("care_tasks(")) {
       rows = rows.map((pet) => ({ ...pet, care_tasks: db.care_tasks.filter((t) => t.pet_id === pet.id) }));
     }
@@ -1027,6 +1033,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date().toISOString(),
       ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
       ...(path === "feed_posts" ? { visibility: "shared" } : {}),
+      ...(path === "pet_cautions" ? { active: true } : {}),
       ...row,
     }));
     if (path === "booking_consents") {

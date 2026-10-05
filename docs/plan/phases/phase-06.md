@@ -58,7 +58,7 @@
 | 6.11 ✅ | Owner Diary activity | `list_pet_activity` … → **`/owner/diary`** (구 Care Activity) |
 | 6.12 ✅ | `POST /api/ai/care-plan` (민식) | (unchanged API) |
 | 6.13 ✅ | Care request UI | `/owner/pets/[petId]/care-request` … 진입: Pet profile **Care request** |
-| 6.14 | Heads-up 표시 | 시터 **Home** 상단·요청 카드·Trip 도착 카드 |
+| 6.14 ✅ | Heads-up 표시 | 시터 **Home** 상단·요청 카드·Trip 도착 카드 |
 
 ### 피드·알림 (Plan B)
 

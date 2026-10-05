@@ -177,3 +177,31 @@ export async function listTodayCheckins(petId: string): Promise<SentCheckin[]> {
     at: r.created_at as string,
   }));
 }
+
+export type PetCaution = { id: string; petId: string; text: string };
+
+/** Active Heads-ups for these pets (RLS: the owner, the sitter in the care window, a sitter deciding on a request). */
+export async function listPetCautions(petIds: string[]): Promise<PetCaution[]> {
+  if (petIds.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("pet_cautions")
+    .select("id, pet_id, text")
+    .in("pet_id", petIds)
+    .eq("active", true)
+    .order("created_at", { ascending: true });
+  if (error) fail("load the Heads-ups");
+  return (data ?? []).map((r) => ({ id: r.id as string, petId: r.pet_id as string, text: r.text as string }));
+}
+
+/** The owner adds one by hand (≤ 100 characters). */
+export async function addPetCaution(petId: string, userId: string, text: string): Promise<void> {
+  const { error } = await getSupabase()
+    .from("pet_cautions")
+    .insert({ pet_id: petId, text: text.trim(), created_by: userId });
+  if (error) fail("add this Heads-up");
+}
+
+export async function deletePetCaution(id: string): Promise<void> {
+  const { error } = await getSupabase().from("pet_cautions").delete().eq("id", id);
+  if (error) fail("remove this Heads-up");
+}
