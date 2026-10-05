@@ -45,6 +45,8 @@ export type DueReminder = {
   dismiss: (logId: string) => void;
   /** Hide this task for 10 minutes; it comes back with a toast (kept across a refresh). */
   snooze: (logId: string) => void;
+  /** Tasks that are snoozed right now → when they come back (ms). */
+  snoozedUntil: Snoozes;
 };
 
 /**
@@ -133,5 +135,7 @@ export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => 
   );
   const dismiss = useCallback((logId: string) => setDismissed((prev) => new Set(prev).add(logId)), []);
 
-  return { current: queue[0] ?? null, more: Math.max(0, queue.length - 1), dismiss, snooze };
+  const snoozedUntil = Object.fromEntries(Object.entries(snoozes).filter(([, until]) => until > now));
+
+  return { current: queue[0] ?? null, more: Math.max(0, queue.length - 1), dismiss, snooze, snoozedUntil };
 }

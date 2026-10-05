@@ -107,6 +107,9 @@ test.describe("care request", () => {
     await screen.getByTestId("care-request-text").fill("breakfast at 7, walk at 5 PM");
     await screen.getByTestId("care-request-make").click();
     await expect(screen.getByTestId("checklist-skipped")).toContainText("Walk — Cats don't go on walks.");
+    // Tick it once read and the red box goes away.
+    await screen.locator("[data-testid^='skipped-ack-']").click();
+    await expect(screen.getByTestId("checklist-skipped")).toHaveCount(0);
     await expect(screen.locator("[data-testid^='draft-title-']")).toHaveCount(1);
   });
 

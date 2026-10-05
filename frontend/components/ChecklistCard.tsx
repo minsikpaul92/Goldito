@@ -32,6 +32,8 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
   const styles = useThemedStyles(makeStyles);
   const [pickingTime, setPickingTime] = useState<string | null>(null);
   const [newCaution, setNewCaution] = useState("");
+  const [seen, setSeen] = useState<ReadonlySet<string>>(new Set());
+  const notSeen = skipped.map((s, i) => ({ ...s, id: `${s.title}-${i}` })).filter((s) => !seen.has(s.id));
 
   const patch = (key: string, change: Partial<DraftTask>) =>
     onTasks(tasks.map((t) => (t.key === key ? { ...t, ...change } : t)));
@@ -89,12 +91,24 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
         </Card>
       ))}
 
-      {skipped.length > 0 ? (
-        <View style={styles.skipped} testID="checklist-skipped">
-          <Text style={styles.muted}>Left out:</Text>
-          {skipped.map((s, i) => (
-            <Text key={`${s.title}-${i}`} style={styles.muted}>{`• ${s.title} — ${s.reason}`}</Text>
+      {notSeen.length > 0 ? (
+        <View style={styles.skipped} testID="checklist-skipped" accessibilityRole="alert">
+          <Text style={styles.skippedTitle}>Left out — not on the checklist</Text>
+          {notSeen.map((s) => (
+            <Pressable
+              key={s.id}
+              accessibilityRole="checkbox"
+              aria-checked={false}
+              accessibilityLabel={`Got it: ${s.title}`}
+              onPress={() => setSeen((prev) => new Set(prev).add(s.id))}
+              style={styles.skippedRow}
+              testID={`skipped-ack-${s.id}`}
+            >
+              <Text style={styles.skippedBox}>☐</Text>
+              <Text style={styles.skippedText}>{`${s.title} — ${s.reason}`}</Text>
+            </Pressable>
           ))}
+          <Text style={styles.skippedHint}>Tick each one once you have read it.</Text>
         </View>
       ) : null}
 
@@ -154,6 +168,18 @@ const makeStyles = (theme: Theme) =>
     timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
     chevron: { fontSize: 22, color: theme.color.textMuted },
     pressed: { opacity: 0.8 },
-    skipped: { gap: 2 },
+    skipped: {
+      gap: theme.spacing.xs,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      borderWidth: 2,
+      borderColor: theme.color.error,
+      backgroundColor: theme.color.surface,
+    },
+    skippedTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.error },
+    skippedRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    skippedBox: { fontSize: 22, color: theme.color.error },
+    skippedText: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.text },
+    skippedHint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
   });

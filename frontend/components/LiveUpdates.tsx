@@ -6,6 +6,7 @@ import { formatFeedTime } from "../lib/feed";
 import {
   AppNotification,
   deleteNotification,
+  deleteNotifications,
   hrefForNotification,
   listNotifications,
   markNotificationRead,
@@ -63,6 +64,20 @@ export function LiveUpdates() {
     }
   };
 
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const clearAll = async () => {
+    const ids = new Set((items ?? []).map((n) => n.id));
+    setItems([]);
+    setConfirmingClear(false);
+    try {
+      await deleteNotifications([...ids]);
+      await refreshUnread();
+    } catch (error) {
+      void load();
+      errorDialog.show({ title: "Couldn't clear", message: (error as Error).message });
+    }
+  };
+
   const open = async (notice: AppNotification) => {
     if (!notice.readAt) {
       try {
@@ -95,7 +110,14 @@ export function LiveUpdates() {
         </Text>
       ) : null}
 
-      {shown.map((n) => (
+      {confirmingClear ? (
+        <View style={styles.clearRow}>
+          <TextButton label="Clear all" onPress={() => void clearAll()} testID="live-clear-all" />
+          <TextButton label="Cancel" onPress={() => setConfirmingClear(false)} testID="live-clear-cancel" />
+        </View>
+      ) : null}
+
+      {shown.map((n, index) => (
         <SwipeToDelete
           key={n.id}
           onDelete={() => void dismiss(n)}
@@ -116,6 +138,18 @@ export function LiveUpdates() {
               {n.body ? <Text style={styles.memo}>{n.body}</Text> : null}
               <Text style={styles.time}>{formatFeedTime(n.createdAt)}</Text>
             </View>
+            {index === 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear updates"
+                hitSlop={8}
+                onPress={() => setConfirmingClear((v) => !v)}
+                style={styles.x}
+                testID="live-x"
+              >
+                <Text style={styles.xText}>✕</Text>
+              </Pressable>
+            ) : null}
           </Pressable>
         </SwipeToDelete>
       ))}
@@ -149,6 +183,9 @@ const makeStyles = (theme: Theme) =>
     },
     unread: { backgroundColor: theme.color.accent },
     pressed: { opacity: 0.85 },
+    clearRow: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.sm },
+    x: { alignSelf: "flex-start", width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+    xText: { fontSize: 18, color: theme.color.textMuted },
     emoji: { fontSize: 22 },
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, color: theme.color.text },

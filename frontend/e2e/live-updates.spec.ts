@@ -70,6 +70,21 @@ test.describe("owner live updates", () => {
     expect(db.care_checkins).toHaveLength(1);
   });
 
+  test("✕ on the top card reveals Clear all, which clears the live updates but not other notices", async ({ page }) => {
+    const db = await ownerHome(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("live-clear-all")).toHaveCount(0);
+    await screen.getByTestId("live-x").click();
+    await screen.getByTestId("live-clear-cancel").click(); // Cancel keeps everything
+    await expect(screen.getByTestId("live-clear-all")).toHaveCount(0);
+    await expect(screen.getByTestId(`live-${nid(5)}`)).toBeVisible();
+
+    await screen.getByTestId("live-x").click();
+    await screen.getByTestId("live-clear-all").click();
+    await expect(screen.getByTestId("live-empty")).toBeVisible();
+    expect(db.notifications.map((x) => x.id)).toEqual([nid(4)]); // the booking notice stays
+  });
+
   test("a short swipe keeps the card; a tap opens History for a check-in", async ({ page }) => {
     const db = await ownerHome(page);
     const screen = app(page);

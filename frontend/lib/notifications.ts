@@ -98,6 +98,13 @@ export async function deleteAllNotifications(): Promise<void> {
   if (error) throw new Error("Couldn't clear your notifications. Try again.");
 }
 
+/** Delete just these notices (Home's "Clear all" only clears the live updates). */
+export async function deleteNotifications(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await getSupabase().from("notifications").delete().in("id", ids);
+  if (error) throw new Error("Couldn't clear your updates. Try again.");
+}
+
 /**
  * Where tapping a notice should go (architecture §7). Returns null when there is
  * no screen yet or the type doesn't apply to this role — still mark as read.

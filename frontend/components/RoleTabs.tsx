@@ -77,6 +77,8 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         headerRight: () => <HeaderActions />,
         tabBarActiveTintColor: theme.color.primary,
         tabBarInactiveTintColor: theme.color.textMuted,
+        tabBarItemStyle: { marginVertical: 0, marginHorizontal: 2, borderRadius: theme.radius.md },
+        tabBarActiveBackgroundColor: theme.color.accent,
         tabBarStyle: {
           height: theme.layout.tabBarHeight,
           backgroundColor: theme.color.surface,

@@ -168,8 +168,9 @@
 | :--- | :--- | :--- | :--- | :--- |
 | HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩(Tasks done · Check-ins · Pets) · Next up 카드 · Now caring 펫 칩 · 바로가기 4개 | 🤖 `sitter-home` | ➖ |
 | HOME-2 | Next up 카드의 **Done** | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일로 바뀜 | 🤖 `sitter-home` | ➖ |
-| HOME-3 | 바로가기 **All tasks · Photos · My history · Bookings**, 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
+| HOME-3 | 바로가기 **All tasks · My history** (Photos · Bookings는 탭과 중복이라 뺌), 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
+| HOME-6 | 할 일 💤 스누즈 중에 Home | Next up 카드에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
 | REM-1 | 시터 Home을 연 상태에서, 시간이 된(지난 지 1시간 안) 할 일이 있음 | **"⏰ Due now"** 배너가 **Next up 카드 자리**에 뜸(Home은 여전히 한 화면). 배너의 **Done**으로 바로 완료 가능 | 🤖 `due-reminder` | ➖ |
 | REM-2 | 앱을 켜 둔 채로 다음 할 일 시간이 됨 (30초마다 확인) | **"⏰ Time for Dinner · Max"** 토스트가 한 번 뜸. 이미 시간이 지난 할 일들 때문에 앱을 켤 때 토스트가 쏟아지지는 않음 | 🤖 `due-reminder` · **실제 시계 👤** | ➖ |
 | REM-3 | 배너의 **✕** 로 닫기 | 다음 할 일 배너로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 배너 사라짐 | 🤖 `due-reminder` | ➖ |
@@ -218,6 +219,7 @@
 | LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home | 맨 위 **Live updates**에 최신 3개 카드(할 일 완료 · 체크인 · 새 사진만; 메모가 있으면 제목 아래에 같이). 예약 알림 등은 안 나옴. 3개 넘으면 "N more in notifications" | 🤖 `live-updates` | ➖ |
 | LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
 | LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
+| LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
 | LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
 | HIST-1 | Home의 **🕘 History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |

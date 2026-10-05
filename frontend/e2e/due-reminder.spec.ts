@@ -92,6 +92,7 @@ test("Remind me in 10 min hides the banner, survives a refresh, and brings it ba
 
   await screen.getByTestId("due-banner-snooze").click();
   await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await expect(screen.getByTestId("tasks-snoozed")).toContainText("Snoozed until");
 
   // A refresh doesn't forget the snooze.
   await page.reload();

@@ -119,6 +119,11 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
               <Text style={styles.muted}>
                 {[next.pet.name, formatTime(isoToZoned(next.log.due_at).time), next.task.dose].filter(Boolean).join(" · ")}
               </Text>
+              {reminder.snoozedUntil[next.log.id] ? (
+                <Text style={styles.muted} testID="tasks-snoozed">
+                  {`💤 Snoozed until ${new Date(reminder.snoozedUntil[next.log.id]).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                </Text>
+              ) : null}
               <Button label="Done" onPress={() => setFinishing(next)} testID="dashboard-next-done" />
             </>
           ) : state.status === "ready" ? (
@@ -156,9 +161,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
 
       <View style={styles.shortcuts}>
         {shortcut("✅ All tasks", () => router.push("/sitter/tasks"), "shortcut-tasks")}
-        {shortcut("📸 Photos", () => router.push("/sitter/feed"), "shortcut-photos")}
         {shortcut("🕘 My history", () => router.push("/sitter/history"), "shortcut-history")}
-        {shortcut("📅 Bookings", () => router.push("/sitter/bookings"), "shortcut-bookings")}
       </View>
 
       <Sheet visible={showCautions} title="Heads-up" onClose={() => setShowCautions(false)} testID="headsup-sheet">
