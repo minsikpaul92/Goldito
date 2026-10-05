@@ -1,4 +1,5 @@
 import { useFocusEffect } from "expo-router";
+import { Platform } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useToast } from "../../providers/ToastProvider";
@@ -11,12 +12,39 @@ const RELOAD_EVERY_TICKS = 10;
 /** D9: after this long a pending task counts as missed. */
 const DUE_WINDOW_MS = 60 * 60_000;
 
+/** "Remind me later" is one fixed step — 10 minutes. */
+export const SNOOZE_MS = 10 * 60_000;
+const SNOOZE_KEY = "pawnote:due-snoozes";
+
+type Snoozes = Record<string, number>;
+
+function loadSnoozes(): Snoozes {
+  if (Platform.OS !== "web") return {};
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(SNOOZE_KEY) ?? "{}") as Snoozes;
+    return Object.fromEntries(Object.entries(raw).filter(([, until]) => typeof until === "number"));
+  } catch {
+    return {};
+  }
+}
+
+function saveSnoozes(snoozes: Snoozes) {
+  if (Platform.OS !== "web") return;
+  try {
+    window.localStorage.setItem(SNOOZE_KEY, JSON.stringify(snoozes));
+  } catch {
+    // Private mode / blocked storage: the snooze still works until the screen is closed.
+  }
+}
+
 export type DueReminder = {
   /** The most urgent unfinished task that is due now (or overdue), not dismissed. */
   current: { item: TaskItem; overdue: boolean } | null;
   /** How many more are waiting behind it. */
   more: number;
   dismiss: (logId: string) => void;
+  /** Hide this task for 10 minutes; it comes back with a toast (kept across a refresh). */
+  snooze: (logId: string) => void;
 };
 
 /**
@@ -24,12 +52,14 @@ export type DueReminder = {
  * - `current` is the task to show in the banner — due now first, then overdue;
  * - a toast says "⏰ Time for Dinner · Max" once, when a task *becomes* due while the app is open
  *   (tasks already due when the screen first loads don't flood toasts);
+ * - **Remind me in 10 min** hides a task for 10 minutes, then it returns with "⏰ Still waiting";
  * - only the focused screen ticks, so a Home screen kept under another one doesn't double it.
  */
 export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => void): DueReminder {
   const toast = useToast();
   const [now, setNow] = useState(Date.now());
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
+  const [snoozes, setSnoozes] = useState<Snoozes>(loadSnoozes);
   const focused = useRef(false);
   const ticks = useRef(0);
   const announced = useRef<Set<string> | null>(null);
@@ -75,10 +105,33 @@ export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dueKey, ready]);
 
+  // A snooze ran out: it returns to the banner and says so once (if the task is still open).
+  useEffect(() => {
+    const expired = Object.entries(snoozes).filter(([, until]) => until <= now);
+    if (expired.length === 0) return;
+    const next = { ...snoozes };
+    for (const [id] of expired) {
+      delete next[id];
+      const item = items.find((i) => i.log.id === id && i.log.status === "pending");
+      if (item && focused.current) toast.show(`⏰ Still waiting: ${item.task.title} · ${item.pet.name}`);
+    }
+    saveSnoozes(next);
+    setSnoozes(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now]);
+
+  const snooze = useCallback((logId: string) => {
+    setSnoozes((prev) => {
+      const next = { ...prev, [logId]: Date.now() + SNOOZE_MS };
+      saveSnoozes(next);
+      return next;
+    });
+  }, []);
+
   const queue = [...dueNow.map((item) => ({ item, overdue: false })), ...overdue.map((item) => ({ item, overdue: true }))].filter(
-    (q) => !dismissed.has(q.item.log.id),
+    (q) => !dismissed.has(q.item.log.id) && !((snoozes[q.item.log.id] ?? 0) > now),
   );
   const dismiss = useCallback((logId: string) => setDismissed((prev) => new Set(prev).add(logId)), []);
 
-  return { current: queue[0] ?? null, more: Math.max(0, queue.length - 1), dismiss };
+  return { current: queue[0] ?? null, more: Math.max(0, queue.length - 1), dismiss, snooze };
 }

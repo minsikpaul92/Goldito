@@ -13,7 +13,7 @@ import { TextButton } from "./ui/TextButton";
 /** Top-of-Home reminder for a task that is due now (or overdue): Done right there, or dismiss. */
 export function DueBanner({ reminder, onDone }: { reminder: DueReminder; onDone: (item: TaskItem) => void }) {
   const styles = useThemedStyles(makeStyles);
-  const { current, more, dismiss } = reminder;
+  const { current, more, dismiss, snooze } = reminder;
   if (!current) return null;
   const { item, overdue } = current;
 
@@ -23,7 +23,10 @@ export function DueBanner({ reminder, onDone }: { reminder: DueReminder; onDone:
         <Text style={styles.label} testID="due-banner-label">
           {overdue ? "⚠️ Overdue" : "⏰ Due now"}
         </Text>
-        <TextButton label="✕" onPress={() => dismiss(item.log.id)} testID="due-banner-dismiss" />
+        <View style={styles.headActions}>
+          <TextButton label="💤 Remind me in 10 min" onPress={() => snooze(item.log.id)} testID="due-banner-snooze" />
+          <TextButton label="✕" onPress={() => dismiss(item.log.id)} testID="due-banner-dismiss" />
+        </View>
       </View>
       <View style={styles.row}>
         <View style={styles.body}>
@@ -57,6 +60,7 @@ const makeStyles = (theme: Theme) =>
     },
     overdue: { borderColor: theme.color.warning },
     head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: -4 },
+    headActions: { flexDirection: "row", alignItems: "center" },
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     body: { flex: 1, gap: 2 },
     done: { minWidth: 88 },

@@ -77,3 +77,31 @@ test("nothing due, no banner", async ({ page }) => {
   await expect(app(page).getByTestId("tasks-next")).toContainText("Dinner");
   await expect(app(page).getByTestId("due-banner")).toHaveCount(0);
 });
+
+test("Remind me in 10 min hides the banner, survives a refresh, and brings it back with a toast", async ({ page }) => {
+  const now = Date.now();
+  test.skip(torontoDay(now - 5 * MIN) !== torontoDay(now + 20 * MIN), "too close to midnight in Toronto");
+  const { db } = await mockSupabase(page, [OWNER, SITTER]);
+  caring(db, [MAX]);
+  db.care_tasks.push(fixtureTask(MAX.id, "t-due", "feeding", "Dinner", torontoTime(now - 5 * MIN)));
+
+  await page.clock.install({ time: now });
+  await signIn(page, SITTER);
+  const screen = app(page);
+  await expect(screen.getByTestId("due-banner-title")).toContainText("Dinner");
+
+  await screen.getByTestId("due-banner-snooze").click();
+  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+
+  // A refresh doesn't forget the snooze.
+  await page.reload();
+  await screen.getByTestId("sitter-dashboard").waitFor();
+  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+
+  // 9 minutes in: still snoozed. 11 minutes in: it is back, with a toast.
+  await page.clock.fastForward("09:00");
+  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await page.clock.fastForward("02:00");
+  await expect(screen.getByTestId("toast")).toContainText("⏰ Still waiting: Dinner · Max");
+  await expect(screen.getByTestId("due-banner-title")).toContainText("Dinner");
+});

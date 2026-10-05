@@ -160,6 +160,7 @@
 | REM-2 | 앱을 켜 둔 채로 다음 할 일 시간이 됨 (30초마다 확인) | **"⏰ Time for Dinner · Max"** 토스트가 한 번 뜸. 이미 시간이 지난 할 일들 때문에 앱을 켤 때 토스트가 쏟아지지는 않음 | 🤖 `due-reminder` · **실제 시계 👤** | ➖ |
 | REM-3 | 배너의 **✕** 로 닫기 | 다음 할 일 배너로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 배너 사라짐 | 🤖 `due-reminder` | ➖ |
 | REM-4 | 급한 게 여러 개 | 가장 이른 것 하나 + "+ N more waiting — see all tasks" (누르면 전체 할 일) | 🤖 `due-reminder` | ➖ |
+| REM-6 | 배너의 **💤 Remind me in 10 min** | 배너가 사라짐(Home의 숫자·목록엔 그대로). **새로고침해도 유지**. 10분 뒤 **"⏰ Still waiting: Dinner · Max"** 토스트와 함께 배너가 다시 뜸 | 🤖 `due-reminder` | ➖ |
 | REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 그 시각이 되면 30초 안에 토스트 + 배너 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
 | CHK-1 | 체크인 화면 → Max의 Meal **All** (메모 비움) | 버튼이 **"✓ All"** 로 바뀌고 잠깐 잠김(연타해도 한 번만). 토스트 "Sent ✅". 오너 알림: "Max ate everything 🍽️" (메모 없음) | 🤖 `quick-checkin` | ➖ |
