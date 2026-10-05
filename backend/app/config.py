@@ -59,6 +59,13 @@ class Settings(BaseSettings):
         alias="MODEL_FAST_BASE_URL",
     )
 
+    # Embeddings for RAG (D33): Qwen3-Embedding, 1024 dimensions → pgvector vector(1024).
+    model_embed: str = Field(default="Qwen/Qwen3-Embedding-8B", alias="MODEL_EMBED")
+    model_embed_base_url: str = Field(
+        default="https://api.tokenfactory.nebius.com/v1/", alias="MODEL_EMBED_BASE_URL"
+    )
+    model_embed_dim: int = Field(default=1024, alias="MODEL_EMBED_DIM")
+
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
