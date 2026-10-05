@@ -112,7 +112,7 @@ test.describe("owner live updates", () => {
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
 
-  test("a notice with a photo and memo shows a thumbnail, opens big, and closing goes to that pet's History", async ({ page }) => {
+  test("a notice with a photo and memo shows a thumbnail, opens big; Close just closes, the button goes to that pet's History", async ({ page }) => {
     const MOCHI = "00000000-0000-4000-8000-0000000000bb";
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push(
@@ -140,6 +140,12 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("notice-detail-memo")).toHaveText("Curled up on the blanket");
     await expect(page).toHaveURL(/\/owner$/); // still Home while the photo is open
 
+    // Close only closes — it stays on Home.
+    await screen.getByTestId("notice-detail-close").click();
+    await expect(screen.getByTestId("notice-detail")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/owner$/);
+
+    await screen.getByTestId(`live-${nid(1)}`).click();
     await screen.getByTestId("notice-detail-next").click();
     await expect(page).toHaveURL(new RegExp(`/owner/history\\?pet=${MOCHI}$`));
     await expect(screen.getByTestId("diary-pet").getByRole("radio", { name: "Mochi" })).toHaveAttribute("aria-checked", "true");

@@ -119,7 +119,7 @@ export function LiveUpdates() {
     if (href) router.push(href);
   };
 
-  const closeDetail = () => {
+  const goFromDetail = () => {
     const notice = detail;
     setDetail(null);
     const href = notice ? hrefForNotification(notice, "owner") : null;
@@ -217,7 +217,8 @@ export function LiveUpdates() {
         notice={detail}
         media={detail ? (media[detail.id] ?? null) : null}
         next={detail ? detailNextLabel(detail.type, "owner") : ""}
-        onClose={closeDetail}
+        onClose={() => setDetail(null)}
+        onNext={goFromDetail}
       />
     </View>
   );

@@ -14,8 +14,10 @@ type Props = {
   media: DiaryMedia | null;
   /** Label of the button that carries on to the screen the notice points at. */
   next: string;
-  /** Closing (✕, backdrop or the button) — the caller then goes on to that screen. */
+  /** Closing (Close or the backdrop) just closes. */
   onClose: () => void;
+  /** The button goes on to the screen the notice points at. */
+  onNext: () => void;
 };
 
 /** Small photo on a notice card/row, so you can tell a photo came before opening it. */
@@ -31,8 +33,8 @@ export function NoticeThumb({ media }: { media: DiaryMedia }) {
   );
 }
 
-/** A notice that carries a photo and/or a memo opens big first; closing it goes on to History/Feed. */
-export function NoticeDetail({ notice, media, next, onClose }: Props) {
+/** A notice that carries a photo and/or a memo opens big first; the button then goes on to History/Feed. */
+export function NoticeDetail({ notice, media, next, onClose, onNext }: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Sheet
@@ -40,7 +42,7 @@ export function NoticeDetail({ notice, media, next, onClose }: Props) {
       title="Update"
       onClose={onClose}
       testID="notice-detail"
-      footer={<Button label={next} onPress={onClose} testID="notice-detail-next" />}
+      footer={<Button label={next} onPress={onNext} testID="notice-detail-next" />}
     >
       {notice ? (
         <View style={styles.body}>

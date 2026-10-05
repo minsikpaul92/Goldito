@@ -154,7 +154,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
     if (href) router.push(href);
   };
 
-  const closeDetail = () => {
+  const goFromDetail = () => {
     const notice = detail;
     setDetail(null);
     const href = notice ? hrefForNotification(notice, role) : null;
@@ -230,7 +230,8 @@ export function NotificationsCenter({ role }: { role: Role }) {
         notice={detail}
         media={detail ? (noticeMedia[detail.id] ?? null) : null}
         next={detail ? detailNextLabel(detail.type, role) : ""}
-        onClose={closeDetail}
+        onClose={() => setDetail(null)}
+        onNext={goFromDetail}
       />
       <Sheet
         visible={confirmClear}

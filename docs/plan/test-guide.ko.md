@@ -212,7 +212,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | NOTIF-1 | 오너: 벨 → 알림 목록 | **둥근 카드** 한 장씩, 최신순, 안 읽은 것 강조, 벨 숫자 | 🤖 `feed` | ➖ |
 | NOTIF-2 | 알림 탭 | 읽음 처리 + 해당 화면 (`feed_post` → Feed, 할 일 · 체크인 → **History**), **그 알림의 펫**으로 열림(Mochi 알림 → Mochi). 사진/메모가 있으면 **먼저 크게 보여 주고** 닫으면 이동 | 🤖 `feed` · `live-updates` | ➖ |
-| NOTIF-8 | 사진이 달린 알림 | 목록/카드 오른쪽에 **작은 사진 썸네일**. 탭 → 큰 사진 + 메모 시트("See in History"), 닫으면 History | 🤖 `live-updates` · 실제 사진 **👤** | ➖ |
+| NOTIF-8 | 사진이 달린 알림 | 목록/카드 오른쪽에 **작은 사진 썸네일**. 탭 → 큰 사진 + 메모 시트. **Close는 그냥 닫힘**, "See in History" 버튼을 눌러야 History | 🤖 `live-updates` · 실제 사진 **👤** | ➖ |
 | NOTIF-3 | **Mark all as read** | 숫자 사라짐 | 🤖 `feed` | ➖ |
 | NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 카드와 같은 **둥근 모양의 빨간 Delete**가 드러나고, 놓으면 사라지며 삭제됨(가만히 있을 땐 빨간 부분이 안 보임). 벨 숫자 갱신 | 🤖 `feed` | ➖ |
 | NOTIF-5 | 알림 한 줄을 **덜 밀다 놓기** | 제자리로 돌아오고 유지됨. 탭은 여전히 열림 | 🤖 `feed` | ➖ |
@@ -228,7 +228,7 @@
 | LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
 | LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
 | LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫은 **카드 배경이 연한 초록 + 굵은 테두리 + 왼쪽 위 테두리에 "In care" 태그**, 이름 아래 "with Lucy · until Oct 7, 1:37 AM". 집에 있는 펫은 평범한 카드 | 🤖 `live-updates` | ➖ |
-| LIVE-8 | 시터가 요청을 **Decline / Counter-request** 함 | 오너 Home Live updates 맨 위에 **주황 테두리 카드가 고정**("Tap to read and answer"). **밀어서 지울 수 없고**, Clear all로도 안 지워지고, 새로고침해도 남음. 탭 → 노트 시트 → "Open the request" → 펫 화면. **읽고 나면** 일반 카드처럼 | 🤖 `care-request` | ➖ |
+| LIVE-8 | 시터가 요청을 **Decline / Counter-request** 함 | 오너 Home Live updates 맨 위에 **주황 테두리 카드가 고정**("Tap to read and answer"). **밀어서 지울 수 없고**, Clear all로도 안 지워지고, 새로고침해도 남음. 탭 → 노트 시트 → **Close는 그냥 닫힘**, "Open the request" 버튼만 펫 화면으로 이동. **읽고 나면** 일반 카드처럼 | 🤖 `care-request` | ➖ |
 | LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
 | HIST-1 | Home의 **🕘 History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |
