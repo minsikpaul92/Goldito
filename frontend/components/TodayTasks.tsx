@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { careTypeMeta, statusLabel, todayStatus } from "../features/care/careFormat";
+import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, TaskPet, useTodayTasks } from "../features/care/useTodayTasks";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -21,9 +22,11 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
   const [showDone, setShowDone] = useState(false);
 
   const names = useMemo(() => pets.map((p) => p.name).join(" & "), [pets]);
+  const items = state.status === "ready" ? state.items : [];
+  // The full list also tells you (toast) when a task becomes due; the banner lives on Home.
+  useDueReminder(items, state.status === "ready", reload);
   if (pets.length === 0) return null;
 
-  const items = state.status === "ready" ? state.items : [];
   const open = items.filter((i) => i.log.status === "pending");
   const done = items.filter((i) => i.log.status === "done");
   const next = open.find((i) => todayStatus(i.log).kind !== "missed") ?? open[0];

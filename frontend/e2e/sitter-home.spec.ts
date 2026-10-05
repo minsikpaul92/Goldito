@@ -11,14 +11,26 @@ const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", speci
 const task = (pet: { id: string }, id: string, type: string, title: string, time: string) =>
   fixtureTask(pet.id, id, type, title, time);
 
+const MIN = 60_000;
+/** Toronto wall clock "HH:MM" for an instant. */
+const at = (ms: number) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone: "America/Toronto", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(
+    new Date(ms),
+  );
+const day = (ms: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date(ms));
+
 async function home(page: import("@playwright/test").Page) {
+  const now = Date.now();
+  // Everything a few minutes ahead: nothing is due, so the dashboard shows its "Next up" card
+  // whatever the time of day. (Too close to midnight the times would wrap into the past.)
+  test.skip(day(now) !== day(now + 40 * MIN), "too close to midnight in Toronto");
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   caring(db, [MAX, MOCHI]);
   db.care_tasks.push(
-    task(MAX, "t1", "feeding", "Breakfast", "08:00"),
-    task(MAX, "t2", "walk", "Walk", "09:00"),
-    task(MOCHI, "t3", "litter", "Litter box", "10:00"),
-    task(MOCHI, "t4", "medication", "Thyroid pill", "20:00"),
+    task(MAX, "t1", "feeding", "Breakfast", at(now + 10 * MIN)),
+    task(MAX, "t2", "walk", "Walk", at(now + 20 * MIN)),
+    task(MOCHI, "t3", "litter", "Litter box", at(now + 30 * MIN)),
+    task(MOCHI, "t4", "medication", "Thyroid pill", at(now + 40 * MIN)),
   );
   await signIn(page, SITTER);
   await app(page).getByTestId("sitter-dashboard").waitFor();

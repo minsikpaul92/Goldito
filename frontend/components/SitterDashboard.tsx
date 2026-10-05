@@ -4,12 +4,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { listTodayCheckins } from "../features/care/careApi";
 import { careTypeMeta, todayStatus } from "../features/care/careFormat";
+import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, useTodayTasks } from "../features/care/useTodayTasks";
 import type { CaringPet } from "../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { DueBanner } from "./DueBanner";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -40,6 +42,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   );
 
   const items = state.status === "ready" ? state.items : [];
+  const reminder = useDueReminder(items, state.status === "ready", reload);
   const open = items.filter((i) => i.log.status === "pending");
   const done = items.length - open.length;
   const next = open.find((i) => todayStatus(i.log).kind !== "missed") ?? open[0];
@@ -76,28 +79,33 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         {stat("Pets in care", String(pets.length), "stat-pets")}
       </View>
 
-      <Card style={styles.next} testID="dashboard-next">
-        {state.status === "error" ? (
-          <Text style={styles.error}>{state.message}</Text>
-        ) : next ? (
-          <>
-            <Text style={styles.nextLabel}>Next up</Text>
-            <Text style={styles.nextTitle} testID="tasks-next">
-              {`${careTypeMeta(next.task.type).emoji} ${next.task.title}`}
+      {/* Something due (or overdue) takes the place of the "Next up" card, so Home stays one screen. */}
+      {reminder.current ? (
+        <DueBanner reminder={reminder} onDone={setFinishing} />
+      ) : (
+        <Card style={styles.next} testID="dashboard-next">
+          {state.status === "error" ? (
+            <Text style={styles.error}>{state.message}</Text>
+          ) : next ? (
+            <>
+              <Text style={styles.nextLabel}>Next up</Text>
+              <Text style={styles.nextTitle} testID="tasks-next">
+                {`${careTypeMeta(next.task.type).emoji} ${next.task.title}`}
+              </Text>
+              <Text style={styles.muted}>
+                {[next.pet.name, formatTime(isoToZoned(next.log.due_at).time), next.task.dose].filter(Boolean).join(" · ")}
+              </Text>
+              <Button label="Done" onPress={() => setFinishing(next)} testID="dashboard-next-done" />
+            </>
+          ) : state.status === "ready" ? (
+            <Text style={styles.nextTitle} testID={items.length > 0 ? "tasks-all-done" : "tasks-empty"}>
+              {items.length > 0 ? "All done for today 🎉" : "No tasks today"}
             </Text>
-            <Text style={styles.muted}>
-              {[next.pet.name, formatTime(isoToZoned(next.log.due_at).time), next.task.dose].filter(Boolean).join(" · ")}
-            </Text>
-            <Button label="Done" onPress={() => setFinishing(next)} testID="dashboard-next-done" />
-          </>
-        ) : state.status === "ready" ? (
-          <Text style={styles.nextTitle} testID={items.length > 0 ? "tasks-all-done" : "tasks-empty"}>
-            {items.length > 0 ? "All done for today 🎉" : "No tasks today"}
-          </Text>
-        ) : (
-          <Text style={styles.muted}>Loading…</Text>
-        )}
-      </Card>
+          ) : (
+            <Text style={styles.muted}>Loading…</Text>
+          )}
+        </Card>
+      )}
 
       <Card style={styles.caring} testID="today-caring">
         <Text style={styles.nextLabel}>Now caring · tap a pet to check in</Text>

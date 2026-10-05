@@ -50,7 +50,7 @@
 | 6.3 ✅ | Sitter tasks on Home/Diary | missed → pending → done · **Mark done** · **Done with photo** · Home "Next up" (구 `/sitter/tasks` 탭 제거, D47b) |
 | 6.4 ✅ | `complete_task_log(p_task_log, p_media_id uuid default null)` | `in_care_window` 검사 · done 갱신 · **`task_done` 항상** · `media_id` 있을 때만 `feed_post` + task 캡션 (`caption_source='task'`) — Diary에도 행 |
 | 6.5 | missed / late | D9 파생 (변경 없음) |
-| 6.6 | `useDueReminder` | scheduled task만 (변경 없음) |
+| 6.6 ✅ | `useDueReminder` | scheduled task만 (변경 없음) |
 | 6.7 | (Stretch) 서버 `task_due` | 변경 없음 |
 | 6.8 ✅ | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
 | 6.9 ✅ | `log_care_checkin` RPC | on-duty · insert · owner `care_checkin` · optional media → feed_post (+ Diary) |
