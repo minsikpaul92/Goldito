@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SentCheckin, listTodayCheckins, logCareCheckin } from "../features/care/careApi";
@@ -12,6 +12,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CareCheckinKind, Species } from "../types/db";
+import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -21,20 +22,17 @@ type Props = {
 };
 
 /**
- * The 5-second check (phase-06 6.10): one tap per check-in, no typing needed. A tap with the memo
- * empty tells the owner a preset line ("Max ate everything"); if the sitter typed a memo for
- * something special, the owner gets only that memo. A photo can ride along (📷).
+ * The 5-second check (phase-06 6.10): tap what happened, then **Send**. With the memo empty the owner
+ * gets a preset line ("Max ate everything"); a memo typed for something special replaces it. A photo
+ * can ride along (📷). A memo alone (nothing picked) is sent as a note.
  */
 export function QuickCheckIn({ pet }: Props) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const [sent, setSent] = useState<SentCheckin[]>([]);
-  /** The tap that just went through (`meal:all`) — shows ✓ and stays locked for a moment, so a
-   * double tap can't send it twice. */
-  const [justSent, setJustSent] = useState<string | null>(null);
-  const [sendingKey, setSendingKey] = useState<string | null>(null);
-  const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The option picked but not sent yet (`meal:all`); tapping it again unpicks it. */
+  const [picked, setPicked] = useState<{ kind: CareCheckinKind; value: string } | null>(null);
   const [memo, setMemo] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
   const [sending, setSending] = useState(false);
@@ -50,15 +48,10 @@ export function QuickCheckIn({ pet }: Props) {
 
   useEffect(() => {
     void loadSent();
-    return () => {
-      if (lockTimer.current) clearTimeout(lockTimer.current);
-    };
   }, [loadSent]);
 
   const send = async (kind: CareCheckinKind, value: string | null) => {
     if (sending) return;
-    const key = `${kind}:${value ?? ""}`;
-    if (key === justSent) return;
     const note = memo.trim() || null;
     if (kind === "note" && !note) {
       setError("Type a note first.");
@@ -66,7 +59,6 @@ export function QuickCheckIn({ pet }: Props) {
     }
     setError(null);
     setSending(true);
-    setSendingKey(key);
     try {
       let mediaId: string | null = null;
       if (photo) {
@@ -82,9 +74,7 @@ export function QuickCheckIn({ pet }: Props) {
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
       setMemo("");
       setPhoto(null);
-      setJustSent(key);
-      if (lockTimer.current) clearTimeout(lockTimer.current);
-      lockTimer.current = setTimeout(() => setJustSent(null), 4000);
+      setPicked(null);
       void loadSent();
     } catch (e) {
       errorDialog.show({
@@ -94,8 +84,12 @@ export function QuickCheckIn({ pet }: Props) {
       });
     } finally {
       setSending(false);
-      setSendingKey(null);
     }
+  };
+
+  const sendPicked = () => {
+    if (picked) void send(picked.kind, picked.value);
+    else void send("note", null);
   };
 
   const attachPhoto = async () => {
@@ -113,26 +107,19 @@ export function QuickCheckIn({ pet }: Props) {
           <Text style={styles.groupLabel}>{`${group.emoji} ${group.label}`}</Text>
           <View style={styles.pills}>
             {group.options.map((option) => {
-              const key = `${group.kind}:${option.value}`;
-              const isSent = justSent === key;
-              const isSending = sendingKey === key;
+              const on = picked?.kind === group.kind && picked.value === option.value;
               return (
                 <Pressable
                   key={option.value}
                   accessibilityRole="button"
-                  accessibilityLabel={`${group.label}: ${option.label}${isSent ? " (sent)" : ""}`}
-                  disabled={sending || isSent}
-                  onPress={() => void send(group.kind, option.value)}
-                  style={({ pressed }) => [
-                    styles.pill,
-                    isSent && styles.pillSent,
-                    (pressed || (sending && !isSending)) && styles.pillPressed,
-                  ]}
+                  accessibilityLabel={`${group.label}: ${option.label}`}
+                  aria-pressed={on}
+                  disabled={sending}
+                  onPress={() => setPicked(on ? null : { kind: group.kind, value: option.value })}
+                  style={({ pressed }) => [styles.pill, on && styles.pillSent, pressed && styles.pillPressed]}
                   testID={`checkin-${pet.id}-${group.kind}-${option.value}`}
                 >
-                  <Text style={[styles.pillText, isSent && styles.pillTextSent]}>
-                    {isSending ? "…" : isSent ? `✓ ${option.label}` : option.label}
-                  </Text>
+                  <Text style={[styles.pillText, on && styles.pillTextSent]}>{on ? `✓ ${option.label}` : option.label}</Text>
                 </Pressable>
               );
             })}
@@ -165,16 +152,20 @@ export function QuickCheckIn({ pet }: Props) {
         {photo ? (
           <TextButton label="Remove photo" onPress={() => setPhoto(null)} testID={`checkin-photo-remove-${pet.id}`} />
         ) : null}
-        <Pressable
-          accessibilityRole="button"
-          disabled={sending}
-          onPress={() => void send("note", null)}
-          style={({ pressed }) => [styles.pill, styles.noteButton, pressed && styles.pillPressed]}
-          testID={`checkin-note-${pet.id}`}
-        >
-          <Text style={styles.pillText}>📝 Send as a note</Text>
-        </Pressable>
       </View>
+      <Text style={styles.groupLabel} testID={`checkin-picked-${pet.id}`}>
+        {picked
+          ? `Ready to send: ${checkinLabel(picked.kind, picked.value).emoji} ${checkinLabel(picked.kind, picked.value).label}`
+          : memo.trim()
+            ? "Ready to send as a note"
+            : "Pick what happened, add a memo or photo if you like, then Send."}
+      </Text>
+      <Button
+        label={sending ? "Sending…" : "Send"}
+        disabled={sending || (!picked && !memo.trim())}
+        onPress={sendPicked}
+        testID={`checkin-send-${pet.id}`}
+      />
       {sent.length > 0 ? (
         <View style={styles.sentBox} testID={`checkin-sent-${pet.id}`}>
           <Text style={styles.groupLabel}>{`Sent to ${pet.ownerName} today`}</Text>
@@ -217,5 +208,4 @@ const makeStyles = (theme: Theme) =>
     sentLine: { fontSize: theme.fontSize.small, color: theme.color.text },
     pillText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
     extras: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs, alignItems: "center" },
-    noteButton: { backgroundColor: theme.color.surface },
   });
