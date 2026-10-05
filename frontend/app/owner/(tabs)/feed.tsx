@@ -25,6 +25,7 @@ import { pickMedia } from "../../../lib/media";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications } from "../../../providers/NotificationsProvider";
 import { useSession } from "../../../providers/SessionProvider";
+import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -43,6 +44,7 @@ export default function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
   const { feedRevision } = useNotifications();
   const toast = useToast();
+  const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
@@ -136,11 +138,12 @@ export default function OwnerFeed() {
       toast.show(visibleToSitter ? "Shared with your sitter 🐾" : "Saved just for you 🔒");
       await loadPage(0, false, true);
     } catch (err) {
-      toast.show(
-        err instanceof UploadError || err instanceof Error
-          ? err.message
-          : "Couldn't share this photo. Try again.",
-      );
+      errorDialog.show({
+        title: "Photo not shared",
+        message:
+          err instanceof UploadError || err instanceof Error ? err.message : "Couldn't share this photo. Try again.",
+        onRetry: () => void sharePhoto(),
+      });
     } finally {
       setUploading(false);
     }

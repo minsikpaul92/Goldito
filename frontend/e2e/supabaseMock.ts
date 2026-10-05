@@ -1047,7 +1047,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (method === "DELETE") {
-    const keep = table.filter((row) => !matches(row, params));
+    // RLS: notifications are deleted only by their user.
+    const keep = table.filter(
+      (row) => !(matches(row, params) && (path !== "notifications" || row.user_id === me)),
+    );
     table.splice(0, table.length, ...keep);
     return route.fulfill({ status: 204 });
   }

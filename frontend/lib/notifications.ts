@@ -86,6 +86,18 @@ export async function markAllNotificationsRead(): Promise<void> {
   if (error) throw new Error("Couldn't mark notices as read.");
 }
 
+/** Delete one notice (RLS: only the owner of the notice). The underlying record stays in History. */
+export async function deleteNotification(id: string): Promise<void> {
+  const { error } = await getSupabase().from("notifications").delete().eq("id", id);
+  if (error) throw new Error("Couldn't delete that notice. Try again.");
+}
+
+/** "Clear all": every notice of the signed-in user (RLS limits the delete to their own). */
+export async function deleteAllNotifications(): Promise<void> {
+  const { error } = await getSupabase().from("notifications").delete().not("id", "is", null);
+  if (error) throw new Error("Couldn't clear your notifications. Try again.");
+}
+
 /**
  * Where tapping a notice should go (architecture §7). Returns null when there is
  * no screen yet or the type doesn't apply to this role — still mark as read.

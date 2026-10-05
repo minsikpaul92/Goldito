@@ -2,17 +2,23 @@ import { useFocusEffect, router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
+import { Sheet } from "../../components/ui/Sheet";
+import { SwipeToDelete } from "../../components/ui/SwipeToDelete";
 import { TextButton } from "../../components/ui/TextButton";
 import { formatFeedTime } from "../../lib/feed";
 import {
   AppNotification,
+  deleteAllNotifications,
+  deleteNotification,
   hrefForNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../lib/notifications";
+import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -33,6 +39,9 @@ export function NotificationsCenter({ role }: { role: Role }) {
   const { inboxRevision, refreshUnread, unreadCount } = useNotifications();
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [markingAll, setMarkingAll] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const errorDialog = useErrorDialog();
 
   const load = useCallback(async (soft = false) => {
     if (!soft) setList({ status: "loading" });
@@ -78,6 +87,39 @@ export function NotificationsCenter({ role }: { role: Role }) {
       // Keep the list; user can retry.
     } finally {
       setMarkingAll(false);
+    }
+  };
+
+  const dropFromList = (shouldDrop: (n: AppNotification) => boolean) =>
+    setList((prev) =>
+      prev.status === "loading" ? prev : { ...prev, status: "ready", items: prev.items.filter((n) => !shouldDrop(n)) },
+    );
+
+  /** Swiped away: it leaves the list at once; if the delete fails it comes back with a message. */
+  const onDelete = async (notice: AppNotification) => {
+    dropFromList((n) => n.id === notice.id);
+    try {
+      await deleteNotification(notice.id);
+      await refreshUnread();
+    } catch (error) {
+      void load(true);
+      errorDialog.show({ title: "Couldn't delete", message: (error as Error).message });
+    }
+  };
+
+  const onClearAll = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      await deleteAllNotifications();
+      setConfirmClear(false);
+      dropFromList(() => true);
+      await refreshUnread();
+    } catch (error) {
+      setConfirmClear(false);
+      errorDialog.show({ title: "Couldn't clear", message: (error as Error).message });
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -128,38 +170,59 @@ export function NotificationsCenter({ role }: { role: Role }) {
 
   return (
     <View style={styles.root} testID="notifications-center">
-      {unreadCount > 0 ? (
-        <View style={styles.toolbar}>
+      <View style={styles.toolbar}>
+        {unreadCount > 0 ? (
           <TextButton
             label={markingAll ? "Marking…" : "Mark all as read"}
             onPress={() => void onMarkAll()}
             disabled={markingAll}
             testID="mark-all-read"
           />
-        </View>
-      ) : null}
+        ) : null}
+        <TextButton label="Clear all" danger onPress={() => setConfirmClear(true)} testID="clear-all" />
+      </View>
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void onOpen(item)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed, !item.readAt && styles.unread]}
-            testID={`notification-${item.id}`}
-          >
-            <View style={styles.rowBody}>
-              {!item.readAt ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
-              <View style={styles.textCol}>
-                <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{item.title}</Text>
-                {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
-                <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
+          <SwipeToDelete onDelete={() => void onDelete(item)} testID={`notification-swipe-${item.id}`}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void onOpen(item)}
+              style={({ pressed }) => [styles.row, pressed && styles.pressed, !item.readAt && styles.unread]}
+              testID={`notification-${item.id}`}
+            >
+              <View style={styles.rowBody}>
+                {!item.readAt ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
+                <View style={styles.textCol}>
+                  <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{item.title}</Text>
+                  {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
+                  <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
+                </View>
               </View>
-            </View>
-          </Pressable>
+            </Pressable>
+          </SwipeToDelete>
         )}
       />
+      <Sheet
+        visible={confirmClear}
+        title="Clear all notifications?"
+        onClose={() => {
+          if (!clearing) setConfirmClear(false);
+        }}
+        testID="clear-all-sheet"
+        footer={
+          <Button
+            label={clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}`}
+            disabled={clearing}
+            onPress={() => void onClearAll()}
+            testID="clear-all-confirm"
+          />
+        }
+      >
+        <Text style={styles.title}>They leave this list for good. What your sitter did stays in History.</Text>
+      </Sheet>
     </View>
   );
 }
@@ -171,7 +234,9 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.background,
     },
     toolbar: {
-      alignItems: "flex-end",
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
       paddingHorizontal: theme.spacing.sm,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.color.border,
