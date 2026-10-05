@@ -6,4 +6,5 @@ PyJWT[crypto]>=2.10.0,<3
 supabase>=2.15.0,<3
 cloudinary>=1.41.0,<2
 pytest>=8.3.0,<9
+certifi>=2024.2.2  # CA bundle for the Supabase JWKS fetch (python.org macOS builds ship no OS certificates)
 tzdata>=2024.1  # zoneinfo data on Windows and slim images (America/Toronto)

@@ -1,10 +1,12 @@
 """Supabase JWT verification and the current user (phase-03 3.4, architecture D14)."""
 
+import ssl
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Literal
 
+import certifi
 import jwt
 from fastapi import Depends, Header, HTTPException, status
 
@@ -51,7 +53,10 @@ def _jwks_client() -> jwt.PyJWKClient:
     if not settings.supabase_url:
         raise RuntimeError("SUPABASE_URL must be set to verify tokens")
     url = f"{settings.supabase_url.rstrip('/')}/auth/v1/.well-known/jwks.json"
-    return jwt.PyJWKClient(url, cache_keys=True, lifespan=600)
+    # PyJWKClient fetches with urllib, which uses the OS certificates; python.org builds on macOS
+    # ship none (CERTIFICATE_VERIFY_FAILED → "Could not reach Supabase"). Use certifi's bundle.
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    return jwt.PyJWKClient(url, cache_keys=True, lifespan=600, ssl_context=ssl_context)
 
 
 def verify_supabase_jwt(token: str) -> dict:
