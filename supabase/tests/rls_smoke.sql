@@ -2130,6 +2130,83 @@ begin
   perform _t_ok((select count(*) from public.care_tasks where request_id is null and title = 'Skin pill') = 1,
     '6.13: deleting the note keeps the tasks it created (request_id → null)');
 
+  -- Phase 06 (6.20): while a stay is on, the owner SENDS a care request and the sitter answers it
+  perform _t_as(chloe);
+  v_id := send_care_change_request(
+    max,
+    '[{"type":"feeding","time":"19:00","title":"Late snack","dose":"a few treats","notes":null,"repeat":false}]'::jsonb,
+    array['Never feed grapes']
+  );
+  perform _t_put('ccr', v_id);
+  perform _t_ok((select count(*) from public.care_change_requests where id = v_id and status = 'pending') = 1,
+    '6.20: the owner sends a care request (pending)');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['One more']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_pending', '6.20: only one open request per pet');
+  -- The request goes to the sitter of the stay that is on (the fixtures hold several bookings of Max).
+  perform _t_as(null);
+  perform _t_put('ccr_sitter', (select sitter_id from public.care_change_requests where id = _t_get('ccr')));
+  perform _t_as(_t_get('ccr_sitter'));
+  perform _t_ok((select count(*) from public.notifications where user_id = _t_get('ccr_sitter') and type = 'care_request' and ref_id = _t_get('ccr')) = 1,
+    '6.20: the sitter is told about the request');
+  perform _t_ok((select count(*) from public.care_change_requests where id = _t_get('ccr')) = 1,
+    '6.20: the sitter sees the request');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['Sitter wrote this']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.20: a sitter cannot send a care request');
+  perform _t_as(chloe);
+  begin
+    perform respond_care_change_request(_t_get('ccr'), true, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.20: the owner cannot approve their own request');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(_t_get('ccr'), true, null);
+  perform _t_ok(exists (select 1 from public.care_tasks where pet_id = max and title = 'Late snack' and not repeat_daily and scheduled_time = '19:00'),
+    '6.20: approving creates the task (one-time here)');
+  perform _t_ok(exists (select 1 from public.pet_cautions where pet_id = max and text = 'Never feed grapes'),
+    '6.20: …and the Heads-up');
+  begin
+    perform respond_care_change_request(_t_get('ccr'), false, 'late');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_answered', '6.20: a request is answered once');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_approved' and ref_id = _t_get('ccr')) = 1,
+    '6.20: the owner is told it was approved');
+
+  v_id := send_care_change_request(max, '[{"type":"walk","time":"22:00","title":"Night walk","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_put('ccr2', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(_t_get('ccr2'), false, 'I''m out by then');
+  perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = max and title = 'Night walk'),
+    '6.20: declining creates nothing');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+      and ref_id = _t_get('ccr2') and body = 'I''m out by then') = 1,
+    '6.20: the owner gets the sitter''s reason');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, '{}');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'empty_request', '6.20: an empty request is refused');
+  begin
+    insert into public.care_change_requests (pet_id, booking_id, requested_by, sitter_id)
+    select max, booking_id, chloe, lucy from public.care_change_requests limit 1;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.20: requests are written only through the functions');
+
   perform _t_as(null);
 end;
 $$;
