@@ -158,6 +158,8 @@ export type MockDb = {
   /** Care request notes and Heads-ups (phase 06 6.13). */
   care_requests: Row[];
   pet_cautions: Row[];
+  /** send_care_change_request / respond_care_change_request (phase 06 6.20). */
+  care_change_requests: Row[];
   /** respond_booking / propose_handoff calls with their parameters. */
   responses: Row[];
   proposals: Row[];
@@ -209,6 +211,7 @@ function createMockDb(): MockDb {
     care_checkins: [],
     care_requests: [],
     pet_cautions: [],
+    care_change_requests: [],
     responses: [],
     proposals: [],
     meetGreetCalls: [],
@@ -783,6 +786,89 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/send_care_change_request") {
+    const { p_pet, p_tasks, p_cautions } = request.postDataJSON();
+    const pet = db.pets.find((p) => p.id === p_pet);
+    if (!pet || pet.owner_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if ((p_tasks as unknown[]).length === 0 && (p_cautions as unknown[]).length === 0) {
+      return json(route, 400, { code: "P0001", message: "empty_request" });
+    }
+    const booking = db.bookings.find(
+      (b) => b.status === "confirmed" && db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === p_pet),
+    );
+    if (!booking) return json(route, 400, { code: "P0001", message: "no_active_stay" });
+    if (db.care_change_requests.some((r) => r.pet_id === p_pet && r.status === "pending")) {
+      return json(route, 400, { code: "P0001", message: "request_pending" });
+    }
+    const id = crypto.randomUUID();
+    db.care_change_requests.push({
+      id,
+      pet_id: p_pet,
+      booking_id: booking.id,
+      requested_by: me,
+      sitter_id: booking.sitter_id,
+      status: "pending",
+      tasks: p_tasks,
+      cautions: p_cautions,
+      decline_reason: null,
+      created_at: new Date().toISOString(),
+    });
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: booking.sitter_id,
+      type: "care_request",
+      title: `${users.find((u) => u.id === me)?.displayName} sent a care request for ${pet.name} 📝`,
+      body: null,
+      pet_id: p_pet,
+      booking_id: booking.id,
+      ref_id: id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, id);
+  }
+
+  if (path === "rpc/respond_care_change_request") {
+    const { p_request, p_approve, p_reason } = request.postDataJSON();
+    const req = db.care_change_requests.find((r) => r.id === p_request);
+    if (!req || req.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (req.status !== "pending") return json(route, 400, { code: "P0001", message: "already_answered" });
+    if (p_approve) {
+      for (const t of req.tasks as Record<string, string | boolean | null>[]) {
+        db.care_tasks.push({
+          id: crypto.randomUUID(),
+          pet_id: req.pet_id,
+          type: t.type,
+          title: t.title,
+          dose: t.dose ?? null,
+          scheduled_time: `${t.time}:00`,
+          notes: t.notes ?? null,
+          repeat_daily: t.repeat ?? true,
+          active: true,
+          created_at: new Date().toISOString(),
+        });
+      }
+      for (const text of req.cautions as string[]) {
+        db.pet_cautions.push({ id: crypto.randomUUID(), pet_id: req.pet_id, text, active: true });
+      }
+    }
+    Object.assign(req, { status: p_approve ? "approved" : "declined", decline_reason: p_approve ? null : p_reason });
+    const pet = db.pets.find((p) => p.id === req.pet_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: req.requested_by,
+      type: p_approve ? "care_request_approved" : "care_request_declined",
+      title: p_approve ? `${pet?.name} request approved` : `Couldn't take this one for ${pet?.name}`,
+      body: p_approve ? null : p_reason,
+      pet_id: req.pet_id,
+      booking_id: req.booking_id,
+      ref_id: req.id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, req);
+  }
+
   if (path === "rpc/log_care_checkin") {
     const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
@@ -991,6 +1077,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    if (path === "care_change_requests") {
+      rows = rows
+        .filter((r) => r.requested_by === me || r.sitter_id === me)
+        .map((r) => ({ ...r, pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null } }));
+    }
     if (path === "task_logs" && select.includes("media") && !select.includes("care_tasks")) {
       rows = rows.map((log) => ({ ...log, media: mediaOf(log.media_id) }));
     }
@@ -1021,7 +1112,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "feed_posts" || path === "notifications" || path === "care_checkins") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }

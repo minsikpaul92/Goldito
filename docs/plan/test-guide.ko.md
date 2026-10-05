@@ -65,7 +65,7 @@
 | 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기) | ✅ 🤖 | 03B.9 |
 | Google Meet 링크 자동 생성 | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
-| AI 케어 요청서 → 체크리스트 | ⬜ | 06 / 6.12–6.14 |
+| AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
 
 ### Stage 3 — Booking (예약)
 
@@ -95,7 +95,7 @@
 | 알림 **밀어서 삭제**(60% 이상) · **Clear all** | ✅ 🤖 | 06 후속 |
 | 실패하면 **닫을 때까지 남는 에러 팝업** + Try again | ✅ 🤖 | 06 후속 |
 | **Heads-up** (오너가 관리 · 시터 Home 한 줄 · 예약 상세) | ✅ 🤖 | 06 / 6.14 |
-| 오너 **케어 요청서** (노트 → AI 체크리스트 → 고쳐서 저장, Heads-up 포함) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 |
+| 오너 **케어 체크리스트 / 요청** (칩 → 줄 → 표, 돌보는 중엔 시터 승인 · 거절) | ✅ 🤖 (실제 AI · 두 계정은 👤) | 06 / 6.12–6.13 · 6.20 |
 | 오너 **돌봄 할 일** 등록 · **시간 탭 선택** · 탭해서 **수정**(종류 고정) · 일시중지 · 삭제 | ✅ 🤖 | 06 / 6.1 + 후속 |
 | 시터 **오늘 할 일** — Done → 팝업(메모 + 사진) → Done, 끝낸 건 목록에서 사라짐 | ✅ 🤖 | 06 / 6.2–6.4 · 6.3 + 후속 |
 | 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
@@ -137,12 +137,16 @@
 | CARE-6 | 목록의 **태스크를 탭** → 이름 · 용량 · 시간 · 메모 수정 → Save changes | "Saved …" (시간을 바꾸면 "Saved — now at 6:45 PM"). **종류는 잠겨 있음** | 🤖 `care-tasks` | ➖ |
 | CARE-7 | 시터가 아직 안 한 오늘 할 일의 **시간을 바꾸거나 Pause** | 시터 화면에서 옛 시각의 할 일이 사라지고 새 시각으로 나타남 (Missed로 남지 않음) | SQL `rls_smoke` · **실제 확인 👤** | ➖ |
 
-| REQ-1 | Home → Max → Care tasks → **✍️ Write a care request** → 노트에 "Meals: 8:00 AM — 1 cup of kibble / Medication: 2:00 PM — 1 skin pill… / Heads-up: No knocking — text me instead." → **Make a checklist** | 몇 초 안에 체크리스트: Feeding 08:00 + Medication 14:00 카드, Heads-up 칩들. **아직 아무것도 저장 안 됨**("Nothing is saved until you tap Save") | 🤖 `care-request` · **실제 AI 👤** | ➖ |
-| REQ-2 | 체크리스트에서 이름 · 용량 고치기, **시간을 탭해 휠로 바꾸기**, 카드 **Remove**, Heads-up **✕**, Heads-up 새로 추가 → **Save checklist** | "Saved 2 tasks and 2 Heads-ups for Max" 토스트, 펫 화면으로 돌아오면 **Care tasks에 바로 보임**(고친 이름 · 시각) | 🤖 `care-request` | ➖ |
-| REQ-3 | Mochi(고양이)에 "…walk at 5 PM" 포함해서 | 산책은 체크리스트에 없고 **"Left out: Walk — Cats don't go on walks."** 로 표시 | 🤖 `care-request` · 실제 AI 👤 | ➖ |
-| REQ-4 | 시간이 없는 요청("be nice to him") | "No tasks with a clock time were found…" 안내, Save는 "Add a task or a Heads-up first" | 🤖 `care-request` | ➖ |
-| REQ-5 | AI가 안 될 때(키 없음 · 네트워크) | **빨간 팝업이 남음**("…add tasks by hand") + Try again. 노트는 그대로 | 🤖 `care-request` | ➖ |
-| REQ-6 | 저장이 거절될 때 | 팝업 + 체크리스트는 그대로 남아 고칠 수 있음. **일부만 저장되는 일은 없음**(전부 아니면 전혀) | 🤖 `care-request` · SQL | ➖ |
+| REQ-1 | Home → Max → Care tasks → **✍️ Write a care checklist** (돌보는 중이면 "care request") → 칩 **Meals** | 글상자가 **"1 cup of kibble"** 로 채워짐(고쳐 쓸 수 있음). 고양이는 **Walk 칩이 없음**. 칩마다 기본 문구가 다름 | 🤖 `care-request` | ➖ |
+| REQ-2 | 시간 선택: **At a time**(휠) 또는 **Several times**(− 3 times +, "a day" / "in one sitting") → **Add line** | 줄이 위 목록에 쌓이고 **새 칩 줄**이 이어서 나타남. Several times는 하루에 균등 배치(8 AM · 2 PM · 8 PM) 후 표에서 시간 수정 가능. **Heads-up** 칩은 글만 입력 | 🤖 `care-request` | ➖ |
+| REQ-3 | **Make a checklist** | **표**(Time · Task)가 나타남. 줄마다 AI가 따로 다듬음(이름 · 용량 · 메모) — AI가 안 되거나 거절하면 내가 쓴 그대로 남고 **에러 없이** 진행. AI가 뺀 항목은 **빨간 "Left out" 박스**(탭하면 사라짐). 다시 줄을 쓰고 **Add to the checklist**로 같은 표에 추가 | 🤖 `care-request` · **실제 AI 👤** | ➖ |
+| REQ-4 | (돌보는 중이 아닐 때) 표가 만들어지는 순간 | **자동 저장**: "Saving…" → **"✓ All changes saved"**. 이름 · 용량 · 시간 고치면 저장됨. 펫 화면 Care tasks에 바로 보임. **Save 버튼 없음**(Done만) | 🤖 `care-request` | ➖ |
+| REQ-5 | 표에서 행 **Remove** | 바로 삭제 저장 + 아래 **"Removed … · Undo"** 8초. Undo → 행이 돌아오고 다시 저장됨 | 🤖 `care-request` | ➖ |
+| REQ-6 | 한 번에 13개 이상 / 글 없는 줄 | 글이 없으면 **Add line** 비활성. 12개 초과면 "A checklist holds 12 tasks…" 팝업 | 🤖 `care-request` | ➖ |
+| REQ-7 | **돌보는 중**(수락된 예약, 아직 픽업 전)인 펫에서 같은 화면 | 제목이 **"Write a care request"**, 자동 저장 없음("Nothing changes until Lucy approves"). **Send request to Lucy** → 토스트, 펫 화면에 "⏳ Waiting for Lucy…". 승인 전엔 Care tasks에 아무것도 안 생김. 대기 중엔 또 보낼 수 없음 | 🤖 `care-request` · SQL `rls_smoke` | ➖ |
+| REQ-8 | 시터: Home에 **"📝 Care request for Max — tap to answer"** 줄(또는 알림) → 요청 화면 → **Approve** | 할 일 · Heads-up이 Max에 생성(한 번만 하는 건 once). 오너에게 "approved" 알림 | 🤖 `care-request` · SQL | ➖ |
+| REQ-9 | 시터: **Decline** → 정중한 이유 3개 중 하나 선택(필수) → Decline | 아무것도 생성 안 됨. 오너 알림 본문 + 펫 화면 빨간 상자에 **그 이유** + "Message them to adjust it" | 🤖 `care-request` · SQL | ➖ |
+| REQ-10 | **실제 두 계정**: 오너가 요청 → 시터 화면 확인 → 답변 → 오너 확인 | 위 흐름이 새로고침 없이 이어짐(시터 알림 · 오너 알림) | **👤만** | ➖ |
 
 | HEADS-1 | 오너: 펫 화면 맨 아래 **Heads-up** 칸 → 문구 입력 → **Add Heads-up** | 칩으로 추가됨, 입력칸 비워짐. 같은 문구(대소문자만 다름)를 또 넣어도 중복 안 됨. 칩의 ✕ → 삭제. 없으면 "None yet…" 안내 | 🤖 `heads-up` | ➖ |
 | HEADS-2 | 시터 Home (돌보는 중) | **한 줄 카드** "⚠️ Max: Text instead of knocking  +2". 카드를 누르면 펫별(+오너 이름)로 전부 보임. Home은 여전히 한 화면 | 🤖 `heads-up` | ➖ |

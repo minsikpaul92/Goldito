@@ -18,6 +18,7 @@ import {
   todayStatus,
   typesForSpecies,
 } from "../features/care/careFormat";
+import { usePetStay } from "../features/care/usePetStay";
 import { formatTime } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -56,6 +57,9 @@ export function CareTasksSection({ pet, userId }: Props) {
   const [editing, setEditing] = useState<CareTaskRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<CareTaskRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const { state: stayState } = usePetStay(pet.id);
+  const stay = stayState.status === "ready" ? stayState.stay : null;
+  const request = stayState.status === "ready" ? stayState.request : null;
 
   const load = useCallback(async () => {
     try {
@@ -119,11 +123,21 @@ export function CareTasksSection({ pet, userId }: Props) {
       </View>
       <Text style={styles.hint}>What {pet.name}&apos;s sitter should do each day.</Text>
       <Button
-        label="✍️ Write a care request"
+        label={stay ? "✍️ Write a care request" : "✍️ Write a care checklist"}
         variant="secondary"
         onPress={() => router.push(`/owner/pets/${pet.id}/care-request`)}
         testID="care-request-open"
       />
+      {stay && request?.status === "pending" ? (
+        <Text style={styles.hint} testID="request-status">{`⏳ Waiting for ${stay.sitterName} to answer your care request.`}</Text>
+      ) : null}
+      {stay && request?.status === "declined" ? (
+        <View style={styles.errorBox} testID="request-status">
+          <Text style={styles.errorText}>
+            {`${stay.sitterName} couldn't take your last request${request.declineReason ? `: “${request.declineReason}”` : "."} Message them to adjust it, then send a new one.`}
+          </Text>
+        </View>
+      ) : null}
 
       {state.status === "loading" ? <Text style={styles.muted}>Loading…</Text> : null}
       {state.status === "error" ? (

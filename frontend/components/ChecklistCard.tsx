@@ -7,7 +7,6 @@ import { formatTime } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
-import { Card } from "./ui/Card";
 import { Chip } from "./ui/Chip";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -58,38 +57,48 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
         </Text>
       ) : null}
 
-      {tasks.map((task) => (
-        <Card key={task.key} style={styles.card} testID={`draft-${task.key}`}>
-          <View style={styles.head}>
-            <Text style={styles.type}>{`${careTypeMeta(task.type).emoji} ${careTypeMeta(task.type).label}`}</Text>
-            <TextButton label="Remove" danger onPress={() => onTasks(tasks.filter((t) => t.key !== task.key))} testID={`draft-remove-${task.key}`} />
+      {tasks.length > 0 ? (
+        <View style={styles.table} testID="checklist-table">
+          <View style={styles.tHead}>
+            <Text style={[styles.th, styles.colTime]}>Time</Text>
+            <Text style={styles.th}>Task</Text>
           </View>
-          <TextField
-            label="Name"
-            value={task.title}
-            maxLength={60}
-            onChangeText={(title) => patch(task.key, { title })}
-            testID={`draft-title-${task.key}`}
-          />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Time ${formatTime(task.time)}, tap to change`}
-            onPress={() => setPickingTime(task.key)}
-            style={({ pressed }) => [styles.time, pressed && styles.pressed]}
-            testID={`draft-time-${task.key}`}
-          >
-            <Text style={styles.timeText}>{formatTime(task.time)} · every day</Text>
-            <Text style={styles.chevron}>▾</Text>
-          </Pressable>
-          <TextField
-            label="Dose or how to give it (optional)"
-            value={task.dose}
-            maxLength={60}
-            onChangeText={(dose) => patch(task.key, { dose })}
-            testID={`draft-dose-${task.key}`}
-          />
-        </Card>
-      ))}
+          {tasks.map((task, i) => (
+            <View key={task.key} style={[styles.tRow, i > 0 && styles.tRowLine]} testID={`draft-${task.key}`}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Time ${formatTime(task.time)}, tap to change`}
+                onPress={() => setPickingTime(task.key)}
+                style={({ pressed }) => [styles.time, styles.colTime, pressed && styles.pressed]}
+                testID={`draft-time-${task.key}`}
+              >
+                <Text style={styles.timeText}>{formatTime(task.time)}</Text>
+                <Text style={styles.timeSub}>{task.repeat === false ? "once" : "every day"}</Text>
+              </Pressable>
+              <View style={styles.cell}>
+                <View style={styles.head}>
+                  <Text style={styles.type}>{`${careTypeMeta(task.type).emoji} ${careTypeMeta(task.type).label}`}</Text>
+                  <TextButton label="Remove" danger onPress={() => onTasks(tasks.filter((t) => t.key !== task.key))} testID={`draft-remove-${task.key}`} />
+                </View>
+                <TextField
+                  label="Name"
+                  value={task.title}
+                  maxLength={60}
+                  onChangeText={(title) => patch(task.key, { title })}
+                  testID={`draft-title-${task.key}`}
+                />
+                <TextField
+                  label="Dose or how to give it (optional)"
+                  value={task.dose}
+                  maxLength={60}
+                  onChangeText={(dose) => patch(task.key, { dose })}
+                  testID={`draft-dose-${task.key}`}
+                />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {notSeen.length > 0 ? (
         <View style={styles.skipped} testID="checklist-skipped" accessibilityRole="alert">
@@ -134,7 +143,7 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
       <TimePickerSheet
         visible={picking != null}
         value={picking?.time ?? "08:00"}
-        title="Task time (every day)"
+        title="Task time"
         onClose={() => setPickingTime(null)}
         onPick={(time) => {
           if (picking) patch(picking.key, { time });
@@ -150,22 +159,27 @@ const makeStyles = (theme: Theme) =>
     root: { gap: theme.spacing.sm },
     heading: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    card: { gap: theme.spacing.xs },
+    table: { borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.color.border, overflow: "hidden", backgroundColor: theme.color.surface },
+    tHead: { flexDirection: "row", gap: theme.spacing.sm, padding: theme.spacing.sm, backgroundColor: theme.color.accent },
+    th: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.textMuted },
+    colTime: { width: 84 },
+    tRow: { flexDirection: "row", gap: theme.spacing.sm, padding: theme.spacing.sm },
+    tRowLine: { borderTopWidth: 1, borderTopColor: theme.color.border },
+    cell: { flex: 1, gap: theme.spacing.xs },
     head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     type: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
     time: {
       minHeight: 48,
-      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: theme.spacing.md,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.xs,
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
+      borderColor: theme.color.primary,
+      backgroundColor: theme.color.accent,
     },
     timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    chevron: { fontSize: 22, color: theme.color.textMuted },
+    timeSub: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
     pressed: { opacity: 0.8 },
     skipped: {
       gap: theme.spacing.xs,

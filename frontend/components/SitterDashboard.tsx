@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PetCaution, listPetCautions, listTodayCheckins } from "../features/care/careApi";
+import { ChangeRequest, listPendingChangeRequests } from "../features/care/carePlanApi";
 import { careTypeMeta, todayStatus } from "../features/care/careFormat";
 import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, useTodayTasks } from "../features/care/useTodayTasks";
@@ -33,6 +34,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const [checkins, setCheckins] = useState<number | null>(null);
   const [cautions, setCautions] = useState<PetCaution[]>([]);
   const [showCautions, setShowCautions] = useState(false);
+  const [requests, setRequests] = useState<(ChangeRequest & { petName: string })[]>([]);
 
   const petKey = pets.map((p) => p.id).join(",");
   useFocusEffect(
@@ -40,6 +42,9 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
       let live = true;
       void Promise.all(pets.map((p) => listTodayCheckins(p.id).catch(() => [])))
         .then((lists) => live && setCheckins(lists.reduce((n, l) => n + l.length, 0)))
+        .catch(() => undefined);
+      void listPendingChangeRequests()
+        .then((list) => live && setRequests(list))
         .catch(() => undefined);
       void listPetCautions(pets.map((p) => p.id))
         .then((list) => live && setCautions(list))
@@ -89,6 +94,20 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         {stat("Check-ins", checkins == null ? "—" : String(checkins), "stat-checkins")}
         {stat("Pets in care", String(pets.length), "stat-pets")}
       </View>
+
+      {/* An owner's care request is waiting for an answer: one line, the whole request one tap away. */}
+      {requests.length > 0 ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Care request for ${requests[0].petName} is waiting`}
+          onPress={() => router.push(`/sitter/care-request/${requests[0].id}`)}
+          style={({ pressed }) => [styles.headsUp, styles.requestLine, pressed && styles.pressed]}
+          testID="request-line"
+        >
+          <Text style={styles.headsUpText} numberOfLines={1}>{`📝 Care request for ${requests[0].petName} — tap to answer`}</Text>
+          <Text style={styles.headsUpMore}>{requests.length > 1 ? `+${requests.length - 1}` : "›"}</Text>
+        </Pressable>
+      ) : null}
 
       {/* The owner's Heads-ups for the pets in care: one line here, all of them one tap away. */}
       {cautions.length > 0 ? (
@@ -254,6 +273,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.warning,
       backgroundColor: theme.color.accent,
     },
+    requestLine: { borderColor: theme.color.primary },
     headsUpText: { flex: 1, fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
     headsUpMore: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
     headsUpGroup: { gap: 2, marginBottom: theme.spacing.sm },

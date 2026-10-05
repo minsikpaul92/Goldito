@@ -12,6 +12,8 @@ export type CareTaskInput = {
   /** "HH:MM" in the app timezone. */
   time: string;
   notes: string | null;
+  /** Every day (default) or one time only. */
+  repeat?: boolean;
 };
 
 function fail(action: string): never {
@@ -56,7 +58,7 @@ export async function createCareTask(
       dose: input.dose,
       scheduled_time: input.time,
       notes: input.notes,
-      repeat_daily: true,
+      repeat_daily: input.repeat ?? true,
       created_by: userId,
     })
     .select(TASK_COLUMNS)

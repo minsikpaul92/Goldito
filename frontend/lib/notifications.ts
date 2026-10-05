@@ -110,7 +110,7 @@ export async function deleteNotifications(ids: string[]): Promise<void> {
  * no screen yet or the type doesn't apply to this role — still mark as read.
  */
 export function hrefForNotification(
-  notice: Pick<AppNotification, "type" | "bookingId" | "petId">,
+  notice: Pick<AppNotification, "type" | "bookingId" | "petId"> & { refId?: string | null },
   role: Role,
 ): Href | null {
   const bookingHref = (id: string | null): Href | null => {
@@ -127,6 +127,11 @@ export function hrefForNotification(
       // The record of what the sitter did lives in History; the written diary is a later feature.
       if (role !== "owner") return null;
       return notice.petId ? `/owner/history?pet=${notice.petId}` : "/owner/history";
+    case "care_request":
+      return role === "sitter" && notice.refId ? `/sitter/care-request/${notice.refId}` : null;
+    case "care_request_approved":
+    case "care_request_declined":
+      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
     case "report_sent":
       return role === "owner" ? "/owner/diary" : null;
     case "booking_requested":
