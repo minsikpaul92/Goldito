@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { formatTime } from "../../features/schedule/dates";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -17,9 +17,17 @@ type Props = {
   testID?: string;
 };
 
-const HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+const ITEM = 44;
+const VISIBLE = 5; // rows in view; the middle one is the selection
+const PAD = ((VISIBLE - 1) / 2) * ITEM;
 const pad = (n: number) => String(n).padStart(2, "0");
+
+const HOURS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: String(i + 1), id: `time-hour-${i + 1}` }));
+const MINUTES = Array.from({ length: 60 }, (_, i) => ({ value: i, label: pad(i), id: `time-min-${pad(i)}` }));
+const MERIDIEM = [
+  { value: 0, label: "AM", id: "time-ampm-am" },
+  { value: 1, label: "PM", id: "time-ampm-pm" },
+];
 
 function split(value: string) {
   const [h, m] = value.split(":").map(Number);
@@ -30,9 +38,88 @@ function join(hour12: number, minute: number, pm: boolean) {
   return `${pad((hour12 % 12) + (pm ? 12 : 0))}:${pad(minute)}`;
 }
 
+type WheelItem = { value: number; label: string; id: string };
+
 /**
- * Tap-to-pick time: hour, minute (every 5) and AM/PM are buttons — no steppers, no typing, works
- * the same with a mouse or a finger (DESIGN.md §7.7).
+ * One drum of the picker: scroll (finger, mouse drag or mouse wheel) and it settles on a row,
+ * or just tap a row. The row in the highlighted band is the choice.
+ */
+function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; selected: number; onSelect: (v: number) => void; flex?: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const ref = useRef<ScrollView>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const index = Math.max(0, items.findIndex((i) => i.value === selected));
+  const indexRef = useRef(index);
+  indexRef.current = index;
+
+  const scrollTo = useCallback((i: number, animated: boolean) => ref.current?.scrollTo({ y: i * ITEM, animated }), []);
+
+  // Start on the current value (a frame later: the rows must be laid out first on the web).
+  const placed = useRef(false);
+  const place = () => {
+    if (placed.current) return;
+    placed.current = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollTo(indexRef.current, false)));
+  };
+
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+    },
+    [],
+  );
+
+  const settle = (y: number) => {
+    const i = Math.max(0, Math.min(items.length - 1, Math.round(y / ITEM)));
+    if (i !== indexRef.current) onSelect(items[i].value);
+    scrollTo(i, true);
+  };
+
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = e.nativeEvent.contentOffset.y;
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    // The scroll has stopped when no event arrives for a moment; then snap to the nearest row.
+    settleTimer.current = setTimeout(() => settle(y), Platform.OS === "web" ? 140 : 60);
+  };
+
+  return (
+    <ScrollView
+      ref={ref}
+      style={[styles.wheel, { flex }]}
+      contentContainerStyle={{ paddingVertical: PAD }}
+      showsVerticalScrollIndicator={false}
+      snapToInterval={ITEM}
+      decelerationRate="fast"
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      onLayout={place}
+    >
+      {items.map((item, i) => {
+        const distance = Math.abs(i - index);
+        return (
+          <Pressable
+            key={item.id}
+            accessibilityRole="radio"
+            // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
+            aria-checked={i === index}
+            onPress={() => {
+              onSelect(item.value);
+              scrollTo(i, true);
+            }}
+            style={styles.item}
+            testID={item.id}
+          >
+            <Text style={[styles.itemText, i === index ? styles.itemOn : { opacity: distance === 1 ? 0.55 : 0.3 }]}>{item.label}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/**
+ * Time picker like the iPhone's: three drums — hour, minute, AM/PM — with a highlighted band in
+ * the middle. Works with a finger, a mouse drag, the mouse wheel, or taps (DESIGN.md §7.7).
  */
 export function TimePickerSheet({ visible, value, title = "Pick a time", onClose, onPick, testID = "time-picker" }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -41,20 +128,6 @@ export function TimePickerSheet({ visible, value, title = "Pick a time", onClose
   useEffect(() => {
     if (visible) setDraft(split(value));
   }, [visible, value]);
-
-  const chip = (label: string, selected: boolean, onPress: () => void, id: string) => (
-    <Pressable
-      key={id}
-      accessibilityRole="radio"
-      // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
-      aria-checked={selected}
-      onPress={onPress}
-      style={[styles.chip, selected && styles.chipOn]}
-      testID={id}
-    >
-      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
-    </Pressable>
-  );
 
   return (
     <Sheet
@@ -70,17 +143,14 @@ export function TimePickerSheet({ visible, value, title = "Pick a time", onClose
         />
       }
     >
-      <View style={styles.row} accessibilityRole="radiogroup">
-        {chip("AM", !draft.pm, () => setDraft((d) => ({ ...d, pm: false })), "time-ampm-am")}
-        {chip("PM", draft.pm, () => setDraft((d) => ({ ...d, pm: true })), "time-ampm-pm")}
-      </View>
-      <Text style={styles.label}>Hour</Text>
-      <View style={styles.grid} accessibilityRole="radiogroup">
-        {HOURS.map((h) => chip(String(h), draft.hour12 === h, () => setDraft((d) => ({ ...d, hour12: h })), `time-hour-${h}`))}
-      </View>
-      <Text style={styles.label}>Minute</Text>
-      <View style={styles.grid} accessibilityRole="radiogroup">
-        {MINUTES.map((m) => chip(pad(m), draft.minute === m, () => setDraft((d) => ({ ...d, minute: m })), `time-min-${pad(m)}`))}
+      <View style={styles.frame}>
+        <View style={styles.band} pointerEvents="none" />
+        <View style={styles.wheels}>
+          <Wheel items={HOURS} selected={draft.hour12} onSelect={(hour12) => setDraft((d) => ({ ...d, hour12 }))} />
+          <Text style={styles.colon}>:</Text>
+          <Wheel items={MINUTES} selected={draft.minute} onSelect={(minute) => setDraft((d) => ({ ...d, minute }))} />
+          <Wheel items={MERIDIEM} selected={draft.pm ? 1 : 0} onSelect={(v) => setDraft((d) => ({ ...d, pm: v === 1 }))} />
+        </View>
       </View>
     </Sheet>
   );
@@ -88,21 +158,20 @@ export function TimePickerSheet({ visible, value, title = "Pick a time", onClose
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    row: { flexDirection: "row", gap: theme.spacing.sm },
-    grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
-    chip: {
-      minWidth: 52,
-      minHeight: 44,
-      paddingHorizontal: theme.spacing.sm,
+    frame: { height: ITEM * VISIBLE, justifyContent: "center" },
+    band: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      top: PAD,
+      height: ITEM,
       borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-      alignItems: "center",
-      justifyContent: "center",
+      backgroundColor: theme.color.accent,
     },
-    chipOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
-    chipText: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.textMuted },
-    chipTextOn: { color: theme.color.text },
+    wheels: { flexDirection: "row", alignItems: "center", height: ITEM * VISIBLE },
+    wheel: { height: ITEM * VISIBLE },
+    colon: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    item: { height: ITEM, alignItems: "center", justifyContent: "center" },
+    itemText: { fontSize: theme.fontSize.title, color: theme.color.text },
+    itemOn: { fontWeight: "700" },
   });

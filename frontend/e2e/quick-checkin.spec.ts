@@ -85,7 +85,7 @@ test.describe("quick check-in", () => {
     expect(db.care_checkins).toHaveLength(1);
   });
 
-  test("a typed memo replaces the preset, then clears", async ({ page }) => {
+  test("a typed memo rides along with what was sent, then clears", async ({ page }) => {
     const db = await setup(page);
     const screen = app(page);
     await screen.getByTestId(`checkin-memo-${MAX.id}`).fill("Left the chicken bits, sniffed and walked off");
@@ -93,7 +93,9 @@ test.describe("quick check-in", () => {
     await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
 
     expect(db.care_checkins[0]).toMatchObject({ kind: "meal", value: "little", note_text: "Left the chicken bits, sniffed and walked off" });
-    expect(db.notifications.find((n) => n.type === "care_checkin")?.title).toBe("Max: Left the chicken bits, sniffed and walked off");
+    const notice = db.notifications.find((n) => n.type === "care_checkin");
+    expect(notice?.title).toBe("Max meal little"); // what was sent
+    expect(notice?.body).toBe("Left the chicken bits, sniffed and walked off"); // + the memo
     await expect(screen.getByTestId(`checkin-memo-${MAX.id}`)).toHaveValue("");
   });
 

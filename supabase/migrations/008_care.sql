@@ -54,8 +54,8 @@ revoke execute on function public.ensure_today_task_logs(uuid) from public, anon
 grant execute on function public.ensure_today_task_logs(uuid) to authenticated, service_role;
 
 -- Complete one of today's tasks (6.4). Only the sitter in the care window. The owner always gets a
--- `task_done` notice — with no memo typed, a preset line ("Max had breakfast on time 🍽️"); with a
--- memo, only the memo ("Max: …"). A photo (media purpose `task_proof`, the sitter's own upload for
+-- `task_done` notice: what was done ("Max had breakfast on time 🍽️") as the title, and the memo, if
+-- one was typed, as its body — so the owner always knows what the memo is about. A photo (media purpose `task_proof`, the sitter's own upload for
 -- this pet) also makes a shared feed post — and no second `feed_post` notice, because
 -- notify_feed_post skips posts that carry a task_log_id (Plan B, sitter-care-loop §4).
 create or replace function public.complete_task_log(
@@ -119,17 +119,14 @@ begin
     when 'play' then format('%s had playtime%s %s', v_pet_name, v_on_time, v_emoji)
     else format('%s is asleep %s', v_pet_name, v_emoji)
   end;
-  perform public.notify_user(
-    v_owner, 'task_done', case when v_note is null then v_title else format('%s: %s', v_pet_name, v_note) end,
-    null, v_log.pet_id, null, v_log.id
-  );
+  perform public.notify_user(v_owner, 'task_done', v_title, v_note, v_log.pet_id, null, v_log.id);
 
   if p_media_id is not null then
     insert into public.feed_posts
       (pet_id, sitter_id, posted_by, media_id, caption, caption_source, task_log_id, visibility)
     values
       (v_log.pet_id, auth.uid(), auth.uid(), p_media_id,
-       coalesce(v_note, format('%s %s — done', v_emoji, v_task.title)), 'task', v_log.id, 'shared');
+       format('%s %s — %s', v_emoji, v_task.title, coalesce(v_note, 'done')), 'task', v_log.id, 'shared');
   end if;
 
   return v_log;
@@ -227,8 +224,8 @@ grant all on public.care_checkins to service_role;
 
 -- The 5-second check (6.9): one tap per check-in, an optional short memo for anything special,
 -- an optional photo. Only the sitter inside the care window. The owner gets a `care_checkin`
--- notice: with no memo typed, a preset line ("Max ate everything 🍽️"); with a memo, only the
--- memo ("Max: Left the chicken bits…") — never both. A photo (media purpose `task_proof`, the sitter's own upload for
+-- notice: what was sent ("Max ate everything 🍽️") as the title, and the memo, if typed, as its body.
+-- A photo (media purpose `task_proof`, the sitter's own upload for
 -- this pet) also makes a shared feed post — captioned like a task photo, so it sends no second
 -- `feed_post` notice (notify_feed_post skips caption_source 'task').
 create or replace function public.log_care_checkin(
@@ -287,17 +284,15 @@ begin
     when 'mood' then format('%s seems %s', v_pet_name, p_value)
     else format('Note from your sitter about %s', v_pet_name)
   end || ' ' || v_emoji;
-  -- A typed memo replaces the preset line (the pet's name stays so the notice makes sense alone).
-  perform public.notify_user(
-    v_owner, 'care_checkin', case when v_note is null then v_title else format('%s: %s', v_pet_name, v_note) end,
-    null, p_pet, null, v_row.id
-  );
+  -- What was sent is the title; a typed memo rides along as the body.
+  perform public.notify_user(v_owner, 'care_checkin', v_title, v_note, p_pet, null, v_row.id);
 
   if p_media_id is not null then
     insert into public.feed_posts
       (pet_id, sitter_id, posted_by, media_id, caption, caption_source, visibility)
     values
-      (p_pet, auth.uid(), auth.uid(), p_media_id, coalesce(v_note, v_title), 'task', 'shared');
+      (p_pet, auth.uid(), auth.uid(), p_media_id,
+       case when v_note is null then v_title else v_title || ' — ' || v_note end, 'task', 'shared');
   end if;
 
   return v_row;

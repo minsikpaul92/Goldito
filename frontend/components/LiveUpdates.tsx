@@ -12,7 +12,7 @@ import {
 } from "../lib/notifications";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useNotifications } from "../providers/NotificationsProvider";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
@@ -28,6 +28,7 @@ const EMOJI: Record<string, string> = { task_done: "✅", care_checkin: "📝", 
  * it (it leaves Home and the notification list; the record stays in History). Tap to open.
  */
 export function LiveUpdates() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
   const { inboxRevision, refreshUnread } = useNotifications();
@@ -95,7 +96,12 @@ export function LiveUpdates() {
       ) : null}
 
       {shown.map((n) => (
-        <SwipeToDelete key={n.id} onDelete={() => void dismiss(n)} testID={`live-swipe-${n.id}`}>
+        <SwipeToDelete
+          key={n.id}
+          onDelete={() => void dismiss(n)}
+          radius={theme.radius.md}
+          testID={`live-swipe-${n.id}`}
+        >
           <Pressable
             accessibilityRole="button"
             onPress={() => void open(n)}
@@ -107,6 +113,7 @@ export function LiveUpdates() {
             </Text>
             <View style={styles.body}>
               <Text style={[styles.title, !n.readAt && styles.titleUnread]}>{n.title}</Text>
+              {n.body ? <Text style={styles.memo}>{n.body}</Text> : null}
               <Text style={styles.time}>{formatFeedTime(n.createdAt)}</Text>
             </View>
           </Pressable>
@@ -146,5 +153,6 @@ const makeStyles = (theme: Theme) =>
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, color: theme.color.text },
     titleUnread: { fontWeight: "700" },
+    memo: { fontSize: theme.fontSize.body, color: theme.color.text },
     time: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

@@ -230,6 +230,28 @@ test.describe("Notification center", () => {
     await expect(screen.locator("[data-testid='notification-badge']:visible").first()).toHaveText("1");
   });
 
+  test("rows are rounded cards; the red Delete layer is hidden at rest and has the same rounded shape while pulled", async ({ page }) => {
+    await seedTwo(page);
+    const screen = app(page);
+    const radius = (testId: string) =>
+      screen.getByTestId(testId).evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+
+    // Every notice is a rounded card…
+    expect(parseFloat(await radius(`notification-${n(0)}`))).toBeGreaterThan(0);
+    // …and the layer under it is invisible until the card is pulled aside.
+    const behind = `notification-swipe-${n(0)}-behind`;
+    expect(await screen.getByTestId(behind).evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
+
+    const row = await box(screen.getByTestId(`notification-swipe-${n(0)}`));
+    const y = row.y + row.height / 2;
+    await page.mouse.move(row.x + row.width - 12, y);
+    await page.mouse.down();
+    await page.mouse.move(row.x + row.width - 12 - row.width * 0.3, y, { steps: 10 });
+    expect(Number(await screen.getByTestId(behind).evaluate((el) => getComputedStyle(el).opacity))).toBeGreaterThan(0.5);
+    expect(await radius(behind)).toBe(await radius(`notification-${n(0)}`)); // same corner shape
+    await page.mouse.up();
+  });
+
   test("a tap still opens the notice (swipe handling doesn't swallow it)", async ({ page }) => {
     await seedTwo(page);
     await app(page).getByTestId(`notification-${n(0)}`).click();

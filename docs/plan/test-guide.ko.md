@@ -130,7 +130,7 @@
 | CARE-2 | Mochi(고양이)에서 Add task | **Walk가 목록에 없음** (Litter는 있음). Max는 반대 | 🤖 `care-tasks` | ✅ 10/04 민식 |
 | CARE-3 | 이름을 비우고 Save | "Give the task a name." | 🤖 `care-tasks` | ➖ |
 | CARE-4 | 태스크 **Pause** → **Resume** → **Delete**(확인 시트) | Paused 표시 → 복귀 → 취소하면 남고, 확인하면 사라짐 | 🤖 `care-tasks` | ➖ |
-| CARE-5 | **시간 칸을 탭** → AM/PM · 시 · 분(5분 단위)을 눌러 고름 → Set | + 버튼 없이 원하는 시간(예: 8:00 PM)이 바로 들어감 | 🤖 `care-tasks` | ➖ |
+| CARE-5 | **시간 칸을 탭** → iPhone처럼 **시 · 분 · AM/PM 휠**이 뜸. 손가락/마우스로 돌리거나 마우스 휠로 굴리거나, 줄을 눌러 고름 → Set | 가운데 띠에 멈춘 값이 선택됨 (예: 8:05 PM). + 버튼 없이 바로 | 🤖 `care-tasks` | ➖ |
 | CARE-6 | 목록의 **태스크를 탭** → 이름 · 용량 · 시간 · 메모 수정 → Save changes | "Saved …" (시간을 바꾸면 "Saved — now at 6:45 PM"). **종류는 잠겨 있음** | 🤖 `care-tasks` | ➖ |
 | CARE-7 | 시터가 아직 안 한 오늘 할 일의 **시간을 바꾸거나 Pause** | 시터 화면에서 옛 시각의 할 일이 사라지고 새 시각으로 나타남 (Missed로 남지 않음) | SQL `rls_smoke` · **실제 확인 👤** | ➖ |
 
@@ -140,8 +140,8 @@
 | :--- | :--- | :--- | :--- | :--- |
 | TASK-1 | Demo sitter → Home → **All tasks** | 오늘 시각의 태스크가 시간순, 위에 "N left · M done"과 **Next up**. 일시중지한 태스크는 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-2 | 할 일의 **Done** | **팝업**이 뜸(메모 칸 · 📷 Add photo · Done). 이 시점엔 아무것도 전송되지 않음 | 🤖 `sitter-tasks` | ➖ |
-| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Chloe was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림은 **프리셋 문구**, Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
-| TASK-4 | 팝업에 **메모를 쓰고 Done** | 오너 알림이 **"Max: 메모"** (프리셋은 안 감) | 🤖 `sitter-tasks` · SQL | ➖ |
+| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Chloe was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
+| TASK-4 | 팝업에 **메모를 쓰고 Done** | 오너 알림에 **한 일(제목) + 메모(본문)** 이 같이 감 — 무엇에 대한 메모인지 알 수 있음 | 🤖 `sitter-tasks` · SQL | ➖ |
 | TASK-5 | 팝업 **📷 Add photo** → 찍기/고르기/샘플 → 미리보기 → Use this photo → Done | 업로드 + 완료. 오너 Feed에 사진 글. 알림은 `task_done` 하나 | 🤖 `sitter-tasks` · **실제 업로드 👤** | ➖ |
 | TASK-6 | 미리보기에서 **Retake** | 선택 화면으로 복귀, 아무것도 올라가지 않음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-7 | 업로드가 **실패**하면 | **빨간 팝업이 닫을 때까지 남음** + Try again. 팝업의 메모는 유지, 완료는 안 됨. Try again → 성공 | 🤖 `sitter-tasks` · **실제 환경 👤** | ➖ |
@@ -156,9 +156,9 @@
 | HOME-3 | 바로가기 **All tasks · Photos · My history · Bookings**, 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
-| CHK-1 | 체크인 화면 → Max의 Meal **All** (메모 비움) | 버튼이 **"✓ All"** 로 바뀌고 잠깐 잠김(연타해도 한 번만). 토스트 "Sent ✅". 오너 알림: **프리셋** "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
+| CHK-1 | 체크인 화면 → Max의 Meal **All** (메모 비움) | 버튼이 **"✓ All"** 로 바뀌고 잠깐 잠김(연타해도 한 번만). 토스트 "Sent ✅". 오너 알림: "Max ate everything 🍽️" (메모 없음) | 🤖 `quick-checkin` | ➖ |
 | CHK-2 | 카드 아래 **"Sent to Chloe today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
-| CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **메모만** "Max: …". 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
+| CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
 | CHK-4 | 메모 없이 **Send as a note** | "Type a note first." 전송 안 됨. 글을 쓰면 노트로 전송 | 🤖 `quick-checkin` | ➖ |
 | CHK-5 | Max에는 Walk 10–60분 있음, Mochi에는 **없음** | 펫마다 체크인 화면이 따로, 고양이는 산책 없음 | 🤖 `quick-checkin` | ➖ |
 | CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | "Photo ready ✓", 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | ➖ |
@@ -182,10 +182,10 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| NOTIF-1 | 오너: 벨 → 알림 목록 | 최신순, 안 읽은 것 강조, 벨 숫자 | 🤖 `feed` | ➖ |
+| NOTIF-1 | 오너: 벨 → 알림 목록 | **둥근 카드** 한 장씩, 최신순, 안 읽은 것 강조, 벨 숫자 | 🤖 `feed` | ➖ |
 | NOTIF-2 | 알림 탭 | 읽음 처리 + 해당 화면 (`feed_post` → Feed, 할 일 · 체크인 → **History**) | 🤖 `feed` | ➖ |
 | NOTIF-3 | **Mark all as read** | 숫자 사라짐 | 🤖 `feed` | ➖ |
-| NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 줄이 사라지고 삭제됨. 벨 숫자 갱신 | 🤖 `feed` | ➖ |
+| NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 카드와 같은 **둥근 모양의 빨간 Delete**가 드러나고, 놓으면 사라지며 삭제됨(가만히 있을 땐 빨간 부분이 안 보임). 벨 숫자 갱신 | 🤖 `feed` | ➖ |
 | NOTIF-5 | 알림 한 줄을 **덜 밀다 놓기** | 제자리로 돌아오고 유지됨. 탭은 여전히 열림 | 🤖 `feed` | ➖ |
 | NOTIF-6 | **Clear all** → 확인 | 확인 시트("Clear 2 notifications") 후 전부 삭제, "You're all caught up." | 🤖 `feed` | ➖ |
 | NOTIF-7 | 한꺼번에 사진 여러 장 | 토스트는 "3 new photos 📸" 하나로 합쳐짐 | 👤 | ➖ |
@@ -194,7 +194,7 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home | 맨 위 **Live updates**에 최신 3개 카드(할 일 완료 · 체크인 · 새 사진만). 예약 알림 등은 안 나옴. 3개 넘으면 "N more in notifications" | 🤖 `live-updates` | ➖ |
+| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home | 맨 위 **Live updates**에 최신 3개 카드(할 일 완료 · 체크인 · 새 사진만; 메모가 있으면 제목 아래에 같이). 예약 알림 등은 안 나옴. 3개 넘으면 "N more in notifications" | 🤖 `live-updates` | ➖ |
 | LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
 | LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
 | LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, signIn } from "./helpers";
+import { app, box, center, signIn } from "./helpers";
 import { OWNER, mockSupabase } from "./supabaseMock";
 
 // Owner care tasks on the pet detail screen (phase-06 6.1).
@@ -87,6 +87,21 @@ test.describe("care tasks", () => {
     await expect(screen.getByTestId("toast")).toContainText("Added Meal");
     expect(db.care_tasks[0].scheduled_time).toBe("20:00");
     await expect(screen.getByText("8:00 PM · every day")).toBeVisible();
+  });
+
+  test("the time picker is a wheel: scrolling the minutes with the mouse wheel changes the time", async ({ page }) => {
+    await setup(page);
+    const screen = app(page);
+    await screen.getByTestId("care-add").click();
+    await screen.getByTestId("care-time").click();
+    await expect(screen.getByTestId("time-picker-set")).toHaveText("Set 8:00 AM");
+
+    // Five rows down on the minute wheel (44 px each) → :05
+    const minute = center(await box(screen.getByTestId("time-min-00")));
+    await page.mouse.move(minute.x, minute.y);
+    await page.mouse.wheel(0, 44 * 5);
+    await expect(screen.getByTestId("time-picker-set")).toHaveText("Set 8:05 AM");
+    await expect(screen.getByTestId("time-min-05")).toHaveAttribute("aria-checked", "true");
   });
 
   test("tap a task to open it, change name / dose / time, and save; its type stays fixed", async ({ page }) => {

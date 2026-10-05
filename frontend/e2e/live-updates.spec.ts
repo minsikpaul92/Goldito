@@ -26,7 +26,8 @@ async function ownerHome(page: import("@playwright/test").Page) {
       created_at: ago(minutes),
     });
   n(1, "task_done", "Max had breakfast on time 🍽️", 50);
-  n(2, "care_checkin", "Max: Left the chicken bits", 40);
+  n(2, "care_checkin", "Max ate a little 🍽️", 40);
+  db.notifications[db.notifications.length - 1].body = "Left the chicken bits";
   n(3, "feed_post", "New photo of Max 📸", 30);
   n(4, "booking_confirmed", "Lucy confirmed your booking", 20); // not part of the live stream
   n(5, "care_checkin", "Max seems calm 😊", 10);
@@ -43,7 +44,8 @@ test.describe("owner live updates", () => {
     const screen = app(page);
     await expect(screen.getByTestId(`live-${nid(5)}`)).toContainText("Max seems calm");
     await expect(screen.getByTestId(`live-${nid(3)}`)).toContainText("New photo of Max");
-    await expect(screen.getByTestId(`live-${nid(2)}`)).toContainText("Max: Left the chicken bits");
+    await expect(screen.getByTestId(`live-${nid(2)}`)).toContainText("Max ate a little");
+    await expect(screen.getByTestId(`live-${nid(2)}`)).toContainText("Left the chicken bits"); // the memo, under what was sent
     // Older ones and non-stay notices stay out of the cards.
     await expect(screen.getByTestId(`live-${nid(1)}`)).toHaveCount(0);
     await expect(screen.getByTestId(`live-${nid(4)}`)).toHaveCount(0);

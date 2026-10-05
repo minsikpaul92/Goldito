@@ -69,7 +69,7 @@ test.describe("sitter today's tasks", () => {
     await expect(screen.locator("[data-testid^='task-finished-']")).toContainText("Breakfast · Max");
   });
 
-  test("a memo typed in the popup is what the owner gets", async ({ page }) => {
+  test("a memo typed in the popup goes with what was done, not instead of it", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
     db.care_tasks.push(task("t-pill", "medication", "Joint pill", "08:00"));
@@ -82,7 +82,9 @@ test.describe("sitter today's tasks", () => {
     await expect(screen.getByTestId("toast")).toContainText("Joint pill done ✅");
 
     expect(db.taskCompletions[0].p_note_text).toBe("Hid it in cheese, took it fine");
-    expect(db.notifications.find((n) => n.type === "task_done")?.title).toBe("Max: Hid it in cheese, took it fine");
+    const notice = db.notifications.find((n) => n.type === "task_done");
+    expect(notice?.title).toBe("Max finished Joint pill"); // what was done
+    expect(notice?.body).toBe("Hid it in cheese, took it fine"); // + the memo
   });
 
   test("a photo from the popup: pick, preview, then Done uploads it with the task", async ({ page }) => {

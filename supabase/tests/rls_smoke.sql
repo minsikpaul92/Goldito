@@ -1961,8 +1961,8 @@ begin
   perform _t_ok(
     (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
      where n.user_id = chloe and n.type = 'care_checkin' and c.value = 'little'
-       and n.title = 'Max: Left the chicken bits, sniffed and walked off' and n.body is null) = 1,
-    '6.9: a typed memo replaces the preset line (memo only)');
+       and n.title like 'Max ate a little%' and n.body = 'Left the chicken bits, sniffed and walked off') = 1,
+    '6.9: a typed memo rides along as the body of the preset title');
   perform _t_ok(not exists (select 1 from public.feed_posts fp
       join public.care_checkins c on c.pet_id = fp.pet_id and c.media_id = fp.media_id),
     '6.9: no photo → no feed post');
@@ -2023,8 +2023,8 @@ begin
   perform _t_ok(
     (select count(*) from public.notifications n join public.task_logs l on l.id = n.ref_id
      where n.user_id = chloe and n.type = 'task_done' and l.task_id = _t_get('task_play')
-       and n.title = 'Max: Chased the ball twice, then napped') = 1,
-    '6.x: a typed memo replaces the preset line');
+       and n.title like 'Max had playtime%' and n.body = 'Chased the ball twice, then napped') = 1,
+    '6.x: with a memo the owner gets what was done (title) plus the memo (body)');
 
   perform _t_as(chloe);
   update public.care_tasks set scheduled_time = '23:00' where id = _t_get('task_play');

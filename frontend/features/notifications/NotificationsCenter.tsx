@@ -21,7 +21,7 @@ import {
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type ListState =
@@ -34,6 +34,7 @@ type ListState =
  * Tap → mark read + navigate (architecture §7). Empty: "You're all caught up."
  */
 export function NotificationsCenter({ role }: { role: Role }) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
   const { inboxRevision, refreshUnread, unreadCount } = useNotifications();
@@ -186,7 +187,11 @@ export function NotificationsCenter({ role }: { role: Role }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <SwipeToDelete onDelete={() => void onDelete(item)} testID={`notification-swipe-${item.id}`}>
+          <SwipeToDelete
+            onDelete={() => void onDelete(item)}
+            radius={theme.radius.md}
+            testID={`notification-swipe-${item.id}`}
+          >
             <Pressable
               accessibilityRole="button"
               onPress={() => void onOpen(item)}
@@ -243,14 +248,18 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     list: {
+      padding: theme.spacing.sm,
+      gap: theme.spacing.xs,
       paddingBottom: theme.spacing.xl,
     },
+    // Each notice is a rounded card (like iPhone notifications), so the swipe layer under it matches.
     row: {
       paddingVertical: theme.spacing.md,
       paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.color.border,
     },
     unread: {
       backgroundColor: theme.color.accent,

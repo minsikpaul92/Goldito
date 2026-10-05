@@ -10,6 +10,8 @@ export const SWIPE_DELETE_RATIO = 0.6;
 type Props = {
   children: ReactNode;
   onDelete: () => void;
+  /** Corner radius of the row, so the red layer under it is cut to the same shape. */
+  radius?: number;
   testID?: string;
 };
 
@@ -18,7 +20,7 @@ type Props = {
  * `onDelete` runs; otherwise it springs back. A tap still goes through to the row's own press.
  * Screen readers get a "Delete" action instead of the gesture.
  */
-export function SwipeToDelete({ children, onDelete, testID }: Props) {
+export function SwipeToDelete({ children, onDelete, radius = 0, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const x = useRef(new Animated.Value(0)).current;
   const [width, setWidth] = useState(0);
@@ -50,7 +52,7 @@ export function SwipeToDelete({ children, onDelete, testID }: Props) {
 
   return (
     <View
-      style={styles_root}
+      style={{ overflow: "hidden", borderRadius: radius }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       accessibilityActions={[{ name: "delete", label: "Delete" }]}
       onAccessibilityAction={(e) => {
@@ -58,17 +60,23 @@ export function SwipeToDelete({ children, onDelete, testID }: Props) {
       }}
       testID={testID}
     >
-      <View style={styles.behind} pointerEvents="none">
+      {/* Only visible while the row is pulled aside, so it never peeks out at the rounded corners. */}
+      <Animated.View
+        style={[
+          styles.behind,
+          { borderRadius: radius, opacity: x.interpolate({ inputRange: [-24, 0], outputRange: [1, 0], extrapolate: "clamp" }) },
+        ]}
+        pointerEvents="none"
+        testID={testID ? `${testID}-behind` : undefined}
+      >
         <Text style={styles.behindText}>🗑️ Delete</Text>
-      </View>
+      </Animated.View>
       <Animated.View style={{ transform: [{ translateX: x }] }} {...pan.panHandlers}>
         {children}
       </Animated.View>
     </View>
   );
 }
-
-const styles_root = { overflow: "hidden" as const };
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
