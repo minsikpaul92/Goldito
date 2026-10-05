@@ -19,7 +19,11 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `007_feed_notifications.sql` | 05 | Feed posts + notification triggers, `feed_posts.category` |
 | `007b_feed_posts_realtime.sql` | 05 | `feed_posts` in the Realtime publication (owner Feed refetch on delete); idempotent. Numbered `007b` because `008` is reserved for care |
 | `007c_feed_visibility.sql` | 05 | `feed_posts.posted_by` (author) + `visibility` (shared / private), owner posts, author-only delete, private media hidden from the other party, `feed_post` notices only for shared posts (sitter post → owner, owner post → on-duty sitter) |
-| `008_care.sql` | 06 | Today task logs, complete with photo, check-ins, care requests, cautions |
+| `008_care.sql` | 06 | `ensure_today_task_logs` (6.2), `complete_task_log` with optional photo (6.4), `care_checkins` table + RLS (6.8), `care_requests` + `pet_cautions` + atomic `save_care_request` (6.13), `log_care_checkin` with an optional memo and photo (6.9); later: check-ins, care requests, cautions |
+| `008g_care_change_requests.sql` | 06 | While a stay is on the owner SENDS a care request (`send_care_change_request`, one open per pet) and the sitter approves or declines (`respond_care_change_request`: approve creates the tasks and Heads-ups, decline carries a reason); notices `care_request` · `care_request_approved` · `care_request_declined` |
+| `008h_care_counter_requests.sql` | 06 | A decline can carry a note; the sitter can send a counter-request instead (`counter_care_change_request`: note + optional extra fee + tasks the owner does themselves) and the owner accepts or declines it (`answer_care_counter`); statuses `countered` · `accepted` · `withdrawn`; notices `care_request_countered` · `care_counter_accepted` · `care_counter_declined` |
+| `008i_revoke_trigger_functions.sql` | 06 | Trigger functions (`care_task_reset_today`, `guard_care_checkin_species`, `notify_feed_post`) are no longer callable as RPCs by `anon` / `authenticated` (Supabase advisor) |
+| `008j_no_direct_edits_during_stay.sql` | 06 | `pet_has_open_stay`: while a stay is on the owner can't INSERT care tasks or Heads-ups directly (RLS) — they send a care request; edits and deletes unchanged |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |

@@ -1,19 +1,22 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
+import { LiveUpdates } from "../../../components/LiveUpdates";
 import { PetCard } from "../../../components/PetCard";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { useInCare } from "../../../features/care/useInCare";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
-/** Owner Home: my pets (phase-03 3.5). Today's summary and the pet room arrive later. */
+/** Owner Home: live updates from the sitter (swipe to dismiss) and my pets. The pet room arrives later. */
 export default function OwnerHome() {
   const styles = useThemedStyles(makeStyles);
   const { status, pets, error, reload } = useMyPets();
+  const inCare = useInCare();
   const addPet = () => router.push("/owner/pets/new");
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
@@ -47,8 +50,9 @@ export default function OwnerHome() {
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.list}>
+        <LiveUpdates />
         {pets.map((pet) => (
-          <PetCard key={pet.id} pet={pet} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
+          <PetCard key={pet.id} pet={pet} inCare={inCare[pet.id]} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
         ))}
       </Screen>
       <View style={styles.footer}>

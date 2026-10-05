@@ -2,7 +2,7 @@
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **PawNote**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack), Seulgi (AI & data anonymization), Muk (UX/UI).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too**), Seulgi (only the 3-year conversation-history anonymization — she is away), Muk (UX/UI).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
@@ -41,6 +41,7 @@ Every feature must pass:
 **Source of truth docs:**
 
 - Product: `README.md`, `docs/README.ko.md`
+- **Feature status + test scenarios:** `docs/plan/test-guide.ko.md`
 - **Product flow (5 stages, demo path):** `docs/plan/full-process.ko.md`
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
@@ -156,7 +157,7 @@ English only for commit messages and GitHub PR content.
 ### Phase order
 
 `00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), Seulgi's AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5) runs in parallel with Minsik's app queue, but TODO must list **one** "Current focus" per agent session.
+After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session.
 
 ### Coding discipline
 
@@ -177,6 +178,7 @@ When a task is **done** (DoD met):
 2. Set **Current focus** to exactly **one** next task ID (e.g. `1.2 FastAPI health`).
 3. If the whole phase is done, note `Phase N complete` in **Completed** and set focus to first task of phase N+1.
 4. If you discovered new work, add it to **Up next** with a short ID — do not silently expand scope in the same task.
+5. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3 — new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
 If TODO.md and phase docs disagree, **phase Goal/DoD wins**; fix TODO to match.
 

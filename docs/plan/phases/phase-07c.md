@@ -56,9 +56,9 @@
 | 7C.1 | DB `011_completion.sql` | 민식 | `reviews(id, booking_id → bookings unique, owner_id, sitter_id, rating int check 1–5, comment text null check (char_length(comment) <= 500), created_at)` — RLS: 견주 insert(자기 예약, 찾기 완료 후, 1회), 누구나(authenticated) select (시터 프로필 평균용 — 견주 이름은 display_name만). `sitter_rating_summary(p_sitter)` RPC `{avg, count, recent:[{rating, comment, created_at}]}`. `pet_life_records(id, pet_id → pets cascade, booking_id → bookings, sitter_id, summary jsonb not null, body text, source_snapshot jsonb, model, created_at)` · unique(booking_id, pet_id) — RLS select: 견주(`is_owner_of`) + 그 반려동물 예약이 requested/confirmed인 시터(기존 "요청 받은 시터는 펫 프로필 조회" 규칙과 같게) + 그 반려동물이 들어간 `open` 문의를 받은 시터(문의 = 펫 프로필 공유, 07B). 트리거: `pick_up` handoff `completed_at` 설정 시 → 견주 `review_requested` (`pet_picked_up` 다음) · reviews insert → 시터 `review_received` | rls_smoke N: 끝난 예약의 시터·제3자는 기록 0행 |
 | 7C.2 | 귀가 리포트 · Stay summary | 민식 | 03B Returned → `pet_picked_up` 문구 "home safe" (06B 이후 `return` 사진 체크가 ok면 "· photo verified"). Stay summary는 클라이언트 집계(daily_reports·feed_posts·task_logs count) — 새 AI 호출 없음 | 완료 예약 상세 표시 |
 | 7C.3 | 리뷰 UI | 민식 | `StarRating`(버튼 5개, 키보드·마우스), 보낸 뒤 읽기 전용. 시터 프로필·검색 카드에 평균 별점 | 1회 제한 |
-| 7C.4 | `POST /api/ai/life-record` | 슬기 | `routers/ai_life_record.py`: `assert_booking_party(booking)` + 찾기 완료 확인 · 반려동물마다 `source_snapshot` = 그 예약 구간의 check-ins · task_logs(완료·누락) · daily_reports 본문 · handoff_checks findings(06B가 아직 없으면 생략) · safety_checks 요약(08 있으면) · 시터 메모 · 문의 메시지(견주 질문만) · 이전 최신 Life Record(있으면) — **출입 정보·주소 키 없음** → `MODEL_REPORT`(Super) + `prompts/life_record/system.md` → `chat_json` `LifeRecord {eats, meds, potty, behavior, heads_up:[str], sitter_tips:[str], changed_since_last:[str]}` (각 항목 ≤ 2문장, 근거 없으면 null) → insert + `rag.index_source('life_record', record_id, 텍스트화, scope pet+owner)` → 견주 `life_record_updated`. 프론트가 Returned 직후 호출(멱등 — 이미 있으면 반환), 실패 시 예약 상세 **Retry** | 환각 테스트 3회 · 멱등 |
+| 7C.4 | `POST /api/ai/life-record` | 민식 | `routers/ai_life_record.py`: `assert_booking_party(booking)` + 찾기 완료 확인 · 반려동물마다 `source_snapshot` = 그 예약 구간의 check-ins · task_logs(완료·누락) · daily_reports 본문 · handoff_checks findings(06B가 아직 없으면 생략) · safety_checks 요약(08 있으면) · 시터 메모 · 문의 메시지(견주 질문만) · 이전 최신 Life Record(있으면) — **출입 정보·주소 키 없음** → `MODEL_REPORT`(Super) + `prompts/life_record/system.md` → `chat_json` `LifeRecord {eats, meds, potty, behavior, heads_up:[str], sitter_tips:[str], changed_since_last:[str]}` (각 항목 ≤ 2문장, 근거 없으면 null) → insert + `rag.index_source('life_record', record_id, 텍스트화, scope pet+owner)` → 견주 `life_record_updated`. 프론트가 Returned 직후 호출(멱등 — 이미 있으면 반환), 실패 시 예약 상세 **Retry** | 환각 테스트 3회 · 멱등 |
 | 7C.5 | Life Record UI | 민식 | 위 화면 + `LifeRecordCard` (07B 출처 칩·03B 요청 카드에서 재사용) | 데스크톱 마우스 확인 |
-| 7C.6 | 다음 예약 연결 | 민식·슬기 | 03B 요청 카드·예약 상세에 최신 기록 요약. 07B `rag.search`에 life_record 포함(이미 범위 필터), 06 `care-plan` 입력에 최신 기록 `heads_up` 전달 → 체크리스트 초안 주의사항 자동 제안 | Paul 요청 카드에 Lucy 기록 |
+| 7C.6 | 다음 예약 연결 | 민식 | 03B 요청 카드·예약 상세에 최신 기록 요약. 07B `rag.search`에 life_record 포함(이미 범위 필터), 06 `care-plan` 입력에 최신 기록 `heads_up` 전달 → 체크리스트 초안 주의사항 자동 제안 | Paul 요청 카드에 Lucy 기록 |
 
 ### 프롬프트 규칙 (`prompts/life_record/system.md`, 영어)
 
@@ -89,7 +89,7 @@
 
 ## AI 프롬프트
 
-Playbook §9C — (7C.1 SQL) / (7C.4 슬기) / (7C.2–7C.3·7C.5 UI)
+Playbook §9C — (7C.1 SQL) / (7C.4 민식) / (7C.2–7C.3·7C.5 UI)
 
 ---
 

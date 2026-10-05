@@ -136,3 +136,26 @@ export $(grep -v '^#' .env | grep NEBIUS_API_KEY | xargs)
 curl -s "https://api.tokenfactory.us-central1.nebius.com/v1/models" \
   -H "Authorization: Bearer $NEBIUS_API_KEY" | python3 -c "import sys,json; d=json.load(sys.stdin); print([m['id'] for m in d['data'] if 'nemotron' in m['id'].lower() or 'MiniCPM' in m['id']])"
 ```
+
+
+---
+
+## Live check — `scripts/test_nebius.py` (7.1, 2026-10-04)
+
+`cd backend && PYTHONPATH=. .venv/bin/python -m scripts.test_nebius` — 5 calls per role ("Say hi in one sentence."; vision gets `frontend/assets/demo/nap.jpg`), reasoning **off**, from the developer's laptop in Toronto.
+
+| Role | Model | TTFT (median of 5) | Latency (median of 5) | Sample answer |
+| :--- | :--- | ---: | ---: | :--- |
+| fast | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 642 ms | 782 ms | Hello! 😊 |
+| report | `nvidia/nemotron-3-super-120b-a12b` | 195 ms | 197 ms | Hi! 👋 |
+| safety | `nvidia/Nemotron-3-Ultra-550b-a55b` | 172 ms | 185 ms | Hi there! |
+| vision | `openbmb/MiniCPM-V-4_5` | 1146 ms | 1266 ms | A small white dog with its mouth open is sitting on a white surface. |
+
+Embeddings: `Qwen/Qwen3-Embedding-8B` returns 1024 dimensions with `dimensions=1024`.
+
+**What the spike found (code comments in `app/services/nebius.py`):**
+
+- **Reasoning toggle:** Nemotron thinks by default (the thinking comes back in a separate `reasoning` field, not in `content`). `extra_body={"chat_template_kwargs": {"enable_thinking": False}}` turns it off — Super: ~780 ms → ~240 ms, Nano: ~2.8 s → ~0.7 s for a one-line JSON answer. `chat(..., reasoning=True)` keeps it (Phase 08 safety step). The vision model gets no flag.
+- **JSON mode:** `response_format={"type": "json_object"}` works on Nano and Super. `chat_json` still extracts the first balanced `{…}` and validates it with pydantic, retries once with a correction message, then raises `AIInvalidOutput`.
+- **Streaming** works (TTFT = first content token); if a model refuses streaming or JSON mode with a 400/422, the call repeats without it and TTFT is null.
+- **Not tested here:** tool calling (7B.11 spike), long inputs.

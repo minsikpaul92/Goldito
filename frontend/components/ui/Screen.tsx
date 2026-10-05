@@ -8,9 +8,10 @@ import { Theme } from "../../theme/themes";
 type Props = {
   children: ReactNode;
   contentStyle?: ViewStyle;
+  testID?: string;
 };
 
-export function Screen({ children, contentStyle }: Props) {
+export function Screen({ children, contentStyle, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -18,6 +19,7 @@ export function Screen({ children, contentStyle }: Props) {
       <ScrollView
         contentContainerStyle={[styles.content, contentStyle]}
         keyboardShouldPersistTaps="handled"
+        testID={testID}
       >
         {children}
       </ScrollView>

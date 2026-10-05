@@ -86,12 +86,31 @@ export async function markAllNotificationsRead(): Promise<void> {
   if (error) throw new Error("Couldn't mark notices as read.");
 }
 
+/** Delete one notice (RLS: only the owner of the notice). The underlying record stays in History. */
+export async function deleteNotification(id: string): Promise<void> {
+  const { error } = await getSupabase().from("notifications").delete().eq("id", id);
+  if (error) throw new Error("Couldn't delete that notice. Try again.");
+}
+
+/** "Clear all": every notice of the signed-in user (RLS limits the delete to their own). */
+export async function deleteAllNotifications(): Promise<void> {
+  const { error } = await getSupabase().from("notifications").delete().not("id", "is", null);
+  if (error) throw new Error("Couldn't clear your notifications. Try again.");
+}
+
+/** Delete just these notices (Home's "Clear all" only clears the live updates). */
+export async function deleteNotifications(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await getSupabase().from("notifications").delete().in("id", ids);
+  if (error) throw new Error("Couldn't clear your updates. Try again.");
+}
+
 /**
  * Where tapping a notice should go (architecture §7). Returns null when there is
  * no screen yet or the type doesn't apply to this role — still mark as read.
  */
 export function hrefForNotification(
-  notice: Pick<AppNotification, "type" | "bookingId" | "petId">,
+  notice: Pick<AppNotification, "type" | "bookingId" | "petId"> & { refId?: string | null },
   role: Role,
 ): Href | null {
   const bookingHref = (id: string | null): Href | null => {
@@ -101,10 +120,21 @@ export function hrefForNotification(
 
   switch (notice.type) {
     case "feed_post":
-      if (role === "owner") return "/owner/feed";
+      if (role === "owner") return notice.petId ? `/owner/feed?pet=${notice.petId}` : "/owner/feed";
       return notice.petId ? `/sitter/feed/${notice.petId}` : "/sitter/feed";
     case "task_done":
     case "care_checkin":
+      // The record of what the sitter did lives in History; the written diary is a later feature.
+      if (role !== "owner") return null;
+      return notice.petId ? `/owner/history?pet=${notice.petId}` : "/owner/history";
+    case "care_request":
+      return role === "sitter" && notice.refId ? `/sitter/care-request/${notice.refId}` : null;
+    case "care_request_approved":
+    case "care_request_declined":
+    case "care_request_countered":
+      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
+    case "care_counter_accepted":
+      return role === "sitter" ? "/sitter/tasks" : null;
     case "report_sent":
       return role === "owner" ? "/owner/diary" : null;
     case "booking_requested":

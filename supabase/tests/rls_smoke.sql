@@ -1670,6 +1670,643 @@ begin
   get diagnostics n = row_count;
   perform _t_ok(n = 1, '5.8: author deletes her own post');
 
+  -- Phase 06 (6.2): ensure_today_task_logs
+  perform _t_as(chloe);
+  begin
+    perform ensure_today_task_logs(max);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '6.2: the owner cannot create task logs');
+  perform _t_as(paul);
+  begin
+    perform ensure_today_task_logs(max);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '6.2: a sitter who is not on duty cannot create task logs');
+
+  -- (seeded as the system: the owner can no longer add tasks to a pet whose stay is on — see 6.23)
+  perform _t_as(null);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time, active)
+  values (max, 'play', 'Paused play', '17:00', false);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time, repeat_daily)
+  values (max, 'medication', 'One-off pill', '12:00', false)
+  returning id into v_id;
+  perform _t_put('task_once', v_id);
+
+  perform _t_as(lucy);
+  select count(*) into n from ensure_today_task_logs(max);
+  perform _t_ok(n = 2, '6.2: logs for the active tasks only (Breakfast + one-off pill, not the paused one)');
+  select count(*) into n from ensure_today_task_logs(max);
+  perform _t_ok(n = 2, '6.2: calling again is idempotent');
+  perform _t_ok(
+    (select due_at from public.task_logs where task_id = _t_get('task_bori'))
+      = local_ts(app_today(), '08:00'),
+    '6.2: due_at is today at the task time in the app timezone');
+  perform _t_ok(
+    (select count(*) from public.task_logs where task_id = _t_get('task_once')) = 1,
+    '6.2: a non-repeating task gets one log');
+  perform _t_ok(
+    (select count(*) from ensure_today_task_logs('00000000-0000-4000-8000-0000000000c2')) = 1,
+    '6.2: each pet gets its own logs (Mochi: litter box)');
+
+  perform _t_as(chloe);
+  select count(*) into n from public.task_logs where pet_id = max;
+  perform _t_ok(n = 2, '6.2: the owner reads the logs through RLS');
+  -- A pet nobody has booked: only its owner reads its logs (later scenarios hand Max to
+  -- different sitters, so Max is not a stable "no access" pet).
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo') returning id into v_id;
+  insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Dinner', '18:00');
+  insert into public.task_logs (task_id, pet_id, due_at)
+  select id, v_id, local_ts(app_today(), '18:00') from public.care_tasks where pet_id = v_id;
+  perform _t_as(lucy);
+  select count(*) into n from public.task_logs where pet_id = v_id;
+  perform _t_ok(n = 0, '6.2: a sitter with no booking for the pet cannot read the logs');
+  perform _t_as(chloe);
+  select count(*) into n from public.task_logs where pet_id = v_id;
+  perform _t_ok(n = 1, '6.2: the owner sees the logs of her unbooked pet');
+
+  -- Phase 06 (6.4): complete_task_log
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (max, lucy, 'smoke/proof-pill', 'image', 'task_proof');
+  perform _t_put('m_proof', (select id from public.media where cloudinary_public_id = 'smoke/proof-pill'));
+  perform _t_put('log_bf', (select id from public.task_logs where task_id = _t_get('task_bori')));
+  perform _t_put('log_pill', (select id from public.task_logs where task_id = _t_get('task_once')));
+
+  perform _t_as(chloe);
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.4: the owner cannot complete a task');
+  perform _t_as(paul);
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.4: a sitter outside the care window cannot complete it');
+
+  perform _t_as(lucy);
+  begin
+    perform complete_task_log(_t_get('log_bf'), _t_get('media_bori'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_media', '6.4: media must be a task_proof upload');
+  perform _t_ok((select status from public.task_logs where id = _t_get('log_bf')) = 'pending',
+    '6.4: a rejected completion leaves the log pending');
+
+  perform complete_task_log(_t_get('log_bf'));
+  perform _t_ok(
+    (select status = 'done' and completed_by = lucy and completed_at is not null and media_id is null
+     from public.task_logs where id = _t_get('log_bf')),
+    '6.4: Mark done without a photo');
+  begin
+    perform complete_task_log(_t_get('log_bf'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_done', '6.4: completing twice is refused');
+
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.notifications
+     where user_id = chloe and type = 'task_done' and ref_id = _t_get('log_bf')
+       and title like 'Max had breakfast%') = 1,
+    '6.4: the owner gets a task_done notice');
+  perform _t_ok(not exists (select 1 from public.feed_posts where task_log_id = _t_get('log_bf')),
+    '6.4: no photo → no feed post');
+
+  perform _t_as(lucy);
+  perform complete_task_log(_t_get('log_pill'), _t_get('m_proof'));
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.feed_posts
+     where task_log_id = _t_get('log_pill') and caption_source = 'task' and visibility = 'shared'
+       and media_id = _t_get('m_proof') and posted_by = lucy) = 1,
+    '6.4: with a photo → a shared feed post with a task caption');
+  perform _t_ok(
+    (select count(*) from public.notifications where user_id = chloe and ref_id = _t_get('log_pill')
+       and type = 'task_done') = 1
+    and not exists (select 1 from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
+       where n.type = 'feed_post' and fp.task_log_id = _t_get('log_pill')),
+    '6.4: task_done only — no extra feed_post notice for a task photo');
+  perform _t_as(chloe);
+  perform _t_ok(
+    (select count(*) from public.feed_posts where task_log_id = _t_get('log_pill')) = 1,
+    '6.4: the owner sees the task photo in the feed');
+
+  -- Phase 06 (6.8): care_checkins
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo2') returning id into v_id;
+  insert into public.care_checkins (pet_id, kind, value) values (v_id, 'meal', 'all');
+  insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '30');
+  insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', 'Watched a squirrel for ten minutes');
+  insert into public.care_checkins (pet_id, kind, value) values (max, 'mood', 'happy');
+  perform _t_ok(true, '6.8: valid check-ins of every shape insert');
+
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'meal', 'a lot');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: value must fit the kind');
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '15');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: walk minutes are 10 / 20 / 30 / 45 / 60');
+  begin
+    insert into public.care_checkins (pet_id, kind) values (v_id, 'note');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a note needs its line');
+  insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', 'Hid under the bed');
+  perform _t_ok(true, '6.8: any check-in may carry a short memo');
+  begin
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', '   ');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a memo is never an empty string');
+  begin
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'meal', 'all', repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a memo is at most 120 characters on any kind');
+  begin
+    insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.8: a note is at most 120 characters');
+  begin
+    insert into public.care_checkins (pet_id, kind, value)
+    values ('00000000-0000-4000-8000-0000000000c2', 'walk', '20');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.8: no walk check-in for a cat (D23)');
+
+  -- RLS: read only, owner and the sitter in the window.
+  perform _t_as(lucy);
+  begin
+    insert into public.care_checkins (pet_id, created_by, kind, value) values (max, lucy, 'mood', 'calm');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: clients cannot insert directly (log_care_checkin writes)');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 0,
+    '6.8: a sitter with no booking for the pet reads nothing');
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = max and kind = 'mood') >= 1,
+    '6.8: the sitter in the care window reads the pet''s check-ins');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 4,
+    '6.8: the owner reads her pet''s check-ins');
+  begin
+    update public.care_checkins set value = 'none' where pet_id = v_id and kind = 'meal';
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: nobody edits a check-in from the client');
+  begin
+    delete from public.care_checkins where pet_id = v_id;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: nobody deletes one from the client');
+  perform _t_as(null, 'anon');
+  begin
+    perform count(*) from public.care_checkins;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.8: anon cannot read check-ins');
+
+  -- Phase 06 (6.9): log_care_checkin
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (max, lucy, 'smoke/proof-checkin', 'image', 'task_proof');
+  perform _t_put('m_checkin', (select id from public.media where cloudinary_public_id = 'smoke/proof-checkin'));
+
+  perform _t_as(chloe);
+  begin
+    perform log_care_checkin(max, 'meal', 'all');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.9: the owner cannot log a check-in');
+  perform _t_as('00000000-0000-4000-8000-0000000000b3');
+  begin
+    perform log_care_checkin(max, 'meal', 'all');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '6.9: a sitter outside the care window cannot');
+
+  perform _t_as(lucy);
+  perform log_care_checkin(max, 'meal', 'all');
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = max and kind = 'meal' and value = 'all'
+       and created_by = lucy and note_text is null and media_id is null) = 1,
+    '6.9: one tap, no memo');
+  perform log_care_checkin(max, 'mood', 'tired', '   ');
+  perform _t_ok(
+    (select note_text from public.care_checkins where pet_id = max and kind = 'mood' and value = 'tired') is null,
+    '6.9: a blank memo is dropped');
+  perform log_care_checkin(max, 'meal', 'little', ' Left the chicken bits, sniffed and walked off ');
+  perform _t_ok(
+    (select note_text from public.care_checkins where pet_id = max and value = 'little')
+      = 'Left the chicken bits, sniffed and walked off',
+    '6.9: something special → a trimmed memo on the check-in');
+  perform log_care_checkin(max, 'note', null, 'Watched a squirrel for ten minutes');
+  begin
+    perform log_care_checkin(max, 'note', null, '  ');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'note_required', '6.9: a note check-in needs its line');
+  begin
+    perform log_care_checkin(max, 'meal', 'plenty');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '6.9: a value that does not fit the kind is refused');
+  begin
+    perform log_care_checkin('00000000-0000-4000-8000-0000000000c2', 'walk', '20');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.9: no walk check-in for a cat');
+  begin
+    perform log_care_checkin(max, 'meal', 'all', null, _t_get('media_bori'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_media', '6.9: the photo must be a task_proof upload');
+
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.user_id = chloe and n.type = 'care_checkin' and c.kind = 'meal' and c.value = 'all'
+       and n.title like 'Max ate everything%' and n.body is null) >= 1,
+    '6.9: no memo typed → the preset line, "Max ate everything 🍽️"');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.user_id = chloe and n.type = 'care_checkin' and c.value = 'little'
+       and n.title like 'Max ate a little%' and n.body = 'Left the chicken bits, sniffed and walked off') = 1,
+    '6.9: a typed memo rides along as the body of the preset title');
+  perform _t_ok(not exists (select 1 from public.feed_posts fp
+      join public.care_checkins c on c.pet_id = fp.pet_id and c.media_id = fp.media_id),
+    '6.9: no photo → no feed post');
+
+  perform _t_as(lucy);
+  perform log_care_checkin(max, 'meal', 'most', null, _t_get('m_checkin'));
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.feed_posts
+     where media_id = _t_get('m_checkin') and caption_source = 'task' and visibility = 'shared'
+       and posted_by = lucy and task_log_id is null) = 1,
+    '6.9: with a photo → a shared feed post');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
+     where n.type = 'feed_post' and fp.media_id = _t_get('m_checkin')) = 0
+    and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+     where n.type = 'care_checkin' and c.media_id = _t_get('m_checkin')) = 1,
+    '6.9: a check-in photo sends the care_checkin notice only');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.feed_posts where media_id = _t_get('m_checkin')) = 1,
+    '6.9: the owner sees the check-in photo in the feed');
+
+  -- Phase 06 follow-ups: task memo, editing a task, deleting notifications
+  perform _t_as(null);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time)
+  values (max, 'play', 'Evening play', '21:00') returning id into v_id;
+  perform _t_put('task_play', v_id);
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
+    '6.x: the new task gets today''s log');
+
+  perform _t_as(chloe);
+  update public.care_tasks set scheduled_time = '22:00' where id = _t_get('task_play');
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
+    '6.x: changing a task''s time drops today''s unfinished log');
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok(
+    (select count(*) from public.task_logs
+     where task_id = _t_get('task_play') and due_at = local_ts(app_today(), '22:00')) = 1,
+    '6.x: …and today gets one log at the new time');
+
+  perform _t_as(chloe);
+  update public.care_tasks set active = false where id = _t_get('task_play');
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
+    '6.x: pausing a task drops today''s unfinished log');
+  update public.care_tasks set active = true where id = _t_get('task_play');
+
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform complete_task_log(
+    (select id from public.task_logs where task_id = _t_get('task_play')), null, '  Chased the ball twice, then napped  ');
+  perform _t_as(null);
+  perform _t_ok(
+    (select note_text from public.task_logs where task_id = _t_get('task_play')) = 'Chased the ball twice, then napped',
+    '6.x: Mark done with a memo stores it (trimmed)');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.task_logs l on l.id = n.ref_id
+     where n.user_id = chloe and n.type = 'task_done' and l.task_id = _t_get('task_play')
+       and n.title like 'Max had playtime%' and n.body = 'Chased the ball twice, then napped') = 1,
+    '6.x: with a memo the owner gets what was done (title) plus the memo (body)');
+
+  perform _t_as(chloe);
+  update public.care_tasks set scheduled_time = '23:00' where id = _t_get('task_play');
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
+    '6.x: a task finished today gets no second log when its time is edited (history stays)');
+  begin
+    perform complete_task_log(
+      (select id from public.task_logs where task_id = _t_get('task_play')), null, repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, '6.x: a memo over 120 characters is refused');
+
+  -- Notifications can be deleted — by their owner only
+  perform _t_as(chloe);
+  delete from public.notifications where id = (select id from public.notifications where user_id = chloe limit 1);
+  get diagnostics n = row_count;
+  perform _t_ok(n = 1, '6.x: a user deletes their own notification');
+  perform _t_as(lucy);
+  delete from public.notifications where user_id = chloe;
+  get diagnostics n = row_count;
+  perform _t_ok(n = 0, '6.x: nobody deletes someone else''s notifications');
+  perform _t_as(chloe);
+  delete from public.notifications;
+  perform _t_ok((select count(*) from public.notifications) = 0, '6.x: Clear all empties one''s own list');
+  perform _t_as(lucy);
+  perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
+
+  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go
+  perform _t_as(chloe);
+  v_id := save_care_request(
+    max,
+    'Meals: 8:00 AM — 1 cup of kibble. Heads-up: text instead of knocking.',
+    'nvidia/test-model',
+    '[{"type":"feeding","time":"08:00","title":"Breakfast","dose":"1 cup of kibble","notes":null},
+      {"type":"medication","time":"14:00","title":"Skin pill","dose":"1 skin pill with a treat"}]'::jsonb,
+    array['Text instead of knocking', 'Keep other dogs away on walks']);
+  perform _t_put('req_saved', v_id);
+  perform _t_ok((select count(*) from public.care_tasks where request_id = v_id) = 2,
+    '6.13: the checklist rows are saved with the request');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = v_id and active) = 2,
+    '6.13: the Heads-ups are saved with the request');
+  perform _t_ok((select scheduled_time from public.care_tasks where request_id = v_id and type = 'medication') = '14:00',
+    '6.13: times arrive as clock times');
+  perform _t_ok((select count(*) from public.care_requests where id = v_id and model = 'nvidia/test-model') = 1,
+    '6.13: the note is kept as written');
+
+  begin
+    perform save_care_request(
+      '00000000-0000-4000-8000-0000000000c2', 'walk', null,
+      '[{"type":"feeding","time":"07:00","title":"Breakfast"},{"type":"walk","time":"17:00","title":"Walk"}]'::jsonb,
+      array['Close the door gently']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'task_type_not_allowed_for_species', '6.13: a walk for a cat is refused…');
+  perform _t_ok(
+    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
+    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
+    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000c2'
+         and title in ('Breakfast', 'Walk') and created_at > now() - interval '1 minute') = 0,
+    '6.13: …and the whole save is rolled back (no request, no cautions, no half a checklist)');
+
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, (select array_agg('c' || g) from generate_series(1, 9) g));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'too_many_items', '6.13: more than 8 Heads-ups is refused');
+
+  perform _t_as(lucy);
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.13: a sitter cannot write a care request');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 2,
+    '6.13: the sitter in the care window sees the Heads-ups');
+  perform _t_ok((select count(*) from public.care_requests) = 0,
+    '6.13: …but not the owner''s note as written');
+  begin
+    insert into public.pet_cautions (pet_id, text) values (max, 'Sitter wrote this');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.13: a sitter cannot add a Heads-up');
+  update public.pet_cautions set active = false where request_id = _t_get('req_saved');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and not active) = 0,
+    '6.13: …or switch one off');
+
+  perform _t_as(chloe);
+  update public.pet_cautions set active = false
+  where request_id = _t_get('req_saved') and text = 'Keep other dogs away on walks';
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and active) = 1,
+    '6.13: the owner switches a Heads-up off');
+  delete from public.pet_cautions where request_id = _t_get('req_saved') and not active;
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 1,
+    '6.13: …and deletes it');
+  delete from public.care_requests where id = _t_get('req_saved');
+  perform _t_ok((select count(*) from public.care_tasks where request_id is null and title = 'Skin pill') = 1,
+    '6.13: deleting the note keeps the tasks it created (request_id → null)');
+
+  -- Phase 06 (6.20): while a stay is on, the owner SENDS a care request and the sitter answers it
+  perform _t_as(chloe);
+  v_id := send_care_change_request(
+    max,
+    '[{"type":"feeding","time":"19:00","title":"Late snack","dose":"a few treats","notes":null,"repeat":false}]'::jsonb,
+    array['Never feed grapes']
+  );
+  perform _t_put('ccr', v_id);
+  perform _t_ok((select count(*) from public.care_change_requests where id = v_id and status = 'pending') = 1,
+    '6.20: the owner sends a care request (pending)');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['One more']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_pending', '6.20: only one open request per pet');
+  -- The request goes to the sitter of the stay that is on (the fixtures hold several bookings of Max).
+  perform _t_as(null);
+  perform _t_put('ccr_sitter', (select sitter_id from public.care_change_requests where id = _t_get('ccr')));
+  perform _t_as(_t_get('ccr_sitter'));
+  perform _t_ok((select count(*) from public.notifications where user_id = _t_get('ccr_sitter') and type = 'care_request' and ref_id = _t_get('ccr')) = 1,
+    '6.20: the sitter is told about the request');
+  perform _t_ok((select count(*) from public.care_change_requests where id = _t_get('ccr')) = 1,
+    '6.20: the sitter sees the request');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['Sitter wrote this']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.20: a sitter cannot send a care request');
+  perform _t_as(chloe);
+  begin
+    perform respond_care_change_request(_t_get('ccr'), true, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.20: the owner cannot approve their own request');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(_t_get('ccr'), true, null);
+  perform _t_ok(exists (select 1 from public.care_tasks where pet_id = max and title = 'Late snack' and not repeat_daily and scheduled_time = '19:00'),
+    '6.20: approving creates the task (one-time here)');
+  perform _t_ok(exists (select 1 from public.pet_cautions where pet_id = max and text = 'Never feed grapes'),
+    '6.20: …and the Heads-up');
+  begin
+    perform respond_care_change_request(_t_get('ccr'), false, 'late');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_answered', '6.20: a request is answered once');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_approved' and ref_id = _t_get('ccr')) = 1,
+    '6.20: the owner is told it was approved');
+
+  v_id := send_care_change_request(max, '[{"type":"walk","time":"22:00","title":"Night walk","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_put('ccr2', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(_t_get('ccr2'), false, 'I''m out by then');
+  perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = max and title = 'Night walk'),
+    '6.20: declining creates nothing');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+      and ref_id = _t_get('ccr2') and body = 'I''m out by then') = 1,
+    '6.20: the owner gets the sitter''s reason');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, '{}');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'empty_request', '6.20: an empty request is refused');
+  begin
+    insert into public.care_change_requests (pet_id, booking_id, requested_by, sitter_id)
+    select max, booking_id, chloe, lucy from public.care_change_requests limit 1;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.20: requests are written only through the functions');
+
+  -- Phase 06 (6.23): no direct additions while a stay is on
+  perform _t_as(chloe);
+  begin
+    insert into public.care_tasks (pet_id, type, title, scheduled_time) values (max, 'play', 'Sneaky task', '10:00');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.23: the owner cannot add a task to a pet whose stay is on');
+  begin
+    insert into public.pet_cautions (pet_id, text, created_by) values (max, 'Sneaky heads-up', chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.23: …or a Heads-up');
+  update public.care_tasks set title = 'Late snack (edited)' where pet_id = max and title = 'Late snack';
+  perform _t_ok(exists (select 1 from public.care_tasks where title = 'Late snack (edited)'),
+    '6.23: …but can still edit what is already there');
+  delete from public.care_tasks where title = 'Late snack (edited)';
+  perform _t_ok(not exists (select 1 from public.care_tasks where title = 'Late snack (edited)'),
+    '6.23: …and remove it');
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Homebody') returning id into v_id;
+  perform _t_as(chloe);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Breakfast', '08:00');
+  insert into public.pet_cautions (pet_id, text, created_by) values (v_id, 'Shy with strangers', chloe);
+  perform _t_ok(true, '6.23: a pet with no stay on is edited directly as before');
+
+  -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
+  perform _t_as(chloe);
+  v_id := send_care_change_request(
+    max,
+    '[{"type":"feeding","time":"06:00","title":"Early meal","dose":null,"notes":null},{"type":"walk","time":"23:00","title":"Late walk","dose":null,"notes":null}]'::jsonb,
+    array['Keep the porch light on']
+  );
+  perform _t_put('ccr3', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform counter_care_change_request(_t_get('ccr3'), '   ', 500, '{}');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'note_required', '6.21: a counter-request needs a note');
+  begin
+    perform counter_care_change_request(_t_get('ccr3'), 'x', 500, array[5]);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_tasks', '6.21: …and the tasks must be on the request');
+  perform counter_care_change_request(_t_get('ccr3'), 'I can do the early meal for $5; please do the late walk yourself.', 500, array[1]);
+  perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr3')) = 'countered'
+      and not exists (select 1 from public.care_tasks where pet_id = max and title in ('Early meal', 'Late walk')),
+    '6.21: a counter-request creates nothing yet');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_countered'
+      and ref_id = _t_get('ccr3') and body like '%$5.00%') = 1,
+    '6.21: the owner is told, with the fee');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['Another']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_pending', '6.21: a counter-request keeps the request open');
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform answer_care_counter(_t_get('ccr3'), true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.21: only the owner answers a counter-request');
+  perform _t_as(chloe);
+  perform answer_care_counter(_t_get('ccr3'), true);
+  perform _t_ok(exists (select 1 from public.care_tasks where pet_id = max and title = 'Early meal')
+      and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Late walk')
+      and exists (select 1 from public.pet_cautions where pet_id = max and text = 'Keep the porch light on'),
+    '6.21: accepting creates what the sitter agreed to (not the tasks the owner will do)');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform _t_ok((select count(*) from public.notifications where user_id = _t_get('ccr_sitter') and type = 'care_counter_accepted'
+      and ref_id = _t_get('ccr3')) = 1, '6.21: the sitter is told it was accepted');
+
+  perform _t_as(chloe);
+  v_id := send_care_change_request(max, '[{"type":"play","time":"15:00","title":"Tug game","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_put('ccr4', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  perform counter_care_change_request(_t_get('ccr4'), 'Extra time for this one.', 300, '{}');
+  perform _t_as(chloe);
+  perform answer_care_counter(_t_get('ccr4'), false);
+  perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr4')) = 'withdrawn'
+      and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Tug game'),
+    '6.21: declining the counter-request closes it and creates nothing');
+
+  perform _t_as(chloe);
+  v_id := send_care_change_request(max, '[{"type":"play","time":"16:00","title":"Ball","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(v_id, false, 'Needs a different time', 'Could we do 5 PM instead?');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+      and body = 'Needs a different time — Could we do 5 PM instead?') = 1,
+    '6.21: a decline carries the reason and the note');
+
   perform _t_as(null);
 end;
 $$;

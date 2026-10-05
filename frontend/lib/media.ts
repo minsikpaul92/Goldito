@@ -7,6 +7,9 @@
  *   const picked = await pickMedia({ purpose: "feed" });
  *   if (picked) await uploadMedia({ petId, purpose: "feed", file: picked.file, trim: picked.trim });
  *
+ * Pass `confirm: true` to add a preview step ("Use this photo" / "Retake") — used when the pick
+ * triggers something (e.g. Done with photo). On a phone the sheet offers Take photo and
+ * Choose from library; on the desktop frame and demo accounts it also shows the sample tray.
  * Returns `null` when the user closes the picker. `trim` is set only for a video the user cut
  * down to ≤ 30 s; pass it on to `uploadMedia()`.
  */
@@ -19,6 +22,10 @@ export type PickMediaOptions = {
   purpose: MediaPurpose;
   /** What the user may pick. Default: photos only. */
   mediaTypes?: MediaKind[];
+  /** Show a preview after picking / taking: "Use this" or "Retake". Default: off. */
+  confirm?: boolean;
+  /** Label of the confirm button (e.g. "Use photo & mark done"). */
+  confirmLabel?: string;
 };
 
 export type PickedMedia = {
@@ -39,7 +46,7 @@ export function pickMedia(options: PickMediaOptions): Promise<PickedMedia | null
   if (!handler) {
     return Promise.reject(new Error("pickMedia() needs MediaPickerProvider at the app root."));
   }
-  return handler({ mediaTypes: ["image"], ...options });
+  return handler({ mediaTypes: ["image"], confirm: false, confirmLabel: "Use this photo", ...options });
 }
 
 /** Props of the trim sheet (`VideoTrimSheet.web.tsx`; native has no sheet yet). */

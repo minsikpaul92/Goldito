@@ -2,20 +2,28 @@ import { useFocusEffect, router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { NoticeDetail, NoticeThumb } from "../../components/NoticeDetail";
+import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
+import { Sheet } from "../../components/ui/Sheet";
+import { SwipeToDelete } from "../../components/ui/SwipeToDelete";
 import { TextButton } from "../../components/ui/TextButton";
 import { formatFeedTime } from "../../lib/feed";
 import {
   AppNotification,
+  deleteAllNotifications,
+  deleteNotification,
   hrefForNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../lib/notifications";
+import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "./noticeMedia";
+import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type ListState =
@@ -28,11 +36,17 @@ type ListState =
  * Tap → mark read + navigate (architecture §7). Empty: "You're all caught up."
  */
 export function NotificationsCenter({ role }: { role: Role }) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
   const { inboxRevision, refreshUnread, unreadCount } = useNotifications();
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [markingAll, setMarkingAll] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const errorDialog = useErrorDialog();
+  const noticeMedia = useNoticeMedia(list.status === "loading" ? null : list.items);
+  const [detail, setDetail] = useState<AppNotification | null>(null);
 
   const load = useCallback(async (soft = false) => {
     if (!soft) setList({ status: "loading" });
@@ -81,6 +95,39 @@ export function NotificationsCenter({ role }: { role: Role }) {
     }
   };
 
+  const dropFromList = (shouldDrop: (n: AppNotification) => boolean) =>
+    setList((prev) =>
+      prev.status === "loading" ? prev : { ...prev, status: "ready", items: prev.items.filter((n) => !shouldDrop(n)) },
+    );
+
+  /** Swiped away: it leaves the list at once; if the delete fails it comes back with a message. */
+  const onDelete = async (notice: AppNotification) => {
+    dropFromList((n) => n.id === notice.id);
+    try {
+      await deleteNotification(notice.id);
+      await refreshUnread();
+    } catch (error) {
+      void load(true);
+      errorDialog.show({ title: "Couldn't delete", message: (error as Error).message });
+    }
+  };
+
+  const onClearAll = async () => {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      await deleteAllNotifications();
+      setConfirmClear(false);
+      dropFromList(() => true);
+      await refreshUnread();
+    } catch (error) {
+      setConfirmClear(false);
+      errorDialog.show({ title: "Couldn't clear", message: (error as Error).message });
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const onOpen = async (notice: AppNotification) => {
     if (!notice.readAt) {
       try {
@@ -99,7 +146,18 @@ export function NotificationsCenter({ role }: { role: Role }) {
         // Still try to navigate.
       }
     }
+    if (DETAIL_TYPES.has(notice.type) && (noticeMedia[notice.id] || notice.body)) {
+      setDetail(notice);
+      return;
+    }
     const href = hrefForNotification(notice, role);
+    if (href) router.push(href);
+  };
+
+  const goFromDetail = () => {
+    const notice = detail;
+    setDetail(null);
+    const href = notice ? hrefForNotification(notice, role) : null;
     if (href) router.push(href);
   };
 
@@ -128,38 +186,71 @@ export function NotificationsCenter({ role }: { role: Role }) {
 
   return (
     <View style={styles.root} testID="notifications-center">
-      {unreadCount > 0 ? (
-        <View style={styles.toolbar}>
+      <View style={styles.toolbar}>
+        {unreadCount > 0 ? (
           <TextButton
             label={markingAll ? "Marking…" : "Mark all as read"}
             onPress={() => void onMarkAll()}
             disabled={markingAll}
             testID="mark-all-read"
           />
-        </View>
-      ) : null}
+        ) : null}
+        <TextButton label="Clear all" danger onPress={() => setConfirmClear(true)} testID="clear-all" />
+      </View>
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void onOpen(item)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed, !item.readAt && styles.unread]}
-            testID={`notification-${item.id}`}
+          <SwipeToDelete
+            onDelete={() => void onDelete(item)}
+            radius={theme.radius.md}
+            testID={`notification-swipe-${item.id}`}
           >
-            <View style={styles.rowBody}>
-              {!item.readAt ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
-              <View style={styles.textCol}>
-                <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{item.title}</Text>
-                {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
-                <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void onOpen(item)}
+              style={({ pressed }) => [styles.row, pressed && styles.pressed, !item.readAt && styles.unread]}
+              testID={`notification-${item.id}`}
+            >
+              <View style={styles.rowBody}>
+                {!item.readAt ? <View style={styles.dot} /> : <View style={styles.dotSpacer} />}
+                <View style={styles.textCol}>
+                  <Text style={[styles.title, !item.readAt && styles.titleUnread]}>{item.title}</Text>
+                  {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
+                  <Text style={styles.time}>{formatFeedTime(item.createdAt)}</Text>
+                </View>
+                {noticeMedia[item.id] ? <NoticeThumb media={noticeMedia[item.id]} /> : null}
               </View>
-            </View>
-          </Pressable>
+            </Pressable>
+          </SwipeToDelete>
         )}
       />
+      <NoticeDetail
+        notice={detail}
+        media={detail ? (noticeMedia[detail.id] ?? null) : null}
+        next={detail ? detailNextLabel(detail.type, role) : ""}
+        onClose={() => setDetail(null)}
+        onNext={goFromDetail}
+      />
+      <Sheet
+        visible={confirmClear}
+        title="Clear all notifications?"
+        onClose={() => {
+          if (!clearing) setConfirmClear(false);
+        }}
+        testID="clear-all-sheet"
+        footer={
+          <Button
+            label={clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}`}
+            disabled={clearing}
+            onPress={() => void onClearAll()}
+            testID="clear-all-confirm"
+          />
+        }
+      >
+        <Text style={styles.title}>They leave this list for good. What your sitter did stays in History.</Text>
+      </Sheet>
     </View>
   );
 }
@@ -171,21 +262,27 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.background,
     },
     toolbar: {
-      alignItems: "flex-end",
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
       paddingHorizontal: theme.spacing.sm,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
     list: {
+      padding: theme.spacing.sm,
+      gap: theme.spacing.xs,
       paddingBottom: theme.spacing.xl,
     },
+    // Each notice is a rounded card (like iPhone notifications), so the swipe layer under it matches.
     row: {
       paddingVertical: theme.spacing.md,
       paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.color.border,
     },
     unread: {
       backgroundColor: theme.color.accent,

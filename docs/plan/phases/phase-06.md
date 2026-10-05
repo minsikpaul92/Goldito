@@ -45,20 +45,20 @@
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 6.1 | Owner care tasks UI | **펫 디테일 / Care request**에서 등록·오늘 상태 (구 `/owner/tasks` Care 탭 — D47). Activity 히스토리는 **Diary** |
-| 6.2 | `ensure_today_task_logs` | 기존 spec 유지 (003 헬퍼, 멱등) |
-| 6.3 | Sitter tasks on Home/Diary | missed → pending → done · **Mark done** · **Done with photo** · Home "Next up" (구 `/sitter/tasks` 탭 제거, D47b) |
-| 6.4 | `complete_task_log(p_task_log, p_media_id uuid default null)` | `in_care_window` 검사 · done 갱신 · **`task_done` 항상** · `media_id` 있을 때만 `feed_post` + task 캡션 (`caption_source='task'`) — Diary에도 행 |
+| 6.1 ✅ | Owner care tasks UI | **펫 디테일 / Care request**에서 등록·오늘 상태 (구 `/owner/tasks` Care 탭 — D47). Activity 히스토리는 **Diary** |
+| 6.2 ✅ | `ensure_today_task_logs` | 기존 spec 유지 (003 헬퍼, 멱등) |
+| 6.3 ✅ | Sitter tasks on Home/Diary | missed → pending → done · **Mark done** · **Done with photo** · Home "Next up" (구 `/sitter/tasks` 탭 제거, D47b) |
+| 6.4 ✅ | `complete_task_log(p_task_log, p_media_id uuid default null)` | `in_care_window` 검사 · done 갱신 · **`task_done` 항상** · `media_id` 있을 때만 `feed_post` + task 캡션 (`caption_source='task'`) — Diary에도 행 |
 | 6.5 | missed / late | D9 파생 (변경 없음) |
-| 6.6 | `useDueReminder` | scheduled task만 (변경 없음) |
+| 6.6 ✅ | `useDueReminder` | scheduled task만 (변경 없음) |
 | 6.7 | (Stretch) 서버 `task_due` | 변경 없음 |
-| 6.8 | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
-| 6.9 | `log_care_checkin` RPC | on-duty · insert · owner `care_checkin` · optional media → feed_post (+ Diary) |
-| 6.10 | Sitter Home quick row | Meal · Poop · Walk · Mood · Note — Home 대시보드 (구 Today, D47b) |
-| 6.11 | Owner Diary activity | `list_pet_activity` … → **`/owner/diary`** (구 Care Activity) |
-| 6.12 | `POST /api/ai/care-plan` (슬기) | (unchanged API) |
-| 6.13 | Care request UI | `/owner/pets/[petId]/care-request` … 진입: Pet profile **Care request** |
-| 6.14 | Heads-up 표시 | 시터 **Home** 상단·요청 카드·Trip 도착 카드 |
+| 6.8 ✅ | DB `care_checkins` + RLS | [sitter-care-loop §3](../sitter-care-loop.ko.md#3-check-in-kinds-care_checkins) · idx(pet_id, created_at desc) |
+| 6.9 ✅ | `log_care_checkin` RPC | on-duty · insert · owner `care_checkin` · optional media → feed_post (+ Diary) |
+| 6.10 ✅ | Sitter Home quick row | Meal · Poop · Walk · Mood · Note — Home 대시보드 (구 Today, D47b) |
+| 6.11 ✅ | Owner Diary activity | `list_pet_activity` … → **`/owner/diary`** (구 Care Activity) |
+| 6.12 ✅ | `POST /api/ai/care-plan` (민식) | (unchanged API) |
+| 6.13 ✅ | Care request UI | `/owner/pets/[petId]/care-request` … 진입: Pet profile **Care request** |
+| 6.14 ✅ | Heads-up 표시 | 시터 **Home** 상단·요청 카드·Trip 도착 카드 |
 
 ### 피드·알림 (Plan B)
 

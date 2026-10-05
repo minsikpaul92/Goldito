@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, signIn } from "./helpers";
+import { app, box, drag, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 import type { MockUser } from "./supabaseMock";
 
@@ -143,7 +143,7 @@ test.describe("Notification center", () => {
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
 
     await expect(app(page).getByTestId("notification-badge").first()).toHaveText("2");
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByTestId("notifications-center")).toBeVisible();
 
     await app(page).getByTestId(`notification-${n(0)}`).click();
@@ -151,8 +151,8 @@ test.describe("Notification center", () => {
     expect(db.notifications.find((x) => x.id === n(0))?.read_at).toBeTruthy();
     await expect(app(page).getByTestId("notification-badge").first()).toHaveText("1");
 
-    await app(page).getByTestId("notification-bell").last().click();
-    await app(page).getByTestId("mark-all-read").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
+    await app(page).locator("[data-testid='mark-all-read']:visible").click();
     await expect(app(page).getByTestId("notification-badge")).toHaveCount(0);
     expect(db.notifications.every((x) => x.read_at)).toBe(true);
   });
@@ -174,17 +174,109 @@ test.describe("Notification center", () => {
     });
     await signIn(page, SITTER);
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await app(page).getByTestId(`notification-${n(7)}`).click();
     await expect(page).toHaveURL(new RegExp(`/sitter/feed/${PET_ID}`));
     await expect(app(page).getByTestId("sitter-pet-feed")).toBeVisible();
+  });
+
+  async function seedTwo(page: Page) {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
+    for (const i of [0, 1]) {
+      db.notifications.push({
+        id: n(i),
+        user_id: OWNER.id,
+        type: "feed_post",
+        title: `New photo of Max 📸 ${i}`,
+        body: null,
+        pet_id: PET_ID,
+        booking_id: null,
+        ref_id: null,
+        read_at: null,
+        created_at: new Date(Date.now() - i * 60_000).toISOString(),
+      });
+    }
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
+    await app(page).getByTestId("notifications-center").waitFor();
+    return db;
+  }
+
+  /** Drag a row to the left by `share` of its own width, like a finger. */
+  async function swipe(page: Page, id: string, share: number) {
+    const row = await box(app(page).getByTestId(`notification-swipe-${id}`));
+    const y = row.y + row.height / 2;
+    const from = { x: row.x + row.width - 12, y };
+    await drag(page, from, { x: from.x - row.width * share, y }, 14);
+  }
+
+  test("swipe a notification past 60% to delete it; a shorter swipe springs back", async ({ page }) => {
+    const db = await seedTwo(page);
+    const screen = app(page);
+
+    await swipe(page, n(0), 0.35);
+    await expect(screen.getByTestId(`notification-${n(0)}`)).toBeVisible();
+    expect(db.notifications).toHaveLength(2);
+
+    await swipe(page, n(0), 0.8);
+    await expect(screen.getByTestId(`notification-${n(0)}`)).toHaveCount(0);
+    await expect(screen.getByTestId(`notification-${n(1)}`)).toBeVisible();
+    expect(db.notifications.map((x) => x.id)).toEqual([n(1)]);
+    // On Home the unread badge counts what is left.
+    await page.goto("/owner");
+    await screen.getByRole("heading", { name: "Home" }).waitFor();
+    await expect(screen.locator("[data-testid='notification-badge']:visible").first()).toHaveText("1");
+  });
+
+  test("rows are rounded cards; the red Delete layer is hidden at rest and has the same rounded shape while pulled", async ({ page }) => {
+    await seedTwo(page);
+    const screen = app(page);
+    const radius = (testId: string) =>
+      screen.getByTestId(testId).evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+
+    // Every notice is a rounded card…
+    expect(parseFloat(await radius(`notification-${n(0)}`))).toBeGreaterThan(0);
+    // …and the layer under it is invisible until the card is pulled aside.
+    const behind = `notification-swipe-${n(0)}-behind`;
+    expect(await screen.getByTestId(behind).evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
+
+    const row = await box(screen.getByTestId(`notification-swipe-${n(0)}`));
+    const y = row.y + row.height / 2;
+    await page.mouse.move(row.x + row.width - 12, y);
+    await page.mouse.down();
+    await page.mouse.move(row.x + row.width - 12 - row.width * 0.3, y, { steps: 10 });
+    expect(Number(await screen.getByTestId(behind).evaluate((el) => getComputedStyle(el).opacity))).toBeGreaterThan(0.5);
+    expect(await radius(behind)).toBe(await radius(`notification-${n(0)}`)); // same corner shape
+    await page.mouse.up();
+  });
+
+  test("a tap still opens the notice (swipe handling doesn't swallow it)", async ({ page }) => {
+    await seedTwo(page);
+    await app(page).getByTestId(`notification-${n(0)}`).click();
+    await expect(page).toHaveURL(/\/owner\/feed/);
+  });
+
+  test("Clear all asks first, then empties the list", async ({ page }) => {
+    const db = await seedTwo(page);
+    const screen = app(page);
+    await screen.getByTestId("clear-all").click();
+    await screen.getByTestId("clear-all-sheet-close").click();
+    expect(db.notifications).toHaveLength(2);
+
+    await screen.getByTestId("clear-all").click();
+    await expect(screen.getByTestId("clear-all-confirm")).toHaveText("Clear 2 notifications");
+    await screen.getByTestId("clear-all-confirm").click();
+    await expect(screen.getByText("You're all caught up.")).toBeVisible();
+    expect(db.notifications).toHaveLength(0);
   });
 
   test("empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
-    await app(page).getByTestId("notification-bell").last().click();
+    await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByText("You're all caught up.")).toBeVisible();
   });
 });

@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +26,7 @@ import { pickMedia } from "../../../lib/media";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications } from "../../../providers/NotificationsProvider";
 import { useSession } from "../../../providers/SessionProvider";
+import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -43,9 +45,12 @@ export default function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
   const { feedRevision } = useNotifications();
   const toast = useToast();
+  const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
+  // A notice opens this screen on the pet it is about (`?pet=`).
+  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
   const [petId, setPetId] = useState<string | null>(null);
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
@@ -61,8 +66,9 @@ export default function OwnerFeed() {
       setPetId(null);
       return;
     }
-    setPetId((current) => (current && pets.some((p) => p.id === current) ? current : pets[0].id));
-  }, [pets]);
+    const wanted = petParam && pets.some((p) => p.id === petParam) ? petParam : null;
+    setPetId((current) => wanted ?? (current && pets.some((p) => p.id === current) ? current : pets[0].id));
+  }, [pets, petParam]);
 
   const loadPage = useCallback(
     async (offset: number, append: boolean, soft = false) => {
@@ -136,11 +142,12 @@ export default function OwnerFeed() {
       toast.show(visibleToSitter ? "Shared with your sitter 🐾" : "Saved just for you 🔒");
       await loadPage(0, false, true);
     } catch (err) {
-      toast.show(
-        err instanceof UploadError || err instanceof Error
-          ? err.message
-          : "Couldn't share this photo. Try again.",
-      );
+      errorDialog.show({
+        title: "Photo not shared",
+        message:
+          err instanceof UploadError || err instanceof Error ? err.message : "Couldn't share this photo. Try again.",
+        onRetry: () => void sharePhoto(),
+      });
     } finally {
       setUploading(false);
     }

@@ -46,6 +46,37 @@ export type SitterProfile = {
   packing_list: string[] | null;
 };
 
+export type CareTaskType = "medication" | "walk" | "feeding" | "litter" | "play" | "sleep";
+
+export type CareCheckinKind = "meal" | "potty" | "walk" | "mood" | "note";
+
+/** One repeating task the owner asks the sitter to do (care_tasks, phase-06). */
+export type CareTaskRow = {
+  id: string;
+  pet_id: string;
+  type: CareTaskType;
+  title: string;
+  dose: string | null;
+  /** Postgres time, "HH:MM:SS" in the app timezone (D8). */
+  scheduled_time: string;
+  repeat_daily: boolean;
+  notes: string | null;
+  active: boolean;
+  created_at: string;
+};
+
+/** Today's instance of a task (written by the sitter side from 6.2/6.4). */
+export type TaskLogRow = {
+  id: string;
+  task_id: string;
+  pet_id: string;
+  due_at: string;
+  status: "pending" | "done";
+  completed_at: string | null;
+  /** The sitter's memo when finishing (008d). */
+  note_text?: string | null;
+};
+
 /** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */
 export type CaptionSource = "ai" | "fallback" | "task";
 

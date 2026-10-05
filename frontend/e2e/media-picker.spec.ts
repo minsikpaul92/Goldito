@@ -219,15 +219,18 @@ test.describe("pickMedia", () => {
     expect(calls.sign[0]).toEqual({ pet_id: PET_ID, resource_type: "video", purpose: "feed", booking_id: null });
   });
 
-  test("a failed upload shows a toast; trying again finishes it", async ({ page }) => {
+  test("a failed upload shows a dialog that stays; Try again finishes it", async ({ page }) => {
     const calls = await setup(page, { failSignOnce: true });
 
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-meal").click();
 
-    await expect(app(page).getByTestId("toast")).toContainText("Cloudinary is down.");
+    // Not a toast: it stays until the sitter closes it or retries.
+    await expect(app(page).getByTestId("error-dialog-message")).toContainText("Cloudinary is down.");
+    await page.waitForTimeout(3500);
+    await expect(app(page).getByTestId("error-dialog")).toBeVisible();
 
-    await app(page).getByTestId("feed-add-photo").click();
+    await app(page).getByTestId("error-dialog-retry").click();
     await app(page).getByTestId("sample-meal").click();
     await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
     expect(calls.sign).toHaveLength(2);

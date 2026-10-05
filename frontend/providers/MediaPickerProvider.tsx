@@ -2,6 +2,7 @@ import { Asset } from "expo-asset";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 
+import { MediaConfirm } from "../components/MediaConfirm";
 import { MediaPicker } from "../components/MediaPicker";
 import { VideoTrimSheet } from "../components/VideoTrimSheet";
 import { useShell } from "../components/shell/useShell";
@@ -59,8 +60,9 @@ const hasTouchCamera = () =>
 /**
  * Mounted once at the app root. Gives `pickMedia()` its UI (phase-04 4.7):
  * - desktop frame or demo account → sample tray + Choose from library (+ Take photo on phones)
- * - a real phone → the system camera / library dialog straight away
- * Videos over 30 s open the trim sheet before `pickMedia()` resolves.
+ * - a real phone → a sheet with **Take photo** and **Choose from library** (no samples)
+ * - `confirm: true` adds a preview step ("Use this photo" / "Retake") before `pickMedia()` resolves
+ * Videos over 30 s open the trim sheet before that.
  * Web only for now; native needs `expo-image-picker` and a native trim sheet.
  */
 export function MediaPickerProvider({ children }: { children: ReactNode }) {
@@ -75,13 +77,29 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   const current = useRef<Current | null>(null);
   const [tray, setTray] = useState<Options | null>(null);
   const [trimming, setTrimming] = useState<{ file: File; duration: number } | null>(null);
+  const [confirming, setConfirming] = useState<PickedMedia | null>(null);
 
   const finish = useCallback((picked: PickedMedia | null) => {
     current.current?.resolve(picked);
     current.current = null;
     setTray(null);
     setTrimming(null);
+    setConfirming(null);
   }, []);
+
+  /** Picked and trimmed: done, or one more look first when the caller asked to confirm. */
+  const accept = useCallback(
+    (picked: PickedMedia) => {
+      if (current.current?.options.confirm) {
+        setTray(null);
+        setTrimming(null);
+        setConfirming(picked);
+      } else {
+        finish(picked);
+      }
+    },
+    [finish],
+  );
 
   /** A file was chosen (sample, computer, camera). Returns whether the pick is over. */
   const settle = useCallback(
@@ -102,9 +120,9 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
           return;
         }
       }
-      finish({ file });
+      accept({ file });
     },
-    [finish, toast],
+    [accept, finish, toast],
   );
 
   useEffect(() => {
@@ -118,18 +136,14 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
         current.current?.resolve(null); // a newer pick replaces an unfinished one
         current.current = { resolve, options };
         setTrimming(null);
-        if (useTrayRef.current) {
-          setTray(options);
-        } else {
-          // Real phone: straight to the system dialog (still inside the user's tap).
-          void openFileDialog(acceptFor(options.mediaTypes), options.mediaTypes[0] === "image").then((file) =>
-            file ? settle(file) : finish(null),
-          );
-        }
+        setConfirming(null);
+        // The sheet is always shown: on a real phone it has no samples, only Take photo /
+        // Choose from library (each opens the system dialog inside its own tap).
+        setTray(options);
       });
     });
     return () => registerMediaPicker(null);
-  }, [finish, settle]);
+  }, [settle]);
 
   const onPickSample = async (sample: DemoSample) => {
     try {
@@ -154,29 +168,51 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   };
 
   const onTrimConfirm = (trim: VideoTrim) => {
-    if (trimming) finish({ file: trimming.file, trim });
+    if (trimming) accept({ file: trimming.file, trim });
+  };
+
+  const onRetake = () => {
+    const options = current.current?.options;
+    setConfirming(null);
+    if (options) setTray(options);
   };
 
   return (
     <>
       {children}
-      <MediaPicker
-        visible={tray !== null}
-        mediaTypes={tray?.mediaTypes ?? ["image"]}
-        samples={tray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
-        canTakePhoto={hasTouchCamera()}
-        onPickSample={onPickSample}
-        onUpload={onUpload}
-        onTakePhoto={onTakePhoto}
-        onClose={() => finish(null)}
-      />
-      <VideoTrimSheet
-        visible={trimming !== null}
-        file={trimming?.file ?? null}
-        duration={trimming?.duration ?? 0}
-        onConfirm={onTrimConfirm}
-        onCancel={() => finish(null)}
-      />
+      {/* Each sheet is mounted only while shown: a Modal mounted later stacks on top of sheets that
+          are already open (e.g. the Done popup), so the picker is never hidden behind one. */}
+      {tray ? (
+        <MediaPicker
+          visible
+          mediaTypes={tray.mediaTypes}
+          samples={useTray ? samplesFor(tray.purpose, tray.mediaTypes) : []}
+          canTakePhoto={hasTouchCamera()}
+          onPickSample={onPickSample}
+          onUpload={onUpload}
+          onTakePhoto={onTakePhoto}
+          onClose={() => finish(null)}
+        />
+      ) : null}
+      {confirming ? (
+        <MediaConfirm
+          visible
+          file={confirming.file}
+          confirmLabel={current.current?.options.confirmLabel ?? "Use this photo"}
+          onConfirm={() => finish(confirming)}
+          onRetake={onRetake}
+          onClose={() => finish(null)}
+        />
+      ) : null}
+      {trimming ? (
+        <VideoTrimSheet
+          visible
+          file={trimming.file}
+          duration={trimming.duration}
+          onConfirm={onTrimConfirm}
+          onCancel={() => finish(null)}
+        />
+      ) : null}
     </>
   );
 }

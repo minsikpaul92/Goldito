@@ -24,6 +24,7 @@ import { getSupabase } from "../../../../lib/supabase";
 import { useNotifications } from "../../../../providers/NotificationsProvider";
 import { useSession } from "../../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useErrorDialog } from "../../../../providers/ErrorDialogProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 
@@ -42,6 +43,7 @@ export default function SitterPetFeed() {
   const { petId } = useLocalSearchParams<{ petId: string }>();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
+  const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
   const { feedRevision } = useNotifications();
@@ -159,7 +161,7 @@ export default function SitterPetFeed() {
           : err instanceof Error
             ? err.message
             : "Couldn't share this photo. Try again.";
-      toast.show(message);
+      errorDialog.show({ title: "Photo not shared", message, onRetry: () => void sharePhoto() });
     } finally {
       setUploading(false);
     }

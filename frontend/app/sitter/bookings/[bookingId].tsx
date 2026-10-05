@@ -265,6 +265,14 @@ export default function SitterBookingDetail() {
               {`${SPECIES_EMOJI[pet.species]} ${pet.name}`}
               {pet.breed ? <Text style={styles.muted}>{` · ${pet.breed}`}</Text> : null}
             </Text>
+            {pet.cautions.length > 0 ? (
+              <View style={styles.headsUp} testID={`heads-up-${pet.name}`}>
+                <Text style={styles.warning}>⚠️ Heads-up</Text>
+                {pet.cautions.map((c) => (
+                  <Text key={c} style={styles.body}>{`• ${c}`}</Text>
+                ))}
+              </View>
+            ) : null}
             {pet.allergies.length > 0 ? (
               <View style={styles.chips}>
                 <Text style={styles.warning}>Allergies</Text>
@@ -438,6 +446,14 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    headsUp: {
+      gap: 2,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.warning,
+      backgroundColor: theme.color.accent,
     },
     chips: {
       flexDirection: "row",
