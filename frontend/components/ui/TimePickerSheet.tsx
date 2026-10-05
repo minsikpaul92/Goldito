@@ -40,10 +40,6 @@ function join(hour12: number, minute: number, pm: boolean) {
   return `${pad((hour12 % 12) + (pm ? 12 : 0))}:${pad(minute)}`;
 }
 
-// Web only: the browser's own scroll-snap keeps the drum smooth with a trackpad, wheel or drag.
-const webSnap = (Platform.OS === "web" ? { scrollSnapType: "y mandatory", overscrollBehavior: "contain" } : null) as object;
-const webSnapItem = (Platform.OS === "web" ? { scrollSnapAlign: "center" } : null) as object;
-
 type WheelItem = { value: number; label: string; id: string };
 
 /**
@@ -81,8 +77,8 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
     if (Date.now() < lockedUntil.current) return;
     const i = Math.max(0, Math.min(items.length - 1, Math.round(y / ITEM)));
     if (i !== indexRef.current) onSelect(items[i].value);
-    // On the web the browser's own scroll-snap has already landed on a row; nudging it again is what jerks.
-    if (Platform.OS !== "web" || Math.abs(y - i * ITEM) > 1) scrollTo(i, true);
+    // Already on the row: don't nudge it again (that re-scroll is what made the drum jerk).
+    if (Math.abs(y - i * ITEM) > 1) scrollTo(i, true);
   };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -95,7 +91,7 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
   return (
     <ScrollView
       ref={ref}
-      style={[styles.wheel, { flex }, webSnap]}
+      style={[styles.wheel, { flex }]}
       contentContainerStyle={{ paddingVertical: PAD }}
       showsVerticalScrollIndicator={false}
       snapToInterval={ITEM}
@@ -117,7 +113,7 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
               onSelect(item.value);
               scrollTo(i, true);
             }}
-            style={[styles.item, webSnapItem]}
+            style={styles.item}
             testID={item.id}
           >
             <Text style={[styles.itemText, i === index ? styles.itemOn : { opacity: distance === 1 ? 0.55 : 0.3 }]}>{item.label}</Text>

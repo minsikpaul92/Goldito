@@ -7,8 +7,8 @@ import type { TaskItem } from "./useTodayTasks";
 
 /** D17: the sitter app checks every 30 s while it is open. */
 export const REMINDER_TICK_MS = 30_000;
-/** Every 10th tick (5 min) the day is re-read, so a task the owner added meanwhile shows up. */
-const RELOAD_EVERY_TICKS = 10;
+/** Every tick the day is re-read, so a task the owner added meanwhile shows up within 30 s. */
+const RELOAD_EVERY_TICKS = 1;
 /** D9: after this long a pending task counts as missed. */
 const DUE_WINDOW_MS = 60 * 60_000;
 
@@ -85,6 +85,17 @@ export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => 
     }, REMINDER_TICK_MS);
     return () => clearInterval(timer);
   }, [reload]);
+
+  const dueMs = (i: TaskItem) => new Date(i.log.due_at).getTime();
+  // Wake up exactly when the next pending task falls due, instead of waiting for the next 30 s tick.
+  const nextDue = items
+    .filter((i) => i.log.status === "pending" && dueMs(i) > now)
+    .reduce<number | null>((min, i) => (min === null || dueMs(i) < min ? dueMs(i) : min), null);
+  useEffect(() => {
+    if (nextDue === null) return;
+    const timer = setTimeout(() => focused.current && setNow(Date.now()), Math.min(nextDue - Date.now() + 200, 2_147_000_000));
+    return () => clearTimeout(timer);
+  }, [nextDue]);
 
   const due = (i: TaskItem) => new Date(i.log.due_at).getTime();
   const pending = items.filter((i) => i.log.status === "pending");

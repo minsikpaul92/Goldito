@@ -97,18 +97,17 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
           {notSeen.map((s) => (
             <Pressable
               key={s.id}
-              accessibilityRole="checkbox"
-              aria-checked={false}
-              accessibilityLabel={`Got it: ${s.title}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Dismiss: ${s.title}`}
               onPress={() => setSeen((prev) => new Set(prev).add(s.id))}
-              style={styles.skippedRow}
+              style={({ pressed }) => [styles.skippedRow, pressed && styles.pressed]}
               testID={`skipped-ack-${s.id}`}
             >
-              <Text style={styles.skippedBox}>☐</Text>
               <Text style={styles.skippedText}>{`${s.title} — ${s.reason}`}</Text>
+              <Text style={styles.skippedX}>✕</Text>
             </Pressable>
           ))}
-          <Text style={styles.skippedHint}>Tick each one once you have read it.</Text>
+          <Text style={styles.skippedHint}>Tap an item to dismiss it.</Text>
         </View>
       ) : null}
 
@@ -172,14 +171,20 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.xs,
       padding: theme.spacing.sm,
       borderRadius: theme.radius.md,
-      borderWidth: 2,
-      borderColor: theme.color.error,
-      backgroundColor: theme.color.surface,
+      backgroundColor: theme.color.error,
     },
-    skippedTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.error },
-    skippedRow: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
-    skippedBox: { fontSize: 22, color: theme.color.error },
-    skippedText: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.text },
-    skippedHint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    skippedTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: "#FFFFFF" },
+    skippedRow: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.sm,
+      borderRadius: theme.radius.sm,
+      backgroundColor: "rgba(255,255,255,0.16)",
+    },
+    skippedText: { flex: 1, fontSize: theme.fontSize.body, color: "#FFFFFF" },
+    skippedX: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+    skippedHint: { fontSize: theme.fontSize.small, color: "#FFFFFF", opacity: 0.85 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
   });

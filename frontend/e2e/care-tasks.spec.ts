@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, center, signIn } from "./helpers";
+import { app, box, center, drag, signIn } from "./helpers";
 import { OWNER, mockSupabase } from "./supabaseMock";
 
 // Owner care tasks on the pet detail screen (phase-06 6.1).
@@ -212,5 +212,27 @@ test.describe("care tasks", () => {
     await expect(screen.getByTestId("care-status-t-later")).toHaveText("⏳ Pending");
     // D9: 20 minutes late is still pending; missed starts after 60 minutes.
     await expect(screen.getByTestId("care-status-t-grace")).toHaveText("⏳ Pending");
+  });
+
+  test("dragging a drum hard to either end lands on its last row (12 · PM), not the one before", async ({ page }) => {
+    await setup(page);
+    const screen = app(page);
+    await screen.getByTestId("care-add").click();
+    await screen.getByTestId("care-time").click();
+    await screen.getByTestId("time-picker-set").waitFor();
+    await page.waitForTimeout(500);
+    const row = async (id: string) => box(screen.getByTestId(id));
+    for (const [id, last, first] of [
+      ["time-hour-8", "time-hour-12", "time-hour-1"],
+      ["time-ampm-am", "time-ampm-pm", "time-ampm-am"],
+    ]) {
+      const r = await row(id);
+      const x = r.x + r.width / 2;
+      const y = r.y + r.height / 2;
+      await drag(page, { x, y }, { x, y: y - 700 }, 10);
+      await expect(screen.getByTestId(last)).toHaveAttribute("aria-checked", "true");
+      await drag(page, { x, y }, { x, y: y + 700 }, 10);
+      await expect(screen.getByTestId(first)).toHaveAttribute("aria-checked", "true");
+    }
   });
 });
