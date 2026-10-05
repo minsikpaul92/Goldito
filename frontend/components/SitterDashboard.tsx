@@ -11,11 +11,15 @@ import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
-import { DueBanner } from "./DueBanner";
+import { DueAlert } from "./DueAlert";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
+import { TextButton } from "./ui/TextButton";
+
+/** Open tasks listed on Home; the rest are one tap away in All tasks. */
+const TODAY_ROWS = 3;
 
 /**
  * The sitter's Home while a stay is on: one screen, no scrolling — today's numbers, the next task
@@ -51,7 +55,6 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const reminder = useDueReminder(items, state.status === "ready", reload);
   const open = items.filter((i) => i.log.status === "pending");
   const done = items.length - open.length;
-  const next = open.find((i) => todayStatus(i.log).kind !== "missed") ?? open[0];
 
   const owners = useMemo(() => {
     const groups = new Map<string, CaringPet[]>();
@@ -103,38 +106,56 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         </Pressable>
       ) : null}
 
-      {/* Something due (or overdue) takes the place of the "Next up" card, so Home stays one screen. */}
-      {reminder.current ? (
-        <DueBanner reminder={reminder} onDone={setFinishing} />
-      ) : (
-        <Card style={styles.next} testID="dashboard-next">
-          {state.status === "error" ? (
-            <Text style={styles.error}>{state.message}</Text>
-          ) : next ? (
-            <>
-              <Text style={styles.nextLabel}>Next up</Text>
-              <Text style={styles.nextTitle} testID="tasks-next">
-                {`${careTypeMeta(next.task.type).emoji} ${next.task.title}`}
-              </Text>
-              <Text style={styles.muted}>
-                {[next.pet.name, formatTime(isoToZoned(next.log.due_at).time), next.task.dose].filter(Boolean).join(" · ")}
-              </Text>
-              {reminder.snoozedUntil[next.log.id] ? (
-                <Text style={styles.muted} testID="tasks-snoozed">
-                  {`💤 Snoozed until ${new Date(reminder.snoozedUntil[next.log.id]).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
-                </Text>
-              ) : null}
-              <Button label="Done" onPress={() => setFinishing(next)} testID="dashboard-next-done" />
-            </>
-          ) : state.status === "ready" ? (
-            <Text style={styles.nextTitle} testID={items.length > 0 ? "tasks-all-done" : "tasks-empty"}>
-              {items.length > 0 ? "All done for today 🎉" : "No tasks today"}
-            </Text>
-          ) : (
-            <Text style={styles.muted}>Loading…</Text>
-          )}
-        </Card>
-      )}
+      {/* Today's open tasks, always — the one that is due turns into an alarm popup (DueAlert). */}
+      <Card style={styles.next} testID="dashboard-next">
+        {state.status === "error" ? (
+          <Text style={styles.error}>{state.message}</Text>
+        ) : open.length > 0 ? (
+          <>
+            <Text style={styles.nextLabel}>{`Today · ${open.length} to do`}</Text>
+            {open.slice(0, TODAY_ROWS).map((item, index) => {
+              const status = todayStatus(item.log);
+              const dueMs = new Date(item.log.due_at).getTime();
+              const tag = status.kind === "missed" ? "⚠️ Overdue" : dueMs <= Date.now() ? "⏰ Due now" : null;
+              const snoozed = reminder.snoozedUntil[item.log.id];
+              return (
+                <View key={item.log.id} style={styles.taskRow} testID={`today-row-${item.log.id}`}>
+                  <View style={styles.taskText}>
+                    <Text style={styles.nextTitle} numberOfLines={1} testID={index === 0 ? "tasks-next" : undefined}>
+                      {`${careTypeMeta(item.task.type).emoji} ${item.task.title}`}
+                    </Text>
+                    <Text style={styles.muted} numberOfLines={1}>
+                      {[item.pet.name, formatTime(isoToZoned(item.log.due_at).time), item.task.dose].filter(Boolean).join(" · ")}
+                    </Text>
+                    {snoozed ? (
+                      <Text style={styles.muted} testID="tasks-snoozed">
+                        {`💤 Snoozed until ${new Date(snoozed).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
+                      </Text>
+                    ) : tag ? (
+                      <Text style={styles.tag}>{tag}</Text>
+                    ) : null}
+                  </View>
+                  <Button
+                    label="Done"
+                    onPress={() => setFinishing(item)}
+                    style={styles.rowDone}
+                    testID={index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`}
+                  />
+                </View>
+              );
+            })}
+            {open.length > TODAY_ROWS ? (
+              <TextButton label={`+ ${open.length - TODAY_ROWS} more — see all tasks`} onPress={() => router.push("/sitter/tasks")} testID="today-more" />
+            ) : null}
+          </>
+        ) : state.status === "ready" ? (
+          <Text style={styles.nextTitle} testID={items.length > 0 ? "tasks-all-done" : "tasks-empty"}>
+            {items.length > 0 ? "All done for today 🎉" : "No tasks today"}
+          </Text>
+        ) : (
+          <Text style={styles.muted}>Loading…</Text>
+        )}
+      </Card>
 
       <Card style={styles.caring} testID="today-caring">
         <Text style={styles.nextLabel}>Now caring · tap a pet to check in</Text>
@@ -179,6 +200,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
           ))}
       </Sheet>
 
+      <DueAlert reminder={reminder} paused={finishing != null} onDone={setFinishing} />
       <TaskDoneSheet item={finishing} onClose={() => setFinishing(null)} onDone={() => void reload()} />
     </View>
   );
@@ -201,6 +223,10 @@ const makeStyles = (theme: Theme) =>
     statLabel: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     next: { gap: theme.spacing.xs },
     nextLabel: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    taskRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
+    taskText: { flex: 1, gap: 1 },
+    rowDone: { minWidth: 76, minHeight: 40 },
+    tag: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
     nextTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },

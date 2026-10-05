@@ -57,6 +57,26 @@ test.describe("sitter home dashboard", () => {
     expect(fits).toBe(true);
   });
 
+  test("today's tasks are listed before they are due, and one can be marked Done early", async ({ page }) => {
+    const db = await home(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("dashboard-next")).toContainText("Today · 4 to do");
+    // Three rows (earliest first) and a link for the fourth.
+    await expect(screen.locator("[data-testid^='today-row-']")).toHaveCount(3);
+    await expect(screen.getByTestId("today-more")).toContainText("+ 1 more");
+    await expect(screen.getByText("Overdue")).toHaveCount(0);
+
+    // Not due yet, still doable now: the Walk (second row).
+    const walk = screen.locator("[data-testid^='today-row-']").nth(1);
+    await expect(walk).toContainText("Walk");
+    await walk.getByRole("button", { name: "Done" }).click();
+    await screen.getByTestId("task-done-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("done ✅");
+    expect(db.taskCompletions).toHaveLength(1);
+    await expect(screen.getByTestId("stat-tasks")).toContainText("1/4");
+    await expect(screen.locator("[data-testid^='today-row-']")).toHaveCount(3); // the fourth moved up
+  });
+
   test("Done on the next-task card opens the popup and updates the numbers", async ({ page }) => {
     const db = await home(page);
     const screen = app(page);

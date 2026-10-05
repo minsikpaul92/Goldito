@@ -166,22 +166,22 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩(Tasks done · Check-ins · Pets) · Next up 카드 · Now caring 펫 칩 · 바로가기 4개 | 🤖 `sitter-home` | ➖ |
-| HOME-2 | Next up 카드의 **Done** | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일로 바뀜 | 🤖 `sitter-home` | ➖ |
+| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩 · **Today 카드(오늘 남은 할 일 최대 3줄, 시간 전에도 보임; 나머지는 "+ N more")** · Now caring 펫 칩 · 바로가기 2개 | 🤖 `sitter-home` | ➖ |
+| HOME-2 | Today 카드 줄의 **Done** (시간 전이어도 가능) | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일이 올라옴. 지난 건 ⚠️ Overdue, 시간이 된 건 ⏰ Due now 표시 | 🤖 `sitter-home` | ➖ |
 | HOME-3 | 바로가기 **All tasks · My history** (Photos · Bookings는 탭과 중복이라 뺌), 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
 | HOME-6 | 할 일 💤 스누즈 중에 Home | Next up 카드에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
-| REM-1 | 시터 Home을 연 상태에서, 시간이 된(지난 지 1시간 안) 할 일이 있음 | **"⏰ Due now"** 배너가 **Next up 카드 자리**에 뜸(Home은 여전히 한 화면). 배너의 **Done**으로 바로 완료 가능 | 🤖 `due-reminder` | ➖ |
+| REM-1 | 시터 Home을 연 상태에서, 시간이 된(지난 지 1시간 안) 할 일이 있음 | **"⏰ Due now" 알람 팝업**이 화면 가운데 뜸(소리 · 진동 시도). **Done**으로 바로 완료, 팝업 뒤 Home엔 Today 목록이 그대로 | 🤖 `due-reminder` · 소리/진동 **👤** | ➖ |
 | REM-2 | 앱을 켜 둔 채로 다음 할 일 시간이 됨 (30초마다 확인) | **"⏰ Time for Dinner · Max"** 토스트가 한 번 뜸. 이미 시간이 지난 할 일들 때문에 앱을 켤 때 토스트가 쏟아지지는 않음 | 🤖 `due-reminder` · **실제 시계 👤** | ➖ |
-| REM-3 | 배너의 **✕** 로 닫기 | 다음 할 일 배너로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 배너 사라짐 | 🤖 `due-reminder` | ➖ |
+| REM-3 | 팝업의 **Dismiss** | 다음 할 일 팝업으로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 팝업 사라짐 | 🤖 `due-reminder` | ➖ |
 | REM-4 | 급한 게 여러 개 | 가장 이른 것 하나 + "+ N more waiting — see all tasks" (누르면 전체 할 일) | 🤖 `due-reminder` | ➖ |
-| REM-6 | 배너의 **💤 Remind me in 10 min** | 배너가 사라짐(Home의 숫자·목록엔 그대로). **새로고침해도 유지**. 10분 뒤 **"⏰ Still waiting: Dinner · Max"** 토스트와 함께 배너가 다시 뜸 | 🤖 `due-reminder` | ➖ |
-| REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 그 시각이 되면 30초 안에 토스트 + 배너 | **👤만** | ➖ |
+| REM-6 | 팝업의 **💤 Remind me in 10 min** | 팝업이 사라지고 Today 카드 줄에 **"💤 Snoozed until …"**. **새로고침해도 유지**. 10분 뒤 **"⏰ Still waiting: Dinner · Max"** 토스트와 함께 팝업이 다시 뜸 | 🤖 `due-reminder` | ➖ |
+| REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 30초 안에 Today 목록에 나타나고, 그 시각 정각에 토스트 + 팝업 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
-| CHK-1 | 체크인 화면 → Max의 Meal **All** (메모 비움) | 버튼이 **"✓ All"** 로 바뀌고 잠깐 잠김(연타해도 한 번만). 토스트 "Sent ✅". 오너 알림: "Max ate everything 🍽️" (메모 없음) | 🤖 `quick-checkin` | ➖ |
+| CHK-1 | 체크인 화면 → Max의 Meal **All** 누르기 (메모 비움) | 버튼이 **"✓ All"** 로 선택만 됨(**아직 전송 안 됨**), "Ready to send: …" 안내, 다시 누르면 선택 해제. **Send**를 눌러야 전송 → 토스트 "Sent ✅", 오너 알림 "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
 | CHK-2 | 카드 아래 **"Sent to Chloe today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
 | CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
-| CHK-4 | 메모 없이 **Send as a note** | "Type a note first." 전송 안 됨. 글을 쓰면 노트로 전송 | 🤖 `quick-checkin` | ➖ |
+| CHK-4 | 아무것도 고르지 않고 메모만 쓰기 | 메모가 없으면 **Send 비활성**. 메모를 쓰면 "Ready to send as a note" → Send로 노트 전송 | 🤖 `quick-checkin` | ➖ |
 | CHK-5 | Max에는 Walk 10–60분 있음, Mochi에는 **없음** | 펫마다 체크인 화면이 따로, 고양이는 산책 없음 | 🤖 `quick-checkin` | ➖ |
 | CHK-6 | **📷 Add photo** → 선택 → 미리보기 → Use → Mood **Happy** | "Photo ready ✓", 전송 시 업로드. 오너 Feed에 사진 글 + 체크인 알림 하나 | 🤖 `quick-checkin` · **실제 업로드 👤** | ➖ |
 | CHK-7 | 전송이 **실패**하면 | 빨간 팝업이 남고 Try again으로 다시 보냄 | 🤖 `quick-checkin` | ➖ |
@@ -205,7 +205,8 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | NOTIF-1 | 오너: 벨 → 알림 목록 | **둥근 카드** 한 장씩, 최신순, 안 읽은 것 강조, 벨 숫자 | 🤖 `feed` | ➖ |
-| NOTIF-2 | 알림 탭 | 읽음 처리 + 해당 화면 (`feed_post` → Feed, 할 일 · 체크인 → **History**) | 🤖 `feed` | ➖ |
+| NOTIF-2 | 알림 탭 | 읽음 처리 + 해당 화면 (`feed_post` → Feed, 할 일 · 체크인 → **History**), **그 알림의 펫**으로 열림(Mochi 알림 → Mochi). 사진/메모가 있으면 **먼저 크게 보여 주고** 닫으면 이동 | 🤖 `feed` · `live-updates` | ➖ |
+| NOTIF-8 | 사진이 달린 알림 | 목록/카드 오른쪽에 **작은 사진 썸네일**. 탭 → 큰 사진 + 메모 시트("See in History"), 닫으면 History | 🤖 `live-updates` · 실제 사진 **👤** | ➖ |
 | NOTIF-3 | **Mark all as read** | 숫자 사라짐 | 🤖 `feed` | ➖ |
 | NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 카드와 같은 **둥근 모양의 빨간 Delete**가 드러나고, 놓으면 사라지며 삭제됨(가만히 있을 땐 빨간 부분이 안 보임). 벨 숫자 갱신 | 🤖 `feed` | ➖ |
 | NOTIF-5 | 알림 한 줄을 **덜 밀다 놓기** | 제자리로 돌아오고 유지됨. 탭은 여전히 열림 | 🤖 `feed` | ➖ |
@@ -220,6 +221,7 @@
 | LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
 | LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
 | LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
+| LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫에 **"🟢 In care · with Lucy until Oct 7, 1:37 AM"**. 집에 있는 펫엔 없음 | 🤖 `live-updates` | ➖ |
 | LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
 | HIST-1 | Home의 **🕘 History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |

@@ -18,7 +18,7 @@ const torontoTime = (ms: number) =>
 const torontoDay = (ms: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date(ms));
 
-test("a banner for what is due now, a toast when the next one becomes due, then overdue ones", async ({ page }) => {
+test("an alarm popup for what is due now, a toast when the next one becomes due, then overdue ones", async ({ page }) => {
   const now = Date.now();
   // Task times are "today" in Toronto; stay clear of midnight so all three fall on the same day.
   test.skip(torontoDay(now - 130 * MIN) !== torontoDay(now + 6 * MIN), "too close to midnight in Toronto");
@@ -35,16 +35,16 @@ test("a banner for what is due now, a toast when the next one becomes due, then 
   await page.clock.install({ time: now });
   await signIn(page, SITTER);
   const screen = app(page);
-  await screen.getByTestId("due-banner").waitFor();
+  await screen.getByTestId("due-alert").waitFor();
 
-  // First look: the banner shows what is due (not the overdue one), and no toast floods in.
-  await expect(screen.getByTestId("due-banner-label")).toHaveText("⏰ Due now");
-  await expect(screen.getByTestId("due-banner-title")).toContainText("Lunch");
+  // First look: the popup shows what is due (not the overdue one), and no toast floods in.
+  await expect(screen.getByTestId("due-alert-label")).toHaveText("⏰ Due now");
+  await expect(screen.getByTestId("due-alert-title")).toContainText("Lunch");
   await expect(screen.getByText("+ 1 more waiting", { exact: false })).toBeVisible();
   await expect(screen.getByTestId("toast")).toHaveCount(0);
-  // The banner takes the place of "Next up": Home still fits one screen, even with two pets.
+  // Home keeps listing today's tasks under the popup and still fits one screen, even with two pets.
   expect(await screen.getByTestId("sitter-home").evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
-  await expect(screen.getByTestId("dashboard-next")).toHaveCount(0);
+  await expect(screen.getByTestId("dashboard-next")).toBeVisible();
 
   // Four minutes pass with the app open: Snack becomes due → one toast.
   await page.clock.fastForward("04:00");
@@ -52,21 +52,21 @@ test("a banner for what is due now, a toast when the next one becomes due, then 
   await expect(screen.getByText("+ 2 more waiting", { exact: false })).toBeVisible();
 
   // Done on the banner finishes Lunch; the banner moves on to Snack.
-  await screen.getByTestId("due-banner-done").click();
+  await screen.getByTestId("due-alert-done").click();
   await screen.getByTestId("task-done-confirm").click();
-  await expect(screen.getByTestId("due-banner-title")).toContainText("Snack");
+  await expect(screen.getByTestId("due-alert-title")).toContainText("Snack");
 
   // Dismiss Snack: only the overdue one is left, and it says so.
-  await screen.getByTestId("due-banner-dismiss").click();
-  await expect(screen.getByTestId("due-banner-label")).toHaveText("⚠️ Overdue");
-  await expect(screen.getByTestId("due-banner-title")).toContainText("Early meal");
+  await screen.getByTestId("due-alert-dismiss").click();
+  await expect(screen.getByTestId("due-alert-label")).toHaveText("⚠️ Overdue");
+  await expect(screen.getByTestId("due-alert-title")).toContainText("Early meal");
 
   // Dismissing the last one clears the banner.
-  await screen.getByTestId("due-banner-dismiss").click();
-  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await screen.getByTestId("due-alert-dismiss").click();
+  await expect(screen.getByTestId("due-alert")).toHaveCount(0);
 });
 
-test("nothing due, no banner", async ({ page }) => {
+test("nothing due, no alarm", async ({ page }) => {
   const now = Date.now();
   test.skip(torontoDay(now) !== torontoDay(now + 20 * MIN), "too close to midnight in Toronto");
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
@@ -75,7 +75,7 @@ test("nothing due, no banner", async ({ page }) => {
   await signIn(page, SITTER);
   await app(page).getByTestId("sitter-dashboard").waitFor();
   await expect(app(page).getByTestId("tasks-next")).toContainText("Dinner");
-  await expect(app(page).getByTestId("due-banner")).toHaveCount(0);
+  await expect(app(page).getByTestId("due-alert")).toHaveCount(0);
 });
 
 test("Remind me in 10 min hides the banner, survives a refresh, and brings it back with a toast", async ({ page }) => {
@@ -88,21 +88,21 @@ test("Remind me in 10 min hides the banner, survives a refresh, and brings it ba
   await page.clock.install({ time: now });
   await signIn(page, SITTER);
   const screen = app(page);
-  await expect(screen.getByTestId("due-banner-title")).toContainText("Dinner");
+  await expect(screen.getByTestId("due-alert-title")).toContainText("Dinner");
 
-  await screen.getByTestId("due-banner-snooze").click();
-  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await screen.getByTestId("due-alert-snooze").click();
+  await expect(screen.getByTestId("due-alert")).toHaveCount(0);
   await expect(screen.getByTestId("tasks-snoozed")).toContainText("Snoozed until");
 
   // A refresh doesn't forget the snooze.
   await page.reload();
   await screen.getByTestId("sitter-dashboard").waitFor();
-  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await expect(screen.getByTestId("due-alert")).toHaveCount(0);
 
   // 9 minutes in: still snoozed. 11 minutes in: it is back, with a toast.
   await page.clock.fastForward("09:00");
-  await expect(screen.getByTestId("due-banner")).toHaveCount(0);
+  await expect(screen.getByTestId("due-alert")).toHaveCount(0);
   await page.clock.fastForward("02:00");
   await expect(screen.getByTestId("toast")).toContainText("⏰ Still waiting: Dinner · Max");
-  await expect(screen.getByTestId("due-banner-title")).toContainText("Dinner");
+  await expect(screen.getByTestId("due-alert-title")).toContainText("Dinner");
 });
