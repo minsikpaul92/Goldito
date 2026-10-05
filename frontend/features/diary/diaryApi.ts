@@ -21,6 +21,8 @@ export type DiaryEntry = {
   media: DiaryMedia | null;
   by: string;
   missed: boolean;
+  /** Set by screens that mix several pets (the sitter's history). */
+  petName?: string;
 };
 
 type MediaEmbed = { id: string; cloudinary_public_id: string; resource_type: MediaResourceType } | null;

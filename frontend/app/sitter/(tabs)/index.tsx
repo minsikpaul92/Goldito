@@ -3,13 +3,11 @@ import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { placeLabel } from "../../../components/BookingCard";
-import { QuickCheckIn } from "../../../components/QuickCheckIn";
-import { TodayTasks } from "../../../components/TodayTasks";
+import { SitterDashboard } from "../../../components/SitterDashboard";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { TextButton } from "../../../components/ui/TextButton";
 import { caringPetsFromBookings, isCaring } from "../../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { appToday, formatInstant, formatTime, isoToZoned } from "../../../features/schedule/dates";
@@ -99,15 +97,10 @@ export default function SitterHome() {
   }
 
   const open = (b: BookingSummary) => router.push(`/sitter/bookings/${b.id}`);
-  const caringPets = caringPetsFromBookings(confirmed, now).map((p) => ({
-    id: p.id,
-    name: p.name,
-    ownerName: p.ownerName,
-    species: p.species,
-  }));
+  const caringPets = caringPetsFromBookings(confirmed, now);
 
   return (
-    <Screen contentStyle={styles.content}>
+    <Screen contentStyle={styles.content} testID="sitter-home">
       {requests > 0 ? (
         <Pressable
           accessibilityRole="button"
@@ -119,59 +112,14 @@ export default function SitterHome() {
         </Pressable>
       ) : null}
 
-      <TodayTasks pets={caringPets} />
-
-      {caringPets.length > 0 ? (
-        <View style={styles.section} testID="quick-checkin">
-          <Text accessibilityRole="header" style={styles.heading}>
-            Quick check-in
-          </Text>
-          {caringPets.map((p) => (
-            <QuickCheckIn key={p.id} pet={p} />
-          ))}
-        </View>
-      ) : null}
-
-      {caring.length > 0 ? (
-        <View style={styles.section} testID="today-caring">
-          <Text accessibilityRole="header" style={styles.heading}>
-            Now caring
-          </Text>
-          {caring.map((b) => (
-            <Card key={b.id} style={styles.card}>
-              <Text style={styles.title}>{`${b.ownerName}'s ${b.pets.length > 1 ? "pets" : "pet"}`}</Text>
-              <Text style={styles.body}>{pets(b)}</Text>
-              {b.pickUp ? <Text style={styles.muted}>{`Until ${formatInstant(b.pickUp.at)}`}</Text> : null}
-              <View style={styles.caringActions}>
-                {b.pets
-                  .filter((p) => p.id)
-                  .map((p) => (
-                    <Pressable
-                      key={p.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Share photos of ${p.name}`}
-                      onPress={() => router.push(`/sitter/feed/${p.id}`)}
-                      style={({ pressed }) => [styles.petChip, pressed && styles.pressed]}
-                      testID={`caring-pet-${p.id}`}
-                    >
-                      <Text style={styles.petChipText}>
-                        {SPECIES_EMOJI[p.species]} {p.name} · + Photo
-                      </Text>
-                    </Pressable>
-                  ))}
-                <TextButton label="Booking details" onPress={() => open(b)} testID={`caring-booking-${b.id}`} />
-              </View>
-            </Card>
-          ))}
-        </View>
-      ) : null}
+      {caringPets.length > 0 ? <SitterDashboard pets={caringPets} /> : null}
 
       {due.length > 0 ? (
         <View style={styles.section} testID="today-due">
           <Text accessibilityRole="header" style={styles.heading}>
             Today
           </Text>
-          {due.map(({ booking: b, kind, at }) => {
+          {due.slice(0, 2).map(({ booking: b, kind, at }) => {
             const h = kind === "drop_off" ? b.dropOff : b.pickUp;
             return (
               <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)}>
@@ -193,7 +141,7 @@ export default function SitterHome() {
           <Text accessibilityRole="header" style={styles.heading}>
             Upcoming
           </Text>
-          {upcoming.map((b) => (
+          {upcoming.slice(0, 2).map((b) => (
             <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)}>
               <Card style={styles.card}>
                 <Text style={styles.title}>{`${b.ownerName} · ${b.dropOff ? formatInstant(b.dropOff.at) : ""}`}</Text>
@@ -222,26 +170,6 @@ const makeStyles = (theme: Theme) =>
     },
     card: {
       gap: theme.spacing.xs,
-    },
-    caringActions: {
-      marginTop: theme.spacing.xs,
-      gap: theme.spacing.xs,
-      alignItems: "flex-start",
-    },
-    petChip: {
-      minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.sm,
-      paddingVertical: theme.spacing.xs,
-      borderRadius: theme.radius.md,
-      backgroundColor: theme.color.accent,
-      borderWidth: 1,
-      borderColor: theme.color.primary,
-    },
-    petChipText: {
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.primary,
     },
     title: {
       fontSize: theme.fontSize.body,

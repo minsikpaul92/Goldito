@@ -10,11 +10,17 @@ const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: 
 const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
 const tid = (pet: { id: string }, kind: string, value: string) => `checkin-${pet.id}-${kind}-${value}`;
 
-async function setup(page: import("@playwright/test").Page) {
+async function openCheckin(page: import("@playwright/test").Page, petId: string) {
+  await signIn(page, SITTER);
+  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await page.goto(`/sitter/checkin/${petId}`);
+  await app(page).getByTestId(`checkin-${petId}`).waitFor();
+}
+
+async function setup(page: import("@playwright/test").Page, petId: string = MAX.id) {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   caring(db, [MAX, MOCHI]);
-  await signIn(page, SITTER);
-  await app(page).getByTestId("quick-checkin").waitFor();
+  await openCheckin(page, petId);
   return db;
 }
 
@@ -65,9 +71,8 @@ test.describe("quick check-in", () => {
         body: JSON.stringify({ code: "P0001", message: "not_in_care_window" }),
       });
     });
-    await signIn(page, SITTER);
+    await openCheckin(page, MAX.id);
     const screen = app(page);
-    await screen.getByTestId("quick-checkin").waitFor();
 
     await screen.getByTestId(tid(MAX, "meal", "most")).click();
     await expect(screen.getByTestId("error-dialog-message")).toContainText("Tasks open once the stay has started.");
@@ -105,10 +110,14 @@ test.describe("quick check-in", () => {
     expect(db.care_checkins[0]).toMatchObject({ kind: "note", value: null, note_text: "Watched a squirrel for ten minutes" });
   });
 
-  test("walks are offered for the dog only; every pet has its own card", async ({ page }) => {
+  test("walks are offered for the dog only; each pet has its own check-in screen", async ({ page }) => {
     await setup(page);
     const screen = app(page);
     await expect(screen.getByTestId(tid(MAX, "walk", "30"))).toBeVisible();
+    await expect(screen.getByTestId(`checkin-${MOCHI.id}`)).toHaveCount(0);
+
+    await page.goto(`/sitter/checkin/${MOCHI.id}`);
+    await screen.getByTestId(`checkin-${MOCHI.id}`).waitFor();
     await expect(screen.getByTestId(tid(MOCHI, "walk", "30"))).toHaveCount(0);
     await expect(screen.getByTestId(tid(MOCHI, "mood", "calm"))).toBeVisible();
     await screen.getByTestId(tid(MOCHI, "mood", "calm")).click();
@@ -119,7 +128,7 @@ test.describe("quick check-in", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [MAX]);
     const sign = await mockUpload(page, db, MAX.id);
-    await signIn(page, SITTER);
+    await openCheckin(page, MAX.id);
     const screen = app(page);
 
     await screen.getByTestId(`checkin-photo-${MAX.id}`).click();

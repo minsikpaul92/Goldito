@@ -12,6 +12,14 @@ const caringMax = (db: MockDb) => caring(db, [MAX]);
 const task = (id: string, type: string, title: string, time: string, extra: object = {}) =>
   fixtureTask(PET, id, type, title, time, extra);
 
+/** Sign in as the sitter and open the full task list (Home only shows the next task). */
+async function openTasks(page: import("@playwright/test").Page) {
+  await signIn(page, SITTER);
+  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await page.goto("/sitter/tasks");
+  await app(page).getByTestId("today-tasks").waitFor();
+}
+
 const firstId = async (screen: ReturnType<typeof app>, prefix: string) =>
   (await screen.locator(`[data-testid^='${prefix}']`).first().getAttribute("data-testid"))!;
 
@@ -24,7 +32,7 @@ test.describe("sitter today's tasks", () => {
       task("t-pill", "medication", "Joint pill", "20:00", { dose: "1 tablet" }),
       task("t-off", "play", "Paused play", "12:00", { active: false }),
     );
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
 
     await expect(screen.getByTestId("today-tasks")).toBeVisible();
@@ -40,7 +48,7 @@ test.describe("sitter today's tasks", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
     db.care_tasks.push(task("t-meal", "feeding", "Breakfast", "08:00"));
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
 
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
@@ -65,7 +73,7 @@ test.describe("sitter today's tasks", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
     db.care_tasks.push(task("t-pill", "medication", "Joint pill", "08:00"));
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
 
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
@@ -82,7 +90,7 @@ test.describe("sitter today's tasks", () => {
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
     const sign = await mockUpload(page, db, PET);
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
 
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
@@ -106,7 +114,7 @@ test.describe("sitter today's tasks", () => {
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
     const sign = await mockUpload(page, db, PET);
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
     await screen.getByTestId("task-done-photo").click();
@@ -123,7 +131,7 @@ test.describe("sitter today's tasks", () => {
     caringMax(db);
     db.care_tasks.push(task("t-walk", "walk", "Walk", "09:00"));
     await mockUpload(page, db, PET, { failSignOnce: true });
-    await signIn(page, SITTER);
+    await openTasks(page);
     const screen = app(page);
 
     await screen.getByTestId(await firstId(screen, "task-done-")).click();
@@ -147,7 +155,7 @@ test.describe("sitter today's tasks", () => {
   test("a pet with no tasks shows a quiet empty line", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caringMax(db);
-    await signIn(page, SITTER);
+    await openTasks(page);
     await expect(app(page).getByTestId("tasks-empty")).toContainText("No tasks for Max today");
   });
 });
@@ -173,6 +181,8 @@ test.describe("on a phone", () => {
     await page.getByTestId("login-email").fill(SITTER.email);
     await page.getByTestId("login-password").fill(SITTER.password);
     await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto("/sitter/tasks");
     const screen = page;
 
     await screen.locator("[data-testid^='task-done-']").first().click();
