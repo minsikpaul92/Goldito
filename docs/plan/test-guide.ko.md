@@ -94,6 +94,7 @@
 | 알림 (토스트 · 벨 · 알림센터 · 탭 이동) | ✅ 🤖 (실시간은 👤) | 05 |
 | 알림 **밀어서 삭제**(60% 이상) · **Clear all** | ✅ 🤖 | 06 후속 |
 | 실패하면 **닫을 때까지 남는 에러 팝업** + Try again | ✅ 🤖 | 06 후속 |
+| 오너 **케어 요청서** (노트 → AI 체크리스트 → 고쳐서 저장, Heads-up 포함) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 |
 | 오너 **돌봄 할 일** 등록 · **시간 탭 선택** · 탭해서 **수정**(종류 고정) · 일시중지 · 삭제 | ✅ 🤖 | 06 / 6.1 + 후속 |
 | 시터 **오늘 할 일** — Done → 팝업(메모 + 사진) → Done, 끝낸 건 목록에서 사라짐 | ✅ 🤖 | 06 / 6.2–6.4 · 6.3 + 후속 |
 | 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
@@ -134,6 +135,13 @@
 | CARE-5 | **시간 칸을 탭** → iPhone처럼 **시 · 분 · AM/PM 휠**이 뜸. 손가락/마우스로 돌리거나 마우스 휠로 굴리거나, 줄을 눌러 고름 → Set | 가운데 띠에 멈춘 값이 선택됨 (예: 8:05 PM). + 버튼 없이 바로 | 🤖 `care-tasks` | ➖ |
 | CARE-6 | 목록의 **태스크를 탭** → 이름 · 용량 · 시간 · 메모 수정 → Save changes | "Saved …" (시간을 바꾸면 "Saved — now at 6:45 PM"). **종류는 잠겨 있음** | 🤖 `care-tasks` | ➖ |
 | CARE-7 | 시터가 아직 안 한 오늘 할 일의 **시간을 바꾸거나 Pause** | 시터 화면에서 옛 시각의 할 일이 사라지고 새 시각으로 나타남 (Missed로 남지 않음) | SQL `rls_smoke` · **실제 확인 👤** | ➖ |
+
+| REQ-1 | Home → Max → Care tasks → **✍️ Write a care request** → 노트에 "Meals: 8:00 AM — 1 cup of kibble / Medication: 2:00 PM — 1 skin pill… / Heads-up: No knocking — text me instead." → **Make a checklist** | 몇 초 안에 체크리스트: Feeding 08:00 + Medication 14:00 카드, Heads-up 칩들. **아직 아무것도 저장 안 됨**("Nothing is saved until you tap Save") | 🤖 `care-request` · **실제 AI 👤** | ➖ |
+| REQ-2 | 체크리스트에서 이름 · 용량 고치기, **시간을 탭해 휠로 바꾸기**, 카드 **Remove**, Heads-up **✕**, Heads-up 새로 추가 → **Save checklist** | "Saved 2 tasks and 2 Heads-ups for Max" 토스트, 펫 화면으로 돌아오면 **Care tasks에 바로 보임**(고친 이름 · 시각) | 🤖 `care-request` | ➖ |
+| REQ-3 | Mochi(고양이)에 "…walk at 5 PM" 포함해서 | 산책은 체크리스트에 없고 **"Left out: Walk — Cats don't go on walks."** 로 표시 | 🤖 `care-request` · 실제 AI 👤 | ➖ |
+| REQ-4 | 시간이 없는 요청("be nice to him") | "No tasks with a clock time were found…" 안내, Save는 "Add a task or a Heads-up first" | 🤖 `care-request` | ➖ |
+| REQ-5 | AI가 안 될 때(키 없음 · 네트워크) | **빨간 팝업이 남음**("…add tasks by hand") + Try again. 노트는 그대로 | 🤖 `care-request` | ➖ |
+| REQ-6 | 저장이 거절될 때 | 팝업 + 체크리스트는 그대로 남아 고칠 수 있음. **일부만 저장되는 일은 없음**(전부 아니면 전혀) | 🤖 `care-request` · SQL | ➖ |
 
 ### 3.2 시터 — 오늘 할 일 (TASK) · *사전: 오너가 태스크를 만들어 둠*
 

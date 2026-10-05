@@ -1,3 +1,4 @@
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -65,9 +66,12 @@ export function CareTasksSection({ pet, userId }: Props) {
     }
   }, [pet.id]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Also when we come back from the care request screen with new tasks.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const tasks = state.status === "ready" ? sortTasks(state.tasks) : [];
   const logByTask = useMemo(() => {
@@ -114,6 +118,12 @@ export function CareTasksSection({ pet, userId }: Props) {
         <Button label="Add task" variant="secondary" onPress={() => setAdding(true)} testID="care-add" />
       </View>
       <Text style={styles.hint}>What {pet.name}&apos;s sitter should do each day.</Text>
+      <Button
+        label="✍️ Write a care request"
+        variant="secondary"
+        onPress={() => router.push(`/owner/pets/${pet.id}/care-request`)}
+        testID="care-request-open"
+      />
 
       {state.status === "loading" ? <Text style={styles.muted}>Loading…</Text> : null}
       {state.status === "error" ? (

@@ -155,6 +155,9 @@ export type MockDb = {
   task_logs: Row[];
   /** log_care_checkin rows (phase 06). */
   care_checkins: Row[];
+  /** Care request notes and Heads-ups (phase 06 6.13). */
+  care_requests: Row[];
+  pet_cautions: Row[];
   /** respond_booking / propose_handoff calls with their parameters. */
   responses: Row[];
   proposals: Row[];
@@ -164,6 +167,8 @@ export type MockDb = {
   completions: Row[];
   /** complete_task_log calls (phase 06). */
   taskCompletions: Row[];
+  /** save_care_request calls, even refused ones (phase 06 6.13). */
+  saves: Row[];
   /** Owner consent signatures (03C). */
   booking_consents: Row[];
   /** Owner entry codes (03C) — sitters only via get_home_access. */
@@ -202,11 +207,14 @@ function createMockDb(): MockDb {
     care_tasks: [],
     task_logs: [],
     care_checkins: [],
+    care_requests: [],
+    pet_cautions: [],
     responses: [],
     proposals: [],
     meetGreetCalls: [],
     completions: [],
     taskCompletions: [],
+    saves: [],
     booking_consents: [],
     owner_home_access: [],
     payments: [],
@@ -739,6 +747,40 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       200,
       db.task_logs.filter((l) => l.pet_id === p_pet && String(l.due_at) >= start && String(l.due_at) < end),
     );
+  }
+
+  if (path === "rpc/save_care_request") {
+    const { p_pet, p_text, p_model, p_tasks, p_cautions } = request.postDataJSON();
+    db.saves.push({ p_pet, p_text, p_model });
+    const pet = db.pets.find((p) => p.id === p_pet);
+    if (!pet || pet.owner_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    // All or nothing, like the SQL function: a task the pet can't do rolls everything back.
+    for (const t of p_tasks as { type: string }[]) {
+      if ((t.type === "walk" && pet.species === "cat") || (t.type === "litter" && pet.species === "dog")) {
+        return json(route, 400, { code: "P0001", message: "task_type_not_allowed_for_species" });
+      }
+    }
+    const id = crypto.randomUUID();
+    db.care_requests.push({ id, pet_id: p_pet, created_by: me, raw_text: p_text, model: p_model });
+    for (const t of p_tasks as Record<string, string | null>[]) {
+      db.care_tasks.push({
+        id: crypto.randomUUID(),
+        pet_id: p_pet,
+        type: t.type,
+        title: t.title,
+        dose: t.dose ?? null,
+        scheduled_time: `${t.time}:00`,
+        notes: t.notes ?? null,
+        repeat_daily: true,
+        active: true,
+        request_id: id,
+        created_at: new Date().toISOString(),
+      });
+    }
+    for (const text of p_cautions as string[]) {
+      db.pet_cautions.push({ id: crypto.randomUUID(), pet_id: p_pet, request_id: id, text, active: true });
+    }
+    return json(route, 200, id);
   }
 
   if (path === "rpc/log_care_checkin") {
