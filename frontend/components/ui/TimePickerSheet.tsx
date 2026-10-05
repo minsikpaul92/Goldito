@@ -20,6 +20,8 @@ type Props = {
 const ITEM = 44;
 const VISIBLE = 5; // rows in view; the middle one is the selection
 const PAD = ((VISIBLE - 1) / 2) * ITEM;
+/** After a tap the wheel scrolls itself; ignore "scroll stopped" guesses until it has arrived. */
+const TAP_SCROLL_LOCK_MS = 700;
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const HOURS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: String(i + 1), id: `time-hour-${i + 1}` }));
@@ -48,6 +50,7 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
   const styles = useThemedStyles(makeStyles);
   const ref = useRef<ScrollView>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lockedUntil = useRef(0);
   const index = Math.max(0, items.findIndex((i) => i.value === selected));
   const indexRef = useRef(index);
   indexRef.current = index;
@@ -70,6 +73,8 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
   );
 
   const settle = (y: number) => {
+    // A slow machine can pause a tap-initiated scroll halfway; snapping then would pick the wrong row.
+    if (Date.now() < lockedUntil.current) return;
     const i = Math.max(0, Math.min(items.length - 1, Math.round(y / ITEM)));
     if (i !== indexRef.current) onSelect(items[i].value);
     scrollTo(i, true);
@@ -103,6 +108,7 @@ function Wheel({ items, selected, onSelect, flex = 1 }: { items: WheelItem[]; se
             // react-native-web ignores accessibilityState.checked; aria-checked reaches the DOM.
             aria-checked={i === index}
             onPress={() => {
+              lockedUntil.current = Date.now() + TAP_SCROLL_LOCK_MS;
               onSelect(item.value);
               scrollTo(i, true);
             }}
