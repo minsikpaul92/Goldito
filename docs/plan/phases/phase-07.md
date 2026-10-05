@@ -24,7 +24,7 @@
 
 - [Phase 05–06](phase-05.md) 당일 feed + task_logs
 - [Phase 00](phase-00.md) 0.3 Nebius key + model ID
-- 슬기: 7.4 few-shot (익명화 — 원본은 영어)
+- 민식: 7.4 few-shot (슬기가 익명화해 준 데이터를 사용 — 원본은 영어)
 
 ---
 
@@ -44,13 +44,13 @@
 
 | ID | 작업 | 담당 | 상세 |
 | :--- | :--- | :--- | :--- |
-| 7.1 | Nebius client + test script | 슬기 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **호출 지표 로그**(architecture §9: TTFT·전체 지연·토큰 수)를 `nebius.py`에 포함하고, 테스트 스크립트가 role별 5회 호출해 **TTFT/지연 중앙값 표**를 `notes/model-ids.md`에 남김 (README 피드백 근거). **Phase 01 끝나면 바로 시작 가능** |
-| 7.2 | daily-report API | 슬기·민식 | 아래 "집계 → 프롬프트 → 저장" |
+| 7.1 | Nebius client + test script | 민식 | architecture §9 규칙대로 `chat()`, `chat_json()`. `scripts/test_nebius.py`: 4개 role 각각 "Say hi in one sentence" + vision role에 샘플 이미지 1장 → model·latency 출력. `response_format` 지원 여부·reasoning 토글 방식 확인해 코드 주석 + `notes/model-ids.md`에 기록. **호출 지표 로그**(architecture §9: TTFT·전체 지연·토큰 수)를 `nebius.py`에 포함하고, 테스트 스크립트가 role별 5회 호출해 **TTFT/지연 중앙값 표**를 `notes/model-ids.md`에 남김 (README 피드백 근거). **Phase 01 끝나면 바로 시작 가능** |
+| 7.2 | daily-report API | 민식 | 아래 "집계 → 프롬프트 → 저장" |
 | 7.3 | Sitter ReportScreen + Owner ReportView | 민식 | 아래 "화면" |
-| 7.4 | Few-shot + PROMPT.md | 슬기 | `app/ai/prompts/daily_report/few_shot.json` — 3편 (그 시터의 `tone_samples`가 아직 없을 때 쓰는 기본 예시, D35), 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Max" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
+| 7.4 | Few-shot + PROMPT.md | 민식 | `app/ai/prompts/daily_report/few_shot.json` — 3편 (그 시터의 `tone_samples`가 아직 없을 때 쓰는 기본 예시, D35), 각 `{input: <source_snapshot 형식>, output: "<report>"}`, **영어**(원본 그대로), 가명 "Max" 등, PII 0. `PROMPT.md`에 톤·구조 규칙만 기록 |
 | 7.5 | send RPC | 민식 | `009_reports.sql`: `send_daily_report(p_report uuid, p_body text)` — 작성한 시터 본인(`sitter_id = auth.uid()`), status draft 확인, body 갱신(편집 반영), `status='sent', sent_at=now()`, owner 알림 `report_sent` |
 | 7.6 | (Stretch) 자동 초안 | 민식 | 18:00에 Nebius Serverless Job이 draft 생성 + sitter에게 "Your report draft is ready" |
-| 7.7 | 칩 제안 `POST /api/ai/report-chips` (D38) | 슬기·민식 | 서버가 그날 check-in·task로 기본 칩을 만들고(모델 없음, 이미 check-in한 값은 그대로), 사진(≤ 2)은 `MODEL_VISION` + `prompts/report_chips/system.md`가 `{description, chips:[≤ 2 짧은 문구]}` (보이는 것만, 의학 판단 금지). 그날 피드 사진의 09 캡션도 칩 후보로. 응답 `{chips:[{id, kind, label, source, media_id?}], photos:[{media_id, description}]}` — 사진 묘사는 draft `inputs`에 저장해 7.2가 재사용(중복 호출 없음). 사진 칩이 20 s 안에 안 오면 하루 기록 칩만. 화면은 칩을 켜고 끄는 토글 + 하루 기록 칩 값 수정 |
+| 7.7 | 칩 제안 `POST /api/ai/report-chips` (D38) | 민식 | 서버가 그날 check-in·task로 기본 칩을 만들고(모델 없음, 이미 check-in한 값은 그대로), 사진(≤ 2)은 `MODEL_VISION` + `prompts/report_chips/system.md`가 `{description, chips:[≤ 2 짧은 문구]}` (보이는 것만, 의학 판단 금지). 그날 피드 사진의 09 캡션도 칩 후보로. 응답 `{chips:[{id, kind, label, source, media_id?}], photos:[{media_id, description}]}` — 사진 묘사는 draft `inputs`에 저장해 7.2가 재사용(중복 호출 없음). 사진 칩이 20 s 안에 안 오면 하루 기록 칩만. 화면은 칩을 켜고 끄는 토글 + 하루 기록 칩 값 수정 |
 
 ### 7.2 집계 → 프롬프트 → 저장
 
@@ -121,7 +121,7 @@
 
 ## AI 프롬프트
 
-Playbook §9 — 7.1 / 7.2 / 7.3+7.5 / 7.4(슬기) 분리
+Playbook §9 — 7.1 / 7.2 / 7.3+7.5 / 7.4(민식) 분리
 
 ---
 

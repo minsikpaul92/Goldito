@@ -2,7 +2,7 @@
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **PawNote**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack), Seulgi (AI & data anonymization), Muk (UX/UI).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too**), Seulgi (only the 3-year conversation-history anonymization — she is away), Muk (UX/UI).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
@@ -157,7 +157,7 @@ English only for commit messages and GitHub PR content.
 ### Phase order
 
 `00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), Seulgi's AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5) runs in parallel with Minsik's app queue, but TODO must list **one** "Current focus" per agent session.
+After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session.
 
 ### Coding discipline
 

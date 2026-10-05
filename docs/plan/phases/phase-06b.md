@@ -67,7 +67,7 @@
 | 6B.2 | `lib/location.ts` | `startLocationSource({mode:'gps'\|'simulate', route?}) → stop()` — gps: `expo-location` foreground watch (웹은 `navigator.geolocation.watchPosition`), 5초 간격 `update_trip_position`. 권한 거부 → "Location is off — the other person won't see the map" + **Simulate** 제안(데모만). simulate: 경로 JSON 재생. 화면이 닫혀도 같은 탭이면 계속(앱 수준 provider `TripProvider`) | 실제 폰 1회 + 데스크톱 simulate |
 | 6B.3 | TripMap + Trip 화면 | `components/TripMap.web.tsx` — Leaflet + OSM 타일(`© OpenStreetMap contributors` 표기), `dragging:false, scrollWheelZoom:false, touchZoom:false`, ± 버튼만, 마커 2개 자동 맞춤. 네이티브 `TripMap.tsx`는 지도 없이 거리·ETA 카드 (해커톤 후 지도). Realtime 구독 `trips` (booking_id 필터) → 마커·ETA 갱신 | 1.7 마우스 테스트: 지도 위 드래그가 화면 스크롤로 동작 |
 | 6B.4 | 도착 안내 카드 | 시터(Sitter drives): `get_home_access` → **EntryInfoCard**(03C) — Buzzer 1-tap = `tel:` 링크(견주 전화, 데모는 가짜 번호) + buzzer 코드, Lockbox **Show code**. 견주(Owner drives): `get_handoff_details` → Lucy's place(주소·Visitor parking·로비 안내) | 도착 시 자동 표시 |
-| 6B.5 | `POST /api/ai/handoff-check` (슬기) | `routers/ai_handoff_check.py` — `assert_booked_sitter(booking, from_hours_before=2)`, media가 그 예약 반려동물 것인지 확인 → `fetch_as_data_url` → `MODEL_VISION` + `prompts/handoff_check/system.md` (check_type별 지시) → `HandoffFindings {pet_visible, species_match, crate_visible?, restraint_visible?, concerns:[str]}` (`chat_json`) → 서버 규칙으로 status: pet_checkin/return = `pet_visible && species_match` → ok / vehicle_safety = `pet_visible && (crate_visible \|\| restraint_visible)` → ok / 그 외 warning. 의학적 판단 금지("looks calm" 같은 관찰만). 실패·20 s 타임아웃 → `unchecked` (200). `handoff_checks(id, booking_id, handoff_kind, check_type, media_id, status, findings jsonb, override_reason text null, model, latency_ms, created_at)` service role insert | 샘플 4장 기대 결과 일치 (아래) |
+| 6B.5 | `POST /api/ai/handoff-check` (민식) | `routers/ai_handoff_check.py` — `assert_booked_sitter(booking, from_hours_before=2)`, media가 그 예약 반려동물 것인지 확인 → `fetch_as_data_url` → `MODEL_VISION` + `prompts/handoff_check/system.md` (check_type별 지시) → `HandoffFindings {pet_visible, species_match, crate_visible?, restraint_visible?, concerns:[str]}` (`chat_json`) → 서버 규칙으로 status: pet_checkin/return = `pet_visible && species_match` → ok / vehicle_safety = `pet_visible && (crate_visible \|\| restraint_visible)` → ok / 그 외 warning. 의학적 판단 금지("looks calm" 같은 관찰만). 실패·20 s 타임아웃 → `unchecked` (200). `handoff_checks(id, booking_id, handoff_kind, check_type, media_id, status, findings jsonb, override_reason text null, model, latency_ms, created_at)` service role insert | 샘플 4장 기대 결과 일치 (아래) |
 | 6B.6 | 인수인계 연결 | `complete_handoff(p_booking, p_kind, p_check uuid default null)`로 확장 — check가 같은 예약·kind면 알림 제목에 "· photo verified ✅" (status ok일 때만). warning + **Continue anyway** → `override_reason` update (시터 RLS). 사진 없이도 Received 가능(카메라 없음·급한 상황) — 견주 알림은 일반 문구. 맡기기 Received 시 열려 있는 trip `end_trip` | 체크 ok/warning/없음 3경로 |
 | 6B.7 | 테스트 | Playwright `flows`: 데모 owner·sitter 두 컨텍스트 — sitter Simulate trip → owner ETA 갱신 → 도착 카드 → 샘플 사진 → Received → owner 토스트. (Realtime mock은 `supabaseMock.ts`에 `trips` 채널 추가) | CI 통과 |
 
@@ -103,7 +103,7 @@
 
 ## AI 프롬프트
 
-Playbook §8B — (6B.1 SQL) / (6B.2–6B.4 UI) / (6B.5 슬기 Vision) 세 번
+Playbook §8B — (6B.1 SQL) / (6B.2–6B.4 UI) / (6B.5 Vision) 세 번
 
 ---
 
