@@ -1,0 +1,319 @@
+"""POST /api/ai/daily-report (phase-07 7.2): the source_snapshot is the model's whole input, drafts upsert,
+a sent report is never rewritten, and only the sitter who has the pet that day can ask."""
+
+import json
+from datetime import UTC, date, datetime
+from types import SimpleNamespace
+from zoneinfo import ZoneInfo
+
+import pytest
+from app.ai.daily_report import age_years, clean_chips, tidy_body
+from app.routers import ai_daily_report
+from app.services import authz, nebius
+from fastapi import HTTPException
+
+from tests import test_media_sign as base
+from tests.fakes import FakeDB
+from tests.test_media_sign import PET_ID, SITTER_ID, owner_token, sitter_token
+
+isolated_settings = base.isolated_settings
+client = base.client
+
+REAL_ASSERT_ON_DUTY = authz.assert_on_duty_for
+OTHER_SITTER = "00000000-0000-4000-8000-000000000009"
+NOW = datetime(2026, 10, 15, 20, 0, tzinfo=UTC)  # 16:00 in Toronto (EDT)
+TODAY = date(2026, 10, 15)
+
+
+def at(hh_mm: str, day: str = "2026-10-15") -> str:
+    """A UTC instant on the test day."""
+    return f"{day}T{hh_mm}:00+00:00"
+
+
+def make_db(*, pick_up: str = "2026-10-16T12:00:00+00:00", **extra) -> FakeDB:
+    tables = dict(
+        pets=[{"id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01"}],
+        bookings=[{"id": "b1", "sitter_id": SITTER_ID, "status": "confirmed"}],
+        booking_pets=[{"booking_id": "b1", "pet_id": PET_ID}],
+        booking_handoffs=[
+            {"booking_id": "b1", "kind": "drop_off", "scheduled_at": "2026-10-15T12:00:00+00:00"},
+            {"booking_id": "b1", "kind": "pick_up", "scheduled_at": pick_up},
+        ],
+        care_tasks=[
+            {"id": "t-med", "pet_id": PET_ID, "type": "medication", "title": "Heartworm pill"},
+            {"id": "t-walk", "pet_id": PET_ID, "type": "walk", "title": "Walk"},
+            {"id": "t-dinner", "pet_id": PET_ID, "type": "feeding", "title": "Dinner"},
+        ],
+        task_logs=[
+            {"task_id": "t-med", "pet_id": PET_ID, "due_at": at("12:00"), "status": "done", "completed_at": at("12:04")},
+            {"task_id": "t-walk", "pet_id": PET_ID, "due_at": at("14:30"), "status": "pending", "completed_at": None},
+            {"task_id": "t-dinner", "pet_id": PET_ID, "due_at": at("22:00"), "status": "pending", "completed_at": None},
+        ],
+        care_checkins=[
+            {"pet_id": PET_ID, "created_by": SITTER_ID, "kind": "meal", "value": "all", "note_text": None, "media_id": None, "created_at": at("12:15")},
+            {"pet_id": PET_ID, "created_by": SITTER_ID, "kind": "potty", "value": "normal", "note_text": None, "media_id": None, "created_at": at("15:02")},
+            {"pet_id": PET_ID, "created_by": SITTER_ID, "kind": "walk", "value": "20", "note_text": None, "media_id": None, "created_at": at("14:00")},
+            {"pet_id": PET_ID, "created_by": SITTER_ID, "kind": "note", "value": None, "note_text": "Met a golden retriever", "media_id": "m1", "created_at": at("18:10")},
+            # Not today's / not this sitter's / not in the sitter's hours:
+            {"pet_id": PET_ID, "created_by": SITTER_ID, "kind": "mood", "value": "tired", "note_text": None, "media_id": None, "created_at": at("15:00", "2026-10-14")},
+            {"pet_id": PET_ID, "created_by": OTHER_SITTER, "kind": "mood", "value": "happy", "note_text": None, "media_id": None, "created_at": at("16:00")},
+        ],
+        feed_posts=[
+            {"pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "Max sniffing autumn leaves", "created_at": at("14:55")},
+            {"pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "private", "caption": "Secret photo", "created_at": at("15:00")},
+        ],
+        daily_reports=[],
+    )
+    tables.update(extra)
+    return FakeDB(**tables)
+
+
+class Model:
+    """Stands in for nebius.chat: records what it was given, answers with `text`."""
+
+    def __init__(self, text: str = "I loved today with Max! 🐶") -> None:
+        self.text = text
+        self.calls: list[dict] = []
+
+    def __call__(self, role, messages, **kwargs):
+        self.calls.append({"role": role, "messages": messages, **kwargs})
+        return SimpleNamespace(text=self.text, model="nvidia/report-model", latency_ms=410)
+
+    @property
+    def snapshot(self) -> dict:
+        return json.loads(self.calls[-1]["messages"][-1]["content"])
+
+
+@pytest.fixture
+def setup(monkeypatch):
+    def _setup(db: FakeDB | None = None, text: str = "I loved today with Max! 🐶"):
+        db = db or make_db()
+        model = Model(text)
+        monkeypatch.setattr(ai_daily_report, "get_service_client", lambda: db)
+        monkeypatch.setattr(ai_daily_report, "_now", lambda: NOW)
+        monkeypatch.setattr(authz, "assert_on_duty_for", lambda user, pet_id: None)
+        monkeypatch.setattr(nebius, "chat", model)
+        return db, model
+
+    return _setup
+
+
+def post(client, token=None, **body):
+    return client.post(
+        "/api/ai/daily-report",
+        headers={"Authorization": f"Bearer {token or sitter_token()}"},
+        json={"pet_id": PET_ID, **body},
+    )
+
+
+# --- the snapshot: the model's whole input ------------------------------------------------------
+
+
+def test_the_snapshot_holds_todays_records_and_what_the_sitter_kept(client, setup):
+    _, model = setup()
+    response = post(client, chips=["Watching a squirrel", "Park walk"], sitter_note="She got so excited", photos=["Max looking up at a squirrel"])
+    assert response.status_code == 200
+    snap = model.snapshot
+    assert snap["pet"] == {"species": "dog", "name": "Max", "breed": "Maltese", "age_years": 4}
+    assert snap["date"] == "2026-10-15"
+    # Done and missed tasks only (the 22:00 dinner is in the future), in the app's timezone.
+    assert snap["tasks"] == [
+        {"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
+        {"type": "walk", "title": "Walk", "due": "10:30", "status": "missed"},
+    ]
+    assert snap["checks"] == {"meal": "all", "potty": "normal", "walk_minutes": 20, "meds": "done"}
+    assert [c["kind"] for c in snap["checkins"]] == ["meal", "walk", "potty", "note"]  # only this sitter, only today
+    assert snap["checkins"][-1] == {"time": "14:10", "kind": "note", "has_photo": True, "note_text": "Met a golden retriever"}
+    assert snap["photos"] == [
+        {"time": "10:55", "caption": "Max sniffing autumn leaves", "source": "feed"},  # the private post is not here
+        {"time": "16:00", "caption": "Max looking up at a squirrel", "source": "report"},
+    ]
+    assert snap["chips"] == ["Watching a squirrel", "Park walk"] and snap["sitter_note"] == "She got so excited"
+
+
+def test_the_model_gets_the_report_prompt_and_the_snapshot_and_nothing_else(client, setup):
+    _, model = setup()
+    post(client)
+    call = model.calls[0]
+    assert call["role"] == "report" and call["endpoint"] == "daily-report" and call["max_tokens"] == 400
+    roles = [m["role"] for m in call["messages"]]
+    assert roles[0] == "system" and roles[-1] == "user"
+    # The worked examples sit between them as user/assistant pairs, in the same JSON shape.
+    assert roles[1:-1] == ["user", "assistant"] * ((len(roles) - 2) // 2) and len(roles) > 2
+    assert "say only what the JSON says" in call["messages"][0]["content"]
+    assert set(json.loads(call["messages"][1]["content"])) == set(model.snapshot)
+
+
+def test_a_check_the_sitter_turned_off_never_reaches_the_model(client, setup):
+    _, model = setup()
+    post(client, skip=["potty", "meds"])
+    snap = model.snapshot
+    assert "potty" not in snap["checks"] and "meds" not in snap["checks"]
+    assert all(c["kind"] != "potty" for c in snap["checkins"])
+    assert all(t["type"] != "medication" for t in snap["tasks"])
+    assert "meal" in snap["checks"]  # what stayed on is still there
+
+
+def test_without_chips_note_or_photos_the_days_records_still_make_a_report(client, setup):
+    db, model = setup()
+    assert post(client).status_code == 200
+    snap = model.snapshot
+    assert snap["chips"] == [] and snap["sitter_note"] is None
+    assert all(p["source"] == "feed" for p in snap["photos"])
+
+
+def test_a_day_with_nothing_recorded_is_a_fixed_line_and_the_model_is_not_asked(client, setup):
+    db = make_db(task_logs=[], care_checkins=[], feed_posts=[])
+    db, model = setup(db)
+    body = post(client).json()
+    assert model.calls == []  # nothing to say → nothing it could invent
+    assert body["model"] == "template" and body["status"] == "draft"
+    assert "nothing special to report" in body["body"] and "Max" in body["body"]
+    assert db.tables["daily_reports"][0]["model"] == "template"
+    # …but a chip or a note is a fact, so then the model writes.
+    post(client, chips=["Nap in the sun"])
+    assert len(model.calls) == 1
+
+
+def test_only_the_hours_this_sitter_had_the_pet_are_reported(client, setup):
+    # Picked up at 15:00 UTC (11:00 local): the walk's due time (14:30 UTC) is in, the 15:02 potty is out.
+    _, model = setup(make_db(pick_up="2026-10-15T15:00:00+00:00"))
+    post(client)
+    snap = model.snapshot
+    assert [c["kind"] for c in snap["checkins"]] == ["meal", "walk"]
+    assert [t["type"] for t in snap["tasks"]] == ["medication", "walk"]
+    assert "potty" not in snap["checks"] and snap["photos"] == [{"time": "10:55", "caption": "Max sniffing autumn leaves", "source": "feed"}]
+
+
+def test_a_missed_walk_is_not_counted_as_minutes_or_done(client, setup):
+    db = make_db()
+    db.tables["care_checkins"] = [c for c in db.tables["care_checkins"] if c["kind"] != "walk"]
+    _, model = setup(db)
+    post(client)
+    snap = model.snapshot
+    assert "walk_minutes" not in snap["checks"]
+    assert {"type": "walk", "title": "Walk", "due": "10:30", "status": "missed"} in snap["tasks"]
+
+
+# --- saving ------------------------------------------------------------------------------------
+
+
+def test_a_draft_is_saved_with_its_inputs_snapshot_and_model(client, setup):
+    db, _ = setup()
+    body = post(client, chips=["Park walk"], sitter_note="Fun day").json()
+    assert body["status"] == "draft" and body["model"] == "nvidia/report-model" and body["latency_ms"] == 410
+    assert body["body"] == "I loved today with Max! 🐶"
+    (row,) = db.tables["daily_reports"]
+    assert row["id"] == body["report_id"]
+    assert (row["pet_id"], row["sitter_id"], row["report_date"], row["status"]) == (PET_ID, SITTER_ID, "2026-10-15", "draft")
+    assert row["inputs"]["chips"] == ["Park walk"] and row["inputs"]["sitter_note"] == "Fun day"
+    assert row["source_snapshot"]["pet"]["name"] == "Max" and row["model"] == "nvidia/report-model"
+
+
+def test_generating_again_overwrites_the_same_days_draft(client, setup):
+    db, model = setup()
+    first = post(client).json()
+    model.text = "A second take on the day."
+    second = post(client, chips=["Nap in the sun"]).json()
+    assert second["report_id"] == first["report_id"]
+    (row,) = db.tables["daily_reports"]
+    assert row["body"] == "A second take on the day." and row["inputs"]["chips"] == ["Nap in the sun"]
+
+
+def test_a_sent_report_is_never_rewritten(client, setup):
+    db = make_db(daily_reports=[{"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent."}])
+    db, model = setup(db)
+    response = post(client)
+    assert response.status_code == 409 and response.json()["detail"] == "report_already_sent"
+    assert model.calls == [] and db.tables["daily_reports"][0]["body"] == "Sent."
+
+
+def test_another_sitters_report_does_not_block_this_one(client, setup):
+    db = make_db(daily_reports=[{"id": "r9", "pet_id": PET_ID, "sitter_id": OTHER_SITTER, "report_date": "2026-10-15", "status": "sent", "body": "Theirs."}])
+    db, _ = setup(db)
+    assert post(client).status_code == 200
+    assert len(db.tables["daily_reports"]) == 2
+
+
+def test_the_model_text_is_tidied_before_it_is_saved(client, setup):
+    db, _ = setup(text='<think>plan</think>\n"Max had a lovely day."  ')
+    assert post(client).json()["body"] == "Max had a lovely day."
+
+
+# --- who may ask, and what goes wrong ------------------------------------------------------------
+
+
+def test_a_sitter_not_on_duty_is_refused(client, setup, monkeypatch):
+    _, model = setup()
+
+    def deny(user, pet_id):
+        raise HTTPException(status_code=403, detail="You are not on duty for this pet.")
+
+    monkeypatch.setattr(authz, "assert_on_duty_for", deny)
+    assert post(client).status_code == 403 and model.calls == []
+
+
+def test_an_owner_is_refused_by_the_real_guard(client, setup, monkeypatch):
+    setup()
+    monkeypatch.setattr(authz, "assert_on_duty_for", REAL_ASSERT_ON_DUTY)
+    assert post(client, token=owner_token()).status_code == 403
+
+
+def test_a_sitter_with_no_booking_today_is_refused(client, setup):
+    db = make_db()
+    db.tables["bookings"] = [{"id": "b1", "sitter_id": OTHER_SITTER, "status": "confirmed"}]
+    _, model = setup(db)
+    assert post(client).status_code == 403 and model.calls == []
+
+
+def test_unknown_pet_is_404(client, setup):
+    db = make_db()
+    db.tables["pets"] = []
+    setup(db)
+    assert post(client).status_code == 404
+
+
+def test_model_trouble_saves_nothing(client, setup, monkeypatch):
+    db, _ = setup()
+
+    def down(*a, **k):
+        raise nebius.AIUnavailable("down")
+
+    monkeypatch.setattr(nebius, "chat", down)
+    response = post(client)
+    assert response.status_code == 503 and "write the note yourself" in response.json()["detail"]
+    assert db.tables["daily_reports"] == []
+
+    monkeypatch.setattr(nebius, "chat", Model("<think>only thoughts</think>"))
+    assert post(client).status_code == 502
+    assert db.tables["daily_reports"] == []
+
+
+def test_input_limits(client, setup):
+    setup()
+    assert post(client, chips=[f"c{i}" for i in range(9)]).status_code == 422
+    assert post(client, photos=["a", "b", "c"]).status_code == 422
+    assert post(client, sitter_note="x" * 201).status_code == 422
+    assert post(client, sitter_note="x" * 200).status_code == 200
+
+
+# --- the pure helpers -----------------------------------------------------------------------------
+
+
+def test_age_chips_and_text_helpers():
+    assert age_years("2022-03-01", date(2026, 10, 15)) == 4
+    assert age_years("2022-12-01", date(2026, 10, 15)) == 3  # birthday not reached yet
+    assert age_years(None, TODAY) is None and age_years("soon", TODAY) is None
+    assert clean_chips(["  Park   walk ", "park walk", "", "x" * 60]) == ["Park walk", "x" * 40]
+    assert tidy_body("<think>a</think> hi ") == "hi"
+
+
+def test_the_morning_and_afternoon_sitters_each_get_their_own_hours():
+    from app.ai.daily_report import care_intervals, day_bounds
+
+    tz = ZoneInfo("America/Toronto")
+    start, end = day_bounds(TODAY, tz)
+    morning = care_intervals([{"drop_off": "2026-10-14T12:00:00+00:00", "pick_up": "2026-10-15T16:00:00+00:00"}], start, end)
+    afternoon = care_intervals([{"drop_off": "2026-10-15T16:00:00+00:00", "pick_up": "2026-10-16T12:00:00+00:00"}], start, end)
+    assert morning[0][0] == start and morning[0][1] == datetime(2026, 10, 15, 16, 0, tzinfo=UTC)
+    assert afternoon[0] == (datetime(2026, 10, 15, 16, 0, tzinfo=UTC), end)  # cut at local midnight

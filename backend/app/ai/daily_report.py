@@ -1,0 +1,227 @@
+"""Daily report (phase-07 7.2): what the sitter did today, as the facts the model may use.
+
+The model only writes prose. Everything it is allowed to say — tasks, check-ins, photos, the checks
+the sitter kept — is assembled here into one JSON `source_snapshot`, so the report can be traced back
+to records and a turned-off chip never reaches the prompt.
+"""
+
+import json
+import re
+from datetime import UTC, date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
+
+# D9: a pending task counts as missed this long after its time.
+MISSED_AFTER = timedelta(minutes=60)
+
+# What the sitter can turn off on the Report screen → the records that feed it.
+CHECK_KEYS = ("meal", "potty", "walk", "mood", "meds")
+TASK_TYPE_FOR_CHECK = {"meal": "feeding", "walk": "walk", "meds": "medication"}
+CHECKIN_KIND_FOR_CHECK = {"meal": "meal", "potty": "potty", "walk": "walk", "mood": "mood"}
+
+MAX_CHIPS = 8
+CHIP_MAX = 40
+NOTE_MAX = 200
+CAPTION_MAX = 160
+MAX_FEED_PHOTOS = 6
+MAX_REPORT_PHOTOS = 2
+
+Interval = tuple[datetime, datetime]
+
+
+def parse_ts(value: str | datetime) -> datetime:
+    """An ISO timestamp from the database → an aware datetime."""
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=UTC)
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def day_bounds(day: date, tz: ZoneInfo) -> Interval:
+    """The local day as [start, end) in UTC."""
+    start = datetime.combine(day, time.min, tzinfo=tz)
+    end = datetime.combine(day + timedelta(days=1), time.min, tzinfo=tz)
+    return start.astimezone(UTC), end.astimezone(UTC)
+
+
+def care_intervals(bookings: list[dict], day_start: datetime, day_end: datetime) -> list[Interval]:
+    """The parts of the day this sitter had the pet: each booking's drop-off → pick-up, cut to the day.
+
+    A booking is `{"drop_off": iso, "pick_up": iso}` (the agreed handoff times). Morning with one
+    sitter and afternoon with another gives each of them only their own hours.
+    """
+    out: list[Interval] = []
+    for b in bookings:
+        start = max(parse_ts(b["drop_off"]), day_start)
+        end = min(parse_ts(b["pick_up"]), day_end)
+        if start < end:
+            out.append((start, end))
+    return sorted(out)
+
+
+def in_any(moment: datetime, intervals: list[Interval]) -> bool:
+    return any(start <= moment < end for start, end in intervals)
+
+
+def _clean(text: str | None, limit: int) -> str | None:
+    text = " ".join((text or "").split())
+    return text[:limit].rstrip() or None
+
+
+def _hhmm(moment: datetime, tz: ZoneInfo) -> str:
+    return moment.astimezone(tz).strftime("%H:%M")
+
+
+def age_years(birthdate: str | None, today: date) -> int | None:
+    if not birthdate:
+        return None
+    try:
+        born = date.fromisoformat(birthdate[:10])
+    except ValueError:
+        return None
+    years = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+    return years if years >= 0 else None
+
+
+def clean_chips(chips: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for chip in chips:
+        text = _clean(chip, CHIP_MAX)
+        if text and text.lower() not in seen:
+            seen.add(text.lower())
+            out.append(text)
+    return out[:MAX_CHIPS]
+
+
+def build_snapshot(
+    *,
+    pet: dict,
+    day: date,
+    tz: ZoneInfo,
+    intervals: list[Interval],
+    tasks: list[dict],
+    task_logs: list[dict],
+    checkins: list[dict],
+    feed_posts: list[dict],
+    report_photos: list[str],
+    chips: list[str],
+    sitter_note: str | None,
+    skip: list[str],
+    now: datetime,
+) -> dict:
+    """The JSON that is the model's whole input. Only records inside `intervals`; nothing the sitter turned off."""
+    off = {k for k in skip if k in CHECK_KEYS}
+    off_task_types = {TASK_TYPE_FOR_CHECK[k] for k in off if k in TASK_TYPE_FOR_CHECK}
+    off_kinds = {CHECKIN_KIND_FOR_CHECK[k] for k in off if k in CHECKIN_KIND_FOR_CHECK}
+    by_id = {t["id"]: t for t in tasks}
+
+    snap_tasks: list[dict] = []
+    for log in sorted(task_logs, key=lambda r: r["due_at"]):
+        due = parse_ts(log["due_at"])
+        task = by_id.get(log["task_id"])
+        if not task or not in_any(due, intervals) or task["type"] in off_task_types:
+            continue
+        done = log["status"] == "done"
+        if not done and now <= due + MISSED_AFTER:
+            continue  # not due yet / still within the hour: nothing to report
+        entry = {
+            "type": task["type"],
+            "title": _clean(task["title"], 40) or task["type"],
+            "due": _hhmm(due, tz),
+            "status": "done" if done else "missed",
+        }
+        if done and log.get("completed_at"):
+            entry["completed_at"] = _hhmm(parse_ts(log["completed_at"]), tz)
+        snap_tasks.append(entry)
+
+    snap_checkins: list[dict] = []
+    for c in sorted(checkins, key=lambda r: r["created_at"]):
+        at = parse_ts(c["created_at"])
+        if not in_any(at, intervals) or c["kind"] in off_kinds:
+            continue
+        entry = {"time": _hhmm(at, tz), "kind": c["kind"], "has_photo": bool(c.get("media_id"))}
+        if c.get("value"):
+            entry["value"] = c["value"]
+        note = _clean(c.get("note_text"), NOTE_MAX)
+        if note:
+            entry["note_text"] = note
+        snap_checkins.append(entry)
+
+    photos: list[dict] = []
+    for post in sorted(feed_posts, key=lambda r: r["created_at"]):
+        at = parse_ts(post["created_at"])
+        caption = _clean(post.get("caption"), CAPTION_MAX)
+        if caption and in_any(at, intervals):
+            photos.append({"time": _hhmm(at, tz), "caption": caption, "source": "feed"})
+    photos = photos[:MAX_FEED_PHOTOS]
+    for caption in report_photos[:MAX_REPORT_PHOTOS]:
+        text = _clean(caption, CAPTION_MAX)
+        if text:
+            photos.append({"time": _hhmm(now, tz), "caption": text, "source": "report"})
+
+    checks: dict = {}
+    last = {}
+    for c in snap_checkins:
+        if c["kind"] in ("meal", "potty", "mood") and c.get("value"):
+            last[c["kind"]] = c["value"]
+    checks.update(last)
+    minutes = sum(int(c["value"]) for c in snap_checkins if c["kind"] == "walk" and str(c.get("value", "")).isdigit())
+    if minutes:
+        checks["walk_minutes"] = minutes
+    med_status = [t["status"] for t in snap_tasks if t["type"] == "medication"]
+    if med_status:
+        checks["meds"] = "missed" if "missed" in med_status else "done"
+
+    snapshot: dict = {
+        "pet": {
+            "species": pet["species"],
+            "name": pet["name"],
+            **({"breed": pet["breed"]} if pet.get("breed") else {}),
+            **({"age_years": a} if (a := age_years(pet.get("birthdate"), day)) is not None else {}),
+        },
+        "date": day.isoformat(),
+        "tasks": snap_tasks,
+        "photos": photos,
+        "checkins": snap_checkins,
+        "checks": checks,
+        "chips": clean_chips(chips),
+        "sitter_note": _clean(sitter_note, NOTE_MAX),
+    }
+    return snapshot
+
+
+def few_shot_messages(examples: list[dict]) -> list[dict]:
+    """Worked examples as chat turns: the snapshot as the user, the report as the assistant."""
+    out: list[dict] = []
+    for ex in examples:
+        out.append({"role": "user", "content": json.dumps(ex["input"], ensure_ascii=False)})
+        out.append({"role": "assistant", "content": ex["output"]})
+    return out
+
+
+_THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def tidy_body(text: str) -> str:
+    """The model's text without think blocks, wrapping quotes or stray whitespace."""
+    text = _THINK.sub("", text).strip()
+    if len(text) >= 2 and text[0] == text[-1] == '"':
+        text = text[1:-1].strip()
+    return text
+
+
+def word_count(text: str) -> int:
+    return len(text.split())
+
+
+def has_facts(snapshot: dict) -> bool:
+    """Is there anything at all the model could say? (Chips, a note, photos, tasks or check-ins.)"""
+    return any(snapshot.get(key) for key in ("tasks", "photos", "checkins", "chips", "sitter_note"))
+
+
+def quiet_day_body(pet_name: str) -> str:
+    """When nothing was recorded the report is this — no model, so nothing can be invented."""
+    return (
+        f"Hi {pet_name}'s family! I spent the day with {pet_name} today, and there is nothing "
+        "special to report. I'll share more as soon as there is something to tell. 💛"
+    )
