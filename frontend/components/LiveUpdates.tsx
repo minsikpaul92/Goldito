@@ -118,8 +118,8 @@ export function LiveUpdates() {
       ) : null}
 
       {shown.map((n, index) => (
+        <View key={n.id} style={styles.cardWrap}>
         <SwipeToDelete
-          key={n.id}
           onDelete={() => void dismiss(n)}
           radius={theme.radius.md}
           testID={`live-swipe-${n.id}`}
@@ -138,20 +138,21 @@ export function LiveUpdates() {
               {n.body ? <Text style={styles.memo}>{n.body}</Text> : null}
               <Text style={styles.time}>{formatFeedTime(n.createdAt)}</Text>
             </View>
-            {index === 0 ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Clear updates"
-                hitSlop={8}
-                onPress={() => setConfirmingClear((v) => !v)}
-                style={styles.x}
-                testID="live-x"
-              >
-                <Text style={styles.xText}>✕</Text>
-              </Pressable>
-            ) : null}
           </Pressable>
         </SwipeToDelete>
+        {index === 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear updates"
+            hitSlop={6}
+            onPress={() => setConfirmingClear((v) => !v)}
+            style={styles.x}
+            testID="live-x"
+          >
+            <Text style={styles.xText}>✕</Text>
+          </Pressable>
+        ) : null}
+        </View>
       ))}
 
       {more > 0 ? (
@@ -183,9 +184,24 @@ const makeStyles = (theme: Theme) =>
     },
     unread: { backgroundColor: theme.color.accent },
     pressed: { opacity: 0.85 },
-    clearRow: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.sm },
-    x: { alignSelf: "flex-start", width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-    xText: { fontSize: 18, color: theme.color.textMuted },
+    clearRow: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.sm, marginBottom: -theme.spacing.xs },
+    cardWrap: { position: "relative" },
+    // Sits on the card's top-right corner, half outside the border.
+    x: {
+      position: "absolute",
+      top: -10,
+      right: -8,
+      zIndex: 2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    xText: { fontSize: 12, fontWeight: "700", color: theme.color.textMuted },
     emoji: { fontSize: 22 },
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, color: theme.color.text },
