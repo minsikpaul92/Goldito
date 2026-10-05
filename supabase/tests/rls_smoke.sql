@@ -1985,6 +1985,76 @@ begin
   perform _t_ok((select count(*) from public.feed_posts where media_id = _t_get('m_checkin')) = 1,
     '6.9: the owner sees the check-in photo in the feed');
 
+  -- Phase 06 follow-ups: task memo, editing a task, deleting notifications
+  perform _t_as(chloe);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time)
+  values (max, 'play', 'Evening play', '21:00') returning id into v_id;
+  perform _t_put('task_play', v_id);
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
+    '6.x: the new task gets today''s log');
+
+  perform _t_as(chloe);
+  update public.care_tasks set scheduled_time = '22:00' where id = _t_get('task_play');
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
+    '6.x: changing a task''s time drops today''s unfinished log');
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok(
+    (select count(*) from public.task_logs
+     where task_id = _t_get('task_play') and due_at = local_ts(app_today(), '22:00')) = 1,
+    '6.x: …and today gets one log at the new time');
+
+  perform _t_as(chloe);
+  update public.care_tasks set active = false where id = _t_get('task_play');
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
+    '6.x: pausing a task drops today''s unfinished log');
+  update public.care_tasks set active = true where id = _t_get('task_play');
+
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform complete_task_log(
+    (select id from public.task_logs where task_id = _t_get('task_play')), null, '  Chased the ball twice, then napped  ');
+  perform _t_as(null);
+  perform _t_ok(
+    (select note_text from public.task_logs where task_id = _t_get('task_play')) = 'Chased the ball twice, then napped',
+    '6.x: Mark done with a memo stores it (trimmed)');
+  perform _t_ok(
+    (select count(*) from public.notifications n join public.task_logs l on l.id = n.ref_id
+     where n.user_id = chloe and n.type = 'task_done' and l.task_id = _t_get('task_play')
+       and n.title = 'Max: Chased the ball twice, then napped') = 1,
+    '6.x: a typed memo replaces the preset line');
+
+  perform _t_as(chloe);
+  update public.care_tasks set scheduled_time = '23:00' where id = _t_get('task_play');
+  perform _t_as(lucy);
+  perform ensure_today_task_logs(max);
+  perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
+    '6.x: a task finished today gets no second log when its time is edited (history stays)');
+  begin
+    perform complete_task_log(
+      (select id from public.task_logs where task_id = _t_get('task_play')), null, repeat('x', 121));
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, '6.x: a memo over 120 characters is refused');
+
+  -- Notifications can be deleted — by their owner only
+  perform _t_as(chloe);
+  delete from public.notifications where id = (select id from public.notifications where user_id = chloe limit 1);
+  get diagnostics n = row_count;
+  perform _t_ok(n = 1, '6.x: a user deletes their own notification');
+  perform _t_as(lucy);
+  delete from public.notifications where user_id = chloe;
+  get diagnostics n = row_count;
+  perform _t_ok(n = 0, '6.x: nobody deletes someone else''s notifications');
+  perform _t_as(chloe);
+  delete from public.notifications;
+  perform _t_ok((select count(*) from public.notifications) = 0, '6.x: Clear all empties one''s own list');
+  perform _t_as(lucy);
+  perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
+
   perform _t_as(null);
 end;
 $$;
