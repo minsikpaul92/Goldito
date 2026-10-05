@@ -35,9 +35,10 @@ test.describe("care tasks", () => {
     await expect(screen.getByTestId("care-title")).toHaveValue("Medication");
     await screen.getByTestId("care-title").fill("Joint pill");
     await screen.getByTestId("care-dose").fill("1 tablet with food");
-    // 8:00 AM → 8:30 AM
-    await screen.getByTestId("care-time-plus").click();
-    await screen.getByTestId("care-time-plus").click();
+    // Tap the time (no stepping): 8:00 AM → 8:30 AM
+    await screen.getByTestId("care-time").click();
+    await screen.getByTestId("time-min-30").click();
+    await screen.getByTestId("time-picker-set").click();
     await expect(screen.getByTestId("care-time-value")).toHaveText("8:30 AM");
     await screen.getByTestId("care-save").click();
 
@@ -67,6 +68,64 @@ test.describe("care tasks", () => {
     await app(page).getByTestId("care-add").click();
     await expect(app(page).getByTestId("care-type-litter")).toHaveCount(0);
     await expect(app(page).getByTestId("care-type-walk")).toBeVisible();
+  });
+
+  test("the time is picked by tapping — hour, minute and AM/PM, 8:00 PM in a few taps", async ({ page }) => {
+    const db = await setup(page);
+    const screen = app(page);
+    await screen.getByTestId("care-add").click();
+    await screen.getByTestId("care-type-feeding").click();
+    await screen.getByTestId("care-time").click();
+    await screen.getByTestId("time-ampm-pm").click();
+    await expect(screen.getByTestId("time-ampm-pm")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("time-hour-8").click();
+    await screen.getByTestId("time-min-00").click();
+    await expect(screen.getByTestId("time-picker-set")).toHaveText("Set 8:00 PM");
+    await screen.getByTestId("time-picker-set").click();
+    await expect(screen.getByTestId("care-time-value")).toHaveText("8:00 PM");
+    await screen.getByTestId("care-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Added Meal");
+    expect(db.care_tasks[0].scheduled_time).toBe("20:00");
+    await expect(screen.getByText("8:00 PM · every day")).toBeVisible();
+  });
+
+  test("tap a task to open it, change name / dose / time, and save; its type stays fixed", async ({ page }) => {
+    const db = await setup(page);
+    db.care_tasks.push({
+      id: "task-1",
+      pet_id: MAX,
+      type: "medication",
+      title: "Joint pill",
+      dose: "1 tablet",
+      scheduled_time: "08:00:00",
+      repeat_daily: true,
+      notes: null,
+      active: true,
+      created_at: "2026-10-01T10:00:00Z",
+    });
+    await page.reload();
+    const screen = app(page);
+    await screen.getByTestId("care-task-open-task-1").click();
+
+    await expect(screen.getByTestId("care-sheet")).toContainText("Edit task");
+    await expect(screen.getByTestId("care-title")).toHaveValue("Joint pill");
+    await expect(screen.getByTestId("care-dose")).toHaveValue("1 tablet");
+    await expect(screen.getByTestId("care-time-value")).toHaveText("8:00 AM");
+    await expect(screen.getByTestId("care-type-locked")).toBeVisible();
+    await expect(screen.getByTestId("care-type-walk")).toHaveCount(0);
+
+    await screen.getByTestId("care-title").fill("Joint pill (with food)");
+    await screen.getByTestId("care-time").click();
+    await screen.getByTestId("time-ampm-pm").click();
+    await screen.getByTestId("time-hour-6").click();
+    await screen.getByTestId("time-min-45").click();
+    await screen.getByTestId("time-picker-set").click();
+    await screen.getByTestId("care-save").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Saved — now at 6:45 PM");
+    expect(db.care_tasks).toHaveLength(1);
+    expect(db.care_tasks[0]).toMatchObject({ title: "Joint pill (with food)", scheduled_time: "18:45", type: "medication" });
+    await expect(screen.getByText("Joint pill (with food)")).toBeVisible();
   });
 
   test("a task needs a name", async ({ page }) => {

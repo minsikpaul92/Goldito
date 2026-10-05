@@ -70,6 +70,18 @@ export async function createCareTask(
   return data as CareTaskRow;
 }
 
+/**
+ * Owner edits a task: name, dose, time, memo for the sitter. The type is fixed (delete and add a
+ * new task instead). The server drops today's unfinished log when the time changes (008d).
+ */
+export async function updateCareTask(taskId: string, input: Omit<CareTaskInput, "type">): Promise<void> {
+  const { error } = await getSupabase()
+    .from("care_tasks")
+    .update({ title: input.title, dose: input.dose, scheduled_time: input.time, notes: input.notes })
+    .eq("id", taskId);
+  if (error) fail("save this task");
+}
+
 export async function setCareTaskActive(taskId: string, active: boolean): Promise<void> {
   const { error } = await getSupabase().from("care_tasks").update({ active }).eq("id", taskId);
   if (error) fail(active ? "resume this task" : "pause this task");

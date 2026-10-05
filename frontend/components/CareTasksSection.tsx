@@ -8,6 +8,7 @@ import {
   listCareTasks,
   listTodayTaskLogs,
   setCareTaskActive,
+  updateCareTask,
 } from "../features/care/careApi";
 import {
   careTypeMeta,
@@ -16,7 +17,7 @@ import {
   todayStatus,
   typesForSpecies,
 } from "../features/care/careFormat";
-import { formatTime, shiftTime } from "../features/schedule/dates";
+import { formatTime } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
@@ -24,7 +25,7 @@ import type { CareTaskRow, CareTaskType, Pet, TaskLogRow } from "../types/db";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
-import { Stepper } from "./ui/Stepper";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 
@@ -41,7 +42,6 @@ type State =
 const TITLE_MAX = 60;
 const DOSE_MAX = 60;
 const NOTES_MAX = 200;
-const TIME_STEP = 15;
 
 /**
  * Owner's care tasks on the pet detail screen (phase-06 6.1): what the sitter should do each
@@ -52,6 +52,7 @@ export function CareTasksSection({ pet, userId }: Props) {
   const toast = useToast();
   const [state, setState] = useState<State>({ status: "loading" });
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<CareTaskRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<CareTaskRow | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -132,7 +133,13 @@ export function CareTasksSection({ pet, userId }: Props) {
         const status = task.active ? statusLabel(todayStatus(logByTask.get(task.id))) : null;
         return (
           <Card key={task.id} testID={`care-task-${task.id}`} style={task.active ? undefined : styles.paused}>
-            <View style={styles.row}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${task.title}`}
+              onPress={() => setEditing(task)}
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+              testID={`care-task-open-${task.id}`}
+            >
               <Text style={styles.emoji} accessibilityElementsHidden>
                 {meta.emoji}
               </Text>
@@ -149,7 +156,10 @@ export function CareTasksSection({ pet, userId }: Props) {
                   </Text>
                 ) : null}
               </View>
-            </View>
+              <Text style={styles.chevron} accessibilityElementsHidden>
+                ›
+              </Text>
+            </Pressable>
             <View style={styles.actions}>
               <TextButton
                 label={task.active ? "Pause" : "Resume"}
@@ -169,14 +179,25 @@ export function CareTasksSection({ pet, userId }: Props) {
         );
       })}
 
-      <AddTaskSheet
-        visible={adding}
+      <TaskSheet
+        visible={adding || editing != null}
         pet={pet}
-        onClose={() => setAdding(false)}
-        onSave={async (input) => {
-          await createCareTask(pet.id, userId, input);
-          toast.show(`Added ${input.title}`);
+        task={editing}
+        onClose={() => {
           setAdding(false);
+          setEditing(null);
+        }}
+        onSave={async (input) => {
+          if (editing) {
+            const timeChanged = editing.scheduled_time.slice(0, 5) !== input.time;
+            await updateCareTask(editing.id, input);
+            toast.show(timeChanged ? `Saved — now at ${formatTime(input.time)}` : `Saved ${input.title}`);
+            setEditing(null);
+          } else {
+            await createCareTask(pet.id, userId, input);
+            toast.show(`Added ${input.title}`);
+            setAdding(false);
+          }
           await load();
         }}
       />
@@ -207,14 +228,17 @@ export function CareTasksSection({ pet, userId }: Props) {
   );
 }
 
-function AddTaskSheet({
+function TaskSheet({
   visible,
   pet,
+  task,
   onClose,
   onSave,
 }: {
   visible: boolean;
   pet: Props["pet"];
+  /** Set to edit that task (its type stays fixed); empty to add a new one. */
+  task: CareTaskRow | null;
   onClose: () => void;
   onSave: (input: CareTaskInput) => Promise<void>;
 }) {
@@ -226,17 +250,18 @@ function AddTaskSheet({
   const [dose, setDose] = useState("");
   const [notes, setNotes] = useState("");
   const [time, setTime] = useState("08:00");
+  const [pickingTime, setPickingTime] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) return;
-    setType(allowed[0].type);
-    setTitle(allowed[0].label);
-    setTitleEdited(false);
-    setDose("");
-    setNotes("");
-    setTime("08:00");
+    setType(task?.type ?? allowed[0].type);
+    setTitle(task?.title ?? allowed[0].label);
+    setTitleEdited(task != null);
+    setDose(task?.dose ?? "");
+    setNotes(task?.notes ?? "");
+    setTime(task ? task.scheduled_time.slice(0, 5) : "08:00");
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
@@ -272,15 +297,25 @@ function AddTaskSheet({
   return (
     <Sheet
       visible={visible}
-      title="Add a care task"
+      title={task ? "Edit task" : "Add a care task"}
       onClose={() => {
         if (!saving) onClose();
       }}
       testID="care-sheet"
       footer={
-        <Button label={saving ? "Saving…" : "Save task"} disabled={saving} onPress={() => void submit()} testID="care-save" />
+        <Button label={saving ? "Saving…" : task ? "Save changes" : "Save task"} disabled={saving} onPress={() => void submit()} testID="care-save" />
       }
     >
+      {task ? (
+        <View testID="care-type-locked">
+          <View style={[styles.pill, styles.pillOn, styles.pillLocked]}>
+            <Text style={[styles.pillText, styles.pillTextOn]}>
+              {careTypeMeta(task.type).emoji} {careTypeMeta(task.type).label}
+            </Text>
+          </View>
+          <Text style={styles.hint}>The type can&apos;t change — delete this task and add a new one instead.</Text>
+        </View>
+      ) : (
       <View style={styles.pills} accessibilityRole="radiogroup">
         {allowed.map((t) => (
           <Pressable
@@ -298,6 +333,7 @@ function AddTaskSheet({
           </Pressable>
         ))}
       </View>
+      )}
 
       <TextField
         label="Name"
@@ -320,12 +356,27 @@ function AddTaskSheet({
         />
       ) : null}
       <Text style={styles.label}>Time (every day)</Text>
-      <Stepper
-        label="Task time"
-        value={formatTime(time)}
-        onDecrease={() => setTime((t) => shiftTime(t, -TIME_STEP))}
-        onIncrease={() => setTime((t) => shiftTime(t, TIME_STEP))}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Task time ${formatTime(time)}, tap to change`}
+        onPress={() => setPickingTime(true)}
+        style={({ pressed }) => [styles.timeButton, pressed && styles.pressed]}
         testID="care-time"
+      >
+        <Text style={styles.timeText} testID="care-time-value">
+          {formatTime(time)}
+        </Text>
+        <Text style={styles.chevron}>▾</Text>
+      </Pressable>
+      <TimePickerSheet
+        visible={pickingTime}
+        value={time}
+        title="Task time (every day)"
+        onClose={() => setPickingTime(false)}
+        onPick={(next) => {
+          setTime(next);
+          setPickingTime(false);
+        }}
       />
       <TextField
         label="Note for the sitter (optional)"
@@ -372,6 +423,21 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
       justifyContent: "center",
     },
+    pillLocked: { alignSelf: "flex-start" },
+    pressed: { opacity: 0.8 },
+    chevron: { fontSize: 22, color: theme.color.textMuted, alignSelf: "center" },
+    timeButton: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+    },
+    timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
     pillOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
     pillText: { fontSize: theme.fontSize.small, color: theme.color.textMuted, fontWeight: "600" },
     pillTextOn: { color: theme.color.text },
