@@ -209,3 +209,10 @@ export async function answerCareCounter(id: string, accept: boolean): Promise<vo
 }
 
 export const formatFee = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+/** Requests the sitter countered that the signed-in owner has not answered yet. */
+export async function listOpenCounterIds(): Promise<string[]> {
+  const { data, error } = await getSupabase().from("care_change_requests").select("id").eq("status", "countered");
+  if (error) throw new Error("Couldn't load care requests.");
+  return ((data ?? []) as { id: string }[]).map((r) => r.id);
+}

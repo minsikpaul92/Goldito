@@ -2,7 +2,8 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { DETAIL_TYPES, IMPORTANT_TYPES, detailNextLabel, useNoticeMedia } from "../features/notifications/noticeMedia";
+import { listOpenCounterIds } from "../features/care/carePlanApi";
+import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "../features/notifications/noticeMedia";
 import { formatFeedTime } from "../lib/feed";
 import {
   AppNotification,
@@ -40,8 +41,13 @@ const EMOJI: Record<string, string> = {
   care_request_countered: "💬",
 };
 
-/** A declined / countered care request stays pinned (and can't be swiped away) until it is opened. */
-const pinned = (n: AppNotification) => IMPORTANT_TYPES.has(n.type) && !n.readAt;
+/**
+ * What Home keeps showing: anything unread, and a counter-request until the owner has answered it.
+ * Opened ("read") updates leave Home — they stay in the notification list and in History.
+ * Pinned ones (an unread decline, an unanswered counter-request) can't be swiped away.
+ */
+const pinnedFor = (open: ReadonlySet<string>) => (n: AppNotification) =>
+  (n.type === "care_request_declined" && !n.readAt) || (n.type === "care_request_countered" && !!n.refId && open.has(n.refId));
 
 /**
  * Owner Home "Live updates": the latest few notices about the stay as cards. Swipe one away to dismiss
@@ -53,14 +59,19 @@ export function LiveUpdates() {
   const errorDialog = useErrorDialog();
   const { inboxRevision, refreshUnread } = useNotifications();
   const [items, setItems] = useState<AppNotification[] | null>(null);
+  const [openCounters, setOpenCounters] = useState<ReadonlySet<string>>(new Set());
+  const pinned = pinnedFor(openCounters);
   const media = useNoticeMedia(items);
   const [detail, setDetail] = useState<AppNotification | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const all = await listNotifications();
-      const live = all.filter((n) => LIVE_TYPES.has(n.type));
-      setItems([...live.filter(pinned), ...live.filter((n) => !pinned(n))]);
+      const [all, counters] = await Promise.all([listNotifications(), listOpenCounterIds().catch(() => [] as string[])]);
+      const open = new Set(counters);
+      const isPinned = pinnedFor(open);
+      const live = all.filter((n) => LIVE_TYPES.has(n.type) && (!n.readAt || isPinned(n)));
+      setOpenCounters(open);
+      setItems([...live.filter(isPinned), ...live.filter((n) => !isPinned(n))]);
     } catch {
       setItems((prev) => prev ?? []);
     }
@@ -105,7 +116,14 @@ export function LiveUpdates() {
       try {
         await markNotificationRead(notice.id);
         await refreshUnread();
-        setItems((prev) => (prev ?? []).map((n) => (n.id === notice.id ? { ...n, readAt: new Date().toISOString() } : n)));
+        // Opened = seen: it leaves Home (a counter-request stays until it is answered).
+        setItems((prev) =>
+          (prev ?? []).flatMap((n) => {
+            if (n.id !== notice.id) return [n];
+            const seen = { ...n, readAt: new Date().toISOString() };
+            return pinned(seen) ? [seen] : [];
+          }),
+        );
       } catch {
         // Still open it.
       }

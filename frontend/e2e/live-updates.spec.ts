@@ -112,7 +112,7 @@ test.describe("owner live updates", () => {
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
 
-  test("a notice with a photo and memo shows a thumbnail, opens big; Close just closes, the button goes to that pet's History", async ({ page }) => {
+  test("a notice with a photo and memo shows a thumbnail, opens big, and the button goes to that pet's History", async ({ page }) => {
     const MOCHI = "00000000-0000-4000-8000-0000000000bb";
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push(
@@ -140,12 +140,6 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("notice-detail-memo")).toHaveText("Curled up on the blanket");
     await expect(page).toHaveURL(/\/owner$/); // still Home while the photo is open
 
-    // Close only closes — it stays on Home.
-    await screen.getByTestId("notice-detail-close").click();
-    await expect(screen.getByTestId("notice-detail")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/owner$/);
-
-    await screen.getByTestId(`live-${nid(1)}`).click();
     await screen.getByTestId("notice-detail-next").click();
     await expect(page).toHaveURL(new RegExp(`/owner/history\\?pet=${MOCHI}$`));
     await expect(screen.getByTestId("diary-pet").getByRole("radio", { name: "Mochi" })).toHaveAttribute("aria-checked", "true");
@@ -161,5 +155,18 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("in-care-Max")).toContainText("with ");
     await expect(screen.getByTestId("in-care-Max")).toContainText("until");
     await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
+  });
+
+  test("an update you opened leaves Home (it stays in the notification list and History)", async ({ page }) => {
+    const db = await ownerHome(page);
+    const screen = app(page);
+    await screen.getByTestId(`live-${nid(5)}`).click(); // "Max seems calm" → History
+    await expect(page).toHaveURL(/\/owner\/history/);
+    await page.goto("/owner");
+    await screen.getByTestId("live-updates").waitFor();
+    await expect(screen.getByTestId(`live-${nid(5)}`)).toHaveCount(0); // seen → gone from Home
+    await expect(screen.getByTestId(`live-${nid(3)}`)).toBeVisible(); // unread ones stay
+    expect(db.notifications.some((x) => x.id === nid(5))).toBe(true); // …but the notice itself is kept
+    expect(db.notifications.find((x) => x.id === nid(5))?.read_at).not.toBeNull();
   });
 });

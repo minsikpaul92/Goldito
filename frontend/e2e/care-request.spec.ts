@@ -361,7 +361,7 @@ test.describe("care request (a stay is on)", () => {
     expect(db.notifications.find((n) => n.type === "care_request_countered")?.user_id).toBe(OWNER.id);
   });
 
-  test("owner: a decline stays pinned on Home until opened, then its note and the request are one tap away", async ({ page }) => {
+  test("owner: a decline stays pinned on Home until read, then it is gone; the answer stays on the pet screen", async ({ page }) => {
     const { db } = await setup(page, { stay: true });
     db.care_change_requests.push({
       id: "req-d",
@@ -403,7 +403,15 @@ test.describe("care request (a stay is on)", () => {
 
     await screen.getByTestId("live-n-decl").click();
     await expect(screen.getByTestId("notice-detail-memo")).toContainText("Could we do 5 PM?");
-    await screen.getByTestId("notice-detail-next").click();
+    // Read it and close: it is gone from Home (the answer stays on the pet screen).
+    await screen.getByTestId("notice-detail-close").click();
+    await expect(screen.getByTestId("notice-detail")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/owner$/); // Close just closes
+    await expect(screen.getByTestId("live-n-decl")).toHaveCount(0);
+    await page.reload();
+    await screen.getByTestId("live-updates").waitFor();
+    await expect(screen.getByTestId("live-n-decl")).toHaveCount(0);
+    await page.goto(`/owner/pets/${MAX}`);
     await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}$`));
     await expect(screen.getByTestId("request-status")).toContainText("Could we do 5 PM?");
   });
@@ -439,5 +447,48 @@ test.describe("care request (a stay is on)", () => {
     expect(db.pet_cautions.map((c) => c.text)).toEqual(["Porch light on"]);
     expect(db.notifications.find((n) => n.type === "care_counter_accepted")?.user_id).toBe(SITTER.id);
     await expect(screen.getByTestId("counter-reply")).toHaveCount(0);
+  });
+
+  test("owner: a counter-request stays on Home after reading, until it is answered", async ({ page }) => {
+    const { db } = await setup(page, { stay: true });
+    db.care_change_requests.push({
+      id: "req-k",
+      pet_id: MAX,
+      booking_id: "b1",
+      requested_by: OWNER.id,
+      sitter_id: SITTER.id,
+      status: "countered",
+      tasks: [{ type: "feeding", time: "06:00", title: "Early meal", dose: null, notes: null }],
+      cautions: [],
+      decline_reason: null,
+      note: "A small fee, please.",
+      counter_fee_cents: 300,
+      counter_owner_tasks: [],
+      created_at: new Date().toISOString(),
+    });
+    db.notifications.push({
+      id: "n-ctr",
+      user_id: OWNER.id,
+      type: "care_request_countered",
+      title: "Lucy sent a counter-request for Max 💬",
+      body: "A small fee, please.",
+      pet_id: MAX,
+      booking_id: "b1",
+      ref_id: "req-k",
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    await page.goto("/owner");
+    const screen = app(page);
+    await screen.getByTestId("live-n-ctr").click();
+    await screen.getByTestId("notice-detail-close").click();
+    await expect(screen.getByTestId("live-pinned-n-ctr")).toBeVisible(); // read, but not answered yet
+
+    await page.goto(`/owner/pets/${MAX}`);
+    await screen.getByTestId("counter-accept").click();
+    await expect(screen.getByTestId("toast")).toContainText("Accepted");
+    await page.goto("/owner");
+    await screen.getByTestId("live-updates").waitFor();
+    await expect(screen.getByTestId("live-n-ctr")).toHaveCount(0); // answered → gone
   });
 });
