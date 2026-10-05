@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Owner Diary (phase-06 6.11): what the sitter did, newest first, photos once.
+// Owner History (the 6.11 timeline, moved off the Diary tab): what the sitter did, newest first, photos once.
 
 const MAX = "00000000-0000-4000-8000-0000000000aa";
 const MOCHI = "00000000-0000-4000-8000-0000000000bb";
@@ -57,11 +57,11 @@ async function open(page: import("@playwright/test").Page, withData = true) {
   }
   await signIn(page, OWNER);
   await app(page).getByRole("heading", { name: "Home" }).waitFor();
-  await page.goto("/owner/diary");
+  await page.goto("/owner/history");
   return db;
 }
 
-test.describe("owner diary", () => {
+test.describe("owner history", () => {
   test("shows the last 7 days newest first, one row per event, photos once", async ({ page }) => {
     await open(page);
     const screen = app(page);
@@ -100,7 +100,7 @@ test.describe("owner diary", () => {
     await expect(screen.getByTestId("diary-detail").getByText("Hid under the bed for a while")).toBeVisible();
   });
 
-  test("each pet has its own diary", async ({ page }) => {
+  test("each pet has its own history", async ({ page }) => {
     await open(page);
     const screen = app(page);
     await screen.getByTestId("diary-pet-" + MOCHI).click();
@@ -108,9 +108,9 @@ test.describe("owner diary", () => {
     await expect(screen.locator("[data-testid^='diary-entry-']")).toHaveCount(1);
   });
 
-  test("a quiet diary explains itself", async ({ page }) => {
+  test("a quiet history explains itself", async ({ page }) => {
     await open(page, false);
-    await expect(app(page).getByText("No diary yet")).toBeVisible();
-    await expect(app(page).getByText("When a stay is on, updates show up here live.", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("No history yet")).toBeVisible();
+    await expect(app(page).getByText("What your sitter does during a stay is kept here.", { exact: false })).toBeVisible();
   });
 });

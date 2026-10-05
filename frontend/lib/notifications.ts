@@ -117,6 +117,8 @@ export function hrefForNotification(
       return notice.petId ? `/sitter/feed/${notice.petId}` : "/sitter/feed";
     case "task_done":
     case "care_checkin":
+      // The record of what the sitter did lives in History; the written diary is a later feature.
+      return role === "owner" ? "/owner/history" : null;
     case "report_sent":
       return role === "owner" ? "/owner/diary" : null;
     case "booking_requested":
