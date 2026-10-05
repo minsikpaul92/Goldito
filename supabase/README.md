@@ -23,6 +23,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `008g_care_change_requests.sql` | 06 | While a stay is on the owner SENDS a care request (`send_care_change_request`, one open per pet) and the sitter approves or declines (`respond_care_change_request`: approve creates the tasks and Heads-ups, decline carries a reason); notices `care_request` · `care_request_approved` · `care_request_declined` |
 | `008h_care_counter_requests.sql` | 06 | A decline can carry a note; the sitter can send a counter-request instead (`counter_care_change_request`: note + optional extra fee + tasks the owner does themselves) and the owner accepts or declines it (`answer_care_counter`); statuses `countered` · `accepted` · `withdrawn`; notices `care_request_countered` · `care_counter_accepted` · `care_counter_declined` |
 | `008i_revoke_trigger_functions.sql` | 06 | Trigger functions (`care_task_reset_today`, `guard_care_checkin_species`, `notify_feed_post`) are no longer callable as RPCs by `anon` / `authenticated` (Supabase advisor) |
+| `008j_no_direct_edits_during_stay.sql` | 06 | `pet_has_open_stay`: while a stay is on the owner can't INSERT care tasks or Heads-ups directly (RLS) — they send a care request; edits and deletes unchanged |
 | `009_reports.sql` | 07 | Daily report send |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |

@@ -134,9 +134,13 @@ export function CareTasksSection({ pet, userId }: Props) {
         <Text accessibilityRole="header" style={styles.heading}>
           Care tasks
         </Text>
-        <Button label="Add task" variant="secondary" onPress={() => setAdding(true)} testID="care-add" />
+        {stay ? null : <Button label="Add task" variant="secondary" onPress={() => setAdding(true)} testID="care-add" />}
       </View>
-      <Text style={styles.hint}>What {pet.name}&apos;s sitter should do each day.</Text>
+      <Text style={styles.hint}>
+        {stay
+          ? `What ${pet.name}'s sitter should do. A stay is on, so new tasks go through a care request — ${stay.sitterName} approves them.`
+          : `What ${pet.name}'s sitter should do each day.`}
+      </Text>
       <Button
         label={stay ? "✍️ Write a care request" : "✍️ Write a care checklist"}
         variant="secondary"

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
+import { usePetStay } from "../features/care/usePetStay";
 import { PetCaution, addPetCaution, deletePetCaution, listPetCautions } from "../features/care/careApi";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -23,6 +24,8 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
   const [items, setItems] = useState<PetCaution[] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const { state: stayState } = usePetStay(pet.id);
+  const stay = stayState.status === "ready" ? stayState.stay : null;
 
   const load = useCallback(async () => {
     try {
@@ -75,7 +78,7 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
       <Text style={styles.hint}>{`What ${pet.name}'s sitter should watch out for — shown at the top of their Home.`}</Text>
       {items != null && items.length === 0 ? (
         <Text style={styles.muted} testID="heads-up-empty">
-          None yet. Write a care request, or add one below.
+          {stay ? "None yet. Write a care request to add one." : "None yet. Write a care request, or add one below."}
         </Text>
       ) : null}
       <View style={styles.chips}>
@@ -83,16 +86,24 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
           <Chip key={i.id} label={i.text} onRemove={() => void remove(i)} testID={`heads-up-item-${i.id}`} />
         ))}
       </View>
-      <TextField
-        label="Add a Heads-up"
-        value={text}
-        maxLength={MAX}
-        placeholder="e.g. Doesn't like men in hats"
-        onChangeText={setText}
-        onSubmitEditing={() => void add()}
-        testID="heads-up-input"
-      />
-      <Button label="Add Heads-up" variant="secondary" disabled={!text.trim() || busy} onPress={() => void add()} testID="heads-up-add" />
+      {stay ? (
+        <Text style={styles.hint} testID="heads-up-locked">
+          {`A stay is on — new Heads-ups go through a care request, and ${stay.sitterName} approves them.`}
+        </Text>
+      ) : (
+        <>
+          <TextField
+            label="Add a Heads-up"
+            value={text}
+            maxLength={MAX}
+            placeholder="e.g. Doesn't like men in hats"
+            onChangeText={setText}
+            onSubmitEditing={() => void add()}
+            testID="heads-up-input"
+          />
+          <Button label="Add Heads-up" variant="secondary" disabled={!text.trim() || busy} onPress={() => void add()} testID="heads-up-add" />
+        </>
+      )}
     </View>
   );
 }

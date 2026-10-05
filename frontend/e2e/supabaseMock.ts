@@ -430,6 +430,16 @@ function matches(row: Row, params: URLSearchParams): boolean {
   return true;
 }
 
+/** Same as the SQL `pet_has_open_stay`. */
+function hasOpenStay(db: MockDb, petId: unknown): boolean {
+  return db.bookings.some(
+    (b) =>
+      b.status === "confirmed" &&
+      db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === petId) &&
+      !db.booking_handoffs.some((h) => h.booking_id === b.id && h.kind === "pick_up" && h.completed_at),
+  );
+}
+
 /** Same as the SQL `apply_care_change_request`: the tasks (minus the ones the owner does) and the Heads-ups. */
 function applyChangeRequest(db: MockDb, req: Row) {
   const skip = (req.counter_owner_tasks as number[] | undefined) ?? [];
@@ -1195,6 +1205,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
         }
       }
+    }
+    // 008j: no direct additions while a stay is on (confirmed booking, pet not picked up yet).
+    if ((path === "care_tasks" || path === "pet_cautions") && inserted.some((row) => hasOpenStay(db, row.pet_id))) {
+      return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
     }
     if (path === "care_tasks") {
       for (const row of inserted) {

@@ -1686,7 +1686,8 @@ begin
   end;
   perform _t_ok(v_err = 'not_on_duty', '6.2: a sitter who is not on duty cannot create task logs');
 
-  perform _t_as(chloe);
+  -- (seeded as the system: the owner can no longer add tasks to a pet whose stay is on — see 6.23)
+  perform _t_as(null);
   insert into public.care_tasks (pet_id, type, title, scheduled_time, active)
   values (max, 'play', 'Paused play', '17:00', false);
   insert into public.care_tasks (pet_id, type, title, scheduled_time, repeat_daily)
@@ -1986,7 +1987,7 @@ begin
     '6.9: the owner sees the check-in photo in the feed');
 
   -- Phase 06 follow-ups: task memo, editing a task, deleting notifications
-  perform _t_as(chloe);
+  perform _t_as(null);
   insert into public.care_tasks (pet_id, type, title, scheduled_time)
   values (max, 'play', 'Evening play', '21:00') returning id into v_id;
   perform _t_put('task_play', v_id);
@@ -2206,6 +2207,33 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', '6.20: requests are written only through the functions');
+
+  -- Phase 06 (6.23): no direct additions while a stay is on
+  perform _t_as(chloe);
+  begin
+    insert into public.care_tasks (pet_id, type, title, scheduled_time) values (max, 'play', 'Sneaky task', '10:00');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.23: the owner cannot add a task to a pet whose stay is on');
+  begin
+    insert into public.pet_cautions (pet_id, text, created_by) values (max, 'Sneaky heads-up', chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '6.23: …or a Heads-up');
+  update public.care_tasks set title = 'Late snack (edited)' where pet_id = max and title = 'Late snack';
+  perform _t_ok(exists (select 1 from public.care_tasks where title = 'Late snack (edited)'),
+    '6.23: …but can still edit what is already there');
+  delete from public.care_tasks where title = 'Late snack (edited)';
+  perform _t_ok(not exists (select 1 from public.care_tasks where title = 'Late snack (edited)'),
+    '6.23: …and remove it');
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Homebody') returning id into v_id;
+  perform _t_as(chloe);
+  insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Breakfast', '08:00');
+  insert into public.pet_cautions (pet_id, text, created_by) values (v_id, 'Shy with strangers', chloe);
+  perform _t_ok(true, '6.23: a pet with no stay on is edited directly as before');
 
   -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
   perform _t_as(chloe);

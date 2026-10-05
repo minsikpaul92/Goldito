@@ -234,6 +234,10 @@ test.describe("care checklist (no stay)", () => {
 test.describe("care request (a stay is on)", () => {
   test("the owner sends a request instead of saving; the sitter approves it and the tasks appear", async ({ page }) => {
     const { db } = await setup(page, { stay: true });
+    // The shortcuts around the request are closed too: no Add task, no hand-written Heads-up.
+    await expect(app(page).getByTestId("care-add")).toHaveCount(0);
+    await expect(app(page).getByTestId("heads-up-input")).toHaveCount(0);
+    await expect(app(page).getByTestId("heads-up-locked")).toContainText("care request");
     const screen = await openBuilder(page);
     await expect(screen.getByTestId("care-request-heading")).toHaveText("Write a care request");
 
@@ -280,7 +284,8 @@ test.describe("care request (a stay is on)", () => {
     await expect(screen.getByTestId("request-tasks")).toContainText("once");
     await expect(screen.getByTestId("request-cautions")).toContainText("Never feed grapes");
     await screen.getByTestId("request-approve").click();
-    await expect(screen.getByTestId("toast")).toContainText("Added to Max's tasks");
+    // (no toast assertion: a task approved for "now" can raise its own due-time toast first)
+    await expect.poll(() => db.care_tasks.length).toBe(1);
     expect(db.care_tasks.map((t) => [t.title, t.repeat_daily])).toEqual([["Late snack", false]]);
     expect(db.pet_cautions.map((c) => c.text)).toEqual(["Never feed grapes"]);
     expect(db.notifications.find((n) => n.type === "care_request_approved")?.user_id).toBe(OWNER.id);

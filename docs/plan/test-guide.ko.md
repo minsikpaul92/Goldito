@@ -149,6 +149,7 @@
 | REQ-10 | **실제 두 계정**: 오너가 요청 → 시터 화면 확인 → 답변 → 오너 확인 | 위 흐름이 새로고침 없이 이어짐(시터 알림 · 오너 알림) | **👤만** | ➖ |
 | REQ-11 | 시터: 노트를 쓰면 **Counter-request** 상자가 나타남 → 추가 비용($, 선택) + "이 할 일은 오너가 해 주세요" 선택 → **Send counter-request** | 아무것도 생성 안 됨, 요청은 열린 채(오너가 답하기 전엔 새 요청 불가). 오너에게 알림 | 🤖 `care-request` · SQL | ➖ |
 | REQ-12 | 오너: 펫 화면 **counter-reply 상자** (노트 · Extra fee · "You'd do yourself: …") → **Accept** / **Decline** | Accept → 시터가 맡기로 한 할 일 + Heads-up만 생성(오너가 하기로 한 할 일은 제외), 시터에게 알림. Decline → 닫힘, 아무것도 생성 안 됨. (비용은 기록·표시만 — 데모엔 추가 결제 없음) | 🤖 `care-request` · SQL | ➖ |
+| REQ-13 | 돌보는 중(수락된 예약, 아직 픽업 전)인 펫의 펫 화면 | **Add task 버튼이 없음**, Heads-up의 직접 입력칸도 없음("A stay is on — … care request로"). 서버도 거절(오너가 직접 추가 시 42501). 이미 있는 할 일의 **수정 · 삭제는 그대로** 가능. 집에 있는 펫은 예전처럼 직접 추가 | 🤖 `care-request` · SQL `rls_smoke` | ➖ |
 
 | HEADS-1 | 오너: 펫 화면 맨 아래 **Heads-up** 칸 → 문구 입력 → **Add Heads-up** | 칩으로 추가됨, 입력칸 비워짐. 같은 문구(대소문자만 다름)를 또 넣어도 중복 안 됨. 칩의 ✕ → 삭제. 없으면 "None yet…" 안내 | 🤖 `heads-up` | ➖ |
 | HEADS-2 | 시터 Home (돌보는 중) | **한 줄 카드** "⚠️ Max: Text instead of knocking  +2". 카드를 누르면 펫별(+오너 이름)로 전부 보임. Home은 여전히 한 화면 | 🤖 `heads-up` | ➖ |

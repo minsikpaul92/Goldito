@@ -16,6 +16,9 @@ export type CareTaskInput = {
   repeat?: boolean;
 };
 
+/** While a stay is on the owner asks through a care request instead (008j). */
+const STAY_ON_MESSAGE = "A stay is on — send a care request instead, and your sitter can approve it.";
+
 function fail(action: string): never {
   throw new Error(`Couldn't ${action}. Check your connection and try again.`);
 }
@@ -67,6 +70,7 @@ export async function createCareTask(
     if (error.message.includes("task_type_not_allowed_for_species")) {
       throw new Error("That task doesn't fit this pet (no walks for cats, no litter for dogs).");
     }
+    if (error.code === "42501") throw new Error(STAY_ON_MESSAGE);
     fail("save this task");
   }
   return data as CareTaskRow;
@@ -200,7 +204,10 @@ export async function addPetCaution(petId: string, userId: string, text: string)
   const { error } = await getSupabase()
     .from("pet_cautions")
     .insert({ pet_id: petId, text: text.trim(), created_by: userId });
-  if (error) fail("add this Heads-up");
+  if (error) {
+    if (error.code === "42501") throw new Error(STAY_ON_MESSAGE);
+    fail("add this Heads-up");
+  }
 }
 
 export async function deletePetCaution(id: string): Promise<void> {
