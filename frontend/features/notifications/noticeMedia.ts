@@ -6,7 +6,16 @@ import type { MediaResourceType } from "../../types/db";
 import type { DiaryMedia } from "../diary/diaryApi";
 
 /** Notices about what the sitter did; these are the ones that can carry a photo (and a memo). */
-export const DETAIL_TYPES = new Set(["task_done", "care_checkin", "feed_post"]);
+export const DETAIL_TYPES = new Set(["task_done", "care_checkin", "feed_post", "care_request_declined", "care_request_countered"]);
+
+/** Care-request answers that must be read — they stay pinned on Home until opened. */
+export const IMPORTANT_TYPES = new Set(["care_request_declined", "care_request_countered"]);
+
+export function detailNextLabel(type: string, role: "owner" | "sitter"): string {
+  if (type === "feed_post") return "See in Feed";
+  if (type.startsWith("care_request")) return "Open the request";
+  return role === "owner" ? "See in History" : "Continue";
+}
 
 const TABLE: Record<string, string> = { task_done: "task_logs", care_checkin: "care_checkins", feed_post: "feed_posts" };
 

@@ -18,6 +18,7 @@ import {
   todayStatus,
   typesForSpecies,
 } from "../features/care/careFormat";
+import { answerCareCounter, formatFee } from "../features/care/carePlanApi";
 import { usePetStay } from "../features/care/usePetStay";
 import { formatTime } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -57,7 +58,7 @@ export function CareTasksSection({ pet, userId }: Props) {
   const [editing, setEditing] = useState<CareTaskRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<CareTaskRow | null>(null);
   const [busy, setBusy] = useState(false);
-  const { state: stayState } = usePetStay(pet.id);
+  const { state: stayState, reload: reloadStay } = usePetStay(pet.id);
   const stay = stayState.status === "ready" ? stayState.stay : null;
   const request = stayState.status === "ready" ? stayState.request : null;
 
@@ -113,6 +114,20 @@ export function CareTasksSection({ pet, userId }: Props) {
     }
   };
 
+  const answerCounter = async (accept: boolean) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await answerCareCounter(request!.id, accept);
+      toast.show(accept ? "Accepted — added to the tasks ✅" : "Declined");
+      await Promise.all([reloadStay(), load()]);
+    } catch (error) {
+      toast.show((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <View style={styles.section} testID="care-tasks">
       <View style={styles.header}>
@@ -131,11 +146,36 @@ export function CareTasksSection({ pet, userId }: Props) {
       {stay && request?.status === "pending" ? (
         <Text style={styles.hint} testID="request-status">{`⏳ Waiting for ${stay.sitterName} to answer your care request.`}</Text>
       ) : null}
-      {stay && request?.status === "declined" ? (
+      {request?.status === "declined" ? (
         <View style={styles.errorBox} testID="request-status">
           <Text style={styles.errorText}>
-            {`${stay.sitterName} couldn't take your last request${request.declineReason ? `: “${request.declineReason}”` : "."} Message them to adjust it, then send a new one.`}
+            {`${stay?.sitterName ?? "Your sitter"} couldn't take your last request.`}
+            {request.declineReason ? ` “${request.declineReason}”` : ""}
+            {request.note ? ` “${request.note}”` : ""}
+            {" Message them to adjust it, then send a new one."}
           </Text>
+        </View>
+      ) : null}
+      {request?.status === "countered" ? (
+        <View style={styles.counterBox} testID="counter-reply">
+          <Text style={styles.counterTitle}>{`${stay?.sitterName ?? "Your sitter"} sent a counter-request`}</Text>
+          {request.note ? <Text style={styles.counterText}>{`“${request.note}”`}</Text> : null}
+          {request.counterFeeCents ? <Text style={styles.counterText} testID="counter-fee-line">{`Extra fee: ${formatFee(request.counterFeeCents)}`}</Text> : null}
+          {request.counterOwnerTasks.length > 0 ? (
+            <Text style={styles.counterText} testID="counter-owner-line">
+              {`You'd do yourself: ${request.counterOwnerTasks.map((i) => request.tasks[i]?.title).filter(Boolean).join(", ")}`}
+            </Text>
+          ) : null}
+          <Text style={styles.counterText}>
+            {`If you accept, ${request.tasks.length - request.counterOwnerTasks.length} task${request.tasks.length - request.counterOwnerTasks.length === 1 ? "" : "s"} and ${request.cautions.length} Heads-up${request.cautions.length === 1 ? "" : "s"} are added.`}
+          </Text>
+          <Button
+            label="Accept"
+            disabled={busy}
+            onPress={() => void answerCounter(true)}
+            testID="counter-accept"
+          />
+          <Button label="Decline" variant="secondary" disabled={busy} onPress={() => void answerCounter(false)} testID="counter-decline" />
         </View>
       ) : null}
 
@@ -427,6 +467,16 @@ const makeStyles = (theme: Theme) =>
     muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: theme.fontSize.body * 1.4 },
     label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
+    counterBox: {
+      gap: theme.spacing.xs,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.md,
+      borderWidth: 2,
+      borderColor: theme.color.warning,
+      backgroundColor: theme.color.surface,
+    },
+    counterTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    counterText: { fontSize: theme.fontSize.body, color: theme.color.text },
     errorBox: { gap: theme.spacing.xs },
     errorText: { fontSize: theme.fontSize.small, color: theme.color.error },
     paused: { opacity: 0.6 },

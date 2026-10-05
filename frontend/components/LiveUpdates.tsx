@@ -2,7 +2,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { DETAIL_TYPES, useNoticeMedia } from "../features/notifications/noticeMedia";
+import { DETAIL_TYPES, IMPORTANT_TYPES, detailNextLabel, useNoticeMedia } from "../features/notifications/noticeMedia";
 import { formatFeedTime } from "../lib/feed";
 import {
   AppNotification,
@@ -21,10 +21,27 @@ import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
 
 /** What the sitter does during a stay — shown as live cards on the owner's Home. */
-const LIVE_TYPES = new Set(["task_done", "care_checkin", "feed_post"]);
+const LIVE_TYPES = new Set([
+  "task_done",
+  "care_checkin",
+  "feed_post",
+  "care_request_approved",
+  "care_request_declined",
+  "care_request_countered",
+]);
 const SHOWN = 3;
 
-const EMOJI: Record<string, string> = { task_done: "✅", care_checkin: "📝", feed_post: "📸" };
+const EMOJI: Record<string, string> = {
+  task_done: "✅",
+  care_checkin: "📝",
+  feed_post: "📸",
+  care_request_approved: "✅",
+  care_request_declined: "⚠️",
+  care_request_countered: "💬",
+};
+
+/** A declined / countered care request stays pinned (and can't be swiped away) until it is opened. */
+const pinned = (n: AppNotification) => IMPORTANT_TYPES.has(n.type) && !n.readAt;
 
 /**
  * Owner Home "Live updates": the latest few notices about the stay as cards. Swipe one away to dismiss
@@ -42,7 +59,8 @@ export function LiveUpdates() {
   const load = useCallback(async () => {
     try {
       const all = await listNotifications();
-      setItems(all.filter((n) => LIVE_TYPES.has(n.type)));
+      const live = all.filter((n) => LIVE_TYPES.has(n.type));
+      setItems([...live.filter(pinned), ...live.filter((n) => !pinned(n))]);
     } catch {
       setItems((prev) => prev ?? []);
     }
@@ -70,8 +88,8 @@ export function LiveUpdates() {
 
   const [confirmingClear, setConfirmingClear] = useState(false);
   const clearAll = async () => {
-    const ids = new Set((items ?? []).map((n) => n.id));
-    setItems([]);
+    const ids = new Set((items ?? []).filter((n) => !pinned(n)).map((n) => n.id)); // unread answers stay
+    setItems((prev) => (prev ?? []).filter(pinned));
     setConfirmingClear(false);
     try {
       await deleteNotifications([...ids]);
@@ -133,17 +151,18 @@ export function LiveUpdates() {
         </View>
       ) : null}
 
-      {shown.map((n, index) => (
-        <View key={n.id} style={styles.cardWrap}>
-        <SwipeToDelete
-          onDelete={() => void dismiss(n)}
-          radius={theme.radius.md}
-          testID={`live-swipe-${n.id}`}
-        >
+      {shown.map((n, index) => {
+        const isPinned = pinned(n);
+        const card = (
           <Pressable
             accessibilityRole="button"
             onPress={() => void open(n)}
-            style={({ pressed }) => [styles.card, !n.readAt && styles.unread, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.card,
+              !n.readAt && styles.unread,
+              isPinned && styles.pinned,
+              pressed && styles.pressed,
+            ]}
             testID={`live-${n.id}`}
           >
             <Text style={styles.emoji} accessibilityElementsHidden>
@@ -151,12 +170,26 @@ export function LiveUpdates() {
             </Text>
             <View style={styles.body}>
               <Text style={[styles.title, !n.readAt && styles.titleUnread]}>{n.title}</Text>
-              {n.body ? <Text style={styles.memo}>{n.body}</Text> : null}
+              {n.body ? (
+                <Text style={styles.memo} numberOfLines={isPinned ? 2 : undefined}>
+                  {n.body}
+                </Text>
+              ) : null}
+              {isPinned ? <Text style={styles.pinHint}>Tap to read and answer</Text> : null}
               <Text style={styles.time}>{formatFeedTime(n.createdAt)}</Text>
             </View>
             {media[n.id] ? <NoticeThumb media={media[n.id]} /> : null}
           </Pressable>
-        </SwipeToDelete>
+        );
+        return (
+        <View key={n.id} style={styles.cardWrap} testID={isPinned ? `live-pinned-${n.id}` : undefined}>
+        {isPinned ? (
+          card
+        ) : (
+          <SwipeToDelete onDelete={() => void dismiss(n)} radius={theme.radius.md} testID={`live-swipe-${n.id}`}>
+            {card}
+          </SwipeToDelete>
+        )}
         {index === 0 ? (
           <Pressable
             accessibilityRole="button"
@@ -170,7 +203,8 @@ export function LiveUpdates() {
           </Pressable>
         ) : null}
         </View>
-      ))}
+        );
+      })}
 
       {more > 0 ? (
         <TextButton
@@ -182,7 +216,7 @@ export function LiveUpdates() {
       <NoticeDetail
         notice={detail}
         media={detail ? (media[detail.id] ?? null) : null}
-        next={detail?.type === "feed_post" ? "See in Feed" : "See in History"}
+        next={detail ? detailNextLabel(detail.type, "owner") : ""}
         onClose={closeDetail}
       />
     </View>
@@ -206,6 +240,8 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     unread: { backgroundColor: theme.color.accent },
+    pinned: { borderWidth: 2, borderColor: theme.color.warning },
+    pinHint: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
     pressed: { opacity: 0.85 },
     clearRow: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.sm, marginBottom: -theme.spacing.xs },
     cardWrap: { position: "relative" },

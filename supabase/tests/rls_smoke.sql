@@ -2207,6 +2207,78 @@ begin
   end;
   perform _t_ok(v_err = '42501', '6.20: requests are written only through the functions');
 
+  -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
+  perform _t_as(chloe);
+  v_id := send_care_change_request(
+    max,
+    '[{"type":"feeding","time":"06:00","title":"Early meal","dose":null,"notes":null},{"type":"walk","time":"23:00","title":"Late walk","dose":null,"notes":null}]'::jsonb,
+    array['Keep the porch light on']
+  );
+  perform _t_put('ccr3', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform counter_care_change_request(_t_get('ccr3'), '   ', 500, '{}');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'note_required', '6.21: a counter-request needs a note');
+  begin
+    perform counter_care_change_request(_t_get('ccr3'), 'x', 500, array[5]);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_tasks', '6.21: …and the tasks must be on the request');
+  perform counter_care_change_request(_t_get('ccr3'), 'I can do the early meal for $5; please do the late walk yourself.', 500, array[1]);
+  perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr3')) = 'countered'
+      and not exists (select 1 from public.care_tasks where pet_id = max and title in ('Early meal', 'Late walk')),
+    '6.21: a counter-request creates nothing yet');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_countered'
+      and ref_id = _t_get('ccr3') and body like '%$5.00%') = 1,
+    '6.21: the owner is told, with the fee');
+  begin
+    perform send_care_change_request(max, '[]'::jsonb, array['Another']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_pending', '6.21: a counter-request keeps the request open');
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform answer_care_counter(_t_get('ccr3'), true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '6.21: only the owner answers a counter-request');
+  perform _t_as(chloe);
+  perform answer_care_counter(_t_get('ccr3'), true);
+  perform _t_ok(exists (select 1 from public.care_tasks where pet_id = max and title = 'Early meal')
+      and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Late walk')
+      and exists (select 1 from public.pet_cautions where pet_id = max and text = 'Keep the porch light on'),
+    '6.21: accepting creates what the sitter agreed to (not the tasks the owner will do)');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform _t_ok((select count(*) from public.notifications where user_id = _t_get('ccr_sitter') and type = 'care_counter_accepted'
+      and ref_id = _t_get('ccr3')) = 1, '6.21: the sitter is told it was accepted');
+
+  perform _t_as(chloe);
+  v_id := send_care_change_request(max, '[{"type":"play","time":"15:00","title":"Tug game","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_put('ccr4', v_id);
+  perform _t_as(_t_get('ccr_sitter'));
+  perform counter_care_change_request(_t_get('ccr4'), 'Extra time for this one.', 300, '{}');
+  perform _t_as(chloe);
+  perform answer_care_counter(_t_get('ccr4'), false);
+  perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr4')) = 'withdrawn'
+      and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Tug game'),
+    '6.21: declining the counter-request closes it and creates nothing');
+
+  perform _t_as(chloe);
+  v_id := send_care_change_request(max, '[{"type":"play","time":"16:00","title":"Ball","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform respond_care_change_request(v_id, false, 'Needs a different time', 'Could we do 5 PM instead?');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+      and body = 'Needs a different time — Could we do 5 PM instead?') = 1,
+    '6.21: a decline carries the reason and the note');
+
   perform _t_as(null);
 end;
 $$;

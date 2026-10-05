@@ -430,6 +430,29 @@ function matches(row: Row, params: URLSearchParams): boolean {
   return true;
 }
 
+/** Same as the SQL `apply_care_change_request`: the tasks (minus the ones the owner does) and the Heads-ups. */
+function applyChangeRequest(db: MockDb, req: Row) {
+  const skip = (req.counter_owner_tasks as number[] | undefined) ?? [];
+  (req.tasks as Record<string, string | boolean | null>[]).forEach((t, i) => {
+    if (skip.includes(i)) return;
+    db.care_tasks.push({
+      id: crypto.randomUUID(),
+      pet_id: req.pet_id,
+      type: t.type,
+      title: t.title,
+      dose: t.dose ?? null,
+      scheduled_time: `${t.time}:00`,
+      notes: t.notes ?? null,
+      repeat_daily: t.repeat ?? true,
+      active: true,
+      created_at: new Date().toISOString(),
+    });
+  });
+  for (const text of req.cautions as string[]) {
+    db.pet_cautions.push({ id: crypto.randomUUID(), pet_id: req.pet_id, text, active: true });
+  }
+}
+
 function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200, count?: number) {
   if (wantsObject) {
     if (rows.length !== 1) {
@@ -797,7 +820,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       (b) => b.status === "confirmed" && db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === p_pet),
     );
     if (!booking) return json(route, 400, { code: "P0001", message: "no_active_stay" });
-    if (db.care_change_requests.some((r) => r.pet_id === p_pet && r.status === "pending")) {
+    if (db.care_change_requests.some((r) => r.pet_id === p_pet && ["pending", "countered"].includes(r.status as string))) {
       return json(route, 400, { code: "P0001", message: "request_pending" });
     }
     const id = crypto.randomUUID();
@@ -829,37 +852,64 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/respond_care_change_request") {
-    const { p_request, p_approve, p_reason } = request.postDataJSON();
+    const { p_request, p_approve, p_reason, p_note } = request.postDataJSON();
     const req = db.care_change_requests.find((r) => r.id === p_request);
     if (!req || req.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
     if (req.status !== "pending") return json(route, 400, { code: "P0001", message: "already_answered" });
-    if (p_approve) {
-      for (const t of req.tasks as Record<string, string | boolean | null>[]) {
-        db.care_tasks.push({
-          id: crypto.randomUUID(),
-          pet_id: req.pet_id,
-          type: t.type,
-          title: t.title,
-          dose: t.dose ?? null,
-          scheduled_time: `${t.time}:00`,
-          notes: t.notes ?? null,
-          repeat_daily: t.repeat ?? true,
-          active: true,
-          created_at: new Date().toISOString(),
-        });
-      }
-      for (const text of req.cautions as string[]) {
-        db.pet_cautions.push({ id: crypto.randomUUID(), pet_id: req.pet_id, text, active: true });
-      }
-    }
-    Object.assign(req, { status: p_approve ? "approved" : "declined", decline_reason: p_approve ? null : p_reason });
+    if (p_approve) applyChangeRequest(db, req);
+    Object.assign(req, { status: p_approve ? "approved" : "declined", decline_reason: p_approve ? null : p_reason, note: p_approve ? null : p_note });
     const pet = db.pets.find((p) => p.id === req.pet_id);
     db.notifications.push({
       id: crypto.randomUUID(),
       user_id: req.requested_by,
       type: p_approve ? "care_request_approved" : "care_request_declined",
       title: p_approve ? `${pet?.name} request approved` : `Couldn't take this one for ${pet?.name}`,
-      body: p_approve ? null : p_reason,
+      body: p_approve ? null : ([p_reason, p_note].filter(Boolean).join(" — ") || "Message them to adjust it."),
+      pet_id: req.pet_id,
+      booking_id: req.booking_id,
+      ref_id: req.id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, req);
+  }
+
+  if (path === "rpc/counter_care_change_request") {
+    const { p_request, p_note, p_fee_cents, p_owner_tasks } = request.postDataJSON();
+    const req = db.care_change_requests.find((r) => r.id === p_request);
+    if (!req || req.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (req.status !== "pending") return json(route, 400, { code: "P0001", message: "already_answered" });
+    if (!String(p_note ?? "").trim()) return json(route, 400, { code: "P0001", message: "note_required" });
+    Object.assign(req, { status: "countered", note: String(p_note).trim(), counter_fee_cents: p_fee_cents, counter_owner_tasks: p_owner_tasks });
+    const pet = db.pets.find((p) => p.id === req.pet_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: req.requested_by,
+      type: "care_request_countered",
+      title: `${users.find((u) => u.id === me)?.displayName} sent a counter-request for ${pet?.name} 💬`,
+      body: req.note,
+      pet_id: req.pet_id,
+      booking_id: req.booking_id,
+      ref_id: req.id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, req);
+  }
+
+  if (path === "rpc/answer_care_counter") {
+    const { p_request, p_accept } = request.postDataJSON();
+    const req = db.care_change_requests.find((r) => r.id === p_request);
+    if (!req || req.requested_by !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (req.status !== "countered") return json(route, 400, { code: "P0001", message: "already_answered" });
+    if (p_accept) applyChangeRequest(db, req);
+    req.status = p_accept ? "accepted" : "withdrawn";
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: req.sitter_id,
+      type: p_accept ? "care_counter_accepted" : "care_counter_declined",
+      title: p_accept ? "Counter-request accepted" : "Counter-request declined",
+      body: null,
       pet_id: req.pet_id,
       booking_id: req.booking_id,
       ref_id: req.id,
@@ -1155,7 +1205,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         if ((row.type === "walk" && pet.species === "cat") || (row.type === "litter" && pet.species === "dog")) {
           return json(route, 400, { code: "P0001", message: "task_type_not_allowed_for_species" });
         }
-        Object.assign(row, { active: true, repeat_daily: true });
+        Object.assign(row, { active: true, repeat_daily: row.repeat_daily ?? true });
       }
     }
     if (path === "pets" && inserted.some((row) => row.owner_id !== me)) {

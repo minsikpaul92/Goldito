@@ -26,18 +26,23 @@ export function PetCard({ pet, onPress, inCare }: Props) {
       accessibilityRole="button"
       accessibilityLabel={`${pet.name}, ${describePet(pet)}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, inCare && styles.cardInCare, pressed && styles.pressed]}
       testID={`pet-card-${pet.name}`}
     >
+      {inCare ? (
+        <View style={styles.inCareLabel} pointerEvents="none">
+          <Text style={styles.inCareLabelText}>In care</Text>
+        </View>
+      ) : null}
       <View style={styles.avatar}>
         <Text style={styles.avatarEmoji}>{SPECIES_EMOJI[pet.species]}</Text>
       </View>
       <View style={styles.body}>
         <Text style={styles.name}>{pet.name}</Text>
         {inCare ? (
-          <View style={styles.inCare} testID={`in-care-${pet.name}`}>
-            <Text style={styles.inCareText}>{`🟢 In care · with ${inCare.sitterName} until ${formatInstant(inCare.until)}`}</Text>
-          </View>
+          <Text style={styles.inCareText} testID={`in-care-${pet.name}`}>
+            {`with ${inCare.sitterName} · until ${formatInstant(inCare.until)}`}
+          </Text>
         ) : null}
         <Text style={styles.facts}>{describePet(pet)}</Text>
         {pet.pet_allergies.length > 0 ? (
@@ -89,15 +94,17 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "600",
       color: theme.color.text,
     },
-    inCare: {
-      alignSelf: "flex-start",
+    // In care: tinted card, stronger border, and an "In care" tag sitting on the top-left border.
+    cardInCare: { borderWidth: 2, borderColor: theme.color.primary, backgroundColor: theme.color.accent },
+    inCareLabel: {
+      position: "absolute",
+      top: -11,
+      left: theme.spacing.md,
       paddingHorizontal: theme.spacing.sm,
-      paddingVertical: 2,
       borderRadius: theme.radius.sm,
-      backgroundColor: theme.color.accent,
-      borderWidth: 1,
-      borderColor: theme.color.primary,
+      backgroundColor: theme.color.primary,
     },
+    inCareLabelText: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primaryText },
     inCareText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
     facts: {
       fontSize: theme.fontSize.small,

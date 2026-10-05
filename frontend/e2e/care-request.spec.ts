@@ -69,9 +69,10 @@ test.describe("care checklist (no stay)", () => {
     await expect(screen.getByTestId("care-request-heading")).toHaveText("Write a care checklist");
     for (const k of ["meal", "medication", "walk", "headsup"]) await expect(screen.getByTestId(`line-kind-${k}`)).toBeVisible();
     await screen.getByTestId("line-kind-meal").click();
-    await expect(screen.getByTestId("line-text")).toHaveValue("1 cup of kibble");
+    await expect(screen.getByTestId("line-text")).toHaveValue("");
+    await expect(screen.getByTestId("line-text")).toHaveAttribute("placeholder", "1 cup of kibble"); // a hint, not text
     await screen.getByTestId("line-kind-medication").click();
-    await expect(screen.getByTestId("line-text")).toHaveValue("1 pill, hidden in a lickable treat");
+    await expect(screen.getByTestId("line-text")).toHaveAttribute("placeholder", "1 pill, hidden in a lickable treat");
 
     await page.goto(`/owner/pets/${MOCHI}`);
     await app(page).getByTestId("care-tasks").waitFor();
@@ -79,7 +80,7 @@ test.describe("care checklist (no stay)", () => {
     await expect(app(page).getByTestId("line-kind-meal")).toBeVisible();
     await expect(app(page).getByTestId("line-kind-walk")).toHaveCount(0);
     await app(page).getByTestId("line-kind-meal").click();
-    await expect(app(page).getByTestId("line-text")).toHaveValue("Half a can of wet food");
+    await expect(app(page).getByTestId("line-text")).toHaveAttribute("placeholder", "Half a can of wet food");
   });
 
   test("lines → table: a time, several times a day, a Heads-up; everything is saved by itself", async ({ page }) => {
@@ -91,7 +92,7 @@ test.describe("care checklist (no stay)", () => {
     await screen.getByTestId("line-text").fill("1 cup of kibble with a spoon of pumpkin");
     await pickTime(screen, "am", 7, "30");
     await screen.getByTestId("line-add").click();
-    await expect(screen.getByTestId("lines")).toContainText("Meals · 7:30 AM · 1 cup of kibble with a spoon of pumpkin");
+    await expect(screen.getByTestId("lines")).toContainText("Meals · 7:30 AM every day · 1 cup of kibble with a spoon of pumpkin");
     // A fresh row of chips is ready for the next line, and the editor is closed.
     await expect(screen.getByTestId("line-editor")).toHaveCount(0);
 
@@ -100,7 +101,7 @@ test.describe("care checklist (no stay)", () => {
     await screen.getByTestId("line-mode-count").click();
     await screen.getByTestId("line-count-plus").click(); // 2 → 3
     await screen.getByTestId("line-add").click();
-    await expect(screen.getByTestId("lines")).toContainText("Medication · 3 times a day");
+    await expect(screen.getByTestId("lines")).toContainText("Medication · 3 times a day · 1 pill, hidden in a lickable treat"); // empty box = the hint
 
     // Line 3: a Heads-up (text only).
     await screen.getByTestId("line-kind-headsup").click();
@@ -127,11 +128,16 @@ test.describe("care checklist (no stay)", () => {
     // The builder is empty again; a new line is appended to the same table.
     await expect(screen.getByTestId("lines")).toHaveCount(0);
     await screen.getByTestId("line-kind-walk").click();
+    await screen.getByTestId("line-span-once").click(); // one time only, not every day
     await screen.getByTestId("line-add").click();
+    await expect(screen.getByTestId("lines")).toContainText("Walk · 5:00 PM once");
     await screen.getByTestId("care-request-make").click();
     await expect(screen.locator("[data-testid^='draft-time-']")).toHaveCount(5);
+    await expect(screen.getByTestId("checklist-table")).toContainText("once");
     await expect(screen.getByTestId("save-state")).toHaveText("✓ All changes saved");
     expect(db.care_tasks).toHaveLength(5);
+    expect(db.care_tasks.find((t) => t.type === "walk")?.repeat_daily).toBe(false);
+    expect(db.care_tasks.filter((t) => t.repeat_daily).length).toBe(4);
   });
 
   test("editing saves by itself; removing saves too, and Undo brings the row back", async ({ page }) => {
@@ -311,5 +317,127 @@ test.describe("care request (a stay is on)", () => {
     expect(db.care_tasks).toHaveLength(0);
     expect(db.care_change_requests[0]).toMatchObject({ status: "declined", decline_reason: "Let's talk first" });
     expect(db.notifications.find((n) => n.type === "care_request_declined")).toMatchObject({ user_id: OWNER.id, body: "Let's talk first" });
+  });
+
+  test("a decline can carry a note; a note also opens a counter-request with a fee and tasks for the owner", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
+    const request = (id: string) => ({
+      id,
+      pet_id: MAX,
+      booking_id: "b1",
+      requested_by: OWNER.id,
+      sitter_id: SITTER.id,
+      status: "pending",
+      tasks: [
+        { type: "feeding", time: "06:00", title: "Early meal", dose: null, notes: null },
+        { type: "walk", time: "23:00", title: "Late walk", dose: null, notes: null },
+      ],
+      cautions: ["Porch light on"],
+      decline_reason: null,
+      note: null,
+      counter_fee_cents: null,
+      counter_owner_tasks: [],
+      created_at: new Date().toISOString(),
+    });
+    db.care_change_requests.push(request("req-a"));
+    await signIn(page, SITTER);
+    const screen = app(page);
+
+    // A note alone: Decline carries it. No counter box until there is a note.
+    await page.goto("/sitter/care-request/req-a");
+    await screen.getByTestId("request-decline").click();
+    await expect(screen.getByTestId("counter-box")).toHaveCount(0);
+    await screen.getByTestId("decline-note").fill("Could we do 7 AM instead?");
+    await expect(screen.getByTestId("counter-box")).toBeVisible();
+
+    // …which turns into a counter-request: a fee, and the late walk is for the owner.
+    await screen.getByTestId("counter-fee").fill("5");
+    await screen.getByTestId("counter-owner-1").click();
+    await screen.getByTestId("counter-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Counter-request sent");
+    expect(db.care_tasks).toHaveLength(0);
+    expect(db.care_change_requests[0]).toMatchObject({ status: "countered", note: "Could we do 7 AM instead?", counter_fee_cents: 500, counter_owner_tasks: [1] });
+    expect(db.notifications.find((n) => n.type === "care_request_countered")?.user_id).toBe(OWNER.id);
+  });
+
+  test("owner: a decline stays pinned on Home until opened, then its note and the request are one tap away", async ({ page }) => {
+    const { db } = await setup(page, { stay: true });
+    db.care_change_requests.push({
+      id: "req-d",
+      pet_id: MAX,
+      booking_id: "b1",
+      requested_by: OWNER.id,
+      sitter_id: SITTER.id,
+      status: "declined",
+      tasks: [],
+      cautions: ["x"],
+      decline_reason: "Needs a different time",
+      note: "Could we do 5 PM?",
+      counter_fee_cents: null,
+      counter_owner_tasks: [],
+      created_at: new Date().toISOString(),
+    });
+    db.notifications.push({
+      id: "n-decl",
+      user_id: OWNER.id,
+      type: "care_request_declined",
+      title: "Lucy couldn't take this one for Max",
+      body: "Needs a different time — Could we do 5 PM?",
+      pet_id: MAX,
+      booking_id: "b1",
+      ref_id: "req-d",
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    await page.goto("/owner");
+    const screen = app(page);
+    await expect(screen.getByTestId("live-pinned-n-decl")).toBeVisible();
+    await expect(screen.getByTestId("live-swipe-n-decl")).toHaveCount(0); // no swiping it away unread
+    await screen.getByTestId("live-x").click();
+    await screen.getByTestId("live-clear-all").click();
+    await expect(screen.getByTestId("live-pinned-n-decl")).toBeVisible(); // Clear all leaves it too
+
+    await page.reload();
+    await expect(app(page).getByTestId("live-pinned-n-decl")).toBeVisible(); // still there after a refresh
+
+    await screen.getByTestId("live-n-decl").click();
+    await expect(screen.getByTestId("notice-detail-memo")).toContainText("Could we do 5 PM?");
+    await screen.getByTestId("notice-detail-next").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}$`));
+    await expect(screen.getByTestId("request-status")).toContainText("Could we do 5 PM?");
+  });
+
+  test("owner: accepting a counter-request adds only what the sitter agreed to; the fee and the owner's tasks are shown", async ({ page }) => {
+    const { db } = await setup(page, { stay: true });
+    db.care_change_requests.push({
+      id: "req-c",
+      pet_id: MAX,
+      booking_id: "b1",
+      requested_by: OWNER.id,
+      sitter_id: SITTER.id,
+      status: "countered",
+      tasks: [
+        { type: "feeding", time: "06:00", title: "Early meal", dose: null, notes: null },
+        { type: "walk", time: "23:00", title: "Late walk", dose: null, notes: null },
+      ],
+      cautions: ["Porch light on"],
+      decline_reason: null,
+      note: "I can do the meal for a small fee.",
+      counter_fee_cents: 500,
+      counter_owner_tasks: [1],
+      created_at: new Date().toISOString(),
+    });
+    await page.goto(`/owner/pets/${MAX}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("counter-reply")).toContainText("I can do the meal for a small fee.");
+    await expect(screen.getByTestId("counter-fee-line")).toHaveText("Extra fee: $5.00");
+    await expect(screen.getByTestId("counter-owner-line")).toContainText("Late walk");
+    await screen.getByTestId("counter-accept").click();
+    await expect(screen.getByTestId("toast")).toContainText("Accepted");
+    expect(db.care_tasks.map((t) => t.title)).toEqual(["Early meal"]); // the late walk stays with the owner
+    expect(db.pet_cautions.map((c) => c.text)).toEqual(["Porch light on"]);
+    expect(db.notifications.find((n) => n.type === "care_counter_accepted")?.user_id).toBe(SITTER.id);
+    await expect(screen.getByTestId("counter-reply")).toHaveCount(0);
   });
 });

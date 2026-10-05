@@ -33,11 +33,11 @@ export function presetText(kind: LineKind, species: Species): string {
 
 export const DEFAULT_TIME: Record<LineKind, string> = { meal: "08:00", medication: "08:00", walk: "17:00", headsup: "08:00" };
 
-/** "A day" = every day of the stay; "once" = one time only (a single sitting). */
+/** "Every day" of the stay, or "once" — one time only. */
 export type Span = "day" | "once";
-export type When = { mode: "time"; time: string } | { mode: "count"; count: number; span: Span };
+export type When = { mode: "time"; time: string } | { mode: "count"; count: number };
 
-export type Line = { key: string; kind: LineKind; text: string; when: When };
+export type Line = { key: string; kind: LineKind; text: string; when: When; span: Span };
 
 export const COUNT_MAX = 6;
 
@@ -57,10 +57,11 @@ export function spreadTimes(count: number): string[] {
 export function lineSummary(line: Line): string {
   const meta = kindMeta(line.kind);
   if (line.kind === "headsup") return `${meta.emoji} ${line.text}`;
+  const how = line.span === "day" ? "every day" : "once";
   const when =
     line.when.mode === "time"
-      ? formatTime(line.when.time)
-      : `${line.when.count} time${line.when.count === 1 ? "" : "s"} ${line.when.span === "day" ? "a day" : "in one sitting"}`;
+      ? `${formatTime(line.when.time)} ${how}`
+      : `${line.when.count} time${line.when.count === 1 ? "" : "s"} ${line.span === "day" ? "a day" : "in all"}`;
   return `${meta.emoji} ${meta.label} · ${when} · ${line.text}`;
 }
 
@@ -75,7 +76,7 @@ export function lineToTasks(line: Line): DraftTask[] {
   if (!meta.type) return [];
   const times =
     line.when.mode === "time" ? [line.when.time] : spreadTimes(line.when.count).slice(0, line.when.count);
-  const repeat = line.when.mode === "time" || line.when.span === "day";
+  const repeat = line.span === "day";
   return times.map((time, i) => ({
     key: `${line.key}-${i}`,
     type: meta.type as CareTaskType,

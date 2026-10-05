@@ -50,7 +50,7 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
 
   const pick = (k: LineKind) => {
     setKind(k);
-    setText(presetText(k, species));
+    setText("");
     setTime(DEFAULT_TIME[k]);
     setMode("time");
     setCount(2);
@@ -62,15 +62,18 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
     setText("");
   };
 
-  const canAdd = kind != null && text.trim().length > 0 && lines.length < LINE_MAX;
+  // Leaving the box empty uses the hint (the preset); a Heads-up always needs its own words.
+  const finalText = kind ? text.trim() || presetText(kind, species) : "";
+  const canAdd = kind != null && finalText.length > 0 && lines.length < LINE_MAX;
 
   const add = () => {
     if (!kind || !canAdd) return;
     const line: Line = {
       key: `line-${Date.now()}-${lines.length}`,
       kind,
-      text: text.trim(),
-      when: kind === "headsup" ? { mode: "time", time: "08:00" } : mode === "time" ? { mode: "time", time } : { mode: "count", count, span },
+      text: finalText,
+      when: kind === "headsup" ? { mode: "time", time: "08:00" } : mode === "time" ? { mode: "time", time } : { mode: "count", count },
+      span,
     };
     onLines([...lines, line]);
     reset();
@@ -121,10 +124,14 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
       {kind ? (
         <View style={styles.editor} testID="line-editor">
           <TextField
-            label={kind === "headsup" ? "What should your sitter watch out for?" : `${kindMeta(kind).label} — what to give or do`}
+            label={
+              kind === "headsup"
+                ? "What should your sitter watch out for?"
+                : `${kindMeta(kind).label} — what to give or do (empty = the hint)`
+            }
             value={text}
             maxLength={kind === "headsup" ? CAUTION_MAX : TEXT_MAX}
-            placeholder={kind === "headsup" ? "e.g. No knocking — text me instead" : undefined}
+            placeholder={kind === "headsup" ? "e.g. No knocking — text me instead" : presetText(kind, species)}
             onChangeText={setText}
             testID="line-text"
           />
@@ -152,7 +159,7 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
                   style={({ pressed }) => [styles.timeButton, pressed && styles.pressed]}
                   testID="line-time"
                 >
-                  <Text style={styles.timeText}>{`${formatTime(time)} · every day`}</Text>
+                  <Text style={styles.timeText}>{formatTime(time)}</Text>
                   <Text style={styles.chevron}>▾</Text>
                 </Pressable>
               ) : (
@@ -167,23 +174,23 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
                     onIncrease={() => setCount((c) => Math.min(COUNT_MAX, c + 1))}
                     testID="line-count"
                   />
-                  <View style={styles.chips}>
-                    {([["day", "a day"], ["once", "in one sitting"]] as const).map(([s, label]) => (
-                      <Pressable
-                        key={s}
-                        accessibilityRole="radio"
-                        aria-checked={span === s}
-                        onPress={() => setSpan(s)}
-                        style={({ pressed }) => [styles.chip, span === s && styles.chipOn, pressed && styles.pressed]}
-                        testID={`line-span-${s}`}
-                      >
-                        <Text style={[styles.chipText, span === s && styles.chipTextOn]}>{label}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
                   <Text style={styles.hint}>We spread them over the day — you can change each time in the checklist.</Text>
                 </View>
               )}
+              <View style={styles.chips}>
+                {([["day", "Every day"], ["once", "Once"]] as const).map(([s, label]) => (
+                  <Pressable
+                    key={s}
+                    accessibilityRole="radio"
+                    aria-checked={span === s}
+                    onPress={() => setSpan(s)}
+                    style={({ pressed }) => [styles.chip, span === s && styles.chipOn, pressed && styles.pressed]}
+                    testID={`line-span-${s}`}
+                  >
+                    <Text style={[styles.chipText, span === s && styles.chipTextOn]}>{label}</Text>
+                  </Pressable>
+                ))}
+              </View>
             </>
           ) : null}
           <View style={styles.actions}>
@@ -196,7 +203,7 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
       <TimePickerSheet
         visible={picking}
         value={time}
-        title="Time (every day)"
+        title="Time"
         onClose={() => setPicking(false)}
         onPick={(t) => {
           setTime(t);

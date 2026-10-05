@@ -52,10 +52,17 @@ export function draftFromPlan(plan: CarePlanResponse): DraftTask[] {
 export type ChangeRequest = {
   id: string;
   petId: string;
-  status: "pending" | "approved" | "declined";
+  /** pending → approved | declined | countered; countered → accepted | withdrawn. */
+  status: "pending" | "approved" | "declined" | "countered" | "accepted" | "withdrawn";
   tasks: { type: CareTaskType; time: string; title: string; dose: string | null; notes: string | null; repeat?: boolean }[];
   cautions: string[];
   declineReason: string | null;
+  /** The sitter's note (decline or counter-request). */
+  note: string | null;
+  /** Extra fee the sitter asks for, in cents. */
+  counterFeeCents: number | null;
+  /** Indexes of `tasks` the sitter asks the owner to do themselves. */
+  counterOwnerTasks: number[];
   createdAt: string;
 };
 
@@ -66,6 +73,9 @@ type ChangeRequestRow = {
   tasks: ChangeRequest["tasks"];
   cautions: string[];
   decline_reason: string | null;
+  note: string | null;
+  counter_fee_cents: number | null;
+  counter_owner_tasks: number[] | null;
   created_at: string;
 };
 
@@ -76,10 +86,14 @@ const asChangeRequest = (r: ChangeRequestRow): ChangeRequest => ({
   tasks: r.tasks,
   cautions: r.cautions,
   declineReason: r.decline_reason,
+  note: r.note,
+  counterFeeCents: r.counter_fee_cents,
+  counterOwnerTasks: r.counter_owner_tasks ?? [],
   createdAt: r.created_at,
 });
 
-const CHANGE_COLUMNS = "id, pet_id, status, tasks, cautions, decline_reason, created_at";
+const CHANGE_COLUMNS =
+  "id, pet_id, status, tasks, cautions, decline_reason, note, counter_fee_cents, counter_owner_tasks, created_at";
 
 const CHANGE_MESSAGES: Record<string, string> = {
   request_pending: "A request is already waiting for your sitter. Wait for their answer first.",
@@ -88,6 +102,8 @@ const CHANGE_MESSAGES: Record<string, string> = {
   too_many_items: "That's too many items for one request (12 tasks, 8 Heads-ups at most).",
   forbidden: "Only the pet's owner can send a care request.",
   already_answered: "That request was already answered.",
+  note_required: "Write a short note first.",
+  invalid_tasks: "One of those tasks isn't on the request.",
 };
 
 function changeError(error: { message: string }, fallback: string): Error {
@@ -155,11 +171,41 @@ export async function getChangeRequest(id: string): Promise<(ChangeRequest & { p
   return { ...asChangeRequest(r), petName: (Array.isArray(r.pets) ? r.pets[0]?.name : r.pets?.name) ?? "your pet" };
 }
 
-export async function respondCareChangeRequest(id: string, approve: boolean, reason: string | null): Promise<void> {
+export async function respondCareChangeRequest(
+  id: string,
+  approve: boolean,
+  reason: string | null,
+  note: string | null = null,
+): Promise<void> {
   const { error } = await getSupabase().rpc("respond_care_change_request", {
     p_request: id,
     p_approve: approve,
     p_reason: reason,
+    p_note: note,
   });
   if (error) throw changeError(error, "Couldn't send your answer. Check your connection and try again.");
 }
+
+/** Sitter → owner instead of a plain no: a note, an optional extra fee, and tasks the owner does themselves. */
+export async function counterCareChangeRequest(
+  id: string,
+  note: string,
+  feeCents: number | null,
+  ownerTasks: number[],
+): Promise<void> {
+  const { error } = await getSupabase().rpc("counter_care_change_request", {
+    p_request: id,
+    p_note: note,
+    p_fee_cents: feeCents,
+    p_owner_tasks: ownerTasks,
+  });
+  if (error) throw changeError(error, "Couldn't send your reply. Check your connection and try again.");
+}
+
+/** Owner answers the sitter's counter-request. */
+export async function answerCareCounter(id: string, accept: boolean): Promise<void> {
+  const { error } = await getSupabase().rpc("answer_care_counter", { p_request: id, p_accept: accept });
+  if (error) throw changeError(error, "Couldn't send your answer. Check your connection and try again.");
+}
+
+export const formatFee = (cents: number) => `$${(cents / 100).toFixed(2)}`;

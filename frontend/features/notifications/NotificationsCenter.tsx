@@ -19,7 +19,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../lib/notifications";
-import { DETAIL_TYPES, useNoticeMedia } from "./noticeMedia";
+import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "./noticeMedia";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { Role, useSession } from "../../providers/SessionProvider";
@@ -229,7 +229,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
       <NoticeDetail
         notice={detail}
         media={detail ? (noticeMedia[detail.id] ?? null) : null}
-        next={detail?.type === "feed_post" ? "See in Feed" : role === "owner" ? "See in History" : "Continue"}
+        next={detail ? detailNextLabel(detail.type, role) : ""}
         onClose={closeDetail}
       />
       <Sheet

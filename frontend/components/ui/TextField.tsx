@@ -19,7 +19,8 @@ export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Prop
       <Text style={styles.label}>{label}</Text>
       <TextInput
         accessibilityLabel={label}
-        placeholderTextColor={theme.color.textMuted}
+        // A hint, not a value: lighter than typed text.
+        placeholderTextColor={`${theme.color.textMuted}80`}
         onFocus={(e) => {
           setFocused(true);
           onFocus?.(e);

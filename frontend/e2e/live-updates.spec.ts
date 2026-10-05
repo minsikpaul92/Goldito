@@ -152,7 +152,7 @@ test.describe("owner live updates", () => {
     db.pets.push({ id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" });
     await signIn(page, OWNER);
     const screen = app(page);
-    await expect(screen.getByTestId("in-care-Max")).toContainText("In care · with");
+    await expect(screen.getByTestId("in-care-Max")).toContainText("with ");
     await expect(screen.getByTestId("in-care-Max")).toContainText("until");
     await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
   });
