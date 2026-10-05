@@ -2,7 +2,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Chip } from "./ui/Chip";
+import type { InCare } from "../features/care/useInCare";
 import { SPECIES_EMOJI, describePet } from "../features/pets/petFormat";
+import { formatInstant } from "../features/schedule/dates";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Pet } from "../types/db";
 import { Theme } from "../theme/themes";
@@ -10,10 +12,12 @@ import { Theme } from "../theme/themes";
 type Props = {
   pet: Pet;
   onPress: () => void;
+  /** Set while a sitter has this pet right now. */
+  inCare?: InCare;
 };
 
 /** Owner Home card: species icon, name, short facts, allergies. */
-export function PetCard({ pet, onPress }: Props) {
+export function PetCard({ pet, onPress, inCare }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -30,6 +34,11 @@ export function PetCard({ pet, onPress }: Props) {
       </View>
       <View style={styles.body}>
         <Text style={styles.name}>{pet.name}</Text>
+        {inCare ? (
+          <View style={styles.inCare} testID={`in-care-${pet.name}`}>
+            <Text style={styles.inCareText}>{`🟢 In care · with ${inCare.sitterName} until ${formatInstant(inCare.until)}`}</Text>
+          </View>
+        ) : null}
         <Text style={styles.facts}>{describePet(pet)}</Text>
         {pet.pet_allergies.length > 0 ? (
           <View style={styles.allergies}>
@@ -80,6 +89,16 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "600",
       color: theme.color.text,
     },
+    inCare: {
+      alignSelf: "flex-start",
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 2,
+      borderRadius: theme.radius.sm,
+      backgroundColor: theme.color.accent,
+      borderWidth: 1,
+      borderColor: theme.color.primary,
+    },
+    inCareText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
     facts: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,

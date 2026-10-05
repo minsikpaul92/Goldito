@@ -464,7 +464,7 @@ type BookingRow = {
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
   booking_handoffs: HandoffRow[] | null;
-  booking_pets?: { pets: { name: string; species: "dog" | "cat" } | null }[] | null;
+  booking_pets?: { pets: { id?: string; name: string; species: "dog" | "cat" } | null }[] | null;
 };
 
 function toStep(h: HandoffRow): ProposalStep {
@@ -524,7 +524,7 @@ function newestFirst(a: BookingSummary, b: BookingSummary): number {
 export async function listOwnerBookings(ownerId: string): Promise<OwnerBooking[]> {
   const { data, error } = await getSupabase()
     .from("bookings")
-    .select(`${BOOKING_COLUMNS}, booking_pets(pets(name, species))`)
+    .select(`${BOOKING_COLUMNS}, booking_pets(pets(id, name, species))`)
     .eq("owner_id", ownerId)
     .order("created_at", { ascending: false });
   if (error) throw new Error("Couldn't load your bookings. Check your connection and try again.");

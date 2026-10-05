@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { useInCare } from "../../../features/care/useInCare";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
@@ -15,6 +16,7 @@ import { Theme } from "../../../theme/themes";
 export default function OwnerHome() {
   const styles = useThemedStyles(makeStyles);
   const { status, pets, error, reload } = useMyPets();
+  const inCare = useInCare();
   const addPet = () => router.push("/owner/pets/new");
 
   if (status === "loading" && pets.length === 0) return <LoadingView />;
@@ -50,7 +52,7 @@ export default function OwnerHome() {
       <Screen contentStyle={styles.list}>
         <LiveUpdates />
         {pets.map((pet) => (
-          <PetCard key={pet.id} pet={pet} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
+          <PetCard key={pet.id} pet={pet} inCare={inCare[pet.id]} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
         ))}
       </Screen>
       <View style={styles.footer}>

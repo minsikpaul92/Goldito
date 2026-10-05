@@ -1012,7 +1012,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
                 .filter((bp) => bp.booking_id === b.id)
                 .map((bp) => {
                   const pet = db.pets.find((p) => p.id === bp.pet_id);
-                  return { pets: pet ? { name: pet.name, species: pet.species } : null };
+                  return { pets: pet ? { id: pet.id, name: pet.name, species: pet.species } : null };
                 }),
             }
           : {}),
