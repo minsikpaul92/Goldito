@@ -2,6 +2,8 @@
 
 Three clickable directions for two P1 ideas ([11.10 pet-photo theming](../../docs/plan/phases/phase-11.md), [11.12 pet status room](../../docs/plan/pet-status-room.ko.md)), built to playtest before writing the real feature. Not production code — throwaway exploration, not wired into the app.
 
+**Start here:** `review.html` — the design review (plan vs status, the 5 stages, decision tree, edge cases), then `index.html` for every prototype. The redesign of the live app's tabs is in `redesign/`.
+
 ## How to open
 
 Each file is a single self-contained HTML page (pet photos are embedded). Fonts load from Google Fonts; offline, each page falls back to system fonts.

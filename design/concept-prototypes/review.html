@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PawNote Design Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font-family:var(--font);font-size:15px;line-height:1.55;
+    padding-inline:1rem;padding-block:2.5rem 4rem;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:60rem;margin:0 auto;display:flex;flex-direction:column;gap:3rem}
+  .wrap>*,section,.col{min-width:0}
+  h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.015em}
+  h1{font-size:1.75rem;font-weight:700}
+  h2{font-size:1.125rem;font-weight:700}
+  h3{font-size:.9375rem;font-weight:600}
+  p{margin:0}
+  a{color:var(--color-primary)}
+  .muted{color:var(--color-text-muted)}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  header{display:flex;flex-direction:column;gap:.75rem;max-width:44rem}
+  header p{color:var(--color-text-muted)}
+  .actions{display:flex;flex-wrap:wrap;gap:.5rem}
+  section{display:flex;flex-direction:column;gap:1rem}
+  .section-head{display:flex;flex-direction:column;gap:.25rem}
+  .section-head p{color:var(--color-text-muted);font-size:.875rem;max-width:42rem}
+
+  /* Numbers strip: the four counts reviewers ask about first */
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.75rem;margin:0;padding:0;list-style:none}
+  .facts li{padding:.875rem 1rem;display:flex;flex-direction:column;gap:.125rem}
+  .facts b{font-size:1.375rem;font-variant-numeric:tabular-nums}
+  .facts span{font-size:.8125rem;color:var(--color-text-muted)}
+
+  /* Tables */
+  .scroll:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+  .scroll{overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface)}
+  table{border-collapse:collapse;width:100%;font-size:.8125rem;min-width:40rem}
+  th,td{text-align:left;vertical-align:top;padding:.625rem .875rem;border-bottom:1px solid var(--color-border)}
+  tr:last-child td,tr:last-child th{border-bottom:none}
+  thead th{font-size:.75rem;font-weight:600;color:var(--color-text-muted);background:var(--color-track);white-space:nowrap}
+  tbody th{font-weight:600}
+  td .ds-tag{white-space:nowrap}
+  .ds-tag.success{background:var(--color-success-surface);color:var(--color-success);border-color:transparent}
+  .ds-tag.error{background:var(--color-error-surface);color:var(--color-error);border-color:transparent}
+
+  /* Decision tree: a question, the options, and the reason for the pick */
+  .tree{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.75rem}
+  .q{padding:1rem 1.125rem;display:flex;flex-direction:column;gap:.625rem}
+  .q-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.625rem;align-items:baseline}
+  .q-head .n{font-size:.75rem;font-weight:700;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+  .opts{list-style:none;margin:0;padding:0 0 0 .875rem;border-left:2px solid var(--color-border);display:flex;flex-direction:column;gap:.375rem}
+  .opts li{display:grid;grid-template-columns:1.25rem 1fr;gap:.375rem;font-size:.875rem}
+  .opts li .m{font-weight:700}
+  .opts li.pick .m{color:var(--color-success)}
+  .opts li.no{color:var(--color-text-muted)}
+  .opts li.pick b{color:var(--color-text)}
+  .why{font-size:.8125rem;color:var(--color-text-muted)}
+  .why b{color:var(--color-text);font-weight:600}
+
+  /* Edge-case principles + banner previews (same as the Figma Banner component) */
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.75rem}
+  .rule{padding:1rem;display:flex;flex-direction:column;gap:.375rem}
+  .rule p{font-size:.8125rem;color:var(--color-text-muted)}
+  .banners{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:.75rem}
+  .banner{display:grid;grid-template-columns:1.5rem 1fr;gap:.5rem;padding:.75rem 1rem;border-radius:var(--radius-md);border:1px solid}
+  .banner b{display:block;font-size:.875rem}
+  .banner p{font-size:.8125rem}
+  .banner .act{display:inline-flex;align-items:center;min-height:var(--size-touch-target);font-weight:600;font-size:.8125rem;color:var(--color-primary)}
+  .banner.info{background:var(--color-accent);border-color:var(--color-border)} .banner.info b{color:var(--color-primary)}
+  .banner.warning{background:var(--color-warning-surface);border-color:var(--color-warning)} .banner.warning b{color:var(--color-warning)}
+  .banner.error{background:var(--color-error-surface);border-color:var(--color-error)} .banner.error b,.banner.error .act{color:var(--color-error)}
+  .banner.offline{background:var(--color-surface);border-color:var(--color-border-strong)}
+
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(17rem,1fr));gap:1rem}
+  .col{padding:1rem 1.125rem;display:flex;flex-direction:column;gap:.5rem}
+  ol,ul{margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:.375rem;font-size:.875rem}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.8125em;background:var(--color-track);border-radius:4px;padding:0 .25rem}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <span class="eyebrow">PawNote · Design review · Oct 6, 2026</span>
+  <h1>Design system: audit, decisions and edge cases</h1>
+  <p>Where the design stands against the plan and the README's 5 stages, why each decision was made, and what owners and sitters see when things don't go to plan. Submission: Oct 30 (internal Oct 28).</p>
+  <div class="actions">
+    <a class="ds-btn" href="index.html">Open the prototypes</a>
+    <a class="ds-btn secondary" href="redesign/compare.html">Live vs Balanced vs Playful</a>
+  </div>
+</header>
+
+<ul class="facts" aria-label="At a glance">
+  <li class="ds-card"><b>61</b><span>Figma components, bound to tokens</span></li>
+  <li class="ds-card"><b>53</b><span>Figma screens, all component instances</span></li>
+  <li class="ds-card"><b>16</b><span>Edge-state screens (owner + sitter)</span></li>
+  <li class="ds-card"><b>0</b><span>axe contrast violations</span></li>
+</ul>
+
+<section aria-labelledby="h-time">
+  <div class="section-head"><h2 id="h-time">1. Against the plan (README.ko §4)</h2>
+    <p>Muk's column of the weekly plan. Week 1 landed two days late; week 2 screens are now drafted in Figma ahead of the code.</p></div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Design weeks vs plan"><table>
+    <thead><tr><th>Week</th><th>Plan for design</th><th>Status</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><th>1 · Oct 1–4</th><td>Design system + inquiry thread, Checkout, Trip, 5-second check</td><td><span class="ds-tag success">Done Oct 6</span></td><td>Figma variables + 61 components; DESIGN.md §3–§6</td></tr>
+      <tr><th>2 · Oct 5–11</th><td>Booking, Checkout, Meet &amp; Greet, care request</td><td><span class="ds-tag success">Drafted</span></td><td>Figma Upcoming · Booking (5 screens) + 6 edge states</td></tr>
+      <tr><th>3 · Oct 12–18</th><td>Trip and map, album, micro-interactions</td><td><span class="ds-tag warning">Started</span></td><td>Trip, handoff, album in Figma; motion tokens in DESIGN.md §5.1</td></tr>
+      <tr><th>4 · Oct 19–25</th><td>Video visuals, thumbnail, Life Record</td><td><span class="ds-tag warning">Life Record only</span></td><td>Life Record + new-fact consent screen</td></tr>
+      <tr><th>5 · Oct 26–30</th><td>Final polish</td><td><span class="ds-tag">Later</span></td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-stage">
+  <div class="section-head"><h2 id="h-stage">2. The 5 stages: README vs app vs design</h2>
+    <p>What the README promises, what is merged on <code>main</code> (Oct 6), and what the design covers. The last column is the gap to close.</p></div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Stage coverage"><table>
+    <thead><tr><th>Stage</th><th>README promise</th><th>App on main</th><th>Design</th><th>Gap</th></tr></thead>
+    <tbody>
+      <tr><th>① Inquiry</th><td>AI reply in the sitter's tone, quote from the server</td><td><span class="ds-tag error">Not built</span> 07B</td><td><span class="ds-tag success">Screen + 2 edges</span></td><td>Assistant hands health questions to the sitter; full dates offer alternatives</td></tr>
+      <tr><th>② Meet &amp; Greet</th><td>Care request → checklist, Meet &amp; Greet, who drives</td><td><span class="ds-tag success">Built</span> 06, 3B.9</td><td><span class="ds-tag success">2 screens + 1 edge</span></td><td>Missing dose and allergy conflicts block Save</td></tr>
+      <tr><th>③ Booking</th><td>Consents, demo pay, timed entry unlock</td><td><span class="ds-tag success">Built</span> 03B, 03C</td><td><span class="ds-tag success">3 screens + 3 edges</span></td><td>Declined, payment failed and entry-info-missing states</td></tr>
+      <tr><th>④ Care &amp; transit</th><td>Live trip, photo check, feed by category, 5-second check, daily report</td><td><span class="ds-tag warning">Half</span> feed, tasks, check-ins; no trip, report, categories</td><td><span class="ds-tag success">5 screens + 7 edges</span></td><td><b>Offline check-ins</b> (no handling in code), late / location off, photo check never blocks</td></tr>
+      <tr><th>⑤ Completion</th><td>Home safe, review, Pet Life Record</td><td><span class="ds-tag error">Not built</span> 07C</td><td><span class="ds-tag success">2 screens + 2 edges</span></td><td>New facts need the owner's OK; low ratings stay private</td></tr>
+      <tr><th>Treat Guard</th><td>Stretch: label photo → safety result</td><td><span class="ds-tag error">Not built</span> 08</td><td><span class="ds-tag success">DANGER + unreadable</span></td><td>Unsure means don't feed</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-dec">
+  <div class="section-head"><h2 id="h-dec">3. Decision tree</h2>
+    <p>Each question, the options we tried, and why one won. Full log in DESIGN.md §0.</p></div>
+  <ol class="tree">
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D1</span><h3>Which look for the app?</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b>Balanced</b> — warm neutrals, white cards, the same green</span></li>
+        <li class="no"><span class="m">→</span><span>Playful — prototypes only (outlines, shadows, fonts change too)</span></li>
+        <li class="no"><span class="m">✕</span><span>Calm Core — dropped Oct 5</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> Balanced is closest to the code tokens, so it costs Minsik almost nothing. Playful changes structure, not just color: three weeks isn't enough to build and test it. Calm Core's tone is already covered by Balanced. <b>Still the team's call.</b></p>
+    </li>
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D2</span><h3>How do screens stay in sync with the design system?</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b>Components first, screens built only from instances</b></span></li>
+        <li class="no"><span class="m">✕</span><span>Captured screenshots as layers</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> edit a component once and all 53 screens update. Component names match code (<code>Button</code>, <code>Tag</code>, <code>Banner</code>), so a Figma name tells Minsik which file to open.</p>
+    </li>
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D3</span><h3>How is status color used?</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b>Status text on its own light surface</b> (<code>errorSurface</code>, <code>warningSurface</code>, <code>successSurface</code>) via <code>Tag</code> and <code>Banner</code></span></li>
+        <li class="no"><span class="m">✕</span><span>Faded (opacity) copies of the status color</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> the audit found red text on a red tint below 4.5:1. Surfaces pass AA in every look, and red stays reserved for real problems.</p>
+    </li>
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D4</span><h3>What outlines controls?</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b><code>borderStrong</code></b> for anything you interact with, <code>border</code> for decoration, <code>track</code> for empty progress</span></li>
+        <li class="no"><span class="m">✕</span><span>One <code>border</code> for everything</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> <code>border</code> is 1.3:1 — inputs and unselected chips were nearly invisible (WCAG 1.4.11 needs 3:1). Sitters use the app outdoors.</p>
+    </li>
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D5</span><h3>What happens when the AI is unsure?</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b>Depends on the risk:</b> safety fails closed (don't feed), everything else fails open to a person</span></li>
+        <li class="no"><span class="m">✕</span><span>One error message for every AI failure</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> a wrong "safe" can hurt a pet, but a blocked handoff or a missing caption only slows people down. So the assistant hands health questions to the sitter, a photo check never blocks a handoff, a report can go out as plain chips, and an unreadable label means "don't feed".</p>
+    </li>
+    <li class="q ds-card">
+      <div class="q-head"><span class="n">D6</span><h3>Type and motion</h3></div>
+      <ul class="opts">
+        <li class="pick"><span class="m">✓</span><span><b>System font in the app, Inter in Figma</b>; 4 sizes (24 · 16 · 14 · 11); 3 durations (120 · 240 · 420 ms); Reduce motion respected</span></li>
+        <li class="no"><span class="m">✕</span><span>A custom brand font; an 18 px subtitle size</span></li>
+      </ul>
+      <p class="why"><b>Why:</b> no font download on the demo and a native feel, and Inter's metrics are close to SF and Roboto. Card titles use Body Strong (16/600), so the 18 px size was never used.</p>
+    </li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-edge">
+  <div class="section-head"><h2 id="h-edge">4. Edge cases</h2>
+    <p>Five rules behind the 16 edge-state screens in Figma (Edge states · ①–③ / ④ / ⑤). Full table in DESIGN.md §10.</p></div>
+  <div class="rules">
+    <div class="rule ds-card"><h3>Never lose a sitter's tap</h3><p>Offline check-ins and photos are saved on the phone, marked "Waiting to send", and sent on their own. A wrong tap has Undo for 5 s.</p></div>
+    <div class="rule ds-card"><h3>Tell the owner before they ask</h3><p>Late ETA, a missing photo, or a handover to a person: the owner sees what happened and when the next update arrives. They never see a blank screen.</p></div>
+    <div class="rule ds-card"><h3>Unsure about safety means no</h3><p>An unreadable label, a missing dose or an allergy conflict blocks the action, and the screen says how to unblock it.</p></div>
+    <div class="rule ds-card"><h3>Nothing new without the owner's OK</h3><p>Facts the AI learned during a stay go into the Life Record only after the owner confirms them. Low ratings stay private.</p></div>
+    <div class="rule ds-card"><h3>Calm by default, red only for real</h3><p>Declined bookings and late pills use info or warning, never error. Red is for failed payments and DANGER.</p></div>
+  </div>
+  <div class="banners" aria-label="Banner component, four tones">
+    <div class="banner info"><span aria-hidden="true">💬</span><div><b>Lucy will answer this one herself</b><p>Health questions always go to Lucy. Usually within 2 hours.</p><span class="act">Got it</span></div></div>
+    <div class="banner warning"><span aria-hidden="true">⏱️</span><div><b>Lucy is running 10 min late</b><p>New ETA 7:40 AM — updated on its own.</p><span class="act">Message Lucy</span></div></div>
+    <div class="banner error"><span aria-hidden="true">⚠️</span><div><b>Payment didn't go through</b><p>You weren't charged. Your consents are kept.</p><span class="act">Try again</span></div></div>
+    <div class="banner offline"><span aria-hidden="true">📶</span><div><b>You're offline</b><p>2 check-ins are saved and send on their own.</p><span class="act">Retry now</span></div></div>
+  </div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Edge cases by stage"><table>
+    <thead><tr><th>Stage</th><th>Situation</th><th>Owner sees</th><th>Sitter sees</th></tr></thead>
+    <tbody>
+      <tr><th>①</th><td>Dates are full</td><td>Reply with the next open dates as chips</td><td>Nothing to do (calendar answers)</td></tr>
+      <tr><th>①</th><td>Health or out-of-scope question</td><td>"Lucy will answer this one herself"</td><td>Thread flagged for a personal reply</td></tr>
+      <tr><th>②</th><td>Dose missing / allergy conflict</td><td>Row tagged; Save disabled with "Fix 2 items"</td><td>Only the confirmed checklist</td></tr>
+      <tr><th>③</th><td>Sitter declines or doesn't answer in 24 h</td><td>"You weren't charged" + another sitter</td><td>—</td></tr>
+      <tr><th>③</th><td>Payment fails</td><td>Error banner; consents and name kept; Try again</td><td>—</td></tr>
+      <tr><th>③</th><td>Entry info not added</td><td>Reminder notification</td><td>Warning banner; card stays locked</td></tr>
+      <tr><th>④</th><td>Sitter running late</td><td>Warning banner, new ETA, no action needed</td><td>ETA updates on its own</td></tr>
+      <tr><th>④</th><td>Location off</td><td>Status lines instead of the map</td><td>Leaving now · 10 min away · I'm here</td></tr>
+      <tr><th>④</th><td>Photo check unsure</td><td>"Checked by Lucy" instead of "Photo verified"</td><td>Retake, or Confirm by eye</td></tr>
+      <tr><th>④</th><td>Offline</td><td>"Last update 9:02" on the stay card</td><td>Offline banner; taps queued</td></tr>
+      <tr><th>④</th><td>Pill late</td><td>Neutral "Not checked off yet" (no red)</td><td>Warning banner + the task as the next action</td></tr>
+      <tr><th>④</th><td>No photos yet today</td><td>Empty state with the usual time</td><td>—</td></tr>
+      <tr><th>④</th><td>Treat label unreadable</td><td>Asked to confirm</td><td>"Don't feed it yet"</td></tr>
+      <tr><th>⑤</th><td>Rating of 1–2 stars</td><td>Optional private note</td><td>Sees the note, not a public score</td></tr>
+      <tr><th>⑤</th><td>AI learned a new fact</td><td>"Add to Max's profile" or "Not accurate"</td><td>—</td></tr>
+      <tr><th>Any</th><td>Loading</td><td colspan="2">Skeleton in the final layout; after 10 s "Still loading…" + Retry</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-next">
+  <div class="section-head"><h2 id="h-next">5. Next</h2></div>
+  <div class="cols">
+    <div class="col ds-card">
+      <h3>For Minsik · in demo order</h3>
+      <ol>
+        <li>New tokens are in <code>tokens.ts</code> (this PR) — use <code>borderStrong</code> on inputs and chips, <code>*Surface</code> behind status text</li>
+        <li>Add <code>Banner</code> and <code>Tag</code> to <code>components/ui</code> (specs in DESIGN.md §6.1)</li>
+        <li>Offline queue for sitter check-ins and photos (§10)</li>
+        <li>Inquiry thread (07B) with the hand-over banner</li>
+        <li>Daily report (7.2–7.7) — chips fall back to a plain list if the AI fails</li>
+        <li>Completion (07C), then Trip (6B) last, as planned (D41)</li>
+      </ol>
+    </div>
+    <div class="col ds-card">
+      <h3>For Muk · week 3</h3>
+      <ol>
+        <li>Trip map polish and album by category</li>
+        <li>Micro-interactions from the motion tokens (press, appear, success)</li>
+        <li>Video storyboard for <em>A Stay with PawNote</em></li>
+        <li>Desktop phone-frame backdrop and side panel (§2.1)</li>
+      </ol>
+    </div>
+    <div class="col ds-card">
+      <h3>Team decisions needed</h3>
+      <ol>
+        <li>Balanced as the app look? (D1)</li>
+        <li>Feed categories Meals · Walks · Naps · Play — still planned (9.x)?</li>
+        <li>Mood tab in the demo, or hidden until 11.9?</li>
+        <li>PR #41: close it in favor of this PR?</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Generated bundles and prototype builds: collapsed in GitHub diffs (review the sources under design/**/src, journey/ and redesign/build_app.py).
+design/figma-plugin/code.js linguist-generated=true
+design/figma-plugin/ui.html linguist-generated=true
+design/figma-plugin/data/*.json linguist-generated=true
+design/concept-prototypes/redesign/app.html linguist-generated=true
+design/concept-prototypes/pawnote-concept-*.html linguist-generated=true

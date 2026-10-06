@@ -313,7 +313,7 @@ const LIBRARY = [
 
     await variants("Tab Bar", "Both roles: Home · Bookings · Feed · Diary · Mood (D47 / D47b). Pick the active tab with the Active property. Settings and Log out are in Profile, not a tab.",
       ["Home", "Bookings", "Feed", "Diary", "Mood"].map((active) => [`Active=${active}`, async () => {
-        const bar = box("Tab Bar", { dir: "H", w: 402, h: 64, justify: "SPACE_BETWEEN", pad: [0, "sm", 0, "sm"], fill: "surface", stroke: "border", align: "CENTER" });
+        const bar = box("Tab Bar", { dir: "H", w: 402, h: 60, justify: "SPACE_BETWEEN", pad: [0, "sm", 0, "sm"], fill: "surface", stroke: "border", align: "CENTER" });
         bar.strokeTopWeight = 1; bar.strokeBottomWeight = 0; bar.strokeLeftWeight = 0; bar.strokeRightWeight = 0;
         for (const [icon, label] of [["🏠", "Home"], ["🗓️", "Bookings"], ["🖼️", "Feed"], ["📖", "Diary"], ["🙂", "Mood"]]) {
           const on = label === active;
@@ -413,10 +413,10 @@ const LIBRARY = [
       box("Source Tag", { dir: "H", pad: [2, "sm", 2, "sm"], radius: 999, stroke: "border" }, [await txt("From Lucy's calendar", "Caption", "text-muted", { name: "Label" })]), [["Label", "Label"]]);
     const tagOf = (label) => { const i = sourceTag.createInstance(); const k = Object.keys(i.componentProperties).find((p) => p.startsWith("Label")); if (k) i.setProperties({ [k]: label }); return i; };
 
-    await variants("Message Bubble", "Inquiry thread (07B). The sitter's reply reads as the sitter's own message, with source chips.", ["Owner", "Sitter"].map((s) => [`From=${s}`, async () => {
+    await variants("Message Bubble", "Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message: name and time, no AI label (D36), with source tags. The AI-draft warning appears only in the sitter's draft view.", ["Owner", "Sitter"].map((s) => [`From=${s}`, async () => {
       if (s === "Owner") return box("Bubble", { w: 280, pad: ["sm", "md", "sm", "md"], radius: 16, fill: "primary" }, [await txt("Is Lucy free Oct 9–12 for Max?", "Body", "primary-text", { name: "Message", fill: true })]);
       return box("Bubble", { w: 300, gap: "sm", pad: ["sm", "md", "sm", "md"], radius: 16, fill: "background", stroke: "border" }, [
-        await txt("✦ Auto-reply from Lucy's PawNote assistant", "Caption", "text-muted", { name: "Label", upper: true, fill: true }),
+        await txt("Lucy · 9:14 AM", "Caption", "text-muted", { name: "Label", fill: true }),
         await txt("Hi Chloe! Lucy is free Oct 9–12 for Max and Mochi.", "Body", "text", { name: "Message", fill: true }),
         fill(box("Sources", { dir: "H", gap: "xs", wrap: true }, [tagOf("From Lucy's calendar"), tagOf("From Lucy's house policy")])),
       ]);
@@ -491,11 +491,13 @@ const LIBRARY = [
       return card;
     }, [["ETA", "ETA"]]);
 
-    await single("Photo Check", "Handoff photo check (MiniCPM-V): pet visible, crate secured. Pick-up completes only after it passes.", async () =>
-      box("Photo Check", { dir: "H", w: 340, gap: "md", pad: "md", radius: "lg", fill: "surface", stroke: "border", align: "CENTER" }, [
+    await variants("Photo Check", "Handoff photo check (MiniCPM-V): pet visible, crate secured. Passed completes the handoff. Retake = the model couldn't see something: retake, or the sitter confirms by eye and the owner sees 'Checked by Lucy' instead of 'Photo verified'. A check never blocks a handoff (vision can be wrong).", ["Passed", "Retake"].map((r) => [`Result=${r}`, async () =>
+      box("Photo Check", { dir: "H", w: 340, gap: "md", pad: "md", radius: "lg", fill: "surface", stroke: r === "Passed" ? "border" : "warning", align: "CENTER" }, [
         rect("Photo", 88, 88, { image: true, radius: 12 }),
-        box("Checks", { gap: "xs" }, [await txt("✓ Max is in the photo", "Small Strong", "success"), await txt("✓ Crate secured in the car", "Small Strong", "success"), await txt("Checked by MiniCPM-V", "Caption", "text-muted")]),
-      ]));
+        box("Checks", { gap: "xs" }, [await txt("✓ Max is in the photo", "Small Strong", "success", { name: "Check 1" }),
+          await txt(r === "Passed" ? "✓ Crate secured in the car" : "? Couldn't see the crate", "Small Strong", r === "Passed" ? "success" : "warning", { name: "Check 2" }),
+          await txt(r === "Passed" ? "Checked by MiniCPM-V" : "Retake, or confirm by eye", "Caption", "text-muted", { name: "Note" })]),
+      ])]), [["Check 1", "Check 1"], ["Check 2", "Check 2"]]);
 
     await variants("Task Row", "A care task on the schedule. Next = the one primary action (Complete with photo); done shows the time and photo.", ["Pending", "Next", "Done"].map((s) => [`State=${s}`, async () =>
       box("Task", { w: 340, gap: "sm", pad: "md", radius: "lg", fill: "surface", stroke: s === "Next" ? "primary" : "border", sw: s === "Next" ? 2 : 1 }, [
@@ -507,7 +509,7 @@ const LIBRARY = [
 
     await single("Progress Bar", "Care progress (2 of 5 done).", async () => {
       const b = box("Progress", { w: 300, gap: "xs" }, [fill(box("Top", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("2 of 5 done", "Small Strong", "text", { name: "Label" }), await txt("Owner sees each one live", "Caption", "text-muted")]))]);
-      const track = box("Track", { dir: "H", w: 300, h: 8, radius: 4, fill: "accent" }, [rect("Fill", 120, 8, { fill: "primary", radius: 4 })]);
+      const track = box("Track", { dir: "H", w: 300, h: 8, radius: 4, fill: "track" }, [rect("Fill", 120, 8, { fill: "primary", radius: 4 })]);
       add(b, track); return b;
     }, [["Label", "Label"]]);
 
@@ -553,6 +555,21 @@ const LIBRARY = [
           box("Tags", { dir: "H", gap: "xs", wrap: true, w: 370 }, [tag("Danger", "chicken"), tag("Danger", "animal fat (may contain chicken)")])])),
         box("Footer", { w: 402, pad: ["md", "md", "lg", "md"] }, [box("Ack", { dir: "H", w: 370, pad: ["sm", "md", "sm", "md"], radius: "md", fill: "error", justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [await txt("I understand — don't feed", "Body Strong", "primary-text", { name: "Action" })])]),
       ]), [["Title", "Title"], ["Body", "Body"]]);
+
+    // Banner: inline notice for edge states (offline, late, failed, handed to a person). Not for DANGER (§7.4).
+    const BANNER = {
+      Info: ["accent", "primary", "border", "💬", "Lucy will answer this one herself", "Health questions always go to Lucy, not the assistant. Usually within 2 hours.", "Got it"],
+      Warning: ["warning-surface", "warning", "warning", "⏱️", "Lucy is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Lucy"],
+      Error: ["error-surface", "error", "error", "⚠️", "Payment didn't go through", "You weren't charged. Your consents and signature are kept.", "Try again"],
+      Offline: ["surface", "text", "border-strong", "📶", "You're offline", "2 check-ins are saved on this phone and send on their own.", "Retry now"],
+    };
+    await variants("Banner", "Inline notice at the top of the content for an edge state (DESIGN.md §10): icon + title in the tone color + one line saying what happens next + optional action. Text sits on the tone's surface (never tone on tone). Never used for DANGER, which is a full-screen Alert Modal.",
+      Object.entries(BANNER).map(([tone, [bg, fg, line, emoji, title, body, action]]) => [`Tone=${tone}`, async () =>
+        box("Banner", { dir: "H", w: 340, gap: "sm", pad: ["sm", "md", "sm", "md"], radius: "md", fill: bg, stroke: line }, [
+          await txt(emoji, "Body", "text", { name: "Icon" }),
+          grow(box("Copy", { gap: 2 }, [await txt(title, "Small Strong", fg, { name: "Title", fill: true }), await txt(body, "Small", "text", { name: "Body", fill: true }),
+            box("Action", { dir: "H", minH: "size/touch-target", align: "CENTER" }, [await txt(action, "Small Strong", tone === "Error" ? "error" : "primary", { name: "Action" })])])),
+        ])]), [["Title", "Title"], ["Body", "Body"], ["Action", "Action"]]);
 
     await variants("Notification Row", "One update in the 🔔 sheet. Unread = dot after the title.", ["Read", "Unread"].map((s) => [`State=${s}`, async () =>
       box("Notification", { dir: "H", w: 340, gap: "sm", pad: ["sm", 0, "sm", 0] }, [await txt("🐾", "Body"),

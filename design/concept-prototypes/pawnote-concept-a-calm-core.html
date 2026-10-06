@@ -1329,8 +1329,8 @@ const Journey = (() => {
     const thread = `<div class="jr-thread">
       <div class="jr-bubble me">${esc(s.question || `Is ${SITTER} free ${STAY.from}–${STAY.to}?`)}</div>
       ${s.status === "sending"
-        ? `<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>PawNote AI is replying for ${SITTER}…</div>`
-        : `<div class="jr-bubble ai" data-testid="jr-ai-reply"><div class="jr-ai-label">✦ Auto-reply from ${SITTER}'s PawNote assistant</div>
+        ? `<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>${SITTER} is typing…</div>`
+        : `<div class="jr-bubble ai" data-testid="jr-ai-reply"><div class="jr-ai-label">${SITTER} · just now</div>
             Hi ${OWNER}! ${SITTER} is free ${STAY.from}–${STAY.to} for ${esc(n)}${J.inq.second ? ` and ${second().name}` : ""}.
             ${esc(n)} can take the pill in a treat — ${SITTER} does that for other pets every day.
             ${J.returning ? `${SITTER} already has ${esc(n)}'s Life Record from the last stay. ` : ""}Here's the total, including the ${STAY.holiday.split(" ")[0]} rate:

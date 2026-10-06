@@ -1,13 +1,15 @@
 /* Redesign screens assembled from component INSTANCES (not captured layers), so editing a
    component on the Components page updates these screens. Each look is the same screen with
-   the Color collection's mode set on the frame (Default · Balanced · Playful). */
+   the Color collection's mode set on the frame (Balanced; Playful lives in the prototypes only). */
 let LIB = null;
 const TODAY_GROUP = "Redesign · live app tabs (D47)";
 // Sections on the Screens page, in reading order (laid out in a grid).
 const UPCOMING_GROUPS = { booking: "Upcoming · Booking", care: "Upcoming · Pick-up & care", done: "Upcoming · Home & review" };
 const ONBOARDING_GROUPS = { owner: "Onboarding (exploration) · Owner sign-up", sitter: "Onboarding (exploration) · Sitter setup", login: "Onboarding (exploration) · Log in" };
-const SECTION_ORDER = () => [TODAY_GROUP, ...Object.values(UPCOMING_GROUPS), ...Object.values(ONBOARDING_GROUPS)];
-const upGroup = (id) => /inquiry|checkout|entry/.test(id) ? UPCOMING_GROUPS.booking : /review$|record/.test(id) && !/check-review/.test(id) ? UPCOMING_GROUPS.done : UPCOMING_GROUPS.care;
+const EDGE_GROUPS = { before: "Edge states · Before the stay (①–③)", during: "Edge states · During the stay (④)", after: "Edge states · After the stay (⑤) and any screen" };
+const SECTION_ORDER = () => [TODAY_GROUP, ...Object.values(UPCOMING_GROUPS), ...Object.values(EDGE_GROUPS), ...Object.values(ONBOARDING_GROUPS)];
+const edgeGroup = (id) => /^e[123]-/.test(id) ? EDGE_GROUPS.before : /^e4-/.test(id) ? EDGE_GROUPS.during : EDGE_GROUPS.after;
+const upGroup = (id) => /inquiry|care-request|meet|checkout|entry/.test(id) ? UPCOMING_GROUPS.booking : /review$|record/.test(id) && !/check-review/.test(id) ? UPCOMING_GROUPS.done : UPCOMING_GROUPS.care;
 const obGroup = (id) => id.startsWith("sit-") ? ONBOARDING_GROUPS.sitter : id === "ob-login" ? ONBOARDING_GROUPS.login : ONBOARDING_GROUPS.owner;
 async function loadLibrary(componentsPage) {
   await componentsPage.loadAsync();
@@ -60,6 +62,24 @@ const UPCOMING = [
     add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Chloe! Lucy is free Oct 9–12 for Max and Mochi. Max can take her pill in a treat. Total with the Thanksgiving rate is below." }));
     add(b, inst("Quote Card"));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Request booking" })],
+  ["up-care-request", "Care request → checklist (06)", { kind: "Detail", title: "Care request", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Card", {}, { Title: "Your request for Max", Body: "Breakfast 8 AM, 1 cup kibble. Skin pill at 2 PM in a treat. Two walks — she pulls on the leash." }));
+    add(b, await txt("✦ Checklist from your request · edit anything", "Small Strong"));
+    add(b, inst("Checklist Row", {}, { Time: "8 AM", Task: "1 cup of kibble" }));
+    add(b, inst("Checklist Row", {}, { Time: "2 PM", Task: "Skin pill · 1 tablet in a treat" }));
+    add(b, inst("Checklist Row", {}, { Time: "9 AM", Task: "Walk 20 min" }));
+    add(b, inst("Checklist Row", {}, { Time: "6 PM", Task: "Walk 20 min" }));
+    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Heads-up · pulls on the leash" }));
+  }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Save checklist" })],
+  ["up-meet-greet", "Meet & Greet (3B.9)", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Booking Card", { Status: "Requested" }));
+    add(b, await txt("First stay with Lucy — meet before the booking?", "Body Strong", "text", { w: 360 }));
+    add(b, split("Mode", [inst("Segment", { State: "Selected" }, { Label: "🤝 In person" }), inst("Segment", { State: "Default" }, { Label: "📹 Video" })]));
+    add(b, inst("Card", {}, { Title: "Sat Oct 3 · 11:00 AM · 20 min", Body: "Trinity Bellwoods dog park (your saved spot)" }));
+    add(b, await txt("Go over together", "Small Strong"));
+    add(b, row("Agenda", ["Care needs", "Quirks", "Route", "Handoff", "Heads-up"].map((l) => inst("Filter Chip", { State: "Default" }, { Label: l })), "xs"));
+    add(b, inst("Text Button", { Tone: "Default", State: "Enabled" }, { Label: "Skip Meet & Greet" }));
+  }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Propose this time" })],
   ["up-checkout", "Checkout · consents (03C)", { kind: "Detail", title: "Checkout", active: "Bookings" }, null, async (b) => {
     add(b, inst("Quote Card"));
     add(b, await txt("Consents (3/5)", "Small Strong"));
@@ -198,6 +218,89 @@ const ONBOARDING = [
   }, P("Log in")],
 ];
 
+// Edge states (DESIGN.md §10): what owners and sitters see when things don't go to plan.
+// e1-…e3- = stages ①–③, e4- = stage ④, e5-/ex- = stage ⑤ and any screen.
+const banner = (tone, title, body, action) => inst("Banner", { Tone: tone }, { Title: title, Body: body, Action: action });
+const EDGE = [
+  ["e1-unavailable", "① Dates are full", { kind: "Detail", title: "Ask Lucy", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Is Lucy free Oct 9–12 for Max and Mochi?" }));
+    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Chloe! Lucy is full Oct 9–12. She's open Oct 13–16 or Oct 20–23 — want one of those?" }));
+    add(b, chips("Other dates", ["Oct 13–16", "Oct 20–23"], ["Oct 13–16"]));
+    add(b, await txt("Dates and prices come from Lucy's calendar, never from the assistant.", "Small", "text-muted", { w: 360 }));
+  }, P("Ask about Oct 13–16")],
+  ["e1-human", "① The assistant hands over", { kind: "Detail", title: "Ask Lucy", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Max had a seizure in August. Is Lucy OK giving her meds if it happens again?" }));
+    add(b, banner("Info", "Lucy will answer this one herself", "Health questions always go to Lucy, not the assistant. Usually within 2 hours — you'll get a notification.", "Got it"));
+  }, null],
+  ["e2-dose", "② Checklist needs a fix", { kind: "Detail", title: "Care request", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Checklist Row", {}, { Time: "8 AM", Task: "1 cup of kibble" }));
+    add(b, inst("Checklist Row", {}, { Time: "2 PM", Task: "Skin pill · dose?" }));
+    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Add the dose — the assistant never guesses doses" }));
+    add(b, inst("Checklist Row", {}, { Time: "4 PM", Task: "Chicken jerky as a reward" }));
+    add(b, inst("Tag", { Tone: "Danger" }, { Label: "chicken — Max is allergic" }));
+    add(b, await txt("Fix 2 items to save.", "Small", "text-muted"));
+  }, () => inst("Button", { Style: "Primary", State: "Disabled" }, { Label: "Save checklist" })],
+  ["e3-declined", "③ Sitter can't take it", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
+    add(b, banner("Info", "Lucy can't take Oct 9–12", "You weren't charged. Paul is open those dates and takes dogs and cats.", "See Lucy's open dates"));
+    add(b, inst("Profile Card", {}, { Name: "Paul Lee", Meta: "Sitter · House · up to 3 pets" }));
+  }, P("Ask Paul")],
+  ["e3-payment", "③ Payment failed", { kind: "Detail", title: "Checkout", active: "Bookings" }, null, async (b) => {
+    add(b, banner("Error", "Payment didn't go through", "You weren't charged. Your 5 consents and signature are kept — just try again.", "Use another card"));
+    add(b, inst("Quote Card"));
+  }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Try again · $268.13" })],
+  ["e3-entry-missing", "③ Entry info not added (sitter)", { kind: "Detail", title: "Booking", active: "Bookings" }, "L", async (b) => {
+    add(b, inst("Booking Card", { Status: "Confirmed" }));
+    add(b, banner("Warning", "Chloe hasn't added entry info yet", "We reminded her. It unlocks for you 2 hours before pick-up once it's added.", "Message Chloe"));
+    add(b, inst("Entry Info Card", { State: "Locked" }));
+  }, null],
+  ["e4-late", "④ Sitter running late (owner)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, null, async (b) => {
+    add(b, banner("Warning", "Lucy is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Lucy"));
+    add(b, inst("Trip Map", {}, { ETA: "16 min" }));
+  }, null],
+  ["e4-location-off", "④ Location is off (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "L", async (b) => {
+    add(b, banner("Offline", "Location is off", "Chloe sees these updates instead of the map. Turn location on in Settings any time.", "Open Settings"));
+    add(b, split("Status", [inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Leaving now" }), inst("Button", { Style: "Secondary", State: "Default" }, { Label: "10 min away" })], "sm"));
+  }, P("I'm here")],
+  ["e4-retake", "④ Photo check unsure (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "L", async (b) => {
+    add(b, inst("Photo Check", { Result: "Retake" }));
+    add(b, await txt("Retake with the crate in view, or confirm it yourself. Chloe will see \"Checked by Lucy\" instead of \"Photo verified\".", "Small", "text-muted", { w: 360 }));
+    add(b, inst("Text Button", { Tone: "Default", State: "Enabled" }, { Label: "Confirm by eye" }));
+  }, P("Retake photo")],
+  ["e4-offline", "④ Offline check-ins (sitter)", { title: "Home", active: "Home" }, "L", async (b) => {
+    add(b, banner("Offline", "You're offline", "2 check-ins are saved on this phone and send on their own when you're back.", "Retry now"));
+    add(b, inst("Task Row", { State: "Done" }, { Title: "Breakfast · 1 cup", Time: "8:04 AM" }));
+    add(b, inst("Tag", { Tone: "Neutral" }, { Label: "⏳ Waiting to send" }));
+    add(b, inst("Task Row", { State: "Next" }, { Title: "Skin pill in a treat", Time: "2:00 PM" }));
+  }, null],
+  ["e4-overdue", "④ Medication is late (sitter)", { title: "Home", active: "Home" }, "L", async (b) => {
+    add(b, banner("Warning", "Max's pill is 40 min late", "Give it now and tap Complete. Chloe sees the real time it was given.", "Call Chloe"));
+    add(b, inst("Task Row", { State: "Next" }, { Title: "Skin pill in a treat", Time: "2:00 PM · 40 min late" }));
+  }, null],
+  ["e4-empty", "④ No photos yet today (owner)", { title: "Feed", active: "Feed" }, null, async (b) => {
+    add(b, row("Pets", [inst("Filter Chip", { State: "Active" }, { Label: "🐶 Max" }), inst("Filter Chip", { State: "Active" }, { Label: "🐱 Mochi" })], "xs"));
+    add(b, inst("Empty State", {}, { Title: "No photos yet today", Message: "Lucy usually posts after the morning walk (about 9 AM). You'll get a notification.", Action: "See today's plan" }));
+  }, null],
+  ["e4-unreadable", "④ Treat label unreadable (sitter)", { kind: "Detail", title: "Treat Guard", active: "Home" }, "L", async (b) => {
+    add(b, row("Photo", [inst("Photo Tile", { State: "Default" })], "xs"));
+    add(b, banner("Warning", "Couldn't read this label", "Don't feed it yet. We asked Chloe — her answer shows here. Unsure always means no.", "Ask Chloe again"));
+  }, P("Retake photo")],
+  ["e5-low-review", "⑤ Low rating", { kind: "Detail", title: "Home safe", active: "Bookings" }, null, async (b) => {
+    add(b, await txt("How was Lucy?", "Body Strong"));
+    add(b, row("Stars", [1, 2, 3, 4, 5].map((n) => inst("Star", { State: n <= 2 ? "On" : "Off" })), 0));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "What could have gone better? (optional, only Lucy sees it)" }));
+  }, P("Send review")],
+  ["e5-new-fact", "⑤ New fact needs your OK", { kind: "Detail", title: "Life Record", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Life Record Card"));
+    add(b, banner("Info", "New from this stay: scared of the vacuum", "From Lucy · Oct 11. It goes into Max's profile only if you say so.", "Not accurate"));
+  }, P("Add to Max's profile")],
+  ["ex-loading", "Any · Loading", { title: "Home", active: "Home" }, null, async (b) => {
+    add(b, inst("Skeleton", { Kind: "Block" }));
+    add(b, inst("Skeleton", { Kind: "Card" }));
+    add(b, inst("Skeleton", { Kind: "Card" }));
+    add(b, inst("Skeleton", { Kind: "Line" }));
+  }, null],
+];
+
 const COMPOSED = [
   ["owner-home", "Owner · Home", { title: "Home", active: "Home" }, null, async (b) => {
     add(b, inst("Stay Summary Card"));
@@ -246,7 +349,7 @@ async function buildComposedScreens(log) {
   // Default mode ≈ Balanced, so only the named looks are built (Default only when there are no looks).
   const looks = color && color.modes.length > 1 ? color.modes.slice(1).map((m) => [m.name, m.modeId]) : [["Default", null]];
   const out = [];
-  const all = [...COMPOSED.map((x) => [TODAY_GROUP, ...x]), ...UPCOMING.map((x) => [upGroup(x[0]), ...x]), ...ONBOARDING.map((x) => [obGroup(x[0]), ...x])];
+  const all = [...COMPOSED.map((x) => [TODAY_GROUP, ...x]), ...UPCOMING.map((x) => [upGroup(x[0]), ...x]), ...EDGE.map((x) => [edgeGroup(x[0]), ...x]), ...ONBOARDING.map((x) => [obGroup(x[0]), ...x])];
   for (const [group, id, title, tab, ava, body, pinned] of all) {
     for (const [look, modeId] of looks) {
       try {

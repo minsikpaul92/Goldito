@@ -2,8 +2,15 @@
 
 Builds the PawNote library and screens in the team's Figma file without the Figma MCP call limits.
 
-- **3. Components**: the components the prototypes use (42 sets/components: navigation, inputs, stay/booking, care and transit, feedback), bound to the file's variables (`color/*`, `spacing/*`, `radius/*`, `size/*`) and text styles. Hand-made components already on the page are left alone.
-- **2. Screens**: every prototype state for A · Calm Core, B · Full Tamagotchi and C · Balanced Skin, rebuilt as editable layers (402 × 874), one Section per app-map group.
+- **Variables and text styles** (if the file doesn't have them): `Color` (Default = `tokens.ts`, plus the **Balanced** look as a mode), `Size`, `Motion`, and six text styles (Title · Body · Body Strong · Small · Small Strong · Caption).
+- **3. Components**: 61 components and variant sets (core, live app, navigation, inputs, stay, care and transit, feedback), every fill, stroke, padding and radius bound to a variable. Hand-made components already on the page are left alone.
+- **2. Screens**, built from component **instances** so editing a component updates every screen (DESIGN.md D2):
+  - **Today**: the live app's tabs, captured (Live) next to the Balanced look.
+  - **Upcoming**: inquiry, care request, Meet & Greet, checkout, entry info, trip, handoff, 5-second check, daily note, DANGER, review, Life Record.
+  - **Edge states**: 16 screens for owners and sitters when things don't go to plan (DESIGN.md §10).
+  - **Onboarding** (exploration).
+
+Playful lives in the clickable prototypes only (DESIGN.md D1).
 
 Re-running replaces only what the plugin made before (tagged with plugin data).
 
