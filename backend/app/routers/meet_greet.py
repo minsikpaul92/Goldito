@@ -49,6 +49,12 @@ class BookingStore(Protocol):
 
     def save_event(self, booking_id: str, *, link: str | None, event_id: str | None) -> None: ...
 
+    def claim_event(
+        self, booking_id: str, *, link: str | None, event_id: str, expect_event_id: str | None
+    ) -> bool:
+        """Save only if the booking still has no link and the event we started from; False = someone else saved first."""
+        ...
+
     def notify(self, user_ids: list[str], booking_id: str, title: str, body: str | None) -> None: ...
 
 
@@ -105,6 +111,21 @@ class SupabaseBookingStore:
         self._db.table("bookings").update(
             {"meet_greet_link": link, "meet_greet_event_id": event_id}
         ).eq("id", booking_id).execute()
+
+    def claim_event(
+        self, booking_id: str, *, link: str | None, event_id: str, expect_event_id: str | None
+    ) -> bool:
+        query = (
+            self._db.table("bookings")
+            .update({"meet_greet_link": link, "meet_greet_event_id": event_id})
+            .eq("id", booking_id)
+            .is_("meet_greet_link", "null")
+        )
+        if expect_event_id is None:
+            query = query.is_("meet_greet_event_id", "null")
+        else:
+            query = query.eq("meet_greet_event_id", expect_event_id)
+        return bool(query.execute().data)
 
     def notify(self, user_ids: list[str], booking_id: str, title: str, body: str | None) -> None:
         self._db.table("notifications").insert(
@@ -219,7 +240,16 @@ def create_video_link(
             detail="Google Meet could not create the link. Try again.",
         ) from exc
 
-    store.save_event(booking.id, link=event.link, event_id=event.event_id)
+    # Owner and sitter can ask at the same moment: the first save wins, the other keeps that link.
+    if not store.claim_event(booking.id, link=event.link, event_id=event.event_id, expect_event_id=booking.event_id):
+        if outcome == "created":
+            try:
+                client.delete(event.event_id)
+            except GoogleMeetError:
+                pass  # an extra Calendar event is harmless; the saved one is what both sides see
+        current = store.get(booking.id)
+        link = current.link if current else None
+        return VideoLinkResponse(link=link, status="existing" if link else "pending")
     if not event.link:
         return VideoLinkResponse(link=None, status="pending")
     store.notify(

@@ -271,6 +271,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | BF-1 | 시터가 handoff 사진 업로드 (`purpose=handoff`) | 확정 예약의 시터만, 합의된 맡기기 2시간 전부터 찾기 2시간 뒤까지 서명 발급. 그 밖에는 403 (예전엔 없는 컬럼을 읽어 **항상 500**) | pytest `test_authz_handoff` | ➖ |
 | BF-2 | 사진을 붙인 체크인 → Feed에서 그 글을 🗑️ 삭제 | 피드 글만 지워지고 **Diary · History의 체크인 사진은 남음** (예전엔 Cloudinary 파일까지 지워짐) | pytest `test_feed_delete` | ➖ |
+| BF-3 | 오너 · 시터가 거의 동시에 영상 미팅 링크를 받음 / 시터가 영상 미팅이 잡힌 요청을 Decline | 링크(캘린더 이벤트)는 **하나만** 남고 알림도 한 번. Decline하면 캘린더 이벤트도 지워짐 | pytest `test_meet_greet` (Decline 후 삭제는 👤 — Google 계정 필요) | ➖ |
 
 ---
 

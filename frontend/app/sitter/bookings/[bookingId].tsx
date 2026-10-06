@@ -396,7 +396,15 @@ export default function SitterBookingDetail() {
             label="Decline request"
             onPress={() => {
               setConfirmDecline(false);
-              void run(() => respondBooking(booking.id, false), "Request declined", () => router.back());
+              void run(
+                async () => {
+                  await respondBooking(booking.id, false);
+                  // A video Meet & Greet's Calendar event goes with the declined request (3B.11).
+                  await releaseVideoLink(booking.id);
+                },
+                "Request declined",
+                () => router.back(),
+              );
             }}
             testID="decline-confirm"
           />
