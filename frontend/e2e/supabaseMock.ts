@@ -683,11 +683,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/get_handoff_details") {
-    // Agreed handoffs with the real address after demo pay (3C.4), confirmed only.
+    // Agreed handoffs with the real address after demo pay (3C.4), confirmed only. Paid once is enough —
+    // a checkout reopened by an agreed change keeps them (009e).
     const { p_booking } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
     if (!booking || booking.status !== "confirmed") return json(route, 400, { code: "P0001", message: "invalid_status" });
-    if (!booking.paid_at) return json(route, 400, { code: "P0001", message: "not_paid" });
+    if (!booking.paid_at && !booking.price_snapshot) return json(route, 400, { code: "P0001", message: "not_paid" });
     const sitter = db.sitter_profiles.find((p) => p.id === booking.sitter_id);
     const address = (h: Row) =>
       h.location_type === "sitter_home"

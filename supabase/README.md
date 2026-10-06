@@ -28,6 +28,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `009b_care_requests_follow_the_stay.sql` | review fix | Open care change requests close when their stay ends (cancel / decline / pick-up); `save_care_request` refuses while a stay is on |
 | `009c_handoffs_stay_consistent.sql` | review fix | A checked handoff can't be replaced, Received / Returned closes that kind's proposals, passed times can't be agreed or confirmed, house-sitting handoffs stay at the owner's home |
 | `009d_paid_bookings_follow_changes.sql` | review fix | A change agreed on a paid booking re-quotes it (owner notice `price_updated`) or, when it needs a new consent (`home_access`), reopens checkout (`paid_at` cleared, notice `checkout_needed`); consents are signed at checkout only; owner profile (address, emergency contact) shared only once the booking was paid (a reopened checkout keeps it) |
+| `009e_reopened_checkout_keeps_addresses.sql` | review fix | `get_handoff_details` returns the handoff places for a booking paid at least once (`paid_at` or `price_snapshot`), so a checkout reopened by 009d keeps the addresses for both sides; only the entry codes wait for the new consent |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
@@ -76,7 +77,7 @@ psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 - **Meet & Greet (004, D44):** `request_booking` sets `bookings.meet_greet_status` to `required` for a first-time pair (no earlier booking that reached the drop-off and no done Meet & Greet), else `not_needed`. `respond_booking` accepts only when it is `not_needed`, `done` or `skipped`.
 - **Booking pets on cards:** use `rpc('get_booking_pets', { p_booking })` — the pets table hides a pet from the sitter once the booking has ended.
 - **Writes:** bookings, handoffs, `booking_pets`, `booking_slots` change only through the RPCs in `003`.
-- **Consents (009d):** the owner inserts `booking_consents` only during checkout — booking `confirmed`, `paid_at` null, and a kind from `rpc('required_consents')`; anything else is an RLS error (`42501`). A booking with `paid_at` null but a `price_snapshot` was paid once and reopened by an agreed change — show "sign to finish", not "accepted".
+- **Consents (009d):** the owner inserts `booking_consents` only during checkout — booking `confirmed`, `paid_at` null, and a kind from `rpc('required_consents')`; anything else is an RLS error (`42501`). A booking with `paid_at` null but a `price_snapshot` was paid once and reopened by an agreed change — show "sign to finish", not "accepted"; `get_handoff_details` still answers for it (009e), `get_home_access` answers `not_paid` until the owner signs.
 
 ## RPC errors
 
@@ -92,7 +93,7 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `invalid_pet_count` | `quote_booking` / `pay_booking_demo` pet count is missing or less than 1 |
 | `consents_missing` | Demo pay before every required consent is signed — detail = missing kinds |
 | `already_paid` | `pay_booking_demo` called again on a booking that already has `paid_at` |
-| `not_paid` | Address / entry info requested before demo pay (03C.4+) |
+| `not_paid` | Address / entry info requested before demo pay (03C.4+); entry info also while a checkout reopened by a change waits for the new consent (009d) — addresses stay (009e) |
 | `access_locked` | Entry codes outside the 2 h-before → pick-up window — detail JSON `unlocks_at` or `locked_since` |
 | `forbidden` | `get_home_access` by anyone other than the booked sitter |
 | `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |

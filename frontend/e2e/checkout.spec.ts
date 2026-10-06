@@ -106,24 +106,8 @@ test.describe("checkout", () => {
   });
 
   test("a change agreed after payment reopens checkout for the new consent only", async ({ page }) => {
-    // 009d: pick-up moved to the owner's home → paid_at cleared, last paid quote kept, home_access missing.
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    seedUnpaid(db);
-    db.bookings[0].price_snapshot = DEMO_QUOTE;
-    const pickUp = db.booking_handoffs.find((h) => h.kind === "pick_up")!;
-    pickUp.location_type = "owner_home";
-    for (const kind of KINDS) {
-      db.booking_consents.push({
-        id: `c-${kind}`,
-        booking_id: BOOKING,
-        kind,
-        version: "1",
-        signer_id: OWNER.id,
-        signer_name: "Chloe",
-        details: {},
-        signed_at: "2026-10-02T18:05:00Z",
-      });
-    }
+    seedReopened(db);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/owner/bookings/${BOOKING}`);
@@ -131,6 +115,8 @@ test.describe("checkout", () => {
 
     await expect(screen.getByTestId("checkout-banner")).toContainText("Your stay changed");
     await expect(screen.getByTestId("checkout-banner")).toContainText("Entry info stays locked for Lucy");
+    // Paid once: the sitter's place stays on the booking while checkout is open again (009e).
+    await expect(screen.getByTestId("sitter-place-card")).toContainText("100 Example St");
     await screen.getByTestId("open-checkout").click();
 
     // Signed kinds stay signed; only home_access needs a check.
@@ -146,4 +132,40 @@ test.describe("checkout", () => {
     expect(db.booking_consents.map((c) => c.kind)).toEqual([...KINDS, "home_access"]);
     expect(db.bookings[0].paid_at).toBeTruthy();
   });
+
+  test("while checkout is reopened the sitter keeps the addresses and sees why the codes are locked", async ({
+    page,
+  }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedReopened(db);
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("handoff-pick_up")).toContainText("1 Owner Ave");
+    await expect(screen.getByTestId("entry-info-waiting")).toContainText("Waiting for Chloe to sign");
+    await expect(screen.getByTestId("entry-codes")).toHaveCount(0);
+  });
 });
+
+/** 009d: pick-up moved to the owner's home after payment → paid_at cleared, last paid quote kept, home_access missing. */
+function seedReopened(db: MockDb) {
+  seedUnpaid(db);
+  db.bookings[0].price_snapshot = DEMO_QUOTE;
+  db.owner_profiles.push({ id: OWNER.id, home_address: "1 Owner Ave" });
+  const pickUp = db.booking_handoffs.find((h) => h.kind === "pick_up")!;
+  pickUp.location_type = "owner_home";
+  for (const kind of KINDS) {
+    db.booking_consents.push({
+      id: `c-${kind}`,
+      booking_id: BOOKING,
+      kind,
+      version: "1",
+      signer_id: OWNER.id,
+      signer_name: "Chloe",
+      details: {},
+      signed_at: "2026-10-02T18:05:00Z",
+    });
+  }
+}

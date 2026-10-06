@@ -89,8 +89,9 @@ export default function OwnerBookingDetail() {
         setState({ status: "missing" });
         return;
       }
+      // Paid once is enough: a checkout reopened by a later change keeps the places (009e).
       const placesResult =
-        booking.status === "confirmed" && booking.paidAt
+        booking.status === "confirmed" && (booking.paidAt || booking.priceSnapshot)
           ? await getHandoffDetails(booking.id)
           : { places: {}, error: null as string | null };
       const addresses: Partial<Record<HandoffKind, string>> = {};
