@@ -18,6 +18,7 @@ from app.ai.daily_report import (
     CHECK_KEYS,
     MAX_CHIPS,
     NOTE_MAX,
+    broken_rules,
     build_snapshot,
     care_intervals,
     day_bounds,
@@ -167,6 +168,28 @@ def daily_report(
                 temperature=0.4,
                 timeout=TIMEOUT_S,
             )
+            broken = broken_rules(tidy_body(result.text), snapshot)
+            if broken:
+                # One more try, told exactly what to fix and a little more careful.
+                logger.info("daily-report broke rules %s; retrying once", broken)
+                messages += [
+                    {"role": "assistant", "content": result.text},
+                    {
+                        "role": "user",
+                        "content": "Rewrite it without these problems: "
+                        + "; ".join(broken)
+                        + ". Do not use he/she/his/her for the pet and do not say anything was on time or right away. "
+                        "Same facts only. Output only the report text.",
+                    },
+                ]
+                result = nebius.chat(
+                    "report",
+                    messages,
+                    endpoint="daily-report",
+                    max_tokens=MAX_TOKENS,
+                    temperature=0.2,
+                    timeout=TIMEOUT_S,
+                )
         except nebius.AIUnavailable as exc:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

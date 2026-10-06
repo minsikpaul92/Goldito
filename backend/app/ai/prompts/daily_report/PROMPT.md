@@ -46,6 +46,12 @@ Tuning history (live Nemotron Super, 3 runs per case):
 4. Added the owner's information as a foundation, "background, not news", "how much was eaten only from the
    check", "one event is one event" (a squirrel in a chip and a photo had become two squirrels).
 
+## After the model answers
+
+`broken_rules()` checks two rules a model still breaks now and then: a gendered pronoun for the pet (unless the
+sitter's own words in the snapshot use it) and a punctuality claim ("on time", "right away"). If either is found
+the model gets **one** rewrite request naming the problem (temperature 0.2); whatever comes back is used.
+
 ## Examples (`few_shot.json`)
 
 Three pairs, English, in the exact snapshot shape: a full day with the owner's info, a short day where the

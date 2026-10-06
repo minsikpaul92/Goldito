@@ -86,11 +86,13 @@ class Model:
 
     def __init__(self, text: str = "I loved today with Max! 🐶") -> None:
         self.text = text
+        self.queue: list[str] = []  # answers to give first, one per call, before falling back to `text`
         self.calls: list[dict] = []
 
     def __call__(self, role, messages, **kwargs):
-        self.calls.append({"role": role, "messages": messages, **kwargs})
-        return SimpleNamespace(text=self.text, model="nvidia/report-model", latency_ms=410)
+        self.calls.append({"role": role, "messages": [dict(m) for m in messages], **kwargs})
+        text = self.queue.pop(0) if self.queue else self.text
+        return SimpleNamespace(text=text, model="nvidia/report-model", latency_ms=410)
 
     @property
     def snapshot(self) -> dict:
@@ -260,6 +262,26 @@ def test_another_sitters_report_does_not_block_this_one(client, setup):
     db, _ = setup(db)
     assert post(client).status_code == 200
     assert len(db.tables["daily_reports"]) == 2
+
+
+def test_a_report_that_breaks_a_rule_is_rewritten_once(client, setup):
+    db, model = setup()
+    model.queue = ["Max ate his dinner right on time!", "Max had dinner and a lovely evening."]
+    body = post(client, chips=["Evening snack"]).json()
+    assert body["body"] == "Max had dinner and a lovely evening."
+    assert len(model.calls) == 2
+    retry = model.calls[1]["messages"][-1]["content"]
+    assert "gendered pronoun" in retry and "punctuality claim" in retry
+    assert model.calls[1]["temperature"] == 0.2
+
+
+def test_a_pronoun_the_sitter_used_is_not_a_broken_rule():
+    from app.ai.daily_report import broken_rules
+
+    assert broken_rules("Bori got so excited, she loved it.", {"sitter_note": "she got so excited"}) == []
+    assert broken_rules("Max loved his walk.", {"sitter_note": None}) == ["gendered pronoun"]
+    assert broken_rules("Dinner was served right on time.", {}) == ["punctuality claim"]
+    assert broken_rules("Max and I had a lovely, quiet evening.", {}) == []
 
 
 def test_the_model_text_is_tidied_before_it_is_saved(client, setup):

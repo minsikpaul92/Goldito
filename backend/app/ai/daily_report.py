@@ -235,3 +235,23 @@ def quiet_day_body(pet_name: str) -> str:
         f"Hi {pet_name}'s family! I spent the day with {pet_name} today, and there is nothing "
         "special to report. I'll share more as soon as there is something to tell. 💛"
     )
+
+
+_PRONOUNS = re.compile(r"\b(he|she|his|her|him|hers)\b", re.IGNORECASE)
+_PUNCTUALITY = re.compile(r"\b(on time|right away|right on time|punctually)\b", re.IGNORECASE)
+
+
+def broken_rules(text: str, snapshot: dict) -> list[str]:
+    """Rules the prompt states but a model sometimes breaks — checked after the fact.
+
+    - a gendered pronoun for the pet (its sex is unknown), unless the sitter's own words in the snapshot use it
+    - a claim of punctuality ("on time", "right away"): the snapshot has times, not promptness
+    """
+    source = json.dumps(snapshot, ensure_ascii=False)
+    found: list[str] = []
+    allowed = {m.group(0).lower() for m in _PRONOUNS.finditer(source)}
+    if any(m.group(0).lower() not in allowed for m in _PRONOUNS.finditer(text)):
+        found.append("gendered pronoun")
+    if _PUNCTUALITY.search(text):
+        found.append("punctuality claim")
+    return found
