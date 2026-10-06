@@ -367,9 +367,12 @@ export type BookingSummary = {
   /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
   cancelledBy: string | null;
   cancelReason: string | null;
-  /** Set by pay_booking_demo (03C). Null until checkout finishes. */
+  /**
+   * Set by pay_booking_demo (03C). Null until checkout finishes — and again when an agreed change
+   * needs a new consent (009d); priceSnapshot then still holds the last paid quote.
+   */
   paidAt: string | null;
-  /** Quote frozen at demo pay — same shape as quote_booking. */
+  /** Quote frozen at demo pay, re-quoted when an agreed change moves the total (009d). */
   priceSnapshot: PriceQuote | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;

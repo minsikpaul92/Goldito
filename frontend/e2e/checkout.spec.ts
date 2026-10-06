@@ -104,4 +104,46 @@ test.describe("checkout", () => {
     await expect(screen.getByTestId("sitter-place-card")).toContainText("100 Example St");
     await expect(screen.getByTestId("packing-list")).toContainText("food");
   });
+
+  test("a change agreed after payment reopens checkout for the new consent only", async ({ page }) => {
+    // 009d: pick-up moved to the owner's home → paid_at cleared, last paid quote kept, home_access missing.
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.bookings[0].price_snapshot = DEMO_QUOTE;
+    const pickUp = db.booking_handoffs.find((h) => h.kind === "pick_up")!;
+    pickUp.location_type = "owner_home";
+    for (const kind of KINDS) {
+      db.booking_consents.push({
+        id: `c-${kind}`,
+        booking_id: BOOKING,
+        kind,
+        version: "1",
+        signer_id: OWNER.id,
+        signer_name: "Chloe",
+        details: {},
+        signed_at: "2026-10-02T18:05:00Z",
+      });
+    }
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("checkout-banner")).toContainText("Your stay changed");
+    await expect(screen.getByTestId("checkout-banner")).toContainText("Entry info stays locked for Lucy");
+    await screen.getByTestId("open-checkout").click();
+
+    // Signed kinds stay signed; only home_access needs a check.
+    for (const kind of KINDS) {
+      await expect(screen.getByTestId(`consent-${kind}-signed`)).toBeVisible();
+    }
+    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
+    await screen.getByTestId("consent-home_access-check").click();
+    await screen.getByTestId("checkout-signer").fill("Chloe");
+    await screen.getByTestId("checkout-pay").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("You're all set");
+    expect(db.booking_consents.map((c) => c.kind)).toEqual([...KINDS, "home_access"]);
+    expect(db.bookings[0].paid_at).toBeTruthy();
+  });
 });

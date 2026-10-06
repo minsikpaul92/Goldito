@@ -9,7 +9,9 @@
 -- 2. Consents are signed at checkout only: by the owner, on a confirmed booking that is not paid yet, for a
 --    kind the booking requires.
 -- 3. The owner's profile (home address, emergency contact) is shared with the sitter only after payment,
---    like the handoff addresses (D31 / D44 — "home address stays private until payment").
+--    like the handoff addresses (D31 / D44 — "home address stays private until payment"). A checkout
+--    reopened by a later change keeps it: the pet may already be with the sitter, and the emergency contact
+--    must stay reachable (the entry codes stay locked until the owner signs).
 
 create or replace function public.follow_paid_booking_change()
 returns trigger
@@ -95,7 +97,8 @@ create policy booking_consents_insert on public.booking_consents
     and kind = any (public.required_consents(booking_id))
   );
 
--- Addresses & emergency contacts: a PAID booking until 24 h after the agreed pick-up.
+-- Addresses & emergency contacts: a booking paid at least once (price_snapshot is set only by payment)
+-- until 24 h after the agreed pick-up.
 create or replace function public.has_current_booking_with(other uuid)
 returns boolean
 language sql
@@ -108,7 +111,7 @@ as $$
     join public.booking_handoffs p
       on p.booking_id = b.id and p.kind = 'pick_up' and p.status = 'agreed'
     where b.status = 'confirmed'
-      and b.paid_at is not null
+      and (b.paid_at is not null or b.price_snapshot is not null)
       and p.scheduled_at + interval '24 hours' > now()
       and ((b.owner_id = auth.uid() and b.sitter_id = other)
         or (b.sitter_id = auth.uid() and b.owner_id = other))

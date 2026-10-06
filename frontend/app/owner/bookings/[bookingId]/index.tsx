@@ -143,6 +143,8 @@ export default function OwnerBookingDetail() {
   const canCancel = open && !booking.dropOff?.completedAt;
   const ended = endedNote(booking);
   const needsCheckout = booking.status === "confirmed" && !booking.paidAt;
+  // Paid once, then an agreed change needed a new consent (009d).
+  const checkoutReopened = needsCheckout && booking.priceSnapshot != null;
   const placeNotes =
     Object.values(places).find((p) => p && (p.visitorParking || p.lobbyNotes || p.packingList?.length)) ?? null;
   const packing = placeNotes?.packingList ?? [];
@@ -205,8 +207,14 @@ export default function OwnerBookingDetail() {
 
         {needsCheckout ? (
           <Card style={styles.block} testID="checkout-banner">
-            <Text style={styles.label}>{`${sitter} accepted! Finish booking →`}</Text>
-            <Text style={styles.muted}>Review the quote, sign the consents, and pay (demo — no card).</Text>
+            <Text style={styles.label}>
+              {checkoutReopened ? "Your stay changed — sign to finish →" : `${sitter} accepted! Finish booking →`}
+            </Text>
+            <Text style={styles.muted}>
+              {checkoutReopened
+                ? `The new plan needs one more consent. Entry info stays locked for ${sitter} until you sign.`
+                : "Review the quote, sign the consents, and pay (demo — no card)."}
+            </Text>
             <Button
               label="Finish booking"
               onPress={() => router.push(`/owner/bookings/${booking.id}/checkout`)}

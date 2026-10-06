@@ -2522,4 +2522,103 @@ begin
 end;
 $$;
 
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  miso uuid;
+  v_b uuid;
+  v_req uuid;
+  v_kind text;
+  v_prop uuid;
+  v_paid jsonb;
+  v_quote jsonb;
+  v_err text;
+begin
+  -- BF.6 (009d): consents are signed at checkout only, and a paid booking follows agreed changes
+  perform _t_as(null);
+  -- From here on only Miso's stay is a paid Chloe ↔ Lucy booking (earlier fixtures reset).
+  update public.bookings set paid_at = null, price_snapshot = null where owner_id = chloe and sitter_id = lucy;
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Miso') returning id into miso;
+  v_req := _t_booking(chloe, lucy, array[miso], now() + interval '160 days', now() + interval '162 days', 'requested');
+  v_b := _t_booking(chloe, lucy, array[miso], now() + interval '134 days', now() + interval '136 days', 'confirmed');
+  perform _t_as(chloe);
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_req, 'emergency_vet', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: nothing is signed before the sitter confirms');
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: only a kind the booking requires can be signed');
+  perform _t_as(lucy);
+  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 0,
+    'BF.6: the sitter sees no owner profile before payment');
+  perform _t_as(chloe);
+
+  foreach v_kind in array required_consents(v_b) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, v_kind, '1', chloe, 'Chloe');
+  end loop;
+  v_paid := pay_booking_demo(v_b);
+
+  -- Pick-up moves to the owner's home → home_access is now required
+  v_prop := propose_handoff(v_b, 'pick_up', now() + interval '136 days', 'owner_home');
+  perform _t_ok('home_access' = any (required_consents(v_b)), 'BF.6: an owner_home handoff requires home_access');
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: …but nothing is signed on a paid booking');
+  perform _t_as(lucy);
+  perform respond_handoff(v_prop, true);
+  perform _t_as(null);
+  perform _t_ok((select paid_at is null and price_snapshot->>'total' = v_paid->>'total'
+      from public.bookings where id = v_b),
+    'BF.6: agreeing to it reopens checkout (the paid quote is kept)');
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = chloe and type = 'checkout_needed' and booking_id = v_b),
+    'BF.6: …and the owner is told to sign');
+  perform _t_as(lucy);
+  begin
+    perform get_home_access(v_b);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', 'BF.6: …so the entry codes stay locked until then');
+  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 1,
+    'BF.6: …while the owner''s emergency contact stays visible');
+
+  perform _t_as(chloe);
+  insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+  values (v_b, 'home_access', '1', chloe, 'Chloe');
+  v_paid := pay_booking_demo(v_b);
+  perform _t_ok((select paid_at is not null from public.bookings where id = v_b),
+    'BF.6: signing home_access finishes checkout again');
+
+  -- Longer stay → re-quoted, owner told the new total; checkout stays done
+  v_prop := propose_handoff(v_b, 'pick_up', now() + interval '138 days');
+  v_quote := quote_booking(lucy, 'boarding', now() + interval '134 days', now() + interval '138 days', 1);
+  perform _t_as(lucy);
+  perform respond_handoff(v_prop, true);
+  perform _t_as(null);
+  perform _t_ok((select paid_at is not null
+        and (price_snapshot->>'total')::numeric = (v_quote->>'total')::numeric
+        and (price_snapshot->>'total')::numeric > (v_paid->>'total')::numeric
+      from public.bookings where id = v_b),
+    'BF.6: a longer stay is re-quoted and stays paid');
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = chloe and type = 'price_updated' and booking_id = v_b),
+    'BF.6: …and the owner gets the new total');
+end;
+$$;
+
 rollback;

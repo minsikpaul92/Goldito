@@ -274,6 +274,7 @@
 | BF-3 | 오너 · 시터가 거의 동시에 영상 미팅 링크를 받음 / 시터가 영상 미팅이 잡힌 요청을 Decline | 링크(캘린더 이벤트)는 **하나만** 남고 알림도 한 번. Decline하면 캘린더 이벤트도 지워짐 | pytest `test_meet_greet` (Decline 후 삭제는 👤 — Google 계정 필요) | ➖ |
 | BF-4 | 돌봄 중 오너가 보낸 요청에 시터가 답하기 전에 예약이 취소되거나 찾기(Returned)가 끝남 | 요청이 **closed** 로 닫혀 다음 요청을 막지 않고, 예전 시터는 더 이상 승인할 수 없음 (시터 화면: "The stay ended before this request was answered."). 돌봄 중에는 저장형 체크리스트(`save_care_request`)도 거절 | SQL `rls_smoke` (BF.4) | ➖ |
 | BF-5 | 오너가 찾기 시간 변경을 보낸 뒤 시터가 먼저 Returned · 지난 시간 제안 수락 · 하우스시팅 장소 변경 | Returned가 남은 제안을 닫아 **완료된 인수인계가 다시 열리지 않음**(출입 정보도 다시 안 열림). 지난 시간은 수락 불가, 픽업 시간이 지난 요청은 **Expired**로 Past에. 하우스시팅은 시간만 바꿀 수 있음 | SQL `rls_smoke` (BF.5) · 🤖 `sitter-bookings` · `negotiation` | ➖ |
+| BF-6 | 결제한 예약에서 찾기 장소를 오너 집으로 바꾸고 시터가 수락 / 찾기 시간을 늦추고 수락 | 오너 집 → 체크아웃이 다시 열림(결제 취소, 지난 견적 유지) + 오너에게 `checkout_needed` 알림, 예약 화면 배너 "Your stay changed — sign to finish", Checkout에서는 **home_access 하나만** 체크하면 결제 완료. 그 전까지 시터의 출입 정보는 잠김. 기간 변경 → 새 총액으로 다시 견적 + `price_updated` 알림(결제 상태 유지). 동의서는 체크아웃 중(확정 · 미결제 · 필요한 종류)에만 서명. 오너 주소·긴급 연락처는 결제 후에만 시터에게 보임 | SQL `rls_smoke` (BF.6) · 🤖 `checkout` | ➖ |
 
 ---
 

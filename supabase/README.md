@@ -25,6 +25,9 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `008i_revoke_trigger_functions.sql` | 06 | Trigger functions (`care_task_reset_today`, `guard_care_checkin_species`, `notify_feed_post`) are no longer callable as RPCs by `anon` / `authenticated` (Supabase advisor) |
 | `008j_no_direct_edits_during_stay.sql` | 06 | `pet_has_open_stay`: while a stay is on the owner can't INSERT care tasks or Heads-ups directly (RLS) — they send a care request; edits and deletes unchanged |
 | `009_reports.sql` | 07 | `send_daily_report(p_report, p_body)`: the writing sitter sends the report once — the text they send (their edits) is published, status draft → sent, owner notice `report_sent`; the owner only ever sees sent reports |
+| `009b_care_requests_follow_the_stay.sql` | review fix | Open care change requests close when their stay ends (cancel / decline / pick-up); `save_care_request` refuses while a stay is on |
+| `009c_handoffs_stay_consistent.sql` | review fix | A checked handoff can't be replaced, Received / Returned closes that kind's proposals, passed times can't be agreed or confirmed, house-sitting handoffs stay at the owner's home |
+| `009d_paid_bookings_follow_changes.sql` | review fix | A change agreed on a paid booking re-quotes it (owner notice `price_updated`) or, when it needs a new consent (`home_access`), reopens checkout (`paid_at` cleared, notice `checkout_needed`); consents are signed at checkout only; owner profile (address, emergency contact) shared only once the booking was paid (a reopened checkout keeps it) |
 | `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
@@ -73,6 +76,7 @@ psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 - **Meet & Greet (004, D44):** `request_booking` sets `bookings.meet_greet_status` to `required` for a first-time pair (no earlier booking that reached the drop-off and no done Meet & Greet), else `not_needed`. `respond_booking` accepts only when it is `not_needed`, `done` or `skipped`.
 - **Booking pets on cards:** use `rpc('get_booking_pets', { p_booking })` — the pets table hides a pet from the sitter once the booking has ended.
 - **Writes:** bookings, handoffs, `booking_pets`, `booking_slots` change only through the RPCs in `003`.
+- **Consents (009d):** the owner inserts `booking_consents` only during checkout — booking `confirmed`, `paid_at` null, and a kind from `rpc('required_consents')`; anything else is an RLS error (`42501`). A booking with `paid_at` null but a `price_snapshot` was paid once and reopened by an agreed change — show "sign to finish", not "accepted".
 
 ## RPC errors
 
