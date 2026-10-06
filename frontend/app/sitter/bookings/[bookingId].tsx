@@ -33,6 +33,7 @@ import {
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
+  requestExpired,
   respondBooking,
   respondHandoff,
 } from "../../../lib/bookings";
@@ -140,7 +141,7 @@ export default function SitterBookingDetail() {
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
-  const canAccept = isRequest && !meetFirst && !waiting && !busy;
+  const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
@@ -396,7 +397,15 @@ export default function SitterBookingDetail() {
             label="Decline request"
             onPress={() => {
               setConfirmDecline(false);
-              void run(() => respondBooking(booking.id, false), "Request declined", () => router.back());
+              void run(
+                async () => {
+                  await respondBooking(booking.id, false);
+                  // A video Meet & Greet's Calendar event goes with the declined request (3B.11).
+                  await releaseVideoLink(booking.id);
+                },
+                "Request declined",
+                () => router.back(),
+              );
             }}
             testID="decline-confirm"
           />

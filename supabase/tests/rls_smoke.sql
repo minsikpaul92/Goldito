@@ -299,7 +299,15 @@ begin
     '5.3: feed post → owner feed_post notification');
   perform _t_as(lucy);
   select count(*) into n from public.owner_profiles where id = chloe;
-  perform _t_ok(n = 1, 'confirmed sitter can see owner profile');
+  perform _t_ok(n = 0, 'BF.6: a confirmed sitter cannot see the owner profile before payment');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = _t_get('current');
+  perform _t_as(lucy);
+  select count(*) into n from public.owner_profiles where id = chloe;
+  perform _t_ok(n = 1, 'paid sitter can see owner profile');
+  perform _t_as(null);
+  update public.bookings set paid_at = null where id = _t_get('current');
+  perform _t_as(lucy);
   perform _t_ok(in_care_window(max, now()), 'in_care_window true during care');
   perform _t_ok(not in_care_window(max, now() - interval '2 days'), 'in_care_window false before drop-off');
   perform _t_ok((select home_address from get_my_sitter_profile()) = '100 Example St',
@@ -2056,10 +2064,22 @@ begin
   perform _t_as(lucy);
   perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
 
-  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go
+  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go — on pets with no stay on
+  -- (009b: while a stay is on the owner sends a change request instead, see 6.20).
+  perform _t_as(chloe);
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'stay_in_progress', 'BF.4: no saved checklist for a pet whose stay is on');
+  perform _t_as(null);
+  insert into public.pets (id, owner_id, species, name) values
+    ('00000000-0000-4000-8000-0000000000d1', chloe, 'dog', 'Biscuit'),
+    ('00000000-0000-4000-8000-0000000000d2', chloe, 'cat', 'Pickle');
   perform _t_as(chloe);
   v_id := save_care_request(
-    max,
+    '00000000-0000-4000-8000-0000000000d1',
     'Meals: 8:00 AM — 1 cup of kibble. Heads-up: text instead of knocking.',
     'nvidia/test-model',
     '[{"type":"feeding","time":"08:00","title":"Breakfast","dose":"1 cup of kibble","notes":null},
@@ -2077,7 +2097,7 @@ begin
 
   begin
     perform save_care_request(
-      '00000000-0000-4000-8000-0000000000c2', 'walk', null,
+      '00000000-0000-4000-8000-0000000000d2', 'walk', null,
       '[{"type":"feeding","time":"07:00","title":"Breakfast"},{"type":"walk","time":"17:00","title":"Walk"}]'::jsonb,
       array['Close the door gently']);
     v_err := null;
@@ -2085,14 +2105,15 @@ begin
   end;
   perform _t_ok(v_err = 'task_type_not_allowed_for_species', '6.13: a walk for a cat is refused…');
   perform _t_ok(
-    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
-    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
-    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000c2'
+    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000d2') = 0
+    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000d2') = 0
+    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000d2'
          and title in ('Breakfast', 'Walk') and created_at > now() - interval '1 minute') = 0,
     '6.13: …and the whole save is rolled back (no request, no cautions, no half a checklist)');
 
   begin
-    perform save_care_request(max, 'x', null, '[]'::jsonb, (select array_agg('c' || g) from generate_series(1, 9) g));
+    perform save_care_request('00000000-0000-4000-8000-0000000000d1', 'x', null, '[]'::jsonb,
+      (select array_agg('c' || g) from generate_series(1, 9) g));
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
@@ -2105,8 +2126,8 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'forbidden', '6.13: a sitter cannot write a care request');
-  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 2,
-    '6.13: the sitter in the care window sees the Heads-ups');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 0,
+    '6.13: a sitter with no booking of the pet does not see its Heads-ups');
   perform _t_ok((select count(*) from public.care_requests) = 0,
     '6.13: …but not the owner''s note as written');
   begin
@@ -2368,6 +2389,235 @@ begin
     '6.21: a decline carries the reason and the note');
 
   perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Review fixes (009b+, 2026-10-06)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  pepper uuid;
+  v_b1 uuid;
+  v_b2 uuid;
+  v_req uuid;
+  v_err text;
+  nori uuid;
+  sesame uuid;
+  v_b3 uuid;
+  v_b4 uuid;
+  v_b5 uuid;
+  v_b6 uuid;
+  v_prop uuid;
+begin
+  -- BF.4 (009b): an open care request ends with its stay
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Pepper') returning id into pepper;
+  v_b1 := _t_booking(chloe, lucy, array[pepper], now() + interval '100 days', now() + interval '102 days', 'confirmed');
+  perform _t_as(chloe);
+  v_req := send_care_change_request(pepper,
+    '[{"type":"play","time":"10:00","title":"Fetch","dose":null,"notes":null}]'::jsonb, '{}');
+  perform cancel_booking(v_b1, 'Plans changed');
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
+    'BF.4: cancelling the booking closes its open care request');
+  perform _t_as(lucy);
+  begin
+    perform respond_care_change_request(v_req, true, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_answered', 'BF.4: …so the old sitter can no longer approve it');
+  perform _t_as(null);
+  perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = pepper and title = 'Fetch'),
+    'BF.4: …and nothing was added');
+
+  v_b2 := _t_booking(chloe, paul, array[pepper], now() + interval '110 days', now() + interval '112 days', 'confirmed');
+  perform _t_as(chloe);
+  v_req := send_care_change_request(pepper,
+    '[{"type":"play","time":"11:00","title":"Tug","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'pending',
+    'BF.4: the next stay''s request is not blocked by the closed one');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v_b2 and kind = 'drop_off';
+  update public.booking_handoffs set completed_at = now() where booking_id = v_b2 and kind = 'pick_up';
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
+    'BF.4: picking the pet up closes an unanswered request');
+
+  -- BF.5 (009c): a checked handoff stays checked; passed times can't be agreed; house sitting stays home
+  perform _t_as(null);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (lucy, 'open', app_today() + 115, app_today() + 150, 'morning', '08:00', '12:00', 3),
+         (lucy, 'open', app_today() + 115, app_today() + 150, 'afternoon', '12:00', '18:00', 3),
+         (lucy, 'open', app_today() + 115, app_today() + 150, 'overnight', '18:00', '08:00', 3);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Nori') returning id into nori;
+  v_b3 := _t_booking(chloe, lucy, array[nori], now() + interval '120 days', now() + interval '122 days', 'confirmed', true);
+  perform _t_as(chloe);
+  v_prop := propose_handoff(v_b3, 'pick_up', now() + interval '123 days');
+  perform _t_as(lucy);
+  perform complete_handoff(v_b3, 'pick_up');
+  perform _t_ok((select status from public.booking_handoffs where id = v_prop) = 'superseded',
+    'BF.5: Returned closes the open pick-up proposal');
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_status', 'BF.5: …so it can no longer be accepted');
+  perform _t_as(null);
+  insert into public.booking_handoffs (booking_id, kind, scheduled_at, within_sitter_hours, status, proposed_by)
+  values (v_b3, 'pick_up', now() + interval '124 days', true, 'proposed', chloe)
+  returning id into v_prop;
+  perform _t_as(lucy);
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'handoff_completed', 'BF.5: a checked handoff is never replaced');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_handoffs
+      where booking_id = v_b3 and kind = 'pick_up' and status = 'agreed' and completed_at is not null) = 1,
+    'BF.5: …the Returned pick-up is still the agreed one');
+
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Sesame') returning id into sesame;
+  v_b4 := _t_booking(chloe, lucy, array[sesame], now() + interval '130 days', now() + interval '132 days', 'confirmed');
+  v_b5 := _t_booking(chloe, lucy, array[sesame], now() + interval '140 days', now() + interval '142 days', 'requested');
+  update public.booking_handoffs set scheduled_at = now() - interval '1 minute'
+  where booking_id = v_b5 and kind = 'drop_off'
+  returning id into v_prop;
+  perform _t_as(lucy);
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'proposal_expired', 'BF.5: a proposed time that has passed cannot be accepted');
+
+  perform _t_as(null);
+  v_b6 := _t_booking(chloe, lucy, array[sesame], now() + interval '145 days', now() + interval '147 days', 'requested');
+  update public.booking_handoffs set status = 'agreed' where booking_id = v_b6;
+  update public.booking_handoffs set scheduled_at = now() - interval '1 hour' where booking_id = v_b6 and kind = 'pick_up';
+  begin
+    update public.bookings set status = 'confirmed' where id = v_b6;
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_expired', 'BF.5: a request whose pick-up has passed cannot be confirmed');
+
+  update public.bookings set service_type = 'house_sitting' where id = v_b4;
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_b4;
+  perform _t_as(chloe);
+  begin
+    perform propose_handoff(v_b4, 'drop_off', now() + interval '130 days', 'sitter_home');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_location', 'BF.5: house sitting handoffs stay at the owner''s home');
+  perform propose_handoff(v_b4, 'drop_off', now() + interval '130 days' + interval '1 hour');
+  perform _t_ok(true, 'BF.5: …a new time at the same place is fine');
+end;
+$$;
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  miso uuid;
+  v_b uuid;
+  v_req uuid;
+  v_kind text;
+  v_prop uuid;
+  v_paid jsonb;
+  v_quote jsonb;
+  v_err text;
+begin
+  -- BF.6 (009d): consents are signed at checkout only, and a paid booking follows agreed changes
+  perform _t_as(null);
+  -- From here on only Miso's stay is a paid Chloe ↔ Lucy booking (earlier fixtures reset).
+  update public.bookings set paid_at = null, price_snapshot = null where owner_id = chloe and sitter_id = lucy;
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Miso') returning id into miso;
+  v_req := _t_booking(chloe, lucy, array[miso], now() + interval '160 days', now() + interval '162 days', 'requested');
+  v_b := _t_booking(chloe, lucy, array[miso], now() + interval '134 days', now() + interval '136 days', 'confirmed');
+  perform _t_as(chloe);
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_req, 'emergency_vet', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: nothing is signed before the sitter confirms');
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: only a kind the booking requires can be signed');
+  perform _t_as(lucy);
+  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 0,
+    'BF.6: the sitter sees no owner profile before payment');
+  perform _t_as(chloe);
+
+  foreach v_kind in array required_consents(v_b) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, v_kind, '1', chloe, 'Chloe');
+  end loop;
+  v_paid := pay_booking_demo(v_b);
+
+  -- Pick-up moves to the owner's home → home_access is now required
+  v_prop := propose_handoff(v_b, 'pick_up', now() + interval '136 days', 'owner_home');
+  perform _t_ok('home_access' = any (required_consents(v_b)), 'BF.6: an owner_home handoff requires home_access');
+  begin
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'BF.6: …but nothing is signed on a paid booking');
+  perform _t_as(lucy);
+  perform respond_handoff(v_prop, true);
+  perform _t_as(null);
+  perform _t_ok((select paid_at is null and price_snapshot->>'total' = v_paid->>'total'
+      from public.bookings where id = v_b),
+    'BF.6: agreeing to it reopens checkout (the paid quote is kept)');
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = chloe and type = 'checkout_needed' and booking_id = v_b),
+    'BF.6: …and the owner is told to sign');
+  perform _t_as(lucy);
+  begin
+    perform get_home_access(v_b);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', 'BF.6: …so the entry codes stay locked until then');
+  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 1,
+    'BF.6: …while the owner''s emergency contact stays visible');
+
+  perform _t_as(chloe);
+  insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
+  values (v_b, 'home_access', '1', chloe, 'Chloe');
+  v_paid := pay_booking_demo(v_b);
+  perform _t_ok((select paid_at is not null from public.bookings where id = v_b),
+    'BF.6: signing home_access finishes checkout again');
+
+  -- Longer stay → re-quoted, owner told the new total; checkout stays done
+  v_prop := propose_handoff(v_b, 'pick_up', now() + interval '138 days');
+  v_quote := quote_booking(lucy, 'boarding', now() + interval '134 days', now() + interval '138 days', 1);
+  perform _t_as(lucy);
+  perform respond_handoff(v_prop, true);
+  perform _t_as(null);
+  perform _t_ok((select paid_at is not null
+        and (price_snapshot->>'total')::numeric = (v_quote->>'total')::numeric
+        and (price_snapshot->>'total')::numeric > (v_paid->>'total')::numeric
+      from public.bookings where id = v_b),
+    'BF.6: a longer stay is re-quoted and stays paid');
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = chloe and type = 'price_updated' and booking_id = v_b),
+    'BF.6: …and the owner gets the new total');
 end;
 $$;
 

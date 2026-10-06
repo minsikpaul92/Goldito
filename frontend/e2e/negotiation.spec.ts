@@ -162,6 +162,25 @@ test.describe("negotiation", () => {
     await expect(screen.getByTestId("proposal-pick_up")).toHaveCount(0);
   });
 
+  test("house sitting: after confirm only the time can change — the place stays at the owner's home", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", [
+      { ...CONFIRMED[0], type: "owner_home" },
+      { ...CONFIRMED[1], type: "owner_home" },
+    ]);
+    db.bookings[0].service_type = "house_sitting";
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    await expect(screen.getByTestId("change-sheet")).toContainText("House sitting — handoffs stay at the owner's home.");
+    await expect(screen.getByTestId("change-place-sitter_home")).toHaveCount(0);
+    await screen.getByTestId("change-time-plus").click();
+    await screen.getByTestId("change-send").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Lucy");
+    expect(db.proposals).toEqual([{ p_booking: BOOKING, p_kind: "pick_up", p_at: "2030-10-08T21:15:00.000Z" }]);
+  });
+
   test("the sitter accepts the owner's change after confirm", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", [

@@ -32,6 +32,7 @@ def make_db(**extra) -> FakeDB:
         ],
         media=[{"id": MEDIA_ID}],
         task_logs=extra.get("task_logs", []),
+        care_checkins=extra.get("care_checkins", []),
         safety_checks=[],
     )
 
@@ -91,6 +92,17 @@ def test_media_still_used_by_another_post_is_kept(client, monkeypatch, destroyed
     assert response.json() == {"deleted": True, "media_removed": False}
     assert destroyed == []
     assert [p["id"] for p in db.tables["feed_posts"]] == [OTHER_POST_ID]
+    assert len(db.tables["media"]) == 1
+
+
+@pytest.mark.parametrize("table", ["task_logs", "care_checkins"])
+def test_task_or_checkin_photo_is_kept(client, monkeypatch, destroyed, table) -> None:
+    db = make_db(**{table: [{"id": "row-1", "media_id": MEDIA_ID}]})
+    monkeypatch.setattr(feed, "get_service_client", lambda: db)
+    response = delete(client, sitter_token())
+    assert response.json() == {"deleted": True, "media_removed": False}
+    assert destroyed == []
+    assert db.tables["feed_posts"] == []
     assert len(db.tables["media"]) == 1
 
 

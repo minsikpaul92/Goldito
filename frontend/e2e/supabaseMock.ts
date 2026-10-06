@@ -1194,7 +1194,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       for (const row of inserted) {
         const dupe = db.booking_consents.some((c) => c.booking_id === row.booking_id && c.kind === row.kind);
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
-        if (row.signer_id !== me) {
+        // 009d: the owner signs at checkout only — confirmed, not paid yet, a kind the booking requires.
+        const booking = db.bookings.find((b) => b.id === row.booking_id);
+        const open = !!booking && booking.owner_id === me && booking.status === "confirmed" && !booking.paid_at;
+        if (row.signer_id !== me || !open || !requiredKinds(db, String(row.booking_id)).includes(String(row.kind))) {
           return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
         }
       }

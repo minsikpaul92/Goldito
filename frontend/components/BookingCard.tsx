@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { SERVICE_LABEL } from "../features/sitters/sitterApi";
-import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
+import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept, requestExpired } from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -16,6 +16,7 @@ type Badge = { label: string; tone: Tone };
 /** Status badges per side (phase-03b screens table). Text always says it — never color alone. */
 export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   if (b.status === "declined") return [{ label: "Declined", tone: "muted" }];
+  if (requestExpired(b)) return [{ label: "Expired — the times have passed", tone: "muted" }];
   if (b.status === "cancelled") {
     return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
   }

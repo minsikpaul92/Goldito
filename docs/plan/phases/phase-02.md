@@ -208,13 +208,13 @@ can_view_pet_profile(pet uuid) → can_access_pet(pet) or is_requested_sitter_of
 
 -- 프로필 상호 조회
 has_booking_with(other uuid) → 호출자와 other 사이에 예약이 하나라도 있음 (상태 무관 — 표시 이름용)
-has_current_booking_with(other uuid) → confirmed 예약이 있고 agreed pick_up + 24시간이 안 지남 (주소·긴급 연락처용)
+has_current_booking_with(other uuid) → 결제(`paid_at`)까지 끝난 confirmed 예약이 있고 agreed pick_up + 24시간이 안 지남 (주소·긴급 연락처용 — 009d)
 ```
 
 | 테이블 | SELECT | INSERT | UPDATE | DELETE |
 | :--- | :--- | :--- | :--- | :--- |
 | profiles | 본인 + `role='sitter'`인 행 (검색·단골 목록) + `has_booking_with(id)` | 트리거만 | 본인 (`display_name`만) | ✗ |
-| owner_profiles | 본인 + `has_current_booking_with(id)` (확정된 시터만, 찾은 뒤 24시간까지 주소·긴급 연락처 확인) | 트리거만 | 본인 | ✗ |
+| owner_profiles | 본인 + `has_current_booking_with(id)` (결제까지 끝난 예약의 시터만, 찾은 뒤 24시간까지 주소·긴급 연락처 확인 — 009d) | 트리거만 | 본인 | ✗ |
 | sitter_profiles | 로그인 사용자 전체 (검색·단골 목록) — **`home_address` 컬럼은 select 권한 회수** (`select('*')` 불가 — 컬럼을 나열). 주소는 본인 `get_my_sitter_profile()`, 확정 예약 당사자 `get_handoff_details(booking)`로만 | 트리거만 | 본인 | ✗ |
 | sitter_availability | 본인 (견주는 스케줄 조회·검색 RPC로만 — 칸 시간·남은 자리만, 다른 견주 예약 내용은 안 보임) | 본인 (role=sitter) | 본인 | 본인 |
 | bookings | `owner_id = auth.uid() or sitter_id = auth.uid()` | ✗ (RPC) | ✗ (RPC) | ✗ |
