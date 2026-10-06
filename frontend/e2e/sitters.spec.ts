@@ -7,7 +7,7 @@ import { MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 const PAUL: MockUser = {
   id: "00000000-0000-4000-8000-000000000003",
-  email: "paul@pawnote.test",
+  email: "paul@pawddy.test",
   password: "nap-time",
   role: "sitter",
   displayName: "Paul",

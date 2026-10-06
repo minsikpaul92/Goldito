@@ -1,4 +1,4 @@
--- PawNote 003: shared functions, triggers, booking & handoff RPCs (Phase 02, task 2.8)
+-- Pawddy 003: shared functions, triggers, booking & handoff RPCs (Phase 02, task 2.8)
 -- Source of truth: docs/plan/phases/phase-02.md §2.8
 --
 -- RPC errors are raised with the error code as the message (e.g. 'sitter_unavailable')
@@ -47,7 +47,7 @@ declare
   v_name text := coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''),
     nullif(split_part(coalesce(new.email, ''), '@', 1), ''),
-    'PawNote user'
+    'Pawddy user'
   );
 begin
   insert into public.profiles (id, role, display_name) values (new.id, v_role, v_name);

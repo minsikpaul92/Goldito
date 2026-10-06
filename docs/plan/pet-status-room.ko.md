@@ -10,7 +10,7 @@ Owner **Home** (or Care top) shows one screen like a **Tamagotchi / Digimon v-pe
 
 | Who | Want |
 | :--- | :--- |
-| Owner | Open PawNote and **see Max’s state now** without scrolling Activity or asking the sitter |
+| Owner | Open Pawddy and **see Max’s state now** without scrolling Activity or asking the sitter |
 | Owner | Feel emotional connection (retro 8-bit room, pet reacts to today’s care) |
 | Sitter | (Indirect) Owner sees updates from check-ins/tasks already logged — no extra sitter work |
 

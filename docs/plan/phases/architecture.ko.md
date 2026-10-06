@@ -1,4 +1,4 @@
-# PawNote P0 — 공통 설계 청사진 (모든 Phase가 따름)
+# Pawddy P0 — 공통 설계 청사진 (모든 Phase가 따름)
 
 > 각 phase 문서는 **이 문서의 결정·구조·규칙을 전제**로 작성되어 있습니다.
 > 이 문서와 [README.ko.md §9 데이터 모델 요약](../README.ko.md#9-데이터-모델-요약) 또는 [Playbook](../P0-ai-prompt-playbook.ko.md)이 다르면 **이 문서 + phase 문서가 우선**입니다.
@@ -55,7 +55,7 @@
 | D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
 | D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
-| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = PawNote Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
+| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의(accept)되는 순간 FastAPI `/api/meet-greet/video-link`가 **Google Calendar API** `events.insert`(`conferenceDataVersion=1`, `conferenceData.createRequest`, `conferenceSolutionKey.type="hangoutsMeet"`)로 이벤트 + Meet 링크 생성, 양쪽 이메일 초대(데모 `.test` 계정은 생략) → 각자 Google Calendar에 등록. 주최자 = Pawddy Google 계정 1개(OAuth refresh token, 백엔드 env, OAuth 앱 게시 상태 **In production** — Testing은 7일 만료). 시각 변경 = `events.patch`, 취소 = `events.delete`. 링크는 새 탭(iframe 불가). 실패 시 시각 + .ics + 링크 붙여넣기. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 쓰지 않음 | 앱 설치 없이 브라우저·폰 어디서나, 캘린더 자동 등록, 추가 비용 없음 |
 | D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
 | D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood`. **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. Sitter = **D47b** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
 | D47b | Sitter 탭 IA (**확정**) | Sitter **5탭:** `Home · Bookings · Feed · Diary · Mood` (Owner와 대칭; 구 Today→**Home**). **Home** = 대시보드: (A) 지금 케어 중이면 그 펫 정보·퀵액션 중심 · (B) 아니면 **승인 대기 요청** · **Upcoming** · **drop-off/pick-up 시간순**. 추후 케어 중 **다마고치/8bit status**(11.12). 구 Tasks는 Home(할 일)·Diary(완료 기록)로 흡수. **Bookings** = 요청·Meet & Greet·Past. **Feed** = + Photo. **Diary** = 스테이 로그 + 저녁 칩 알림장(구 Report). **Mood** = Owner와 동일. Treat scan = Home 버튼(08). Settings = Profile. **수익·돌봄 히스토리(추후):** 탭 추가 없음 — Bookings **Past**(스테이·견주별) + Profile **Earnings / payouts** 섹션(데모 pay 금액·기간 요약). 활동 디테일은 Diary 필터 | Owner 대칭 + 시터 대시보드 (2026-10-04 민식) |
@@ -65,7 +65,7 @@
 ## 2. 리포 구조 (최종 형태)
 
 ```
-PawNote/
+Pawddy/
 ├─ README.md                  # 제품 + Getting Started (Phase 10에서 완성)
 ├─ CLAUDE.md
 ├─ .gitignore                 # .env, data/raw/, node_modules, __pycache__, .venv, dist
@@ -244,7 +244,7 @@ PawNote/
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, 07B 문의 답변 |
 | `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33 — `dimensions` 파라미터 동작 확인 2026-10-01) | 07B RAG, 07C Life Record |
 | `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
-| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | PawNote Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events`, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | Pawddy Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events`, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
 | `GOOGLE_CALENDAR_ID` / `MEET_INVITE_ATTENDEES` | `primary` / `true` (`false`면 링크만 만들고 초대 메일 없음 — 데모 `.test` 계정은 항상 생략) | 3B.11 |
 | `DEMO_PASSWORD` | 데모 계정 전용 비밀번호 — `scripts/seed_demo.py`가 사용, frontend `EXPO_PUBLIC_DEMO_PASSWORD`와 같은 값 (심사위원에게 공개되는 값, 실제 비밀번호 재사용 금지) | 10.1 (계정 부분은 2026-10-01 먼저) |
 
@@ -411,7 +411,7 @@ PawNote/
 | Backend | `cd backend && pytest -q` (Nebius 키 없으면 AI 테스트 skip) + phase 문서의 `curl` 예시 |
 | DB/RLS | Supabase SQL Editor에서 `supabase/tests/rls_smoke.sql` 실행 (역할별 `set local request.jwt.claims`) |
 | Frontend | `npx tsc --noEmit` + Playwright 마우스 테스트 (1.7, CI) + 두 브라우저(일반 창 = owner, 시크릿 창 = sitter — 10.10 이후는 `?view=split`) 수동 시나리오를 **데스크톱 폰 프레임에서 마우스로** ([DESIGN.md §7.7](../../../DESIGN.md#77-works-with-a-mouse) 체크) |
-| 데모 | Phase 10 "A Stay with PawNote" 체크리스트 ([full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-pawnote)) |
+| 데모 | Phase 10 "A Stay with Pawddy" 체크리스트 ([full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-pawddy)) |
 
 ---
 

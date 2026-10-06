@@ -29,7 +29,7 @@ from app.config import get_settings
 
 Role = Literal["fast", "report", "safety", "vision"]
 
-logger = logging.getLogger("pawnote.ai")
+logger = logging.getLogger("pawddy.ai")
 
 DEFAULT_TIMEOUT_S = 45.0
 EMBED_BATCH = 16

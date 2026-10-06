@@ -1,4 +1,4 @@
-# 🐾 PawNote
+# 🐾 Pawddy
 
 > **Leave your pet, keep your peace of mind.**
 > The whole pet-sitting journey for **dogs and cats** in one app — from the first question to the ride home — with an AI agent that answers, plans, checks, and writes so the sitter can just care. Powered by **NVIDIA Nemotron on Nebius Token Factory**.
@@ -29,7 +29,7 @@ After 3 years of pet sitting, we saw the same things go wrong at every step of a
 | :--- | :--- |
 | **Never need to ask.** Replies, trip updates, photos, and daily notes arrive on their own. | **Just care, snap, and tap.** No quoting, no report writing, no answering the same questions. |
 
-PawNote combines three experiences people already trust, and adds an AI agent that does the typing:
+Pawddy combines three experiences people already trust, and adds an AI agent that does the typing:
 
 - **Rover**-style booking — find a sitter, ask, book.
 - **KidsNote**-style care — medication requests, check-in and check-out, daily notes, photo albums.
@@ -37,7 +37,7 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 
 ---
 
-## 🔄 How PawNote Works — 5 Stages
+## 🔄 How Pawddy Works — 5 Stages
 
 ```
  ① Inquiry ──> ② Meet & Greet ──> ③ Booking ──> ④ Care & Pet Transit ──> ⑤ Completion
@@ -45,18 +45,18 @@ PawNote combines three experiences people already trust, and adds an AI agent th
  sitter's tone → checklist        payment,       check · AI daily note     Pet Life Record → RAG
                                    timed unlock                                       │
       ▲                                                                               │
-      └──────────────── the next stay starts with everything PawNote learned ─────────┘
+      └──────────────── the next stay starts with everything Pawddy learned ─────────┘
 ```
 
 ### ① Inquiry — a reply in the sitter's own writing style
 - The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question.
-- **PawNote AI drafts the reply in seconds, in the sitter's own writing style** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, which answers right away at a human pace after a clear responsibility prompt — so a busy or sleeping sitter still answers first.
+- **Pawddy AI drafts the reply in seconds, in the sitter's own writing style** (learned from the sitter's past conversations): availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, and answers from the sitter's house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, which answers right away at a human pace after a clear responsibility prompt — so a busy or sleeping sitter still answers first.
 - Prices are calculated by the server, never by the model — the reply and the checkout always show the same numbers.
 
 ### ② Meet & Greet — the care request becomes a checklist
 - The owner writes a **care & medication request** like a note: *"8 AM — 1 cup of kibble · 2 PM — skin pill in a treat · No knocking — text me · Keep other dogs away on walks."*
 - Nemotron turns it into the sitter's **mission checklist** (timed tasks) and **Heads-up** cards. The owner reviews it before saving.
-- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at one of the spots either of them saved, or on video: PawNote creates a **Google Meet** link and calendar invite the moment they agree on a time. Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. Repeat clients skip this step.
+- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at one of the spots either of them saved, or on video: Pawddy creates a **Google Meet** link and calendar invite the moment they agree on a time. Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. Repeat clients skip this step.
 - They choose how the pet travels: **Owner drives** or **Sitter drives**.
 
 ### ③ Booking — consents, payment, and secrets that unlock on time
@@ -67,7 +67,7 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 ### ④ Care & Pet Transit — live trips, 5-second checks, AI daily notes
 - **Uber-style transit:** whoever is driving taps **Start trip**; the other side sees a live map and ETA. On arrival the owner gets visitor-parking directions, and the sitter gets the buzzer and lockbox card.
 - **Photo check-in:** the sitter snaps one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt). The owner gets *"Pick-up complete — care has started · photo verified."*
-- **5-second check:** PawNote suggests chips from the day's check-ins and photos — Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅ · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short note if they want. **Nemotron writes the daily note** in the sitter's own voice from only those facts, and it is posted once the sitter approves it.
+- **5-second check:** Pawddy suggests chips from the day's check-ins and photos — Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅ · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short note if they want. **Nemotron writes the daily note** in the sitter's own voice from only those facts, and it is posted once the sitter approves it.
 - **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day, KidsNote-style.
 - **Treat Safety Guard** *(stretch)*: scan a treat label, and Nemotron Ultra catches allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
 
@@ -81,9 +81,9 @@ PawNote combines three experiences people already trust, and adds an AI agent th
 
 ---
 
-## 🤖 The PawNote Agent
+## 🤖 The Pawddy Agent
 
-PawNote's AI works like an agent. Each event in a stay triggers it; it gathers the facts it needs, acts, and remembers. A person approves anything that reaches the other side.
+Pawddy's AI works like an agent. Each event in a stay triggers it; it gathers the facts it needs, acts, and remembers. A person approves anything that reaches the other side.
 
 | When this happens | The agent | A person decides |
 | :--- | :--- | :--- |
@@ -98,7 +98,7 @@ Prices, dates, and entry codes never come from the model: the server supplies th
 
 ---
 
-## 🗓️ A Stay with PawNote (demo path)
+## 🗓️ A Stay with Pawddy (demo path)
 
 Thanksgiving weekend: Chloe leaves **Max** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Lucy.
 
@@ -150,7 +150,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 - **Entry info unlocks on time.** Lockbox and buzzer codes are readable only by the booked sitter, from 2 hours before the visit until the stay ends, and the owner is notified when they open. They never enter AI prompts or the RAG knowledge base.
 - **Location only while moving.** Trips share one live position, only with the other person on the booking, and stop when you arrive. No route history is stored.
-- **Video Meet & Greets run on Google Meet.** PawNote shares only the owner's and sitter's account emails with Google, to send the calendar invite.
+- **Video Meet & Greets run on Google Meet.** Pawddy shares only the owner's and sitter's account emails with Google, to send the calendar invite.
 - **The AI never invents facts.** Prices, dates, and availability come from the database; daily notes and Life Records use only what was recorded that day.
 - **No real personal data.** Demo accounts, pets, addresses, and codes are fictional; real messages used for tone are anonymized before they reach a prompt.
 

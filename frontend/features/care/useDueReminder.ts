@@ -14,7 +14,7 @@ const DUE_WINDOW_MS = 60 * 60_000;
 
 /** "Remind me later" is one fixed step — 10 minutes. */
 export const SNOOZE_MS = 10 * 60_000;
-const SNOOZE_KEY = "pawnote:due-snoozes";
+const SNOOZE_KEY = "pawddy:due-snoozes";
 
 type Snoozes = Record<string, number>;
 

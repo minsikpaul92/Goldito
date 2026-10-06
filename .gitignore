@@ -71,7 +71,7 @@ web_modules/
 !.env.example
 !**/.env.example
 
-# PawNote
+# Pawddy
 data/raw/
 backend/.venv/
 backend/.pytest_cache/

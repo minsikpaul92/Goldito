@@ -1,6 +1,6 @@
-# CLAUDE.md — PawNote agent instructions
+# CLAUDE.md — Pawddy agent instructions
 
-This file guides AI assistants (Claude, Cursor, etc.) working in **PawNote**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
+This file guides AI assistants (Claude, Cursor, etc.) working in **Pawddy**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
 **Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too**), Seulgi (only the 3-year conversation-history anonymization — she is away), Muk (UX/UI).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
@@ -19,7 +19,7 @@ Every feature must pass:
 
 **Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
-**Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
+**Demo north star:** The 5-stage flow in root `README.md` — *How Pawddy Works* and the demo path *A Stay with Pawddy* — must work end-to-end before hackathon submit.
 
 **Hackathon hard rules:** Runtime on Token Factory; at least one **NVIDIA open-source model (Nemotron)**; public repo + MIT; demo stays up until judging ends; no real PII in repo or prompts.
 
@@ -33,7 +33,7 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; PawNote Google account OAuth — D45) |
+| Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; Pawddy Google account OAuth — D45) |
 | AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
@@ -238,7 +238,7 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches *A Stay with PawNote* (5 stages, `docs/plan/full-process.ko.md` §6)
+- Video path matches *A Stay with Pawddy* (5 stages, `docs/plan/full-process.ko.md` §6)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 

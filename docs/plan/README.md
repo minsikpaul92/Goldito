@@ -1,4 +1,4 @@
-# PawNote — Development Plan (Team Internal)
+# Pawddy — Development Plan (Team Internal)
 
 🇰🇷 Korean: [README.ko.md](README.ko.md) · Product README: [../../README.md](../../README.md) · Hackathon rules: [../hackathon/README.md](../hackathon/README.md)
 
@@ -47,7 +47,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 The old P2 "Private Q&A with AI first reply" is now the Stage 1 inquiry AI (07B, P0).
 
-Demo priority: the **5-stage flow** in the main README (*How PawNote Works* → *A Stay with PawNote*) must work end-to-end.
+Demo priority: the **5-stage flow** in the main README (*How Pawddy Works* → *A Stay with Pawddy*) must work end-to-end.
 
 ### Post-hackathon roadmap (not built for the hackathon)
 

@@ -66,7 +66,7 @@ export default function LoginScreen() {
 
       <View style={styles.body}>
         <View style={styles.header}>
-          <Text style={styles.brand}>🐾 PawNote</Text>
+          <Text style={styles.brand}>🐾 Pawddy</Text>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to see today's care updates.</Text>
         </View>

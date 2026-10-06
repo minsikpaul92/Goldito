@@ -1,6 +1,6 @@
-# PawNote — Supabase (Postgres + Auth + Realtime)
+# Pawddy — Supabase (Postgres + Auth + Realtime)
 
-SQL migrations for the PawNote demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
+SQL migrations for the Pawddy demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
 **Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
@@ -56,7 +56,7 @@ profiles 1─* notifications ─0..1 pets / bookings
 **Local / CI:** plain Postgres 17 plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 
 ```bash
-docker run -d --name pawnote-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
+docker run -d --name pawddy-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
 ```
 
 ```bash

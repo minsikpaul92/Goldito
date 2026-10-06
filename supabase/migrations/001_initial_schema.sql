@@ -1,4 +1,4 @@
--- PawNote 001: core schema (Phase 02, tasks 2.1–2.6)
+-- Pawddy 001: core schema (Phase 02, tasks 2.1–2.6)
 -- Source of truth: docs/plan/phases/phase-02.md
 -- RLS is added in 002, helper functions / triggers / RPCs in 003.
 

@@ -1,4 +1,4 @@
--- PawNote 004: booking options (Phase 03B, task 3B.0)
+-- Pawddy 004: booking options (Phase 03B, task 3B.0)
 -- Source of truth: docs/plan/phases/phase-03b.md 3B.0 · architecture D28 (service type), D44 (Meet & Greet)
 --
 -- * bookings.service_type (boarding / house_sitting) + sitter_profiles.services

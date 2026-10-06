@@ -95,13 +95,13 @@ test.describe("auth and role routing", () => {
     await expect(signup.getByTestId("role-sitter")).toHaveAttribute("aria-checked", "true");
     await expect(signup.getByTestId("role-owner")).toHaveAttribute("aria-checked", "false");
     await signup.getByTestId("signup-name").fill("Lucy");
-    await signup.getByTestId("signup-email").fill("lucy@pawnote.test");
+    await signup.getByTestId("signup-email").fill("lucy@pawddy.test");
     await signup.getByTestId("signup-password").fill("care-snap-tap");
     await signup.getByTestId("signup-confirm").fill("care-snap-tap");
     await signup.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/\/sitter$/);
-    expect(signups).toEqual([{ email: "lucy@pawnote.test", role: "sitter", display_name: "Lucy" }]);
+    expect(signups).toEqual([{ email: "lucy@pawddy.test", role: "sitter", display_name: "Lucy" }]);
   });
 
   test("sign up checks the email shape and that both passwords match, and Back returns", async ({ page }) => {
@@ -113,7 +113,7 @@ test.describe("auth and role routing", () => {
 
     await screen.getByTestId("role-owner").click();
     await screen.getByTestId("signup-name").fill("Chloe");
-    await screen.getByTestId("signup-email").fill("chloe@pawnote");
+    await screen.getByTestId("signup-email").fill("chloe@pawddy");
     await screen.getByTestId("signup-password").fill("max-and-mochi");
     await screen.getByTestId("signup-confirm").fill("max-and-moch");
     await expect(screen.getByText("Passwords don't match.")).toBeVisible();
@@ -135,8 +135,8 @@ test.describe("auth and role routing", () => {
 
   test("Try demo buttons sign in to the seeded owner and sitter (OB.3)", async ({ page }) => {
     // Same strings as lib/demo.ts; the password is the CI build's test-only EXPO_PUBLIC_DEMO_PASSWORD.
-    const demoOwner = { ...OWNER, email: "demo-owner@pawnote.test", password: "e2e-demo-password" };
-    const demoSitter = { ...SITTER, email: "demo-sitter@pawnote.test", password: "e2e-demo-password" };
+    const demoOwner = { ...OWNER, email: "demo-owner@pawddy.test", password: "e2e-demo-password" };
+    const demoSitter = { ...SITTER, email: "demo-sitter@pawddy.test", password: "e2e-demo-password" };
     await mockSupabase(page, [demoOwner, demoSitter]);
 
     await page.goto("/login");

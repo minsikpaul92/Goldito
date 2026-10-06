@@ -46,11 +46,11 @@ async function setup(
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        cloud_name: "pawnote-test",
+        cloud_name: "pawddy-test",
         api_key: "123",
         timestamp: 1_700_000_000,
         signature: "sig",
-        folder: `pawnote/${body.pet_id}/${body.purpose}`,
+        folder: `pawddy/${body.pet_id}/${body.purpose}`,
         upload_url: `http://127.0.0.1:4173/cloudinary-mock/${body.resource_type}/upload`,
         transformation: video
           ? `so_${start},du_${length}/c_limit,w_1280,h_1280/q_auto`
@@ -68,7 +68,7 @@ async function setup(
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ public_id: `pawnote/${PET_ID}/feed/abc`, width: 1200, height: 900, duration: 12 }),
+      body: JSON.stringify({ public_id: `pawddy/${PET_ID}/feed/abc`, width: 1200, height: 900, duration: 12 }),
     });
   });
 
@@ -79,7 +79,7 @@ async function setup(
     db.media.push({
       id: mediaId,
       pet_id: body.pet_id,
-      cloudinary_public_id: body.public_id ?? `pawnote/${PET_ID}/feed/abc`,
+      cloudinary_public_id: body.public_id ?? `pawddy/${PET_ID}/feed/abc`,
       resource_type: body.resource_type ?? "image",
       purpose: body.purpose ?? "feed",
       width: 1200,
@@ -92,8 +92,8 @@ async function setup(
       contentType: "application/json",
       body: JSON.stringify({
         media_id: mediaId,
-        public_id: `pawnote/${PET_ID}/feed/abc`,
-        secure_url: "https://res.cloudinary.com/pawnote-test/image/upload/abc",
+        public_id: `pawddy/${PET_ID}/feed/abc`,
+        secure_url: "https://res.cloudinary.com/pawddy-test/image/upload/abc",
         thumb_url: "",
       }),
     });
@@ -271,7 +271,7 @@ test.describe("feed visibility (5.8)", () => {
     calls.db.media.push({
       id: "22222222-2222-4222-8222-222222222222",
       pet_id: PET_ID,
-      cloudinary_public_id: `pawnote/${PET_ID}/feed/sitter`,
+      cloudinary_public_id: `pawddy/${PET_ID}/feed/sitter`,
       resource_type: "image",
       purpose: "feed",
     });

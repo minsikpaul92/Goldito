@@ -1,7 +1,7 @@
 """Video Meet & Greet links (phase-03b 3B.11, D45).
 
 After both sides agree on a video Meet & Greet (005 `respond_meet_greet`), the app calls
-`POST /api/meet-greet/video-link`: the PawNote Google account creates a 30-minute Calendar
+`POST /api/meet-greet/video-link`: the Pawddy Google account creates a 30-minute Calendar
 event with a Google Meet link, the link is saved on the booking (service role) and both
 sides get `meet_greet_link_ready`. Calling it again is safe. After a reschedule the same
 event is patched (same link). `…/release` deletes the event once the booking is cancelled
@@ -132,7 +132,7 @@ def _meet_client() -> GoogleCalendarMeetClient:
 
 
 def get_meet_client() -> MeetClient | None:
-    """None until the PawNote Google account is set up — the app then keeps its fallback."""
+    """None until the Pawddy Google account is set up — the app then keeps its fallback."""
     if not get_settings().google_meet_configured:
         return None
     return _meet_client()
@@ -205,9 +205,9 @@ def create_video_link(
             pets = ", ".join(booking.pet_names) or "your pet"
             event = client.create(
                 # Same booking + time → same conference request (Google de-duplicates it).
-                request_id=f"pawnote-{booking.id}-{int(booking.at.timestamp())}",
-                # "PawNote Meet & Greet — Max, Mochi & Lucy"
-                summary=f"PawNote Meet & Greet — {pets} & {booking.sitter_name}",
+                request_id=f"pawddy-{booking.id}-{int(booking.at.timestamp())}",
+                # "Pawddy Meet & Greet — Max, Mochi & Lucy"
+                summary=f"Pawddy Meet & Greet — {pets} & {booking.sitter_name}",
                 start=booking.at,
                 attendees=_invitees(booking),
                 timezone=timezone,
