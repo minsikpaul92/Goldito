@@ -103,3 +103,13 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `booking_finished` | Handoff addresses are hidden 24 h after the pick-up |
 | `overlaps_confirmed_booking` | Schedule change would drop below confirmed pets — detail = booking ids |
 | `task_type_not_allowed_for_species` | `walk` for a cat or `litter` for a dog |
+| `checkin_not_allowed_for_species` | A check-in kind that does not fit the pet (e.g. `walk` for a cat) |
+| `not_on_duty`, `not_in_care_window` | Today's task list / a task or check-in outside the sitter's care window |
+| `task_log_not_found`, `already_done` | Completing a task that is not on today's list / that is already done |
+| `invalid_media` | The attached photo is not the sitter's own upload for this pet |
+| `note_required` | A note check-in or a counter-request without a note |
+| `too_many_items`, `empty_request` | More than 12 tasks or 8 Heads-ups / a care request with neither |
+| `stay_in_progress` | `save_care_request` while a stay is on — send a change request instead (009b) |
+| `no_active_stay`, `request_pending` | Change request with no stay on / one is already open (pending or countered) for the pet |
+| `already_answered`, `invalid_tasks` | The change request was already answered or closed / counter-request names tasks that are not on it |
+| `report_already_sent`, `body_required`, `body_too_long` | Daily report sent twice / empty / over 2000 characters |

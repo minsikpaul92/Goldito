@@ -2056,10 +2056,22 @@ begin
   perform _t_as(lucy);
   perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
 
-  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go
+  -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go — on pets with no stay on
+  -- (009b: while a stay is on the owner sends a change request instead, see 6.20).
+  perform _t_as(chloe);
+  begin
+    perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'stay_in_progress', 'BF.4: no saved checklist for a pet whose stay is on');
+  perform _t_as(null);
+  insert into public.pets (id, owner_id, species, name) values
+    ('00000000-0000-4000-8000-0000000000d1', chloe, 'dog', 'Biscuit'),
+    ('00000000-0000-4000-8000-0000000000d2', chloe, 'cat', 'Pickle');
   perform _t_as(chloe);
   v_id := save_care_request(
-    max,
+    '00000000-0000-4000-8000-0000000000d1',
     'Meals: 8:00 AM — 1 cup of kibble. Heads-up: text instead of knocking.',
     'nvidia/test-model',
     '[{"type":"feeding","time":"08:00","title":"Breakfast","dose":"1 cup of kibble","notes":null},
@@ -2077,7 +2089,7 @@ begin
 
   begin
     perform save_care_request(
-      '00000000-0000-4000-8000-0000000000c2', 'walk', null,
+      '00000000-0000-4000-8000-0000000000d2', 'walk', null,
       '[{"type":"feeding","time":"07:00","title":"Breakfast"},{"type":"walk","time":"17:00","title":"Walk"}]'::jsonb,
       array['Close the door gently']);
     v_err := null;
@@ -2085,14 +2097,15 @@ begin
   end;
   perform _t_ok(v_err = 'task_type_not_allowed_for_species', '6.13: a walk for a cat is refused…');
   perform _t_ok(
-    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
-    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000c2') = 0
-    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000c2'
+    (select count(*) from public.care_requests where pet_id = '00000000-0000-4000-8000-0000000000d2') = 0
+    and (select count(*) from public.pet_cautions where pet_id = '00000000-0000-4000-8000-0000000000d2') = 0
+    and (select count(*) from public.care_tasks where pet_id = '00000000-0000-4000-8000-0000000000d2'
          and title in ('Breakfast', 'Walk') and created_at > now() - interval '1 minute') = 0,
     '6.13: …and the whole save is rolled back (no request, no cautions, no half a checklist)');
 
   begin
-    perform save_care_request(max, 'x', null, '[]'::jsonb, (select array_agg('c' || g) from generate_series(1, 9) g));
+    perform save_care_request('00000000-0000-4000-8000-0000000000d1', 'x', null, '[]'::jsonb,
+      (select array_agg('c' || g) from generate_series(1, 9) g));
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
@@ -2105,8 +2118,8 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'forbidden', '6.13: a sitter cannot write a care request');
-  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 2,
-    '6.13: the sitter in the care window sees the Heads-ups');
+  perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved')) = 0,
+    '6.13: a sitter with no booking of the pet does not see its Heads-ups');
   perform _t_ok((select count(*) from public.care_requests) = 0,
     '6.13: …but not the owner''s note as written');
   begin
@@ -2368,6 +2381,56 @@ begin
     '6.21: a decline carries the reason and the note');
 
   perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Review fixes (009b+, 2026-10-06)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  pepper uuid;
+  v_b1 uuid;
+  v_b2 uuid;
+  v_req uuid;
+  v_err text;
+begin
+  -- BF.4 (009b): an open care request ends with its stay
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Pepper') returning id into pepper;
+  v_b1 := _t_booking(chloe, lucy, array[pepper], now() + interval '100 days', now() + interval '102 days', 'confirmed');
+  perform _t_as(chloe);
+  v_req := send_care_change_request(pepper,
+    '[{"type":"play","time":"10:00","title":"Fetch","dose":null,"notes":null}]'::jsonb, '{}');
+  perform cancel_booking(v_b1, 'Plans changed');
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
+    'BF.4: cancelling the booking closes its open care request');
+  perform _t_as(lucy);
+  begin
+    perform respond_care_change_request(v_req, true, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_answered', 'BF.4: …so the old sitter can no longer approve it');
+  perform _t_as(null);
+  perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = pepper and title = 'Fetch'),
+    'BF.4: …and nothing was added');
+
+  v_b2 := _t_booking(chloe, paul, array[pepper], now() + interval '110 days', now() + interval '112 days', 'confirmed');
+  perform _t_as(chloe);
+  v_req := send_care_change_request(pepper,
+    '[{"type":"play","time":"11:00","title":"Tug","dose":null,"notes":null}]'::jsonb, '{}');
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'pending',
+    'BF.4: the next stay''s request is not blocked by the closed one');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v_b2 and kind = 'drop_off';
+  update public.booking_handoffs set completed_at = now() where booking_id = v_b2 and kind = 'pick_up';
+  perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
+    'BF.4: picking the pet up closes an unanswered request');
 end;
 $$;
 
