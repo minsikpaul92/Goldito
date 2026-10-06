@@ -86,7 +86,7 @@ const UPCOMING = [
     add(b, inst("Consent Card", { Checked: "Yes" }));
     add(b, inst("Consent Card", { Checked: "Yes" }, { Title: "Lockbox and buzzer use", Summary: "Lucy may use your lockbox code only during the booked visits." }));
     add(b, inst("Consent Card", { Checked: "No" }, { Title: "Handoff rules", Summary: "Drop-off and pick-up happen at the agreed time and place." }));
-    add(b, inst("Text Field", { State: "Default" }, { Label: "Type your full name to sign" }));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "Type your full name to sign", Value: "e.g. Chloe Park", Helper: "Signs all 5 consents." }));
   }, () => inst("Button", { Style: "Primary", State: "Disabled" }, { Label: "Pay $268.13 (demo)" })],
   ["up-entry", "Paid · entry info (03C)", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
     add(b, inst("Booking Card", { Status: "Confirmed" }));
@@ -107,7 +107,7 @@ const UPCOMING = [
     add(b, row("Photos", [inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Default" })], "xs"));
     add(b, await txt("✦ Suggested from today · tap to turn off", "Small Strong"));
     add(b, row("Chips", [["🍽️ Breakfast", "On"], ["💊 Pill in a treat", "On"], ["🦮 Walk 20 min", "On"], ["💩 Potty normal", "On"], ["🐿️ Squirrel", "Off"], ["😴 Long nap", "On"]].map(([l, st]) => inst("Suggestion Chip", { State: st }, { Label: l })), "xs"));
-    add(b, inst("Text Field", { State: "Default" }, { Label: "Short note (optional)" }));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "Short note (optional)", Value: "e.g. Loved the squirrels today", Helper: "0/200" }));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Generate daily note" })],
   ["up-check-review", "Daily note · review (7.3)", { kind: "Detail", title: "5-second check", active: "Diary" }, "L", async (b) => {
     add(b, inst("Daily Note"));
@@ -129,7 +129,9 @@ const UPCOMING = [
 
 const P = (l) => () => inst("Button", { Style: "Primary", State: "Default" }, { Label: l });
 const chips = (name, list, active = []) => row(name, list.map((l) => inst("Filter Chip", { State: active.includes(l) ? "Active" : "Default" }, { Label: l })), "xs");
-const field = (label) => inst("Text Field", { State: "Default" }, { Label: label });
+// Placeholder and helper per field (the component's defaults are for "Pet's name").
+const FIELD = { "Full name": ["e.g. Chloe Park", "Shown to your sitter."], Email: ["e.g. chloe@example.com", "We'll send booking updates here."], Password: ["At least 8 characters", "Use 8 or more characters."], "Pet's name": ["e.g. Max", "Shown on every booking."], Breed: ["e.g. Maltese", "Helps the sitter with care tips."] };
+const field = (label) => inst("Text Field", { State: "Default" }, { Label: label, Value: (FIELD[label] || [])[0], Helper: (FIELD[label] || [])[1] });
 const ONBOARDING = [
   ["ob-welcome", "Welcome", { title: "PawNote" }, null, async (b) => {
     add(b, row("Photos", [inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" })], "xs"));
@@ -268,7 +270,7 @@ const EDGE = [
   }, P("Retake photo")],
   ["e4-offline", "④ Offline check-ins (sitter)", { title: "Home", active: "Home" }, "L", async (b) => {
     add(b, banner("Offline", "You're offline", "2 check-ins are saved on this phone and send on their own when you're back.", "Retry now"));
-    add(b, inst("Task Row", { State: "Done" }, { Title: "Breakfast · 1 cup", Time: "8:04 AM" }));
+    add(b, inst("Task Row", { State: "Done" }, { Title: "Breakfast · 1 cup", Time: "8:00 AM" }));
     add(b, inst("Tag", { Tone: "Neutral" }, { Label: "⏳ Waiting to send" }));
     add(b, inst("Task Row", { State: "Next" }, { Title: "Skin pill in a treat", Time: "2:00 PM" }));
   }, null],
@@ -287,7 +289,7 @@ const EDGE = [
   ["e5-low-review", "⑤ Low rating", { kind: "Detail", title: "Home safe", active: "Bookings" }, null, async (b) => {
     add(b, await txt("How was Lucy?", "Body Strong"));
     add(b, row("Stars", [1, 2, 3, 4, 5].map((n) => inst("Star", { State: n <= 2 ? "On" : "Off" })), 0));
-    add(b, inst("Text Field", { State: "Default" }, { Label: "What could have gone better? (optional, only Lucy sees it)" }));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "What could have gone better? (optional)", Value: "e.g. More photos in the afternoon", Helper: "Only Lucy sees this." }));
   }, P("Send review")],
   ["e5-new-fact", "⑤ New fact needs your OK", { kind: "Detail", title: "Life Record", active: "Bookings" }, null, async (b) => {
     add(b, inst("Life Record Card"));

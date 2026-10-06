@@ -189,14 +189,14 @@ const LIBRARY = [
         [await txt("chicken", "Small", "text", { name: "Label" }), r === "Yes" ? await txt("✕", "Small", "text-muted") : null].filter(Boolean))]), [["Label", "Label"]]);
     if (!has("Card")) await single("Card", "Container: surface, radius/lg, spacing/md padding, 1 px border. Code: components/ui/Card.tsx", async () =>
       box("Card", { w: CW, gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" },
-        [await txt("Lucy's place · Oct 9–12", "Body Strong", "text", { name: "Title" }), await txt("Max and Mochi · Boarding · Confirmed", "Small", "text-muted", { name: "Body" })]), [["Title", "Title"], ["Body", "Body"]]);
+        [await txt("Lucy's place · Oct 9–12", "Body Strong", "text", { name: "Title", fill: true }), await txt("Max and Mochi · Boarding · Confirmed", "Small", "text-muted", { name: "Body", fill: true })]), [["Title", "Title"], ["Body", "Body"]]);
     if (!has("Toast")) await single("Toast", "Success feedback after an action; above the tab bar and any pinned footer; hides after 3 s. Never the only signal for DANGER. Code: providers/ToastProvider.tsx", async () =>
       box("Toast", { dir: "H", w: CW, pad: "md", radius: "md", fill: "text", justify: "CENTER", align: "CENTER" }, [await txt("Max is added 🐶", "Body", "primary-text", { name: "Message" })]), [["Message", "Message"]]);
     if (!has("Text Field")) await variants("Text Field", "Label above, 44 min height. Focus = primary border; Error = error border + message (clears on edit). Placeholders start with 'e.g.'. Code: components/ui/TextField.tsx", ["Default", "Focused", "Error"].map((st) => [`State=${st}`, async () =>
       box("Text Field", { w: CW, gap: "xs" }, [await txt("Pet's name", "Small Strong", "text-muted", { name: "Label" }),
         fill(box("Input", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", minH: "size/touch-target", fill: "surface", stroke: st === "Focused" ? "primary" : st === "Error" ? "error" : "border-strong", align: "CENTER" },
           [await txt(st === "Default" ? "e.g. Max" : "Max", "Body", st === "Default" ? "text-muted" : "text", { name: "Value" })])),
-        await txt(st === "Error" ? "Enter your pet's name." : "Shown on every booking.", "Small", st === "Error" ? "error" : "text-muted", { name: "Helper" })])]), [["Label", "Label"]]);
+        await txt(st === "Error" ? "Enter your pet's name." : "Shown on every booking.", "Small", st === "Error" ? "error" : "text-muted", { name: "Helper", fill: true })])]), [["Label", "Label"], ["Value", "Value"], ["Helper", "Helper"]]);
     if (!has("Segment")) await variants("Segment", "One option of a Segmented Control (2–4 options). Selected = primary border + accent fill. Code: components/ui/SegmentedControl.tsx", ["Default", "Selected", "Disabled"].map((st) => [`State=${st}`, async () =>
       box("Segment", { dir: "H", w: 140, h: 44, radius: "md", align: "CENTER", justify: "CENTER", fill: st === "Selected" ? "accent" : "surface", stroke: st === "Selected" ? "primary" : "border-strong", opacity: st === "Disabled" ? 0.5 : 1 },
         [await txt("🐶 Dog", st === "Selected" ? "Body Strong" : "Body", "text", { name: "Label" })])]), [["Label", "Label"]]);
@@ -511,7 +511,7 @@ const LIBRARY = [
         fill(box("Row", { dir: "H", gap: "sm", align: "CENTER" }, [box("Icon", { dir: "H", w: 40, h: 40, radius: "md", fill: s === "Done" ? "success-surface" : "accent", align: "CENTER", justify: "CENTER" }, [await txt("💊", "Body")]),
           grow(box("Copy", {}, [await txt("2:00 PM", "Caption", s === "Next" ? "primary" : "text-muted", { name: "Time", fill: true }), await txt("Skin pill in a treat", "Body Strong", "text", { name: "Title", fill: true })]))])),
         s === "Next" ? fill(box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "primary", justify: "CENTER", minH: "size/touch-target", align: "CENTER" }, [await txt("Complete with photo", "Body Strong", "primary-text")])) : null,
-        s === "Done" ? await txt("✓ Done 2:04 PM · sent to Chloe", "Small Strong", "success") : null,
+        s === "Done" ? await txt("✓ Done 2:04 PM · sent to Chloe", "Small Strong", "success", { name: "Status" }) : null,
       ].filter(Boolean))]), [["Title", "Title"], ["Time", "Time"]]);
 
     await single("Progress Bar", "Care progress (2 of 5 done).", async () => {
