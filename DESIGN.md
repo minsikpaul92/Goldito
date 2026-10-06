@@ -119,7 +119,7 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 | `track` | `#E6E1D9` | `#F2E2BD` |
 | `accent` | `#DCEDE3` | `#FFE0A3` |
 
-`primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). In Figma the looks are modes of the **Color** collection (file *PawNote Design System*), so any frame can switch look.
+`primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). Figma (*PawNote Design System*) shows **Balanced** only; Playful also changes outlines, shadows, corners and fonts, so it lives in the clickable prototypes (`design/concept-prototypes/redesign/`) until the team picks a look.
 
 ---
 

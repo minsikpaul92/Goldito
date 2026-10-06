@@ -844,12 +844,15 @@ const LIBRARY = [
 
 const LOOKS = {
   Balanced: { background: "#F4F2EE", surface: "#FFFFFF", text: "#1F1B16", "text-muted": "#5E5850", border: "#E6E1D9", accent: "#DCEDE3", "border-strong": "#857E73", track: "#E6E1D9" },
-  Playful: { background: "#FFF1D6", surface: "#FFFDF7", text: "#231B12", "text-muted": "#5E4B33", border: "#231B12", accent: "#FFE0A3", "border-strong": "#231B12", track: "#F2E2BD" },
+  // Playful lives in the prototypes only (Oct 6): Figma shows the Balanced look.
 };
 // Adds the two looks as modes on the Color collection (same variables, different values).
 async function addLookModes(log) {
   const col = (await figma.variables.getLocalVariableCollectionsAsync()).find((c) => c.name === "Color");
   if (!col) { log.push("No 'Color' collection found; looks not added."); return 0; }
+  // Remove the Playful mode an earlier run added (Playful stays in the prototypes only).
+  const old = col.modes.find((m) => m.name === "Playful");
+  if (old && col.modes.length > 1) { try { col.removeMode(old.modeId); log.push("Removed the Playful color mode (kept in the prototypes only)."); } catch (e) {} }
   let added = 0;
   for (const [look, values] of Object.entries(LOOKS)) {
     let mode = col.modes.find((m) => m.name === look);
