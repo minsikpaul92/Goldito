@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "PawNote",
-    "slug": "pawnote",
+    "name": "Pawddy",
+    "slug": "pawddy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "pawnote",
+    "scheme": "pawddy",
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"

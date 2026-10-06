@@ -1,4 +1,4 @@
-# PawNote frontend
+# Pawddy frontend
 
 Expo (React Native Web) with **expo-router**, TypeScript, npm.
 

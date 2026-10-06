@@ -85,7 +85,7 @@ def normalize(raw: RawPlan, species: str) -> Plan:
         task_type = task.type.strip().lower()
         title = _clean(task.title, 40) or TYPE_LABEL.get(task_type, "Task")
         if task_type not in TASK_TYPES:
-            plan.skipped.append({"type": task_type, "title": title, "reason": "Not a task type PawNote knows."})
+            plan.skipped.append({"type": task_type, "title": title, "reason": "Not a task type Pawddy knows."})
             continue
         blocked = species_blocks(task_type, species)
         if blocked:

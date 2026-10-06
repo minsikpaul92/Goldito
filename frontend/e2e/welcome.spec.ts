@@ -40,7 +40,7 @@ test.describe("welcome", () => {
   });
 
   test("sitter tour Try demo lands on Home", async ({ page }) => {
-    const demoSitter = { ...SITTER, email: "demo-sitter@pawnote.test", password: "e2e-demo-password" };
+    const demoSitter = { ...SITTER, email: "demo-sitter@pawddy.test", password: "e2e-demo-password" };
     await mockSupabase(page, [OWNER, demoSitter]);
     await page.goto("/welcome/sitter");
     const screen = app(page);

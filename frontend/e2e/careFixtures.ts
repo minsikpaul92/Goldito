@@ -79,11 +79,11 @@ export async function mockUpload(page: Page, db: MockDb, petId: string, options:
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
-        cloud_name: "pawnote-test",
+        cloud_name: "pawddy-test",
         api_key: "1",
         timestamp: 1,
         signature: "s",
-        folder: `pawnote/${body.pet_id}/${body.purpose}`,
+        folder: `pawddy/${body.pet_id}/${body.purpose}`,
         upload_url: "http://127.0.0.1:4173/cloudinary-mock/image/upload",
         transformation: "c_limit,w_2000/q_auto",
       }),
@@ -93,14 +93,14 @@ export async function mockUpload(page: Page, db: MockDb, petId: string, options:
     route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ public_id: `pawnote/${petId}/task_proof/abc`, width: 10, height: 10 }),
+      body: JSON.stringify({ public_id: `pawddy/${petId}/task_proof/abc`, width: 10, height: 10 }),
     }),
   );
   await page.route("**/api/media/complete", (route) => {
     db.media.push({
       id: "media-proof",
       pet_id: petId,
-      cloudinary_public_id: `pawnote/${petId}/task_proof/abc`,
+      cloudinary_public_id: `pawddy/${petId}/task_proof/abc`,
       resource_type: "image",
       purpose: "task_proof",
     });

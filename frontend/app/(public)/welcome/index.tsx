@@ -19,13 +19,13 @@ export default function WelcomeLanding() {
     <View style={styles.root} testID="welcome">
       <Screen contentStyle={styles.content}>
         <Text style={styles.brand} testID="welcome-brand">
-          🐾 PawNote
+          🐾 Pawddy
         </Text>
         <Text accessibilityRole="header" style={styles.title}>
           Care updates without the back-and-forth
         </Text>
         <Text style={styles.lead}>
-          Choose how you use PawNote — we'll show you what matters for that role. Sign in stays on the
+          Choose how you use Pawddy — we'll show you what matters for that role. Sign in stays on the
           next screen, same as before.
         </Text>
 

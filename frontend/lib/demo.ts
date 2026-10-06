@@ -6,8 +6,8 @@ import { Role } from "../providers/SessionProvider";
  * demo-only value (architecture §4) — never a real password or a service key.
  */
 export const DEMO_ACCOUNTS: Record<Role, { email: string; name: string }> = {
-  owner: { email: "demo-owner@pawnote.test", name: "Chloe" },
-  sitter: { email: "demo-sitter@pawnote.test", name: "Lucy" },
+  owner: { email: "demo-owner@pawddy.test", name: "Chloe" },
+  sitter: { email: "demo-sitter@pawddy.test", name: "Lucy" },
 };
 
 export const DEMO_PASSWORD = process.env.EXPO_PUBLIC_DEMO_PASSWORD?.trim() ?? "";

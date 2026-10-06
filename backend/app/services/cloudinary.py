@@ -78,7 +78,7 @@ def configure_cloudinary() -> None:
 
 
 def media_folder(pet_id: str, purpose: str) -> str:
-    return f"pawnote/{pet_id}/{purpose}"
+    return f"pawddy/{pet_id}/{purpose}"
 
 
 def sign(
@@ -142,8 +142,9 @@ VISION_VIDEO_TRANSFORM = "so_0," + VISION_TRANSFORM  # poster frame of a video
 VISION_FETCH_TIMEOUT_S = 10.0
 VISION_MAX_BYTES = 5 * 1024 * 1024  # a 1024 px JPEG is far below this; guards a bad response
 
-# Our public ids are `pawnote/<pet_id>/<purpose>/<random>` — nothing else may reach the URL.
-_PUBLIC_ID_RE = re.compile(r"^pawnote/[A-Za-z0-9_\-]+(?:/[A-Za-z0-9_\-]+)+$")
+# Our public ids are `pawddy/<pet_id>/<purpose>/<random>` — nothing else may reach the URL.
+# `pawnote/` is the folder from before the rename; media uploaded then still lives there.
+_PUBLIC_ID_RE = re.compile(r"^(?:pawddy|pawnote)/[A-Za-z0-9_\-]+(?:/[A-Za-z0-9_\-]+)+$")
 
 
 class MediaFetchError(RuntimeError):
@@ -155,7 +156,7 @@ def vision_url(public_id: str, resource_type: str = "image") -> str:
     if resource_type not in RESOURCE_TYPES:
         raise ValueError(f"unsupported resource_type: {resource_type}")
     if not _PUBLIC_ID_RE.fullmatch(public_id):
-        raise ValueError("public_id must be a pawnote/ media id")
+        raise ValueError("public_id must be a pawddy/ media id")
     if resource_type == "video":
         return delivery_url(public_id, resource_type="video", transform=VISION_VIDEO_TRANSFORM) + ".jpg"
     return delivery_url(public_id, transform=VISION_TRANSFORM)

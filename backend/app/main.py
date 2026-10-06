@@ -9,7 +9,7 @@ from app.routers import ai_care_plan, ai_daily_report, feed, health, me, media, 
 
 settings = get_settings()
 
-app = FastAPI(title="PawNote API", version="0.1.0")
+app = FastAPI(title="Pawddy API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

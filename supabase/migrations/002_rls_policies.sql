@@ -1,4 +1,4 @@
--- PawNote 002: row level security (Phase 02, task 2.7)
+-- Pawddy 002: row level security (Phase 02, task 2.7)
 -- Source of truth: docs/plan/phases/phase-02.md §2.7
 
 -- ---------------------------------------------------------------------------

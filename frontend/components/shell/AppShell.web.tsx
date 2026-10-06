@@ -83,7 +83,7 @@ function AppFrame() {
   return (
     <iframe
       src={src}
-      title="PawNote app"
+      title="Pawddy app"
       allow="camera; microphone"
       style={{
         border: 0,

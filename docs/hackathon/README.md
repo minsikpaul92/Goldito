@@ -31,7 +31,7 @@ If anything here conflicts with the [Official Rules](https://nebiusglobalaihacka
 
 ## 3. Tracks
 
-| Track | Summary | Fit for PawNote |
+| Track | Summary | Fit for Pawddy |
 | :--- | :--- | :--- |
 | Coding & Agentic Engineering | Coding agents in Token Factory Sandboxes | ❌ |
 | **Best Apps and Agents** | Apps/agents people actually use. Powered by **Nemotron** via Token Factory. Use **Nemotron 3 Ultra** for heavy reasoning, **Nano / Super** for fast everyday calls. Serverless Endpoints / Jobs encouraged, not required | ✅ **Our track** |

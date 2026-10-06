@@ -1,4 +1,4 @@
-# Nebius Token Factory — models for PawNote
+# Nebius Token Factory — models for Pawddy
 
 **Last catalog check:** 2026-10-01 (`GET /v1/models?verbose=true` on both base URLs, API key in local `backend/.env` only). First check 2026-09-29.
 
@@ -8,7 +8,7 @@
 
 ## Which model for which feature?
 
-| PawNote feature | Phase | API route | Env role | Model ID (public endpoint) | Why this model |
+| Pawddy feature | Phase | API route | Env role | Model ID (public endpoint) | Why this model |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Inquiry auto-reply** (Stage 1) | 07B | `POST /api/ai/inquiry-reply` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | **Speed:** answer in seconds from server-collected facts (schedule, quote, policy, RAG). Never computes prices. |
 | **RAG embeddings** (Stage 1 · 5) | 07B · 07C | `services/rag.py` | `MODEL_EMBED` | `Qwen/Qwen3-Embedding-8B` | Only embedding model in the catalog. `dimensions: 1024` works on both base URLs (2026-10-01) → pgvector `vector(1024)` + HNSW. |
@@ -36,7 +36,7 @@
 OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token Factory public API:
 
 - **Input:** image(s) (+ prompt), including OCR-style label/PDF-style text in photos.
-- **PawNote use:** anything that must **see** Cloudinary media (base64 data URL from backend, architecture D12):
+- **Pawddy use:** anything that must **see** Cloudinary media (base64 data URL from backend, architecture D12):
   1. **Caption** — “what is in this picture?”
   2. **Safety step 1** — “list ingredients from this packaging photo.”
 

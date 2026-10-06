@@ -60,7 +60,7 @@
 ### 검증
 
 ```bash
-# 웹 앱에서 로그인 후 브라우저 콘솔: JSON.parse(localStorage.getItem("pawnote-auth")).access_token 복사 (backend/README.md "Auth")
+# 웹 앱에서 로그인 후 브라우저 콘솔: JSON.parse(localStorage.getItem("pawddy-auth")).access_token 복사 (backend/README.md "Auth")
 curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 ```
 

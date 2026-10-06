@@ -6,8 +6,8 @@
 
 | Item | Status |
 | :--- | :--- |
-| OB | [PR #43](https://github.com/minsikpaul92/PawNote/pull/43) **merged** to `main` |
-| Docs queue | [PR #44](https://github.com/minsikpaul92/PawNote/pull/44) (`docs/phase-04-queue`) — merge first so TODO + this policy land on `main` |
+| OB | [PR #43](https://github.com/minsikpaul92/Pawddy/pull/43) **merged** to `main` |
+| Docs queue | [PR #44](https://github.com/minsikpaul92/Pawddy/pull/44) (`docs/phase-04-queue`) — merge first so TODO + this policy land on `main` |
 | Branch | `feat/phase-04-media` — rebase onto latest `main`, then **draft** Phase 04 PR |
 | **4.1–4.4** | On branch only (not main): `POST /api/media/sign` · `/complete` · `services/authz.py` · `services/cloudinary.sign` · FE `apiPost` + `uploadMedia()` + thumb/video URL helpers · `tests/test_media_sign.py` · README curl steps |
 | **4.5** | **Current focus** — implement **Media normalize policy** below (old “reject if &gt;10 MB / &gt;30 s” is outdated) |
@@ -78,8 +78,8 @@ Trim + compress live in `pickMedia()` / `MediaPicker` (4.7). Mouse must work in 
 
 | ID | 작업 | 상세 |
 | :--- | :--- | :--- |
-| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_on_duty_for(pet_id)` (확정 예약 기간 밖이면 403). 예외: `purpose='handoff'`는 `assert_booked_sitter(booking_id, from_hours_before=2)` — 맡기기 사진은 맡기 직전에 찍으므로 (06B). purpose = `feed` · `task_proof` · `report` · `handoff` · `safety_label` (`media.purpose` check에 `report`·`handoff` 추가는 03B의 `004_booking_options.sql`에 함께 — Phase 04는 migration 없음). `folder = f"pawnote/{pet_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
-| 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawnote/{pet_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
+| 4.1 | Sign endpoint | `routers/media.py`. `require_role("sitter")` + `assert_on_duty_for(pet_id)` (확정 예약 기간 밖이면 403). 예외: `purpose='handoff'`는 `assert_booked_sitter(booking_id, from_hours_before=2)` — 맡기기 사진은 맡기 직전에 찍으므로 (06B). purpose = `feed` · `task_proof` · `report` · `handoff` · `safety_label` (`media.purpose` check에 `report`·`handoff` 추가는 03B의 `004_booking_options.sql`에 함께 — Phase 04는 migration 없음). `folder = f"pawddy/{pet_id}/{purpose}"`, `timestamp = now`. **서명 대상 파라미터 = `folder`, `timestamp`** (클라이언트가 동일 값만 보내야 서명 일치). `cloudinary.utils.api_sign_request` 사용. 응답에 `upload_url = https://api.cloudinary.com/v1_1/{cloud}/{resource_type}/upload` |
+| 4.2 | Complete endpoint | 검증: ① `public_id.startswith(f"pawddy/{pet_id}/{purpose}/")` (traversal 방지) ② `cloudinary.api.resource(public_id, resource_type=…)`로 **실존 확인** + width/height/duration 서버에서 취득 ③ service role로 `media` insert ④ `secure_url`, `thumb_url` 반환 |
 | 4.3 | Frontend helper | `uploadMedia({petId, purpose, file}) → {mediaId, secureUrl, thumbUrl}`: `pickMedia()`(4.7)가 준 file → `api.post('/api/media/sign')` → `FormData(file, api_key, timestamp, signature, folder)` → fetch upload_url → `api.post('/api/media/complete')`. 실패 시 `UploadError(step)` throw → 호출 화면이 Toast + **Retry** |
 | 4.4 | URL helper | `thumbUrl(publicId, w=400)` → `https://res.cloudinary.com/{cloud}/image/upload/f_auto,q_auto,c_fill,w_400,h_400/{publicId}`, `videoPosterUrl(publicId)` → `…/video/upload/so_0,f_jpg,w_400/{publicId}.jpg`, `videoUrl(publicId)` → `…/video/upload/q_auto/{publicId}` |
 | 4.5 | Normalize + limits | See **Media normalize policy** above. Photos: always client long-edge + &lt;10 MB; sign request may include incoming transform params (or upload preset). Video: always client compress; duration ≤ 30 s after trim. Soft alert only if compress still fails Free limits. |

@@ -20,7 +20,7 @@ async function setup(page: Page, user: MockUser) {
     db.media.push({
       id: media(i),
       pet_id: PET_ID,
-      cloudinary_public_id: `pawnote/${PET_ID}/feed/m${i}`,
+      cloudinary_public_id: `pawddy/${PET_ID}/feed/m${i}`,
       resource_type: kind,
       purpose: "feed",
       width: 1200,

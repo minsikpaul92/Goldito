@@ -1,4 +1,4 @@
--- PawNote 005: Meet & Greet RPCs (Phase 03B, task 3B.9)
+-- Pawddy 005: Meet & Greet RPCs (Phase 03B, task 3B.9)
 -- Source of truth: docs/plan/phases/phase-03b.md 3B.9 · architecture D44 (D45 Meet link = 3B.11)
 --
 -- 004 added the columns and the Accept guard (respond_booking raises meet_greet_required
