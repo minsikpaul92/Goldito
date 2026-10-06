@@ -134,6 +134,21 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
   });
 
+  test("a request whose pick-up time passed is Expired: it sits in Past and can't be accepted", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "not_needed");
+    for (const h of db.booking_handoffs) h.scheduled_at = h.kind === "drop_off" ? "2020-10-05T11:00:00.000Z" : "2020-10-08T21:00:00.000Z";
+    await signIn(page, SITTER);
+    const screen = app(page);
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+    await expect(screen.getByText("No requests yet")).toBeVisible();
+    await screen.getByTestId("sitter-bookings-tabs-past").click();
+    const card = screen.getByTestId(`booking-card-${BOOKING}`);
+    await expect(card).toContainText("Expired — the times have passed");
+    await card.click();
+    await expect(screen.getByTestId("accept-booking")).toBeDisabled();
+  });
+
   test("Decline asks first, ends the request and lands it in Past", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");

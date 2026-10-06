@@ -2398,6 +2398,13 @@ declare
   v_b2 uuid;
   v_req uuid;
   v_err text;
+  nori uuid;
+  sesame uuid;
+  v_b3 uuid;
+  v_b4 uuid;
+  v_b5 uuid;
+  v_b6 uuid;
+  v_prop uuid;
 begin
   -- BF.4 (009b): an open care request ends with its stay
   perform _t_as(null);
@@ -2431,6 +2438,79 @@ begin
   update public.booking_handoffs set completed_at = now() where booking_id = v_b2 and kind = 'pick_up';
   perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
     'BF.4: picking the pet up closes an unanswered request');
+
+  -- BF.5 (009c): a checked handoff stays checked; passed times can't be agreed; house sitting stays home
+  perform _t_as(null);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (lucy, 'open', app_today() + 115, app_today() + 150, 'morning', '08:00', '12:00', 3),
+         (lucy, 'open', app_today() + 115, app_today() + 150, 'afternoon', '12:00', '18:00', 3),
+         (lucy, 'open', app_today() + 115, app_today() + 150, 'overnight', '18:00', '08:00', 3);
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Nori') returning id into nori;
+  v_b3 := _t_booking(chloe, lucy, array[nori], now() + interval '120 days', now() + interval '122 days', 'confirmed', true);
+  perform _t_as(chloe);
+  v_prop := propose_handoff(v_b3, 'pick_up', now() + interval '123 days');
+  perform _t_as(lucy);
+  perform complete_handoff(v_b3, 'pick_up');
+  perform _t_ok((select status from public.booking_handoffs where id = v_prop) = 'superseded',
+    'BF.5: Returned closes the open pick-up proposal');
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_status', 'BF.5: …so it can no longer be accepted');
+  perform _t_as(null);
+  insert into public.booking_handoffs (booking_id, kind, scheduled_at, within_sitter_hours, status, proposed_by)
+  values (v_b3, 'pick_up', now() + interval '124 days', true, 'proposed', chloe)
+  returning id into v_prop;
+  perform _t_as(lucy);
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'handoff_completed', 'BF.5: a checked handoff is never replaced');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_handoffs
+      where booking_id = v_b3 and kind = 'pick_up' and status = 'agreed' and completed_at is not null) = 1,
+    'BF.5: …the Returned pick-up is still the agreed one');
+
+  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Sesame') returning id into sesame;
+  v_b4 := _t_booking(chloe, lucy, array[sesame], now() + interval '130 days', now() + interval '132 days', 'confirmed');
+  v_b5 := _t_booking(chloe, lucy, array[sesame], now() + interval '140 days', now() + interval '142 days', 'requested');
+  update public.booking_handoffs set scheduled_at = now() - interval '1 minute'
+  where booking_id = v_b5 and kind = 'drop_off'
+  returning id into v_prop;
+  perform _t_as(lucy);
+  begin
+    perform respond_handoff(v_prop, true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'proposal_expired', 'BF.5: a proposed time that has passed cannot be accepted');
+
+  perform _t_as(null);
+  v_b6 := _t_booking(chloe, lucy, array[sesame], now() + interval '145 days', now() + interval '147 days', 'requested');
+  update public.booking_handoffs set status = 'agreed' where booking_id = v_b6;
+  update public.booking_handoffs set scheduled_at = now() - interval '1 hour' where booking_id = v_b6 and kind = 'pick_up';
+  begin
+    update public.bookings set status = 'confirmed' where id = v_b6;
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'request_expired', 'BF.5: a request whose pick-up has passed cannot be confirmed');
+
+  update public.bookings set service_type = 'house_sitting' where id = v_b4;
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_b4;
+  perform _t_as(chloe);
+  begin
+    perform propose_handoff(v_b4, 'drop_off', now() + interval '130 days', 'sitter_home');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_location', 'BF.5: house sitting handoffs stay at the owner''s home');
+  perform propose_handoff(v_b4, 'drop_off', now() + interval '130 days' + interval '1 hour');
+  perform _t_ok(true, 'BF.5: …a new time at the same place is fine');
 end;
 $$;
 

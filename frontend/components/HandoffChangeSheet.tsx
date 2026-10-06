@@ -63,12 +63,14 @@ export function HandoffChangeSheet({
   const [draft, setDraft] = useState<Draft>(() => draftFor(booking, initialKind));
   const set = (change: Partial<Draft>) => setDraft((d) => ({ ...d, ...change }));
 
+  // House sitting happens at the owner's home — only the time can move (009c).
+  const placeEditable = allowPlace && booking.serviceType !== "house_sitting";
   const at = draft.day ? zonedToIso(draft.day, draft.time) : null;
   const problem = !at
     ? "Pick a day."
     : Date.parse(at) <= Date.now()
       ? "Pick a time in the future."
-      : allowPlace && draft.locationType === "other" && !draft.note.trim()
+      : placeEditable && draft.locationType === "other" && !draft.note.trim()
         ? "Tell them where to meet."
         : null;
 
@@ -77,7 +79,7 @@ export function HandoffChangeSheet({
     onSubmit({
       kind: draft.kind,
       at,
-      place: allowPlace ? { locationType: draft.locationType, note: draft.note.trim() || null } : undefined,
+      place: placeEditable ? { locationType: draft.locationType, note: draft.note.trim() || null } : undefined,
     });
   };
 
@@ -114,7 +116,7 @@ export function HandoffChangeSheet({
           testID="change-time"
         />
       </View>
-      {allowPlace ? (
+      {placeEditable ? (
         <View accessibilityRole="radiogroup">
           {PLACES.map((type) => (
             <CheckRow
@@ -138,7 +140,9 @@ export function HandoffChangeSheet({
           ) : null}
         </View>
       ) : (
-        <Text style={styles.hint}>The place stays the same.</Text>
+        <Text style={styles.hint}>
+          {allowPlace ? "House sitting — handoffs stay at the owner's home." : "The place stays the same."}
+        </Text>
       )}
       {problem ? <Text style={styles.problem}>{problem}</Text> : null}
     </Sheet>

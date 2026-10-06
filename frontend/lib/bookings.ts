@@ -19,6 +19,9 @@ const MESSAGES: Record<string, string> = {
   access_locked: "Entry info isn't available yet — or the stay has ended.",
   forbidden: "You can't view this entry info.",
   not_paid: "Addresses unlock after checkout.",
+  proposal_expired: "That time has already passed — suggest another time.",
+  request_expired: "This request's pick-up time has passed, so it can't be accepted.",
+  invalid_location: "House sitting happens at the owner's home.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -566,9 +569,14 @@ export async function getBooking(bookingId: string): Promise<BookingSummary | nu
   return toSummary(data as unknown as BookingRow, await getBookingPets(bookingId));
 }
 
+/** A request nobody answered before its pick-up time — it can't be accepted any more (009c). */
+export function requestExpired(b: BookingSummary, now: number = Date.now()): boolean {
+  return b.status === "requested" && !!b.pickUp && Date.parse(b.pickUp.at) <= now;
+}
+
 /** Requests · Upcoming · Past for the sitter's Bookings tab. */
 export function sitterBucket(b: BookingSummary): "requests" | "upcoming" | "past" {
-  if (b.status === "requested") return "requests";
+  if (b.status === "requested") return requestExpired(b) ? "past" : "requests";
   if (b.status === "confirmed" && !b.pickUp?.completedAt) return "upcoming";
   return "past";
 }

@@ -33,6 +33,7 @@ import {
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
+  requestExpired,
   respondBooking,
   respondHandoff,
 } from "../../../lib/bookings";
@@ -140,7 +141,7 @@ export default function SitterBookingDetail() {
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
-  const canAccept = isRequest && !meetFirst && !waiting && !busy;
+  const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
