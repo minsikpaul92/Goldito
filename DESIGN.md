@@ -51,6 +51,7 @@ PawNote is a private care app for **dogs and cats**. Owners hand their pet to a 
 - **Design frame: 402 × 874** (iPhone 17 class, the current base iPhone). Layouts are fluid and must work from **360 to 440 px** wide (small Android → Pro Max). Check 360 / 402 / 440.
 - **8 px grid.** All spacing comes from `tokens.spacing`.
 - Screen padding: `spacing.md` (16). Gap between cards: `spacing.md`. Inside a card: `spacing.md`.
+- **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
 - Dev builds show a small role label (**Owner** / **Sitter**) in the header.
 
