@@ -2235,6 +2235,66 @@ begin
   insert into public.pet_cautions (pet_id, text, created_by) values (v_id, 'Shy with strangers', chloe);
   perform _t_ok(true, '6.23: a pet with no stay on is edited directly as before');
 
+  -- Phase 07 (7.5): the sitter sends the daily report; the owner only ever sees the sent text
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, model)
+  values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: Max had a day.', 'draft', 'test-model')
+  returning id into v_id;
+  perform _t_put('report', v_id);
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.daily_reports where id = _t_get('report')) = 0,
+    '7.5: the owner does not see the draft');
+  begin
+    perform send_daily_report(_t_get('report'), 'I am the owner');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '7.5: the owner cannot send it');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform _t_ok((select count(*) from public.daily_reports where id = _t_get('report')) = 1,
+    '7.5: the sitter sees their own draft');
+  perform _t_as(lucy);
+  begin
+    perform send_daily_report(_t_get('report'), 'Not mine');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', '7.5: another sitter cannot send it');
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform send_daily_report(_t_get('report'), '   ');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'body_required', '7.5: an empty report cannot be sent');
+  begin
+    perform send_daily_report(_t_get('report'), repeat('x', 2001));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'body_too_long', '7.5: …or one over 2000 characters');
+  perform send_daily_report(_t_get('report'), '  Max had a lovely day — my own words.  ');
+  perform _t_ok((select status = 'sent' and body = 'Max had a lovely day — my own words.' and sent_at is not null
+      from public.daily_reports where id = _t_get('report')),
+    '7.5: sending publishes the sitter''s edited text (trimmed), not the AI draft');
+  perform _t_as(chloe);
+  perform _t_ok((select body from public.daily_reports where id = _t_get('report')) = 'Max had a lovely day — my own words.',
+    '7.5: the owner now sees the sent report');
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'report_sent'
+      and ref_id = _t_get('report') and pet_id = max and body like 'Max had a lovely day%') = 1,
+    '7.5: the owner is told, with the start of the text');
+  perform _t_as(_t_get('ccr_sitter'));
+  begin
+    perform send_daily_report(_t_get('report'), 'Again');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'report_already_sent', '7.5: a report is sent once');
+  update public.daily_reports set body = 'Rewritten after sending' where id = _t_get('report');
+  perform _t_as(null);
+  perform _t_ok((select body from public.daily_reports where id = _t_get('report')) = 'Max had a lovely day — my own words.',
+    '7.5: a sent report cannot be edited directly');
+
   -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
   perform _t_as(chloe);
   v_id := send_care_change_request(
