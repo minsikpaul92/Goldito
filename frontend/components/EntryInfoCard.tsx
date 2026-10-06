@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { formatInstant } from "../features/schedule/dates";
 import {
+  BookingError,
   getHomeAccess,
   type HomeAccess,
   type HomeAccessLocked,
@@ -30,7 +31,10 @@ const HIDE_MS = 10_000;
  */
 export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const [state, setState] = useState<HomeAccess | HomeAccessLocked | { error: string } | null>(null);
+  // `code` is the RPC error code (not_paid, forbidden, …); `error` is the message to show.
+  const [state, setState] = useState<
+    HomeAccess | HomeAccessLocked | { error: string; code: string | null } | null
+  >(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -41,7 +45,9 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props
         const result = await getHomeAccess(bookingId);
         if (!cancelled) setState(result);
       } catch (err) {
-        if (!cancelled) setState({ error: (err as Error).message });
+        if (!cancelled) {
+          setState({ error: (err as Error).message, code: err instanceof BookingError ? err.code : null });
+        }
       }
     })();
     return () => {
@@ -64,7 +70,7 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props
     );
   }
   if ("error" in state) {
-    if (state.error === "not_paid" && waitingForSignature) {
+    if (state.code === "not_paid" && waitingForSignature) {
       return (
         <Card style={styles.card} testID="entry-info-waiting">
           <Text style={styles.title}>🔒 Entry info</Text>
@@ -75,7 +81,7 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props
         </Card>
       );
     }
-    if (state.error === "forbidden" || state.error === "not_paid") return null;
+    if (state.code === "forbidden" || state.code === "not_paid") return null;
     return (
       <Card style={styles.card} testID="entry-info-error">
         <Text style={styles.muted}>{state.error}</Text>
