@@ -103,6 +103,8 @@ def build_snapshot(
     task_logs: list[dict],
     checkins: list[dict],
     feed_posts: list[dict],
+    allergies: list[str],
+    heads_up: list[str],
     report_photos: list[str],
     chips: list[str],
     sitter_note: str | None,
@@ -130,6 +132,10 @@ def build_snapshot(
             "due": _hhmm(due, tz),
             "status": "done" if done else "missed",
         }
+        # What the owner asked for, in their words (a done task means it was carried out).
+        for key in ("dose", "notes"):
+            if value := _clean(task.get(key), 120):
+                entry[f"owner_{key}"] = value
         if done and log.get("completed_at"):
             entry["completed_at"] = _hhmm(parse_ts(log["completed_at"]), tz)
         snap_tasks.append(entry)
@@ -178,6 +184,10 @@ def build_snapshot(
             "name": pet["name"],
             **({"breed": pet["breed"]} if pet.get("breed") else {}),
             **({"age_years": a} if (a := age_years(pet.get("birthdate"), day)) is not None else {}),
+            # The owner's own information about the pet: background, never something that happened today.
+            **({"owner_notes": n} if (n := _clean(pet.get("notes"), NOTE_MAX)) else {}),
+            **({"allergies": cleaned} if (cleaned := [a for a in (_clean(x, 40) for x in allergies) if a][:8]) else {}),
+            **({"heads_up": h} if (h := [t for t in (_clean(x, 100) for x in heads_up) if t][:8]) else {}),
         },
         "date": day.isoformat(),
         "tasks": snap_tasks,

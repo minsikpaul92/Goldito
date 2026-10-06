@@ -32,7 +32,17 @@ def at(hh_mm: str, day: str = "2026-10-15") -> str:
 
 def make_db(*, pick_up: str = "2026-10-16T12:00:00+00:00", **extra) -> FakeDB:
     tables = dict(
-        pets=[{"id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01"}],
+        pets=[
+            {
+                "id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01",
+                "notes": "Loves squirrels, shy with strangers",
+            }
+        ],
+        pet_allergies=[{"pet_id": PET_ID, "allergen": "chicken"}, {"pet_id": "other-pet", "allergen": "beef"}],
+        pet_cautions=[
+            {"pet_id": PET_ID, "text": "No knocking — text me instead", "active": True},
+            {"pet_id": PET_ID, "text": "Switched off", "active": False},
+        ],
         bookings=[{"id": "b1", "sitter_id": SITTER_ID, "status": "confirmed"}],
         booking_pets=[{"booking_id": "b1", "pet_id": PET_ID}],
         booking_handoffs=[
@@ -40,8 +50,11 @@ def make_db(*, pick_up: str = "2026-10-16T12:00:00+00:00", **extra) -> FakeDB:
             {"booking_id": "b1", "kind": "pick_up", "scheduled_at": pick_up},
         ],
         care_tasks=[
-            {"id": "t-med", "pet_id": PET_ID, "type": "medication", "title": "Heartworm pill"},
-            {"id": "t-walk", "pet_id": PET_ID, "type": "walk", "title": "Walk"},
+            {
+                "id": "t-med", "pet_id": PET_ID, "type": "medication", "title": "Heartworm pill",
+                "dose": "1 pill, hidden in a lickable treat", "notes": None,
+            },
+            {"id": "t-walk", "pet_id": PET_ID, "type": "walk", "title": "Walk", "dose": "20 minutes", "notes": "Avoid the dog park"},
             {"id": "t-dinner", "pet_id": PET_ID, "type": "feeding", "title": "Dinner"},
         ],
         task_logs=[
@@ -114,12 +127,24 @@ def test_the_snapshot_holds_todays_records_and_what_the_sitter_kept(client, setu
     response = post(client, chips=["Watching a squirrel", "Park walk"], sitter_note="She got so excited", photos=["Max looking up at a squirrel"])
     assert response.status_code == 200
     snap = model.snapshot
-    assert snap["pet"] == {"species": "dog", "name": "Max", "breed": "Maltese", "age_years": 4}
+    # The owner's own information about the pet is part of it (active Heads-ups and this pet's allergies only).
+    assert snap["pet"] == {
+        "species": "dog",
+        "name": "Max",
+        "breed": "Maltese",
+        "age_years": 4,
+        "owner_notes": "Loves squirrels, shy with strangers",
+        "allergies": ["chicken"],
+        "heads_up": ["No knocking — text me instead"],
+    }
     assert snap["date"] == "2026-10-15"
     # Done and missed tasks only (the 22:00 dinner is in the future), in the app's timezone.
     assert snap["tasks"] == [
-        {"type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04"},
-        {"type": "walk", "title": "Walk", "due": "10:30", "status": "missed"},
+        {
+            "type": "medication", "title": "Heartworm pill", "due": "08:00", "status": "done", "completed_at": "08:04",
+            "owner_dose": "1 pill, hidden in a lickable treat",  # what the owner asked for
+        },
+        {"type": "walk", "title": "Walk", "due": "10:30", "status": "missed", "owner_dose": "20 minutes", "owner_notes": "Avoid the dog park"},
     ]
     assert snap["checks"] == {"meal": "all", "potty": "normal", "walk_minutes": 20, "meds": "done"}
     assert [c["kind"] for c in snap["checkins"]] == ["meal", "walk", "potty", "note"]  # only this sitter, only today
@@ -169,6 +194,8 @@ def test_a_day_with_nothing_recorded_is_a_fixed_line_and_the_model_is_not_asked(
     assert model.calls == []  # nothing to say → nothing it could invent
     assert body["model"] == "template" and body["status"] == "draft"
     assert "nothing special to report" in body["body"] and "Max" in body["body"]
+    # The owner's notes, allergies and Heads-ups are background: on their own they are not a day's facts.
+    assert "chicken" not in body["body"] and "squirrel" not in body["body"]
     assert db.tables["daily_reports"][0]["model"] == "template"
     # …but a chip or a note is a fact, so then the model writes.
     post(client, chips=["Nap in the sun"])
@@ -192,7 +219,7 @@ def test_a_missed_walk_is_not_counted_as_minutes_or_done(client, setup):
     post(client)
     snap = model.snapshot
     assert "walk_minutes" not in snap["checks"]
-    assert {"type": "walk", "title": "Walk", "due": "10:30", "status": "missed"} in snap["tasks"]
+    assert any(t["type"] == "walk" and t["status"] == "missed" for t in snap["tasks"])
 
 
 # --- saving ------------------------------------------------------------------------------------

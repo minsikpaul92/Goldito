@@ -73,7 +73,7 @@ def daily_report(
     day = now.astimezone(tz).date()
     day_start, day_end = day_bounds(day, tz)
 
-    pet = _one(db.table("pets").select("name, species, breed, birthdate").eq("id", pet_id).limit(1).execute())
+    pet = _one(db.table("pets").select("name, species, breed, birthdate, notes").eq("id", pet_id).limit(1).execute())
     if not pet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pet not found.")
 
@@ -94,7 +94,7 @@ def daily_report(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet today.")
 
     lo, hi = day_start.isoformat(), day_end.isoformat()
-    tasks = db.table("care_tasks").select("id, type, title").eq("pet_id", pet_id).execute().data
+    tasks = db.table("care_tasks").select("id, type, title, dose, notes").eq("pet_id", pet_id).execute().data
     logs = (
         db.table("task_logs")
         .select("task_id, due_at, status, completed_at")
@@ -126,6 +126,11 @@ def daily_report(
         .data
     )
 
+    allergies = [a["allergen"] for a in db.table("pet_allergies").select("allergen").eq("pet_id", pet_id).execute().data]
+    heads_up = [
+        c["text"] for c in db.table("pet_cautions").select("text").eq("pet_id", pet_id).eq("active", True).execute().data
+    ]
+
     snapshot = build_snapshot(
         pet=pet,
         day=day,
@@ -135,6 +140,8 @@ def daily_report(
         task_logs=logs,
         checkins=checkins,
         feed_posts=posts,
+        allergies=allergies,
+        heads_up=heads_up,
         report_photos=body.photos,
         chips=body.chips,
         sitter_note=body.sitter_note,
