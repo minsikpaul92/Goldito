@@ -1,0 +1,40 @@
+/* PawNote design system for web pages (prototype hub, viewers, notes).
+   Same tokens as frontend/theme/tokens.ts and the Figma "PawNote Design System" variables.
+   Dark values are a proposal (the app has no dark mode yet); every pair is checked: text ≥ 4.5:1, outlines ≥ 3:1. */
+:root{
+  --color-background:#F7F7F5; --color-surface:#FFFFFF; --color-text:#1A1A1A; --color-text-muted:#5C5C5C;
+  --color-primary:#2D6A4F; --color-primary-text:#FFFFFF; --color-accent:#D8F3DC;
+  --color-border:#E5E5E0; --color-border-strong:#86867F; --color-track:#E5E5E0;
+  --color-error:#B42318; --color-error-surface:#FEF3F2; --color-warning:#B54708; --color-warning-surface:#FFFAEB;
+  --color-success:#067647; --color-success-surface:#ECFDF3;
+  --spacing-xs:4px; --spacing-sm:8px; --spacing-md:16px; --spacing-lg:24px; --spacing-xl:32px;
+  --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --size-touch-target:44px;
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-size-title:24px; --font-size-body:16px; --font-size-small:14px; --font-size-caption:12px;
+  --shadow-xs:0 1px 2px 0 rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --color-background:#121312; --color-surface:#1A1B1A; --color-text:#EDEDEA; --color-text-muted:#A3A39C;
+  --color-primary:#7CCBA2; --color-primary-text:#0E1210; --color-accent:#1E3128;
+  --color-border:#2C2D2B; --color-border-strong:#6E6E68; --color-track:#2C2D2B;
+  --color-error:#FF8A7E; --color-error-surface:#2E1512; --color-warning:#F5A75B; --color-warning-surface:#2B1D0E;
+  --color-success:#5FD69A; --color-success-surface:#0F2A1E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --color-background:#121312; --color-surface:#1A1B1A; --color-text:#EDEDEA; --color-text-muted:#A3A39C;
+  --color-primary:#7CCBA2; --color-primary-text:#0E1210; --color-accent:#1E3128;
+  --color-border:#2C2D2B; --color-border-strong:#6E6E68; --color-track:#2C2D2B;
+  --color-error:#FF8A7E; --color-error-surface:#2E1512; --color-warning:#F5A75B; --color-warning-surface:#2B1D0E;
+  --color-success:#5FD69A; --color-success-surface:#0F2A1E; color-scheme:dark}
+
+/* Components (same names as Figma) */
+.ds-btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-sm);min-height:var(--size-touch-target);
+  padding:0 var(--spacing-md);border-radius:var(--radius-md);font:600 var(--font-size-small)/1.2 var(--font);text-decoration:none;cursor:pointer;
+  border:1px solid var(--color-primary);background:var(--color-primary);color:var(--color-primary-text);box-shadow:var(--shadow-xs)}
+.ds-btn.secondary{background:var(--color-surface);border-color:var(--color-border-strong);color:var(--color-primary)}
+.ds-btn:hover{filter:brightness(.97)} .ds-btn:focus-visible,.ds-chip:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+.ds-tag{display:inline-flex;align-items:center;gap:var(--spacing-xs);padding:2px var(--spacing-sm);border-radius:var(--radius-sm);
+  font:600 var(--font-size-caption)/1.4 var(--font);background:var(--color-surface);color:var(--color-text-muted);border:1px solid var(--color-border-strong)}
+.ds-tag.brand{background:var(--color-accent);color:var(--color-primary);border-color:transparent}
+.ds-tag.warning{background:var(--color-warning-surface);color:var(--color-warning);border-color:transparent}
+.ds-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-xs)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
