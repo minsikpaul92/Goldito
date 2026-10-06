@@ -299,7 +299,15 @@ begin
     '5.3: feed post → owner feed_post notification');
   perform _t_as(lucy);
   select count(*) into n from public.owner_profiles where id = chloe;
-  perform _t_ok(n = 1, 'confirmed sitter can see owner profile');
+  perform _t_ok(n = 0, 'BF.6: a confirmed sitter cannot see the owner profile before payment');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = _t_get('current');
+  perform _t_as(lucy);
+  select count(*) into n from public.owner_profiles where id = chloe;
+  perform _t_ok(n = 1, 'paid sitter can see owner profile');
+  perform _t_as(null);
+  update public.bookings set paid_at = null where id = _t_get('current');
+  perform _t_as(lucy);
   perform _t_ok(in_care_window(max, now()), 'in_care_window true during care');
   perform _t_ok(not in_care_window(max, now() - interval '2 days'), 'in_care_window false before drop-off');
   perform _t_ok((select home_address from get_my_sitter_profile()) = '100 Example St',
