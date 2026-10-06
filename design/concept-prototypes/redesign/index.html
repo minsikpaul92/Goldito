@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PawNote Redesign Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500&family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="skins.css">
+<style>
+/* Tokens = frontend/theme/tokens.ts (+ shadcn-style elevation). */
+:root{
+  --background:#F7F7F5; --surface:#FFFFFF; --text:#1A1A1A; --text-muted:#5C5C5C; --primary:#2D6A4F; --primary-text:#FFFFFF;
+  --accent:#D8F3DC; --border:#E5E5E0; --border-strong:#86867F; --track:#E5E5E0; --error-surface:#FEF3F2; --warning-surface:#FFFAEB; --success-surface:#ECFDF3; --error:#B42318; --success:#067647; --warning:#B54708;
+  --xs:4px; --sm:8px; --md:16px; --lg:24px; --xl:32px; --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --shadow-xs:0 1px 2px 0 rgba(0,0,0,.05); --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);
+  --page:#EDEDEA; --page-text:#1A1A1A; --page-muted:#5C5C5C;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--page:#121312;--page-text:#EDEDEA;--page-muted:#A3A39C;color-scheme:dark}}
+:root[data-theme="dark"]{--page:#121312;--page-text:#EDEDEA;--page-muted:#A3A39C;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--page-text);font-family:Inter,-apple-system,system-ui,sans-serif;padding-inline:16px;padding-block:40px 80px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+header h1{margin:0 0 8px;font-size:30px;letter-spacing:-.02em}
+header p{margin:0;color:var(--page-muted);max-width:760px;line-height:1.5}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:13px;color:var(--page-muted)}
+.legend b{color:var(--page-text)}
+section.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:start}
+@media (max-width:980px){section.pair{grid-template-columns:1fr}}
+.col h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--page-muted);margin:0 0 10px}
+.shot{width:100%;max-width:360px;border-radius:28px;border:6px solid #1A1A1A;display:block;background:#fff}
+.notes h3{margin:0 0 4px;font-size:20px;letter-spacing:-.01em}
+.notes .tabname{color:var(--page-muted);font-size:13px;margin-bottom:12px}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
+.notes li b{font-weight:600}
+.notes .comp{margin-top:14px;font-size:12px;color:var(--page-muted)}
+.notes .comp code{background:rgba(127,127,127,.15);border-radius:4px;padding:1px 5px;font-size:11.5px}
+
+/* ---------- phone + app (design system) ---------- */
+.phone{width:360px;max-width:100%;height:760px;border-radius:28px;border:6px solid #1A1A1A;background:var(--background);color:var(--text);
+  display:flex;flex-direction:column;overflow:hidden;position:relative;font-size:14px}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:12px var(--md) 10px;background:var(--background)}
+.bar h4{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.icons{display:flex;gap:4px}
+.ib{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;position:relative;color:var(--text)}
+.ib svg{width:22px;height:22px}
+.ib .dot{position:absolute;top:6px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--error);box-shadow:0 0 0 2px var(--background)}
+.ava{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--primary);display:grid;place-items:center;font-weight:700;font-size:13px}
+.scroll{flex:1;overflow:hidden;padding:4px var(--md) var(--md);display:flex;flex-direction:column;gap:var(--md)}
+.scroll>*{flex-shrink:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-xs)}
+.pad{padding:var(--md)}
+.row{display:flex;align-items:center;gap:var(--sm)}
+.between{display:flex;align-items:center;justify-content:space-between;gap:var(--sm)}
+.stack{display:flex;flex-direction:column;gap:var(--sm)}
+.muted{color:var(--text-muted)} .small{font-size:12.5px} .tiny{font-size:11px}
+.b{font-weight:600} .h{font-weight:700;font-size:16px;letter-spacing:-.01em}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+.pill.live{background:var(--accent);color:var(--primary)} .pill.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--success)}
+.pill.line{border:1px solid var(--border);color:var(--text)}
+.pill.warn{background:var(--warning-surface);color:var(--warning)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:var(--r-md);font-weight:600;font-size:15px;border:1px solid var(--primary);background:var(--primary);color:var(--primary-text);box-shadow:var(--shadow-xs)}
+.btn.sec{background:var(--surface);color:var(--primary);border-color:var(--border)}
+.link{color:var(--primary);font-weight:600;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-strong);min-height:36px;background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--primary);border-color:var(--primary);color:var(--primary-text)}
+.chip.soft{background:var(--accent);border-color:transparent;color:var(--primary)}
+.chips{display:flex;gap:6px;flex-wrap:nowrap;overflow:hidden}
+.photo{background-size:cover;background-position:center;border-radius:var(--r-md)}
+.avatar{width:44px;height:44px;border-radius:50%;background-size:cover;background-position:center;flex:0 0 auto;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--border)}
+.avatar.emoji{display:grid;place-items:center;background:var(--accent);font-size:22px}
+.prog{display:flex;gap:4px}.prog i{flex:1;height:6px;border-radius:3px;background:var(--track)}.prog i.on{background:var(--primary)}
+.divider{height:1px;background:var(--border)}
+.tabs{display:flex;justify-content:space-around;padding:6px 6px 16px;background:var(--surface);border-top:1px solid var(--border)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--text-muted);width:62px}
+.tab .p{width:50px;height:28px;border-radius:14px;display:grid;place-items:center}
+.tab svg{width:21px;height:21px}
+.tab.on{color:var(--primary)} .tab.on .p{background:var(--accent)}
+.pinned{padding:var(--sm) var(--md) var(--sm);background:var(--background)}
+.tl{display:flex;flex-direction:column}
+.tl .it{display:grid;grid-template-columns:44px 14px 1fr;gap:8px;align-items:start;padding-bottom:12px}
+.tl .t{font-size:11.5px;font-weight:600;color:var(--text-muted);padding-top:2px;font-variant-numeric:tabular-nums}
+.tl .rail{position:relative;height:100%}.tl .rail::before{content:"";position:absolute;left:6px;top:14px;bottom:-12px;width:2px;background:var(--border)}
+.tl .rail::after{content:"";position:absolute;left:2px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--primary)}
+.tl .it:last-child .rail::before{display:none}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.grid3 .g{aspect-ratio:1;border-radius:8px;background-size:cover;background-position:center;position:relative}
+.grid3 .g span{position:absolute;left:4px;bottom:4px;background:rgba(255,255,255,.92);border-radius:999px;font-size:10px;font-weight:600;padding:1px 6px}
+.seg{display:flex;background:#EFEFEB;border-radius:10px;padding:3px}
+.seg span{flex:1;text-align:center;padding:6px;border-radius:8px;font-size:13px;font-weight:600;color:var(--text-muted)}
+.seg span.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-xs)}
+.steps{display:flex;gap:4px;align-items:center}
+.steps i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;background:var(--track);color:var(--text-muted)}
+.steps i.d{background:var(--success);color:#fff}.steps i.c{background:var(--primary);color:#fff}
+.steps b{flex:1;height:2px;background:var(--border)}.steps b.d{background:var(--success)}
+.task{border:2px solid var(--primary)}
+.bubble{background:var(--background);border:1px solid var(--border);border-radius:14px;padding:12px;font-size:13.5px;line-height:1.5}
+.skinbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:14px;font-size:13px}
+.skinbar button{font:inherit;font-weight:600;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;border-radius:999px;padding:6px 12px;cursor:pointer}
+.skinbar button[aria-pressed="true"]{background:#2D6A4F;border-color:#2D6A4F;color:#fff}
+.skinbar a{color:inherit;margin-left:6px}
+footer{color:var(--page-muted);font-size:13px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>PawNote: live app vs. our design system</h1>
+  <p>Draft for Minsik. Same tabs and the same data as the live app (D47: Home · Bookings · Feed · Diary · Mood; demo Chloe, Lucy, Max, Mochi). The right-hand phone uses only our tokens and components, so every change maps to something already in <code>frontend/components/ui</code>, PR #41 or the Figma library.</p>
+  <div class="legend"><span><b>Left</b> live on Vercel (Oct 5)</span><span><b>Middle</b> with our design system</span><span><b>Right</b> what changed and why</span></div>
+  <div class="skinbar" role="group" aria-label="Look"><span>Look:</span><button data-s="">Design system</button><button data-s="c">Balanced</button><button data-s="b">Playful</button><a href="compare.html#owner-home/all">Side by side ↗</a></div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 9"/></symbol>
+  <symbol id="book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 6c-2-1.5-5-2-9-2v15c4 0 7 .5 9 2 2-1.5 5-2 9-2V4c-4 0-7 .5-9 2zM12 6v15"/></symbol>
+  <symbol id="smile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></symbol>
+  <symbol id="cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+</svg>
+
+<template id="tabbar"><nav class="tabs">
+  <span class="tab" data-t="home"><span class="p"><svg><use href="#home"/></svg></span>Home</span>
+  <span class="tab" data-t="bookings"><span class="p"><svg><use href="#cal"/></svg></span>Bookings</span>
+  <span class="tab" data-t="feed"><span class="p"><svg><use href="#img"/></svg></span>Feed</span>
+  <span class="tab" data-t="diary"><span class="p"><svg><use href="#book"/></svg></span>Diary</span>
+  <span class="tab" data-t="mood"><span class="p"><svg><use href="#smile"/></svg></span>Mood</span>
+</nav></template>
+<template id="bar"><div class="bar"><h4></h4><div class="icons"><span class="ib"><svg><use href="#bell"/></svg><span class="dot"></span></span><span class="ib"><span class="ava">C</span></span></div></div></template>
+
+<!-- ===================== OWNER HOME ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Owner Home</h2><img class="shot" src="live/owner-home.png" alt="Live owner Home"></div>
+  <div class="col"><h2>Design system · Owner Home</h2>
+    <div class="phone" data-title="Home" data-tab="home">
+      <div class="scroll">
+        <div class="card" style="overflow:hidden">
+          <div class="photo" style="height:150px;border-radius:0;background-image:url(img/pet0.jpg);background-position:50% 35%"></div>
+          <div class="pad stack">
+            <div class="between"><span class="pill live">With Lucy now</span><span class="small muted">Day 2 of 3</span></div>
+            <div class="h">Max & Mochi are with Lucy</div>
+            <div class="small muted">Picked up Fri 7:30 AM · photo verified · home Mon 5:00 PM</div>
+            <div class="between small"><span class="b">Today's care</span><span class="muted">3 of 5 done</span></div>
+            <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
+          </div>
+        </div>
+        <div class="card pad row" style="align-items:flex-start;gap:12px">
+          <div class="photo" style="width:56px;height:56px;flex:0 0 auto;background-image:url(img/pet0.jpg);background-position:30% 60%"></div>
+          <div class="stack" style="gap:2px"><span class="tiny muted b">LATEST · 9:02 AM</span><span class="small"><b>Breakfast done.</b> Max finished every bit and asked for more.</span></div>
+        </div>
+        <div class="between"><span class="h" style="font-size:15px">Your pets</span><span class="link">+ Add pet</span></div>
+        <div class="row" style="gap:10px">
+          <div class="card pad row" style="flex:1;padding:10px;gap:8px"><span class="avatar" style="width:36px;height:36px;background-image:url(img/pet0.jpg)"></span><div><div class="b">Max</div><div class="tiny muted">Maltese · 4 yrs</div></div></div>
+          <div class="card pad row" style="flex:1;padding:10px;gap:8px"><span class="avatar emoji" style="width:36px;height:36px;font-size:18px">🐱</span><div><div class="b">Mochi</div><div class="tiny muted">Shorthair · 3 yrs</div></div></div>
+        </div>
+        <div class="pill warn" style="align-self:flex-start">⚠️ Max · allergic to chicken</div>
+      </div>
+      <div class="pinned"><div class="btn">See today's updates</div></div>
+    </div>
+  </div>
+  <div class="col notes"><h3>Answer “is my pet OK?” first</h3><div class="tabname">Owner · Home</div>
+    <ul>
+      <li><b>One stay card replaces two “In care” cards.</b> Photo, “With Lucy now”, day 2 of 3, and today's care progress: the README's “learn without asking” at a glance.</li>
+      <li><b>Latest update right on Home</b> (photo + AI caption), so the owner doesn't have to open Diary to feel reassured.</li>
+      <li><b>The one primary action matches the moment:</b> “See today's updates” during a stay. “Add pet” becomes a text link (DESIGN.md §7.1).</li>
+      <li><b>Log out leaves the header</b> (D47: settings live in Profile). Bell + avatar only.</li>
+      <li>Allergy stays visible as a <b>Heads-up tag</b>, warning tone, not a status chip.</li>
+    </ul>
+    <div class="comp">Components: <code>Card</code> <code>Progress Bar</code> <code>Avatar</code> <code>Heads-up Tag</code> <code>Button</code> (pinned via <code>Screen footer</code>) <code>Icon Button</code></div>
+  </div>
+</section>
+
+<!-- ===================== BOOKINGS ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Bookings</h2><img class="shot" src="live/owner-bookings.png" alt="Live owner Bookings"></div>
+  <div class="col"><h2>Design system · Bookings</h2>
+    <div class="phone" data-title="Bookings" data-tab="bookings">
+      <div class="scroll">
+        <div class="seg"><span class="on">Upcoming</span><span>Requests</span><span>Past</span></div>
+        <div class="card pad stack">
+          <div class="between"><div class="row"><span class="avatar emoji" style="width:36px;height:36px;font-size:15px;background:var(--primary);color:#fff;font-weight:700">L</span><div><div class="b">Lucy · Boarding</div><div class="tiny muted">Max, Mochi · Oct 9–12</div></div></div><span class="pill live">In care</span></div>
+          <div class="steps"><i class="d">✓</i><b class="d"></b><i class="d">✓</i><b class="d"></b><i class="d">✓</i><b class="d"></b><i class="c">4</i><b></b><i>5</i></div>
+          <div class="tiny muted">Inquiry · Meet & Greet · Booking · <b style="color:var(--primary)">Care</b> · Home</div>
+          <div class="divider"></div>
+          <div class="between small"><span>🚗 Drop-off · you drive</span><span class="b">Fri 7:30 AM ✓</span></div>
+          <div class="between small"><span>🏠 Pick-up · you drive</span><span class="b">Mon 5:00 PM</span></div>
+          <div class="between small"><span class="muted">Paid · 5 consents signed</span><span class="b">$268.13 CAD</span></div>
+        </div>
+        <div class="between"><span class="h" style="font-size:15px">Your sitters</span><span class="link">See all</span></div>
+        <div class="card pad row" style="gap:12px">
+          <span class="avatar emoji" style="background:var(--primary);color:#fff;font-weight:700;font-size:16px">L</span>
+          <div style="flex:1"><div class="b">Lucy Kim <span class="small" style="color:var(--warning)">★ 5.0</span></div><div class="tiny muted">North York · 1 stay with you · replies in ~30 s</div></div>
+          <span class="chip" style="padding:4px 10px">🏠 Boarding</span>
+        </div>
+      </div>
+      <div class="pinned"><div class="btn">Book care</div></div>
+    </div>
+  </div>
+  <div class="col notes"><h3>Show where the stay is</h3><div class="tabname">Owner · Bookings</div>
+    <ul>
+      <li><b>Upcoming · Requests · Past</b> segments (D47b already names Past) instead of one long list as bookings grow.</li>
+      <li><b>The 5-stage stepper</b> on each booking (Inquiry → Home). It's the README's main story; judges see the whole flow on one card.</li>
+      <li><b>Handoffs as two clear rows</b> with who drives and a check when done, instead of one dense paragraph. Realistic demo times (7:30 AM, not 12:37 AM).</li>
+      <li><b>Price and consents</b> summarised on the card (03C is built; surface it).</li>
+      <li>Sitter row gets <b>rating and reply speed</b> (Rover benchmark).</li>
+    </ul>
+    <div class="comp">Components: <code>Segmented Control</code> <code>Stage Card</code> (compact) <code>Quote Card</code> line <code>Profile Card</code> <code>Button</code></div>
+  </div>
+</section>
+
+<!-- ===================== FEED ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Feed</h2><img class="shot" src="live/owner-feed.png" alt="Live owner Feed"></div>
+  <div class="col"><h2>Design system · Feed</h2>
+    <div class="phone" data-title="Feed" data-tab="feed">
+      <div class="scroll" style="gap:12px">
+        <div class="chips"><span class="chip soft">🐶 Max ✓</span><span class="chip soft">🐱 Mochi ✓</span></div>
+        <div class="chips"><span class="chip on">All</span><span class="chip">🍽️ Meals</span><span class="chip">🦮 Walks</span><span class="chip">😴 Naps</span><span class="chip">🎾 Play</span></div>
+        <div class="between"><span class="b">Today · Sat Oct 10</span><span class="tiny muted">6 photos</span></div>
+        <div class="grid3">
+          <div class="g" style="background-image:url(img/pet0.jpg);background-position:30% 40%"><span>🍽️ 8:12</span></div>
+          <div class="g" style="background-image:url(img/pet0.jpg);background-position:70% 60%"><span>🦮 9:02</span></div>
+          <div class="g" style="background-image:url(img/pet0.jpg)"><span>😴 1:10</span></div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div class="photo" style="height:170px;border-radius:0;background-image:url(img/pet0.jpg);background-position:50% 30%"></div>
+          <div class="pad stack" style="gap:6px">
+            <span class="eyebrow" style="font-size:10px">✦ AI caption · 🦮 Walks</span>
+            <span class="small">Max spotted a squirrel on the morning walk and wagged the whole way home.</span>
+            <div class="between"><span class="tiny muted">Lucy · 9:02 AM · 🔒 Visible to Chloe</span><span class="small b muted">♡ Love it</span></div>
+          </div>
+        </div>
+        <div class="between"><span class="b">Yesterday · Fri Oct 9</span><span class="tiny muted">4 photos</span></div>
+      </div>
+      <div class="pinned" style="display:flex;justify-content:flex-end"><div class="btn" style="padding:0 18px;border-radius:999px"><svg style="width:18px;height:18px"><use href="#cam"/></svg> Photo</div></div>
+    </div>
+  </div>
+  <div class="col notes"><h3>An album you can scan by day and kind</h3><div class="tabname">Owner · Feed</div>
+    <ul>
+      <li><b>Category chips (Meals · Walks · Naps · Play)</b>: the README's “timeline album”, missing on live. Pet toggles stay as soft chips.</li>
+      <li><b>Grouped by day</b> with a count, plus a small category + time badge on each tile.</li>
+      <li><b>Tapping opens the caption card</b>: AI caption, who and when, Love it. Captions are the AI story judges need to see.</li>
+      <li>“Only you” becomes an explicit <b>“🔒 Visible to Chloe”</b> line on the post, not a floating pill.</li>
+      <li><b>Demo photos must be Max</b> (Maltese). Live shows other breeds.</li>
+    </ul>
+    <div class="comp">Components: <code>Filter Chip</code> <code>Feed Card</code> <code>Photo Tile</code> <code>Button</code></div>
+  </div>
+</section>
+
+<!-- ===================== DIARY ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Diary</h2><img class="shot" src="live/owner-diary.png" alt="Live owner Diary"></div>
+  <div class="col"><h2>Design system · Diary</h2>
+    <div class="phone" data-title="Diary" data-tab="diary">
+      <div class="scroll" style="gap:12px">
+        <div class="between"><span class="pill live">On air · Lucy</span><span class="link">Filter</span></div>
+        <div class="card pad stack">
+          <div class="between"><span class="b">Daily note · Fri Oct 9</span><span class="tiny muted">6:04 PM</span></div>
+          <div class="bubble">Max finished every bit of her breakfast, took her skin pill tucked in a treat, and we did a 20-minute walk. She spotted a squirrel and got so excited 🐿️ Potty was perfectly healthy, too.</div>
+          <div class="chips" style="flex-wrap:wrap"><span class="chip on" style="padding:3px 9px;font-size:11.5px">🍽️ Breakfast</span><span class="chip on" style="padding:3px 9px;font-size:11.5px">💊 Pill</span><span class="chip on" style="padding:3px 9px;font-size:11.5px">🦮 20 min</span></div>
+          <div class="tiny muted">✦ Written by AI from Lucy's 5-second check · approved by Lucy</div>
+        </div>
+        <span class="b">Today</span>
+        <div class="tl">
+          <div class="it"><span class="t">9:02</span><span class="rail"></span><div class="row" style="gap:8px"><span class="photo" style="width:36px;height:36px;flex:0 0 auto;background-image:url(img/pet0.jpg)"></span><span class="small"><b>Walk</b> · 20 min, all good</span></div></div>
+          <div class="it"><span class="t">8:12</span><span class="rail"></span><span class="small"><b>Breakfast</b> · finished the bowl ✓</span></div>
+          <div class="it"><span class="t">7:30</span><span class="rail"></span><span class="small"><b>Picked up</b> · photo verified ✓</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col notes"><h3>The diary is the product; don't show it empty</h3><div class="tabname">Owner · Diary</div>
+    <ul>
+      <li><b>“On air · Lucy”</b> signals a live stay (D47 “Live/On air”).</li>
+      <li><b>The AI daily note leads</b>, with the chips it was written from and “approved by Lucy”. Shows Nemotron and the no-typing sitter loop in one card (7.2 / 7.7, current focus).</li>
+      <li><b>Today's timeline</b> below: time rail, check-ins, photos. Same data as History, organised by time.</li>
+      <li><b>Seed the demo</b> with one sent note and a few check-ins so judges never land on “No diary yet” while Max is in care.</li>
+    </ul>
+    <div class="comp">Components: <code>Daily Note</code> <code>Suggestion Chip</code> <code>Notification Row</code>-style timeline <code>Card</code></div>
+  </div>
+</section>
+
+<!-- ===================== MOOD ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Mood</h2><img class="shot" src="live/owner-mood.png" alt="Live owner Mood"></div>
+  <div class="col"><h2>Design system · Mood</h2>
+    <div class="phone" data-title="Mood" data-tab="mood">
+      <div class="scroll">
+        <div class="chips"><span class="chip on">🐶 Max</span><span class="chip">🐱 Mochi</span></div>
+        <div class="card" style="overflow:hidden">
+          <div class="photo" style="height:200px;border-radius:0;background-image:url(img/pet0.jpg)"></div>
+          <div class="pad stack">
+            <span class="eyebrow">Just for fun</span>
+            <div class="h">Max seems playful today 😄</div>
+            <div class="small muted">From Lucy's 9:02 AM walk clip. Not a health check.</div>
+            <div class="chips"><span class="chip soft">😄 Playful</span><span class="chip">😌 Calm</span><span class="chip">😴 Sleepy</span></div>
+          </div>
+        </div>
+        <div class="card pad small muted" style="text-align:center">This week: playful 4 days · calm 2 days</div>
+      </div>
+      <div class="pinned"><div class="btn sec"><svg style="width:18px;height:18px"><use href="#cam"/></svg> Check a photo or clip</div></div>
+    </div>
+  </div>
+  <div class="col notes"><h3>Give the 5th tab something to show</h3><div class="tabname">Owner · Mood (P1 · 11.9)</div>
+    <ul>
+      <li>An empty centered message makes a main tab look unfinished. A <b>seeded example result</b> shows the idea even before 11.9 ships.</li>
+      <li>Keep <b>“Just for fun · not a health check”</b> visible (safety).</li>
+      <li>Secondary button only: Mood is never the screen's main job.</li>
+      <li>Alternative if 11.9 slips: hide the tab for the demo rather than ship an empty one. Decide together.</li>
+    </ul>
+    <div class="comp">Components: <code>Filter Chip</code> <code>Card</code> <code>Button</code> (secondary)</div>
+  </div>
+</section>
+
+<!-- ===================== SITTER HOME ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Sitter Home</h2><img class="shot" src="live/sitter-home.png" alt="Live sitter Home"></div>
+  <div class="col"><h2>Design system · Sitter Home</h2>
+    <div class="phone" data-title="Home" data-tab="home" data-ava="L">
+      <div class="scroll" style="gap:12px">
+        <div class="between"><span class="pill live">Now caring · Max & Mochi</span><span class="tiny muted">Chloe's pets · until Mon</span></div>
+        <div class="card pad stack task">
+          <span class="eyebrow">Next · 2:00 PM</span>
+          <div class="row" style="gap:10px"><span class="avatar" style="width:40px;height:40px;background-image:url(img/pet0.jpg)"></span><div><div class="h" style="font-size:15px">Max · skin pill in a treat</div><div class="tiny muted">From Chloe's care request</div></div></div>
+          <div class="btn">📷 Complete with photo</div>
+        </div>
+        <div class="card pad row" style="padding:12px;background:var(--warning-surface);border-color:var(--warning)"><span>⚠️</span><span class="small"><b>No knocking</b> · text Chloe instead</span></div>
+        <span class="b small">Quick check-in · Max</span>
+        <div class="chips" style="flex-wrap:wrap"><span class="chip">🍽️ Ate</span><span class="chip">💩 Potty</span><span class="chip">🦮 Walk</span><span class="chip">😊 Mood</span></div>
+        <div class="card pad stack" style="gap:6px">
+          <div class="between small"><span class="b">Today</span><span class="muted">2 of 5 tasks · 6 check-ins</span></div>
+          <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+        </div>
+        <div class="row" style="gap:8px"><div class="btn sec" style="flex:1">🔍 Scan a treat</div><div class="btn sec" style="flex:1">📝 5-second check</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="col notes"><h3>One next task, one big button</h3><div class="tabname">Sitter · Home (D47b dashboard)</div>
+    <ul>
+      <li><b>The next task is the hero</b> with “Complete with photo” (DESIGN.md §7.1 example): care, snap, tap.</li>
+      <li><b>Heads-up in warning tone</b> (live uses a green success fill with an orange border, which mixes signals).</li>
+      <li><b>Quick check-in chips</b> one tap away instead of “tap a pet to check in” in a card.</li>
+      <li>Stats shrink to <b>one progress line</b>; the three big number tiles spend the best space on counts.</li>
+      <li><b>Treat scan (08) and the evening 5-second check</b> as the two secondary actions. The calendar icon moves into Bookings; Log out into Profile.</li>
+      <li>Later (11.12): the pixel Tamagotchi status can sit above the next-task card.</li>
+    </ul>
+    <div class="comp">Components: <code>Task Row</code> (Next) <code>Heads-up Tag</code> <code>Filter Chip</code> <code>Progress Bar</code> <code>Button</code> (secondary)</div>
+  </div>
+</section>
+
+<footer>Draft by Muk · built from <code>frontend/theme/tokens.ts</code>, PR #41 primitives and the Figma library “PawNote Design System”. Live screenshots from pawnote-frontend.vercel.app on Oct 5 (demo accounts). Mock data only.</footer>
+</div>
+<script>
+  // Shared chrome: header (no Log out) + tab bar with the active tab.
+  document.querySelectorAll(".phone").forEach((p) => {
+    const bar = document.getElementById("bar").content.cloneNode(true);
+    bar.querySelector("h4").textContent = p.dataset.title;
+    if (p.dataset.ava) bar.querySelector(".ava").textContent = p.dataset.ava;
+    p.prepend(bar);
+    const tabs = document.getElementById("tabbar").content.cloneNode(true);
+    tabs.querySelector(`[data-t="${p.dataset.tab}"]`).classList.add("on");
+    p.append(tabs);
+  });
+  // Look switcher: applies a skin to the middle phones only.
+  const setSkin = (k) => {
+    document.querySelectorAll(".phone").forEach((p) => { if (k) p.dataset.skin = k; else delete p.dataset.skin; });
+    document.querySelectorAll(".skinbar button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === k)));
+  };
+  document.querySelector(".skinbar").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setSkin(b.dataset.s); });
+  setSkin("");
+</script>
+</body>
+</html>

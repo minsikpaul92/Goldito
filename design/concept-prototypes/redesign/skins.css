@@ -1,0 +1,34 @@
+/* Two looks (Calm Core dropped Oct 5) on the same screens. Default (no skin) = design-system tokens. */
+
+/* Playful (was B · Full Tamagotchi) — cream re-theme, rounded type, ink outlines, sticker shadows */
+[data-skin="b"]{--border-strong:#231B12;--track:#F2E2BD;--background:#FFF1D6;--surface:#FFFDF7;--border:#231B12;--text:#231B12;--text-muted:#5E4B33;--accent:#FFE0A3;
+  --r-sm:12px;--r-md:16px;--r-lg:20px;--shadow-xs:0 3px 0 #231B12;font-family:Nunito,ui-rounded,system-ui,sans-serif}
+[data-skin="b"] .bar h4,[data-skin="b"] .h,[data-skin="b"] .btn,[data-skin="b"] .eyebrow,[data-skin="b"] .tab{font-family:Fredoka,ui-rounded,sans-serif}
+[data-skin="b"] .card,[data-skin="b"] .btn,[data-skin="b"] .chip,[data-skin="b"] .seg{border-width:2px;border-color:#231B12}
+[data-skin="b"] .chip{box-shadow:0 2px 0 #231B12}
+[data-skin="b"] .pill.live{border:2px solid #231B12;background:#FFD24A;color:#231B12}
+[data-skin="b"] .tabs{margin:0 10px 12px;border:2px solid #231B12;border-radius:22px;box-shadow:0 3px 0 #231B12;padding:6px}
+[data-skin="b"] .tab.on .p{background:#FFD24A;border:2px solid #231B12}
+[data-skin="b"] .photo,[data-skin="b"] .grid3 .g{border:2px solid #231B12}
+[data-skin="b"] .divider{background:#231B1233}
+
+/* Balanced (was C · Balanced Skin) — soft tint, Plus Jakarta Sans, large radii, big photos */
+[data-skin="c"]{--border-strong:#857E73;--track:#E6E1D9;--background:#F4F2EE;--surface:#FFFFFF;--border:#E6E1D9;--accent:#DCEDE3;--text:#1F1B16;--text-muted:#5E5850;
+  --r-sm:12px;--r-md:16px;--r-lg:20px;font-family:"Plus Jakarta Sans",Inter,system-ui,sans-serif}
+[data-skin="c"] .bar h4,[data-skin="c"] .h{font-weight:800;letter-spacing:-.02em}
+[data-skin="c"] .btn{border-radius:999px}
+[data-skin="c"] .card{border-radius:20px}
+
+/* Pixel room (Tamagotchi status) — only in B, on sitter Home while caring (D47b, 11.12) */
+.pixel-room{display:none}
+[data-skin="b"] .pixel-room{display:block;border:2px solid #231B12;border-radius:20px;box-shadow:0 3px 0 #231B12;overflow:hidden;
+  background:linear-gradient(#9FD8FF 0 62%,#7BC86C 62%);position:relative;height:150px;flex-shrink:0}
+.pixel-room canvas{position:absolute;left:50%;bottom:14px;width:96px;height:96px;margin-left:-48px;image-rendering:pixelated;animation:bob 2.4s ease-in-out infinite}
+.pixel-room .hud{position:absolute;left:10px;top:8px;right:10px;display:flex;justify-content:space-between;font:600 12px Fredoka,sans-serif}
+.pixel-room .hud span{background:#FFFDF7;border:2px solid #231B12;border-radius:999px;padding:1px 8px}
+.pixel-room .bowl{position:absolute;left:24px;bottom:16px;font-size:24px}
+.pixel-room .ball{position:absolute;right:26px;bottom:18px;font-size:22px;animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion: reduce){.pixel-room canvas,.pixel-room .ball{animation:none}}
+[data-skin="b"] .prog i{background:var(--track)}
+[data-skin="b"] .prog i.on{background:var(--primary)}

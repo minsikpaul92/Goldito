@@ -1,0 +1,142 @@
+
+/* ==========================================================================
+   Onboarding layer (shared). The layer carries class "jr", so each concept's
+   journey skin (card look, radius, heading font) styles it too.
+   ========================================================================== */
+/* The concept's top bar stays; this layer drives its Back and progress dots. */
+.phone.ob-on .tabbar,.phone.ob-on #jrBell{display:none !important}
+.phone.ob-back .back-btn{display:flex !important}
+.phone.ob-back .brand{display:none !important}
+.phone.ob-noback .back-btn{display:none !important}
+.phone.ob-noback .brand{display:flex !important}
+
+.ob{position:absolute;left:0;right:0;bottom:0;top:var(--ob-top,5.25rem);z-index:3;background:var(--tint-bg,var(--bg));
+  display:flex;flex-direction:column;color:var(--text)}
+.ob[hidden]{display:none}
+.ob-scroll{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:1.25rem 1.25rem 1.5rem;display:flex;flex-direction:column;
+  gap:1.25rem;scrollbar-width:thin}
+.ob-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:.625rem;padding:.75rem 1.25rem 1.5rem;background:var(--tint-bg,var(--bg));
+  box-shadow:0 -1px 0 var(--tint-border)}
+.ob-flash{margin:0;font-size:.8125rem;font-weight:600;text-align:center;color:var(--text);background:var(--tint-surface);
+  border:1px solid var(--tint-border);border-radius:.75rem;padding:.5rem .75rem;animation:obFade .2s ease both}
+.ob-cal-acts{display:flex;gap:.75rem}
+.ob-cal-acts .jr-link{margin:0;min-height:2.75rem}
+.ob-hint{font-size:.75rem;color:var(--text-muted);text-align:center;margin:0}
+.ob .jr-title{font-size:1.5rem}
+.ob-skip{align-self:center;background:none;border:none;font:inherit;font-size:.8125rem;font-weight:600;color:var(--text-muted);
+  min-height:2.75rem;padding:.25rem .5rem;cursor:pointer;border-radius:.5rem}
+.ob-skip:hover{color:var(--text);background:var(--tint-border)}
+
+/* Welcome */
+.ob-collage{display:flex;justify-content:center;align-items:center;padding:.5rem 0 .25rem}
+.ob-collage img{width:4.75rem;height:4.75rem;border-radius:50%;object-fit:cover;border:3px solid var(--tint-bg,var(--bg));
+  margin-left:-1rem;background:var(--tint-surface)}
+.ob-collage img:first-child{margin-left:0;transform:rotate(-6deg)}
+.ob-collage img:nth-child(2){width:5.75rem;height:5.75rem;position:relative;z-index:1}
+.ob-collage img:last-child{transform:rotate(6deg)}
+.ob-values{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.875rem}
+.ob-values li{display:grid;grid-template-columns:2.5rem 1fr;gap:.75rem;align-items:center}
+.ob-values li>span{width:2.5rem;height:2.5rem;border-radius:.75rem;display:grid;place-items:center;font-size:1.125rem;
+  background:color-mix(in srgb,var(--primary) 12%,var(--tint-surface))}
+.ob-values b{display:block;font-size:.9375rem}
+.ob-values p{margin:0;font-size:.8125rem;color:var(--text-muted)}
+
+/* Choice cards (role, cancellation) */
+.ob-choice{display:grid;grid-template-columns:auto 1fr auto;gap:.875rem;align-items:center;width:100%;text-align:left;cursor:pointer;
+  font:inherit;color:var(--text);background:var(--jr-card-bg);border:var(--jr-card-border);box-shadow:var(--jr-card-shadow);
+  border-radius:var(--jr-radius);padding:1rem;transition:transform .12s ease,box-shadow .15s,background-color .15s}
+.ob-choice-sm{grid-template-columns:1fr auto;padding:.75rem 1rem}
+.ob-choice b{display:block;font-family:var(--jr-font-head);font-weight:var(--jr-head-weight);font-size:1rem}
+.ob-choice span span{display:block;font-size:.8125rem;color:var(--text-muted);margin-top:.125rem}
+.ob-choice-emoji{font-size:1.75rem;width:3rem;height:3rem;border-radius:.875rem;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--primary) 10%,var(--tint-surface))}
+.ob-tick{width:1.5rem;height:1.5rem;border-radius:50%;display:grid;place-items:center;font-size:.75rem;font-weight:800;
+  border:2px solid var(--tint-border);color:transparent}
+.ob-choice.on{box-shadow:0 0 0 2px var(--primary),var(--jr-card-shadow);background:color-mix(in srgb,var(--primary) 6%,var(--jr-card-bg))}
+.ob-choice.on .ob-tick{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}
+.ob-choice:active{transform:scale(.98)}
+@media (hover:hover){.ob-choice:not(.on):hover{background:color-mix(in srgb,var(--primary) 4%,var(--jr-card-bg))}}
+
+/* Account */
+.ob-social{display:flex;flex-direction:column;gap:.5rem}
+.ob-or{display:flex;align-items:center;gap:.75rem;font-size:.75rem;color:var(--text-muted);font-weight:600}
+.ob-or::before,.ob-or::after{content:"";flex:1;height:1px;background:var(--tint-border)}
+.ob-meter{display:grid;grid-template-columns:repeat(4,1fr);gap:.25rem}
+.ob-meter i{height:.25rem;border-radius:999px;background:var(--tint-border)}
+.ob-meter i.on{background:var(--jr-ok)}
+
+/* Switches */
+.ob-switches{gap:0;padding-top:.25rem;padding-bottom:.25rem}
+.ob-switch-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.625rem 0}
+.ob-switches .ob-switch-row+.ob-switch-row{border-top:1px solid var(--tint-border)}
+.ob-switch-row b{display:block;font-size:.9375rem}
+.ob-switch-row span{display:block;font-size:.8125rem;color:var(--text-muted)}
+.ob-switch{flex:0 0 auto;width:2.875rem;height:1.75rem;border-radius:999px;border:none;padding:0;cursor:pointer;position:relative;
+  background:var(--tint-border);transition:background-color .2s}
+.ob-switch i{position:absolute;top:.1875rem;left:.1875rem;width:1.375rem;height:1.375rem;border-radius:50%;background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.ob-switch.on{background:var(--primary)}
+.ob-switch.on i{transform:translateX(1.125rem)}
+.ob-switch[disabled]{opacity:.55;cursor:not-allowed}
+
+/* Sample notification */
+.ob-push{display:grid;grid-template-columns:2.25rem 1fr;gap:.625rem;padding:.75rem .875rem;border-radius:1.125rem;
+  background:var(--tint-surface);border:1px solid var(--tint-border);font-size:.8125rem}
+.ob-enter .ob-push{animation:obDrop .5s .15s cubic-bezier(.2,.8,.2,1) both}
+.ob-push-ico{width:2.25rem;height:2.25rem;border-radius:.625rem;background:var(--primary);display:grid;place-items:center;font-size:1rem}
+.ob-push b{display:block}
+.ob-push>div>span{color:var(--text-muted)}
+.ob-push-top{display:flex;justify-content:space-between;color:var(--text-muted);font-size:.6875rem;text-transform:uppercase;letter-spacing:.04em}
+.ob-push-top b{font-weight:700}
+@keyframes obDrop{from{opacity:0;transform:translateY(-.75rem)}to{opacity:1;transform:none}}
+
+/* Simulated OS permission prompt: system look, not the concept's skin */
+.ob-os{--os-bg:rgba(242,242,247,.98);--os-fg:#000;--os-sub:#3C3C43;--os-line:rgba(60,60,67,.29);--os-blue:#007AFF;
+  position:absolute;inset:0;z-index:5;background:rgba(0,0,0,.4);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:.75rem;animation:obFade .2s ease both}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ob-os{--os-bg:rgba(44,44,46,.96);--os-fg:#fff;--os-sub:#EBEBF5;--os-line:rgba(84,84,88,.65);--os-blue:#0A84FF}}
+:root[data-theme="dark"] .ob-os{--os-bg:rgba(44,44,46,.96);--os-fg:#fff;--os-sub:#EBEBF5;--os-line:rgba(84,84,88,.65);--os-blue:#0A84FF}
+.ob-os-card{width:16.875rem;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-radius:.875rem;background:var(--os-bg);color:var(--os-fg);overflow:hidden;text-align:center;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;animation:obPop .25s cubic-bezier(.2,.8,.2,1) both}
+.ob-os-body{padding:1.125rem 1rem 1rem;display:flex;flex-direction:column;gap:.25rem}
+.ob-os-body b{font-size:1.0625rem;line-height:1.3}
+.ob-os-body span{font-size:.8125rem;color:var(--os-sub);line-height:1.35}
+.ob-os-btns{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--os-line)}
+.ob-os-btns button{background:none;border:none;font:inherit;font-size:1.0625rem;color:var(--os-blue);padding:.6875rem;cursor:pointer;min-height:2.75rem}
+.ob-os-btns button+button{border-left:1px solid var(--os-line)}
+.ob-os-btns button:hover{background:rgba(127,127,127,.12)}
+.ob-os-tag{font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;opacity:.85}
+@keyframes obFade{from{opacity:0}to{opacity:1}}
+@keyframes obPop{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:none}}
+
+/* Sitter: services, stepper, calendar, profile */
+.ob-service{gap:.5rem}
+.ob-service .ob-switch-row{padding:0}
+.ob-stepper{display:flex;align-items:center;gap:.25rem}
+.ob-stepper button{width:2.75rem;height:2.75rem;border-radius:.75rem;border:1px solid var(--tint-border);background:var(--tint-surface);
+  color:var(--text);font-size:1.125rem;font-weight:800;cursor:pointer}
+.ob-stepper button:active{transform:scale(.94)}
+.ob-stepper output{min-width:4.5rem;text-align:center;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;line-height:1.15}
+.ob-stepper output b{font-size:1.0625rem}
+.ob-stepper output span{font-size:.6875rem;color:var(--text-muted)}
+.ob-quote{gap:.25rem}
+.ob-big{font-size:1.75rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ob-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem;text-align:center}
+.ob-dow{font-size:.6875rem;font-weight:800;color:var(--text-muted);padding:.25rem 0}
+.ob-day{aspect-ratio:1;min-height:2.25rem;border-radius:.625rem;border:none;background:none;color:var(--text);font:inherit;font-size:.875rem;
+  font-weight:600;cursor:pointer;position:relative;font-variant-numeric:tabular-nums}
+.ob-day:hover{background:var(--tint-border)}
+.ob-day.on{background:var(--primary);color:var(--primary-foreground)}
+.ob-day.hol::after,.ob-hol-dot{content:"";display:inline-block;width:.3125rem;height:.3125rem;border-radius:50%;background:#F5B301}
+.ob-day.hol::after{position:absolute;left:50%;bottom:.1875rem;margin-left:-.15625rem}
+.ob-avatar{width:3rem;height:3rem;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:var(--primary-foreground);
+  font-weight:800;font-size:1.25rem;flex:0 0 auto}
+.ob-none{background:none !important;color:var(--text-muted) !important;padding-left:0 !important}
+
+/* One shared "it registered" pop for chips and choices */
+.ob-pop{animation:obBump .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes obBump{0%,100%{transform:scale(1)}45%{transform:scale(1.06)}}
+
+@media (prefers-reduced-motion: reduce){
+  .ob *,.ob-os,.ob-os-card,.ob-push{animation:none !important;transition:none !important}
+}

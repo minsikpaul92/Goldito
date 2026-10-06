@@ -83,7 +83,9 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 | `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
 | `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
 | `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
-| `border` | `#E5E5E0` | | Card borders, dividers, input outlines |
+| `border` | `#E5E5E0` | | Card borders, dividers (decorative only — too faint for controls) |
+| `borderStrong` **(proposed)** | `#86867F` | | Outlines of things you interact with: inputs, checkboxes, unselected chips and segments, switch off, star off. ≥ 3:1 on `surface`, `background` and `accent` (WCAG 1.4.11) |
+| `track` **(proposed)** | `#E5E5E0` | | Empty part of progress bars; `primary` fill stays ≥ 3:1 against it |
 | `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
 | `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
 | `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
@@ -95,10 +97,29 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 Rules:
 - `error` red is reserved for real problems (failed actions, DANGER). Do not use red for decoration or "cancel" buttons.
 - Status is never color-only — always pair color with an icon or text (e.g. ⚠️ + "Contains chicken").
+- Status text sits on its **surface** token (`error` on `errorSurface`, `warning` on `warningSurface`, `success` on `successSurface`), never on the solid status color and never on a faded (opacity) copy of it. Use the `Tag` component.
+- `border` is decoration; anything you interact with uses `borderStrong`.
 
 ### 3.1 Themes (pet skins)
 
 A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
+
+### 3.2 Looks (brand direction — pick one)
+
+A **look** is the overall palette the team chooses once for the app; a **skin** (3.1) is the per-pet tint applied on top of it. Two looks remain after the Oct 5 review (Calm Core dropped):
+
+| Token | Balanced | Playful |
+| :--- | :--- | :--- |
+| `background` | `#F4F2EE` | `#FFF1D6` |
+| `surface` | `#FFFFFF` | `#FFFDF7` |
+| `text` | `#1F1B16` | `#231B12` |
+| `textMuted` | `#5E5850` | `#5E4B33` |
+| `border` | `#E6E1D9` | `#231B12` (ink outlines) |
+| `borderStrong` | `#857E73` | `#231B12` |
+| `track` | `#E6E1D9` | `#F2E2BD` |
+| `accent` | `#DCEDE3` | `#FFE0A3` |
+
+`primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). In Figma the looks are modes of the **Color** collection (file *PawNote Design System*), so any frame can switch look.
 
 ---
 
@@ -170,6 +191,10 @@ System font for now (Figma will pick one family).
 | `ProposalCard` (`components/`) | One open handoff offer (3B.5), `warning` border: the other side's "Lucy suggested a new drop-off · Oct 5, 10:00 AM · Lucy's place" with **Accept** (filled) + Suggest another time + Decline (`danger` link), or my own "Change pending — until Lucy agrees, it stays at …"; history line "You: 9:30 AM → Lucy: 10:00 AM" |
 | `HandoffChangeSheet` (`components/`) | Sheet for a new handoff time (Drop-off / Pick-up switch, day ± 1, time ± 15 min); after confirm also the place (radio rows) — **Change time or place** |
 | `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
+
+### In Figma (*PawNote Design System*, 3. Components)
+
+Built from the tokens above and bound to Figma variables; the redesign and upcoming screens on *2. Screens* use only instances of these. New since the Oct 5 redesign: `Tag` (Tone: Danger · Warning · Success · Brand · Neutral), `Source Tag`, `Top Bar` (App · Detail · Onboarding), `Tab Bar` (Active: Home · Bookings · Feed · Diary · Mood), `Stay Summary Card`, `Latest Update Row`, `Pet Mini Card`, `Booking Card` (Requested · Confirmed · In care, 5-step progress), `Day Header`, `Timeline Row`, `Grid Photo` (Meals · Walks · Naps · Play), `Next Task Card`, `Mood Result Card`, `Feature Row`, plus the planned components below (Message Bubble, Quote Card, Consent Card, Entry Info Card, Trip Map, Suggestion Chip, Star, Life Record Card, Alert Modal · DANGER, and others). Code still has only the `Existing` set; the rest arrive with their phases.
 
 ### Planned (build as needed, keep the same tokens)
 
@@ -296,8 +321,10 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/owner`, `/welcom
 
 ## 9. Accessibility
 
-- Text contrast ≥ 4.5:1 on its background (all current text tokens pass on `background` and `surface`).
-- Touch targets ≥ 44 × 44; spacing between tappable items ≥ 8.
+- Text contrast ≥ 4.5:1 on its background (all current text tokens pass on `background`, `surface` and `accent`, in both looks).
+- Non-text contrast ≥ 3:1 for control outlines, focus rings, progress fills and selected states (`borderStrong`, `track` — §3).
+- No opacity tints for text or its background: a faded status color can drop below 4.5:1. Use the `*Surface` tokens.
+- Touch targets ≥ 44 × 44 — including chips, calendar days and stars; spacing between tappable items ≥ 8.
 - Set `accessibilityRole` / `accessibilityLabel` on buttons and icon-only controls.
 - Never rely on color alone for status (see §3).
 

@@ -1,0 +1,29 @@
+<style>
+  body{margin:0;font:13px/1.45 Inter,-apple-system,system-ui,sans-serif;color:#1a1a1a;background:#fff}
+  .wrap{padding:16px;display:flex;flex-direction:column;gap:12px;height:100vh;box-sizing:border-box}
+  h1{font-size:15px;margin:0}
+  label{display:flex;gap:8px;align-items:center}
+  button{font:inherit;font-weight:600;border-radius:8px;padding:10px;border:1px solid #2D6A4F;background:#2D6A4F;color:#fff;cursor:pointer}
+  button:disabled{background:#E5E5E0;border-color:#E5E5E0;color:#5C5C5C;cursor:default}
+  #log{flex:1;overflow:auto;background:#F7F7F5;border:1px solid #E5E5E0;border-radius:8px;padding:8px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap}
+  .error{color:#B42318}.ok{color:#067647}.warn{color:#B54708}
+</style>
+<div class="wrap">
+  <h1>PawNote Design Sync</h1>
+  <label><input type="checkbox" id="c" checked> Components → page with “Components” in its name</label>
+  <label><input type="checkbox" id="s" checked> Screens (Live · Balanced · Playful) → page with “Screens” in its name</label>
+  <button id="run">Build</button>
+  <div id="log"></div>
+  <button id="close" style="background:#fff;color:#2D6A4F">Close</button>
+</div>
+<script>
+  const DATA = /*DATA*/null;
+  const log = (msg, kind) => { const d = document.createElement("div"); d.className = kind || ""; d.textContent = msg; const l = document.getElementById("log"); l.appendChild(d); l.scrollTop = l.scrollHeight; };
+  log(`Screen data: ${DATA ? DATA.reduce((n, d) => n + d.screens.length, 0) : 0} screens ready.`);
+  onmessage = (e) => { const m = e.data.pluginMessage; if (m && m.type === "log") { log(m.msg, m.kind); if (/^Done|^Error/.test(m.msg)) document.getElementById("run").disabled = false; } };
+  document.getElementById("run").onclick = () => {
+    document.getElementById("run").disabled = true;
+    parent.postMessage({ pluginMessage: { type: "run", data: DATA, components: document.getElementById("c").checked, screens: document.getElementById("s").checked } }, "*");
+  };
+  document.getElementById("close").onclick = () => parent.postMessage({ pluginMessage: { type: "close" } }, "*");
+</script>
