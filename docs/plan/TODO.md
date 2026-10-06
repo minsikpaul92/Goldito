@@ -1,6 +1,6 @@
 # PawNote — Active TODO
 
-> **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Where things stand (snapshot):** [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 > **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
