@@ -138,6 +138,8 @@ export default function SitterBookingDetail() {
 
   const { booking, pets, addresses } = state;
   const owner = booking.ownerName;
+  // Paid once, then an agreed change needed a new consent (009d): entry codes wait for the owner.
+  const checkoutReopened = booking.status === "confirmed" && !booking.paidAt && booking.priceSnapshot != null;
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
@@ -198,6 +200,7 @@ export default function SitterBookingDetail() {
               booking.dropOff?.locationType === "owner_home" ||
               booking.pickUp?.locationType === "owner_home")
           }
+          waitingForSignature={checkoutReopened ? owner : null}
         />
 
         {KINDS.filter((kind) => showsProposal(booking, "sitter", kind)).map((kind) => (

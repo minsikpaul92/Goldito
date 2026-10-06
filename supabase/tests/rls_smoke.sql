@@ -2596,8 +2596,12 @@ begin
   perform _t_ok(v_err = 'not_paid', 'BF.6: …so the entry codes stay locked until then');
   perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 1,
     'BF.6: …while the owner''s emergency contact stays visible');
-
+  perform _t_ok((select address from get_handoff_details(v_b) where kind = 'pick_up') = '1 Owner Ave',
+    'BF.7: …and the sitter still sees where to bring the pet back');
   perform _t_as(chloe);
+  perform _t_ok((select count(*) from get_handoff_details(v_b)) = 2,
+    'BF.7: …and the owner still sees both handoff places');
+
   insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
   values (v_b, 'home_access', '1', chloe, 'Chloe');
   v_paid := pay_booking_demo(v_b);

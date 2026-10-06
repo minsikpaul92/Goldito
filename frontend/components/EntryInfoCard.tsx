@@ -16,6 +16,11 @@ type Props = {
   bookingId: string;
   /** Hide when this booking does not need owner-home access. */
   visible: boolean;
+  /**
+   * The owner's name when checkout was reopened by an agreed change (009d): the codes stay locked
+   * until they sign the new consent, so say so instead of hiding the card.
+   */
+  waitingForSignature?: string | null;
 };
 
 const HIDE_MS = 10_000;
@@ -23,7 +28,7 @@ const HIDE_MS = 10_000;
 /**
  * Sitter entry-info card (03C): locked until T−2h, then Show code (auto-hides after 10 s).
  */
-export function EntryInfoCard({ bookingId, visible }: Props) {
+export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [state, setState] = useState<HomeAccess | HomeAccessLocked | { error: string } | null>(null);
   const [show, setShow] = useState(false);
@@ -59,6 +64,17 @@ export function EntryInfoCard({ bookingId, visible }: Props) {
     );
   }
   if ("error" in state) {
+    if (state.error === "not_paid" && waitingForSignature) {
+      return (
+        <Card style={styles.card} testID="entry-info-waiting">
+          <Text style={styles.title}>🔒 Entry info</Text>
+          <Text style={styles.body}>{`Waiting for ${waitingForSignature} to sign`}</Text>
+          <Text style={styles.muted}>
+            The new plan needs their home-access consent. The codes open here once they sign.
+          </Text>
+        </Card>
+      );
+    }
     if (state.error === "forbidden" || state.error === "not_paid") return null;
     return (
       <Card style={styles.card} testID="entry-info-error">
