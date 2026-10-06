@@ -1,5 +1,6 @@
 """Prompt files live in `app/ai/prompts/` so they can be tuned without touching code (§9)."""
 
+import json
 from functools import lru_cache
 from pathlib import Path
 
@@ -13,3 +14,9 @@ def load_prompt(name: str) -> str:
     if PROMPTS_DIR.resolve() not in path.parents:
         raise ValueError("prompt path must stay inside app/ai/prompts")
     return path.read_text(encoding="utf-8")
+
+
+@lru_cache
+def load_json(name: str):
+    """A JSON file in `app/ai/prompts/` (few-shot examples)."""
+    return json.loads(load_prompt(name))

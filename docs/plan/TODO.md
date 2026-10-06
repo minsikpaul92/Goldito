@@ -1,6 +1,6 @@
 # PawNote — Active TODO
 
-> **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Where things stand (snapshot):** [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 > **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **7.2** | Phase 07 starts: daily-report API (`POST /api/ai/daily-report`, then 7.7 chips) on a **new branch from `main`**. Phase 06 is merged (PR #48); left over: 6.7 server push (skipped) · real-phone camera check (#19) after deploy · the human-only scenarios in the test guide (REQ-3 live AI, REQ-10 two accounts, REM-2/5, sounds) | [phase-07.md](phases/phase-07.md) |
+| **7.7** | `POST /api/ai/report-chips` (D38): the server builds the day's default chips from check-ins and tasks (no model), the vision model turns up to 2 photos into a one-line description + 1–2 episode chips; the sitter keeps or turns off each chip. Then **7.3** screens (sitter Report screen, owner Diary). Left over from Phase 06: 6.7 server push (skipped) · phone camera (#19) after deploy · human-only scenarios in the test guide | [phase-07.md](phases/phase-07.md) |
 
 ---
 
@@ -72,6 +72,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ## Completed
 
+- [x] **7.5** `009_reports.sql` `send_daily_report(p_report, p_body)` (applied to the hosted DB): only the writing sitter, only a draft (`report_already_sent` otherwise), body 1–2000 characters; the text sent — the sitter's edits — becomes the report (trimmed), status `sent`, `sent_at`; the owner gets a `report_sent` notice with the start of the text. The owner's policy shows sent reports only, so the AI draft is never visible to them; a sent report can't be edited directly. SQL smoke 322 ✓ (2026-10-05).
+- [x] **7.4** Daily report prompt: the **owner's information is the foundation** — the snapshot now carries the pet's `owner_notes`, `allergies`, active Heads-ups and, on each done/missed task, what the owner asked for (`owner_dose`, `owner_notes`), so a done pill is reported "hidden in a treat, as you asked"; it is background, never turned into an event (and alone it does not make the model write). Rules added: no "potty wasn't logged", one event = one event, how much was eaten only from the check. `few_shot.json` reviewed (owner info in the examples), `PROMPT.md` written, `scripts/check_daily_report.py` (live check, human-read). pytest 139 ✓, ruff ✓ (2026-10-05).
+- [x] **7.2** `POST /api/ai/daily-report` (`routers/ai_daily_report.py`, `ai/daily_report.py`, prompts `daily_report/system.md` + 3-pair `few_shot.json`): on-duty sitter only; the day's records inside the hours this sitter had the pet (done/missed tasks, their check-ins, shared photo captions, up to 2 photo descriptions, kept chips, short note, checks the sitter turned off are removed) become one `source_snapshot` — the model's whole input; Super writes a first-person draft (temp 0.4, 400 tokens); upsert on (pet, date, sitter), 409 `report_already_sent`; nothing recorded → fixed line, no model call. Live check on Nemotron Super (3 runs × 3 cases): no invented facts after adding the rules + examples. pytest 139 ✓, ruff ✓ (2026-10-05).
 - [x] **6.23** While a stay is on the owner can't add tasks or Heads-ups directly: the pet screen hides Add task and the Heads-up input, and the DB refuses the insert (`008j_no_direct_edits_during_stay.sql`, applied to the hosted DB); they send a care request instead. Also `008i` (trigger functions no longer callable as RPCs), autosave flush on leaving the screen. SQL smoke 311 ✓, flows 141 ✓ ×3 (2026-10-05). **Phase 06 complete** — PR #48 merged.
 - [x] **6.22** Live updates are for what is new: an update the owner opened (read) leaves Home — it stays in the notification list and History; an unread decline is pinned until read; a counter-request stays until the owner answers it. Close on a notice sheet only closes; the button goes on. Selected tab looks pushed in (inner shadow). Flows 140 ✓ ×3 (2026-10-05).
 - [x] **6.21** Care request round 2: each line is **Every day / Once**; the text box shows the preset as a light hint (empty = the hint); owner Home *In care* card = tinted card + strong border + "In care" tag on the top-left border; sitter can leave a **note** when declining, and with a note a **counter-request** (extra fee + tasks for the owner) → the owner accepts/declines on the pet screen (`008h_care_counter_requests.sql`, applied to the hosted DB); a declined/countered answer is **pinned** on Live updates until opened (no swipe, survives Clear all and refresh). SQL smoke 306 ✓, flows 138 ✓ ×3, `tsc` ✓ (2026-10-05).
