@@ -2625,4 +2625,199 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- M (Phase 07B, 7B.1): inquiries, the thread, the knowledge base
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_inq uuid;
+  v_other uuid;
+  v_msg uuid;
+  v_draft uuid;
+  v_err text;
+begin
+  -- Chloe asks Lucy; she can ask only about her own pets and only a sitter
+  perform _t_as(chloe);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[max])
+  returning id into v_inq;
+  begin
+    insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+    values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[coco]);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: an owner cannot ask about someone else''s pet');
+  begin
+    insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+    values (chloe, joy, now() + interval '200 days', now() + interval '203 days', array[max]);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …nor ask an owner');
+  begin
+    insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids, status)
+    values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[max], 'booked');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …and a new inquiry cannot start as booked');
+
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
+  values (v_inq, 'owner', chloe, 'Can you give Max his pill at 2 PM?') returning id into v_msg;
+  begin
+    insert into public.inquiry_messages (inquiry_id, author, body, drafted_by_ai, status)
+    values (v_inq, 'ai', 'forged draft', true, 'draft');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: an owner cannot write an AI draft');
+  begin
+    insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
+    values (v_inq, 'sitter', chloe, 'pretend to be Lucy');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …nor write as the sitter');
+
+  -- The AI draft arrives (service role): Lucy is told, Chloe sees nothing of it
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, body, drafted_by_ai, status, grounding, model)
+  values (v_inq, 'ai', 'Hi Chloe! I''m available…', true, 'draft', '{"quote":{"total":268.13}}', 'm')
+  returning id into v_draft;
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = lucy and type = 'inquiry_received' and ref_id = v_inq),
+    'M: the sitter is told the draft is ready');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq) = 1,
+    'M: the owner sees her own message and not the AI draft');
+  perform _t_as(lucy);
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq) = 2,
+    'M: the sitter sees the question and the draft');
+
+  -- Third parties see nothing
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.inquiries) = 0 and (select count(*) from public.inquiry_messages) = 0,
+    'M: a third party sees no inquiry and no message');
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.inquiries) = 0 and (select count(*) from public.inquiry_messages) = 0,
+    'M: another sitter sees none either');
+
+  -- Lucy sends it (as herself); Chloe sees it once it is visible, and is told
+  perform _t_as(lucy);
+  begin
+    insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
+    values (v_inq, 'sitter', paul, 'as Paul');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: a sitter writes only as herself');
+  begin
+    insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
+    values (v_inq, 'sitter', lucy, 'a held-back reply');
+    update public.inquiry_messages set visible_at = now() - interval '1 second' where inquiry_id = v_inq;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …and cannot set visible_at herself');
+  perform _t_as(null);
+  delete from public.inquiry_messages where body = 'a held-back reply';
+  perform _t_as(lucy);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, confirmed_by_sitter_at)
+  values (v_inq, 'sitter', lucy, 'Hi Chloe! I''m available…', true, now());
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 1
+      and (select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'ai') = 0,
+    'M: the owner sees the sitter''s sent reply, still not the draft');
+  perform _t_ok(exists (select 1 from public.notifications
+      where user_id = chloe and type = 'inquiry_replied' and ref_id = v_inq),
+    'M: the owner is told Lucy replied');
+
+  -- A reply that is not visible yet stays hidden from the owner
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, status, visible_at)
+  values (v_inq, 'sitter', lucy, 'later', 'sent', now() + interval '1 hour');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and body = 'later') = 0,
+    'M: a reply before its visible_at is hidden from the owner');
+
+  -- Booking link: only her own booking with this sitter
+  begin
+    update public.inquiries set booking_id = (select id from public.bookings where owner_id = joy limit 1)
+    where id = v_inq;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null or (select booking_id is null from public.inquiries where id = v_inq),
+    'M: an inquiry cannot be linked to someone else''s booking');
+  update public.inquiries set status = 'closed' where id = v_inq;
+  perform _t_ok((select status = 'closed' from public.inquiries where id = v_inq), 'M: the owner can close her inquiry');
+  begin
+    update public.inquiries set owner_id = joy where id = v_inq;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …but cannot change who it belongs to');
+
+  -- Sitter policies: written by the sitter only
+  perform _t_as(lucy);
+  update public.sitter_profiles set policies = 'No dogs over 20 kg.' where id = lucy;
+  perform _t_ok((select policies from public.sitter_profiles where id = lucy) = 'No dogs over 20 kg.',
+    'M: a sitter writes her own policies');
+  perform _t_as(paul);
+  update public.sitter_profiles set policies = 'hijacked' where id = lucy;
+  perform _t_ok((select policies from public.sitter_profiles where id = lucy) = 'No dogs over 20 kg.',
+    'M: …and nobody else can');
+
+  -- The knowledge base is service-role only
+  perform _t_as(null);
+  insert into public.knowledge_chunks (scope, sitter_id, source_type, source_id, content, embedding)
+  values ('sitter', lucy, 'sitter_policy', lucy, 'No dogs over 20 kg.', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  v_other := null;
+  perform _t_as(chloe);
+  begin
+    perform count(*) from public.knowledge_chunks;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: knowledge_chunks is not readable by authenticated');
+  perform _t_as(null, 'anon');
+  begin
+    perform count(*) from public.knowledge_chunks;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …nor by anon');
+  perform _t_as(chloe);
+  begin
+    perform * from public.match_knowledge((select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, array[max], chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …and match_knowledge is not callable by clients');
+  -- match_knowledge stays inside each source's scope (service role)
+  perform _t_as(null);
+  insert into public.knowledge_chunks (scope, sitter_id, owner_id, source_type, source_id, content, embedding)
+  values
+    ('owner', paul, chloe, 'inquiry', gen_random_uuid(), 'Chloe asked Paul about weekends', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    ('owner', lucy, chloe, 'inquiry', gen_random_uuid(), 'Chloe asked Lucy about pills', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    ('owner', lucy, joy, 'inquiry', gen_random_uuid(), 'Joy asked Lucy about Toto', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  insert into public.knowledge_chunks (scope, sitter_id, source_type, source_id, content, embedding)
+  values ('sitter', paul, 'sitter_policy', paul, 'Paul never takes cats', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  insert into public.knowledge_chunks (scope, pet_id, source_type, source_id, content, embedding)
+  values ('pet', coco, 'life_record', gen_random_uuid(), 'Coco is afraid of thunder', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  perform _t_ok((select array_agg(content order by content) from public.match_knowledge(
+        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, array[max], chloe, 20))
+      = array['Chloe asked Lucy about pills', 'No dogs over 20 kg.'],
+    'M: a search reaches only this sitter''s policy and this owner × sitter conversation — no other pet, sitter or owner');
+end;
+$$;
+
 rollback;

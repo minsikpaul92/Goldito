@@ -29,7 +29,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `009c_handoffs_stay_consistent.sql` | review fix | A checked handoff can't be replaced, Received / Returned closes that kind's proposals, passed times can't be agreed or confirmed, house-sitting handoffs stay at the owner's home |
 | `009d_paid_bookings_follow_changes.sql` | review fix | A change agreed on a paid booking re-quotes it (owner notice `price_updated`) or, when it needs a new consent (`home_access`), reopens checkout (`paid_at` cleared, notice `checkout_needed`); consents are signed at checkout only; owner profile (address, emergency contact) shared only once the booking was paid (a reopened checkout keeps it) |
 | `009e_reopened_checkout_keeps_addresses.sql` | review fix | `get_handoff_details` returns the handoff places for a booking paid at least once (`paid_at` or `price_snapshot`), so a checkout reopened by 009d keeps the addresses for both sides; only the entry codes wait for the new consent |
-| `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
+| `010_inquiries_rag.sql` | 07B | pgvector (in `extensions`), `inquiries` + `inquiry_messages` (owner never sees `author='ai'` or an unsent / not-yet-visible sitter message), `sitter_profiles.policies`, notices `inquiry_received` · `inquiry_replied`, service-role-only `knowledge_chunks` + `match_knowledge` (per-source scope) |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
