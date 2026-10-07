@@ -165,9 +165,9 @@ def test_a_cat_walk_comes_back_skipped(client, pets, monkeypatch):
 
 def test_nothing_is_saved(client, pets, monkeypatch):
     fake_model(monkeypatch, raw(task("feeding", "08:00", "Breakfast")))
-    before = {name: list(rows) for name, rows in pets.tables.items()}
+    before = {name: list(rows) for name, rows in pets.tables.items() if rows}
     assert post(client, owner_token()).status_code == 200
-    assert pets.tables == before
+    assert {name: rows for name, rows in pets.tables.items() if rows} == before  # reading an empty table adds nothing
 
 
 def test_someone_who_does_not_own_the_pet_is_refused(client, pets, monkeypatch):
@@ -215,3 +215,21 @@ def test_model_trouble_is_mapped_to_helpful_errors(client, pets, monkeypatch):
     monkeypatch.setattr(nebius, "chat_json", invalid)
     assert post(client, owner_token()).status_code == 502
 
+
+
+def test_heads_ups_from_the_pets_life_record_join_the_suggested_cautions(client, pets, monkeypatch):
+    pets.tables["pet_life_records"] = [
+        {"pet_id": PET_ID, "created_at": "2026-09-01T00:00:00+00:00", "summary": {"heads_up": ["Old note"]}},
+        {"pet_id": PET_ID, "created_at": "2026-10-01T00:00:00+00:00", "summary": {"heads_up": ["Chicken allergy", "Text instead of knocking", "  "]}},
+        {"pet_id": CAT_ID, "created_at": "2026-10-02T00:00:00+00:00", "summary": {"heads_up": ["Not Max"]}},
+    ]
+    fake_model(monkeypatch, raw(task("feeding", "08:00", "Breakfast"), cautions=["text instead of knocking"]))
+    body = post(client, owner_token()).json()
+    assert body["cautions"] == ["text instead of knocking", "Chicken allergy"]  # the owner's own wording stays, no duplicate
+    assert body["cautions_from_record"] == ["Chicken allergy"]
+
+
+def test_a_pet_without_a_record_gets_no_extra_cautions(client, pets, monkeypatch):
+    fake_model(monkeypatch, raw(task("feeding", "08:00", "Breakfast"), cautions=["No knocking"]))
+    body = post(client, owner_token()).json()
+    assert body["cautions"] == ["No knocking"] and body["cautions_from_record"] == []

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.ai.care_plan import RawPlan, normalize
+from app.ai.care_plan import RawPlan, add_known_cautions, normalize
 from app.ai.prompts import load_prompt
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
@@ -39,6 +39,8 @@ class CarePlanResponse(BaseModel):
     tasks: list[PlanTask]
     cautions: list[str]
     skipped: list[Skipped]
+    # The cautions in `cautions` that came from the pet's Life Record, not from the owner's text.
+    cautions_from_record: list[str] = []
     model: str
     latency_ms: int
 
@@ -87,10 +89,17 @@ def care_plan(
         ) from exc
 
     plan = normalize(raw, pet["species"])
+    # What earlier stays taught us about this pet (Life Record, 07C): its Heads-ups join the suggested cautions.
+    records = sorted(
+        get_service_client().table("pet_life_records").select("summary, created_at").eq("pet_id", str(body.pet_id)).execute().data,
+        key=lambda r: str(r["created_at"]),
+    )
+    known = add_known_cautions(plan, (records[-1]["summary"] or {}).get("heads_up", []) if records else [])
     return CarePlanResponse(
         tasks=[PlanTask(**t) for t in plan.tasks],
         cautions=plan.cautions,
         skipped=[Skipped(**s) for s in plan.skipped],
+        cautions_from_record=known,
         model=result.model,
         latency_ms=result.latency_ms,
     )

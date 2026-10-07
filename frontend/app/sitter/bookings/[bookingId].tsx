@@ -37,6 +37,7 @@ import {
   respondBooking,
   respondHandoff,
 } from "../../../lib/bookings";
+import { PetRecordFold } from "../../../components/PetRecordFold";
 import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
@@ -294,6 +295,7 @@ export default function SitterBookingDetail() {
               </Text>
             ))}
             {pet.notes ? <Text style={styles.muted}>{pet.notes}</Text> : null}
+            <PetRecordFold petId={pet.id} petName={pet.name} />
           </Card>
         ))}
 

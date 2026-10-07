@@ -1225,7 +1225,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
-        (path !== "pet_life_records" || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
+        // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
+        (path !== "pet_life_records" ||
+          db.pets.some((p) => p.id === row.pet_id && p.owner_id === me) ||
+          db.bookings.some(
+            (b) =>
+              b.sitter_id === me &&
+              (b.status === "requested" || b.status === "confirmed") &&
+              db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === row.pet_id),
+          )) &&
         (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {

@@ -121,3 +121,17 @@ def normalize(raw: RawPlan, species: str) -> Plan:
 
     plan.tasks.sort(key=lambda t: t["time"])
     return plan
+
+
+def add_known_cautions(plan: Plan, heads_up: list[str]) -> list[str]:
+    """Heads-ups from the pet's latest Life Record that the owner's text did not mention, added to the draft
+    (the owner reviews every line anyway). Returns the ones that were added."""
+    seen = {c.lower() for c in plan.cautions}
+    added: list[str] = []
+    for item in heads_up:
+        text = _clean(item, 100)
+        if text and text.lower() not in seen and len(plan.cautions) < MAX_CAUTIONS:
+            seen.add(text.lower())
+            plan.cautions.append(text)
+            added.append(text)
+    return added
