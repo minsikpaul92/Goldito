@@ -2423,6 +2423,14 @@ const Look = (() => {
     if (id && id !== last) { last = id; window.parent.postMessage({goldito: "at", id}, "*"); }
   }, 400);
 })();
+/* Placeholder pass: strip emoji from the UI so screens read as product, not decoration (real icons come later). */
+(() => {
+  const RE = /(\p{Extended_Pictographic}|\p{Regional_Indicator})(️|‍\p{Extended_Pictographic})*\s?/gu;
+  const clean = (root) => { const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while ((n = w.nextNode())) if (RE.test(n.nodeValue)) { RE.lastIndex = 0; n.nodeValue = n.nodeValue.replace(RE, ""); } RE.lastIndex = 0; };
+  const run = () => clean(document.body);
+  document.addEventListener("DOMContentLoaded", () => { run(); new MutationObserver(run).observe(document.body, {childList: true, subtree: true, characterData: true}); });
+})();
 </script>
 <!-- journey:end -->
 <script>
