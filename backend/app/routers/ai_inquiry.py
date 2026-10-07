@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ai import inquiry as logic
-from app.ai import tone
+from app.ai import inquiry_agent, tone
 from app.ai.prompts import load_prompt
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
@@ -187,6 +187,7 @@ def inquiry_reply(
                     "sources": [s for s in sources if not used or s["id"] in used],
                     "needs_sitter": needs,
                     "policy_conflicts": grounding["policy_conflicts"] if grounding else [],
+                    "tools": draft.tools if draft else [],
                     "intent": body.intent,
                 },
             }
@@ -374,6 +375,23 @@ def _names(db, inquiry: dict) -> dict:
         "owner_names": [n for n in (owner.get("display_name") or "").split() if n],
         "pet_names": [p["name"] for p in pets],
     }
+
+
+def _try_agent(grounding: dict, system: str, question: str, intent: str | None):
+    """The tool-calling path (7B.11). Returns (draft, model) only when it finished AND passed every check;
+    otherwise None, and the single grounded call answers instead."""
+    try:
+        draft, model, called = inquiry_agent.run_agent(grounding, system, question, intent)
+    except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
+        log.info("inquiry-agent: falling back to one call (%s)", exc)
+        return None
+    draft.reply = logic.fill_placeholders(draft.reply, grounding)
+    problems = logic.reply_problems(draft.reply, grounding, question, intent)
+    if problems:
+        log.info("inquiry-agent: answer failed the checks %s; falling back to one call", problems)
+        return None
+    draft.tools = called
+    return draft, f"{model}+agent"
 
 
 def _reuse(message: dict) -> InquiryReplyResponse:
@@ -595,6 +613,10 @@ def _write(
     system = (
         load_prompt("inquiry/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"
     )
+    if get_settings().inquiry_agent:
+        agent = _try_agent(grounding, system, question, intent)
+        if agent is not None:
+            return agent
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": _facts_message(grounding, question, intent)},

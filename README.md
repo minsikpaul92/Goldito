@@ -127,7 +127,7 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 | Stage | AI task | Model ID | Why |
 | :--- | :--- | :--- | :--- |
-| ① Inquiry | Reply draft in the sitter's tone, grounded in the sitter's calendar, server-side quote, house policy, and the pet's Life Record | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast enough to answer in seconds; facts and prices come from the server |
+| ① Inquiry | Inquiry auto-reply — Reply draft in the sitter's tone, grounded in the sitter's calendar, server-side quote, house policy, and the pet's Life Record. Answered in about 3 s (p50) | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` + Qwen3 Embedding | Fast enough to answer in seconds; facts and prices come from the server, and every amount in the draft is checked against the quote |
 | ① ⑤ Retrieval | Embeddings for the RAG knowledge base (Life Records, policies, past questions) | `Qwen/Qwen3-Embedding-8B` (1024-dim) | The embedding model on Token Factory; stored in Supabase pgvector |
 | ② Meet & Greet | Care & medication request → structured mission checklist | `nvidia/nemotron-3-super-120b-a12b` | Reliable structure for times, doses, and cautions |
 | ④ Transit | Handoff photo check — pet visible, crate or seatbelt in the car | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory |

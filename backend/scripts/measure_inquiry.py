@@ -17,7 +17,6 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.ai import inquiry as logic  # noqa: E402
-from app.ai import tone  # noqa: E402
 from app.ai.prompts import PROMPTS_DIR  # noqa: E402
 from app.deps.supabase import get_service_client  # noqa: E402
 from app.routers import ai_inquiry as router  # noqa: E402

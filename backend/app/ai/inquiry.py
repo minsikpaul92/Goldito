@@ -42,6 +42,8 @@ class Draft(BaseModel):
     can_host: bool = True
     needs_sitter: bool = False
     used_sources: list[str] = Field(default_factory=list)
+    # Filled by the server in agent mode: the tools the model called (for the sitter's review and the demo).
+    tools: list[str] = Field(default_factory=list)
 
 
 def asks_if_ai(question: str) -> bool:

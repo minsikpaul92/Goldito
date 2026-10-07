@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     )
     model_embed_dim: int = Field(default=1024, alias="MODEL_EMBED_DIM")
 
+    # Inquiry replies via a tool-calling agent (7B.11, D46). Off = one grounded call, which is the default.
+    inquiry_agent: bool = Field(default=False, alias="INQUIRY_AGENT")
+
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
