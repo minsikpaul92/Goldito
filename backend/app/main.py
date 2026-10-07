@@ -6,6 +6,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
 from app.routers import (
+    ai_caption,
     ai_care_plan,
     ai_daily_report,
     ai_inquiry,
@@ -37,6 +38,7 @@ app.include_router(meet_greet.router)
 app.include_router(media.router)
 app.include_router(feed.router)
 app.include_router(ai_care_plan.router)
+app.include_router(ai_caption.router)
 app.include_router(ai_daily_report.router)
 app.include_router(ai_inquiry.router)
 app.include_router(ai_report_chips.router)
