@@ -3,311 +3,56 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PawNote Concepts</title>
+<title>Goldito Concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500&family=Fredoka:wght@600&family=Nunito:wght@600&family=Plus+Jakarta+Sans:wght@500;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="ds.css">
 <style>
-  /* Flex children may shrink below their content (stops wide tables / the app map from widening the page). */
-  .wrap>*,section{min-width:0}
-  .ia-scroll,.scroll{max-width:100%}
-  :root{ /* page aliases onto the design-system tokens (ds.css) */
-    --bg:var(--color-background); --surface:var(--color-surface); --text:var(--color-text); --muted:var(--color-text-muted);
-    --border:var(--color-border); --soft:var(--color-track); --accent:var(--color-primary); --accent-soft:var(--color-accent);
-    --check:var(--color-primary); --on-accent:var(--color-primary-text);
-  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;
+  body{margin:0;background:var(--color-background);color:var(--color-text);font-family:var(--font);font-size:15px;line-height:1.5;
     padding-inline:1rem;padding-block:2.5rem 4rem;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem}
-  h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.015em}
+  .wrap{max-width:60rem;margin:0 auto;display:flex;flex-direction:column;gap:2rem}
+  .wrap>*{min-width:0}
+  h1,h2{margin:0;text-wrap:balance;letter-spacing:-.015em}
   h1{font-size:1.75rem;font-weight:700}
-  h2{font-size:1.125rem;font-weight:700}
   p{margin:0}
-  a{color:inherit}
-  .muted{color:var(--muted)}
-  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-  header{display:flex;flex-direction:column;gap:.5rem;max-width:42rem}
-  header p{color:var(--muted)}
-  section{display:flex;flex-direction:column;gap:1rem}
-  .section-head{display:flex;flex-direction:column;gap:.25rem}
-  .section-head p{color:var(--muted);font-size:.875rem;max-width:40rem}
-
-  /* IA chart: onboarding lane → owner app (tab bar) → always-on layers */
-  .ia-scroll{overflow-x:auto;border:1px solid var(--border);border-radius:1rem;background:var(--surface)}
-  .ia{min-width:58rem;padding:1.25rem;display:grid;grid-template-columns:14.5rem 1.75rem 1fr;gap:0 .5rem;align-items:start}
-  .lane{display:flex;flex-direction:column;gap:.625rem}
-  .lane-title{font-size:.6875rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-  .ia-arrow{align-self:center;justify-self:center;color:var(--muted);font-size:1.25rem}
-  .node{display:flex;align-items:center;justify-content:space-between;gap:.5rem;text-decoration:none;font-weight:600;font-size:.8125rem;
-    border:1px solid var(--border);border-radius:.5rem;padding:.4375rem .625rem;background:var(--surface);transition:border-color .15s,background-color .15s}
-  a.node:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
-  .node.root{background:var(--soft)}
-  .node small{font-weight:500;color:var(--muted);font-size:.6875rem}
-  .tree{display:flex;flex-direction:column;gap:.5rem;margin-left:.75rem;padding-left:.75rem;border-left:1px solid var(--border)}
-  .leaves{list-style:none;margin:.375rem 0 0 .625rem;padding:0 0 0 .625rem;border-left:1px dashed var(--border);
-    display:flex;flex-direction:column;gap:.125rem;font-size:.75rem;color:var(--muted)}
-  .leaves i{font-style:normal;font-size:.625rem;border:1px solid var(--border);border-radius:999px;padding:0 .3125rem;margin-left:.25rem}
-  .tabbar-line{display:flex;align-items:center;gap:.5rem;font-size:.75rem;font-weight:600;color:var(--muted)}
-  .tabbar-line::after{content:"";flex:1;height:1px;background:var(--border)}
-  .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.5rem}
-  .tab-col{display:flex;flex-direction:column;gap:.375rem;padding-top:.5rem;border-top:2px solid var(--border)}
-  .tab-col.stay{border-top-color:var(--accent)}
-  .tab-col .leaves{margin-left:.25rem}
-  .stages{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.25rem}
-  .stages a{font-weight:500;font-size:.75rem;padding:.3125rem .5rem}
-  .lock{font-size:.6875rem}
-  .always{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:1.5rem;padding-top:.875rem;border-top:1px dashed var(--border)}
-  .always .node{font-weight:500}
-  .legend{font-size:.75rem;color:var(--muted)}
-
-  /* Concept cards: identical structure, no ranking */
-  .concepts{display:grid;grid-template-columns:repeat(auto-fit,minmax(17.5rem,1fr));gap:1rem}
-  .concept{background:var(--surface);border:1px solid var(--border);border-radius:1rem;overflow:hidden;display:flex;flex-direction:column}
-  .sample{height:7.5rem;display:flex;flex-direction:column;justify-content:center;gap:.625rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
-  .sample .s-title{font-size:1.25rem;line-height:1.2}
-  .sample .s-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-  .sample .s-btn,.sample .s-chip{font-size:.8125rem;padding:.4375rem .875rem;white-space:nowrap}
-  /* A · Calm Core: paper, serif, hairlines */
-  .sample.a{background:#F6F2EA;color:#24211D}
-  .sample.a .s-title{font-family:"Fraunces",Georgia,serif;font-weight:500}
-  .sample.a .s-btn{background:#2D6A4F;color:#fff;border-radius:.375rem;font-family:"Inter",sans-serif;font-weight:600}
-  .sample.a .s-chip{border:1px solid #DCD3C4;border-radius:.375rem;font-family:"Inter",sans-serif;font-weight:500;color:#5F584E}
-  .sample.a .s-rule{height:1px;background:#DCD3C4}
-  /* B · Full Tamagotchi: cream re-theme, outlines, sticker shadow */
-  .sample.b{background:#FFF1D6;color:#231B12}
-  .sample.b .s-title{font-family:"Fredoka","Arial Rounded MT Bold",sans-serif;font-weight:600}
-  .sample.b .s-btn{background:#2D6A4F;color:#fff;border:2px solid #231B12;border-radius:1rem;box-shadow:0 3px 0 #231B12;font-family:"Fredoka",sans-serif;font-weight:600}
-  .sample.b .s-chip{background:#FFFDF7;border:2px solid #231B12;border-radius:999px;font-family:"Nunito",sans-serif;font-weight:600}
-  .sample.b .s-xp{font-family:"Fredoka",sans-serif;font-size:.75rem;background:#FFD24A;border:2px solid #231B12;border-radius:999px;padding:.125rem .5rem}
-  /* C · Balanced Skin: neutral page, white cards, hairline + faint shadow */
-  .sample.c{background:#F4F2EE;color:#1F1B16}
-  .sample.c .s-title{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800}
-  .sample.c .s-btn{background:#2D6A4F;color:#fff;border-radius:999px;box-shadow:0 1px 2px rgba(0,0,0,.05);font-family:"Plus Jakarta Sans",sans-serif;font-weight:800}
-  .sample.c .s-chip{background:#fff;border:1px solid #E6E1D9;border-radius:999px;box-shadow:0 1px 2px rgba(0,0,0,.05);font-family:"Plus Jakarta Sans",sans-serif;font-weight:800}
-  .concept-body{padding:1rem 1.25rem 1.25rem;display:flex;flex-direction:column;gap:.75rem;flex:1}
-  .concept-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
-  .concept-body .tag{align-self:flex-start;font-size:.6875rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
-    color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:.125rem .625rem}
-  .concept-body h3{font-size:1.0625rem}
-  .concept-body p{font-size:.875rem;color:var(--muted)}
-  dl{margin:0;display:grid;grid-template-columns:5.5rem 1fr;gap:.375rem .75rem;font-size:.8125rem;line-height:1.4}
-  dt{color:var(--muted)}
-  dd{margin:0}
-  .open{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:.375rem;text-decoration:none;font-weight:600;font-size:.875rem;
-    border:1px solid var(--border);border-radius:.625rem;padding:.625rem;background:var(--surface);transition:background-color .15s,border-color .15s}
-  .open:hover{background:var(--soft);border-color:var(--muted)}
-
-  /* Tables */
-  .scroll{overflow-x:auto;border:1px solid var(--border);border-radius:.875rem;background:var(--surface)}
-  table{border-collapse:collapse;width:100%;font-size:.8125rem}
-  th,td{text-align:left;vertical-align:middle;padding:.5rem .875rem;border-bottom:1px solid var(--border)}
-  tr:last-child td,tr:last-child th{border-bottom:none}
-  thead th{font-size:.75rem;font-weight:600;color:var(--muted);background:var(--soft)}
-  tbody th{font-weight:600;white-space:nowrap}
-  .flows td.check{width:2.5rem}
-  .flows input{width:1.125rem;height:1.125rem;accent-color:var(--check);margin:0;cursor:pointer}
-  .links{display:flex;gap:.375rem;white-space:nowrap;justify-content:flex-end}
-  .links a{display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:.5rem;border:1px solid var(--border);
-    text-decoration:none;font-weight:700;font-size:.8125rem}
-  .links a:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
-  tr.done th{opacity:.55}
-  .flow-link{text-decoration:none;display:inline-flex;gap:.375rem;align-items:center}
-  .flow-link span{color:var(--muted);transition:transform .15s}
-  .flow-link:hover{color:var(--accent);text-decoration:underline}
-  .flow-link:hover span{transform:translateX(2px);color:var(--accent)}
-  .links a.all{width:auto;padding:0 .5rem;font-weight:600}
-  .progress{font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums}
-  .row-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap}
-  .reset{background:none;border:none;color:var(--muted);font:inherit;font-size:.8125rem;text-decoration:underline;cursor:pointer;padding:0}
-
-  /* Questions */
-  details{border-top:1px solid var(--border);padding-top:1rem}
-  summary{cursor:pointer;font-weight:600;font-size:.9375rem}
-  summary span{color:var(--muted);font-weight:500}
-  .questions{margin:.875rem 0 0;padding-left:1.25rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(18rem,1fr));gap:.5rem 2rem;font-size:.875rem}
-  footer{font-size:.8125rem;color:var(--muted);border-top:1px solid var(--border);padding-top:1rem;display:flex;flex-direction:column;gap:.25rem}
-  code{font-size:.8125rem;background:var(--soft);border-radius:.25rem;padding:.0625rem .3125rem}
-  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
-  /* Design-system components (ds.css): buttons, tags, 44 px targets */
-  .open{border:1px solid var(--color-border-strong)!important;border-radius:var(--radius-md)!important;min-height:var(--size-touch-target);color:var(--color-primary)!important;background:var(--color-surface)!important;box-shadow:var(--shadow-xs)}
-  .concept-body .tag{border:1px solid var(--color-border-strong);border-radius:var(--radius-sm);color:var(--color-text-muted)}
-  .flows .links a{width:var(--size-touch-target)!important;height:var(--size-touch-target)!important;border-color:var(--color-border-strong)!important;border-radius:var(--radius-md)!important}
-  .flows .links a.all{width:auto!important;padding:0 12px}
-  .node{min-height:36px}
-  a.node:hover{background:var(--color-accent)}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  header{display:flex;flex-direction:column;gap:.625rem;max-width:40rem}
+  header p{color:var(--color-text-muted)}
+  .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+  .looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem}
+  .look{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .15s}
+  .look:hover{border-color:var(--color-primary)}
+  .look .frame{display:block;height:19rem;overflow:hidden;background:var(--color-track);position:relative}
+  .look iframe{position:absolute;left:50%;top:0;width:402px;height:874px;border:0;transform:translateX(-50%) scale(.6);transform-origin:top center;pointer-events:none}
+  .look-body{display:flex;flex-direction:column;gap:.25rem;padding:.875rem 1rem 1rem;font-size:.875rem}
+  .look-body b{font-size:1rem}
+  .look-body span{color:var(--color-text-muted)}
+  .more{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;font-size:.875rem;color:var(--color-text-muted)}
+  .more a{color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;min-height:var(--size-touch-target)}
 </style>
+<script src="nav.js" defer></script>
 </head>
 <body>
-<div class="wrap">
+<main class="wrap">
   <header>
-    <span class="eyebrow">Design exploration · Oct 5, 2026</span>
-    <h1>PawNote design exploration</h1>
-    <p>The live app's tabs redesigned with our design system in two looks, the screens for the next phases, and the first round of prototypes for reference.</p>
-    <p><a class="ds-btn" href="review.html">Read the design review · Oct 6</a></p>
+    <span class="eyebrow">Goldito design · Oct 7, 2026</span>
+    <h1>Pick a look</h1>
+    <p>The live app's tabs in three looks, same screens and data. Open one to compare all six tabs side by side.</p>
+    <div class="actions"><a class="ds-btn" href="redesign/compare.html#owner-home/all">Compare the looks</a><a class="ds-btn secondary" href="review.html">Design review</a></div>
   </header>
 
-  <section aria-labelledby="rdH">
-    <div class="section-head"><h2 id="rdH">Redesign · live app vs Balanced and Playful</h2><p>Minsik's tabs (Home · Bookings · Feed · Diary · Mood) rebuilt with our design system in the two remaining looks, next to the live app. Calm Core was dropped (Oct 5): Balanced covers the calm, trustworthy tone.</p></div>
-    <div class="links" style="justify-content:flex-start;gap:8px;flex-wrap:wrap;white-space:normal">
-      <a class="open" style="width:auto;padding:10px 16px;margin:0" href="redesign/compare.html#owner-home/all">Compare Live · Balanced · Playful</a>
-      <a class="open" style="width:auto;padding:10px 16px;margin:0" href="redesign/index.html">Live vs design system, with notes</a>
-    </div>
-  </section>
+  <div class="looks">
+    <a class="look" href="redesign/compare.html#owner-home/c"><span class="frame"><iframe src="redesign/app.html?skin=c#owner-home" title="Balanced preview" loading="lazy" tabindex="-1"></iframe></span>
+      <span class="look-body"><b>Balanced</b><span>Calm and close to the code. White cards, soft neutrals.</span></span></a>
+    <a class="look" href="redesign/compare.html#owner-home/b"><span class="frame"><iframe src="redesign/app.html?skin=b#owner-home" title="Playful preview" loading="lazy" tabindex="-1"></iframe></span>
+      <span class="look-body"><b>Playful</b><span>Ink outlines, sticker shadows, a pixel room for the sitter.</span></span></a>
+    <a class="look" href="redesign/compare.html#owner-home/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-home" title="Expressive preview" loading="lazy" tabindex="-1"></iframe></span>
+      <span class="look-body"><b>Expressive</b><span>Own layouts: big type, color blocks, illustrations.</span></span></a>
+  </div>
 
-  <section aria-labelledby="iaH">
-    <div class="section-head"><h2 id="iaH">Exploration app map (old tabs)</h2><p>The first round of prototypes, kept as reference for flows the live app hasn't built yet (onboarding, Trip, 5-second check, Life Record).</p></div>
-    <div class="ia-scroll">
-      <div class="ia" role="group" aria-label="Information architecture">
-        <div class="lane">
-          <span class="lane-title">Get started</span>
-          <a class="node root" href="compare.html#owner">Welcome</a>
-          <div class="tree">
-            <div><a class="node" href="compare.html#owner">Owner sign-up <small>6 steps</small></a>
-              <ol class="leaves"><li>Role</li><li>Account</li><li>Pet<i>concept</i></li><li>Look<i>concept</i></li><li>Health &amp; care</li><li>Notifications</li></ol></div>
-            <div><a class="node" href="compare.html#sitter">Sitter setup <small>5 steps</small></a>
-              <ol class="leaves"><li>Services &amp; rates</li><li>House rules</li><li>Availability</li><li>Live profile</li></ol></div>
-            <a class="node" href="compare.html#login">Log in</a>
-            <a class="node" href="compare.html#splash">Welcome splash <small>plays once</small></a>
-          </div>
-        </div>
-        <span class="ia-arrow" aria-hidden="true">→</span>
-        <div class="lane">
-          <span class="tabbar-line">Owner app · tab bar</span>
-          <div class="tabs">
-            <div class="tab-col"><a class="node" href="compare.html#login">Home</a>
-              <ul class="leaves"><li>Plan a stay</li><li>Live status</li><li>Today's photos</li><li>Next up</li></ul></div>
-            <div class="tab-col stay"><a class="node" href="compare.html#stage-1">Stay</a>
-              <ol class="stages">
-                <li><a class="node" href="compare.html#stage-1">1 · Inquiry</a></li>
-                <li><a class="node" href="compare.html#stage-2">2 · Meet &amp; Greet</a></li>
-                <li><a class="node" href="compare.html#stage-3">3 · Booking</a></li>
-                <li><a class="node" href="compare.html#stage-4">4 · Pick-up &amp; care</a></li>
-                <li><a class="node" href="compare.html#stage-5">5 · Home &amp; review</a></li>
-              </ol></div>
-            <div class="tab-col"><a class="node" href="compare.html#care">Feed <span class="lock" aria-label="unlocks at pick-up">🔒</span></a>
-              <ul class="leaves"><li>Photo album</li><li>Meals · Walks · Naps · Play</li></ul></div>
-            <div class="tab-col"><a class="node" href="compare.html#care">Care <span class="lock" aria-label="unlocks at pick-up">🔒</span></a>
-              <ul class="leaves"><li>Today's tasks</li><li>Check-off + Undo</li></ul>
-              <a class="node" href="compare.html#check" style="font-weight:500">5-second check</a></div>
-            <div class="tab-col"><a class="node" href="compare.html#care">Reports <span class="lock" aria-label="unlocks at pick-up">🔒</span></a>
-              <ul class="leaves"><li>Daily report</li><li>Thank-you</li></ul></div>
-          </div>
-          <div class="always">
-          <span class="lane-title">Over any screen</span>
-          <a class="node" href="compare.html#stage-3">🔔 Updates</a>
-          <a class="node" href="compare.html#treat">⚠️ Treat Guard</a>
-          <span class="node">ⓘ Notes + jump to stage</span>
-          <span class="legend">🔒 unlocks at pick-up</span>
-        </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section aria-labelledby="conceptsH">
-    <div class="section-head"><h2 id="conceptsH">Concepts</h2></div>
-    <div class="concepts">
-      <article class="concept">
-        <div class="sample a" aria-hidden="true"><span class="s-title">Max's day</span><span class="s-rule"></span>
-          <span class="s-row"><span class="s-btn">Ask Lucy</span><span class="s-chip">Meals</span></span></div>
-        <div class="concept-body">
-          <div class="concept-head"><h3>A · Calm Core</h3><span class="tag">Dropped Oct 5</span></div>
-          <dl>
-            <dt>Look</dt><dd>Paper, serif, hairline rules</dd>
-            <dt>Pet color</dt><dd>Accent only</dd>
-            <dt>In care</dt><dd>Timeline · checklist · letter</dd>
-          </dl>
-          <a class="open" href="pawnote-concept-a-calm-core.html">Open A</a>
-        </div>
-      </article>
-      <article class="concept">
-        <div class="sample b" aria-hidden="true"><span class="s-row"><span class="s-title">Max's room</span><span class="s-xp">⭐ 10 XP</span></span>
-          <span class="s-row"><span class="s-btn">Ask Lucy</span><span class="s-chip">Meals</span></span></div>
-        <div class="concept-body">
-          <div class="concept-head"><h3>B · Full Tamagotchi</h3><span class="tag">Now “Playful”</span></div>
-          <dl>
-            <dt>Look</dt><dd>Outlines, stickers, pixel room</dd>
-            <dt>Pet color</dt><dd>Whole app</dd>
-            <dt>In care</dt><dd>Album · quests + XP · stat cards</dd>
-          </dl>
-          <a class="open" href="pawnote-concept-b-full-tamagotchi.html">Open B</a>
-        </div>
-      </article>
-      <article class="concept">
-        <div class="sample c" aria-hidden="true"><span class="s-title">Max's day</span>
-          <span class="s-row"><span class="s-btn">Ask Lucy</span><span class="s-chip">Meals</span></span></div>
-        <div class="concept-body">
-          <div class="concept-head"><h3>C · Balanced Skin</h3><span class="tag">Now “Balanced”</span></div>
-          <dl>
-            <dt>Look</dt><dd>Large photos, shadcn-style cards</dd>
-            <dt>Pet color</dt><dd>Accent + surfaces</dd>
-            <dt>In care</dt><dd>Photo cards · schedule · summary</dd>
-          </dl>
-          <a class="open" href="pawnote-concept-c-balanced-skin.html">Open C</a>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section aria-labelledby="flowsH">
-    <div class="row-head">
-      <h2 id="flowsH">Flows to test</h2>
-      <span class="progress"><span id="doneCount">0</span> of <span id="totalCount">0</span> tried · <button type="button" class="reset" id="resetTicks">Clear</button></span>
-    </div>
-    <div class="scroll">
-      <table class="flows">
-        <thead><tr><th scope="col"><span class="visually-hidden">Tried</span></th><th scope="col">Flow</th><th scope="col" style="text-align:right">Open in</th></tr></thead>
-        <tbody id="flowRows"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <details>
-    <summary>Questions to answer for each concept <span>(8)</span></summary>
-    <ol class="questions">
-      <li>Is the next action obvious within a few seconds?</li>
-      <li>Does the pet's color help, or get in the way of reading?</li>
-      <li>Do the sitter's demo controls read clearly as “not you”?</li>
-      <li>Does the motion feel earned, or decorative?</li>
-      <li>Would an anxious owner trust it with meds and entry codes?</li>
-      <li>Does it hold up in dark mode and with Reduce motion?</li>
-      <li>How much could become shared tokens and components?</li>
-      <li>What would you take from the other two?</li>
-    </ol>
-  </details>
-
-  <footer>Prototypes only: no real accounts, AI, payments or locations.</footer>
-</div>
-
-<script src="flows.js"></script>
-<script>
-  const FLOWS = window.PAWNOTE_FLOWS, CONCEPTS = window.PAWNOTE_CONCEPTS, KEY = window.PAWNOTE_TRIED_KEY;
-  let tried = new Set();
-  try { tried = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...tried])); } catch (e) {} };
-  const body = document.getElementById("flowRows");
-  function render() {
-    body.innerHTML = FLOWS.map((f, i) => {
-      const id = `f${i}`, on = tried.has(f.name);
-      return `<tr class="${on ? "done" : ""}"><td class="check"><input type="checkbox" id="${id}" data-flow="${f.name}"${on ? " checked" : ""} aria-label="Tried: ${f.name}"></td>
-        <th scope="row"><a class="flow-link" href="compare.html#${f.id}" title="${f.what}">${f.name}<span aria-hidden="true">→</span></a></th>
-        <td><span class="links">${CONCEPTS.map((c) => `<a href="compare.html#${f.id}/${c.k}" aria-label="${f.name} in concept ${c.k.toUpperCase()}">${c.k.toUpperCase()}</a>`).join("")}<a class="all" href="compare.html#${f.id}/all" aria-label="${f.name} in all three, side by side">All</a></span></td></tr>`;
-    }).join("");
-    document.getElementById("doneCount").textContent = [...tried].filter((n) => FLOWS.some((f) => f.name === n)).length;
-    document.getElementById("totalCount").textContent = FLOWS.length;
-  }
-  body.addEventListener("change", (e) => {
-    const n = e.target.dataset.flow;
-    if (!n) return;
-    e.target.checked ? tried.add(n) : tried.delete(n);
-    save(); render();
-  });
-  document.getElementById("resetTicks").onclick = () => { tried.clear(); save(); render(); };
-  window.addEventListener("pageshow", () => { try { tried = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {} render(); });
-  render();
-</script>
-<style>.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}</style>
+  <p class="more"><a href="compare.html#stage-1">Walk through the full journey: inquiry to home safe →</a></p>
+</main>
 </body>
 </html>

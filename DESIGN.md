@@ -143,6 +143,8 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 
 `primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). Figma (*Goldito Design System*) shows **Balanced** only; Playful also changes outlines, shadows, corners and fonts, so it lives in the clickable prototypes (`design/concept-prototypes/redesign/`) until the team picks a look.
 
+**Expressive** (Oct 7, prototypes only) is a third direction with its own layouts, not just a palette: brand green stays primary, warm complements (`#E76F51` · `#F4A261` · `#E9C46A`) tint color-blocked sections, a display face (Lilita One) sets headlines, and a placeholder illustration set (`design/concept-prototypes/redesign/art.svg`) fills fixed slots — never over content. It needs new components (number tiles, color blocks, illustration slots) if the team picks it.
+
 ---
 
 ## 4. Typography

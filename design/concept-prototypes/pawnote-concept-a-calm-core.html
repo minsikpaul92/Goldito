@@ -3,6 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calm Core</title>
+<script src="nav.js" defer></script>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -559,14 +560,14 @@ button{font:inherit;color:inherit}
     </div>
     <div class="topbar">
       <div class="left-slot">
-        <div class="brand"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg>PawNote</div>
+        <div class="brand"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg>Goldito</div>
         <button class="back-btn" id="backBtn"><svg class="ico" aria-hidden="true"><use href="#i-left"/></svg>Back</button>
       </div>
       <div class="center-slot">
         <div class="steps" role="img" aria-label="Step 1 of 3" id="stepDots">
           <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
         </div>
-        <button class="masthead" id="mastheadBtn" aria-label="PawNote, go to Home"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><b style="font-weight:inherit">Paw<span>Note</span></b></button>
+        <button class="masthead" id="mastheadBtn" aria-label="Goldito, go to Home"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><b style="font-weight:inherit">Paw<span>Note</span></b></button>
       </div>
       <div class="right-slot">
         <button class="notes-fab" id="notesFab" aria-label="About this version" aria-expanded="false" aria-controls="notesSheet"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg></button>
@@ -577,7 +578,7 @@ button{font:inherit;color:inherit}
   <div class="page-head">
     <p class="kicker">Setup &middot; 1 of 3</p>
     <h1 class="display">Add your pet</h1>
-    <p class="lede">A few details, then PawNote takes its accent color from your pet's photo.</p>
+    <p class="lede">A few details, then Goldito takes its accent color from your pet's photo.</p>
   </div>
   <div class="field">
     <label for="nameInput">Pet's name</label>
@@ -603,7 +604,7 @@ button{font:inherit;color:inherit}
 <div class="screen has-actions" data-step="2" hidden>
   <div class="page-head">
     <p class="kicker">Setup &middot; 2 of 3</p>
-    <h1 class="display">PawNote, in <span id="petNamePreview">Max</span>'s colors <span id="petEmojiPreview">🐶</span></h1>
+    <h1 class="display">Goldito, in <span id="petNamePreview">Max</span>'s colors <span id="petEmojiPreview">🐶</span></h1>
     <p class="lede">We read the coat color and snap it to the closest accessible preset, so text always stays readable.</p>
   </div>
   <div class="ruled">
@@ -693,7 +694,7 @@ button{font:inherit;color:inherit}
   <header class="page-head">
     <p class="kicker js-date">Today</p>
     <h1 class="display">Feed</h1>
-    <p class="lede">Photos from Lucy as the day goes. PawNote AI writes the captions, so Lucy never types.</p>
+    <p class="lede">Photos from Lucy as the day goes. Goldito AI writes the captions, so Lucy never types.</p>
   </header>
   <div id="feedGroups" style="display:flex;flex-direction:column;gap:1.5rem"></div>
   <div class="feed-end">
@@ -742,7 +743,7 @@ button{font:inherit;color:inherit}
     <p class="signoff">Warmly,<span class="sig">&mdash; Lucy</span></p>
     <div class="letter-foot">
       <button class="btn btn-primary thanks" id="thanksBtn"><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><span>Send Lucy a thank-you paw</span></button>
-      <p class="fine" id="letterFoot">Drafted by PawNote AI from today's photos and check-ins. Lucy reads it before it's sent.</p>
+      <p class="fine" id="letterFoot">Drafted by Goldito AI from today's photos and check-ins. Lucy reads it before it's sent.</p>
     </div>
   </article>
 </div>
@@ -793,7 +794,7 @@ button{font:inherit;color:inherit}
         </div>
         <button class="sheet-close" id="sheetClose" aria-label="Close notes"><svg class="ico" aria-hidden="true"><use href="#i-close"/></svg></button>
       </div>
-      <p class="status-line lede-notes">PawNote as a quiet, Kidsnote-style family journal: warm paper, serif headings, hairline rules instead of boxed cards. Only the accent color comes from your pet's photo.</p>
+      <p class="status-line lede-notes">Goldito as a quiet, Kidsnote-style family journal: warm paper, serif headings, hairline rules instead of boxed cards. Only the accent color comes from your pet's photo.</p>
       <h4>UI</h4>
       <ul>
         <li><b>Theming:</b> only <code>--primary</code> swaps to the matched preset (plus a lighter, contrast-checked twin for dark mode). Paper, ink and rules never change, so a photo can never hurt readability.</li>
@@ -1257,7 +1258,7 @@ const Journey = (() => {
     o.innerHTML = `<div class="jr-sheet jr" role="dialog" aria-modal="true" aria-label="Notifications">
       <div class="jr-spread"><h3 class="jr-h3">Updates</h3><button type="button" class="btn btn-secondary btn-sm" data-jr="close-sheet" style="width:auto">Close</button></div>
       ${J.notes.length ? J.notes.map((n) => `<div class="jr-note${n.read ? "" : " unread"}"><span aria-hidden="true">🐾</span><div><b>${esc(n.title)}</b><small>${esc(n.when)}</small></div></div>`).join("")
-        : `<p class="jr-p">Nothing yet. Updates from ${SITTER} and PawNote land here, so you never need to ask.</p>`}
+        : `<p class="jr-p">Nothing yet. Updates from ${SITTER} and Goldito land here, so you never need to ask.</p>`}
     </div>`;
     o.hidden = false;
     J.notes.forEach((n) => (n.read = true));
@@ -1347,7 +1348,7 @@ const Journey = (() => {
   function meet() {
     const s = J.meet, n = pet();
     let out = `<div class="jr-stack"><span class="jr-label">Care & medication request</span>
-      <p class="jr-p">Write it like a note. PawNote turns it into ${SITTER}'s checklist; you review it first.</p>`;
+      <p class="jr-p">Write it like a note. Goldito turns it into ${SITTER}'s checklist; you review it first.</p>`;
     if (s.status === "write" || s.status === "generating") {
       out += `<textarea class="input jr-textarea" id="jrRequest" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
         <button type="button" class="btn btn-primary" data-jr="generate"${s.status === "generating" ? " disabled" : ""}>${s.status === "generating" ? `<span class="spinner" aria-hidden="true"></span>Making the checklist…` : "Turn into checklist"}</button>`;
@@ -1388,7 +1389,7 @@ const Journey = (() => {
         <div class="jr-card">${quoteHTML()}</div>
         <div class="jr-stack"><span class="jr-label">Consents (${s.consents.size}/${CONSENTS.length})</span>
           ${CONSENTS.map((c) => `<div class="jr-consent"><label><input type="checkbox" data-jr-consent="${c.k}"${s.consents.has(c.k) ? " checked" : ""}>${c.t}</label>
-            <p>${s.open.has(c.k) ? esc(c.s) + " This is a demo template written for PawNote; it is not legal advice." : esc(c.s.split(".")[0]) + "."}</p>
+            <p>${s.open.has(c.k) ? esc(c.s) + " This is a demo template written for Goldito; it is not legal advice." : esc(c.s.split(".")[0]) + "."}</p>
             <button type="button" class="jr-link" data-jr="read" data-v="${c.k}">${s.open.has(c.k) ? "Show less" : "Read full text"}</button></div>`).join("")}
           <p class="jr-legal">Demo template — not legal advice.</p></div>
         <label class="jr-stack"><span class="jr-label">Type your full name to sign</span>
@@ -1953,7 +1954,7 @@ const Onboard = (() => {
     role() {
       const opt = (v, emoji, t, s) => `<button type="button" class="ob-choice${O.role === v ? " on" : ""}" data-ob="role" data-v="${v}" aria-pressed="${O.role === v}">
         <span class="ob-choice-emoji" aria-hidden="true">${emoji}</span><span><b>${t}</b><span>${s}</span></span><span class="ob-tick" aria-hidden="true">✓</span></button>`;
-      return frame(`${head("", "How will you use PawNote?", "You can add the other role later from your profile.")}
+      return frame(`${head("", "How will you use Goldito?", "You can add the other role later from your profile.")}
         <div class="jr-stack" role="group" aria-label="Role">
           ${opt("owner", "🏡", "I have a pet", "Book sitters and follow along while you're away")}
           ${opt("sitter", "🧺", "I'm a pet sitter", "Get booked, then care, snap and tap. No report typing")}
@@ -1999,9 +2000,9 @@ const Onboard = (() => {
     },
     updates() {
       const s = O.notif, sit = SITTER, n = esc(pet());
-      return frame(`${head("Updates", "Know how it's going without asking", `Pick what ${sit} and PawNote send you. You can change this anytime.`)}
+      return frame(`${head("Updates", "Know how it's going without asking", `Pick what ${sit} and Goldito send you. You can change this anytime.`)}
         <div class="ob-push" aria-hidden="true"><span class="ob-push-ico">🐾</span>
-          <div><span class="ob-push-top"><b>PawNote</b><small>now</small></span><b>${sit} posted 2 photos of ${n} 📸</b><span>Breakfast done. Finished the whole bowl.</span></div></div>
+          <div><span class="ob-push-top"><b>Goldito</b><small>now</small></span><b>${sit} posted 2 photos of ${n} 📸</b><span>Breakfast done. Finished the whole bowl.</span></div></div>
         <div class="jr-card ob-switches">
           ${sw("Photos and captions", "As they're posted", "notif", "photos", s.photos)}
           ${sw("Care check-offs", "Meals, walks, medication", "notif", "care", s.care)}
@@ -2014,7 +2015,7 @@ const Onboard = (() => {
     },
     services() {
       const r = O.rates, q = sampleQuote();
-      return frame(`${head("Your services", "What do you offer, and for how much?", "PawNote's AI quotes owners from these numbers. It never makes up a price.")}
+      return frame(`${head("Your services", "What do you offer, and for how much?", "Goldito's AI quotes owners from these numbers. It never makes up a price.")}
         ${SERVICES.map((s) => { const on = O.services.has(s.k);
           return `<div class="jr-card ob-service${on ? " on" : ""}">${sw(s.t, s.s, "service", s.k, on)}
             ${on ? `<div class="jr-spread"><span class="jr-p">Rate per ${s.unit}</span>${stepper(`rate-${s.k}`, `$${r[s.k]}`, `/ ${s.unit}`)}</div>` : ""}</div>`; }).join("")}
@@ -2056,14 +2057,14 @@ const Onboard = (() => {
     live() {
       const r = O.rates, s = O.sitter, h = O.house, n = first(s.name) || "You", q = sampleQuote();
       const free = STAY_NIGHTS.every((d) => O.avail.has(d));
-      return frame(`${head("You're live", `You're ready to be booked, ${esc(n)}`, "Here's what owners see, and how PawNote answers for you.")}
+      return frame(`${head("You're live", `You're ready to be booked, ${esc(n)}`, "Here's what owners see, and how Goldito answers for you.")}
         <div class="jr-card ob-profile" data-testid="ob-profile"><div class="jr-row"><span class="ob-avatar" aria-hidden="true">${esc(n[0] || "L")}</span>
           <div><b>${esc(s.name)}</b><span class="jr-p" style="display:block">New sitter · ${h.type} · up to ${h.maxPets} pets</span></div></div>
           <div class="jr-stack">${SERVICES.filter((x) => O.services.has(x.k)).map((x) => `<div class="jr-spread"><span>${x.t}</span><b>$${r[x.k]} / ${x.unit}</b></div>`).join("")}</div>
           <div class="jr-chips">${[...h.rules].map((x) => `<span class="chip">${x}</span>`).join("")}<span class="chip">${CANCEL.find((c) => c.k === h.cancel).t} cancellation</span></div></div>
         <div class="jr-stack"><span class="jr-label">An owner asks</span><div class="jr-thread">
           <div class="jr-bubble me">Are you free Oct 9–12 for Max and Mochi?</div>
-          <div class="jr-bubble ai"><div class="jr-ai-label">✦ Auto-reply from your PawNote assistant</div>
+          <div class="jr-bubble ai"><div class="jr-ai-label">✦ Auto-reply from your Goldito assistant</div>
             ${free && q ? `Hi! ${esc(n)} is free Oct 9–12 for Max and Mochi. ${q.label}: <b>${money(q.total)} CAD</b> for 3 nights, including the Thanksgiving rate.`
               : `Hi! ${esc(n)} isn't free for all of Oct 9–12. Here are the open days this month: ${[...O.avail].sort((a, b) => a - b).slice(0, 4).map((d) => `Oct ${d}`).join(", ")}.`}
             <div class="jr-src"><span>From your calendar</span><span>From your rates</span><span>From your house rules</span></div></div></div></div>`,
@@ -2079,7 +2080,7 @@ const Onboard = (() => {
   }
   function osPrompt() {
     return `<div class="ob-os" role="alertdialog" aria-modal="true" aria-labelledby="obOsT"><div class="ob-os-card">
-      <div class="ob-os-body"><b id="obOsT">“PawNote” Would Like to Send You Notifications</b>
+      <div class="ob-os-body"><b id="obOsT">“Goldito” Would Like to Send You Notifications</b>
         <span>Notifications may include alerts, sounds and icon badges. These can be configured in Settings.</span></div>
       <div class="ob-os-btns"><button type="button" data-ob="os-deny">Don’t Allow</button><button type="button" data-ob="os-allow"><b>Allow</b></button></div>
       </div><span class="ob-os-tag">Simulated system prompt</span></div>`;
@@ -2951,7 +2952,7 @@ function renderReport(){
     ? [`Finished every bite of breakfast`, `Joint supplement taken with food`, `A long, sunny-window nap`]
     : [`Ate breakfast and groomed after`, `Hairball gel taken without a fuss`, `A long, sunny-window nap`];
   $("#letterHighlights").innerHTML = hl.map(h => `<li><svg class="paw" aria-hidden="true"><use href="#i-paw"/></svg><span>${h}</span></li>`).join("");
-  $("#letterFoot").textContent = `Drafted by PawNote AI from ${feedEntries().length} photos and ${done} care check-ins. ${SITTER} reads it before it's sent.`;
+  $("#letterFoot").textContent = `Drafted by Goldito AI from ${feedEntries().length} photos and ${done} care check-ins. ${SITTER} reads it before it's sent.`;
 }
 
 /* ---------- Thank-you paw ---------- */

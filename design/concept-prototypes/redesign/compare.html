@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PawNote Redesign Viewer</title>
+<title>Goldito Redesign Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -76,10 +76,10 @@
   .seg{border:1px solid var(--color-border-strong);flex-wrap:wrap;max-width:100%}
   .back{min-height:var(--size-touch-target)}
 </style>
+<script src="../nav.js" defer></script>
 </head>
 <body>
   <div class="bar">
-    <a class="back" href="../index.html"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>All flows</a>
     <div class="flow-pick">
       <div class="select"><select id="flowSel" aria-label="Flow"></select>
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div>
@@ -95,7 +95,7 @@
   </div>
   <p class="brief"><b id="flowName"></b><span id="flowWhat"></span></p>
   <main class="stage" id="stage" aria-live="polite"></main>
-  <p class="hint hide-sm">Each concept keeps its own progress while you switch. Keys: <kbd>1</kbd> live · <kbd>2</kbd> Balanced · <kbd>3</kbd> Playful · <kbd>4</kbd> all · <kbd>[</kbd> <kbd>]</kbd> previous / next flow</p>
+  <p class="hint hide-sm">Each concept keeps its own progress while you switch. Keys: <kbd>1</kbd> live · <kbd>2</kbd> Balanced · <kbd>3</kbd> Playful · <kbd>4</kbd> Expressive · <kbd>5</kbd> all · <kbd>[</kbd> <kbd>]</kbd> previous / next flow</p>
 
 <script>
   window.PAWNOTE_FLOWS = [
@@ -110,6 +110,7 @@
     {k: "live", label: "Live (Oct 5)", file: "live", live: true},
     {k: "c", label: "Balanced", file: "app.html?skin=c"},
     {k: "b", label: "Playful", file: "app.html?skin=b"},
+    {k: "d", label: "Expressive", file: "app.html?skin=d"},
   ];
   window.PAWNOTE_TRIED_KEY = "pawnote-redesign-tried";
 </script>
@@ -130,7 +131,7 @@
   // ---------- build ----------
   sel.innerHTML = FLOWS.map((f) => `<option value="${f.id}">${f.name}</option>`).join("");
   seg.innerHTML = CONCEPTS.map((c, i) => `<button type="button" data-view="${c.k}">${c.label}<kbd>${i + 1}</kbd></button>`).join("")
-    + `<button type="button" data-view="all">All<kbd>4</kbd></button>`;
+    + `<button type="button" data-view="all">All<kbd>5</kbd></button>`;
   stage.innerHTML = CONCEPTS.map((c) => `<div class="slot" data-k="${c.k}">
       <button type="button" class="slot-label" data-focus="${c.k}" title="Show only this concept">${c.label}</button>
       <div class="frame-box"><span class="loading">Loading…</span>${c.live ? `<img class="liveimg" alt="${c.label}" data-k="${c.k}">` : `<iframe title="${c.label}" data-k="${c.k}"></iframe>`}</div></div>`).join("");
@@ -191,7 +192,7 @@
     const one = CONCEPTS.find((c) => c.k === view) || CONCEPTS[0];
     $("#openFull").href = one.live ? `live/${flow.id}.png` : `${one.file}#${flow.hash}`;
     $("#openFullText").textContent = view === "all" ? "Open full page" : `Open ${one.k.toUpperCase()} full page`;
-    document.title = `${flow.name} · PawNote Flow Viewer`;
+    document.title = `${flow.name} · Goldito Flow Viewer`;
     history.replaceState(null, "", `#${flow.id}/${view}`);
     store.set("pawnote-redesign-view", view);
     fit();
@@ -222,7 +223,7 @@
   };
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("select,input") || e.metaKey || e.ctrlKey || e.altKey) return;
-    const k = { "1": "live", "2": "c", "3": "b", "4": "all" }[e.key];
+    const k = { "1": "live", "2": "c", "3": "b", "4": "d", "5": "all" }[e.key];
     if (k) setView(k);
     else if (e.key === "[") $("#prev").click();
     else if (e.key === "]") $("#next").click();
@@ -232,7 +233,7 @@
   // #<flow-id>/<a|b|c|all>; missing parts fall back to the first flow and the last view used.
   const [hid, hview] = decodeURIComponent(location.hash.slice(1)).split("/");
   flow = FLOWS.find((f) => f.id === hid) || FLOWS[0];
-  view = ["live", "b", "c", "all"].includes(hview) ? hview : store.get("pawnote-redesign-view", "all");
+  view = ["live", "b", "c", "d", "all"].includes(hview) ? hview : store.get("pawnote-redesign-view", "all");
   render();
 </script>
 </body>

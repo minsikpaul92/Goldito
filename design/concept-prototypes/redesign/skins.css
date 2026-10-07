@@ -6,11 +6,17 @@
 [data-skin="b"] .bar h4,[data-skin="b"] .h,[data-skin="b"] .btn,[data-skin="b"] .eyebrow,[data-skin="b"] .tab{font-family:Fredoka,ui-rounded,sans-serif}
 [data-skin="b"] .card,[data-skin="b"] .btn,[data-skin="b"] .chip,[data-skin="b"] .seg{border-width:2px;border-color:#231B12}
 [data-skin="b"] .chip{box-shadow:0 2px 0 #231B12}
+/* Chip rows clip sideways (scroll hint); room below and at the start so the sticker shadow and outline aren't cut */
+[data-skin="b"] .chips{padding:2px 2px 4px;margin:-2px -2px -4px}
 [data-skin="b"] .pill.live{border:2px solid #231B12;background:#FFD24A;color:#231B12}
 [data-skin="b"] .tabs{margin:0 10px 12px;border:2px solid #231B12;border-radius:22px;box-shadow:0 3px 0 #231B12;padding:6px}
 [data-skin="b"] .tab.on .p{background:#FFD24A;border:2px solid #231B12}
 [data-skin="b"] .photo,[data-skin="b"] .grid3 .g{border:2px solid #231B12}
 [data-skin="b"] .divider{background:#231B1233}
+/* Segmented control: one ink-outlined pill; the selected segment is a yellow sticker, not a half-shadowed white card */
+[data-skin="b"] .seg{background:#FFFDF7;border:2px solid #231B12;border-radius:999px;padding:3px;box-shadow:0 3px 0 #231B12}
+[data-skin="b"] .seg span{border-radius:999px;font-family:Fredoka,ui-rounded,sans-serif;font-weight:600;color:#5E4B33}
+[data-skin="b"] .seg span.on{background:#FFD24A;color:#231B12;border:2px solid #231B12;box-shadow:none;margin:-1px 0}
 
 /* Balanced (was C · Balanced Skin) — soft tint, Plus Jakarta Sans, large radii, big photos */
 [data-skin="c"]{--border-strong:#857E73;--track:#E6E1D9;--background:#F4F2EE;--surface:#FFFFFF;--border:#E6E1D9;--accent:#DCEDE3;--text:#1F1B16;--text-muted:#5E5850;
@@ -32,3 +38,12 @@
 @media (prefers-reduced-motion: reduce){.pixel-room canvas,.pixel-room .ball{animation:none}}
 [data-skin="b"] .prog i{background:var(--track)}
 [data-skin="b"] .prog i.on{background:var(--primary)}
+
+/* Playful: one "selected" language everywhere — yellow sticker + ink outline (segments, filters, meter, tabs, live pill) */
+[data-skin="b"] .chip.on{background:#FFD24A;color:#231B12;border-color:#231B12}
+[data-skin="b"] .meter{background:#FFFDF7;border:2px solid #231B12;border-radius:999px;padding:3px}
+[data-skin="b"] .meter span{border-radius:999px;font-family:Fredoka,ui-rounded,sans-serif;font-weight:600;color:#5E4B33}
+[data-skin="b"] .meter span.on{background:#FFD24A;color:#231B12;border:2px solid #231B12;margin:-1px 0}
+/* Nested boxes: one ink outline per card, the inner note is a soft tint, not a second outline */
+[data-skin="b"] .bubble{border:none;background:#FFF1D6}
+[data-skin="b"] .tag{background:#FFE0A3;color:#231B12}

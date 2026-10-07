@@ -1,5 +1,5 @@
-/* PawNote design system for web pages (prototype hub, viewers, notes).
-   Same tokens as frontend/theme/tokens.ts and the Figma "PawNote Design System" variables.
+/* Goldito design system for web pages (prototype hub, viewers, notes).
+   Same tokens as frontend/theme/tokens.ts and the Figma "Goldito Design System" variables.
    Dark values are a proposal (the app has no dark mode yet); every pair is checked: text ≥ 4.5:1, outlines ≥ 3:1. */
 :root{
   --color-background:#F7F7F5; --color-surface:#FFFFFF; --color-text:#1A1A1A; --color-text-muted:#5C5C5C;

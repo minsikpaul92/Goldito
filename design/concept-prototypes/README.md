@@ -42,7 +42,7 @@ All three share the same onboarding (see *Onboarding* below) and the same five-s
 
 | Path | Screens |
 | :--- | :--- |
-| Owner | Welcome → *How will you use PawNote?* → Create account → **Add your pet** → **Your look** → Health & care (breed, age, allergies, medication, personality, vet, live "heads-up" preview) → Notifications (choose types, simulated system prompt or *Not now*) → Home |
+| Owner | Welcome → *How will you use Goldito?* → Create account → **Add your pet** → **Your look** → Health & care (breed, age, allergies, medication, personality, vet, live "heads-up" preview) → Notifications (choose types, simulated system prompt or *Not now*) → Home |
 | Sitter | Welcome → role → Create account → Services & rates (steppers; a sample quote for 2 pets over Thanksgiving updates live, same formula as the stay) → House rules (home type, rules, own pets, max pets, cancellation, optional note) → Availability (October calendar, Thanksgiving marked) → *You're live*: the profile owners see + an AI auto-reply preview → *Try it as an owner* |
 | Returning | Welcome → Log in → Home |
 
@@ -111,7 +111,7 @@ If the team later wants the exact Lottie file instead, it needs the `lottie-web`
 `DESIGN.md` marks almost every value as a placeholder until the designer decides. Highest leverage, in order:
 
 1. **Foundations (tokens):** font family; final palette; the **(proposed)** tokens not yet in code — `warning`, `warningSurface`, `errorSurface`, `successSurface`, `fontSize.subtitle` (18); logo + app icon.
-2. **What judges see first:** the desktop backdrop + side panel around the phone frame (pitch, Try demo, QR); Welcome / Login screens ([#13](https://github.com/minsikpaul92/PawNote/issues/13)).
+2. **What judges see first:** the desktop backdrop + side panel around the phone frame (pitch, Try demo, QR); Welcome / Login screens ([#13](https://github.com/minsikpaul92/Goldito/issues/13)).
 3. **Demo "wow" moment:** the full-screen DANGER treat-safety modal (plus WARNING / SAFE variants), §7.4.
 4. **Components without visuals yet:** Button variants, TabBar, TaskRow, FeedCard, Toast (high); Chip, EmptyState, PetAvatar, Skeleton, Sheet (medium); ProposalCard, ReportCard, report themes/stickers (later).
 5. **Gaps in DESIGN.md:** shadow/elevation scale, motion (durations, easing, skeleton shimmer), icon sizes and line-height tokens, empty-state illustration style, photo loading/error/no-photo states, a stated dark-mode decision.

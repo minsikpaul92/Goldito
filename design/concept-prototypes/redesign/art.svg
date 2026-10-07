@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Goldito placeholder illustration set (Expressive). One style for all: flat shapes, 3 px rounded ink outline (#1B4332),
+       fills from the brand palette only — cream #FFF9F0 · mint #D8F3DC · leaf #52B788 · green #2D6A4F · sand #F4A261 ·
+       saffron #E9C46A · terracotta #E76F51. viewBox 0 0 120 120, artwork kept inside 8–112 so every piece sits the same size.
+       Replace with final art later: keep the symbol ids. -->
+  <defs>
+    <style>.pn-o{stroke:#1B4332;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}</style>
+  </defs>
+
+  <!-- Max (Maltese): fluffy white head, droopy ears, saffron bow -->
+  <symbol id="art-dog" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="34" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#FFFFFF" d="M28 50c-10 4-14 22-8 36 4 9 13 10 16 4l4-20z"/>
+    <path class="pn-o" fill="#FFFFFF" d="M92 50c10 4 14 22 8 36-4 9-13 10-16 4l-4-20z"/>
+    <path class="pn-o" fill="#FFFFFF" d="M60 22c-14 0-22 6-26 14-6 2-9 9-6 15-3 8 0 16 5 20 1 14 13 26 27 26s26-12 27-26c5-4 8-12 5-20 3-6 0-13-6-15-4-8-12-14-26-14z"/>
+    <circle cx="48" cy="60" r="4.5" fill="#1B4332"/><circle cx="72" cy="60" r="4.5" fill="#1B4332"/>
+    <circle cx="49.5" cy="58.5" r="1.4" fill="#fff"/><circle cx="73.5" cy="58.5" r="1.4" fill="#fff"/>
+    <path class="pn-o" fill="#1B4332" d="M55 70h10l-5 6z"/>
+    <path class="pn-o" fill="none" d="M60 76v4m-7 1c3 4 11 4 14 0"/>
+    <path class="pn-o" fill="#E76F51" d="M56 83c1 6 7 6 8 0z"/>
+    <circle cx="41" cy="71" r="4" fill="#F4A261" opacity=".55"/><circle cx="79" cy="71" r="4" fill="#F4A261" opacity=".55"/>
+    <path class="pn-o" fill="#E9C46A" d="M60 30l-12-7v14zM60 30l12-7v14z"/><circle class="pn-o" cx="60" cy="30" r="4" fill="#E9C46A"/>
+  </symbol>
+
+  <!-- Mochi (shorthair cat): sand head, pointed ears, whiskers -->
+  <symbol id="art-cat" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="32" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#F4A261" d="M30 30l8 28h-8zM90 30l-8 28h8z"/>
+    <path class="pn-o" fill="#F4A261" d="M30 30l18 16h24l18-16 2 34c0 20-14 34-32 34S28 84 28 64z"/>
+    <path fill="#FFF9F0" d="M36 38l4 14-6 2zM84 38l-4 14 6 2z"/>
+    <path class="pn-o" fill="#FFF9F0" d="M44 78c4-8 28-8 32 0-2 10-30 10-32 0z"/>
+    <path class="pn-o" fill="none" d="M44 62c3-3 7-3 10 0M66 62c3-3 7-3 10 0"/>
+    <path class="pn-o" fill="#E76F51" d="M56 72h8l-4 4z"/>
+    <path class="pn-o" fill="none" d="M38 74l-14-2m14 6l-13 4m57-8l14-2m-14 6l13 4"/>
+    <path class="pn-o" fill="none" d="M52 46c2 4 2 6 0 8m16-8c-2 4-2 6 0 8"/>
+  </symbol>
+
+  <!-- Food bowl with kibble -->
+  <symbol id="art-bowl" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="38" ry="6" fill="#1B4332" opacity=".12"/>
+    <g class="pn-o" fill="#B5652E"><circle cx="44" cy="56" r="7"/><circle cx="58" cy="50" r="7"/><circle cx="72" cy="55" r="7"/><circle cx="51" cy="62" r="7"/><circle cx="66" cy="62" r="7"/><circle cx="80" cy="62" r="6"/><circle cx="38" cy="64" r="6"/></g>
+    <path class="pn-o" fill="#E76F51" d="M22 64h76l-8 30c-1 4-4 6-8 6H38c-4 0-7-2-8-6z"/>
+    <path class="pn-o" fill="#FFF9F0" d="M18 62h84v6H18z"/>
+    <g fill="#FFF9F0"><circle cx="60" cy="84" r="5"/><circle cx="52" cy="77" r="2.6"/><circle cx="57" cy="74" r="2.6"/><circle cx="63" cy="74" r="2.6"/><circle cx="68" cy="77" r="2.6"/></g>
+  </symbol>
+
+  <!-- Tennis ball -->
+  <symbol id="art-ball" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="28" ry="6" fill="#1B4332" opacity=".12"/>
+    <circle class="pn-o" cx="60" cy="60" r="34" fill="#E9C46A"/>
+    <path fill="none" stroke="#FFF9F0" stroke-width="5" stroke-linecap="round" d="M34 38c14 10 14 34 0 44M86 38c-14 10-14 34 0 44"/>
+    <circle cx="48" cy="44" r="5" fill="#fff" opacity=".6"/>
+  </symbol>
+
+  <!-- Walk: tree + leash loop -->
+  <symbol id="art-walk" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="38" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#B5652E" d="M54 70h12v32H54z"/>
+    <path class="pn-o" fill="#52B788" d="M60 14c-14 0-22 10-20 20-10 2-14 12-10 20 3 8 12 12 20 10 4 6 16 6 20 0 8 2 17-2 20-10 4-8 0-18-10-20 2-10-6-20-20-20z"/>
+    <circle cx="48" cy="40" r="5" fill="#D8F3DC"/><circle cx="72" cy="48" r="4" fill="#D8F3DC"/>
+    <path class="pn-o" fill="none" stroke="#E76F51" d="M80 102c10-4 14-14 10-22-3-6-12-6-14 0-2 5 3 9 8 7"/>
+  </symbol>
+
+  <!-- Camera -->
+  <symbol id="art-camera" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="38" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#F4A261" d="M22 42h20l6-10h24l6 10h20c3 0 6 3 6 6v40c0 3-3 6-6 6H22c-3 0-6-3-6-6V48c0-3 3-6 6-6z"/>
+    <circle class="pn-o" cx="60" cy="68" r="19" fill="#FFF9F0"/><circle class="pn-o" cx="60" cy="68" r="10" fill="#2D6A4F"/>
+    <circle cx="56" cy="64" r="3" fill="#fff"/><rect class="pn-o" x="84" y="50" width="8" height="6" rx="2" fill="#E9C46A"/>
+  </symbol>
+
+  <!-- Nap: moon + Zz -->
+  <symbol id="art-nap" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="30" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#E9C46A" d="M70 24c-20 2-34 18-32 38s20 34 40 32c6 0 11-2 16-5-18 2-34-12-35-30-1-14 6-27 18-34-2-1-5-1-7-1z"/>
+    <path class="pn-o" fill="none" d="M80 30h12l-12 14h12M94 54h8l-8 9h8"/>
+  </symbol>
+
+  <!-- Home -->
+  <symbol id="art-home" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="40" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#FFF9F0" d="M26 56l34-28 34 28v42H26z"/>
+    <path class="pn-o" fill="#E76F51" d="M16 60l44-38 44 38-6 6-38-32-38 32z"/>
+    <path class="pn-o" fill="#2D6A4F" d="M52 98V74h16v24z"/>
+    <rect class="pn-o" x="74" y="66" width="12" height="12" rx="2" fill="#D8F3DC"/>
+    <path class="pn-o" fill="#F4A261" d="M38 70c-3-4 0-8 4-6 4-2 7 2 4 6l-4 4z"/>
+  </symbol>
+
+  <!-- Pill -->
+  <symbol id="art-pill" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="30" ry="6" fill="#1B4332" opacity=".12"/>
+    <g transform="rotate(-35 60 60)"><rect class="pn-o" x="26" y="44" width="68" height="32" rx="16" fill="#FFF9F0"/><path class="pn-o" fill="#E76F51" d="M60 44H42a16 16 0 0 0 0 32h18z"/></g>
+    <path fill="#fff" opacity=".7" d="M38 66l10-7 3 4-10 7z"/>
+  </symbol>
+
+  <!-- Heart -->
+  <symbol id="art-heart" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="28" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#E76F51" d="M60 94C38 78 22 64 22 46c0-11 9-20 20-20 8 0 14 4 18 10 4-6 10-10 18-10 11 0 20 9 20 20 0 18-16 32-38 48z"/>
+    <path fill="#fff" opacity=".55" d="M36 42c2-6 7-8 11-8-4 3-6 6-7 10z"/>
+  </symbol>
+
+  <!-- Potty: little leaf patch -->
+  <symbol id="art-potty" viewBox="0 0 120 120">
+    <ellipse cx="60" cy="104" rx="38" ry="6" fill="#1B4332" opacity=".12"/>
+    <path class="pn-o" fill="#D8F3DC" d="M18 98c4-14 20-22 42-22s38 8 42 22z"/>
+    <path class="pn-o" fill="#52B788" d="M40 80c-6-16-2-30 10-38 2 14 0 26-10 38zM60 76c0-18 6-30 20-36-2 16-8 28-20 36zM74 84c2-10 10-16 20-16-4 8-10 14-20 16z"/>
+  </symbol>
+
+  <!-- Paw (used small, only in its own space) -->
+  <symbol id="art-paw" viewBox="0 0 120 120">
+    <g class="pn-o" fill="#2D6A4F"><ellipse cx="60" cy="74" rx="22" ry="18"/><ellipse cx="34" cy="50" rx="9" ry="11"/><ellipse cx="50" cy="36" rx="9" ry="11"/><ellipse cx="70" cy="36" rx="9" ry="11"/><ellipse cx="86" cy="50" rx="9" ry="11"/></g>
+  </symbol>
+</svg>

@@ -15,8 +15,7 @@ window.PAWNOTE_FLOWS = [
   {id: "stage-5", name: "Stage 5 · Home & review", hash: "stage-5", what: "Drive home · return photo · stars · Life Record · Plan the next stay."},
 ];
 window.PAWNOTE_CONCEPTS = [
-  {k: "a", label: "A · Calm Core", file: "pawnote-concept-a-calm-core.html"},
-  {k: "b", label: "B · Full Tamagotchi", file: "pawnote-concept-b-full-tamagotchi.html"},
-  {k: "c", label: "C · Balanced Skin", file: "pawnote-concept-c-balanced-skin.html"},
+  {k: "b", label: "Playful", file: "pawnote-concept-b-full-tamagotchi.html"},
+  {k: "c", label: "Balanced", file: "pawnote-concept-c-balanced-skin.html"},
 ];
 window.PAWNOTE_TRIED_KEY = "pawnote-concepts-tried";

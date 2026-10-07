@@ -96,7 +96,7 @@ const Onboard = (() => {
     role() {
       const opt = (v, emoji, t, s) => `<button type="button" class="ob-choice${O.role === v ? " on" : ""}" data-ob="role" data-v="${v}" aria-pressed="${O.role === v}">
         <span class="ob-choice-emoji" aria-hidden="true">${emoji}</span><span><b>${t}</b><span>${s}</span></span><span class="ob-tick" aria-hidden="true">✓</span></button>`;
-      return frame(`${head("", "How will you use PawNote?", "You can add the other role later from your profile.")}
+      return frame(`${head("", "How will you use Goldito?", "You can add the other role later from your profile.")}
         <div class="jr-stack" role="group" aria-label="Role">
           ${opt("owner", "🏡", "I have a pet", "Book sitters and follow along while you're away")}
           ${opt("sitter", "🧺", "I'm a pet sitter", "Get booked, then care, snap and tap. No report typing")}
@@ -142,9 +142,9 @@ const Onboard = (() => {
     },
     updates() {
       const s = O.notif, sit = SITTER, n = esc(pet());
-      return frame(`${head("Updates", "Know how it's going without asking", `Pick what ${sit} and PawNote send you. You can change this anytime.`)}
+      return frame(`${head("Updates", "Know how it's going without asking", `Pick what ${sit} and Goldito send you. You can change this anytime.`)}
         <div class="ob-push" aria-hidden="true"><span class="ob-push-ico">🐾</span>
-          <div><span class="ob-push-top"><b>PawNote</b><small>now</small></span><b>${sit} posted 2 photos of ${n} 📸</b><span>Breakfast done. Finished the whole bowl.</span></div></div>
+          <div><span class="ob-push-top"><b>Goldito</b><small>now</small></span><b>${sit} posted 2 photos of ${n} 📸</b><span>Breakfast done. Finished the whole bowl.</span></div></div>
         <div class="jr-card ob-switches">
           ${sw("Photos and captions", "As they're posted", "notif", "photos", s.photos)}
           ${sw("Care check-offs", "Meals, walks, medication", "notif", "care", s.care)}
@@ -157,7 +157,7 @@ const Onboard = (() => {
     },
     services() {
       const r = O.rates, q = sampleQuote();
-      return frame(`${head("Your services", "What do you offer, and for how much?", "PawNote's AI quotes owners from these numbers. It never makes up a price.")}
+      return frame(`${head("Your services", "What do you offer, and for how much?", "Goldito's AI quotes owners from these numbers. It never makes up a price.")}
         ${SERVICES.map((s) => { const on = O.services.has(s.k);
           return `<div class="jr-card ob-service${on ? " on" : ""}">${sw(s.t, s.s, "service", s.k, on)}
             ${on ? `<div class="jr-spread"><span class="jr-p">Rate per ${s.unit}</span>${stepper(`rate-${s.k}`, `$${r[s.k]}`, `/ ${s.unit}`)}</div>` : ""}</div>`; }).join("")}
@@ -199,14 +199,14 @@ const Onboard = (() => {
     live() {
       const r = O.rates, s = O.sitter, h = O.house, n = first(s.name) || "You", q = sampleQuote();
       const free = STAY_NIGHTS.every((d) => O.avail.has(d));
-      return frame(`${head("You're live", `You're ready to be booked, ${esc(n)}`, "Here's what owners see, and how PawNote answers for you.")}
+      return frame(`${head("You're live", `You're ready to be booked, ${esc(n)}`, "Here's what owners see, and how Goldito answers for you.")}
         <div class="jr-card ob-profile" data-testid="ob-profile"><div class="jr-row"><span class="ob-avatar" aria-hidden="true">${esc(n[0] || "L")}</span>
           <div><b>${esc(s.name)}</b><span class="jr-p" style="display:block">New sitter · ${h.type} · up to ${h.maxPets} pets</span></div></div>
           <div class="jr-stack">${SERVICES.filter((x) => O.services.has(x.k)).map((x) => `<div class="jr-spread"><span>${x.t}</span><b>$${r[x.k]} / ${x.unit}</b></div>`).join("")}</div>
           <div class="jr-chips">${[...h.rules].map((x) => `<span class="chip">${x}</span>`).join("")}<span class="chip">${CANCEL.find((c) => c.k === h.cancel).t} cancellation</span></div></div>
         <div class="jr-stack"><span class="jr-label">An owner asks</span><div class="jr-thread">
           <div class="jr-bubble me">Are you free Oct 9–12 for Max and Mochi?</div>
-          <div class="jr-bubble ai"><div class="jr-ai-label">✦ Auto-reply from your PawNote assistant</div>
+          <div class="jr-bubble ai"><div class="jr-ai-label">✦ Auto-reply from your Goldito assistant</div>
             ${free && q ? `Hi! ${esc(n)} is free Oct 9–12 for Max and Mochi. ${q.label}: <b>${money(q.total)} CAD</b> for 3 nights, including the Thanksgiving rate.`
               : `Hi! ${esc(n)} isn't free for all of Oct 9–12. Here are the open days this month: ${[...O.avail].sort((a, b) => a - b).slice(0, 4).map((d) => `Oct ${d}`).join(", ")}.`}
             <div class="jr-src"><span>From your calendar</span><span>From your rates</span><span>From your house rules</span></div></div></div></div>`,
@@ -222,7 +222,7 @@ const Onboard = (() => {
   }
   function osPrompt() {
     return `<div class="ob-os" role="alertdialog" aria-modal="true" aria-labelledby="obOsT"><div class="ob-os-card">
-      <div class="ob-os-body"><b id="obOsT">“PawNote” Would Like to Send You Notifications</b>
+      <div class="ob-os-body"><b id="obOsT">“Goldito” Would Like to Send You Notifications</b>
         <span>Notifications may include alerts, sounds and icon badges. These can be configured in Settings.</span></div>
       <div class="ob-os-btns"><button type="button" data-ob="os-deny">Don’t Allow</button><button type="button" data-ob="os-allow"><b>Allow</b></button></div>
       </div><span class="ob-os-tag">Simulated system prompt</span></div>`;

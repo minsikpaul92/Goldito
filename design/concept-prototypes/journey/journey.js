@@ -90,7 +90,7 @@ const Journey = (() => {
     o.innerHTML = `<div class="jr-sheet jr" role="dialog" aria-modal="true" aria-label="Notifications">
       <div class="jr-spread"><h3 class="jr-h3">Updates</h3><button type="button" class="btn btn-secondary btn-sm" data-jr="close-sheet" style="width:auto">Close</button></div>
       ${J.notes.length ? J.notes.map((n) => `<div class="jr-note${n.read ? "" : " unread"}"><span aria-hidden="true">🐾</span><div><b>${esc(n.title)}</b><small>${esc(n.when)}</small></div></div>`).join("")
-        : `<p class="jr-p">Nothing yet. Updates from ${SITTER} and PawNote land here, so you never need to ask.</p>`}
+        : `<p class="jr-p">Nothing yet. Updates from ${SITTER} and Goldito land here, so you never need to ask.</p>`}
     </div>`;
     o.hidden = false;
     J.notes.forEach((n) => (n.read = true));
@@ -180,7 +180,7 @@ const Journey = (() => {
   function meet() {
     const s = J.meet, n = pet();
     let out = `<div class="jr-stack"><span class="jr-label">Care & medication request</span>
-      <p class="jr-p">Write it like a note. PawNote turns it into ${SITTER}'s checklist; you review it first.</p>`;
+      <p class="jr-p">Write it like a note. Goldito turns it into ${SITTER}'s checklist; you review it first.</p>`;
     if (s.status === "write" || s.status === "generating") {
       out += `<textarea class="input jr-textarea" id="jrRequest" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
         <button type="button" class="btn btn-primary" data-jr="generate"${s.status === "generating" ? " disabled" : ""}>${s.status === "generating" ? `<span class="spinner" aria-hidden="true"></span>Making the checklist…` : "Turn into checklist"}</button>`;
@@ -221,7 +221,7 @@ const Journey = (() => {
         <div class="jr-card">${quoteHTML()}</div>
         <div class="jr-stack"><span class="jr-label">Consents (${s.consents.size}/${CONSENTS.length})</span>
           ${CONSENTS.map((c) => `<div class="jr-consent"><label><input type="checkbox" data-jr-consent="${c.k}"${s.consents.has(c.k) ? " checked" : ""}>${c.t}</label>
-            <p>${s.open.has(c.k) ? esc(c.s) + " This is a demo template written for PawNote; it is not legal advice." : esc(c.s.split(".")[0]) + "."}</p>
+            <p>${s.open.has(c.k) ? esc(c.s) + " This is a demo template written for Goldito; it is not legal advice." : esc(c.s.split(".")[0]) + "."}</p>
             <button type="button" class="jr-link" data-jr="read" data-v="${c.k}">${s.open.has(c.k) ? "Show less" : "Read full text"}</button></div>`).join("")}
           <p class="jr-legal">Demo template — not legal advice.</p></div>
         <label class="jr-stack"><span class="jr-label">Type your full name to sign</span>
