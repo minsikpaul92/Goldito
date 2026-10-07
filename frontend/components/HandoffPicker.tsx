@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { CheckRow } from "./ui/CheckRow";
+import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { Stepper } from "./ui/Stepper";
 import { TextField } from "./ui/TextField";
 import { addDays, formatDay, formatTime, shiftTime } from "../features/schedule/dates";
@@ -41,10 +43,11 @@ function placeOptions(kind: Props["kind"], sitter: string | null): { value: Loca
       ];
 }
 
-/** Day (± 1 day), time (± 15 min) and place for one handoff — no native pickers (DESIGN.md §7.7). */
+/** Day (tap for a calendar, or ± 1 day), time (± 15 min) and place for one handoff — no native pickers (DESIGN.md §7.7). */
 export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixedPlace }: Props) {
   const styles = useThemedStyles(makeStyles);
   const title = kind === "drop_off" ? "Drop-off" : "Pick-up";
+  const [calendar, setCalendar] = useState(false);
   const set = (change: Partial<HandoffDraft>) => onChange({ ...value, ...change });
 
   return (
@@ -59,6 +62,7 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
           onDecrease={() => set({ day: addDays(value.day, -1) })}
           onIncrease={() => set({ day: addDays(value.day, 1) })}
           canDecrease={value.day > minDay}
+          onPressValue={() => setCalendar(true)}
           testID={`${kind}-day`}
         />
         <Stepper
@@ -69,6 +73,15 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
           testID={`${kind}-time`}
         />
       </View>
+      <DayPickerSheet
+        visible={calendar}
+        title={`${title} day`}
+        value={value.day}
+        minDay={minDay}
+        onPick={(day) => set({ day })}
+        onClose={() => setCalendar(false)}
+        testID={`${kind}-calendar`}
+      />
       {fixedPlace ? (
         <Text style={styles.fixed} testID={`${kind}-place-fixed`}>
           {fixedPlace}
