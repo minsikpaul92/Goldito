@@ -99,7 +99,7 @@
       <button type="button" class="btn2" id="restart"><span class="en">↻ Restart</span><span class="ko">↻ 처음부터</span></button>
       <a class="btn2" id="full" target="_blank" rel="noopener">Open full page ↗</a>
     </div>
-    <div class="phones" id="phones" tabindex="0" role="region" aria-label="Today's app and our version"></div>
+    <div class="phones" id="phones" tabindex="0" role="region" aria-label="Today's app and the draft"></div>
   </main>
   <aside class="notes" id="notes" aria-label="Design notes"></aside>
 </div>
@@ -147,12 +147,12 @@
       : `<div class="ph">${ICON[s.live]}<b>${s.live === "built" ? t("In the app, not captured yet", "앱에 있지만 아직 캡처 안 함") : t("Not in the app yet", "아직 앱에 없어요")}</b><span>${s.task}</span>
          <span style="font-size:.9375rem">${s.live === "built" ? t("Capture it from the live demo to compare side by side.", "라이브 데모에서 캡처하면 나란히 비교할 수 있어요.") : t("The design on the right is what to build.", "오른쪽 디자인이 만들 화면이에요.")}</span></div>`;
     return `<div class="slot" data-kind="live"><div class="slot-head"><b>${t("Today's app", "지금 앱")}</b><span class="chip ${s.live}">${s.live === "live" ? t(`🔒 Screenshot · not clickable · ${s.captured}`, `🔒 스크린샷 · 클릭 안 됨 · ${s.captured}`) : STATUS[s.live](s)}</span></div>
-      <div class="box${s.live === "live" ? " still" : ""}" data-w="${W}" data-h="${H}" title="${s.live === "live" ? t("A screenshot of the live app — tap through our version on the right", "라이브 앱 스크린샷이에요 — 오른쪽 우리 버전을 눌러 보세요") : ""}">${inner}</div></div>`;
+      <div class="box${s.live === "live" ? " still" : ""}" data-w="${W}" data-h="${H}" title="${s.live === "live" ? t("A screenshot of the live app — tap through the draft on the right", "라이브 앱 스크린샷이에요 — 오른쪽 초안을 눌러 보세요") : ""}">${inner}</div></div>`;
   }
   function oursSlot(l) {
     const jw = cur.ours.kind === "tab" ? W : 418, jh = cur.ours.kind === "tab" ? H : 860;
-    return `<div class="slot" data-kind="ours"><div class="slot-head"><b>${t("Our version", "우리 버전")} · ${lk(l)}</b><span class="chip ours">${cur.ours.kind === "tab" ? t("Design-system screen · not clickable yet", "디자인 시스템 화면 · 아직 클릭 안 됨") : t("👆 Interactive · tap through it", "👆 인터랙티브 · 눌러 보세요")}</span></div>
-      <div class="box" data-w="${jw}" data-h="${jh}"><span class="loading">${t("Loading…", "불러오는 중…")}</span><iframe title="Our version, ${l.label}: ${cur.name}" src="${oursSrc(l)}" style="width:${jw}px;height:${jh}px"></iframe></div></div>`;
+    return `<div class="slot" data-kind="ours"><div class="slot-head"><b>${t("Draft", "초안")} · ${lk(l)}</b><span class="chip ours">${cur.ours.kind === "tab" ? t("Design-system screen · not clickable yet", "디자인 시스템 화면 · 아직 클릭 안 됨") : t("👆 Interactive · tap through it", "👆 인터랙티브 · 눌러 보세요")}</span></div>
+      <div class="box" data-w="${jw}" data-h="${jh}"><span class="loading">${t("Loading…", "불러오는 중…")}</span><iframe title="Draft, ${l.label}: ${cur.name}" src="${oursSrc(l)}" style="width:${jw}px;height:${jh}px"></iframe></div></div>`;
   }
   function fit() {
     const area = $("#phones"), boxes = [...area.querySelectorAll(".box")];
@@ -190,7 +190,7 @@
         <a href="${FIG}${s.figma}" target="_blank" rel="noopener">${t("Figma section ↗", "Figma 섹션 ↗")}</a>
         <p class="hint" style="margin:0">${s.figmaScreens.length ? `${t("In Figma", "Figma 화면")}: ${s.figmaScreens.join(" · ")}` : t("Not in Figma as its own screen: the in-care tabs are the Today's app screens.", "Figma에 별도 화면은 없어요: 돌봄 중 탭은 ‘지금 앱’ 화면이에요.")}</p>
         ${isTab ? `<a href="redesign/index.html">${t("All tab notes", "탭별 노트 전체")}</a>` : ""}</div>
-      <p class="hint">${t("Today's app is a screenshot of the live demo. Our version is the interactive part — as you tap through it, this list, the notes and the Figma link follow along.", "‘지금 앱’은 라이브 데모 스크린샷이에요. 우리 버전은 직접 눌러 볼 수 있고, 누르는 대로 목록·노트·Figma 링크가 따라와요.")}</p>
+      <p class="hint">${t("Today's app is a screenshot of the live demo. The draft is the interactive part — as you tap through it, this list, the notes and the Figma link follow along.", "‘지금 앱’은 라이브 데모 스크린샷이에요. 초안은 직접 눌러 볼 수 있고, 누르는 대로 목록·노트·Figma 링크가 따라와요.")}</p>
       <p class="hint">${t("Keys", "단축키")}: <kbd>↑</kbd> <kbd>↓</kbd> ${t("screens", "화면")} · <kbd>1</kbd>–<kbd>4</kbd> ${t("looks", "룩")}</p>`;
   }
 
