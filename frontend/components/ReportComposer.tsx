@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import {
+  CUSTOM_CHIP_MAX,
   ChipPhoto,
   REPORT_BODY_MAX,
   REPORT_MAX_PHOTOS,
@@ -47,6 +48,10 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
   const [off, setOff] = useState<Set<string>>(new Set());
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [note, setNote] = useState("");
+  /** Chips the sitter typed themselves ("+ Add"); they behave like episode chips. */
+  const [custom, setCustom] = useState<ReportChip[]>([]);
+  const [adding, setAdding] = useState(false);
+  const [customText, setCustomText] = useState("");
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<"chips" | "generate" | "send" | null>(null);
@@ -126,7 +131,18 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     void refreshChips(next.map((p) => p.mediaId));
   };
 
-  const kept = useMemo(() => chips.filter((c) => !off.has(c.id)), [chips, off]);
+  const all = useMemo(() => [...chips, ...custom], [chips, custom]);
+  const kept = useMemo(() => all.filter((c) => !off.has(c.id)), [all, off]);
+
+  const addCustom = () => {
+    const label = customText.trim().replace(/\s+/g, " ").slice(0, CUSTOM_CHIP_MAX);
+    if (!label) return;
+    if (!all.some((c) => c.label.toLowerCase() === label.toLowerCase())) {
+      setCustom((prev) => [...prev, { id: `custom-${prev.length}-${label}`, kind: "episode", label, source: "custom", check: null, media_id: null }]);
+    }
+    setCustomText("");
+    setAdding(false);
+  };
 
   const generate = async () => {
     if (busy) return;
@@ -215,12 +231,31 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     <Card style={styles.card} testID={`report-${pet.id}`}>
       <Text style={styles.title}>{pet.name}</Text>
       <Text style={styles.label}>Today's chips</Text>
-      {chips.length > 0 ? (
-        <ChipSuggestions chips={chips} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
+      {all.length > 0 ? (
+        <ChipSuggestions chips={all} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
           {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short note."}
         </Text>
+      )}
+
+      {adding ? (
+        <View style={styles.addRow}>
+          <View style={styles.addField}>
+            <TextField
+              label="Your own chip"
+              value={customText}
+              maxLength={CUSTOM_CHIP_MAX}
+              placeholder="e.g. Learned a new trick"
+              onChangeText={setCustomText}
+              onSubmitEditing={addCustom}
+              testID={`report-custom-input-${pet.id}`}
+            />
+          </View>
+          <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
+        </View>
+      ) : (
+        <TextButton label="+ Add" onPress={() => setAdding(true)} testID={`report-custom-${pet.id}`} />
       )}
 
       <View style={styles.photos}>
@@ -265,6 +300,8 @@ const makeStyles = (theme: Theme) =>
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     sentBadge: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
+    addField: { flex: 1 },
     photos: { flexDirection: "row", gap: theme.spacing.sm },
     photoBox: { alignItems: "center", gap: 2 },
     photo: { width: 72, height: 72, borderRadius: theme.radius.sm, backgroundColor: theme.color.border },

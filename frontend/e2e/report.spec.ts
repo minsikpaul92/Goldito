@@ -137,6 +137,28 @@ test.describe("daily report", () => {
     await expect(screen.getByText("Pill · missed")).toBeVisible();
   });
 
+  test("+ Add makes the sitter's own chip; it goes to the report like an episode chip and can be turned off", async ({ page }) => {
+    const { reportRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-custom-${MAX.id}`).click();
+    await screen.getByTestId(`report-custom-add-${MAX.id}`).waitFor();
+    await expect(screen.getByTestId(`report-custom-add-${MAX.id}`)).toBeDisabled();
+    await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Learned a new trick");
+    await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
+    const chip = screen.getByRole("button", { name: "Learned a new trick: on" });
+    await expect(chip).toBeVisible();
+
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
+    expect(reportRequests[0]).toMatchObject({ chips: ["Met a golden retriever", "Learned a new trick"] });
+
+    await screen.getByTestId(`report-back-${MAX.id}`).click();
+    await screen.getByRole("button", { name: "Learned a new trick: on" }).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
+    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever"] });
+  });
+
   test("a saved draft comes back after a reload, still private", async ({ page }) => {
     const { db } = await openSitterDiary(page);
     const today = new Date().toISOString().slice(0, 10);

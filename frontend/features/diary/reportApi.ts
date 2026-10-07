@@ -7,7 +7,7 @@ export type ReportChip = {
   id: string;
   kind: "record" | "episode";
   label: string;
-  source: "checkin" | "task" | "feed" | "vision";
+  source: "checkin" | "task" | "feed" | "vision" | "custom";
   check: "meal" | "potty" | "walk" | "mood" | "meds" | null;
   media_id: string | null;
 };
@@ -17,6 +17,7 @@ export type ChipSuggestions = { chips: ReportChip[]; photos: ChipPhoto[] };
 export const REPORT_NOTE_MAX = 200;
 export const REPORT_BODY_MAX = 2000;
 export const REPORT_MAX_PHOTOS = 2;
+export const CUSTOM_CHIP_MAX = 40;
 
 export type ReportDraft = { id: string; body: string; status: "draft" | "sent" };
 

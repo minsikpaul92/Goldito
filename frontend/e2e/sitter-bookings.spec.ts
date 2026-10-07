@@ -98,6 +98,29 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
   });
 
+  test("the tab opens on Requests, but on Upcoming once a stay is on or about to start", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "not_needed");
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto("/sitter/bookings");
+    const screen = app(page);
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toBeVisible();
+
+    // A confirmed stay that starts within 48 h now comes first, with the request still counted on its tab.
+    const soon = new Date(Date.now() + 6 * 3_600_000).toISOString();
+    db.bookings.push({ id: "soon1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "confirmed", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-02T18:00:00Z" });
+    db.booking_pets.push({ booking_id: "soon1", pet_id: MOCHI });
+    db.booking_handoffs.push(
+      { id: "s-drop", booking_id: "soon1", kind: "drop_off", scheduled_at: soon, location_type: "sitter_home", location_note: null, within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: null, created_at: "2026-10-02T18:00:00Z" },
+      { id: "s-pick", booking_id: "soon1", kind: "pick_up", scheduled_at: "2030-10-08T21:00:00.000Z", location_type: "sitter_home", location_note: null, within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: null, created_at: "2026-10-02T18:00:00Z" },
+    );
+    await page.goto("/sitter/bookings");
+    await expect(screen.getByTestId("booking-card-soon1")).toBeVisible();
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toContainText("Requests (1)");
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toHaveCount(0);
+  });
+
   test("Accept confirms a pair that has met and moves it to Upcoming", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "not_needed");

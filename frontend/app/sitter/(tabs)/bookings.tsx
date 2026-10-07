@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
@@ -7,7 +7,7 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
-import { BookingSummary, listSitterBookings, sitterBucket } from "../../../lib/bookings";
+import { BookingSummary, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
@@ -44,11 +44,19 @@ export default function SitterBookings() {
   const sitterId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
   const [bucket, setBucket] = useState<Bucket>("requests");
+  const picked = useRef(false);
 
   const load = useCallback(async () => {
     if (!sitterId) return;
     try {
-      setState({ status: "ready", bookings: await listSitterBookings(sitterId) });
+      const bookings = await listSitterBookings(sitterId);
+      setState({ status: "ready", bookings });
+      // Open on what matters most, once: a stay that is on or about to start, else open requests (the
+      // Requests count stays on its tab). Never override a tab the sitter picked themselves.
+      if (!picked.current) {
+        picked.current = true;
+        setBucket(firstSitterBucket(bookings));
+      }
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
