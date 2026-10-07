@@ -33,7 +33,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `010b_send_inquiry_reply.sql` | 07B | `send_inquiry_reply` (the only way a sitter message is written: quote / sources / can_host copied from the draft, nothing else; the direct INSERT policy is dropped) + `mark_inquiry_read` (the sitter opening the thread is the owner's only read mark) |
 | `010c_tone_samples.sql` | 07B | `tone_samples` (the sitter's own approved / edited / seeded replies, `regenerated` = thrown-away drafts), `match_tone`, `sitter_profiles.style_card` — all service-role only |
 | `010d_auto_reply.sql` | 07B | Auto-send: `sitter_profiles.ai_reply_mode` / `ai_consent_at` via `set_ai_reply_mode` (consent first) + `get_my_ai_reply_mode`, `inquiries.reply_typing_at` / `reply_visible_at` (times only), `notifications.visible_at` (a notice that appears later; the select policy hides it until then) |
-| `011_completion.sql` | 07C | Reviews, Pet Life Records |
+| `011_completion.sql` | 07C | Returned says "home safe 🏠"; `reviews` + `submit_review` (owner, once, only after Returned) + `sitter_rating_summary` (public: average, count, 3 recent comments with a first name); notices `review_requested` / `review_received`; `pet_life_records` (service-role writes; owner, a sitter asked about the pet by request or open inquiry, and the current sitter read) |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |

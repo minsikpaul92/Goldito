@@ -333,7 +333,7 @@ begin
   perform complete_handoff(_t_get('current'), 'pick_up');
   perform _t_as(null);
   perform _t_ok((select title from public.notifications where user_id = robert and type = 'pet_picked_up')
-      = 'Max and Mochi are on the way home 👋',
+      = 'Max and Mochi are home safe 🏠',
     'Returned → owner notified');
 
   -- Owner
@@ -504,7 +504,7 @@ begin
   -- G: opening a schedule notifies nobody
   perform _t_as(null);
   perform _t_ok((select count(*) from public.notifications where user_id in (robert, joy)
-      and type not in ('pet_dropped_off', 'pet_picked_up', 'feed_post')) = 0,
+      and type not in ('pet_dropped_off', 'pet_picked_up', 'review_requested', 'feed_post')) = 0,
     'G: opening a schedule sends no owner notifications');
 
   -- A: in-hours drop-off & pick-up at sitter's home → request → accept → confirmed
@@ -2926,6 +2926,172 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …but cannot change it');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- N (Phase 07C, 7C.1): home safe, reviews, Pet Life Records
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  max uuid;
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_b uuid;
+  v_open uuid;
+  v_rev public.reviews;
+  v_err text;
+  v_sum jsonb;
+begin
+  -- A pet of their own (earlier scenarios keep Max booked far into the future)
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Rex') returning id into max;
+  -- A stay: Received, not Returned yet
+  perform _t_as(null);
+  v_b := _t_booking(robert, chloe, array[max], now() + interval '300 days', now() + interval '302 days', 'confirmed', true);
+
+  perform _t_as(robert);
+  begin
+    perform submit_review(v_b, 5, 'Great');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'stay_not_finished', 'N: no review before the pets are back');
+
+  -- Returned → home safe + the owner is asked for a review, in that order
+  perform _t_as(chloe);
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null);
+  perform _t_ok((select title from public.notifications where user_id = robert and type = 'pet_picked_up' and booking_id = v_b)
+      = 'Rex is home safe 🏠', 'N: Returned says the pet is home safe');
+  perform _t_ok((select title from public.notifications where user_id = robert and type = 'review_requested' and booking_id = v_b)
+      = 'Thanks for trusting Chloe! How was Rex''s stay? ⭐', 'N: …and asks for a review');
+  perform _t_ok((select created_at from public.notifications where type = 'review_requested' and booking_id = v_b)
+      >= (select created_at from public.notifications where type = 'pet_picked_up' and booking_id = v_b),
+    'N: …right after it');
+
+  -- Who may review
+  perform _t_as(chloe);
+  begin
+    perform submit_review(v_b, 5, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'N: the sitter cannot review their own stay');
+  perform _t_as(joy);
+  begin
+    perform submit_review(v_b, 5, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'N: a third party cannot review it');
+  perform _t_as(robert);
+  begin
+    insert into public.reviews (booking_id, owner_id, sitter_id, rating) values (v_b, robert, chloe, 5);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'N: reviews are not written around submit_review');
+  begin
+    perform submit_review(v_b, 6, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_rating', 'N: ★1–5 only');
+  begin
+    perform submit_review(v_b, 4, repeat('x', 501));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'comment_too_long', 'N: a comment is at most 500 characters');
+
+  v_rev := submit_review(v_b, 5, '  Lovely, Rex came home happy!  ');
+  perform _t_ok(v_rev.rating = 5 and v_rev.comment = 'Lovely, Rex came home happy!', 'N: the owner reviews once the pets are back');
+  begin
+    perform submit_review(v_b, 1, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'already_reviewed', 'N: one review per booking');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'review_received' and ref_id = v_rev.id),
+    'N: the sitter is told');
+
+  -- Rows are private to the two parties; the summary is public
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.reviews) >= 1, 'N: the sitter reads reviews about them');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.reviews) = 0, 'N: a third party reads no review rows');
+  v_sum := sitter_rating_summary(chloe);
+  perform _t_ok((v_sum ->> 'count')::int = 1 and (v_sum ->> 'avg')::numeric = 5.0
+      and v_sum -> 'recent' -> 0 ->> 'reviewer' = 'Robert' and v_sum -> 'recent' -> 0 ->> 'comment' like 'Lovely%',
+    'N: …but anyone signed in sees the average, the count and recent comments with a first name');
+  perform _t_ok(not (v_sum::text like '%' || robert::text || '%'), 'N: …and no id of the reviewer');
+  perform _t_as(null, 'anon');
+  begin
+    perform sitter_rating_summary(chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'N: signed-out visitors get no summary');
+
+  -- Life Records: written by the service role, read by the right people
+  perform _t_as(null);
+  insert into public.pet_life_records (pet_id, booking_id, sitter_id, summary)
+  values (max, v_b, chloe, '{"eats":"finishes breakfast","heads_up":["chicken allergy"]}');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.pet_life_records where pet_id = max) = 1, 'N: the owner reads their pet''s record');
+  begin
+    insert into public.pet_life_records (pet_id, booking_id, summary) values (max, v_b, '{}');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'N: clients never write records');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.pet_life_records) = 1,
+    'N: the sitter still reads it until their wrap-up window (2 h after the agreed pick-up) closes');
+  perform _t_as(null);
+  update public.booking_handoffs set scheduled_at = case kind when 'drop_off' then now() - interval '2 days' else now() - interval '3 hours' end
+  where booking_id = v_b;
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.pet_life_records) = 0,
+    'N: …then the sitter of a finished stay no longer reads the record');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_life_records) = 0, 'N: a third party reads no record');
+
+  -- Paul is asked to care for Max: a request opens it
+  perform _t_as(null);
+  perform _t_booking(robert, paul, array[max], now() + interval '330 days', now() + interval '332 days', 'requested');
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.pet_life_records where pet_id = max) = 1,
+    'N: a sitter with a pending request for the pet reads its record');
+  perform _t_as(null);
+  update public.bookings set status = 'declined' where owner_id = robert and sitter_id = paul;
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.pet_life_records) = 0, 'N: …until the request ends');
+
+  -- …or an open inquiry
+  perform _t_as(robert);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, paul, now() + interval '340 days', now() + interval '342 days', array[max]) returning id into v_open;
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.pet_life_records where pet_id = max) = 1,
+    'N: a sitter with an open inquiry about the pet reads its record');
+  perform _t_as(robert);
+  update public.inquiries set status = 'closed' where id = v_open;
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.pet_life_records) = 0, 'N: …until the inquiry is closed');
+  perform _t_as(joy);
+  begin
+    perform count(*) from public.pet_life_records where pet_id = coco;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is null, 'N: a query on someone else''s pet just returns nothing');
 end;
 $$;
 
