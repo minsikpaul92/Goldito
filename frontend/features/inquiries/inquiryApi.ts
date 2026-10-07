@@ -327,3 +327,42 @@ export async function markInquiryBooked(inquiryId: string, bookingId: string): P
     .eq("id", inquiryId);
   if (error) fail("link this question to your booking");
 }
+
+export type OwnerInquiryCard = {
+  id: string;
+  sitterName: string;
+  petNames: string[];
+  serviceType: ServiceType;
+  dropOffAt: string;
+  pickUpAt: string;
+  createdAt: string;
+  status: "open" | "booked" | "closed";
+  /** "replied" = the sitter's reply is visible to the owner (RLS hides drafts and unsent / not-yet-visible ones). */
+  state: "waiting" | "replied";
+};
+
+/** The owner's own questions, newest first — the way back into a conversation after the notice is gone. */
+export async function listOwnerInquiries(): Promise<OwnerInquiryCard[]> {
+  const supabase = getSupabase();
+  const found = await supabase.from("inquiries").select(COLUMNS).order("created_at", { ascending: false }).limit(20);
+  if (found.error) fail("load your questions");
+  const rows = (found.data ?? []) as unknown as InquiryRow[];
+  if (rows.length === 0) return [];
+  const [msgs, pets] = await Promise.all([
+    supabase.from("inquiry_messages").select("inquiry_id, author").eq("author", "sitter").in("inquiry_id", rows.map((r) => r.id)),
+    supabase.from("pets").select("id, name").in("id", [...new Set(rows.flatMap((r) => r.pet_ids))]),
+  ]);
+  const names = new Map(((pets.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]));
+  const replied = new Set(((msgs.data ?? []) as { inquiry_id: string }[]).map((m) => m.inquiry_id));
+  return rows.map((r) => ({
+    id: r.id,
+    sitterName: first(r.sitter)?.display_name ?? "Your sitter",
+    petNames: r.pet_ids.map((p) => names.get(p)).filter((n): n is string => !!n),
+    serviceType: r.service_type,
+    dropOffAt: r.drop_off_at,
+    pickUpAt: r.pick_up_at,
+    createdAt: r.created_at,
+    status: r.status,
+    state: replied.has(r.id) ? "replied" : "waiting",
+  }));
+}

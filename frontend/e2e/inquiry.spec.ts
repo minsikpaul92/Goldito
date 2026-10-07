@@ -358,3 +358,34 @@ test.describe("auto-send", () => {
     await expect(screen.getByTestId("profile-ai-replies")).toContainText("go out in your name");
   });
 });
+
+test.describe("owner questions list", () => {
+  test("Bookings lists my questions with where each stands and opens the conversation", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    // A second question the sitter already answered, and a third already turned into a booking.
+    db.inquiries.push(
+      { id: "inq-b", owner_id: OWNER.id, sitter_id: SITTER.id, service_type: "boarding", drop_off_at: "2030-11-01T12:00:00.000Z", pick_up_at: "2030-11-03T20:00:00.000Z", drop_off_location_type: "sitter_home", pick_up_location_type: "sitter_home", pet_ids: [MAX], status: "open", booking_id: null, created_at: "2026-10-05T10:00:00Z" },
+      { id: "inq-c", owner_id: OWNER.id, sitter_id: SITTER.id, service_type: "boarding", drop_off_at: "2030-12-01T12:00:00.000Z", pick_up_at: "2030-12-03T20:00:00.000Z", drop_off_location_type: "sitter_home", pick_up_location_type: "sitter_home", pet_ids: [MAX], status: "booked", booking_id: null, created_at: "2026-10-04T10:00:00Z" },
+    );
+    db.inquiry_messages.push(
+      { id: "r-b", inquiry_id: "inq-b", author: "sitter", sender_id: SITTER.id, status: "sent", body: "Yes!", visible_at: "2026-10-05T10:05:00Z", created_at: "2026-10-05T10:05:00Z", grounding: null },
+      // A reply that is not visible yet must not count as a reply.
+      { id: "r-hidden", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", body: "later", visible_at: new Date(Date.now() + 3_600_000).toISOString(), created_at: "2026-10-06T10:06:00Z", grounding: null },
+    );
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/bookings");
+    const screen = app(page);
+    await expect(screen.getByTestId("owner-questions")).toContainText("Your questions");
+    await expect(screen.getByTestId(`question-card-${INQ}`)).toContainText("Waiting for Chloe");
+    await expect(screen.getByTestId("question-card-inq-b")).toContainText("Reply ready");
+    await expect(screen.getByTestId("question-card-inq-c")).toContainText("Booking requested");
+    // Newest first.
+    const ids = await page.frameLocator('iframe[title="Pawddy app"]').locator("[data-testid^='question-card-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(ids).toEqual([`question-card-${INQ}`, "question-card-inq-b", "question-card-inq-c"]);
+    await screen.getByTestId("question-card-inq-b").click();
+    await expect(page).toHaveURL(/\/owner\/inquiries\/inq-b$/);
+    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("Yes!");
+  });
+});

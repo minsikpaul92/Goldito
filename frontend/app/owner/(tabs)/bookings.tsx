@@ -1,14 +1,17 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
 import { SitterCard } from "../../../components/SitterCard";
+import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { MySitter, listMySitters } from "../../../features/sitters/sitterApi";
+import { OwnerInquiryCard, listOwnerInquiries } from "../../../features/inquiries/inquiryApi";
+import { formatDay, isoToZoned } from "../../../features/schedule/dates";
+import { MySitter, SERVICE_LABEL, listMySitters } from "../../../features/sitters/sitterApi";
 import { OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
@@ -16,7 +19,7 @@ import { Theme } from "../../../theme/themes";
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; bookings: OwnerBooking[]; sitters: MySitter[] }
+  | { status: "ready"; bookings: OwnerBooking[]; sitters: MySitter[]; inquiries: OwnerInquiryCard[] }
   | { status: "error"; message: string };
 
 /**
@@ -32,8 +35,12 @@ export default function OwnerBookings() {
   const load = useCallback(async () => {
     if (!ownerId) return;
     try {
-      const [bookings, sitters] = await Promise.all([listOwnerBookings(ownerId), listMySitters()]);
-      setState({ status: "ready", bookings, sitters });
+      const [bookings, sitters, inquiries] = await Promise.all([
+        listOwnerBookings(ownerId),
+        listMySitters(),
+        listOwnerInquiries().catch(() => [] as OwnerInquiryCard[]),
+      ]);
+      setState({ status: "ready", bookings, sitters, inquiries });
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
@@ -62,7 +69,7 @@ export default function OwnerBookings() {
     );
   }
 
-  if (state.bookings.length === 0 && state.sitters.length === 0) {
+  if (state.bookings.length === 0 && state.sitters.length === 0 && state.inquiries.length === 0) {
     return (
       <Screen>
         <EmptyState
@@ -90,6 +97,35 @@ export default function OwnerBookings() {
                 viewer="owner"
                 onPress={() => router.push(`/owner/bookings/${booking.id}`)}
               />
+            ))}
+          </View>
+        ) : null}
+        {state.inquiries.length > 0 ? (
+          <View style={styles.section} testID="owner-questions">
+            <Text accessibilityRole="header" style={styles.heading}>
+              Your questions
+            </Text>
+            {state.inquiries.map((inq) => (
+              <Pressable
+                key={inq.id}
+                accessibilityRole="button"
+                onPress={() => router.push(`/owner/inquiries/${inq.id}`)}
+                testID={`question-card-${inq.id}`}
+              >
+                <Card style={styles.question}>
+                  <Text style={styles.questionTitle}>{`${inq.sitterName} · ${inq.petNames.join(", ")}`}</Text>
+                  <Text style={styles.hint}>
+                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} – ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
+                  </Text>
+                  <Text style={inq.state === "replied" && inq.status === "open" ? styles.ready : styles.hint}>
+                    {inq.status === "booked"
+                      ? "Booking requested"
+                      : inq.state === "replied"
+                        ? "💬 Reply ready"
+                        : `Waiting for ${inq.sitterName}`}
+                  </Text>
+                </Card>
+              </Pressable>
             ))}
           </View>
         ) : null}
@@ -138,6 +174,9 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
+    question: { gap: theme.spacing.xs },
+    questionTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    ready: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
     footer: {
       padding: theme.spacing.md,
       maxWidth: 480,
