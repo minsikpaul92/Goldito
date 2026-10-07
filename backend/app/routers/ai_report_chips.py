@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from app.ai.daily_report import build_snapshot, care_intervals, day_bounds, has_facts
 from app.ai.prompts import load_prompt
-from app.ai.report_chips import MAX_PHOTOS, PhotoRead, photo_messages, record_chips
+from app.ai.report_chips import MAX_PHOTOS, PhotoRead, day_summary, photo_messages, record_chips
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
@@ -42,6 +42,7 @@ class Chip(BaseModel):
     label: str
     source: str  # checkin | task | feed | vision
     check: str | None = None  # the `skip` key when a record chip is switched off
+    value: str | None = None  # a record chip's recorded value (meal / potty / mood / walk minutes), editable
     media_id: str | None = None
 
 
@@ -50,7 +51,14 @@ class PhotoDescription(BaseModel):
     description: str
 
 
+class DaySummary(BaseModel):
+    tasks_done: int
+    tasks_missed: int
+    checkins: int
+
+
 class ReportChipsResponse(BaseModel):
+    summary: DaySummary
     chips: list[Chip]
     photos: list[PhotoDescription]
 
@@ -100,7 +108,7 @@ def report_chips(
             chips.append(
                 {"id": f"photo-{media_id}-{i}", "kind": "episode", "label": label, "source": "vision", "media_id": media_id}
             )
-    return ReportChipsResponse(chips=[Chip(**c) for c in chips], photos=[PhotoDescription(**p) for p in photos])
+    return ReportChipsResponse(summary=DaySummary(**day_summary(snapshot)), chips=[Chip(**c) for c in chips], photos=[PhotoDescription(**p) for p in photos])
 
 
 def _sitter_media(db, sitter_id: str, pet_id: str, media_ids: list[str]) -> list[dict]:

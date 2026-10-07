@@ -18,6 +18,14 @@ CHECK_KEYS = ("meal", "potty", "walk", "mood", "meds")
 TASK_TYPE_FOR_CHECK = {"meal": "feeding", "walk": "walk", "meds": "medication"}
 CHECKIN_KIND_FOR_CHECK = {"meal": "meal", "potty": "potty", "walk": "walk", "mood": "mood"}
 
+# The values the sitter can correct on the Report screen (the check-in's own one-tap values).
+OVERRIDE_VALUES = {
+    "meal": ("all", "most", "little", "none"),
+    "potty": ("normal", "soft", "none"),
+    "mood": ("happy", "calm", "tired"),
+}
+MAX_WALK_MINUTES = 240
+
 MAX_CHIPS = 8
 CHIP_MAX = 40
 NOTE_MAX = 200
@@ -93,6 +101,33 @@ def clean_chips(chips: list[str]) -> list[str]:
     return out[:MAX_CHIPS]
 
 
+def clean_overrides(overrides: dict[str, str] | None) -> dict[str, str]:
+    """The sitter's corrections that make sense: a known check with an allowed value, walk as minutes."""
+    out: dict[str, str] = {}
+    for key, value in (overrides or {}).items():
+        if key in OVERRIDE_VALUES and value in OVERRIDE_VALUES[key]:
+            out[key] = value
+        elif key == "walk" and value.isdigit() and 0 < int(value) <= MAX_WALK_MINUTES:
+            out[key] = str(int(value))
+    return out
+
+
+def apply_overrides(checkins: list[dict], overrides: dict[str, str]) -> list[dict]:
+    """Where the sitter corrected a value, that kind has exactly one check-in carrying their value."""
+    if not overrides:
+        return checkins
+    out: list[dict] = []
+    seen: set[str] = set()
+    for c in checkins:
+        value = overrides.get(c["kind"])
+        if value is None:
+            out.append(c)
+        elif c["kind"] not in seen:
+            seen.add(c["kind"])
+            out.append({**c, "value": value})
+    return out
+
+
 def build_snapshot(
     *,
     pet: dict,
@@ -110,6 +145,7 @@ def build_snapshot(
     sitter_note: str | None,
     skip: list[str],
     now: datetime,
+    overrides: dict[str, str] | None = None,
 ) -> dict:
     """The JSON that is the model's whole input. Only records inside `intervals`; nothing the sitter turned off."""
     off = {k for k in skip if k in CHECK_KEYS}
@@ -152,6 +188,8 @@ def build_snapshot(
         if note:
             entry["note_text"] = note
         snap_checkins.append(entry)
+
+    snap_checkins = apply_overrides(snap_checkins, clean_overrides(overrides))
 
     photos: list[dict] = []
     for post in sorted(feed_posts, key=lambda r: r["created_at"]):

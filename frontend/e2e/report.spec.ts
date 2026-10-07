@@ -9,8 +9,8 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
 const CHIPS = [
-  { id: "rec-meal", kind: "record", label: "Ate everything", source: "checkin", check: "meal", media_id: null },
-  { id: "rec-walk", kind: "record", label: "Walk · 20 min", source: "checkin", check: "walk", media_id: null },
+  { id: "rec-meal", kind: "record", label: "Ate everything", source: "checkin", check: "meal", value: "all", media_id: null },
+  { id: "rec-walk", kind: "record", label: "Walk · 20 min", source: "checkin", check: "walk", value: "20", media_id: null },
   { id: "note-0", kind: "episode", label: "Met a golden retriever", source: "checkin", check: null, media_id: null },
 ];
 const PHOTO_CHIP = { id: "photo-media-proof-0", kind: "episode", label: "Watching a squirrel", source: "vision", check: null, media_id: "media-proof" };
@@ -28,6 +28,7 @@ async function openSitterDiary(page: import("@playwright/test").Page) {
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({
+        summary: { tasks_done: 2, tasks_missed: 1, checkins: 4 },
         chips: withPhoto ? [...CHIPS, PHOTO_CHIP] : CHIPS,
         photos: withPhoto ? [{ media_id: "media-proof", description: "Max looking up at a squirrel" }] : [],
       }),
@@ -135,6 +136,25 @@ test.describe("daily report", () => {
     await expect(screen.getByTestId("diary-entry-body")).toContainText("Then we walked.");
     await expect(screen.getByText("✓ Walk")).toBeVisible();
     await expect(screen.getByText("Pill · missed")).toBeVisible();
+  });
+
+  test("the top line sums up the day, and a recorded value can be corrected before the report is written", async ({ page }) => {
+    const { reportRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    await expect(screen.getByTestId(`report-summary-${MAX.id}`)).toHaveText("Today: 2 tasks done · 1 missed · 4 check-ins");
+
+    await screen.getByTestId(`report-edit-${MAX.id}`).click();
+    await screen.getByTestId(`report-edit-${MAX.id}-meal-most`).click();
+    await screen.getByTestId(`report-edit-${MAX.id}-walk-30`).click();
+    await screen.getByTestId(`report-edit-done-${MAX.id}`).click();
+    await expect(screen.getByRole("button", { name: "Meal: Most: on" })).toBeVisible();
+    await expect(screen.getByRole("button", { name: "Walk: 30 min: on" })).toBeVisible();
+
+    // Turning the corrected walk chip off drops its correction too.
+    await screen.getByRole("button", { name: "Walk: 30 min: on" }).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
+    expect(reportRequests[0]).toMatchObject({ skip: ["walk"], overrides: { meal: "most" } });
   });
 
   test("+ Add makes the sitter's own chip; it goes to the report like an episode chip and can be turned off", async ({ page }) => {

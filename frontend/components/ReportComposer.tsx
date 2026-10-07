@@ -10,10 +10,14 @@ import {
   ReportChip,
   ReportDraft,
   generateReport,
+  overrideLabel,
   getTodayReport,
   sendReport,
   suggestChips,
+  summaryLine,
+  type DaySummary,
 } from "../features/diary/reportApi";
+import { CHECKIN_GROUPS } from "../features/care/checkinOptions";
 import { UploadError, uploadMedia } from "../lib/cloudinary";
 import { pickMedia } from "../lib/media";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
@@ -24,6 +28,7 @@ import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
 import { ChipSuggestions } from "./ChipSuggestions";
 import { Button } from "./ui/Button";
+import { Sheet } from "./ui/Sheet";
 import { Card } from "./ui/Card";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -44,6 +49,10 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
 
   const [loading, setLoading] = useState(true);
   const [chips, setChips] = useState<ReportChip[]>([]);
+  const [summary, setSummary] = useState<DaySummary | null>(null);
+  /** Values the sitter corrected on a record chip: { meal: "most" }. */
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState(false);
   const [descriptions, setDescriptions] = useState<ChipPhoto[]>([]);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -63,6 +72,7 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       try {
         const res = await suggestChips(pet.id, mediaIds);
         setChips(res.chips);
+        setSummary(res.summary);
         setDescriptions(res.photos);
       } catch (e) {
         toast.show((e as Error).message);
@@ -131,7 +141,20 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     void refreshChips(next.map((p) => p.mediaId));
   };
 
-  const all = useMemo(() => [...chips, ...custom], [chips, custom]);
+  // A corrected record chip shows (and is sent) with the sitter's value.
+  const shown = useMemo(
+    () =>
+      chips.map((c) => {
+        const fixed = c.check && overrides[c.check] ? overrideLabel(c.check, overrides[c.check]) : null;
+        return fixed ? { ...c, label: fixed } : c;
+      }),
+    [chips, overrides],
+  );
+  const editable = useMemo(
+    () => chips.filter((c) => c.kind === "record" && c.check && CHECKIN_GROUPS.some((g) => g.kind === c.check)),
+    [chips],
+  );
+  const all = useMemo(() => [...shown, ...custom], [shown, custom]);
   const kept = useMemo(() => all.filter((c) => !off.has(c.id)), [all, off]);
 
   const addCustom = () => {
@@ -159,6 +182,8 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
           .filter((d) => keptPhotoIds.has(d.media_id) || !chips.some((c) => c.media_id === d.media_id))
           .map((d) => d.description),
         skip: [...new Set(skip)],
+        // Only for chips still on: a corrected value of a switched-off check never goes out.
+        overrides: Object.fromEntries(Object.entries(overrides).filter(([check]) => !skip.includes(check))),
       });
       setDraft(result);
       setBody(result.body);
@@ -230,6 +255,11 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
   return (
     <Card style={styles.card} testID={`report-${pet.id}`}>
       <Text style={styles.title}>{pet.name}</Text>
+      {summary ? (
+        <Text style={styles.muted} testID={`report-summary-${pet.id}`}>
+          {summaryLine(summary)}
+        </Text>
+      ) : null}
       <Text style={styles.label}>Today's chips</Text>
       {all.length > 0 ? (
         <ChipSuggestions chips={all} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
@@ -238,6 +268,44 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
           {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short note."}
         </Text>
       )}
+
+      {editable.length > 0 ? (
+        <TextButton label="✎ Fix a recorded value" onPress={() => setEditing(true)} testID={`report-edit-${pet.id}`} />
+      ) : null}
+      <Sheet visible={editing} title="Fix a recorded value" onClose={() => setEditing(false)} testID={`report-edit-sheet-${pet.id}`}>
+        {editable.map((chip) => {
+          const group = CHECKIN_GROUPS.find((g) => g.kind === chip.check);
+          if (!group) return null;
+          const current = overrides[group.kind] ?? chip.value ?? null;
+          return (
+            <View key={chip.id} style={styles.editGroup}>
+              <Text style={styles.label}>{`${group.emoji} ${group.label}`}</Text>
+              <View style={styles.editPills}>
+                {group.options.map((o) => {
+                  const on = current === o.value;
+                  return (
+                    <Button
+                      key={o.value}
+                      label={on ? `✓ ${o.label}` : o.label}
+                      variant={on ? "primary" : "secondary"}
+                      onPress={() =>
+                        setOverrides((prev) => {
+                          const next = { ...prev };
+                          if (o.value === chip.value) delete next[group.kind];
+                          else next[group.kind] = o.value;
+                          return next;
+                        })
+                      }
+                      testID={`report-edit-${pet.id}-${group.kind}-${o.value}`}
+                    />
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
+        <Button label="Done" onPress={() => setEditing(false)} testID={`report-edit-done-${pet.id}`} />
+      </Sheet>
 
       {adding ? (
         <View style={styles.addRow}>
@@ -300,6 +368,8 @@ const makeStyles = (theme: Theme) =>
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     sentBadge: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    editGroup: { gap: theme.spacing.xs },
+    editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },
     addField: { flex: 1 },
     photos: { flexDirection: "row", gap: theme.spacing.sm },

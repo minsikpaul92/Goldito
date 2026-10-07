@@ -52,17 +52,17 @@ def record_chips(snapshot: dict) -> list[dict]:
     checks = snapshot["checks"]
     out: list[dict] = []
 
-    def add(chip_id: str, label: str, source: str, check: str | None) -> None:
-        out.append({"id": chip_id, "kind": "record", "label": label, "source": source, "check": check})
+    def add(chip_id: str, label: str, source: str, check: str | None, value: str | None = None) -> None:
+        out.append({"id": chip_id, "kind": "record", "label": label, "source": source, "check": check, "value": value})
 
     if label := MEAL.get(checks.get("meal")):
-        add("rec-meal", label, "checkin", "meal")
+        add("rec-meal", label, "checkin", "meal", checks["meal"])
     if label := POTTY.get(checks.get("potty")):
-        add("rec-potty", label, "checkin", "potty")
+        add("rec-potty", label, "checkin", "potty", checks["potty"])
     if minutes := checks.get("walk_minutes"):
-        add("rec-walk", f"Walk · {minutes} min", "checkin", "walk")
+        add("rec-walk", f"Walk · {minutes} min", "checkin", "walk", str(minutes))
     if label := MOOD.get(checks.get("mood")):
-        add("rec-mood", label, "checkin", "mood")
+        add("rec-mood", label, "checkin", "mood", checks["mood"])
     if meds := checks.get("meds"):
         add("rec-meds", "Medication given" if meds == "done" else "Missed a medication", "task", "meds")
 
@@ -73,6 +73,16 @@ def record_chips(snapshot: dict) -> list[dict]:
         if label := _clean(p["caption"], CHIP_MAX):
             out.append({"id": f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
     return out
+
+
+def day_summary(snapshot: dict) -> dict:
+    """The line at the top of the Report screen: what today holds before any chip is chosen."""
+    tasks = snapshot["tasks"]
+    return {
+        "tasks_done": sum(1 for t in tasks if t["status"] == "done"),
+        "tasks_missed": sum(1 for t in tasks if t["status"] == "missed"),
+        "checkins": len(snapshot["checkins"]),
+    }
 
 
 def photo_messages(system: str, pet_name: str, data_url: str) -> list[dict]:
@@ -88,4 +98,4 @@ def photo_messages(system: str, pet_name: str, data_url: str) -> list[dict]:
     ]
 
 
-__all__ = ["MAX_PHOTOS", "NOTE_MAX", "PhotoRead", "photo_messages", "record_chips"]
+__all__ = ["MAX_PHOTOS", "NOTE_MAX", "PhotoRead", "day_summary", "photo_messages", "record_chips"]

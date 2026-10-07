@@ -158,6 +158,16 @@ def test_the_snapshot_holds_todays_records_and_what_the_sitter_kept(client, setu
     assert snap["chips"] == ["Watching a squirrel", "Park walk"] and snap["sitter_note"] == "She got so excited"
 
 
+def test_a_corrected_value_replaces_the_recorded_one_everywhere_in_the_snapshot(client, setup):
+    _, model = setup()
+    response = post(client, overrides={"meal": "most", "walk": "35", "mood": "calm", "bogus": "x", "potty": "wet"})
+    assert response.status_code == 200
+    snap = model.snapshot
+    # Allowed values only: bogus kinds and values are dropped. Mood had no check-in today, so it stays absent.
+    assert snap["checks"] == {"meal": "most", "potty": "normal", "walk_minutes": 35, "meds": "done"}
+    assert [(c["kind"], c.get("value")) for c in snap["checkins"] if c["kind"] in ("meal", "walk")] == [("meal", "most"), ("walk", "35")]
+
+
 def test_the_model_gets_the_report_prompt_and_the_snapshot_and_nothing_else(client, setup):
     _, model = setup()
     post(client)

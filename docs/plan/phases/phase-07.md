@@ -12,11 +12,11 @@
 
 ### Goal 달성 기준
 
-- [ ] `POST /api/ai/daily-report` → `daily_reports` status=draft (같은 날 재생성 시 덮어쓰기)
-- [ ] Sitter: Report 화면에서 사진 2장(그중 1장 = 공원에서 다람쥐를 보는 Max, 샘플 `walk_squirrel`) → **칩 제안** — 하루 기록에서 ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task), 사진에서 "🐿️ Watching a squirrel" · "🌳 Park walk" → 틀린 칩 1개 끄기 → 짧은 메모(선택) "She got so excited" → **Generate** → 시터 말투 미리보기 → **Send**(승인 = 게시) → status=sent + owner `report_sent` 알림
-- [ ] 칩 제안이 틀려도(예: 공원 사진을 nap으로 봄) 시터가 끄면 알림장에 안 들어감 · 사진 0장·메모 없이도 하루 기록 칩만으로 생성 · 승인 전에는 견주에게 안 보임
-- [ ] Owner: **Diary** 탭에서 날짜별 알림장 목록 + 본문 + 그날 사진 스트립 (구 Reports, D47)
-- [ ] **환각 방지:** `source_snapshot`에 없는 산책/투약/식사 내용이 report에 없음 (수동 테스트 3회)
+- [x] `POST /api/ai/daily-report` → `daily_reports` status=draft (같은 날 재생성 시 덮어쓰기)
+- [x] Sitter: Report 화면에서 사진 2장(그중 1장 = 공원에서 다람쥐를 보는 Max, 샘플 `walk_squirrel`) → **칩 제안** — 하루 기록에서 ☑ Meal: All · ☑ Potty: 1× normal · ☑ Walk: 20 min · ☑ Meds: done(task), 사진에서 "🐿️ Watching a squirrel" · "🌳 Park walk" → 틀린 칩 1개 끄기 → 짧은 메모(선택) "She got so excited" → **Generate** → 시터 말투 미리보기 → **Send**(승인 = 게시) → status=sent + owner `report_sent` 알림
+- [x] 칩 제안이 틀려도(예: 공원 사진을 nap으로 봄) 시터가 끄면 알림장에 안 들어감 · 사진 0장·메모 없이도 하루 기록 칩만으로 생성 · 승인 전에는 견주에게 안 보임
+- [x] Owner: **Diary** 탭에서 날짜별 알림장 목록 + 본문 + 그날 사진 스트립 (구 Reports, D47)
+- [x] **환각 방지:** `source_snapshot`에 없는 산책/투약/식사 내용이 report에 없음 (수동 테스트 3회)
 
 ---
 
@@ -112,7 +112,7 @@
 ## 산출물
 
 - `backend/app/services/nebius.py`, `backend/scripts/test_nebius.py`
-- `backend/app/routers/ai_daily_report.py`, `backend/app/schemas/daily_report.py`, `backend/app/routers/ai_report_chips.py`, `backend/app/ai/prompts/report_chips/system.md`, `frontend/components/ChipSuggestions.tsx` (7.7)
+- `backend/app/routers/ai_daily_report.py`, `backend/app/routers/ai_report_chips.py` (요청·응답 스키마는 각 라우터 안), `backend/app/ai/report_chips.py`, `backend/app/ai/prompts/report_chips/system.md`, `frontend/components/ChipSuggestions.tsx` · `ReportComposer.tsx`, `frontend/features/diary/reportApi.ts` (7.7)
 - `backend/app/ai/prompts/daily_report/{system.md, few_shot.json, PROMPT.md}`
 - `frontend/app/sitter/diary.tsx` (evening note), `frontend/app/owner/diary.tsx` (+ `[entryId]`)
 - `supabase/migrations/009_reports.sql`

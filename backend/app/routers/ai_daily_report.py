@@ -21,6 +21,7 @@ from app.ai.daily_report import (
     broken_rules,
     build_snapshot,
     care_intervals,
+    clean_overrides,
     day_bounds,
     few_shot_messages,
     has_facts,
@@ -50,6 +51,8 @@ class DailyReportRequest(BaseModel):
     sitter_note: str | None = Field(default=None, max_length=NOTE_MAX)
     photos: list[str] = Field(default_factory=list, max_length=2)
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
+    # Corrections to a recorded value: {"meal": "most", "walk": "30"} (see `clean_overrides`).
+    overrides: dict[str, str] = Field(default_factory=dict, max_length=len(CHECK_KEYS))
 
 
 class DailyReportResponse(BaseModel):
@@ -107,6 +110,7 @@ def daily_report(
         sitter_note=body.sitter_note,
         skip=body.skip,
         now=now,
+        overrides=body.overrides,
     )
 
     if not has_facts(snapshot):
@@ -172,6 +176,7 @@ def daily_report(
             "sitter_note": snapshot["sitter_note"],
             "photos": [p["caption"] for p in snapshot["photos"] if p["source"] == "report"],
             "skip": [k for k in body.skip if k in CHECK_KEYS],
+            "overrides": clean_overrides(body.overrides),
         },
         "source_snapshot": snapshot,
         "model": model_name,

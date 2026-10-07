@@ -75,9 +75,12 @@ def test_the_days_records_become_chips_without_any_model_call(client, setup):
     assert vision.calls == []
     chips = {c["id"]: c for c in response.json()["chips"]}
     assert chips["rec-meal"] == {
-        "id": "rec-meal", "kind": "record", "label": "Ate everything", "source": "checkin", "check": "meal", "media_id": None,
+        "id": "rec-meal", "kind": "record", "label": "Ate everything", "source": "checkin", "check": "meal", "value": "all", "media_id": None,
     }
     assert chips["rec-potty"]["label"] == "Normal potty" and chips["rec-walk"]["label"] == "Walk · 20 min"
+    assert chips["rec-walk"]["value"] == "20"
+    # The line above the chips: today's tasks (one done, the 14:30 walk missed) and this sitter's check-ins.
+    assert response.json()["summary"] == {"tasks_done": 1, "tasks_missed": 1, "checkins": 4}
     assert chips["rec-meds"]["check"] == "meds" and chips["rec-meds"]["source"] == "task"
     # Episodes: the sitter's own check-in note and the shared feed caption — not the private post, not other sitters.
     assert "Met a golden retriever" in labels(response) and "Max sniffing autumn leaves" in labels(response)
@@ -149,7 +152,9 @@ def test_a_quiet_day_has_no_chips_and_no_model_call(client, setup):
     db = make_db(care_checkins=[], task_logs=[], feed_posts=[], media=[])
     _, vision = setup(db=db)
     response = post(client)
-    assert response.status_code == 200 and response.json() == {"chips": [], "photos": []}
+    assert response.status_code == 200 and response.json() == {
+        "summary": {"tasks_done": 0, "tasks_missed": 0, "checkins": 0}, "chips": [], "photos": [],
+    }
     assert vision.calls == []
 
 

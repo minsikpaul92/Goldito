@@ -1,5 +1,6 @@
 import { ApiError, apiPost } from "../../lib/api";
 import { getSupabase } from "../../lib/supabase";
+import { CHECKIN_GROUPS } from "../care/checkinOptions";
 import { addDays, appToday, zonedToIso } from "../schedule/dates";
 
 /** One chip from `POST /api/ai/report-chips`. A record chip carries the `check` it turns off. */
@@ -9,10 +10,13 @@ export type ReportChip = {
   label: string;
   source: "checkin" | "task" | "feed" | "vision" | "custom";
   check: "meal" | "potty" | "walk" | "mood" | "meds" | null;
+  /** What was recorded (meal / potty / mood value, walk minutes) — the sitter can correct it. */
+  value?: string | null;
   media_id: string | null;
 };
+export type DaySummary = { tasks_done: number; tasks_missed: number; checkins: number };
 export type ChipPhoto = { media_id: string; description: string };
-export type ChipSuggestions = { chips: ReportChip[]; photos: ChipPhoto[] };
+export type ChipSuggestions = { summary: DaySummary; chips: ReportChip[]; photos: ChipPhoto[] };
 
 export const REPORT_NOTE_MAX = 200;
 export const REPORT_BODY_MAX = 2000;
@@ -44,6 +48,8 @@ export type GenerateInput = {
   photos: string[];
   /** Record chips switched off. */
   skip: string[];
+  /** Corrected values: { meal: "most", walk: "30" }. */
+  overrides?: Record<string, string>;
 };
 
 export async function generateReport(input: GenerateInput): Promise<ReportDraft> {
@@ -54,6 +60,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
       sitter_note: input.note,
       photos: input.photos,
       skip: input.skip,
+      overrides: input.overrides ?? {},
     });
     return { id: res.report_id, body: res.body, status: "draft" };
   } catch (error) {
@@ -168,4 +175,19 @@ export function previewOf(body: string, max = 120): string {
   const end = flat.search(/[.!?](\s|$)/);
   const line = end >= 0 ? flat.slice(0, end + 1) : flat;
   return line.length > max ? `${line.slice(0, max - 1).trimEnd()}…` : line;
+}
+
+/** The chip text for a corrected value, e.g. `Meal: Most` · `Walk: 30 min`. */
+export function overrideLabel(check: string, value: string): string | null {
+  const group = CHECKIN_GROUPS.find((g) => g.kind === check);
+  const option = group?.options.find((o) => o.value === value);
+  return group && option ? `${group.label}: ${option.label}` : null;
+}
+
+/** One line for the top of the Report screen. */
+export function summaryLine(s: DaySummary): string {
+  const parts = [`${s.tasks_done} task${s.tasks_done === 1 ? "" : "s"} done`];
+  if (s.tasks_missed > 0) parts.push(`${s.tasks_missed} missed`);
+  parts.push(`${s.checkins} check-in${s.checkins === 1 ? "" : "s"}`);
+  return `Today: ${parts.join(" · ")}`;
 }
