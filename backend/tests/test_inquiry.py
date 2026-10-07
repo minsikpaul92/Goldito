@@ -103,6 +103,7 @@ def setup(monkeypatch):
         monkeypatch.setattr(rag, "search", search)
         monkeypatch.setattr(rag, "index_source", lambda _db, **kw: indexed.append(kw) or 1)
         monkeypatch.setattr(nebius, "chat_json", model)
+        monkeypatch.setattr(nebius, "embed", lambda texts, **kw: [[0.1] * 3 for _ in texts])
         return SimpleNamespace(db=db, model=model, indexed=indexed, searches=searches)
 
     return _setup
@@ -188,8 +189,22 @@ def test_a_date_outside_the_stay_is_a_problem(client, setup):
     assert post(client).json()["body"] == GOOD and len(ctx.model.calls) == 2
 
 
-def test_h_a_placeholder_is_never_sent(client, setup):
-    ctx = setup("Hi Chloe! The total is {PRICE}.", "Total {PRICE} again", )
+def test_h_a_price_placeholder_is_filled_with_the_servers_total(client, setup):
+    ctx = setup("Hi {OWNER}! {PET} is welcome Oct 9 to Oct 12. The total is {PRICE}. Tap **Request booking**.")
+    body = post(client).json()
+    assert body["body"] == "Hi Chloe! Max is welcome Oct 9 to Oct 12. The total is $268.13 CAD. Tap **Request booking**."
+    assert len(ctx.model.calls) == 1 and body["model"] == "nano"
+
+
+def test_h_a_date_placeholder_cannot_be_guessed_so_it_is_rewritten_then_replaced(client, setup):
+    ctx = setup("Hi Chloe! I'm away on {DATE}. Total {PRICE}.", "Still {DATE}. {PRICE}")
+    body = post(client).json()
+    assert "{DATE}" not in body["body"] and "{PRICE}" not in body["body"]
+    assert body["model"] == "checked-template" and len(ctx.model.calls) == 2
+
+
+def test_h_a_price_placeholder_for_unavailable_dates_is_a_problem(client, setup):
+    ctx = setup("Hi Chloe! Total {PRICE}.", "Total {PRICE}", blocked="2026-10-10")
     body = post(client).json()
     assert "{PRICE}" not in body["body"] and body["model"] == "checked-template" and len(ctx.model.calls) == 2
 
@@ -408,3 +423,44 @@ def test_without_a_quote_the_model_is_told_not_to_name_a_price(client, setup):
     ctx = setup("Hi Chloe! I'm available Oct 9 to Oct 12 and I'll send the price shortly.", quote=None)
     body = post(client).json()
     assert body["quote"] is None and "quote_note" in ctx.model.facts and "$" not in body["body"]
+
+
+# --- the sitter's voice (7B.8) and what a draft teaches (7B.9) --------------------------------------------------
+
+
+def test_the_sitters_style_card_is_in_the_draft_prompt(client, setup):
+    db = make_db()
+    db.tables["sitter_profiles"][0]["style_card"] = "Calm and precise. No emojis."
+    ctx = setup(db=db)
+    post(client)
+    system = ctx.model.calls[0]["messages"][0]["content"]
+    assert "Style notes for this sitter: Calm and precise. No emojis." in system
+
+
+def test_without_a_style_card_the_default_style_is_used(client, setup):
+    ctx = setup()
+    post(client)
+    assert "Friendly, plain and brief" in ctx.model.calls[0]["messages"][0]["content"]
+
+
+def test_a_discarded_draft_is_kept_as_a_negative_signal_anonymized(client, setup):
+    ctx = setup(GOOD, "Hi Chloe! Different take: $268.13 CAD for Max.")
+    post(client)
+    post(client, sitter_token(), regenerate=True)
+    (sample,) = ctx.db.tables["tone_samples"]
+    assert sample["source"] == "regenerated" and sample["final_text"] == "" and sample["edit_ratio"] is None
+    assert "Chloe" not in sample["draft"] and "$268.13" not in sample["draft"] and "{PRICE}" in sample["draft"]
+
+
+def test_an_are_you_an_ai_question_also_tells_the_sitter_directly(client, setup):
+    ctx = setup(GOOD, db=make_db("Are you an AI?"))
+    post(client)
+    notices = [n for n in ctx.db.tables["notifications"] if n["type"] == "inquiry_needs_you"]
+    assert len(notices) == 1 and notices[0]["user_id"] == SITTER_ID and notices[0]["ref_id"] == INQ
+    assert "reply yourself" in notices[0]["title"]
+
+
+def test_a_normal_question_sends_no_extra_notice(client, setup):
+    ctx = setup()
+    post(client)
+    assert not ctx.db.tables.get("notifications")

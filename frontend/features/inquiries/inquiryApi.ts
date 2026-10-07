@@ -239,6 +239,15 @@ export async function sendInquiryReply(inquiryId: string, body: string, draftId:
   fail("send the reply");
 }
 
+/** After a send: let the assistant learn from what the sitter did with the draft. Never blocks or fails. */
+export async function recordReplySample(inquiryId: string): Promise<void> {
+  try {
+    await apiPost("/api/tone/record-reply", { inquiry_id: inquiryId });
+  } catch {
+    // Learning is a bonus; the reply is already sent.
+  }
+}
+
 /** The sitter opened the thread: the owner's messages become read (the only read mark there is). */
 export async function markInquiryRead(inquiryId: string): Promise<void> {
   await getSupabase().rpc("mark_inquiry_read", { p_inquiry: inquiryId });

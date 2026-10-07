@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.ai import tone
 from app.ai.daily_report import (
     CHECK_KEYS,
     MAX_CHIPS,
@@ -117,8 +118,9 @@ def daily_report(
         # Nothing was recorded: a fixed, honest line — the model is not asked, so it cannot make anything up.
         text, model_name, latency_ms = quiet_day_body(pet["name"]), "template", 0
     else:
+        voice = tone.compose(db, user.id, kind="report", query=_report_situation(snapshot))
         messages = [
-            {"role": "system", "content": load_prompt("daily_report/system.md")},
+            {"role": "system", "content": load_prompt("daily_report/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"},
             *few_shot_messages(load_json("daily_report/few_shot.json")),
             {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)},
         ]
@@ -246,6 +248,13 @@ def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_e
         "allergies": allergies,
         "heads_up": heads_up,
     }
+
+
+def _report_situation(snapshot: dict) -> str:
+    """One line for finding the sitter's own earlier reports: the kind of day, never its facts."""
+    pet = snapshot["pet"]
+    kinds = sorted({c["kind"] for c in snapshot["checkins"]} | {t["type"] for t in snapshot["tasks"]})
+    return f"daily report for a {pet['species']}: {', '.join(kinds) or 'quiet day'}"
 
 
 def _now() -> datetime:

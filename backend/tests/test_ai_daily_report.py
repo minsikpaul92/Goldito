@@ -108,6 +108,7 @@ def setup(monkeypatch):
         monkeypatch.setattr(ai_daily_report, "_now", lambda: NOW)
         monkeypatch.setattr(authz, "assert_on_duty_for", lambda user, pet_id: None)
         monkeypatch.setattr(nebius, "chat", model)
+        monkeypatch.setattr(nebius, "embed", lambda texts, **kw: [[0.1] * 3 for _ in texts])
         return db, model
 
     return _setup
@@ -166,6 +167,14 @@ def test_a_corrected_value_replaces_the_recorded_one_everywhere_in_the_snapshot(
     # Allowed values only: bogus kinds and values are dropped. Mood had no check-in today, so it stays absent.
     assert snap["checks"] == {"meal": "most", "potty": "normal", "walk_minutes": 35, "meds": "done"}
     assert [(c["kind"], c.get("value")) for c in snap["checkins"] if c["kind"] in ("meal", "walk")] == [("meal", "most"), ("walk", "35")]
+
+
+def test_the_report_prompt_carries_the_sitters_style_notes(client, setup):
+    db = make_db()
+    db.tables["sitter_profiles"] = [{"id": SITTER_ID, "style_card": "Breezy, one paw emoji."}]
+    _, model = setup(db)
+    post(client)
+    assert "Style notes for this sitter: Breezy, one paw emoji." in model.calls[0]["messages"][0]["content"]
 
 
 def test_the_model_gets_the_report_prompt_and_the_snapshot_and_nothing_else(client, setup):

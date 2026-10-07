@@ -188,6 +188,11 @@ async function openSitterThread(page: import("@playwright/test").Page, extra: Re
 
 test.describe("sitter inquiry", () => {
   test("Questions lists the thread with a draft ready; one tap on Send keeps the quote and tells the owner", async ({ page }) => {
+    const learned: Record<string, unknown>[] = [];
+    await page.route("**/api/tone/record-reply", (route) => {
+      learned.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ recorded: 1 }) });
+    });
     const { db } = await openSitterThread(page);
     const screen = app(page);
     await expect(screen.getByTestId("sitter-bookings-tabs-inquiries")).toContainText("Questions (1)");
@@ -211,6 +216,8 @@ test.describe("sitter inquiry", () => {
     expect(db.notifications.find((n) => n.type === "inquiry_replied")?.user_id).toBe(OWNER.id);
     await expect(screen.getByTestId("inquiry-replied")).toContainText("Chloe was told");
     await expect(screen.getByTestId("inquiry-draft")).toHaveCount(0);
+    await expect.poll(() => learned.length).toBe(1); // the assistant is asked to learn from this send
+    expect(learned[0]).toEqual({ inquiry_id: INQ });
   });
 
   test("Edit / Add sends the sitter's own text, and a needs-you draft says so", async ({ page }) => {

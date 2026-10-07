@@ -85,6 +85,8 @@ def inquiry_reply(
     drafts = [m for m in messages if m["author"] == "ai"]
     if drafts and not body.regenerate:
         return _reuse(drafts[-1])  # idempotent: asking twice never makes a second draft
+    if drafts and body.regenerate:
+        _note_discarded(db, inquiry, drafts[-1])
     questions = [m for m in messages if m["author"] == "owner"]
     if not questions:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This inquiry has no question yet.")
@@ -109,7 +111,7 @@ def inquiry_reply(
         grounding = None
 
     if grounding is not None:
-        draft, model_name = _write(grounding, question["body"], inquiry["sitter_id"], body.intent, sitter_name)
+        draft, model_name = _write(db, grounding, question["body"], inquiry["sitter_id"], body.intent, sitter_name)
 
     if draft is None:
         text = logic.fixed_reply(owner_name, sitter_name, grounding, model_failed=grounding is None or model_name == "failed")
@@ -148,6 +150,17 @@ def inquiry_reply(
         .data[0]
     )
 
+    if logic.asks_if_ai(question["body"]):
+        # "Are you an AI?" must be answered by the sitter themselves (D36): say so, apart from "draft ready".
+        db.table("notifications").insert(
+            {
+                "user_id": inquiry["sitter_id"],
+                "type": "inquiry_needs_you",
+                "title": f"{owner_name} asked if they're talking to a person — please reply yourself",
+                "ref_id": inquiry["id"],
+            }
+        ).execute()
+
     # The owner's question joins the knowledge base for this owner × sitter pair (never the sitter's reply).
     try:
         rag.index_source(
@@ -172,6 +185,33 @@ def inquiry_reply(
         model=model_name,
         latency_ms=saved["latency_ms"] or 0,
     )
+
+
+def _note_discarded(db, inquiry: dict, draft: dict) -> None:
+    """A draft the sitter threw away is a negative signal for their voice (kept, never used as an example)."""
+    try:
+        names = _names(db, inquiry)
+        tone.record_sample(
+            db,
+            sitter_id=inquiry["sitter_id"],
+            source="regenerated",
+            kind="inquiry",
+            context_summary=tone.anonymize(f"{inquiry['service_type']} inquiry", **names),
+            final_text="",
+            draft=tone.anonymize(draft["body"], **names),
+            intent=(draft.get("grounding") or {}).get("intent"),
+        )
+    except Exception as exc:  # noqa: BLE001 — learning must never get in the way of a new draft
+        log.info("tone: regenerate not recorded (%s)", exc)
+
+
+def _names(db, inquiry: dict) -> dict:
+    owner = _one(db.table("profiles").select("display_name").eq("id", inquiry["owner_id"]).limit(1).execute()) or {}
+    pets = db.table("pets").select("name").in_("id", [str(p) for p in inquiry["pet_ids"]]).execute().data
+    return {
+        "owner_names": [n for n in (owner.get("display_name") or "").split() if n],
+        "pet_names": [p["name"] for p in pets],
+    }
 
 
 def _reuse(message: dict) -> InquiryReplyResponse:
@@ -316,19 +356,19 @@ def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
     return json.dumps(payload, ensure_ascii=False)
 
 
-def _write(grounding: dict, question: str, sitter_id: str, intent: str | None, sitter_name: str) -> tuple[logic.Draft | None, str]:
+def _write(db, grounding: dict, question: str, sitter_id: str, intent: str | None, sitter_name: str) -> tuple[logic.Draft | None, str]:
     """The model's draft after the checks, or (None, why) when it must be replaced by the fixed text."""
-    voice = tone.compose(sitter_id, kind="inquiry", intent=intent, query=question)
+    voice = tone.compose(db, sitter_id, kind="inquiry", intent=intent, query=logic.situation(question, grounding))
     system = load_prompt("inquiry/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"
     messages = [
         {"role": "system", "content": system},
-        *voice.examples,
         {"role": "user", "content": _facts_message(grounding, question, intent)},
     ]
     try:
         draft, result = nebius.chat_json(
             "fast", messages, logic.Draft, endpoint="inquiry-reply", max_tokens=MAX_TOKENS, temperature=0.4, timeout=TIMEOUT_S
         )
+        draft.reply = logic.fill_placeholders(draft.reply, grounding)
         problems = logic.reply_problems(draft.reply, grounding, question, intent)
         if problems:
             log.info("inquiry-reply broke rules %s; retrying once", problems)
@@ -343,6 +383,7 @@ def _write(grounding: dict, question: str, sitter_id: str, intent: str | None, s
             draft, result = nebius.chat_json(
                 "fast", messages, logic.Draft, endpoint="inquiry-reply", max_tokens=MAX_TOKENS, temperature=0.2, timeout=TIMEOUT_S
             )
+            draft.reply = logic.fill_placeholders(draft.reply, grounding)
             if logic.reply_problems(draft.reply, grounding, question, intent):
                 return None, "checked-template"
         return draft, result.model

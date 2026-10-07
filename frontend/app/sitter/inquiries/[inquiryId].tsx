@@ -17,6 +17,7 @@ import {
   ReplyIntent,
   getInquiry,
   markInquiryRead,
+  recordReplySample,
   regenerateDraft,
   sendInquiryReply,
   tripSummary,
@@ -105,6 +106,7 @@ export default function SitterInquiry() {
     setBusy("send");
     try {
       await sendInquiryReply(inquiry.id, text.trim(), draft?.id ?? null);
+      void recordReplySample(inquiry.id);
       toast.show(`Sent ✅ ${inquiry.ownerName} was told`);
       await load();
     } catch (e) {

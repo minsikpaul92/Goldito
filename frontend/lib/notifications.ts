@@ -138,6 +138,7 @@ export function hrefForNotification(
     case "inquiry_replied":
       return role === "owner" && notice.refId ? `/owner/inquiries/${notice.refId}` : null;
     case "inquiry_received":
+    case "inquiry_needs_you":
       return role === "sitter" && notice.refId ? `/sitter/inquiries/${notice.refId}` : null;
     case "report_sent":
       if (role !== "owner") return null;
@@ -172,11 +173,6 @@ export function hrefForNotification(
       return bookingHref(notice.bookingId);
     case "life_record_updated":
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
-    case "inquiry_received":
-      // Inquiry thread UI lands in 07B — Bookings is the closest home for sitters.
-      return role === "sitter" ? "/sitter/bookings" : null;
-    case "inquiry_replied":
-      return role === "owner" ? "/owner/bookings" : null;
     case "safety_danger":
     case "photo_request":
     case "task_due":

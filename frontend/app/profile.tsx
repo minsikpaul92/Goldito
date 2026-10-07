@@ -241,6 +241,12 @@ export default function ProfileScreen() {
         </View>
       ) : null}
       {loaded.role === "sitter" ? (
+        <Text style={styles.muted} testID="profile-ai-notice">
+          Pawddy may use AI writing assistance to draft your replies and daily notes in your voice. You approve everything
+          before it is sent.
+        </Text>
+      ) : null}
+      {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-services">
           <Text style={styles.groupTitle}>Services you offer</Text>
           {SERVICES.map((s) => (

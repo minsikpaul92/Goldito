@@ -31,6 +31,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `009e_reopened_checkout_keeps_addresses.sql` | review fix | `get_handoff_details` returns the handoff places for a booking paid at least once (`paid_at` or `price_snapshot`), so a checkout reopened by 009d keeps the addresses for both sides; only the entry codes wait for the new consent |
 | `010_inquiries_rag.sql` | 07B | pgvector (in `extensions`), `inquiries` + `inquiry_messages` (owner never sees `author='ai'` or an unsent / not-yet-visible sitter message), `sitter_profiles.policies`, notices `inquiry_received` · `inquiry_replied`, service-role-only `knowledge_chunks` + `match_knowledge` (per-source scope) |
 | `010b_send_inquiry_reply.sql` | 07B | `send_inquiry_reply` (the only way a sitter message is written: quote / sources / can_host copied from the draft, nothing else; the direct INSERT policy is dropped) + `mark_inquiry_read` (the sitter opening the thread is the owner's only read mark) |
+| `010c_tone_samples.sql` | 07B | `tone_samples` (the sitter's own approved / edited / seeded replies, `regenerated` = thrown-away drafts), `match_tone`, `sitter_profiles.style_card` — all service-role only |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |

@@ -2851,6 +2851,30 @@ begin
         (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, array[max], chloe, 20))
       = array['Chloe asked Lucy about pills', 'No dogs over 20 kg.'],
     'M: a search reaches only this sitter''s policy and this owner × sitter conversation — no other pet, sitter or owner');
+  -- tone_samples: service role only, and a search never reaches another sitter's voice or a thrown-away draft
+  perform _t_as(null);
+  insert into public.tone_samples (sitter_id, kind, source, context_summary, final_text, embedding) values
+    (lucy, 'inquiry', 'approved', 'asks about a pill', 'Hi! Happy to help 🐾', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (lucy, 'inquiry', 'regenerated', 'asks about a pill', '', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (lucy, 'report', 'approved', 'daily report', 'A lovely day!', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (paul, 'inquiry', 'approved', 'asks about a pill', 'Hello. Yes.', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  perform _t_ok((select array_agg(final_text) from public.match_tone(
+        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, 'inquiry', 10))
+      = array['Hi! Happy to help 🐾'],
+    'M: match_tone returns only this sitter''s approved / edited examples of this kind');
+  perform _t_as(lucy);
+  begin
+    perform count(*) from public.tone_samples;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: tone_samples is not readable by clients, not even the sitter''s own');
+  begin
+    perform style_card from public.sitter_profiles where id = lucy;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …and neither is the style card');
 end;
 $$;
 

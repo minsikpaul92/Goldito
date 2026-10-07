@@ -218,6 +218,25 @@ def policy_conflicts(policies: str | None, pets: list[dict]) -> list[dict]:
     return out
 
 
+def fill_placeholders(text: str, grounding: dict) -> str:
+    """{OWNER}, {PET} and {PRICE} (from the sitter's own examples) become the real values. {DATE} is left as is on
+    purpose: it is a problem for the checks, never a guess."""
+    out = text.replace("{OWNER}", grounding["owner"]["first_name"])
+    names = [p["name"] for p in grounding["pets"]]
+    if names:
+        out = out.replace("{PET}", " and ".join([", ".join(names[:-1]), names[-1]] if len(names) > 1 else names))
+    quote = grounding.get("quote")
+    if quote and grounding["availability"]["can_host"]:
+        out = out.replace("{PRICE}", f"${float(quote['total']):.2f} {quote.get('currency', 'CAD')}")
+    return out
+
+
+def situation(question: str, grounding: dict) -> str:
+    """One line describing what was asked — the search key for the sitter's own examples."""
+    inquiry = grounding["inquiry"]
+    return f"{inquiry['service']} for {inquiry['pet_count']} pet(s): {question}"[:600]
+
+
 def fixed_reply(owner_name: str, sitter_first: str, grounding: dict | None, *, model_failed: bool) -> str:
     """The safe text used when the model is down or can't pass the checks. Built only from the facts."""
     if grounding is None or model_failed:
