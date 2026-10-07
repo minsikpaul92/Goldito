@@ -184,6 +184,9 @@ export type MockDb = {
   media: Row[];
   /** AI drafts (private to the sitter) and sent reports (Phase 07). */
   daily_reports: Row[];
+  /** Inquiries and their thread (Phase 07B). */
+  inquiries: Row[];
+  inquiry_messages: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -227,6 +230,8 @@ function createMockDb(): MockDb {
     feed_posts: [],
     media: [],
     daily_reports: [],
+    inquiries: [],
+    inquiry_messages: [],
   };
 }
 
@@ -433,6 +438,19 @@ function matches(row: Row, params: URLSearchParams): boolean {
     }
   }
   return true;
+}
+
+/** The 010 RLS for inquiry_messages. */
+function inquiryMessageVisible(db: MockDb, row: Row, me: string | null): boolean {
+  const inquiry = db.inquiries.find((i) => i.id === row.inquiry_id);
+  if (!inquiry) return false;
+  if (inquiry.sitter_id === me) return true;
+  return (
+    inquiry.owner_id === me &&
+    (row.author === "owner" || row.author === "sitter") &&
+    (row.status ?? "sent") === "sent" &&
+    Date.parse(String(row.visible_at ?? row.created_at ?? 0)) <= Date.now()
+  );
 }
 
 /** Same as the SQL `pet_has_open_stay`. */
@@ -1100,7 +1118,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         // RLS: a private post is only visible to its author (5.8).
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
         // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
-        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent"),
+        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent") &&
+        // RLS: a party sees their own inquiries; the owner never sees an AI draft or an unsent / not-yet-visible reply (010).
+        (path !== "inquiries" || row.owner_id === me || row.sitter_id === me) &&
+        (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -1168,6 +1189,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    if (path === "inquiries" && select.includes("sitter:profiles")) {
+      const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
+      rows = rows.map((r) => ({ ...r, sitter: name(r.sitter_id), owner: name(r.owner_id) }));
+    }
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({
         ...r,
@@ -1226,6 +1251,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
       ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...(path === "pet_cautions" ? { active: true } : {}),
+      // Column defaults of 010.
+      ...(path === "inquiries" ? { status: "open", booking_id: null } : {}),
+      ...(path === "inquiry_messages" ? { status: "sent", visible_at: new Date().toISOString(), read_at: null } : {}),
       ...row,
     }));
     if (path === "booking_consents") {

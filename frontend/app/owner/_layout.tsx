@@ -18,6 +18,7 @@ export default function OwnerLayout() {
       <Stack.Screen name="home-access" options={{ title: "Entry info" }} />
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="diary/[entryId]" options={{ title: "Diary" }} />
+      <Stack.Screen name="inquiries/[inquiryId]" options={{ title: "Conversation" }} />
       <Stack.Screen name="history" options={{ title: "History" }} />
     </RoleStack>
   );

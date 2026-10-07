@@ -135,6 +135,10 @@ export function hrefForNotification(
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
     case "care_counter_accepted":
       return role === "sitter" ? "/sitter/tasks" : null;
+    case "inquiry_replied":
+      return role === "owner" && notice.refId ? `/owner/inquiries/${notice.refId}` : null;
+    case "inquiry_received":
+      return role === "sitter" && notice.refId ? `/sitter/inquiries/${notice.refId}` : null;
     case "report_sent":
       if (role !== "owner") return null;
       return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";

@@ -1,0 +1,161 @@
+import { router } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+
+import { QUESTION_MAX, createInquiry, requestInquiryReply } from "../features/inquiries/inquiryApi";
+import { SPECIES_EMOJI } from "../features/pets/petFormat";
+import { useMyPets } from "../features/pets/useMyPets";
+import { addDays, appToday, zonedToIso } from "../features/schedule/dates";
+import { SERVICE_LABEL, ServiceType } from "../features/sitters/sitterApi";
+import { tripProblem } from "../lib/trip";
+import { useThemedStyles } from "../providers/ThemeProvider";
+import { Theme } from "../theme/themes";
+import { HandoffDraft, HandoffPicker } from "./HandoffPicker";
+import { Button } from "./ui/Button";
+import { CheckRow } from "./ui/CheckRow";
+import { SegmentedControl } from "./ui/SegmentedControl";
+import { Sheet } from "./ui/Sheet";
+import { TextField } from "./ui/TextField";
+
+type Props = {
+  visible: boolean;
+  onClose: () => void;
+  sitter: { id: string; displayName: string; services: ServiceType[] };
+};
+
+/**
+ * "Ask about a stay" (phase-07B 7B.5): the trip, the pets, and an optional question. Sending creates the
+ * inquiry, asks for the sitter's draft in the background and opens the thread — the owner never waits on the model.
+ */
+export function InquirySheet({ visible, onClose, sitter }: Props) {
+  const styles = useThemedStyles(makeStyles);
+  const { pets } = useMyPets();
+  const today = useMemo(() => appToday(), []);
+  const [service, setService] = useState<ServiceType>(sitter.services[0] ?? "boarding");
+  const [petIds, setPetIds] = useState<string[]>([]);
+  const [dropOff, setDropOff] = useState<HandoffDraft>({ day: addDays(today, 1), time: "09:00", locationType: "sitter_home", note: "" });
+  const [pickUp, setPickUp] = useState<HandoffDraft>({ day: addDays(today, 3), time: "17:00", locationType: "sitter_home", note: "" });
+  const [question, setQuestion] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pets.length === 1) setPetIds([pets[0].id]);
+  }, [pets]);
+
+  const houseSitting = service === "house_sitting";
+  const problem = tripProblem(petIds, dropOff, pickUp);
+  const placeProblem =
+    !houseSitting && ((dropOff.locationType === "other" && !dropOff.note.trim()) || (pickUp.locationType === "other" && !pickUp.note.trim()))
+      ? "Tell the sitter where to meet."
+      : null;
+
+  const send = async () => {
+    if (problem || placeProblem || sending) return;
+    setSending(true);
+    setError(null);
+    const place = (h: HandoffDraft) => (houseSitting ? ("owner_home" as const) : h.locationType);
+    try {
+      const id = await createInquiry({
+        sitterId: sitter.id,
+        serviceType: service,
+        dropOff: { at: zonedToIso(dropOff.day, dropOff.time), locationType: place(dropOff) },
+        pickUp: { at: zonedToIso(pickUp.day, pickUp.time), locationType: place(pickUp) },
+        petIds,
+        petNames: pets.filter((p) => petIds.includes(p.id)).map((p) => p.name),
+        question,
+      });
+      void requestInquiryReply(id); // the thread keeps waiting for the sitter either way
+      onClose();
+      router.push(`/owner/inquiries/${id}`);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Sheet
+      visible={visible}
+      title={`Ask ${sitter.displayName} about a stay`}
+      onClose={onClose}
+      testID="inquiry-sheet"
+      footer={
+        <Button
+          label={sending ? "Sending…" : "Send"}
+          disabled={!!problem || !!placeProblem || sending}
+          onPress={() => void send()}
+          testID="inquiry-send"
+        />
+      }
+    >
+      <View style={styles.body}>
+        {sitter.services.length > 1 ? (
+          <SegmentedControl
+            options={sitter.services.map((s) => ({ value: s, label: SERVICE_LABEL[s] }))}
+            value={service}
+            onChange={setService}
+            testID="inquiry-service"
+          />
+        ) : null}
+        <Text style={styles.label}>Who's staying?</Text>
+        {pets.map((pet) => (
+          <CheckRow
+            key={pet.id}
+            label={`${SPECIES_EMOJI[pet.species]} ${pet.name}`}
+            checked={petIds.includes(pet.id)}
+            onChange={(on) => setPetIds((ids) => (on ? [...ids, pet.id] : ids.filter((x) => x !== pet.id)))}
+            testID={`inquiry-pet-${pet.name}`}
+          />
+        ))}
+        <Text style={styles.hint}>
+          {petIds.length > 0
+            ? `${pets.filter((p) => petIds.includes(p.id)).map((p) => `${p.name}'s`).join(", ")} profile and Life Record are shared with ${sitter.displayName}.`
+            : ""}
+        </Text>
+        <HandoffPicker
+          kind="drop_off"
+          value={dropOff}
+          minDay={today}
+          sitterName={sitter.displayName}
+          fixedPlace={houseSitting ? `🔑 ${sitter.displayName} comes to my place` : undefined}
+          onChange={(value) => {
+            setDropOff(value);
+            if (value.day > pickUp.day) setPickUp((p) => ({ ...p, day: value.day }));
+          }}
+        />
+        <HandoffPicker
+          kind="pick_up"
+          value={pickUp}
+          minDay={dropOff.day}
+          sitterName={sitter.displayName}
+          fixedPlace={houseSitting ? "🔑 At my place" : undefined}
+          onChange={setPickUp}
+        />
+        <TextField
+          label="Your question (optional)"
+          value={question}
+          maxLength={QUESTION_MAX}
+          multiline
+          placeholder="e.g. Can you give Max his pill at 2 PM?"
+          onChangeText={setQuestion}
+          testID="inquiry-question"
+        />
+        {problem || placeProblem || error ? (
+          <Text style={styles.error} testID="inquiry-problem">
+            {error ?? placeProblem ?? problem}
+          </Text>
+        ) : null}
+      </View>
+    </Sheet>
+  );
+}
+
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    body: { gap: theme.spacing.sm },
+    label: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    error: { fontSize: theme.fontSize.small, color: theme.color.error },
+  });

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { InquirySheet } from "../../../components/InquirySheet";
 import { STATE_LABEL, SlotCalendar } from "../../../components/SlotCalendar";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -44,6 +45,7 @@ export default function SitterProfileScreen() {
   const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [day, setDay] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!sitterId) return;
@@ -172,7 +174,15 @@ export default function SitterProfileScreen() {
           onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
           testID="book-this-sitter"
         />
+        <Button
+          label="Ask about a stay"
+          variant="secondary"
+          onPress={() => setAsking(true)}
+          style={styles.askButton}
+          testID="ask-about-stay"
+        />
       </View>
+      <InquirySheet visible={asking} onClose={() => setAsking(false)} sitter={sitter} />
     </View>
   );
 }
@@ -188,6 +198,9 @@ const makeStyles = (theme: Theme) =>
       maxWidth: 480,
       width: "100%",
       alignSelf: "center",
+    },
+    askButton: {
+      marginTop: theme.spacing.xs,
     },
     content: {
       gap: theme.spacing.md,
