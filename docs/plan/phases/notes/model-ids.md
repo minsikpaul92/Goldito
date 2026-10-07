@@ -109,6 +109,19 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 **Fun mood meter (11.9 / D42):** `agentmish/dog-emotion-classifier-v2` — Apache-2.0, ViT-base, 85.6% accuracy on its small eval set, no training-dataset license stated. `Dewa/dog_emotion_v2` has no license tag, do not use.
 
+## Inquiry reply latency (07B.7, 2026-10-07)
+
+`backend/scripts/measure_inquiry.py` — 10 runs, real Token Factory, ~2k-token facts (5 policy sources, 2 pets, the quote) plus the sitter's style card and 3 own examples, Nemotron-3 Nano, reasoning off, 350 max tokens. No DB writes.
+
+| Step | median | max |
+| :--- | :--- | :--- |
+| RAG query embedding (Qwen3-Embedding-8B, 1024 dims) | 539 ms | 2639 ms |
+| Tone search embedding + Nano draft (incl. the one rewrite when a check fails) | 2591 ms | 3591 ms |
+| Hosted Supabase round trip (one query) | 37 ms | 584 ms |
+| **Estimated draft total** (embedding + tone + draft + ~120 ms for the four parallel gathers) | **3.2 s** | **6.1 s** |
+
+Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a few tens of ms per query, so a cache in front of it (e.g. Redis) would save about 1 % — not worth the stale-data risk for allergies and Heads-ups. The human-paced auto-send delay (15–40 s) is separate and deliberate (7B.10). The gathering that needs a signed-in session (schedule and quote RPCs) is not in this script: it is timed in the app run on the hosted DB once `010` is applied there.
+
 ## Open questions (Phase 07.1 / 08 spike)
 
 - [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
@@ -123,8 +136,8 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 - [ ] Ultra/Super: `response_format` / JSON schema adherence
 - [x] Image input: base64 data URL (D12) accepted by MiniCPM on Token Factory — smoke 2026-09-29
 - [ ] MiniCPM: crate / seatbelt detection on car photos (6B.5) — compare Kimi-K2.6 if < 3/4 samples pass
-- [ ] Nano: inquiry reply p50 latency with ~2k-token grounding JSON (07B.7 target < 10 s)
-- [ ] Nemotron tool calling on Token Factory (record only — P0 does one grounded call, full-process §8)
+- [x] Nano: inquiry reply p50 latency with ~2k-token grounding JSON — **p50 ≈ 3.2 s, max ≈ 6.1 s** over 10 runs (2026-10-07, see "Inquiry reply latency" below; target < 10 s)
+- [x] Nemotron tool calling on Token Factory: **works** on both `NVIDIA-Nemotron-3-Nano-30B-A3B` (≈ 0.9 s) and `nemotron-3-super-120b-a12b` (≈ 0.9 s) with `tools` + `tool_choice="auto"` and `enable_thinking: false` — returns a proper `tool_calls` entry with valid JSON arguments (2026-10-07). Used only by the optional agent mode (7B.11)
 
 ---
 
