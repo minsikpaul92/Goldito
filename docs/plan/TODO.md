@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **9.4 (optional)** Also caption task / check-in photos asynchronously, or skip it. If skipped: **Phase 09 complete** → next **7C.1** (Phase 07C — Completion, Pet Life Record) per [phase-07c.md](phases/phase-07c.md). | [phase-09.md](phases/phase-09.md) |
+| **Phase 09 complete** (9.4 task-photo captions skipped on purpose: task posts keep their fixed wording) → next: **7C.1** DB `011_completion.sql` (reviews, Pet Life Records) — start Phase 07C. Left over: 6.7 server push · 7.6 auto-draft · human runs in the test guide (INQ-*, REPORT-10, album with real photos) · phone camera (#19) after deploy | [phase-07c.md](phases/phase-07c.md) |
 
 ---
 
