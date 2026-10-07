@@ -14,6 +14,7 @@ from app.routers import (
     me,
     media,
     meet_greet,
+    rag,
 )
 
 settings = get_settings()
@@ -36,6 +37,7 @@ app.include_router(feed.router)
 app.include_router(ai_care_plan.router)
 app.include_router(ai_daily_report.router)
 app.include_router(ai_report_chips.router)
+app.include_router(rag.router)
 
 
 @app.exception_handler(StarletteHTTPException)
