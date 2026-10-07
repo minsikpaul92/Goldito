@@ -2,6 +2,7 @@
 and every amount / date / voice rule is checked after the fact. The model is mocked; the gathering and checks are real."""
 
 import json
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -110,7 +111,8 @@ def setup(monkeypatch):
 
 
 def post(client, token=None, **body):
-    return client.post("/api/ai/inquiry-reply", headers={"Authorization": f"Bearer {token or owner_token()}"}, json={"inquiry_id": INQ, **body})
+    # The sitter by default: they get the whole draft back. The owner gets an acknowledgement only (see below).
+    return client.post("/api/ai/inquiry-reply", headers={"Authorization": f"Bearer {token or sitter_token()}"}, json={"inquiry_id": INQ, **body})
 
 
 def drafts(ctx) -> list[dict]:
@@ -372,8 +374,8 @@ def test_the_sitter_can_ask_for_a_fresh_draft_with_an_intent(client, setup):
 def test_the_owner_cannot_regenerate_or_steer_the_draft(client, setup):
     setup()
     post(client)
-    assert post(client, regenerate=True).status_code == 403
-    assert post(client, intent="accept").status_code == 403
+    assert post(client, owner_token(), regenerate=True).status_code == 403
+    assert post(client, owner_token(), intent="accept").status_code == 403
     assert post(client, sitter_token(), intent="bogus").status_code == 422
 
 
@@ -464,3 +466,94 @@ def test_a_normal_question_sends_no_extra_notice(client, setup):
     ctx = setup()
     post(client)
     assert not ctx.db.tables.get("notifications")
+
+
+# --- the owner never receives the draft (D36) ---------------------------------------------------------------------------
+
+
+def test_the_owner_who_asks_gets_an_acknowledgement_and_no_draft_content(client, setup):
+    ctx = setup()
+    body = post(client, owner_token()).json()
+    assert body["body"] is None and body["quote"] is None and body["availability"] is None and body["sources"] == []
+    assert body["message_id"] and body["needs_sitter"] is None and body["model"] == ""
+    (saved,) = drafts(ctx)
+    assert saved["status"] == "draft" and "$268.13" in saved["body"]
+    again = post(client, owner_token()).json()  # the idempotent path is redacted too
+    assert again["reused"] is True and again["body"] is None and again["quote"] is None
+    assert len(drafts(ctx)) == 1
+
+
+# --- auto-send at a human pace (7B.10) -----------------------------------------------------------------------------------
+
+
+def auto_db(**profile) -> FakeDB:
+    db = make_db()
+    db.tables["sitter_profiles"][0].update({"ai_reply_mode": "auto", "ai_consent_at": "2026-10-01T00:00:00+00:00", **profile})
+    return db
+
+
+def sitter_messages(ctx) -> list[dict]:
+    return [m for m in ctx.db.tables["inquiry_messages"] if m["author"] == "sitter"]
+
+
+def test_in_auto_mode_the_reply_is_scheduled_not_shown_and_the_owner_notice_waits(client, setup):
+    ctx = setup(db=auto_db())
+    body = post(client, owner_token()).json()
+    (reply,) = sitter_messages(ctx)
+    assert reply["status"] == "sent" and reply["drafted_by_ai"] is True and reply["sender_id"] == SITTER_ID
+    assert reply["confirmed_by_sitter_at"] is None  # nobody approved it: never a style sample
+    assert reply["grounding"]["quote"]["total"] == 268.13 and "needs_sitter" not in reply["grounding"]
+    # It appears later: 15–40 s from "now" (test clock), and the owner's inquiry carries just the two times.
+    now = daily.NOW
+    visible = datetime.fromisoformat(reply["visible_at"])
+    assert 15 <= (visible - now).total_seconds() <= 40
+    inquiry = ctx.db.tables["inquiries"][0]
+    assert inquiry["reply_visible_at"] == reply["visible_at"] and 0 < (datetime.fromisoformat(inquiry["reply_typing_at"]) - now).total_seconds() < 15
+    assert body["auto_scheduled_at"] == reply["visible_at"] and body["body"] is None
+    (notice,) = [n for n in ctx.db.tables["notifications"] if n["type"] == "inquiry_replied"]
+    assert notice["user_id"] == OWNER_ID and notice["visible_at"] == reply["visible_at"] and notice["ref_id"] == INQ
+
+
+@pytest.mark.parametrize(
+    "case",
+    ["manual", "no_consent", "policy_conflict", "model_failed", "checked_template", "sitter_calls", "regenerate"],
+)
+def test_auto_send_stays_out_of_the_way_when_the_sitter_must_decide(client, setup, case):
+    db = auto_db()
+    answers = [GOOD]
+    caller, extra = owner_token(), {}
+    if case == "manual":
+        db.tables["sitter_profiles"][0]["ai_reply_mode"] = "manual"
+    elif case == "no_consent":
+        db.tables["sitter_profiles"][0]["ai_consent_at"] = None
+    elif case == "policy_conflict":
+        db.tables["pets"][0]["weight_kg"] = 25
+    elif case == "model_failed":
+        answers = [nebius.AIUnavailable("down")]
+    elif case == "checked_template":
+        answers = ["Total $300.", "Still $300."]
+    elif case == "sitter_calls":
+        caller = sitter_token()
+    elif case == "regenerate":
+        caller, extra = sitter_token(), {"regenerate": True}
+        answers = [GOOD, GOOD]
+    ctx = setup(*answers, db=db)
+    if case == "regenerate":
+        post(client, sitter_token())  # the first draft (the sitter asked, so no auto-send)
+    post(client, caller, **extra)
+    assert sitter_messages(ctx) == [] and "inquiry_replied" not in [n["type"] for n in ctx.db.tables.get("notifications", [])]
+    assert "reply_visible_at" not in ctx.db.tables["inquiries"][0]
+
+
+def test_an_are_you_an_ai_question_is_never_auto_answered(client, setup):
+    db = auto_db()
+    db.tables["inquiry_messages"][0]["body"] = "Are you an AI?"
+    ctx = setup(db=db)
+    post(client, owner_token())
+    assert sitter_messages(ctx) == []
+
+
+@pytest.mark.parametrize(("chars", "total"), [(0, 15), (100, 16), (300, 28), (2000, 40)])
+def test_the_default_human_delay_aims_at_about_thirty_seconds(chars, total):
+    typing, visible = logic.human_delay("x" * chars)
+    assert typing == 4 and visible == total

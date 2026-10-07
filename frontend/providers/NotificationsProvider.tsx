@@ -33,6 +33,9 @@ const NotificationsContext = createContext<NotificationsValue | null>(null);
 /** Photos shared within this window show one toast ("3 new photos 📸") instead of one each. */
 const FEED_TOAST_WINDOW_MS = 1200;
 
+/** The unread count is re-read this often too: a notice written ahead of its visible_at fires no event. */
+const UNREAD_POLL_MS = 30_000;
+
 /**
  * Realtime for the signed-in user (phase-05 5.4–5.5 · 5.7):
  * - `notifications` INSERT → toast + unread + type revisions
@@ -71,6 +74,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     let active = true;
     void refreshUnread();
+    const poll = setInterval(() => void refreshUnread(), UNREAD_POLL_MS);
 
     const supabase = getSupabase();
     const channel = supabase
@@ -130,6 +134,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      clearInterval(poll);
       if (feedBurst.current) clearTimeout(feedBurst.current.timer);
       feedBurst.current = null;
       void supabase.removeChannel(channel);

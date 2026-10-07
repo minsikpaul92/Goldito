@@ -231,6 +231,19 @@ def fill_placeholders(text: str, grounding: dict) -> str:
     return out
 
 
+# A human takes a few seconds to start typing and then roughly a minute per few hundred characters; the target is a
+# total of about 30 s for a typical reply (D37). The exact formula is Seulgi's call — this is the default until then.
+TYPING_START_S = 4
+MIN_TOTAL_S = 15
+MAX_TOTAL_S = 40
+
+
+def human_delay(text: str) -> tuple[int, int]:
+    """Seconds until the reply starts "typing", and until it appears."""
+    total = int(min(MAX_TOTAL_S, max(MIN_TOTAL_S, 10 + 0.06 * len(text))))
+    return TYPING_START_S, total
+
+
 def situation(question: str, grounding: dict) -> str:
     """One line describing what was asked — the search key for the sitter's own examples."""
     inquiry = grounding["inquiry"]

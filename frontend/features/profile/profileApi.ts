@@ -67,3 +67,21 @@ export async function reindexSitterPolicies(): Promise<void> {
     // It is picked up the next time they save.
   }
 }
+
+export type AiReplyMode = { mode: "manual" | "auto"; consented: boolean };
+
+export async function getAiReplyMode(): Promise<AiReplyMode> {
+  const { data, error } = await getSupabase().rpc("get_my_ai_reply_mode");
+  if (error || !data) return { mode: "manual", consented: false };
+  return data as AiReplyMode;
+}
+
+/** Turning auto-send on needs the sitter's explicit consent the first time (consent = the modal was confirmed). */
+export async function setAiReplyMode(mode: "manual" | "auto", consent: boolean): Promise<AiReplyMode> {
+  const { data, error } = await getSupabase().rpc("set_ai_reply_mode", { p_mode: mode, p_consent: consent });
+  if (error) {
+    if (error.message.includes("consent_required")) throw new Error("Confirm that replies go out in your name first.");
+    fail("save this setting");
+  }
+  return data as AiReplyMode;
+}

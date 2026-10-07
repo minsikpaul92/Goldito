@@ -8,8 +8,18 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { TextButton } from "../components/ui/TextButton";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
+import { Sheet } from "../components/ui/Sheet";
 import { TextField } from "../components/ui/TextField";
-import { RoleProfile, loadRoleProfile, reindexSitterPolicies, saveProfile } from "../features/profile/profileApi";
+import {
+  AiReplyMode,
+  RoleProfile,
+  getAiReplyMode,
+  loadRoleProfile,
+  reindexSitterPolicies,
+  saveProfile,
+  setAiReplyMode,
+} from "../features/profile/profileApi";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -105,6 +115,8 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [spots, setSpots] = useState<string[]>(padSpots([]));
   const [services, setServices] = useState<Service[]>(["boarding"]);
+  const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
+  const [consenting, setConsenting] = useState(false);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -116,7 +128,10 @@ export default function ProfileScreen() {
         setLoaded(result);
         setDraft(toDraft(result));
         setSpots(padSpots(result.fields.meet_spots));
-        if (result.role === "sitter") setServices(result.fields.services);
+        if (result.role === "sitter") {
+          setServices(result.fields.services);
+          void getAiReplyMode().then(setAiMode);
+        }
       })
       .catch((error: Error) => setLoadError(error.message));
     // Load once per user; later name edits are local until saved.
@@ -246,6 +261,49 @@ export default function ProfileScreen() {
           before it is sent.
         </Text>
       ) : null}
+      {loaded.role === "sitter" ? (
+        <View style={styles.group} testID="profile-ai-replies">
+          <Text style={styles.groupTitle}>AI replies</Text>
+          <SegmentedControl
+            options={[
+              { value: "manual", label: "Manual approval" },
+              { value: "auto", label: "Auto-send" },
+            ]}
+            value={aiMode.mode}
+            onChange={(mode) => {
+              if (mode === aiMode.mode) return;
+              if (mode === "auto" && !aiMode.consented) {
+                setConsenting(true);
+                return;
+              }
+              setAiReplyMode(mode, false)
+                .then(setAiMode)
+                .catch((e: Error) => toast.show(e.message));
+            }}
+            testID="profile-ai-mode"
+          />
+          <Text style={styles.muted}>
+            {aiMode.mode === "auto"
+              ? "Replies that need nothing from you go out in your name after a short, human-paced delay. Anything that needs your confirmation waits for you."
+              : "You read each drafted reply and tap Send. Nothing goes out without you."}
+          </Text>
+        </View>
+      ) : null}
+      <Sheet visible={consenting} title="Turn on auto-send?" onClose={() => setConsenting(false)} testID="ai-consent-sheet">
+        <Text style={styles.muted}>Replies go out in your name. You're responsible for what's sent.</Text>
+        <Button
+          label="Turn on auto-send"
+          onPress={() => {
+            setAiReplyMode("auto", true)
+              .then((next) => {
+                setAiMode(next);
+                setConsenting(false);
+              })
+              .catch((e: Error) => toast.show(e.message));
+          }}
+          testID="ai-consent-confirm"
+        />
+      </Sheet>
       {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-services">
           <Text style={styles.groupTitle}>Services you offer</Text>

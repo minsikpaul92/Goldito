@@ -30,6 +30,10 @@ export type InquiryMessage = {
   canHost: boolean | null;
   /** Owner messages only: when the sitter opened the thread (the only "read" mark, no faked ones). */
   readAt: string | null;
+  /** Written by the assistant and sent on its own (auto-send): nobody approved this one. */
+  auto: boolean;
+  /** When the owner can see it — later than `at` for an auto reply (the sitter sees it at once). */
+  visibleAt: string;
 };
 
 export type InquiryView = {
@@ -47,6 +51,9 @@ export type InquiryView = {
   petNames: string[];
   status: "open" | "booked" | "closed";
   bookingId: string | null;
+  /** Auto-send only: when the reply starts "typing" and when it appears (times, never text). */
+  replyTypingAt: string | null;
+  replyVisibleAt: string | null;
   messages: InquiryMessage[];
   /** The newest AI draft — only the sitter's queries ever return one (RLS). */
   draft: InquiryDraft | null;
@@ -122,6 +129,9 @@ type MessageRow = {
   body: string;
   created_at: string;
   read_at: string | null;
+  drafted_by_ai: boolean;
+  confirmed_by_sitter_at: string | null;
+  visible_at: string | null;
   grounding: {
     quote?: PriceQuote | null;
     sources?: InquirySource[];
@@ -133,7 +143,7 @@ type MessageRow = {
 
 const COLUMNS =
   "id, owner_id, sitter_id, service_type, drop_off_at, pick_up_at, drop_off_location_type, pick_up_location_type, " +
-  "pet_ids, status, booking_id, created_at, sitter:profiles!inquiries_sitter_id_fkey(display_name), " +
+  "pet_ids, status, booking_id, created_at, reply_typing_at, reply_visible_at, sitter:profiles!inquiries_sitter_id_fkey(display_name), " +
   "owner:profiles!inquiries_owner_id_fkey(display_name)";
 
 type InquiryRow = {
@@ -149,6 +159,8 @@ type InquiryRow = {
   status: "open" | "booked" | "closed";
   booking_id: string | null;
   created_at: string;
+  reply_typing_at: string | null;
+  reply_visible_at: string | null;
   sitter: Embed<{ display_name: string }>;
   owner: Embed<{ display_name: string }>;
 };
@@ -163,7 +175,7 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
   const [msgs, pets] = await Promise.all([
     supabase
       .from("inquiry_messages")
-      .select("id, author, body, created_at, read_at, grounding")
+      .select("id, author, body, created_at, read_at, drafted_by_ai, confirmed_by_sitter_at, visible_at, grounding")
       .eq("inquiry_id", id)
       .order("created_at", { ascending: true }),
     supabase.from("pets").select("id, name").in("id", row.pet_ids),
@@ -185,6 +197,8 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
     petNames: row.pet_ids.map((p) => names.get(p)).filter((n): n is string => !!n),
     status: row.status,
     bookingId: row.booking_id,
+    replyTypingAt: row.reply_typing_at,
+    replyVisibleAt: row.reply_visible_at,
     draft: latestDraft((msgs.data ?? []) as MessageRow[]),
     messages: ((msgs.data ?? []) as MessageRow[])
       .filter((m) => m.author !== "ai")
@@ -197,6 +211,8 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
         sources: m.grounding?.sources ?? [],
         canHost: m.grounding?.availability?.can_host ?? null,
         readAt: m.read_at,
+        auto: m.author === "sitter" && m.drafted_by_ai && !m.confirmed_by_sitter_at,
+        visibleAt: m.visible_at ?? m.created_at,
       })),
   };
 }

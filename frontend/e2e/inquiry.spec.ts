@@ -282,3 +282,79 @@ test.describe("sitter inquiry", () => {
     await expect.poll(() => reindex.length).toBe(1);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// Auto-send at a human pace (7B.10)
+// ---------------------------------------------------------------------------------------------
+
+test.describe("auto-send", () => {
+  test("the owner sees nothing, then \"typing…\", then the reply — and Read only once the sitter opened the thread", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    // The AI draft is the sitter's; the auto reply is stored now but only appears at visible_at.
+    const now = Date.now();
+    const visible = new Date(now + 7000).toISOString();
+    db.inquiries[0].reply_typing_at = new Date(now + 2000).toISOString();
+    db.inquiries[0].reply_visible_at = visible;
+    db.inquiry_messages.push({
+      id: "auto1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true, confirmed_by_sitter_at: null,
+      body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾", visible_at: visible, read_at: null,
+      created_at: new Date(now).toISOString(), grounding: { quote: QUOTE, sources: [], availability: { can_host: true } },
+    });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/inquiries/${INQ}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("inquiry-waiting")).toContainText("will reply soon");
+    await expect(screen.getByTestId("inquiry-typing")).toHaveText("Lucy is typing…", { timeout: 6000 });
+    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("268.13", { timeout: 9000 });
+    await expect(screen.getByTestId("inquiry-typing")).toHaveCount(0);
+    // Nobody has opened the thread: no "Read", whatever the screen was doing.
+    await expect(screen.getByTestId("inquiry-question-bubble")).not.toContainText("Read");
+
+    db.inquiry_messages.find((m) => m.id === "q1")!.read_at = new Date().toISOString(); // the sitter opened it
+    await page.reload();
+    await expect(screen.getByTestId("inquiry-question-bubble")).toContainText("· Read");
+  });
+
+  test("the sitter sees the auto reply marked as sent automatically, with no draft to approve", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    db.inquiry_messages.push({
+      id: "auto1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true, confirmed_by_sitter_at: null,
+      body: "Hi Chloe! I'm available.", visible_at: new Date(Date.now() + 20000).toISOString(), read_at: null,
+      created_at: "2026-10-06T10:00:06Z", grounding: null,
+    });
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/sitter/inquiries/${INQ}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("inquiry-message-sitter")).toContainText("Sent automatically");
+    await expect(screen.getByTestId("inquiry-draft")).toHaveCount(0);
+    await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+  });
+
+  test("the sitter turns auto-send on only after the responsibility modal, and off again freely", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null, services: ["boarding"], policies: null });
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto("/profile");
+    const screen = app(page);
+    await expect(screen.getByTestId("profile-ai-replies")).toContainText("You read each drafted reply");
+    await screen.getByTestId("profile-ai-mode-auto").click();
+    await expect(screen.getByTestId("ai-consent-sheet")).toContainText("Replies go out in your name. You're responsible for what's sent.");
+    expect(db.sitter_profiles[0].ai_reply_mode).toBeUndefined(); // nothing changed yet
+    await screen.getByTestId("ai-consent-confirm").click();
+    await expect(screen.getByTestId("profile-ai-replies")).toContainText("go out in your name");
+    expect(db.sitter_profiles[0]).toMatchObject({ ai_reply_mode: "auto" });
+    expect(db.sitter_profiles[0].ai_consent_at).toBeTruthy();
+
+    await screen.getByTestId("profile-ai-mode-manual").click();
+    await expect(screen.getByTestId("profile-ai-replies")).toContainText("You read each drafted reply");
+    await screen.getByTestId("profile-ai-mode-auto").click(); // consented once: no second modal
+    await expect(screen.getByTestId("ai-consent-sheet")).toHaveCount(0);
+    await expect(screen.getByTestId("profile-ai-replies")).toContainText("go out in your name");
+  });
+});

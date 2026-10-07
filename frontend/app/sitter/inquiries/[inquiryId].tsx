@@ -144,7 +144,7 @@ export default function SitterInquiry() {
           key={m.id}
           side={m.author === "sitter" ? "me" : "them"}
           body={m.body}
-          meta={when(m.at)}
+          meta={m.auto ? `${when(m.at)} · Sent automatically` : when(m.at)}
           testID={`inquiry-message-${m.author}`}
         />
       ))}

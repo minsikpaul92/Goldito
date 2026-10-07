@@ -2875,6 +2875,57 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …and neither is the style card');
+  -- Auto-send settings: consent first, the sitter's own row only, and the mode is not a plain column update
+  perform _t_as(lucy);
+  perform _t_ok((public.get_my_ai_reply_mode() ->> 'mode') = 'manual' and (public.get_my_ai_reply_mode() ->> 'consented') = 'false',
+    'M: auto-send is off until the sitter turns it on');
+  begin
+    perform set_ai_reply_mode('auto', false);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'consent_required', 'M: auto-send needs the sitter''s consent');
+  begin
+    update public.sitter_profiles set ai_reply_mode = 'auto' where id = lucy;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …and cannot be switched with a plain update');
+  perform set_ai_reply_mode('auto', true);
+  perform _t_ok((get_my_ai_reply_mode() ->> 'mode') = 'auto' and (get_my_ai_reply_mode() ->> 'consented') = 'true',
+    'M: with consent auto-send turns on');
+  perform set_ai_reply_mode('manual');
+  perform set_ai_reply_mode('auto');
+  perform _t_ok((get_my_ai_reply_mode() ->> 'mode') = 'auto',
+    'M: turning it off and on again needs no second consent');
+  perform _t_as(chloe);
+  begin
+    perform set_ai_reply_mode('auto', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'M: an owner has no auto-send setting');
+
+  -- A notice that is written now but appears later
+  perform _t_as(null);
+  insert into public.notifications (user_id, type, title, ref_id, visible_at)
+  values (chloe, 'inquiry_replied', 'later', v_inq, now() + interval '1 hour'),
+         (chloe, 'inquiry_replied', 'now', v_inq, now() - interval '1 second');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.notifications where title = 'now') = 1
+      and (select count(*) from public.notifications where title = 'later') = 0,
+    'M: a notice with a later visible_at stays hidden until then');
+  perform _t_as(null);
+  update public.inquiries set reply_typing_at = now() + interval '5 seconds', reply_visible_at = now() + interval '30 seconds' where id = v_inq;
+  perform _t_as(chloe);
+  perform _t_ok((select reply_visible_at is not null from public.inquiries where id = v_inq),
+    'M: the owner can read when the reply will appear (times only, no text)');
+  begin
+    update public.inquiries set reply_visible_at = now() where id = v_inq;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'M: …but cannot change it');
 end;
 $$;
 

@@ -8,7 +8,7 @@ draft is stored as `author='ai'`, which the owner can never read; the sitter sen
 import json
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -46,16 +46,19 @@ class Source(BaseModel):
 
 
 class InquiryReplyResponse(BaseModel):
+    """What the caller gets. The owner gets an acknowledgement only: the draft is the sitter's until they send it."""
+
     message_id: str
-    body: str
-    can_host: bool
-    needs_sitter: bool
+    body: str | None
+    can_host: bool | None
+    needs_sitter: bool | None
     quote: dict | None
-    availability: dict
+    availability: dict | None
     sources: list[Source]
     model: str
     latency_ms: int
     reused: bool = False
+    auto_scheduled_at: str | None = None
 
 
 def _now() -> datetime:
@@ -72,31 +75,62 @@ def inquiry_reply(
     user: CurrentUser = Depends(get_current_user),
 ) -> InquiryReplyResponse:
     db = get_service_client()
-    inquiry = _one(db.table("inquiries").select("*").eq("id", str(body.inquiry_id)).limit(1).execute())
+    inquiry = _one(
+        db.table("inquiries").select("*").eq("id", str(body.inquiry_id)).limit(1).execute()
+    )
     if not inquiry:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inquiry not found.")
     if user.id not in (inquiry["owner_id"], inquiry["sitter_id"]):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This isn't your inquiry.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="This isn't your inquiry."
+        )
     if (body.regenerate or body.intent) and user.id != inquiry["sitter_id"]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the sitter can ask for another draft.")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the sitter can ask for another draft.",
+        )
 
-    messages = db.table("inquiry_messages").select("*").eq("inquiry_id", inquiry["id"]).execute().data
+    messages = (
+        db.table("inquiry_messages").select("*").eq("inquiry_id", inquiry["id"]).execute().data
+    )
     messages.sort(key=lambda m: str(m.get("created_at", "")))
     drafts = [m for m in messages if m["author"] == "ai"]
     if drafts and not body.regenerate:
-        return _reuse(drafts[-1])  # idempotent: asking twice never makes a second draft
+        return _redact(
+            _reuse(drafts[-1]), user, inquiry
+        )  # idempotent: asking twice never makes a second draft
     if drafts and body.regenerate:
         _note_discarded(db, inquiry, drafts[-1])
     questions = [m for m in messages if m["author"] == "owner"]
     if not questions:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This inquiry has no question yet.")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This inquiry has no question yet."
+        )
     question = questions[-1]
 
     tz = ZoneInfo(get_settings().app_timezone)
     today = _now().astimezone(tz).date()
     started = datetime.now(UTC)
-    owner = _one(db.table("profiles").select("display_name").eq("id", inquiry["owner_id"]).limit(1).execute()) or {}
-    sitter = _one(db.table("profiles").select("display_name").eq("id", inquiry["sitter_id"]).limit(1).execute()) or {}
+    owner = (
+        _one(
+            db.table("profiles")
+            .select("display_name")
+            .eq("id", inquiry["owner_id"])
+            .limit(1)
+            .execute()
+        )
+        or {}
+    )
+    sitter = (
+        _one(
+            db.table("profiles")
+            .select("display_name")
+            .eq("id", inquiry["sitter_id"])
+            .limit(1)
+            .execute()
+        )
+        or {}
+    )
     owner_name = _first_name(owner.get("display_name"), "there")
     sitter_name = sitter.get("display_name") or "the sitter"
 
@@ -111,14 +145,25 @@ def inquiry_reply(
         grounding = None
 
     if grounding is not None:
-        draft, model_name = _write(db, grounding, question["body"], inquiry["sitter_id"], body.intent, sitter_name)
+        draft, model_name = _write(
+            db, grounding, question["body"], inquiry["sitter_id"], body.intent, sitter_name
+        )
 
     if draft is None:
-        text = logic.fixed_reply(owner_name, sitter_name, grounding, model_failed=grounding is None or model_name == "failed")
+        text = logic.fixed_reply(
+            owner_name,
+            sitter_name,
+            grounding,
+            model_failed=grounding is None or model_name == "failed",
+        )
         can_host = bool(grounding and grounding["availability"]["can_host"])
         needs = True
     else:
-        text, can_host, needs = draft.reply.strip(), grounding["availability"]["can_host"], draft.needs_sitter
+        text, can_host, needs = (
+            draft.reply.strip(),
+            grounding["availability"]["can_host"],
+            draft.needs_sitter,
+        )
     if logic.asks_if_ai(question["body"]) or (grounding and grounding["policy_conflicts"]):
         needs = True
 
@@ -174,17 +219,119 @@ def inquiry_reply(
     except (nebius.AIUnavailable, ValueError):
         log.info("inquiry-reply: question not indexed")
 
-    return InquiryReplyResponse(
-        message_id=str(saved["id"]),
-        body=text,
-        can_host=can_host,
-        needs_sitter=needs,
-        quote=grounding["quote"] if grounding else None,
-        availability=grounding["availability"] if grounding else {"can_host": True, "unavailable_days": []},
-        sources=[Source(**s) for s in sources if not used or s["id"] in used],
-        model=model_name,
-        latency_ms=saved["latency_ms"] or 0,
+    scheduled = None
+    if (
+        not body.regenerate
+        and not body.intent
+        and user.id == inquiry["owner_id"]
+        and not needs
+        and draft is not None
+        and model_name not in ("failed", "checked-template", "template")
+    ):
+        scheduled = _auto_publish(db, inquiry, text, grounding, owner_name)
+
+    return _redact(
+        InquiryReplyResponse(
+            message_id=str(saved["id"]),
+            body=text,
+            can_host=can_host,
+            needs_sitter=needs,
+            quote=grounding["quote"] if grounding else None,
+            availability=grounding["availability"]
+            if grounding
+            else {"can_host": True, "unavailable_days": []},
+            sources=[Source(**s) for s in sources if not used or s["id"] in used],
+            model=model_name,
+            latency_ms=saved["latency_ms"] or 0,
+            auto_scheduled_at=scheduled,
+        ),
+        user,
+        inquiry,
     )
+
+
+def _redact(
+    response: InquiryReplyResponse, user: CurrentUser, inquiry: dict
+) -> InquiryReplyResponse:
+    """The owner never receives the draft, not even in this response (RLS hides it everywhere else too)."""
+    if user.id != inquiry["owner_id"]:
+        return response
+    return InquiryReplyResponse(
+        message_id=response.message_id,
+        body=None,
+        can_host=None,
+        needs_sitter=None,
+        quote=None,
+        availability=None,
+        sources=[],
+        model="",
+        latency_ms=response.latency_ms,
+        reused=response.reused,
+        auto_scheduled_at=response.auto_scheduled_at,
+    )
+
+
+def _auto_publish(db, inquiry: dict, text: str, grounding: dict, owner_name: str) -> str | None:
+    """Auto-send mode (D36 · D37): the reply goes out in the sitter's name at a human pace. Returns when it appears.
+
+    Only for a sitter who switched it on (with consent), and only for a draft that needs nothing from them. The reply
+    is stored now with a later `visible_at`; the owner's notice carries the same time, so nothing is announced early.
+    """
+    profile = _one(
+        db.table("sitter_profiles")
+        .select("ai_reply_mode, ai_consent_at")
+        .eq("id", inquiry["sitter_id"])
+        .limit(1)
+        .execute()
+    )
+    if not profile or profile.get("ai_reply_mode") != "auto" or not profile.get("ai_consent_at"):
+        return None
+    typing_s, visible_s = logic.human_delay(text)
+    now = _now()
+    typing_at = (now + timedelta(seconds=typing_s)).isoformat()
+    visible_at = (now + timedelta(seconds=visible_s)).isoformat()
+    db.table("inquiry_messages").insert(
+        {
+            "inquiry_id": inquiry["id"],
+            "author": "sitter",
+            "sender_id": inquiry["sitter_id"],
+            "body": text,
+            "drafted_by_ai": True,
+            "status": "sent",
+            # No confirmation: nobody approved this one, so it never becomes a style sample.
+            "confirmed_by_sitter_at": None,
+            "visible_at": visible_at,
+            "grounding": {
+                "quote": grounding["quote"],
+                "sources": grounding["sources"],
+                "availability": {"can_host": grounding["availability"]["can_host"]},
+            },
+        }
+    ).execute()
+    db.table("inquiries").update({"reply_typing_at": typing_at, "reply_visible_at": visible_at}).eq(
+        "id", inquiry["id"]
+    ).execute()
+    sitter = (
+        _one(
+            db.table("profiles")
+            .select("display_name")
+            .eq("id", inquiry["sitter_id"])
+            .limit(1)
+            .execute()
+        )
+        or {}
+    )
+    db.table("notifications").insert(
+        {
+            "user_id": inquiry["owner_id"],
+            "type": "inquiry_replied",
+            "title": f"{sitter.get('display_name', 'Your sitter')} replied to your question 💬",
+            "body": text[:140],
+            "ref_id": inquiry["id"],
+            "visible_at": visible_at,
+        }
+    ).execute()
+    return visible_at
 
 
 def _note_discarded(db, inquiry: dict, draft: dict) -> None:
@@ -206,8 +353,23 @@ def _note_discarded(db, inquiry: dict, draft: dict) -> None:
 
 
 def _names(db, inquiry: dict) -> dict:
-    owner = _one(db.table("profiles").select("display_name").eq("id", inquiry["owner_id"]).limit(1).execute()) or {}
-    pets = db.table("pets").select("name").in_("id", [str(p) for p in inquiry["pet_ids"]]).execute().data
+    owner = (
+        _one(
+            db.table("profiles")
+            .select("display_name")
+            .eq("id", inquiry["owner_id"])
+            .limit(1)
+            .execute()
+        )
+        or {}
+    )
+    pets = (
+        db.table("pets")
+        .select("name")
+        .in_("id", [str(p) for p in inquiry["pet_ids"]])
+        .execute()
+        .data
+    )
     return {
         "owner_names": [n for n in (owner.get("display_name") or "").split() if n],
         "pet_names": [p["name"] for p in pets],
@@ -234,7 +396,16 @@ def _first_name(display_name: str | None, fallback: str) -> str:
     return (display_name or "").split()[0] if (display_name or "").strip() else fallback
 
 
-def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, today: date, owner_name: str, sitter_name: str) -> dict:
+def _gather(
+    db,
+    inquiry: dict,
+    question: dict,
+    user: CurrentUser,
+    tz: ZoneInfo,
+    today: date,
+    owner_name: str,
+    sitter_name: str,
+) -> dict:
     drop_off = _ts(inquiry["drop_off_at"])
     pick_up = _ts(inquiry["pick_up_at"])
     days = logic.stay_days(drop_off, pick_up, tz)
@@ -243,7 +414,13 @@ def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, 
     def schedule():
         end = min(days[-1], days[0].fromordinal(days[0].toordinal() + 92))
         return authz.rpc_json(
-            user.access_token, "get_sitter_schedule", {"p_sitter": inquiry["sitter_id"], "p_from": days[0].isoformat(), "p_to": end.isoformat()}
+            user.access_token,
+            "get_sitter_schedule",
+            {
+                "p_sitter": inquiry["sitter_id"],
+                "p_from": days[0].isoformat(),
+                "p_to": end.isoformat(),
+            },
         )
 
     def quote():
@@ -266,20 +443,47 @@ def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, 
     def sources():
         query = f"{question['body']} ({inquiry['service_type']}, {', '.join(d.isoformat() for d in (days[0], days[-1]))})"
         try:
-            return rag.search(db, query, sitter_id=inquiry["sitter_id"], pet_ids=pet_ids, owner_id=inquiry["owner_id"], k=logic.MAX_SOURCES)
+            return rag.search(
+                db,
+                query,
+                sitter_id=inquiry["sitter_id"],
+                pet_ids=pet_ids,
+                owner_id=inquiry["owner_id"],
+                k=logic.MAX_SOURCES,
+            )
         except Exception as exc:  # noqa: BLE001 — a search outage must not stop the draft
             log.info("inquiry-reply: no sources (%s)", exc)
             return []
 
     def pet_records():
         # Only this inquiry's pets, and only the columns a reply may use.
-        pets = db.table("pets").select("id, name, species, breed, birthdate, weight_kg, notes").in_("id", pet_ids).execute().data
-        allergies = db.table("pet_allergies").select("pet_id, allergen").in_("pet_id", pet_ids).execute().data
-        cautions = db.table("pet_cautions").select("pet_id, text, active").in_("pet_id", pet_ids).execute().data
+        pets = (
+            db.table("pets")
+            .select("id, name, species, breed, birthdate, weight_kg, notes")
+            .in_("id", pet_ids)
+            .execute()
+            .data
+        )
+        allergies = (
+            db.table("pet_allergies")
+            .select("pet_id, allergen")
+            .in_("pet_id", pet_ids)
+            .execute()
+            .data
+        )
+        cautions = (
+            db.table("pet_cautions")
+            .select("pet_id, text, active")
+            .in_("pet_id", pet_ids)
+            .execute()
+            .data
+        )
         return pets, allergies, cautions
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-        f_schedule, f_quote, f_sources, f_pets = (pool.submit(f) for f in (schedule, quote, sources, pet_records))
+        f_schedule, f_quote, f_sources, f_pets = (
+            pool.submit(f) for f in (schedule, quote, sources, pet_records)
+        )
         rows = f_schedule.result()
         quote_json = f_quote.result()
         hits = f_sources.result()
@@ -297,12 +501,21 @@ def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, 
     ]
     pet_names = {str(p["id"]): p["name"] for p in pets_rows}
     labels = {
-        str(h.get("source_id")): logic.source_label(h["source_type"], sitter_name, pet_names, _pet_of(h, pets_rows))
+        str(h.get("source_id")): logic.source_label(
+            h["source_type"], sitter_name, pet_names, _pet_of(h, pets_rows)
+        )
         for h in hits
     }
-    profile = _one(
-        db.table("sitter_profiles").select("bio, service_area, experience_years, policies").eq("id", inquiry["sitter_id"]).limit(1).execute()
-    ) or {}
+    profile = (
+        _one(
+            db.table("sitter_profiles")
+            .select("bio, service_area, experience_years, policies")
+            .eq("id", inquiry["sitter_id"])
+            .limit(1)
+            .execute()
+        )
+        or {}
+    )
 
     return {
         "owner": {"first_name": owner_name},
@@ -310,7 +523,11 @@ def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, 
             "name": sitter_name,
             **({"bio": profile["bio"][:300]} if profile.get("bio") else {}),
             **({"service_area": profile["service_area"]} if profile.get("service_area") else {}),
-            **({"experience_years": profile["experience_years"]} if profile.get("experience_years") is not None else {}),
+            **(
+                {"experience_years": profile["experience_years"]}
+                if profile.get("experience_years") is not None
+                else {}
+            ),
         },
         "inquiry": {
             "service": inquiry["service_type"],
@@ -331,7 +548,11 @@ def _gather(db, inquiry: dict, question: dict, user: CurrentUser, tz: ZoneInfo, 
 
 def _pet_of(hit: dict, pets_rows: list[dict]) -> str | None:
     # Life Record / care request hits are scoped to one of the inquiry's pets; the label names it when we can.
-    return str(hit["pet_id"]) if hit.get("pet_id") else (str(pets_rows[0]["id"]) if len(pets_rows) == 1 else None)
+    return (
+        str(hit["pet_id"])
+        if hit.get("pet_id")
+        else (str(pets_rows[0]["id"]) if len(pets_rows) == 1 else None)
+    )
 
 
 def _ts(value: str) -> datetime:
@@ -341,8 +562,14 @@ def _ts(value: str) -> datetime:
 
 def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
     payload = {
-        **{k: grounding[k] for k in ("owner", "sitter", "inquiry", "availability", "quote", "pets")},
-        **({"policy_conflicts": grounding["policy_conflicts"]} if grounding["policy_conflicts"] else {}),
+        **{
+            k: grounding[k] for k in ("owner", "sitter", "inquiry", "availability", "quote", "pets")
+        },
+        **(
+            {"policy_conflicts": grounding["policy_conflicts"]}
+            if grounding["policy_conflicts"]
+            else {}
+        ),
         "policies_and_notes": [
             {"id": s["id"], "source": s["label"], "text": s["text"]} for s in grounding["sources"]
         ],
@@ -351,22 +578,36 @@ def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
         **({"sitter_intent": intent} if intent else {}),
     }
     if grounding["quote"] is None and grounding["availability"]["can_host"]:
-        payload["quote_note"] = "No price is available for these dates: do not state any price; say I'll send it."
+        payload["quote_note"] = (
+            "No price is available for these dates: do not state any price; say I'll send it."
+        )
     # The model never sees the stay_days list or labels it doesn't need beyond what's useful for dates.
     return json.dumps(payload, ensure_ascii=False)
 
 
-def _write(db, grounding: dict, question: str, sitter_id: str, intent: str | None, sitter_name: str) -> tuple[logic.Draft | None, str]:
+def _write(
+    db, grounding: dict, question: str, sitter_id: str, intent: str | None, sitter_name: str
+) -> tuple[logic.Draft | None, str]:
     """The model's draft after the checks, or (None, why) when it must be replaced by the fixed text."""
-    voice = tone.compose(db, sitter_id, kind="inquiry", intent=intent, query=logic.situation(question, grounding))
-    system = load_prompt("inquiry/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"
+    voice = tone.compose(
+        db, sitter_id, kind="inquiry", intent=intent, query=logic.situation(question, grounding)
+    )
+    system = (
+        load_prompt("inquiry/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"
+    )
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": _facts_message(grounding, question, intent)},
     ]
     try:
         draft, result = nebius.chat_json(
-            "fast", messages, logic.Draft, endpoint="inquiry-reply", max_tokens=MAX_TOKENS, temperature=0.4, timeout=TIMEOUT_S
+            "fast",
+            messages,
+            logic.Draft,
+            endpoint="inquiry-reply",
+            max_tokens=MAX_TOKENS,
+            temperature=0.4,
+            timeout=TIMEOUT_S,
         )
         draft.reply = logic.fill_placeholders(draft.reply, grounding)
         problems = logic.reply_problems(draft.reply, grounding, question, intent)
@@ -376,12 +617,19 @@ def _write(db, grounding: dict, question: str, sitter_id: str, intent: str | Non
                 {"role": "assistant", "content": result.text},
                 {
                     "role": "user",
-                    "content": "Rewrite the reply without these problems: " + "; ".join(problems)
+                    "content": "Rewrite the reply without these problems: "
+                    + "; ".join(problems)
                     + ". Use only the facts in the JSON, write as the sitter in the first person, and return the same JSON shape.",
                 },
             ]
             draft, result = nebius.chat_json(
-                "fast", messages, logic.Draft, endpoint="inquiry-reply", max_tokens=MAX_TOKENS, temperature=0.2, timeout=TIMEOUT_S
+                "fast",
+                messages,
+                logic.Draft,
+                endpoint="inquiry-reply",
+                max_tokens=MAX_TOKENS,
+                temperature=0.2,
+                timeout=TIMEOUT_S,
             )
             draft.reply = logic.fill_placeholders(draft.reply, grounding)
             if logic.reply_problems(draft.reply, grounding, question, intent):

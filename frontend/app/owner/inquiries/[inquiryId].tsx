@@ -38,6 +38,21 @@ export default function OwnerInquiry() {
   }, [inquiryId]);
 
   const reply = inquiry?.messages.find((m) => m.author === "sitter");
+  // Auto-send: "typing…" between the two times the server stored, then the message itself (RLS shows it from then on).
+  const [now, setNow] = useState(() => Date.now());
+  const typingAt = inquiry?.replyTypingAt ? Date.parse(inquiry.replyTypingAt) : null;
+  const visibleAt = inquiry?.replyVisibleAt ? Date.parse(inquiry.replyVisibleAt) : null;
+  const scheduled = !reply && visibleAt != null && visibleAt > now;
+  const typing = scheduled && typingAt != null && now >= typingAt;
+  useEffect(() => {
+    if (!scheduled || visibleAt == null) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const show = setTimeout(() => void load(), Math.max(0, visibleAt - Date.now()) + 400);
+    return () => {
+      clearInterval(tick);
+      clearTimeout(show);
+    };
+  }, [scheduled, visibleAt, load]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -78,7 +93,7 @@ export default function OwnerInquiry() {
         <Text style={styles.muted}>{`Drop-off ${when(inquiry.dropOffAt)} · Pick-up ${when(inquiry.pickUpAt)}`}</Text>
       </Card>
 
-      {question ? <MessageBubble side="me" body={question.body} meta={when(question.at)} testID="inquiry-question-bubble" /> : null}
+      {question ? <MessageBubble side="me" body={question.body} meta={question.readAt ? `${when(question.at)} · Read` : when(question.at)} testID="inquiry-question-bubble" /> : null}
 
       {reply ? (
         <MessageBubble side="them" body={reply.body} meta={when(reply.at)} testID="inquiry-reply-bubble">
@@ -92,8 +107,14 @@ export default function OwnerInquiry() {
         </MessageBubble>
       ) : (
         <View style={styles.waiting} testID="inquiry-waiting">
-          <Text style={styles.muted}>{`${inquiry.sitterName} will reply soon.`}</Text>
-          <Text style={styles.muted}>You'll get a notification when they do.</Text>
+          {typing ? (
+            <Text style={styles.typing} testID="inquiry-typing">{`${inquiry.sitterName} is typing…`}</Text>
+          ) : (
+            <>
+              <Text style={styles.muted}>{`${inquiry.sitterName} will reply soon.`}</Text>
+              <Text style={styles.muted}>You'll get a notification when they do.</Text>
+            </>
+          )}
         </View>
       )}
 
@@ -133,4 +154,5 @@ const makeStyles = (theme: Theme) =>
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     sources: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     waiting: { gap: 2, padding: theme.spacing.sm },
+    typing: { fontSize: theme.fontSize.small, fontStyle: "italic", color: theme.color.textMuted },
   });

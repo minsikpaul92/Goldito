@@ -1012,6 +1012,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row);
   }
 
+  if (path === "rpc/get_my_ai_reply_mode" || path === "rpc/set_ai_reply_mode") {
+    const profile = db.sitter_profiles.find((p) => p.id === me);
+    if (!profile) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (path === "rpc/set_ai_reply_mode") {
+      const { p_mode, p_consent } = request.postDataJSON();
+      if (p_mode === "auto" && !p_consent && !profile.ai_consent_at) return json(route, 400, { code: "P0001", message: "consent_required" });
+      profile.ai_reply_mode = p_mode;
+      if (p_mode === "auto" && p_consent) profile.ai_consent_at = new Date().toISOString();
+    }
+    return json(route, 200, { mode: profile.ai_reply_mode ?? "manual", consented: !!profile.ai_consent_at });
+  }
+
   if (path === "rpc/mark_inquiry_read") {
     const { p_inquiry } = request.postDataJSON();
     const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
@@ -1161,7 +1173,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     let rows = table.filter(
       (row) =>
         matches(row, params) &&
-        (path !== "notifications" || row.user_id === me) &&
+        (path !== "notifications" || (row.user_id === me && (row.visible_at == null || Date.parse(String(row.visible_at)) <= Date.now()))) &&
         // RLS: a private post is only visible to its author (5.8).
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
         // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
