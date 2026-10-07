@@ -15,6 +15,7 @@ export default function OwnerLayout() {
       <Stack.Screen name="bookings/new" options={{ title: "Book care" }} />
       <Stack.Screen name="bookings/[bookingId]/index" options={{ title: "Booking" }} />
       <Stack.Screen name="bookings/[bookingId]/checkout" options={{ title: "Checkout" }} />
+      <Stack.Screen name="bookings/[bookingId]/review" options={{ title: "Review" }} />
       <Stack.Screen name="home-access" options={{ title: "Entry info" }} />
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="diary/[entryId]" options={{ title: "Diary" }} />
