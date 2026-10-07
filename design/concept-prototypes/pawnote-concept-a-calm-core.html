@@ -906,8 +906,12 @@ button{font:inherit;color:inherit}
 .jr-x{width:2.75rem;height:2.75rem;border-radius:.75rem;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:1.125rem}
 .jr-x:hover{background:var(--tint-border)}
 .jr-heads{display:flex;flex-wrap:wrap;gap:.375rem}
-.jr-heads span{font-size:.8125rem;font-weight:700;background:color-mix(in srgb,var(--warning,#B54708) 12%,transparent);
-  color:var(--warning,#B54708);border-radius:.5rem;padding:.25rem .5rem}
+/* Heads-up tags: text on its own light surface (DESIGN.md D3), never a faded tint. Good-to-know tags are neutral. */
+:root{--jr-warn-bg:#FFFAEB;--jr-warn-fg:#B54708;--jr-good-bg:var(--primary-soft,#D8F3DC);--jr-good-fg:var(--primary-text,#2D6A4F)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--jr-warn-bg:#2B1D0E;--jr-warn-fg:#F5A75B}}
+:root[data-theme="dark"]{--jr-warn-bg:#2B1D0E;--jr-warn-fg:#F5A75B}
+.jr-heads span{font-size:.8125rem;font-weight:700;background:var(--jr-warn-bg);color:var(--jr-warn-fg);border-radius:.5rem;padding:.25rem .5rem}
+.jr-heads span.good{background:var(--jr-good-bg);color:var(--jr-good-fg)}
 .jr-textarea{min-height:6.5rem;resize:vertical;line-height:1.45}
 
 /* Consents */
@@ -1184,6 +1188,46 @@ button{font:inherit;color:inherit}
 @media (prefers-reduced-motion: reduce){
   .ob *,.ob-os,.ob-os-card,.ob-push{animation:none !important;transition:none !important}
 }
+
+/* Health & care: two personality lists, custom tags, grouped preview */
+.ob-sub{font-weight:500;color:var(--text-muted);font-size:.75rem}
+.jr .chip.ob-add{background:none;border:1.5px dashed var(--text-muted);color:var(--text-muted);font-weight:700}
+.jr .chip.ob-add:hover{color:var(--text);border-color:var(--text)}
+.ob-custom{display:inline-flex;align-items:center;gap:.25rem;padding-right:.25rem}
+.ob-x{display:inline-grid;place-items:center;min-width:32px;min-height:32px;border:0;border-radius:999px;background:none;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.ob-x:hover{background:rgba(127,127,127,.2)}
+.ob-add-row{display:flex;align-items:center;gap:.375rem;width:100%}
+.ob-add-row .input{flex:1;min-width:0}
+.ob-add-row .btn{width:auto;flex:0 0 auto}
+.ob-heads-group{display:flex;flex-direction:column;gap:.375rem}
+.ob-heads-group+.ob-heads-group{margin-top:.5rem}
+.ob-heads-title{font-size:.6875rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+/* Look step (look.js) */
+.lk-card{display:flex;flex-direction:column;gap:1rem}
+.lk-preview{display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:1.25rem;background:var(--lk-soft);transition:background .25s}
+.lk-photo{width:84px;height:84px;border-radius:50%;padding:4px;background:var(--lk);flex:0 0 auto;transition:background .25s}
+.lk-photo img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:3px solid var(--surface,#fff)}
+.lk-mock{display:flex;flex-direction:column;gap:.375rem;min-width:0;flex:1}
+.lk-mock b{color:var(--lk-soft-text);font-size:.9375rem;line-height:1.25}
+.lk-pill{align-self:flex-start;display:inline-flex;align-items:center;gap:.375rem;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;
+  background:var(--surface,#fff);color:var(--lk-soft-text)}
+.lk-pill i{width:7px;height:7px;border-radius:50%;background:var(--lk)}
+.lk-bar{display:flex;gap:3px}
+.lk-bar i{flex:1;height:6px;border-radius:3px;background:var(--lk)}
+.lk-bar i.off{background:var(--surface,#fff)}
+.lk-btn{align-self:flex-start;display:inline-flex;padding:.45rem .875rem;border-radius:999px;background:var(--lk);color:var(--lk-fg);font-weight:700;font-size:.8125rem}
+.lk-swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.375rem}
+.lk-sw{display:flex;flex-direction:column;align-items:center;gap:.25rem;min-height:76px;padding:.5rem .125rem;border:2px solid transparent;border-radius:1rem;
+  background:none;color:inherit;font:inherit;cursor:pointer}
+.lk-sw:hover{background:var(--tint-border,rgba(127,127,127,.12))}
+.lk-sw[aria-checked="true"]{border-color:var(--text)}
+.lk-sw:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.lk-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.lk-name{font-size:.75rem;font-weight:700;line-height:1.2;text-align:center}
+.lk-tag{font-size:.6875rem;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.2}
+.lk-note{font-size:.75rem;color:var(--text-muted);margin:0}
+.lk-actions{display:flex;flex-direction:column;gap:.5rem}
+@media (prefers-reduced-motion: reduce){.lk-preview,.lk-photo{transition:none}}
 </style>
 <script id="journey-js">
 /* ==========================================================================
@@ -1936,7 +1980,10 @@ const Onboard = (() => {
   const VARIANT = {pet: 1, look: 2};
   const UNCOUNTED = ["welcome", "live", "login"];
   const ALLERGIES = ["Chicken", "Beef", "Grain", "Dairy"];
-  const TEMPER = ["Friendly with dogs", "Good with cats", "Shy with strangers", "Pulls on leash", "Scared of storms"];
+  // Personality is split by what the sitter should do with it: "watch" traits are heads-ups, "good" traits are just good to know.
+  const WATCH = ["Pulls on leash", "Shy with strangers", "Scared of storms"];
+  const GOOD = ["Friendly with dogs", "Good with cats"];
+  const ADD_HINT = {allergy: "e.g. Peanut butter", watch: "e.g. Barks at bikes", good: "e.g. Loves car rides"};
   const RULES = ["Fenced yard", "Smoke-free", "Crate available", "Kids at home"];
   const CANCEL = [
     {k: "flexible", t: "Flexible", s: "Full refund up to 24 hours before"},
@@ -1967,7 +2014,9 @@ const Onboard = (() => {
       owner: {name: "Chloe Park", email: "chloe@pawnote.test"},
       sitter: {name: "Lucy Kim", email: "lucy@pawnote.test"},
       health: {age: "Adult", allergies: new Set(["Chicken"]), meds: true, medText: "Skin pill at 2 PM, hidden in a treat",
-        temper: new Set(["Pulls on leash"]), vet: ""},
+        watch: new Set(["Pulls on leash"]), good: new Set(["Friendly with dogs"]), vet: "",
+        // Options per list; owners can add their own (custom ones carry a remove button).
+        opts: {allergy: [...ALLERGIES], watch: [...WATCH], good: [...GOOD]}, custom: new Set(), adding: null},
       notif: {photos: true, care: true, report: true, trip: true}, permission: "unasked",
       services: new Set(["boarding", "house_sitting"]),
       rates: {boarding: 55, house_sitting: 70, dropin: 25, extraPetPct: 50, holidayPct: 25},
@@ -1996,6 +2045,19 @@ const Onboard = (() => {
     `<div class="ob-stepper"><button type="button" data-ob="${act}" data-v="-1" aria-label="Less">−</button>
       <output aria-live="polite"><b>${value}</b>${unit ? `<span>${unit}</span>` : ""}</output>
       <button type="button" data-ob="${act}" data-v="1" aria-label="More">+</button></div>`;
+  // A chip list whose options the owner can extend: preset chips toggle, custom chips remove, "+ Add" opens an inline field.
+  function tagList(list, selected, act) {
+    const h = O.health;
+    const chips = h.opts[list].map((x) => h.custom.has(`${list}|${x}`)
+      ? `<span class="chip active ob-custom">${esc(x)}<button type="button" class="ob-x" data-ob="tag-remove" data-v="${esc(`${list}|${x}`)}" aria-label="Remove ${esc(x)}">✕</button></span>`
+      : chip(esc(x), act, selected.has(x), x)).join("");
+    const add = h.adding === list
+      ? `<span class="ob-add-row"><input class="input" id="obAdd" maxlength="30" placeholder="${ADD_HINT[list]}" aria-label="New tag">
+          <button type="button" class="btn btn-primary btn-sm" data-ob="tag-save" data-v="${list}">Add</button>
+          <button type="button" class="ob-x" data-ob="tag-cancel" aria-label="Cancel">✕</button></span>`
+      : `<button type="button" class="chip ob-add" data-ob="tag-open" data-v="${list}">+ Add</button>`;
+    return chips + add;
+  }
   const frame = (body, foot) => `<div class="ob-scroll">${body}</div>${foot ? `<div class="ob-foot">${O.flash ? `<p class="ob-flash" role="status">${esc(O.flash)}</p>` : ""}${foot}</div>` : ""}`;
 
   // ---------- screens ----------
@@ -2049,14 +2111,15 @@ const Onboard = (() => {
         ${field("Breed", "obBreed", h.breed, 'placeholder="e.g. Maltese"')}
         <div class="jr-stack"><span class="jr-label">Age</span><div class="jr-chips">${[A.species() === "dog" ? "Puppy" : "Kitten", "Adult", "Senior"].map((x) => chip(x, "age", h.age === x, x)).join("")}</div></div>
         <div class="jr-stack"><span class="jr-label">Food allergies</span><div class="jr-chips">
-          ${ALLERGIES.map((x) => chip(x, "allergy", h.allergies.has(x), x)).join("")}${chip("None", "allergy-none", h.allergies.size === 0, "")}</div>
+          ${chip("None", "allergy-none", h.allergies.size === 0, "")}${tagList("allergy", h.allergies, "allergy")}</div>
           <p class="jr-p">Treat Guard checks every new treat label against this.</p></div>
         <div class="jr-stack"><span class="jr-label">Medication</span><div class="jr-chips">${chip("None", "meds", !h.meds, "0")}${chip("Takes medication", "meds", h.meds, "1")}</div>
           ${h.meds ? `<input class="input" id="obMeds" value="${esc(h.medText)}" placeholder="e.g. Skin pill at 2 PM, hidden in a treat" aria-label="Medication details">` : ""}</div>
-        <div class="jr-stack"><span class="jr-label">Personality</span><div class="jr-chips">${TEMPER.map((x) => chip(x, "temper", h.temper.has(x), x)).join("")}</div></div>
+        <div class="jr-stack"><span class="jr-label">Watch out for <span class="ob-sub">· ${SITTER} sees these as a heads-up</span></span><div class="jr-chips">${tagList("watch", h.watch, "watch")}</div></div>
+        <div class="jr-stack"><span class="jr-label">Good to know</span><div class="jr-chips">${tagList("good", h.good, "good")}</div></div>
         ${field("Vet clinic (optional)", "obVet", h.vet, 'placeholder="e.g. Maple Animal Clinic"')}
-        <div class="jr-card ob-preview" aria-live="polite"><span class="jr-label">Heads-up the sitter will see</span>
-          <div class="jr-heads">${headsHTML()}</div></div>`,
+        <div class="jr-card ob-preview" aria-live="polite"><span class="jr-label">What ${SITTER} will see</span>
+          ${headsHTML()}</div>`,
         `${primary("Save and continue", "health-save")}<button type="button" class="ob-skip" data-ob="health-skip">Skip for now · the sitter will ask at Meet & Greet</button>`);
     },
     updates() {
@@ -2133,11 +2196,15 @@ const Onboard = (() => {
     },
   };
 
+  // Heads-up (warning tone) for allergies, medication and watch-outs; good-to-know traits stay neutral — never shown as alerts.
   function headsHTML() {
     const h = O.health;
     const heads = [...h.allergies].map((x) => `Allergic to ${x.toLowerCase()}`)
-      .concat(h.meds && h.medText.trim() ? [h.medText.trim()] : [], [...h.temper]);
-    return heads.length ? heads.map((x) => `<span>⚠️ ${esc(x)}</span>`).join("") : `<span class="ob-none">Nothing yet</span>`;
+      .concat(h.meds && h.medText.trim() ? [h.medText.trim()] : [], [...h.watch]);
+    const good = [...h.good];
+    if (!heads.length && !good.length) return `<div class="jr-heads"><span class="ob-none">Nothing yet</span></div>`;
+    return (heads.length ? `<div class="ob-heads-group"><span class="ob-heads-title">Heads-up</span><div class="jr-heads">${heads.map((x) => `<span class="warn">⚠️ ${esc(x)}</span>`).join("")}</div></div>` : "")
+      + (good.length ? `<div class="ob-heads-group"><span class="ob-heads-title">Good to know</span><div class="jr-heads">${good.map((x) => `<span class="good">${esc(x)}</span>`).join("")}</div></div>` : "");
   }
   function osPrompt() {
     return `<div class="ob-os" role="alertdialog" aria-modal="true" aria-labelledby="obOsT"><div class="ob-os-card">
@@ -2243,7 +2310,24 @@ const Onboard = (() => {
       case "allergy": toggle(h.allergies, v); break;
       case "allergy-none": h.allergies.clear(); break;
       case "meds": h.meds = v === "1"; break;
-      case "temper": toggle(h.temper, v); break;
+      case "watch": toggle(h.watch, v); break;
+      case "good": toggle(h.good, v); break;
+      case "tag-open": h.adding = v; render(); { const i = el.querySelector("#obAdd"); if (i) i.focus(); } return;
+      case "tag-cancel": h.adding = null; break;
+      case "tag-save": {
+        const i = el.querySelector("#obAdd"), t = (i ? i.value : "").trim().replace(/\s+/g, " ");
+        if (!t) { h.adding = null; break; }
+        const label = t.charAt(0).toUpperCase() + t.slice(1);
+        const list = v, sel = list === "allergy" ? h.allergies : h[list];
+        if (!h.opts[list].some((x) => x.toLowerCase() === label.toLowerCase())) { h.opts[list].push(label); h.custom.add(`${list}|${label}`); }
+        sel.add(h.opts[list].find((x) => x.toLowerCase() === label.toLowerCase()));
+        h.adding = null; break;
+      }
+      case "tag-remove": {
+        const [list, label] = v.split("|");
+        h.opts[list] = h.opts[list].filter((x) => x !== label); h.custom.delete(v);
+        (list === "allergy" ? h.allergies : h[list]).delete(label); break;
+      }
       case "health-save":
         Journey.configure({allergy: h.allergies.size ? [...h.allergies][0].toLowerCase() : null});
         next(); return;
@@ -2354,7 +2438,12 @@ const Onboard = (() => {
       handle(b.dataset.ob, b.dataset.v, b);
     });
     el.addEventListener("input", onInput);
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") { const p = el.querySelector(".ob-foot .btn-primary:not([disabled])"); if (p) p.click(); } });
+    el.addEventListener("keydown", (e) => {
+      if (e.target.id === "obAdd" && (e.key === "Enter" || e.key === "Escape")) {
+        e.preventDefault(); handle(e.key === "Enter" ? "tag-save" : "tag-cancel", O.health.adding); return;
+      }
+      if (e.key === "Enter" && e.target.tagName === "INPUT") { const p = el.querySelector(".ob-foot .btn-primary:not([disabled])"); if (p) p.click(); }
+    });
     // While onboarding runs, the top bar's Back belongs to this layer (except on the concept's Look step).
     A.backBtn.addEventListener("click", (e) => {
       if (!O || !O.active || key() === "look") return;
@@ -2369,7 +2458,109 @@ const Onboard = (() => {
     fromHash();
   }
 
-  return {init, step, after, reset, active: () => !!(O && O.active), quiet: () => quiet};
+  return {init, step, after, reset, active: () => !!(O && O.active), quiet: () => quiet, flow: () => (O ? O.flow : "owner")};
+})();
+/* ==========================================================================
+   Look step (owner onboarding): pick the app color. Shared by the journey
+   prototypes; each concept mounts it with an adapter (its presets and theme math).
+   Goldito green is the default; a color from the pet's coat is offered, never forced.
+   ========================================================================== */
+const Look = (() => {
+  let A = null, host = null;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  const forest = () => A.presets().findIndex((p) => p.name === "Forest");
+  const label = (k) => (k === forest() ? "Goldito green" : A.presets()[k].name);
+
+  function tag(k, name) {
+    const f = forest(), d = A.detected();
+    if (k === f && k === d) return `<span class="lk-tag">Default · suits ${name}</span>`;
+    if (k === f) return `<span class="lk-tag">Default</span>`;
+    if (k === d) return `<span class="lk-tag">From ${name}'s coat</span>`;
+    return "";
+  }
+  function render() {
+    if (!A || !host || A.get() == null) return;
+    const P = A.presets(), i = A.get(), v = A.preview(i), name = esc(A.petName() || "your pet");
+    host.innerHTML = `
+      <div class="${A.headClass || ""}"><h2 class="${A.titleClass || ""}">Pick ${name}'s colors</h2>
+        <p class="${A.subClass}">Start with Goldito green, or use a color from ${name}'s coat. You can change it anytime in Profile.</p></div>
+      <div class="card lk-card">
+        <div class="lk-preview" style="--lk:${v.primary};--lk-fg:${v.fg};--lk-soft:${v.soft};--lk-soft-text:${v.softText}">
+          <div class="lk-photo"><img src="${A.photo()}" alt="${name}"></div>
+          <div class="lk-mock" aria-hidden="true">
+            <span class="lk-pill"><i></i>With Lucy now</span>
+            <b>${name} is with Lucy</b>
+            <span class="lk-bar"><i></i><i></i><i></i><i class="off"></i><i class="off"></i></span>
+            <span class="lk-btn">See today's updates</span>
+          </div>
+        </div>
+        <div class="lk-swatches" role="radiogroup" aria-label="App color">
+          ${P.map((p, k) => `<button type="button" role="radio" class="lk-sw" data-i="${k}" aria-checked="${k === i}" tabindex="${k === i ? 0 : -1}">
+            <span class="lk-dot" style="background:${A.swatch(k)};color:${A.preview(k, true).fg}">${k === i ? "✓" : ""}</span>
+            <span class="lk-name">${label(k)}</span>${tag(k, name)}</button>`).join("")}
+        </div>
+        <p class="lk-note">✓ Text stays easy to read in every color.</p>
+      </div>
+      <div class="actions lk-actions">
+        <button class="btn btn-primary" id="keepBtn" data-lk="keep" style="background:${v.primary};border-color:${v.primary};color:${v.fg}">Use ${label(i)}</button>
+        ${i !== forest() ? `<button class="btn btn-secondary" data-lk="forest">Keep Goldito green</button>` : ""}
+      </div>`;
+  }
+  function pick(k, focus) {
+    A.set(k); render();
+    if (focus) { const b = host.querySelector(`.lk-sw[data-i="${k}"]`); if (b) b.focus(); }
+  }
+  function mount(adapter) {
+    A = adapter;
+    host = document.querySelector('.screen[data-step="2"]');
+    if (!host) return;
+    host.classList.add("lk-screen");
+    host.addEventListener("click", (e) => {
+      const sw = e.target.closest(".lk-sw");
+      if (sw) { pick(Number(sw.dataset.i)); return; }
+      const b = e.target.closest("[data-lk]");
+      if (!b) return;
+      if (b.dataset.lk === "forest") A.set(forest());
+      A.keep();
+    });
+    // Arrow keys move through the colors (radio group).
+    host.addEventListener("keydown", (e) => {
+      if (!e.target.closest(".lk-sw")) return;
+      const n = A.presets().length, d = {ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1}[e.key];
+      if (d) { e.preventDefault(); pick((A.get() + d + n) % n, true); }
+    });
+  }
+  return {mount, render};
+})();
+/* ==========================================================================
+   Follow: when a journey prototype runs inside the Prototype page, it tells the
+   page which screen you're on (postMessage), so the page's list, notes, Figma link
+   and "Today's app" column follow along while you tap. Ids match screens.js.
+   ========================================================================== */
+(() => {
+  if (window.parent === window) return;
+  let last = "", touched = false;
+  // Only report after you've tapped or typed here: opening a deep link (e.g. Treat Guard on the care screen) isn't navigation.
+  ["pointerdown", "keydown"].forEach((t) => addEventListener(t, () => { touched = true; }, true));
+  function where() {
+    const danger = document.querySelector(".jr-danger");
+    if (danger && !danger.hidden) return "treat";
+    const bar = document.getElementById("tabbar");
+    if (!bar || bar.hidden) return typeof Onboard !== "undefined" && Onboard.flow() === "sitter" ? "sitter" : "owner";
+    const tab = document.querySelector('.tab[aria-current="page"]');
+    const t = tab ? tab.dataset.tab || tab.dataset.view : "home";
+    const stage = typeof Journey !== "undefined" ? Journey.stage() : 0;
+    const unlocked = typeof Journey !== "undefined" && Journey.isUnlocked();
+    if (t === "stay") return `stage-${Math.min(stage, 4) + 1}`;
+    if (t === "reports") return "check";
+    if (t === "feed" || t === "care") return "care";
+    return unlocked ? "care" : `stage-${Math.min(stage, 4) + 1}`;
+  }
+  setInterval(() => {
+    let id; try { id = where(); } catch (e) { return; }
+    if (!touched) { last = id; return; }
+    if (id && id !== last) { last = id; window.parent.postMessage({goldito: "at", id}, "*"); }
+  }, 400);
 })();
 </script>
 <!-- journey:end -->

@@ -376,9 +376,20 @@ const LIBRARY = [
         box("Value", { w: 72, align: "CENTER" }, [await txt("$55", "Body Strong", "text", { name: "Value" }), await txt("/ night", "Caption", "text-muted", { name: "Unit" })]), await btn("+")]);
     }, [["Value", "Value"], ["Unit", "Unit"]]);
 
-    await variants("Filter Chip", "Selectable chip (feed filter, service, age, allergies). Active = primary fill.", ["Default", "Active"].map((s) => [`State=${s}`, async () =>
-      box("Filter Chip", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: 999, fill: s === "Active" ? "primary" : "surface", stroke: s === "Active" ? undefined : "border-strong", align: "CENTER", minH: "size/touch-target" }, [
-        await txt("🍽️ Meals", "Small Strong", s === "Active" ? "primary-text" : "text", { name: "Label" })])]), [["Label", "Label"]]);
+    await variants("Filter Chip", "Selectable chip (feed filter, service, age, allergies). Active = primary fill. Custom = a tag the owner added: selected, with ✕ to remove it.", ["Default", "Active", "Custom"].map((s) => [`State=${s}`, async () =>
+      box("Filter Chip", { dir: "H", gap: "xs", pad: ["sm", s === "Custom" ? "sm" : "md", "sm", "md"], radius: 999, fill: s === "Default" ? "surface" : "primary", stroke: s === "Default" ? "border-strong" : undefined, align: "CENTER", minH: "size/touch-target" }, [
+        await txt(s === "Custom" ? "Loves car rides" : "🍽️ Meals", "Small Strong", s === "Default" ? "text" : "primary-text", { name: "Label" }),
+        s === "Custom" ? await txt("✕", "Small Strong", "primary-text", { name: "Remove" }) : null].filter(Boolean))]), [["Label", "Label"]]);
+
+    await single("Add Chip", "Opens an inline field to add your own tag (allergies, watch-outs, good-to-know). Dashed so it reads as an action, not a choice.", async () =>
+      box("Add Chip", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: 999, stroke: "text-muted", sw: 1.5, dashed: true, align: "CENTER", minH: "size/touch-target" }, [
+        await txt("+ Add", "Small Strong", "text-muted", { name: "Label" })]), [["Label", "Label"]]);
+
+    await variants("Color Swatch", "Look step: one app color. Selected = 2 px text-color ring + ✓. Tag marks the default and the color matched from the pet's coat. Override the Dot fill per preset.", ["Default", "Selected"].map((s) => [`State=${s}`, async () =>
+      box("Color Swatch", { w: Math.floor((CW - 18) / 4), gap: 4, pad: ["sm", "xs", "sm", "xs"], radius: "lg", stroke: s === "Selected" ? "text" : undefined, sw: 2, align: "CENTER", minH: 76 }, [
+        box("Dot", { dir: "H", w: 36, h: 36, radius: 18, fill: "primary", align: "CENTER", justify: "CENTER" }, s === "Selected" ? [await txt("✓", "Small Strong", "primary-text")] : []),
+        await txt("Goldito green", "Caption", "text", { name: "Name", align: "CENTER" }),
+        await txt("Default", "Caption", "text-muted", { name: "Tag", align: "CENTER" })])]), [["Name", "Name"], ["Tag", "Tag"]]);
 
     await variants("Suggestion Chip", "5-second check (D38): AI-suggested fact from today. Tap turns a wrong one off (struck through).", ["On", "Off"].map((s) => [`State=${s}`, async () =>
       box("Suggestion Chip", { dir: "H", pad: ["xs", "md", "xs", "md"], radius: 999, fill: s === "On" ? "primary" : "surface", stroke: s === "On" ? undefined : "border-strong", align: "CENTER", minH: "size/touch-target" }, [
@@ -612,11 +623,16 @@ const LIBRARY = [
         grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
       [["Title", "Title"], ["Body", "Body"]]);
 
-    await single("Theme Preview", "Onboarding Look step: coat color → nearest accessible preset, contrast badge (≥ 4.5:1), and how it carries into the app.", async () =>
-      box("Theme Preview", { w: CW, gap: "md", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
-        box("Swatches", { dir: "H", gap: "md", align: "CENTER" }, [rect("Detected", 56, 56, { fill: "text-muted", radius: 12 }), await txt("→", "Body", "text-muted"), rect("Preset", 88, 88, { fill: "primary", radius: 18 }), await txt("Forest", "Body Strong", "text", { name: "Preset" })]),
-        tag("Success", "6.4:1 with white text · Passes AA ✓"),
-      ]), [["Preset", "Preset"]]);
+    await single("Look Preview", "Look step: the pet's photo in a ring of the chosen color, next to a mini stay card in that color. Shows the result, not the math (every preset keeps text ≥ 4.5:1).", async () =>
+      box("Look Preview", { dir: "H", w: CW, gap: "md", pad: "md", radius: "lg", fill: "accent", align: "CENTER" }, [
+        box("Ring", { dir: "H", w: 84, h: 84, radius: 42, fill: "primary", pad: 4 }, [rect("Photo", 76, 76, { image: true, radius: 38 })]),
+        grow(box("Mock", { gap: "xs" }, [
+          box("Pill", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "surface", align: "CENTER" }, [dot("live", 7, "primary"), await txt("With Lucy now", "Caption", "primary")]),
+          await txt("Max is with Lucy", "Body Strong", "primary", { name: "Title", fill: true }),
+          fill(box("Bar", { dir: "H", gap: 3 }, [1, 1, 1, 0, 0].map((on, k) => grow(rect(`seg${k}`, 30, 6, { fill: on ? "primary" : "surface", radius: 3 }))))),
+          box("Button", { dir: "H", pad: [6, 14, 6, 14], radius: 999, fill: "primary" }, [await txt("See today's updates", "Small Strong", "primary-text")]),
+        ])),
+      ]), [["Title", "Title"]]);
 
     await variants("Avatar", "Round avatar: sitter initial or pet photo.", ["Initial", "Photo"].map((s) => [`Kind=${s}`, async () => {
       if (s === "Initial") return box("Avatar", { dir: "H", w: 40, h: 40, radius: 20, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("L", "Body Strong", "primary-text", { name: "Initial" })]);

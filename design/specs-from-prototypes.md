@@ -1,6 +1,6 @@
 # Design specs from the prototypes (for Minsik)
 
-Muk · 2026-10-05.
+Mook · 2026-10-05.
 Matches the live app's tabs (D47 / D47b): **Home · Bookings · Feed · Diary · Mood**.
 Each section links the prototype screen to try (`python3 -m http.server 4001 --directory design/concept-prototypes`, then open the link) and the task it supports.
 

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goldito Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font:14px/1.45 "Inter","Noto Sans KR",-apple-system,system-ui,sans-serif;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+  button,select{font:inherit;color:inherit}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .app{flex:1;min-height:0;display:grid;grid-template-columns:15rem minmax(0,1fr) 18rem}
+  /* Screen list */
+  .list{border-right:1px solid var(--color-border);overflow:auto;padding:.75rem .5rem 1rem;background:var(--color-surface)}
+  .grp{font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin:.875rem .5rem .375rem}
+  .grp:first-child{margin-top:.25rem}
+  .item{display:flex;align-items:center;gap:.5rem;width:100%;min-height:var(--size-touch-target);padding:.375rem .625rem;border:0;border-radius:var(--radius-md);
+    background:none;text-align:left;cursor:pointer;font-weight:500}
+  .item:hover{background:var(--color-track)}
+  .item[aria-current="true"]{background:var(--color-accent);color:var(--color-primary);font-weight:600}
+  .item span:first-child{flex:1;min-width:0}
+  .dot{width:.625rem;height:.625rem;border-radius:50%;flex:0 0 auto}
+  .dot.live{background:var(--color-success)}
+  .dot.built{background:var(--color-warning)}
+  .dot.none{border:2px solid var(--color-border-strong)}
+  .legend{margin:1rem .5rem 0;display:flex;flex-direction:column;gap:.375rem;font-size:.75rem;color:var(--color-text-muted)}
+  .legend span{display:flex;align-items:center;gap:.5rem}
+  /* Stage */
+  .stage{display:flex;flex-direction:column;min-width:0;min-height:0}
+  .bar{display:flex;align-items:center;gap:.5rem 1rem;flex-wrap:wrap;padding:.625rem 1rem;border-bottom:1px solid var(--color-border);background:var(--color-surface)}
+  .bar h1{margin:0;font-size:1rem;font-weight:700;flex:1 1 12rem;min-width:0;border-radius:6px}
+  .bar h1.followed{animation:followed 1.2s ease-out}
+  @keyframes followed{0%{background:var(--color-accent)}100%{background:transparent}}
+  @media (prefers-reduced-motion: reduce){.bar h1.followed{animation:none}}
+  .seg{display:inline-flex;padding:3px;gap:2px;background:var(--color-track);border-radius:var(--radius-md)}
+  .seg button{border:0;background:none;min-height:38px;padding:0 .75rem;border-radius:calc(var(--radius-md) - 3px);font-weight:600;color:var(--color-text-muted);cursor:pointer;white-space:nowrap}
+  .seg button[aria-pressed="true"]{background:var(--color-surface);color:var(--color-text);box-shadow:0 0 0 1px var(--color-border)}
+  .seg kbd{font:inherit;font-size:.6875rem;opacity:.6;margin-left:.25rem}
+  .btn2{display:inline-flex;align-items:center;gap:.375rem;min-height:var(--size-touch-target);padding:0 .75rem;border:1px solid var(--color-border-strong);border-radius:var(--radius-md);
+    background:var(--color-surface);color:var(--color-text);font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+  .btn2:hover{background:var(--color-track)}
+  .btn2:disabled{opacity:.4;cursor:default}
+  .phones{flex:1;min-height:0;display:flex;align-items:flex-start;justify-content:center;gap:1.25rem;padding:1rem;overflow:auto}
+  .slot{display:flex;flex-direction:column;align-items:center;gap:.5rem;min-width:0}
+  .slot-head{display:flex;flex-direction:column;align-items:center;gap:.125rem;text-align:center}
+  .slot-head b{font-size:.8125rem}
+  .chip{display:inline-flex;align-items:center;gap:.375rem;font-size:.75rem;font-weight:600;border-radius:999px;padding:.125rem .5rem}
+  .chip.live{background:var(--color-success-surface);color:var(--color-success)}
+  .chip.built{background:var(--color-warning-surface);color:var(--color-warning)}
+  .chip.none{background:var(--color-track);color:var(--color-text-muted)}
+  .chip.ours{background:var(--color-accent);color:var(--color-primary)}
+  .box{position:relative;overflow:hidden;border-radius:28px;background:var(--color-surface)}
+  .box iframe,.box img,.box .ph{position:absolute;top:0;left:0;transform-origin:0 0}
+  .box iframe,.box img{border:0}
+  .box img{width:402px;height:874px}
+  .box.still{cursor:not-allowed}
+  .box.still img{filter:saturate(.85)}
+  .ph{width:402px;height:874px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;padding:2.5rem;text-align:center;
+    border:3px dashed var(--color-border-strong);border-radius:28px;color:var(--color-text-muted);font-size:1.125rem;background:var(--color-background)}
+  .ph b{color:var(--color-text);font-size:1.5rem}
+  .ph svg{width:56px;height:56px}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--color-text-muted)}
+  /* Notes */
+  .notes{border-left:1px solid var(--color-border);overflow:auto;padding:1rem 1.125rem 1.5rem;background:var(--color-surface);display:flex;flex-direction:column;gap:1rem}
+  .notes h2{margin:0;font-size:1.0625rem;line-height:1.3;text-wrap:balance}
+  .notes h3{margin:0 0 .375rem;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  .notes ul{margin:0;padding-left:1.125rem;display:flex;flex-direction:column;gap:.5rem;font-size:.8125rem;line-height:1.5}
+  .comps{display:flex;flex-wrap:wrap;gap:.375rem}
+  .comps code{font:600 .75rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--color-track);border-radius:6px;padding:.125rem .375rem}
+  .open-links{display:flex;flex-direction:column;gap:.25rem}
+  .open-links a{color:var(--color-primary);font-weight:600;min-height:32px;display:inline-flex;align-items:center}
+  .meta{font-size:.8125rem}
+  .hint{font-size:.75rem;color:var(--color-text-muted)}
+  .hint kbd{font:inherit;border:1px solid var(--color-border);border-radius:4px;padding:0 .25rem}
+  .pick{display:none}
+  @media (max-width:1100px){.app{grid-template-columns:13rem minmax(0,1fr)}.notes{grid-column:1/-1;border-left:0;border-top:1px solid var(--color-border)}}
+  @media (max-width:760px){
+    body{height:auto}.app{display:flex;flex-direction:column}.list{display:none}.pick{display:block;padding:.5rem 1rem 0}
+    .pick select{width:100%;min-height:var(--size-touch-target);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);background:var(--color-surface);padding:0 .75rem;font-weight:600}
+    .phones{overflow:visible;flex-wrap:wrap}
+    .seg{width:100%}.seg button{flex:1;padding:0 .375rem}.seg kbd{display:none}
+  }
+</style>
+<script src="nav.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <nav class="list" id="list" aria-label="Screens"></nav>
+  <main class="stage">
+    <div class="pick"><label class="sr" for="pickSel">Screen</label><select id="pickSel"></select></div>
+    <div class="bar">
+      <h1 id="title">Owner · Home</h1>
+      <div class="seg" id="looks" role="group" aria-label="Our look"></div>
+      <button type="button" class="btn2" id="restart"><span class="en">↻ Restart</span><span class="ko">↻ 처음부터</span></button>
+      <a class="btn2" id="full" target="_blank" rel="noopener">Open full page ↗</a>
+    </div>
+    <div class="phones" id="phones" tabindex="0" role="region" aria-label="Today's app and our version"></div>
+  </main>
+  <aside class="notes" id="notes" aria-label="Design notes"></aside>
+</div>
+<script src="screens.js?v=1"></script>
+<script>
+(() => {
+  const S = window.GOLDITO_SCREENS, LOOKS = window.GOLDITO_LOOKS, GROUPS = window.GOLDITO_GROUPS, FIG = window.GOLDITO_FIGMA;
+  const $ = (q) => document.querySelector(q);
+  const W = 402, H = 874;          // phone screen (design frame); journey pages render a 418×860 phone
+  // EN / 한국어 (toggle in the site bar). Screen names, notes and labels come from screens.js in both languages.
+  const ko = () => document.documentElement.dataset.lang === "ko";
+  const t = (en, k) => (ko() ? k : en);
+  const nm = (s) => (ko() && s.name_ko) || s.name;
+  const lk = (l) => (ko() && l.ko) || l.label;
+  const STATUS = {
+    live: (s) => t(`Screenshot · ${s.captured}`, `스크린샷 · ${s.captured}`),
+    built: () => t("In the app · not captured yet", "앱에 있음 · 아직 캡처 안 함"),
+    none: () => t("Not built yet", "아직 구현 안 됨"),
+  };
+  let cur = S[0], look = "c", run = Date.now();
+  const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+
+  // ---------- list ----------
+  function lists() {
+    $("#list").innerHTML = GROUPS.map(([g, en, k]) => `<div class="grp">${t(en, k)}</div>` +
+      S.filter((s) => s.group === g).map((s) => `<button type="button" class="item" data-id="${s.id}"><span>${nm(s)}</span><span class="dot ${s.live}" aria-hidden="true"></span><span class="sr">${STATUS[s.live](s)}</span></button>`).join("")).join("") +
+      `<div class="legend"><span><i class="dot live"></i>${t("Live in the app, captured", "앱에 있음, 캡처됨")}</span><span><i class="dot built"></i>${t("In the app, not captured yet", "앱에 있음, 아직 캡처 안 함")}</span><span><i class="dot none"></i>${t("Not built yet", "아직 구현 안 됨")}</span></div>`;
+    $("#pickSel").innerHTML = GROUPS.map(([g, en, k]) => `<optgroup label="${t(en, k)}">${S.filter((s) => s.group === g).map((s) => `<option value="${s.id}">${nm(s)}</option>`).join("")}</optgroup>`).join("");
+    $("#looks").innerHTML = LOOKS.map((l, i) => `<button type="button" data-look="${l.k}">${lk(l)}<kbd>${i + 1}</kbd></button>`).join("") + `<button type="button" data-look="all">${t("All looks", "모든 룩")}<kbd>4</kbd></button>`;
+  }
+
+  // ---------- frames ----------
+  // ?r= makes every visit load a fresh copy (no stale cache); the full-page link leaves it out.
+  const oursSrc = (l, fresh = true) => cur.ours.kind === "tab"
+    ? `redesign/app.html?skin=${l.k}${fresh ? `&r=${run}` : ""}#${cur.ours.id}`
+    : `${l.journey}${fresh ? `?r=${run}` : ""}${cur.ours.hash ? "#" + cur.ours.hash : ""}`;
+  const ICON = {
+    built: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    none: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12h8M12 8v8"/></svg>',
+  };
+  function liveSlot() {
+    const s = cur;
+    const inner = s.live === "live"
+      ? `<img src="${s.shot}" alt="Live app: ${s.name}, captured ${s.captured}">`
+      : `<div class="ph">${ICON[s.live]}<b>${s.live === "built" ? t("In the app, not captured yet", "앱에 있지만 아직 캡처 안 함") : t("Not in the app yet", "아직 앱에 없어요")}</b><span>${s.task}</span>
+         <span style="font-size:.9375rem">${s.live === "built" ? t("Capture it from the live demo to compare side by side.", "라이브 데모에서 캡처하면 나란히 비교할 수 있어요.") : t("The design on the right is what to build.", "오른쪽 디자인이 만들 화면이에요.")}</span></div>`;
+    return `<div class="slot" data-kind="live"><div class="slot-head"><b>${t("Today's app", "지금 앱")}</b><span class="chip ${s.live}">${s.live === "live" ? t(`🔒 Screenshot · not clickable · ${s.captured}`, `🔒 스크린샷 · 클릭 안 됨 · ${s.captured}`) : STATUS[s.live](s)}</span></div>
+      <div class="box${s.live === "live" ? " still" : ""}" data-w="${W}" data-h="${H}" title="${s.live === "live" ? t("A screenshot of the live app — tap through our version on the right", "라이브 앱 스크린샷이에요 — 오른쪽 우리 버전을 눌러 보세요") : ""}">${inner}</div></div>`;
+  }
+  function oursSlot(l) {
+    const jw = cur.ours.kind === "tab" ? W : 418, jh = cur.ours.kind === "tab" ? H : 860;
+    return `<div class="slot" data-kind="ours"><div class="slot-head"><b>${t("Our version", "우리 버전")} · ${lk(l)}</b><span class="chip ours">${cur.ours.kind === "tab" ? t("Design-system screen · not clickable yet", "디자인 시스템 화면 · 아직 클릭 안 됨") : t("👆 Interactive · tap through it", "👆 인터랙티브 · 눌러 보세요")}</span></div>
+      <div class="box" data-w="${jw}" data-h="${jh}"><span class="loading">${t("Loading…", "불러오는 중…")}</span><iframe title="Our version, ${l.label}: ${cur.name}" src="${oursSrc(l)}" style="width:${jw}px;height:${jh}px"></iframe></div></div>`;
+  }
+  function fit() {
+    const area = $("#phones"), boxes = [...area.querySelectorAll(".box")];
+    const narrow = matchMedia("(max-width:760px)").matches;
+    const availH = narrow ? 600 : area.clientHeight - 32 - 44;
+    const availW = narrow ? area.clientWidth - 32 : (area.clientWidth - 32 - 20 * (boxes.length - 1)) / boxes.length;
+    const s = Math.min(1, availH / H, availW / W);
+    boxes.forEach((b) => {
+      const w = +b.dataset.w, h = +b.dataset.h;
+      b.style.width = `${Math.floor(w * s)}px`; b.style.height = `${Math.floor(h * s)}px`;
+      b.querySelectorAll("iframe,img,.ph").forEach((el) => { el.style.transform = `scale(${s})`; });
+    });
+  }
+  // Inside the frame, drop the journey page's own backdrop and label so only the phone shows.
+  $("#phones").addEventListener("load", (e) => {
+    const f = e.target; if (f.tagName !== "IFRAME") return;
+    const ld = f.previousElementSibling; if (ld) ld.hidden = true;
+    try {
+      const d = f.contentDocument, st = d.createElement("style");
+      st.textContent = `html,body{background:transparent !important}body{padding:0 !important;min-height:0 !important;gap:0 !important}
+        .rig{max-width:none}.rig-label{display:none !important}.phone{max-height:none !important;box-shadow:none !important}`;
+      d.head.appendChild(st);
+    } catch (err) {}
+  }, true);
+
+  // ---------- notes ----------
+  function notes() {
+    const s = cur, isTab = s.ours.kind === "tab";
+    $("#notes").innerHTML = `
+      <div><h3>${isTab ? t("What changed", "무엇이 바뀌었나") : t("What it does", "무엇을 하나")}</h3><h2>${ko() ? s.why_ko : s.why}</h2></div>
+      <div class="meta"><span class="chip ${s.live}">${STATUS[s.live](s)}</span><div class="hint" style="margin-top:.375rem">${t("Task", "작업")} · ${s.task}</div></div>
+      <ul>${(ko() ? s.changes_ko : s.changes).map((c) => `<li>${c}</li>`).join("")}</ul>
+      <div><h3>${t("Components", "컴포넌트")}</h3><div class="comps">${s.components.map((c) => `<code>${c}</code>`).join("")}</div></div>
+      <div class="open-links"><h3>${t("Open", "열기")}</h3>
+        <a href="${FIG}${s.figma}" target="_blank" rel="noopener">${t("Figma section ↗", "Figma 섹션 ↗")}</a>
+        <p class="hint" style="margin:0">${s.figmaScreens.length ? `${t("In Figma", "Figma 화면")}: ${s.figmaScreens.join(" · ")}` : t("Not in Figma as its own screen: the in-care tabs are the Today's app screens.", "Figma에 별도 화면은 없어요: 돌봄 중 탭은 ‘지금 앱’ 화면이에요.")}</p>
+        ${isTab ? `<a href="redesign/index.html">${t("All tab notes", "탭별 노트 전체")}</a>` : ""}</div>
+      <p class="hint">${t("Today's app is a screenshot of the live demo. Our version is the interactive part — as you tap through it, this list, the notes and the Figma link follow along.", "‘지금 앱’은 라이브 데모 스크린샷이에요. 우리 버전은 직접 눌러 볼 수 있고, 누르는 대로 목록·노트·Figma 링크가 따라와요.")}</p>
+      <p class="hint">${t("Keys", "단축키")}: <kbd>↑</kbd> <kbd>↓</kbd> ${t("screens", "화면")} · <kbd>1</kbd>–<kbd>4</kbd> ${t("looks", "룩")}</p>`;
+  }
+
+  // ---------- render ----------
+  // List, title, notes and the hash — everything except our (interactive) frames.
+  function chrome() {
+    document.querySelectorAll(".item").forEach((b) => b.setAttribute("aria-current", String(b.dataset.id === cur.id)));
+    $("#pickSel").value = cur.id;
+    $("#title").textContent = nm(cur);
+    document.title = `${nm(cur)} · Goldito Prototype`;
+    notes();
+    history.replaceState(null, "", `#${cur.id}/${look}`);
+  }
+  function render() {
+    chrome();
+    $("#looks").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.look === look)));
+    const shown = look === "all" ? LOOKS : LOOKS.filter((l) => l.k === look);
+    $("#phones").innerHTML = liveSlot() + shown.map(oursSlot).join("");
+    const one = shown[0];
+    $("#full").href = oursSrc(one, false);
+    $("#full").textContent = t(`Open ${lk(one)} full page ↗`, `${lk(one)} 전체 화면 ↗`);
+    fit();
+    store.set("goldito-proto-look", look);
+  }
+  // Our prototypes report where you are while you tap (journey/follow.js). Follow along without reloading them:
+  // swap the list selection, notes and the Today's app column only.
+  addEventListener("message", (e) => {
+    const d = e.data;
+    if (!d || d.goldito !== "at") return;
+    if (d.id === cur.id) return;
+    const fromOurs = [...document.querySelectorAll("#phones iframe")].some((f) => f.contentWindow === e.source);
+    const s = S.find((x) => x.id === d.id);
+    if (!fromOurs || !s) return;
+    cur = s; chrome();
+    const live = $('#phones .slot[data-kind="live"]');
+    if (live) { live.outerHTML = liveSlot(); fit(); }
+    const t = $("#title"); t.classList.remove("followed"); void t.offsetWidth; t.classList.add("followed");
+  });
+  function go(id) { const s = S.find((x) => x.id === id); if (s) { cur = s; run = Date.now(); render(); } }
+  $("#list").addEventListener("click", (e) => { const b = e.target.closest(".item"); if (b) go(b.dataset.id); });
+  $("#pickSel").addEventListener("change", (e) => go(e.target.value));
+  $("#looks").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { look = b.dataset.look; render(); } });
+  $("#restart").onclick = () => { run = Date.now(); render(); };
+  new ResizeObserver(fit).observe($("#phones")); // refits when the site bar arrives or the window resizes
+  addEventListener("keydown", (e) => {
+    if (e.target.closest("input,select,textarea")) return;
+    const i = S.indexOf(cur);
+    if (e.key === "ArrowDown" || e.key === "]") { e.preventDefault(); if (i < S.length - 1) go(S[i + 1].id); }
+    else if (e.key === "ArrowUp" || e.key === "[") { e.preventDefault(); if (i > 0) go(S[i - 1].id); }
+    else { const k = { 1: "c", 2: "b", 3: "d", 4: "all" }[e.key]; if (k) { look = k; render(); } }
+  });
+  // #<screen>/<look> deep links (also when a link is pasted into the same tab).
+  function fromHash() {
+    const [hid, hl] = location.hash.slice(1).split("/");
+    cur = S.find((x) => x.id === hid) || S[0];
+    look = ["c", "b", "d", "all"].includes(hl) ? hl : store.get("goldito-proto-look", "c");
+    run = Date.now(); render();
+  }
+  addEventListener("hashchange", fromHash);
+  addEventListener("goldito-lang", () => { lists(); render(); });
+  // Start after the site bar (deferred nav.js) has set the language.
+  addEventListener("DOMContentLoaded", () => { lists(); fromHash(); });
+})();
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 > Goldito is the new name for PawNote (Oct 7). Repo paths, issue links and code identifiers keep the old name until the app is renamed.
 
-> **Status (Oct 6): design system v1.** The Figma library [Figma design file](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) (variables, 63 components, 53 screens built only from component instances) matches [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) and this file. Open: the app look (§3.2) and the items at the end.
+> **Status (Oct 6): design system v1.** The Figma library [Figma design file](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) (variables, 65 components, 53 screens built only from component instances) matches [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) and this file. Open: the app look (§3.2) and the items at the end.
 > Values come from `tokens.ts` (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. To change a value: update the Figma variable and `tokens.ts` in the same PR, then this file.
 >
 > Source of truth order: **Figma** → **`tokens.ts`** → **this file**. Every decision and its reason is in [§0](#0-decision-log).
@@ -126,7 +126,7 @@ Rules:
 
 A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
-**Pet skins in the prototypes (proposed, 11.10).** The first-round prototypes ("Full journey") already try this: the onboarding *Your look* step reads the pet photo's coat color and picks the nearest of 7 presets — **Forest** (hue 152, sat 42 — the brand green) · **Amber** (40, 62) · **Clay** (16, 58) · **Umber** (26, 28) · **Slate** (210, 26) · **Plum** (280, 34) · **Rose** (350, 48). White, grey and black coats (saturation < 18) fall back to Umber (warm) or **Slate** (cool) — that's why a white Maltese shows a blue app there. Each preset's lightness is adjusted until text on it is ≥ 4.5:1. None of these are in `tokens.ts` or Figma yet; until the team picks them, the brand green (Forest) is the only primary.
+**Pet skins in the prototypes (proposed, 11.10).** The first-round prototypes ("Full journey") already try this: the onboarding *Your look* step reads the pet photo's coat color and picks the nearest of 7 presets — **Forest** (hue 152, sat 42 — the brand green) · **Amber** (40, 62) · **Clay** (16, 58) · **Umber** (26, 28) · **Slate** (210, 26) · **Plum** (280, 34) · **Rose** (350, 48). White, grey and black coats (saturation < 18) fall back to Umber (warm) or **Slate** (cool) — that's why a white Maltese shows a blue app there. Each preset's lightness is adjusted until text on it is ≥ 4.5:1. None of these are in `tokens.ts` yet. Goldito green is the default and is preselected; a coat color is only offered (never applied) and the owner picks it on the *Pick your colors* step (Figma: `Look Preview`, `Color Swatch`).
 
 ### 3.2 Looks (brand direction — pick one)
 
@@ -218,7 +218,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | :--- | :--- |
 | `Screen` | Wraps every screen: safe area, scroll, `background`, 16 padding, max width 480 |
 | `BackLink` | Standard back control: `chevron-back` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
-| `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Muk’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
+| `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Mook’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity. **Target (§6.1):** Secondary + Loading variants, press = scale 0.97 + opacity 0.85 (§5.1), disabled = neutral `border` fill (a faded brand color reads as enabled) |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
@@ -243,7 +243,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 
 ### In Figma (design file, *Components* page)
 
-**63 components**, every fill, stroke, padding and radius bound to a variable; *2. Screens* uses only instances of them (D2). Groups: Core (`Tag`, `Button`, `Text Button`, `Chip`, `Card`, `Toast`, `Text Field`, `Segment`) · Live app (`Stay Summary Card`, `Booking Card`, `Timeline Row`, `Grid Photo`, `Next Task Card` …) · Navigation (`Top Bar`, `Tab Bar`, `Icon Button`, `Bottom Sheet`, `Empty State`) · Inputs (`Choice Card`, `Switch`, `Stepper`, `Filter Chip`, `Suggestion Chip`, `Photo Tile`, `Calendar Day`, `Checkbox Row`) · Stay (`Stage Card`, `Source Tag`, `Message Bubble`, `Quote Card`, `Checklist Row`, `Consent Card`, `Entry Info Card`, `Star`, `Profile Card`) · Care & transit (`Trip Map`, `Photo Check`, `Task Row`, `Progress Bar`, `Feed Card`, `Daily Note`, `Life Record Card`) · Feedback (`Alert Modal · DANGER`, `Banner`, `Notification Row`, `Skeleton`, `Avatar` …). `Demo Control` is prototype-only. Code has the `Existing` set plus the components marked *built* below; the rest arrive with their phases.
+**65 components**, every fill, stroke, padding and radius bound to a variable; *2. Screens* uses only instances of them (D2). Groups: Core (`Tag`, `Button`, `Text Button`, `Chip`, `Card`, `Toast`, `Text Field`, `Segment`) · Live app (`Stay Summary Card`, `Booking Card`, `Timeline Row`, `Grid Photo`, `Next Task Card` …) · Navigation (`Top Bar`, `Tab Bar`, `Icon Button`, `Bottom Sheet`, `Empty State`) · Inputs (`Choice Card`, `Switch`, `Stepper`, `Filter Chip`, `Suggestion Chip`, `Photo Tile`, `Calendar Day`, `Checkbox Row`) · Stay (`Stage Card`, `Source Tag`, `Message Bubble`, `Quote Card`, `Checklist Row`, `Consent Card`, `Entry Info Card`, `Star`, `Profile Card`) · Care & transit (`Trip Map`, `Photo Check`, `Task Row`, `Progress Bar`, `Feed Card`, `Daily Note`, `Life Record Card`) · Feedback (`Alert Modal · DANGER`, `Banner`, `Notification Row`, `Skeleton`, `Avatar` …). `Demo Control` is prototype-only. Code has the `Existing` set plus the components marked *built* below; the rest arrive with their phases.
 
 ### Planned and recently built (keep the same tokens)
 
@@ -313,6 +313,8 @@ Anyone should tell in under a second what they can tap. One rule for every scree
 | **A one-tap log** (Ate, Potty, Walk, Mood) | `Check-in Tile`: icon over label, `borderStrong` outline, 64 tall, four across | Filter-chip styling (reads as a filter) |
 | **A filter** | `Filter Chip`: outline when off, filled `primary` when on — one selected style per screen | Mint for some filters and green for others |
 | **A card that opens something** | The card plus a last row **View booking ›** / **View profile ›** | A card with no hint that it opens |
+| **Pet traits for the sitter** | Two groups: **Heads-up** (allergies, meds, watch-outs) as warning `Tag`s; **Good to know** (friendly with dogs…) as brand `Tag`s | Positive traits shown as warnings |
+| **Your own tag** (allergy, trait) | `Add Chip` (dashed **+ Add**) opens an inline field; the new tag is a `Filter Chip` in the Custom state with **✕** | A fixed list with no way to add |
 | **Information** (status, facts, labels) | `Tag`: tinted surface, no outline, not 44 tall | Outlined or filled chips for facts (they look tappable) |
 | **A result** (mood, safety) | A meter or result card | Chips that look selectable |
 

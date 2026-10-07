@@ -3,56 +3,163 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Goldito Concepts</title>
+<title>Goldito Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="ds.css">
 <style>
   *{box-sizing:border-box}
-  body{margin:0;background:var(--color-background);color:var(--color-text);font-family:var(--font);font-size:15px;line-height:1.5;
-    padding-inline:1rem;padding-block:2.5rem 4rem;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:60rem;margin:0 auto;display:flex;flex-direction:column;gap:2rem}
-  .wrap>*{min-width:0}
-  h1,h2{margin:0;text-wrap:balance;letter-spacing:-.015em}
-  h1{font-size:1.75rem;font-weight:700}
+  :root{--font:"Inter","Noto Sans KR",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font-family:var(--font);font-size:15px;line-height:1.55;
+    padding-inline:1rem;padding-block:0 4rem;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:64rem;margin:0 auto;display:flex;flex-direction:column;gap:3rem;padding-top:2.5rem}
+  .wrap>*,section{min-width:0}
+  h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.015em}
+  h1{font-size:1.875rem;font-weight:700}
+  h2{font-size:1.125rem;font-weight:700}
+  h3{font-size:.9375rem;font-weight:600}
   p{margin:0}
+  a{color:var(--color-primary)}
   .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
-  header{display:flex;flex-direction:column;gap:.625rem;max-width:40rem}
-  header p{color:var(--color-text-muted)}
+  header{display:flex;flex-direction:column;gap:.75rem;max-width:42rem}
+  header p{color:var(--color-text-muted);font-size:1rem}
   .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+  section{display:flex;flex-direction:column;gap:1rem}
+  .head{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem 1rem;flex-wrap:wrap}
+  .head p{color:var(--color-text-muted);font-size:.875rem}
+  /* Looks */
   .looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem}
-  .look{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color .15s}
+  .look{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden}
   .look:hover{border-color:var(--color-primary)}
-  .look .frame{display:block;height:19rem;overflow:hidden;background:var(--color-track);position:relative}
-  .look iframe{position:absolute;left:50%;top:0;width:402px;height:874px;border:0;transform:translateX(-50%) scale(.6);transform-origin:top center;pointer-events:none}
-  .look-body{display:flex;flex-direction:column;gap:.25rem;padding:.875rem 1rem 1rem;font-size:.875rem}
+  .look .frame{display:block;height:15rem;overflow:hidden;background:var(--color-track);position:relative}
+  .look iframe{position:absolute;left:50%;top:0;width:402px;height:874px;border:0;transform:translateX(-50%) scale(.5);transform-origin:top center;pointer-events:none}
+  .look-body{display:flex;flex-direction:column;gap:.125rem;padding:.75rem 1rem .875rem;font-size:.875rem}
   .look-body b{font-size:1rem}
-  .look-body span{color:var(--color-text-muted)}
-  .more{display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;font-size:.875rem;color:var(--color-text-muted)}
-  .more a{color:var(--color-primary);font-weight:600;display:inline-flex;align-items:center;min-height:var(--size-touch-target)}
+  .look-body>span{color:var(--color-text-muted)}
+  /* Where we are */
+  .weeks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .weeks span{height:8px;border-radius:4px;background:var(--color-track)}
+  .weeks span.done{background:var(--color-primary)}
+  .weeks span.now{background:var(--color-primary);opacity:.55}
+  .weeks-cap{display:flex;justify-content:space-between;gap:.5rem;font-size:.8125rem;color:var(--color-text-muted);margin-top:.375rem}
+  .stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(11.5rem,1fr));gap:.75rem;margin:0;padding:0;list-style:none}
+  .stage{padding:1rem;display:flex;flex-direction:column;gap:.5rem}
+  .stage .num{font-size:.75rem;font-weight:700;color:var(--color-text-muted)}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;font-size:.8125rem}
+  .ds-tag.success{background:var(--color-success-surface);color:var(--color-success);border-color:transparent}
+  .ds-tag.none{background:var(--color-track);color:var(--color-text-muted);border-color:transparent}
+  .stage .go{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:auto;padding-top:.25rem;font-size:.8125rem;font-weight:600}
+  .stage .go a{min-height:32px;display:inline-flex;align-items:center}
+  /* Input, decisions, rules */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:.75rem}
+  .card{padding:1rem 1.125rem;display:flex;flex-direction:column;gap:.375rem}
+  .card p{font-size:.875rem;color:var(--color-text-muted)}
+  .q .n{font-size:.75rem;font-weight:700;color:var(--color-warning)}
+  .settled{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.5rem;font-size:.875rem;color:var(--color-text-muted)}
+  .settled b{color:var(--color-text);margin-right:.375rem}
+  footer{font-size:.8125rem;color:var(--color-text-muted);display:flex;gap:.5rem 1.25rem;flex-wrap:wrap;align-items:center;border-top:1px solid var(--color-border);padding-top:1rem}
+  footer a{min-height:32px;display:inline-flex;align-items:center}
 </style>
 <script src="nav.js" defer></script>
 </head>
 <body>
 <main class="wrap">
   <header>
-    <span class="eyebrow">Goldito design · Oct 7, 2026</span>
-    <h1>Pick a look</h1>
-    <p>The live app's tabs in three looks, same screens and data. Open one to compare all six tabs side by side.</p>
-    <div class="actions"><a class="ds-btn" href="redesign/compare.html#owner-home/all">Compare the looks</a><a class="ds-btn secondary" href="review.html">Design review</a></div>
+    <span class="eyebrow"><span class="en">Goldito design · Oct 7, 2026</span><span class="ko">Goldito 디자인 · 2026년 10월 7일</span></span>
+    <h1><span class="en">Design overview</span><span class="ko">디자인 개요</span></h1>
+    <p><span class="en">Three looks for the app, where design and code stand on the 5-stage stay, and what needs the team's input. Submission Oct 30 (internal Oct 28).</span><span class="ko">앱의 세 가지 룩, 5단계 스테이에서 디자인과 코드가 어디까지 왔는지, 그리고 팀이 정해야 할 것. 제출 10/30 (내부 마감 10/28).</span></p>
+    <div class="actions">
+      <a class="ds-btn" href="prototype.html#owner-home/all"><span class="en">Open the prototype</span><span class="ko">프로토타입 열기</span></a>
+      <a class="ds-btn secondary" href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=0-1" target="_blank" rel="noopener"><span class="en">Open Figma ↗</span><span class="ko">Figma 열기 ↗</span></a>
+    </div>
   </header>
 
-  <div class="looks">
-    <a class="look" href="redesign/compare.html#owner-home/c"><span class="frame"><iframe src="redesign/app.html?skin=c#owner-home" title="Balanced preview" loading="lazy" tabindex="-1"></iframe></span>
-      <span class="look-body"><b>Balanced</b><span>Calm and close to the code. White cards, soft neutrals.</span></span></a>
-    <a class="look" href="redesign/compare.html#owner-home/b"><span class="frame"><iframe src="redesign/app.html?skin=b#owner-home" title="Playful preview" loading="lazy" tabindex="-1"></iframe></span>
-      <span class="look-body"><b>Playful</b><span>Ink outlines, sticker shadows, a pixel room for the sitter.</span></span></a>
-    <a class="look" href="redesign/compare.html#owner-home/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-home" title="Expressive preview" loading="lazy" tabindex="-1"></iframe></span>
-      <span class="look-body"><b>Expressive</b><span>Own layouts: big type, color blocks, illustrations.</span></span></a>
-  </div>
+  <section aria-labelledby="h-looks">
+    <div class="head"><h2 id="h-looks"><span class="en">1. Pick a look</span><span class="ko">1. 룩 고르기</span></h2>
+      <p><span class="en">Same screen, same data. Open one to compare it with today's app.</span><span class="ko">같은 화면, 같은 데이터. 열어서 지금 앱과 비교해 보세요.</span></p></div>
+    <div class="looks">
+      <a class="look" href="prototype.html#owner-home/c"><span class="frame"><iframe src="redesign/app.html?skin=c#owner-home" title="Balanced" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Balanced</span><span class="ko">밸런스드</span></b><span><span class="en">Calm and close to the code. White cards, soft neutrals.</span><span class="ko">차분하고 코드와 가까워요. 흰 카드, 부드러운 뉴트럴.</span></span></span></a>
+      <a class="look" href="prototype.html#owner-home/b"><span class="frame"><iframe src="redesign/app.html?skin=b#owner-home" title="Playful" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Playful</span><span class="ko">플레이풀</span></b><span><span class="en">Ink outlines, sticker shadows, a pixel room for the sitter.</span><span class="ko">잉크 외곽선, 스티커 그림자, 시터용 픽셀 룸.</span></span></span></a>
+      <a class="look" href="prototype.html#owner-home/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-home" title="Expressive" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Expressive</span><span class="ko">익스프레시브</span></b><span><span class="en">Own layouts: big type, color blocks, illustrations.</span><span class="ko">자체 레이아웃: 큰 글자, 컬러 블록, 일러스트.</span></span></span></a>
+    </div>
+  </section>
 
-  <p class="more"><a href="compare.html#stage-1">Walk through the full journey: inquiry to home safe →</a></p>
+  <section aria-labelledby="h-where">
+    <div class="head"><h2 id="h-where"><span class="en">2. Where we are</span><span class="ko">2. 지금 어디까지</span></h2>
+      <p><span class="en">Design is in week 2 of 5. For each stage: is it in the app, and is it designed?</span><span class="ko">디자인은 5주 중 2주차. 단계마다: 앱에 있는지, 디자인됐는지.</span></p></div>
+    <div><div class="weeks" aria-hidden="true"><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+      <div class="weeks-cap"><span><span class="en">Oct 1 · design system ✓</span><span class="ko">10/1 · 디자인 시스템 ✓</span></span><span><span class="en">Now · booking screens</span><span class="ko">지금 · 예약 화면</span></span><span><span class="en">Oct 30 · submit</span><span class="ko">10/30 · 제출</span></span></div></div>
+    <ul class="stages">
+      <li class="stage ds-card"><span class="num">①</span><h3><span class="en">Inquiry</span><span class="ko">문의</span></h3>
+        <div class="row"><span><span class="en">App</span><span class="ko">앱</span></span><span class="ds-tag none"><span class="en">Not built · 07B</span><span class="ko">미구현 · 07B</span></span></div>
+        <div class="row"><span><span class="en">Design</span><span class="ko">디자인</span></span><span class="ds-tag success"><span class="en">Ready</span><span class="ko">완료</span></span></div>
+        <div class="go"><a href="prototype.html#stage-1/c"><span class="en">Try it</span><span class="ko">체험하기</span></a><a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=174-50318" target="_blank" rel="noopener">Figma ↗</a></div></li>
+      <li class="stage ds-card"><span class="num">②</span><h3><span class="en">Meet &amp; Greet</span><span class="ko">만남 인사</span></h3>
+        <div class="row"><span><span class="en">App</span><span class="ko">앱</span></span><span class="ds-tag success"><span class="en">Built</span><span class="ko">구현됨</span></span></div>
+        <div class="row"><span><span class="en">Design</span><span class="ko">디자인</span></span><span class="ds-tag success"><span class="en">Ready</span><span class="ko">완료</span></span></div>
+        <div class="go"><a href="prototype.html#stage-2/c"><span class="en">Try it</span><span class="ko">체험하기</span></a><a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=174-50318" target="_blank" rel="noopener">Figma ↗</a></div></li>
+      <li class="stage ds-card"><span class="num">③</span><h3><span class="en">Booking</span><span class="ko">예약</span></h3>
+        <div class="row"><span><span class="en">App</span><span class="ko">앱</span></span><span class="ds-tag success"><span class="en">Built</span><span class="ko">구현됨</span></span></div>
+        <div class="row"><span><span class="en">Design</span><span class="ko">디자인</span></span><span class="ds-tag success"><span class="en">Ready</span><span class="ko">완료</span></span></div>
+        <div class="go"><a href="prototype.html#stage-3/c"><span class="en">Try it</span><span class="ko">체험하기</span></a><a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=174-50318" target="_blank" rel="noopener">Figma ↗</a></div></li>
+      <li class="stage ds-card"><span class="num">④</span><h3><span class="en">Care &amp; trip</span><span class="ko">돌봄 · 이동</span></h3>
+        <div class="row"><span><span class="en">App</span><span class="ko">앱</span></span><span class="ds-tag warning"><span class="en">Half · no trip yet</span><span class="ko">절반 · 이동 미구현</span></span></div>
+        <div class="row"><span><span class="en">Design</span><span class="ko">디자인</span></span><span class="ds-tag success"><span class="en">Ready</span><span class="ko">완료</span></span></div>
+        <div class="go"><a href="prototype.html#stage-4/c"><span class="en">Try it</span><span class="ko">체험하기</span></a><a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=174-50325" target="_blank" rel="noopener">Figma ↗</a></div></li>
+      <li class="stage ds-card"><span class="num">⑤</span><h3><span class="en">Home safe</span><span class="ko">귀가</span></h3>
+        <div class="row"><span><span class="en">App</span><span class="ko">앱</span></span><span class="ds-tag none"><span class="en">Not built · 07C</span><span class="ko">미구현 · 07C</span></span></div>
+        <div class="row"><span><span class="en">Design</span><span class="ko">디자인</span></span><span class="ds-tag success"><span class="en">Ready</span><span class="ko">완료</span></span></div>
+        <div class="go"><a href="prototype.html#stage-5/c"><span class="en">Try it</span><span class="ko">체험하기</span></a><a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=174-50332" target="_blank" rel="noopener">Figma ↗</a></div></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-input">
+    <div class="head"><h2 id="h-input"><span class="en">3. Needs your input</span><span class="ko">3. 의견이 필요해요</span></h2></div>
+    <div class="cards">
+      <div class="card ds-card q"><span class="n"><span class="en">Decision · D1</span><span class="ko">결정 · D1</span></span><h3><span class="en">Which look for the app?</span><span class="ko">앱 룩은 어떤 걸로?</span></h3>
+        <p><span class="en">Balanced is closest to the code, so it costs the least to build. Expressive has the most character and the most new work.</span><span class="ko">밸런스드가 코드와 가장 가까워 구현 비용이 적어요. 익스프레시브는 개성이 가장 크고 새로 만들 것도 가장 많아요.</span></p></div>
+      <div class="card ds-card q"><span class="n"><span class="en">Scope · 9.x</span><span class="ko">범위 · 9.x</span></span><h3><span class="en">Feed categories?</span><span class="ko">피드 카테고리?</span></h3>
+        <p><span class="en">The README promises Meals · Walks · Naps · Play. Still planned, or change the README?</span><span class="ko">README는 식사 · 산책 · 낮잠 · 놀이를 약속해요. 계속 계획에 있나요, 아니면 README를 바꿀까요?</span></p></div>
+      <div class="card ds-card q"><span class="n"><span class="en">Demo · 11.9</span><span class="ko">데모 · 11.9</span></span><h3><span class="en">Mood tab in the demo?</span><span class="ko">데모에 무드 탭?</span></h3>
+        <p><span class="en">Show a sample result, or hide the tab until 11.9 ships.</span><span class="ko">예시 결과를 보여줄지, 11.9가 나올 때까지 숨길지.</span></p></div>
+      <div class="card ds-card q"><span class="n">PR #41</span><h3><span class="en">Rebase or redo?</span><span class="ko">리베이스할까, 다시 할까?</span></h3>
+        <p><span class="en">The primitives PR conflicts with main in 15 files. Rebase it, or close it and redo it in smaller PRs.</span><span class="ko">프리미티브 PR이 main과 파일 15개에서 충돌해요. 리베이스할지, 닫고 작게 다시 올릴지.</span></p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-decided">
+    <div class="head"><h2 id="h-decided"><span class="en">4. Decided</span><span class="ko">4. 정해진 것</span></h2>
+      <p><span class="en">Reasons for each are in DESIGN.md §0.</span><span class="ko">이유는 DESIGN.md §0에 있어요.</span></p></div>
+    <ul class="settled">
+      <li><b>D2</b><span class="en">Components first; Figma screens are built only from instances, named like the code.</span><span class="ko">컴포넌트 먼저. Figma 화면은 인스턴스로만 만들고, 이름은 코드와 같아요.</span></li>
+      <li><b>D3</b><span class="en">Status text sits on its own light surface, never a faded color.</span><span class="ko">상태 텍스트는 같은 톤의 밝은 바탕 위에. 흐린 색은 쓰지 않아요.</span></li>
+      <li><b>D4</b><span class="en">Anything tappable has a strong outline or fill; information never looks tappable.</span><span class="ko">누를 수 있는 건 진한 외곽선이나 채움, 정보는 절대 버튼처럼 보이지 않게.</span></li>
+      <li><b>D5</b><span class="en">When the AI is unsure: safety says no; everything else goes to a person.</span><span class="ko">AI가 확신이 없으면: 안전은 ‘안 됨’, 나머지는 사람에게.</span></li>
+      <li><b>D6</b><span class="en">System font, four sizes; one press feel, three motion speeds.</span><span class="ko">시스템 폰트, 크기 4개. 누름 느낌 하나, 모션 속도 3개.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-rules">
+    <div class="head"><h2 id="h-rules"><span class="en">5. When things go wrong</span><span class="ko">5. 문제가 생겼을 때</span></h2>
+      <p><span class="en">Five rules behind the 16 edge-state screens (DESIGN.md §10).</span><span class="ko">엣지 케이스 화면 16개 뒤의 규칙 다섯 가지 (DESIGN.md §10).</span></p></div>
+    <div class="cards">
+      <div class="card ds-card"><h3><span class="en">Never lose a sitter's tap</span><span class="ko">시터의 탭은 절대 잃지 않기</span></h3><p><span class="en">Offline check-ins wait on the phone and send on their own.</span><span class="ko">오프라인 체크인은 폰에 저장했다가 알아서 보내요.</span></p></div>
+      <div class="card ds-card"><h3><span class="en">Tell the owner before they ask</span><span class="ko">묻기 전에 알려주기</span></h3><p><span class="en">Late, no photo yet, handed to a person: say what happened and what's next.</span><span class="ko">늦음, 아직 사진 없음, 사람에게 넘김: 무슨 일인지와 다음을 알려요.</span></p></div>
+      <div class="card ds-card"><h3><span class="en">Unsure about safety means no</span><span class="ko">안전이 불확실하면 ‘안 됨’</span></h3><p><span class="en">Unreadable label, missing dose, allergy conflict: block, and say how to fix it.</span><span class="ko">라벨 판독 불가, 용량 누락, 알레르기 충돌: 막고, 해결 방법을 알려요.</span></p></div>
+      <div class="card ds-card"><h3><span class="en">Nothing new without the owner's OK</span><span class="ko">보호자 확인 없이 새 정보 없음</span></h3><p><span class="en">Facts the AI learned enter the Life Record only after the owner confirms.</span><span class="ko">AI가 알게 된 사실은 보호자가 확인해야 Life Record에 들어가요.</span></p></div>
+      <div class="card ds-card"><h3><span class="en">Red only for real problems</span><span class="ko">빨강은 진짜 문제에만</span></h3><p><span class="en">Declined bookings and late pills are info or warning; red is for failed payments and DANGER.</span><span class="ko">예약 거절, 늦은 약은 안내나 경고. 빨강은 결제 실패와 DANGER에만.</span></p></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="redesign/index.html"><span class="en">All tab notes (live vs ours)</span><span class="ko">탭별 노트 전체 (라이브 vs 우리)</span></a>
+    <a href="prototype.html#stage-1/all"><span class="en">The stay in all three looks</span><span class="ko">세 룩으로 보는 스테이</span></a>
+    <span><span class="en">Prototype only: no real accounts, AI, payments or locations.</span><span class="ko">프로토타입이에요: 실제 계정, AI, 결제, 위치는 없어요.</span></span>
+  </footer>
 </main>
 </body>
 </html>

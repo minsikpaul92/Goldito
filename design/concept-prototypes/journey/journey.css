@@ -79,8 +79,12 @@
 .jr-x{width:2.75rem;height:2.75rem;border-radius:.75rem;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:1.125rem}
 .jr-x:hover{background:var(--tint-border)}
 .jr-heads{display:flex;flex-wrap:wrap;gap:.375rem}
-.jr-heads span{font-size:.8125rem;font-weight:700;background:color-mix(in srgb,var(--warning,#B54708) 12%,transparent);
-  color:var(--warning,#B54708);border-radius:.5rem;padding:.25rem .5rem}
+/* Heads-up tags: text on its own light surface (DESIGN.md D3), never a faded tint. Good-to-know tags are neutral. */
+:root{--jr-warn-bg:#FFFAEB;--jr-warn-fg:#B54708;--jr-good-bg:var(--primary-soft,#D8F3DC);--jr-good-fg:var(--primary-text,#2D6A4F)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--jr-warn-bg:#2B1D0E;--jr-warn-fg:#F5A75B}}
+:root[data-theme="dark"]{--jr-warn-bg:#2B1D0E;--jr-warn-fg:#F5A75B}
+.jr-heads span{font-size:.8125rem;font-weight:700;background:var(--jr-warn-bg);color:var(--jr-warn-fg);border-radius:.5rem;padding:.25rem .5rem}
+.jr-heads span.good{background:var(--jr-good-bg);color:var(--jr-good-fg)}
 .jr-textarea{min-height:6.5rem;resize:vertical;line-height:1.45}
 
 /* Consents */

@@ -1,0 +1,26 @@
+/* Look step (look.js) */
+.lk-card{display:flex;flex-direction:column;gap:1rem}
+.lk-preview{display:flex;align-items:center;gap:1rem;padding:1rem;border-radius:1.25rem;background:var(--lk-soft);transition:background .25s}
+.lk-photo{width:84px;height:84px;border-radius:50%;padding:4px;background:var(--lk);flex:0 0 auto;transition:background .25s}
+.lk-photo img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;border:3px solid var(--surface,#fff)}
+.lk-mock{display:flex;flex-direction:column;gap:.375rem;min-width:0;flex:1}
+.lk-mock b{color:var(--lk-soft-text);font-size:.9375rem;line-height:1.25}
+.lk-pill{align-self:flex-start;display:inline-flex;align-items:center;gap:.375rem;font-size:.75rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;
+  background:var(--surface,#fff);color:var(--lk-soft-text)}
+.lk-pill i{width:7px;height:7px;border-radius:50%;background:var(--lk)}
+.lk-bar{display:flex;gap:3px}
+.lk-bar i{flex:1;height:6px;border-radius:3px;background:var(--lk)}
+.lk-bar i.off{background:var(--surface,#fff)}
+.lk-btn{align-self:flex-start;display:inline-flex;padding:.45rem .875rem;border-radius:999px;background:var(--lk);color:var(--lk-fg);font-weight:700;font-size:.8125rem}
+.lk-swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.375rem}
+.lk-sw{display:flex;flex-direction:column;align-items:center;gap:.25rem;min-height:76px;padding:.5rem .125rem;border:2px solid transparent;border-radius:1rem;
+  background:none;color:inherit;font:inherit;cursor:pointer}
+.lk-sw:hover{background:var(--tint-border,rgba(127,127,127,.12))}
+.lk-sw[aria-checked="true"]{border-color:var(--text)}
+.lk-sw:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.lk-dot{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.lk-name{font-size:.75rem;font-weight:700;line-height:1.2;text-align:center}
+.lk-tag{font-size:.6875rem;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.2}
+.lk-note{font-size:.75rem;color:var(--text-muted);margin:0}
+.lk-actions{display:flex;flex-direction:column;gap:.5rem}
+@media (prefers-reduced-motion: reduce){.lk-preview,.lk-photo{transition:none}}

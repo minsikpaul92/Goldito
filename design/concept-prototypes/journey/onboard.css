@@ -140,3 +140,17 @@
 @media (prefers-reduced-motion: reduce){
   .ob *,.ob-os,.ob-os-card,.ob-push{animation:none !important;transition:none !important}
 }
+
+/* Health & care: two personality lists, custom tags, grouped preview */
+.ob-sub{font-weight:500;color:var(--text-muted);font-size:.75rem}
+.jr .chip.ob-add{background:none;border:1.5px dashed var(--text-muted);color:var(--text-muted);font-weight:700}
+.jr .chip.ob-add:hover{color:var(--text);border-color:var(--text)}
+.ob-custom{display:inline-flex;align-items:center;gap:.25rem;padding-right:.25rem}
+.ob-x{display:inline-grid;place-items:center;min-width:32px;min-height:32px;border:0;border-radius:999px;background:none;color:inherit;font:inherit;font-weight:700;cursor:pointer}
+.ob-x:hover{background:rgba(127,127,127,.2)}
+.ob-add-row{display:flex;align-items:center;gap:.375rem;width:100%}
+.ob-add-row .input{flex:1;min-width:0}
+.ob-add-row .btn{width:auto;flex:0 0 auto}
+.ob-heads-group{display:flex;flex-direction:column;gap:.375rem}
+.ob-heads-group+.ob-heads-group{margin-top:.5rem}
+.ob-heads-title{font-size:.6875rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}

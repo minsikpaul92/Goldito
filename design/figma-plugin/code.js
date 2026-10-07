@@ -629,9 +629,20 @@ const LIBRARY = [
         box("Value", { w: 72, align: "CENTER" }, [await txt("$55", "Body Strong", "text", { name: "Value" }), await txt("/ night", "Caption", "text-muted", { name: "Unit" })]), await btn("+")]);
     }, [["Value", "Value"], ["Unit", "Unit"]]);
 
-    await variants("Filter Chip", "Selectable chip (feed filter, service, age, allergies). Active = primary fill.", ["Default", "Active"].map((s) => [`State=${s}`, async () =>
-      box("Filter Chip", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: 999, fill: s === "Active" ? "primary" : "surface", stroke: s === "Active" ? undefined : "border-strong", align: "CENTER", minH: "size/touch-target" }, [
-        await txt("🍽️ Meals", "Small Strong", s === "Active" ? "primary-text" : "text", { name: "Label" })])]), [["Label", "Label"]]);
+    await variants("Filter Chip", "Selectable chip (feed filter, service, age, allergies). Active = primary fill. Custom = a tag the owner added: selected, with ✕ to remove it.", ["Default", "Active", "Custom"].map((s) => [`State=${s}`, async () =>
+      box("Filter Chip", { dir: "H", gap: "xs", pad: ["sm", s === "Custom" ? "sm" : "md", "sm", "md"], radius: 999, fill: s === "Default" ? "surface" : "primary", stroke: s === "Default" ? "border-strong" : undefined, align: "CENTER", minH: "size/touch-target" }, [
+        await txt(s === "Custom" ? "Loves car rides" : "🍽️ Meals", "Small Strong", s === "Default" ? "text" : "primary-text", { name: "Label" }),
+        s === "Custom" ? await txt("✕", "Small Strong", "primary-text", { name: "Remove" }) : null].filter(Boolean))]), [["Label", "Label"]]);
+
+    await single("Add Chip", "Opens an inline field to add your own tag (allergies, watch-outs, good-to-know). Dashed so it reads as an action, not a choice.", async () =>
+      box("Add Chip", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: 999, stroke: "text-muted", sw: 1.5, dashed: true, align: "CENTER", minH: "size/touch-target" }, [
+        await txt("+ Add", "Small Strong", "text-muted", { name: "Label" })]), [["Label", "Label"]]);
+
+    await variants("Color Swatch", "Look step: one app color. Selected = 2 px text-color ring + ✓. Tag marks the default and the color matched from the pet's coat. Override the Dot fill per preset.", ["Default", "Selected"].map((s) => [`State=${s}`, async () =>
+      box("Color Swatch", { w: Math.floor((CW - 18) / 4), gap: 4, pad: ["sm", "xs", "sm", "xs"], radius: "lg", stroke: s === "Selected" ? "text" : undefined, sw: 2, align: "CENTER", minH: 76 }, [
+        box("Dot", { dir: "H", w: 36, h: 36, radius: 18, fill: "primary", align: "CENTER", justify: "CENTER" }, s === "Selected" ? [await txt("✓", "Small Strong", "primary-text")] : []),
+        await txt("Goldito green", "Caption", "text", { name: "Name", align: "CENTER" }),
+        await txt("Default", "Caption", "text-muted", { name: "Tag", align: "CENTER" })])]), [["Name", "Name"], ["Tag", "Tag"]]);
 
     await variants("Suggestion Chip", "5-second check (D38): AI-suggested fact from today. Tap turns a wrong one off (struck through).", ["On", "Off"].map((s) => [`State=${s}`, async () =>
       box("Suggestion Chip", { dir: "H", pad: ["xs", "md", "xs", "md"], radius: 999, fill: s === "On" ? "primary" : "surface", stroke: s === "On" ? undefined : "border-strong", align: "CENTER", minH: "size/touch-target" }, [
@@ -865,11 +876,16 @@ const LIBRARY = [
         grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
       [["Title", "Title"], ["Body", "Body"]]);
 
-    await single("Theme Preview", "Onboarding Look step: coat color → nearest accessible preset, contrast badge (≥ 4.5:1), and how it carries into the app.", async () =>
-      box("Theme Preview", { w: CW, gap: "md", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
-        box("Swatches", { dir: "H", gap: "md", align: "CENTER" }, [rect("Detected", 56, 56, { fill: "text-muted", radius: 12 }), await txt("→", "Body", "text-muted"), rect("Preset", 88, 88, { fill: "primary", radius: 18 }), await txt("Forest", "Body Strong", "text", { name: "Preset" })]),
-        tag("Success", "6.4:1 with white text · Passes AA ✓"),
-      ]), [["Preset", "Preset"]]);
+    await single("Look Preview", "Look step: the pet's photo in a ring of the chosen color, next to a mini stay card in that color. Shows the result, not the math (every preset keeps text ≥ 4.5:1).", async () =>
+      box("Look Preview", { dir: "H", w: CW, gap: "md", pad: "md", radius: "lg", fill: "accent", align: "CENTER" }, [
+        box("Ring", { dir: "H", w: 84, h: 84, radius: 42, fill: "primary", pad: 4 }, [rect("Photo", 76, 76, { image: true, radius: 38 })]),
+        grow(box("Mock", { gap: "xs" }, [
+          box("Pill", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "surface", align: "CENTER" }, [dot("live", 7, "primary"), await txt("With Lucy now", "Caption", "primary")]),
+          await txt("Max is with Lucy", "Body Strong", "primary", { name: "Title", fill: true }),
+          fill(box("Bar", { dir: "H", gap: 3 }, [1, 1, 1, 0, 0].map((on, k) => grow(rect(`seg${k}`, 30, 6, { fill: on ? "primary" : "surface", radius: 3 }))))),
+          box("Button", { dir: "H", pad: [6, 14, 6, 14], radius: 999, fill: "primary" }, [await txt("See today's updates", "Small Strong", "primary-text")]),
+        ])),
+      ]), [["Title", "Title"]]);
 
     await variants("Avatar", "Round avatar: sitter initial or pet photo.", ["Initial", "Photo"].map((s) => [`Kind=${s}`, async () => {
       if (s === "Initial") return box("Avatar", { dir: "H", w: 40, h: 40, radius: 20, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("L", "Body Strong", "primary-text", { name: "Initial" })]);
@@ -1192,18 +1208,36 @@ const ONBOARDING = [
     add(b, split("Species", [inst("Segment", { State: "Selected" }, { Label: "🐶 Dog" }), inst("Segment", { State: "Default" }, { Label: "🐱 Cat" })]));
     add(b, row("Photos", [inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Upload" })], "xs"));
   }, P("Continue")],
-  ["ob-look", "Your look", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("Your app now matches Max 🐶", "Title", "text", { fill: true }));
-    add(b, inst("Theme Preview"));
-    add(b, inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Try another preset" }));
-  }, P("Keep this look")],
+  ["ob-look", "Pick your colors", { kind: "Onboarding" }, null, async (b) => {
+    add(b, await txt("Pick Max's colors", "Title", "text", { fill: true }));
+    add(b, await txt("Start with Goldito green, or use a color from Max's coat. You can change it anytime in Profile.", "Body", "text-muted", { fill: true }));
+    add(b, inst("Look Preview"));
+    // Illustrative preset colors (the prototypes compute each one so text stays ≥ 4.5:1).
+    const PRESET = [["Goldito green", "#2D6A4F", "Default · suits Max"], ["Amber", "#9A6B22"], ["Clay", "#B4502E"], ["Umber", "#8C6A52"], ["Slate", "#587593"], ["Plum", "#8A4AA4"], ["Rose", "#B03A50"]];
+    const sw = PRESET.map(([name, hex, tg], k) => {
+      const i = inst("Color Swatch", { State: k === 0 ? "Selected" : "Default" }, { Name: name, Tag: tg || " " });
+      const d = i.findOne((n) => n.name === "Dot"); if (d) d.fills = [{ type: "SOLID", color: hexRGB(hex) }];
+      return i;
+    });
+    add(b, row("Colors", sw, "xs"));
+    add(b, await txt("✓ Text stays easy to read in every color.", "Small", "text-muted", { fill: true }));
+  }, P("Use Goldito green")],
   ["ob-health", "Health & care", { kind: "Onboarding" }, null, async (b) => {
     add(b, await txt("What should Lucy know about Max?", "Title", "text", { fill: true }));
-    add(b, field("Breed"));
-    add(b, chips("Age", ["Puppy", "Adult", "Senior"], ["Adult"]));
-    add(b, chips("Allergies", ["Chicken", "Beef", "Grain", "None"], ["Chicken"]));
-    add(b, chips("Personality", ["Friendly with dogs", "Pulls on leash", "Shy"], ["Pulls on leash"]));
-    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to chicken" }));
+    const tags = (name, list, active, custom) => row(name, [...list.map((l) => inst("Filter Chip", { State: active.includes(l) ? "Active" : "Default" }, { Label: l })),
+      ...(custom || []).map((l) => inst("Filter Chip", { State: "Custom" }, { Label: l })), inst("Add Chip")], "xs");
+    add(b, await txt("Food allergies", "Small Strong"));
+    add(b, tags("Allergies", ["None", "Chicken", "Beef", "Grain", "Dairy"], ["Chicken"], ["Peanut butter"]));
+    add(b, await txt("Watch out for · Lucy sees these as a heads-up", "Small Strong"));
+    add(b, tags("Watch out for", ["Pulls on leash", "Shy with strangers", "Scared of storms"], ["Pulls on leash"]));
+    add(b, await txt("Good to know", "Small Strong"));
+    add(b, tags("Good to know", ["Friendly with dogs", "Good with cats"], ["Friendly with dogs"], ["Loves car rides"]));
+    add(b, box("What Lucy will see", { gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
+      await txt("HEADS-UP", "Caption", "text-muted"),
+      row("Heads-up", [inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to chicken" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to peanut butter" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Pulls on leash" })], "xs"),
+      await txt("GOOD TO KNOW", "Caption", "text-muted"),
+      row("Good to know", [inst("Tag", { Tone: "Brand" }, { Label: "Friendly with dogs" }), inst("Tag", { Tone: "Brand" }, { Label: "Loves car rides" })], "xs"),
+    ]));
   }, P("Save and continue")],
   ["ob-updates", "Notifications", { kind: "Onboarding" }, null, async (b) => {
     add(b, await txt("Know how it's going without asking", "Title", "text", { fill: true }));

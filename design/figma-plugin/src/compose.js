@@ -159,18 +159,36 @@ const ONBOARDING = [
     add(b, split("Species", [inst("Segment", { State: "Selected" }, { Label: "🐶 Dog" }), inst("Segment", { State: "Default" }, { Label: "🐱 Cat" })]));
     add(b, row("Photos", [inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Upload" })], "xs"));
   }, P("Continue")],
-  ["ob-look", "Your look", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("Your app now matches Max 🐶", "Title", "text", { fill: true }));
-    add(b, inst("Theme Preview"));
-    add(b, inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Try another preset" }));
-  }, P("Keep this look")],
+  ["ob-look", "Pick your colors", { kind: "Onboarding" }, null, async (b) => {
+    add(b, await txt("Pick Max's colors", "Title", "text", { fill: true }));
+    add(b, await txt("Start with Goldito green, or use a color from Max's coat. You can change it anytime in Profile.", "Body", "text-muted", { fill: true }));
+    add(b, inst("Look Preview"));
+    // Illustrative preset colors (the prototypes compute each one so text stays ≥ 4.5:1).
+    const PRESET = [["Goldito green", "#2D6A4F", "Default · suits Max"], ["Amber", "#9A6B22"], ["Clay", "#B4502E"], ["Umber", "#8C6A52"], ["Slate", "#587593"], ["Plum", "#8A4AA4"], ["Rose", "#B03A50"]];
+    const sw = PRESET.map(([name, hex, tg], k) => {
+      const i = inst("Color Swatch", { State: k === 0 ? "Selected" : "Default" }, { Name: name, Tag: tg || " " });
+      const d = i.findOne((n) => n.name === "Dot"); if (d) d.fills = [{ type: "SOLID", color: hexRGB(hex) }];
+      return i;
+    });
+    add(b, row("Colors", sw, "xs"));
+    add(b, await txt("✓ Text stays easy to read in every color.", "Small", "text-muted", { fill: true }));
+  }, P("Use Goldito green")],
   ["ob-health", "Health & care", { kind: "Onboarding" }, null, async (b) => {
     add(b, await txt("What should Lucy know about Max?", "Title", "text", { fill: true }));
-    add(b, field("Breed"));
-    add(b, chips("Age", ["Puppy", "Adult", "Senior"], ["Adult"]));
-    add(b, chips("Allergies", ["Chicken", "Beef", "Grain", "None"], ["Chicken"]));
-    add(b, chips("Personality", ["Friendly with dogs", "Pulls on leash", "Shy"], ["Pulls on leash"]));
-    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to chicken" }));
+    const tags = (name, list, active, custom) => row(name, [...list.map((l) => inst("Filter Chip", { State: active.includes(l) ? "Active" : "Default" }, { Label: l })),
+      ...(custom || []).map((l) => inst("Filter Chip", { State: "Custom" }, { Label: l })), inst("Add Chip")], "xs");
+    add(b, await txt("Food allergies", "Small Strong"));
+    add(b, tags("Allergies", ["None", "Chicken", "Beef", "Grain", "Dairy"], ["Chicken"], ["Peanut butter"]));
+    add(b, await txt("Watch out for · Lucy sees these as a heads-up", "Small Strong"));
+    add(b, tags("Watch out for", ["Pulls on leash", "Shy with strangers", "Scared of storms"], ["Pulls on leash"]));
+    add(b, await txt("Good to know", "Small Strong"));
+    add(b, tags("Good to know", ["Friendly with dogs", "Good with cats"], ["Friendly with dogs"], ["Loves car rides"]));
+    add(b, box("What Lucy will see", { gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
+      await txt("HEADS-UP", "Caption", "text-muted"),
+      row("Heads-up", [inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to chicken" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to peanut butter" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Pulls on leash" })], "xs"),
+      await txt("GOOD TO KNOW", "Caption", "text-muted"),
+      row("Good to know", [inst("Tag", { Tone: "Brand" }, { Label: "Friendly with dogs" }), inst("Tag", { Tone: "Brand" }, { Label: "Loves car rides" })], "xs"),
+    ]));
   }, P("Save and continue")],
   ["ob-updates", "Notifications", { kind: "Onboarding" }, null, async (b) => {
     add(b, await txt("Know how it's going without asking", "Title", "text", { fill: true }));

@@ -17,7 +17,10 @@ const Onboard = (() => {
   const VARIANT = {pet: 1, look: 2};
   const UNCOUNTED = ["welcome", "live", "login"];
   const ALLERGIES = ["Chicken", "Beef", "Grain", "Dairy"];
-  const TEMPER = ["Friendly with dogs", "Good with cats", "Shy with strangers", "Pulls on leash", "Scared of storms"];
+  // Personality is split by what the sitter should do with it: "watch" traits are heads-ups, "good" traits are just good to know.
+  const WATCH = ["Pulls on leash", "Shy with strangers", "Scared of storms"];
+  const GOOD = ["Friendly with dogs", "Good with cats"];
+  const ADD_HINT = {allergy: "e.g. Peanut butter", watch: "e.g. Barks at bikes", good: "e.g. Loves car rides"};
   const RULES = ["Fenced yard", "Smoke-free", "Crate available", "Kids at home"];
   const CANCEL = [
     {k: "flexible", t: "Flexible", s: "Full refund up to 24 hours before"},
@@ -48,7 +51,9 @@ const Onboard = (() => {
       owner: {name: "Chloe Park", email: "chloe@pawnote.test"},
       sitter: {name: "Lucy Kim", email: "lucy@pawnote.test"},
       health: {age: "Adult", allergies: new Set(["Chicken"]), meds: true, medText: "Skin pill at 2 PM, hidden in a treat",
-        temper: new Set(["Pulls on leash"]), vet: ""},
+        watch: new Set(["Pulls on leash"]), good: new Set(["Friendly with dogs"]), vet: "",
+        // Options per list; owners can add their own (custom ones carry a remove button).
+        opts: {allergy: [...ALLERGIES], watch: [...WATCH], good: [...GOOD]}, custom: new Set(), adding: null},
       notif: {photos: true, care: true, report: true, trip: true}, permission: "unasked",
       services: new Set(["boarding", "house_sitting"]),
       rates: {boarding: 55, house_sitting: 70, dropin: 25, extraPetPct: 50, holidayPct: 25},
@@ -77,6 +82,19 @@ const Onboard = (() => {
     `<div class="ob-stepper"><button type="button" data-ob="${act}" data-v="-1" aria-label="Less">−</button>
       <output aria-live="polite"><b>${value}</b>${unit ? `<span>${unit}</span>` : ""}</output>
       <button type="button" data-ob="${act}" data-v="1" aria-label="More">+</button></div>`;
+  // A chip list whose options the owner can extend: preset chips toggle, custom chips remove, "+ Add" opens an inline field.
+  function tagList(list, selected, act) {
+    const h = O.health;
+    const chips = h.opts[list].map((x) => h.custom.has(`${list}|${x}`)
+      ? `<span class="chip active ob-custom">${esc(x)}<button type="button" class="ob-x" data-ob="tag-remove" data-v="${esc(`${list}|${x}`)}" aria-label="Remove ${esc(x)}">✕</button></span>`
+      : chip(esc(x), act, selected.has(x), x)).join("");
+    const add = h.adding === list
+      ? `<span class="ob-add-row"><input class="input" id="obAdd" maxlength="30" placeholder="${ADD_HINT[list]}" aria-label="New tag">
+          <button type="button" class="btn btn-primary btn-sm" data-ob="tag-save" data-v="${list}">Add</button>
+          <button type="button" class="ob-x" data-ob="tag-cancel" aria-label="Cancel">✕</button></span>`
+      : `<button type="button" class="chip ob-add" data-ob="tag-open" data-v="${list}">+ Add</button>`;
+    return chips + add;
+  }
   const frame = (body, foot) => `<div class="ob-scroll">${body}</div>${foot ? `<div class="ob-foot">${O.flash ? `<p class="ob-flash" role="status">${esc(O.flash)}</p>` : ""}${foot}</div>` : ""}`;
 
   // ---------- screens ----------
@@ -130,14 +148,15 @@ const Onboard = (() => {
         ${field("Breed", "obBreed", h.breed, 'placeholder="e.g. Maltese"')}
         <div class="jr-stack"><span class="jr-label">Age</span><div class="jr-chips">${[A.species() === "dog" ? "Puppy" : "Kitten", "Adult", "Senior"].map((x) => chip(x, "age", h.age === x, x)).join("")}</div></div>
         <div class="jr-stack"><span class="jr-label">Food allergies</span><div class="jr-chips">
-          ${ALLERGIES.map((x) => chip(x, "allergy", h.allergies.has(x), x)).join("")}${chip("None", "allergy-none", h.allergies.size === 0, "")}</div>
+          ${chip("None", "allergy-none", h.allergies.size === 0, "")}${tagList("allergy", h.allergies, "allergy")}</div>
           <p class="jr-p">Treat Guard checks every new treat label against this.</p></div>
         <div class="jr-stack"><span class="jr-label">Medication</span><div class="jr-chips">${chip("None", "meds", !h.meds, "0")}${chip("Takes medication", "meds", h.meds, "1")}</div>
           ${h.meds ? `<input class="input" id="obMeds" value="${esc(h.medText)}" placeholder="e.g. Skin pill at 2 PM, hidden in a treat" aria-label="Medication details">` : ""}</div>
-        <div class="jr-stack"><span class="jr-label">Personality</span><div class="jr-chips">${TEMPER.map((x) => chip(x, "temper", h.temper.has(x), x)).join("")}</div></div>
+        <div class="jr-stack"><span class="jr-label">Watch out for <span class="ob-sub">· ${SITTER} sees these as a heads-up</span></span><div class="jr-chips">${tagList("watch", h.watch, "watch")}</div></div>
+        <div class="jr-stack"><span class="jr-label">Good to know</span><div class="jr-chips">${tagList("good", h.good, "good")}</div></div>
         ${field("Vet clinic (optional)", "obVet", h.vet, 'placeholder="e.g. Maple Animal Clinic"')}
-        <div class="jr-card ob-preview" aria-live="polite"><span class="jr-label">Heads-up the sitter will see</span>
-          <div class="jr-heads">${headsHTML()}</div></div>`,
+        <div class="jr-card ob-preview" aria-live="polite"><span class="jr-label">What ${SITTER} will see</span>
+          ${headsHTML()}</div>`,
         `${primary("Save and continue", "health-save")}<button type="button" class="ob-skip" data-ob="health-skip">Skip for now · the sitter will ask at Meet & Greet</button>`);
     },
     updates() {
@@ -214,11 +233,15 @@ const Onboard = (() => {
     },
   };
 
+  // Heads-up (warning tone) for allergies, medication and watch-outs; good-to-know traits stay neutral — never shown as alerts.
   function headsHTML() {
     const h = O.health;
     const heads = [...h.allergies].map((x) => `Allergic to ${x.toLowerCase()}`)
-      .concat(h.meds && h.medText.trim() ? [h.medText.trim()] : [], [...h.temper]);
-    return heads.length ? heads.map((x) => `<span>⚠️ ${esc(x)}</span>`).join("") : `<span class="ob-none">Nothing yet</span>`;
+      .concat(h.meds && h.medText.trim() ? [h.medText.trim()] : [], [...h.watch]);
+    const good = [...h.good];
+    if (!heads.length && !good.length) return `<div class="jr-heads"><span class="ob-none">Nothing yet</span></div>`;
+    return (heads.length ? `<div class="ob-heads-group"><span class="ob-heads-title">Heads-up</span><div class="jr-heads">${heads.map((x) => `<span class="warn">⚠️ ${esc(x)}</span>`).join("")}</div></div>` : "")
+      + (good.length ? `<div class="ob-heads-group"><span class="ob-heads-title">Good to know</span><div class="jr-heads">${good.map((x) => `<span class="good">${esc(x)}</span>`).join("")}</div></div>` : "");
   }
   function osPrompt() {
     return `<div class="ob-os" role="alertdialog" aria-modal="true" aria-labelledby="obOsT"><div class="ob-os-card">
@@ -324,7 +347,24 @@ const Onboard = (() => {
       case "allergy": toggle(h.allergies, v); break;
       case "allergy-none": h.allergies.clear(); break;
       case "meds": h.meds = v === "1"; break;
-      case "temper": toggle(h.temper, v); break;
+      case "watch": toggle(h.watch, v); break;
+      case "good": toggle(h.good, v); break;
+      case "tag-open": h.adding = v; render(); { const i = el.querySelector("#obAdd"); if (i) i.focus(); } return;
+      case "tag-cancel": h.adding = null; break;
+      case "tag-save": {
+        const i = el.querySelector("#obAdd"), t = (i ? i.value : "").trim().replace(/\s+/g, " ");
+        if (!t) { h.adding = null; break; }
+        const label = t.charAt(0).toUpperCase() + t.slice(1);
+        const list = v, sel = list === "allergy" ? h.allergies : h[list];
+        if (!h.opts[list].some((x) => x.toLowerCase() === label.toLowerCase())) { h.opts[list].push(label); h.custom.add(`${list}|${label}`); }
+        sel.add(h.opts[list].find((x) => x.toLowerCase() === label.toLowerCase()));
+        h.adding = null; break;
+      }
+      case "tag-remove": {
+        const [list, label] = v.split("|");
+        h.opts[list] = h.opts[list].filter((x) => x !== label); h.custom.delete(v);
+        (list === "allergy" ? h.allergies : h[list]).delete(label); break;
+      }
       case "health-save":
         Journey.configure({allergy: h.allergies.size ? [...h.allergies][0].toLowerCase() : null});
         next(); return;
@@ -435,7 +475,12 @@ const Onboard = (() => {
       handle(b.dataset.ob, b.dataset.v, b);
     });
     el.addEventListener("input", onInput);
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") { const p = el.querySelector(".ob-foot .btn-primary:not([disabled])"); if (p) p.click(); } });
+    el.addEventListener("keydown", (e) => {
+      if (e.target.id === "obAdd" && (e.key === "Enter" || e.key === "Escape")) {
+        e.preventDefault(); handle(e.key === "Enter" ? "tag-save" : "tag-cancel", O.health.adding); return;
+      }
+      if (e.key === "Enter" && e.target.tagName === "INPUT") { const p = el.querySelector(".ob-foot .btn-primary:not([disabled])"); if (p) p.click(); }
+    });
     // While onboarding runs, the top bar's Back belongs to this layer (except on the concept's Look step).
     A.backBtn.addEventListener("click", (e) => {
       if (!O || !O.active || key() === "look") return;
@@ -450,5 +495,5 @@ const Onboard = (() => {
     fromHash();
   }
 
-  return {init, step, after, reset, active: () => !!(O && O.active), quiet: () => quiet};
+  return {init, step, after, reset, active: () => !!(O && O.active), quiet: () => quiet, flow: () => (O ? O.flow : "owner")};
 })();
