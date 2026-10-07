@@ -138,3 +138,140 @@ test.describe("owner inquiry", () => {
     await expect(app(page).getByText("Conversation not found")).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// Sitter side (7B.6)
+// ---------------------------------------------------------------------------------------------
+
+const INQ = "00000000-0000-4000-8000-0000000000d1";
+
+function seedThread(db: MockDb, extra: Record<string, unknown> = {}) {
+  seed(db);
+  db.inquiries.push({
+    id: INQ, owner_id: OWNER.id, sitter_id: SITTER.id, service_type: "boarding",
+    drop_off_at: "2030-10-09T11:30:00.000Z", pick_up_at: "2030-10-12T21:00:00.000Z",
+    drop_off_location_type: "sitter_home", pick_up_location_type: "sitter_home",
+    pet_ids: [MAX], status: "open", booking_id: null, created_at: "2026-10-06T10:00:00Z",
+  });
+  db.inquiry_messages.push(
+    { id: "q1", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "Can you give Max his pill at 2 PM?", status: "sent", drafted_by_ai: false, visible_at: "2026-10-06T10:00:00Z", read_at: null, created_at: "2026-10-06T10:00:00Z", grounding: null },
+    {
+      id: "draft1", inquiry_id: INQ, author: "ai", sender_id: null, body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾", status: "draft", drafted_by_ai: true,
+      visible_at: "2026-10-06T10:00:05Z", read_at: null, created_at: "2026-10-06T10:00:05Z",
+      grounding: { quote: QUOTE, sources: [{ id: "policy-0", type: "sitter_policy", label: "From Lucy's policies", text: "x" }], availability: { can_host: true }, needs_sitter: false, intent: null, policy_conflicts: [] },
+      ...extra,
+    },
+  );
+}
+
+async function openSitterThread(page: import("@playwright/test").Page, extra: Record<string, unknown> = {}) {
+  const { db } = await mockSupabase(page, [OWNER, SITTER]);
+  seedThread(db, extra);
+  const asked: Record<string, unknown>[] = [];
+  await page.route("**/api/ai/inquiry-reply", (route) => {
+    const body = route.request().postDataJSON();
+    asked.push(body);
+    db.inquiry_messages.push({
+      id: `draft-${asked.length + 1}`, inquiry_id: INQ, author: "ai", sender_id: null, status: "draft", drafted_by_ai: true,
+      body: body.intent === "decline" ? "Hi Chloe! I'm sorry, I can't this time." : "Hi Chloe! A fresh take: $268.13 CAD.",
+      visible_at: new Date().toISOString(), read_at: null, created_at: new Date(Date.now() + 1000 * asked.length).toISOString(),
+      grounding: { quote: QUOTE, sources: [], availability: { can_host: true }, needs_sitter: false, intent: body.intent ?? null },
+    });
+    return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+  await signIn(page, SITTER);
+  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await page.goto("/sitter/bookings");
+  await app(page).getByTestId("sitter-bookings-tabs-inquiries").click();
+  return { db, asked };
+}
+
+test.describe("sitter inquiry", () => {
+  test("Questions lists the thread with a draft ready; one tap on Send keeps the quote and tells the owner", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("sitter-bookings-tabs-inquiries")).toContainText("Questions (1)");
+    await expect(screen.getByTestId(`inquiry-card-${INQ}`)).toContainText("Draft ready");
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+
+    await expect(screen.getByTestId("inquiry-warning")).toHaveText("AI drafts can be wrong. You're responsible for what you send.");
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("$268.13");
+    await expect(screen.getByTestId("inquiry-draft-quote")).toContainText("268.13");
+    await expect(screen.getByTestId("inquiry-draft-sources")).toContainText("From Lucy's policies");
+    await expect(screen.getByTestId("inquiry-needs-you")).toHaveCount(0);
+    // Opening the thread is the read mark.
+    await expect.poll(() => db.inquiry_messages.find((m) => m.id === "q1")?.read_at).toBeTruthy();
+
+    await screen.getByTestId("inquiry-send").click(); // no typing at all
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Chloe was told");
+    const sent = db.inquiry_messages.find((m) => m.author === "sitter");
+    expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id, body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾" });
+    expect((sent?.grounding as { quote: { total: number } }).quote.total).toBe(268.13);
+    expect(sent?.grounding).not.toHaveProperty("needs_sitter");
+    expect(db.notifications.find((n) => n.type === "inquiry_replied")?.user_id).toBe(OWNER.id);
+    await expect(screen.getByTestId("inquiry-replied")).toContainText("Chloe was told");
+    await expect(screen.getByTestId("inquiry-draft")).toHaveCount(0);
+  });
+
+  test("Edit / Add sends the sitter's own text, and a needs-you draft says so", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    db.inquiry_messages.find((m) => m.id === "draft1")!.grounding = {
+      quote: QUOTE, sources: [], availability: { can_host: true }, needs_sitter: true, intent: null,
+    };
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-needs-you")).toBeVisible();
+    await screen.getByTestId("inquiry-edit-toggle").click();
+    await screen.getByTestId("inquiry-edit").fill("Hi Chloe! Yes — pill at 2 PM works. $268.13 CAD total.");
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    expect(db.inquiry_messages.find((m) => m.author === "sitter")?.body).toBe("Hi Chloe! Yes — pill at 2 PM works. $268.13 CAD total.");
+  });
+
+  test("Regenerate and the intent chips ask for another draft (the newest one is shown)", async ({ page }) => {
+    const { asked } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-regenerate").click();
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("A fresh take");
+    expect(asked[0]).toEqual({ inquiry_id: INQ, regenerate: true });
+    await screen.getByTestId("inquiry-intent-decline").click();
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("I can't this time");
+    expect(asked[1]).toEqual({ inquiry_id: INQ, regenerate: true, intent: "decline" });
+  });
+
+  test("with no draft yet the sitter sees it is being written and can write it themselves", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    db.inquiry_messages.splice(db.inquiry_messages.findIndex((m) => m.id === "draft1"), 1);
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/sitter/inquiries/${INQ}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("inquiry-no-draft")).toContainText("Your draft is being written");
+    await screen.getByTestId("inquiry-write-myself").click();
+    await screen.getByTestId("inquiry-edit").fill("Hi Chloe! I'll check and reply properly soon.");
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    expect(db.inquiry_messages.find((m) => m.author === "sitter")).toMatchObject({ drafted_by_ai: false, grounding: null });
+  });
+
+  test("the sitter's policies are saved and handed to the assistant", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null, services: ["boarding"], policies: null });
+    const reindex: number[] = [];
+    await page.route("**/api/rag/reindex-sitter", (route) => {
+      reindex.push(1);
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chunks: 1 }) });
+    });
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto("/profile");
+    const screen = app(page);
+    await screen.getByLabel("House rules & policies (optional)").fill("No dogs over 20 kg.");
+    await screen.getByRole("button", { name: "Save" }).click();
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
+    expect(db.sitter_profiles[0].policies).toBe("No dogs over 20 kg.");
+    await expect.poll(() => reindex.length).toBe(1);
+  });
+});

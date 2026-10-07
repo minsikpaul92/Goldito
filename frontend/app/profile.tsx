@@ -9,7 +9,7 @@ import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { TextButton } from "../components/ui/TextButton";
 import { TextField } from "../components/ui/TextField";
-import { RoleProfile, loadRoleProfile, saveProfile } from "../features/profile/profileApi";
+import { RoleProfile, loadRoleProfile, reindexSitterPolicies, saveProfile } from "../features/profile/profileApi";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -39,6 +39,12 @@ const SITTER_FIELDS: FieldSpec[] = [
     key: "packing_list",
     label: "Packing list for owners",
     placeholder: "One item per line — food, bed, meds…",
+    multiline: true,
+  },
+  {
+    key: "policies",
+    label: "House rules & policies",
+    placeholder: "What's included, cancellation, house rules, pets you don't take… Written once; your replies draw on it.",
     multiline: true,
   },
 ];
@@ -175,6 +181,7 @@ export default function ProfileScreen() {
               visitor_parking: value("visitor_parking"),
               lobby_notes: value("lobby_notes"),
               packing_list: packing.length > 0 ? packing : [],
+              policies: value("policies"),
             },
           };
 
@@ -182,6 +189,9 @@ export default function ProfileScreen() {
     setSaveError(null);
     try {
       await saveProfile(profile.id, name, next);
+      if (next.role === "sitter" && loaded.role === "sitter" && (next.fields.policies ?? null) !== (loaded.fields.policies ?? null)) {
+        void reindexSitterPolicies();
+      }
       session.patchProfile({ displayName: name });
       setLoaded(next);
       toast.show("Profile saved ✅");

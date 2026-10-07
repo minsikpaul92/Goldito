@@ -2710,35 +2710,69 @@ begin
   perform _t_ok((select count(*) from public.inquiries) = 0 and (select count(*) from public.inquiry_messages) = 0,
     'M: another sitter sees none either');
 
-  -- Lucy sends it (as herself); Chloe sees it once it is visible, and is told
+  -- Lucy sends it through the RPC; a direct insert as the sitter is refused
   perform _t_as(lucy);
   begin
     insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
-    values (v_inq, 'sitter', paul, 'as Paul');
+    values (v_inq, 'sitter', lucy, 'a message written around the RPC');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
-  perform _t_ok(v_err = '42501', 'M: a sitter writes only as herself');
+  perform _t_ok(v_err = '42501', 'M: a sitter cannot insert a message directly (only through send_inquiry_reply)');
+  perform _t_as(paul);
   begin
-    insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
-    values (v_inq, 'sitter', lucy, 'a held-back reply');
-    update public.inquiry_messages set visible_at = now() - interval '1 second' where inquiry_id = v_inq;
+    perform send_inquiry_reply(v_inq, 'as Paul', null);
     v_err := null;
-  exception when others then v_err := sqlstate;
+  exception when others then v_err := sqlerrm;
   end;
-  perform _t_ok(v_err = '42501', 'M: …and cannot set visible_at herself');
-  perform _t_as(null);
-  delete from public.inquiry_messages where body = 'a held-back reply';
+  perform _t_ok(v_err = 'forbidden', 'M: another sitter cannot reply in Lucy''s thread');
+  perform _t_as(chloe);
+  begin
+    perform send_inquiry_reply(v_inq, 'as Chloe', null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'M: the owner cannot reply as the sitter');
   perform _t_as(lucy);
-  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, confirmed_by_sitter_at)
-  values (v_inq, 'sitter', lucy, 'Hi Chloe! I''m available…', true, now());
+  begin
+    perform send_inquiry_reply(v_inq, '   ', v_draft);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'body_required', 'M: an empty reply is refused');
+  begin
+    perform send_inquiry_reply(v_inq, 'hi', gen_random_uuid());
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'draft_not_found', 'M: a draft that is not in this thread is refused');
+  perform send_inquiry_reply(v_inq, 'Hi Chloe! I''m available…', v_draft);
   perform _t_as(chloe);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 1
       and (select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'ai') = 0,
     'M: the owner sees the sitter''s sent reply, still not the draft');
+  perform _t_ok((select grounding -> 'quote' ->> 'total' from public.inquiry_messages
+        where inquiry_id = v_inq and author = 'sitter') = '268.13'
+      and (select grounding ? 'needs_sitter' from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = false,
+    'M: the reply carries the quote but none of the draft''s internal notes');
+  perform _t_ok((select drafted_by_ai and confirmed_by_sitter_at is not null and sender_id = lucy
+        from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter'),
+    'M: …marked as approved by the sitter');
   perform _t_ok(exists (select 1 from public.notifications
       where user_id = chloe and type = 'inquiry_replied' and ref_id = v_inq),
     'M: the owner is told Lucy replied');
+
+  -- The sitter opening the thread is the only "read"
+  perform _t_ok((select read_at is null from public.inquiry_messages where id = v_msg),
+    'M: the owner''s message is unread until the sitter opens the thread');
+  perform _t_as(paul);
+  perform mark_inquiry_read(v_inq);
+  perform _t_as(lucy);
+  perform _t_ok((select read_at is null from public.inquiry_messages where id = v_msg),
+    'M: another sitter opening it marks nothing');
+  perform mark_inquiry_read(v_inq);
+  perform _t_ok((select read_at is not null from public.inquiry_messages where id = v_msg),
+    'M: the sitter opening the thread marks the owner''s message read');
 
   -- A reply that is not visible yet stays hidden from the owner
   perform _t_as(null);

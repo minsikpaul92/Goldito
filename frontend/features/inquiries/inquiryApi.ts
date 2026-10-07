@@ -48,6 +48,19 @@ export type InquiryView = {
   status: "open" | "booked" | "closed";
   bookingId: string | null;
   messages: InquiryMessage[];
+  /** The newest AI draft — only the sitter's queries ever return one (RLS). */
+  draft: InquiryDraft | null;
+};
+
+export type InquiryDraft = {
+  id: string;
+  body: string;
+  at: string;
+  quote: PriceQuote | null;
+  sources: InquirySource[];
+  canHost: boolean | null;
+  needsSitter: boolean;
+  intent: string | null;
 };
 
 type Embed<T> = T | T[] | null;
@@ -109,12 +122,18 @@ type MessageRow = {
   body: string;
   created_at: string;
   read_at: string | null;
-  grounding: { quote?: PriceQuote | null; sources?: InquirySource[]; availability?: { can_host?: boolean } } | null;
+  grounding: {
+    quote?: PriceQuote | null;
+    sources?: InquirySource[];
+    availability?: { can_host?: boolean };
+    needs_sitter?: boolean;
+    intent?: string | null;
+  } | null;
 };
 
 const COLUMNS =
   "id, owner_id, sitter_id, service_type, drop_off_at, pick_up_at, drop_off_location_type, pick_up_location_type, " +
-  "pet_ids, status, booking_id, sitter:profiles!inquiries_sitter_id_fkey(display_name), " +
+  "pet_ids, status, booking_id, created_at, sitter:profiles!inquiries_sitter_id_fkey(display_name), " +
   "owner:profiles!inquiries_owner_id_fkey(display_name)";
 
 type InquiryRow = {
@@ -129,6 +148,7 @@ type InquiryRow = {
   pet_ids: string[];
   status: "open" | "booked" | "closed";
   booking_id: string | null;
+  created_at: string;
   sitter: Embed<{ display_name: string }>;
   owner: Embed<{ display_name: string }>;
 };
@@ -165,6 +185,7 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
     petNames: row.pet_ids.map((p) => names.get(p)).filter((n): n is string => !!n),
     status: row.status,
     bookingId: row.booking_id,
+    draft: latestDraft((msgs.data ?? []) as MessageRow[]),
     messages: ((msgs.data ?? []) as MessageRow[])
       .filter((m) => m.author !== "ai")
       .map((m) => ({
@@ -178,6 +199,99 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
         readAt: m.read_at,
       })),
   };
+}
+
+function latestDraft(rows: MessageRow[]): InquiryDraft | null {
+  const drafts = rows.filter((m) => m.author === "ai");
+  const m = drafts[drafts.length - 1];
+  if (!m) return null;
+  return {
+    id: m.id,
+    body: m.body,
+    at: m.created_at,
+    quote: m.grounding?.quote ?? null,
+    sources: m.grounding?.sources ?? [],
+    canHost: m.grounding?.availability?.can_host ?? null,
+    needsSitter: !!m.grounding?.needs_sitter,
+    intent: m.grounding?.intent ?? null,
+  };
+}
+
+export type ReplyIntent = "accept" | "decline" | "suggest_dates";
+
+/** Sitter: another draft, optionally leaning one way (the intent chips). Throws a message the sitter can read. */
+export async function regenerateDraft(inquiryId: string, intent?: ReplyIntent): Promise<void> {
+  try {
+    await apiPost("/api/ai/inquiry-reply", { inquiry_id: inquiryId, regenerate: true, ...(intent ? { intent } : {}) });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 409)) throw new Error(error.message);
+    throw new Error("Couldn't write another draft. Check your connection and try again.");
+  }
+}
+
+/** Sitter: send the text they approved (the draft as is, or their edit). `draftId` keeps the quote and sources. */
+export async function sendInquiryReply(inquiryId: string, body: string, draftId: string | null): Promise<void> {
+  const { error } = await getSupabase().rpc("send_inquiry_reply", { p_inquiry: inquiryId, p_body: body, p_draft: draftId });
+  if (!error) return;
+  if (error.message.includes("body_required")) throw new Error("Write something before sending.");
+  if (error.message.includes("body_too_long")) throw new Error("Keep the reply under 2000 characters.");
+  if (error.message.includes("inquiry_closed")) throw new Error("The owner closed this question.");
+  fail("send the reply");
+}
+
+/** The sitter opened the thread: the owner's messages become read (the only read mark there is). */
+export async function markInquiryRead(inquiryId: string): Promise<void> {
+  await getSupabase().rpc("mark_inquiry_read", { p_inquiry: inquiryId });
+}
+
+export type SitterInquiryCard = {
+  id: string;
+  ownerName: string;
+  petNames: string[];
+  serviceType: ServiceType;
+  dropOffAt: string;
+  pickUpAt: string;
+  createdAt: string;
+  status: "open" | "booked" | "closed";
+  /** "waiting" = no draft yet · "draft" = draft ready, not sent · "replied" = the sitter has sent a reply. */
+  state: "waiting" | "draft" | "replied";
+};
+
+/** The sitter's inquiries, newest first, each with where it stands. */
+export async function listSitterInquiries(): Promise<SitterInquiryCard[]> {
+  const supabase = getSupabase();
+  const found = await supabase
+    .from("inquiries")
+    .select(COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (found.error) fail("load your questions");
+  const rows = (found.data ?? []) as unknown as InquiryRow[];
+  if (rows.length === 0) return [];
+  const [msgs, pets] = await Promise.all([
+    supabase.from("inquiry_messages").select("inquiry_id, author, created_at").in("inquiry_id", rows.map((r) => r.id)),
+    supabase.from("pets").select("id, name").in("id", [...new Set(rows.flatMap((r) => r.pet_ids))]),
+  ]);
+  const names = new Map(((pets.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]));
+  const byInquiry = new Map<string, { author: string; created_at: string }[]>();
+  for (const m of (msgs.data ?? []) as { inquiry_id: string; author: string; created_at: string }[]) {
+    byInquiry.set(m.inquiry_id, [...(byInquiry.get(m.inquiry_id) ?? []), m]);
+  }
+  return rows.map((r) => {
+    const list = byInquiry.get(r.id) ?? [];
+    const replied = list.some((m) => m.author === "sitter");
+    return {
+      id: r.id,
+      ownerName: first(r.owner)?.display_name ?? "An owner",
+      petNames: r.pet_ids.map((p) => names.get(p)).filter((n): n is string => !!n),
+      serviceType: r.service_type,
+      dropOffAt: r.drop_off_at,
+      pickUpAt: r.pick_up_at,
+      createdAt: r.created_at,
+      status: r.status,
+      state: replied ? "replied" : list.some((m) => m.author === "ai") ? "draft" : "waiting",
+    };
+  });
 }
 
 /** After the booking request went out: the inquiry is booked (RLS lets the owner set only this). */
