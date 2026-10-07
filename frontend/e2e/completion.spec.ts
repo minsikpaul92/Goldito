@@ -109,6 +109,98 @@ test.describe("finished stay", () => {
   });
 });
 
+test.describe("life record", () => {
+  const RECORD = {
+    eats: "Finishes breakfast; ate less on day 2.", meds: "Takes the skin pill inside a treat.", potty: null,
+    behavior: "Excited by squirrels, calm indoors.", heads_up: ["Chicken allergy"], sitter_tips: ["Text instead of knocking"], changed_since_last: [],
+  };
+
+  /** The backend writes one record per pet (here: Max has notes, Mochi has none). */
+  async function mockRecordApi(page: Page, db: MockDb, options: { failFirst?: boolean; delayMs?: number } = {}) {
+    const calls: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/life-record", async (route) => {
+      calls.push(route.request().postDataJSON());
+      if (options.delayMs) await new Promise((r) => setTimeout(r, options.delayMs));
+      if (options.failFirst && calls.length === 1) {
+        return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Couldn't write Max's Life Record right now. Try again." }) });
+      }
+      for (const [petId, summary] of [[MAX, RECORD], [MOCHI, { eats: null, meds: null, potty: null, behavior: null, heads_up: [], sitter_tips: [], changed_since_last: [] }]] as const) {
+        if (!db.pet_life_records.some((r) => r.booking_id === BOOKING && r.pet_id === petId)) {
+          db.pet_life_records.push({ id: `rec-${petId.slice(-2)}`, pet_id: petId, booking_id: BOOKING, sitter_id: SITTER.id, summary, stay_from: "2026-10-09", stay_to: "2026-10-12", created_at: new Date().toISOString() });
+        }
+      }
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ records: [] }) });
+    });
+    return calls;
+  }
+
+  test("a finished stay writes the Life Record on its own and shows it with where it came from", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const calls = await mockRecordApi(page, db, { delayMs: 800 });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("record-writing")).toContainText("Writing the Life Record");
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
+    expect(calls).toEqual([{ booking_id: BOOKING }]);
+    await expect(screen.getByTestId(`life-record-${MAX}-eats`)).toContainText("ate less on day 2");
+    await expect(screen.getByTestId(`life-record-${MAX}-meds`)).toContainText("skin pill");
+    await expect(screen.getByTestId(`life-record-${MAX}-potty`)).toHaveCount(0); // nothing recorded → no square
+    await expect(screen.getByTestId(`life-record-${MAX}-heads-up`)).toContainText("Chicken allergy");
+    await expect(screen.getByTestId(`life-record-${MAX}-source`)).toHaveText(/^From Chloe · Oct 9 – Oct 12$/);
+    await expect(screen.getByTestId(`life-record-${MOCHI}`)).toContainText("Nothing was recorded");
+    await expect(screen.getByTestId("record-writing")).toHaveCount(0);
+  });
+
+  test("when writing fails there is a Retry that finishes the job; nothing is asked once the records exist", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const calls = await mockRecordApi(page, db, { failFirst: true });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("record-failed")).toContainText("Couldn't write Max's Life Record");
+    await screen.getByTestId("record-retry").click();
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
+    await expect(screen.getByTestId("record-failed")).toHaveCount(0);
+    expect(calls).toHaveLength(2);
+    await page.reload();
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
+    expect(calls).toHaveLength(2); // already written: no new request
+  });
+
+  test("the pet's Life Record page shows the newest stay first and earlier stays below", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.pet_life_records.push(
+      { id: "old", pet_id: MAX, booking_id: "b0", sitter_id: SITTER.id, summary: { ...RECORD, eats: "Old note.", heads_up: [] }, stay_from: "2026-09-01", stay_to: "2026-09-03", created_at: "2026-09-04T00:00:00Z" },
+      { id: "new", pet_id: MAX, booking_id: BOOKING, sitter_id: SITTER.id, summary: RECORD, stay_from: "2026-10-09", stay_to: "2026-10-12", created_at: "2026-10-13T00:00:00Z" },
+    );
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/pets/${MAX}`);
+    await app(page).getByTestId("open-life-record").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}/record$`));
+    const screen = app(page);
+    await expect(screen.getByTestId("record-latest")).toContainText("ate less on day 2");
+    await expect(screen.getByTestId("record-latest-source")).toHaveText("From Chloe · Oct 9 – Oct 12");
+    await expect(screen.getByTestId("record-old")).toContainText("Old note.");
+    await expect(screen.getByTestId("record-old-source")).toHaveText("From Chloe · Sep 1 – Sep 3");
+  });
+
+  test("no stay yet: the page explains what will appear", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/pets/${MOCHI}/record`);
+    await expect(app(page).getByText("No Life Record yet")).toBeVisible();
+  });
+});
+
 test.describe("sitter rating", () => {
   test("the sitter's profile shows the average, the count and recent comments with first names", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);

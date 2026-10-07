@@ -189,6 +189,8 @@ export type MockDb = {
   inquiry_messages: Row[];
   /** Reviews of finished stays (Phase 07C). */
   reviews: Row[];
+  /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
+  pet_life_records: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -235,6 +237,7 @@ function createMockDb(): MockDb {
     inquiries: [],
     inquiry_messages: [],
     reviews: [],
+    pet_life_records: [],
   };
 }
 
@@ -1221,6 +1224,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "inquiries" || row.owner_id === me || row.sitter_id === me) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
+        // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
+        (path !== "pet_life_records" || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
         (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
@@ -1293,6 +1298,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
       rows = rows.map((r) => ({ ...r, sitter: name(r.sitter_id), owner: name(r.owner_id) }));
     }
+    if (path === "pet_life_records" && select.includes("sitter:profiles")) {
+      rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({
         ...r,
@@ -1335,7 +1343,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }

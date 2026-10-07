@@ -144,6 +144,7 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
             {
                 "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
                 "body": text, "source_snapshot": snapshot, "model": result.model,
+                "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
             }
         )
         .execute()

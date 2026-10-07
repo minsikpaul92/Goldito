@@ -1,3 +1,4 @@
+import { ApiError, apiPost } from "../../lib/api";
 import { getSupabase } from "../../lib/supabase";
 import { previewOf } from "../diary/reportApi";
 
@@ -98,4 +99,98 @@ export async function getRatingSummary(sitterId: string): Promise<RatingSummary>
     count: Number(row.count),
     recent: (row.recent ?? []).map((r) => ({ rating: r.rating, comment: r.comment, reviewer: r.reviewer, createdAt: r.created_at })),
   };
+}
+
+/** The six squares of a Pet Life Record (what one stay taught us, for the next sitter). */
+export type LifeRecordSummary = {
+  eats: string | null;
+  meds: string | null;
+  potty: string | null;
+  behavior: string | null;
+  heads_up: string[];
+  sitter_tips: string[];
+  changed_since_last: string[];
+};
+
+export type LifeRecord = {
+  id: string;
+  petId: string;
+  bookingId: string;
+  sitterName: string | null;
+  stayFrom: string | null;
+  stayTo: string | null;
+  createdAt: string;
+  summary: LifeRecordSummary;
+};
+
+type Embed<T> = T | T[] | null;
+type RecordRow = {
+  id: string;
+  pet_id: string;
+  booking_id: string;
+  stay_from: string | null;
+  stay_to: string | null;
+  created_at: string;
+  summary: Partial<LifeRecordSummary>;
+  sitter: Embed<{ display_name: string }>;
+};
+
+const RECORD_COLUMNS =
+  "id, pet_id, booking_id, stay_from, stay_to, created_at, summary, sitter:profiles!pet_life_records_sitter_id_fkey(display_name)";
+
+function toRecord(row: RecordRow): LifeRecord {
+  const sitter = Array.isArray(row.sitter) ? row.sitter[0] : row.sitter;
+  const s = row.summary ?? {};
+  return {
+    id: row.id,
+    petId: row.pet_id,
+    bookingId: row.booking_id,
+    sitterName: sitter?.display_name ?? null,
+    stayFrom: row.stay_from,
+    stayTo: row.stay_to,
+    createdAt: row.created_at,
+    summary: {
+      eats: s.eats ?? null,
+      meds: s.meds ?? null,
+      potty: s.potty ?? null,
+      behavior: s.behavior ?? null,
+      heads_up: s.heads_up ?? [],
+      sitter_tips: s.sitter_tips ?? [],
+      changed_since_last: s.changed_since_last ?? [],
+    },
+  };
+}
+
+/** A pet's records, newest first (RLS decides who may read them; the raw source is never selected). */
+export async function listLifeRecords(petId: string): Promise<LifeRecord[]> {
+  const { data, error } = await getSupabase()
+    .from("pet_life_records")
+    .select(RECORD_COLUMNS)
+    .eq("pet_id", petId)
+    .order("created_at", { ascending: false });
+  if (error) fail("load the Life Record");
+  return ((data ?? []) as unknown as RecordRow[]).map(toRecord);
+}
+
+export async function listBookingRecords(petIds: string[], bookingId: string): Promise<LifeRecord[]> {
+  if (petIds.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("pet_life_records")
+    .select(RECORD_COLUMNS)
+    .in("pet_id", petIds)
+    .eq("booking_id", bookingId);
+  if (error) fail("load the Life Record");
+  return ((data ?? []) as unknown as RecordRow[]).map(toRecord);
+}
+
+/** Ask for the stay's Life Records (idempotent: what already exists is returned). Throws a message the owner can read. */
+export async function requestLifeRecord(bookingId: string): Promise<void> {
+  try {
+    await apiPost("/api/ai/life-record", { booking_id: bookingId });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 503 || error.status === 409 || error.status === 403)) {
+      throw new Error(error.message === "stay_not_finished" ? "The stay isn't finished yet." : error.message);
+    }
+    throw new Error("Couldn't write the Life Record. Check your connection and try again.");
+  }
 }

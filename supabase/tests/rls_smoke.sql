@@ -3051,6 +3051,12 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'N: clients never write records');
+  begin
+    perform source_snapshot from public.pet_life_records;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'N: even the owner reads the summary, not the raw source_snapshot');
   perform _t_as(chloe);
   perform _t_ok((select count(*) from public.pet_life_records) = 1,
     'N: the sitter still reads it until their wrap-up window (2 h after the agreed pick-up) closes');

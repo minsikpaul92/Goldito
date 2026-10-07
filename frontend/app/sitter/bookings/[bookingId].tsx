@@ -37,6 +37,7 @@ import {
   respondBooking,
   respondHandoff,
 } from "../../../lib/bookings";
+import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
@@ -336,7 +337,11 @@ export default function SitterBookingDetail() {
             <Button
               label={busy ? "Saving…" : "Returned"}
               onPress={() =>
-                void run(() => completeHandoff(booking.id, "pick_up"), `${petNames} on the way home — ${owner} gets a notice`)
+                void run(async () => {
+                  await completeHandoff(booking.id, "pick_up");
+                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                  void requestLifeRecord(booking.id).catch(() => undefined);
+                }, `${petNames} home safe — ${owner} gets a notice`)
               }
               disabled={busy}
               testID="handoff-returned"

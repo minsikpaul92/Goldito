@@ -172,7 +172,7 @@ export function hrefForNotification(
     case "trip_arrived":
       return bookingHref(notice.bookingId);
     case "life_record_updated":
-      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
+      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}/record` : null;
     case "safety_danger":
     case "photo_request":
     case "task_due":

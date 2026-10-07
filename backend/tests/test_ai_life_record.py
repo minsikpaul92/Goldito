@@ -162,6 +162,7 @@ def test_each_pet_gets_one_record_stored_indexed_and_announced(client, setup):
     assert len(ctx.db.tables["pet_life_records"]) == 2
     saved = ctx.db.tables["pet_life_records"][0]
     assert saved["booking_id"] == BOOKING and saved["sitter_id"] == SITTER_ID and saved["model"] == "super"
+    assert (saved["stay_from"], saved["stay_to"]) == ("2026-10-09", "2026-10-12")
     assert saved["body"].startswith("Eats: Finishes breakfast.") and "Heads-up: Chicken allergy" in saved["body"]
     assert [i["source_type"] for i in ctx.indexed] == ["life_record", "life_record"] and ctx.indexed[0]["pet_id"] == MAX
     notices = [n for n in ctx.db.tables["notifications"] if n["type"] == "life_record_updated"]

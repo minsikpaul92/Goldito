@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CareTasksSection } from "../../../components/CareTasksSection";
 import { HeadsUpSection } from "../../../components/HeadsUpSection";
 import { PetForm } from "../../../components/PetForm";
+import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
@@ -68,6 +69,7 @@ export default function PetProfileScreen() {
           router.back();
         }}
       />
+      <TextButton label="📖 Life Record" onPress={() => router.push(`/owner/pets/${pet.id}/record`)} testID="open-life-record" />
       {session.status === "signedIn" ? <CareTasksSection pet={pet} userId={session.profile.id} /> : null}
       {session.status === "signedIn" ? <HeadsUpSection pet={pet} userId={session.profile.id} /> : null}
     </Screen>
