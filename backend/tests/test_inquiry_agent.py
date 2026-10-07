@@ -18,12 +18,12 @@ client = __import__("tests.test_media_sign", fromlist=["x"]).client
 
 def grounding(can_host=True) -> dict:
     return {
-        "owner": {"first_name": "Chloe"}, "sitter": {"name": "Lucy"},
+        "owner": {"first_name": "Robert"}, "sitter": {"name": "Chloe"},
         "inquiry": {"service": "boarding", "stay_days": ["2026-10-09"], "pet_count": 1},
         "availability": {"can_host": can_host, "unavailable_days": [] if can_host else [{"day": "2026-10-10", "label": "Oct 10", "state": "blocked"}]},
         "quote": QUOTE if can_host else None,
         "pets": [{"name": "Max", "species": "dog"}],
-        "sources": [{"id": "policy-0", "type": "sitter_policy", "label": "From Lucy's policies", "text": "No dogs over 20 kg. Medication is fine."}],
+        "sources": [{"id": "policy-0", "type": "sitter_policy", "label": "From Chloe's policies", "text": "No dogs over 20 kg. Medication is fine."}],
         "policy_conflicts": [],
     }
 

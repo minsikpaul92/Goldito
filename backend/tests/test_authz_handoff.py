@@ -68,7 +68,7 @@ def booking(*, status="confirmed", sitter=SITTER_ID, active=True, drop_in=timede
 
 
 def sitter() -> CurrentUser:
-    return CurrentUser(id=SITTER_ID, email=None, role="sitter", display_name="Lucy", access_token="t")
+    return CurrentUser(id=SITTER_ID, email=None, role="sitter", display_name="Chloe", access_token="t")
 
 
 def check(monkeypatch: pytest.MonkeyPatch, row: dict | None) -> FakeClient:

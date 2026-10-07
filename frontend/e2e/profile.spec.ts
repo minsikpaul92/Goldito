@@ -17,7 +17,7 @@ test.describe("profile", () => {
     await expect(screen.getByTestId("profile-display_name")).toHaveValue(OWNER.displayName);
     await expect(screen.getByTestId("profile-bio")).toHaveCount(0);
 
-    await screen.getByTestId("profile-display_name").fill("Chloe Park");
+    await screen.getByTestId("profile-display_name").fill("Robert Park");
     await screen.getByTestId("profile-emergency_contact_name").fill("Min");
     await screen.getByTestId("profile-emergency_contact_phone").fill("416-555-0100");
     await screen.getByTestId("profile-save").click();
@@ -30,7 +30,7 @@ test.describe("profile", () => {
     expect(row?.home_address).toBeNull();
 
     await screen.getByTestId("open-profile").click();
-    await expect(screen.getByTestId("profile-display_name")).toHaveValue("Chloe Park");
+    await expect(screen.getByTestId("profile-display_name")).toHaveValue("Robert Park");
     await expect(screen.getByTestId("profile-emergency_contact_name")).toHaveValue("Min");
   });
 

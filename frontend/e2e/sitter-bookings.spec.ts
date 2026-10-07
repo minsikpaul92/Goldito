@@ -9,7 +9,7 @@ const BOOKING = "00000000-0000-4000-8000-0000000000e1";
 const MAX = "00000000-0000-4000-8000-0000000000c1";
 const MOCHI = "00000000-0000-4000-8000-0000000000c2";
 
-/** Chloe asks Lucy for Max + Mochi; the drop-off is outside Lucy's hours. */
+/** Robert asks Chloe for Max + Mochi; the drop-off is outside Chloe's hours. */
 function seed(db: MockDb, meetGreet: string) {
   db.pets.push(
     { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: "Maltese", notes: "Pill in a treat" },
@@ -82,15 +82,15 @@ test.describe("sitter requests", () => {
     const { screen, card } = await openRequest(page);
 
     await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toContainText("Requests (1)");
-    await expect(card).toContainText("Chloe");
+    await expect(card).toContainText("Robert");
     await expect(card).toContainText("Custom time — needs your OK");
     await expect(card).toContainText("Meet first");
     await expect(card).toContainText("Drop-off Oct 5, 7:00 AM · Your place");
-    await expect(card).toContainText("Pick-up Oct 8, 5:00 PM · Chloe's place");
+    await expect(card).toContainText("Pick-up Oct 8, 5:00 PM · Robert's place");
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet Chloe first — or agree to skip the Meet & Greet.");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Meet Robert first — or agree to skip the Meet & Greet.");
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("Custom time — outside your hours, needs your OK.");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("chicken");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("8:00 AM · Breakfast");
@@ -128,7 +128,7 @@ test.describe("sitter requests", () => {
     await card.click();
 
     await screen.getByTestId("accept-booking").click();
-    await expect(screen.getByTestId("toast")).toContainText("Booking confirmed — Chloe gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Booking confirmed — Robert gets a notice");
     expect(db.responses).toEqual([{ p_booking: BOOKING, p_accept: true, p_note: null }]);
     expect(db.bookings[0].status).toBe("confirmed");
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
@@ -150,10 +150,10 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("change-time-value")).toHaveText("8:30 AM");
     await screen.getByTestId("change-send").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("New time sent to Chloe");
+    await expect(screen.getByTestId("toast")).toContainText("New time sent to Robert");
     expect(db.proposals).toEqual([{ p_booking: BOOKING, p_kind: "drop_off", p_at: "2030-10-05T12:30:00.000Z" }]);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("8:30 AM");
-    await expect(screen.getByTestId("handoff-drop_off")).toContainText("You suggested this — waiting for Chloe.");
+    await expect(screen.getByTestId("handoff-drop_off")).toContainText("You suggested this — waiting for Robert.");
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
   });
 
@@ -179,7 +179,7 @@ test.describe("sitter requests", () => {
     await card.click();
 
     await screen.getByTestId("decline-booking").click();
-    await expect(screen.getByTestId("decline-sheet")).toContainText("Chloe gets a notice and can find another sitter.");
+    await expect(screen.getByTestId("decline-sheet")).toContainText("Robert gets a notice and can find another sitter.");
     await screen.getByTestId("decline-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Request declined");
     expect(db.bookings[0].status).toBe("declined");

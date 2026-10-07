@@ -8,7 +8,7 @@ export const HOUR = 3_600_000;
 
 export type PetSeed = { id: string; name: string; species: "dog" | "cat" };
 
-/** Chloe's pets, all with Lucy right now (drop-off a day ago, pick-up in two days). */
+/** Robert's pets, all with Chloe right now (drop-off a day ago, pick-up in two days). */
 export function caring(db: MockDb, pets: PetSeed[]) {
   const now = Date.now();
   db.bookings.push({

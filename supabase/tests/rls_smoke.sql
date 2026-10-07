@@ -6,8 +6,8 @@
 -- Success = the script finishes without error ("PASS: ..." notices for each check).
 -- Failure = "FAIL: <check>" error.
 --
--- Cast (all fictional): owners Chloe (dog Max, cat Mochi) and Joy (dogs Coco, Toto);
--- sitters Lucy (08–12 / 12–18 / 18–08, 3 pets), Paul (09–13 / 13–17, 2 pets),
+-- Cast (all fictional): owners Robert (dog Max, cat Mochi) and Joy (dogs Coco, Toto);
+-- sitters Chloe (08–12 / 12–18 / 18–08, 3 pets), Paul (09–13 / 13–17, 2 pets),
 -- Allen (08–12 / 12–18 / 18–08, 3 pets), Nora (no schedule).
 -- Scenario letters match docs/plan/phases/phase-02.md "예시 시나리오".
 -- H (last-spot race) runs sequentially here; the advisory lock serializes real concurrent calls.
@@ -101,9 +101,9 @@ grant execute on function public._t_put(text, uuid), public._t_get(text), public
 -- ---------------------------------------------------------------------------
 
 insert into auth.users (id, email, raw_user_meta_data) values
-  ('00000000-0000-4000-8000-0000000000a1', 'chloe@example.test', '{"role":"owner","display_name":"Chloe"}'),
+  ('00000000-0000-4000-8000-0000000000a1', 'robert@example.test', '{"role":"owner","display_name":"Robert"}'),
   ('00000000-0000-4000-8000-0000000000a2', 'joy@example.test', '{"role":"owner","display_name":"Joy"}'),
-  ('00000000-0000-4000-8000-0000000000b1', 'lucy@example.test', '{"role":"sitter","display_name":"Lucy"}'),
+  ('00000000-0000-4000-8000-0000000000b1', 'chloe@example.test', '{"role":"sitter","display_name":"Chloe"}'),
   ('00000000-0000-4000-8000-0000000000b2', 'paul@example.test', '{"role":"sitter","display_name":"Paul"}'),
   ('00000000-0000-4000-8000-0000000000b3', 'allen@example.test', '{"role":"sitter","display_name":"Allen"}'),
   ('00000000-0000-4000-8000-0000000000b4', 'nora@example.test', '{"role":"sitter"}');
@@ -118,16 +118,16 @@ update public.owner_profiles set home_address = '1 Owner Ave' where id = '000000
 update public.sitter_profiles set home_address = '100 Example St' where id = '00000000-0000-4000-8000-0000000000b1';
 
 -- Permission fixtures:
---   current:       Lucy has Max + Mochi right now.
+--   current:       Chloe has Max + Mochi right now.
 --   future:        Paul has Coco next week.
 --   requested:     Nora has an unanswered request for Mochi in 40 days.
 --   just_finished: Paul returned Toto 1 hour ago (inside the 2 h wrap-up).
 --   finished:      Allen had Coco last week.
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
   nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
@@ -137,11 +137,11 @@ declare
   toto constant uuid := '00000000-0000-4000-8000-0000000000c4';
   v_id uuid;
 begin
-  perform _t_put('current', _t_booking(chloe, lucy, array[max, mochi],
+  perform _t_put('current', _t_booking(robert, chloe, array[max, mochi],
     now() - interval '1 day', now() + interval '1 day', 'confirmed'));
   perform _t_put('future', _t_booking(joy, paul, array[coco],
     now() + interval '7 days', now() + interval '8 days', 'confirmed'));
-  perform _t_put('requested', _t_booking(chloe, nora, array[mochi],
+  perform _t_put('requested', _t_booking(robert, nora, array[mochi],
     now() + interval '40 days', now() + interval '41 days', 'requested'));
   perform _t_put('just_finished', _t_booking(joy, paul, array[toto],
     now() - interval '2 days', now() - interval '1 hour', 'confirmed', true));
@@ -149,8 +149,8 @@ begin
     now() - interval '6 days', now() - interval '5 days', 'confirmed', true));
 
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose) values
-    (max, lucy, 'smoke/max', 'image', 'feed'),
-    (mochi, lucy, 'smoke/mochi', 'image', 'feed'),
+    (max, chloe, 'smoke/max', 'image', 'feed'),
+    (mochi, chloe, 'smoke/mochi', 'image', 'feed'),
     (coco, paul, 'smoke/coco', 'image', 'feed'),
     (toto, paul, 'smoke/toto', 'image', 'feed');
   perform _t_put('media_bori', (select id from public.media where cloudinary_public_id = 'smoke/max'));
@@ -163,7 +163,7 @@ begin
   perform _t_put('task_bori', v_id);
 
   insert into public.daily_reports (pet_id, sitter_id, report_date, body)
-  values (max, lucy, app_today(), 'Draft');
+  values (max, chloe, app_today(), 'Draft');
 end;
 $$;
 
@@ -199,9 +199,9 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
   nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
@@ -221,9 +221,9 @@ begin
   perform _t_ok(n = 1, 'requested sitter can see the pet profile');
   select count(*) into n from public.media where pet_id = mochi;
   perform _t_ok(n = 0, 'requested sitter cannot see the pet''s media');
-  select count(*) into n from public.owner_profiles where id = chloe;
+  select count(*) into n from public.owner_profiles where id = robert;
   perform _t_ok(n = 0, 'requested-only sitter cannot see owner profile');
-  select count(*) into n from public.profiles where id = chloe;
+  select count(*) into n from public.profiles where id = robert;
   perform _t_ok(n = 1, 'requested sitter sees the owner''s display name');
   select * into r from get_booking_pets(_t_get('requested'));
   perform _t_ok(r.name = 'Mochi' and r.species = 'cat', 'get_booking_pets returns the requested pets');
@@ -286,44 +286,44 @@ begin
   perform _t_ok((select count(*) from get_booking_pets(_t_get('finished'))) = 1,
     'past booking still lists its pets');
 
-  -- Sitter currently caring for Max + Mochi (Lucy)
-  perform _t_as(lucy);
-  insert into public.feed_posts (pet_id, sitter_id, media_id) values (max, lucy, _t_get('media_bori'));
+  -- Sitter currently caring for Max + Mochi (Chloe)
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, media_id) values (max, chloe, _t_get('media_bori'));
   perform _t_ok(true, 'on-duty sitter can post');
   perform _t_as(null);
   perform _t_ok(
     (select title from public.notifications n
      join public.feed_posts fp on fp.id = n.ref_id
-     where n.user_id = chloe and n.type = 'feed_post' and fp.pet_id = max
+     where n.user_id = robert and n.type = 'feed_post' and fp.pet_id = max
      order by n.created_at desc limit 1) = 'New photo of Max 📸',
     '5.3: feed post → owner feed_post notification');
-  perform _t_as(lucy);
-  select count(*) into n from public.owner_profiles where id = chloe;
+  perform _t_as(chloe);
+  select count(*) into n from public.owner_profiles where id = robert;
   perform _t_ok(n = 0, 'BF.6: a confirmed sitter cannot see the owner profile before payment');
   perform _t_as(null);
   update public.bookings set paid_at = now() where id = _t_get('current');
-  perform _t_as(lucy);
-  select count(*) into n from public.owner_profiles where id = chloe;
+  perform _t_as(chloe);
+  select count(*) into n from public.owner_profiles where id = robert;
   perform _t_ok(n = 1, 'paid sitter can see owner profile');
   perform _t_as(null);
   update public.bookings set paid_at = null where id = _t_get('current');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok(in_care_window(max, now()), 'in_care_window true during care');
   perform _t_ok(not in_care_window(max, now() - interval '2 days'), 'in_care_window false before drop-off');
   perform _t_ok((select home_address from get_my_sitter_profile()) = '100 Example St',
     'sitter reads own home_address via get_my_sitter_profile');
   begin
-    update public.sitter_profiles set default_hours = '{"morning":["8am","noon"]}' where id = lucy;
+    update public.sitter_profiles set default_hours = '{"morning":["8am","noon"]}' where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', 'malformed default_hours is rejected');
   perform complete_handoff(_t_get('current'), 'drop_off');
   perform _t_as(null);
-  perform _t_ok((select title from public.notifications where user_id = chloe and type = 'pet_dropped_off')
-      = 'Max and Mochi arrived at Lucy''s 🏠',
+  perform _t_ok((select title from public.notifications where user_id = robert and type = 'pet_dropped_off')
+      = 'Max and Mochi arrived at Chloe''s 🏠',
     'A: Received → owner notified');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform cancel_booking(_t_get('current'), 'Something came up');
     v_err := null;
@@ -332,12 +332,12 @@ begin
   perform _t_ok(v_err = 'booking_in_progress', 'cannot cancel after the pets are received');
   perform complete_handoff(_t_get('current'), 'pick_up');
   perform _t_as(null);
-  perform _t_ok((select title from public.notifications where user_id = chloe and type = 'pet_picked_up')
+  perform _t_ok((select title from public.notifications where user_id = robert and type = 'pet_picked_up')
       = 'Max and Mochi are on the way home 👋',
     'Returned → owner notified');
 
   -- Owner
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     insert into public.task_logs (task_id, pet_id, due_at) values (_t_get('task_bori'), max, now());
     v_err := null;
@@ -347,15 +347,15 @@ begin
   select count(*) into n from public.daily_reports where pet_id = max;
   perform _t_ok(n = 0, 'owner cannot see draft daily report');
   begin
-    perform home_address from public.sitter_profiles where id = lucy;
+    perform home_address from public.sitter_profiles where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'owner cannot read sitter home_address');
-  select count(*) into n from public.sitter_profiles where id = lucy and bio is null;
+  select count(*) into n from public.sitter_profiles where id = chloe and bio is null;
   perform _t_ok(n = 1, 'owner can read public sitter profile columns');
   begin
-    update public.profiles set role = 'sitter' where id = chloe;
+    update public.profiles set role = 'sitter' where id = robert;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -370,7 +370,7 @@ begin
   perform _t_ok(true, 'owner can update pet details');
   begin
     insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
-    values (chloe, 'blocked', app_today(), app_today(), 'morning');
+    values (robert, 'blocked', app_today(), app_today(), 'morning');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -382,13 +382,13 @@ begin
   end;
   perform _t_ok(v_err = 'handoff_completed', 'a received drop-off cannot be changed');
   begin
-    perform sitter_remaining(lucy, app_today(), 'morning');
+    perform sitter_remaining(chloe, app_today(), 'morning');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'internal helpers are not callable by clients');
   begin
-    perform request_booking(lucy, array[coco], now() + interval '60 days', 'sitter_home', null,
+    perform request_booking(chloe, array[coco], now() + interval '60 days', 'sitter_home', null,
       now() + interval '61 days', 'sitter_home', null, null);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -402,7 +402,7 @@ begin
   end;
   perform _t_ok(v_err = 'not_a_sitter', 'booking an owner as sitter is rejected');
   begin
-    perform request_booking(lucy, array[max], now() - interval '1 hour', 'sitter_home', null,
+    perform request_booking(chloe, array[max], now() - interval '1 hour', 'sitter_home', null,
       now() + interval '1 day', 'sitter_home', null, null);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -419,17 +419,17 @@ begin
   -- updated_at is maintained by trigger
   perform _t_as(null);
   alter table public.profiles disable trigger profiles_set_updated_at;
-  update public.profiles set updated_at = '2000-01-01' where id = chloe;
+  update public.profiles set updated_at = '2000-01-01' where id = robert;
   alter table public.profiles enable trigger profiles_set_updated_at;
-  perform _t_as(chloe);
-  update public.profiles set display_name = 'Chloe K.' where id = chloe;
+  perform _t_as(robert);
+  update public.profiles set display_name = 'Robert K.' where id = robert;
   perform _t_as(null);
-  perform _t_ok((select updated_at > '2001-01-01' from public.profiles where id = chloe),
+  perform _t_ok((select updated_at > '2001-01-01' from public.profiles where id = robert),
     'updated_at is refreshed on update');
-  update public.profiles set display_name = 'Chloe' where id = chloe;
+  update public.profiles set display_name = 'Robert' where id = robert;
 
   -- Species care rules (D23)
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     insert into public.care_tasks (pet_id, type, title, scheduled_time) values (mochi, 'walk', 'Walk', '09:00');
     v_err := null;
@@ -450,7 +450,7 @@ begin
   select count(*) into n from public.pets;
   perform _t_ok(n = 0, 'anon sees no pets');
   begin
-    perform get_sitter_schedule(lucy, '2030-01-01', '2030-01-02');
+    perform get_sitter_schedule(chloe, '2030-01-01', '2030-01-02');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -466,9 +466,9 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
   nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
@@ -486,11 +486,11 @@ declare
   r record;
 begin
   -- Sitters open their schedules
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
-  values (lucy, 'open', d - 1, d + 20, 'morning', '08:00', '12:00', 3),
-         (lucy, 'open', d - 1, d + 20, 'afternoon', '12:00', '18:00', 3),
-         (lucy, 'open', d - 1, d + 20, 'overnight', '18:00', '08:00', 3);
+  values (chloe, 'open', d - 1, d + 20, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 20, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 20, 'overnight', '18:00', '08:00', 3);
   perform _t_as(paul);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (paul, 'open', d - 1, d + 20, 'morning', '09:00', '13:00', 2),
@@ -503,13 +503,13 @@ begin
 
   -- G: opening a schedule notifies nobody
   perform _t_as(null);
-  perform _t_ok((select count(*) from public.notifications where user_id in (chloe, joy)
+  perform _t_ok((select count(*) from public.notifications where user_id in (robert, joy)
       and type not in ('pet_dropped_off', 'pet_picked_up', 'feed_post')) = 0,
     'G: opening a schedule sends no owner notifications');
 
   -- A: in-hours drop-off & pick-up at sitter's home → request → accept → confirmed
-  perform _t_as(chloe);
-  v_a := request_booking(lucy, array[max, mochi],
+  perform _t_as(robert);
+  v_a := request_booking(chloe, array[max, mochi],
     local_ts(d, '09:30'), 'sitter_home', null,
     local_ts(d + 3, '17:00'), 'sitter_home', null, 'First trip');
   perform _t_put('A', v_a);
@@ -522,32 +522,32 @@ begin
   perform _t_ok((select count(*) from public.booking_handoffs
       where booking_id = v_a and status = 'proposed' and within_sitter_hours) = 2,
     'A: two in-hours handoff proposals');
-  -- Lucy received Max + Mochi in the 'current' fixture (permissions block), so they have met.
+  -- Chloe received Max + Mochi in the 'current' fixture (permissions block), so they have met.
   perform _t_ok((select service_type = 'boarding' and meet_greet_status = 'not_needed'
       from public.bookings where id = v_a),
     'A: boarding by default; a pair that already had a drop-off skips the Meet & Greet');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform respond_booking(v_a, true, 'See you!');
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed', 'A: booking confirmed');
   perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v_a and status = 'agreed') = 2,
     'A: both handoffs agreed');
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'booking_confirmed') = 1,
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'booking_confirmed') = 1,
     'A: owner gets one booking_confirmed');
-  perform _t_ok((select count(*) from public.notifications where user_id = lucy and type = 'booking_requested') = 1,
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'booking_requested') = 1,
     'A: sitter got booking_requested');
 
   -- B + H: capacity 3 at day d morning; two requests race for the last spot
   perform _t_as(joy);
-  v_b := request_booking(lucy, array[coco], local_ts(d, '09:00'), 'sitter_home', null,
+  v_b := request_booking(chloe, array[coco], local_ts(d, '09:00'), 'sitter_home', null,
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
-  v_h := request_booking(lucy, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
+  v_h := request_booking(chloe, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
     local_ts(d + 1, '17:00'), 'sitter_home', null, null);
-  -- Joy ↔ Lucy have never met: Accept waits for the Meet & Greet (D44).
+  -- Joy ↔ Chloe have never met: Accept waits for the Meet & Greet (D44).
   perform _t_ok((select count(*) from public.bookings
       where id in (v_b, v_h) and meet_greet_status = 'required') = 2,
     'B: first stay together needs a Meet & Greet');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform respond_booking(v_b, true);
     v_err := null;
@@ -564,11 +564,11 @@ begin
   end;
   perform _t_ok(v_err = 'sitter_unavailable', 'H: second acceptance for the last spot fails');
   perform _t_as(joy);
-  select * into r from get_sitter_schedule(lucy, d, d) s where s.slot = 'morning';
+  select * into r from get_sitter_schedule(chloe, d, d) s where s.slot = 'morning';
   perform _t_ok(r.state = 'full' and r.remaining = 0, 'B: schedule shows the slot as full');
   perform cancel_booking(v_h, 'Found another plan');
   begin
-    perform request_booking(lucy, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
+    perform request_booking(chloe, array[toto], local_ts(d, '09:00'), 'sitter_home', null,
       local_ts(d + 1, '17:00'), 'sitter_home', null, null);
     v_err := null;
   exception when others then
@@ -579,27 +579,27 @@ begin
     'B: new request into a full slot is rejected with the slot in detail');
 
   -- Capacity guard: lowering max_pets or removing an open slot below confirmed pets fails
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
-    values (lucy, 'open', d, d, 'morning', '08:00', '12:00', 2);
+    values (chloe, 'open', d, d, 'morning', '08:00', '12:00', 2);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'overlaps_confirmed_booking', 'newer open row with fewer spots than booked fails');
   begin
-    delete from public.sitter_availability where sitter_id = lucy and kind = 'open' and slot = 'morning';
+    delete from public.sitter_availability where sitter_id = chloe and kind = 'open' and slot = 'morning';
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'overlaps_confirmed_booking', 'removing a booked open slot fails');
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
-  values (lucy, 'open', d + 15, d + 15, 'morning', '09:00', '12:00', 1);
-  select * into r from get_sitter_schedule(lucy, d + 15, d + 15) s where s.slot = 'morning';
+  values (chloe, 'open', d + 15, d + 15, 'morning', '09:00', '12:00', 1);
+  select * into r from get_sitter_schedule(chloe, d + 15, d + 15) s where s.slot = 'morning';
   perform _t_ok(r.starts_at = '09:00' and r.remaining = 1, 'the newest open row sets hours and spots');
 
   -- C: early-flight drop-off at 07:00, before Paul's Morning (09:00) → negotiated to 08:30
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_a := request_booking(paul, array[max], local_ts(d + 10, '07:00'), 'sitter_home', null,
     local_ts(d + 10, '16:00'), 'sitter_home', null, null);
   perform _t_meet(v_a);
@@ -627,11 +627,11 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'handoff_pending', 'C: sitter cannot accept while own counter-offer is pending');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform propose_handoff(v_a, 'drop_off', local_ts(d + 10, '08:00'));
   perform _t_as(paul);
   v_h := propose_handoff(v_a, 'drop_off', local_ts(d + 10, '08:30'));
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform respond_handoff(v_h, true);
   perform _t_as(paul);
   perform respond_booking(v_a, true);
@@ -665,7 +665,7 @@ begin
 
   -- D: confirmed booking, owner moves pick-up 17:00 → 20:00
   v_a := _t_get('A');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_h := propose_handoff(v_a, 'pick_up', local_ts(d + 3, '20:00'));
   begin
     perform respond_handoff(v_h, true);
@@ -677,7 +677,7 @@ begin
   perform _t_ok((select scheduled_at from public.booking_handoffs
       where booking_id = v_a and kind = 'pick_up' and status = 'agreed') = local_ts(d + 3, '17:00'),
     'D: old pick-up stays valid until agreed');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform respond_handoff(v_h, true);
   perform _t_as(null);
   perform _t_ok((select scheduled_at from public.booking_handoffs
@@ -685,25 +685,25 @@ begin
     'D: new pick-up agreed');
   perform _t_ok((select count(*) from public.booking_slots where booking_id = v_a) = 24,
     'D: slots recalculated (overnight added)');
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'handoff_agreed') = 1,
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'handoff_agreed') = 1,
     'D: owner notified of agreement');
 
   -- D″: sitter declines a change after confirmation → booking unchanged
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_h := propose_handoff(v_a, 'pick_up', local_ts(d + 3, '21:00'));
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform respond_handoff(v_h, false);
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed'
       and (select scheduled_at from public.booking_handoffs
         where booking_id = v_a and kind = 'pick_up' and status = 'agreed') = local_ts(d + 3, '20:00'),
     'D″: declined change keeps the agreed pick-up');
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'handoff_declined') = 1,
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'handoff_declined') = 1,
     'D″: owner notified of the decline');
 
   -- D′: pick-up at the owner's home; a time-only counter-offer keeps the place;
   --     addresses only via get_handoff_details, only for the booking parties
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform propose_handoff(v_a, 'pick_up', local_ts(d + 3, '20:00'), 'other');
     v_err := null;
@@ -711,18 +711,18 @@ begin
   end;
   perform _t_ok(v_err = 'location_note_required', 'D′: "Somewhere else" needs a place note');
   perform propose_handoff(v_a, 'pick_up', local_ts(d + 3, '20:00'), 'owner_home');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   v_h := propose_handoff(v_a, 'pick_up', local_ts(d + 3, '19:30'));
   perform _t_ok((select location_type from public.booking_handoffs where id = v_h) = 'owner_home',
     'D′: time-only counter-offer keeps the proposed place');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform respond_handoff(v_h, true);
   perform _t_as(null);
   update public.bookings set paid_at = now() where id = v_a;
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select address from get_handoff_details(v_a) where kind = 'drop_off') = '100 Example St',
     'D′: owner sees sitter address for the confirmed booking');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok((select address from get_handoff_details(v_a) where kind = 'pick_up') = '1 Owner Ave',
     'D′: sitter sees owner address for an owner_home pick-up');
   perform _t_as(nora);
@@ -734,10 +734,10 @@ begin
   perform _t_ok(v_err = 'not_allowed', 'D′: outsider cannot read handoff details');
 
   -- E: sitter blocks a day overlapping a confirmed booking → must cancel first → owner rebooks
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
-    values (lucy, 'blocked', d + 2, d + 2, 'morning');
+    values (chloe, 'blocked', d + 2, d + 2, 'morning');
     v_err := null;
   exception when others then
     v_err := sqlerrm;
@@ -747,14 +747,14 @@ begin
     'E: block over a confirmed booking is rejected with the booking id');
   perform cancel_booking(v_a, 'Personal schedule');
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
-  values (lucy, 'blocked', d + 2, d + 2, 'morning');
+  values (chloe, 'blocked', d + 2, d + 2, 'morning');
   perform _t_as(null);
   perform _t_ok(not exists (select 1 from public.booking_pets where booking_id = v_a and active),
     'E: cancelled booking releases the pets');
-  perform _t_ok((select body from public.notifications where user_id = chloe and type = 'booking_cancelled')
-      like 'Lucy can''t take Max and Mochi on %. Find a new sitter.',
+  perform _t_ok((select body from public.notifications where user_id = robert and type = 'booking_cancelled')
+      like 'Chloe can''t take Max and Mochi on %. Find a new sitter.',
     'E: owner told to find a new sitter');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) limit 1;
   perform _t_ok(r.sitter_id = allen and r.covered_slots = r.total_slots, 'E: fully available sitter ranks first');
   select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s where s.sitter_id = paul;
@@ -768,15 +768,15 @@ begin
   perform _t_ok((select status = 'confirmed' and rebooked_from = v_a from public.bookings where id = v_b),
     'E: rebooked with another sitter');
 
-  -- F: Coco with Lucy 09:00–12:00, then Paul takes over at 12:00 (same pet & day)
+  -- F: Coco with Chloe 09:00–12:00, then Paul takes over at 12:00 (same pet & day)
   perform _t_as(joy);
-  v_a := request_booking(lucy, array[coco], local_ts(d + 14, '09:00'), 'sitter_home', null,
-    local_ts(d + 14, '12:00'), 'other', 'Paul picks up at Lucy''s', null);
-  v_b := request_booking(paul, array[coco], local_ts(d + 14, '12:00'), 'other', 'Lucy''s place',
+  v_a := request_booking(chloe, array[coco], local_ts(d + 14, '09:00'), 'sitter_home', null,
+    local_ts(d + 14, '12:00'), 'other', 'Paul picks up at Chloe''s', null);
+  v_b := request_booking(paul, array[coco], local_ts(d + 14, '12:00'), 'other', 'Chloe''s place',
     local_ts(d + 14, '17:00'), 'sitter_home', null, null);
   perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
     'F: a pair whose Meet & Greet was done (in B) does not meet again');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform respond_booking(v_a, true);
   perform _t_as(paul);
   perform respond_booking(v_b, true);
@@ -789,7 +789,7 @@ begin
   end;
   perform _t_ok(v_err = 'pet_already_booked', 'F: a third sitter for the same hours is rejected');
   -- Overlapping stays are caught by time, even when the two sitters' slot names differ
-  perform request_booking(lucy, array[toto], local_ts(d + 16, '12:00'), 'sitter_home', null,
+  perform request_booking(chloe, array[toto], local_ts(d + 16, '12:00'), 'sitter_home', null,
     local_ts(d + 16, '17:00'), 'sitter_home', null, null);
   begin
     perform request_booking(paul, array[toto], local_ts(d + 16, '09:00'), 'sitter_home', null,
@@ -802,21 +802,21 @@ begin
   perform _t_ok((select count(*) from public.bookings where id in (v_a, v_b) and status = 'confirmed') = 2,
     'F: split day with two sitters confirmed');
   insert into public.daily_reports (pet_id, sitter_id, report_date, body)
-  values (coco, lucy, d + 14, 'Morning report'), (coco, paul, d + 14, 'Afternoon report');
+  values (coco, chloe, d + 14, 'Morning report'), (coco, paul, d + 14, 'Afternoon report');
   perform _t_ok(true, 'F: one daily report per sitter for the same day');
 end;
 $$;
 
 -- ---------------------------------------------------------------------------
 -- Booking options (004, phase-03b 3B.0): service type, sitter services, Meet & Greet
--- state, meeting spots, media purposes. Runs after A–H (Chloe ↔ Lucy met in the
+-- state, meeting spots, media purposes. Runs after A–H (Robert ↔ Chloe met in the
 -- 'current' fixture).
 -- ---------------------------------------------------------------------------
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
@@ -827,39 +827,39 @@ declare
   r record;
 begin
   -- House sitting needs the sitter to offer it; both handoffs move to the owner's home
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
-    perform request_booking(lucy, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
+    perform request_booking(chloe, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
       local_ts(d + 18, '11:00'), 'sitter_home', null, null, null, 'house_sitting');
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'service_not_offered', '3B.0: sitters offer boarding only by default');
   begin
-    perform request_booking(lucy, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
+    perform request_booking(chloe, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
       local_ts(d + 18, '11:00'), 'sitter_home', null, null, null, 'dog_walking');
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'invalid_service', '3B.0: unknown service type is rejected');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
-    update public.sitter_profiles set services = '{}' where id = lucy;
+    update public.sitter_profiles set services = '{}' where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '3B.0: a sitter must offer at least one service');
   begin
-    update public.sitter_profiles set services = '{boarding,dog_walking}' where id = lucy;
+    update public.sitter_profiles set services = '{boarding,dog_walking}' where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '3B.0: services are boarding / house_sitting only');
-  update public.sitter_profiles set services = '{boarding,house_sitting}' where id = lucy;
+  update public.sitter_profiles set services = '{boarding,house_sitting}' where id = chloe;
 
-  perform _t_as(chloe);
-  v_a := request_booking(lucy, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
+  perform _t_as(robert);
+  v_a := request_booking(chloe, array[max], local_ts(d + 18, '09:00'), 'sitter_home', null,
     local_ts(d + 18, '11:00'), 'other', 'Trinity Bellwoods', null, null, 'house_sitting');
   perform _t_as(null);
   perform _t_ok((select service_type from public.bookings where id = v_a) = 'house_sitting',
@@ -870,8 +870,8 @@ begin
   perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
     '3B.0: a pair that already met does not meet again');
 
-  -- A skipped Meet & Greet is not a meeting: Chloe ↔ Allen are still first-time. Declining works.
-  perform _t_as(chloe);
+  -- A skipped Meet & Greet is not a meeting: Robert ↔ Allen are still first-time. Declining works.
+  perform _t_as(robert);
   v_a := request_booking(allen, array[mochi], local_ts(d + 19, '09:00'), 'sitter_home', null,
     local_ts(d + 19, '11:00'), 'sitter_home', null, null);
   perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'required',
@@ -883,42 +883,42 @@ begin
     '3B.0: sitter can decline before the Meet & Greet');
 
   -- Search results carry the sitter's services
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select * into r from search_sitters(local_ts(d + 20, '09:00'), local_ts(d + 20, '11:00'), 1) s
-  where s.sitter_id = lucy;
+  where s.sitter_id = chloe;
   perform _t_ok(r.services = '{boarding,house_sitting}', '3B.0: search_sitters returns services');
   select * into r from list_my_sitters() s where s.sitter_id = allen;
   perform _t_ok(r.services = '{boarding}', '3B.0: list_my_sitters returns services');
 
   -- Preferred meeting spots: ≤ 3 labels of ≤ 60 chars; sitter spots are not in the public list
-  update public.owner_profiles set meet_spots = '{"Trinity Bellwoods — north gate"}' where id = chloe;
-  perform _t_ok((select meet_spots from public.owner_profiles where id = chloe)
+  update public.owner_profiles set meet_spots = '{"Trinity Bellwoods — north gate"}' where id = robert;
+  perform _t_ok((select meet_spots from public.owner_profiles where id = robert)
       = '{"Trinity Bellwoods — north gate"}', '3B.0: owner saves a meeting spot');
   begin
-    update public.owner_profiles set meet_spots = '{a,b,c,d}' where id = chloe;
+    update public.owner_profiles set meet_spots = '{a,b,c,d}' where id = robert;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '3B.0: at most 3 meeting spots');
   begin
-    update public.owner_profiles set meet_spots = array[repeat('x', 61)] where id = chloe;
+    update public.owner_profiles set meet_spots = array[repeat('x', 61)] where id = robert;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '3B.0: meeting spot label is at most 60 characters');
   begin
-    update public.owner_profiles set meet_spots = '{" "}' where id = chloe;
+    update public.owner_profiles set meet_spots = '{" "}' where id = robert;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '3B.0: blank meeting spot is rejected');
 
-  perform _t_as(lucy);
-  update public.sitter_profiles set meet_spots = '{"Christie Pits — east entrance"}' where id = lucy;
+  perform _t_as(chloe);
+  update public.sitter_profiles set meet_spots = '{"Christie Pits — east entrance"}' where id = chloe;
   perform _t_ok((select meet_spots from get_my_sitter_profile()) = '{"Christie Pits — east entrance"}',
     '3B.0: sitter reads own meeting spots');
-  perform _t_as(chloe);
-  perform _t_ok((select services from public.sitter_profiles where id = lucy) = '{boarding,house_sitting}',
+  perform _t_as(robert);
+  perform _t_ok((select services from public.sitter_profiles where id = chloe) = '{boarding,house_sitting}',
     '3B.0: owners can read sitter services');
   begin
     select count(*) into n from (select meet_spots from public.sitter_profiles) s;
@@ -930,11 +930,11 @@ begin
   -- Media purposes for the daily report (07) and handoff photo check (06B)
   perform _t_as(null);
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose) values
-    (max, lucy, 'smoke/max-report', 'image', 'report'),
-    (max, lucy, 'smoke/max-handoff', 'image', 'handoff');
+    (max, chloe, 'smoke/max-report', 'image', 'report'),
+    (max, chloe, 'smoke/max-handoff', 'image', 'handoff');
   begin
     insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
-    values (max, lucy, 'smoke/max-other', 'image', 'selfie');
+    values (max, chloe, 'smoke/max-other', 'image', 'selfie');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -944,7 +944,7 @@ begin
   -- not granted to anon either, and would fail first)
   perform _t_as(null, 'anon');
   begin
-    perform request_booking(lucy, array[max], now() + interval '60 days', 'sitter_home', null,
+    perform request_booking(chloe, array[max], now() + interval '60 days', 'sitter_home', null,
       now() + interval '61 days', 'sitter_home', null, null, null, 'boarding');
     v_err := null;
   exception when others then v_err := sqlstate;
@@ -956,14 +956,14 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Meet & Greet (005, phase-03b 3B.9, D44): propose / respond / done, skip accepted /
--- declined. First-time pairs: Chloe ↔ Nora (the 'requested' fixture) and Joy ↔ Nora.
+-- declined. First-time pairs: Robert ↔ Nora (the 'requested' fixture) and Joy ↔ Nora.
 -- ---------------------------------------------------------------------------
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
   coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
   toto constant uuid := '00000000-0000-4000-8000-0000000000c4';
@@ -975,7 +975,7 @@ begin
   perform _t_meet(v_a, 'required');
 
   -- Proposals are checked
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform propose_meet_greet(v_a, 'in_person', now() + interval '1 day', '  ');
     v_err := null;
@@ -999,19 +999,19 @@ begin
   perform propose_meet_greet(v_a, 'in_person', now() + interval '1 day', 'Trinity Bellwoods — north gate');
   perform _t_as(null);
   perform _t_ok((select meet_greet_status = 'proposed' and meet_greet_place = 'Trinity Bellwoods — north gate'
-      and meet_greet_proposed_by = chloe from public.bookings where id = v_a),
+      and meet_greet_proposed_by = robert from public.bookings where id = v_a),
     '3B.9: in-person proposal stored');
   perform _t_ok(exists (select 1 from public.notifications where user_id = nora and type = 'meet_greet_proposed'
-      and title like 'Chloe suggested meeting at Trinity Bellwoods — north gate on %'),
+      and title like 'Robert suggested meeting at Trinity Bellwoods — north gate on %'),
     '3B.9: the other side gets meet_greet_proposed');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform respond_meet_greet(v_a, true);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'not_allowed', '3B.9: the proposer cannot accept their own Meet & Greet');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform respond_meet_greet(v_a, true);
     v_err := null;
@@ -1024,13 +1024,13 @@ begin
   perform _t_ok((select meet_greet_status = 'required' and meet_greet_mode is null and meet_greet_at is null
       from public.bookings where id = v_a),
     '3B.9: a declined Meet & Greet goes back to required');
-  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'meet_greet_declined'),
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'meet_greet_declined'),
     '3B.9: the proposer hears about the decline');
 
-  -- Video: Nora proposes, Chloe agrees, done only once the time has come, then Accept works
+  -- Video: Nora proposes, Robert agrees, done only once the time has come, then Accept works
   perform _t_as(nora);
   perform propose_meet_greet(v_a, 'video', now() + interval '2 days');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform respond_meet_greet(v_a, true);
   perform _t_as(null);
   perform _t_ok((select meet_greet_status = 'agreed' and meet_greet_mode = 'video' and meet_greet_place is null
@@ -1053,9 +1053,9 @@ begin
   perform _t_ok(v_err = 'meet_greet_not_yet', '3B.9: Done only after the meeting time');
   perform _t_as(null);
   update public.bookings set meet_greet_at = now() - interval '1 hour' where id = v_a;
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform complete_meet_greet(v_a);
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     select * into r from get_meet_greet_options(v_a);
     v_err := null;
@@ -1064,7 +1064,7 @@ begin
   perform _t_ok(v_err = 'not_allowed', '3B.9: meeting spots are only for the two parties');
   perform _t_as(nora);
   select * into r from get_meet_greet_options(v_a);
-  perform _t_ok(r.owner_name = 'Chloe' and r.owner_spots = '{"Trinity Bellwoods — north gate"}'
+  perform _t_ok(r.owner_name = 'Robert' and r.owner_spots = '{"Trinity Bellwoods — north gate"}'
       and r.sitter_spots = '{}',
     '3B.9: both sides'' meeting spots for the In person sheet');
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
@@ -1131,8 +1131,8 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   q jsonb;
   v_err text;
@@ -1144,21 +1144,21 @@ declare
   v_day_drop timestamptz := ('2026-10-10 08:00:00'::timestamp at time zone app_timezone());
   v_day_pick timestamptz := ('2026-10-10 18:00:00'::timestamp at time zone app_timezone());
 begin
-  -- Lucy: Boarding $55 · House sitting $70 · Daycare $35 · +50% · +25% (Goal)
+  -- Chloe: Boarding $55 · House sitting $70 · Daycare $35 · +50% · +25% (Goal)
   perform _t_as(null);
   update public.sitter_profiles
   set services = array['boarding', 'house_sitting']
-  where id = lucy;
+  where id = chloe;
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   insert into public.sitter_rates (
     sitter_id, boarding_nightly, house_sitting_nightly, daycare_daily,
     extra_pet_pct, holiday_pct
-  ) values (lucy, 55.00, 70.00, 35.00, 50, 25);
+  ) values (chloe, 55.00, 70.00, 35.00, 50, 25);
 
   -- Boarding · 2 pets · Thanksgiving (phase-03c Goal): $268.13 CAD
-  perform _t_as(chloe);
-  q := quote_booking(lucy, 'boarding', v_drop, v_pick, 2);
+  perform _t_as(robert);
+  q := quote_booking(chloe, 'boarding', v_drop, v_pick, 2);
   perform _t_ok(
     (q->>'nights')::int = 3
     and (q->>'days')::int = 3
@@ -1172,7 +1172,7 @@ begin
     '3C.1: boarding 2 pets + Thanksgiving = $268.13');
 
   -- House sitting · 1 pet · no holiday in Oct 5–8
-  q := quote_booking(lucy, 'house_sitting', v_hs_drop, v_hs_pick, 1);
+  q := quote_booking(chloe, 'house_sitting', v_hs_drop, v_hs_pick, 1);
   perform _t_ok(
     (q->>'nights')::int = 3
     and (q->>'unit_price')::numeric = 70.00
@@ -1184,7 +1184,7 @@ begin
     '3C.1: house sitting 1 pet = $210.00');
 
   -- Daycare · same day · 2 pets
-  q := quote_booking(lucy, 'daycare', v_day_drop, v_day_pick, 2);
+  q := quote_booking(chloe, 'daycare', v_day_drop, v_day_pick, 2);
   perform _t_ok(
     (q->>'nights')::int = 0
     and (q->>'days')::int = 1
@@ -1225,9 +1225,9 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
@@ -1239,15 +1239,15 @@ declare
   v_signed_at timestamptz;
 begin
   -- Boarding (sitter_home handoffs): emergency_vet, safe_return, handoff_rules, cohabitation
-  v_board := _t_booking(chloe, lucy, array[max],
+  v_board := _t_booking(robert, chloe, array[max],
     now() + interval '20 days', now() + interval '23 days', 'confirmed');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_kinds := required_consents(v_board);
   perform _t_ok(v_kinds = array['emergency_vet', 'safe_return', 'handoff_rules', 'cohabitation'],
     '3C.2: boarding requires 4 consents');
 
   insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
-  values (v_board, 'emergency_vet', '1', chloe, 'Chloe',
+  values (v_board, 'emergency_vet', '1', robert, 'Robert',
     jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet'));
   select signed_at into v_signed_at from public.booking_consents
     where booking_id = v_board and kind = 'emergency_vet';
@@ -1255,7 +1255,7 @@ begin
 
   begin
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-    values (v_board, 'emergency_vet', '1', chloe, 'Chloe');
+    values (v_board, 'emergency_vet', '1', robert, 'Robert');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -1271,7 +1271,7 @@ begin
   end;
   perform _t_ok(n = 0 or v_err = '42501', '3C.2: signatures are read-only after signing');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select count(*) into n from public.booking_consents where booking_id = v_board;
   perform _t_ok(n = 1, '3C.2: sitter can read owner signatures');
 
@@ -1315,8 +1315,8 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
@@ -1326,13 +1326,13 @@ declare
   v_err text;
   v_detail text;
 begin
-  -- Confirmed boarding with Lucy rates already seeded in 3C.1
-  v_pay := _t_booking(chloe, lucy, array[max, mochi],
+  -- Confirmed boarding with Chloe rates already seeded in 3C.1
+  v_pay := _t_booking(robert, chloe, array[max, mochi],
     ('2026-10-09 07:30:00'::timestamp at time zone app_timezone()),
     ('2026-10-12 17:00:00'::timestamp at time zone app_timezone()),
     'confirmed');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     v_quote := pay_booking_demo(v_pay);
     v_err := null;
@@ -1346,10 +1346,10 @@ begin
   -- Sign every required kind
   foreach v_kind in array required_consents(v_pay) loop
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
-    values (v_pay, v_kind, '1', chloe, 'Chloe',
+    values (v_pay, v_kind, '1', robert, 'Robert',
       case v_kind
         when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
-        when 'safe_return' then jsonb_build_object('receiver_name', 'Chloe')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Robert')
         else '{}'::jsonb
       end);
   end loop;
@@ -1362,10 +1362,10 @@ begin
   perform _t_as(null);
   perform _t_ok(exists (
       select 1 from public.notifications
-      where user_id = lucy and type = 'booking_paid' and booking_id = v_pay),
+      where user_id = chloe and type = 'booking_paid' and booking_id = v_pay),
     '3C.3: sitter gets booking_paid');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     v_quote := pay_booking_demo(v_pay);
     v_err := null;
@@ -1373,7 +1373,7 @@ begin
   end;
   perform _t_ok(v_err = 'already_paid', '3C.3: second pay → already_paid');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     v_quote := pay_booking_demo(v_pay);
     v_err := null;
@@ -1399,8 +1399,8 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   v_id uuid;
   r record;
@@ -1411,12 +1411,12 @@ begin
   set visitor_parking = 'Visitor spot B-12',
       lobby_notes = 'Buzz 1204',
       packing_list = array['food', 'leash']
-  where id = lucy;
+  where id = chloe;
 
-  v_id := _t_booking(chloe, lucy, array[max],
+  v_id := _t_booking(robert, chloe, array[max],
     now() + interval '80 days', now() + interval '83 days', 'confirmed');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     select * into r from get_handoff_details(v_id);
     v_err := null;
@@ -1427,7 +1427,7 @@ begin
   perform _t_as(null);
   update public.bookings set paid_at = now() where id = v_id;
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select * into r from get_handoff_details(v_id) where kind = 'drop_off';
   perform _t_ok(
     r.address = '100 Example St'
@@ -1446,9 +1446,9 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
@@ -1459,9 +1459,9 @@ declare
   n int;
 begin
   -- I: before pay — get_home_access blocked; owner can save codes privately
-  perform _t_as(chloe);
+  perform _t_as(robert);
   insert into public.owner_home_access (owner_id, entry_steps, lockbox_code, buzzer, fob_notes, sitter_parking)
-  values (chloe, '1. Buzz 1204  2. Lockbox left of door', '0000', '#1204', 'Fob on key hook', 'Street parking OK')
+  values (robert, '1. Buzz 1204  2. Lockbox left of door', '0000', '#1204', 'Fob on key hook', 'Street parking OK')
   on conflict (owner_id) do update set
     entry_steps = excluded.entry_steps,
     lockbox_code = excluded.lockbox_code,
@@ -1470,12 +1470,12 @@ begin
     sitter_parking = excluded.sitter_parking;
 
   perform _t_as(null);
-  v_id := _t_booking(chloe, lucy, array[max],
+  v_id := _t_booking(robert, chloe, array[max],
     now() + interval '90 days', now() + interval '93 days', 'confirmed');
   update public.booking_handoffs set location_type = 'owner_home'
     where booking_id = v_id and kind = 'drop_off';
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     select * into r from get_home_access(v_id);
     v_err := null;
@@ -1494,7 +1494,7 @@ begin
   where booking_id = v_id and kind = 'pick_up';
 
   -- J: T−2h before → access_locked with unlocks_at
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     select * into r from get_home_access(v_id);
     v_err := null;
@@ -1510,7 +1510,7 @@ begin
   set scheduled_at = now() + interval '1 hour'
   where booking_id = v_id and kind = 'drop_off';
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select * into r from get_home_access(v_id);
   perform _t_ok(r.lockbox_code = '0000' and r.buzzer = '#1204',
     '3C.5 J: codes return inside the window');
@@ -1518,15 +1518,15 @@ begin
   perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1,
     '3C.5 J: first reveal recorded once');
   perform _t_ok((select count(*) from public.notifications
-      where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+      where user_id = robert and type = 'access_unlocked' and booking_id = v_id) = 1,
     '3C.5 J: owner notified once');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select * into r from get_home_access(v_id);
   perform _t_as(null);
   perform _t_ok((select count(*) from public.access_reveals where booking_id = v_id) = 1
       and (select count(*) from public.notifications
-        where user_id = chloe and type = 'access_unlocked' and booking_id = v_id) = 1,
+        where user_id = robert and type = 'access_unlocked' and booking_id = v_id) = 1,
     '3C.5 J: second open does not re-notify');
 
   -- K: other sitter forbidden; after pick-up completed → locked_since
@@ -1538,7 +1538,7 @@ begin
   end;
   perform _t_ok(v_err = 'forbidden', '3C.5 K: other sitter forbidden');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     select * into r from get_home_access(v_id);
     v_err := null;
@@ -1551,7 +1551,7 @@ begin
   set completed_at = now() - interval '1 minute'
   where booking_id = v_id and kind = 'pick_up';
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     select * into r from get_home_access(v_id);
     v_err := null;
@@ -1562,9 +1562,9 @@ begin
   perform _t_ok(v_err = 'access_locked' and v_detail like '%locked_since%',
     '3C.5 K: locked again after pick-up completed');
 
-  -- Paul cannot read Chloe's owner_home_access row directly
+  -- Paul cannot read Robert's owner_home_access row directly
   perform _t_as(paul);
-  select count(*) into n from public.owner_home_access where owner_id = chloe;
+  select count(*) into n from public.owner_home_access where owner_id = robert;
   perform _t_ok(n = 0, '3C.5 K: sitter RLS cannot read owner_home_access');
 
   -- 3C.7 polish: unlock notice must never echo lockbox / buzzer codes (DoD #3)
@@ -1578,10 +1578,10 @@ begin
     '3C.7: access_unlocked notice has no entry codes');
 
   -- Phase 05 (5.3): feed_posts.category
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     insert into public.feed_posts (pet_id, sitter_id, media_id, category)
-    values (max, lucy, _t_get('media_bori'), 'not_a_category');
+    values (max, chloe, _t_get('media_bori'), 'not_a_category');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -1590,28 +1590,28 @@ begin
   -- Phase 05 (5.8): visibility + owner posts
   perform _t_as(null);
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose) values
-    (max, lucy, 'smoke/max-private', 'image', 'feed'),
-    (max, chloe, 'smoke/max-owner-private', 'image', 'feed'),
-    (max, chloe, 'smoke/max-owner-shared', 'image', 'feed');
+    (max, chloe, 'smoke/max-private', 'image', 'feed'),
+    (max, robert, 'smoke/max-owner-private', 'image', 'feed'),
+    (max, robert, 'smoke/max-owner-shared', 'image', 'feed');
   perform _t_put('m_priv', (select id from public.media where cloudinary_public_id = 'smoke/max-private'));
   perform _t_put('m_opriv', (select id from public.media where cloudinary_public_id = 'smoke/max-owner-private'));
   perform _t_put('m_oshared', (select id from public.media where cloudinary_public_id = 'smoke/max-owner-shared'));
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
-  values (max, lucy, _t_get('m_priv'), 'private');
+  values (max, chloe, _t_get('m_priv'), 'private');
   select count(*) into n from public.feed_posts where media_id = _t_get('m_priv');
   perform _t_ok(n = 1, '5.8: author sees her own private post');
   begin
     insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
-    values (max, lucy, _t_get('media_bori'), 'hidden');
+    values (max, chloe, _t_get('media_bori'), 'hidden');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '23514', '5.8: visibility check');
   begin
     insert into public.feed_posts (pet_id, sitter_id, media_id)
-    values (max, lucy, _t_get('m_oshared'));
+    values (max, chloe, _t_get('m_oshared'));
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -1622,7 +1622,7 @@ begin
       where n.type = 'feed_post' and fp.media_id = _t_get('m_priv')),
     '5.8: private post sends no owner notification');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select count(*) into n from public.feed_posts where media_id = _t_get('m_priv');
   perform _t_ok(n = 0, '5.8: owner cannot see the sitter''s private post');
   select count(*) into n from public.media where id = _t_get('m_priv');
@@ -1635,20 +1635,20 @@ begin
   perform _t_as(null);
   perform _t_ok((select count(*) from public.notifications n
       join public.feed_posts fp on fp.id = n.ref_id
-      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id = lucy) = 1,
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id = chloe) = 1,
     '5.9: owner''s shared post notifies the on-duty sitter');
   perform _t_ok((select count(*) from public.notifications n
       join public.feed_posts fp on fp.id = n.ref_id
-      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id <> lucy) = 0,
+      where n.type = 'feed_post' and fp.media_id = _t_get('m_oshared') and n.user_id <> chloe) = 0,
     '5.9: nobody else is notified (not the other sitter, not the owner)');
   perform _t_ok(not exists (select 1 from public.notifications n
       join public.feed_posts fp on fp.id = n.ref_id
       where n.type = 'feed_post' and fp.media_id = _t_get('m_opriv')),
     '5.9: owner''s private post notifies nobody');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     insert into public.feed_posts (pet_id, sitter_id, media_id)
-    values (max, lucy, _t_get('media_bori'));
+    values (max, chloe, _t_get('media_bori'));
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -1664,7 +1664,7 @@ begin
   get diagnostics n = row_count;
   perform _t_ok(n = 0, '5.8: owner cannot delete the sitter''s post');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select count(*) into n from public.feed_posts where media_id = _t_get('m_opriv');
   perform _t_ok(n = 0, '5.8: sitter cannot see the owner''s private post');
   select count(*) into n from public.media where id = _t_get('m_opriv');
@@ -1679,7 +1679,7 @@ begin
   perform _t_ok(n = 1, '5.8: author deletes her own post');
 
   -- Phase 06 (6.2): ensure_today_task_logs
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform ensure_today_task_logs(max);
     v_err := null;
@@ -1703,7 +1703,7 @@ begin
   returning id into v_id;
   perform _t_put('task_once', v_id);
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select count(*) into n from ensure_today_task_logs(max);
   perform _t_ok(n = 2, '6.2: logs for the active tasks only (Breakfast + one-off pill, not the paused one)');
   select count(*) into n from ensure_today_task_logs(max);
@@ -1719,32 +1719,32 @@ begin
     (select count(*) from ensure_today_task_logs('00000000-0000-4000-8000-0000000000c2')) = 1,
     '6.2: each pet gets its own logs (Mochi: litter box)');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select count(*) into n from public.task_logs where pet_id = max;
   perform _t_ok(n = 2, '6.2: the owner reads the logs through RLS');
   -- A pet nobody has booked: only its owner reads its logs (later scenarios hand Max to
   -- different sitters, so Max is not a stable "no access" pet).
   perform _t_as(null);
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo') returning id into v_id;
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Solo') returning id into v_id;
   insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Dinner', '18:00');
   insert into public.task_logs (task_id, pet_id, due_at)
   select id, v_id, local_ts(app_today(), '18:00') from public.care_tasks where pet_id = v_id;
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   select count(*) into n from public.task_logs where pet_id = v_id;
   perform _t_ok(n = 0, '6.2: a sitter with no booking for the pet cannot read the logs');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   select count(*) into n from public.task_logs where pet_id = v_id;
   perform _t_ok(n = 1, '6.2: the owner sees the logs of her unbooked pet');
 
   -- Phase 06 (6.4): complete_task_log
   perform _t_as(null);
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
-  values (max, lucy, 'smoke/proof-pill', 'image', 'task_proof');
+  values (max, chloe, 'smoke/proof-pill', 'image', 'task_proof');
   perform _t_put('m_proof', (select id from public.media where cloudinary_public_id = 'smoke/proof-pill'));
   perform _t_put('log_bf', (select id from public.task_logs where task_id = _t_get('task_bori')));
   perform _t_put('log_pill', (select id from public.task_logs where task_id = _t_get('task_once')));
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform complete_task_log(_t_get('log_bf'));
     v_err := null;
@@ -1759,7 +1759,7 @@ begin
   end;
   perform _t_ok(v_err = 'not_in_care_window', '6.4: a sitter outside the care window cannot complete it');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform complete_task_log(_t_get('log_bf'), _t_get('media_bori'));
     v_err := null;
@@ -1771,7 +1771,7 @@ begin
 
   perform complete_task_log(_t_get('log_bf'));
   perform _t_ok(
-    (select status = 'done' and completed_by = lucy and completed_at is not null and media_id is null
+    (select status = 'done' and completed_by = chloe and completed_at is not null and media_id is null
      from public.task_logs where id = _t_get('log_bf')),
     '6.4: Mark done without a photo');
   begin
@@ -1784,34 +1784,34 @@ begin
   perform _t_as(null);
   perform _t_ok(
     (select count(*) from public.notifications
-     where user_id = chloe and type = 'task_done' and ref_id = _t_get('log_bf')
+     where user_id = robert and type = 'task_done' and ref_id = _t_get('log_bf')
        and title like 'Max had breakfast%') = 1,
     '6.4: the owner gets a task_done notice');
   perform _t_ok(not exists (select 1 from public.feed_posts where task_log_id = _t_get('log_bf')),
     '6.4: no photo → no feed post');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform complete_task_log(_t_get('log_pill'), _t_get('m_proof'));
   perform _t_as(null);
   perform _t_ok(
     (select count(*) from public.feed_posts
      where task_log_id = _t_get('log_pill') and caption_source = 'task' and visibility = 'shared'
-       and media_id = _t_get('m_proof') and posted_by = lucy) = 1,
+       and media_id = _t_get('m_proof') and posted_by = chloe) = 1,
     '6.4: with a photo → a shared feed post with a task caption');
   perform _t_ok(
-    (select count(*) from public.notifications where user_id = chloe and ref_id = _t_get('log_pill')
+    (select count(*) from public.notifications where user_id = robert and ref_id = _t_get('log_pill')
        and type = 'task_done') = 1
     and not exists (select 1 from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
        where n.type = 'feed_post' and fp.task_log_id = _t_get('log_pill')),
     '6.4: task_done only — no extra feed_post notice for a task photo');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok(
     (select count(*) from public.feed_posts where task_log_id = _t_get('log_pill')) = 1,
     '6.4: the owner sees the task photo in the feed');
 
   -- Phase 06 (6.8): care_checkins
   perform _t_as(null);
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Solo2') returning id into v_id;
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Solo2') returning id into v_id;
   insert into public.care_checkins (pet_id, kind, value) values (v_id, 'meal', 'all');
   insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '30');
   insert into public.care_checkins (pet_id, kind, note_text) values (v_id, 'note', 'Watched a squirrel for ten minutes');
@@ -1865,9 +1865,9 @@ begin
   perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.8: no walk check-in for a cat (D23)');
 
   -- RLS: read only, owner and the sitter in the window.
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
-    insert into public.care_checkins (pet_id, created_by, kind, value) values (max, lucy, 'mood', 'calm');
+    insert into public.care_checkins (pet_id, created_by, kind, value) values (max, chloe, 'mood', 'calm');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -1876,7 +1876,7 @@ begin
     '6.8: a sitter with no booking for the pet reads nothing');
   perform _t_ok((select count(*) from public.care_checkins where pet_id = max and kind = 'mood') >= 1,
     '6.8: the sitter in the care window reads the pet''s check-ins');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.care_checkins where pet_id = v_id) = 4,
     '6.8: the owner reads her pet''s check-ins');
   begin
@@ -1902,10 +1902,10 @@ begin
   -- Phase 06 (6.9): log_care_checkin
   perform _t_as(null);
   insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
-  values (max, lucy, 'smoke/proof-checkin', 'image', 'task_proof');
+  values (max, chloe, 'smoke/proof-checkin', 'image', 'task_proof');
   perform _t_put('m_checkin', (select id from public.media where cloudinary_public_id = 'smoke/proof-checkin'));
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform log_care_checkin(max, 'meal', 'all');
     v_err := null;
@@ -1920,11 +1920,11 @@ begin
   end;
   perform _t_ok(v_err = 'not_in_care_window', '6.9: a sitter outside the care window cannot');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform log_care_checkin(max, 'meal', 'all');
   perform _t_ok(
     (select count(*) from public.care_checkins where pet_id = max and kind = 'meal' and value = 'all'
-       and created_by = lucy and note_text is null and media_id is null) = 1,
+       and created_by = chloe and note_text is null and media_id is null) = 1,
     '6.9: one tap, no memo');
   perform log_care_checkin(max, 'mood', 'tired', '   ');
   perform _t_ok(
@@ -1964,25 +1964,25 @@ begin
   perform _t_as(null);
   perform _t_ok(
     (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
-     where n.user_id = chloe and n.type = 'care_checkin' and c.kind = 'meal' and c.value = 'all'
+     where n.user_id = robert and n.type = 'care_checkin' and c.kind = 'meal' and c.value = 'all'
        and n.title like 'Max ate everything%' and n.body is null) >= 1,
     '6.9: no memo typed → the preset line, "Max ate everything 🍽️"');
   perform _t_ok(
     (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
-     where n.user_id = chloe and n.type = 'care_checkin' and c.value = 'little'
+     where n.user_id = robert and n.type = 'care_checkin' and c.value = 'little'
        and n.title like 'Max ate a little%' and n.body = 'Left the chicken bits, sniffed and walked off') = 1,
     '6.9: a typed memo rides along as the body of the preset title');
   perform _t_ok(not exists (select 1 from public.feed_posts fp
       join public.care_checkins c on c.pet_id = fp.pet_id and c.media_id = fp.media_id),
     '6.9: no photo → no feed post');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform log_care_checkin(max, 'meal', 'most', null, _t_get('m_checkin'));
   perform _t_as(null);
   perform _t_ok(
     (select count(*) from public.feed_posts
      where media_id = _t_get('m_checkin') and caption_source = 'task' and visibility = 'shared'
-       and posted_by = lucy and task_log_id is null) = 1,
+       and posted_by = chloe and task_log_id is null) = 1,
     '6.9: with a photo → a shared feed post');
   perform _t_ok(
     (select count(*) from public.notifications n join public.feed_posts fp on fp.id = n.ref_id
@@ -1990,7 +1990,7 @@ begin
     and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
      where n.type = 'care_checkin' and c.media_id = _t_get('m_checkin')) = 1,
     '6.9: a check-in photo sends the care_checkin notice only');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.feed_posts where media_id = _t_get('m_checkin')) = 1,
     '6.9: the owner sees the check-in photo in the feed');
 
@@ -1999,29 +1999,29 @@ begin
   insert into public.care_tasks (pet_id, type, title, scheduled_time)
   values (max, 'play', 'Evening play', '21:00') returning id into v_id;
   perform _t_put('task_play', v_id);
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform ensure_today_task_logs(max);
   perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
     '6.x: the new task gets today''s log');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   update public.care_tasks set scheduled_time = '22:00' where id = _t_get('task_play');
   perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
     '6.x: changing a task''s time drops today''s unfinished log');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform ensure_today_task_logs(max);
   perform _t_ok(
     (select count(*) from public.task_logs
      where task_id = _t_get('task_play') and due_at = local_ts(app_today(), '22:00')) = 1,
     '6.x: …and today gets one log at the new time');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   update public.care_tasks set active = false where id = _t_get('task_play');
   perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 0,
     '6.x: pausing a task drops today''s unfinished log');
   update public.care_tasks set active = true where id = _t_get('task_play');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform ensure_today_task_logs(max);
   perform complete_task_log(
     (select id from public.task_logs where task_id = _t_get('task_play')), null, '  Chased the ball twice, then napped  ');
@@ -2031,13 +2031,13 @@ begin
     '6.x: Mark done with a memo stores it (trimmed)');
   perform _t_ok(
     (select count(*) from public.notifications n join public.task_logs l on l.id = n.ref_id
-     where n.user_id = chloe and n.type = 'task_done' and l.task_id = _t_get('task_play')
+     where n.user_id = robert and n.type = 'task_done' and l.task_id = _t_get('task_play')
        and n.title like 'Max had playtime%' and n.body = 'Chased the ball twice, then napped') = 1,
     '6.x: with a memo the owner gets what was done (title) plus the memo (body)');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   update public.care_tasks set scheduled_time = '23:00' where id = _t_get('task_play');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform ensure_today_task_logs(max);
   perform _t_ok((select count(*) from public.task_logs where task_id = _t_get('task_play')) = 1,
     '6.x: a task finished today gets no second log when its time is edited (history stays)');
@@ -2050,23 +2050,23 @@ begin
   perform _t_ok(v_err is not null, '6.x: a memo over 120 characters is refused');
 
   -- Notifications can be deleted — by their owner only
-  perform _t_as(chloe);
-  delete from public.notifications where id = (select id from public.notifications where user_id = chloe limit 1);
+  perform _t_as(robert);
+  delete from public.notifications where id = (select id from public.notifications where user_id = robert limit 1);
   get diagnostics n = row_count;
   perform _t_ok(n = 1, '6.x: a user deletes their own notification');
-  perform _t_as(lucy);
-  delete from public.notifications where user_id = chloe;
+  perform _t_as(chloe);
+  delete from public.notifications where user_id = robert;
   get diagnostics n = row_count;
   perform _t_ok(n = 0, '6.x: nobody deletes someone else''s notifications');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   delete from public.notifications;
   perform _t_ok((select count(*) from public.notifications) = 0, '6.x: Clear all empties one''s own list');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok((select count(*) from public.notifications) > 0, '6.x: …and leaves other people''s alone');
 
   -- Phase 06 (6.13): care requests, tasks and Heads-ups saved in one go — on pets with no stay on
   -- (009b: while a stay is on the owner sends a change request instead, see 6.20).
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
     v_err := null;
@@ -2075,9 +2075,9 @@ begin
   perform _t_ok(v_err = 'stay_in_progress', 'BF.4: no saved checklist for a pet whose stay is on');
   perform _t_as(null);
   insert into public.pets (id, owner_id, species, name) values
-    ('00000000-0000-4000-8000-0000000000d1', chloe, 'dog', 'Biscuit'),
-    ('00000000-0000-4000-8000-0000000000d2', chloe, 'cat', 'Pickle');
-  perform _t_as(chloe);
+    ('00000000-0000-4000-8000-0000000000d1', robert, 'dog', 'Biscuit'),
+    ('00000000-0000-4000-8000-0000000000d2', robert, 'cat', 'Pickle');
+  perform _t_as(robert);
   v_id := save_care_request(
     '00000000-0000-4000-8000-0000000000d1',
     'Meals: 8:00 AM — 1 cup of kibble. Heads-up: text instead of knocking.',
@@ -2119,7 +2119,7 @@ begin
   end;
   perform _t_ok(v_err = 'too_many_items', '6.13: more than 8 Heads-ups is refused');
 
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform save_care_request(max, 'x', null, '[]'::jsonb, array['Be careful']);
     v_err := null;
@@ -2140,7 +2140,7 @@ begin
   perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and not active) = 0,
     '6.13: …or switch one off');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   update public.pet_cautions set active = false
   where request_id = _t_get('req_saved') and text = 'Keep other dogs away on walks';
   perform _t_ok((select count(*) from public.pet_cautions where request_id = _t_get('req_saved') and active) = 1,
@@ -2153,7 +2153,7 @@ begin
     '6.13: deleting the note keeps the tasks it created (request_id → null)');
 
   -- Phase 06 (6.20): while a stay is on, the owner SENDS a care request and the sitter answers it
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_id := send_care_change_request(
     max,
     '[{"type":"feeding","time":"19:00","title":"Late snack","dose":"a few treats","notes":null,"repeat":false}]'::jsonb,
@@ -2182,7 +2182,7 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'forbidden', '6.20: a sitter cannot send a care request');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform respond_care_change_request(_t_get('ccr'), true, null);
     v_err := null;
@@ -2201,8 +2201,8 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'already_answered', '6.20: a request is answered once');
-  perform _t_as(chloe);
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_approved' and ref_id = _t_get('ccr')) = 1,
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'care_request_approved' and ref_id = _t_get('ccr')) = 1,
     '6.20: the owner is told it was approved');
 
   v_id := send_care_change_request(max, '[{"type":"walk","time":"22:00","title":"Night walk","dose":null,"notes":null}]'::jsonb, '{}');
@@ -2211,8 +2211,8 @@ begin
   perform respond_care_change_request(_t_get('ccr2'), false, 'I''m out by then');
   perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = max and title = 'Night walk'),
     '6.20: declining creates nothing');
-  perform _t_as(chloe);
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'care_request_declined'
       and ref_id = _t_get('ccr2') and body = 'I''m out by then') = 1,
     '6.20: the owner gets the sitter''s reason');
   begin
@@ -2223,14 +2223,14 @@ begin
   perform _t_ok(v_err = 'empty_request', '6.20: an empty request is refused');
   begin
     insert into public.care_change_requests (pet_id, booking_id, requested_by, sitter_id)
-    select max, booking_id, chloe, lucy from public.care_change_requests limit 1;
+    select max, booking_id, robert, chloe from public.care_change_requests limit 1;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', '6.20: requests are written only through the functions');
 
   -- Phase 06 (6.23): no direct additions while a stay is on
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     insert into public.care_tasks (pet_id, type, title, scheduled_time) values (max, 'play', 'Sneaky task', '10:00');
     v_err := null;
@@ -2238,7 +2238,7 @@ begin
   end;
   perform _t_ok(v_err = '42501', '6.23: the owner cannot add a task to a pet whose stay is on');
   begin
-    insert into public.pet_cautions (pet_id, text, created_by) values (max, 'Sneaky heads-up', chloe);
+    insert into public.pet_cautions (pet_id, text, created_by) values (max, 'Sneaky heads-up', robert);
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -2250,10 +2250,10 @@ begin
   perform _t_ok(not exists (select 1 from public.care_tasks where title = 'Late snack (edited)'),
     '6.23: …and remove it');
   perform _t_as(null);
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Homebody') returning id into v_id;
-  perform _t_as(chloe);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Homebody') returning id into v_id;
+  perform _t_as(robert);
   insert into public.care_tasks (pet_id, type, title, scheduled_time) values (v_id, 'feeding', 'Breakfast', '08:00');
-  insert into public.pet_cautions (pet_id, text, created_by) values (v_id, 'Shy with strangers', chloe);
+  insert into public.pet_cautions (pet_id, text, created_by) values (v_id, 'Shy with strangers', robert);
   perform _t_ok(true, '6.23: a pet with no stay on is edited directly as before');
 
   -- Phase 07 (7.5): the sitter sends the daily report; the owner only ever sees the sent text
@@ -2262,7 +2262,7 @@ begin
   values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: Max had a day.', 'draft', 'test-model')
   returning id into v_id;
   perform _t_put('report', v_id);
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.daily_reports where id = _t_get('report')) = 0,
     '7.5: the owner does not see the draft');
   begin
@@ -2274,7 +2274,7 @@ begin
   perform _t_as(_t_get('ccr_sitter'));
   perform _t_ok((select count(*) from public.daily_reports where id = _t_get('report')) = 1,
     '7.5: the sitter sees their own draft');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform send_daily_report(_t_get('report'), 'Not mine');
     v_err := null;
@@ -2298,10 +2298,10 @@ begin
   perform _t_ok((select status = 'sent' and body = 'Max had a lovely day — my own words.' and sent_at is not null
       from public.daily_reports where id = _t_get('report')),
     '7.5: sending publishes the sitter''s edited text (trimmed), not the AI draft');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select body from public.daily_reports where id = _t_get('report')) = 'Max had a lovely day — my own words.',
     '7.5: the owner now sees the sent report');
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'report_sent'
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'report_sent'
       and ref_id = _t_get('report') and pet_id = max and body like 'Max had a lovely day%') = 1,
     '7.5: the owner is told, with the start of the text');
   perform _t_as(_t_get('ccr_sitter'));
@@ -2317,7 +2317,7 @@ begin
     '7.5: a sent report cannot be edited directly');
 
   -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_id := send_care_change_request(
     max,
     '[{"type":"feeding","time":"06:00","title":"Early meal","dose":null,"notes":null},{"type":"walk","time":"23:00","title":"Late walk","dose":null,"notes":null}]'::jsonb,
@@ -2341,8 +2341,8 @@ begin
   perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr3')) = 'countered'
       and not exists (select 1 from public.care_tasks where pet_id = max and title in ('Early meal', 'Late walk')),
     '6.21: a counter-request creates nothing yet');
-  perform _t_as(chloe);
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_countered'
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'care_request_countered'
       and ref_id = _t_get('ccr3') and body like '%$5.00%') = 1,
     '6.21: the owner is told, with the fee');
   begin
@@ -2358,7 +2358,7 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'forbidden', '6.21: only the owner answers a counter-request');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform answer_care_counter(_t_get('ccr3'), true);
   perform _t_ok(exists (select 1 from public.care_tasks where pet_id = max and title = 'Early meal')
       and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Late walk')
@@ -2368,23 +2368,23 @@ begin
   perform _t_ok((select count(*) from public.notifications where user_id = _t_get('ccr_sitter') and type = 'care_counter_accepted'
       and ref_id = _t_get('ccr3')) = 1, '6.21: the sitter is told it was accepted');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_id := send_care_change_request(max, '[{"type":"play","time":"15:00","title":"Tug game","dose":null,"notes":null}]'::jsonb, '{}');
   perform _t_put('ccr4', v_id);
   perform _t_as(_t_get('ccr_sitter'));
   perform counter_care_change_request(_t_get('ccr4'), 'Extra time for this one.', 300, '{}');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform answer_care_counter(_t_get('ccr4'), false);
   perform _t_ok((select status from public.care_change_requests where id = _t_get('ccr4')) = 'withdrawn'
       and not exists (select 1 from public.care_tasks where pet_id = max and title = 'Tug game'),
     '6.21: declining the counter-request closes it and creates nothing');
 
-  perform _t_as(chloe);
+  perform _t_as(robert);
   v_id := send_care_change_request(max, '[{"type":"play","time":"16:00","title":"Ball","dose":null,"notes":null}]'::jsonb, '{}');
   perform _t_as(_t_get('ccr_sitter'));
   perform respond_care_change_request(v_id, false, 'Needs a different time', 'Could we do 5 PM instead?');
-  perform _t_as(chloe);
-  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'care_request_declined'
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'care_request_declined'
       and body = 'Needs a different time — Could we do 5 PM instead?') = 1,
     '6.21: a decline carries the reason and the note');
 
@@ -2398,8 +2398,8 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   pepper uuid;
   v_b1 uuid;
@@ -2416,15 +2416,15 @@ declare
 begin
   -- BF.4 (009b): an open care request ends with its stay
   perform _t_as(null);
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Pepper') returning id into pepper;
-  v_b1 := _t_booking(chloe, lucy, array[pepper], now() + interval '100 days', now() + interval '102 days', 'confirmed');
-  perform _t_as(chloe);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pepper') returning id into pepper;
+  v_b1 := _t_booking(robert, chloe, array[pepper], now() + interval '100 days', now() + interval '102 days', 'confirmed');
+  perform _t_as(robert);
   v_req := send_care_change_request(pepper,
     '[{"type":"play","time":"10:00","title":"Fetch","dose":null,"notes":null}]'::jsonb, '{}');
   perform cancel_booking(v_b1, 'Plans changed');
   perform _t_ok((select status from public.care_change_requests where id = v_req) = 'closed',
     'BF.4: cancelling the booking closes its open care request');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform respond_care_change_request(v_req, true, null);
     v_err := null;
@@ -2435,8 +2435,8 @@ begin
   perform _t_ok(not exists (select 1 from public.care_tasks where pet_id = pepper and title = 'Fetch'),
     'BF.4: …and nothing was added');
 
-  v_b2 := _t_booking(chloe, paul, array[pepper], now() + interval '110 days', now() + interval '112 days', 'confirmed');
-  perform _t_as(chloe);
+  v_b2 := _t_booking(robert, paul, array[pepper], now() + interval '110 days', now() + interval '112 days', 'confirmed');
+  perform _t_as(robert);
   v_req := send_care_change_request(pepper,
     '[{"type":"play","time":"11:00","title":"Tug","dose":null,"notes":null}]'::jsonb, '{}');
   perform _t_ok((select status from public.care_change_requests where id = v_req) = 'pending',
@@ -2450,14 +2450,14 @@ begin
   -- BF.5 (009c): a checked handoff stays checked; passed times can't be agreed; house sitting stays home
   perform _t_as(null);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
-  values (lucy, 'open', app_today() + 115, app_today() + 150, 'morning', '08:00', '12:00', 3),
-         (lucy, 'open', app_today() + 115, app_today() + 150, 'afternoon', '12:00', '18:00', 3),
-         (lucy, 'open', app_today() + 115, app_today() + 150, 'overnight', '18:00', '08:00', 3);
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Nori') returning id into nori;
-  v_b3 := _t_booking(chloe, lucy, array[nori], now() + interval '120 days', now() + interval '122 days', 'confirmed', true);
-  perform _t_as(chloe);
+  values (chloe, 'open', app_today() + 115, app_today() + 150, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', app_today() + 115, app_today() + 150, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', app_today() + 115, app_today() + 150, 'overnight', '18:00', '08:00', 3);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Nori') returning id into nori;
+  v_b3 := _t_booking(robert, chloe, array[nori], now() + interval '120 days', now() + interval '122 days', 'confirmed', true);
+  perform _t_as(robert);
   v_prop := propose_handoff(v_b3, 'pick_up', now() + interval '123 days');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform complete_handoff(v_b3, 'pick_up');
   perform _t_ok((select status from public.booking_handoffs where id = v_prop) = 'superseded',
     'BF.5: Returned closes the open pick-up proposal');
@@ -2469,9 +2469,9 @@ begin
   perform _t_ok(v_err = 'invalid_status', 'BF.5: …so it can no longer be accepted');
   perform _t_as(null);
   insert into public.booking_handoffs (booking_id, kind, scheduled_at, within_sitter_hours, status, proposed_by)
-  values (v_b3, 'pick_up', now() + interval '124 days', true, 'proposed', chloe)
+  values (v_b3, 'pick_up', now() + interval '124 days', true, 'proposed', robert)
   returning id into v_prop;
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform respond_handoff(v_prop, true);
     v_err := null;
@@ -2483,13 +2483,13 @@ begin
       where booking_id = v_b3 and kind = 'pick_up' and status = 'agreed' and completed_at is not null) = 1,
     'BF.5: …the Returned pick-up is still the agreed one');
 
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Sesame') returning id into sesame;
-  v_b4 := _t_booking(chloe, lucy, array[sesame], now() + interval '130 days', now() + interval '132 days', 'confirmed');
-  v_b5 := _t_booking(chloe, lucy, array[sesame], now() + interval '140 days', now() + interval '142 days', 'requested');
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Sesame') returning id into sesame;
+  v_b4 := _t_booking(robert, chloe, array[sesame], now() + interval '130 days', now() + interval '132 days', 'confirmed');
+  v_b5 := _t_booking(robert, chloe, array[sesame], now() + interval '140 days', now() + interval '142 days', 'requested');
   update public.booking_handoffs set scheduled_at = now() - interval '1 minute'
   where booking_id = v_b5 and kind = 'drop_off'
   returning id into v_prop;
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform respond_handoff(v_prop, true);
     v_err := null;
@@ -2498,7 +2498,7 @@ begin
   perform _t_ok(v_err = 'proposal_expired', 'BF.5: a proposed time that has passed cannot be accepted');
 
   perform _t_as(null);
-  v_b6 := _t_booking(chloe, lucy, array[sesame], now() + interval '145 days', now() + interval '147 days', 'requested');
+  v_b6 := _t_booking(robert, chloe, array[sesame], now() + interval '145 days', now() + interval '147 days', 'requested');
   update public.booking_handoffs set status = 'agreed' where booking_id = v_b6;
   update public.booking_handoffs set scheduled_at = now() - interval '1 hour' where booking_id = v_b6 and kind = 'pick_up';
   begin
@@ -2510,7 +2510,7 @@ begin
 
   update public.bookings set service_type = 'house_sitting' where id = v_b4;
   update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_b4;
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform propose_handoff(v_b4, 'drop_off', now() + interval '130 days', 'sitter_home');
     v_err := null;
@@ -2524,8 +2524,8 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   miso uuid;
   v_b uuid;
   v_req uuid;
@@ -2537,34 +2537,34 @@ declare
 begin
   -- BF.6 (009d): consents are signed at checkout only, and a paid booking follows agreed changes
   perform _t_as(null);
-  -- From here on only Miso's stay is a paid Chloe ↔ Lucy booking (earlier fixtures reset).
-  update public.bookings set paid_at = null, price_snapshot = null where owner_id = chloe and sitter_id = lucy;
-  insert into public.pets (owner_id, species, name) values (chloe, 'dog', 'Miso') returning id into miso;
-  v_req := _t_booking(chloe, lucy, array[miso], now() + interval '160 days', now() + interval '162 days', 'requested');
-  v_b := _t_booking(chloe, lucy, array[miso], now() + interval '134 days', now() + interval '136 days', 'confirmed');
-  perform _t_as(chloe);
+  -- From here on only Miso's stay is a paid Robert ↔ Chloe booking (earlier fixtures reset).
+  update public.bookings set paid_at = null, price_snapshot = null where owner_id = robert and sitter_id = chloe;
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Miso') returning id into miso;
+  v_req := _t_booking(robert, chloe, array[miso], now() + interval '160 days', now() + interval '162 days', 'requested');
+  v_b := _t_booking(robert, chloe, array[miso], now() + interval '134 days', now() + interval '136 days', 'confirmed');
+  perform _t_as(robert);
   begin
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-    values (v_req, 'emergency_vet', '1', chloe, 'Chloe');
+    values (v_req, 'emergency_vet', '1', robert, 'Robert');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'BF.6: nothing is signed before the sitter confirms');
   begin
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    values (v_b, 'home_access', '1', robert, 'Robert');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'BF.6: only a kind the booking requires can be signed');
-  perform _t_as(lucy);
-  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 0,
-    'BF.6: the sitter sees no owner profile before payment');
   perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.owner_profiles where id = robert) = 0,
+    'BF.6: the sitter sees no owner profile before payment');
+  perform _t_as(robert);
 
   foreach v_kind in array required_consents(v_b) loop
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-    values (v_b, v_kind, '1', chloe, 'Chloe');
+    values (v_b, v_kind, '1', robert, 'Robert');
   end loop;
   v_paid := pay_booking_demo(v_b);
 
@@ -2573,45 +2573,45 @@ begin
   perform _t_ok('home_access' = any (required_consents(v_b)), 'BF.6: an owner_home handoff requires home_access');
   begin
     insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-    values (v_b, 'home_access', '1', chloe, 'Chloe');
+    values (v_b, 'home_access', '1', robert, 'Robert');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'BF.6: …but nothing is signed on a paid booking');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform respond_handoff(v_prop, true);
   perform _t_as(null);
   perform _t_ok((select paid_at is null and price_snapshot->>'total' = v_paid->>'total'
       from public.bookings where id = v_b),
     'BF.6: agreeing to it reopens checkout (the paid quote is kept)');
   perform _t_ok(exists (select 1 from public.notifications
-      where user_id = chloe and type = 'checkout_needed' and booking_id = v_b),
+      where user_id = robert and type = 'checkout_needed' and booking_id = v_b),
     'BF.6: …and the owner is told to sign');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform get_home_access(v_b);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'not_paid', 'BF.6: …so the entry codes stay locked until then');
-  perform _t_ok((select count(*) from public.owner_profiles where id = chloe) = 1,
+  perform _t_ok((select count(*) from public.owner_profiles where id = robert) = 1,
     'BF.6: …while the owner''s emergency contact stays visible');
   perform _t_ok((select address from get_handoff_details(v_b) where kind = 'pick_up') = '1 Owner Ave',
     'BF.7: …and the sitter still sees where to bring the pet back');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from get_handoff_details(v_b)) = 2,
     'BF.7: …and the owner still sees both handoff places');
 
   insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name)
-  values (v_b, 'home_access', '1', chloe, 'Chloe');
+  values (v_b, 'home_access', '1', robert, 'Robert');
   v_paid := pay_booking_demo(v_b);
   perform _t_ok((select paid_at is not null from public.bookings where id = v_b),
     'BF.6: signing home_access finishes checkout again');
 
   -- Longer stay → re-quoted, owner told the new total; checkout stays done
   v_prop := propose_handoff(v_b, 'pick_up', now() + interval '138 days');
-  v_quote := quote_booking(lucy, 'boarding', now() + interval '134 days', now() + interval '138 days', 1);
-  perform _t_as(lucy);
+  v_quote := quote_booking(chloe, 'boarding', now() + interval '134 days', now() + interval '138 days', 1);
+  perform _t_as(chloe);
   perform respond_handoff(v_prop, true);
   perform _t_as(null);
   perform _t_ok((select paid_at is not null
@@ -2620,7 +2620,7 @@ begin
       from public.bookings where id = v_b),
     'BF.6: a longer stay is re-quoted and stays paid');
   perform _t_ok(exists (select 1 from public.notifications
-      where user_id = chloe and type = 'price_updated' and booking_id = v_b),
+      where user_id = robert and type = 'price_updated' and booking_id = v_b),
     'BF.6: …and the owner gets the new total');
 end;
 $$;
@@ -2631,9 +2631,9 @@ $$;
 
 do $$
 declare
-  chloe constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
-  lucy constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   max constant uuid := '00000000-0000-4000-8000-0000000000c1';
   coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
@@ -2643,35 +2643,35 @@ declare
   v_draft uuid;
   v_err text;
 begin
-  -- Chloe asks Lucy; she can ask only about her own pets and only a sitter
-  perform _t_as(chloe);
+  -- Robert asks Chloe; she can ask only about her own pets and only a sitter
+  perform _t_as(robert);
   insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
-  values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[max])
+  values (robert, chloe, now() + interval '200 days', now() + interval '203 days', array[max])
   returning id into v_inq;
   begin
     insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
-    values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[coco]);
+    values (robert, chloe, now() + interval '200 days', now() + interval '203 days', array[coco]);
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: an owner cannot ask about someone else''s pet');
   begin
     insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
-    values (chloe, joy, now() + interval '200 days', now() + interval '203 days', array[max]);
+    values (robert, joy, now() + interval '200 days', now() + interval '203 days', array[max]);
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …nor ask an owner');
   begin
     insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids, status)
-    values (chloe, lucy, now() + interval '200 days', now() + interval '203 days', array[max], 'booked');
+    values (robert, chloe, now() + interval '200 days', now() + interval '203 days', array[max], 'booked');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …and a new inquiry cannot start as booked');
 
   insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
-  values (v_inq, 'owner', chloe, 'Can you give Max his pill at 2 PM?') returning id into v_msg;
+  values (v_inq, 'owner', robert, 'Can you give Max his pill at 2 PM?') returning id into v_msg;
   begin
     insert into public.inquiry_messages (inquiry_id, author, body, drafted_by_ai, status)
     values (v_inq, 'ai', 'forged draft', true, 'draft');
@@ -2681,24 +2681,24 @@ begin
   perform _t_ok(v_err = '42501', 'M: an owner cannot write an AI draft');
   begin
     insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
-    values (v_inq, 'sitter', chloe, 'pretend to be Lucy');
+    values (v_inq, 'sitter', robert, 'pretend to be Chloe');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …nor write as the sitter');
 
-  -- The AI draft arrives (service role): Lucy is told, Chloe sees nothing of it
+  -- The AI draft arrives (service role): Chloe is told, Robert sees nothing of it
   perform _t_as(null);
   insert into public.inquiry_messages (inquiry_id, author, body, drafted_by_ai, status, grounding, model)
-  values (v_inq, 'ai', 'Hi Chloe! I''m available…', true, 'draft', '{"quote":{"total":268.13}}', 'm')
+  values (v_inq, 'ai', 'Hi Robert! I''m available…', true, 'draft', '{"quote":{"total":268.13}}', 'm')
   returning id into v_draft;
   perform _t_ok(exists (select 1 from public.notifications
-      where user_id = lucy and type = 'inquiry_received' and ref_id = v_inq),
+      where user_id = chloe and type = 'inquiry_received' and ref_id = v_inq),
     'M: the sitter is told the draft is ready');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq) = 1,
     'M: the owner sees her own message and not the AI draft');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq) = 2,
     'M: the sitter sees the question and the draft');
 
@@ -2710,11 +2710,11 @@ begin
   perform _t_ok((select count(*) from public.inquiries) = 0 and (select count(*) from public.inquiry_messages) = 0,
     'M: another sitter sees none either');
 
-  -- Lucy sends it through the RPC; a direct insert as the sitter is refused
-  perform _t_as(lucy);
+  -- Chloe sends it through the RPC; a direct insert as the sitter is refused
+  perform _t_as(chloe);
   begin
     insert into public.inquiry_messages (inquiry_id, author, sender_id, body)
-    values (v_inq, 'sitter', lucy, 'a message written around the RPC');
+    values (v_inq, 'sitter', chloe, 'a message written around the RPC');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -2725,15 +2725,15 @@ begin
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
-  perform _t_ok(v_err = 'forbidden', 'M: another sitter cannot reply in Lucy''s thread');
-  perform _t_as(chloe);
+  perform _t_ok(v_err = 'forbidden', 'M: another sitter cannot reply in Chloe''s thread');
+  perform _t_as(robert);
   begin
-    perform send_inquiry_reply(v_inq, 'as Chloe', null);
+    perform send_inquiry_reply(v_inq, 'as Robert', null);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'forbidden', 'M: the owner cannot reply as the sitter');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform send_inquiry_reply(v_inq, '   ', v_draft);
     v_err := null;
@@ -2746,8 +2746,8 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'draft_not_found', 'M: a draft that is not in this thread is refused');
-  perform send_inquiry_reply(v_inq, 'Hi Chloe! I''m available…', v_draft);
-  perform _t_as(chloe);
+  perform send_inquiry_reply(v_inq, 'Hi Robert! I''m available…', v_draft);
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 1
       and (select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'ai') = 0,
     'M: the owner sees the sitter''s sent reply, still not the draft');
@@ -2755,19 +2755,19 @@ begin
         where inquiry_id = v_inq and author = 'sitter') = '268.13'
       and (select grounding ? 'needs_sitter' from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = false,
     'M: the reply carries the quote but none of the draft''s internal notes');
-  perform _t_ok((select drafted_by_ai and confirmed_by_sitter_at is not null and sender_id = lucy
+  perform _t_ok((select drafted_by_ai and confirmed_by_sitter_at is not null and sender_id = chloe
         from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter'),
     'M: …marked as approved by the sitter');
   perform _t_ok(exists (select 1 from public.notifications
-      where user_id = chloe and type = 'inquiry_replied' and ref_id = v_inq),
-    'M: the owner is told Lucy replied');
+      where user_id = robert and type = 'inquiry_replied' and ref_id = v_inq),
+    'M: the owner is told Chloe replied');
 
   -- The sitter opening the thread is the only "read"
   perform _t_ok((select read_at is null from public.inquiry_messages where id = v_msg),
     'M: the owner''s message is unread until the sitter opens the thread');
   perform _t_as(paul);
   perform mark_inquiry_read(v_inq);
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok((select read_at is null from public.inquiry_messages where id = v_msg),
     'M: another sitter opening it marks nothing');
   perform mark_inquiry_read(v_inq);
@@ -2777,8 +2777,8 @@ begin
   -- A reply that is not visible yet stays hidden from the owner
   perform _t_as(null);
   insert into public.inquiry_messages (inquiry_id, author, sender_id, body, status, visible_at)
-  values (v_inq, 'sitter', lucy, 'later', 'sent', now() + interval '1 hour');
-  perform _t_as(chloe);
+  values (v_inq, 'sitter', chloe, 'later', 'sent', now() + interval '1 hour');
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and body = 'later') = 0,
     'M: a reply before its visible_at is hidden from the owner');
 
@@ -2801,21 +2801,21 @@ begin
   perform _t_ok(v_err = '42501', 'M: …but cannot change who it belongs to');
 
   -- Sitter policies: written by the sitter only
-  perform _t_as(lucy);
-  update public.sitter_profiles set policies = 'No dogs over 20 kg.' where id = lucy;
-  perform _t_ok((select policies from public.sitter_profiles where id = lucy) = 'No dogs over 20 kg.',
+  perform _t_as(chloe);
+  update public.sitter_profiles set policies = 'No dogs over 20 kg.' where id = chloe;
+  perform _t_ok((select policies from public.sitter_profiles where id = chloe) = 'No dogs over 20 kg.',
     'M: a sitter writes her own policies');
   perform _t_as(paul);
-  update public.sitter_profiles set policies = 'hijacked' where id = lucy;
-  perform _t_ok((select policies from public.sitter_profiles where id = lucy) = 'No dogs over 20 kg.',
+  update public.sitter_profiles set policies = 'hijacked' where id = chloe;
+  perform _t_ok((select policies from public.sitter_profiles where id = chloe) = 'No dogs over 20 kg.',
     'M: …and nobody else can');
 
   -- The knowledge base is service-role only
   perform _t_as(null);
   insert into public.knowledge_chunks (scope, sitter_id, source_type, source_id, content, embedding)
-  values ('sitter', lucy, 'sitter_policy', lucy, 'No dogs over 20 kg.', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  values ('sitter', chloe, 'sitter_policy', chloe, 'No dogs over 20 kg.', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
   v_other := null;
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform count(*) from public.knowledge_chunks;
     v_err := null;
@@ -2829,9 +2829,9 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …nor by anon');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
-    perform * from public.match_knowledge((select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, array[max], chloe);
+    perform * from public.match_knowledge((select array_fill(0.1::real, array[1024])::extensions.vector(1024)), chloe, array[max], robert);
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -2840,29 +2840,29 @@ begin
   perform _t_as(null);
   insert into public.knowledge_chunks (scope, sitter_id, owner_id, source_type, source_id, content, embedding)
   values
-    ('owner', paul, chloe, 'inquiry', gen_random_uuid(), 'Chloe asked Paul about weekends', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
-    ('owner', lucy, chloe, 'inquiry', gen_random_uuid(), 'Chloe asked Lucy about pills', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
-    ('owner', lucy, joy, 'inquiry', gen_random_uuid(), 'Joy asked Lucy about Toto', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+    ('owner', paul, robert, 'inquiry', gen_random_uuid(), 'Robert asked Paul about weekends', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    ('owner', chloe, robert, 'inquiry', gen_random_uuid(), 'Robert asked Chloe about pills', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    ('owner', chloe, joy, 'inquiry', gen_random_uuid(), 'Joy asked Chloe about Toto', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
   insert into public.knowledge_chunks (scope, sitter_id, source_type, source_id, content, embedding)
   values ('sitter', paul, 'sitter_policy', paul, 'Paul never takes cats', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
   insert into public.knowledge_chunks (scope, pet_id, source_type, source_id, content, embedding)
   values ('pet', coco, 'life_record', gen_random_uuid(), 'Coco is afraid of thunder', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
   perform _t_ok((select array_agg(content order by content) from public.match_knowledge(
-        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, array[max], chloe, 20))
-      = array['Chloe asked Lucy about pills', 'No dogs over 20 kg.'],
+        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), chloe, array[max], robert, 20))
+      = array['No dogs over 20 kg.', 'Robert asked Chloe about pills'],
     'M: a search reaches only this sitter''s policy and this owner × sitter conversation — no other pet, sitter or owner');
   -- tone_samples: service role only, and a search never reaches another sitter's voice or a thrown-away draft
   perform _t_as(null);
   insert into public.tone_samples (sitter_id, kind, source, context_summary, final_text, embedding) values
-    (lucy, 'inquiry', 'approved', 'asks about a pill', 'Hi! Happy to help 🐾', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
-    (lucy, 'inquiry', 'regenerated', 'asks about a pill', '', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
-    (lucy, 'report', 'approved', 'daily report', 'A lovely day!', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (chloe, 'inquiry', 'approved', 'asks about a pill', 'Hi! Happy to help 🐾', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (chloe, 'inquiry', 'regenerated', 'asks about a pill', '', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
+    (chloe, 'report', 'approved', 'daily report', 'A lovely day!', (select array_fill(0.1::real, array[1024])::extensions.vector(1024))),
     (paul, 'inquiry', 'approved', 'asks about a pill', 'Hello. Yes.', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
   perform _t_ok((select array_agg(final_text) from public.match_tone(
-        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), lucy, 'inquiry', 10))
+        (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), chloe, 'inquiry', 10))
       = array['Hi! Happy to help 🐾'],
     'M: match_tone returns only this sitter''s approved / edited examples of this kind');
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   begin
     perform count(*) from public.tone_samples;
     v_err := null;
@@ -2870,13 +2870,13 @@ begin
   end;
   perform _t_ok(v_err = '42501', 'M: tone_samples is not readable by clients, not even the sitter''s own');
   begin
-    perform style_card from public.sitter_profiles where id = lucy;
+    perform style_card from public.sitter_profiles where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err = '42501', 'M: …and neither is the style card');
   -- Auto-send settings: consent first, the sitter's own row only, and the mode is not a plain column update
-  perform _t_as(lucy);
+  perform _t_as(chloe);
   perform _t_ok((public.get_my_ai_reply_mode() ->> 'mode') = 'manual' and (public.get_my_ai_reply_mode() ->> 'consented') = 'false',
     'M: auto-send is off until the sitter turns it on');
   begin
@@ -2886,7 +2886,7 @@ begin
   end;
   perform _t_ok(v_err = 'consent_required', 'M: auto-send needs the sitter''s consent');
   begin
-    update public.sitter_profiles set ai_reply_mode = 'auto' where id = lucy;
+    update public.sitter_profiles set ai_reply_mode = 'auto' where id = chloe;
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
@@ -2898,7 +2898,7 @@ begin
   perform set_ai_reply_mode('auto');
   perform _t_ok((get_my_ai_reply_mode() ->> 'mode') = 'auto',
     'M: turning it off and on again needs no second consent');
-  perform _t_as(chloe);
+  perform _t_as(robert);
   begin
     perform set_ai_reply_mode('auto', true);
     v_err := null;
@@ -2909,15 +2909,15 @@ begin
   -- A notice that is written now but appears later
   perform _t_as(null);
   insert into public.notifications (user_id, type, title, ref_id, visible_at)
-  values (chloe, 'inquiry_replied', 'later', v_inq, now() + interval '1 hour'),
-         (chloe, 'inquiry_replied', 'now', v_inq, now() - interval '1 second');
-  perform _t_as(chloe);
+  values (robert, 'inquiry_replied', 'later', v_inq, now() + interval '1 hour'),
+         (robert, 'inquiry_replied', 'now', v_inq, now() - interval '1 second');
+  perform _t_as(robert);
   perform _t_ok((select count(*) from public.notifications where title = 'now') = 1
       and (select count(*) from public.notifications where title = 'later') = 0,
     'M: a notice with a later visible_at stays hidden until then');
   perform _t_as(null);
   update public.inquiries set reply_typing_at = now() + interval '5 seconds', reply_visible_at = now() + interval '30 seconds' where id = v_inq;
-  perform _t_as(chloe);
+  perform _t_as(robert);
   perform _t_ok((select reply_visible_at is not null from public.inquiries where id = v_inq),
     'M: the owner can read when the reply will appear (times only, no text)');
   begin

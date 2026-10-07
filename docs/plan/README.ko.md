@@ -147,7 +147,7 @@
 
 ### D. 문의 자동 답장 (Nano + RAG) — Stage 1, Phase 07B
 - 입력: 서버가 모은 JSON뿐 — 시터 가능 여부, `quote_booking` 결과, 반려동물 프로필, 시터 공개 프로필, RAG 상위 5개(시터 정책·Life Record·지난 문의·케어 의뢰서)
-- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Lucy will confirm" + `needs_sitter`
+- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Chloe will confirm" + `needs_sitter`
 - 시터 1인칭 말투 초안(D35) → 시터가 **Send** / Edit / Regenerate로 승인(D36). 자동 발송은 시터가 켜는 옵션 + 사람 속도(D37)
 
 ### E. 케어 플랜 (Super) — Stage 2, Phase 06

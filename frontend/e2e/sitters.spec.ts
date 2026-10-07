@@ -58,7 +58,7 @@ test.describe("your sitters", () => {
         responded_at: null,
         created_at: "2026-08-31T00:00:00Z",
       },
-      // Another owner's booking fills Lucy's morning on day 11.
+      // Another owner's booking fills Chloe's morning on day 11.
       {
         id: OTHER_BOOKING,
         owner_id: "00000000-0000-4000-8000-0000000000aa",
@@ -103,14 +103,14 @@ test.describe("your sitters", () => {
     await expect(screen.getByText("Your sitters")).toBeVisible();
     await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(1);
 
-    const card = screen.getByTestId("sitter-card-Lucy");
+    const card = screen.getByTestId("sitter-card-Chloe");
     await expect(card).toContainText("North York · 3 yrs experience");
     await expect(card).toContainText("1 booking with you");
     await expect(card).toContainText("House sitting");
     await card.click();
 
     await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
-    await expect(screen.getByTestId("sitter-name")).toHaveText("Lucy");
+    await expect(screen.getByTestId("sitter-name")).toHaveText("Chloe");
     await expect(screen.getByText("Fenced yard, no other pets.")).toBeVisible();
     await expect(screen.getByTestId("sitter-service-house_sitting")).toBeVisible();
     await expect(screen.getByText("12 Maple St")).toHaveCount(0);
@@ -127,7 +127,7 @@ test.describe("your sitters", () => {
 
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Full · 8:00 AM–12:00 PM");
-    await expect(screen.getByTestId("sitter-day")).not.toContainText("Chloe");
+    await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");
   });
 
   test("an unknown sitter link shows a friendly empty state", async ({ page }) => {

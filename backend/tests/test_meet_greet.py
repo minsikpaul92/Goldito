@@ -29,8 +29,8 @@ AT = datetime(2030, 10, 6, 23, 0, tzinfo=UTC)
 MEET = "https://meet.google.com/abc-defg-hij"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Robert"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Chloe"),
     OUTSIDER_ID: Profile(id=OUTSIDER_ID, role="sitter", display_name="Paul"),
 }
 
@@ -44,10 +44,10 @@ AGREED = MeetGreetBooking(
     at=AT,
     link=None,
     event_id=None,
-    owner_name="Chloe",
-    sitter_name="Lucy",
+    owner_name="Robert",
+    sitter_name="Chloe",
     pet_names=["Max", "Mochi"],
-    owner_email="chloe@example.com",
+    owner_email="robert@example.com",
     sitter_email="demo-sitter@pawddy.test",
 )
 
@@ -180,11 +180,11 @@ def test_creates_the_event_saves_the_link_and_tells_both_sides() -> None:
     assert response.json() == {"link": MEET, "status": "created"}
     kind, kwargs = meet.calls[0]
     assert kind == "create"
-    assert kwargs["summary"] == "Pawddy Meet & Greet — Max, Mochi & Lucy"
+    assert kwargs["summary"] == "Pawddy Meet & Greet — Max, Mochi & Chloe"
     assert kwargs["start"] == AT
     assert kwargs["timezone"] == "America/Toronto"
     # The demo .test address never gets an invite.
-    assert kwargs["attendees"] == ["chloe@example.com"]
+    assert kwargs["attendees"] == ["robert@example.com"]
     assert kwargs["request_id"] == f"pawddy-{BOOKING_ID}-{int(AT.timestamp())}"
     assert store.saved == [{"booking_id": BOOKING_ID, "link": MEET, "event_id": "evt-1"}]
     assert store.notices == [
@@ -317,9 +317,9 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
     event = client.create(
         request_id="req-1",
-        summary="Pawddy Meet & Greet — Max & Lucy",
+        summary="Pawddy Meet & Greet — Max & Chloe",
         start=AT,
-        attendees=["chloe@example.com"],
+        attendees=["robert@example.com"],
         timezone="America/Toronto",
     )
 
@@ -334,7 +334,7 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
         "requestId": "req-1",
         "conferenceSolutionKey": {"type": "hangoutsMeet"},
     }
-    assert body["attendees"] == [{"email": "chloe@example.com"}]
+    assert body["attendees"] == [{"email": "robert@example.com"}]
     assert body["start"]["timeZone"] == "America/Toronto"
     assert poll.method == "GET" and poll.url.path.endswith("/events/evt-9")
 

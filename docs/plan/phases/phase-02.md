@@ -21,7 +21,7 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 - [x] `001`–`003` migration이 호스팅 Supabase SQL Editor에서 순서대로 오류 없이 적용 (2.9)
 - [x] 예약이 없는 시터는 남의 pet·feed·task를 조회 불가, 맡은 시간이 아니면 게시·완료 불가 (`supabase/tests/rls_smoke.sql`)
 - [x] 시터의 칸 정원(`max_pets`)을 넘는 예약 수락을 DB가 거부
-- [x] 같은 반려동물이 **겹치는 시간**에 두 시터에게 예약되지 않음 (`booking_pets` exclusion 제약). 12:00에 Lucy → Paul처럼 이어서 맡기기는 가능
+- [x] 같은 반려동물이 **겹치는 시간**에 두 시터에게 예약되지 않음 (`booking_pets` exclusion 제약). 12:00에 Chloe → Paul처럼 이어서 맡기기는 가능
 - [x] 시터 근무 시간 밖 맡기기/찾기는 **협의 대기**로 저장되고, 상대방 동의 전엔 확정되지 않음
 - [x] 시터가 확정 예약과 겹치는 칸을 막으려 하면 거부 → 예약 취소를 거쳐야 하고, 취소 시 견주에게 알림. **맡긴 뒤(Received)에는 취소 불가**
 - [x] `notifications` Realtime publication 등록
@@ -66,7 +66,7 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 ### 칸 · 시간 규칙 (D24)
 
 - 칸은 **이름만 고정**: `morning` · `afternoon` · `overnight` (UI: Morning · Afternoon · Overnight). **정확한 시간은 앱 전체에 고정하지 않는다.**
-- **시터**가 스케줄을 열 때 칸마다 자기 시간을 적는다. 예: Lucy는 Morning 08:00–12:00, Afternoon 12:00–18:00, Overnight 18:00–다음날 08:00. Paul은 Morning 09:00–13:00, Afternoon 13:00–17:00만 (Overnight 없음).
+- **시터**가 스케줄을 열 때 칸마다 자기 시간을 적는다. 예: Chloe는 Morning 08:00–12:00, Afternoon 12:00–18:00, Overnight 18:00–다음날 08:00. Paul은 Morning 09:00–13:00, Afternoon 13:00–17:00만 (Overnight 없음).
 - **견주**는 예약할 때 **맡기는 시각**과 **찾는 시각**을 정확히 정한다. 예: 10/5 09:30 맡김 → 10/8 17:00 찾음. 이 구간 `[맡기는 시각, 찾는 시각)`을 **맡긴 구간**이라 부른다.
 - **누가 언제 맡나**(권한·할 일 담당·중복 금지)는 칸이 아니라 **맡긴 구간**으로 판단한다. 칸은 **정원 계산과 검색**에만 쓴다.
 - **예약이 차지하는 칸** (`slots_for_window`):
@@ -100,10 +100,10 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 
 **`booking_pets` = 누가 언제 맡나.** 예약의 반려동물 목록이자, 반려동물마다 맡긴 구간. `active` = 예약이 `requested`/`confirmed`. 트리거 `sync_booking_ended`가 예약이 거절·취소되면 `false`로 바꿔 구간을 비운다.
 
-- **exclusion 제약** → 한 반려동물은 한 시각에 **시터 1명**. 구간이 `[)`라 Lucy `09:00–12:00` → Paul `12:00–17:00`처럼 **이어서 맡기기는 가능**하고, Lucy `12:00–17:00` + Paul `09:00–13:00`처럼 **겹치면** `pet_already_booked`. 시터마다 칸 시간이 달라도 시각으로 비교하므로 정확하다.
+- **exclusion 제약** → 한 반려동물은 한 시각에 **시터 1명**. 구간이 `[)`라 Chloe `09:00–12:00` → Paul `12:00–17:00`처럼 **이어서 맡기기는 가능**하고, Chloe `12:00–17:00` + Paul `09:00–13:00`처럼 **겹치면** `pet_already_booked`. 시터마다 칸 시간이 달라도 시각으로 비교하므로 정확하다.
 - 요청(`requested`)도 구간을 잡는다 → 같은 반려동물·시간으로 **두 시터에게 동시에 요청할 수 없다** (먼저 취소).
 
-**`booking_slots` = 정원 계산 단위** (반려동물 × 날짜 × 칸, 그 예약 시터의 칸 시간 기준). Max + Mochi를 10/5 09:30 → 10/6 17:00 Lucy에게 맡기면, 걸치는 칸은 10/5 morning·afternoon·overnight, 10/6 morning·afternoon → 2마리 × 5칸 = **10행** (+ `booking_pets` 2행). 정원은 **confirmed** 예약의 행만 센다.
+**`booking_slots` = 정원 계산 단위** (반려동물 × 날짜 × 칸, 그 예약 시터의 칸 시간 기준). Max + Mochi를 10/5 09:30 → 10/6 17:00 Chloe에게 맡기면, 걸치는 칸은 10/5 morning·afternoon·overnight, 10/6 morning·afternoon → 2마리 × 5칸 = **10행** (+ `booking_pets` 2행). 정원은 **confirmed** 예약의 행만 센다.
 
 **`booking_handoffs` = 맡기기·찾기의 시간·장소와 협의 이력.** 예약마다 `drop_off` 1개, `pick_up` 1개가 **agreed** 상태로 있어야 확정된 것이다.
 
@@ -139,7 +139,7 @@ requested ──(인수인계 2개 agreed + 시터 수락 + 모든 칸 자리 �
     └─(견주 취소)─> cancelled                                                          → 같은 반려동물·시각·장소로 재검색
 ```
 
-- **시터가 일정이 생기면:** 확정 예약과 겹치는 칸을 `blocked`로 추가하려 하면 트리거가 `'overlaps_confirmed_booking'`으로 막는다 → 앱이 "This overlaps Chloe's booking (Oct 5–8). Cancel that booking?" → 시터가 `cancel_booking` → **예약 전체 취소** + 견주 알림 → 그다음 blocked 추가.
+- **시터가 일정이 생기면:** 확정 예약과 겹치는 칸을 `blocked`로 추가하려 하면 트리거가 `'overlaps_confirmed_booking'`으로 막는다 → 앱이 "This overlaps Robert's booking (Oct 5–8). Cancel that booking?" → 시터가 `cancel_booking` → **예약 전체 취소** + 견주 알림 → 그다음 blocked 추가.
 - **맡긴 뒤에는 취소 불가:** `drop_off`가 Received(`completed_at`)됐거나 찾는 시각이 지났으면 `cancel_booking` → `'booking_in_progress'`. 일찍 데려가야 하면 **찾는 시각 변경 제안**(`propose_handoff`)으로 처리한다 — 반려동물이 시터 집에 있는 동안 권한·주소가 끊기지 않게.
 - 견주는 취소 알림을 받고 **한 시터에게 다시 맡길지, 나눠 맡길지 직접 결정**한다. 앱이 자동으로 쪼개거나 대신 배정하지 않는다.
 - `completed`는 저장하지 않고 파생: `pick_up` handoff의 `completed_at is not null` 또는 `scheduled_at < now()`.
@@ -155,7 +155,7 @@ requested ──(인수인계 2개 agreed + 시터 수락 + 모든 칸 자리 �
 | **media** | `pet_id → pets cascade` · `uploaded_by → profiles` · `cloudinary_public_id text not null unique` · `resource_type text check in ('image','video')` · `purpose text check in ('feed','task_proof','safety_label')` · `width int` · `height int` · `duration_s numeric` | idx(pet_id, created_at desc) |
 | **task_logs** | `task_id → care_tasks cascade` · `pet_id → pets cascade` (비정규화: RLS·조회용) · `due_at timestamptz not null` · `status text not null default 'pending' check in ('pending','done')` · `completed_at timestamptz` · `completed_by → profiles` · `media_id → media null` | **unique(task_id, due_at)**, idx(pet_id, due_at) |
 | **feed_posts** | `pet_id → pets cascade` · `sitter_id → profiles` (게시한 시터) · `media_id → media not null` · `caption text` · `caption_source text check in ('ai','fallback','task')` · `task_log_id → task_logs null` | idx(pet_id, created_at desc) |
-| **daily_reports** | `pet_id → pets cascade` · `sitter_id → profiles` (작성한 시터) · `report_date date not null` · `body text not null` · `status text not null default 'draft' check in ('draft','sent')` · `inputs jsonb not null default '{}'` (퀵탭) · `source_snapshot jsonb` (AI에 준 입력 원본 — 환각 검증용) · `model text` · `sent_at timestamptz` · `updated_at` | **unique(pet_id, report_date, sitter_id)** — 시터마다 그날 자기가 맡은 시간에 대해 1개 (오전 Lucy·오후 Paul이면 하루 2개) |
+| **daily_reports** | `pet_id → pets cascade` · `sitter_id → profiles` (작성한 시터) · `report_date date not null` · `body text not null` · `status text not null default 'draft' check in ('draft','sent')` · `inputs jsonb not null default '{}'` (퀵탭) · `source_snapshot jsonb` (AI에 준 입력 원본 — 환각 검증용) · `model text` · `sent_at timestamptz` · `updated_at` | **unique(pet_id, report_date, sitter_id)** — 시터마다 그날 자기가 맡은 시간에 대해 1개 (오전 Chloe·오후 Paul이면 하루 2개) |
 | **safety_checks** | `pet_id → pets cascade` · `checked_by → profiles` · `media_id → media` · `safety_status text check in ('DANGER','WARNING','SAFE')` · `result_json jsonb not null` · `model_vision text` · `model_reasoning text` · `acknowledged_at timestamptz` | idx(pet_id, created_at desc) |
 | **notifications** | `user_id → profiles cascade` · `pet_id → pets null` · `booking_id → bookings null` · `type text not null` ([architecture §7](architecture.ko.md#7-알림-매트릭스-p0)) · `ref_id uuid` · `title text not null` · `body text` · `read_at timestamptz` | idx(user_id, created_at desc), partial idx(user_id) where read_at is null |
 
@@ -277,7 +277,7 @@ has_current_booking_with(other uuid) → 결제(`paid_at`)까지 끝난 confirme
 | `search_sitters(p_drop_off_at timestamptz, p_pick_up_at timestamptz, p_pet_count int)` | RPC security definer | 맡긴 구간 최대 31일. 시터마다 `slots_for_window`의 칸 중 `sitter_remaining >= p_pet_count`인 칸 수 + 맡기는/찾는 시각이 그 시터 칸 시간 안인지 → `{sitter_id, display_name, bio, service_area, experience_years, is_my_sitter, covered_slots, total_slots, drop_off_within_hours, pick_up_within_hours}`. `covered_slots = 0`인 시터는 제외. **정렬: ① 전체 가능 + 단골 ② 전체 가능 ③ 일부 가능**(나눠 맡기기 참고용). 시각이 시간 밖이어도 제외하지 않음 (협의 가능) — 카드에 "Custom drop-off time" 표시 |
 | `request_booking(p_sitter, p_pets uuid[], p_drop_off_at, p_drop_off_location_type, p_drop_off_note, p_pick_up_at, p_pick_up_location_type, p_pick_up_note, p_note, p_rebooked_from default null)` | RPC security definer | 호출자가 모든 pet의 owner, `p_sitter`가 sitter, `now() <= p_drop_off_at < p_pick_up_at`, 구간 ≤ 31일, 장소 유효(`other`면 메모 필수), `slots_for_window`의 모든 칸 `sitter_remaining >= cardinality(p_pets)` → 실패 시 `'not_owner'` / `'not_a_sitter'` / `'invalid_window'` / `'invalid_location'`·`'location_note_required'` / `'sitter_unavailable'`(어느 칸인지 detail에, 칸이 없으면 `no_open_slot`). bookings(requested) + booking_pets(맡긴 구간) + booking_slots(pet × 칸) + booking_handoffs 2행(`proposed`, `within_sitter_hours` 계산, `proposed_by` = 견주) insert. 구간 겹침 → `'pet_already_booked'`. 시터에게 `booking_requested` |
 | `respond_booking(p_booking uuid, p_accept boolean, p_note text default null)` | RPC security definer | 호출자 = 해당 시터, status=`requested`. 수락: 두 handoff가 모두 견주 제안이거나 이미 agreed여야 함 (시터 역제안이 대기 중이면 `'handoff_pending'`) → `pg_advisory_xact_lock(hashtext(sitter_id::text))` → 최종 시각으로 모든 칸 자리 재확인 → 부족하면 `'sitter_unavailable'` → `booking_pets`·`booking_slots`를 최종 시각으로 재계산 → handoff 2개 `agreed` + booking `confirmed` + 견주 `booking_confirmed`. 거절: 제안 `rejected` + `declined` + 견주 `booking_declined` |
-| `cancel_booking(p_booking uuid, p_reason text default null)` | RPC security definer | 호출자 = 견주 또는 시터, status in (`requested`,`confirmed`). confirmed인데 drop_off가 Received됐거나 찾는 시각이 지났으면 `'booking_in_progress'` → 아니면 `cancelled`, `cancelled_by`·`cancel_reason` 기록 → 상대방에게 `booking_cancelled` ("Lucy can't take Max and Mochi on Oct 5–8. Find a new sitter.") |
+| `cancel_booking(p_booking uuid, p_reason text default null)` | RPC security definer | 호출자 = 견주 또는 시터, status in (`requested`,`confirmed`). confirmed인데 drop_off가 Received됐거나 찾는 시각이 지났으면 `'booking_in_progress'` → 아니면 `cancelled`, `cancelled_by`·`cancel_reason` 기록 → 상대방에게 `booking_cancelled` ("Chloe can't take Max and Mochi on Oct 5–8. Find a new sitter.") |
 | `sync_booking_ended()` | trigger `after update of status on bookings` | status가 `declined`/`cancelled`가 되면 그 예약의 `booking_pets.active = false` (구간 해제), 남은 `proposed` handoff → `superseded`. 정원은 confirmed만 세므로 `booking_slots`는 그대로 |
 | `guard_availability_change()` | trigger `after insert or update or delete on sitter_availability` (변경 후 정원으로 검사, 실패 시 롤백) | (1) `blocked` 추가/변경이 그 시터의 confirmed 칸과 겹치면 `'overlaps_confirmed_booking'` (+ 겹치는 booking id 목록) (2) `open`을 지우거나 더 낮은 `max_pets`의 새 행을 넣어 이미 확정된 마리 수보다 정원이 작아지는 칸이 생기면 같은 에러. 칸 **시간(starts_at/ends_at)만 바꾸는 것은 허용** — 이미 agreed된 인수인계 시각은 그대로 유효 |
 
@@ -287,7 +287,7 @@ has_current_booking_with(other uuid) → 결제(`paid_at`)까지 끝난 confirme
 | :--- | :--- | :--- |
 | `propose_handoff(p_booking uuid, p_kind text, p_at timestamptz, p_location_type text default null, p_note text default null)` | RPC security definer | 호출자 = 그 예약의 견주 또는 시터, status in (`requested`,`confirmed`), 해당 handoff가 아직 `completed_at is null` (아니면 `'handoff_completed'`), `p_at >= now()`. `p_location_type`을 생략하면 현재 제안(없으면 agreed)의 장소·메모를 이어받음. 기존 `proposed` 행 → `superseded`, 새 `proposed` 행 insert → **상대방**에게 `handoff_proposed` ("Paul suggested drop-off at 8:30 AM"). 확정 예약이면 새 시각이 걸치는 칸 자리도 재확인 |
 | `respond_handoff(p_handoff uuid, p_accept boolean)` | RPC security definer | 호출자 = 제안하지 않은 쪽 (역제안은 `propose_handoff`로 — 횟수 제한 없음). 수락: 기존 agreed → `superseded`, 이 행 → `agreed`, 확정 예약이면 자리 재확인 후 `booking_pets`·`booking_slots` 재계산 → 제안자에게 `handoff_agreed`. 거절: 이 행 `rejected` → **예약이 `requested`면 예약 종료** (시터 거절 → `declined`, 견주 거절 → `cancelled`, 상대방에게 `booking_declined`/`booking_cancelled`) / **`confirmed`면 기존 agreed 유지**, 제안자에게 `handoff_declined` |
-| `complete_handoff(p_booking uuid, p_kind text)` | RPC security definer | 호출자 = 시터, agreed 행에 `completed_at = now()`. `drop_off`는 agreed 시각 2시간 전부터(`'handoff_too_early'`), `pick_up`은 drop_off Received 후에만(`'drop_off_not_completed'`) → 견주에게 `pet_dropped_off` ("Max and Mochi arrived at Lucy's 🏠") / `pet_picked_up` ("Max and Mochi are on the way home 👋") |
+| `complete_handoff(p_booking uuid, p_kind text)` | RPC security definer | 호출자 = 시터, agreed 행에 `completed_at = now()`. `drop_off`는 agreed 시각 2시간 전부터(`'handoff_too_early'`), `pick_up`은 drop_off Received 후에만(`'drop_off_not_completed'`) → 견주에게 `pet_dropped_off` ("Max and Mochi arrived at Chloe's 🏠") / `pet_picked_up` ("Max and Mochi are on the way home 👋") |
 | `get_handoff_details(p_booking uuid)` | RPC security definer | 확정 예약 당사자에게, agreed pick_up + 24시간까지(`'booking_finished'`) agreed 인수인계 + **실제 주소** (`sitter_home`이면 시터 `home_address`, `owner_home`이면 견주 `home_address`, `other`면 `location_note`). **변경 예정 (D31, Phase 03C `006_agreements.sql`):** 조건이 "확정" → "결제(`paid_at`)"로, 시터 집 Visitor parking·로비 안내·짐 체크리스트 추가 |
 
 ### 조회 · 기타
@@ -326,7 +326,7 @@ has_current_booking_with(other uuid) → 결제(`paid_at`)까지 끝난 confirme
      - D″: 확정 후 변경 제안을 시터가 거절 → 기존 agreed 유지, booking `confirmed` 그대로
      - D′: 찾는 장소를 견주 집으로 → 시터가 시각만 역제안해도 장소 유지 → `get_handoff_details`로 양쪽 주소 / 외부인 → `not_allowed`
      - E: 시터가 확정 칸과 겹치게 blocked insert → `overlaps_confirmed_booking` → `cancel_booking` → `booking_pets.active=false`, 견주 `booking_cancelled` → 검색 1위 = 전체 가능 시터 → `request_booking(p_rebooked_from)` 성공
-     - F: Lucy 09:00–12:00 → Paul 12:00–17:00 (같은 pet·같은 날) 둘 다 확정 / 같은 시간 세 번째 요청 → `pet_already_booked` / 시간이 겹치는 두 시터 → `pet_already_booked` / 각자 `daily_reports` 1개씩
+     - F: Chloe 09:00–12:00 → Paul 12:00–17:00 (같은 pet·같은 날) 둘 다 확정 / 같은 시간 세 번째 요청 → `pet_already_booked` / 시간이 겹치는 두 시터 → `pet_already_booked` / 각자 `daily_reports` 1개씩
      - G: 시터가 open 구간 insert → 견주 알림 0건
      - H: 두 요청이 마지막 1자리 경쟁 → 먼저 수락한 것만 confirmed
    - **케어**
@@ -350,25 +350,25 @@ rollback;
 
 등장인물 (모두 가상 인물):
 
-- 시터 **Lucy**: Morning 08:00–12:00 · Afternoon 12:00–18:00 · Overnight 18:00–08:00, 정원 3
+- 시터 **Chloe**: Morning 08:00–12:00 · Afternoon 12:00–18:00 · Overnight 18:00–08:00, 정원 3
 - 시터 **Paul**: Morning 09:00–13:00 · Afternoon 13:00–17:00만 (Overnight 없음), 정원 2
-- 시터 **Allen**: Lucy와 같은 시간, 정원 3 (E의 재예약 상대)
-- 견주 **Chloe**: 강아지 Max, 고양이 Mochi
+- 시터 **Allen**: Chloe와 같은 시간, 정원 3 (E의 재예약 상대)
+- 견주 **Robert**: 강아지 Max, 고양이 Mochi
 - 견주 **Joy**: 강아지 Coco
 
 | # | 상황 | DB에서 일어나는 일 | 결과 |
 | :--- | :--- | :--- | :--- |
-| A | Chloe가 10/5 09:30 Lucy 집에 맡기고 10/8 17:00 찾음. "Your sitters"에서 Lucy 스케줄 확인 → 요청 → 수락 | booking 1 + booking_pets 2 + slots 2마리 × 11칸 + handoffs 2 (시간 안, `sitter_home`) → 수락 시 agreed | "Lucy confirmed your booking" 1건. 10/5 09:35 Lucy가 **Received** 체크 → "Max and Mochi arrived at Lucy's 🏠" |
-| B | Joy가 Coco를 10/6–10/7 Lucy에게 맡김. 다른 견주가 Lucy 스케줄 확인 | 10/6 morning Lucy 사용 3 → 남은 자리 0 | 그 칸 "Full" — 예약 불가 |
-| C | Chloe의 다음 여행은 새벽 비행기라 Max를 **07:00**에 Paul에게 맡기고 싶음 (Paul Morning은 09:00부터, 전날 밤은 열지 않음) | 07:00–09:00은 칸을 차지하지 않음(전날 Overnight와 1시간만 겹침) → drop_off handoff `within_sitter_hours=false` → 요청 카드 "Custom drop-off — needs your OK" → Paul이 **08:30** 역제안 → (필요하면 몇 번 더 주고받음) → Chloe 동의 → Paul 수락 | 08:30 맡기기로 확정. 둘 다 앱에서 협의. 어느 쪽이든 **Decline**하면 이 요청은 끝. (Lucy처럼 전날 Overnight를 연 시터라면 07:00은 시간 안이라 협의 없이 요청되고, 그 밤 칸 정원을 씀) |
-| D | 확정 후 비행기 연착 → Chloe가 찾는 시각 17:00 → 20:00 변경 제안 | 새 pick_up `proposed` → Lucy 동의 전까지 17:00 유효 → 동의 → 20:00 agreed, 10/8 overnight 칸 추가 (자리 재확인) | Lucy 동의 알림이 Chloe에게 |
-| D′ | 찾는 장소를 Chloe 집으로 요청 ("Can you drop them at my place?") | pick_up `location_type='owner_home'` 제안 → Lucy가 "19:30이면 돼요"(시각만) 역제안 → 장소는 Chloe 집 그대로 → Chloe 동의 | `get_handoff_details`로 Lucy만 Chloe 주소 확인 |
-| E | 10/1에 Lucy가 10/7 개인 일정 → block 시도 | `overlaps_confirmed_booking` → Lucy가 Chloe·Joy 예약 취소(아직 맡기기 전) → 각자 취소 알림 | Chloe가 **Find a new sitter** → 같은 시각·장소로 검색 → Allen는 **전체 가능**(1위), Paul은 Overnight가 없어 **일부 가능** → Chloe가 **결정** (보통 Allen 한 명) |
-| F | Joy가 출근하는 날 Coco를 09:00 Lucy에게 맡기고 12:00에 Paul이 Lucy 집에서 받아감 (`other`/장소 협의) | 예약 2건: Lucy(09:00–12:00 → Lucy morning), Paul(12:00–17:00 → Paul morning·afternoon). 맡긴 구간이 겹치지 않아 둘 다 가능 | 08:00 feeding은 Joy 담당(맡기기 전), 13:00 feeding은 Paul. 알림장은 Lucy·Paul 각자 1개. 시간이 겹치게(예: Lucy 12–17 + Paul 09–13) 요청하면 `pet_already_booked` |
+| A | Robert가 10/5 09:30 Chloe 집에 맡기고 10/8 17:00 찾음. "Your sitters"에서 Chloe 스케줄 확인 → 요청 → 수락 | booking 1 + booking_pets 2 + slots 2마리 × 11칸 + handoffs 2 (시간 안, `sitter_home`) → 수락 시 agreed | "Chloe confirmed your booking" 1건. 10/5 09:35 Chloe가 **Received** 체크 → "Max and Mochi arrived at Chloe's 🏠" |
+| B | Joy가 Coco를 10/6–10/7 Chloe에게 맡김. 다른 견주가 Chloe 스케줄 확인 | 10/6 morning Chloe 사용 3 → 남은 자리 0 | 그 칸 "Full" — 예약 불가 |
+| C | Robert의 다음 여행은 새벽 비행기라 Max를 **07:00**에 Paul에게 맡기고 싶음 (Paul Morning은 09:00부터, 전날 밤은 열지 않음) | 07:00–09:00은 칸을 차지하지 않음(전날 Overnight와 1시간만 겹침) → drop_off handoff `within_sitter_hours=false` → 요청 카드 "Custom drop-off — needs your OK" → Paul이 **08:30** 역제안 → (필요하면 몇 번 더 주고받음) → Robert 동의 → Paul 수락 | 08:30 맡기기로 확정. 둘 다 앱에서 협의. 어느 쪽이든 **Decline**하면 이 요청은 끝. (Chloe처럼 전날 Overnight를 연 시터라면 07:00은 시간 안이라 협의 없이 요청되고, 그 밤 칸 정원을 씀) |
+| D | 확정 후 비행기 연착 → Robert가 찾는 시각 17:00 → 20:00 변경 제안 | 새 pick_up `proposed` → Chloe 동의 전까지 17:00 유효 → 동의 → 20:00 agreed, 10/8 overnight 칸 추가 (자리 재확인) | Chloe 동의 알림이 Robert에게 |
+| D′ | 찾는 장소를 Robert 집으로 요청 ("Can you drop them at my place?") | pick_up `location_type='owner_home'` 제안 → Chloe가 "19:30이면 돼요"(시각만) 역제안 → 장소는 Robert 집 그대로 → Robert 동의 | `get_handoff_details`로 Chloe만 Robert 주소 확인 |
+| E | 10/1에 Chloe가 10/7 개인 일정 → block 시도 | `overlaps_confirmed_booking` → Chloe가 Robert·Joy 예약 취소(아직 맡기기 전) → 각자 취소 알림 | Robert가 **Find a new sitter** → 같은 시각·장소로 검색 → Allen는 **전체 가능**(1위), Paul은 Overnight가 없어 **일부 가능** → Robert가 **결정** (보통 Allen 한 명) |
+| F | Joy가 출근하는 날 Coco를 09:00 Chloe에게 맡기고 12:00에 Paul이 Chloe 집에서 받아감 (`other`/장소 협의) | 예약 2건: Chloe(09:00–12:00 → Chloe morning), Paul(12:00–17:00 → Paul morning·afternoon). 맡긴 구간이 겹치지 않아 둘 다 가능 | 08:00 feeding은 Joy 담당(맡기기 전), 13:00 feeding은 Paul. 알림장은 Chloe·Paul 각자 1개. 시간이 겹치게(예: Chloe 12–17 + Paul 09–13) 요청하면 `pet_already_booked` |
 | G | Paul이 11월을 새로 open | `sitter_availability` insert | 견주 알림 없음 |
-| H | 두 견주 요청이 Lucy의 10/5 morning 마지막 1자리 경쟁 | 요청은 자리를 안 차지. 수락 시 advisory lock + 재확인 | 먼저 수락한 쪽만 confirmed |
+| H | 두 견주 요청이 Chloe의 10/5 morning 마지막 1자리 경쟁 | 요청은 자리를 안 차지. 수락 시 advisory lock + 재확인 | 먼저 수락한 쪽만 confirmed |
 
-**맡긴 동안 견주가 받는 알림 (Phase 05–08):** 도착 → "Max arrived at Lucy's 🏠" · 사진 → "New photo of Max 📸" · 08:00 feeding → "Max had breakfast on time 🍽️" · 21:00 sleep → "Max is asleep 😴" · 알림장 → "Today's report for Max is here 📝" · 세이프티 DANGER → 경고 · 출발 → "Max is on the way home 👋".
+**맡긴 동안 견주가 받는 알림 (Phase 05–08):** 도착 → "Max arrived at Chloe's 🏠" · 사진 → "New photo of Max 📸" · 08:00 feeding → "Max had breakfast on time 🍽️" · 21:00 sleep → "Max is asleep 😴" · 알림장 → "Today's report for Max is here 📝" · 세이프티 DANGER → 경고 · 출발 → "Max is on the way home 👋".
 
 ---
 

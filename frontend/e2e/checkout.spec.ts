@@ -60,9 +60,9 @@ test.describe("checkout", () => {
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
 
-    await expect(screen.getByTestId("checkout-banner")).toContainText("Lucy accepted");
+    await expect(screen.getByTestId("checkout-banner")).toContainText("Chloe accepted");
     await screen.getByTestId("open-checkout").click();
-    await expect(screen.getByTestId("checkout-title")).toContainText("Finish booking with Lucy");
+    await expect(screen.getByTestId("checkout-title")).toContainText("Finish booking with Chloe");
     await expect(screen.getByTestId("quote-total")).toContainText(`$${DEMO_QUOTE.total.toFixed(2)}`);
 
     await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
@@ -88,7 +88,7 @@ test.describe("checkout", () => {
     for (const kind of KINDS) {
       await screen.getByTestId(`consent-${kind}-check`).click();
     }
-    await screen.getByTestId("checkout-signer").fill("Chloe");
+    await screen.getByTestId("checkout-signer").fill("Robert");
     await expect(screen.getByTestId("checkout-pay")).toBeEnabled();
     await screen.getByTestId("checkout-pay").click();
 
@@ -114,7 +114,7 @@ test.describe("checkout", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("checkout-banner")).toContainText("Your stay changed");
-    await expect(screen.getByTestId("checkout-banner")).toContainText("Entry info stays locked for Lucy");
+    await expect(screen.getByTestId("checkout-banner")).toContainText("Entry info stays locked for Chloe");
     // Paid once: the sitter's place stays on the booking while checkout is open again (009e).
     await expect(screen.getByTestId("sitter-place-card")).toContainText("100 Example St");
     await screen.getByTestId("open-checkout").click();
@@ -125,7 +125,7 @@ test.describe("checkout", () => {
     }
     await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
     await screen.getByTestId("consent-home_access-check").click();
-    await screen.getByTestId("checkout-signer").fill("Chloe");
+    await screen.getByTestId("checkout-signer").fill("Robert");
     await screen.getByTestId("checkout-pay").click();
 
     await expect(screen.getByTestId("toast")).toContainText("You're all set");
@@ -144,7 +144,7 @@ test.describe("checkout", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("1 Owner Ave");
-    await expect(screen.getByTestId("entry-info-waiting")).toContainText("Waiting for Chloe to sign");
+    await expect(screen.getByTestId("entry-info-waiting")).toContainText("Waiting for Robert to sign");
     await expect(screen.getByTestId("entry-codes")).toHaveCount(0);
   });
 });
@@ -163,7 +163,7 @@ function seedReopened(db: MockDb) {
       kind,
       version: "1",
       signer_id: OWNER.id,
-      signer_name: "Chloe",
+      signer_name: "Robert",
       details: {},
       signed_at: "2026-10-02T18:05:00Z",
     });

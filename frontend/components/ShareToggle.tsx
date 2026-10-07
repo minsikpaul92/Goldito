@@ -4,7 +4,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
-  /** What turning it on does, e.g. "Share with Chloe" / "Visible to sitter". */
+  /** What turning it on does, e.g. "Share with Robert" / "Visible to sitter". */
   label: string;
   on: boolean;
   onToggle: () => void;

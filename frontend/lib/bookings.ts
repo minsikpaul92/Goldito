@@ -398,7 +398,7 @@ export type MeetGreet = {
 
 export type OwnerBooking = BookingSummary;
 
-/** "You: 7:00 AM → Lucy: 8:30 AM → You: 8:00 AM" for a handoff with more than one offer. */
+/** "You: 7:00 AM → Chloe: 8:30 AM → You: 8:00 AM" for a handoff with more than one offer. */
 export function historyLine(b: BookingSummary, kind: HandoffKind, me: string, format: (iso: string) => string): string | null {
   const steps = b.history[kind];
   if (steps.length < 2) return null;

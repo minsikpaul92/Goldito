@@ -64,10 +64,10 @@ def test_the_sitters_style_card_and_their_own_examples_shape_the_notes(embedding
 
 
 def test_two_sitters_get_different_notes_for_the_same_question():
-    db = ToneDB(sitter_profiles=[{"id": "lucy", "style_card": "Breezy, emojis."}, {"id": "paul", "style_card": "Calm and precise, no emojis."}])
-    lucy = tone.compose(db, "lucy", query="pill?").style_notes
+    db = ToneDB(sitter_profiles=[{"id": "chloe", "style_card": "Breezy, emojis."}, {"id": "paul", "style_card": "Calm and precise, no emojis."}])
+    chloe = tone.compose(db, "chloe", query="pill?").style_notes
     paul = tone.compose(db, "paul", query="pill?").style_notes
-    assert lucy != paul and "Breezy" in lucy and "precise" in paul
+    assert chloe != paul and "Breezy" in chloe and "precise" in paul
 
 
 def test_a_search_outage_still_gives_the_style_card(monkeypatch):
@@ -91,7 +91,7 @@ def test_a_database_without_the_tone_tables_never_blocks_a_draft():
 @pytest.mark.parametrize(
     ("draft", "final", "expected"),
     [
-        ("Hi Chloe! All good.", "Hi Chloe! All good.", 0.0),
+        ("Hi Robert! All good.", "Hi Robert! All good.", 0.0),
         ("one two three four", "one two three five", 0.25),
         ("a b", "x y z", 1.0),
         ("", "", 0.0),
@@ -106,14 +106,14 @@ def test_the_edit_ratio_is_word_edit_distance_over_the_longer_text(draft, final,
 
 
 def test_examples_are_stored_without_names_amounts_dates_or_contact_details():
-    text = "Hi Chloe! Max and Mochi can stay Oct 9 to October 12 (2026-10-09) for $268.13 CAD. Call +1 416 555 0199 or chloe@example.com."
-    out = tone.anonymize(text, owner_names=["Chloe"], pet_names=["Max", "Mochi"])
+    text = "Hi Robert! Max and Mochi can stay Oct 9 to October 12 (2026-10-09) for $268.13 CAD. Call +1 416 555 0199 or robert@example.com."
+    out = tone.anonymize(text, owner_names=["Robert"], pet_names=["Max", "Mochi"])
     assert out == "Hi {OWNER}! {PET} and {PET} can stay {DATE} to {DATE} ({DATE}) for {PRICE}. Call or ."
-    assert "Chloe" not in out and "555" not in out and "@" not in out
+    assert "Robert" not in out and "555" not in out and "@" not in out
 
 
 def test_anonymize_keeps_paragraph_breaks_and_possessives():
-    out = tone.anonymize("Max's bed is ready.\n\nSee you soon, Chloe!", owner_names=["Chloe"], pet_names=["Max"])
+    out = tone.anonymize("Max's bed is ready.\n\nSee you soon, Robert!", owner_names=["Robert"], pet_names=["Max"])
     assert out == "{PET} bed is ready.\n\nSee you soon, {OWNER}!"
 
 
@@ -135,10 +135,10 @@ def test_a_discarded_draft_is_kept_as_a_negative_signal_without_a_ratio():
 # --- the route --------------------------------------------------------------------------------------------
 
 
-def thread(db: FakeDB, *, body="Hi Chloe! I'm available. 🐾", confirmed="2026-10-07T10:05:00+00:00", ai=True):
+def thread(db: FakeDB, *, body="Hi Robert! I'm available. 🐾", confirmed="2026-10-07T10:05:00+00:00", ai=True):
     db.tables["inquiry_messages"] += [
         {
-            "id": "draft1", "inquiry_id": INQ, "author": "ai", "body": "Hi Chloe! I'm available. 🐾", "status": "draft",
+            "id": "draft1", "inquiry_id": INQ, "author": "ai", "body": "Hi Robert! I'm available. 🐾", "status": "draft",
             "grounding": {"intent": "accept"}, "created_at": "2026-10-07T10:00:05+00:00",
         },
         {
@@ -170,14 +170,14 @@ def test_an_approved_reply_is_recorded_once_and_anonymized(client, route):
     (sample,) = db.tables["tone_samples"]
     assert sample["source"] == "approved" and sample["edit_ratio"] == 0.0 and sample["intent"] == "accept"
     assert sample["source_message_id"] == "sent1" and sample["sitter_id"] == SITTER_ID
-    assert "Chloe" not in sample["final_text"] and "{OWNER}" in sample["final_text"]
+    assert "Robert" not in sample["final_text"] and "{OWNER}" in sample["final_text"]
     assert "Max" not in sample["context_summary"]
     assert record(client).json() == {"recorded": 0}  # once per message
     assert len(db.tables["tone_samples"]) == 1
 
 
 def test_an_edited_reply_records_how_much_was_changed(client, route):
-    db = route(thread(make_db(), body="Hi Chloe! I'm available, and a pill at 2 PM is no problem. 🐾"))
+    db = route(thread(make_db(), body="Hi Robert! I'm available, and a pill at 2 PM is no problem. 🐾"))
     assert record(client).json() == {"recorded": 1}
     sample = db.tables["tone_samples"][0]
     assert sample["source"] == "edited" and 0 < sample["edit_ratio"] < 1

@@ -119,7 +119,7 @@ test.describe("pickMedia", () => {
     }
     await app(page).getByTestId("sample-walk").click();
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     await expect(app(page).getByTestId("media-picker")).toBeHidden();
 
     expect(calls.sign).toEqual([{ pet_id: PET_ID, resource_type: "image", purpose: "feed", booking_id: null }]);
@@ -150,7 +150,7 @@ test.describe("pickMedia", () => {
     });
     await (await chooser).setFiles({ name: "big.png", mimeType: "image/png", buffer: Buffer.from(png) });
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     const sent = calls.upload[0];
     expect(sent.body).toContain('filename="big.jpg"');
     expect(sent.body).toContain("Content-Type: image/jpeg");
@@ -178,7 +178,7 @@ test.describe("pickMedia", () => {
     await drag(page, endHandle, { x: strip.x + strip.width + 40, y: endHandle.y });
 
     await app(page).getByTestId("trim-confirm").click();
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
 
     expect(calls.sign).toHaveLength(1);
     const body = calls.sign[0] as { resource_type: string; trim_start: number; trim_duration: number };
@@ -214,7 +214,7 @@ test.describe("pickMedia", () => {
     await app(page).getByTestId("media-choose-library").click();
     await (await chooser).setFiles(path.join(FIXTURES, "video-10s.webm"));
 
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     await expect(app(page).getByTestId("trim-sheet")).toBeHidden();
     expect(calls.sign[0]).toEqual({ pet_id: PET_ID, resource_type: "video", purpose: "feed", booking_id: null });
   });
@@ -232,7 +232,7 @@ test.describe("pickMedia", () => {
 
     await app(page).getByTestId("error-dialog-retry").click();
     await app(page).getByTestId("sample-meal").click();
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     expect(calls.sign).toHaveLength(2);
     expect(calls.complete).toHaveLength(1);
   });
@@ -245,7 +245,7 @@ test.describe("feed visibility (5.8)", () => {
     await expect(app(page).getByTestId("feed-share-toggle")).toHaveAttribute("aria-checked", "true");
     await app(page).getByTestId("feed-add-photo").click();
     await app(page).getByTestId("sample-walk").click();
-    await expect(app(page).getByTestId("toast")).toContainText("Shared with Chloe");
+    await expect(app(page).getByTestId("toast")).toContainText("Shared with Robert");
     expect(calls.db.feed_posts).toHaveLength(1);
     expect(calls.db.feed_posts[0]).toMatchObject({
       visibility: "shared",
@@ -282,7 +282,7 @@ test.describe("feed visibility (5.8)", () => {
       posted_by: SITTER.id,
       visibility: "shared",
       media_id: "22222222-2222-4222-8222-222222222222",
-      caption: "From Lucy",
+      caption: "From Chloe",
       caption_source: "fallback",
       task_log_id: null,
       created_at: new Date(Date.now() - 3_600_000).toISOString(),
@@ -295,7 +295,7 @@ test.describe("feed visibility (5.8)", () => {
       posted_by: SITTER.id,
       visibility: "private",
       media_id: "22222222-2222-4222-8222-222222222222",
-      caption: "Lucy only",
+      caption: "Chloe only",
       caption_source: "fallback",
       task_log_id: null,
       created_at: new Date().toISOString(),

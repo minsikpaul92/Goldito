@@ -103,7 +103,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 심사위원 **체크리스트 (Devpost / README에 복붙 가능):**
 
 1. Open demo URL — on a computer it appears in a phone frame (**click = tap, drag or scroll = swipe**); on a phone it opens full screen → Welcome (또는 Login). 10.10 Split view가 있으면 **Show both phones** → 두 역할을 한 화면에서
-2. **Try demo as Owner** → Bookings → Lucy → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
+2. **Try demo as Owner** → Bookings → Chloe → **Ask about a stay** → AI reply with a quote in seconds (Stage ①)
 3. **Try demo as Sitter** → Bookings → today's pick-up → **Show code** → **Start trip → Simulate the drive** → sample car photo → **Received** (Stage ④ — the owner sees the live ETA and "care has started")
 4. Sitter → Report → 5-second check + 2 sample photos → **Generate → Send**; Owner → Reports / Feed **Album**
 5. (Optional) Owner → Bookings → Checkout of the second request (consents + **Pay (demo)**, Stage ③) · Returned → review → **Life Record** (Stage ⑤) · (08 done) Sitter Home → **Scan a treat** → `chicken_jerky` → DANGER
@@ -186,7 +186,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 **CTA:** “Try demo as Sitter” / “Try demo as Owner” / “Sign in” / “Create account”
 
-**Login demo hint:** “Demo accounts include Max (Maltese, allergic to chicken) and Mochi (cat), booked with Lucy for Thanksgiving weekend.”
+**Login demo hint:** “Demo accounts include Max (Maltese, allergic to chicken) and Mochi (cat), booked with Chloe for Thanksgiving weekend.”
 
 ---
 

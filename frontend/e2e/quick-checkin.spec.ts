@@ -40,7 +40,7 @@ test.describe("quick check-in", () => {
     await expect(screen.getByTestId(send(MAX))).toBeDisabled();
     await screen.getByTestId(tid(MAX, "meal", "all")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Chloe was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
 
     expect(db.care_checkins).toHaveLength(1);
     expect(db.care_checkins[0]).toMatchObject({ pet_id: MAX.id, kind: "meal", value: "all", note_text: null, media_id: null });
@@ -59,7 +59,7 @@ test.describe("quick check-in", () => {
 
     await screen.getByTestId(tid(MAX, "mood", "calm")).click();
     await screen.getByTestId(send(MAX)).click();
-    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Sent to Chloe today");
+    await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Sent to Robert today");
     await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Fed · All");
     await expect(screen.getByTestId(`checkin-sent-${MAX.id}`)).toContainText("Mood · Calm");
     expect(db.care_checkins).toHaveLength(2);

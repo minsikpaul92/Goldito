@@ -243,7 +243,7 @@ Implement Meet & Greet per docs/plan/phases/phase-03b.md 3B.9 and 3B.11 (archite
 - 004_booking_options.sql: meet_greet_status (not_needed / required / proposed / agreed / done / skip_requested / skipped), set by request_booking — required only when this owner and sitter have never met (no earlier booking with a finished handoff and no finished Meet & Greet); meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_link, meet_greet_event_id, proposed_by / skip_requested_by; owner_profiles.meet_spots and sitter_profiles.meet_spots (up to 3 labels each)
 - RPCs: propose_meet_greet, respond_meet_greet, complete_meet_greet, request_skip_meet_greet, respond_skip_meet_greet (decline → cancel_booking with reason 'meet_greet_declined'), get_meet_greet_options; respond_booking(accept) raises meet_greet_required until the status is not_needed, done, or skipped
 - FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the Pawddy Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
-- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Lucy says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
+- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Chloe says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
 
 DoD: the phase-03b Goal checklist (first-time, in person, video, skip accepted, skip declined, repeat pair) passes in two browser windows; pytest mocks Google.
 ```
@@ -438,7 +438,7 @@ DoD: backend/tests/test_inquiry.py cases a–k pass with a mocked model; live ca
 | 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 03B (Returned — 06B 사진 체크는 붙으면 추가) | rls_smoke N |
 | 7C.2–7C.3 | 귀가 리포트 · Stay summary · 리뷰 UI | 7C.1 | 1회 제한 |
 | 7C.4 | `POST /api/ai/life-record` + RAG 인덱싱 (민식) | 7B.2, 07 | 환각 테스트 3회 |
-| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Paul 요청 카드에 Lucy 기록 |
+| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Paul 요청 카드에 Chloe 기록 |
 
 ### AI 프롬프트 (구 슬기 전용) — 7C.4
 
@@ -519,7 +519,7 @@ Create scripts/seed_demo.sql or Python using service role:
 - Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
 
-- Scenario data (phase-10 10.1): Lucy rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Paul + Life Records + review, RAG indexing
+- Scenario data (phase-10 10.1): Chloe rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Paul + Life Records + review, RAG indexing
 
 DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ```

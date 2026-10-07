@@ -56,7 +56,7 @@ test.describe("sitter today's tasks", () => {
     expect(db.taskCompletions).toHaveLength(0); // opening is not sending
 
     await screen.getByTestId("task-done-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Breakfast done ✅ Chloe was told");
+    await expect(screen.getByTestId("toast")).toContainText("Breakfast done ✅ Robert was told");
     expect(db.taskCompletions).toEqual([{ p_task_log: db.task_logs[0].id, p_media_id: null, p_note_text: null }]);
     expect(db.notifications.filter((n) => n.type === "task_done" && n.user_id === OWNER.id)).toHaveLength(1);
     expect(db.feed_posts).toHaveLength(0);

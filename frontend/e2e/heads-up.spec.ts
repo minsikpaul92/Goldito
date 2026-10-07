@@ -102,9 +102,9 @@ test.describe("what the sitter sees", () => {
 
     await screen.getByTestId("headsup-compact").click();
     const sheet = screen.getByTestId("headsup-sheet");
-    await expect(sheet).toContainText("Max — from Chloe");
+    await expect(sheet).toContainText("Max — from Robert");
     await expect(sheet).toContainText("Keep other dogs away on walks");
-    await expect(sheet).toContainText("Mochi — from Chloe");
+    await expect(sheet).toContainText("Mochi — from Robert");
     await expect(sheet).toContainText("Close the door gently");
   });
 

@@ -21,7 +21,7 @@ export const OWNER: MockUser = {
   email: "owner@pawddy.test",
   password: "max-and-mochi",
   role: "owner",
-  displayName: "Chloe",
+  displayName: "Robert",
 };
 
 export const SITTER: MockUser = {
@@ -29,7 +29,7 @@ export const SITTER: MockUser = {
   email: "sitter@pawddy.test",
   password: "care-snap-tap",
   role: "sitter",
-  displayName: "Lucy",
+  displayName: "Chloe",
 };
 
 function base64url(value: object): string {
@@ -354,9 +354,9 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
 
   if (fn === "get_meet_greet_options") {
     return json(route, 200, {
-      owner_name: "Chloe",
+      owner_name: "Robert",
       owner_spots: db.owner_profiles.find((p) => p.id === b.owner_id)?.meet_spots ?? [],
-      sitter_name: "Lucy",
+      sitter_name: "Chloe",
       sitter_spots: db.sitter_profiles.find((p) => p.id === b.sitter_id)?.meet_spots ?? [],
     });
   }

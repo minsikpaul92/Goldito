@@ -181,7 +181,7 @@ client.chat.completions.create(
 
 ### D. Inquiry auto-reply (Nano + RAG) — Stage 1, Phase 07B
 - Input: server-collected JSON only — sitter availability, `quote_booking` result, pet profiles, sitter public profile, top-5 RAG chunks (sitter policy, Life Record, past questions, care request).
-- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Lucy will confirm" + `needs_sitter`.
+- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Chloe will confirm" + `needs_sitter`.
 - A first-person draft in the sitter's voice (D35); the sitter approves it with **Send** / Edit / Regenerate (D36). Auto-send is a sitter opt-in with human pacing (D37).
 
 ### E. Care plan (Super) — Stage 2, Phase 06

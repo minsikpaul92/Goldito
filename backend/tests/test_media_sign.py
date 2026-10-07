@@ -22,8 +22,8 @@ SITTER_ID = "00000000-0000-4000-8000-000000000002"
 PET_ID = "00000000-0000-4000-8000-0000000000aa"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Robert"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Chloe"),
 }
 
 

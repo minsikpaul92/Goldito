@@ -227,7 +227,7 @@ def create_video_link(
             event = client.create(
                 # Same booking + time → same conference request (Google de-duplicates it).
                 request_id=f"pawddy-{booking.id}-{int(booking.at.timestamp())}",
-                # "Pawddy Meet & Greet — Max, Mochi & Lucy"
+                # "Pawddy Meet & Greet — Max, Mochi & Chloe"
                 summary=f"Pawddy Meet & Greet — {pets} & {booking.sitter_name}",
                 start=booking.at,
                 attendees=_invitees(booking),

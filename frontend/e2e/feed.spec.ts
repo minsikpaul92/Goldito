@@ -164,7 +164,7 @@ test.describe("Notification center", () => {
       id: n(7),
       user_id: SITTER.id,
       type: "feed_post",
-      title: "Chloe shared a photo of Max 📸",
+      title: "Robert shared a photo of Max 📸",
       body: null,
       pet_id: PET_ID,
       booking_id: null,

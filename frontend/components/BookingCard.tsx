@@ -56,7 +56,7 @@ export function placeLabel(type: LocationType, note: string | null, b: BookingSu
 }
 
 /**
- * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Lucy brings them home". House
+ * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Chloe brings them home". House
  * sitting has no drive — the sitter comes to the owner's home.
  */
 export function transportLine(b: BookingSummary, viewer: Viewer): string | null {

@@ -86,8 +86,8 @@ test.describe("daily report", () => {
 
     await screen.getByTestId(`report-body-${MAX.id}`).fill("Max had a great day! 🐶");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Chloe was told");
-    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Chloe");
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "Max had a great day! 🐶" });
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe("r1");
   });
@@ -129,7 +129,7 @@ test.describe("daily report", () => {
     await page.goto("/owner/diary");
     const screen = app(page);
     await expect(screen.getByTestId("diary-report-sent1")).toContainText("A calm day.");
-    await expect(screen.getByTestId("diary-report-sent1")).toContainText("Max · Lucy");
+    await expect(screen.getByTestId("diary-report-sent1")).toContainText("Max · Chloe");
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
 
     await screen.getByTestId("diary-report-sent1").click();

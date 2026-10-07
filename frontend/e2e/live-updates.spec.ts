@@ -30,7 +30,7 @@ async function ownerHome(page: import("@playwright/test").Page) {
   n(2, "care_checkin", "Max ate a little 🍽️", 40);
   db.notifications[db.notifications.length - 1].body = "Left the chicken bits";
   n(3, "feed_post", "New photo of Max 📸", 30);
-  n(4, "booking_confirmed", "Lucy confirmed your booking", 20); // not part of the live stream
+  n(4, "booking_confirmed", "Chloe confirmed your booking", 20); // not part of the live stream
   n(5, "care_checkin", "Max seems calm 😊", 10);
   // The record the notices point at stays in History whatever happens to them.
   db.care_checkins.push({ id: "c-mood", pet_id: MAX, created_by: SITTER.id, kind: "mood", value: "calm", note_text: null, media_id: null, created_at: ago(10) });

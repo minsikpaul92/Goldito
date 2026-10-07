@@ -64,7 +64,7 @@ test.describe("owner inquiry", () => {
     expect(replyRequests[0]).toMatchObject({ inquiry_id: db.inquiries[0].id });
 
     await expect(screen.getByTestId("inquiry-question-bubble")).toContainText("pill at 2 PM");
-    await expect(screen.getByTestId("inquiry-waiting")).toContainText("Lucy will reply soon");
+    await expect(screen.getByTestId("inquiry-waiting")).toContainText("Chloe will reply soon");
 
     // A draft is invisible to the owner; the sent reply appears (poll).
     const inquiryId = db.inquiries[0].id as string;
@@ -78,22 +78,22 @@ test.describe("owner inquiry", () => {
 
     db.inquiry_messages.push({
       id: "reply1", inquiry_id: inquiryId, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true,
-      body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾",
+      body: "Hi Robert! I'm available. The total is $268.13 CAD. 🐾",
       visible_at: new Date().toISOString(), created_at: new Date().toISOString(),
-      grounding: { quote: QUOTE, sources: [{ id: "policy-0", type: "sitter_policy", label: "From Lucy's policies", text: "x" }], availability: { can_host: true } },
+      grounding: { quote: QUOTE, sources: [{ id: "policy-0", type: "sitter_policy", label: "From Chloe's policies", text: "x" }], availability: { can_host: true } },
     });
     await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("268.13", { timeout: 8000 });
     await expect(screen.getByTestId("inquiry-waiting")).toHaveCount(0);
     await expect(screen.getByTestId("inquiry-quote")).toContainText("268.13");
-    await expect(screen.getByTestId("inquiry-sources")).toContainText("From Lucy's policies");
+    await expect(screen.getByTestId("inquiry-sources")).toContainText("From Chloe's policies");
 
     await screen.getByTestId("inquiry-request-booking").click();
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/new\\?inquiry=${inquiryId}`));
     await expect(screen.getByTestId("pick-pet-Max")).toHaveAttribute("aria-checked", "true");
     await expect(screen.getByTestId("pick-pet-Mochi")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
     await screen.getByTestId("request-booking").click();
-    await expect(screen.getByTestId("toast")).toContainText("Request sent to Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("Request sent to Chloe");
     expect(db.requests[0]).toMatchObject({ p_sitter: SITTER.id, p_pets: [MAX, MOCHI] });
     await expect.poll(() => db.inquiries[0].status).toBe("booked");
     expect(db.inquiries[0].booking_id).toBe(db.bookings.at(-1)?.id);
@@ -117,7 +117,7 @@ test.describe("owner inquiry", () => {
     const inquiryId = db.inquiries[0].id as string;
     db.inquiry_messages.push({
       id: "reply2", inquiry_id: inquiryId, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true,
-      body: "Hi Chloe! I can't take Max on Oct 10 — want me to look at other dates?",
+      body: "Hi Robert! I can't take Max on Oct 10 — want me to look at other dates?",
       visible_at: new Date().toISOString(), created_at: new Date().toISOString(),
       grounding: { quote: null, sources: [], availability: { can_host: false, unavailable_days: [] } },
     });
@@ -127,7 +127,7 @@ test.describe("owner inquiry", () => {
     await screen.getByTestId("inquiry-find-others").click();
     await expect(page).toHaveURL(/inquiry=.+&other=1/);
     await expect(screen.getByTestId("pick-pet-Max")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("pick-sitter-Lucy")).not.toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).not.toHaveAttribute("aria-checked", "true");
   });
 
   test("nobody else can open the conversation", async ({ page }) => {
@@ -156,9 +156,9 @@ function seedThread(db: MockDb, extra: Record<string, unknown> = {}) {
   db.inquiry_messages.push(
     { id: "q1", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "Can you give Max his pill at 2 PM?", status: "sent", drafted_by_ai: false, visible_at: "2026-10-06T10:00:00Z", read_at: null, created_at: "2026-10-06T10:00:00Z", grounding: null },
     {
-      id: "draft1", inquiry_id: INQ, author: "ai", sender_id: null, body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾", status: "draft", drafted_by_ai: true,
+      id: "draft1", inquiry_id: INQ, author: "ai", sender_id: null, body: "Hi Robert! I'm available. The total is $268.13 CAD. 🐾", status: "draft", drafted_by_ai: true,
       visible_at: "2026-10-06T10:00:05Z", read_at: null, created_at: "2026-10-06T10:00:05Z",
-      grounding: { quote: QUOTE, sources: [{ id: "policy-0", type: "sitter_policy", label: "From Lucy's policies", text: "x" }], availability: { can_host: true }, needs_sitter: false, intent: null, policy_conflicts: [] },
+      grounding: { quote: QUOTE, sources: [{ id: "policy-0", type: "sitter_policy", label: "From Chloe's policies", text: "x" }], availability: { can_host: true }, needs_sitter: false, intent: null, policy_conflicts: [] },
       ...extra,
     },
   );
@@ -173,7 +173,7 @@ async function openSitterThread(page: import("@playwright/test").Page, extra: Re
     asked.push(body);
     db.inquiry_messages.push({
       id: `draft-${asked.length + 1}`, inquiry_id: INQ, author: "ai", sender_id: null, status: "draft", drafted_by_ai: true,
-      body: body.intent === "decline" ? "Hi Chloe! I'm sorry, I can't this time." : "Hi Chloe! A fresh take: $268.13 CAD.",
+      body: body.intent === "decline" ? "Hi Robert! I'm sorry, I can't this time." : "Hi Robert! A fresh take: $268.13 CAD.",
       visible_at: new Date().toISOString(), read_at: null, created_at: new Date(Date.now() + 1000 * asked.length).toISOString(),
       grounding: { quote: QUOTE, sources: [], availability: { can_host: true }, needs_sitter: false, intent: body.intent ?? null },
     });
@@ -202,19 +202,19 @@ test.describe("sitter inquiry", () => {
     await expect(screen.getByTestId("inquiry-warning")).toHaveText("AI drafts can be wrong. You're responsible for what you send.");
     await expect(screen.getByTestId("inquiry-draft-body")).toContainText("$268.13");
     await expect(screen.getByTestId("inquiry-draft-quote")).toContainText("268.13");
-    await expect(screen.getByTestId("inquiry-draft-sources")).toContainText("From Lucy's policies");
+    await expect(screen.getByTestId("inquiry-draft-sources")).toContainText("From Chloe's policies");
     await expect(screen.getByTestId("inquiry-needs-you")).toHaveCount(0);
     // Opening the thread is the read mark.
     await expect.poll(() => db.inquiry_messages.find((m) => m.id === "q1")?.read_at).toBeTruthy();
 
     await screen.getByTestId("inquiry-send").click(); // no typing at all
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Chloe was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
     const sent = db.inquiry_messages.find((m) => m.author === "sitter");
-    expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id, body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾" });
+    expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id, body: "Hi Robert! I'm available. The total is $268.13 CAD. 🐾" });
     expect((sent?.grounding as { quote: { total: number } }).quote.total).toBe(268.13);
     expect(sent?.grounding).not.toHaveProperty("needs_sitter");
     expect(db.notifications.find((n) => n.type === "inquiry_replied")?.user_id).toBe(OWNER.id);
-    await expect(screen.getByTestId("inquiry-replied")).toContainText("Chloe was told");
+    await expect(screen.getByTestId("inquiry-replied")).toContainText("Robert was told");
     await expect(screen.getByTestId("inquiry-draft")).toHaveCount(0);
     await expect.poll(() => learned.length).toBe(1); // the assistant is asked to learn from this send
     expect(learned[0]).toEqual({ inquiry_id: INQ });
@@ -229,10 +229,10 @@ test.describe("sitter inquiry", () => {
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
     await expect(screen.getByTestId("inquiry-needs-you")).toBeVisible();
     await screen.getByTestId("inquiry-edit-toggle").click();
-    await screen.getByTestId("inquiry-edit").fill("Hi Chloe! Yes — pill at 2 PM works. $268.13 CAD total.");
+    await screen.getByTestId("inquiry-edit").fill("Hi Robert! Yes — pill at 2 PM works. $268.13 CAD total.");
     await screen.getByTestId("inquiry-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
-    expect(db.inquiry_messages.find((m) => m.author === "sitter")?.body).toBe("Hi Chloe! Yes — pill at 2 PM works. $268.13 CAD total.");
+    expect(db.inquiry_messages.find((m) => m.author === "sitter")?.body).toBe("Hi Robert! Yes — pill at 2 PM works. $268.13 CAD total.");
   });
 
   test("Regenerate and the intent chips ask for another draft (the newest one is shown)", async ({ page }) => {
@@ -257,7 +257,7 @@ test.describe("sitter inquiry", () => {
     const screen = app(page);
     await expect(screen.getByTestId("inquiry-no-draft")).toContainText("Your draft is being written");
     await screen.getByTestId("inquiry-write-myself").click();
-    await screen.getByTestId("inquiry-edit").fill("Hi Chloe! I'll check and reply properly soon.");
+    await screen.getByTestId("inquiry-edit").fill("Hi Robert! I'll check and reply properly soon.");
     await screen.getByTestId("inquiry-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
     expect(db.inquiry_messages.find((m) => m.author === "sitter")).toMatchObject({ drafted_by_ai: false, grounding: null });
@@ -298,7 +298,7 @@ test.describe("auto-send", () => {
     db.inquiries[0].reply_visible_at = visible;
     db.inquiry_messages.push({
       id: "auto1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true, confirmed_by_sitter_at: null,
-      body: "Hi Chloe! I'm available. The total is $268.13 CAD. 🐾", visible_at: visible, read_at: null,
+      body: "Hi Robert! I'm available. The total is $268.13 CAD. 🐾", visible_at: visible, read_at: null,
       created_at: new Date(now).toISOString(), grounding: { quote: QUOTE, sources: [], availability: { can_host: true } },
     });
     await signIn(page, OWNER);
@@ -307,7 +307,7 @@ test.describe("auto-send", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("inquiry-waiting")).toContainText("will reply soon");
-    await expect(screen.getByTestId("inquiry-typing")).toHaveText("Lucy is typing…", { timeout: 6000 });
+    await expect(screen.getByTestId("inquiry-typing")).toHaveText("Chloe is typing…", { timeout: 6000 });
     await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("268.13", { timeout: 9000 });
     await expect(screen.getByTestId("inquiry-typing")).toHaveCount(0);
     // Nobody has opened the thread: no "Read", whatever the screen was doing.
@@ -323,7 +323,7 @@ test.describe("auto-send", () => {
     seedThread(db);
     db.inquiry_messages.push({
       id: "auto1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true, confirmed_by_sitter_at: null,
-      body: "Hi Chloe! I'm available.", visible_at: new Date(Date.now() + 20000).toISOString(), read_at: null,
+      body: "Hi Robert! I'm available.", visible_at: new Date(Date.now() + 20000).toISOString(), read_at: null,
       created_at: "2026-10-06T10:00:06Z", grounding: null,
     });
     await signIn(page, SITTER);

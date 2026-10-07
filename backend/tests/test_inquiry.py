@@ -25,7 +25,7 @@ QUOTE = {
     "holiday_days": [{"day": "2026-10-12", "name": "Thanksgiving"}], "holiday_surcharge": 20.63,
     "total": 268.13, "currency": "CAD", "rate_version": "t",
 }
-GOOD = "Hi Chloe! I'm available for Max from Oct 9 to Oct 12 🐾 The total is $268.13 CAD, including Thanksgiving. Tap **Request booking** to hold these dates."
+GOOD = "Hi Robert! I'm available for Max from Oct 9 to Oct 12 🐾 The total is $268.13 CAD, including Thanksgiving. Tap **Request booking** to hold these dates."
 
 
 def schedule_rows(blocked: str | None = None) -> list[dict]:
@@ -44,7 +44,7 @@ def make_db(question: str = "Can you give Max his pill at 2 PM?", **extra) -> Fa
             "pet_ids": [PET_ID], "status": "open",
         }],
         inquiry_messages=[{"id": "q1", "inquiry_id": INQ, "author": "owner", "body": question, "created_at": "2026-10-07T10:00:00+00:00"}],
-        profiles=[{"id": OWNER_ID, "display_name": "Chloe"}, {"id": SITTER_ID, "display_name": "Lucy"}],
+        profiles=[{"id": OWNER_ID, "display_name": "Robert"}, {"id": SITTER_ID, "display_name": "Chloe"}],
         sitter_profiles=[{"id": SITTER_ID, "bio": "Cozy home, big backyard", "service_area": "Toronto", "experience_years": 5, "policies": "No dogs over 20 kg."}],
         pets=[
             {"id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01", "weight_kg": 5, "notes": "Pill in a treat"},
@@ -141,14 +141,14 @@ def test_b_thanksgiving_is_in_the_facts_and_the_total_is_the_servers(client, set
     post(client)
     quote = ctx.model.facts["quote"]
     assert quote["holiday_days"] == [{"day": "2026-10-12", "name": "Thanksgiving"}] and quote["total"] == 268.13
-    assert ctx.model.facts["inquiry"]["service"] == "boarding" and ctx.model.facts["owner"] == {"first_name": "Chloe"}
+    assert ctx.model.facts["inquiry"]["service"] == "boarding" and ctx.model.facts["owner"] == {"first_name": "Robert"}
 
 
 # --- availability -------------------------------------------------------------------------------------
 
 
 def test_a_blocked_day_means_no_quote_no_price_and_cannot_host(client, setup):
-    ctx = setup("Hi Chloe! I can't take Max on Oct 10 — want me to look at other dates?", blocked="2026-10-10")
+    ctx = setup("Hi Robert! I can't take Max on Oct 10 — want me to look at other dates?", blocked="2026-10-10")
     body = post(client).json()
     assert body["can_host"] is False and body["quote"] is None
     assert body["availability"]["unavailable_days"] == [{"day": "2026-10-10", "label": "Oct 10", "state": "blocked"}]
@@ -166,7 +166,7 @@ def test_a_price_in_a_draft_for_unavailable_dates_is_rewritten_then_replaced(cli
 
 
 def test_c_an_amount_that_is_not_in_the_quote_is_rewritten_once(client, setup):
-    ctx = setup("Hi Chloe! The total is $300 CAD.", GOOD)
+    ctx = setup("Hi Robert! The total is $300 CAD.", GOOD)
     body = post(client).json()
     assert body["body"] == GOOD and len(ctx.model.calls) == 2
     retry = ctx.model.calls[1]["messages"]
@@ -182,31 +182,31 @@ def test_c_a_second_wrong_amount_falls_back_to_the_fixed_text_with_the_real_tota
 
 
 def test_an_item_of_the_quote_may_be_mentioned(client, setup):
-    setup("Hi Chloe! $55 a night, $20.63 for Thanksgiving, $268.13 CAD total. 🐾")
+    setup("Hi Robert! $55 a night, $20.63 for Thanksgiving, $268.13 CAD total. 🐾")
     assert post(client).json()["model"] == "nano"
 
 
 def test_a_date_outside_the_stay_is_a_problem(client, setup):
-    ctx = setup("Hi Chloe! I could do Oct 20 instead.", GOOD)
+    ctx = setup("Hi Robert! I could do Oct 20 instead.", GOOD)
     assert post(client).json()["body"] == GOOD and len(ctx.model.calls) == 2
 
 
 def test_h_a_price_placeholder_is_filled_with_the_servers_total(client, setup):
     ctx = setup("Hi {OWNER}! {PET} is welcome Oct 9 to Oct 12. The total is {PRICE}. Tap **Request booking**.")
     body = post(client).json()
-    assert body["body"] == "Hi Chloe! Max is welcome Oct 9 to Oct 12. The total is $268.13 CAD. Tap **Request booking**."
+    assert body["body"] == "Hi Robert! Max is welcome Oct 9 to Oct 12. The total is $268.13 CAD. Tap **Request booking**."
     assert len(ctx.model.calls) == 1 and body["model"] == "nano"
 
 
 def test_h_a_date_placeholder_cannot_be_guessed_so_it_is_rewritten_then_replaced(client, setup):
-    ctx = setup("Hi Chloe! I'm away on {DATE}. Total {PRICE}.", "Still {DATE}. {PRICE}")
+    ctx = setup("Hi Robert! I'm away on {DATE}. Total {PRICE}.", "Still {DATE}. {PRICE}")
     body = post(client).json()
     assert "{DATE}" not in body["body"] and "{PRICE}" not in body["body"]
     assert body["model"] == "checked-template" and len(ctx.model.calls) == 2
 
 
 def test_h_a_price_placeholder_for_unavailable_dates_is_a_problem(client, setup):
-    ctx = setup("Hi Chloe! Total {PRICE}.", "Total {PRICE}", blocked="2026-10-10")
+    ctx = setup("Hi Robert! Total {PRICE}.", "Total {PRICE}", blocked="2026-10-10")
     body = post(client).json()
     assert "{PRICE}" not in body["body"] and body["model"] == "checked-template" and len(ctx.model.calls) == 2
 
@@ -215,17 +215,17 @@ def test_h_a_price_placeholder_for_unavailable_dates_is_a_problem(client, setup)
 
 
 def test_g_a_third_person_draft_is_rewritten_then_replaced_by_a_first_person_text(client, setup):
-    ctx = setup("Hi Chloe! Lucy is available for Max, says Lucy's assistant.", "Lucy will confirm the pill time.")
+    ctx = setup("Hi Robert! Chloe is available for Max, says Chloe's assistant.", "Chloe will confirm the pill time.")
     body = post(client).json()
-    assert body["model"] == "checked-template" and "Lucy" not in body["body"] and "assistant" not in body["body"].lower()
+    assert body["model"] == "checked-template" and "Chloe" not in body["body"] and "assistant" not in body["body"].lower()
     assert "I'll" in body["body"] or "I can" in body["body"] or "Thanks" in body["body"]
     assert len(ctx.model.calls) == 2
 
 
 def test_i_an_are_you_an_ai_question_never_gets_a_human_claim_and_needs_the_sitter(client, setup):
     ctx = setup(
-        "Hi Chloe! I'm a real person, promise.",
-        {"reply": "Hi Chloe! I'll answer that one myself shortly. 🐾", "needs_sitter": True},
+        "Hi Robert! I'm a real person, promise.",
+        {"reply": "Hi Robert! I'll answer that one myself shortly. 🐾", "needs_sitter": True},
         db=make_db("Are you an AI?"),
     )
     body = post(client).json()
@@ -252,10 +252,10 @@ def test_the_ai_question_detector_leaves_normal_questions_alone(text):
 
 def test_d_a_policy_that_applies_comes_with_its_source_and_the_models_needs_sitter(client, setup):
     hits = [{"content": "No dogs over 20 kg.", "source_type": "sitter_policy", "source_id": SITTER_ID, "similarity": 0.8}]
-    ctx = setup({"reply": "Hi Chloe! I'll confirm if I can take a dog that size. The total would be $268.13 CAD.", "needs_sitter": True, "used_sources": ["policy-0"]}, hits=hits)
+    ctx = setup({"reply": "Hi Robert! I'll confirm if I can take a dog that size. The total would be $268.13 CAD.", "needs_sitter": True, "used_sources": ["policy-0"]}, hits=hits)
     body = post(client).json()
     assert body["needs_sitter"] is True
-    assert body["sources"] == [{"id": "policy-0", "type": "sitter_policy", "label": "From Lucy's policies", "text": "No dogs over 20 kg."}]
+    assert body["sources"] == [{"id": "policy-0", "type": "sitter_policy", "label": "From Chloe's policies", "text": "No dogs over 20 kg."}]
     assert ctx.model.facts["policies_and_notes"][0]["text"] == "No dogs over 20 kg."
 
 
@@ -292,7 +292,7 @@ def test_the_weight_limit_parser(policy, weight, flagged):
 
 
 def test_a_reply_without_the_total_is_rewritten(client, setup):
-    ctx = setup("Hi Chloe! I'm available Oct 9 to Oct 12. Tap **Request booking**.", GOOD)
+    ctx = setup("Hi Robert! I'm available Oct 9 to Oct 12. Tap **Request booking**.", GOOD)
     assert post(client).json()["body"] == GOOD and len(ctx.model.calls) == 2
     assert "268.13" in ctx.model.calls[1]["messages"][-1]["content"]
 
@@ -334,7 +334,7 @@ def test_f_the_facts_hold_no_entry_address_or_contact_keys(client, setup):
 
 
 def test_a_draft_that_mentions_entry_info_is_a_problem(client, setup):
-    ctx = setup("Hi Chloe! Leave the lockbox code with me.", GOOD)
+    ctx = setup("Hi Robert! Leave the lockbox code with me.", GOOD)
     assert post(client).json()["body"] == GOOD and len(ctx.model.calls) == 2
 
 
@@ -364,7 +364,7 @@ def test_asking_twice_makes_one_draft(client, setup):
 
 
 def test_the_sitter_can_ask_for_a_fresh_draft_with_an_intent(client, setup):
-    ctx = setup(GOOD, "Hi Chloe! Unfortunately I can't this time — want me to look at other dates?")
+    ctx = setup(GOOD, "Hi Robert! Unfortunately I can't this time — want me to look at other dates?")
     post(client)
     response = post(client, sitter_token(), regenerate=True, intent="decline")
     assert response.status_code == 200 and response.json()["reused"] is False
@@ -422,7 +422,7 @@ def test_when_the_schedule_cannot_be_read_the_draft_is_the_safe_text(client, set
 
 
 def test_without_a_quote_the_model_is_told_not_to_name_a_price(client, setup):
-    ctx = setup("Hi Chloe! I'm available Oct 9 to Oct 12 and I'll send the price shortly.", quote=None)
+    ctx = setup("Hi Robert! I'm available Oct 9 to Oct 12 and I'll send the price shortly.", quote=None)
     body = post(client).json()
     assert body["quote"] is None and "quote_note" in ctx.model.facts and "$" not in body["body"]
 
@@ -446,12 +446,12 @@ def test_without_a_style_card_the_default_style_is_used(client, setup):
 
 
 def test_a_discarded_draft_is_kept_as_a_negative_signal_anonymized(client, setup):
-    ctx = setup(GOOD, "Hi Chloe! Different take: $268.13 CAD for Max.")
+    ctx = setup(GOOD, "Hi Robert! Different take: $268.13 CAD for Max.")
     post(client)
     post(client, sitter_token(), regenerate=True)
     (sample,) = ctx.db.tables["tone_samples"]
     assert sample["source"] == "regenerated" and sample["final_text"] == "" and sample["edit_ratio"] is None
-    assert "Chloe" not in sample["draft"] and "$268.13" not in sample["draft"] and "{PRICE}" in sample["draft"]
+    assert "Robert" not in sample["draft"] and "$268.13" not in sample["draft"] and "{PRICE}" in sample["draft"]
 
 
 def test_an_are_you_an_ai_question_also_tells_the_sitter_directly(client, setup):

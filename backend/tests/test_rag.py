@@ -85,34 +85,34 @@ def test_empty_text_has_no_chunks():
 def test_reindexing_replaces_the_source_and_leaves_others(embed):
     db = ChunksDB()
     db.rows.append({"source_type": "sitter_policy", "source_id": "other", "chunk_no": 0, "content": "keep me"})
-    assert rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="No dogs over 20 kg.\n\nNo cats at night.", sitter_id="lucy") == 1
-    first = [r for r in db.rows if r["source_id"] == "lucy"]
-    assert len(first) == 1 and first[0]["scope"] == "sitter" and first[0]["sitter_id"] == "lucy"
+    assert rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="No dogs over 20 kg.\n\nNo cats at night.", sitter_id="chloe") == 1
+    first = [r for r in db.rows if r["source_id"] == "chloe"]
+    assert len(first) == 1 and first[0]["scope"] == "sitter" and first[0]["sitter_id"] == "chloe"
     assert first[0]["chunk_no"] == 0 and len(first[0]["embedding"]) == 3
 
-    rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="Only small dogs.", sitter_id="lucy")
-    assert [r["content"] for r in db.rows if r["source_id"] == "lucy"] == ["Only small dogs."]  # no duplicates
+    rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="Only small dogs.", sitter_id="chloe")
+    assert [r["content"] for r in db.rows if r["source_id"] == "chloe"] == ["Only small dogs."]  # no duplicates
     assert any(r["content"] == "keep me" for r in db.rows)
 
 
 def test_empty_text_removes_the_source_without_embedding(embed):
     db = ChunksDB()
-    rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="Something.", sitter_id="lucy")
+    rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="Something.", sitter_id="chloe")
     embed.clear()
-    assert rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="  ", sitter_id="lucy") == 0
-    assert [r for r in db.rows if r["source_id"] == "lucy"] == [] and embed == []
+    assert rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="  ", sitter_id="chloe") == 0
+    assert [r for r in db.rows if r["source_id"] == "chloe"] == [] and embed == []
 
 
 def test_a_failed_embedding_keeps_the_old_index(monkeypatch, embed):
     db = ChunksDB()
-    rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="Old rules.", sitter_id="lucy")
+    rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="Old rules.", sitter_id="chloe")
 
     def down(texts, *, endpoint="embed"):
         raise nebius.AIUnavailable("down")
 
     monkeypatch.setattr(nebius, "embed", down)
     with pytest.raises(nebius.AIUnavailable):
-        rag.index_source(db, source_type="sitter_policy", source_id="lucy", text="New rules.", sitter_id="lucy")
+        rag.index_source(db, source_type="sitter_policy", source_id="chloe", text="New rules.", sitter_id="chloe")
     assert [r["content"] for r in db.rows] == ["Old rules."]
 
 

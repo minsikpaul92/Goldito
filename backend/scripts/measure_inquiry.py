@@ -74,13 +74,13 @@ def facts(question: str) -> dict:
     tz = ZoneInfo("America/Toronto")
     days = logic.stay_days(router._ts("2026-10-09T11:30:00+00:00"), router._ts("2026-10-12T21:00:00+00:00"), tz)
     sources = [
-        {"id": f"policy-{i}", "type": "sitter_policy", "label": "From Lucy's policies",
+        {"id": f"policy-{i}", "type": "sitter_policy", "label": "From Chloe's policies",
          "text": "I welcome dogs and cats up to 20 kg. Medication is fine when written in the care plan. Daily photos are included. " * 3}
         for i in range(5)
     ]
     return {
-        "owner": {"first_name": "Chloe"},
-        "sitter": {"name": "Lucy", "bio": "Cozy home with a big backyard", "service_area": "Toronto", "experience_years": 5},
+        "owner": {"first_name": "Robert"},
+        "sitter": {"name": "Chloe", "bio": "Cozy home with a big backyard", "service_area": "Toronto", "experience_years": 5},
         "inquiry": {
             "service": "boarding", "drop_off": "2026-10-09T07:30-04:00", "pick_up": "2026-10-12T17:00-04:00",
             "drop_off_label": "Oct 9", "pick_up_label": "Oct 12", "stay_days": [d.isoformat() for d in days], "pet_count": 2,
@@ -118,7 +118,7 @@ def main() -> None:
         embed.append(e)
         (_, ms) = timed(lambda: db.table("profiles").select("id").limit(1).execute())
         supabase.append(ms)
-        result, d = timed(lambda g=grounding, q=question: router._write(Style(sitter), g, q, "s", None, "Lucy"))
+        result, d = timed(lambda g=grounding, q=question: router._write(Style(sitter), g, q, "s", None, "Chloe"))
         draft.append(d)
         # `_write` includes the tone embedding and the model call (and a rewrite if a check failed).
         total.append(e + d)
