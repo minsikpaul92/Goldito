@@ -14,6 +14,7 @@ CONCEPTS = [
     "pawnote-concept-a-calm-core.html",
     "pawnote-concept-b-full-tamagotchi.html",
     "pawnote-concept-c-balanced-skin.html",
+    "pawnote-concept-d-expressive.html",
 ]
 START, END = "<!-- journey:start -->", "<!-- journey:end -->"
 

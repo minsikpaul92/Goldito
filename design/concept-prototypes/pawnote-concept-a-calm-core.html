@@ -1364,7 +1364,7 @@ const Journey = (() => {
         ${chip("🏠 Boarding", "service", s.service === "boarding", "boarding")}${chip("🔑 House sitting", "service", s.service === "house_sitting", "house_sitting")}</div>
         <p class="jr-p">${s.service === "boarding" ? `${n} stays at ${SITTER}'s home.` : `${SITTER} looks after ${n} at your home.`}</p></div>
       <div class="jr-stack"><span class="jr-label">Dates</span>
-        <button type="button" class="jr-datefield" data-jr="cal" aria-expanded="${s.cal}"><span>📅 ${STAY.from} → ${STAY.to} · ${STAY.nights} night${STAY.nights === 1 ? "" : "s"}</span><span class="jr-link">${s.cal ? "Done" : "Change"}</span></button>
+        <button type="button" class="jr-datefield" data-jr="cal" aria-expanded="${s.cal}"><span>📅 ${STAY.from}–${STAY.to.replace("Oct ", "")} · ${STAY.nights} night${STAY.nights === 1 ? "" : "s"}</span><span class="jr-link">${s.cal ? "Done" : "Change"}</span></button>
         ${s.cal ? calendar() : ""}</div>
       <div class="jr-stack"><span class="jr-label">Pets <span class="jr-hint">· pick one or both</span></span><div class="jr-chips">
         ${chip(`${isDog() ? "🐶" : "🐱"} ${esc(n)}`, "first", s.first, "1")}

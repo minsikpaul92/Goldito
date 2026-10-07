@@ -17,5 +17,6 @@ window.PAWNOTE_FLOWS = [
 window.PAWNOTE_CONCEPTS = [
   {k: "b", label: "Playful", file: "pawnote-concept-b-full-tamagotchi.html"},
   {k: "c", label: "Balanced", file: "pawnote-concept-c-balanced-skin.html"},
+  {k: "d", label: "Expressive", file: "pawnote-concept-d-expressive.html"},
 ];
 window.PAWNOTE_TRIED_KEY = "pawnote-concepts-tried";

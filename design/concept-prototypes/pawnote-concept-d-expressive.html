@@ -2,11 +2,11 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Balanced Skin</title>
+<title>Expressive</title>
 <script src="nav.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
 
 /* Concept C - Balanced Skin: warm modern, photo-first.
@@ -490,7 +490,7 @@ button{font-family:inherit;color:inherit}
 </svg>
 
 <div class="rig">
-  <div class="rig-label">Concept C of 3 &middot; Balanced Skin &mdash; soft tint, photo-first</div>
+  <div class="rig-label">Expressive &middot; display type, color blocks, illustrations</div>
   <div class="phone" id="phone">
     <div class="notes-backdrop" id="notesBackdrop"></div>
     <div class="statusbar">
@@ -2260,6 +2260,59 @@ const Onboard = (() => {
 })();
 </script>
 <!-- journey:end -->
+<!-- expressive:start — the Expressive look on top of the journey (same flows, brand green, DESIGN.md §3.2) -->
+<style id="expressive">
+:root{--bg:#FFF9F0;--surface:#FFFFFF;--text:#1A1A1A;--text-muted:#4F5B53;--border:#E3EADF;
+  --primary:#2D6A4F;--primary-foreground:#FFFFFF;--primary-text:#2D6A4F;--primary-soft:#D8F3DC;
+  --tint-bg:#FFF9F0;--tint-surface:#FFFFFF;--tint-border:#E3EADF;
+  --x-ink:#1B4332;--x-mint:#D8F3DC;--x-peach:#FDE2CC;--x-butter:#FBEFC8;--x-blush:#FAD6CB;--x-rust:#B4441F;
+  --radius-sm:.875rem;--radius-md:1.125rem;--radius-lg:1.625rem;--shadow-1:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121312;--surface:#1A1B1A;--text:#EDEDEA;--text-muted:#A3A39C;--border:#2C2D2B;
+  --primary:#7CCBA2;--primary-foreground:#0E1210;--primary-text:#7CCBA2;--primary-soft:#1E3128;--tint-bg:#121312;--tint-surface:#1A1B1A;--tint-border:#2C2D2B;
+  --x-ink:#D8F3DC;--x-mint:#1E3128;--x-peach:#3A2A1F;--x-butter:#36301A;--x-blush:#3A2421;--x-rust:#F4A261}}
+:root[data-theme="dark"]{--bg:#121312;--surface:#1A1B1A;--text:#EDEDEA;--text-muted:#A3A39C;--border:#2C2D2B;
+  --primary:#7CCBA2;--primary-foreground:#0E1210;--primary-text:#7CCBA2;--primary-soft:#1E3128;--tint-bg:#121312;--tint-surface:#1A1B1A;--tint-border:#2C2D2B;
+  --x-ink:#D8F3DC;--x-mint:#1E3128;--x-peach:#3A2A1F;--x-butter:#36301A;--x-blush:#3A2421;--x-rust:#F4A261}
+.jr,.jr-danger,.jr-overlay{--jr-font-head:"Lilita One","Arial Rounded MT Bold",sans-serif;--jr-head-weight:400;--jr-radius:1.625rem;--jr-card-border:none;--jr-card-shadow:none}
+.jr-title{font-size:2rem;letter-spacing:.01em;color:var(--x-ink)}
+.jr-eyebrow{color:var(--x-rust)}
+.jr-h3,.jr-stage-title b{letter-spacing:.01em;color:var(--x-ink)}
+/* Color-blocked stages: each stage keeps its own pastel, so the five steps read at a glance */
+.jr-stage{border:none;box-shadow:none}
+.jr-stage:nth-of-type(5n+1){background:var(--x-mint)}.jr-stage:nth-of-type(5n+2){background:var(--x-peach)}
+.jr-stage:nth-of-type(5n+3){background:var(--x-butter)}.jr-stage:nth-of-type(5n+4){background:var(--x-blush)}
+.jr-stage:nth-of-type(5n+5){background:var(--x-mint)}
+.jr-stage .jr-card{background:var(--surface)}
+.jr-stage-head{position:relative}
+.x-art{width:52px;height:52px;flex:0 0 auto;margin:-6px -4px -6px auto}
+/* Controls: ink pill when selected, white when not; buttons are bold pills */
+.chip{background:var(--surface);border-color:transparent;font-weight:700}
+.chip.active{background:var(--x-ink);color:var(--bg);border-color:var(--x-ink)}
+.btn{border-radius:999px;font-weight:800}
+.btn-secondary{background:var(--surface);border:2px solid var(--x-ink);color:var(--x-ink)}
+.jr-datefield{background:var(--surface);border:2px solid var(--x-ink)}
+.jr-day.on{background:var(--x-ink);color:var(--bg)}
+.brand{font-family:"Lilita One","Arial Rounded MT Bold",sans-serif;font-weight:400;letter-spacing:.02em;color:var(--x-ink)}
+/* Tab bar: white sheet, mint pill + ink icon on the active tab */
+.tabbar{border-radius:1.625rem 1.625rem 0 0;box-shadow:0 -8px 24px rgba(27,67,50,.08)}
+.tab[aria-current="page"]{color:var(--x-ink)}
+</style>
+<script id="expressive-js">
+// Illustrations sit in a fixed slot on each stage header (never over content). Placeholder set: redesign/art.svg.
+(() => {
+  const ART = ["art-dog", "art-walk", "art-home", "art-camera", "art-ball"];
+  fetch("redesign/art.svg").then((r) => r.text()).then((svg) => {
+    document.body.insertAdjacentHTML("afterbegin", svg);
+    const add = () => document.querySelectorAll(".jr-stage").forEach((st, i) => {
+      const head = st.querySelector(".jr-stage-head");
+      if (!head || head.querySelector(".x-art")) return;
+      head.insertAdjacentHTML("beforeend", `<svg class="x-art" aria-hidden="true"><use href="#${ART[i % ART.length]}"/></svg>`);
+    });
+    add(); new MutationObserver(add).observe(document.body, {childList: true, subtree: true});
+  }).catch(() => {});
+})();
+</script>
+<!-- expressive:end -->
 <script>
 
 const PETS = [

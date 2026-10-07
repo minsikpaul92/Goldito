@@ -95,9 +95,9 @@
   </div>
   <p class="brief"><b id="flowName"></b><span id="flowWhat"></span></p>
   <main class="stage" id="stage" aria-live="polite"></main>
-  <p class="hint hide-sm">Each concept keeps its own progress while you switch. Keys (outside the phone): <kbd>1</kbd> Playful · <kbd>2</kbd> Balanced · <kbd>3</kbd> both · <kbd>[</kbd> <kbd>]</kbd> previous / next flow</p>
+  <p class="hint hide-sm">Each concept keeps its own progress while you switch. Keys (outside the phone): <kbd>1</kbd> Playful · <kbd>2</kbd> Balanced · <kbd>3</kbd> Expressive · <kbd>4</kbd> all · <kbd>[</kbd> <kbd>]</kbd> previous / next flow</p>
 
-<script src="flows.js"></script>
+<script src="flows.js?v=3"></script>
 <script>
   const FLOWS = window.PAWNOTE_FLOWS, CONCEPTS = window.PAWNOTE_CONCEPTS, KEY = window.PAWNOTE_TRIED_KEY;
   const W = 418, H = 860; // the concept page's phone (402px + bezel) at real size
@@ -115,7 +115,7 @@
   // ---------- build ----------
   sel.innerHTML = FLOWS.map((f) => `<option value="${f.id}">${f.name}</option>`).join("");
   seg.innerHTML = CONCEPTS.map((c, i) => `<button type="button" data-view="${c.k}">${c.label}<kbd>${i + 1}</kbd></button>`).join("")
-    + `<button type="button" data-view="all">Both<kbd>3</kbd></button>`;
+    + `<button type="button" data-view="all">All<kbd>4</kbd></button>`;
   stage.innerHTML = CONCEPTS.map((c) => `<div class="slot" data-k="${c.k}">
       <button type="button" class="slot-label" data-focus="${c.k}" title="Show only this concept">${c.label}</button>
       <div class="frame-box"><span class="loading">Loading…</span><iframe title="${c.label}" data-k="${c.k}"></iframe></div></div>`).join("");
@@ -206,7 +206,7 @@
   };
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("select,input") || e.metaKey || e.ctrlKey || e.altKey) return;
-    const k = { "1": "b", "2": "c", "3": "all" }[e.key];
+    const k = { "1": "b", "2": "c", "3": "d", "4": "all" }[e.key];
     if (k) setView(k);
     else if (e.key === "[") $("#prev").click();
     else if (e.key === "]") $("#next").click();
@@ -216,7 +216,7 @@
   // #<flow-id>/<a|b|c|all>; missing parts fall back to the first flow and the last view used.
   const [hid, hview] = decodeURIComponent(location.hash.slice(1)).split("/");
   flow = FLOWS.find((f) => f.id === hid) || FLOWS[0];
-  view = ["b", "c", "all"].includes(hview) ? hview : store.get("pawnote-viewer-view", "all");
+  view = ["b", "c", "d", "all"].includes(hview) ? hview : store.get("pawnote-viewer-view", "all");
   render();
 </script>
 </body>
