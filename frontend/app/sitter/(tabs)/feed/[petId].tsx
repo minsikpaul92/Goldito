@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { FeedCard } from "../../../../components/FeedCard";
 import { FeedViewer } from "../../../../components/FeedViewer";
@@ -12,7 +12,7 @@ import { Sheet } from "../../../../components/ui/Sheet";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { UploadError, uploadMedia } from "../../../../lib/cloudinary";
 import {
-  FALLBACK_CAPTION,
+  captionPhoto,
   FEED_PAGE_SIZE,
   FeedTimelinePost,
   createFeedPost,
@@ -53,6 +53,8 @@ export default function SitterPetFeed() {
   const [feed, setFeed] = useState<FeedState>({ status: "loading" });
   const [loadingMore, setLoadingMore] = useState(false);
   const [uploading, setUploading] = useState(false);
+  /** While a photo is on its way: what is happening to it, and its local thumbnail. */
+  const [stage, setStage] = useState<{ step: "uploading" | "captioning"; uri: string | null } | null>(null);
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -135,6 +137,8 @@ export default function SitterPetFeed() {
     if (!picked) return;
 
     setUploading(true);
+    const uri = typeof URL !== "undefined" && picked.file.type.startsWith("image/") ? URL.createObjectURL(picked.file) : null;
+    setStage({ step: "uploading", uri });
     try {
       const kind = picked.file.type.startsWith("video/") ? "video" : "image";
       const uploaded = await uploadMedia({
@@ -144,11 +148,15 @@ export default function SitterPetFeed() {
         trim: picked.trim,
         resourceType: kind,
       });
+      setStage({ step: "captioning", uri });
+      // The sitter types nothing: the model writes the caption and picks the album; if it can't, the post still goes out.
+      const written = await captionPhoto(petId, uploaded.mediaId);
       await createFeedPost({
         petId,
         mediaId: uploaded.mediaId,
-        caption: FALLBACK_CAPTION,
-        captionSource: "fallback",
+        caption: written.caption,
+        captionSource: written.source,
+        category: written.category,
         role: "sitter",
         visibility: shareWithOwner ? "shared" : "private",
       });
@@ -163,6 +171,8 @@ export default function SitterPetFeed() {
             : "Couldn't share this photo. Try again.";
       errorDialog.show({ title: "Photo not shared", message, onRetry: () => void sharePhoto() });
     } finally {
+      if (uri) URL.revokeObjectURL(uri);
+      setStage(null);
       setUploading(false);
     }
   };
@@ -243,8 +253,14 @@ export default function SitterPetFeed() {
           ListHeaderComponent={
             uploading ? (
               <View style={styles.skeleton} testID="feed-uploading">
-                <View style={styles.skeletonMedia} />
-                <Text style={styles.skeletonText}>Uploading…</Text>
+                {stage?.uri ? (
+                  <Image source={{ uri: stage.uri }} style={styles.skeletonMedia} accessibilityIgnoresInvertColors />
+                ) : (
+                  <View style={styles.skeletonMedia} />
+                )}
+                <Text style={styles.skeletonText} testID="feed-uploading-text">
+                  {stage?.step === "captioning" ? "Writing a caption…" : "Uploading…"}
+                </Text>
               </View>
             ) : null
           }
