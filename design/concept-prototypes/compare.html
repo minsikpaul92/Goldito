@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PawNote Flow Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  :root{ /* page aliases onto the design-system tokens (ds.css) */
+    --bg:var(--color-background); --surface:var(--color-surface); --text:var(--color-text); --muted:var(--color-text-muted);
+    --border:var(--color-border); --soft:var(--color-track); --accent:var(--color-primary); --accent-soft:var(--color-accent);
+    --check:var(--color-primary); --on-accent:var(--color-primary-text);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.45;
+    display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+  button,select{font:inherit;color:inherit}
+  a{color:inherit}
+
+  /* Toolbar */
+  .bar{flex:0 0 auto;display:flex;align-items:center;gap:.75rem 1rem;flex-wrap:wrap;padding:.75rem 1rem;
+    background:var(--surface);border-bottom:1px solid var(--border)}
+  .ico{width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .back{display:inline-flex;align-items:center;gap:.375rem;text-decoration:none;color:var(--muted);font-weight:500;white-space:nowrap;
+    padding:.375rem .5rem;border-radius:.375rem}
+  .back:hover{background:var(--soft)}
+  .back:hover{color:var(--text)}
+  .flow-pick{display:flex;align-items:center;gap:.25rem;min-width:0;flex:1 1 16rem}
+  .select{position:relative;flex:1;min-width:0;display:flex}
+  .select select{flex:1;min-width:0;height:2.25rem;border:1px solid var(--border);border-radius:.5rem;background:var(--surface);
+    padding:0 2.25rem 0 .75rem;font-weight:600;cursor:pointer;-webkit-appearance:none;appearance:none}
+  .select select:hover{background:var(--soft)}
+  .select .ico{position:absolute;right:.75rem;top:50%;margin-top:-.5rem;pointer-events:none;color:var(--muted)}
+  .icon-btn{height:2.25rem;min-width:2.25rem;border:1px solid var(--border);border-radius:.5rem;background:var(--surface);
+    cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.375rem;padding:0 .625rem;white-space:nowrap;
+    text-decoration:none;font-weight:500}
+  .icon-btn.sq{padding:0}
+  .icon-btn:hover{background:var(--soft)}
+  .icon-btn:disabled{opacity:.4;cursor:default;background:var(--surface)}
+  .seg{display:inline-flex;padding:.1875rem;gap:.125rem;background:var(--soft);border-radius:.625rem}
+  .seg button{border:none;background:none;height:1.875rem;padding:0 .75rem;border-radius:.4375rem;font-weight:600;color:var(--muted);
+    cursor:pointer;white-space:nowrap}
+  .seg button:hover{color:var(--text)}
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--border)}
+  .seg kbd{font:inherit;font-size:.6875rem;color:var(--muted);margin-left:.25rem;opacity:.7}
+  .actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+  .tried{display:inline-flex;align-items:center;gap:.375rem;font-weight:500;cursor:pointer;white-space:nowrap;padding:0 .25rem}
+  .tried input{width:1rem;height:1rem;accent-color:var(--accent);margin:0}
+
+  .brief{flex:0 0 auto;display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap;padding:.625rem 1rem;color:var(--muted);font-size:.8125rem;
+    border-bottom:1px solid var(--border)}
+  .brief b{color:var(--text);font-weight:600}
+
+  /* Stage: phones are rendered at real size, then scaled to fit */
+  .stage{flex:1 1 auto;min-height:0;display:flex;justify-content:center;align-items:flex-start;gap:1.25rem;padding:1rem;overflow:auto}
+  .slot{display:flex;flex-direction:column;align-items:center;gap:.5rem}
+  .slot[hidden]{display:none}
+  .slot-label{border:none;background:none;cursor:pointer;font-weight:600;font-size:.8125rem;color:var(--muted);padding:.25rem .5rem;border-radius:.375rem}
+  .slot-label:hover{color:var(--text);background:var(--soft)}
+  .stage.single .slot-label{display:none}
+  .frame-box{position:relative;overflow:hidden}
+  .frame-box iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:transparent}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:.8125rem}
+  .hint{flex:0 0 auto;text-align:center;font-size:.75rem;color:var(--muted);padding:0 1rem .75rem}
+  .hint kbd{font:inherit;border:1px solid var(--border);border-radius:.25rem;padding:0 .3rem;background:var(--surface)}
+  @media (max-width:640px){ .hide-sm{display:none} }
+  /* Design-system controls (ds.css): 44 px targets, strong outlines */
+  .icon-btn,.select select{min-height:var(--size-touch-target);height:var(--size-touch-target)!important;border-color:var(--color-border-strong)!important;border-radius:var(--radius-md)!important}
+  .icon-btn.sq{width:var(--size-touch-target)}
+  .seg button{height:40px!important}
+  .seg{border:1px solid var(--color-border-strong);flex-wrap:wrap;max-width:100%}
+  .back{min-height:var(--size-touch-target)}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <a class="back" href="index.html"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>All flows</a>
+    <div class="flow-pick">
+      <div class="select"><select id="flowSel" aria-label="Flow"></select>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div>
+      <button type="button" class="icon-btn sq" id="prev" aria-label="Previous flow" title="Previous flow  ["><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+      <button type="button" class="icon-btn sq" id="next" aria-label="Next flow" title="Next flow  ]"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
+    </div>
+    <div class="seg" role="group" aria-label="Concept" id="seg"></div>
+    <div class="actions">
+      <button type="button" class="icon-btn" id="splash" title="Replay the welcome animation"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>Play splash</button>
+      <button type="button" class="icon-btn" id="restart" title="Reload this flow from its start"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Restart</button>
+      <a class="icon-btn hide-sm" id="openFull" target="_blank" rel="noopener"><span id="openFullText">Open full page</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <label class="tried"><input type="checkbox" id="tried"> Tried</label>
+    </div>
+  </div>
+  <p class="brief"><b id="flowName"></b><span id="flowWhat"></span></p>
+  <main class="stage" id="stage" aria-live="polite"></main>
+  <p class="hint hide-sm">Each concept keeps its own progress while you switch. Keys (outside the phone): <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> concepts · <kbd>4</kbd> all three · <kbd>[</kbd> <kbd>]</kbd> previous / next flow</p>
+
+<script src="flows.js"></script>
+<script>
+  const FLOWS = window.PAWNOTE_FLOWS, CONCEPTS = window.PAWNOTE_CONCEPTS, KEY = window.PAWNOTE_TRIED_KEY;
+  const W = 418, H = 860; // the concept page's phone (402px + bezel) at real size
+  const $ = (s) => document.querySelector(s);
+  const stage = $("#stage"), seg = $("#seg"), sel = $("#flowSel");
+  let flow = FLOWS[0], view = "a", run = 0;
+  const loaded = {}; // concept key → flow id currently loaded in its frame
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  const tried = () => { try { return new Set(JSON.parse(store.get(KEY, "[]"))); } catch (e) { return new Set(); } };
+
+  // ---------- build ----------
+  sel.innerHTML = FLOWS.map((f) => `<option value="${f.id}">${f.name}</option>`).join("");
+  seg.innerHTML = CONCEPTS.map((c, i) => `<button type="button" data-view="${c.k}">${c.label}<kbd>${i + 1}</kbd></button>`).join("")
+    + `<button type="button" data-view="all">All three<kbd>4</kbd></button>`;
+  stage.innerHTML = CONCEPTS.map((c) => `<div class="slot" data-k="${c.k}">
+      <button type="button" class="slot-label" data-focus="${c.k}" title="Show only this concept">${c.label}</button>
+      <div class="frame-box"><span class="loading">Loading…</span><iframe title="${c.label}" data-k="${c.k}"></iframe></div></div>`).join("");
+
+  function src(c) {
+    // ?r= forces a fresh load even when only the hash changes; each concept reads its hash on load.
+    return `${c.file}?r=${run}${flow.hash ? "#" + flow.hash : ""}`;
+  }
+  function load(c, force) {
+    if (!force && loaded[c.k] === flow.id) return;
+    const f = stage.querySelector(`iframe[data-k="${c.k}"]`);
+    f.previousElementSibling.hidden = false;
+    loaded[c.k] = flow.id;
+    f.src = src(c);
+  }
+  // Inside the viewer, drop each page's own backdrop and label so only the phone shows.
+  stage.addEventListener("load", (e) => {
+    const f = e.target;
+    if (f.tagName !== "IFRAME") return;
+    f.previousElementSibling.hidden = true;
+    try {
+      const d = f.contentDocument, st = d.createElement("style");
+      st.textContent = `html,body{background:transparent !important}body{padding:0 !important;min-height:0 !important;gap:0 !important}
+        .rig{max-width:none}.rig-label{display:none !important}.phone{max-height:none !important;box-shadow:none !important}`;
+      d.head.appendChild(st);
+    } catch (err) { /* opened from file:// — the page still works, just with its own padding */ }
+  }, true);
+
+  function fit() {
+    const cols = view === "all" ? 3 : 1;
+    const gap = 20, label = view === "all" ? 32 : 0;
+    const availW = stage.clientWidth - 32 - gap * (cols - 1);
+    const availH = stage.clientHeight - 32 - label;
+    const s = Math.min(1, availW / (cols * W), availH / H);
+    stage.querySelectorAll(".frame-box").forEach((b) => {
+      b.style.width = `${Math.floor(W * s)}px`; b.style.height = `${Math.floor(H * s)}px`;
+      const f = b.querySelector("iframe");
+      f.style.width = `${W}px`; f.style.height = `${H}px`; f.style.transform = `scale(${s})`;
+    });
+  }
+
+  function render() {
+    stage.classList.toggle("single", view !== "all");
+    seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+    CONCEPTS.forEach((c) => {
+      const show = view === "all" || view === c.k;
+      stage.querySelector(`.slot[data-k="${c.k}"]`).hidden = !show;
+      if (show) load(c);
+    });
+    sel.value = flow.id;
+    const i = FLOWS.indexOf(flow);
+    $("#prev").disabled = i === 0;
+    $("#next").disabled = i === FLOWS.length - 1;
+    $("#flowName").textContent = flow.name;
+    $("#flowWhat").textContent = flow.what;
+    $("#tried").checked = tried().has(flow.name);
+    const one = CONCEPTS.find((c) => c.k === view) || CONCEPTS[0];
+    $("#openFull").href = `${one.file}${flow.hash ? "#" + flow.hash : ""}`;
+    $("#openFullText").textContent = view === "all" ? "Open A full page" : `Open ${one.k.toUpperCase()} full page`;
+    document.title = `${flow.name} · PawNote Flow Viewer`;
+    history.replaceState(null, "", `#${flow.id}/${view}`);
+    store.set("pawnote-viewer-view", view);
+    fit();
+  }
+
+  function setFlow(id) {
+    const f = FLOWS.find((x) => x.id === id);
+    if (!f || f === flow) return;
+    flow = f; run++;
+    render();
+  }
+  function setView(v) { view = v; render(); }
+
+  // ---------- wiring ----------
+  seg.addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
+  stage.addEventListener("click", (e) => { const b = e.target.closest("[data-focus]"); if (b) setView(b.dataset.focus); });
+  sel.addEventListener("change", () => setFlow(sel.value));
+  $("#prev").onclick = () => setFlow(FLOWS[Math.max(0, FLOWS.indexOf(flow) - 1)].id);
+  $("#next").onclick = () => setFlow(FLOWS[Math.min(FLOWS.length - 1, FLOWS.indexOf(flow) + 1)].id);
+  $("#restart").onclick = () => { run++; CONCEPTS.forEach((c) => { if (view === "all" || view === c.k) load(c, true); else delete loaded[c.k]; }); };
+  $("#splash").onclick = () => stage.querySelectorAll(".slot:not([hidden]) iframe").forEach((f) => {
+    if (f.contentWindow) f.contentWindow.postMessage("pawnote:splash", "*");
+  });
+  $("#tried").onchange = (e) => {
+    const t = tried();
+    e.target.checked ? t.add(flow.name) : t.delete(flow.name);
+    store.set(KEY, JSON.stringify([...t]));
+  };
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("select,input") || e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = { "1": "a", "2": "b", "3": "c", "4": "all" }[e.key];
+    if (k) setView(k);
+    else if (e.key === "[") $("#prev").click();
+    else if (e.key === "]") $("#next").click();
+  });
+  window.addEventListener("resize", fit);
+
+  // #<flow-id>/<a|b|c|all>; missing parts fall back to the first flow and the last view used.
+  const [hid, hview] = decodeURIComponent(location.hash.slice(1)).split("/");
+  flow = FLOWS.find((f) => f.id === hid) || FLOWS[0];
+  view = ["a", "b", "c", "all"].includes(hview) ? hview : store.get("pawnote-viewer-view", "a");
+  render();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-/** Interim design tokens (8px grid). Replace with Figma variables when ready. */
+/** Design tokens (8px grid). Mirrors the Figma variables in *PawNote Design System*; change both together (DESIGN.md). */
 export const tokens = {
   color: {
     background: "#F7F7F5",
@@ -10,9 +10,17 @@ export const tokens = {
     /** Soft tint for highlights (selected chip background, badges). Text on it uses `text`. */
     accent: "#D8F3DC",
     border: "#E5E5E0",
+    /** Outlines of things you interact with (inputs, checkboxes, chips, switch off). ≥ 3:1 on every surface. */
+    borderStrong: "#86867F",
+    /** Empty part of progress bars; `primary` stays ≥ 3:1 against it. */
+    track: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
     warning: "#B54708",
+    /** Light backgrounds behind status text (Tag, Banner). Never put status text on its solid color. */
+    errorSurface: "#FEF3F2",
+    warningSurface: "#FFFAEB",
+    successSurface: "#ECFDF3",
     /** Dimmed backdrop behind modals and sheets. */
     overlay: "rgba(26, 26, 26, 0.4)",
     // Desktop phone frame only (DESIGN.md §2.1)
@@ -51,6 +59,18 @@ export const tokens = {
     frameHeight: 874,
     /** Bottom tab bar. The library default (49) squeezes the label on web. */
     tabBarHeight: 60,
+    /** Minimum size of anything tappable (DESIGN.md §9). */
+    touchTarget: 44,
+    /** Content column width on wide screens (`Screen`). */
+    contentMaxWidth: 480,
+  },
+  /** Durations in ms and the one press feel for every tappable (DESIGN.md §5.1). */
+  motion: {
+    fast: 120,
+    base: 240,
+    slow: 420,
+    pressScale: 0.97,
+    pressOpacity: 0.85,
   },
   breakpoint: {
     /** Reserved for the post-hackathon sitter desktop layout. */
