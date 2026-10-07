@@ -100,9 +100,9 @@ def test_a_final_answer_that_is_not_json_is_an_error():
 
 @pytest.fixture
 def agent_on(monkeypatch, setup):  # noqa: F811
-    def _on(*answers, script, on=True, db=None):
-        ctx = setup(*answers, db=db)
-        monkeypatch.setattr(ai_inquiry, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", inquiry_agent=on))
+    def _on(*answers, script, mode="on", db=None, hits=None):
+        ctx = setup(*answers, db=db, hits=hits)
+        monkeypatch.setattr(ai_inquiry, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", inquiry_agent=mode))
         monkeypatch.setattr(nebius, "chat_tools", script)
         return ctx
 
@@ -125,10 +125,51 @@ def test_with_the_agent_on_the_draft_comes_from_the_tools_and_the_log_is_kept(cl
     assert saved["grounding"]["tools"] == ["check_availability", "get_quote"] and saved["grounding"]["quote"]["total"] == 268.13
 
 
-def test_the_agent_is_off_by_default(client, setup):  # noqa: F811
-    ctx = setup()
-    assert post(client, sitter_token()).json()["model"] == "nano"
-    assert len(ctx.model.calls) == 1
+def test_with_the_agent_off_it_is_never_used(client, agent_on):
+    ctx = agent_on(script=good_script(), mode="off", hits=[{"content": "Medication is fine.", "source_type": "sitter_policy", "source_id": "s", "similarity": 0.9}])
+    assert post(client, sitter_token()).json()["model"] == "nano" and len(ctx.model.calls) == 1
+
+
+def test_in_auto_mode_a_plain_question_is_one_call_and_no_agent(client, agent_on):
+    script = good_script()
+    ctx = agent_on(script=script, mode="auto")
+    body = post(client, sitter_token()).json()
+    assert body["model"] == "nano" and len(ctx.model.calls) == 1 and script.seen == []
+
+
+def test_in_auto_mode_a_question_that_touches_stored_records_goes_to_the_agent(client, agent_on):
+    hits = [{"content": "Medication is fine when in the care plan.", "source_type": "sitter_policy", "source_id": "s", "similarity": 0.9}]
+    script = good_script()
+    ctx = agent_on(script=script, mode="auto", hits=hits)
+    body = post(client, sitter_token()).json()
+    assert body["model"].endswith("+agent") and ctx.model.calls == [] and script.seen
+
+
+@pytest.mark.parametrize(
+    ("question", "sources", "conflicts", "expected"),
+    [
+        ("Can you take Max Oct 9 to 12?", [], [], False),
+        ("Can you take Max Oct 9 to 12?", [{"id": "policy-0"}], [], True),
+        ("Can you take Max Oct 9 to 12?", [], [{"pet": "Max"}], True),
+        ("Do you have a yard? Can he bring his bed?", [], [], True),
+        ("x" * 141, [], [], True),
+        ("Can you take Max?", [], [], False),
+    ],
+)
+def test_the_agent_gate_uses_only_what_the_server_knows(question, sources, conflicts, expected):
+    assert agent.needs_agent(question, {"sources": sources, "policy_conflicts": conflicts}) is expected
+
+
+def test_the_agent_loop_runs_on_the_stronger_model():
+    roles: list[str] = []
+    script = Script(reply(json.dumps({"reply": GOOD})))
+
+    def spy(role, messages, tools, **kw):
+        roles.append(role)
+        return script(role, messages, tools, **kw)
+
+    agent.run_agent(grounding(), "S", "q", None, chat=spy)
+    assert roles == ["report"]
 
 
 def test_an_agent_outage_falls_back_to_the_single_call(client, agent_on):

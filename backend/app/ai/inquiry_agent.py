@@ -58,6 +58,21 @@ AGENT_NOTE = (
 )
 
 
+LONG_QUESTION = 140
+
+
+def needs_agent(question: str, grounding: dict) -> bool:
+    """Is this inquiry worth the agent's extra rounds? Decided from what the server already knows — no model call.
+
+    Yes when the question touches stored knowledge (RAG found policies / records / earlier messages), when a house
+    rule may rule the pet out, or when it asks several things at once. A plain "can you take Max Oct 9–12?" is one
+    grounded call: the facts are already complete, and the agent would only add latency.
+    """
+    if grounding["sources"] or grounding["policy_conflicts"]:
+        return True
+    return len(question) > LONG_QUESTION or question.count("?") >= 2
+
+
 def run_tool(name: str, arguments: dict, grounding: dict) -> dict:
     """The tool's result — always from the facts the server already holds."""
     if name == "check_availability":
@@ -101,7 +116,8 @@ def run_agent(
     ]
     called: list[str] = []
     for _ in range(MAX_ROUNDS):
-        reply = chat("fast", messages, TOOLS, endpoint="inquiry-agent", max_tokens=400, timeout=TIMEOUT_S)
+        # The stronger model (Nemotron Super) drives the tool loop; the one-call path stays on Nano.
+        reply = chat("report", messages, TOOLS, endpoint="inquiry-agent", max_tokens=400, timeout=TIMEOUT_S)
         if not reply.tool_calls:
             try:
                 draft = logic.Draft.model_validate(nebius.extract_json(reply.content))

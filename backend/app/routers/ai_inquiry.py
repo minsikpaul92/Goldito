@@ -613,7 +613,8 @@ def _write(
     system = (
         load_prompt("inquiry/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"
     )
-    if get_settings().inquiry_agent:
+    mode = get_settings().inquiry_agent
+    if mode == "on" or (mode == "auto" and inquiry_agent.needs_agent(question, grounding)):
         agent = _try_agent(grounding, system, question, intent)
         if agent is not None:
             return agent

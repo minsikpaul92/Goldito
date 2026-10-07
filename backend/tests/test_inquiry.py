@@ -104,6 +104,8 @@ def setup(monkeypatch):
         monkeypatch.setattr(rag, "search", search)
         monkeypatch.setattr(rag, "index_source", lambda _db, **kw: indexed.append(kw) or 1)
         monkeypatch.setattr(nebius, "chat_json", model)
+        # One grounded call unless a test turns the agent on.
+        monkeypatch.setattr(ai_inquiry, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", inquiry_agent="off"))
         monkeypatch.setattr(nebius, "embed", lambda texts, **kw: [[0.1] * 3 for _ in texts])
         return SimpleNamespace(db=db, model=model, indexed=indexed, searches=searches)
 

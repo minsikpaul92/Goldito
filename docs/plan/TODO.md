@@ -273,7 +273,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 ---
 
-## Waiting on a go-ahead (hosted project `Pawddy`, ca-central-1)
+## Hosted DB status (project `Pawddy`, ca-central-1) — 2026-10-07
 
-- [ ] **Apply `010` → `010d` to the hosted DB** (Supabase MCP `apply_migration` was refused by the permission classifier on 2026-10-07; run it once the user allows it, or paste the four files into the SQL Editor in order). Then `scripts/seed_tone.py --apply` and the two-account run (test-guide INQ-1…18).
-- [ ] **Rename the demo people in the hosted DB** to match the repo (2026-10-07 rename: owner Chloe → **Robert**, sitter Lucy → **Chloe**): `update public.profiles set display_name = 'Robert' where display_name = 'Chloe' and role = 'owner'; update public.profiles set display_name = 'Chloe' where display_name = 'Lucy' and role = 'sitter';` — the order matters. Demo logins (`demo-owner@` / `demo-sitter@pawddy.test`) do not change.
+- [x] `010` → `010d` applied through the Supabase MCP (advisors: only `knowledge_chunks` / `tone_samples` report "RLS enabled, no policy" — intended, they are service-role only).
+- [x] Demo people renamed in the DB: owner **Robert**, sitter **Chloe** (logins `demo-owner@` / `demo-sitter@` unchanged).
+- [x] `scripts/seed_tone.py --apply`: sitter Chloe has her style card and 3 example replies (emoji-rich, friendly). The second style (plain, no emoji — "Paul") is in the file but there is no second sitter account yet; it is seeded by the Phase 10 demo seed.
+- [ ] Two-account run of test-guide **INQ-1 … INQ-18** and **REPORT-10** (human).
