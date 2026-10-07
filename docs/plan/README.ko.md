@@ -1,4 +1,4 @@
-# Pawddy — 개발 계획 (팀 내부용)
+# Goldito — 개발 계획 (팀 내부용)
 
 🇺🇸 English: [README.md](README.md) · 제품 소개: [../README.ko.md](../README.ko.md) · 해커톤 규정: [../hackathon/README.ko.md](../hackathon/README.ko.md) · **P0 Todo & AI 프롬프트:** [P0-ai-prompt-playbook.ko.md](P0-ai-prompt-playbook.ko.md) · **Phase별 Goal:** [phases/README.ko.md](phases/README.ko.md) · **진행 Todo:** [TODO.md](TODO.md) · **AI 규칙:** [CLAUDE.md](../../CLAUDE.md)
 
@@ -41,7 +41,7 @@
 
 구 P2 "AI 1차 답변 Q&A"는 Stage 1 문의 AI(07B, P0)로 흡수되었습니다.
 
-데모 기준: README의 **5단계 흐름**(*How Pawddy Works* → *A Stay with Pawddy*)이 처음부터 끝까지 동작해야 합니다.
+데모 기준: README의 **5단계 흐름**(*How Goldito Works* → *A Stay with Goldito*)이 처음부터 끝까지 동작해야 합니다.
 
 해커톤 이후 (우선순위 마지막): **시터 전용 데스크톱 웹** — 스케줄 작성·알림장 작업을 컴퓨터에서 빠르게 (사이드바 레이아웃). 견주는 계속 폰 화면. 전체 로드맵은 [README.md](README.md#post-hackathon-roadmap-not-built-for-the-hackathon), 설계 대비는 architecture D25.
 

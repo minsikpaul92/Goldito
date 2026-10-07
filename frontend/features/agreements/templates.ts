@@ -36,7 +36,7 @@ export const CONSENT_TEMPLATES: Record<ConsentKind, ConsentTemplate> = {
       "it is safe to do so. Costs above the limit need your separate approval unless a",
       "clinician says delay would put the pet at serious risk.",
       "",
-      "This is a demo template for the Pawddy hackathon — not legal advice.",
+      "This is a demo template for the Goldito hackathon — not legal advice.",
     ].join("\n"),
   },
   safe_return: {
@@ -54,7 +54,7 @@ export const CONSENT_TEMPLATES: Record<ConsentKind, ConsentTemplate> = {
       "until you confirm a change in the app. You are responsible for keeping the",
       "receiver name up to date before pick-up.",
       "",
-      "This is a demo template for the Pawddy hackathon — not legal advice.",
+      "This is a demo template for the Goldito hackathon — not legal advice.",
     ].join("\n"),
   },
   handoff_rules: {
@@ -69,10 +69,10 @@ export const CONSENT_TEMPLATES: Record<ConsentKind, ConsentTemplate> = {
     body: [
       "Boarding handoffs happen at the agreed times and places. Please respect visitor",
       "parking, lobby, and building rules the sitter shares after payment. If you will",
-      "be more than 15 minutes late, message the sitter in Pawddy so they can adjust.",
+      "be more than 15 minutes late, message the sitter in Goldito so they can adjust.",
       "Repeated no-shows may lead the sitter to cancel the stay.",
       "",
-      "This is a demo template for the Pawddy hackathon — not legal advice.",
+      "This is a demo template for the Goldito hackathon — not legal advice.",
     ].join("\n"),
   },
   cohabitation: {
@@ -90,7 +90,7 @@ export const CONSENT_TEMPLATES: Record<ConsentKind, ConsentTemplate> = {
       "reactivity in the care request. The sitter will use crates, rooms, or staggered",
       "schedules when that is safer. Serious incidents should be reported in the app.",
       "",
-      "This is a demo template for the Pawddy hackathon — not legal advice.",
+      "This is a demo template for the Goldito hackathon — not legal advice.",
     ].join("\n"),
   },
   home_access: {
@@ -104,12 +104,12 @@ export const CONSENT_TEMPLATES: Record<ConsentKind, ConsentTemplate> = {
     ],
     body: [
       "When care happens at your home (house sitting or a sitter-drive handoff), you",
-      "authorize the booked sitter to use the entry method you save in Pawddy —",
+      "authorize the booked sitter to use the entry method you save in Goldito —",
       "lockbox code, keys, buzzer, or fob notes. Access details stay locked until two",
       "hours before the agreed arrival and lock again after the stay ends. Do not share",
       "real production codes in this demo; use obviously fake values.",
       "",
-      "This is a demo template for the Pawddy hackathon — not legal advice.",
+      "This is a demo template for the Goldito hackathon — not legal advice.",
     ].join("\n"),
   },
 };

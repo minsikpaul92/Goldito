@@ -382,7 +382,7 @@ test.describe("owner questions list", () => {
     await expect(screen.getByTestId("question-card-inq-b")).toContainText("Reply ready");
     await expect(screen.getByTestId("question-card-inq-c")).toContainText("Booking requested");
     // Newest first.
-    const ids = await page.frameLocator('iframe[title="Pawddy app"]').locator("[data-testid^='question-card-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    const ids = await page.frameLocator('iframe[title="Goldito app"]').locator("[data-testid^='question-card-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
     expect(ids).toEqual([`question-card-${INQ}`, "question-card-inq-b", "question-card-inq-c"]);
     await screen.getByTestId("question-card-inq-b").click();
     await expect(page).toHaveURL(/\/owner\/inquiries\/inq-b$/);

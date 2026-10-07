@@ -22,7 +22,7 @@ M1, M2 = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222
 def media_row(media_id: str, **over) -> dict:
     return {
         "id": media_id, "pet_id": PET_ID, "uploaded_by": SITTER_ID, "purpose": "report", "resource_type": "image",
-        "cloudinary_public_id": f"pawddy/{PET_ID}/report/{media_id[:4]}", **over,
+        "cloudinary_public_id": f"goldito/{PET_ID}/report/{media_id[:4]}", **over,
     }
 
 

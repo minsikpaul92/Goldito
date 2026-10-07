@@ -113,7 +113,7 @@ test.describe("auth and role routing", () => {
 
     await screen.getByTestId("role-owner").click();
     await screen.getByTestId("signup-name").fill("Robert");
-    await screen.getByTestId("signup-email").fill("robert@pawddy");
+    await screen.getByTestId("signup-email").fill("robert@goldito");
     await screen.getByTestId("signup-password").fill("max-and-mochi");
     await screen.getByTestId("signup-confirm").fill("max-and-moch");
     await expect(screen.getByText("Passwords don't match.")).toBeVisible();

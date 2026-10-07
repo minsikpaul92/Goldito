@@ -86,7 +86,7 @@ export default function SitterProfileScreen() {
   if (profile.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left Pawddy." />
+        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left Goldito." />
       </Screen>
     );
   }

@@ -257,7 +257,7 @@ export default function ProfileScreen() {
       ) : null}
       {loaded.role === "sitter" ? (
         <Text style={styles.muted} testID="profile-ai-notice">
-          Pawddy may use AI writing assistance to draft your replies and daily notes in your voice. You approve everything
+          Goldito may use AI writing assistance to draft your replies and daily notes in your voice. You approve everything
           before it is sent.
         </Text>
       ) : null}

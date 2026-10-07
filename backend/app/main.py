@@ -21,7 +21,7 @@ from app.routers import (
 
 settings = get_settings()
 
-app = FastAPI(title="Pawddy API", version="0.1.0")
+app = FastAPI(title="Goldito API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

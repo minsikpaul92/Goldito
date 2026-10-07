@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from app.ai.prompts import load_prompt
 from app.services import nebius
 
-log = logging.getLogger("pawddy.ai")
+log = logging.getLogger("goldito.ai")
 
 EXAMPLES = 3
 CONTEXT_MAX = 600

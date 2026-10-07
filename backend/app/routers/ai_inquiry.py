@@ -24,7 +24,7 @@ from app.deps.supabase import get_service_client
 from app.services import authz, nebius, rag
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
-log = logging.getLogger("pawddy.ai")
+log = logging.getLogger("goldito.ai")
 
 TIMEOUT_S = 45.0  # architecture §7: inquiry-reply 45 s
 MAX_TOKENS = 350

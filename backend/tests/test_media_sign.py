@@ -32,7 +32,7 @@ def isolated_settings(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("SUPABASE_URL", SUPABASE_URL)
     monkeypatch.setenv("SUPABASE_JWT_SECRET", JWT_SECRET)
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role-test")
-    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "pawddy-test")
+    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "goldito-test")
     monkeypatch.setenv("CLOUDINARY_API_KEY", "123456789012345")
     monkeypatch.setenv("CLOUDINARY_API_SECRET", "cloudinary-api-secret-for-tests")
     get_settings.cache_clear()
@@ -109,7 +109,7 @@ def test_owner_signs_feed_photo_for_own_pet(client: TestClient, monkeypatch: pyt
             api_key="k",
             timestamp=1,
             signature="s",
-            folder=f"pawddy/{kw['pet_id']}/{kw['purpose']}",
+            folder=f"goldito/{kw['pet_id']}/{kw['purpose']}",
             upload_url="u",
             transformation="t",
         ),
@@ -151,12 +151,12 @@ def test_sign_returns_folder_and_signature(client: TestClient, monkeypatch: pyte
         cloudinary_service,
         "sign",
         lambda **kwargs: SimpleNamespace(
-            cloud_name="pawddy-test",
+            cloud_name="goldito-test",
             api_key="123456789012345",
             timestamp=1_700_000_000,
             signature="sig-abc",
-            folder=f"pawddy/{kwargs['pet_id']}/{kwargs['purpose']}",
-            upload_url="https://api.cloudinary.com/v1_1/pawddy-test/image/upload",
+            folder=f"goldito/{kwargs['pet_id']}/{kwargs['purpose']}",
+            upload_url="https://api.cloudinary.com/v1_1/goldito-test/image/upload",
             transformation=cloudinary_service.INCOMING_IMAGE,
         ),
     )
@@ -167,10 +167,10 @@ def test_sign_returns_folder_and_signature(client: TestClient, monkeypatch: pyte
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["folder"] == f"pawddy/{PET_ID}/feed"
+    assert body["folder"] == f"goldito/{PET_ID}/feed"
     assert body["signature"] == "sig-abc"
     assert body["upload_url"].endswith("/image/upload")
-    assert body["cloud_name"] == "pawddy-test"
+    assert body["cloud_name"] == "goldito-test"
     assert body["transformation"] == cloudinary_service.INCOMING_IMAGE
 
 
@@ -191,7 +191,7 @@ def test_complete_rejects_folder_traversal(client: TestClient, monkeypatch: pyte
         headers={"Authorization": f"Bearer {sitter_token()}"},
         json={
             "pet_id": PET_ID,
-            "public_id": "pawddy/other-pet/feed/hack",
+            "public_id": "goldito/other-pet/feed/hack",
             "resource_type": "image",
             "purpose": "feed",
         },
@@ -213,12 +213,12 @@ def test_handoff_uses_booked_sitter_check(client: TestClient, monkeypatch: pytes
         cloudinary_service,
         "sign",
         lambda **kwargs: SimpleNamespace(
-            cloud_name="pawddy-test",
+            cloud_name="goldito-test",
             api_key="k",
             timestamp=1,
             signature="s",
-            folder=f"pawddy/{kwargs['pet_id']}/handoff",
-            upload_url="https://api.cloudinary.com/v1_1/pawddy-test/image/upload",
+            folder=f"goldito/{kwargs['pet_id']}/handoff",
+            upload_url="https://api.cloudinary.com/v1_1/goldito-test/image/upload",
             transformation=cloudinary_service.INCOMING_IMAGE,
         ),
     )
@@ -370,7 +370,7 @@ def test_sign_endpoint_rejects_bad_trim(
 def _complete_body() -> dict:
     return {
         "pet_id": PET_ID,
-        "public_id": f"pawddy/{PET_ID}/feed/abc",
+        "public_id": f"goldito/{PET_ID}/feed/abc",
         "resource_type": "image",
         "purpose": "feed",
         "width": 1,
@@ -412,7 +412,7 @@ def test_complete_conflicts_when_another_user_registered_it(
                 "id": "m1",
                 "uploaded_by": "someone-else",
                 "pet_id": PET_ID,
-                "cloudinary_public_id": f"pawddy/{PET_ID}/feed/abc",
+                "cloudinary_public_id": f"goldito/{PET_ID}/feed/abc",
             }
         ]
     )

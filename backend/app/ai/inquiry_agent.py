@@ -14,7 +14,7 @@ from collections.abc import Callable
 from app.ai import inquiry as logic
 from app.services import nebius
 
-log = logging.getLogger("pawddy.ai")
+log = logging.getLogger("goldito.ai")
 
 MAX_ROUNDS = 4
 TIMEOUT_S = 25.0

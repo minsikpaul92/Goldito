@@ -84,7 +84,7 @@ export default function SignupScreen() {
 
       <View style={styles.header}>
         <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>First, how will you use Pawddy?</Text>
+        <Text style={styles.subtitle}>First, how will you use Goldito?</Text>
       </View>
 
       {!isSupabaseConfigured ? (

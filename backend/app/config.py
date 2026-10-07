@@ -75,7 +75,7 @@ class Settings(BaseSettings):
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
 
-    # Video Meet & Greet (3B.11, D45): the Pawddy Google account creates Calendar events
+    # Video Meet & Greet (3B.11, D45): the Goldito Google account creates Calendar events
     # with a Google Meet link. The refresh token comes from one consent by that account.
     google_oauth_client_id: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_ID")
     google_oauth_client_secret: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_SECRET")

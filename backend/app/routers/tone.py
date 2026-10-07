@@ -18,7 +18,7 @@ from app.deps.supabase import get_service_client
 from app.services import nebius
 
 router = APIRouter(prefix="/api/tone", tags=["tone"])
-log = logging.getLogger("pawddy.ai")
+log = logging.getLogger("goldito.ai")
 
 
 class RecordRequest(BaseModel):

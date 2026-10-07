@@ -142,7 +142,7 @@ def test_role_comes_from_profiles_not_token_metadata(client: TestClient) -> None
 def test_me_without_profile_is_403(client: TestClient) -> None:
     response = client.get("/api/me", headers=bearer(hs256(claims(NO_PROFILE_ID))))
     assert response.status_code == 403
-    assert response.json() == {"detail": "No Pawddy profile for this account.", "code": "forbidden"}
+    assert response.json() == {"detail": "No Goldito profile for this account.", "code": "forbidden"}
 
 
 def test_require_role_lets_only_that_role_through() -> None:

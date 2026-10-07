@@ -37,7 +37,7 @@ from app.deps.supabase import get_service_client
 from app.services import authz, nebius
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
-logger = logging.getLogger("pawddy.ai")
+logger = logging.getLogger("goldito.ai")
 
 TIMEOUT_S = 60.0
 MAX_TOKENS = 400

@@ -4,19 +4,19 @@ After three years of pet sitting dogs and cats, we watched the same things go wr
 
 Existing pet-care and sitter apps help with booking and photo updates, but the work in between still happens in chat. We wanted to go one step further and fix the whole journey, not one screen: an app that covers every step of a stay, from the first question to the ride home, with an AI agent that does the typing so the sitter can just care.
 
-**Pawddy** is that product: owners never need to ask; sitters just care, snap, and tap.
+**Goldito** is that product: owners never need to ask; sitters just care, snap, and tap.
 
 ## What it does
 
-Pawddy covers a pet stay in **five stages**, for dogs and cats:
+Goldito covers a pet stay in **five stages**, for dogs and cats:
 
-1. **Inquiry** — The owner asks about a stay (boarding or house sitting, dates, pets). Pawddy AI drafts a reply **in the sitter's own writing style** in seconds, using the sitter's calendar, a server-calculated quote (holiday and multi-pet rates), the house policy, and the pet's Life Record. The sitter sends it with one tap, or opts into auto-send with a human-paced "typing…" delay.
+1. **Inquiry** — The owner asks about a stay (boarding or house sitting, dates, pets). Goldito AI drafts a reply **in the sitter's own writing style** in seconds, using the sitter's calendar, a server-calculated quote (holiday and multi-pet rates), the house policy, and the pet's Life Record. The sitter sends it with one tap, or opts into auto-send with a human-paced "typing…" delay.
 2. **Meet & Greet** — The owner writes a care and medication request like a note; Nemotron turns it into a timed mission checklist and Heads-up cards. First-time pairs meet in person or on **Google Meet** (link and calendar invite created automatically) before the sitter accepts.
 3. **Booking** — Canada-first consent forms (emergency vet authorization, lockbox and buzzer use, shared space, safe return), a demo payment, and **timed unlock**: the sitter's address appears after payment, while the owner's lockbox and buzzer codes unlock for the sitter only 2 hours before the visit.
-4. **Care & Pet Transit** — Live trip with map and ETA, a photo check at the handoff (vision model confirms the pet is there and secured), then a **5-second check**: Pawddy suggests chips from the day's check-ins and photos, the sitter turns off anything wrong, and Nemotron writes the daily note in the sitter's voice. It posts only after the sitter approves. Every photo gets a caption and lands in a day-by-day album sorted into Meals, Walks, and Naps.
+4. **Care & Pet Transit** — Live trip with map and ETA, a photo check at the handoff (vision model confirms the pet is there and secured), then a **5-second check**: Goldito suggests chips from the day's check-ins and photos, the sitter turns off anything wrong, and Nemotron writes the daily note in the sitter's voice. It posts only after the sitter approves. Every photo gets a caption and lands in a day-by-day album sorted into Meals, Walks, and Naps.
 5. **Completion** — "Max is home safe" with a photo, a 5-star review, and a **Pet Life Record** built from the whole stay and stored in a RAG knowledge base. The next booking, even with a new sitter, starts informed.
 
-Pawddy's AI works like an agent: each event in a stay triggers it, it gathers facts, acts, and remembers. A person approves anything that reaches the other side. Prices, dates, and entry codes never come from the model, and entry codes never enter prompts or RAG.
+Goldito's AI works like an agent: each event in a stay triggers it, it gathers facts, acts, and remembers. A person approves anything that reaches the other side. Prices, dates, and entry codes never come from the model, and entry codes never enter prompts or RAG.
 
 **Demo tip:** open it on a computer. The app runs inside a phone frame (click = tap, drag = swipe), with sample photos and a **Simulate the drive** button, so no camera or GPS is needed.
 
@@ -66,7 +66,7 @@ We worked from a single product-flow document (the 5 stages), a phase-by-phase p
 - **RLS and grants are the product.** If the wrong person can see a pet or an entry code, no UI polish matters.
 - A hackathon demo is as much process (a task queue, per-phase definitions of done, migrations, smoke tests) as it is models.
 
-## What's next for Pawddy
+## What's next for Goldito
 
 - **Real payments** (Stripe, refunds, taxes) in place of the demo payment.
 - **Road-based ETA** with a routing API, address search, and background location on native apps.

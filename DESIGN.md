@@ -1,4 +1,4 @@
-# Pawddy — Design Guide
+# Goldito — Design Guide
 
 > **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
 > Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` / `themes.ts` first, then this file.
@@ -12,7 +12,7 @@ This file is written for both people and AI coding agents. Before building any s
 
 ## 1. Product feel
 
-Pawddy is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
+Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
 
 | Keyword | Means in UI |
 | :--- | :--- |
@@ -270,7 +270,7 @@ Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components
 - Visual: Ionicons `chevron-back` + the word **Back** (same row, `primary` color).
 - Placement: top of the screen (or the tour top bar), left-aligned, 44 px min hit area.
 - Behavior: go to the previous step or parent route (e.g. Login → `/welcome`, onboarding step 0 → role landing). Prefer `router.push` / `replace` to a known parent over inventing a second marketing link.
-- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How Pawddy works”) for the same job.
+- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How Goldito works”) for the same job.
 
 ### 7.9 Welcome / role onboarding
 

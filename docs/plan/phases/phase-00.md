@@ -36,7 +36,7 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 | ID | 작업 | 담당 | 상세 체크리스트 |
 | :--- | :--- | :--- | :--- |
 | 0.1 | Supabase 프로젝트 | 민식 | ① 리전: **Canada Central 또는 US East** (팀·심사 북미) ② Auth → Providers → Email ON, **Confirm email OFF** (D15) ③ Settings → API에서 URL·anon·service_role 복사 ④ Settings → JWT: signing key 종류(**asymmetric JWKS vs legacy HS256**) 메모 → HS256이면 `SUPABASE_JWT_SECRET`도 복사 (D14) ⑤ 무료 tier: **7일 비활성 시 일시정지** 확인 → Phase 10.7 keep-alive 필요 |
-| 0.2 | Cloudinary | 민식 | cloud name, API key/secret. **unsigned preset 만들지 않음** (signed only). 폴더 규칙은 서버가 강제: `pawddy/{pet_id}/{purpose}/` |
+| 0.2 | Cloudinary | 민식 | cloud name, API key/secret. **unsigned preset 만들지 않음** (signed only). 폴더 규칙은 서버가 강제: `goldito/{pet_id}/{purpose}/` |
 | 0.3 | Nebius Token Factory | 슬기 | ① 크레딧 코드 적용 ② `GET /v1/models`를 **두 base URL**(eu-north1, us-central1)에 각각 호출 ③ 아래 4개 role별 model ID·base URL 확정 ④ `notes/model-ids.md`에 표 + 호출일 기록 ⑤ Nano Omni 없으면 fallback 비전 모델 ID 기록 (NVIDIA 모델이 아닐 경우 README에 명시) |
 | 0.4 | Tavily | 슬기·민식 | [tavily.com](https://tavily.com) API Key → `TAVILY_API_KEY`. Builders & Brews Toronto **8,000 credits** (Phase 08.7) |
 | 0.5 | `.env` | 민식 | Phase 01.1이 만든 `.env.example` 복사 → 값 채움. `git status`에 `.env`가 안 보이는지 확인 |

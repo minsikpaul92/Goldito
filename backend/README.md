@@ -1,4 +1,4 @@
-# Pawddy backend
+# Goldito backend
 
 FastAPI (Python 3.12): Cloudinary signing, JWT-protected routes, Nemotron via Nebius Token Factory.
 
@@ -28,7 +28,7 @@ Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost
 Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty for (`is_on_duty_for`).
 
 1. Get a sitter token (sign in as demo sitter in the app, then from the browser console on the phone frame page):  
-   `JSON.parse(localStorage.getItem("pawddy-auth")).access_token`
+   `JSON.parse(localStorage.getItem("goldito-auth")).access_token`
 2. Sign:
    ```bash
    curl -s localhost:8000/api/media/sign \
@@ -40,7 +40,7 @@ Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty 
    ```bash
    curl -s localhost:8000/api/media/complete \
      -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-     -d '{"pet_id":"'$PET_ID'","public_id":"pawddy/'$PET_ID'/feed/…","resource_type":"image","purpose":"feed"}'
+     -d '{"pet_id":"'$PET_ID'","public_id":"goldito/'$PET_ID'/feed/…","resource_type":"image","purpose":"feed"}'
    ```
 5. Confirm a `media` row in Supabase (`cloudinary_public_id`, `purpose`).
 
@@ -50,7 +50,7 @@ App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / f
 
 ### Images for the model (D12)
 
-`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for MiniCPM-V. It raises `ValueError` for ids outside `pawddy/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
+`app.services.cloudinary.fetch_as_data_url(public_id, resource_type)` returns the 1024 px JPEG (a video gives its first frame) as `data:image/jpeg;base64,…` for MiniCPM-V. It raises `ValueError` for ids outside `goldito/…` and `MediaFetchError` when Cloudinary cannot deliver the image. It does not check who owns the media — the calling AI route must.
 
 ## Auth (who may call what)
 
@@ -61,11 +61,11 @@ App pick path: `pickMedia()` (`frontend/lib/media.ts`) opens the sample tray / f
 - `require_role("sitter")` → 403 `{"detail": "This action is for sitters.", "code": "forbidden"}` for the other role.
 - Errors: no / bad / expired token → 401 `unauthorized`; valid token but no `profiles` row → 403 `forbidden`; JWKS unreachable → 502 `upstream_error`.
 
-`GET /api/me` with a real token (sign in on the web app first; the session is stored under `pawddy-auth`):
+`GET /api/me` with a real token (sign in on the web app first; the session is stored under `goldito-auth`):
 
 ```bash
 # Browser console on http://localhost:8081 (inside the phone frame's page, same origin):
-#   JSON.parse(localStorage.getItem("pawddy-auth")).access_token
+#   JSON.parse(localStorage.getItem("goldito-auth")).access_token
 curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 # → {"id":"…","email":"…","role":"owner","display_name":"…"}
 ```

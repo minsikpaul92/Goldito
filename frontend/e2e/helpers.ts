@@ -2,7 +2,7 @@ import type { FrameLocator, Locator, Page } from "@playwright/test";
 
 import type { MockUser } from "./supabaseMock";
 
-export const APP_FRAME = 'iframe[title="Pawddy app"]';
+export const APP_FRAME = 'iframe[title="Goldito app"]';
 
 type Point = { x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };

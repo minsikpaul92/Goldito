@@ -180,12 +180,12 @@ def test_creates_the_event_saves_the_link_and_tells_both_sides() -> None:
     assert response.json() == {"link": MEET, "status": "created"}
     kind, kwargs = meet.calls[0]
     assert kind == "create"
-    assert kwargs["summary"] == "Pawddy Meet & Greet — Max, Mochi & Chloe"
+    assert kwargs["summary"] == "Goldito Meet & Greet — Max, Mochi & Chloe"
     assert kwargs["start"] == AT
     assert kwargs["timezone"] == "America/Toronto"
     # The demo .test address never gets an invite.
     assert kwargs["attendees"] == ["robert@example.com"]
-    assert kwargs["request_id"] == f"pawddy-{BOOKING_ID}-{int(AT.timestamp())}"
+    assert kwargs["request_id"] == f"goldito-{BOOKING_ID}-{int(AT.timestamp())}"
     assert store.saved == [{"booking_id": BOOKING_ID, "link": MEET, "event_id": "evt-1"}]
     assert store.notices == [
         {
@@ -317,7 +317,7 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
     event = client.create(
         request_id="req-1",
-        summary="Pawddy Meet & Greet — Max & Chloe",
+        summary="Goldito Meet & Greet — Max & Chloe",
         start=AT,
         attendees=["robert@example.com"],
         timezone="America/Toronto",

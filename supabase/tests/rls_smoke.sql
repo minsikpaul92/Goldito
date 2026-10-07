@@ -1,4 +1,4 @@
--- Pawddy RLS + booking smoke test (Phase 02 DoD 2)
+-- Goldito RLS + booking smoke test (Phase 02 DoD 2)
 --
 -- Run after all migrations (001–007) in the Supabase SQL Editor (as postgres), or locally with
 -- tests/supabase_stub.sql first (see supabase/README.md). Everything runs in one transaction
