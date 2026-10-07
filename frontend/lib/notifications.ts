@@ -136,7 +136,8 @@ export function hrefForNotification(
     case "care_counter_accepted":
       return role === "sitter" ? "/sitter/tasks" : null;
     case "report_sent":
-      return role === "owner" ? "/owner/diary" : null;
+      if (role !== "owner") return null;
+      return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";
     case "booking_requested":
       return role === "sitter" ? bookingHref(notice.bookingId) : null;
     case "checkout_needed":

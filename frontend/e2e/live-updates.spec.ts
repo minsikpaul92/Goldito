@@ -99,7 +99,7 @@ test.describe("owner live updates", () => {
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
 
-  test("with nothing new Home says so; the Diary tab waits for the sitter's written diary", async ({ page }) => {
+  test("with nothing new Home says so; the Diary tab waits for the sitter's daily note", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" });
     await signIn(page, OWNER);
@@ -107,7 +107,7 @@ test.describe("owner live updates", () => {
     await expect(app(page).getByTestId("live-empty")).toContainText("Nothing new");
 
     await page.goto("/owner/diary");
-    await expect(app(page).getByText("When your sitter writes up the day", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("When a stay is on, updates show up here live", { exact: false })).toBeVisible();
     await app(page).getByRole("button", { name: "Open History" }).click();
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });

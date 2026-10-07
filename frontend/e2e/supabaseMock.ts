@@ -182,6 +182,8 @@ export type MockDb = {
   /** Feed posts + media rows (Phase 05 upload path). */
   feed_posts: Row[];
   media: Row[];
+  /** AI drafts (private to the sitter) and sent reports (Phase 07). */
+  daily_reports: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -224,6 +226,7 @@ function createMockDb(): MockDb {
     notifications: [],
     feed_posts: [],
     media: [],
+    daily_reports: [],
   };
 }
 
@@ -418,6 +421,8 @@ function matches(row: Row, params: URLSearchParams): boolean {
       if (!(String(row[key]) <= raw.slice(4))) return false;
     } else if (raw.startsWith("gte.")) {
       if (!(String(row[key]) >= raw.slice(4))) return false;
+    } else if (raw.startsWith("lt.")) {
+      if (!(String(row[key]) < raw.slice(3))) return false;
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
@@ -930,6 +935,29 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, req);
   }
 
+  if (path === "rpc/send_daily_report") {
+    const { p_report, p_body } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report || report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (report.status !== "draft") return json(route, 400, { code: "P0001", message: "report_already_sent" });
+    if (!String(p_body ?? "").trim()) return json(route, 400, { code: "P0001", message: "body_required" });
+    Object.assign(report, { body: String(p_body).trim(), status: "sent", sent_at: new Date().toISOString() });
+    const pet = db.pets.find((p) => p.id === report.pet_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "report_sent",
+      title: `${users.find((u) => u.id === me)?.displayName} sent ${pet?.name}'s daily report 📓`,
+      body: String(p_body).trim().slice(0, 140),
+      pet_id: report.pet_id,
+      booking_id: null,
+      ref_id: report.id,
+      read_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return json(route, 200, report);
+  }
+
   if (path === "rpc/log_care_checkin") {
     const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
@@ -1070,7 +1098,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         matches(row, params) &&
         (path !== "notifications" || row.user_id === me) &&
         // RLS: a private post is only visible to its author (5.8).
-        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private"),
+        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
+        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
+        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent"),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -1137,6 +1167,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           completed: nameOf(log.completed_by),
         };
       });
+    }
+    if (path === "daily_reports" && select.includes("pets(")) {
+      rows = rows.map((r) => ({
+        ...r,
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
+      }));
     }
     if (path === "care_change_requests") {
       rows = rows
