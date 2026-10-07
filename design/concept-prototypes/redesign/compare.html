@@ -119,7 +119,7 @@
   const W = 402, H = 874; // design frame size
   const $ = (s) => document.querySelector(s);
   const stage = $("#stage"), seg = $("#seg"), sel = $("#flowSel");
-  let flow = FLOWS[0], view = "a", run = 0;
+  let flow = FLOWS[0], view = "a", run = Date.now(); // unique per visit, so frames never load a cached copy
   const loaded = {}; // concept key → flow id currently loaded in its frame
 
   const store = {

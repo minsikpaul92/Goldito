@@ -33,12 +33,12 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme:dark;
-    --bg:#121416; --surface:#1B1E21; --text:#F2F0EC; --text-muted:#A9A49C;
-    --border:#2C3034; --success:#3DD68C; --success-bg:#0F2A1E;
+    --bg:#121312; --surface:#1A1B1A; --text:#EDEDEA; --text-muted:#A3A39C;
+    --border:#2C2D2B; --success:#3DD68C; --success-bg:#0F2A1E;
     --error:#FF6B5E; --error-bg:#2E1512;
     --frame-backdrop:#0B0C0D; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-    --primary:#6CCB9A; --primary-foreground:#0E1012; --primary-text:#6CCB9A; --primary-soft:#1F3329;
-    --tint-bg:#121416; --tint-surface:#1B1E21; --tint-border:#2C3034;
+    --primary:#7CCBA2; --primary-foreground:#0E1210; --primary-text:#7CCBA2; --primary-soft:#1E3128;
+    --tint-bg:#121312; --tint-surface:#1A1B1A; --tint-border:#2C2D2B;
     --scrim:rgba(0,0,0,.55);
     --ring:0 0 0 1px var(--tint-border);
     --shadow-1:0 1px 2px 0 rgba(0,0,0,.3);
@@ -48,12 +48,12 @@
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#121416; --surface:#1B1E21; --text:#F2F0EC; --text-muted:#A9A49C;
-  --border:#2C3034; --success:#3DD68C; --success-bg:#0F2A1E;
+  --bg:#121312; --surface:#1A1B1A; --text:#EDEDEA; --text-muted:#A3A39C;
+  --border:#2C2D2B; --success:#3DD68C; --success-bg:#0F2A1E;
   --error:#FF6B5E; --error-bg:#2E1512;
   --frame-backdrop:#0B0C0D; --frame-bezel:#000000; --frame-shadow:rgba(0,0,0,.5);
-  --primary:#6CCB9A; --primary-foreground:#0E1012; --primary-text:#6CCB9A; --primary-soft:#1F3329;
-  --tint-bg:#121416; --tint-surface:#1B1E21; --tint-border:#2C3034;
+  --primary:#7CCBA2; --primary-foreground:#0E1210; --primary-text:#7CCBA2; --primary-soft:#1E3128;
+  --tint-bg:#121312; --tint-surface:#1A1B1A; --tint-border:#2C2D2B;
   --scrim:rgba(0,0,0,.55);
   --ring:0 0 0 1px var(--tint-border);
   --shadow-1:0 1px 2px 0 rgba(0,0,0,.3);
@@ -928,6 +928,7 @@ button{font-family:inherit;color:inherit}
 .jr-day.full{color:var(--text-muted);text-decoration:line-through;cursor:not-allowed}
 .jr-day.hol::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor}
 .jr-day.pad{pointer-events:none}
+.jr-datefield>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 
 /* ==========================================================================
    Onboarding layer (shared). The layer carries class "jr", so each concept's
@@ -2378,7 +2379,7 @@ const NEUTRAL_SAT = 18;
 function presetIndexFor(hue, sat){
   if(sat < NEUTRAL_SAT){
     const warm = hue >= 10 && hue <= 70;
-    return PRESETS.findIndex(p => p.name === (warm ? "Umber" : "Slate"));
+    return PRESETS.findIndex(p => p.name === "Forest"); // neutral coat → brand green (DESIGN.md §3.1)
   }
   return nearestPresetIndex(hue);
 }
@@ -2597,7 +2598,9 @@ function applyThemeVars(vars){
 function keepTheme(){
   if(state.presetIdx === null) return;
   const preset = PRESETS[state.presetIdx];
-  applyThemeVars(buildThemeVars(preset, colorForPreset(preset)));
+  // Forest = the brand: use the design-system tokens as they are (no computed tint).
+  if(preset.name === "Forest") applyThemeVars({light:{}, dark:{}});
+  else applyThemeVars(buildThemeVars(preset, colorForPreset(preset)));
   $("#keepBtn").style.removeProperty("--primary");
   $("#keepBtn").style.removeProperty("--primary-foreground");
   // Onboarding may show Health & care + Updates first (already in the new colors).
@@ -3031,7 +3034,7 @@ document.addEventListener("DOMContentLoaded", () => {
     celebrate: (kind, el) => floatBurst(el, "paw", 6),
     splash: welcomeWalk,
     skipToApp: () => { state.presetIdx = null; goToStep(2);
-      const t = setInterval(() => { if(state.presetIdx !== null){ clearInterval(t); keepTheme(); } }, 40); },
+      const t = setInterval(() => { if(state.presetIdx !== null){ clearInterval(t); state.presetIdx = PRESETS.findIndex(p => p.name === "Forest"); keepTheme(); } }, 40); },
   });
 });
 

@@ -1041,6 +1041,7 @@ button{font:inherit;color:inherit}
 .jr-day.full{color:var(--text-muted);text-decoration:line-through;cursor:not-allowed}
 .jr-day.hol::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor}
 .jr-day.pad{pointer-events:none}
+.jr-datefield>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 
 /* ==========================================================================
    Onboarding layer (shared). The layer carries class "jr", so each concept's
@@ -2488,7 +2489,7 @@ const NEUTRAL_SAT = 18;
 function presetIndexFor(hue, sat){
   if(sat < NEUTRAL_SAT){
     const warm = hue >= 10 && hue <= 70;
-    return PRESETS.findIndex(p => p.name === (warm ? "Umber" : "Slate"));
+    return PRESETS.findIndex(p => p.name === "Forest"); // neutral coat → brand green (DESIGN.md §3.1)
   }
   return nearestPresetIndex(hue);
 }
@@ -3125,7 +3126,7 @@ document.addEventListener("DOMContentLoaded", () => {
     celebrate: (kind, el) => pawBurst(el, 6),
     splash: () => playWelcome(() => {}),
     skipToApp: () => { state.presetIdx = null; goToStep(2);
-      const t = setInterval(() => { if(state.presetIdx !== null){ clearInterval(t); keepTheme(); } }, 40); },
+      const t = setInterval(() => { if(state.presetIdx !== null){ clearInterval(t); state.presetIdx = PRESETS.findIndex(p => p.name === "Forest"); keepTheme(); } }, 40); },
   });
 });
 

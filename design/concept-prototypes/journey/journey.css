@@ -214,3 +214,4 @@
 .jr-day.full{color:var(--text-muted);text-decoration:line-through;cursor:not-allowed}
 .jr-day.hol::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor}
 .jr-day.pad{pointer-events:none}
+.jr-datefield>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
