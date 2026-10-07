@@ -164,7 +164,12 @@ async function buildScreens(page, datasets, log, componentsPage) {
     try { await loadLibrary(componentsPage); await initDS(SAMPLE); COMPOSED_SCREENS = await buildComposedScreens(log); }
     catch (e) { log.push(`Component-built screens skipped: ${e.message || e}`); COMPOSED_SCREENS = []; }
   }
-  for (const n of page.children.filter((c) => c.getPluginData("pawnote") === "screens")) n.remove();
+  // Sections are kept (emptied and refilled) so their node IDs stay stable: the design review links to them.
+  const oldSections = new Map();
+  for (const n of page.children.filter((c) => c.getPluginData("pawnote") === "screens")) {
+    if (n.type === "SECTION" && !oldSections.has(n.name)) { for (const k of [...n.children]) k.remove(); oldSections.set(n.name, n); }
+    else n.remove();
+  }
 
   const label = await pickFont("Inter", 700, false), body = await pickFont("Inter", 400, false);
   const W = 402, H = 874, GAP = 64, ROW_LABEL = 260, PAD = 80;
@@ -190,7 +195,8 @@ async function buildScreens(page, datasets, log, componentsPage) {
     for (const d of datasets) for (const s of d.screens) if (s.group === group && !ids.includes(s.id)) ids.push(s.id);
     for (const c of COMPOSED_SCREENS) if (c.group === group && !ids.includes(c.id)) ids.push(c.id);
     if (!ids.length) continue;
-    const section = figma.createSection();
+    const section = oldSections.get(group) || figma.createSection();
+    oldSections.delete(group);
     section.name = group;
     page.appendChild(section);
     section.setPluginData("pawnote", "screens");
@@ -241,6 +247,7 @@ async function buildScreens(page, datasets, log, componentsPage) {
     say(`  ${group}: done (${built} so far)`);
     await tick();
   }
+  for (const n of oldSections.values()) n.remove(); // groups that no longer exist
   return built;
 }
 
@@ -424,7 +431,7 @@ const LIBRARY = [
         if (state === "Loading") { const e = figma.createEllipse(); e.name = "Spinner"; e.resize(16, 16); e.fills = []; e.strokes = [paint(fg)]; e.strokeWeight = 2; e.arcData = { startingAngle: 0, endingAngle: Math.PI * 1.5, innerRadius: 1 }; kids.push(e); }
         kids.push(await txt("Request booking", "Body Strong", fg, { name: "Label" }));
         return box("Button", { dir: "H", pad: ["sm", "md", "sm", "md"], gap: "sm", align: "CENTER", justify: "CENTER", radius: "md", minH: "size/touch-target",
-          fill: dis ? "border" : pri ? "primary" : "surface", stroke: dis ? "border" : pri ? "primary" : "border" }, kids);
+          fill: dis ? "border" : pri ? "primary" : "surface", stroke: dis ? "border" : pri ? "primary" : "border-strong" }, kids);
       }])), [["Label", "Label"]]);
     if (!has("Text Button")) await variants("Text Button", "Secondary action as a text link (keeps one filled button per screen). Danger = destructive link. Code: components/ui/TextButton.tsx",
       ["Default", "Danger"].flatMap((tone) => ["Enabled", "Disabled"].map((st) => [`Tone=${tone}, State=${st}`, async () =>
@@ -487,6 +494,8 @@ const LIBRARY = [
         fill(box("Drop-off", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("🚗 Drop-off · you drive", "Small"), await txt("Fri 7:30 AM", "Small Strong")])),
         fill(box("Pick-up", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("🏠 Pick-up · you drive", "Small"), await txt("Mon 5:00 PM", "Small Strong")])),
         fill(box("Total", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt(st === "Requested" ? "Quote" : "Paid · 5 consents signed", "Small", "text-muted"), await txt("$268.13 CAD", "Small Strong")])),
+        fill(rect("Divider 2", CW - 32, 1, { fill: "border" })),
+        fill(box("Open", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER", minH: "size/touch-target" }, [await txt("View booking", "Small Strong", "primary"), await txt("›", "Title", "primary")])),
       ]);
     }]), [["Title", "Title"], ["Meta", "Meta"]]);
 
@@ -519,7 +528,7 @@ const LIBRARY = [
         await txt("NEXT · 2:00 PM", "Caption", "primary", { name: "When" }),
         fill(box("Row", { dir: "H", gap: "sm", align: "CENTER" }, [rect("Photo", 40, 40, { image: true, radius: 20 }),
           grow(box("Copy", {}, [await txt("Max · skin pill in a treat", "Body Strong", "text", { name: "Task", fill: true }), await txt("From Chloe's care request", "Caption", "text-muted", { name: "Source", fill: true })]))])),
-        fill(box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "primary", justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [await txt("📷 Complete with photo", "Body Strong", "primary-text")]))]),
+        fill(box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "primary", justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [await txt("Complete with photo", "Body Strong", "primary-text")]))]),
       [["When", "When"], ["Task", "Task"], ["Source", "Source"]]);
 
     await single("Mood Result Card", "Mood tab (11.9): photo or clip + a 'for fun' read of the pet's mood. Always says it isn't a health check.", async () =>
@@ -642,6 +651,18 @@ const LIBRARY = [
       return d;
     }]), [["Day", "Day"]]);
 
+    await single("Action Row", "Opens a tool or another screen (5-second check, Scan a treat, settings rows). Icon tile + title + one line + chevron; borderStrong outline so it reads as tappable, never as a plain card (DESIGN.md §6.2).", async () =>
+      box("Action Row", { dir: "H", w: CW, gap: "sm", pad: ["sm", "sm", "sm", "sm"], radius: "lg", fill: "surface", stroke: "border-strong", align: "CENTER", minH: 60 }, [
+        box("Icon", { dir: "H", w: 40, h: 40, radius: "md", fill: "accent", align: "CENTER", justify: "CENTER" }, [await txt("📝", "Body", "text", { name: "Icon" })]),
+        grow(box("Copy", { gap: 2 }, [await txt("5-second check", "Body Strong", "text", { name: "Title", fill: true }), await txt("Today's note for Chloe · tap chips, done", "Small", "text-muted", { name: "Subtitle", fill: true })])),
+        await txt("›", "Title", "text-muted", { name: "Chevron" }),
+      ]), [["Icon", "Icon"], ["Title", "Title"], ["Subtitle", "Subtitle"]]);
+
+    await variants("Check-in Tile", "One-tap log on sitter Home (meal, potty, walk, mood). Four across. Logged = success surface + check; Undo lives in the toast (DESIGN.md §10).", ["Default", "Logged"].map((st) => [`State=${st}`, async () =>
+      box("Check-in Tile", { w: Math.floor((CW - 24) / 4), gap: 4, pad: ["sm", "xs", "sm", "xs"], radius: "md", fill: st === "Logged" ? "success-surface" : "surface", stroke: st === "Logged" ? "success" : "border-strong", align: "CENTER", justify: "CENTER", minH: 64 }, [
+        await txt(st === "Logged" ? "✓" : "🍽️", "Body", st === "Logged" ? "success" : "text", { name: "Icon" }),
+        await txt("Ate", "Small Strong", "text", { name: "Label" })])]), [["Icon", "Icon"], ["Label", "Label"]]);
+
     await variants("Checkbox Row", "Checkbox + label (+ hint) as one 44-tall target (CheckRow).", ["No", "Yes"].map((s) => [`Checked=${s}`, async () =>
       box("Checkbox Row", { dir: "H", w: CW, gap: "sm", align: "CENTER", minH: "size/touch-target" }, [
         box("Box", { dir: "H", w: 20, h: 20, radius: 4, fill: s === "Yes" ? "primary" : "surface", stroke: s === "Yes" ? "primary" : "text-muted", sw: 1.5, align: "CENTER", justify: "CENTER" }, s === "Yes" ? [await txt("✓", "Caption", "primary-text")] : []),
@@ -720,6 +741,7 @@ const LIBRARY = [
           grow(box("Copy", {}, [await txt("Lucy Kim", "Body Strong", "text", { name: "Name", fill: true }), await txt("New sitter · Condo · up to 2 pets", "Small", "text-muted", { name: "Meta", fill: true })]))])),
         fill(box("Rate", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("Boarding", "Small"), await txt("$55 / night", "Small Strong")])),
         fill(box("Rate", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("House sitting", "Small"), await txt("$70 / night", "Small Strong")])),
+        fill(box("Open", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER", minH: "size/touch-target" }, [await txt("View profile", "Small Strong", "primary"), await txt("›", "Title", "primary")])),
       ]), [["Name", "Name"], ["Meta", "Meta"]]);
   }],
 
@@ -1345,14 +1367,15 @@ const COMPOSED = [
   ["owner-mood", "Owner · Mood", { title: "Mood", active: "Mood" }, null, async (b) => {
     add(b, row("Pets", [inst("Filter Chip", { State: "Active" }, { Label: "🐶 Max" }), inst("Filter Chip", { State: "Default" }, { Label: "🐱 Mochi" })], "xs"));
     add(b, inst("Mood Result Card"));
-  }, () => inst("Button", { Style: "Secondary", State: "Default" }, { Label: "📷 Check a photo or clip" })],
+  }, () => inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Check a photo or clip" })],
   ["sitter-home", "Sitter · Home", { title: "Home", active: "Home" }, "L", async (b) => {
     add(b, inst("Next Task Card"));
     add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ No knocking · text Chloe instead" }));
-    add(b, await txt("Quick check-in · Max", "Small Strong"));
-    add(b, row("Check-in", ["🍽️ Ate", "💩 Potty", "🦮 Walk", "😊 Mood"].map((l) => inst("Filter Chip", { State: "Default" }, { Label: l })), "xs"));
+    add(b, box("Check-in head", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [await txt("Quick check-in · Max", "Small Strong"), await txt("One tap logs it", "Caption", "text-muted")]));
+    add(b, split("Check-in", [["🍽️", "Ate"], ["🌿", "Potty"], ["🦮", "Walk"], ["🙂", "Mood"]].map(([i, l]) => inst("Check-in Tile", { State: "Default" }, { Icon: i, Label: l })), "xs"));
     add(b, inst("Progress Bar", {}, { Label: "2 of 5 tasks · 6 check-ins" }));
-    add(b, split("Actions", [inst("Button", { Style: "Secondary", State: "Default" }, { Label: "🔍 Scan a treat" }), inst("Button", { Style: "Secondary", State: "Default" }, { Label: "📝 5-second check" })], "sm"));
+    add(b, inst("Action Row"));
+    add(b, inst("Action Row", {}, { Icon: "🔍", Title: "Scan a treat", Subtitle: "Checks the label for Max's allergies" }));
   }, null],
 ];
 

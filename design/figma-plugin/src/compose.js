@@ -334,14 +334,15 @@ const COMPOSED = [
   ["owner-mood", "Owner · Mood", { title: "Mood", active: "Mood" }, null, async (b) => {
     add(b, row("Pets", [inst("Filter Chip", { State: "Active" }, { Label: "🐶 Max" }), inst("Filter Chip", { State: "Default" }, { Label: "🐱 Mochi" })], "xs"));
     add(b, inst("Mood Result Card"));
-  }, () => inst("Button", { Style: "Secondary", State: "Default" }, { Label: "📷 Check a photo or clip" })],
+  }, () => inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Check a photo or clip" })],
   ["sitter-home", "Sitter · Home", { title: "Home", active: "Home" }, "L", async (b) => {
     add(b, inst("Next Task Card"));
     add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ No knocking · text Chloe instead" }));
-    add(b, await txt("Quick check-in · Max", "Small Strong"));
-    add(b, row("Check-in", ["🍽️ Ate", "💩 Potty", "🦮 Walk", "😊 Mood"].map((l) => inst("Filter Chip", { State: "Default" }, { Label: l })), "xs"));
+    add(b, box("Check-in head", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [await txt("Quick check-in · Max", "Small Strong"), await txt("One tap logs it", "Caption", "text-muted")]));
+    add(b, split("Check-in", [["🍽️", "Ate"], ["🌿", "Potty"], ["🦮", "Walk"], ["🙂", "Mood"]].map(([i, l]) => inst("Check-in Tile", { State: "Default" }, { Icon: i, Label: l })), "xs"));
     add(b, inst("Progress Bar", {}, { Label: "2 of 5 tasks · 6 check-ins" }));
-    add(b, split("Actions", [inst("Button", { Style: "Secondary", State: "Default" }, { Label: "🔍 Scan a treat" }), inst("Button", { Style: "Secondary", State: "Default" }, { Label: "📝 5-second check" })], "sm"));
+    add(b, inst("Action Row"));
+    add(b, inst("Action Row", {}, { Icon: "🔍", Title: "Scan a treat", Subtitle: "Checks the label for Max's allergies" }));
   }, null],
 ];
 

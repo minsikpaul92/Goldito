@@ -237,7 +237,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 
 ### In Figma (*PawNote Design System*, 3. Components)
 
-**61 components**, every fill, stroke, padding and radius bound to a variable; *2. Screens* uses only instances of them (D2). Groups: Core (`Tag`, `Button`, `Text Button`, `Chip`, `Card`, `Toast`, `Text Field`, `Segment`) · Live app (`Stay Summary Card`, `Booking Card`, `Timeline Row`, `Grid Photo`, `Next Task Card` …) · Navigation (`Top Bar`, `Tab Bar`, `Icon Button`, `Bottom Sheet`, `Empty State`) · Inputs (`Choice Card`, `Switch`, `Stepper`, `Filter Chip`, `Suggestion Chip`, `Photo Tile`, `Calendar Day`, `Checkbox Row`) · Stay (`Stage Card`, `Source Tag`, `Message Bubble`, `Quote Card`, `Checklist Row`, `Consent Card`, `Entry Info Card`, `Star`, `Profile Card`) · Care & transit (`Trip Map`, `Photo Check`, `Task Row`, `Progress Bar`, `Feed Card`, `Daily Note`, `Life Record Card`) · Feedback (`Alert Modal · DANGER`, `Banner`, `Notification Row`, `Skeleton`, `Avatar` …). `Demo Control` is prototype-only. Code has the `Existing` set plus the components marked *built* below; the rest arrive with their phases.
+**63 components**, every fill, stroke, padding and radius bound to a variable; *2. Screens* uses only instances of them (D2). Groups: Core (`Tag`, `Button`, `Text Button`, `Chip`, `Card`, `Toast`, `Text Field`, `Segment`) · Live app (`Stay Summary Card`, `Booking Card`, `Timeline Row`, `Grid Photo`, `Next Task Card` …) · Navigation (`Top Bar`, `Tab Bar`, `Icon Button`, `Bottom Sheet`, `Empty State`) · Inputs (`Choice Card`, `Switch`, `Stepper`, `Filter Chip`, `Suggestion Chip`, `Photo Tile`, `Calendar Day`, `Checkbox Row`) · Stay (`Stage Card`, `Source Tag`, `Message Bubble`, `Quote Card`, `Checklist Row`, `Consent Card`, `Entry Info Card`, `Star`, `Profile Card`) · Care & transit (`Trip Map`, `Photo Check`, `Task Row`, `Progress Bar`, `Feed Card`, `Daily Note`, `Life Record Card`) · Feedback (`Alert Modal · DANGER`, `Banner`, `Notification Row`, `Skeleton`, `Avatar` …). `Demo Control` is prototype-only. Code has the `Existing` set plus the components marked *built* below; the rest arrive with their phases.
 
 ### Planned and recently built (keep the same tokens)
 
@@ -281,6 +281,8 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | `SegmentedControl` | segments 44 tall, equal width | — | `md` | Body | Default · Selected (`primary` border + `accent`) · Disabled |
 | `Tag` | hugs text | 4 × 8 | `sm` | Small Strong | Tones (§6) |
 | `Banner` | full width | 8 × 16 | `md` | Title Small Strong, body Small, action Small Strong (44 tall) | Info · Warning · Error · Offline; 1 px border in the tone |
+| `Action Row` | full width, min 60 | 8 | `lg` | Title Body Strong, line Small `textMuted`, icon tile 40 on `accent`, **›** | Default; 1 px `borderStrong` (§6.2) |
+| `Check-in Tile` | ¼ width, min 64 | 8 × 4 | `md` | Icon over label (Small Strong) | Default (`borderStrong`) · Logged (`successSurface` + ✓) |
 | `Card` | full width | 16 | `lg` | Title Body Strong, body Small | — |
 | Task row | full width; icon 40 | 16 | `lg` | Time Caption, title Body Strong | Pending · Next (2 px `primary` border + the one filled action) · Done (time + ✓ in `success`) |
 | `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Above the tab bar and pinned footer |
@@ -292,6 +294,23 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | Avatar | 40 (feed 32) | — | full | Initial Body Strong on `primary` | Initial · Photo |
 | Photo tile | 76 × 76 | — | `md` | — | Default · Selected (3 px `primary` ring + ✓) · Upload (dashed `borderStrong`) |
 | `AlertModal` · DANGER | full screen | 16 | — | Title on `error` header | Closes only with its button (§7.4) |
+
+### 6.2 Tappable vs information
+
+Anyone should tell in under a second what they can tap. One rule for every screen:
+
+| It is… | It looks like | Never |
+| :--- | :--- | :--- |
+| **The main action** | `Button` Primary: filled `primary`, full width, pinned or inside its card | Two filled buttons on one screen |
+| **Another action** | `Button` Secondary: `surface` + **`borderStrong`** outline + `primary` label | A faint `border` outline (reads as a card) |
+| **A tool or another screen** (5-second check, Scan a treat, settings) | `Action Row`: icon tile + title + one line + **›**, `borderStrong` outline, min 60 tall | A plain white card with green text |
+| **A one-tap log** (Ate, Potty, Walk, Mood) | `Check-in Tile`: icon over label, `borderStrong` outline, 64 tall, four across | Filter-chip styling (reads as a filter) |
+| **A filter** | `Filter Chip`: outline when off, filled `primary` when on — one selected style per screen | Mint for some filters and green for others |
+| **A card that opens something** | The card plus a last row **View booking ›** / **View profile ›** | A card with no hint that it opens |
+| **Information** (status, facts, labels) | `Tag`: tinted surface, no outline, not 44 tall | Outlined or filled chips for facts (they look tappable) |
+| **A result** (mood, safety) | A meter or result card | Chips that look selectable |
+
+Buttons carry text and, if needed, a line icon — no emoji in button labels (§7.6).
 
 ---
 

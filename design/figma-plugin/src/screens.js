@@ -163,7 +163,12 @@ async function buildScreens(page, datasets, log, componentsPage) {
     try { await loadLibrary(componentsPage); await initDS(SAMPLE); COMPOSED_SCREENS = await buildComposedScreens(log); }
     catch (e) { log.push(`Component-built screens skipped: ${e.message || e}`); COMPOSED_SCREENS = []; }
   }
-  for (const n of page.children.filter((c) => c.getPluginData("pawnote") === "screens")) n.remove();
+  // Sections are kept (emptied and refilled) so their node IDs stay stable: the design review links to them.
+  const oldSections = new Map();
+  for (const n of page.children.filter((c) => c.getPluginData("pawnote") === "screens")) {
+    if (n.type === "SECTION" && !oldSections.has(n.name)) { for (const k of [...n.children]) k.remove(); oldSections.set(n.name, n); }
+    else n.remove();
+  }
 
   const label = await pickFont("Inter", 700, false), body = await pickFont("Inter", 400, false);
   const W = 402, H = 874, GAP = 64, ROW_LABEL = 260, PAD = 80;
@@ -189,7 +194,8 @@ async function buildScreens(page, datasets, log, componentsPage) {
     for (const d of datasets) for (const s of d.screens) if (s.group === group && !ids.includes(s.id)) ids.push(s.id);
     for (const c of COMPOSED_SCREENS) if (c.group === group && !ids.includes(c.id)) ids.push(c.id);
     if (!ids.length) continue;
-    const section = figma.createSection();
+    const section = oldSections.get(group) || figma.createSection();
+    oldSections.delete(group);
     section.name = group;
     page.appendChild(section);
     section.setPluginData("pawnote", "screens");
@@ -240,5 +246,6 @@ async function buildScreens(page, datasets, log, componentsPage) {
     say(`  ${group}: done (${built} so far)`);
     await tick();
   }
+  for (const n of oldSections.values()) n.remove(); // groups that no longer exist
   return built;
 }
