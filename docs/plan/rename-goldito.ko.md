@@ -19,7 +19,7 @@
 
 | 항목 | 이유 | 나중에 바꾸려면 |
 | :--- | :--- | :--- |
-| 데모 로그인 이메일 `demo-owner@pawddy.test` · `demo-sitter@pawddy.test` (코드 · 테스트 · 문서) | 호스팅 Supabase에 **이미 이 이메일로 계정이 있음**. 코드만 바꾸면 Try demo 로그인이 깨짐 | §3-4 참고 |
+| 데모 로그인 이메일 `demo-owner@pawddy.test` · `demo-sitter@pawddy.test` (코드 · 테스트 · 문서) | 호스팅 Supabase에 **이미 이 이메일로 계정이 있음**. 코드만 바꾸면 Try demo 로그인이 깨짐 | §2-5 |
 | GitHub 주소 `github.com/minsikpaul92/Pawddy/…` (문서 · PR 템플릿 링크, `docs/plan/env-setup.ko.md`) | 저장소 이름을 바꾸기 **전**에 바꾸면 링크가 깨짐 (바꾼 뒤에는 GitHub이 옛 주소를 자동으로 새 주소로 넘겨 줌) | §2-1 뒤에 아래 명령 |
 | Cloudinary 옛 폴더 `pawddy/…` · `pawnote/…` | 이미 올라간 사진 · 영상이 거기 있음. 백엔드는 `goldito` · `pawddy` · `pawnote` **셋 다** 읽음 | 필요 없음 (옛 파일은 그대로 보임) |
 | `docs/CHANGELOG.md`의 이전 항목, "PawNote → Pawddy" 이력 문장 | 역사 기록 | — |
