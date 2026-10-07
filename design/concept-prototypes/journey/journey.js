@@ -20,6 +20,12 @@ const Journey = (() => {
   // Lucy's rates (03C formula): nights × rate, extra pet %, holiday % on holiday days in the stay.
   const RATES = {boarding: 55, house_sitting: 70, extraPetPct: 50, holidayPct: 25};
   const STAY = {from: "Oct 9", to: "Oct 12", nights: 3, holiday: "Thanksgiving (Oct 12)", holidayDays: 1};
+  // Date picker: October 2026, today is Oct 7. Lucy is full Oct 20–23; Oct 12 is Thanksgiving (holiday rate).
+  const CAL = {firstDow: 4, days: 31, today: 7, full: [20, 21, 22, 23], holiday: 12};
+  function setStay(from, to) {
+    Object.assign(STAY, {from: `Oct ${from}`, to: `Oct ${to}`, nights: to - from,
+      holidayDays: from <= CAL.holiday && CAL.holiday < to ? 1 : 0});
+  }
   const CONSENTS = [
     {k: "vet", t: "24-hour emergency vet", s: `${SITTER} may take your pet to the nearest 24-hour vet if needed. You'll be called first; costs up to $500 are pre-approved.`},
     {k: "access", t: "Lockbox and buzzer use", s: `${SITTER} may use your lockbox code and condo buzzer only during the booked visits.`},
@@ -44,7 +50,7 @@ const Journey = (() => {
   function fresh(returning) {
     return {
       stage: 0, unlocked: false, complete: false, returning: !!returning,
-      inq: {service: "boarding", second: false, question: `Can ${pet()} take her pill in a treat?`, status: "form"},
+      inq: {service: "boarding", first: true, second: false, cal: false, from: 9, to: 12, pick: null, question: `Can ${pet()} take her pill in a treat?`, status: "form"},
       meet: {request: DEFAULT_REQUEST(), status: "write", checklist: [], heads: [], mode: "video", slot: 0, mg: "none",
         dropoff: "sitter", pickup: "owner"},
       book: {status: "waiting", consents: new Set(), open: new Set(), name: "", entry: "locked", codeShown: false},
@@ -58,7 +64,7 @@ const Journey = (() => {
   // ---------- quote (server-side in the real app; mirrored here for the demo) ----------
   function quote() {
     const rate = RATES[J.inq.service];
-    const pets = J.inq.second ? 2 : 1;
+    const pets = (J.inq.first ? 1 : 0) + (J.inq.second ? 1 : 0);
     const base = rate * STAY.nights;
     const extraRate = rate * RATES.extraPetPct / 100;
     const extra = extraRate * (pets - 1) * STAY.nights;
@@ -71,7 +77,7 @@ const Journey = (() => {
     return `<div class="jr-quote" data-testid="jr-quote">
       <div><span>${STAY.nights} nights × ${money(q.rate)}</span><span>${money(q.base)}</span></div>
       ${q.pets > 1 ? `<div><span>Extra pet (${second().name}, ${RATES.extraPetPct}%)</span><span>+${money(q.extra)}</span></div>` : ""}
-      <div><span>${STAY.holiday} +${RATES.holidayPct}%</span><span>+${money(q.holiday)}</span></div>
+      ${STAY.holidayDays ? `<div><span>${STAY.holiday} +${RATES.holidayPct}%</span><span>+${money(q.holiday)}</span></div>` : ""}
       <div class="total"><span>Total</span><span data-testid="jr-total">${money(q.total)} CAD</span></div>
     </div>`;
   }
@@ -145,16 +151,37 @@ const Journey = (() => {
     return `<button type="button" class="chip${on ? " active" : ""}" data-jr="${action}" data-v="${value}" aria-pressed="${on}">${label}</button>`;
   }
 
+  // Month grid for the stay: tap the first day, then the last. Past and full days can't be picked.
+  function calendar() {
+    const s = J.inq, cells = [];
+    for (let i = 0; i < CAL.firstDow; i++) cells.push(`<span class="jr-day pad" aria-hidden="true"></span>`);
+    for (let d = 1; d <= CAL.days; d++) {
+      const past = d < CAL.today, full = CAL.full.includes(d);
+      const start = s.pick == null ? d === s.from : d === s.pick, end = s.pick == null && d === s.to;
+      const mid = s.pick == null && d > s.from && d < s.to;
+      const cls = ["jr-day", past && "past", full && "full", (start || end) && "on", mid && "mid", d === CAL.holiday && "hol"].filter(Boolean).join(" ");
+      cells.push(`<button type="button" class="${cls}" data-jr="day" data-v="${d}" ${past || full ? "disabled" : ""} aria-pressed="${start || end || mid}" aria-label="Oct ${d}${full ? ", Lucy is full" : ""}${d === CAL.holiday ? ", Thanksgiving" : ""}">${d}</button>`);
+    }
+    return `<div class="jr-cal" role="group" aria-label="October 2026">
+      <div class="jr-cal-head"><b>October 2026</b><span class="jr-hint">${s.pick == null ? "Tap the first day" : "Now tap the last day"}</span></div>
+      <div class="jr-cal-dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="jr-cal-grid">${cells.join("")}</div>
+      <p class="jr-hint">● Thanksgiving (holiday rate) · struck through = Lucy is full</p></div>`;
+  }
+
   // ① Inquiry
   function inquiry() {
     const s = J.inq, n = pet();
     const ask = `<div class="jr-stack"><span class="jr-label">Service</span><div class="jr-chips">
         ${chip("🏠 Boarding", "service", s.service === "boarding", "boarding")}${chip("🔑 House sitting", "service", s.service === "house_sitting", "house_sitting")}</div>
         <p class="jr-p">${s.service === "boarding" ? `${n} stays at ${SITTER}'s home.` : `${SITTER} looks after ${n} at your home.`}</p></div>
-      <div class="jr-stack"><span class="jr-label">Dates</span><div class="jr-chips"><span class="chip active" aria-disabled="true">${STAY.from} → ${STAY.to} · ${STAY.nights} nights</span></div></div>
-      <div class="jr-stack"><span class="jr-label">Pets</span><div class="jr-chips">
-        <span class="chip active" aria-disabled="true">${isDog() ? "🐶" : "🐱"} ${esc(n)}</span>
+      <div class="jr-stack"><span class="jr-label">Dates</span>
+        <button type="button" class="jr-datefield" data-jr="cal" aria-expanded="${s.cal}"><span>📅 ${STAY.from} → ${STAY.to} · ${STAY.nights} night${STAY.nights === 1 ? "" : "s"}</span><span class="jr-link">${s.cal ? "Done" : "Change"}</span></button>
+        ${s.cal ? calendar() : ""}</div>
+      <div class="jr-stack"><span class="jr-label">Pets <span class="jr-hint">· pick one or both</span></span><div class="jr-chips">
+        ${chip(`${isDog() ? "🐶" : "🐱"} ${esc(n)}`, "first", s.first, "1")}
         ${chip(`${second().emoji} ${second().name}`, "second", s.second, "1")}</div>
+        ${s.petHint ? `<p class="jr-p jr-warn" role="status">Pick at least one pet.</p>` : ""}
         <p class="jr-p">Their profiles (breed, age, allergies) go with your question${J.returning ? ", plus the Life Record from the last stay" : ""}.</p></div>
       <label class="jr-stack"><span class="jr-label">Your question (optional)</span>
         <input class="input" id="jrQuestion" value="${esc(s.question)}" placeholder="e.g. Can she take her pill in a treat?"></label>`;
@@ -164,9 +191,9 @@ const Journey = (() => {
       ${s.status === "sending"
         ? `<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>${SITTER} is typing…</div>`
         : `<div class="jr-bubble ai" data-testid="jr-ai-reply"><div class="jr-ai-label">${SITTER} · just now</div>
-            Hi ${OWNER}! ${SITTER} is free ${STAY.from}–${STAY.to} for ${esc(n)}${J.inq.second ? ` and ${second().name}` : ""}.
-            ${esc(n)} can take the pill in a treat — ${SITTER} does that for other pets every day.
-            ${J.returning ? `${SITTER} already has ${esc(n)}'s Life Record from the last stay. ` : ""}Here's the total, including the ${STAY.holiday.split(" ")[0]} rate:
+            Hi ${OWNER}! ${SITTER} is free ${STAY.from}–${STAY.to} for ${[J.inq.first && esc(n), J.inq.second && second().name].filter(Boolean).join(" and ")}.
+            ${J.inq.first ? `${esc(n)} can take the pill in a treat — ${SITTER} does that for other pets every day.` : ""}
+            ${J.returning ? `${SITTER} already has ${esc(n)}'s Life Record from the last stay. ` : ""}Here's the total${STAY.holidayDays ? `, including the ${STAY.holiday.split(" ")[0]} rate` : ""}:
             <div style="margin-top:.625rem">${quoteHTML()}</div>
             <div class="jr-src"><span>From ${SITTER}'s calendar</span><span>From ${SITTER}'s house policy</span>${J.returning ? `<span>From ${esc(n)}'s Life Record</span>` : ""}</div>
           </div>`}
@@ -433,7 +460,21 @@ const Journey = (() => {
     const s = J;
     switch (act) {
       case "service": s.inq.service = v; break;
-      case "second": s.inq.second = !s.inq.second; break;
+      case "first": case "second": {
+        // Toggle a pet; at least one has to stay selected.
+        const other = act === "first" ? s.inq.second : s.inq.first;
+        if (s.inq[act] && !other) { s.inq.petHint = true; break; }
+        s.inq[act] = !s.inq[act]; s.inq.petHint = false; break;
+      }
+      case "cal": s.inq.cal = !s.inq.cal; s.inq.pick = null; break;
+      case "day": {
+        const d = Number(v);
+        if (s.inq.pick == null || d <= s.inq.pick) { s.inq.pick = d; break; }
+        // A range can't run across days Lucy is full.
+        if (CAL.full.some((f) => f > s.inq.pick && f < d)) { s.inq.pick = d; break; }
+        s.inq.from = s.inq.pick; s.inq.to = d; s.inq.pick = null; s.inq.cal = false;
+        setStay(s.inq.from, s.inq.to); break;
+      }
       case "ask":
         s.inq.question = (document.getElementById("jrQuestion") || {}).value || s.inq.question;
         s.inq.status = "sending"; render();

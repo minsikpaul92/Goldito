@@ -126,6 +126,8 @@ Rules:
 
 A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
+**Pet skins in the prototypes (proposed, 11.10).** The first-round prototypes ("Full journey") already try this: the onboarding *Your look* step reads the pet photo's coat color and picks the nearest of 7 presets — **Forest** (hue 152, sat 42 — the brand green) · **Amber** (40, 62) · **Clay** (16, 58) · **Umber** (26, 28) · **Slate** (210, 26) · **Plum** (280, 34) · **Rose** (350, 48). White, grey and black coats (saturation < 18) fall back to Umber (warm) or **Slate** (cool) — that's why a white Maltese shows a blue app there. Each preset's lightness is adjusted until text on it is ≥ 4.5:1. None of these are in `tokens.ts` or Figma yet; until the team picks them, the brand green (Forest) is the only primary.
+
 ### 3.2 Looks (brand direction — pick one)
 
 A **look** is the overall palette the team chooses once for the app; a **skin** (3.1) is the per-pet tint applied on top of it. Two looks remain after the Oct 5 review (Calm Core dropped). **Recommended: Balanced** (D1) — waiting for the team's OK before `tokens.ts` switches to it:
