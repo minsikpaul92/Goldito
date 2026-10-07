@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.routers import (
     ai_care_plan,
     ai_daily_report,
+    ai_inquiry,
     ai_report_chips,
     feed,
     health,
@@ -36,6 +37,7 @@ app.include_router(media.router)
 app.include_router(feed.router)
 app.include_router(ai_care_plan.router)
 app.include_router(ai_daily_report.router)
+app.include_router(ai_inquiry.router)
 app.include_router(ai_report_chips.router)
 app.include_router(rag.router)
 

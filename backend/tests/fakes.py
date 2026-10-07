@@ -39,6 +39,10 @@ class _Query:
         self.filters.append(lambda r: r.get(col) != val)
         return self
 
+    def in_(self, col, vals):
+        self.filters.append(lambda r: r.get(col) in list(vals))
+        return self
+
     def gte(self, col, val):
         self.filters.append(lambda r: _when(r.get(col)) >= _when(val))
         return self
