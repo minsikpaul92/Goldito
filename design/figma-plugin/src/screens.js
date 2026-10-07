@@ -180,7 +180,7 @@ async function buildScreens(page, datasets, log, componentsPage) {
   const title = figma.createText(); title.fontName = label; title.fontSize = 64; title.characters = "Screens · by app map";
   page.appendChild(title); title.x = 0; title.y = y; title.setPluginData("pawnote", "screens");
   const sub = figma.createText(); sub.fontName = body; sub.fontSize = 24;
-  sub.characters = "1) Today: the live app's tabs (D47), Live (captured) vs Balanced (components). 2) Upcoming: the next phases' screens in stay order — inquiry, care request, Meet & Greet, checkout, trip, 5-second check, review, Life Record. 3) Edge states: what owners and sitters see when things don't go to plan (DESIGN.md §10). 4) Onboarding: explored sign-up and sitter setup (OB.4 on hold). Everything except Live is built from components; re-run the PawNote plugin after changes.";
+  sub.characters = "1) Today: the live app's tabs (D47), Live (captured) vs Balanced (components). 2) Upcoming: the next phases' screens in stay order — inquiry, care request, Meet & Greet, checkout, trip, 5-second check, review, Life Record. 3) Edge states: what owners and sitters see when things don't go to plan (DESIGN.md §10). 4) Onboarding: explored sign-up and sitter setup (OB.4 on hold). Everything except Live is built from components; re-run the Goldito plugin after changes.";
   page.appendChild(sub); sub.x = 0; sub.y = y + 90; sub.setPluginData("pawnote", "screens");
   y += 220;
 

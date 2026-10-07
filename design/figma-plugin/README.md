@@ -1,6 +1,6 @@
-# PawNote Design Sync (Figma plugin)
+# Goldito Design Sync (Figma plugin)
 
-Builds the PawNote library and screens in the team's Figma file without the Figma MCP call limits.
+Builds the Goldito library and screens in the team's Figma file without the Figma MCP call limits.
 
 - **Variables and text styles** (if the file doesn't have them): `Color` (Default = `tokens.ts`, plus the **Balanced** look as a mode), `Size`, `Motion`, and six text styles (Title · Body · Body Strong · Small · Small Strong · Caption).
 - **3. Components**: 61 components and variant sets (core, live app, navigation, inputs, stay, care and transit, feedback), every fill, stroke, padding and radius bound to a variable. Hand-made components already on the page are left alone.
@@ -16,9 +16,9 @@ Re-running replaces only what the plugin made before (tagged with plugin data).
 
 ## Run it (Figma desktop app)
 
-1. Open the PawNote Design System file. It needs pages whose names start with `2.` and `3.`.
+1. Open the Goldito Design System file. It needs pages whose names start with `2.` and `3.`.
 2. Menu → Plugins → Development → **Import plugin from manifest…** → pick `design/figma-plugin/manifest.json`.
-3. Menu → Plugins → Development → **PawNote Design Sync**. A small window opens; press **Build**. Progress and any errors show in that window (about a minute).
+3. Menu → Plugins → Development → **Goldito Design Sync**. A small window opens; press **Build**. Progress and any errors show in that window (about a minute).
 
 ## Update after prototype changes
 

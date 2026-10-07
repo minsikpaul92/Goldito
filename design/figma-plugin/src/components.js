@@ -1,4 +1,4 @@
-/* Builds the PawNote component library on "3. Components" from the local variables
+/* Builds the Goldito component library on "3. Components" from the local variables
    (color/*, spacing/*, radius/*, size/*) and text styles (Title, Body, Body Strong, Small,
    Small Strong, Caption). Every fill, stroke, padding, gap and radius is bound to a variable.
    Components already made by hand or earlier (Button, Text Button, Chip, Card, Toast,
@@ -600,7 +600,7 @@ const LIBRARY = [
 
     await single("Permission Prompt", "Simulated system prompt after the notification primer. System look, not the app skin.", async () =>
       box("Permission", { w: 270, radius: 14, fill: "surface" }, [
-        box("Body", { w: 270, gap: "xs", pad: "md", align: "CENTER" }, [await txt("“PawNote” Would Like to Send You Notifications", "Body Strong", "text", { w: 238, align: "CENTER" }),
+        box("Body", { w: 270, gap: "xs", pad: "md", align: "CENTER" }, [await txt("“Goldito” Would Like to Send You Notifications", "Body Strong", "text", { w: 238, align: "CENTER" }),
           await txt("Notifications may include alerts, sounds and icon badges.", "Small", "text-muted", { w: 238, align: "CENTER" })]),
         box("Buttons", { dir: "H", w: 270, stroke: "border" }, [grow(box("No", { dir: "H", h: 44, justify: "CENTER", align: "CENTER" }, [await txt("Don’t Allow", "Body", "primary")])),
           grow(box("Yes", { dir: "H", h: 44, justify: "CENTER", align: "CENTER" }, [await txt("Allow", "Body Strong", "primary")]))]),
@@ -609,7 +609,7 @@ const LIBRARY = [
     await single("Push Preview", "Lock-screen notification preview used in the notifications step.", async () =>
       box("Push", { dir: "H", w: CW, gap: "sm", pad: "sm", radius: 16, fill: "surface", stroke: "border" }, [
         box("App", { dir: "H", w: 36, h: 36, radius: 9, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("🐾", "Body")]),
-        grow(box("Copy", {}, [await txt("PAWNOTE · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
+        grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
       [["Title", "Title"], ["Body", "Body"]]);
 
     await single("Theme Preview", "Onboarding Look step: coat color → nearest accessible preset, contrast badge (≥ 4.5:1), and how it carries into the app.", async () =>

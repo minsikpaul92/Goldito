@@ -133,7 +133,7 @@ const chips = (name, list, active = []) => row(name, list.map((l) => inst("Filte
 const FIELD = { "Full name": ["e.g. Chloe Park", "Shown to your sitter."], Email: ["e.g. chloe@example.com", "We'll send booking updates here."], Password: ["At least 8 characters", "Use 8 or more characters."], "Pet's name": ["e.g. Max", "Shown on every booking."], Breed: ["e.g. Maltese", "Helps the sitter with care tips."] };
 const field = (label) => inst("Text Field", { State: "Default" }, { Label: label, Value: (FIELD[label] || [])[0], Helper: (FIELD[label] || [])[1] });
 const ONBOARDING = [
-  ["ob-welcome", "Welcome", { title: "PawNote" }, null, async (b) => {
+  ["ob-welcome", "Welcome", { title: "Goldito" }, null, async (b) => {
     add(b, row("Photos", [inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" })], "xs"));
     add(b, await txt("Pet care updates that come to you", "Title", "text", { fill: true }));
     add(b, await txt("Book a sitter you trust, then follow along with photos, care check-offs and a daily report.", "Body", "text-muted", { fill: true }));
@@ -143,7 +143,7 @@ const ONBOARDING = [
     add(b, inst("Button", { Style: "Secondary", State: "Default" }, { Label: "I already have an account" }));
   }, P("Get started")],
   ["ob-role", "Role", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("How will you use PawNote?", "Title", "text", { fill: true }));
+    add(b, await txt("How will you use Goldito?", "Title", "text", { fill: true }));
     add(b, inst("Choice Card", { Size: "Large", Selected: "Yes" }));
     add(b, inst("Choice Card", { Size: "Large", Selected: "No" }, { Title: "I'm a pet sitter", Subtitle: "Get booked, then care, snap and tap" }));
   }, P("Continue")],

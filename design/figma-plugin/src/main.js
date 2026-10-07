@@ -4,7 +4,7 @@ let DATA = [];
 const say = (msg, kind = "info") => figma.ui.postMessage({ type: "log", msg, kind });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-figma.showUI(__html__, { width: 380, height: 460, title: "PawNote Design Sync" });
+figma.showUI(__html__, { width: 380, height: 460, title: "Goldito Design Sync" });
 say(`Plugin loaded. File: ${figma.root.name}. Pages: ${figma.root.children.map((p) => `"${p.name}"`).join(", ")}`);
 
 figma.ui.onmessage = async (m) => {

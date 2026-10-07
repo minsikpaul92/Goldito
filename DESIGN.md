@@ -1,6 +1,8 @@
-# PawNote — Design Guide
+# Goldito — Design Guide
 
-> **Status (Oct 6): design system v1.** The Figma library *PawNote Design System* (variables, 61 components, 53 screens built only from component instances) matches [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) and this file. Open: the app look (§3.2) and the items at the end.
+> Goldito is the new name for PawNote (Oct 7). Repo paths, issue links and code identifiers keep the old name until the app is renamed.
+
+> **Status (Oct 6): design system v1.** The Figma library [Figma design file](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) (variables, 63 components, 53 screens built only from component instances) matches [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) and this file. Open: the app look (§3.2) and the items at the end.
 > Values come from `tokens.ts` (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. To change a value: update the Figma variable and `tokens.ts` in the same PR, then this file.
 >
 > Source of truth order: **Figma** → **`tokens.ts`** → **this file**. Every decision and its reason is in [§0](#0-decision-log).
@@ -31,7 +33,7 @@ Each design decision, its reason, and what it replaced. Change a row only with t
 
 ## 1. Product feel
 
-PawNote is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
+Goldito is a private care app for **dogs and cats**. Owners hand their pet to a part-time sitter; the app keeps them updated without asking. One stay runs through five stages — Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion ([full-process.ko.md](docs/plan/full-process.ko.md)) — so screens should feel like one continuous journey (Rover booking × KidsNote care × Uber trip), not separate tools.
 
 | Keyword | Means in UI |
 | :--- | :--- |
@@ -139,7 +141,7 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 | `track` | `#E6E1D9` | `#F2E2BD` |
 | `accent` | `#DCEDE3` | `#FFE0A3` |
 
-`primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). Figma (*PawNote Design System*) shows **Balanced** only; Playful also changes outlines, shadows, corners and fonts, so it lives in the clickable prototypes (`design/concept-prototypes/redesign/`) until the team picks a look.
+`primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). Figma (*Goldito Design System*) shows **Balanced** only; Playful also changes outlines, shadows, corners and fonts, so it lives in the clickable prototypes (`design/concept-prototypes/redesign/`) until the team picks a look.
 
 ---
 
@@ -235,7 +237,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `HandoffChangeSheet` (`components/`) | Sheet for a new handoff time (Drop-off / Pick-up switch, day ± 1, time ± 15 min); after confirm also the place (radio rows) — **Change time or place** |
 | `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
 
-### In Figma (*PawNote Design System*, 3. Components)
+### In Figma (design file, *Components* page)
 
 **63 components**, every fill, stroke, padding and radius bound to a variable; *2. Screens* uses only instances of them (D2). Groups: Core (`Tag`, `Button`, `Text Button`, `Chip`, `Card`, `Toast`, `Text Field`, `Segment`) · Live app (`Stay Summary Card`, `Booking Card`, `Timeline Row`, `Grid Photo`, `Next Task Card` …) · Navigation (`Top Bar`, `Tab Bar`, `Icon Button`, `Bottom Sheet`, `Empty State`) · Inputs (`Choice Card`, `Switch`, `Stepper`, `Filter Chip`, `Suggestion Chip`, `Photo Tile`, `Calendar Day`, `Checkbox Row`) · Stay (`Stage Card`, `Source Tag`, `Message Bubble`, `Quote Card`, `Checklist Row`, `Consent Card`, `Entry Info Card`, `Star`, `Profile Card`) · Care & transit (`Trip Map`, `Photo Check`, `Task Row`, `Progress Bar`, `Feed Card`, `Daily Note`, `Life Record Card`) · Feedback (`Alert Modal · DANGER`, `Banner`, `Notification Row`, `Skeleton`, `Avatar` …). `Demo Control` is prototype-only. Code has the `Existing` set plus the components marked *built* below; the rest arrive with their phases.
 
@@ -385,7 +387,7 @@ Every screen that leaves a parent flow uses **`BackLink`** (`frontend/components
 - Visual: Ionicons `chevron-back` + the word **Back** (same row, `primary` color).
 - Placement: top of the screen (or the tour top bar), left-aligned, 44 px min hit area.
 - Behavior: go to the previous step or parent route (e.g. Login → `/welcome`, onboarding step 0 → role landing). Prefer `router.push` / `replace` to a known parent over inventing a second marketing link.
-- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How PawNote works”) for the same job.
+- Label is always **Back** — not “Back to Onboarding”, not icon-only, not a marketing link (“How Goldito works”) for the same job.
 
 ### 7.9 Welcome / role onboarding
 

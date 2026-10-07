@@ -181,7 +181,7 @@ async function buildScreens(page, datasets, log, componentsPage) {
   const title = figma.createText(); title.fontName = label; title.fontSize = 64; title.characters = "Screens · by app map";
   page.appendChild(title); title.x = 0; title.y = y; title.setPluginData("pawnote", "screens");
   const sub = figma.createText(); sub.fontName = body; sub.fontSize = 24;
-  sub.characters = "1) Today: the live app's tabs (D47), Live (captured) vs Balanced (components). 2) Upcoming: the next phases' screens in stay order — inquiry, care request, Meet & Greet, checkout, trip, 5-second check, review, Life Record. 3) Edge states: what owners and sitters see when things don't go to plan (DESIGN.md §10). 4) Onboarding: explored sign-up and sitter setup (OB.4 on hold). Everything except Live is built from components; re-run the PawNote plugin after changes.";
+  sub.characters = "1) Today: the live app's tabs (D47), Live (captured) vs Balanced (components). 2) Upcoming: the next phases' screens in stay order — inquiry, care request, Meet & Greet, checkout, trip, 5-second check, review, Life Record. 3) Edge states: what owners and sitters see when things don't go to plan (DESIGN.md §10). 4) Onboarding: explored sign-up and sitter setup (OB.4 on hold). Everything except Live is built from components; re-run the Goldito plugin after changes.";
   page.appendChild(sub); sub.x = 0; sub.y = y + 90; sub.setPluginData("pawnote", "screens");
   y += 220;
 
@@ -251,7 +251,7 @@ async function buildScreens(page, datasets, log, componentsPage) {
   return built;
 }
 
-/* Builds the PawNote component library on "3. Components" from the local variables
+/* Builds the Goldito component library on "3. Components" from the local variables
    (color/*, spacing/*, radius/*, size/*) and text styles (Title, Body, Body Strong, Small,
    Small Strong, Caption). Every fill, stroke, padding, gap and radius is bound to a variable.
    Components already made by hand or earlier (Button, Text Button, Chip, Card, Toast,
@@ -853,7 +853,7 @@ const LIBRARY = [
 
     await single("Permission Prompt", "Simulated system prompt after the notification primer. System look, not the app skin.", async () =>
       box("Permission", { w: 270, radius: 14, fill: "surface" }, [
-        box("Body", { w: 270, gap: "xs", pad: "md", align: "CENTER" }, [await txt("“PawNote” Would Like to Send You Notifications", "Body Strong", "text", { w: 238, align: "CENTER" }),
+        box("Body", { w: 270, gap: "xs", pad: "md", align: "CENTER" }, [await txt("“Goldito” Would Like to Send You Notifications", "Body Strong", "text", { w: 238, align: "CENTER" }),
           await txt("Notifications may include alerts, sounds and icon badges.", "Small", "text-muted", { w: 238, align: "CENTER" })]),
         box("Buttons", { dir: "H", w: 270, stroke: "border" }, [grow(box("No", { dir: "H", h: 44, justify: "CENTER", align: "CENTER" }, [await txt("Don’t Allow", "Body", "primary")])),
           grow(box("Yes", { dir: "H", h: 44, justify: "CENTER", align: "CENTER" }, [await txt("Allow", "Body Strong", "primary")]))]),
@@ -862,7 +862,7 @@ const LIBRARY = [
     await single("Push Preview", "Lock-screen notification preview used in the notifications step.", async () =>
       box("Push", { dir: "H", w: CW, gap: "sm", pad: "sm", radius: 16, fill: "surface", stroke: "border" }, [
         box("App", { dir: "H", w: 36, h: 36, radius: 9, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("🐾", "Body")]),
-        grow(box("Copy", {}, [await txt("PAWNOTE · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
+        grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
       [["Title", "Title"], ["Body", "Body"]]);
 
     await single("Theme Preview", "Onboarding Look step: coat color → nearest accessible preset, contrast badge (≥ 4.5:1), and how it carries into the app.", async () =>
@@ -1166,7 +1166,7 @@ const chips = (name, list, active = []) => row(name, list.map((l) => inst("Filte
 const FIELD = { "Full name": ["e.g. Chloe Park", "Shown to your sitter."], Email: ["e.g. chloe@example.com", "We'll send booking updates here."], Password: ["At least 8 characters", "Use 8 or more characters."], "Pet's name": ["e.g. Max", "Shown on every booking."], Breed: ["e.g. Maltese", "Helps the sitter with care tips."] };
 const field = (label) => inst("Text Field", { State: "Default" }, { Label: label, Value: (FIELD[label] || [])[0], Helper: (FIELD[label] || [])[1] });
 const ONBOARDING = [
-  ["ob-welcome", "Welcome", { title: "PawNote" }, null, async (b) => {
+  ["ob-welcome", "Welcome", { title: "Goldito" }, null, async (b) => {
     add(b, row("Photos", [inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" }), inst("Avatar", { Kind: "Photo" })], "xs"));
     add(b, await txt("Pet care updates that come to you", "Title", "text", { fill: true }));
     add(b, await txt("Book a sitter you trust, then follow along with photos, care check-offs and a daily report.", "Body", "text-muted", { fill: true }));
@@ -1176,7 +1176,7 @@ const ONBOARDING = [
     add(b, inst("Button", { Style: "Secondary", State: "Default" }, { Label: "I already have an account" }));
   }, P("Get started")],
   ["ob-role", "Role", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("How will you use PawNote?", "Title", "text", { fill: true }));
+    add(b, await txt("How will you use Goldito?", "Title", "text", { fill: true }));
     add(b, inst("Choice Card", { Size: "Large", Selected: "Yes" }));
     add(b, inst("Choice Card", { Size: "Large", Selected: "No" }, { Title: "I'm a pet sitter", Subtitle: "Get booked, then care, snap and tap" }));
   }, P("Continue")],
@@ -1404,7 +1404,7 @@ let DATA = [];
 const say = (msg, kind = "info") => figma.ui.postMessage({ type: "log", msg, kind });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-figma.showUI(__html__, { width: 380, height: 460, title: "PawNote Design Sync" });
+figma.showUI(__html__, { width: 380, height: 460, title: "Goldito Design Sync" });
 say(`Plugin loaded. File: ${figma.root.name}. Pages: ${figma.root.children.map((p) => `"${p.name}"`).join(", ")}`);
 
 figma.ui.onmessage = async (m) => {
