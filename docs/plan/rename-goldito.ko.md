@@ -19,7 +19,7 @@
 
 | 항목 | 이유 | 나중에 바꾸려면 |
 | :--- | :--- | :--- |
-| 데모 로그인 이메일 `demo-owner@pawddy.test` · `demo-sitter@pawddy.test` (코드 · 테스트 · 문서) | 호스팅 Supabase에 **이미 이 이메일로 계정이 있음**. 코드만 바꾸면 Try demo 로그인이 깨짐 | §2-5 |
+| ~~데모 로그인 이메일~~ | **2026-10-07 바꿈**: 호스팅 DB의 계정을 `@pawnote.test`(예전 이름 때 옮기지 않았던 것) → `demo-owner@goldito.test` · `demo-sitter@goldito.test` 로 직접 바꾸고 코드 · 문서 · 테스트도 같은 주소로 맞춤. 비밀번호는 그대로 | — |
 | GitHub 주소 `github.com/minsikpaul92/Pawddy/…` (문서 · PR 템플릿 링크, `docs/plan/env-setup.ko.md`) | 저장소 이름을 바꾸기 **전**에 바꾸면 링크가 깨짐 (바꾼 뒤에는 GitHub이 옛 주소를 자동으로 새 주소로 넘겨 줌) | §2-1 뒤에 아래 명령 |
 | Cloudinary 옛 폴더 `pawddy/…` · `pawnote/…` | 이미 올라간 사진 · 영상이 거기 있음. 백엔드는 `goldito` · `pawddy` · `pawnote` **셋 다** 읽음 | 필요 없음 (옛 파일은 그대로 보임) |
 | `docs/CHANGELOG.md`의 이전 항목, "PawNote → Pawddy" 이력 문장 | 역사 기록 | — |
@@ -55,18 +55,8 @@
 - [ ] Auth → Email Templates · SMTP 보낸 사람 이름에 "Pawddy"가 있으면 변경
 - [ ] (선택) 새 가입자의 기본 표시 이름이 아직 **"Pawddy user"** 입니다 — `003_functions_triggers.sql`의 `handle_new_user` 안 문구는 파일에서만 "Goldito user"로 바뀌었고, 이미 적용된 DB 함수는 그대로. 바꾸려면 그 함수 블록만 SQL Editor에서 다시 실행 (`create or replace function public.handle_new_user …`)
 
-### 2-5. 데모 로그인 이메일 (선택 — 안 해도 동작함)
-`@pawddy.test` 도메인이 어색하면 **세 곳을 한꺼번에** 바꿔야 합니다. 하나라도 빠지면 Try demo가 깨집니다.
-- [ ] Supabase SQL Editor:
-  ```sql
-  update auth.users set email = replace(email, '@pawddy.test', '@goldito.test') where email like '%@pawddy.test';
-  update auth.identities set identity_data = jsonb_set(identity_data, '{email}', to_jsonb(replace(identity_data->>'email', '@pawddy.test', '@goldito.test'))) where identity_data->>'email' like '%@pawddy.test';
-  ```
-- [ ] 코드 · 문서 · 테스트 일괄:
-  ```bash
-  git grep -l "@pawddy.test" | xargs sed -i '' 's#@pawddy.test#@goldito.test#g'
-  ```
-- [ ] `backend/scripts/seed_demo.py`로 데모 데이터를 다시 시드할 때 이메일이 새 도메인인지 확인
+### 2-5. 데모 로그인 이메일 — ✅ 끝남 (2026-10-07)
+호스팅 DB(`auth.users` · `auth.identities`)와 코드를 `@goldito.test` 로 함께 바꿨습니다. 나중에 `backend/scripts/seed_demo.py`로 다시 시드해도 같은 주소를 씁니다.
 
 ### 2-6. Cloudinary
 - [ ] 클라우드 이름은 그대로 (바꿀 필요 없음). 새 업로드는 `goldito/` 폴더로 쌓임

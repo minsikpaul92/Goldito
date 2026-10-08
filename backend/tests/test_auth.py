@@ -46,7 +46,7 @@ def claims(user_id: str = OWNER_ID, **overrides) -> dict:
     now = int(time.time())
     base = {
         "sub": user_id,
-        "email": "owner@pawddy.test",
+        "email": "owner@goldito.test",
         "aud": "authenticated",
         "iss": ISSUER,
         "role": "authenticated",
@@ -113,14 +113,14 @@ def test_me_with_valid_legacy_hs256_token_returns_profile(client: TestClient) ->
     assert response.status_code == 200
     assert response.json() == {
         "id": OWNER_ID,
-        "email": "owner@pawddy.test",
+        "email": "owner@goldito.test",
         "role": "owner",
         "display_name": "Robert",
     }
 
 
 def test_me_with_es256_token_is_checked_against_jwks(client: TestClient, es256_key) -> None:
-    token = jwt.encode(claims(SITTER_ID, email="sitter@pawddy.test"), es256_key, algorithm="ES256")
+    token = jwt.encode(claims(SITTER_ID, email="sitter@goldito.test"), es256_key, algorithm="ES256")
     response = client.get("/api/me", headers=bearer(token))
     assert response.status_code == 200
     assert response.json()["role"] == "sitter"

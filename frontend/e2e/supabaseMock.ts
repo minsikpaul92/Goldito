@@ -18,7 +18,7 @@ export type MockUser = {
 
 export const OWNER: MockUser = {
   id: "00000000-0000-4000-8000-000000000001",
-  email: "owner@pawddy.test",
+  email: "owner@goldito.test",
   password: "max-and-mochi",
   role: "owner",
   displayName: "Robert",
@@ -26,7 +26,7 @@ export const OWNER: MockUser = {
 
 export const SITTER: MockUser = {
   id: "00000000-0000-4000-8000-000000000002",
-  email: "sitter@pawddy.test",
+  email: "sitter@goldito.test",
   password: "care-snap-tap",
   role: "sitter",
   displayName: "Chloe",

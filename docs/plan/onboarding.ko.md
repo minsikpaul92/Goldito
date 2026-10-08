@@ -70,7 +70,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | 요소 | 설명 |
 | :--- | :--- |
 | 이메일·비밀번호 | Supabase signIn |
-| **Demo block** | 카드 또는 버튼 2개: Owner / Sitter — 탭 시 `demo-owner@pawddy.test` / `demo-sitter@pawddy.test` + `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 공개값, architecture §4 — service key 금지) 자동 채움 후 로그인 |
+| **Demo block** | 카드 또는 버튼 2개: Owner / Sitter — 탭 시 `demo-owner@goldito.test` / `demo-sitter@goldito.test` + `EXPO_PUBLIC_DEMO_PASSWORD` (데모 계정 전용 공개값, architecture §4 — service key 금지) 자동 채움 후 로그인 |
 | 힌트 | “For judges: use Try demo — Max (chicken allergy) is already set up.” |
 | 링크 | Create account → signup |
 

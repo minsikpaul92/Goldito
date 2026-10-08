@@ -27,8 +27,8 @@
 
 | 계정 | 이름 | 가진 것 |
 | :--- | :--- | :--- |
-| `demo-owner@pawddy.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
-| `demo-sitter@pawddy.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
+| `demo-owner@goldito.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
+| `demo-sitter@goldito.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
 > **2026-10-06 이름 변경 (PawNote → Pawddy):** 데모 계정 이메일이 `@pawnote.test` → `@pawddy.test` 로 바뀌었다. hosted DB에 `cd backend && python -m scripts.seed_demo` 를 한 번 다시 돌려야 **Try demo** 버튼이 동작한다. 예전 `@pawnote.test` 계정의 데이터(예약 · 펫)는 새 계정으로 옮겨지지 않는다.
 
@@ -371,7 +371,7 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | NAME-1 | 앱 첫 화면 · 로그인 · 가입 | 어디에도 "Pawddy"가 없고 **Goldito** | 🤖 (iframe 제목) · **👤** | ➖ |
-| NAME-2 | 데모 계정으로 로그인 (한 번 로그아웃된 상태에서) | Try the demo 로그인 성공 (이메일은 그대로 `@pawddy.test`) | 🤖 `welcome` | ➖ |
+| NAME-2 | 데모 계정으로 로그인 (한 번 로그아웃된 상태에서) | Try the demo 로그인 성공 (이메일은 그대로 `@goldito.test`) | 🤖 `welcome` | ➖ |
 | NAME-3 | 새 사진 업로드 후 Cloudinary 주소 | 폴더 `goldito/…`. **예전 사진(`pawddy/…`)도 계속 보임** | pytest | ➖ |
 | NAME-4 | Meet & Greet 영상 링크 · `.ics` 파일 | 제목이 "Goldito Meet & Greet — …", 파일명 `goldito-meet-greet.ics` | **👤** | ➖ |
 | NAME-5 | 동의서 문구 | "demo template for the Goldito hackathon" | **👤** | ➖ |
