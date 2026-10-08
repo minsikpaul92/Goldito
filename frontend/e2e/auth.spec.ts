@@ -135,8 +135,8 @@ test.describe("auth and role routing", () => {
 
   test("Try demo buttons sign in to the seeded owner and sitter (OB.3)", async ({ page }) => {
     // Same strings as lib/demo.ts; the password is the CI build's test-only EXPO_PUBLIC_DEMO_PASSWORD.
-    const demoOwner = { ...OWNER, email: "demo-owner@pawddy.test", password: "e2e-demo-password" };
-    const demoSitter = { ...SITTER, email: "demo-sitter@pawddy.test", password: "e2e-demo-password" };
+    const demoOwner = { ...OWNER, email: "demo-owner@goldito.test", password: "e2e-demo-password" };
+    const demoSitter = { ...SITTER, email: "demo-sitter@goldito.test", password: "e2e-demo-password" };
     await mockSupabase(page, [demoOwner, demoSitter]);
 
     await page.goto("/login");
