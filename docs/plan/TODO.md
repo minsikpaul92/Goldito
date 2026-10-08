@@ -34,7 +34,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [phases/phase-
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **Phase 07C complete** → next: **6B.1** DB `012_transit.sql` (home coordinates, trips, handoff checks) — start Phase 06B Pet Transit (P0, last; D41). Left over: 6.7 server push · 7.6 auto-draft · human runs (test-guide INQ-*, REPORT-10, album, review, Life Record) · phone camera (#19) after deploy | [phase-06b.md](phases/phase-06b.md) |
+| **6B.1** | DB `012_transit.sql` — home coordinates (`home_lat` / `home_lng`), trips (last position only), handoff photo checks; smoke O. Starts Phase 06B Pet Transit (P0, last; D41). Phase 07C is complete (PR #58). Left over: 6.7 server push · 7.6 auto-draft · the human test run of the unmerged PRs ([test-run-unmerged.ko.md](test-run-unmerged.ko.md)) · phone camera (#19) after deploy | [phase-06b.md](phases/phase-06b.md) |
 
 ---
 

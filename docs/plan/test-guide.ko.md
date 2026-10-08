@@ -325,6 +325,57 @@
 | INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
 | INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
 
+### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 실행 + `NEBIUS_API_KEY`*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| CAP-1 | 시터 → Feed → 펫 → **+ Photo** → 샘플 사진 하나 | 피드 위에 **내 사진 썸네일 카드** + "Uploading…" → **"Writing a caption…"** → 토스트 "Shared with Robert". **글 입력칸이 어디에도 없음** | 🤖 `caption` | ➖ |
+| CAP-2 | 게시된 카드의 캡션 | 1–2문장, 따뜻함, 펫 이름 한 번, 이모지 ≤ 2, **해시태그 · 따옴표 없음**, 사진에 안 보이는 것을 지어내지 않음. 샘플 5장 중 4장 이상이 사람이 쓴 듯 | **👤** | ➖ |
+| CAP-3 | 샘플 meal · walk · nap 사진을 각각 올림 | 오너 Album에서 각각 🍚 Meals · 🐕 Walks · 😴 Naps (샘플 9번 중 8번 맞음 — 틀린 한두 장은 정상) | **👤** (분류) | ➖ |
+| CAP-4 | 백엔드를 끄고(또는 `NEBIUS_API_KEY`를 틀리게) 사진 올리기 | **그래도 게시됨**, 캡션이 "… had a lovely moment today 🐾" / "A moment from today's care 🐾", Album에서는 ✨ Moments | 🤖 `caption` · pytest | ➖ |
+| CAP-5 | 영상 올리기 | 첫 프레임으로 캡션 · 분류, 카드에 ▶ | **👤** | ➖ |
+| CAP-6 | 오너 → Feed → **Timeline / Album** 토글 | Timeline = 최신순 카드. Album = 날짜 헤더("Oct 9, 2026") 아래 분류별 3열, **빈 분류는 안 보임**, "Meals · 2" 같은 개수. 사진을 누르면 뷰어 | 🤖 `caption` | ➖ |
+| CAP-7 | 할 일(밥 · 산책 · 낮잠 · 놀이)을 사진과 함께 완료 | 오너 Album에서 그 사진이 할 일 종류대로 Meals · Walks · Naps · Play에 들어감 | **👤** | ➖ |
+
+### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: 호스팅 DB에 `011` · `011b` 적용, 백엔드 실행 + `NEBIUS_API_KEY`, 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| DONE-1 | 시터가 **Returned** | 시터 토스트 "… home safe — Robert gets a notice". 오너 알림 두 개: **"Max and Mochi are home safe 🏠"** → 바로 뒤 **"Thanks for trusting Chloe! How was … stay? ⭐"** (이 순서) | SQL N | ➖ |
+| DONE-2 | 오너 → 그 예약 상세 | 맨 위 **"home safe 🏠"** + **Stay summary**(기간 · 알림장 수 · 사진 수 · 완료 할 일 수 · 마지막 알림장 첫 문장 — **그 돌봄 기간만** 셈) | 🤖 `completion` | ➖ |
+| DONE-3 | **Leave a review ⭐** → 별 없이 Send | Send **비활성**. 별을 누르면 선택 표시 (마우스 · 키보드) | 🤖 `completion` | ➖ |
+| DONE-4 | 별 4 + 코멘트 → **Send review** | 토스트 "Thanks! Chloe was told", 예약 상세로 돌아오고 **별 · 코멘트 읽기 전용**, Leave a review 사라짐. 시터에게 "Robert left you 4 stars ⭐" 알림 | 🤖 `completion` · SQL N | ➖ |
+| DONE-5 | 같은 리뷰를 다시 (주소 `/owner/bookings/<id>/review` 직접) | "you already reviewed this stay" — 두 번 못 씀. 돌봄이 안 끝난 예약이면 "Not ready yet" | 🤖 `completion` · SQL N | ➖ |
+| DONE-6 | 오너 → Chloe 시터 프로필 | **★ 평균 · 후기 수**, 최근 코멘트(리뷰어는 **이름만**). 후기가 없으면 별점 줄 없음 | 🤖 `completion` | ➖ |
+| DONE-7 | 끝난 예약 상세를 처음 엶 (Life Record가 없을 때) | "📖 Writing the Life Record…" → 펫마다 **LifeRecordCard**. 기록 없는 칸(예: 배변을 안 적음)은 **안 보임**, 전부 비면 "Nothing was recorded…". 출처 "From Chloe · Oct 9 – Oct 12" | 🤖 `completion` · pytest · **실제 모델 👤** | ➖ |
+| DONE-8 | **지어낸 내용이 없는지** — 이번 돌봄에 없던 것(산책을 안 했는데 "loves long walks", 약 할 일이 없는데 약 얘기)이 기록에 있나? 3번 확인 | 없어야 함 | pytest · **👤 3회** | ➖ |
+| DONE-9 | 기록 어디에도 lockbox · buzzer · 주소 · 전화번호 · 이메일이 없나? | 없어야 함 (Heads-up이나 Sitter tips에 섞여 들어가지 않음) | pytest · **👤** | ➖ |
+| DONE-10 | AI가 실패하는 상황(백엔드 끔) | "Couldn't write … Life Record" + **Retry**. 백엔드를 켜고 Retry → 기록 생성. 이미 있으면 다시 안 만듦(새로고침해도 요청 없음) | 🤖 `completion` | ➖ |
+| DONE-11 | 오너 → 펫(Max) → **📖 Life Record** | 최신 돌봄이 위, **Earlier stays** 아래. 알림 "…'s Life Record is updated 📖"를 누르면 이 화면 | 🤖 `completion` | ➖ |
+| DONE-12 | **다음 시터(다른 계정/시터)에게 Max 요청** → 그 시터 화면의 요청 · 예약 상세 | Max 카드에 **"📖 From Max's Life Record"** (접힘, 지난 시터 · 날짜) → 펼치면 기록. 기록 없는 펫(Mochi)에는 없음. 요청이 거절되면 사라짐 | 🤖 `sitter-bookings` · SQL N | ➖ |
+| DONE-13 | 오너 → 케어 요청서 **Make a checklist** (기록에 Heads-up이 있는 펫) | 제안된 주의사항에 지난 Heads-up이 **자동으로** 포함 (오너가 쓴 것과 같은 말은 중복 안 됨) | pytest | ➖ |
+| DONE-14 | 다른 시터가 Max에 대해 문의받았을 때(07B) 초안의 출처 | 출처 칩에 "From Max's Life Record" | pytest | ➖ |
+| DONE-15 | **보안 (실제 DB 👤)**: 돌봄이 끝난 시터(접근 시간 2시간 이후) · 제3자가 기록 조회, 오너가 `source_snapshot` 조회, 클라이언트가 `reviews`에 직접 insert | 모두 0행 / 거부 | SQL N | ➖ |
+
+### 3.14 이번 피드백 반영 (UX)
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| UX-1 | 오너 → 예약 새로 만들기 → Drop-off / Pick-up **날짜를 탭** | **달력 시트**가 뜸. 오늘 이전 날은 비활성(Pick-up은 Drop-off 이전), 월 이동 가능, 날짜를 누르면 그 날로 선택. −/+ 는 여전히 하루씩 | 🤖 `booking` | ➖ |
+| UX-2 | 시터 Home (돌보는 중) | **All tasks / My history**가 숫자 타일과 **달라 보임** (색 테두리 · 연한 배경 · `›`), 누르면 이동 | **👤** (모양) | ➖ |
+| UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
+| UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
+
+### 3.15 이름 변경 (NAME) — Pawddy → Goldito
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| NAME-1 | 앱 첫 화면 · 로그인 · 가입 | 어디에도 "Pawddy"가 없고 **Goldito** | 🤖 (iframe 제목) · **👤** | ➖ |
+| NAME-2 | 데모 계정으로 로그인 (한 번 로그아웃된 상태에서) | Try the demo 로그인 성공 (이메일은 그대로 `@pawddy.test`) | 🤖 `welcome` | ➖ |
+| NAME-3 | 새 사진 업로드 후 Cloudinary 주소 | 폴더 `goldito/…`. **예전 사진(`pawddy/…`)도 계속 보임** | pytest | ➖ |
+| NAME-4 | Meet & Greet 영상 링크 · `.ics` 파일 | 제목이 "Goldito Meet & Greet — …", 파일명 `goldito-meet-greet.ics` | **👤** | ➖ |
+| NAME-5 | 동의서 문구 | "demo template for the Goldito hackathon" | **👤** | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
