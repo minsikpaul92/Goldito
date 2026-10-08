@@ -366,6 +366,23 @@
 | UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 
+### 3.16 예약 흐름 피드백 (FLOW) — [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) 반영 후 확인할 것 *(아직 고치지 않음 — 지금은 전부 ❌ 예상)*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| FLOW-1 | 오너가 예약 요청 → 시터 화면 (새로고침 없이) | 시터 Bookings의 **Requests (1)** 이 바로 갱신 (FB-2) | 새로 필요 | ❌ 10/08 민식 (실시간 안 뜸) |
+| FLOW-2 | 시터가 Accept → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 새로 필요 | ➖ |
+| FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock) | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음) |
+| FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
+| FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸, 합의된 픽업 2시간 전 이전에는 비활성, 확인한 뒤에만 처리 (FB-9) | 새로 필요 | ❌ 10/08 민식 (바로 처리됨) |
+| FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 저장 · 전송. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성/숨김, 에러("That handoff already happened.")가 안 나옴 (FB-6) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
+| FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
+
 ### 3.15 이름 변경 (NAME) — Pawddy → Goldito
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
