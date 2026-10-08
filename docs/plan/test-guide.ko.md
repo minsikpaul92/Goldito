@@ -146,7 +146,7 @@
 | :--- | :--- | :--- |
 | 예약 요청 → 수락 → Confirmed (BOOK-1) | 🟡 | 진행은 됨. 실시간 갱신 ❌ (FLOW-1) |
 | 시간 · 장소 변경 (BOOK-2) | ❌ | FLOW-7 · 8 · 9 |
-| 체크아웃 · 결제 (BOOK-5) | ❌ ⛔ | 요금표 없음 (FLOW-3) — **이후 모든 단계가 여기서 막힘** |
+| 체크아웃 · 결제 (BOOK-5) | ❌ → 다시 확인 필요 | 요금표 없음이 원인이었음 — **10/08 Chloe 요금 행을 임시로 넣어 풀림**(견적 $268.13 확인). 예약을 새로 만들거나 기존 예약의 Finish booking을 다시 눌러 보세요 (FLOW-3) |
 | Received → Returned (BOOK-4) | ❌ | Returned 확인 단계 없음 (FLOW-6), 진행 중이 Upcoming에 (FLOW-5) |
 | 날짜 · 시간 입력 통일 (FLOW-10) · 이름 옆 역할 표시 (FLOW-11) · 입력칸 힌트 (FLOW-12) | ❌ | 모양 · 통일 |
 | 데모 로그인 (NAME-2) | 🟡 | Claude 확인 |
@@ -396,7 +396,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | FLOW-1 | 오너가 예약 요청 → 시터 화면 (새로고침 없이) | 시터 Bookings의 **Requests (1)** 이 바로 갱신 (FB-2) | 새로 필요 | ❌ 10/08 민식 (실시간 안 뜸) |
 | FLOW-2 | 시터가 Accept → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 새로 필요 | ➖ |
-| FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock) | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음) |
+| FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock) | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음) |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸, 합의된 픽업 2시간 전 이전에는 비활성, 확인한 뒤에만 처리 (FB-9) | 새로 필요 | ❌ 10/08 민식 (바로 처리됨) |
