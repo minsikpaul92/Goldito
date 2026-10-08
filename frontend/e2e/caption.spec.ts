@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import { mockUpload } from "./careFixtures";
-import { app, signIn } from "./helpers";
+import { NOON_TORONTO, app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Photo captions and the feed album (phase-09 9.1–9.5): the sitter only uploads; the model writes the caption and
@@ -81,7 +81,10 @@ test.describe("feed album", () => {
   const SEED: [string | null, number][] = [["meal", 0], ["meal", 0], ["walk", 0], ["nap", 1], [null, 1], ["other", 1]];
 
   async function seeded(page: Page) {
-    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    // A fixed clock before the first navigation: "today" and "yesterday" are Toronto days, so the seed must not
+    // straddle midnight whenever CI happens to run.
+    await page.clock.setFixedTime(NOON_TORONTO);
+    const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
     db.pets.push({ id: PET_ID, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
     SEED.forEach(([category, daysAgo], i) => {
       db.media.push({
@@ -91,7 +94,7 @@ test.describe("feed album", () => {
       db.feed_posts.push({
         id: post(i), pet_id: PET_ID, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: mediaId(i),
         caption: `Caption ${i}`, caption_source: "ai", category, task_log_id: null,
-        created_at: new Date(Date.now() - daysAgo * 86_400_000 - i * 60_000).toISOString(),
+        created_at: new Date(NOON_TORONTO.getTime() - daysAgo * 86_400_000 - i * 60_000).toISOString(),
       });
     });
     await signIn(page, OWNER);
