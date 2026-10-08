@@ -17,9 +17,9 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | Step | State |
 | :--- | :--- |
-| 1 | **Unmerged stack:** #55 (`feat/phase-07-report-chips`) → #56 (`feat/phase-07b-inquiry`) → #57 (`feat/phase-09-caption`) → #58 (`feat/phase-07c-completion`). Code complete, **DoD pending** (human runs). CI: `supabase` red on #56/#58 (R0-1), `frontend` red on time-of-day tests (R0-2). |
-| 2 | **Hotfix on main:** `fix/demo-login-emails` (`f2a6203`) — Try demo on main uses `@pawddy.test` but the hosted accounts are `@goldito.test`. PR to open + merge first (review D-R1). |
-| 3 | **Plan (review D-R2):** fix CI on the stack (R0) → merge the stack in order by merging `origin/main` into each next branch (no rebase / force-push) → review fixes from main in chunks R1 → R2 → R3 → R4 → then 6B.1. |
+| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 (`feat/phase-09-caption`, `main` merged in, CI running) → #58 (`feat/phase-07c-completion`). Code complete, **DoD pending** (human runs). CI is green on #55 / #56 after R0-1 / R0-2. |
+| 2 | **Hotfix on main:** ✅ merged as #59 (`780c772`, 2026-10-08) — Try demo uses `@goldito.test`. |
+| 3 | **Plan (review D-R2):** ✅ CI fixed on the stack (R0-1 · R0-2) → merging the stack in order by merging `origin/main` into each next branch (no rebase / force-push; **do not delete a base branch before the PR on top is retargeted**) → review fixes from main in chunks R1 → R2 → R3 → R4 → then 6B.1. |
 | 4 | **Hosted DB** already has `010`–`011b` + a temporary `sitter_rates` row for Chloe (see Hosted DB status). New migrations from the review start at `011c` (`012` is reserved for 06B). |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **R0-1** | CI `supabase` job: use the `pgvector/pgvector:pg17` image so `010` applies and smoke M/N finally run in CI; same image + `LC_ALL=C` order in `supabase/README.md`. Commit on `feat/phase-07b-inquiry`, then merge forward into `feat/phase-09-caption` and `feat/phase-07c-completion`. Fix any smoke check that fails once it really runs | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §3 R0-1 |
+| **R0-4** | Merge the rest of the stack in order: #57 (`main` already merged in; CI green → squash), then merge `origin/main` into `feat/phase-07c-completion`, re-run smoke + flows + pytest, retarget #58 to `main`, CI green → squash. Then R1 starts with **FB-7** | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §3 R0-4 |
 
 ---
 
@@ -46,7 +46,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's; **since 2026-10-04 Minsik owns them all** (Seulgi only delivers the anonymized conversation data) — one Current focus per agent session.
 
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
-  - **R0 (on the stack, before merge):** R0-2 time-of-day e2e tests (care-tasks · report · booking calendar · caption album → fixed clock) · R0-3 PR bodies (human pastes) · R0-4 merge in order (human approves)
+  - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order (in progress: #55 ✅ #56 ✅)
   - **R1 `fix/review-high` (from main after the stack):** FB-7 (rates seed + truthful message) → FB-10 (`reset_demo.py`) → **RV-9** Life Record concurrent write → **RV-10** Life Record uses this stay's reports only → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
@@ -77,6 +77,10 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **R0-2** The time-of-day e2e tests no longer depend on when CI runs (`94b5476`, `4d29dcb`; tests only, no app code): `care-tasks`, `report`, `caption` pin the browser clock to Toronto noon (`page.clock.setFixedTime` before the first navigation, `NOON_TORONTO` / `TODAY_TORONTO` in `e2e/helpers.ts`) and the mock takes the same time (`mockSupabase(page, users, { now })`); `booking` picks the 15th of next month instead of "the last day". Checked: at Toronto 00:30 the old failure comes back, at noon it passes. Flows 182 ✓, CI `frontend` green on #55 / #56 (2026-10-08).
+- [x] **R0-1** CI `supabase` job runs on `pgvector/pgvector:pg17` (`6fcf39c`) so `010` applies and the SQL smoke runs in CI for the first time; `supabase/README.md` uses the same image and `LC_ALL=C` migration order. The smoke's Thanksgiving pay test (fixed Oct 9–12 dates) overlapped Max / Mochi's `now() ± 1 day` booking for a few days around today — it now gets its own two pets. Smoke 423 ✓ on a fresh DB, CI `supabase` green on #56 (2026-10-08).
+- [x] **Hotfix** Try demo logins use `@goldito.test` (#59, `780c772`, 2026-10-08): `frontend/lib/demo.ts`, `backend/scripts/seed_demo.py`, `backend/README.md`, two e2e specs.
 
 - [x] **BF.7** A reopened checkout keeps the addresses (`009e_reopened_checkout_keeps_addresses.sql` — applied to the hosted DB 2026-10-06, hosted smoke ✓): `get_handoff_details` answers for a booking paid at least once (`paid_at` or `price_snapshot`), so while an agreed change waits for the owner's new consent (009d) the sitter still sees where to bring the pet back and the owner keeps the sitter's place card — the same rule as the owner profile (009d). Only the entry codes stay locked; the sitter's entry card now says "Waiting for {owner} to sign" instead of disappearing. The card now checks the RPC error code — it compared the shown message, so its hide-on-`not_paid` / `forbidden` branch never ran and showed "Addresses unlock after checkout." instead. SQL smoke (BF.7) + 🤖 `checkout` (2026-10-06).
 - [x] **BF.6** Paid bookings follow agreed changes (`009d_paid_bookings_follow_changes.sql` — applied to the hosted DB 2026-10-06, hosted smoke ✓): a handoff change agreed after checkout used to leave the paid quote (2 nights paid, 4 booked) and, when it moved a handoff to the owner's home, unlocked the entry codes with no `home_access` consent. Now the stay is re-quoted (owner notice `price_updated`, demo — nothing charged) or, when a new consent is needed, checkout reopens (`paid_at` cleared, last paid quote kept, notice `checkout_needed` → Checkout; the booking banner says "Your stay changed — sign to finish"). Consents are signed at checkout only (confirmed, unpaid, a required kind). The owner's address and emergency contact reach the sitter only after payment (D31). SQL smoke (BF.6) + 🤖 `checkout` (2026-10-06).
