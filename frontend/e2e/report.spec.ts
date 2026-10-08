@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { caring, mockUpload } from "./careFixtures";
-import { app, signIn } from "./helpers";
+import { NOON_TORONTO, TODAY_TORONTO, app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Daily report (phase-07 7.3): the sitter keeps or turns off chips, adds a note, edits the AI preview and sends;
@@ -16,8 +16,10 @@ const CHIPS = [
 const PHOTO_CHIP = { id: "photo-media-proof-0", kind: "episode", label: "Watching a squirrel", source: "vision", check: null, media_id: "media-proof" };
 
 async function openSitterDiary(page: import("@playwright/test").Page) {
-  const { db } = await mockSupabase(page, [OWNER, SITTER]);
-  caring(db, [MAX]);
+  // A fixed clock before the first navigation: "today" is a Toronto date, so it must not depend on when CI runs.
+  await page.clock.setFixedTime(NOON_TORONTO);
+  const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
+  caring(db, [MAX], NOON_TORONTO);
   const chipRequests: Record<string, unknown>[] = [];
   const reportRequests: Record<string, unknown>[] = [];
   await page.route("**/api/ai/report-chips", (route) => {
@@ -40,11 +42,11 @@ async function openSitterDiary(page: import("@playwright/test").Page) {
       id: "r1",
       pet_id: MAX.id,
       sitter_id: SITTER.id,
-      report_date: new Date().toISOString().slice(0, 10),
+      report_date: TODAY_TORONTO,
       body: "I had such a lovely day with Max! 🐶 He ate everything.",
       status: "draft",
       source_snapshot: { tasks: [{ title: "Walk", status: "done" }] },
-      created_at: new Date().toISOString(),
+      created_at: NOON_TORONTO.toISOString(),
     };
     db.daily_reports.push(row);
     return route.fulfill({
@@ -181,8 +183,7 @@ test.describe("daily report", () => {
 
   test("a saved draft comes back after a reload, still private", async ({ page }) => {
     const { db } = await openSitterDiary(page);
-    const today = new Date().toISOString().slice(0, 10);
-    db.daily_reports.push({ id: "d1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: today, body: "Saved draft text", status: "draft", source_snapshot: null, created_at: new Date().toISOString() });
+    db.daily_reports.push({ id: "d1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: TODAY_TORONTO, body: "Saved draft text", status: "draft", source_snapshot: null, created_at: NOON_TORONTO.toISOString() });
     await page.reload();
     const screen = app(page);
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("Saved draft text");

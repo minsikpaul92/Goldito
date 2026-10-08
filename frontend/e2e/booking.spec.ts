@@ -157,11 +157,9 @@ test.describe("book care", () => {
     await screen.getByTestId("drop_off-day-open").click();
     const sheet = screen.getByTestId("drop_off-calendar");
     await expect(sheet).toBeVisible();
-    // Pick the last day shown (the end of the month).
-    const days = sheet.locator('[data-testid^="drop_off-calendar-20"]');
-    const ids = await days.evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")!.slice(-10)));
-    const target = ids[ids.length - 1];
-    await screen.getByTestId(`drop_off-calendar-${target}`).click();
+    // Next month, then its 15th: never the default drop-off (tomorrow), whatever day the test runs.
+    await screen.getByTestId("drop_off-calendar-next").click();
+    await sheet.locator('[data-testid^="drop_off-calendar-20"][data-testid$="-15"]').click();
     await expect(sheet).toHaveCount(0);
     expect(await dropDay.innerText()).not.toBe(start);
 
