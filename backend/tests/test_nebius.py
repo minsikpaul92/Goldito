@@ -115,7 +115,7 @@ def test_streaming_refused_falls_back_to_a_plain_call(monkeypatch):
 
 def test_the_metrics_line_has_numbers_and_never_the_text(monkeypatch, caplog):
     install(monkeypatch, "SECRET ANSWER")
-    with caplog.at_level(logging.INFO, logger="pawddy.ai"):
+    with caplog.at_level(logging.INFO, logger="goldito.ai"):
         nebius.chat("fast", [{"role": "user", "content": "SECRET PROMPT"}], endpoint="care-plan")
     line = next(r.getMessage() for r in caplog.records if "ai_call" in r.getMessage())
     fields = json.loads(line.split("ai_call ", 1)[1])

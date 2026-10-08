@@ -20,8 +20,8 @@ SITTER_ID = "00000000-0000-4000-8000-000000000002"
 NO_PROFILE_ID = "00000000-0000-4000-8000-000000000009"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Robert"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Chloe"),
 }
 
 
@@ -115,7 +115,7 @@ def test_me_with_valid_legacy_hs256_token_returns_profile(client: TestClient) ->
         "id": OWNER_ID,
         "email": "owner@pawddy.test",
         "role": "owner",
-        "display_name": "Chloe",
+        "display_name": "Robert",
     }
 
 
@@ -142,7 +142,7 @@ def test_role_comes_from_profiles_not_token_metadata(client: TestClient) -> None
 def test_me_without_profile_is_403(client: TestClient) -> None:
     response = client.get("/api/me", headers=bearer(hs256(claims(NO_PROFILE_ID))))
     assert response.status_code == 403
-    assert response.json() == {"detail": "No Pawddy profile for this account.", "code": "forbidden"}
+    assert response.json() == {"detail": "No Goldito profile for this account.", "code": "forbidden"}
 
 
 def test_require_role_lets_only_that_role_through() -> None:

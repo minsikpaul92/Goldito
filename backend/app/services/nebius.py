@@ -29,7 +29,7 @@ from app.config import get_settings
 
 Role = Literal["fast", "report", "safety", "vision"]
 
-logger = logging.getLogger("pawddy.ai")
+logger = logging.getLogger("goldito.ai")
 
 DEFAULT_TIMEOUT_S = 45.0
 EMBED_BATCH = 16
@@ -180,6 +180,96 @@ def chat(
         ttft_ms=ttft_ms,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
+    )
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    id: str
+    name: str
+    arguments: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ToolReply:
+    """One assistant turn when tools are offered: either the answer (`content`) or tools to run (`tool_calls`)."""
+
+    content: str
+    tool_calls: list[ToolCall]
+    model: str
+    latency_ms: int
+
+    def as_message(self) -> dict[str, Any]:
+        """The assistant turn to append before the tool results (OpenAI chat format)."""
+        message: dict[str, Any] = {"role": "assistant", "content": self.content or None}
+        if self.tool_calls:
+            message["tool_calls"] = [
+                {"id": c.id, "type": "function", "function": {"name": c.name, "arguments": json.dumps(c.arguments)}}
+                for c in self.tool_calls
+            ]
+        return message
+
+
+def chat_tools(
+    role: Role,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    *,
+    endpoint: str = "",
+    max_tokens: int = 400,
+    temperature: float = 0.2,
+    timeout: float = 30.0,
+) -> ToolReply:
+    """One non-streaming completion with tools (Nemotron tool calling works on Token Factory, 2026-10-07)."""
+    model, base_url = _role_config(role)
+    client = _client(base_url)
+    started = time.perf_counter()
+    ok = False
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+            max_tokens=max_tokens,
+            temperature=temperature,
+            timeout=timeout,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        )
+        message = response.choices[0].message
+        calls: list[ToolCall] = []
+        for call in message.tool_calls or []:
+            try:
+                arguments = json.loads(call.function.arguments or "{}")
+            except json.JSONDecodeError:
+                arguments = {}
+            calls.append(ToolCall(call.id, call.function.name, arguments if isinstance(arguments, dict) else {}))
+        if response.usage is not None:
+            prompt_tokens, completion_tokens = response.usage.prompt_tokens, response.usage.completion_tokens
+        ok = True
+    except (APIConnectionError, APITimeoutError) as exc:
+        raise AIUnavailable("Could not reach the model.") from exc
+    except APIStatusError as exc:
+        raise AIUnavailable(f"The model refused the request ({exc.status_code}).") from exc
+    finally:
+        _log_call(
+            role=role,
+            model=model,
+            endpoint=endpoint,
+            ttft_ms=None,
+            latency_ms=int((time.perf_counter() - started) * 1000),
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            retried=False,
+            ok=ok,
+        )
+    return ToolReply(
+        content=strip_think(message.content or ""),
+        tool_calls=calls,
+        model=model,
+        latency_ms=int((time.perf_counter() - started) * 1000),
     )
 
 

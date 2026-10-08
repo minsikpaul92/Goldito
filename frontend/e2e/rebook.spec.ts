@@ -54,7 +54,7 @@ test.describe("cancel and rebook", () => {
     await page.goto(`/sitter/bookings/${BOOKING}`);
     const sitter = app(page);
     await sitter.getByTestId("cancel-booking").click();
-    await expect(sitter.getByTestId("cancel-sheet")).toContainText("Chloe gets a notice and can find a new sitter.");
+    await expect(sitter.getByTestId("cancel-sheet")).toContainText("Robert gets a notice and can find a new sitter.");
     await sitter.getByTestId("cancel-confirm").click();
     await expect(sitter.getByTestId("toast")).toContainText("Booking cancelled");
     expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancelled_by: SITTER.id });
@@ -64,7 +64,7 @@ test.describe("cancel and rebook", () => {
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/owner/bookings/${BOOKING}`);
     const owner = app(page);
-    await expect(owner.getByTestId("booking-ended")).toContainText("Lucy cancelled this booking.");
+    await expect(owner.getByTestId("booking-ended")).toContainText("Chloe cancelled this booking.");
     await expect(owner.getByTestId("cancel-booking")).toHaveCount(0);
     await owner.getByTestId("find-new-sitter").click();
 
@@ -86,7 +86,7 @@ test.describe("cancel and rebook", () => {
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await screen.getByTestId("cancel-booking").click();
-    await expect(screen.getByTestId("cancel-sheet")).toContainText("Lucy gets a notice.");
+    await expect(screen.getByTestId("cancel-sheet")).toContainText("Chloe gets a notice.");
     await screen.getByTestId("cancel-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Booking cancelled");
     expect(db.cancellations).toEqual([{ p_booking: BOOKING, p_reason: "Owner cancelled" }]);

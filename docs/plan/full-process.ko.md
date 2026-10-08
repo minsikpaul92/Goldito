@@ -1,4 +1,4 @@
-# Pawddy 전체 서비스 흐름 (Full Process) — 제품 흐름 정본
+# Goldito 전체 서비스 흐름 (Full Process) — 제품 흐름 정본
 
 > **Status:** 2026-10-01 확정 (architecture **D27–D34**), 2026-10-02 보강 (**D35–D46**: 시터 말투 레이어 · 시터 승인 · 사람 속도 전달 · 모델 정책 · 변경 요청 · 위치 동의 · mood meter · SFT는 보여주기용 · Meet & Greet 규칙 · Google Meet · 에이전트 설명). 팀 시나리오 "Pawddy Full Process"(PDF·Markdown, 리포에 넣지 않음)를 앱 설계로 옮긴 문서입니다. 원문의 "PetNote"·"PawNote"(옛 이름)는 Pawddy입니다. **2026-10-02 원문 대조 최종 점검:** 원문의 모든 항목이 반영되어 있고(바꾼 부분은 §5에 이유와 함께 기록), 문서 사이 불일치를 정리했으며, 점검 뒤 결정(§9 #2·#3·#11·#12 — 자동 발송·읽음 표시·06B 순서·에이전트 설명)과 Meet & Greet 규칙(D44·D45), 알림장 글쓰기 거의 제로(D38 개정)를 반영했습니다.
 > **이 문서가 제품 흐름의 정본입니다.** 루트 README(심사위원용), 데모 영상, Phase 순서([phases/README.ko.md](phases/README.ko.md)), [TODO.md](TODO.md)가 이 흐름을 따릅니다. 스키마·API 세부는 phase 문서와 [architecture.ko.md](phases/architecture.ko.md)가 정본입니다.
@@ -12,7 +12,7 @@
 
 영감: **Rover**(예약·빠른 응답) × **KidsNote**(투약의뢰서·등하원·알림장·앨범) × **Uber**(실시간 이동) + **AI/RAG** (Nebius Token Factory).
 
-**Pawddy AI는 에이전트처럼 움직인다 (D46):** 문의가 오면 근거를 모아 답장 초안, 의뢰서가 오면 체크리스트, 인계 사진이 오면 안전 확인, 하루가 끝나면 칩 제안과 알림장, 돌봄이 끝나면 Life Record — 일이 생길 때마다 스스로 움직이고, 상대에게 닿는 것은 모두 사람이 승인한다.
+**Goldito AI는 에이전트처럼 움직인다 (D46):** 문의가 오면 근거를 모아 답장 초안, 의뢰서가 오면 체크리스트, 인계 사진이 오면 안전 확인, 하루가 끝나면 칩 제안과 알림장, 돌봄이 끝나면 Life Record — 일이 생길 때마다 스스로 움직이고, 상대에게 닿는 것은 모두 사람이 승인한다.
 
 ---
 
@@ -52,8 +52,8 @@
 | 누가 | 무엇을 |
 | :--- | :--- |
 | **Owner** | 시터 프로필에서 **Ask about a stay** → 서비스 방식(**A. House sitting** — 시터가 내 집으로 / **B. Boarding** — 시터 집에 맡김), 맡기기·찾기 날짜·시각, 반려동물 선택(프로필 자동 첨부: 종·품종·나이·알레르기·주의사항), 질문 1줄(선택) |
-| **Pawddy AI** | 문의가 오면 몇 초 안에 **시터의 말투(1인칭, "I can take Max…")로 답장 초안**을 만든다 (D35). 근거: ① 그 시터의 **캘린더**(가능 여부) ② **요금 정책**(기본·**공휴일 할증**·**다두 할증**) → 서버가 계산한 견적 ③ 시터의 **정책 문서**(포함 서비스·취소·집 규칙) ④ 이 반려동물의 **Pet Life Record**·지난 대화 (RAG) ⑤ 시터의 **말투 스타일 가이드 + 과거 답변 예시** |
-| **Sitter** | 알림 "Chloe sent an inquiry — draft ready" → 스레드에서 초안을 보고 **Send**(그대로) · **Edit / Add**(수정·추가) · **Regenerate** · 의도 칩(수락 / 거절 / 다른 날짜 제안)으로 초안 방향을 바꿀 수 있다. 시터는 한 글자도 안 써도 된다 (D38). 초안 위에 "AI drafts can be wrong. You're responsible for what you send." 문구 (D36) |
+| **Goldito AI** | 문의가 오면 몇 초 안에 **시터의 말투(1인칭, "I can take Max…")로 답장 초안**을 만든다 (D35). 근거: ① 그 시터의 **캘린더**(가능 여부) ② **요금 정책**(기본·**공휴일 할증**·**다두 할증**) → 서버가 계산한 견적 ③ 시터의 **정책 문서**(포함 서비스·취소·집 규칙) ④ 이 반려동물의 **Pet Life Record**·지난 대화 (RAG) ⑤ 시터의 **말투 스타일 가이드 + 과거 답변 예시** |
+| **Sitter** | 알림 "Robert sent an inquiry — draft ready" → 스레드에서 초안을 보고 **Send**(그대로) · **Edit / Add**(수정·추가) · **Regenerate** · 의도 칩(수락 / 거절 / 다른 날짜 제안)으로 초안 방향을 바꿀 수 있다. 시터는 한 글자도 안 써도 된다 (D38). 초안 위에 "AI drafts can be wrong. You're responsible for what you send." 문구 (D36) |
 | **왜** | 마켓플레이스에서는 견주가 **먼저 답한 시터**에게 예약하는 경우가 많다 → 바쁜 시터도 응답 속도를 유지하면서, 견주는 **시터와 직접 대화하는 느낌**을 받는다 (원문: Rover의 빠른 응답 환경) |
 
 **발송 모드 (D36 · D37)**
@@ -61,10 +61,10 @@
 | 모드 | 동작 | 사람 속도 연출 |
 | :--- | :--- | :--- |
 | **수동 승인** (기본) | 시터가 **Send**를 누르는 즉시 발송. 견주 화면에서 시터가 승인해 보낸 메시지는 **시터의 메시지**로 표시된다 (메시지마다 "AI" 라벨 없음) | 없음 (시터가 실제로 읽고 누른 시간이 곧 응답 시간) |
-| **자동 발송** (옵션, 시터가 켬) | 초안이 **대기 없이 바로** 사람 속도로 나간다 (N분 기다리지 않음 — 2026-10-02 결정). **켜는 순간 책임 동의 모달**을 띄운다: "Replies go out in your name. You're responsible for what's sent." | 견주 화면에 **"Lucy is typing…"** → 답장 = **총 약 30초**. **읽음 표시는 시터가 스레드를 실제로 열었을 때만** — 자동 모드라고 가짜 읽음을 보여 주지 않는다 (2026-10-02 결정). 글자 수별 지연 공식은 **슬기가 정한다 (TBD, §9)**. 메시지 구조(1개/분할)도 미확정 |
+| **자동 발송** (옵션, 시터가 켬) | 초안이 **대기 없이 바로** 사람 속도로 나간다 (N분 기다리지 않음 — 2026-10-02 결정). **켜는 순간 책임 동의 모달**을 띄운다: "Replies go out in your name. You're responsible for what's sent." | 견주 화면에 **"Chloe is typing…"** → 답장 = **총 약 30초**. **읽음 표시는 시터가 스레드를 실제로 열었을 때만** — 자동 모드라고 가짜 읽음을 보여 주지 않는다 (2026-10-02 결정). 글자 수별 지연 공식은 **슬기가 정한다 (TBD, §9)**. 메시지 구조(1개/분할)도 미확정 |
 
 - **데모 영상**에도 같은 사람 속도 연출을 쓴다 (장면 ①). 알림장·캡션에는 인위적 지연을 쓰지 않는다 (D37).
-- **AI 사용 고지:** 메시지마다 라벨은 붙이지 않는다. 대신 ① 이용약관·시터 온보딩에 "시터가 AI 작성 보조를 쓸 수 있음"을 한 번 고지 ② 자동 발송 모드의 시터 프로필에 한 줄("Lucy uses Pawddy's assistant for quick replies") ③ 견주가 "Are you an AI?"처럼 직접 물으면 사람이라고 답하지 않고 시터에게 알린다 (D36).
+- **AI 사용 고지:** 메시지마다 라벨은 붙이지 않는다. 대신 ① 이용약관·시터 온보딩에 "시터가 AI 작성 보조를 쓸 수 있음"을 한 번 고지 ② 자동 발송 모드의 시터 프로필에 한 줄("Chloe uses Goldito's assistant for quick replies") ③ 견주가 "Are you an AI?"처럼 직접 물으면 사람이라고 답하지 않고 시터에게 알린다 (D36).
 - **계속 배우는 말투 (D35):** 시터가 초안을 **그대로 보냄 / 수정해서 보냄 / 다시 생성**한 결과가 시터별 예시 풀(`tone_samples`)에 쌓여, 다음 초안의 few-shot에 쓰인다. 수정 비율(edit ratio)이 줄어드는 곡선이 학습 지표다.
 - 숫자(가격·날짜·가능 여부)는 **서버가 계산**하고 AI는 문장만 쓴다 (D29) — 답변 아래에 견적 카드가 같은 숫자로 붙는다. 안전 경고·견적 숫자·동의서는 **고정 문구**로 말투 레이어를 거치지 않는다 (D35).
 - 다음 액션: **Request booking**(문의 내용 자동 입력). 처음 만나는 사이면 요청 뒤 **Meet & Greet** 단계로 이어진다 (Stage 2-2, D44). 요청은 결제가 아니고(결제는 시터 수락 후 Checkout), 맡기기 전이면 취소할 수 있다.
@@ -92,7 +92,7 @@ Heads-up: No knocking or doorbell — text me instead.
 | :--- | :--- |
 | **In person** (대면) | 견주·시터가 프로필에 미리 적어 둔 **선호 만남 장소**(각자 최대 3개 — 공원 입구·카페 같은 공개 장소)가 칩으로 보인다 → 장소(또는 "Somewhere else" 1줄) + 날짜·시각을 골라 제안 → 상대 수락 (거절하면 다시 제안). 집 주소는 결제 전까지 자동으로 공개하지 않는다 (D31) |
 | **Video** (영상) | 날짜·시각을 제안 → 상대가 수락하는 순간 **Google Meet 링크가 자동으로 생성**되어 양쪽 예약 카드에 **Join Google Meet**, 양쪽 이메일로 **Google Calendar 초대** (D45). 앱 설치 없이 브라우저로 참여(폰은 Meet 앱 권장), 링크는 새 탭으로 연다 |
-| **건너뛰기** | 한쪽이 **Skip Meet & Greet** → 먼저 "If Lucy says no, this booking will be cancelled." 확인 → 상대에게 "Continue the booking without a Meet & Greet?" → **Continue**면 그대로 진행 / **Decline**이면 **예약이 취소**되고 견주는 **Find a new sitter**로 다른 시터를 찾는다 |
+| **건너뛰기** | 한쪽이 **Skip Meet & Greet** → 먼저 "If Chloe says no, this booking will be cancelled." 확인 → 상대에게 "Continue the booking without a Meet & Greet?" → **Continue**면 그대로 진행 / **Decline**이면 **예약이 취소**되고 견주는 **Find a new sitter**로 다른 시터를 찾는다 |
 
 **2-3. 이동 방식** — 맡기기·찾기마다 고름 (= 인수인계 장소, D28):
 
@@ -123,7 +123,7 @@ House sitting은 돌봄 장소가 견주 집이라 시작·끝 모두 **Sitter d
 | 공통 | **Safe return**(귀가 시 받을 사람) | — |
 
 - **확정 후 변경 요청 (D40):** 서비스 방식·이동 방식은 확정과 함께 고정된다. **견주와 시터 모두 변경을 요청**할 수 있고, **상대가 승인해야** 적용된다. 한쪽이라도 거부하면 **변경 요청만 취소**되고 원래 예약은 그대로 유지된다. (P0 구현은 시각·장소(=이동 방식) 변경까지, **서비스 방식 변경은 P1** — Phase 11.14) (예약 자체를 취소하는 흐름은 기존 03B 취소 규칙을 따른다.)
-- 출입 정보가 열릴 때마다 기록 + 견주 알림 "Lucy can now see your entry info". 끝나면 다시 잠김.
+- 출입 정보가 열릴 때마다 기록 + 견주 알림 "Chloe can now see your entry info". 끝나면 다시 잠김.
 - 출입 정보는 **RAG·AI 입력·알림 본문에 절대 넣지 않음** (D31).
 - Phase: **03C**.
 
@@ -131,10 +131,10 @@ House sitting은 돌봄 장소가 견주 집이라 시작·끝 모두 **Sitter d
 
 **4-1. Scenario 1 — Owner drives** (견주가 시터 집으로)
 
-0. **위치 공유 동의 (D41)** — 이동하는 쪽이 **Start trip**을 누르면 먼저 앱 동의 화면이 뜬다: "Share your live location with Lucy until you arrive?" (**누구에게 · 언제까지**를 명시, 도착하면 자동 종료) → **Allow**를 누르면 그다음에 브라우저/OS 위치 권한 팝업. 동의하지 않으면 위치는 공유되지 않는다 (대안 흐름은 §9 TBD).
+0. **위치 공유 동의 (D41)** — 이동하는 쪽이 **Start trip**을 누르면 먼저 앱 동의 화면이 뜬다: "Share your live location with Chloe until you arrive?" (**누구에게 · 언제까지**를 명시, 도착하면 자동 종료) → **Allow**를 누르면 그다음에 브라우저/OS 위치 권한 팝업. 동의하지 않으면 위치는 공유되지 않는다 (대안 흐름은 §9 TBD).
 1. 견주 **Start trip** → 시터 화면: 견주 실시간 위치 · 지도 · **ETA**
-2. 시터 집 근처(150 m) 도착 → 시터: "**Chloe has arrived** 🚗" / 견주: **Visitor parking** 위치 · 로비 안내 카드
-3. 체크인: 인계 → 시터가 사진 1장 → **Vision AI**가 상태 확인(반려동물이 보이고 이상 신호 없음) → **Received** → 견주 Push "**Max checked in at Lucy's ✅**"
+2. 시터 집 근처(150 m) 도착 → 시터: "**Robert has arrived** 🚗" / 견주: **Visitor parking** 위치 · 로비 안내 카드
+3. 체크인: 인계 → 시터가 사진 1장 → **Vision AI**가 상태 확인(반려동물이 보이고 이상 신호 없음) → **Received** → 견주 Push "**Max checked in at Chloe's ✅**"
 
 **4-2. Scenario 2 — Sitter drives** (시터가 견주 집으로)
 
@@ -194,7 +194,7 @@ Oct 9, 2026
 
 ## 3. 역할별 흐름
 
-| Owner | Sitter | Pawddy AI |
+| Owner | Sitter | Goldito AI |
 | :--- | :--- | :--- |
 | 예약 문의 | 문의 확인 | 요청 수신 → RAG 검색 |
 | 펫 프로필 제공 (자동 첨부) | AI가 기본 응대 | 시터 일정·요금·펫 프로필 확인 |
@@ -242,23 +242,23 @@ Oct 9, 2026
 | D42 | Fun mood meter (P1) | 재미용 문구 필수, 보이는 행동 태그 + 프레임 비율로 서버 계산, 부정 감정 퍼센트 금지. 모델 후보 = 비전 모델 태그 추출(A) + Apache-2.0 이미지 분류기 `agentmish/dog-emotion-classifier-v2`(B). 비용·라이선스 문제 시 제외 가능 | 임팩트용 비핵심 기능 |
 | D43 | SFT는 보여주기용 | 앱 말투는 Nemotron + 말투 카드 + few-shot만. 파인튜닝은 앱에 연결하지 않고 README Future work·데이터 명세로만 보여줌 (서빙 비용·데이터 부족) | 비용 없이 확장 가능성만 전달 |
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**, **예약 요청 뒤 · 시터 수락 전**. Done이거나 건너뛰기에 둘 다 동의해야 수락 가능. 대면 = 양쪽 프로필의 **선호 만남 장소** 칩 + 날짜·시각, 영상 = Google Meet(D45). 건너뛰기: 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 **예약 취소** + 견주 Find a new sitter. 이미 만난 사이면 단계 없음 | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
-| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의되는 순간 백엔드가 **Google Calendar API**로 이벤트 + Meet 링크를 만들고 양쪽 이메일로 초대 → 각자 Google Calendar에 등록. 주최 계정 = Pawddy Google 계정(OAuth refresh token은 백엔드에만, 앱 게시 상태 **In production** — Testing이면 7일 만료). 브라우저로 참여(폰은 앱 권장), 새 탭으로 연다. 실패하면 시각 + .ics + 링크 붙여넣기 | 앱 설치 없이 플랫폼 무관, 캘린더 자동 등록, 추가 비용 없음 |
+| D45 | 영상 Meet & Greet = Google Meet | 시각이 합의되는 순간 백엔드가 **Google Calendar API**로 이벤트 + Meet 링크를 만들고 양쪽 이메일로 초대 → 각자 Google Calendar에 등록. 주최 계정 = Goldito Google 계정(OAuth refresh token은 백엔드에만, 앱 게시 상태 **In production** — Testing이면 7일 만료). 브라우저로 참여(폰은 앱 권장), 새 탭으로 연다. 실패하면 시각 + .ics + 링크 붙여넣기 | 앱 설치 없이 플랫폼 무관, 캘린더 자동 등록, 추가 비용 없음 |
 | D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 동작이 확인되면 07B에만 선택(7B.11) | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성은 그대로 |
 
 ---
 
-## 6. 데모 경로 (A Stay with Pawddy)
+## 6. 데모 경로 (A Stay with Goldito)
 
-추수감사절 연휴(2026-10-09 금 ~ 10-12 월, 10-12 = Thanksgiving) Max(강아지·Maltese·닭고기 알레르기) + Mochi(고양이)를 Lucy에게 보딩. 시드는 상대 날짜(`--relative`)로 언제든 재현.
+추수감사절 연휴(2026-10-09 금 ~ 10-12 월, 10-12 = Thanksgiving) Max(강아지·Maltese·닭고기 알레르기) + Mochi(고양이)를 Chloe에게 보딩. 시드는 상대 날짜(`--relative`)로 언제든 재현.
 
 | # | 장면 | 화면 (역할) | Phase |
 | :--- | :--- | :--- | :--- |
-| ① | 22:40 Chloe가 Lucy에게 문의 (Lucy는 자동 발송 모드) → "Lucy is typing…" → **약 30초 뒤 답장**(Lucy의 말투·1인칭): 가능, 견적(공휴일·2마리 할증 포함), "Max's Life Record says she takes her pill in a treat — happy to do that". 초안 생성 자체는 몇 초 → Chloe **Request booking**(문의 내용 자동 입력 — 맡기기 Sitter drives · 찾기 Owner drives) | Owner 스레드 · Sitter 알림 | 07B (+03C 견적, 07C 기록) · 03B |
-| ② | 케어·투약 의뢰서 → AI 체크리스트 → 확인 · 처음 만나는 사이라 **Meet & Greet**: 영상 통화(Oct 6, 7:00 PM) 제안 → Lucy 수락 → **Google Meet 링크 자동 생성**(양쪽 카드 + 캘린더 초대) → 통화 후 Done · 이동 방식 확인(맡기기 = **Sitter drives**, 찾기 = **Owner drives**) | Owner Care request (펫 디테일, D47) · 예약 상세 | 06 · 03B |
-| ③ | Lucy 수락 → Checkout: 견적 → 동의서 5개 서명 (`emergency_vet` · `cohabitation` · `handoff_rules` · `home_access` · `safe_return`) → **Pay (demo)** → Lucy 집 주소·Visitor parking·짐 체크리스트 열림 | Owner Checkout | 03C |
-| ④-a | 픽업 2시간 전 출입 정보 해제(Chloe 알림) → Lucy **Start trip** → **위치 공유 동의 화면** → Chloe가 지도·ETA 확인 → 도착 시 Buzzer·Lockbox 카드 → 차량 사진 → Vision ✅ → "Pick-up complete — care has started" | Sitter Trip · Owner Trip | 06B · 03C |
-| ④-b | 사진 2장 → **AI 칩 제안**(틀린 칩 1개 끄기) + 짧은 메모 "She got so excited" → AI 알림장 → Lucy 승인 → 게시 · 앨범이 Meals/Walks/Naps로 정리 | Sitter Report · Owner Reports/Feed | 06 · 07 · 09 · 05 |
-| ⑤ | Chloe **Start trip**(Owner drives) → Lucy가 ETA 확인 → "Chloe has arrived" + Chloe에게 Visitor parking 안내 → 귀가 사진 → "Max is home safe 🏠" → ★★★★★ → Life Record 갱신 | Owner/Sitter Trip · Review · Life Record | 06B · 07C |
+| ① | 22:40 Robert가 Chloe에게 문의 (Chloe는 자동 발송 모드) → "Chloe is typing…" → **약 30초 뒤 답장**(Chloe의 말투·1인칭): 가능, 견적(공휴일·2마리 할증 포함), "Max's Life Record says she takes her pill in a treat — happy to do that". 초안 생성 자체는 몇 초 → Robert **Request booking**(문의 내용 자동 입력 — 맡기기 Sitter drives · 찾기 Owner drives) | Owner 스레드 · Sitter 알림 | 07B (+03C 견적, 07C 기록) · 03B |
+| ② | 케어·투약 의뢰서 → AI 체크리스트 → 확인 · 처음 만나는 사이라 **Meet & Greet**: 영상 통화(Oct 6, 7:00 PM) 제안 → Chloe 수락 → **Google Meet 링크 자동 생성**(양쪽 카드 + 캘린더 초대) → 통화 후 Done · 이동 방식 확인(맡기기 = **Sitter drives**, 찾기 = **Owner drives**) | Owner Care request (펫 디테일, D47) · 예약 상세 | 06 · 03B |
+| ③ | Chloe 수락 → Checkout: 견적 → 동의서 5개 서명 (`emergency_vet` · `cohabitation` · `handoff_rules` · `home_access` · `safe_return`) → **Pay (demo)** → Chloe 집 주소·Visitor parking·짐 체크리스트 열림 | Owner Checkout | 03C |
+| ④-a | 픽업 2시간 전 출입 정보 해제(Robert 알림) → Chloe **Start trip** → **위치 공유 동의 화면** → Robert가 지도·ETA 확인 → 도착 시 Buzzer·Lockbox 카드 → 차량 사진 → Vision ✅ → "Pick-up complete — care has started" | Sitter Trip · Owner Trip | 06B · 03C |
+| ④-b | 사진 2장 → **AI 칩 제안**(틀린 칩 1개 끄기) + 짧은 메모 "She got so excited" → AI 알림장 → Chloe 승인 → 게시 · 앨범이 Meals/Walks/Naps로 정리 | Sitter Report · Owner Reports/Feed | 06 · 07 · 09 · 05 |
+| ⑤ | Robert **Start trip**(Owner drives) → Chloe가 ETA 확인 → "Robert has arrived" + Robert에게 Visitor parking 안내 → 귀가 사진 → "Max is home safe 🏠" → ★★★★★ → Life Record 갱신 | Owner/Sitter Trip · Review · Life Record | 06B · 07C |
 | (선택) | 새 간식 성분표 스캔 → DANGER "Contains chicken" | Sitter Scan | 08 (stretch) |
 
 ---
@@ -304,5 +304,5 @@ Oct 9, 2026
 | 10 | ✅ RFT 연구 프로그램은 신청하지 않음 | — | 2026-10-02 결정 |
 | 11 | ✅ **순서: 07C → 06B → (08은 시간이 남을 때) → 10** — stretch가 P0보다 먼저 오지 않게. migration 번호도 012 = transit, 013 = safety로 바꿈 | — | 2026-10-02 민식 결정 (D41). 08을 못 하면 Ultra는 쓰지 않는다 (규정은 Nano·Super로 충족) |
 | 12 | ✅ **에이전트 설명:** P0 구조는 그대로 두고, README·영상에서 "일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트"로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 되면 07B에만 선택 (7B.11) | — | 2026-10-02 민식 결정 (D46) |
-| 13 | **Google Meet 준비 (3B.11 전)** — Pawddy용 Google 계정 + Google Cloud 프로젝트(Calendar API) + OAuth 동의 화면 게시 상태 **In production** + 그 계정으로 한 번 동의해 refresh token 발급 → backend env | 민식 | Testing 상태면 refresh token이 7일 만에 만료돼 12/15까지 못 버팀. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 실제 계정 1개를 주최자로 씀. 초대 시 양쪽 이메일이 Google로 가므로 예약 화면에 한 줄 고지 |
+| 13 | **Google Meet 준비 (3B.11 전)** — Goldito용 Google 계정 + Google Cloud 프로젝트(Calendar API) + OAuth 동의 화면 게시 상태 **In production** + 그 계정으로 한 번 동의해 refresh token 발급 → backend env | 민식 | Testing 상태면 refresh token이 7일 만에 만료돼 12/15까지 못 버팀. 서비스 계정만으로는 Meet 링크 생성이 막히는 사례가 많아 실제 계정 1개를 주최자로 씀. 초대 시 양쪽 이메일이 Google로 가므로 예약 화면에 한 줄 고지 |
 | 14 | **Meet 참여 방식** — 기본 접근 설정에서는 초대받지 않았거나 Google 계정이 없는 사람이 참여 요청(knock)을 하고, 주최자나 참가자가 들여보내야 한다. 주최 계정은 통화에 들어오지 않는다 | 민식 | 3B.11 spike: 초대 이메일로 둘 다 바로 들어가는지 확인 → 안 되면 Meet REST API(`spaces.create`, scope `meetings.space.created`, `accessType: OPEN`)로 만든 링크를 이벤트에 넣는 방식과 비교 |

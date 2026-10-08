@@ -1,3 +1,4 @@
+import { apiPost } from "../../lib/api";
 import { getSupabase } from "../../lib/supabase";
 import { Role } from "../../providers/SessionProvider";
 import { OwnerProfile, SitterProfile } from "../../types/db";
@@ -28,6 +29,8 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
   const { data, error } = await supabase.rpc("get_my_sitter_profile").maybeSingle();
   if (error || !data) fail("load your profile");
   const row = data as SitterProfile;
+  // policies has its own column grant (010), so it is not part of the RPC's row.
+  const extra = await supabase.from("sitter_profiles").select("policies").eq("id", userId).maybeSingle();
   return {
     role,
     fields: {
@@ -41,6 +44,7 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
       visitor_parking: row.visitor_parking ?? null,
       lobby_notes: row.lobby_notes ?? null,
       packing_list: row.packing_list ?? null,
+      policies: (extra.data as { policies: string | null } | null)?.policies ?? null,
     },
   };
 }
@@ -53,4 +57,31 @@ export async function saveProfile(userId: string, displayName: string, profile: 
   const table = profile.role === "owner" ? "owner_profiles" : "sitter_profiles";
   const { error } = await supabase.from(table).update(profile.fields).eq("id", userId);
   if (error) fail("save your profile");
+}
+
+/** After the sitter's policies changed: refresh what the assistant can read. Never blocks or fails the save. */
+export async function reindexSitterPolicies(): Promise<void> {
+  try {
+    await apiPost("/api/rag/reindex-sitter", {});
+  } catch {
+    // It is picked up the next time they save.
+  }
+}
+
+export type AiReplyMode = { mode: "manual" | "auto"; consented: boolean };
+
+export async function getAiReplyMode(): Promise<AiReplyMode> {
+  const { data, error } = await getSupabase().rpc("get_my_ai_reply_mode");
+  if (error || !data) return { mode: "manual", consented: false };
+  return data as AiReplyMode;
+}
+
+/** Turning auto-send on needs the sitter's explicit consent the first time (consent = the modal was confirmed). */
+export async function setAiReplyMode(mode: "manual" | "auto", consent: boolean): Promise<AiReplyMode> {
+  const { data, error } = await getSupabase().rpc("set_ai_reply_mode", { p_mode: mode, p_consent: consent });
+  if (error) {
+    if (error.message.includes("consent_required")) throw new Error("Confirm that replies go out in your name first.");
+    fail("save this setting");
+  }
+  return data as AiReplyMode;
 }

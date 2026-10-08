@@ -13,6 +13,7 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { TextButton } from "../../../components/ui/TextButton";
 import { TextField } from "../../../components/ui/TextField";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
+import { getInquiry, markInquiryBooked } from "../../../features/inquiries/inquiryApi";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
 import { MySitter, SERVICE_LABEL, ServiceType, listMySitters } from "../../../features/sitters/sitterApi";
@@ -24,11 +25,11 @@ import {
   requestBooking,
   searchSitters,
 } from "../../../lib/bookings";
+import { tripProblem } from "../../../lib/trip";
 import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
-const MAX_TRIP_DAYS = 31;
 const SEARCH_DELAY_MS = 400;
 
 type Search =
@@ -36,15 +37,6 @@ type Search =
   | { status: "loading" }
   | { status: "ready"; matches: SitterMatch[] }
   | { status: "error"; message: string };
-
-function tripProblem(petIds: string[], dropOff: HandoffDraft, pickUp: HandoffDraft): string | null {
-  if (petIds.length === 0) return "Pick at least one pet.";
-  const drop = Date.parse(zonedToIso(dropOff.day, dropOff.time));
-  const pick = Date.parse(zonedToIso(pickUp.day, pickUp.time));
-  if (drop <= Date.now() || pick <= drop) return "Pick a drop-off in the future and a pick-up after it.";
-  if (pick - drop > MAX_TRIP_DAYS * 86_400_000) return `A trip can be up to ${MAX_TRIP_DAYS} days.`;
-  return null;
-}
 
 /** Lines under a sitter option: fit for the whole trip and custom times they need to OK. */
 function fitLines(match: SitterMatch | undefined, dropOff: HandoffDraft, pickUp: HandoffDraft, name: string): string {
@@ -70,7 +62,7 @@ export default function BookCare() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
-  const params = useLocalSearchParams<{ sitter?: string; rebook?: string }>();
+  const params = useLocalSearchParams<{ sitter?: string; rebook?: string; inquiry?: string; other?: string }>();
   const { status: petStatus, pets } = useMyPets();
   const today = useMemo(() => appToday(), []);
 
@@ -99,8 +91,8 @@ export default function BookCare() {
 
   // One pet → picked for you (unless a rebook already filled the pets in).
   useEffect(() => {
-    if (pets.length === 1 && !params.rebook) setPetIds([pets[0].id]);
-  }, [pets, params.rebook]);
+    if (pets.length === 1 && !params.rebook && !params.inquiry) setPetIds([pets[0].id]);
+  }, [pets, params.rebook, params.inquiry]);
 
   // Find a new sitter (3B.7): same pets, times and places as the cancelled booking.
   useEffect(() => {
@@ -120,6 +112,23 @@ export default function BookCare() {
       })
       .catch(() => undefined);
   }, [params.rebook]);
+
+  // From an inquiry (07B 7B.5): the same trip; the same sitter unless the owner is looking elsewhere.
+  useEffect(() => {
+    if (!params.inquiry) return;
+    getInquiry(params.inquiry)
+      .then((inq) => {
+        if (!inq) return;
+        setService(inq.serviceType);
+        setPetIds(inq.petIds);
+        if (!params.other) setSitterId(inq.sitterId);
+        const fill = (at: string, place: HandoffDraft["locationType"], set: (d: HandoffDraft) => void) =>
+          set({ ...isoToZoned(at), locationType: place, note: "" });
+        fill(inq.dropOffAt, inq.dropOffPlace, setDropOff);
+        fill(inq.pickUpAt, inq.pickUpPlace, setPickUp);
+      })
+      .catch(() => undefined);
+  }, [params.inquiry, params.other]);
 
   useEffect(() => {
     listMySitters()
@@ -185,7 +194,7 @@ export default function BookCare() {
         ? { locationType: "owner_home" as const, note: null }
         : { locationType: h.locationType, note: h.note.trim() || null };
     try {
-      await requestBooking({
+      const bookingId = await requestBooking({
         sitterId: chosen.sitterId,
         petIds,
         dropOff: { at: dropIso, ...place(dropOff) },
@@ -194,6 +203,10 @@ export default function BookCare() {
         serviceType: service,
         rebookedFrom,
       });
+      if (params.inquiry && !params.other) {
+        // The question led to this request; a failed link must not undo a booking that went out.
+        await markInquiryBooked(params.inquiry, bookingId).catch(() => undefined);
+      }
       toast.show(`Request sent to ${chosen.displayName} 📨`);
       router.replace("/owner/bookings");
     } catch (error) {

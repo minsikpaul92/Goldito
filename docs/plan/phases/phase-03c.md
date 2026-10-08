@@ -9,13 +9,13 @@
 
 ### Goal 달성 기준 (phase-02·03B와 같은 인물)
 
-- [ ] Lucy 요금표: Boarding $55/night · House sitting $70/night · Daycare $35/day · 추가 반려동물 +50% · 공휴일 +25% (CAD)
-- [ ] `quote_booking(Lucy, boarding, 10/9 07:30, 10/12 17:00, 2)` → 3 nights · base $165.00 · extra pet $82.50 · holiday (Oct 12 Thanksgiving) $20.63 · **total $268.13 CAD** — 같은 숫자가 Checkout과 07B 답변 카드에
+- [ ] Chloe 요금표: Boarding $55/night · House sitting $70/night · Daycare $35/day · 추가 반려동물 +50% · 공휴일 +25% (CAD)
+- [ ] `quote_booking(Chloe, boarding, 10/9 07:30, 10/12 17:00, 2)` → 3 nights · base $165.00 · extra pet $82.50 · holiday (Oct 12 Thanksgiving) $20.63 · **total $268.13 CAD** — 같은 숫자가 Checkout과 07B 답변 카드에
 - [ ] 예약(보딩, 맡기기 = **Sitter drives**, 찾기 = **Owner drives**) Checkout에 필요한 동의서 = `emergency_vet` · `cohabitation` · `handoff_rules` · `home_access` · `safe_return` — 하나라도 빠지면 Pay 비활성 + `consents_missing`
-- [ ] **Pay $268.13 (demo)** → `paid_at` 저장 → Lucy `booking_paid` 알림 → Chloe 예약 상세에 Lucy 집 주소 · Visitor parking · 로비 안내 · **Pack for Max & Mochi** 체크리스트
-- [ ] 결제 전에는 Chloe에게 Lucy 주소가, Lucy에게 Chloe 주소가 어디에도 안 보임
-- [ ] Lucy 예약 상세(10/7): 출입 카드 "🔒 Unlocks Oct 9, 5:30 AM (2 h before pick-up)" → 10/9 05:30 이후 **Show code** → buzzer·lockbox·출입 순서 → Chloe `access_unlocked` 알림 1회 → 맡기기 완료 후에도 예약 종료(찾기 완료)까지 열림 → 종료 후 `access_locked`
-- [ ] Paul(다른 시터)은 언제든 Chloe 출입 정보 요청 시 `forbidden`
+- [ ] **Pay $268.13 (demo)** → `paid_at` 저장 → Chloe `booking_paid` 알림 → Robert 예약 상세에 Chloe 집 주소 · Visitor parking · 로비 안내 · **Pack for Max & Mochi** 체크리스트
+- [ ] 결제 전에는 Robert에게 Chloe 주소가, Chloe에게 Robert 주소가 어디에도 안 보임
+- [ ] Chloe 예약 상세(10/7): 출입 카드 "🔒 Unlocks Oct 9, 5:30 AM (2 h before pick-up)" → 10/9 05:30 이후 **Show code** → buzzer·lockbox·출입 순서 → Robert `access_unlocked` 알림 1회 → 맡기기 완료 후에도 예약 종료(찾기 완료)까지 열림 → 종료 후 `access_locked`
+- [ ] Paul(다른 시터)은 언제든 Robert 출입 정보 요청 시 `forbidden`
 
 ---
 
@@ -43,7 +43,7 @@
 | Route | 역할 | 화면 | 주 액션 |
 | :--- | :--- | :--- | :--- |
 | `/owner/bookings/[bookingId]/checkout` | owner | ① **QuoteCard**: "3 nights × $55 · Extra pet +$82.50 · Thanksgiving (Oct 12) +$20.63 · **Total $268.13 CAD**" ② **Consents** — 카드마다 요약 3줄 + **Read full text** + 체크 ③ 이름 입력(서명) ④ **Pay $268.13 (demo)** + "Demo payment — no card needed" ⑤ 완료 → 예약 상세로 + 토스트 "You're all set ✅" | **Pay** |
-| `/owner/bookings/[bookingId]` (03B 확장) | owner | 결제 후: **Lucy's place** 카드(주소 · Visitor parking · 로비 안내) + **Pack for Max & Mochi** 체크리스트(사료·방석·약·리드줄·화장실 모래 — 로컬 체크, 저장 안 함) | 상황별 1개 |
+| `/owner/bookings/[bookingId]` (03B 확장) | owner | 결제 후: **Chloe's place** 카드(주소 · Visitor parking · 로비 안내) + **Pack for Max & Mochi** 체크리스트(사료·방석·약·리드줄·화장실 모래 — 로컬 체크, 저장 안 함) | 상황별 1개 |
 | `/owner/home-access` | owner | 출입 정보 폼: Entry steps · Lockbox code · Buzzer · Fob notes · Parking for sitter. 상단 안내 "Only shown to your booked sitter, starting 2 hours before they arrive. You'll be notified when it opens." | **Save** |
 | `/sitter/bookings/[bookingId]` (03B 확장) | sitter | **EntryInfoCard** — 잠김: 🔒 "Unlocks Oct 9, 5:30 AM" / 열림: **Show code** 탭 → 코드 표시(10초 뒤 다시 가림). Sitter drives 인수인계 또는 house sitting일 때만 보임 | Show code |
 | `/profile` (sitter 섹션 확장) | sitter | **Rates** (보딩·house sitting·데이케어·추가 반려동물 %·공휴일 %) · **Your place for owners** (Visitor parking · 로비 안내 · 짐 체크리스트 항목) | Save |
@@ -59,7 +59,7 @@
 | 3C.3 | 데모 결제 | `pay_booking_demo(p_booking)` RPC: 호출자 = 견주, status `confirmed`, `paid_at is null`, `required_consents(p_booking)` 전부 서명(아니면 `consents_missing` + 목록) → `bookings.paid_at = now()`, `price_snapshot = quote_booking(...)`(최종 시각 기준) → 시터 `booking_paid`. 결제 후 인수인계 시각 변경(03B 3B.5)은 그대로 허용 — 금액 재계산은 해커톤 후 (화면에 "Price was set at checkout") | Pay 후 상태 뱃지 **Paid**, 같은 예약 재결제 `already_paid` |
 | 3C.4 | 시터 집 정보 공개 시점 변경 | `sitter_profiles`에 `visitor_parking text`, `lobby_notes text`, `packing_list text[] default '{food,bed or cushion,medications,leash,favorite toy}'` 추가 (본인 RLS, 기존 column grant 규칙). `get_handoff_details` 조건을 **확정 → 결제(`paid_at is not null`)**로 바꾸고 `sitter_home`이면 위 3개 필드도 반환 (찾은 뒤 24시간까지 — 기존 규칙). 견주 집 주소(`owner_home`)도 결제 후에만 시터에게. 한 번 결제한 예약은 이후 변경으로 체크아웃이 다시 열려도(009d) 주소를 계속 반환 — `paid_at` 또는 `price_snapshot` (009e) | 결제 전 `not_paid` · 결제 후 반환 |
 | 3C.5 | 견주 집 출입 정보 + 해제 | `owner_home_access(owner_id PK → profiles, entry_steps text, lockbox_code text, buzzer text, fob_notes text, sitter_parking text, updated_at)` — RLS: 본인만 select/insert/update (시터 정책 없음). `get_home_access(p_booking)` RPC: 호출자 = 그 예약 시터, `paid_at is not null`, 그 예약에 `owner_home` 인수인계가 있거나 `service_type='house_sitting'`, `now()`가 [첫 `owner_home` 인수인계(또는 맡기기) agreed 시각 − 2시간, 찾기 completed_at 또는 찾는 시각] 안 → 행 반환 + `access_reveals(booking_id, sitter_id, first_revealed_at)` 첫 회만 insert + 견주 `access_unlocked`. 밖이면 `access_locked` + detail `unlocks_at`/`locked_since`. 다른 사람 `forbidden` | rls_smoke 시나리오 I–K (아래) 통과 |
-| 3C.6 | Checkout UI + 시터 잠금 카드 | 위 화면. `QuoteCard`(07B 답변에서도 재사용), `ConsentCard`, `EntryInfoCard`. Checkout 진입점: 예약 상세 배너 "Lucy accepted! Finish booking →" (confirmed & not paid) | 마우스만으로 Checkout 완주 (D25) |
+| 3C.6 | Checkout UI + 시터 잠금 카드 | 위 화면. `QuoteCard`(07B 답변에서도 재사용), `ConsentCard`, `EntryInfoCard`. Checkout 진입점: 예약 상세 배너 "Chloe accepted! Finish booking →" (confirmed & not paid) | 마우스만으로 Checkout 완주 (D25) |
 | 3C.7 | 테스트 | `supabase/tests/rls_smoke.sql` 추가 시나리오 — **I** 결제 전 주소·출입 정보 비공개, **J** T−2h 전 `access_locked` → 후 반환 + reveal 1회 + 알림 1회, **K** 다른 시터·견주 본인 아닌 사람 `forbidden`, 예약 종료 후 다시 잠김. Playwright `flows`: Checkout(동의서 하나 빠지면 Pay 비활성) | CI 통과 |
 
 ### 필요한 동의서 규칙 (`required_consents` — SQL·프론트 같은 표)
@@ -74,7 +74,7 @@
 
 ## Definition of Done (DoD)
 
-1. Goal 달성 기준 수동 시나리오 통과 (Chloe·Lucy·Paul)
+1. Goal 달성 기준 수동 시나리오 통과 (Robert·Chloe·Paul)
 2. `rls_smoke.sql` A–K 통과 (기존 A–H 유지)
 3. 출입 정보가 RPC 응답 외에 어디에도 안 나감: 알림 본문·로그·FastAPI 프롬프트에 lockbox/buzzer 값 없음 (`grep` + 리뷰)
 4. `quote_booking` 결과 = Checkout 표시 금액 = `price_snapshot` (같은 예약)

@@ -18,7 +18,7 @@ function seed(db: Awaited<ReturnType<typeof mockSupabase>>["db"]) {
   const media = (id: string) => ({
     id,
     pet_id: MAX,
-    cloudinary_public_id: `pawddy/${MAX}/task_proof/${id}`,
+    cloudinary_public_id: `goldito/${MAX}/task_proof/${id}`,
     resource_type: "image",
     purpose: "task_proof",
   });

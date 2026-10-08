@@ -25,7 +25,7 @@ from app.services import authz, nebius
 from app.services import cloudinary as cloudinary_service
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
-logger = logging.getLogger("pawddy.ai")
+logger = logging.getLogger("goldito.ai")
 
 PHOTO_TIMEOUT_S = 20.0  # phase-07 7.7: no photo chips after this, the day's record chips only
 PHOTO_PURPOSES = ("report", "feed", "task_proof")

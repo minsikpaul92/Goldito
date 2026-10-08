@@ -1,4 +1,4 @@
-# Pawddy — Phase 가이드 (개발 청사진)
+# Goldito — Phase 가이드 (개발 청사진)
 
 각 Phase는 **Goal → 범위 → 작업 → DoD → 산출물** 순으로 정리되어 있습니다.
 **먼저 [architecture.ko.md](architecture.ko.md)를 읽으세요** — 확정된 결정(D1–D47), 리포 구조, 라우트 맵, env 목록, API 계약, 알림 매트릭스가 있고 모든 phase가 이를 전제로 합니다.
@@ -47,7 +47,7 @@ Stretch:        08 세이프티 (06B 뒤 시간이 남을 때, 10 최종 배포 
 
 ## Stage ↔ Phase 매핑 (데모 장면)
 
-| Stage | 완료 Phase | 데모 장면 ([full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-pawddy)) |
+| Stage | 완료 Phase | 데모 장면 ([full-process.ko.md §6](../full-process.ko.md#6-데모-경로-a-stay-with-goldito)) |
 | :--- | :--- | :--- |
 | 1 Inquiry | 07B (+03C 견적, 07C 기록) | ① 문의 → AI 초안(몇 초) → 자동 모드면 약 30초 뒤 답 + 견적 카드 |
 | 2 Meet & Greet | 06 (의뢰서) · 03B (Meet & Greet · 3B.11 Google Meet · 이동 방식) | ② 의뢰서 → 체크리스트 · 첫 만남 Meet & Greet(Google Meet) · Sitter/Owner drives |

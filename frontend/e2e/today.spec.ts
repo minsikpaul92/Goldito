@@ -59,7 +59,7 @@ test.describe("sitter today", () => {
   test("shows who is in care, what is due today, what is coming, and new requests", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, JOY, SITTER]);
     const now = Date.now();
-    // Joy's Coco is already here; Chloe's Max arrives in a minute; Chloe's Mochi comes next week.
+    // Joy's Coco is already here; Robert's Max arrives in a minute; Robert's Mochi comes next week.
     booking(db, "b-caring", JOY, { id: "p-coco", name: "Coco", species: "dog" }, "confirmed", now - 24 * HOUR, now + 48 * HOUR, true);
     booking(db, "b-today", OWNER, { id: "p-max", name: "Max", species: "dog" }, "confirmed", now + 60_000, now + 72 * HOUR);
     booking(db, "b-next", OWNER, { id: "p-mochi", name: "Mochi", species: "cat" }, "confirmed", now + 7 * 24 * HOUR, now + 8 * 24 * HOUR);
@@ -73,12 +73,12 @@ test.describe("sitter today", () => {
     await expect(screen.getByTestId("today-caring")).toContainText("Joy's pet");
     await expect(screen.getByTestId("today-caring")).toContainText("Coco");
     await expect(screen.getByTestId("today-due")).toContainText("Drop-off");
-    await expect(screen.getByTestId("today-due")).toContainText("Max · Chloe");
+    await expect(screen.getByTestId("today-due")).toContainText("Max · Robert");
     await expect(screen.getByTestId("today-due")).toContainText("Your place");
     await expect(screen.getByTestId("today-upcoming")).toContainText("Mochi");
     await expect(screen.getByTestId("today-upcoming")).not.toContainText("Toto");
 
-    await screen.getByTestId("today-due").getByText("Max · Chloe", { exact: false }).click();
+    await screen.getByTestId("today-due").getByText("Max · Robert", { exact: false }).click();
     await expect(page).toHaveURL(/\/sitter\/bookings\/b-today$/);
     await expect(screen.getByTestId("handoff-received")).toBeEnabled();
   });

@@ -30,7 +30,7 @@ async function ownerHome(page: import("@playwright/test").Page) {
   n(2, "care_checkin", "Max ate a little 🍽️", 40);
   db.notifications[db.notifications.length - 1].body = "Left the chicken bits";
   n(3, "feed_post", "New photo of Max 📸", 30);
-  n(4, "booking_confirmed", "Lucy confirmed your booking", 20); // not part of the live stream
+  n(4, "booking_confirmed", "Chloe confirmed your booking", 20); // not part of the live stream
   n(5, "care_checkin", "Max seems calm 😊", 10);
   // The record the notices point at stays in History whatever happens to them.
   db.care_checkins.push({ id: "c-mood", pet_id: MAX, created_by: SITTER.id, kind: "mood", value: "calm", note_text: null, media_id: null, created_at: ago(10) });
@@ -119,7 +119,7 @@ test.describe("owner live updates", () => {
       { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" },
       { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" },
     );
-    db.media.push({ id: "m-nap", pet_id: MOCHI, cloudinary_public_id: `pawddy/${MOCHI}/task_proof/m-nap`, resource_type: "image", purpose: "task_proof" });
+    db.media.push({ id: "m-nap", pet_id: MOCHI, cloudinary_public_id: `goldito/${MOCHI}/task_proof/m-nap`, resource_type: "image", purpose: "task_proof" });
     db.care_tasks.push({ id: "t-nap", pet_id: MOCHI, type: "sleep", title: "Nap", scheduled_time: "13:00:00", active: true });
     db.task_logs.push({ id: "l-nap", task_id: "t-nap", pet_id: MOCHI, due_at: ago(30), status: "done", completed_at: ago(20), completed_by: SITTER.id, media_id: "m-nap" });
     const base = { user_id: OWNER.id, pet_id: MOCHI, booking_id: null, read_at: null };

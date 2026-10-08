@@ -16,7 +16,7 @@ MEDIA_ID = "00000000-0000-4000-8000-0000000000c1"
 isolated_settings = base.isolated_settings
 client = base.client
 
-PUBLIC_ID = f"pawddy/{PET_ID}/feed/abc"
+PUBLIC_ID = f"goldito/{PET_ID}/feed/abc"
 
 
 def make_db(**extra) -> FakeDB:

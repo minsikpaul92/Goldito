@@ -14,7 +14,7 @@ export const SUPABASE_NOT_CONFIGURED =
  * gives each phone pane its own key so two demo accounts can be signed in at once.
  */
 export function getAuthStorageKey(): string {
-  return "pawddy-auth";
+  return "goldito-auth";
 }
 
 let client: SupabaseClient | null = null;

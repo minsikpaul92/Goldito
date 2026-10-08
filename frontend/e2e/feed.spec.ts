@@ -20,7 +20,7 @@ async function setup(page: Page, user: MockUser) {
     db.media.push({
       id: media(i),
       pet_id: PET_ID,
-      cloudinary_public_id: `pawddy/${PET_ID}/feed/m${i}`,
+      cloudinary_public_id: `goldito/${PET_ID}/feed/m${i}`,
       resource_type: kind,
       purpose: "feed",
       width: 1200,
@@ -164,7 +164,7 @@ test.describe("Notification center", () => {
       id: n(7),
       user_id: SITTER.id,
       type: "feed_post",
-      title: "Chloe shared a photo of Max 📸",
+      title: "Robert shared a photo of Max 📸",
       body: null,
       pet_id: PET_ID,
       booking_id: null,

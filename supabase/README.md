@@ -1,6 +1,6 @@
-# Pawddy — Supabase (Postgres + Auth + Realtime)
+# Goldito — Supabase (Postgres + Auth + Realtime)
 
-SQL migrations for the Pawddy demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
+SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
 **Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
@@ -29,7 +29,10 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `009c_handoffs_stay_consistent.sql` | review fix | A checked handoff can't be replaced, Received / Returned closes that kind's proposals, passed times can't be agreed or confirmed, house-sitting handoffs stay at the owner's home |
 | `009d_paid_bookings_follow_changes.sql` | review fix | A change agreed on a paid booking re-quotes it (owner notice `price_updated`) or, when it needs a new consent (`home_access`), reopens checkout (`paid_at` cleared, notice `checkout_needed`); consents are signed at checkout only; owner profile (address, emergency contact) shared only once the booking was paid (a reopened checkout keeps it) |
 | `009e_reopened_checkout_keeps_addresses.sql` | review fix | `get_handoff_details` returns the handoff places for a booking paid at least once (`paid_at` or `price_snapshot`), so a checkout reopened by 009d keeps the addresses for both sides; only the entry codes wait for the new consent |
-| `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
+| `010_inquiries_rag.sql` | 07B | pgvector (in `extensions`), `inquiries` + `inquiry_messages` (owner never sees `author='ai'` or an unsent / not-yet-visible sitter message), `sitter_profiles.policies`, notices `inquiry_received` · `inquiry_replied`, service-role-only `knowledge_chunks` + `match_knowledge` (per-source scope) |
+| `010b_send_inquiry_reply.sql` | 07B | `send_inquiry_reply` (the only way a sitter message is written: quote / sources / can_host copied from the draft, nothing else; the direct INSERT policy is dropped) + `mark_inquiry_read` (the sitter opening the thread is the owner's only read mark) |
+| `010c_tone_samples.sql` | 07B | `tone_samples` (the sitter's own approved / edited / seeded replies, `regenerated` = thrown-away drafts), `match_tone`, `sitter_profiles.style_card` — all service-role only |
+| `010d_auto_reply.sql` | 07B | Auto-send: `sitter_profiles.ai_reply_mode` / `ai_consent_at` via `set_ai_reply_mode` (consent first) + `get_my_ai_reply_mode`, `inquiries.reply_typing_at` / `reply_visible_at` (times only), `notifications.visible_at` (a notice that appears later; the select policy hides it until then) |
 | `011_completion.sql` | 07C | Reviews, Pet Life Records |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
@@ -57,16 +60,16 @@ profiles 1─* notifications ─0..1 pets / bookings
 
 **Hosted (task 2.9):** after the latest migration (`003` includes API table grants at the end of the file; `004` adds column grants for its new profile columns), paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. If smoke fails with `permission denied for table pets`, run the **API table grants** section at the bottom of `003_functions_triggers.sql` (do not use a bare `grant update on all tables` — that allows changing `profiles.role` and breaks smoke). If smoke fails with `FAIL: user cannot change own role`, re-run that same grants section to restore column-level UPDATE rules — and then the **Column grants** lines at the end of `004_booking_options.sql`, which that section would otherwise drop. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
 
-**Local / CI:** plain Postgres 17 plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
+**Local / CI:** Postgres 17 with pgvector (`010` needs the `vector` extension) plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 
 ```bash
-docker run -d --name pawddy-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
+docker run -d --name goldito-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 pgvector/pgvector:pg17
 ```
 
 ```bash
 export PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres
 psql -v ON_ERROR_STOP=1 -q -f supabase/tests/supabase_stub.sql
-for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -f "$f"; done
+for f in $(ls supabase/migrations/*.sql | LC_ALL=C sort); do psql -v ON_ERROR_STOP=1 -q -f "$f"; done
 psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 ```
 

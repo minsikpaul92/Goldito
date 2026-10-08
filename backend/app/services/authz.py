@@ -23,22 +23,43 @@ def _rest_headers(access_token: str) -> dict[str, str]:
     }
 
 
-def _rpc_bool(access_token: str, fn: str, params: dict) -> bool:
+def rpc_json(access_token: str, fn: str, params: dict, *, timeout: float = 10.0):
+    """Call a Postgres function as the signed-in user (their JWT), so `auth.uid()` works inside it."""
     settings = get_settings()
     url = f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/{fn}"
     try:
-        response = httpx.post(url, headers=_rest_headers(access_token), json=params, timeout=10.0)
+        response = httpx.post(url, headers=_rest_headers(access_token), json=params, timeout=timeout)
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not reach Supabase for authorization.",
         ) from exc
     if response.status_code >= 400:
+        message = ""
+        try:
+            message = str(response.json().get("message", ""))
+        except ValueError:
+            pass
+        raise RpcError(fn, response.status_code, message)
+    return response.json()
+
+
+class RpcError(RuntimeError):
+    """A user-scoped RPC refused (its Postgres `raise exception` text is in `.message`)."""
+
+    def __init__(self, fn: str, status_code: int, message: str) -> None:
+        super().__init__(f"{fn} failed ({status_code}): {message}")
+        self.fn, self.status_code, self.message = fn, status_code, message
+
+
+def _rpc_bool(access_token: str, fn: str, params: dict) -> bool:
+    try:
+        return bool(rpc_json(access_token, fn, params))
+    except RpcError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Authorization check failed.",
-        )
-    return bool(response.json())
+        ) from exc
 
 
 def assert_on_duty_for(user: CurrentUser, pet_id: UUID) -> None:

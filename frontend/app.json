@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Pawddy",
-    "slug": "pawddy",
+    "name": "Goldito",
+    "slug": "goldito",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme": "pawddy",
+    "scheme": "goldito",
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"

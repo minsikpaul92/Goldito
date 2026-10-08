@@ -1,4 +1,4 @@
-# Pawddy frontend
+# Goldito frontend
 
 Expo (React Native Web) with **expo-router**, TypeScript, npm.
 

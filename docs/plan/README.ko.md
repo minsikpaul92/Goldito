@@ -1,4 +1,4 @@
-# Pawddy — 개발 계획 (팀 내부용)
+# Goldito — 개발 계획 (팀 내부용)
 
 🇺🇸 English: [README.md](README.md) · 제품 소개: [../README.ko.md](../README.ko.md) · 해커톤 규정: [../hackathon/README.ko.md](../hackathon/README.ko.md) · **P0 Todo & AI 프롬프트:** [P0-ai-prompt-playbook.ko.md](P0-ai-prompt-playbook.ko.md) · **Phase별 Goal:** [phases/README.ko.md](phases/README.ko.md) · **진행 Todo:** [TODO.md](TODO.md) · **AI 규칙:** [CLAUDE.md](../../CLAUDE.md)
 
@@ -41,7 +41,7 @@
 
 구 P2 "AI 1차 답변 Q&A"는 Stage 1 문의 AI(07B, P0)로 흡수되었습니다.
 
-데모 기준: README의 **5단계 흐름**(*How Pawddy Works* → *A Stay with Pawddy*)이 처음부터 끝까지 동작해야 합니다.
+데모 기준: README의 **5단계 흐름**(*How Goldito Works* → *A Stay with Goldito*)이 처음부터 끝까지 동작해야 합니다.
 
 해커톤 이후 (우선순위 마지막): **시터 전용 데스크톱 웹** — 스케줄 작성·알림장 작업을 컴퓨터에서 빠르게 (사이드바 레이아웃). 견주는 계속 폰 화면. 전체 로드맵은 [README.md](README.md#post-hackathon-roadmap-not-built-for-the-hackathon), 설계 대비는 architecture D25.
 
@@ -147,7 +147,7 @@
 
 ### D. 문의 자동 답장 (Nano + RAG) — Stage 1, Phase 07B
 - 입력: 서버가 모은 JSON뿐 — 시터 가능 여부, `quote_booking` 결과, 반려동물 프로필, 시터 공개 프로필, RAG 상위 5개(시터 정책·Life Record·지난 문의·케어 의뢰서)
-- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Lucy will confirm" + `needs_sitter`
+- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Chloe will confirm" + `needs_sitter`
 - 시터 1인칭 말투 초안(D35) → 시터가 **Send** / Edit / Regenerate로 승인(D36). 자동 발송은 시터가 켜는 옵션 + 사람 속도(D37)
 
 ### E. 케어 플랜 (Super) — Stage 2, Phase 06

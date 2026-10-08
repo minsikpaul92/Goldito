@@ -63,7 +63,7 @@ def test_unknown_types_and_missing_times_are_left_out_with_a_reason():
     plan = normalize(raw(task("grooming", "10:00"), task("feeding", None, "Dinner"), task("feeding", "soon")), "dog")
     assert plan.tasks == []
     assert [s["reason"] for s in plan.skipped] == [
-        "Not a task type Pawddy knows.",
+        "Not a task type Goldito knows.",
         "No clock time was given.",
         "No clock time was given.",
     ]

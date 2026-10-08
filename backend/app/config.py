@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -66,11 +67,15 @@ class Settings(BaseSettings):
     )
     model_embed_dim: int = Field(default=1024, alias="MODEL_EMBED_DIM")
 
+    # Inquiry replies via a tool-calling agent (7B.11, D46): off = always one grounded call; on = always the agent;
+    # auto (default) = the agent only for questions that need a lookup (see ai/inquiry_agent.needs_agent).
+    inquiry_agent: Literal["off", "auto", "on"] = Field(default="auto", alias="INQUIRY_AGENT")
+
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
 
-    # Video Meet & Greet (3B.11, D45): the Pawddy Google account creates Calendar events
+    # Video Meet & Greet (3B.11, D45): the Goldito Google account creates Calendar events
     # with a Google Meet link. The refresh token comes from one consent by that account.
     google_oauth_client_id: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_ID")
     google_oauth_client_secret: str | None = Field(default=None, alias="GOOGLE_OAUTH_CLIENT_SECRET")

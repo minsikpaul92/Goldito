@@ -1,4 +1,4 @@
-# Pawddy — Development Plan (Team Internal)
+# Goldito — Development Plan (Team Internal)
 
 🇰🇷 Korean: [README.ko.md](README.ko.md) · Product README: [../../README.md](../../README.md) · Hackathon rules: [../hackathon/README.md](../hackathon/README.md)
 
@@ -47,7 +47,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 The old P2 "Private Q&A with AI first reply" is now the Stage 1 inquiry AI (07B, P0).
 
-Demo priority: the **5-stage flow** in the main README (*How Pawddy Works* → *A Stay with Pawddy*) must work end-to-end.
+Demo priority: the **5-stage flow** in the main README (*How Goldito Works* → *A Stay with Goldito*) must work end-to-end.
 
 ### Post-hackathon roadmap (not built for the hackathon)
 
@@ -181,7 +181,7 @@ client.chat.completions.create(
 
 ### D. Inquiry auto-reply (Nano + RAG) — Stage 1, Phase 07B
 - Input: server-collected JSON only — sitter availability, `quote_booking` result, pet profiles, sitter public profile, top-5 RAG chunks (sitter policy, Life Record, past questions, care request).
-- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Lucy will confirm" + `needs_sitter`.
+- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Chloe will confirm" + `needs_sitter`.
 - A first-person draft in the sitter's voice (D35); the sitter approves it with **Send** / Edit / Regenerate (D36). Auto-send is a sitter opt-in with human pacing (D37).
 
 ### E. Care plan (Super) — Stage 2, Phase 06

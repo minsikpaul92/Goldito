@@ -44,6 +44,8 @@ export type SitterProfile = {
   visitor_parking: string | null;
   lobby_notes: string | null;
   packing_list: string[] | null;
+  /** House rules & policies — read by the inquiry AI and shown to owners as a source (07B). */
+  policies?: string | null;
 };
 
 export type CareTaskType = "medication" | "walk" | "feeding" | "litter" | "play" | "sleep";

@@ -35,7 +35,7 @@ function ApiHealthScreen() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Pawddy</Text>
+      <Text style={styles.title}>Goldito</Text>
       <Text style={styles.subtitle}>
         Private care updates for dogs and cats — development build
       </Text>

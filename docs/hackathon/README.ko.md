@@ -33,7 +33,7 @@ Devpost 공식 페이지(Overview, Rules, Resources, Updates, 2026-09-28 기준)
 
 ## 3. 트랙
 
-| 트랙 | 요약 | Pawddy 적합도 |
+| 트랙 | 요약 | Goldito 적합도 |
 | :--- | :--- | :--- |
 | Coding & Agentic Engineering | 코드 짜고 테스트하는 코딩 에이전트 | ❌ |
 | **Best Apps and Agents** | 실제로 쓸 앱/에이전트. Token Factory의 **Nemotron**으로 구동. 무거운 추론은 **Nemotron 3 Ultra**, 빠른 일상 호출은 **Nano / Super** 권장. Serverless 배포는 권장(필수 아님) | ✅ **우리 트랙** |

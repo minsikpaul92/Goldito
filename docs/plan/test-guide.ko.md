@@ -1,11 +1,11 @@
-# Pawddy 기능 현황 · 테스트 가이드
+# Goldito 기능 현황 · 테스트 가이드
 
 > **누구를 위한 문서?** 개발에 같이 참여하는 사람(민식 · 슬기 · 묵)과 테스트하는 사람.
 > **무엇을 알 수 있나?** ① 지금 무엇이 만들어졌고 무엇이 아직인지 ② 어떻게 확인하는지 ③ 확인 결과.
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
 > 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
 
-**마지막 갱신:** 2026-10-04 · Phase 06 / 6.11 + 오너·시터 화면 개편까지
+**마지막 갱신:** 2026-10-07 · Phase 07 · 07B (알림장 · 문의 AI) 까지
 
 ---
 
@@ -27,16 +27,16 @@
 
 | 계정 | 이름 | 가진 것 |
 | :--- | :--- | :--- |
-| `demo-owner@pawddy.test` | Chloe (오너) | 강아지 **Max**, 고양이 **Mochi** |
-| `demo-sitter@pawddy.test` | Lucy (시터) | Chloe의 확정 예약 1건 (아래) |
+| `demo-owner@pawddy.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
+| `demo-sitter@pawddy.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
 > **2026-10-06 이름 변경 (PawNote → Pawddy):** 데모 계정 이메일이 `@pawnote.test` → `@pawddy.test` 로 바뀌었다. hosted DB에 `cd backend && python -m scripts.seed_demo` 를 한 번 다시 돌려야 **Try demo** 버튼이 동작한다. 예전 `@pawnote.test` 계정의 데이터(예약 · 펫)는 새 계정으로 옮겨지지 않는다.
 
 ### 1.3 데모 데이터 (2026-10-04 기준)
 
-- Chloe ↔ Lucy 예약 **확정**, 미팅 완료, **결제 전**. Max · Mochi.
+- Robert ↔ Chloe 예약 **확정**, 미팅 완료, **결제 전**. Max · Mochi.
 - 드롭오프 완료(10/4), **픽업 예정 10/7 05:37 UTC (토론토 10/7 새벽 1:37)**.
-- 그래서 **지금 Lucy는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
+- 그래서 **지금 Chloe는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
 - ⚠️ **픽업 시각이 지나면** 시터 쪽 시나리오(TASK · CHK)가 "Tasks open once the stay has started" 등으로 막힌다. 그때는 새 예약을 만들어 드롭오프를 완료 처리하거나 시드 스크립트(Phase 10, 10.1)를 쓴다.
 - 데이터 시드·리셋 스크립트는 아직 없다 (Phase 10).
 
@@ -58,7 +58,13 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| AI 자동 응대 (RAG, 시터 말투, 승인) | ⬜ | 07B |
+| 오너 **문의 보내기** (시터 프로필 → Ask about a stay: 서비스 · 반려동물 · 날짜 · 장소 · 질문(선택) → 대화 화면, 시터가 보낸 답만 보임, 견적 카드 · 출처 칩, Request booking 자동 입력, 불가 날짜면 Find other sitters) | ✅ 🤖 `inquiry.spec.ts` (실제 두 계정 · 실제 DB는 👤 — **010 호스팅 DB 적용 전**) | 07B / 7B.5 |
+| 시터 **문의함** (Questions 탭 · 초안 Send 한 번 / Edit·Add / Regenerate / 의도 칩 · 경고 문구 · 열면 읽음) + 정책 편집 | ✅ 🤖 `inquiry.spec.ts` | 07B / 7B.6 |
+| 문의 답장 **초안 API** (일정 · 견적 · 반려동물 · RAG 근거 → Nano, 금액 · 날짜 · 1인칭 · 출입 정보 검사, 정책 체중 한도, 멱등, 오너에게는 초안을 안 줌) | ✅ 🤖 pytest a–k (실제 모델 확인 · 지연 p50 3.2 s) | 07B / 7B.3–7B.4 · 7B.7 |
+| RAG (문단 청크 · 재색인 · 범위 제한 검색) | ✅ 🤖 pytest + SQL smoke M | 07B / 7B.2 |
+| **시터 말투** (스타일 카드 + 본인 예시 · 익명화 · 그대로 / 수정 / 다시 생성 학습) | ✅ 🤖 pytest · 실제 모델로 두 시터 다른 말투 확인 · 블라인드 평가(약 50건)는 👤 | 07B / 7B.8–7B.9 |
+| **자동 발송** (동의 모달 · 약 30초 사람 속도 · typing → 말풍선 · 시터가 열기 전엔 읽음 없음) | ✅ 🤖 pytest + `inquiry.spec.ts` + SQL smoke M (지연 공식은 슬기 확정 전 기본값) | 07B / 7B.10 |
+| 문의 에이전트 (tool calling, `INQUIRY_AGENT=1`, 기본 꺼짐) | ✅ 🤖 pytest · 실제 모델 확인 | 07B / 7B.11 |
 
 ### Stage 2 — Meet & Greet · 케어 요청
 
@@ -147,7 +153,7 @@
 | REQ-4 | (돌보는 중이 아닐 때) 표가 만들어지는 순간 | **자동 저장**: "Saving…" → **"✓ All changes saved"**. 이름 · 용량 · 시간 고치면 저장됨. 펫 화면 Care tasks에 바로 보임. **Save 버튼 없음**(Done만) | 🤖 `care-request` | ➖ |
 | REQ-5 | 표에서 행 **Remove** | 바로 삭제 저장 + 아래 **"Removed … · Undo"** 8초. Undo → 행이 돌아오고 다시 저장됨 | 🤖 `care-request` | ➖ |
 | REQ-6 | 한 번에 13개 이상 / 글 없는 줄 | 글이 없으면 **Add line** 비활성. 12개 초과면 "A checklist holds 12 tasks…" 팝업 | 🤖 `care-request` | ➖ |
-| REQ-7 | **돌보는 중**(수락된 예약, 아직 픽업 전)인 펫에서 같은 화면 | 제목이 **"Write a care request"**, 자동 저장 없음("Nothing changes until Lucy approves"). **Send request to Lucy** → 토스트, 펫 화면에 "⏳ Waiting for Lucy…". 승인 전엔 Care tasks에 아무것도 안 생김. 대기 중엔 또 보낼 수 없음 | 🤖 `care-request` · SQL `rls_smoke` | ➖ |
+| REQ-7 | **돌보는 중**(수락된 예약, 아직 픽업 전)인 펫에서 같은 화면 | 제목이 **"Write a care request"**, 자동 저장 없음("Nothing changes until Chloe approves"). **Send request to Chloe** → 토스트, 펫 화면에 "⏳ Waiting for Chloe…". 승인 전엔 Care tasks에 아무것도 안 생김. 대기 중엔 또 보낼 수 없음 | 🤖 `care-request` · SQL `rls_smoke` | ➖ |
 | REQ-8 | 시터: Home에 **"📝 Care request for Max — tap to answer"** 줄(또는 알림) → 요청 화면 → **Approve** | 할 일 · Heads-up이 Max에 생성(한 번만 하는 건 once). 오너에게 "approved" 알림 | 🤖 `care-request` · SQL | ➖ |
 | REQ-9 | 시터: **Decline or reply…** → 이유 칩(선택) 및/또는 **노트**(200자) → Decline | 아무것도 생성 안 됨. 오너 알림 본문에 이유 + 노트. 이유도 노트도 없으면 Decline 비활성 | 🤖 `care-request` · SQL | ➖ |
 | REQ-10 | **실제 두 계정**: 오너가 요청 → 시터 화면 확인 → 답변 → 오너 확인 | 위 흐름이 새로고침 없이 이어짐(시터 알림 · 오너 알림) | **👤만** | ➖ |
@@ -166,7 +172,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | TASK-1 | Demo sitter → Home → **All tasks** | 오늘 시각의 태스크가 시간순, 위에 "N left · M done"과 **Next up**. 일시중지한 태스크는 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-2 | 할 일의 **Done** | **팝업**이 뜸(메모 칸 · 📷 Add photo · Done). 이 시점엔 아무것도 전송되지 않음 | 🤖 `sitter-tasks` | ➖ |
-| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Chloe was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
+| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Robert was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-4 | 팝업에 **메모를 쓰고 Done** | 오너 알림에 **한 일(제목) + 메모(본문)** 이 같이 감 — 무엇에 대한 메모인지 알 수 있음 | 🤖 `sitter-tasks` · SQL | ➖ |
 | TASK-5 | 팝업 **📷 Add photo** → 찍기/고르기/샘플 → 미리보기 → Use this photo → Done | 업로드 + 완료. 오너 Feed에 사진 글. 알림은 `task_done` 하나 | 🤖 `sitter-tasks` · **실제 업로드 👤** | ➖ |
 | TASK-6 | 미리보기에서 **Retake** | 선택 화면으로 복귀, 아무것도 올라가지 않음 | 🤖 `sitter-tasks` | ➖ |
@@ -190,7 +196,7 @@
 | REM-5 | **실제 시계로**: 오너가 2~3분 뒤 시각의 할 일을 만들고, 시터는 Home을 연 채 기다림 | 30초 안에 Today 목록에 나타나고, 그 시각 정각에 토스트 + 팝업 | **👤만** | ➖ |
 | HOME-5 | (돌보는 중이 아닐 때) 시터 Home | 요청 배너 · 오늘 인계 · 다가오는 예약이 짧게 | 🤖 `today` | ➖ |
 | CHK-1 | 체크인 화면 → Max의 Meal **All** 누르기 (메모 비움) | 버튼이 **"✓ All"** 로 선택만 됨(**아직 전송 안 됨**), "Ready to send: …" 안내, 다시 누르면 선택 해제. **Send**를 눌러야 전송 → 토스트 "Sent ✅", 오너 알림 "Max ate everything 🍽️" | 🤖 `quick-checkin` | ➖ |
-| CHK-2 | 카드 아래 **"Sent to Chloe today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
+| CHK-2 | 카드 아래 **"Sent to Robert today"** 목록 | 방금 보낸 것이 시각과 함께 쌓임 (메모는 따옴표로) | 🤖 `quick-checkin` | ➖ |
 | CHK-3 | 메모 칸에 글을 쓰고 Meal **A little** | 오너 알림: **보낸 것(제목) + 메모(본문)**. 전송 후 메모 칸 비워짐 | 🤖 `quick-checkin` | ➖ |
 | CHK-4 | 아무것도 고르지 않고 메모만 쓰기 | 메모가 없으면 **Send 비활성**. 메모를 쓰면 "Ready to send as a note" → Send로 노트 전송 | 🤖 `quick-checkin` | ➖ |
 | CHK-5 | Max에는 Walk 10–60분 있음, Mochi에는 **없음** | 펫마다 체크인 화면이 따로, 고양이는 산책 없음 | 🤖 `quick-checkin` | ➖ |
@@ -201,15 +207,15 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Chloe 🐾", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
+| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Robert 🐾", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
 | FEED-2 | **두 브라우저**: 일반 창 = 오너, 시크릿 창 = 시터. 시터가 올림 | 오너 화면에 **새로고침 없이** 토스트 + 벨 숫자 + Home 카드 + Feed 카드 (≤ 3초) | **👤만** (실시간) | ➖ |
 | FEED-3 | 오너: 사진 탭 | **탭한 그 사진**이 전체화면. ‹ › 버튼, 스와이프, ←/→ 키 이동 | 🤖 `feed` | ➖ |
 | FEED-4 | 영상 샘플 (Fetch play) 재생 | 오너 전체화면에서 재생 | 👤 | ➖ |
 | FEED-5 | 시터가 **자기 사진** 열기 → 🗑️ → 확인 | "Photo deleted", 오너 Feed에서도 사라짐. 오너 화면에는 시터 글의 🗑️ **없음** | 🤖 `feed` · 파일 삭제는 pytest | ➖ |
 | FEED-6 | 사진 업로드가 **실패**하면 | 빨간 팝업이 남고 Try again | 🤖 `media-picker` | ➖ |
-| VIS-1 | 시터: **Share with Chloe** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you 🔒", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
+| VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you 🔒", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
 | VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you 🔒". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
-| VIS-3 | 오너: "Visible to sitter" 켜고 올림 | 당직 시터가 알림 "Chloe shared a photo of Max 📸" → 탭 → 시터 Feed → Max, 사진 보임 | 🤖 SQL · e2e (알림 이동) | ➖ |
+| VIS-3 | 오너: "Visible to sitter" 켜고 올림 | 당직 시터가 알림 "Robert shared a photo of Max 📸" → 탭 → 시터 Feed → Max, 사진 보임 | 🤖 SQL · e2e (알림 이동) | ➖ |
 
 ### 3.5 알림 (NOTIF)
 
@@ -232,7 +238,7 @@
 | LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
 | LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
 | LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
-| LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫은 **카드 배경이 연한 초록 + 굵은 테두리 + 왼쪽 위 테두리에 "In care" 태그**, 이름 아래 "with Lucy · until Oct 7, 1:37 AM". 집에 있는 펫은 평범한 카드 | 🤖 `live-updates` | ➖ |
+| LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫은 **카드 배경이 연한 초록 + 굵은 테두리 + 왼쪽 위 테두리에 "In care" 태그**, 이름 아래 "with Chloe · until Oct 7, 1:37 AM". 집에 있는 펫은 평범한 카드 | 🤖 `live-updates` | ➖ |
 | LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 Home 맨 위에 **주황 테두리 카드가 고정**("Tap to read and answer"): 밀어서 못 지움 · Clear all에도 남음 · 새로고침해도 남음. 탭 → 노트 시트(**Close는 그냥 닫힘**) → **읽으면 Home에서 사라짐**(답은 펫 화면 빨간 상자에 남음) | 🤖 `care-request` | ➖ |
 | LIVE-9 | 시터가 **Counter-request** 를 보냄 | 같은 고정 카드. 읽어도 **오너가 Accept/Decline 하기 전까지 Home에 남음**, 답하면 사라짐 | 🤖 `care-request` | ➖ |
 | LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
@@ -250,7 +256,7 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SEC-1 | 다른 오너 계정으로 로그인 | Chloe의 Max/Mochi 피드 · 알림 · 체크인이 **보이지 않음** | SQL `rls_smoke` | ➖ |
+| SEC-1 | 다른 오너 계정으로 로그인 | Robert의 Max/Mochi 피드 · 알림 · 체크인이 **보이지 않음** | SQL `rls_smoke` | ➖ |
 | SEC-2 | 시터로 `/owner` 주소를 직접 입력 | 시터 화면으로 되돌아감 | 🤖 `auth` | ➖ |
 | SEC-3 | 오너가 체크인 · 할 일 완료를 API로 직접 시도 | 거절 (돌봄 구간의 시터만 가능) | SQL `rls_smoke` | ➖ |
 
@@ -277,11 +283,51 @@
 | BF-6 | 결제한 예약에서 찾기 장소를 오너 집으로 바꾸고 시터가 수락 / 찾기 시간을 늦추고 수락 | 오너 집 → 체크아웃이 다시 열림(결제 취소, 지난 견적 유지) + 오너에게 `checkout_needed` 알림, 예약 화면 배너 "Your stay changed — sign to finish", Checkout에서는 **home_access 하나만** 체크하면 결제 완료. 그 전까지 시터의 출입 정보는 잠김. 기간 변경 → 새 총액으로 다시 견적 + `price_updated` 알림(결제 상태 유지). 동의서는 체크아웃 중(확정 · 미결제 · 필요한 종류)에만 서명. 오너 주소·긴급 연락처는 결제 후에만 시터에게 보임 | SQL `rls_smoke` (BF.6) · 🤖 `checkout` | ➖ |
 | BF-7 | BF-6처럼 체크아웃이 다시 열린 상태에서 오너 · 시터가 예약 화면을 엶 | 오너: 시터 집 카드(주소 · 주차 · 로비)가 그대로 보임. 시터: 맡기기 · 찾기 주소(펫을 데려다줄 오너 집 포함)가 그대로 보이고, 출입 정보 카드는 사라지지 않고 "Waiting for {오너} to sign"을 보여 줌(코드는 서명 전까지 잠김). 한 번도 결제하지 않은 예약은 예전처럼 주소가 안 보임 | SQL `rls_smoke` (BF.7) · 🤖 `checkout` | ➖ |
 
+### 3.10 알림장 (REPORT) — Phase 07 · *사전: 시터가 돌보는 중, 오늘 체크인 몇 개, 백엔드 실행 (`uvicorn`) + `NEBIUS_API_KEY`*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| REPORT-1 | 시터 → **Diary** 탭 | 돌보는 펫마다 카드. 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
+| REPORT-2 | 칩을 눌러 **끄기** → **Write the report** | 미리보기에 **끈 칩의 내용이 없음**. 끈 칩은 서버로 `skip`으로 감 | 🤖 `report` · pytest | ➖ |
+| REPORT-3 | **✎ Fix a recorded value** → 식사를 Most로, 산책 30 min으로 | 칩 문구가 "Meal: Most" · "Walk: 30 min"으로 바뀌고 알림장에도 그 값이 쓰임. 그 칩을 끄면 고친 값도 안 감 | 🤖 `report` · pytest | ➖ |
+| REPORT-4 | **+ Add** → 직접 칩 입력("Learned a new trick") | 칩이 생기고, 켜 두면 알림장에 반영, 끄면 빠짐 | 🤖 `report` | ➖ |
+| REPORT-5 | **📷 Add photo** (최대 2장) → 사진 추가 | 사진 묘사 한 줄 + 에피소드 칩 1–2개가 생김(📷 표시). 사진을 지우면 그 칩도 사라짐. 사진 칩을 전부 끄면 그 사진 내용은 알림장에 안 들어감 | 🤖 `report` (AI는 mock) · **실제 모델 👤** | ➖ |
+| REPORT-6 | 짧은 메모(200자) 입력 → Write the report → 미리보기 **직접 고치기** → **Send to {owner}** | "Sent ✅ … was told". 오너가 받는 글은 **시터가 고친 최종본**. 같은 날 다시 Write하면 덮어쓴 초안(보낸 뒤엔 불가) | 🤖 `report` · SQL | ➖ |
+| REPORT-7 | 초안을 만든 뒤 앱 새로고침 | 초안이 그대로 다시 보임 (오너에게는 보내기 전까지 안 보임) | 🤖 `report` | ➖ |
+| REPORT-8 | 기록이 하나도 없는 날 Write the report | 고정된 짧은 인사 문장만 (모델을 안 부름, 지어내지 않음) | 🤖 pytest | ➖ |
+| REPORT-9 | 오너 → **Diary** 탭 | 보낸 알림장만 날짜순 카드(첫 문장 미리보기). 카드 → 본문 · 그날 사진 스트립 · 할 일 체크리스트. 초안은 절대 안 보임 | 🤖 `report` · SQL | ➖ |
+| REPORT-10 | **실제 두 계정**: 시터가 Send → 오너 벨 알림 → 탭 | 알림을 누르면 해당 알림장 항목이 열림. 새로고침 없이 이어짐 | **👤만** | ➖ |
+
+### 3.11 문의 AI (INQ) — Phase 07B · *사전: 호스팅 DB에 `010`~`010d` 적용, 백엔드 실행 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| INQ-1 | 오너 → Chloe 프로필 → **Ask about a stay** → 반려동물 · 날짜 · 질문("Can you give Max his pill at 2 PM?") → **Send** | 시트가 닫히고 대화 화면. 내 질문 말풍선, "Chloe will reply soon". **시터가 보내기 전에는 답이 안 보임** | 🤖 `inquiry` | ➖ |
+| INQ-2 | 질문을 비우고 Send | 질문 자리에 "Boarding · Oct 9 – Oct 12 · Max" 같은 한 줄 요약이 감 | 🤖 `inquiry` | ➖ |
+| INQ-3 | 시터 → Bookings → **Questions (1)** → 문의 카드("✍️ Draft ready") → 열기 | 경고 문구 "AI drafts can be wrong. You're responsible for what you send.", **시터 1인칭** 초안, 견적 카드(03C와 **같은 금액**), 출처 칩. 열면 오너 질문이 읽음 처리 | 🤖 `inquiry` · pytest · **실제 모델 👤** | ➖ |
+| INQ-4 | 초안의 금액 · 날짜가 서버 값과 같은가 (Thanksgiving 포함 3박 2마리 → $268.13 CAD) | 금액 = 견적 total, 날짜는 문의한 기간 안, `{PRICE}` 같은 자리표시자 없음 | pytest a–c · h | ➖ |
+| INQ-5 | 시터가 **Send** 한 번 (타이핑 없이) | "Sent ✅ … was told". 오너 대화에 **AI 라벨 없는 시터 말풍선** + 견적 카드 + "From Chloe's policies" 칩 + **Request booking** | 🤖 `inquiry` · SQL | ➖ |
+| INQ-6 | 시터 **Edit / Add** → 고쳐서 Send | 오너가 받는 글 = 고친 글. (학습: `edited` + 수정 비율 기록) | 🤖 `inquiry` · pytest | ➖ |
+| INQ-7 | 시터 **Regenerate** · 의도 칩(Accept / Decline / Suggest other dates) | 새 초안이 뜨고 방향이 바뀜(Decline이면 정중한 거절, 가격 문장 없음) | 🤖 `inquiry` · pytest | ➖ |
+| INQ-8 | 시터가 문의 기간 중 하루를 **block** 한 상태로 같은 문의 | 초안이 "그날은 어렵다 + 다른 날짜/다른 시터" 안내, **가격 문장 없음**. 오너에게는 **Find other sitters**만 (Request booking 없음) | 🤖 `inquiry` · pytest a | ➖ |
+| INQ-9 | 시터 정책에 "No dogs over 20 kg." + 25 kg 반려동물로 문의 | 초안이 "확인하겠다"로 안내하고 **⚠️ Check this one** 표시 (자동 발송 안 됨) | pytest d | ➖ |
+| INQ-10 | 질문에 "Are you an AI?" | 사람이라고 답하지 않음 · 시터에게 "reply yourself" 별도 알림 · 자동 발송 안 됨 | pytest i | ➖ |
+| INQ-11 | 오너 **Request booking** | `/owner/bookings/new`에 서비스 · 반려동물 · 시간 · 장소 · 시터가 **채워진 채** 열림. 요청을 보내면 그 문의가 booked | 🤖 `inquiry` | ➖ |
+| INQ-12 | 시터 `/profile` → **House rules & policies** 저장 | 저장되고 백그라운드에서 재색인. 이후 초안이 그 규칙을 근거("From Chloe's policies")로 씀 | 🤖 `inquiry` · pytest · **실제 DB 👤** | ➖ |
+| INQ-13 | 시터 `/profile` → **AI replies → Auto-send** | 책임 동의 모달("Replies go out in your name…") 확인 후에만 켜짐. 껐다 켜면 모달 없음 | 🤖 `inquiry` · SQL | ➖ |
+| INQ-14 | **자동 모드 시터에게** 오너가 문의 | 대기 없이 초안 생성 → 오너 화면 "Chloe will reply soon" → **약 4초 뒤 "Chloe is typing…"** → **약 15–40초(보통 ≈ 30초) 뒤 답 말풍선** + 그 시각에 알림. 시터가 스레드를 열기 **전엔 "Read" 표시가 없음**. 시터 화면에는 "Sent automatically" | 🤖 `inquiry` · pytest | ➖ |
+| INQ-15 | 자동 모드인데 초안이 확인이 필요한 경우(정책 충돌 · AI 질문 · 모델 실패) | **자동 발송 안 됨** — 수동 초안으로 시터에게 | pytest | ➖ |
+| INQ-16 | 시터 말투 비교: Chloe(경쾌) vs Paul(차분) 같은 질문 | 초안 말투가 뚜렷이 다름 (금액 · 날짜는 둘 다 서버 값). 약 50건 블라인드 평가는 슬기 | 실제 모델 확인 · **평가 👤** | ➖ |
+| INQ-17 | **실제 두 계정** 전체 흐름 (문의 → 초안 → Send → 오너 알림 → Request booking) | 새로고침 없이 이어지고 오너는 초안을 한 번도 못 봄 | **👤만** | ➖ |
+| INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
+| INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
-- **오너 Diary 탭은 비어 있다** — 시터가 쓰는 일기(저녁 알림장)는 Phase 07에서 만든다. 지금의 실시간 소식은 Home, 전체 기록은 History.
+- **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
+- **문의 AI**: 호스팅 DB에 `010`~`010d`를 적용하기 전에는 앱에서 문의가 동작하지 않는다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
 - **시터 Diary** 는 아직 없다. History는 **읽기 전용**이다.
 - Heads-up은 시터 **예약 상세와 Home**에 보인다. "도착 카드"(Pet Transit)는 Phase 06B에서 만든다.
 - History는 3가지 기록(할 일 · 체크인 · 피드 사진)을 화면에서 합쳐 보여준다. 같은 사진이 Feed에도 있으면 한 번만 나온다.

@@ -57,7 +57,7 @@ async function openDetail(page: Page, user: MockUser) {
   return screen;
 }
 
-/** Lucy answered Chloe's 7:00 AM drop-off with 8:30 AM; the pick-up still waits for Lucy. */
+/** Chloe answered Robert's 7:00 AM drop-off with 8:30 AM; the pick-up still waits for Chloe. */
 const SITTER_COUNTER: Step[] = [
   { kind: "drop_off", at: AT.drop700, by: OWNER, status: "superseded", minute: 0 },
   { kind: "pick_up", at: AT.pick1700, by: OWNER, status: "proposed", minute: 1 },
@@ -78,21 +78,21 @@ test.describe("negotiation", () => {
     const screen = app(page);
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     const card = screen.getByTestId(`booking-card-${BOOKING}`);
-    await expect(card).toContainText("Time suggested by Lucy");
+    await expect(card).toContainText("Time suggested by Chloe");
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
 
     const proposal = screen.getByTestId("proposal-drop_off");
-    await expect(proposal).toContainText("Lucy suggested a new drop-off");
-    await expect(proposal).toContainText("Oct 5, 8:30 AM · Lucy's place");
-    await expect(proposal).toContainText("You: Oct 5, 7:00 AM → Lucy: Oct 5, 8:30 AM");
+    await expect(proposal).toContainText("Chloe suggested a new drop-off");
+    await expect(proposal).toContainText("Oct 5, 8:30 AM · Chloe's place");
+    await expect(proposal).toContainText("You: Oct 5, 7:00 AM → Chloe: Oct 5, 8:30 AM");
     await screen.getByTestId("proposal-drop_off-accept").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("New time agreed with Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("New time agreed with Chloe");
     expect(db.responses).toEqual([{ p_handoff: "h-2", p_accept: true }]);
     await expect(screen.getByTestId("proposal-drop_off")).toHaveCount(0);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("Oct 5, 8:30 AM");
-    await expect(screen.getByText("Waiting for Lucy to answer your request.")).toBeVisible();
+    await expect(screen.getByText("Waiting for Chloe to answer your request.")).toBeVisible();
   });
 
   test("declining the sitter's time before confirm asks first and ends the request", async ({ page }) => {
@@ -118,7 +118,7 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-time-minus").click();
     await screen.getByTestId("change-send").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("Sent to Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
     expect(db.proposals).toEqual([{ p_booking: BOOKING, p_kind: "drop_off", p_at: "2030-10-05T12:00:00.000Z" }]);
     await expect(screen.getByTestId("proposal-drop_off")).toHaveCount(0);
     // The sitter now sees the owner's counter on their side.
@@ -138,7 +138,7 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-place-owner_home").click();
     await screen.getByTestId("change-send").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("Sent to Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
     expect(db.proposals).toEqual([
       {
         p_booking: BOOKING,
@@ -151,14 +151,14 @@ test.describe("negotiation", () => {
     const pending = screen.getByTestId("proposal-pick_up");
     await expect(pending).toContainText("Change pending");
     await expect(pending).toContainText("You suggested pick-up Oct 8, 6:00 PM · My place.");
-    await expect(pending).toContainText("Until Lucy agrees, it stays at Oct 8, 5:00 PM.");
+    await expect(pending).toContainText("Until Chloe agrees, it stays at Oct 8, 5:00 PM.");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("Oct 8, 5:00 PM");
 
-    // Lucy declines (respond_handoff false after confirm) → the agreed time stays.
+    // Chloe declines (respond_handoff false after confirm) → the agreed time stays.
     const offer = db.booking_handoffs.find((h) => h.status === "proposed");
     if (offer) offer.status = "rejected";
     await page.reload();
-    await expect(screen.getByTestId("declined-pick_up")).toHaveText("Lucy kept the original time.");
+    await expect(screen.getByTestId("declined-pick_up")).toHaveText("Chloe kept the original time.");
     await expect(screen.getByTestId("proposal-pick_up")).toHaveCount(0);
   });
 
@@ -177,7 +177,7 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-time-plus").click();
     await screen.getByTestId("change-send").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("Sent to Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
     expect(db.proposals).toEqual([{ p_booking: BOOKING, p_kind: "pick_up", p_at: "2030-10-08T21:15:00.000Z" }]);
   });
 
@@ -193,16 +193,16 @@ test.describe("negotiation", () => {
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await screen.getByTestId("sitter-bookings-tabs-upcoming").click();
     const card = screen.getByTestId(`booking-card-${BOOKING}`);
-    await expect(card).toContainText("Chloe suggested a change");
+    await expect(card).toContainText("Robert suggested a change");
     await card.click();
 
     const proposal = screen.getByTestId("proposal-pick_up");
-    await expect(proposal).toContainText("Chloe suggested a new pick-up");
-    await expect(proposal).toContainText("Oct 8, 6:00 PM · Chloe's place");
+    await expect(proposal).toContainText("Robert suggested a new pick-up");
+    await expect(proposal).toContainText("Oct 8, 6:00 PM · Robert's place");
     await screen.getByTestId("proposal-pick_up-accept").click();
-    await expect(screen.getByTestId("toast")).toContainText("New time agreed with Chloe");
+    await expect(screen.getByTestId("toast")).toContainText("New time agreed with Robert");
     expect(db.booking_handoffs.find((h) => h.id === "h-2")?.status).toBe("agreed");
     expect(db.booking_handoffs.find((h) => h.id === "h-1")?.status).toBe("superseded");
-    await expect(screen.getByTestId("handoff-pick_up")).toContainText("Oct 8, 6:00 PM · Chloe's place");
+    await expect(screen.getByTestId("handoff-pick_up")).toContainText("Oct 8, 6:00 PM · Robert's place");
   });
 });

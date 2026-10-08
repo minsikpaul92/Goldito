@@ -1,6 +1,6 @@
 """Google Calendar events with a Google Meet link for video Meet & Greets (3B.11, D45).
 
-The Pawddy Google account is the organizer: a refresh token from its one-time consent
+The Goldito Google account is the organizer: a refresh token from its one-time consent
 (scope calendar.events, OAuth app published *In production*) buys short-lived access
 tokens. One event per booking; rescheduling patches it (same link), cancelling deletes it.
 """
@@ -90,7 +90,7 @@ def _pending(event: dict) -> bool:
 
 
 class GoogleCalendarMeetClient:
-    """Calendar API v3 over httpx with the Pawddy account's refresh token."""
+    """Calendar API v3 over httpx with the Goldito account's refresh token."""
 
     def __init__(self, settings: Settings, http: httpx.Client | None = None) -> None:
         if not settings.google_meet_configured:
@@ -168,7 +168,7 @@ class GoogleCalendarMeetClient:
             params={"conferenceDataVersion": 1, "sendUpdates": self._send_updates(attendees)},
             json={
                 "summary": summary,
-                "description": "Pawddy Meet & Greet — say hi before the first stay.",
+                "description": "Goldito Meet & Greet — say hi before the first stay.",
                 **_when(start, timezone),
                 "attendees": [{"email": email} for email in attendees],
                 "conferenceData": {

@@ -9,13 +9,13 @@ from app.services import cloudinary as cloudinary_service
 from app.services.cloudinary import MediaFetchError, fetch_as_data_url, vision_url
 
 PET_ID = "00000000-0000-4000-8000-0000000000aa"
-IMAGE_ID = f"pawddy/{PET_ID}/feed/abc123"
+IMAGE_ID = f"goldito/{PET_ID}/feed/abc123"
 JPEG_BYTES = b"\xff\xd8\xff\xe0fake-jpeg-bytes"
 
 
 @pytest.fixture(autouse=True)
 def cloudinary_env(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "pawddy-test")
+    monkeypatch.setenv("CLOUDINARY_CLOUD_NAME", "goldito-test")
     monkeypatch.setenv("CLOUDINARY_API_KEY", "123456789012345")
     monkeypatch.setenv("CLOUDINARY_API_SECRET", "cloudinary-api-secret-for-tests")
     get_settings.cache_clear()
@@ -29,20 +29,21 @@ def client_returning(handler) -> httpx.Client:
 
 def test_vision_url_image_is_1024_jpeg_without_upscale() -> None:
     assert vision_url(IMAGE_ID) == (
-        f"https://res.cloudinary.com/pawddy-test/image/upload/c_limit,w_1024,f_jpg/{IMAGE_ID}"
+        f"https://res.cloudinary.com/goldito-test/image/upload/c_limit,w_1024,f_jpg/{IMAGE_ID}"
     )
 
 
 def test_vision_url_video_uses_first_frame_poster() -> None:
-    url = vision_url(f"pawddy/{PET_ID}/report/clip1", "video")
+    url = vision_url(f"goldito/{PET_ID}/report/clip1", "video")
     assert url == (
-        "https://res.cloudinary.com/pawddy-test/video/upload/"
-        f"so_0,c_limit,w_1024,f_jpg/pawddy/{PET_ID}/report/clip1.jpg"
+        "https://res.cloudinary.com/goldito-test/video/upload/"
+        f"so_0,c_limit,w_1024,f_jpg/goldito/{PET_ID}/report/clip1.jpg"
     )
 
 
-def test_vision_url_accepts_media_from_before_the_rename() -> None:
-    legacy = f"pawnote/{PET_ID}/feed/abc123"
+@pytest.mark.parametrize("folder", ["pawnote", "pawddy"])
+def test_vision_url_accepts_media_from_before_the_renames(folder: str) -> None:
+    legacy = f"{folder}/{PET_ID}/feed/abc123"
     assert vision_url(legacy).endswith(f"/c_limit,w_1024,f_jpg/{legacy}")
 
 
@@ -51,15 +52,15 @@ def test_vision_url_accepts_media_from_before_the_rename() -> None:
     [
         "",
         "sample",  # not ours
-        "pawddy/",
-        "pawddy/only-one-part",
+        "goldito/",
+        "goldito/only-one-part",
         f"other/{PET_ID}/feed/abc",
-        f"pawddy/{PET_ID}/feed/../../secret",
-        f"pawddy/{PET_ID}/feed/abc?x=1",
-        f"pawddy/{PET_ID}/feed/abc#frag",
-        f"pawddy/{PET_ID}/feed/abc.jpg",
-        f"pawddy/{PET_ID}/feed/a b",
-        "https://evil.example/pawddy/x/y/z",
+        f"goldito/{PET_ID}/feed/../../secret",
+        f"goldito/{PET_ID}/feed/abc?x=1",
+        f"goldito/{PET_ID}/feed/abc#frag",
+        f"goldito/{PET_ID}/feed/abc.jpg",
+        f"goldito/{PET_ID}/feed/a b",
+        "https://evil.example/goldito/x/y/z",
     ],
 )
 def test_vision_url_rejects_ids_that_are_not_ours(public_id: str) -> None:
@@ -94,7 +95,7 @@ def test_fetch_video_asks_for_the_poster_frame() -> None:
         seen.append(str(request.url))
         return httpx.Response(200, content=JPEG_BYTES, headers={"content-type": "image/jpeg"})
 
-    fetch_as_data_url(f"pawddy/{PET_ID}/report/clip1", "video", http=client_returning(handler))
+    fetch_as_data_url(f"goldito/{PET_ID}/report/clip1", "video", http=client_returning(handler))
     assert "/video/upload/so_0," in seen[0]
     assert seen[0].endswith(".jpg")
 
@@ -144,4 +145,4 @@ def test_bad_public_id_never_reaches_the_network() -> None:
         raise AssertionError("no request expected")
 
     with pytest.raises(ValueError):
-        fetch_as_data_url("pawddy/x/../y", http=client_returning(handler))
+        fetch_as_data_url("goldito/x/../y", http=client_returning(handler))

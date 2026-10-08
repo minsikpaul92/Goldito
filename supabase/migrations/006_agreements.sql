@@ -1,4 +1,4 @@
--- Pawddy 006: agreements (Phase 03C) — task 3C.1 first
+-- Goldito 006: agreements (Phase 03C) — task 3C.1 first
 -- Source of truth: docs/plan/phases/phase-03c.md 3C.1 · architecture D29
 --
 -- * sitter_rates — nightly / daily prices + extra-pet and holiday %

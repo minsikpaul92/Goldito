@@ -2,7 +2,7 @@ import type { FrameLocator, Locator, Page } from "@playwright/test";
 
 import type { MockUser } from "./supabaseMock";
 
-export const APP_FRAME = 'iframe[title="Pawddy app"]';
+export const APP_FRAME = 'iframe[title="Goldito app"]';
 
 /** A fixed "now" for specs that depend on the day: noon in Toronto (EDT), far from any midnight or month edge. */
 export const NOON_TORONTO = new Date("2026-10-09T16:00:00Z");

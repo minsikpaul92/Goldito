@@ -54,12 +54,12 @@ test.describe("handoff check", () => {
 
     await expect(screen.getByTestId("handoff-returned")).toHaveCount(0);
     await screen.getByTestId("handoff-received").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max checked in — Chloe gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Max checked in — Robert gets a notice");
     expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
 
     await screen.getByTestId("handoff-returned").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max on the way home — Chloe gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Max on the way home — Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
 

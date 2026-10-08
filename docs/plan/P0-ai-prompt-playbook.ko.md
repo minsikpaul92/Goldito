@@ -20,7 +20,7 @@ AI는 **위에서 아래로** 진행할 때 실패가 적습니다. AI 기능은
 ## 1. AI에게 줄 때 공통 프롬프트 머리말 (매번 복붙)
 
 ```text
-You are working in the Pawddy monorepo (Nebius x NVIDIA hackathon).
+You are working in the Goldito monorepo (Nebius x NVIDIA hackathon).
 Stack: Expo (React Native Web), FastAPI (Python 3.12), Supabase (Postgres + Auth + Realtime + pgvector), Cloudinary (media), Nebius Token Factory — Nemotron for replies/reasoning/reports, MiniCPM-V for vision, Qwen3 Embedding for RAG (AI only in backend).
 Product flow: docs/plan/full-process.ko.md (5 stages).
 
@@ -55,7 +55,7 @@ Output:
 | ID | Todo | 담당 | DoD |
 | :--- | :--- | :--- | :--- |
 | 0.1 | Supabase 프로젝트 생성, 리전 선택 | 민식 | URL + anon key + service role key 확보 |
-| 0.2 | Cloudinary 계정, 업로드 프리셋(폴더 `pawddy/{pet_id}/`) | 민식 | cloud name, API key/secret |
+| 0.2 | Cloudinary 계정, 업로드 프리셋(폴더 `goldito/{pet_id}/`) | 민식 | cloud name, API key/secret |
 | 0.3 | Nebius Token Factory API key, `GET /v1/models`로 비전 모델 ID 확인 | 슬기 | 사용할 model ID 목록 문서화 |
 | 0.4 | Tavily API key (P0 후반 또는 P1) | 슬기 | key 확보 |
 | 0.5 | `.env` 로컬 파일 (gitignore) | 민식 | backend/frontend 각각 |
@@ -76,7 +76,7 @@ Output:
 ### AI 프롬프트 — 1.1 모노레포 scaffold
 
 ```text
-Create monorepo layout under Pawddy:
+Create monorepo layout under Goldito:
 - frontend/ Expo app (TypeScript), app router or standard expo-router — pick one and document in frontend/README.md
 - backend/ FastAPI with pyproject.toml or requirements.txt
 - supabase/migrations/ for SQL
@@ -100,7 +100,7 @@ DoD: uvicorn app.main:app --reload works from backend/.
 ### AI 프롬프트 — 1.3 Expo 뼈대
 
 ```text
-Scaffold Expo TypeScript app in frontend/ with a single Home screen showing "Pawddy" and API health check button that fetches BACKEND_URL/health.
+Scaffold Expo TypeScript app in frontend/ with a single Home screen showing "Goldito" and API health check button that fetches BACKEND_URL/health.
 Use expo-constants or env for EXPO_PUBLIC_API_URL.
 
 DoD: web loads and health check shows ok when backend runs.
@@ -242,8 +242,8 @@ DoD: Pay is disabled until every required consent is signed; Playwright flow cov
 Implement Meet & Greet per docs/plan/phases/phase-03b.md 3B.9 and 3B.11 (architecture D44–D45):
 - 004_booking_options.sql: meet_greet_status (not_needed / required / proposed / agreed / done / skip_requested / skipped), set by request_booking — required only when this owner and sitter have never met (no earlier booking with a finished handoff and no finished Meet & Greet); meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_link, meet_greet_event_id, proposed_by / skip_requested_by; owner_profiles.meet_spots and sitter_profiles.meet_spots (up to 3 labels each)
 - RPCs: propose_meet_greet, respond_meet_greet, complete_meet_greet, request_skip_meet_greet, respond_skip_meet_greet (decline → cancel_booking with reason 'meet_greet_declined'), get_meet_greet_options; respond_booking(accept) raises meet_greet_required until the status is not_needed, done, or skipped
-- FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the Pawddy Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
-- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Lucy says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
+- FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the Goldito Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
+- UI: MeetGreetCard + sheet (In person: both sides' spots as chips + Somewhere else + date/time; Video: date/time, then Join Google Meet opens a new tab + Add to calendar .ics); skip confirm "If Chloe says no, this booking will be cancelled."; the other side sees "Continue the booking without a Meet & Greet?" with Continue / Decline
 
 DoD: the phase-03b Goal checklist (first-time, in person, video, skip accepted, skip declined, repeat pair) passes in two browser windows; pytest mocks Google.
 ```
@@ -264,7 +264,7 @@ DoD: the phase-03b Goal checklist (first-time, in person, video, skip accepted, 
 ```text
 Implement Cloudinary signed upload:
 - POST /api/media/sign { pet_id, resource_type: image|video, purpose } requires an on-duty sitter: call rpc('is_on_duty_for') with the user's JWT (architecture §5, phase-04)
-- Return timestamp, signature, cloud_name, api_key, folder pawddy/{pet_id}/
+- Return timestamp, signature, cloud_name, api_key, folder goldito/{pet_id}/
 - POST /api/media/complete { pet_id, public_id, resource_type } inserts media row via Supabase service role or user client — use pattern consistent with Phase 3 choice
 
 DoD: integration test script or manual steps in backend/README.md.
@@ -438,7 +438,7 @@ DoD: backend/tests/test_inquiry.py cases a–k pass with a mocked model; live ca
 | 7C.1 | `011_completion.sql` — reviews, pet_life_records, 트리거 | 03B (Returned — 06B 사진 체크는 붙으면 추가) | rls_smoke N |
 | 7C.2–7C.3 | 귀가 리포트 · Stay summary · 리뷰 UI | 7C.1 | 1회 제한 |
 | 7C.4 | `POST /api/ai/life-record` + RAG 인덱싱 (민식) | 7B.2, 07 | 환각 테스트 3회 |
-| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Paul 요청 카드에 Lucy 기록 |
+| 7C.5–7C.6 | Life Record 화면 · 다음 예약 요청 카드 · 07B/06 연결 | 7C.4 | Paul 요청 카드에 Chloe 기록 |
 
 ### AI 프롬프트 (구 슬기 전용) — 7C.4
 
@@ -499,7 +499,7 @@ DoD: sitter upload only; caption appears automatically.
 
 ---
 
-## 12. Phase 10 — 데모 시드 & "A Stay with Pawddy"
+## 12. Phase 10 — 데모 시드 & "A Stay with Goldito"
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
@@ -519,7 +519,7 @@ Create scripts/seed_demo.sql or Python using service role:
 - Cat Mochi, feeding 9am, litter 12pm
 - Do not seed real PII
 
-- Scenario data (phase-10 10.1): Lucy rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Paul + Life Records + review, RAG indexing
+- Scenario data (phase-10 10.1): Chloe rates/policies/visitor parking, fictional entry info and coordinates, a paid booking whose pick-up is now + 90 min (--relative), a past completed stay with Paul + Life Records + review, RAG indexing
 
 DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ```
