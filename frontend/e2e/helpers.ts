@@ -4,6 +4,11 @@ import type { MockUser } from "./supabaseMock";
 
 export const APP_FRAME = 'iframe[title="Pawddy app"]';
 
+/** A fixed "now" for specs that depend on the day: noon in Toronto (EDT), far from any midnight or month edge. */
+export const NOON_TORONTO = new Date("2026-10-09T16:00:00Z");
+/** The Toronto calendar date of NOON_TORONTO (what the app calls "today"). */
+export const TODAY_TORONTO = "2026-10-09";
+
 type Point = { x: number; y: number };
 type Box = { x: number; y: number; width: number; height: number };
 

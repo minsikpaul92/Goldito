@@ -21,6 +21,7 @@ from app.ai.daily_report import (
     broken_rules,
     build_snapshot,
     care_intervals,
+    clean_overrides,
     day_bounds,
     few_shot_messages,
     has_facts,
@@ -50,6 +51,8 @@ class DailyReportRequest(BaseModel):
     sitter_note: str | None = Field(default=None, max_length=NOTE_MAX)
     photos: list[str] = Field(default_factory=list, max_length=2)
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
+    # Corrections to a recorded value: {"meal": "most", "walk": "30"} (see `clean_overrides`).
+    overrides: dict[str, str] = Field(default_factory=dict, max_length=len(CHECK_KEYS))
 
 
 class DailyReportResponse(BaseModel):
@@ -94,60 +97,20 @@ def daily_report(
     if not intervals:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet today.")
 
-    lo, hi = day_start.isoformat(), day_end.isoformat()
-    tasks = db.table("care_tasks").select("id, type, title, dose, notes").eq("pet_id", pet_id).execute().data
-    logs = (
-        db.table("task_logs")
-        .select("task_id, due_at, status, completed_at")
-        .eq("pet_id", pet_id)
-        .gte("due_at", lo)
-        .lt("due_at", hi)
-        .execute()
-        .data
-    )
-    checkins = (
-        db.table("care_checkins")
-        .select("kind, value, note_text, media_id, created_at")
-        .eq("pet_id", pet_id)
-        .eq("created_by", user.id)
-        .gte("created_at", lo)
-        .lt("created_at", hi)
-        .execute()
-        .data
-    )
-    posts = (
-        db.table("feed_posts")
-        .select("caption, created_at")
-        .eq("pet_id", pet_id)
-        .eq("posted_by", user.id)
-        .eq("visibility", "shared")
-        .gte("created_at", lo)
-        .lt("created_at", hi)
-        .execute()
-        .data
-    )
-
-    allergies = [a["allergen"] for a in db.table("pet_allergies").select("allergen").eq("pet_id", pet_id).execute().data]
-    heads_up = [
-        c["text"] for c in db.table("pet_cautions").select("text").eq("pet_id", pet_id).eq("active", True).execute().data
-    ]
+    records = load_day_records(db, pet_id, user.id, day_start, day_end)
 
     snapshot = build_snapshot(
         pet=pet,
         day=day,
         tz=tz,
         intervals=intervals,
-        tasks=tasks,
-        task_logs=logs,
-        checkins=checkins,
-        feed_posts=posts,
-        allergies=allergies,
-        heads_up=heads_up,
+        **records,
         report_photos=body.photos,
         chips=body.chips,
         sitter_note=body.sitter_note,
         skip=body.skip,
         now=now,
+        overrides=body.overrides,
     )
 
     if not has_facts(snapshot):
@@ -213,6 +176,7 @@ def daily_report(
             "sitter_note": snapshot["sitter_note"],
             "photos": [p["caption"] for p in snapshot["photos"] if p["source"] == "report"],
             "skip": [k for k in body.skip if k in CHECK_KEYS],
+            "overrides": clean_overrides(body.overrides),
         },
         "source_snapshot": snapshot,
         "model": model_name,
@@ -234,6 +198,54 @@ def daily_report(
         model=model_name,
         latency_ms=latency_ms,
     )
+
+
+def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_end: datetime) -> dict:
+    """The day's raw records for one pet and sitter, as the keyword arguments `build_snapshot` takes."""
+    lo, hi = day_start.isoformat(), day_end.isoformat()
+    tasks = db.table("care_tasks").select("id, type, title, dose, notes").eq("pet_id", pet_id).execute().data
+    logs = (
+        db.table("task_logs")
+        .select("task_id, due_at, status, completed_at")
+        .eq("pet_id", pet_id)
+        .gte("due_at", lo)
+        .lt("due_at", hi)
+        .execute()
+        .data
+    )
+    checkins = (
+        db.table("care_checkins")
+        .select("kind, value, note_text, media_id, created_at")
+        .eq("pet_id", pet_id)
+        .eq("created_by", sitter_id)
+        .gte("created_at", lo)
+        .lt("created_at", hi)
+        .execute()
+        .data
+    )
+    posts = (
+        db.table("feed_posts")
+        .select("caption, created_at")
+        .eq("pet_id", pet_id)
+        .eq("posted_by", sitter_id)
+        .eq("visibility", "shared")
+        .gte("created_at", lo)
+        .lt("created_at", hi)
+        .execute()
+        .data
+    )
+    allergies = [a["allergen"] for a in db.table("pet_allergies").select("allergen").eq("pet_id", pet_id).execute().data]
+    heads_up = [
+        c["text"] for c in db.table("pet_cautions").select("text").eq("pet_id", pet_id).eq("active", True).execute().data
+    ]
+    return {
+        "tasks": tasks,
+        "task_logs": logs,
+        "checkins": checkins,
+        "feed_posts": posts,
+        "allergies": allergies,
+        "heads_up": heads_up,
+    }
 
 
 def _now() -> datetime:

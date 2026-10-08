@@ -83,7 +83,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
       style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}
       testID={id}
     >
-      <Text style={styles.shortcutText}>{label}</Text>
+      <Text style={styles.shortcutText}>{`${label}  ›`}</Text>
     </Pressable>
   );
 
@@ -284,11 +284,12 @@ const makeStyles = (theme: Theme) =>
       minHeight: 48,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
+      // A button, not a number tile: the primary tint + arrow set it apart from the stats above.
+      borderRadius: 24,
+      borderWidth: 1.5,
+      borderColor: theme.color.primary,
+      backgroundColor: theme.color.accent,
     },
-    shortcutText: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    shortcutText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.primary },
     pressed: { opacity: 0.7 },
   });

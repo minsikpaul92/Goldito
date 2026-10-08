@@ -144,6 +144,31 @@ test.describe("book care", () => {
     await expect(card).toContainText("5:00 PM · My place");
   });
 
+  test("tapping the date opens a calendar; a tap picks the day and − / + still nudge it", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
+    seed(db, [pet(MAX, "Max", "dog")]);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/bookings/new");
+    const screen = app(page);
+
+    const dropDay = screen.getByTestId("drop_off-day-value");
+    const start = await dropDay.innerText();
+    await screen.getByTestId("drop_off-day-open").click();
+    const sheet = screen.getByTestId("drop_off-calendar");
+    await expect(sheet).toBeVisible();
+    // Next month, then its 15th: never the default drop-off (tomorrow), whatever day the test runs.
+    await screen.getByTestId("drop_off-calendar-next").click();
+    await sheet.locator('[data-testid^="drop_off-calendar-20"][data-testid$="-15"]').click();
+    await expect(sheet).toHaveCount(0);
+    expect(await dropDay.innerText()).not.toBe(start);
+
+    // The − button still works from the picked day.
+    const picked = await dropDay.innerText();
+    await screen.getByTestId("drop_off-day-minus").click();
+    expect(await dropDay.innerText()).not.toBe(picked);
+  });
+
   test("somewhere else needs a place, and a double booking names the pet", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
     seed(db, [pet(MAX, "Max", "dog")]);

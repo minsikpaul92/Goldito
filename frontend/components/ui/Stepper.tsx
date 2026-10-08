@@ -14,6 +14,8 @@ type Props = {
   canIncrease?: boolean;
   /** Words after the label for the − and + buttons. */
   actions?: [string, string];
+  /** Makes the value itself tappable (e.g. opens a calendar). */
+  onPressValue?: () => void;
   testID?: string;
 };
 
@@ -26,6 +28,7 @@ export function Stepper({
   canDecrease = true,
   canIncrease = true,
   actions = ["earlier", "later"],
+  onPressValue,
   testID,
 }: Props) {
   const theme = useTheme();
@@ -47,9 +50,23 @@ export function Stepper({
   return (
     <View style={styles.row}>
       {button("remove", onDecrease, canDecrease, actions[0], "minus")}
-      <Text style={styles.value} testID={testID ? `${testID}-value` : undefined}>
-        {value}
-      </Text>
+      {onPressValue ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${value}. Pick from calendar`}
+          onPress={onPressValue}
+          style={({ pressed }) => [styles.valueButton, pressed && styles.pressed]}
+          testID={testID ? `${testID}-open` : undefined}
+        >
+          <Text style={[styles.value, styles.valueLink]} testID={testID ? `${testID}-value` : undefined}>
+            {value}
+          </Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.value} testID={testID ? `${testID}-value` : undefined}>
+          {value}
+        </Text>
+      )}
       {button("add", onIncrease, canIncrease, actions[1], "plus")}
     </View>
   );
@@ -78,6 +95,8 @@ const makeStyles = (theme: Theme) =>
     disabled: {
       opacity: 0.4,
     },
+    valueButton: { minHeight: 44, justifyContent: "center" },
+    valueLink: { textDecorationLine: "underline", textDecorationColor: theme.color.primary },
     value: {
       minWidth: 84,
       textAlign: "center",

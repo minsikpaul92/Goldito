@@ -32,14 +32,21 @@ export const SITTER: MockUser = {
   displayName: "Lucy",
 };
 
+// "Now" for the mock's own rules and timestamps: the real clock, or the fixed time a test passes to
+// mockSupabase({ now }) so it matches the browser clock (page.clock) the test installs.
+let fixedNow: number | null = null;
+function nowMs(): number {
+  return fixedNow ?? Date.now();
+}
+
 function base64url(value: object): string {
   return btoa(JSON.stringify(value)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function sessionFor(user: MockUser) {
-  const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(nowMs() / 1000);
   const claims = { sub: user.id, email: user.email, role: "authenticated", aud: "authenticated", iat: now, exp: now + 3600 };
-  const timestamp = new Date().toISOString();
+  const timestamp = new Date(nowMs()).toISOString();
   return {
     access_token: `${base64url({ alg: "HS256", typ: "JWT" })}.${base64url(claims)}.e2e-signature`,
     token_type: "bearer",
@@ -64,7 +71,8 @@ function json(route: Route, status: number, body: unknown) {
   return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 }
 
-export async function mockSupabase(page: Page, initialUsers: MockUser[]) {
+export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date } = {}) {
+  fixedNow = options.now ? options.now.getTime() : null;
   // Copies, so a test that edits a user (e.g. display name) never leaks into the next one.
   const users = initialUsers.map((user) => ({ ...user }));
   const signups: { email: string; role: string; display_name: string }[] = [];
@@ -182,6 +190,8 @@ export type MockDb = {
   /** Feed posts + media rows (Phase 05 upload path). */
   feed_posts: Row[];
   media: Row[];
+  /** AI drafts (private to the sitter) and sent reports (Phase 07). */
+  daily_reports: Row[];
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -224,6 +234,7 @@ function createMockDb(): MockDb {
     notifications: [],
     feed_posts: [],
     media: [],
+    daily_reports: [],
   };
 }
 
@@ -360,7 +371,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     case "propose_meet_greet": {
       if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
       if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
-      if (Date.parse(String(args.p_at)) <= Date.now()) return fail("invalid_window");
+      if (Date.parse(String(args.p_at)) <= nowMs()) return fail("invalid_window");
       Object.assign(b, {
         meet_greet_status: "proposed",
         meet_greet_mode: args.p_mode,
@@ -388,7 +399,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     }
     case "complete_meet_greet": {
       if (status !== "agreed") return fail("invalid_status");
-      if (Date.now() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
+      if (nowMs() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
       b.meet_greet_status = "done";
       return done();
     }
@@ -418,6 +429,8 @@ function matches(row: Row, params: URLSearchParams): boolean {
       if (!(String(row[key]) <= raw.slice(4))) return false;
     } else if (raw.startsWith("gte.")) {
       if (!(String(row[key]) >= raw.slice(4))) return false;
+    } else if (raw.startsWith("lt.")) {
+      if (!(String(row[key]) < raw.slice(3))) return false;
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
@@ -455,7 +468,7 @@ function applyChangeRequest(db: MockDb, req: Row) {
       notes: t.notes ?? null,
       repeat_daily: t.repeat ?? true,
       active: true,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
   });
   for (const text of req.cautions as string[]) {
@@ -543,7 +556,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const forced = db.search_results.find((r) => r.sitter_id === args.p_sitter)?.request_error;
     if (forced) return json(route, 400, { code: "P0001", message: forced, details: null });
     const id = crypto.randomUUID();
-    const created = new Date().toISOString();
+    const created = new Date(nowMs()).toISOString();
     db.bookings.push({
       id,
       owner_id: me,
@@ -629,7 +642,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       status: "proposed",
       proposed_by: me,
       completed_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
   }
@@ -651,11 +664,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const h = agreed(p_kind);
     if (!h) return fail("handoff_missing");
     if (h.completed_at) return fail("handoff_completed");
-    if (p_kind === "drop_off" && Date.now() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
+    if (p_kind === "drop_off" && nowMs() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
       return fail("handoff_too_early");
     }
     if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
-    h.completed_at = new Date().toISOString();
+    h.completed_at = new Date(nowMs()).toISOString();
     return route.fulfill({ status: 204 });
   }
 
@@ -754,7 +767,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     );
     const missing = required.filter((k) => !signed.has(k));
     if (missing.length > 0) return fail("consents_missing", missing.join(","));
-    booking.paid_at = new Date().toISOString();
+    booking.paid_at = new Date(nowMs()).toISOString();
     booking.price_snapshot = DEMO_QUOTE;
     return json(route, 200, DEMO_QUOTE);
   }
@@ -773,7 +786,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           status: "pending",
           completed_at: null,
           media_id: null,
-          created_at: new Date().toISOString(),
+          created_at: new Date(nowMs()).toISOString(),
         });
       }
     }
@@ -811,7 +824,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         repeat_daily: true,
         active: true,
         request_id: id,
-        created_at: new Date().toISOString(),
+        created_at: new Date(nowMs()).toISOString(),
       });
     }
     for (const text of p_cautions as string[]) {
@@ -845,7 +858,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       tasks: p_tasks,
       cautions: p_cautions,
       decline_reason: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     db.notifications.push({
       id: crypto.randomUUID(),
@@ -857,7 +870,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: booking.id,
       ref_id: id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
   }
@@ -880,7 +893,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
   }
@@ -903,7 +916,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
   }
@@ -925,9 +938,32 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
+  }
+
+  if (path === "rpc/send_daily_report") {
+    const { p_report, p_body } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report || report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (report.status !== "draft") return json(route, 400, { code: "P0001", message: "report_already_sent" });
+    if (!String(p_body ?? "").trim()) return json(route, 400, { code: "P0001", message: "body_required" });
+    Object.assign(report, { body: String(p_body).trim(), status: "sent", sent_at: new Date(nowMs()).toISOString() });
+    const pet = db.pets.find((p) => p.id === report.pet_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "report_sent",
+      title: `${users.find((u) => u.id === me)?.displayName} sent ${pet?.name}'s daily report 📓`,
+      body: String(p_body).trim().slice(0, 140),
+      pet_id: report.pet_id,
+      booking_id: null,
+      ref_id: report.id,
+      read_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+    });
+    return json(route, 200, report);
   }
 
   if (path === "rpc/log_care_checkin") {
@@ -946,7 +982,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       value: p_kind === "note" ? null : p_value,
       note_text: note,
       media_id: p_media_id,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     };
     db.care_checkins.push(row);
     // Same rule as the SQL: preset line, or only the typed memo.
@@ -975,7 +1011,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (log.status === "done") return json(route, 400, { code: "P0001", message: "already_done" });
     Object.assign(log, {
       status: "done",
-      completed_at: new Date().toISOString(),
+      completed_at: new Date(nowMs()).toISOString(),
       completed_by: me,
       media_id: p_media_id,
       note_text: note,
@@ -992,7 +1028,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: null,
       ref_id: log.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     if (p_media_id) {
       db.feed_posts.push({
@@ -1005,7 +1041,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         caption: note ?? `${task?.title} — done`,
         caption_source: "task",
         task_log_id: log.id,
-        created_at: new Date().toISOString(),
+        created_at: new Date(nowMs()).toISOString(),
       });
     }
     return json(route, 200, log);
@@ -1030,8 +1066,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         h.status === "agreed" &&
         (booking.service_type === "house_sitting" || h.location_type === "owner_home"),
     );
-    const unlockAt = drop ? Date.parse(String(drop.scheduled_at)) - 2 * 3_600_000 : Date.now();
-    if (Date.now() < unlockAt) {
+    const unlockAt = drop ? Date.parse(String(drop.scheduled_at)) - 2 * 3_600_000 : nowMs();
+    if (nowMs() < unlockAt) {
       return fail("access_locked", JSON.stringify({ unlocks_at: new Date(unlockAt).toISOString() }));
     }
     const access = db.owner_home_access.find((r) => r.owner_id === booking.owner_id);
@@ -1042,7 +1078,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         buzzer: access?.buzzer ?? null,
         fob_notes: access?.fob_notes ?? null,
         sitter_parking: access?.sitter_parking ?? null,
-        first_revealed_at: new Date().toISOString(),
+        first_revealed_at: new Date(nowMs()).toISOString(),
       },
     ]);
   }
@@ -1070,7 +1106,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         matches(row, params) &&
         (path !== "notifications" || row.user_id === me) &&
         // RLS: a private post is only visible to its author (5.8).
-        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private"),
+        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
+        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
+        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent"),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -1138,6 +1176,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    if (path === "daily_reports" && select.includes("pets(")) {
+      rows = rows.map((r) => ({
+        ...r,
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
+      }));
+    }
     if (path === "care_change_requests") {
       rows = rows
         .filter((r) => r.requested_by === me || r.sitter_id === me)
@@ -1185,8 +1230,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const body = request.postDataJSON();
     const inserted: Row[] = (Array.isArray(body) ? body : [body]).map((row: Row): Row => ({
       id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
+      created_at: new Date(nowMs()).toISOString(),
+      ...(path === "booking_consents" ? { signed_at: new Date(nowMs()).toISOString() } : {}),
       ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...(path === "pet_cautions" ? { active: true } : {}),
       ...row,
