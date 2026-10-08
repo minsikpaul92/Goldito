@@ -5,7 +5,7 @@
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
 > 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
 
-**마지막 갱신:** 2026-10-07 · Phase 07 · 07B (알림장 · 문의 AI) 까지
+**마지막 갱신:** 2026-10-08 · 첫 수동 테스트 결과 반영 (§3.0)
 
 ---
 
@@ -138,6 +138,22 @@
 
 **열 설명** — 자동: 같은 시나리오를 자동 테스트가 확인하는지 (스펙 이름). **상태**: ✅ 통과 · ❌ 실패 · ➖ 미확인 (+ 날짜 · 확인한 사람). 아직 아무도 사람 손으로 확인하지 않은 줄은 **➖** 이다.
 
+### 3.0 테스트 진행 현황 (2026-10-08, 첫 수동 테스트 후)
+
+**범례** ✅ 사람이 확인해 통과 · 🟡 일부만(또는 Claude가 확인, 사람 확인 대기) · ❌ 사람이 확인해 실패 · ➖ 아직 안 해 봄. 아래는 이번 첫 테스트(런북 §2 단계 1~5까지)에서 **사람이 직접 본 것**만 반영한 표입니다.
+
+| 영역 | 결과 | 비고 |
+| :--- | :--- | :--- |
+| 예약 요청 → 수락 → Confirmed (BOOK-1) | 🟡 | 진행은 됨. 실시간 갱신 ❌ (FLOW-1) |
+| 시간 · 장소 변경 (BOOK-2) | ❌ | FLOW-7 · 8 · 9 |
+| 체크아웃 · 결제 (BOOK-5) | ❌ ⛔ | 요금표 없음 (FLOW-3) — **이후 모든 단계가 여기서 막힘** |
+| Received → Returned (BOOK-4) | ❌ | Returned 확인 단계 없음 (FLOW-6), 진행 중이 Upcoming에 (FLOW-5) |
+| 날짜 · 시간 입력 통일 (FLOW-10) · 이름 옆 역할 표시 (FLOW-11) · 입력칸 힌트 (FLOW-12) | ❌ | 모양 · 통일 |
+| 데모 로그인 (NAME-2) | 🟡 | Claude 확인 |
+| **REPORT · CAP · INQ · DONE · UX-1~4 · NAME-1 · 3~5** | ➖ | 체크아웃이 막혀 아직 못 감 (INQ · UX-1~4 일부는 막히지 않음) |
+
+피드백과 고치는 아이디어: [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md).
+
 ### 3.1 오너 — 돌봄 할 일 (CARE)
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
@@ -149,7 +165,6 @@
 | CARE-5 | **시간 칸을 탭** → iPhone처럼 **시 · 분 · AM/PM 휠**이 뜸. 손가락/마우스로 돌리거나 마우스 휠로 굴리거나, 줄을 눌러 고름 → Set | 가운데 띠에 멈춘 값이 선택됨 (예: 8:05 PM). + 버튼 없이 바로 | 🤖 `care-tasks` | ➖ |
 | CARE-6 | 목록의 **태스크를 탭** → 이름 · 용량 · 시간 · 메모 수정 → Save changes | "Saved …" (시간을 바꾸면 "Saved — now at 6:45 PM"). **종류는 잠겨 있음** | 🤖 `care-tasks` | ➖ |
 | CARE-7 | 시터가 아직 안 한 오늘 할 일의 **시간을 바꾸거나 Pause** | 시터 화면에서 옛 시각의 할 일이 사라지고 새 시각으로 나타남 (Missed로 남지 않음) | SQL `rls_smoke` · **실제 확인 👤** | ➖ |
-
 | REQ-1 | Home → Max → Care tasks → **✍️ Write a care checklist** (돌보는 중이면 "care request") → 칩 **Meals** | 글상자는 **비어 있고 연한 힌트**("1 cup of kibble")만 보임. 비워 두고 Add line 하면 힌트 문구가 쓰임. 고양이는 **Walk 칩이 없음**. 칩마다 기본 문구가 다름 | 🤖 `care-request` | ➖ |
 | REQ-2 | 시간 선택: **At a time**(휠) 또는 **Several times**(− 3 times +) — 둘 다 **Every day / Once** 선택 → **Add line** | 줄이 위 목록에 쌓이고 **새 칩 줄**이 이어서 나타남. Several times는 하루에 균등 배치(8 AM · 2 PM · 8 PM) 후 표에서 시간 수정 가능. **Heads-up** 칩은 글만 입력 | 🤖 `care-request` | ➖ |
 | REQ-3 | **Make a checklist** | **표**(Time · Task)가 나타남. 줄마다 AI가 따로 다듬음(이름 · 용량 · 메모) — AI가 안 되거나 거절하면 내가 쓴 그대로 남고 **에러 없이** 진행. AI가 뺀 항목은 **빨간 "Left out" 박스**(탭하면 사라짐). 다시 줄을 쓰고 **Add to the checklist**로 같은 표에 추가 | 🤖 `care-request` · **실제 AI 👤** | ➖ |
@@ -163,7 +178,6 @@
 | REQ-11 | 시터: 노트를 쓰면 **Counter-request** 상자가 나타남 → 추가 비용($, 선택) + "이 할 일은 오너가 해 주세요" 선택 → **Send counter-request** | 아무것도 생성 안 됨, 요청은 열린 채(오너가 답하기 전엔 새 요청 불가). 오너에게 알림 | 🤖 `care-request` · SQL | ➖ |
 | REQ-12 | 오너: 펫 화면 **counter-reply 상자** (노트 · Extra fee · "You'd do yourself: …") → **Accept** / **Decline** | Accept → 시터가 맡기로 한 할 일 + Heads-up만 생성(오너가 하기로 한 할 일은 제외), 시터에게 알림. Decline → 닫힘, 아무것도 생성 안 됨. (비용은 기록·표시만 — 데모엔 추가 결제 없음) | 🤖 `care-request` · SQL | ➖ |
 | REQ-13 | 돌보는 중(수락된 예약, 아직 픽업 전)인 펫의 펫 화면 | **Add task 버튼이 없음**, Heads-up의 직접 입력칸도 없음("A stay is on — … care request로"). 서버도 거절(오너가 직접 추가 시 42501). 이미 있는 할 일의 **수정 · 삭제는 그대로** 가능. 집에 있는 펫은 예전처럼 직접 추가 | 🤖 `care-request` · SQL `rls_smoke` | ➖ |
-
 | HEADS-1 | 오너: 펫 화면 맨 아래 **Heads-up** 칸 → 문구 입력 → **Add Heads-up** | 칩으로 추가됨, 입력칸 비워짐. 같은 문구(대소문자만 다름)를 또 넣어도 중복 안 됨. 칩의 ✕ → 삭제. 없으면 "None yet…" 안내 | 🤖 `heads-up` | ➖ |
 | HEADS-2 | 시터 Home (돌보는 중) | **한 줄 카드** "⚠️ Max: Text instead of knocking  +2". 카드를 누르면 펫별(+오너 이름)로 전부 보임. Home은 여전히 한 화면 | 🤖 `heads-up` | ➖ |
 | HEADS-3 | 시터: 예약 상세(요청 수락 전 포함) | 펫 카드 **맨 위에 "⚠️ Heads-up" 상자**. 꺼 둔(inactive) 것은 안 보임, 없으면 상자 자체가 없음 | 🤖 `heads-up` | ➖ |
@@ -267,11 +281,11 @@
 
 | ID | 확인 내용 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- |
-| BOOK-1 | 예약 요청 → 시터 수락 → 확정 | 🤖 `booking` · `sitter-bookings` | ➖ |
-| BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ➖ |
+| BOOK-1 | 예약 요청 → 시터 수락 → 확정 | 🤖 `booking` · `sitter-bookings` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
+| BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) |
 | BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기) | 🤖 `meet-greet` | ➖ |
-| BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ➖ |
-| BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ➖ |
+| BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
+| BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서) | 서버만 확인 (**앱 e2e 미확인**, 3B.11) | ➖ |
 
 ### 3.9 리뷰 버그 수정 (BF) — 2026-10-06 코드 리뷰에서 나온 버그
@@ -366,6 +380,16 @@
 | UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 
+### 3.15 이름 변경 (NAME) — Pawddy → Goldito
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| NAME-1 | 앱 첫 화면 · 로그인 · 가입 | 어디에도 "Pawddy"가 없고 **Goldito** | 🤖 (iframe 제목) · **👤** | ➖ |
+| NAME-2 | 데모 계정으로 로그인 (한 번 로그아웃된 상태에서) | Try the demo 로그인 성공 (이메일 `@goldito.test`) | 🤖 `welcome` | 🟡 10/08 Claude가 브라우저로 두 버튼 로그인 확인 (사람 확인 대기) |
+| NAME-3 | 새 사진 업로드 후 Cloudinary 주소 | 폴더 `goldito/…`. **예전 사진(`pawddy/…`)도 계속 보임** | pytest | ➖ |
+| NAME-4 | Meet & Greet 영상 링크 · `.ics` 파일 | 제목이 "Goldito Meet & Greet — …", 파일명 `goldito-meet-greet.ics` | **👤** | ➖ |
+| NAME-5 | 동의서 문구 | "demo template for the Goldito hackathon" | **👤** | ➖ |
+
 ### 3.16 예약 흐름 피드백 (FLOW) — [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) 반영 후 확인할 것 *(아직 고치지 않음 — 지금은 전부 ❌ 예상)*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
@@ -382,16 +406,6 @@
 | FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
 | FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
-
-### 3.15 이름 변경 (NAME) — Pawddy → Goldito
-
-| ID | 단계 | 기대 결과 | 자동 | 상태 |
-| :--- | :--- | :--- | :--- | :--- |
-| NAME-1 | 앱 첫 화면 · 로그인 · 가입 | 어디에도 "Pawddy"가 없고 **Goldito** | 🤖 (iframe 제목) · **👤** | ➖ |
-| NAME-2 | 데모 계정으로 로그인 (한 번 로그아웃된 상태에서) | Try the demo 로그인 성공 (이메일은 그대로 `@goldito.test`) | 🤖 `welcome` | ➖ |
-| NAME-3 | 새 사진 업로드 후 Cloudinary 주소 | 폴더 `goldito/…`. **예전 사진(`pawddy/…`)도 계속 보임** | pytest | ➖ |
-| NAME-4 | Meet & Greet 영상 링크 · `.ics` 파일 | 제목이 "Goldito Meet & Greet — …", 파일명 `goldito-meet-greet.ics` | **👤** | ➖ |
-| NAME-5 | 동의서 문구 | "demo template for the Goldito hackathon" | **👤** | ➖ |
 
 ---
 
