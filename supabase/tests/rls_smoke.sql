@@ -1318,16 +1318,19 @@ declare
   robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
   chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
-  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
-  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
   v_pay uuid;
   v_kind text;
   v_quote jsonb;
   v_err text;
   v_detail text;
+  v_dog uuid;
+  v_cat uuid;
 begin
-  -- Confirmed boarding with Chloe rates already seeded in 3C.1
-  v_pay := _t_booking(robert, chloe, array[max, mochi],
+  -- Confirmed boarding with Chloe rates already seeded in 3C.1. The Thanksgiving dates are fixed, so this
+  -- booking gets its own pets: Max and Mochi are booked relative to now(), which would overlap it for a few days.
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Payer') returning id into v_dog;
+  insert into public.pets (owner_id, species, name) values (robert, 'cat', 'Payee') returning id into v_cat;
+  v_pay := _t_booking(robert, chloe, array[v_dog, v_cat],
     ('2026-10-09 07:30:00'::timestamp at time zone app_timezone()),
     ('2026-10-12 17:00:00'::timestamp at time zone app_timezone()),
     'confirmed');
