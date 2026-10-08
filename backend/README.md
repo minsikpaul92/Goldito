@@ -76,8 +76,8 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 
 | Email | Role | Name |
 | :--- | :--- | :--- |
-| `demo-owner@pawddy.test` | owner | Chloe |
-| `demo-sitter@pawddy.test` | sitter | Lucy |
+| `demo-owner@goldito.test` | owner | Robert |
+| `demo-sitter@goldito.test` | sitter | Chloe |
 
 The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that will be shared with judges — never reuse a real password. `.test` addresses never receive mail.
 
