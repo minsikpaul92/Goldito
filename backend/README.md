@@ -23,6 +23,17 @@ pytest -q   # auth tests use their own test keys — no real project needed
 
 Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost:8081`, `http://localhost:19006`).
 
+### Docker (deploy image)
+
+```bash
+cd backend
+docker build -t goldito-backend .
+docker run --rm -p 8000:8000 --env-file .env goldito-backend
+curl -s http://localhost:8000/health
+```
+
+The image holds `app/` only (no `.env`, tests, or scripts). It listens on `$PORT` (default 8000) so hosts like Render can set their own. CI builds the image and checks `/health` on every backend change. Deployed env: everything in `.env.example`, with `CORS_ORIGINS` including the Vercel URL ([env-setup](../docs/plan/env-setup.ko.md)).
+
 ## Media upload (Phase 04) — manual check
 
 Needs Cloudinary vars in `.env` and a **sitter** JWT for a pet they are on duty for (`is_on_duty_for`).

@@ -46,6 +46,16 @@ jobs:
         run: ruff check .
       - name: Pytest
         run: pytest -q
+      - name: Docker image builds and serves /health
+        run: |
+          docker build -t goldito-backend .
+          docker run -d --name goldito-backend -p 8000:8000 goldito-backend
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            curl -fsS http://127.0.0.1:8000/health && exit 0
+            sleep 2
+          done
+          docker logs goldito-backend
+          exit 1
 
   frontend:
     needs: changes
