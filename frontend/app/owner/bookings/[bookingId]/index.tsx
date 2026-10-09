@@ -6,6 +6,7 @@ import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
 import { FinishedStay } from "../../../../components/FinishedStay";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
+import { PaidConfirmation } from "../../../../components/PaidConfirmation";
 import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
@@ -18,6 +19,7 @@ import { Sheet } from "../../../../components/ui/Sheet";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
 import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { loadLocal, saveLocal } from "../../../../lib/localState";
 import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   BookingError,
@@ -56,6 +58,9 @@ function actionError(error: unknown, sitter: string, pets: string): string {
   if (error.code === "booking_in_progress") return `${pets} is already with ${sitter} — change the pick-up time instead.`;
   return error.message;
 }
+
+/** What the owner has packed, remembered on this device so the list can be used at the door (FB-13). */
+const packKey = (bookingId: string) => `goldito:packed:${bookingId}`;
 
 /** Why a booking ended, from the owner's side. */
 function endedNote(b: BookingSummary): string | null {
@@ -105,7 +110,7 @@ export default function OwnerBookingDetail() {
         booking,
         addresses,
         places: placesResult.places,
-        packChecks: prev.status === "ready" ? prev.packChecks : {},
+        packChecks: prev.status === "ready" ? prev.packChecks : loadLocal<Record<string, boolean>>(packKey(booking.id), {}),
       }));
     } catch (err) {
       setState({ status: "error", message: (err as Error).message });
@@ -196,6 +201,7 @@ export default function OwnerBookingDetail() {
               <Chip key={b.label} label={b.label} />
             ))}
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
+            {booking.paidAt ? <Chip label="Paid" testID="paid-chip" /> : null}
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>
@@ -227,7 +233,7 @@ export default function OwnerBookingDetail() {
           </Card>
         ) : null}
 
-        {booking.paidAt ? <Chip label="Paid" /> : null}
+        <PaidConfirmation booking={booking} />
 
         {sitterAddress || placeNotes?.visitorParking || placeNotes?.lobbyNotes ? (
           <Card style={styles.block} testID="sitter-place-card">
@@ -243,19 +249,17 @@ export default function OwnerBookingDetail() {
         {packing.length > 0 ? (
           <Card style={styles.block} testID="packing-list">
             <Text style={styles.label}>{`Pack for ${petNames}`}</Text>
-            <Text style={styles.muted}>Local checklist — not saved.</Text>
+            <Text style={styles.muted}>Tick what you've packed. It's saved on this device so nothing gets forgotten.</Text>
             {packing.map((item) => (
               <CheckRow
                 key={item}
                 label={item}
                 checked={Boolean(packChecks[item])}
-                onChange={(v) =>
-                  setState((s) =>
-                    s.status === "ready"
-                      ? { ...s, packChecks: { ...s.packChecks, [item]: v } }
-                      : s,
-                  )
-                }
+                onChange={(v) => {
+                  const next = { ...packChecks, [item]: v };
+                  saveLocal(packKey(booking.id), next);
+                  setState((s) => (s.status === "ready" ? { ...s, packChecks: next } : s));
+                }}
                 testID={`pack-${item}`}
               />
             ))}

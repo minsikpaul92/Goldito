@@ -9,7 +9,7 @@ export default function SitterLayout() {
   return (
     <RoleStack role="sitter">
       <Stack.Screen name="schedule" options={{ title: "Schedule" }} />
-      <Stack.Screen name="bookings/[bookingId]" options={{ title: "Booking" }} />
+      <Stack.Screen name="bookings/[bookingId]" options={{ title: "Booking details" }} />
       <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
       <Stack.Screen name="tasks" options={{ title: "Today's tasks" }} />
       <Stack.Screen name="checkin/[petId]" options={{ title: "Check-in" }} />
