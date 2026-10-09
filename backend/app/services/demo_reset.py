@@ -8,9 +8,13 @@ Five states, each a point to start a manual test from:
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
 
-Everything the stays, inquiries and reports of the two accounts created is deleted first;
-Cloudinary files, the sitter's policy text and index, her style card and her seeded tone
-samples stay. The `confirmed` booking is made with the real RPCs, signed in as the two
+What the two accounts did **with each other** is deleted first (their bookings and inquiries, the
+owner's pets' care data, the owner's inquiry index, the voice the sitter learned from those replies,
+their notices that are not about another booking). Anything with a third account stays: another
+owner's booking with the sitter (and its reports, Life Records and notices), another sitter's
+inquiry from the owner. If the sitter has a confirmed booking with someone else, her schedule is
+kept as it is (removing it would break that booking). Cloudinary files, the sitter's policy text
+and index, her style card and her seeded tone samples stay. The `confirmed` booking is made with the real RPCs, signed in as the two
 demo users, so it passes the same rules a person's does. Used by `scripts/reset_demo.py`
 and (while it is switched on, for testing only) `POST /api/demo/reset`.
 """
@@ -49,18 +53,29 @@ class Step:
     table: str
     # Every column must match one of its values (an `in` filter per column).
     where: dict[str, list] = field(default_factory=dict)
+    # Columns that must be null.
+    nulls: tuple[str, ...] = ()
 
 
-def plan(owner_id: str, sitter_id: str, pet_ids: list[str], state: State = "pets") -> list[Step]:
-    """What to delete, in order. Bookings and inquiries go first; their children cascade."""
-    both = [owner_id, sitter_id]
+def plan(
+    owner_id: str,
+    sitter_id: str,
+    pet_ids: list[str],
+    state: State = "pets",
+    *,
+    pair_message_ids: list[str] | None = None,
+    keep_schedule: bool = False,
+) -> list[Step]:
+    """What to delete, in order. Only the pair's own bookings and inquiries; their children cascade.
+    `pair_message_ids` are the messages of the pair's inquiries (the voice learned from them goes first,
+    before the inquiries take the link with them)."""
+    pair = {"owner_id": [owner_id], "sitter_id": [sitter_id]}
     steps = [
-        Step("bookings (owner side)", "bookings", {"owner_id": both}),
-        Step("bookings (sitter side)", "bookings", {"sitter_id": both}),
-        Step("inquiries (owner side)", "inquiries", {"owner_id": both}),
-        Step("inquiries (sitter side)", "inquiries", {"sitter_id": both}),
-        Step("notifications", "notifications", {"user_id": both}),
-        Step("daily reports (sitter)", "daily_reports", {"sitter_id": [sitter_id]}),
+        Step("learned tone samples", "tone_samples", {"sitter_id": [sitter_id], "source": LEARNED_SAMPLES, "source_message_id": pair_message_ids or []}),
+        Step("bookings", "bookings", pair),
+        Step("inquiries", "inquiries", pair),
+        # Notices about a booking went with it; one about another account's booking stays.
+        Step("notifications", "notifications", {"user_id": [owner_id, sitter_id]}, nulls=("booking_id",)),
     ]
     for label, table in (
         ("feed posts", "feed_posts"),
@@ -78,10 +93,9 @@ def plan(owner_id: str, sitter_id: str, pet_ids: list[str], state: State = "pets
     steps += [
         Step("knowledge chunks (pets)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "pet_id": pet_ids}),
         Step("knowledge chunks (owner)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "owner_id": [owner_id]}),
-        Step("knowledge chunks (sitter)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "sitter_id": [sitter_id]}),
-        Step("learned tone samples", "tone_samples", {"sitter_id": [sitter_id], "source": LEARNED_SAMPLES}),
-        Step("schedule rows", "sitter_availability", {"sitter_id": [sitter_id]}),
     ]
+    if not keep_schedule:
+        steps.append(Step("schedule rows", "sitter_availability", {"sitter_id": [sitter_id]}))
     if state == "empty":
         steps.append(Step("pets", "pets", {"owner_id": [owner_id]}))
     return steps
@@ -91,6 +105,8 @@ def _query(client: Client, step: Step, op: str):
     query = client.table(step.table).select("id") if op == "count" else client.table(step.table).delete()
     for column, values in step.where.items():
         query = query.in_(column, values)
+    for column in step.nulls:
+        query = query.is_(column, "null")
     return query.execute()
 
 
@@ -111,6 +127,22 @@ def demo_ids(client: Client) -> tuple[str, str]:
     if not owner or not sitter:
         raise LookupError("A demo account is missing — run `python -m scripts.seed_demo` first.")
     return owner, sitter
+
+
+def pair_message_ids(client: Client, owner_id: str, sitter_id: str) -> list[str]:
+    """The messages of the inquiries between the two demo accounts."""
+    inquiries = client.table("inquiries").select("id").eq("owner_id", owner_id).eq("sitter_id", sitter_id).execute().data
+    if not inquiries:
+        return []
+    rows = client.table("inquiry_messages").select("id").in_("inquiry_id", [i["id"] for i in inquiries]).execute().data
+    return [row["id"] for row in rows]
+
+
+def sitter_has_other_bookings(client: Client, owner_id: str, sitter_id: str) -> bool:
+    """A confirmed booking of the sitter with someone else: her schedule must stay (the availability guard
+    refuses to remove the slots it holds)."""
+    rows = client.table("bookings").select("id").eq("sitter_id", sitter_id).neq("owner_id", owner_id).eq("status", "confirmed").limit(1).execute().data
+    return bool(rows)
 
 
 def owner_pet_ids(client: Client, owner_id: str) -> list[str]:
@@ -312,15 +344,23 @@ def reset(
     if state not in STATES:
         raise ValueError(f"unknown state {state!r}")
     report = []
-    for step in plan(owner_id, sitter_id, owner_pet_ids(client, owner_id), state):
+    keep_schedule = sitter_has_other_bookings(client, owner_id, sitter_id)
+    steps = plan(
+        owner_id, sitter_id, owner_pet_ids(client, owner_id), state,
+        pair_message_ids=pair_message_ids(client, owner_id, sitter_id), keep_schedule=keep_schedule,
+    )
+    for step in steps:
         report.append((step.label, count_rows(client, step)))
         if apply:
             delete_rows(client, step)
+    if keep_schedule:
+        report.append(("schedule kept (the sitter has another owner's confirmed booking)", 0))
     if apply:
         if state != "empty":
             ensure_pets(client, owner_id, today)
         ensure_sitter_rates(client, sitter_id)
-        open_schedule(client, sitter_id, today)
+        if not keep_schedule:
+            open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id)
         if state in ("confirmed", "ready", "in_care"):
             book(client, owner_id, sitter_id, today, state)

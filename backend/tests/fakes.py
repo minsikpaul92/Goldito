@@ -43,6 +43,11 @@ class _Query:
         self.filters.append(lambda r: r.get(col) in list(vals))
         return self
 
+    def is_(self, col, val):
+        assert val == "null"
+        self.filters.append(lambda r: r.get(col) is None)
+        return self
+
     def gte(self, col, val):
         self.filters.append(lambda r: _when(r.get(col)) >= _when(val))
         return self

@@ -45,7 +45,7 @@ export function DemoTools() {
   return (
     <View style={styles.group} testID="demo-tools">
       <Text style={styles.title}>Demo tools (testing only)</Text>
-      <Text style={styles.muted}>Start over from a known point. This clears the demo accounts' bookings, inquiries, notices and reports.</Text>
+      <Text style={styles.muted}>Start over from a known point. This clears what the two demo accounts did together: bookings, inquiries, notices and reports. Other accounts' data stays.</Text>
       {DEMO_STATES.map((option) => (
         <CheckRow
           key={option.value}
@@ -59,7 +59,7 @@ export function DemoTools() {
       ))}
       <TextButton label="Reset demo…" onPress={() => setAsking(true)} danger testID="demo-reset-open" />
       <Sheet visible={asking} title="Reset the demo?" onClose={() => (busy ? undefined : setAsking(false))} testID="demo-reset-sheet">
-        <Text style={styles.body}>{`Both demo accounts go back to “${chosen.label}”. Bookings, inquiries, notices and reports are deleted. This can't be undone.`}</Text>
+        <Text style={styles.body}>{`Both demo accounts go back to “${chosen.label}”. Their bookings, inquiries, notices and reports with each other are deleted. This can't be undone.`}</Text>
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="demo-reset-error">
             {error}

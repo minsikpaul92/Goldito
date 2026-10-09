@@ -18,7 +18,6 @@ from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import demo_reset
-from app.services.demo_accounts import DEMO_USERS
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
@@ -37,14 +36,13 @@ def reset_demo(body: ResetRequest, user: CurrentUser = Depends(get_current_user)
     settings = get_settings()
     if not settings.demo_reset_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    if (user.email or "").lower() not in {demo.email for demo in DEMO_USERS}:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the demo accounts can reset the demo.")
-
     client = get_service_client()
     try:
         owner_id, sitter_id = demo_reset.demo_ids(client)
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    if user.id not in (owner_id, sitter_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the demo accounts can reset the demo.")
     today = datetime.now(ZoneInfo(settings.app_timezone)).date()
     report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True)
     return ResetResponse(state=body.state, deleted={label: rows for label, rows in report if rows})

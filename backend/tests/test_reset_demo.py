@@ -24,6 +24,7 @@ def world() -> FakeDB:
             {"id": "b-other", "owner_id": OTHER_OWNER, "sitter_id": OTHER_SITTER},
         ],
         inquiries=[{"id": "q-demo", "owner_id": OWNER, "sitter_id": SITTER}],
+        inquiry_messages=[{"id": "m-demo", "inquiry_id": "q-demo"}],
         notifications=[
             {"id": "n1", "user_id": OWNER},
             {"id": "n2", "user_id": SITTER},
@@ -40,7 +41,7 @@ def world() -> FakeDB:
         ],
         tone_samples=[
             {"id": "t-history", "sitter_id": SITTER, "source": "history"},
-            {"id": "t-approved", "sitter_id": SITTER, "source": "approved"},
+            {"id": "t-approved", "sitter_id": SITTER, "source": "approved", "source_message_id": "m-demo"},
         ],
         sitter_availability=[{"id": "a-old", "sitter_id": SITTER, "kind": "blocked"}],
         sitter_profiles=[
@@ -67,7 +68,7 @@ def test_a_dry_run_counts_and_changes_nothing():
     report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=False))
 
     assert {name: db.tables[name] for name in before} == before  # (the fake adds empty tables when queried)
-    assert report["bookings (owner side)"] == 1
+    assert report["bookings"] == 1
     assert report["notifications"] == 2
     assert report["Life Records"] == 1
 
@@ -86,6 +87,48 @@ def test_apply_removes_only_the_demo_accounts_stay_data():
     # The sitter's policy text and the seeded voice stay; what her approvals taught goes.
     assert ids(db, "knowledge_chunks") == {"k-policy", "k-other"}
     assert ids(db, "tone_samples") == {"t-history"}
+
+
+def with_a_third_account(db: FakeDB) -> FakeDB:
+    """Another owner (a judge, say) booked and asked the demo sitter; the demo owner asked another sitter."""
+    db.tables["bookings"].append({"id": "b-judge", "owner_id": OTHER_OWNER, "sitter_id": SITTER, "status": "confirmed"})
+    db.tables["inquiries"] += [
+        {"id": "q-judge", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
+        {"id": "q-elsewhere", "owner_id": OWNER, "sitter_id": OTHER_SITTER},
+    ]
+    db.tables["inquiry_messages"].append({"id": "m-judge", "inquiry_id": "q-judge"})
+    db.tables["notifications"] += [
+        {"id": "n-judge-booking", "user_id": SITTER, "booking_id": "b-judge"},
+        {"id": "n-plain", "user_id": SITTER, "booking_id": None},
+    ]
+    db.tables["daily_reports"].append({"id": "r-judge", "pet_id": "other-pet", "sitter_id": SITTER})
+    db.tables["pet_life_records"].append({"id": "l-judge", "pet_id": "other-pet", "booking_id": "b-judge"})
+    db.tables["knowledge_chunks"].append({"id": "k-judge-inq", "source_type": "inquiry", "pet_id": None, "owner_id": OTHER_OWNER, "sitter_id": SITTER})
+    db.tables["tone_samples"].append({"id": "t-judge", "sitter_id": SITTER, "source": "approved", "source_message_id": "m-judge"})
+    return db
+
+
+def test_another_accounts_booking_inquiry_and_what_came_of_them_stay():
+    db = with_a_third_account(world())
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True)
+
+    assert ids(db, "bookings") == {"b-other", "b-judge"}
+    assert ids(db, "inquiries") == {"q-judge", "q-elsewhere"}
+    assert ids(db, "notifications") == {"n3", "n-judge-booking"}
+    assert ids(db, "daily_reports") == {"r-judge"}
+    assert ids(db, "pet_life_records") == {"l-judge"}
+    assert "k-judge-inq" in ids(db, "knowledge_chunks")
+    assert ids(db, "tone_samples") == {"t-history", "t-judge"}
+
+
+def test_the_sitters_schedule_stays_while_she_has_another_owners_confirmed_booking():
+    db = with_a_third_account(world())
+
+    report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True))
+
+    assert ids(db, "sitter_availability") == {"a-old"}  # not removed (the guard would refuse), not doubled
+    assert "schedule rows" not in report and any(label.startswith("schedule kept") for label in report)
 
 
 def test_apply_rebuilds_the_starting_state():
