@@ -29,7 +29,7 @@
 1. https://goldito-petcare.vercel.app → 로그인 화면 **Try demo** → **Demo owner**(Robert) / **Demo sitter**(Chloe).
 2. 두 계정 동시에: 크롬 일반 창 + 시크릿 창에 각각 같은 주소.
 3. 업로드 · AI · 데모 리셋은 Render에 배포된 백엔드로 Vercel에서 다 됩니다 (U0, 2026-10-09). 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 첫 요청이 30~50초** 걸립니다 — 고장이 아닙니다.
-4. 상태 되돌리기: 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠) → `empty` · `pets` · `confirmed` · `ready` · `in_care` 중 선택. `in_care` 직후 3분 안의 기록은 알림장 칩에 안 나옵니다(CW-1, 고칠 예정) — 3분 기다렸다가 기록하세요.
+4. 상태 되돌리기: 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠) → `empty` · `pets` · `confirmed` · `ready` · `in_care` 중 선택. (`011i`가 호스팅 DB에 적용되기 전에는 `in_care` 직후 3분 동안 체크인이 막힙니다 — CW-1.)
 5. **코드를 고칠 때만(Q.2부터) 로컬 환경:** 저장소 받기 → `main`에서 작은 브랜치(아래 §3). `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지, 형식은 각 `.env.example`. 백엔드 `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, 프론트 `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. 로컬은 고치는 중 확인용이고, PR이 머지된 뒤 Vercel에서 다시 확인해 기록합니다.
 6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q.md. Work only on that task."*
 

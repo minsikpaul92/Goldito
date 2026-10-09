@@ -295,14 +295,24 @@ def _one(response) -> dict | None:
 
 
 def _sitter_bookings(db, sitter_id: str, pet_id: str) -> list[dict]:
-    """This sitter's confirmed bookings that include the pet, each as its agreed drop-off → pick-up."""
+    """This sitter's confirmed bookings that include the pet, each as drop-off → agreed pick-up.
+
+    The start is the agreed drop-off, or Received when the sitter tapped it earlier — the same rule as the
+    database's `care_window` (011i), so a photo or check-in after an early Received makes it into the report.
+    """
     out: list[dict] = []
     bookings = db.table("bookings").select("id").eq("sitter_id", sitter_id).eq("status", "confirmed").execute().data
     for b in bookings:
         if not db.table("booking_pets").select("pet_id").eq("booking_id", b["id"]).eq("pet_id", pet_id).execute().data:
             continue
-        handoffs = db.table("booking_handoffs").select("kind, scheduled_at").eq("booking_id", b["id"]).execute().data
-        times = {h["kind"]: h["scheduled_at"] for h in handoffs}
-        if "drop_off" in times and "pick_up" in times:
-            out.append({"drop_off": times["drop_off"], "pick_up": times["pick_up"]})
+        handoffs = (
+            db.table("booking_handoffs").select("kind, scheduled_at, completed_at").eq("booking_id", b["id"]).execute().data
+        )
+        by_kind = {h["kind"]: h for h in handoffs}
+        drop, pick = by_kind.get("drop_off"), by_kind.get("pick_up")
+        if drop and pick:
+            start = drop["scheduled_at"]
+            if drop.get("completed_at") and parse_ts(drop["completed_at"]) < parse_ts(start):
+                start = drop["completed_at"]
+            out.append({"drop_off": start, "pick_up": pick["scheduled_at"]})
     return out
