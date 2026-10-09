@@ -30,12 +30,12 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 ## Current focus (one task per person — since 2026-10-09 Minsik and Seulgi each have one)
 
-> Work split (2026-10-09): Minsik = what blocks the demo path (R1b → 06B → R2 → 10); Seulgi = Phase Q (QA · wording · anonymized data · tone · Medium/Low review items). See [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). Each person edits only their own row.
+> Work split (2026-10-09): Minsik = what blocks the demo path (U0 backend deploy → R1b → 06B → R2 → 10); Seulgi = Phase Q (QA · wording · anonymized data · tone · Medium/Low review items). See [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). Each person edits only their own row.
 
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
-| **Seulgi** | **Q.0** | Environment + demo accounts: run the app locally with the `.env` files from Minsik, sign in with Try demo (owner + sitter), one demo reset — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **RV-1** | (branch `fix/review-inquiry` from main) Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
+| **Seulgi** | **Q.0** | Environment + demo accounts: open **https://pawddy.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (ask Minsik until U0) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
+| **Minsik** | **U0** | Backend deploy (10.3 pulled forward): Nebius Serverless Endpoint (Render fallback), `/health` green; Vercel `EXPO_PUBLIC_API_URL` → backend URL, backend `CORS_ORIGINS` += `https://pawddy.vercel.app`, test period only `EXPO_PUBLIC_DEMO_TOOLS=1` + `DEMO_RESET_ENABLED=1`, Redeploy; on Vercel an upload, one AI call and a demo reset work. Then **RV-1** (`fix/review-inquiry`, `011c`) | [phases/phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
 
 ---
 

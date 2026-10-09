@@ -1,7 +1,7 @@
 # Phase Q — 품질 · 데이터 · 말투 · QA (슬기 트랙, 2026-10-09 ~ 10-30)
 
 > **담당:** 슬기 · **같이 보는 사람:** 민식 (급한 개발), 묵 (디자인)
-> **왜 따로 뺐나:** [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) — 마감(10/30)까지 민식은 데모 경로를 막는 급한 개발(문의 AI 안전 RV-1~5 → 06B Pet Transit → 배포), 슬기는 **안 급한 것 · 익명화된 실제 데이터가 필요한 것 · 시터 실무 경험이 필요한 QA/UX**를 맡는다.
+> **왜 따로 뺐나:** [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) — 마감(10/30)까지 민식은 데모 경로를 막는 급한 개발(백엔드 배포 → 문의 AI 안전 RV-1~5 → 06B Pet Transit → 예약 흐름 → 데모 배포), 슬기는 **안 급한 것 · 익명화된 실제 데이터가 필요한 것 · 시터 실무 경험이 필요한 QA/UX**를 맡는다.
 > **공통 전제:** [CLAUDE.md](../../../CLAUDE.md) (작업 순서 · 브랜치 · 커밋 규칙) · [architecture.ko.md](architecture.ko.md) (D31 출입 정보 · D35 말투 · D38 시터 입력 최소화 · §9 AI 규칙)
 
 ---
@@ -24,13 +24,14 @@
 
 ### 0.2 환경 (Q.0)
 
-1. 저장소 받기 → `main`. 브랜치는 main에서 작게(아래 §3).
-2. `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지. 형식은 각 `.env.example`.
-3. 백엔드: `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`.
-4. 프론트: `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`, 로그인 화면 **Try demo** (오너 Robert / 시터 Chloe).
-5. 두 계정 동시에: 크롬 일반 창 + 시크릿 창.
-6. 상태 되돌리기: Profile → **Demo tools** (테스트 전용 — 백엔드 `DEMO_RESET_ENABLED=1`, 프론트 `EXPO_PUBLIC_DEMO_TOOLS=1`일 때만 보임) 또는 `python -m scripts.reset_demo --state <상태>` (먼저 dry run).
-7. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q.md. Work only on that task."*
+**손 테스트는 설치 없이 Vercel에서** — `main`이 머지될 때마다 자동 배포되는 **https://pawddy.vercel.app** 에서 합니다 (2026-10-09 결정, [test-run.ko.md](../test-run.ko.md) §0). 결과(✅)도 Vercel(main) 기준으로만 적습니다.
+
+1. https://pawddy.vercel.app → 로그인 화면 **Try demo** → **Demo owner**(Robert) / **Demo sitter**(Chloe).
+2. 두 계정 동시에: 크롬 일반 창 + 시크릿 창에 각각 같은 주소.
+3. ⚠️ **백엔드 배포(민식 U0) 전까지** Vercel에서는 사진 · 영상 업로드, AI(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record), 데모 리셋이 안 됩니다. 그동안은 Supabase만 쓰는 화면(예약 · 체크아웃 · Received/Returned · 체크인 · 리뷰 · 즐겨찾기)부터 보고, 나머지 시나리오는 U0 뒤로 미룹니다.
+4. 상태 되돌리기: U0 뒤에는 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠). 그 전에는 원하는 상태 이름(`empty` · `pets` · `confirmed` · `ready` · `in_care`)을 민식에게 알려 주면 민식 PC에서 `reset_demo`로 리셋합니다.
+5. **코드를 고칠 때만(Q.2부터) 로컬 환경:** 저장소 받기 → `main`에서 작은 브랜치(아래 §3). `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지, 형식은 각 `.env.example`. 백엔드 `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, 프론트 `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. 로컬은 고치는 중 확인용이고, PR이 머지된 뒤 Vercel에서 다시 확인해 기록합니다.
+6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q.md. Work only on that task."*
 
 ---
 
@@ -53,7 +54,7 @@
 
 | # | 작업 | 출력물 | 완료 기준 | 예상 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Q.0** | 환경 · 계정 (§0.2) | 로컬에서 앱이 뜸 | 오너 · 시터 데모 로그인, 데모 리셋 1회 | 0.5일 |
+| **Q.0** | 환경 · 계정 (§0.2) | Vercel에서 두 계정이 동시에 열림 | https://pawddy.vercel.app 에서 오너 · 시터 데모 로그인(일반 창 + 시크릿 창), 원하는 상태로 리셋 1회(U0 전에는 민식에게 요청). 로컬 환경은 Q.2 전까지만 준비하면 됨 | 0.5일 |
 | **Q.1** | **전체 손 테스트 + 시터 관점 피드백** — 데모 경로를 처음부터: 문의(INQ) → Meet & Greet → 예약 · 체크아웃(FLOW) → Received · 체크인 · 사진 · 알림장(REPORT · CAP) → Returned · 리뷰 · Life Record(DONE). 특히 새 기능 REPORT-11 · 12, FLOW-15~23 | test-guide 상태 칸 갱신, `feedback-2026-10-08.ko.md`에 **FB-30~** (본 것 · 실무에서는 · 생각 · 급함 여부) | 시나리오마다 ✅ 또는 FB 번호. 급한 FB는 민식에게 바로 알림 | 1.5일 |
 | **Q.2** | **문구 · 프리셋 검수 (실무 표현)** — ① 리뷰 프리셋 `frontend/features/completion/reviewPresets.ts` (오너 → 시터 · 시터 → 오너, 별마다 3개) ② 알림장 기록 칩 문구 `backend/app/ai/report_chips.py` (`MEAL` · `POTTY` · `MOOD`) ③ 체크인 선택지 `frontend/features/care/checkinOptions.ts` ④ 화면 안내 문구(빈 화면 · 버튼). 알림 제목은 SQL 함수 안에 있으니 **목록만** 피드백으로 | 코드 수정 PR (`fix/q-wording`) | 영어(D1) 유지, 관련 e2e · pytest 통과(문구를 고치면 테스트 기대값도) | 1일 |
 | **Q.3** | **익명화** (기존 담당) — 3년치 대화 · 알림장 → 이름 · 연락처 · 주소 · 위치 · 실견명 치환, 말투 유지 → train / validation / hold-out JSONL. `{PRICE}` · `{DATE}` 자리표시자 규칙. Nebius **zero-retention** 사용 여부와 제3자 처리 고지 결정 | 익명화 규칙 문서(`docs/plan/anonymization.ko.md`), JSONL은 **리포 밖** 또는 gitignore된 `data/` | 샘플 20개를 민식이 무작위로 봐서 개인정보 0. full-process §9 #5 · #8 답 기록 | 2일 |

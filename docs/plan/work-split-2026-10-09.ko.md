@@ -20,10 +20,11 @@
 
 | # | 항목 | 왜 급한가 | 상세 |
 | :--- | :--- | :--- | :--- |
+| U0 | **백엔드 배포** (10.3을 앞당김) — Nebius Serverless Endpoint(막히면 Render), Vercel `EXPO_PUBLIC_API_URL`, 백엔드 `CORS_ORIGINS`에 `https://pawddy.vercel.app`, 테스트 기간에만 `EXPO_PUBLIC_DEMO_TOOLS=1` · `DEMO_RESET_ENABLED=1` | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 **업로드 · AI · 데모 리셋이 전부 안 됨** — 슬기의 Q.1 손 테스트 절반이 막힘 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
 | U1 | **R1b — 문의 AI 안전 RV-1 → RV-5** (`fix/review-inquiry`, 마이그레이션 `011c`~`011e`) | 데모 1단계에서 AI가 **막힌 날짜에 "가능해요"**, 거절 답장에 견적 카드 — 시터 이름으로 틀린 약속. 예약 엔진 · RLS와 얽혀 있음 | review §4 RV-1~RV-5 |
-| U2 | **R2 — 예약 흐름** FB-8 (시터 In progress) → FB-9 (Returned 확인) → FB-5 · FB-6 (시간 변경 시트) → FB-2 (목록 실시간 갱신) | 심사위원이 직접 누르는 흐름 | feedback FB-2 · 5 · 6 · 8 · 9 |
-| U3 | **06B Pet Transit** (`012`) — Start trip · 위치 · ETA · 도착 사진 체크 | P0 마지막 기능 (D41), 데모 4단계 | [phase-06b.md](phases/phase-06b.md) |
-| U4 | **10 데모 · 배포** — 고정 데모 계정(리셋 기능 제거), 시드, 공개 URL, README, keep-alive, 데모 영상, Devpost | 제출 필수 | [phase-10.md](phases/phase-10.md), TODO "Demo accounts for judging" |
+| U2 | **06B Pet Transit** (`012`) — Start trip · 위치 · ETA · 도착 사진 체크 | P0 마지막 기능 (D41), 데모 4단계 | [phase-06b.md](phases/phase-06b.md) |
+| U3 | **R2 — 예약 흐름** FB-8 (시터 In progress) → FB-9 (Returned 확인) → FB-5 · FB-6 (시간 변경 시트) → FB-2 (목록 실시간 갱신) | 심사위원이 직접 누르는 흐름 | feedback FB-2 · 5 · 6 · 8 · 9 |
+| U4 | **10 데모 · 배포** — 고정 데모 계정(리셋 기능 제거), 시드, README, keep-alive, 데모 영상, Devpost (백엔드 배포는 U0에서 끝남) | 제출 필수 | [phase-10.md](phases/phase-10.md), TODO "Demo accounts for judging" |
 | U5 | 사람만 할 수 있는 것 — 호스팅 DB 마이그레이션 적용, Google OAuth In production, 두 번째 시터 계정(Paul) | 배포 · 3B.11 앞 | TODO human 줄 |
 | — | (08 세이프티 가드는 06B · 10 뒤 시간이 남을 때만) | stretch | [phase-08.md](phases/phase-08.md) |
 
@@ -71,9 +72,9 @@
 
 | 기간 | 민식 | 슬기 |
 | :--- | :--- | :--- |
-| 10/9–10/11 | U1 R1b (RV-1~5) | Q.0 환경 · 계정 → Q.1 전체 손 테스트 · 피드백 |
-| 10/12–10/17 | U3 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터(문의 · 알림장) |
-| 10/18–10/20 | U4 배포 리허설 + U2 R2 | Q.5 R3 알림장 · 캡션 · Life Record M 항목 |
-| 10/21–10/26 | U2 마무리, 데모 경로 버그 | Q.6 R3 문의 M-1~M-11 (R1b 머지 뒤) · Q.7 평가 |
-| 10/27–10/29 | U4 시드 · README · 영상 · Devpost | Q.8 최종 QA(데모 경로 전체, 두 계정) · R4 Low 여유분 |
+| 10/9–10/11 | U0 백엔드 배포 → U1 R1b (RV-1~5) | Q.0 Vercel에서 두 계정 → Q.1 전체 손 테스트 · 피드백 (업로드 · AI는 U0 뒤) |
+| 10/12–10/17 | U2 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터(문의 · 알림장) |
+| 10/18–10/20 | U3 R2 예약 흐름 | Q.5 R3 알림장 · 캡션 · Life Record M 항목 |
+| 10/21–10/26 | U3 마무리, 데모 경로 버그 | Q.6 R3 문의 M-1~M-11 (R1b 머지 뒤) · Q.7 평가 |
+| 10/27–10/29 | U4 고정 데모 계정 · 시드 · README · 영상 · Devpost | Q.8 최종 QA(데모 경로 전체, 두 계정) · R4 Low 여유분 |
 | 10/30 오전 | 제출 | 제출 전 마지막 확인 |
