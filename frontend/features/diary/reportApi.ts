@@ -50,6 +50,8 @@ export type GenerateInput = {
   skip: string[];
   /** Corrected values: { meal: "most", walk: "30" }. */
   overrides?: Record<string, string>;
+  /** Episode chips switched off (`note-…`, `feed-…`): their notes / captions stay out of the report. */
+  off?: string[];
 };
 
 export async function generateReport(input: GenerateInput): Promise<ReportDraft> {
@@ -61,6 +63,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
       photos: input.photos,
       skip: input.skip,
       overrides: input.overrides ?? {},
+      off: input.off ?? [],
     });
     return { id: res.report_id, body: res.body, status: "draft" };
   } catch (error) {

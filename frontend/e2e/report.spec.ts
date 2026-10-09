@@ -11,9 +11,11 @@ const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: 
 const CHIPS = [
   { id: "rec-meal", kind: "record", label: "Ate everything", source: "checkin", check: "meal", value: "all", media_id: null },
   { id: "rec-walk", kind: "record", label: "Walk · 20 min", source: "checkin", check: "walk", value: "20", media_id: null },
-  { id: "note-0", kind: "episode", label: "Met a golden retriever", source: "checkin", check: null, media_id: null },
+  { id: "note-c-note", kind: "episode", label: "Met a golden retriever", source: "checkin", check: null, media_id: null },
+  { id: "feed-f-park", kind: "episode", label: "Zoomies at the park", source: "feed", check: null, media_id: null },
 ];
 const PHOTO_CHIP = { id: "photo-media-proof-0", kind: "episode", label: "Watching a squirrel", source: "vision", check: null, media_id: "media-proof" };
+const PHOTO_CHIP_2 = { id: "photo-media-proof-1", kind: "episode", label: "Park walk", source: "vision", check: null, media_id: "media-proof" };
 
 async function openSitterDiary(page: import("@playwright/test").Page) {
   // A fixed clock before the first navigation: "today" is a Toronto date, so it must not depend on when CI runs.
@@ -31,7 +33,7 @@ async function openSitterDiary(page: import("@playwright/test").Page) {
       contentType: "application/json",
       body: JSON.stringify({
         summary: { tasks_done: 2, tasks_missed: 1, checkins: 4 },
-        chips: withPhoto ? [...CHIPS, PHOTO_CHIP] : CHIPS,
+        chips: withPhoto ? [...CHIPS, PHOTO_CHIP, PHOTO_CHIP_2] : CHIPS,
         photos: withPhoto ? [{ media_id: "media-proof", description: "Max looking up at a squirrel" }] : [],
       }),
     });
@@ -78,10 +80,11 @@ test.describe("daily report", () => {
     // The walk chip was off → "walk" is skipped; only episode chips go as chips; the note rides along.
     expect(reportRequests[0]).toMatchObject({
       pet_id: MAX.id,
-      chips: ["Met a golden retriever"],
+      chips: ["Met a golden retriever", "Zoomies at the park"],
       sitter_note: "She got so excited",
       photos: [],
       skip: ["walk"],
+      off: [],
     });
     // Nothing is visible to the owner before Send.
     expect(db.daily_reports[0].status).toBe("draft");
@@ -108,15 +111,28 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
     expect(reportRequests[0]).toMatchObject({
-      chips: ["Met a golden retriever", "Watching a squirrel"],
+      chips: ["Met a golden retriever", "Zoomies at the park", "Watching a squirrel", "Park walk"],
       photos: ["Max looking up at a squirrel"],
     });
 
+    // One of the photo's two chips off: its description could say the same thing, so it stays home too.
     await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
-    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever"], photos: [] });
+    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever", "Zoomies at the park", "Park walk"], photos: [] });
+  });
+
+  test("a turned-off note or photo chip is sent as `off`, so the server leaves that record out", async ({ page }) => {
+    const { reportRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-chip-${MAX.id}-note-c-note`).click();
+    await screen.getByTestId(`report-chip-${MAX.id}-feed-f-park`).click();
+    await screen.getByTestId(`report-chip-${MAX.id}-rec-walk`).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
+    expect(reportRequests[0]).toMatchObject({ chips: [], skip: ["walk"] });
+    expect([...(reportRequests[0].off as string[])].sort()).toEqual(["feed-f-park", "note-c-note"]);
   });
 
   test("the owner's Diary lists only sent reports and opens one read-only", async ({ page }) => {
@@ -172,13 +188,13 @@ test.describe("daily report", () => {
 
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
-    expect(reportRequests[0]).toMatchObject({ chips: ["Met a golden retriever", "Learned a new trick"] });
+    expect(reportRequests[0]).toMatchObject({ chips: ["Met a golden retriever", "Zoomies at the park", "Learned a new trick"] });
 
     await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByRole("button", { name: "Learned a new trick: on" }).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
-    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever"] });
+    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever", "Zoomies at the park"] });
   });
 
   test("a saved draft comes back after a reload, still private", async ({ page }) => {

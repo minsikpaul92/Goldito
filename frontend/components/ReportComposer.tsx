@@ -172,16 +172,17 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     setBusy("generate");
     try {
       const skip = chips.filter((c) => c.kind === "record" && c.check && off.has(c.id)).map((c) => c.check as string);
-      const keptPhotoIds = new Set(kept.filter((c) => c.source === "vision").map((c) => c.media_id));
       const result = await generateReport({
         petId: pet.id,
         chips: kept.filter((c) => c.kind === "episode").map((c) => c.label),
         note: note.trim() || null,
-        // A photo whose chips were all turned off stays out of the report too (D38).
+        // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
-          .filter((d) => keptPhotoIds.has(d.media_id) || !chips.some((c) => c.media_id === d.media_id))
+          .filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id)))
           .map((d) => d.description),
         skip: [...new Set(skip)],
+        // Turned-off episode chips of the day's notes and photos: the server leaves those records out.
+        off: [...off].filter((id) => id.startsWith("note-") || id.startsWith("feed-")),
         // Only for chips still on: a corrected value of a switched-off check never goes out.
         overrides: Object.fromEntries(Object.entries(overrides).filter(([check]) => !skip.includes(check))),
       });

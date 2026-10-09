@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-6** | Turned-off chips really leave the draft (D38): stable episode chip ids (`note-{checkin_id}` · `feed-{post_id}`), `off` in the daily-report request, task-photo captions out of `photos`, no vision description for a photo with a turned-off chip | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-6 |
+| **RV-7** | More than 8 kept chips no longer 422 → "check your connection": request `chips` up to 30 (server still uses 8), a hint under the chips past 8, `explain()` maps 422 | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-7 |
 
 ---
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
@@ -80,6 +80,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **RV-6** A turned-off chip really stays out of the daily report (D38). Episode chips are named after their record (`note-{checkin_id}`, `feed-{post_id}`, carried as `_ref` in the snapshot; `model_view` strips `_` keys before the model sees it, the saved `source_snapshot` keeps them). `POST /api/ai/daily-report` takes `off` (turned-off episode chips, max 60; unknown ids ignored; saved in `inputs.off`): that check-in's note is dropped (a `note` check-in entirely) and that feed caption is left out. Task / check-in photo captions (`caption_source='task'`, e.g. "🍽️ Dinner — done") are no longer photos or episode chips — they repeated a record and brought a turned-off check back. The app sends `off`, and a photo with **any** chip turned off sends no vision description (before: only when all were off). pytest +5 (all fail on the old code), full pytest 376 ✓, flows `report` + `diary` 12 ✓ (3 fail on the old composer), tsc ✓, ruff ✓ (2026-10-09).
 
 - [x] **RV-10** The Life Record is written from **this stay's** sent reports only (`report_date` within the stay's Toronto dates; the newest 5, oldest first) — before, a second stay with the same sitter or a stay longer than 5 days used the **oldest** reports, also from earlier stays. Owner questions: the inquiry that became this booking (`inquiries.booking_id`) first, otherwise the pair's inquiries about the pet made before the stay ended; the newest 5 owner messages, oldest first. pytest `test_ai_life_record` +4 (all fail on the old code), full pytest 371 ✓, ruff ✓ (2026-10-09). **Human:** a Life Record already written from the wrong reports cannot be rewritten (one per booking × pet) — on the hosted DB, a demo reset (any state) deletes the demo pets' records and their index; a non-demo record would need a manual delete of its `pet_life_records` row + `knowledge_chunks` (`source_type='life_record'`, `source_id` = the record id).
 

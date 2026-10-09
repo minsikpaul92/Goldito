@@ -88,6 +88,16 @@ def test_the_days_records_become_chips_without_any_model_call(client, setup):
     assert "rec-mood" not in chips  # the only mood check-in today is another sitter's
 
 
+def test_episode_chips_are_named_after_their_record_and_task_photos_make_none(client, setup):
+    from tests.test_ai_daily_report import with_episodes
+
+    setup(db=with_episodes(make_db(media=[media_row(M1)])))
+    chips = {c["label"]: c["id"] for c in post(client).json()["chips"] if c["kind"] == "episode"}
+    assert chips["Threw up a little after lunch"] == "note-c-note2" and chips["Left the carrots"] == "note-c-meal2"
+    assert chips["Zoomies at the park"] == "feed-f-park"
+    assert "🍽️ Dinner — done" not in chips
+
+
 def test_a_photo_gives_a_description_and_episode_chips(client, setup):
     _, vision = setup({"description": "Max looking up at a squirrel", "chips": ["Watching a squirrel", "Park walk"]})
     response = post(client, media_ids=[M1])

@@ -66,12 +66,13 @@ def record_chips(snapshot: dict) -> list[dict]:
     if meds := checks.get("meds"):
         add("rec-meds", "Medication given" if meds == "done" else "Missed a medication", "task", "meds")
 
+    # Episode chips are named after their record (`_ref`), so turning one off (`off`) removes that record.
     for i, c in enumerate(c for c in snapshot["checkins"] if c.get("note_text")):
         if label := _clean(c["note_text"], CHIP_MAX):
-            out.append({"id": f"note-{i}", "kind": "episode", "label": label, "source": "checkin", "check": None})
+            out.append({"id": c.get("_ref") or f"note-{i}", "kind": "episode", "label": label, "source": "checkin", "check": None})
     for i, p in enumerate(p for p in snapshot["photos"] if p["source"] == "feed"):
         if label := _clean(p["caption"], CHIP_MAX):
-            out.append({"id": f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
+            out.append({"id": p.get("_ref") or f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
     return out
 
 

@@ -26,6 +26,7 @@ from app.ai.daily_report import (
     day_bounds,
     few_shot_messages,
     has_facts,
+    model_view,
     quiet_day_body,
     tidy_body,
     word_count,
@@ -54,6 +55,8 @@ class DailyReportRequest(BaseModel):
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
     # Corrections to a recorded value: {"meal": "most", "walk": "30"} (see `clean_overrides`).
     overrides: dict[str, str] = Field(default_factory=dict, max_length=len(CHECK_KEYS))
+    # Episode chips the sitter turned off ("note-{checkin_id}" | "feed-{post_id}"): those records stay out (D38).
+    off: list[str] = Field(default_factory=list, max_length=60)
 
 
 class DailyReportResponse(BaseModel):
@@ -112,6 +115,7 @@ def daily_report(
         skip=body.skip,
         now=now,
         overrides=body.overrides,
+        off=body.off,
     )
 
     if not has_facts(snapshot):
@@ -122,7 +126,7 @@ def daily_report(
         messages = [
             {"role": "system", "content": load_prompt("daily_report/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"},
             *few_shot_messages(load_json("daily_report/few_shot.json")),
-            {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)},
+            {"role": "user", "content": json.dumps(model_view(snapshot), ensure_ascii=False)},
         ]
         try:
             result = nebius.chat(
@@ -133,7 +137,7 @@ def daily_report(
                 temperature=0.4,
                 timeout=TIMEOUT_S,
             )
-            broken = broken_rules(tidy_body(result.text), snapshot)
+            broken = broken_rules(tidy_body(result.text), model_view(snapshot))
             if broken:
                 # One more try, told exactly what to fix and a little more careful.
                 logger.info("daily-report broke rules %s; retrying once", broken)
@@ -179,6 +183,7 @@ def daily_report(
             "photos": [p["caption"] for p in snapshot["photos"] if p["source"] == "report"],
             "skip": [k for k in body.skip if k in CHECK_KEYS],
             "overrides": clean_overrides(body.overrides),
+            "off": [ref for ref in body.off if ref.startswith(("note-", "feed-"))],
         },
         "source_snapshot": snapshot,
         "model": model_name,
@@ -217,7 +222,7 @@ def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_e
     )
     checkins = (
         db.table("care_checkins")
-        .select("kind, value, note_text, media_id, created_at")
+        .select("id, kind, value, note_text, media_id, created_at")
         .eq("pet_id", pet_id)
         .eq("created_by", sitter_id)
         .gte("created_at", lo)
@@ -227,7 +232,7 @@ def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_e
     )
     posts = (
         db.table("feed_posts")
-        .select("caption, created_at")
+        .select("id, caption, caption_source, created_at")
         .eq("pet_id", pet_id)
         .eq("posted_by", sitter_id)
         .eq("visibility", "shared")

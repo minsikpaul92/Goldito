@@ -200,6 +200,56 @@ def test_a_check_the_sitter_turned_off_never_reaches_the_model(client, setup):
     assert "meal" in snap["checks"]  # what stayed on is still there
 
 
+def with_episodes(db: FakeDB) -> FakeDB:
+    """Two notes (one on a meal check-in), a shared photo, and a check-in photo's automatic caption."""
+    db.tables["care_checkins"] += [
+        {"id": "c-note2", "pet_id": PET_ID, "created_by": SITTER_ID, "kind": "note", "value": None, "note_text": "Threw up a little after lunch", "media_id": None, "created_at": at("17:00")},
+        {"id": "c-meal2", "pet_id": PET_ID, "created_by": SITTER_ID, "kind": "meal", "value": "most", "note_text": "Left the carrots", "media_id": None, "created_at": at("19:00")},
+    ]
+    db.tables["feed_posts"] += [
+        {"id": "f-park", "pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "Zoomies at the park", "caption_source": "ai", "created_at": at("16:30")},
+        {"id": "f-task", "pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "🍽️ Dinner — done", "caption_source": "task", "created_at": at("19:05")},
+    ]
+    return db
+
+
+def model_input(model) -> str:
+    return model.calls[-1]["messages"][-1]["content"]
+
+
+def test_a_turned_off_note_chip_never_reaches_the_model(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    assert post(client, off=["note-c-note2", "note-c-meal2"]).status_code == 200
+    assert "Threw up" not in model_input(model) and "carrots" not in model_input(model)
+    # The note check-in is gone; the meal check-in stays with its value, only its note is dropped.
+    assert all(c.get("note_text") != "Threw up a little after lunch" for c in model.snapshot["checkins"])
+    assert {"kind": "meal", "value": "most"}.items() <= next(c for c in model.snapshot["checkins"] if c["time"] == "15:00").items()
+    assert "Met a golden retriever" in model_input(model)  # a note still on stays
+
+
+def test_a_turned_off_feed_chip_never_reaches_the_model(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    post(client, off=["feed-f-park", "feed-unknown", "rec-meal"])  # unknown ids are ignored
+    assert "Zoomies" not in model_input(model) and "Max sniffing autumn leaves" in model_input(model)
+    assert model.snapshot["checks"]["meal"] == "most"  # `off` is for episodes; records are turned off with `skip`
+
+
+def test_a_task_photo_caption_is_not_a_separate_fact(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    post(client, skip=["meal"])
+    assert "Dinner — done" not in model_input(model)  # it would bring the turned-off meal back
+    assert [p["caption"] for p in model.snapshot["photos"]] == ["Max sniffing autumn leaves", "Zoomies at the park"]
+
+
+def test_the_model_never_sees_the_internal_chip_refs_but_the_draft_keeps_them(client, setup):
+    db, model = setup(with_episodes(make_db()))
+    post(client, off=["note-c-note2"])
+    assert "_ref" not in model_input(model) and "c-meal2" not in model_input(model)
+    saved = db.tables["daily_reports"][0]
+    assert saved["inputs"]["off"] == ["note-c-note2"]
+    assert any(p.get("_ref") == "feed-f-park" for p in saved["source_snapshot"]["photos"])
+
+
 def test_without_chips_note_or_photos_the_days_records_still_make_a_report(client, setup):
     db, model = setup()
     assert post(client).status_code == 200
