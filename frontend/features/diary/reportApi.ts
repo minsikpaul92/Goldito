@@ -25,11 +25,13 @@ export const REPORT_MAX_PHOTOS = 2;
 export const REPORT_MAX_HIGHLIGHTS = 8;
 export const CUSTOM_CHIP_MAX = 40;
 
-export type ReportDraft = { id: string; body: string; status: "draft" | "sent" };
+/** `fallback`: the writing model was down, so the draft is the plain list of the kept chips (RV-8). */
+export type ReportDraft = { id: string; body: string; status: "draft" | "sent"; fallback?: boolean };
 
 function explain(error: unknown, fallback: string): Error {
-  // The server's 503 / 502 / 403 / 409 messages are already written for the sitter.
-  if (error instanceof ApiError && [403, 409, 502, 503].includes(error.status)) return new Error(error.message);
+  // The server's 403 / 409 messages are already written for the sitter. (A model outage is no longer an error:
+  // the report comes back as a plain-list draft.)
+  if (error instanceof ApiError && [403, 409].includes(error.status)) return new Error(error.message);
   return new Error(fallback);
 }
 
@@ -58,7 +60,7 @@ export type GenerateInput = {
 
 export async function generateReport(input: GenerateInput): Promise<ReportDraft> {
   try {
-    const res = await apiPost<{ report_id: string; body: string; status: "draft" }>("/api/ai/daily-report", {
+    const res = await apiPost<{ report_id: string; body: string; status: "draft"; fallback?: boolean }>("/api/ai/daily-report", {
       pet_id: input.petId,
       chips: input.chips,
       sitter_note: input.note,
@@ -67,7 +69,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
       overrides: input.overrides ?? {},
       off: input.off ?? [],
     });
-    return { id: res.report_id, body: res.body, status: "draft" };
+    return { id: res.report_id, body: res.body, status: "draft", fallback: res.fallback ?? false };
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights — turn a few off and try again.");
     throw explain(error, "Couldn't write the report. Check your connection and try again.");

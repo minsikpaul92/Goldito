@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-8** | A report without the AI: when the model is down (503) or answers empty (502), save a plain-list draft of the kept chips + note (`model = "template-fallback"`, `fallback: true`), the app says so and Send still works | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-8 |
+| **RV-1** | Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
 
 ---
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → **RV-8** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → RV-8 ✅ (plain-list draft without the AI) → **RV-1** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
@@ -80,6 +80,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **RV-8** A daily report can be sent when the writing model is down. Instead of a 503 / 502 with nothing saved (and "You can write the note yourself" with no way to do it — the client cannot insert `daily_reports`), `POST /api/ai/daily-report` saves a **plain-list draft** and answers 200 with `fallback: true`, `model = "template-fallback"`: "Hi {pet}'s family! Here's {pet}'s day:" + one bullet per record still on (with corrections), kept highlight and picked photo description, then the sitter's note — nothing the sitter turned off, nothing new (`report_chips.fallback_report_body`). The greeting uses the family form of the quiet-day line instead of the owner's first name (no extra lookup). The app shows "The writing helper is down — here's a plain list. Edit it if you like, then send." above the editable preview; Send is unchanged; the 502 / 503 message mapping is gone. pytest +3 (outage, empty answer, a written report is not a fallback), full pytest 379 ✓, flows `report` + `diary` 16 ✓, tsc ✓, ruff ✓ (2026-10-09).
 
 - [x] **RV-7** More than 8 kept highlights no longer fail with a 422 that read as "check your connection". `POST /api/ai/daily-report` takes up to 30 chips and still writes from the first 8 (`clean_chips`); the app sends them in order — the sitter's own chips, notes, photos, then feed captions — shows "Only 8 highlights go into the report — turn a few off to choose." under the chips past 8 (it does not block), and a 422 now says "Too many highlights — turn a few off and try again." pytest +1 (12 chips → 200, 8 in the snapshot), full pytest 377 ✓, flows `report` 10 ✓ (+2), tsc ✓, ruff ✓ (2026-10-09).
 

@@ -242,6 +242,11 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{`${pet.name} · preview`}</Text>
+        {draft.fallback ? (
+          <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
+            The writing helper is down — here's a plain list. Edit it if you like, then send.
+          </Text>
+        ) : null}
         <Text style={styles.muted}>{`Edit it if you like. ${pet.ownerName} sees it only after you send.`}</Text>
         <TextField
           label="Daily report"

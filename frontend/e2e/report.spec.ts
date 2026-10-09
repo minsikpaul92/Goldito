@@ -146,6 +146,34 @@ test.describe("daily report", () => {
     await expect(screen.getByText("Too many highlights — turn a few off and try again.")).toBeVisible();
   });
 
+  test("the writing helper is down: a plain-list draft with a notice, and it can still be sent", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const plain = "Hi Max's family! Here's Max's day:\n• Ate everything\n• Met a golden retriever";
+    await page.route("**/api/ai/daily-report", (route) => {
+      db.daily_reports.push({ id: "r1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: TODAY_TORONTO, body: plain, status: "draft", source_snapshot: null, created_at: NOON_TORONTO.toISOString() });
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ report_id: "r1", body: plain, status: "draft", model: "template-fallback", latency_ms: 0, fallback: true }),
+      });
+    });
+    const screen = app(page);
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveText("The writing helper is down — here's a plain list. Edit it if you like, then send.");
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(plain);
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
+    expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: plain });
+  });
+
+  test("a written draft shows no plain-list notice", async ({ page }) => {
+    await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
+    await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveCount(0);
+  });
+
   test("a turned-off note or photo chip is sent as `off`, so the server leaves that record out", async ({ page }) => {
     const { reportRequests } = await openSitterDiary(page);
     const screen = app(page);

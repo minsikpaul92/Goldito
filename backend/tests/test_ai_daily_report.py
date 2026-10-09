@@ -391,20 +391,47 @@ def test_unknown_pet_is_404(client, setup):
     assert post(client).status_code == 404
 
 
-def test_model_trouble_saves_nothing(client, setup, monkeypatch):
-    db, _ = setup()
+def test_a_model_outage_saves_a_plain_list_of_what_the_sitter_kept(client, setup, monkeypatch):
+    db, _ = setup(with_episodes(make_db()))
 
     def down(*a, **k):
         raise nebius.AIUnavailable("down")
 
     monkeypatch.setattr(nebius, "chat", down)
-    response = post(client)
-    assert response.status_code == 503 and "write the note yourself" in response.json()["detail"]
-    assert db.tables["daily_reports"] == []
+    response = post(
+        client, chips=["Met a golden retriever", "Park walk"], sitter_note="Such a sweet boy", photos=["Max looking up at a squirrel"],
+        skip=["potty"], overrides={"meal": "most"}, off=["note-c-note2"],
+    )
+    assert response.status_code == 200
+    out = response.json()
+    assert out["fallback"] is True and out["model"] == "template-fallback" and out["status"] == "draft"
+    assert out["body"].splitlines() == [
+        "Hi Max's family! Here's Max's day:",
+        "• Ate most of it",  # the sitter's correction
+        "• Walk · 20 min",
+        "• Medication given",
+        "• Met a golden retriever",
+        "• Park walk",
+        "• Max looking up at a squirrel",
+        "",
+        "Such a sweet boy",
+    ]
+    assert "potty" not in out["body"].lower() and "Threw up" not in out["body"]  # turned off stays off
+    saved = db.tables["daily_reports"][0]
+    assert saved["status"] == "draft" and saved["body"] == out["body"] and saved["model"] == "template-fallback"
 
+
+def test_an_empty_model_answer_also_falls_back_to_the_plain_list(client, setup, monkeypatch):
+    db, _ = setup()
     monkeypatch.setattr(nebius, "chat", Model("<think>only thoughts</think>"))
-    assert post(client).status_code == 502
-    assert db.tables["daily_reports"] == []
+    out = post(client, chips=["Park walk"]).json()
+    assert out["fallback"] is True and "• Park walk" in out["body"]
+    assert len(db.tables["daily_reports"]) == 1
+
+
+def test_a_written_report_is_not_a_fallback(client, setup):
+    setup()
+    assert post(client).json()["fallback"] is False
 
 
 def test_more_than_eight_kept_chips_write_a_report_from_the_first_eight(client, setup):

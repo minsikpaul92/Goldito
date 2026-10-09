@@ -31,6 +31,7 @@ from app.ai.daily_report import (
     word_count,
 )
 from app.ai.prompts import load_json, load_prompt
+from app.ai.report_chips import fallback_report_body
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
@@ -66,6 +67,8 @@ class DailyReportResponse(BaseModel):
     status: str
     model: str
     latency_ms: int
+    # True when the model was unavailable and the draft is the plain list of kept chips (the sitter can edit it).
+    fallback: bool = False
 
 
 @router.post("/daily-report", response_model=DailyReportResponse)
@@ -119,6 +122,7 @@ def daily_report(
         off=body.off,
     )
 
+    fallback = False
     if not has_facts(snapshot):
         # Nothing was recorded: a fixed, honest line — the model is not asked, so it cannot make anything up.
         text, model_name, latency_ms = quiet_day_body(pet["name"]), "template", 0
@@ -160,20 +164,19 @@ def daily_report(
                     temperature=0.2,
                     timeout=TIMEOUT_S,
                 )
+            text, model_name, latency_ms = tidy_body(result.text), result.model, result.latency_ms
         except nebius.AIUnavailable as exc:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="The report helper is unavailable right now. You can write the note yourself.",
-            ) from exc
-        text, model_name, latency_ms = tidy_body(result.text), result.model, result.latency_ms
+            logger.warning("daily-report: model unavailable (%s); saving the plain list", exc)
+            text = ""
         if not text:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Couldn't write the report. Try again.",
-            )
-        words = word_count(text)
-        if not TARGET_WORDS[0] <= words <= TARGET_WORDS[1]:
-            logger.info("daily-report length outside target: %s words", words)
+            # No model text (down, or only thoughts): the kept chips and note as a plain list, so the sitter can
+            # still edit and send it — never an error with nothing to send (RV-8).
+            text = fallback_report_body(pet["name"], snapshot) or quiet_day_body(pet["name"])
+            model_name, latency_ms, fallback = "template-fallback", 0, True
+        else:
+            words = word_count(text)
+            if not TARGET_WORDS[0] <= words <= TARGET_WORDS[1]:
+                logger.info("daily-report length outside target: %s words", words)
 
     row = {
         "body": text,
@@ -205,6 +208,7 @@ def daily_report(
         status="draft",
         model=model_name,
         latency_ms=latency_ms,
+        fallback=fallback,
     )
 
 
