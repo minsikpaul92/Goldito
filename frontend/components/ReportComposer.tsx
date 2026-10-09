@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import {
@@ -19,6 +20,7 @@ import {
   type DaySummary,
 } from "../features/diary/reportApi";
 import { CHECKIN_GROUPS } from "../features/care/checkinOptions";
+import { appToday } from "../features/schedule/dates";
 import { UploadError, uploadMedia } from "../lib/cloudinary";
 import { pickMedia } from "../lib/media";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
@@ -87,12 +89,12 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     [pet.id, toast],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  /** Today's saved report (draft or sent), then today's chips. */
+  const loadToday = useCallback(
+    async (isLive: () => boolean) => {
       try {
         const existing = sitterId ? await getTodayReport(pet.id, sitterId) : null;
-        if (cancelled) return;
+        if (!isLive()) return;
         if (existing?.status === "sent") {
           setSent(true);
           setBody(existing.body);
@@ -103,14 +105,60 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       } catch {
         // No saved draft is fine: the sitter starts from the chips.
       }
-      if (!cancelled) setLoading(false);
-      if (!cancelled) void refreshChips([]);
-    })();
+      if (!isLive()) return;
+      setLoading(false);
+      void refreshChips([]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pet.id, sitterId],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadToday(() => !cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pet.id, sitterId]);
+  }, [loadToday]);
+
+  // The Diary tab stays mounted: coming back to it must show what was recorded meanwhile (M-12). The day's record
+  // and note chips are read again quietly (the photo chips stay — no new vision call); what the sitter turned off
+  // or added stays, by chip id. A new day starts over.
+  const day = useRef(appToday());
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false; // the mount already loaded
+        return;
+      }
+      let live = true;
+      if (appToday() !== day.current) {
+        day.current = appToday();
+        setDraft(null);
+        setSent(false);
+        setBody("");
+        setOff(new Set());
+        setCustom([]);
+        setOverrides({});
+        setPhotos([]);
+        setDescriptions([]);
+        setChips([]);
+        void loadToday(() => live);
+      } else {
+        suggestChips(pet.id, [])
+          .then((res) => {
+            if (!live) return;
+            setChips((prev) => [...res.chips, ...prev.filter((c) => c.source === "vision")]);
+            setSummary(res.summary);
+          })
+          .catch(() => undefined); // a quiet refresh: the chips on screen stay
+      }
+      return () => {
+        live = false;
+      };
+    }, [loadToday, pet.id]),
+  );
 
   const toggle = (id: string) =>
     setOff((prev) => {

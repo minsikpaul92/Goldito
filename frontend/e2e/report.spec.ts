@@ -24,6 +24,8 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   caring(db, [MAX], NOON_TORONTO);
   const chipRequests: Record<string, unknown>[] = [];
   const reportRequests: Record<string, unknown>[] = [];
+  /** What the chips endpoint answers; a test may add to it (something recorded meanwhile). */
+  const served = [...CHIPS, ...extraChips];
   await page.route("**/api/ai/report-chips", (route) => {
     const body = route.request().postDataJSON();
     chipRequests.push(body);
@@ -33,7 +35,7 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
       contentType: "application/json",
       body: JSON.stringify({
         summary: { tasks_done: 2, tasks_missed: 1, checkins: 4 },
-        chips: [...CHIPS, ...extraChips, ...(withPhoto ? [PHOTO_CHIP, PHOTO_CHIP_2] : [])],
+        chips: [...served, ...(withPhoto ? [PHOTO_CHIP, PHOTO_CHIP_2] : [])],
         photos: withPhoto ? [{ media_id: "media-proof", description: "Max looking up at a squirrel" }] : [],
       }),
     });
@@ -61,7 +63,7 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   await app(page).getByRole("heading", { name: "Home" }).waitFor();
   await page.goto("/sitter/diary");
   await app(page).getByTestId(`report-${MAX.id}`).waitFor();
-  return { db, chipRequests, reportRequests };
+  return { db, chipRequests, reportRequests, served };
 }
 
 test.describe("daily report", () => {
@@ -172,6 +174,22 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
     await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveCount(0);
+  });
+
+  test("coming back to the Diary shows what was recorded meanwhile; a chip turned off stays off", async ({ page }) => {
+    const { served, chipRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    const chip = (id: string) => screen.getByTestId(`report-chip-${MAX.id}-${id}`);
+    await chip("rec-walk").click();
+    await expect(chip("rec-walk")).toHaveAttribute("aria-pressed", "false");
+
+    await screen.getByRole("tab", { name: /Home/ }).click();
+    served.push({ id: "note-c-new", kind: "episode", label: "Threw up a little", source: "checkin", check: null, media_id: null });
+    await screen.getByRole("tab", { name: /Diary/ }).click();
+
+    await expect(chip("note-c-new")).toBeVisible();
+    await expect(chip("rec-walk")).toHaveAttribute("aria-pressed", "false");
+    expect(chipRequests.at(-1)).toMatchObject({ media_ids: [] }); // a quiet refresh: no photo is read again
   });
 
   test("a turned-off note or photo chip is sent as `off`, so the server leaves that record out", async ({ page }) => {
