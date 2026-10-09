@@ -17,7 +17,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | Step | State |
 | :--- | :--- |
-| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 (`feat/phase-09-caption`, `main` merged in, CI running) → #58 (`feat/phase-07c-completion`). Code complete, **DoD pending** (human runs). CI is green on #55 / #56 after R0-1 / R0-2. |
+| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 ✅ merged (`7f37e94`) → #58 (`feat/phase-07c-completion`, `main` merged in, CI running). Code complete, **DoD pending** (human runs). CI was green on #55 / #56 / #57 after R0-1 / R0-2. |
 | 2 | **Hotfix on main:** ✅ merged as #59 (`780c772`, 2026-10-08) — Try demo uses `@goldito.test`. |
 | 3 | **Plan (review D-R2):** ✅ CI fixed on the stack (R0-1 · R0-2) → merging the stack in order by merging `origin/main` into each next branch (no rebase / force-push; **do not delete a base branch before the PR on top is retargeted**) → review fixes from main in chunks R1 → R2 → R3 → R4 → then 6B.1. |
 | 4 | **Hosted DB** already has `010`–`011b` + a temporary `sitter_rates` row for Chloe (see Hosted DB status). New migrations from the review start at `011c` (`012` is reserved for 06B). |
@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **R0-4** | Merge the rest of the stack in order: #57 (`main` already merged in; CI green → squash), then merge `origin/main` into `feat/phase-07c-completion`, re-run smoke + flows + pytest, retarget #58 to `main`, CI green → squash. Then R1 starts with **FB-7** | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §3 R0-4 |
+| **R0-4** | Merge #58: `main` is merged in (pytest 334 · flows 182 ✓), base set to `main`; when CI is green → squash. Then R1 starts with **FB-7** | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §3 R0-4 |
 
 ---
 
@@ -46,7 +46,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 > Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's; **since 2026-10-04 Minsik owns them all** (Seulgi only delivers the anonymized conversation data) — one Current focus per agent session.
 
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
-  - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order (in progress: #55 ✅ #56 ✅)
+  - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order (in progress: #55 ✅ #56 ✅ #57 ✅ #58 🔄)
   - **R1 `fix/review-high` (from main after the stack):** FB-7 (rates seed + truthful message) → FB-10 (`reset_demo.py`) → **RV-9** Life Record concurrent write → **RV-10** Life Record uses this stay's reports only → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
