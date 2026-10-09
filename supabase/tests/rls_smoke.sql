@@ -3273,4 +3273,53 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Stay capacity check (011c, RV-1): the inquiry AI's availability = request_booking's capacity rule
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 200;
+  v text;
+  v_err text;
+begin
+  -- Chloe opens four days with room for 2, then lowers one night to 1 (the newest open row sets the spots).
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d, d + 3, 'morning', '08:00', '12:00', 2),
+         (chloe, 'open', d, d + 3, 'afternoon', '12:00', '18:00', 2),
+         (chloe, 'open', d, d + 3, 'overnight', '18:00', '08:00', 2);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d + 2, d + 2, 'overnight', '18:00', '08:00', 1);
+
+  perform _t_as(robert);
+  v := stay_capacity_check(chloe, local_ts(d, '10:00'), local_ts(d + 1, '10:00'), 2);
+  perform _t_ok(v is null, '011c: two pets fit where every slot has two spots');
+  v := stay_capacity_check(chloe, local_ts(d + 1, '10:00'), local_ts(d + 3, '10:00'), 2);
+  perform _t_ok(v = format('%s overnight', d + 2),
+    '011c: two pets and a night with one spot left → that slot, as request_booking would refuse');
+  v := stay_capacity_check(chloe, local_ts(d + 1, '10:00'), local_ts(d + 3, '10:00'), 1);
+  perform _t_ok(v is null, '011c: …while one pet still fits');
+  v := stay_capacity_check(chloe, local_ts(d + 10, '10:00'), local_ts(d + 11, '10:00'), 1);
+  perform _t_ok(v like '%' || (d + 10)::text || ' afternoon%' and v like '%overnight%',
+    '011c: days the sitter never opened count as no room (their default slots are listed)');
+  v := stay_capacity_check(chloe, local_ts(d + 3, '10:00'), local_ts(d + 5, '10:00'), 1);
+  perform _t_ok(v like '%' || (d + 4)::text || '%' and v not like '%' || (d + 3)::text || ' morning%',
+    '011c: a stay running past the opened days names the unopened slots');
+  v := stay_capacity_check(chloe, local_ts(d + 1, '10:00'), local_ts(d, '10:00'), 1);
+  perform _t_ok(v = 'invalid_window', '011c: a reversed window is invalid_window');
+
+  perform _t_as(null, 'anon');
+  begin
+    perform stay_capacity_check(chloe, local_ts(d, '10:00'), local_ts(d + 1, '10:00'), 1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err like 'permission denied%', '011c: anon cannot call it');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

@@ -166,6 +166,8 @@ def inquiry_reply(
         )
     if logic.asks_if_ai(question["body"]) or (grounding and grounding["policy_conflicts"]):
         needs = True
+    if grounding and grounding["availability"].get("unchecked"):
+        needs = True  # RV-1: unknown availability is never auto-sent
 
     sources = grounding["sources"] if grounding else []
     used = set(draft.used_sources) if draft else set()
@@ -441,6 +443,23 @@ def _gather(
             },
         )
 
+    def capacity():
+        # The booking engine's own rule (RV-1). (checked, shortfall): unchecked when the check itself failed.
+        try:
+            return True, authz.rpc_json(
+                user.access_token,
+                "stay_capacity_check",
+                {
+                    "p_sitter": inquiry["sitter_id"],
+                    "p_drop_off_at": inquiry["drop_off_at"],
+                    "p_pick_up_at": inquiry["pick_up_at"],
+                    "p_pet_count": len(pet_ids),
+                },
+            )
+        except authz.RpcError as exc:
+            log.warning("inquiry-reply: capacity not checked (%s)", exc.message)
+            return False, None
+
     def quote():
         try:
             return authz.rpc_json(
@@ -498,16 +517,22 @@ def _gather(
         )
         return pets, allergies, cautions
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        f_schedule, f_quote, f_sources, f_pets = (
-            pool.submit(f) for f in (schedule, quote, sources, pet_records)
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        f_schedule, f_capacity, f_quote, f_sources, f_pets = (
+            pool.submit(f) for f in (schedule, capacity, quote, sources, pet_records)
         )
         rows = f_schedule.result()
+        checked, shortfall = f_capacity.result()
         quote_json = f_quote.result()
         hits = f_sources.result()
         pets_rows, allergies, cautions = f_pets.result()
 
-    avail = logic.availability(rows, days)
+    if checked:
+        avail = logic.availability(shortfall, rows, days)
+    else:
+        # Not knowing is not a "no": the reply promises nothing, names no price, and waits for the sitter.
+        avail = {"can_host": True, "unavailable_days": [], "unchecked": True}
+        quote_json = None
     pets = [
         logic.pet_facts(
             p,
@@ -598,6 +623,10 @@ def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
     if grounding["quote"] is None and grounding["availability"]["can_host"]:
         payload["quote_note"] = (
             "No price is available for these dates: do not state any price; say I'll send it."
+        )
+    if grounding["availability"].get("unchecked"):
+        payload["availability_note"] = (
+            "My calendar could not be checked: do not say yes or no to these dates; say I'll confirm shortly."
         )
     # The model never sees the stay_days list or labels it doesn't need beyond what's useful for dates.
     return json.dumps(payload, ensure_ascii=False)

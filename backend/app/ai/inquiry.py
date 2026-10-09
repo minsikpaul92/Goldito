@@ -59,23 +59,30 @@ def stay_days(drop_off: datetime, pick_up: datetime, tz: ZoneInfo) -> list[date]
     return [first + timedelta(days=i) for i in range((last - first).days + 1)]
 
 
-def availability(rows: list[dict], days: list[date]) -> dict:
-    """Which days of the stay the sitter can't take: any slot that day blocked or full.
+def availability(shortfall: str | None, rows: list[dict], days: list[date]) -> dict:
+    """Can the sitter take this stay — by the booking engine's own rule (`stay_capacity_check`, 011c, RV-1).
 
-    `rows` are `get_sitter_schedule` rows (`day`, `state`). A day with no row at all is not counted. Closed
-    slots (outside the sitter's hours) are normal and never make a day unavailable.
+    `shortfall` is what the check answered: None (every slot of the stay has room for all the pets),
+    'no_open_slot' (none of it is in an open slot), 'invalid_window' (past or impossible dates), or
+    'YYYY-MM-DD slot, …' (the slots short of room — a slot the sitter never opened has none). The
+    `get_sitter_schedule` rows only say why a day is short: `blocked` / `full`, else `no_room`.
     """
-    wanted = {d.isoformat() for d in days}
-    worst: dict[str, str] = {}
+    if shortfall is None:
+        return {"can_host": True, "unavailable_days": []}
+    reason = shortfall if shortfall in ("no_open_slot", "invalid_window") else None
+    if reason:
+        short = [d.isoformat() for d in days]
+    else:
+        short = sorted({part.strip()[:10] for part in shortfall.split(",") if part.strip()})
+    states: dict[str, str] = {}
     for row in rows:
-        day = str(row["day"])[:10]
-        if day not in wanted:
-            continue
-        state = row["state"]
-        if state == "blocked" or (state == "full" and worst.get(day) != "blocked"):
-            worst[day] = state
-    unavailable = [{"day": d, "label": human_date(date.fromisoformat(d)), "state": worst[d]} for d in sorted(worst)]
-    return {"can_host": not unavailable, "unavailable_days": unavailable}
+        day, state = str(row["day"])[:10], row["state"]
+        if state == "blocked" or (state == "full" and states.get(day) != "blocked"):
+            states[day] = state
+    unavailable = [
+        {"day": d, "label": human_date(date.fromisoformat(d)), "state": states.get(d, "no_room")} for d in short
+    ]
+    return {"can_host": False, "unavailable_days": unavailable, **({"reason": reason} if reason else {})}
 
 
 def pet_facts(pet: dict, allergies: list[str], cautions: list[str], today: date) -> dict:

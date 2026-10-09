@@ -79,15 +79,24 @@ class Model:
 
 @pytest.fixture
 def setup(monkeypatch):
-    def _setup(*answers, db=None, blocked=None, quote=QUOTE, hits=None):
+    def _setup(*answers, db=None, blocked=None, quote=QUOTE, hits=None, shortfall=None):
         db = db or make_db()
         model = Model(*(answers or (GOOD,)))
         indexed: list[dict] = []
         searches: list[dict] = []
+        capacity_calls: list[dict] = []
+        if blocked and shortfall is None:
+            # A blocked day has no room in any of its slots (stay_capacity_check, 011c).
+            shortfall = ", ".join(f"{blocked} {slot}" for slot in ("morning", "afternoon", "overnight"))
 
         def rpc(token, fn, params, **kw):
             if fn == "get_sitter_schedule":
                 return schedule_rows(blocked)
+            if fn == "stay_capacity_check":
+                capacity_calls.append(params)
+                if isinstance(shortfall, Exception):
+                    raise shortfall
+                return shortfall
             if fn == "quote_booking":
                 if quote is None:
                     raise authz.RpcError(fn, 400, "service_not_offered")
@@ -107,7 +116,7 @@ def setup(monkeypatch):
         # One grounded call unless a test turns the agent on.
         monkeypatch.setattr(ai_inquiry, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", inquiry_agent="off"))
         monkeypatch.setattr(nebius, "embed", lambda texts, **kw: [[0.1] * 3 for _ in texts])
-        return SimpleNamespace(db=db, model=model, indexed=indexed, searches=searches)
+        return SimpleNamespace(db=db, model=model, indexed=indexed, searches=searches, capacity_calls=capacity_calls)
 
     return _setup
 
@@ -155,6 +164,43 @@ def test_a_blocked_day_means_no_quote_no_price_and_cannot_host(client, setup):
     assert body["can_host"] is False and body["quote"] is None
     assert body["availability"]["unavailable_days"] == [{"day": "2026-10-10", "label": "Oct 10", "state": "blocked"}]
     assert ctx.model.facts["quote"] is None and "$" not in body["body"]
+
+
+def test_availability_is_the_booking_engines_rule_for_this_stay_and_these_pets(client, setup):
+    ctx = setup()
+    assert post(client).json()["can_host"] is True
+    assert ctx.capacity_calls == [{
+        "p_sitter": SITTER_ID, "p_drop_off_at": "2026-10-09T11:30:00+00:00",
+        "p_pick_up_at": "2026-10-12T21:00:00+00:00", "p_pet_count": 1,
+    }]
+
+
+def test_a_slot_without_room_for_all_the_pets_means_cannot_host_even_when_no_day_is_blocked(client, setup):
+    # RV-1: every day reads "open" in the schedule, but one night has a spot for fewer pets than asked.
+    ctx = setup("Hi Robert! I can't take Max on Oct 10 — want me to look at other dates?", shortfall="2026-10-10 overnight")
+    body = post(client).json()
+    assert body["can_host"] is False and body["quote"] is None and "$" not in body["body"]
+    assert body["availability"]["unavailable_days"] == [{"day": "2026-10-10", "label": "Oct 10", "state": "no_room"}]
+    assert ctx.model.facts["quote"] is None
+
+
+def test_a_stay_in_no_open_slot_is_unavailable_on_every_day(client, setup):
+    setup("Hi Robert! I can't take Max on those days — want me to look at other dates?", shortfall="no_open_slot")
+    availability = post(client).json()["availability"]
+    assert availability["can_host"] is False and availability["reason"] == "no_open_slot"
+    assert [d["label"] for d in availability["unavailable_days"]] == ["Oct 9", "Oct 10", "Oct 11", "Oct 12"]
+
+
+def test_when_the_capacity_check_fails_nothing_is_promised_and_the_sitter_decides(client, setup):
+    ctx = setup(
+        "Hi Robert! Thanks for asking about Max — I'll check my calendar and confirm shortly. 🐾",
+        shortfall=authz.RpcError("stay_capacity_check", 500, "boom"),
+    )
+    body = post(client).json()
+    assert body["needs_sitter"] is True and body["quote"] is None and "$" not in body["body"]
+    assert "availability_note" in ctx.model.facts and ctx.model.facts["quote"] is None
+    (saved,) = drafts(ctx)
+    assert saved["grounding"]["needs_sitter"] is True
 
 
 def test_a_price_in_a_draft_for_unavailable_dates_is_rewritten_then_replaced(client, setup):
