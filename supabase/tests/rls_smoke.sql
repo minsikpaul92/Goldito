@@ -3152,7 +3152,9 @@ begin
   perform _t_ok(v_err = 'stay_not_finished', 'O: no owner note before the pets are back');
 
   perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null); -- count every notice of the owner (RLS hides them from the sitter)
   select count(*) into v_notes from public.notifications where user_id = robert;
+  perform _t_as(chloe);
   perform save_owner_note(v_b, 4, '  Clear care notes  ');
   perform _t_ok((select rating = 4 and comment = 'Clear care notes' from public.sitter_owner_notes where booking_id = v_b),
     'O: the sitter saves a private note about the owner (trimmed)');
