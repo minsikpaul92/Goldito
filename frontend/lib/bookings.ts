@@ -13,6 +13,7 @@ const MESSAGES: Record<string, string> = {
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
   location_note_required: "Tell the sitter where to meet.",
   service_not_offered: "This sitter doesn't offer that service.",
+  rates_not_set: "This sitter hasn't set their prices yet, so there is nothing to pay. Ask them to add prices, then try again.",
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
@@ -67,6 +68,12 @@ function asQuote(raw: unknown): PriceQuote {
   };
 }
 
+async function sitterHasRates(sitterId: string): Promise<boolean> {
+  const { data, error } = await getSupabase().from("sitter_rates").select("sitter_id").eq("sitter_id", sitterId).maybeSingle();
+  // If we can't tell, keep the old wording rather than blame the sitter.
+  return error != null || data != null;
+}
+
 /** Read-only quote for Checkout / inquiry card (same RPC Checkout freezes at pay). */
 export async function quoteBooking(input: {
   sitterId: string;
@@ -83,11 +90,11 @@ export async function quoteBooking(input: {
     p_pet_count: input.petCount,
   });
   if (error) {
-    throw new BookingError(
-      error.message,
-      bookingErrorMessage(error.message, "Couldn't load the price. Try again."),
-      error.details ?? null,
-    );
+    // quote_booking raises service_not_offered both for a service the sitter doesn't offer and for a
+    // sitter with no price row at all. The rates are readable by every signed-in user, so tell them apart.
+    let code = error.message;
+    if (code === "service_not_offered" && !(await sitterHasRates(input.sitterId))) code = "rates_not_set";
+    throw new BookingError(code, bookingErrorMessage(code, "Couldn't load the price. Try again."), error.details ?? null);
   }
   return asQuote(data);
 }

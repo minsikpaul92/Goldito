@@ -199,6 +199,10 @@ export type MockDb = {
   reviews: Row[];
   /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
   pet_life_records: Row[];
+  /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
+  sitter_rates: Row[];
+  /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
+  quote_error: string | null;
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -246,6 +250,8 @@ function createMockDb(): MockDb {
     inquiry_messages: [],
     reviews: [],
     pet_life_records: [],
+    sitter_rates: [],
+    quote_error: null,
   };
 }
 
@@ -765,6 +771,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/quote_booking") {
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: null });
     return json(route, 200, DEMO_QUOTE);
   }
 

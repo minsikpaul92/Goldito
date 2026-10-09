@@ -76,6 +76,33 @@ test.describe("checkout", () => {
     expect(db.payments).toHaveLength(0);
   });
 
+  test("a sitter with no prices yet is named as the reason, not 'doesn't offer that service'", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.quote_error = "service_not_offered"; // what quote_booking raises with no price row
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    const screen = app(page);
+
+    await expect(screen.getByText("Can't open checkout")).toBeVisible();
+    await expect(screen.getByText("hasn't set their prices yet", { exact: false })).toBeVisible();
+    await expect(screen.getByText("doesn't offer that service", { exact: false })).toHaveCount(0);
+  });
+
+  test("a sitter who has prices but does not offer the service still says so", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.sitter_rates.push({ sitter_id: SITTER.id, boarding_nightly: 55 });
+    db.quote_error = "service_not_offered";
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+
+    await expect(app(page).getByText("doesn't offer that service", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("hasn't set their prices yet", { exact: false })).toHaveCount(0);
+  });
+
   test("checking every consent and Pay completes demo checkout", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedUnpaid(db);
