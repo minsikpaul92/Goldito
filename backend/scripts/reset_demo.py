@@ -7,7 +7,7 @@ starting state exists. It is a hosted-database write and cannot be undone, so:
 
     cd backend
     .venv/bin/python -m scripts.reset_demo            # dry run: counts what would go, changes nothing
-    .venv/bin/python -m scripts.reset_demo --apply    # asks you to type RESET, then deletes + re-seeds
+    .venv/bin/python -m scripts.reset_demo --apply    # asks you to type reset, then deletes + re-seeds
 
 Cascades (booking handoffs, slots, consents, reviews, Life Records, thread messages) go
 with their booking / inquiry. Cloudinary files are not touched. The sitter's policy text
@@ -201,6 +201,11 @@ def reset(client: Client, owner_id: str, sitter_id: str, today: date, *, apply: 
     return report
 
 
+def confirmed(answer: str) -> bool:
+    """`reset` in any case, with stray spaces ignored."""
+    return answer.strip().lower() == "reset"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--apply", action="store_true", help="really delete (default: dry run)")
@@ -215,7 +220,8 @@ def main() -> int:
     print(f"Project: {settings.supabase_url}")
     print(f"Owner {owner_id[:8]}… · sitter {sitter_id[:8]}…  ({'APPLY' if args.apply else 'dry run'})")
     if args.apply and not args.yes:
-        if input("This deletes the demo accounts' stays, inquiries, reports and notices. Type RESET to continue: ") != "RESET":
+        answer = input("This deletes the demo accounts' stays, inquiries, reports and notices. Type reset to continue: ")
+        if not confirmed(answer):
             print("Cancelled — nothing changed.")
             return 1
 

@@ -115,3 +115,8 @@ def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
 
     assert report["feed posts"] == 0
     assert sorted(p["name"] for p in db.tables["pets"]) == ["Max", "Mochi"]
+
+
+def test_the_confirmation_accepts_reset_in_any_case_and_nothing_else():
+    assert all(reset_demo.confirmed(a) for a in ("reset", "RESET", "Reset", "  reset \n"))
+    assert not any(reset_demo.confirmed(a) for a in ("", "yes", "resett", "re set"))
