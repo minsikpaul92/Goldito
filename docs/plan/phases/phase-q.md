@@ -17,7 +17,7 @@
 | 3 | [work-split-2026-10-09.ko.md](../work-split-2026-10-09.ko.md) | 누가 무엇을, 충돌 막는 규칙 §4 |
 | 4 | **이 문서** | 내 작업 목록 Q.0~Q.10 |
 | 5 | [test-guide.ko.md](../test-guide.ko.md) §2 · §3 · §4 | 기능 상태표, 시나리오(ID · 기대 결과), 알려진 제약 |
-| 6 | [test-run-unmerged.ko.md](../test-run-unmerged.ko.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
+| 6 | [test-run.ko.md](../test-run.ko.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
 | 7 | [feedback-2026-10-08.ko.md](../feedback-2026-10-08.ko.md) | 피드백을 쓰는 형식 (FB-1~29 예시) |
 | 8 | [review-2026-10-08.ko.md](../review-2026-10-08.ko.md) §5 · §6 | 내가 맡을 M · L 항목 상세 (현상 → 원인 → 수정 → 테스트) |
 | 필요할 때 | [P0-ai-prompt-playbook.ko.md](../P0-ai-prompt-playbook.ko.md) · [README.ko.md](../README.ko.md) §8 (익명화) · [DESIGN.md](../../../DESIGN.md) | 프롬프트 · 익명화 규칙 · UI 토큰 |
