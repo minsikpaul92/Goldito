@@ -35,7 +35,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
 | **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (Profile → Demo tools) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-40+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **FB-30** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: **FB-30** tabs on one line → FB-31 owner name (RV-4 name part) → FB-32 a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-30: the sitter Bookings tabs stay on one line — the count is a small badge, not "(1)" | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
+| **Minsik** | **FB-31** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 owner name (RV-4 name part) → FB-32 a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-31: a first-contact owner's name shows on the sitter's Questions card and thread (the name part of RV-4: `has_inquiry_with` in `profiles_select`, migration `011e`) | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
 
 ---
 
@@ -85,6 +85,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 
 ## Completed
+
+- [x] **FB-30** Sitter Bookings tabs stay on one line (2026-10-09, `fix/stage1-booking-ux`): `SegmentedControl` options take a `count`, shown as a small badge on the segment's corner instead of "Requests (1)"; labels are one line (14 px when there are four segments — each is about 86 px wide on a phone). e2e `sitter-bookings` · `inquiry` read the badge. test-guide UX-5.
 
 - [x] **RV-1** The inquiry AI's "yes, I can host" is the booking engine's own rule (2026-10-09, `fix/review-inquiry`): new migration **`011c_stay_capacity_check`** — `stay_capacity_check(sitter, drop-off, pick-up, pet count)` runs the schedule part of `request_booking` (window check, then `capacity_shortfall`) and answers null / `invalid_window` / `no_open_slot` / the slots short of room (a slot the sitter never opened has none). `_gather` calls it with the user's JWT next to the schedule; `availability(shortfall, rows, days)` replaces the blocked-or-full rule (rows only label the reason: blocked / full / `no_room`). If the check itself fails, nothing is promised: no price, an `availability_note` ("don't say yes or no"), and `needs_sitter` forced (never auto-sent). Smoke +7 (`011c`), pytest +4 (the RPC's arguments, two pets × one spot left, `no_open_slot`, check failure). `011c` applied to the hosted DB (2026-10-09). Manual INQ-20 passed locally (Minsik, 2026-10-09: Max + Mochi with one spot on Oct 16 → "unavailable on Oct 16", no quote). PR #66 = RV-1 only.
 

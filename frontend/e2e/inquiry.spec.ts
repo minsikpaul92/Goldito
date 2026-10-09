@@ -195,7 +195,7 @@ test.describe("sitter inquiry", () => {
     });
     const { db } = await openSitterThread(page);
     const screen = app(page);
-    await expect(screen.getByTestId("sitter-bookings-tabs-inquiries")).toContainText("Questions (1)");
+    await expect(screen.getByTestId("sitter-bookings-tabs-inquiries-count")).toHaveText("1");
     await expect(screen.getByTestId(`inquiry-card-${INQ}`)).toContainText("Draft ready");
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
 

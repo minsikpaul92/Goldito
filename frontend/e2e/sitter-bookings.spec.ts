@@ -99,7 +99,7 @@ test.describe("sitter requests", () => {
     seed(db, "required");
     const { screen, card } = await openRequest(page);
 
-    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toContainText("Requests (1)");
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests-count")).toHaveText("1");
     await expect(card).toContainText("Robert");
     await expect(card).toContainText("Custom time — needs your OK");
     await expect(card).toContainText("Meet first");
@@ -135,7 +135,7 @@ test.describe("sitter requests", () => {
     );
     await page.goto("/sitter/bookings");
     await expect(screen.getByTestId("booking-card-soon1")).toBeVisible();
-    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toContainText("Requests (1)");
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests-count")).toHaveText("1");
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toHaveCount(0);
   });
 

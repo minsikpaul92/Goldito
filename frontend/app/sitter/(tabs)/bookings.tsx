@@ -106,8 +106,8 @@ export default function SitterBookings() {
     <Screen contentStyle={styles.content}>
       <SegmentedControl
         options={[
-          { value: "requests", label: requests > 0 ? `Requests (${requests})` : "Requests" },
-          { value: "inquiries", label: waiting > 0 ? `Questions (${waiting})` : "Questions" },
+          { value: "requests", label: "Requests", count: requests },
+          { value: "inquiries", label: "Questions", count: waiting },
           { value: "upcoming", label: "Upcoming" },
           { value: "past", label: "Past" },
         ]}
