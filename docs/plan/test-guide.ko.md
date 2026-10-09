@@ -19,7 +19,7 @@
 | Vercel preview (선택) | PR 코멘트의 Preview 링크 | 머지 전 미리 보기용 — 결과 기록은 main 기준 |
 | 로컬 (개발할 때만) | `http://localhost:8081` + 백엔드 `http://localhost:8000` | `cd frontend && npx expo start --web --port 8081`, `cd backend && .venv/bin/uvicorn app.main:app --port 8000` |
 
-> ⚠️ **백엔드 배포 전까지 (민식 U0):** Vercel 빌드의 `EXPO_PUBLIC_API_URL`이 비어 있어 `localhost:8000`을 본다 → Vercel에서는 **업로드 · AI(REPORT · INQ · CAP · DONE의 Life Record · 케어 체크리스트) · 데모 리셋이 안 된다.** 그 시나리오는 U0 뒤에 Vercel에서, 그 전에는 민식이 main을 로컬로 확인한다.
+> **백엔드 (U0, 2026-10-09):** Vercel 빌드는 Render의 **https://goldito-backend.onrender.com** 을 본다 → 업로드 · AI · 데모 리셋(Profile → Demo tools)이 Vercel에서 된다. 무료 플랜이라 **15분 동안 요청이 없으면 잠들고 첫 요청이 30~50초** 걸린다(keep-alive cron이 깨워 둠). PR **Preview는 CORS에 없어** 업로드 · AI가 안 된다 — 결과는 main(Production)에서.
 > 어느 환경이든 **호스티드 Supabase(실제 DB)** 에 붙는다. 테스트가 실제 데이터를 만든다는 뜻이다 (1.4 참고).
 
 ### 1.2 데모 계정
@@ -301,7 +301,7 @@
 | BF-6 | 결제한 예약에서 찾기 장소를 오너 집으로 바꾸고 시터가 수락 / 찾기 시간을 늦추고 수락 | 오너 집 → 체크아웃이 다시 열림(결제 취소, 지난 견적 유지) + 오너에게 `checkout_needed` 알림, 예약 화면 배너 "Your stay changed — sign to finish", Checkout에서는 **home_access 하나만** 체크하면 결제 완료. 그 전까지 시터의 출입 정보는 잠김. 기간 변경 → 새 총액으로 다시 견적 + `price_updated` 알림(결제 상태 유지). 동의서는 체크아웃 중(확정 · 미결제 · 필요한 종류)에만 서명. 오너 주소·긴급 연락처는 결제 후에만 시터에게 보임 | SQL `rls_smoke` (BF.6) · 🤖 `checkout` | ➖ |
 | BF-7 | BF-6처럼 체크아웃이 다시 열린 상태에서 오너 · 시터가 예약 화면을 엶 | 오너: 시터 집 카드(주소 · 주차 · 로비)가 그대로 보임. 시터: 맡기기 · 찾기 주소(펫을 데려다줄 오너 집 포함)가 그대로 보이고, 출입 정보 카드는 사라지지 않고 "Waiting for {오너} to sign"을 보여 줌(코드는 서명 전까지 잠김). 한 번도 결제하지 않은 예약은 예전처럼 주소가 안 보임 | SQL `rls_smoke` (BF.7) · 🤖 `checkout` | ➖ |
 
-### 3.10 알림장 (REPORT) — Phase 07 · *사전: 시터가 돌보는 중, 오늘 체크인 몇 개, 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤***
+### 3.10 알림장 (REPORT) — Phase 07 · *사전: 시터가 돌보는 중, 오늘 체크인 몇 개, 백엔드 + `NEBIUS_API_KEY`*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -318,7 +318,7 @@
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
 | REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 
-### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤**, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
+### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -342,7 +342,7 @@
 | INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
 | INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
 
-### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤***
+### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -354,7 +354,7 @@
 | CAP-6 | 오너 → Feed → **Timeline / Album** 토글 | Timeline = 최신순 카드. Album = 날짜 헤더("Oct 9, 2026") 아래 분류별 3열, **빈 분류는 안 보임**, "Meals · 2" 같은 개수. 사진을 누르면 뷰어 | 🤖 `caption` | ➖ |
 | CAP-7 | 할 일(밥 · 산책 · 낮잠 · 놀이)을 사진과 함께 완료 | 오너 Album에서 그 사진이 할 일 종류대로 Meals · Walks · Naps · Play에 들어감 | **👤** | ➖ |
 
-### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: Life Record는 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤** (리뷰 · home safe는 지금도 Vercel에서), 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run.ko.md](test-run.ko.md) §2*
+### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: Life Record는 백엔드 + `NEBIUS_API_KEY`, 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run.ko.md](test-run.ko.md) §2*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -425,7 +425,7 @@
 
 ### 3.17 코드 리뷰 수정 (REV) — [review-2026-10-08.ko.md](review-2026-10-08.ko.md) *(RV-6~10은 #60에서 수정 · RV-1~5는 R1b(민식) · M · L은 Phase Q(슬기) — ID는 리뷰 문서 항목과 같음)*
 
-**사전:** main이 Vercel에 배포됨(백엔드가 필요한 항목은 U0 뒤), 원하는 상태로 리셋. "자동" 칸은 고치는 커밋이 채운다.
+**사전:** main이 Vercel에 배포됨, 원하는 상태로 리셋. "자동" 칸은 고치는 커밋이 채운다.
 
 | ID | 무엇을 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -468,7 +468,8 @@
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
-- **문의 AI**: Vercel에서는 백엔드 배포(U0) 전까지 AI 답장이 안 나온다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
+- **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
+- **알림장 칩이 Received를 약속 시각보다 일찍 누른 뒤의 기록을 빠뜨린다 (CW-1, 2026-10-09 발견 · 고칠 예정):** 칩 · 초안은 "시터가 맡은 시간"을 실제 Received 시각이 아니라 **약속된 드롭오프 시각부터** 센다. 그래서 일찍 맡고 약속 시각 전에 올린 사진 · 체크인은 칩이 안 된다. `in_care` 리셋은 드롭오프를 "지금 + 3분"으로 잡으므로 **리셋 뒤 3분 안의 기록은 항상 빠진다** — 테스트할 때는 3분 기다렸다가 기록하자.
 - History는 **읽기 전용**이다. 시터 Diary(알림장 쓰기)는 7.3에서 생겼다(스택 #55).
 - Heads-up은 시터 **예약 상세와 Home**에 보인다. "도착 카드"(Pet Transit)는 Phase 06B에서 만든다.
 - History는 3가지 기록(할 일 · 체크인 · 피드 사진)을 화면에서 합쳐 보여준다. 같은 사진이 Feed에도 있으면 한 번만 나온다.

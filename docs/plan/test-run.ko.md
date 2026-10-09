@@ -8,9 +8,9 @@
 
 **주소: https://goldito-petcare.vercel.app** (main이 머지될 때마다 자동 배포). 로그인 화면 **Try demo → Demo owner / Demo sitter**.
 
-> ⚠️ **백엔드 배포 전까지(민식 U0)** Vercel에서는 **사진 · 영상 업로드, AI 기능(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record), 데모 리셋이 동작하지 않습니다** (`EXPO_PUBLIC_API_URL`이 비어 `localhost:8000`을 봄). 그동안 Vercel에서는 Supabase만 쓰는 화면(예약 · 체크아웃 · Received/Returned · 체크인 · 리뷰 · 즐겨찾기)만 보고, 업로드 · AI는 민식이 main을 로컬로 띄워 확인합니다. U0가 끝나면 이 경고를 지웁니다.
+> **백엔드는 Render에 배포돼 있습니다 (U0, 2026-10-09 — https://goldito-backend.onrender.com).** 업로드 · AI(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record) · 데모 리셋이 모두 Vercel에서 됩니다. 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 그 뒤 첫 요청은 30~50초** 걸립니다 — 처음 한 번 느리면 그것입니다.
 
-**데모 계정의 상태는 누가 마지막에 뭘 했는지에 따라 다릅니다.** 시작하기 전에 원하는 상태로 리셋하세요(§1 아래). 2026-10-09 기준으로는 `ready`에서 시작한 한 번의 돌봄이 Returned까지 진행된 상태입니다.
+**데모 계정의 상태는 누가 마지막에 뭘 했는지에 따라 다릅니다.** 시작하기 전에 원하는 상태로 리셋하세요(§1 아래).
 
 ### 어떤 시나리오는 어느 상태에서 시작하나
 
@@ -38,6 +38,8 @@
 
 ### 상태를 다시 고르고 싶을 때 (리셋)
 
+**앱에서:** 시터 또는 오너로 로그인 → **Profile → Demo tools** → 상태 선택 → 확인. 테스트 기간에만 켜 둔 기능입니다(`DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1` — 심사 전에 제거).
+
 호스팅 DB의 데모 데이터를 **지우고 다시 만듭니다** (펫 · 정책 · 말투 시드는 유지). 지우는 것은 **두 데모 계정 사이의 것만**입니다 — 다른 계정이 Chloe를 예약 · 문의한 것(그 알림장 · Life Record · 알림 포함)은 남고, Chloe에게 다른 오너의 확정 예약이 있으면 일정은 그대로 둡니다(출력에 "schedule kept"). 되돌릴 수 없으니 먼저 dry run으로 숫자를 보세요.
 
 ```bash
@@ -46,7 +48,7 @@ cd backend
 .venv/bin/python -m scripts.reset_demo --state ready --apply      # reset 입력 (--yes면 생략)
 ```
 
-`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 명령은 `backend/.env`(서비스 키)가 있는 **민식 PC**에서 실행합니다 — 리셋이 필요하면 민식에게 상태 이름을 알려 주세요. **앱의 Profile → Demo tools**는 백엔드 배포(U0) 뒤 Vercel에서도 켭니다(`DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`, 테스트 전용 — 심사 전에 제거).
+`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. **`in_care`는 드롭오프를 "지금 + 3분"으로 잡기 때문에, 리셋 뒤 3분 안에 남긴 기록은 알림장 칩에서 빠집니다**(CW-1, 고칠 예정) — 3분 기다렸다가 기록하세요.
 
 | 상태 | 만들어지는 것 |
 | :--- | :--- |
@@ -102,7 +104,8 @@ cd backend
 | 날짜 · 시간 입력 | 곳곳이 − + 만 있음 (달력 · 시계 통일은 아직) | FB-3 |
 | 시터 알림 | 오너가 요금표 없는 시터로 체크아웃하면 시터에게 "Set your prices" 알림이 안 감 | FB-7b |
 | 문의 AI | AI가 "가능해요"라고 했는데 예약이 거절될 수 있음 · 거절 답장에 견적 카드가 붙음 · 처음 문의한 오너 이름이 시터에게 안 보임 | RV-1 · RV-3 · RV-4 (R1b) |
-| Vercel | 업로드 · AI · 데모 리셋이 안 됨 | 백엔드 배포 전 (U0) |
+| 시터 Diary 알림장 | Received를 약속 시각보다 일찍 누른 뒤(또는 `in_care` 리셋 뒤 3분 안) 남긴 사진 · 체크인이 칩에 안 나옴 | CW-1 (고칠 예정) |
+| 첫 요청 | 30~50초 걸림 (Render 무료 플랜이 잠들었다 깨는 중) | 설계 — keep-alive cron |
 
 ## 5. 결과 적는 법
 

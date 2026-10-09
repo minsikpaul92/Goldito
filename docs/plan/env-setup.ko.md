@@ -31,12 +31,24 @@
 | `NEBIUS_API_KEY` | Nebius Token Factory (추론 API) |
 | `TAVILY_API_KEY` | [Tavily](https://tavily.com) 대시보드 — [tavily.ko.md](tavily.ko.md). Builders & Brews Toronto **8,000 credits** |
 
-**배포 (U0 — 10.3을 2026-10-09에 앞당김):** Nebius **AI Cloud Serverless Endpoint** URL·시크릿은 GitHub Actions secrets 또는 Nebius 콘솔에 둡니다. 배포된 백엔드 env는 위 표 + 아래 두 줄이 다릅니다. 프론트가 백엔드를 보게 하는 것은 **Vercel**의 `EXPO_PUBLIC_API_URL`입니다 (아래 § Vercel).
+### 배포된 백엔드 — Render (U0, 2026-10-09)
+
+**주소: https://goldito-backend.onrender.com** (`/health` → `{"status":"ok"}`). Nebius AI Cloud Serverless Endpoint가 정식 경로(D18)지만 카드 등록 + $25 선결제를 요구하고 행사 AI Cloud 크레딧이 계정에 안 보여서, D18의 fallback인 **Render 무료 플랜**으로 먼저 띄웠습니다. 이미지가 같아서(`backend/Dockerfile`) 나중에 Nebius로 옮길 때는 Vercel의 `EXPO_PUBLIC_API_URL`만 바꾸면 됩니다 (Nebius 쪽 준비: [phase-10.md](phases/phase-10.md) 10.3).
+
+| Render 설정 | 값 |
+| :--- | :--- |
+| 서비스 | Web Service · GitHub `minsikpaul92/Goldito` · Branch `main` · **Root Directory `backend`** · Language **Docker** · Region Ohio · Instance **Free** |
+| 배포 | **Auto-Deploy On Commit** — main에 머지하면 Render가 Dockerfile로 다시 빌드 (Build Filters에 `backend/**`를 넣으면 백엔드가 바뀔 때만) · Health Check Path `/health` |
+| 환경변수 | **Add from .env**로 `backend/.env`를 붙여넣고 아래 세 줄만 다르게. `PORT`는 넣지 않음(Render가 정함, 이미지가 `$PORT`를 읽음). Secret Files는 안 씀 |
+| 잠듦 | 무료 플랜은 **15분 동안 요청이 없으면 잠들고 첫 요청이 30~50초**. `.github/workflows/keepalive.yml`이 10분마다 `/health`를 불러 깨워 둠 (월 750시간 무료 = 서비스 1개 24시간) |
 
 | 변수 (배포된 백엔드) | 값 |
 | :--- | :--- |
-| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` 추가 (로컬 값 `http://localhost:8081,…`은 유지해도 됨). Preview(`*-git-*.vercel.app`)는 기본으로 막힘 — 업로드 · AI 확인은 main(Production)에서 |
+| `APP_ENV` | `production` |
+| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` (Preview `*-git-*.vercel.app`는 막힘 — 업로드 · AI 확인은 main(Production)에서) |
 | `DEMO_RESET_ENABLED` | 테스트 기간에만 `1` (Profile → Demo tools). **심사 전에 `0`** — TODO "Demo accounts for judging" |
+
+값을 바꾸면 Render → Environment → Save → **Manual Deploy**(또는 저장 시 자동 재시작)를 확인합니다.
 
 ---
 
@@ -46,7 +58,7 @@
 | :--- | :--- |
 | `EXPO_PUBLIC_SUPABASE_URL` | backend와 **동일** Project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Connect → **Publishable** / Settings → API → **anon** |
-| `EXPO_PUBLIC_API_URL` | 로컬: `http://localhost:8000` · 프로덕션: **Nebius AI Cloud Endpoint** URL |
+| `EXPO_PUBLIC_API_URL` | 로컬: `http://localhost:8000` · 프로덕션(Vercel): `https://goldito-backend.onrender.com` |
 | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
 
@@ -67,9 +79,11 @@
 | `EXPO_PUBLIC_SUPABASE_URL` · `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 로컬 `frontend/.env`와 동일 (anon/publishable만) |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
 | `EXPO_PUBLIC_DEMO_PASSWORD` | 데모 계정 비밀번호 (데모 전용 값) |
-| `EXPO_PUBLIC_API_URL` | 배포된 백엔드 URL (U0). **비어 있으면 `http://localhost:8000`으로 폴백**(`frontend/lib/api.ts`) → Vercel에서 업로드 · AI · 데모 리셋이 안 됨 (U0 전 상태) |
-| `EXPO_PUBLIC_DEMO_TOOLS` | 테스트 기간에만 `1` (백엔드 `DEMO_RESET_ENABLED=1`과 함께 — Profile → Demo tools). **심사 전에 비움** |
+| `EXPO_PUBLIC_API_URL` | `https://goldito-backend.onrender.com` (U0, 2026-10-09). 비어 있으면 업로드 · AI · 데모 리셋이 안 됨 |
+| `EXPO_PUBLIC_DEMO_TOOLS` | 테스트 기간에만 `1` (백엔드 `DEMO_RESET_ENABLED=1`과 함께 — Profile → Demo tools). **심사 전에 지움** |
 | `EXPO_PUBLIC_DEV_ROUTES` | **설정하지 않음** (dev 화면은 로컬·CI만) |
+
+> **Type은 Config로.** Vercel은 `EXPO_PUBLIC_`처럼 공개 접두사가 붙은 변수에 **Secret을 허용하지 않습니다** (수정하면 "cannot use `visibility: secret`" 오류). 어차피 번들에 들어가 브라우저에서 보이는 값이라 Config가 맞습니다. 예전에 Secret으로 만든 변수는 그대로 동작하지만 **수정할 수 없으니, 바꿀 때는 지우고 Config로 다시 추가**합니다 (2026-10-09: `EXPO_PUBLIC_API_URL` · `EXPO_PUBLIC_SUPABASE_URL`을 이렇게 다시 만듦).
 
 4. Deploy → main = Production, 다른 브랜치·PR = Preview URL (PR 코멘트). `EXPO_PUBLIC_*`는 **빌드 시점**에 번들에 들어가므로 값을 바꾸면 Redeploy.
 5. Supabase는 비밀번호 로그인만 쓰므로 Auth URL 설정은 필수 아님 (메일 링크·OAuth를 쓰게 되면 Authentication → URL Configuration에 Vercel 도메인 추가).
