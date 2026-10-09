@@ -6,6 +6,7 @@ import { QUESTION_MAX, createInquiry, requestInquiryReply } from "../features/in
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
 import { addDays, appToday, zonedToIso } from "../features/schedule/dates";
+import { DaySlot, loadSitterMonth } from "../features/schedule/scheduleApi";
 import { SERVICE_LABEL, ServiceType } from "../features/sitters/sitterApi";
 import { tripProblem } from "../lib/trip";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -13,6 +14,7 @@ import { Theme } from "../theme/themes";
 import { HandoffDraft, HandoffPicker } from "./HandoffPicker";
 import { Button } from "./ui/Button";
 import { CheckRow } from "./ui/CheckRow";
+import { DayMark } from "./ui/DayPickerSheet";
 import { SegmentedControl } from "./ui/SegmentedControl";
 import { Sheet } from "./ui/Sheet";
 import { TextField } from "./ui/TextField";
@@ -23,8 +25,31 @@ type Props = {
   sitter: { id: string; displayName: string; services: ServiceType[] };
 };
 
+/** How far ahead the date picker shows the sitter's days. */
+const MARK_DAYS = 90; // get_sitter_schedule reads at most 92 days
+
 /**
- * "Ask about a stay" (phase-07B 7B.5): the trip, the pets, and an optional question. Sending creates the
+ * A day for these pets, by the booking engine's rule (a stay needs room for all its pets in every slot it
+ * touches): no open slot → not open; any open slot without room for them → full; else open. Closed slots
+ * next to open ones are the sitter's hours, not a gap.
+ */
+export function dayMarks(slots: Map<string, DaySlot>, petCount: number): Map<string, DayMark> {
+  const need = Math.max(1, petCount);
+  const marks = new Map<string, DayMark>();
+  for (const s of slots.values()) {
+    const before = marks.get(s.day);
+    if (s.state === "closed") {
+      if (!before) marks.set(s.day, "closed");
+      continue;
+    }
+    const mark: DayMark = s.state === "open" && s.remaining >= need ? "open" : "full";
+    if (!before || before === "closed" || mark === "full") marks.set(s.day, mark);
+  }
+  return marks;
+}
+
+/**
+ * "Ask before booking" (phase-07B 7B.5, FB-33): the trip, the pets, and an optional question. Sending creates the
  * inquiry, asks for the sitter's draft in the background and opens the thread — the owner never waits on the model.
  */
 export function InquirySheet({ visible, onClose, sitter }: Props) {
@@ -38,6 +63,20 @@ export function InquirySheet({ visible, onClose, sitter }: Props) {
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
+
+  // The sitter's days, so the owner picks dates that work (FB-33). Without them the picker still works.
+  useEffect(() => {
+    if (!visible) return;
+    let live = true;
+    loadSitterMonth(sitter.id, today, addDays(today, MARK_DAYS))
+      .then((found) => live && setSlots(found))
+      .catch(() => live && setSlots(null));
+    return () => {
+      live = false;
+    };
+  }, [visible, sitter.id, today]);
+  const marks = useMemo(() => (slots ? dayMarks(slots, petIds.length) : undefined), [slots, petIds.length]);
 
   useEffect(() => {
     if (pets.length === 1) setPetIds([pets[0].id]);
@@ -78,7 +117,7 @@ export function InquirySheet({ visible, onClose, sitter }: Props) {
   return (
     <Sheet
       visible={visible}
-      title={`Ask ${sitter.displayName} about a stay`}
+      title={`Ask ${sitter.displayName} before booking`}
       onClose={onClose}
       testID="inquiry-sheet"
       footer={
@@ -119,6 +158,7 @@ export function InquirySheet({ visible, onClose, sitter }: Props) {
           value={dropOff}
           minDay={today}
           sitterName={sitter.displayName}
+          dayMarks={marks}
           fixedPlace={houseSitting ? `🔑 ${sitter.displayName} comes to my place` : undefined}
           onChange={(value) => {
             setDropOff(value);
@@ -130,6 +170,7 @@ export function InquirySheet({ visible, onClose, sitter }: Props) {
           value={pickUp}
           minDay={dropOff.day}
           sitterName={sitter.displayName}
+          dayMarks={marks}
           fixedPlace={houseSitting ? "🔑 At my place" : undefined}
           onChange={setPickUp}
         />

@@ -221,18 +221,23 @@ export default function SitterProfileScreen() {
         </Card>
       </Screen>
       <View style={styles.footer}>
-        <Button
-          label={`Book ${sitter.displayName}`}
-          onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
-          testID="book-this-sitter"
-        />
-        <Button
-          label="Ask about a stay"
-          variant="secondary"
-          onPress={() => setAsking(true)}
-          style={styles.askButton}
-          testID="ask-about-stay"
-        />
+        {/* FB-33: asking first reads as "before booking", next to Book — Book stays the one filled button. */}
+        <View style={styles.actions}>
+          <Button
+            label="Ask before booking"
+            variant="secondary"
+            onPress={() => setAsking(true)}
+            style={styles.action}
+            testID="ask-about-stay"
+          />
+          <Button
+            label="Book"
+            onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
+            style={styles.action}
+            testID="book-this-sitter"
+          />
+        </View>
+        <Text style={styles.actionsHint}>Ask about dates, price or care first — nothing is booked until you send a request.</Text>
       </View>
       <InquirySheet visible={asking} onClose={() => setAsking(false)} sitter={sitter} />
     </View>
@@ -251,8 +256,18 @@ const makeStyles = (theme: Theme) =>
       width: "100%",
       alignSelf: "center",
     },
-    askButton: {
+    actions: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    action: {
+      flex: 1,
+    },
+    actionsHint: {
       marginTop: theme.spacing.xs,
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+      textAlign: "center",
     },
     content: {
       gap: theme.spacing.md,

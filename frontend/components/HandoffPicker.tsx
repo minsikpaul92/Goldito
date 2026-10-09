@@ -2,7 +2,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { CheckRow } from "./ui/CheckRow";
-import { DayPickerSheet } from "./ui/DayPickerSheet";
+import { DayMark, DayPickerSheet } from "./ui/DayPickerSheet";
 import { Stepper } from "./ui/Stepper";
 import { TextField } from "./ui/TextField";
 import { addDays, formatDay, formatTime, shiftTime } from "../features/schedule/dates";
@@ -24,6 +24,8 @@ type Props = {
   sitterName: string | null;
   /** House sitting: the place is fixed (both handoffs at the owner's home, D28) — show this instead of the choice. */
   fixedPlace?: string;
+  /** The sitter's days (FB-33): marked in the calendar, and a note when the picked day has no room. */
+  dayMarks?: Map<string, DayMark>;
 };
 
 /** Where the pets change hands = who drives (D28): sitter_home = Owner drives, owner_home = Sitter drives. */
@@ -44,7 +46,7 @@ function placeOptions(kind: Props["kind"], sitter: string | null): { value: Loca
 }
 
 /** Day (tap for a calendar, or ± 1 day), time (± 15 min) and place for one handoff — no native pickers (DESIGN.md §7.7). */
-export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixedPlace }: Props) {
+export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixedPlace, dayMarks }: Props) {
   const styles = useThemedStyles(makeStyles);
   const title = kind === "drop_off" ? "Drop-off" : "Pick-up";
   const [calendar, setCalendar] = useState(false);
@@ -80,8 +82,16 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
         minDay={minDay}
         onPick={(day) => set({ day })}
         onClose={() => setCalendar(false)}
+        marks={dayMarks}
         testID={`${kind}-calendar`}
       />
+      {dayMarks && dayMarks.get(value.day) && dayMarks.get(value.day) !== "open" ? (
+        <Text style={styles.dayNote} testID={`${kind}-day-note`}>
+          {dayMarks.get(value.day) === "full"
+            ? `${sitterName ?? "The sitter"} has no room for your pets that day — you can still ask.`
+            : `${sitterName ?? "The sitter"} hasn't opened that day — you can still ask.`}
+        </Text>
+      ) : null}
       {fixedPlace ? (
         <Text style={styles.fixed} testID={`${kind}-place-fixed`}>
           {fixedPlace}
@@ -132,5 +142,9 @@ const makeStyles = (theme: Theme) =>
     fixed: {
       fontSize: theme.fontSize.body,
       color: theme.color.text,
+    },
+    dayNote: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.warning,
     },
   });

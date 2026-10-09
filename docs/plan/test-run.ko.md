@@ -17,7 +17,7 @@
 | 보고 싶은 것 | 시작 상태 | 처음 할 일 |
 | :--- | :--- | :--- |
 | 펫 등록 · 처음 사용 | `empty` | 오너 로그인 → Add pet |
-| 예약 만들기 (Book care · 달력 UX-1) · 문의 INQ-* | `pets` | 오너 Bookings → Book care, 또는 Chloe 프로필 → Ask about a stay |
+| 예약 만들기 (Book care · 달력 UX-1) · 문의 INQ-* | `pets` | 오너 Bookings → Book care, 또는 Chloe 프로필 → Ask before booking |
 | 체크아웃 · 결제 (FLOW-3 · BOOK-5) | `confirmed` | 오너 예약 → Finish booking |
 | 결제 직후 확인 카드 · 준비물 (FLOW-13 · FLOW-14) | `ready` 또는 `confirmed`(직접 결제) | 오너 예약 상세 |
 | 시터 Received · 돌봄 시작 | `ready` | 시터 예약 → Received |
@@ -76,7 +76,7 @@ cd backend
 1. **FLOW-13 · FLOW-14** (§3.16) — [A] 오너 예약 상세. 가장 먼저 (닫으면 확인 카드가 다시 안 나옴).
 2. **REPORT** (§3.10) — D 중에. 시터 Diary → 오너 Diary / 알림.
 3. **CAP** (§3.12) — D 중 사진 올릴 때마다 + 오너 Feed Album. **CAP-4**(백엔드 끄고 올리기)는 마지막에.
-4. **INQ** (§3.11) — 완료와 별개로 언제든. 오너 → Chloe 프로필 → **Ask about a stay**. 자동 발송(INQ-13~14)은 시터가 `/profile` → **AI replies → Auto-send**를 켠 뒤 한 번 더. 정책(INQ-12)은 시터 `/profile`의 **House rules & policies**에 "No dogs over 20 kg."를 적고 시작하면 INQ-9도 볼 수 있음(Max의 체중을 25 kg으로 바꿔서).
+4. **INQ** (§3.11) — 완료와 별개로 언제든. 오너 → Chloe 프로필 → **Ask before booking**. 자동 발송(INQ-13~14)은 시터가 `/profile` → **AI replies → Auto-send**를 켠 뒤 한 번 더. 정책(INQ-12)은 시터 `/profile`의 **House rules & policies**에 "No dogs over 20 kg."를 적고 시작하면 INQ-9도 볼 수 있음(Max의 체중을 25 kg으로 바꿔서).
 5. **DONE** (§3.13) — E(Returned) 직후부터. DONE-12는 **다른 시터 계정**이 필요합니다(아래 §4).
 6. **UX** (§3.14) · **NAME** (§3.15) — 화면 돌아다니며.
 

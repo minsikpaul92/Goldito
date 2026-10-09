@@ -185,7 +185,7 @@ Goldito/
 | `/owner/pets/new`, `/owner/pets/[petId]` | owner | Pet profile (**종 Dog/Cat**·이름·품종·생일·메모·**알레르기 chips**) · **Care request** · **Life Record** 진입 | Save | 03 |
 | `/owner/pets/[petId]/care-request` | owner | 케어·투약 의뢰서 (메모처럼 작성) → AI 체크리스트 미리보기 → 확인 (Stage 2) | **Save checklist** | 06 |
 | `/owner/pets/[petId]/record` | owner | Pet Life Record — 식습관·배변·약 반응·행동·주의사항 + 지난 돌봄 목록 (Stage 5) | 읽기 | 07C |
-| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | 예약·문의 목록 / 서비스 방식·단골 스케줄·검색·요청(이동 방식) / 상세(첫 만남 Meet & Greet — 대면 장소·Google Meet·건너뛰기 동의, D44 — ·인수인계·재예약) / 시터 프로필·스케줄·별점 + **Ask about a stay** | Book care | 03B (+07B 문의) |
+| `/owner/bookings` (tab: Bookings), `/owner/bookings/new`, `/owner/bookings/[bookingId]`, `/owner/sitters/[sitterId]` | owner | 예약·문의 목록 / 서비스 방식·단골 스케줄·검색·요청(이동 방식) / 상세(첫 만남 Meet & Greet — 대면 장소·Google Meet·건너뛰기 동의, D44 — ·인수인계·재예약) / 시터 프로필·스케줄·별점 + **Ask before booking** | Book care | 03B (+07B 문의) |
 | `/owner/inquiries/[inquiryId]` | owner | 문의 스레드 — AI 자동 답변 + 견적 카드 (Stage 1) | **Request booking** | 07B |
 | `/owner/bookings/[bookingId]/checkout` | owner | 견적 → 동의서 서명 → **Pay (demo)** → 시터 집 정보·짐 체크리스트 (Stage 3) | **Pay** | 03C |
 | `/owner/home-access` | owner | 내 집 출입 정보 (lockbox·buzzer·fob·출입 순서) — "Only shown to your sitter 2 hours before" | Save | 03C |

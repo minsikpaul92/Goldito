@@ -45,6 +45,52 @@ async function openProfile(page: import("@playwright/test").Page) {
   return { db, replyRequests };
 }
 
+/** `YYYY-MM-DD`, `n` days from today in the app timezone. */
+function dayFromToday(n: number): string {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
+  const [y, m, d] = today.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+test.describe("ask before booking (FB-33)", () => {
+  test("the profile reads Ask before booking next to Book, and the dates show the sitter's days for these pets", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const first = dayFromToday(0);
+    const short = dayFromToday(1); // the sheet's default drop-off day
+    const hours: Record<string, [string, string]> = { morning: ["08:00", "12:00"], afternoon: ["12:00", "18:00"], overnight: ["18:00", "08:00"] };
+    for (const [slot, [starts, ends]] of Object.entries(hours)) {
+      db.sitter_availability.push({
+        id: `open-${slot}`, sitter_id: SITTER.id, kind: "open", slot, start_date: first, end_date: dayFromToday(20),
+        starts_at: starts, ends_at: ends, max_pets: 2, created_at: "2026-01-01T00:00:00Z",
+      });
+    }
+    // One night with a single spot: room for one pet, not for two.
+    db.sitter_availability.push({
+      id: "one-spot", sitter_id: SITTER.id, kind: "open", slot: "overnight", start_date: short, end_date: short,
+      starts_at: "18:00", ends_at: "08:00", max_pets: 1, created_at: "2026-01-02T00:00:00Z",
+    });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("ask-about-stay")).toHaveText("Ask before booking");
+    await expect(screen.getByTestId("book-this-sitter")).toHaveText("Book");
+    await screen.getByTestId("ask-about-stay").click();
+    await expect(screen.getByText("Ask Chloe before booking")).toBeVisible();
+
+    await screen.getByTestId("inquiry-pet-Max").click();
+    await expect(screen.getByTestId("drop_off-day-note")).toHaveCount(0); // one pet fits that night
+    await screen.getByTestId("inquiry-pet-Mochi").click();
+    await expect(screen.getByTestId("drop_off-day-note")).toContainText("Chloe has no room for your pets that day");
+
+    await screen.getByTestId("drop_off-day-open").click();
+    await expect(screen.getByTestId(`drop_off-calendar-${short}-full`)).toBeVisible();
+    await expect(screen.getByTestId("drop_off-calendar-legend")).toContainText("Room for your pets");
+  });
+});
+
 test.describe("owner inquiry", () => {
   test("ask → thread waits for the sitter → the sent reply shows with the quote → Request booking is prefilled", async ({ page }) => {
     const { db, replyRequests } = await openProfile(page);

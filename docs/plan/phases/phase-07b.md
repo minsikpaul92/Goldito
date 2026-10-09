@@ -47,7 +47,7 @@
 
 | Route | 역할 | 화면 | 주 액션 |
 | :--- | :--- | :--- | :--- |
-| `/owner/sitters/[sitterId]` (03B 확장) | owner | 시터 프로필 하단 **Ask about a stay** → 시트: Service(Boarding / House sitting — 시터가 제공하는 것만) · Drop-off · Pick-up(HandoffPicker 재사용 — 이동 방식 포함) · Pets(체크 — 안내 "Max's profile and Life Record are shared with Chloe") · Question(선택, ≤ 300자) | **Send** |
+| `/owner/sitters/[sitterId]` (03B 확장) | owner | 시터 프로필 하단 **Ask before booking** → 시트: Service(Boarding / House sitting — 시터가 제공하는 것만) · Drop-off · Pick-up(HandoffPicker 재사용 — 이동 방식 포함) · Pets(체크 — 안내 "Max's profile and Life Record are shared with Chloe") · Question(선택, ≤ 300자) | **Send** |
 | `/owner/inquiries/[inquiryId]` | owner | 스레드: 내 질문 카드(조건 요약) → "Chloe is typing…" (사람 속도 연출 구간, 아니면 skeleton) → 시터 말풍선(AI 라벨 없음) + **QuoteCard** + 출처 칩("From Chloe's policies", "From Max's Life Record") → 버튼 **Request booking** (primary — 처음 만나는 사이면 요청 뒤 Meet & Greet 단계, 3B.9) | **Request booking** |
 | `/sitter/bookings` (Inquiries 세그먼트) · `/sitter/inquiries/[inquiryId]` | sitter | 문의 카드(견주·반려동물·날짜·"Draft ready") → 스레드: 말투 초안 + 경고 문구("AI drafts can be wrong. You're responsible for what you send.") · **Send** (primary) · **Edit / Add** · **Regenerate** · 의도 칩(Accept · Decline · Suggest other dates) | **Send** |
 | `/profile` (sitter) | sitter | **House rules & policies** (자유 텍스트, 한 번 작성 — 포함 서비스·취소·집 규칙·받지 않는 경우). 저장 시 RAG 재인덱싱. **AI replies**: Manual approval(기본) / Auto-send(대기 없이 바로, 약 30초 사람 속도) — Auto를 켜면 책임 동의 모달("Replies go out in your name. You're responsible for what's sent.") | Save |
