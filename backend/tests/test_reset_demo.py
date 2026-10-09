@@ -138,22 +138,27 @@ def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not()
     db = world()
     calls = []
 
-    def book(client, owner_id, sitter_id, today):
+    def book(client, owner_id, sitter_id, today, state):
         # By now the pets, prices and schedule must already exist for the booking RPCs to accept it.
-        calls.append((owner_id, sitter_id, today, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
+        calls.append((owner_id, sitter_id, today, state, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
         return "b-new"
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, book=book)
     assert calls == []
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=book)
-    assert calls == [(OWNER, SITTER, TODAY, 3, 1)]
+    assert calls == [(OWNER, SITTER, TODAY, "confirmed", 3, 1)]
+
+    calls.clear()
+    for state in ("ready", "in_care"):
+        demo_reset.reset(db, OWNER, SITTER, TODAY, state=state, apply=True, book=book)
+    assert [c[3] for c in calls] == ["ready", "in_care"]
 
 
 def test_a_dry_run_never_books_and_an_unknown_state_is_refused():
     db = world()
 
-    def book(*_):
+    def book(*_args):
         raise AssertionError("a dry run must not book")
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=False, book=book)
@@ -162,3 +167,53 @@ def test_a_dry_run_never_books_and_an_unknown_state_is_refused():
 
     with pytest.raises(ValueError):
         demo_reset.reset(db, OWNER, SITTER, TODAY, state="bogus", apply=False)  # type: ignore[arg-type]
+
+
+def test_each_booked_state_starts_where_its_test_needs_it():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime(2026, 10, 9, 22, 15, tzinfo=ZoneInfo("America/Toronto"))
+
+    confirmed_drop, confirmed_pick = demo_reset.stay_times("confirmed", now, TODAY)
+    assert (confirmed_drop.date().isoformat(), confirmed_drop.hour, confirmed_drop.minute) == ("2026-10-11", 9, 30)
+    assert confirmed_pick.date().isoformat() == "2026-10-14"
+
+    # `ready`: an hour away, inside the 2 h before which the sitter cannot tap Received.
+    ready_drop, ready_pick = demo_reset.stay_times("ready", now, TODAY)
+    assert ready_drop == datetime(2026, 10, 9, 23, 15, tzinfo=ZoneInfo("America/Toronto"))
+    assert (ready_pick.date().isoformat(), ready_pick.hour) == ("2026-10-12", 17)
+
+    # `in_care`: minutes away, so the care window (30 min early) is open the moment it is built.
+    care_drop, _ = demo_reset.stay_times("in_care", now, TODAY)
+    assert (care_drop - now).total_seconds() == 180
+
+
+def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
+    """ready = accept → sign → pay; in_care also taps Received; confirmed stops after the sitter accepts."""
+    calls = []
+
+    def fake_rpc(token, fn, params, **_):
+        calls.append((token, fn))
+        return ["emergency_vet", "safe_return"] if fn == "required_consents" else "b-1"
+
+    monkeypatch.setattr(demo_reset.authz, "rpc_json", fake_rpc)
+    monkeypatch.setattr(demo_reset, "sign_in", lambda email: "owner-token" if "owner" in email else "sitter-token")
+    inserted = []
+    monkeypatch.setattr(demo_reset, "_insert_as", lambda token, table, row: inserted.append((token, table, row["kind"], row["signer_id"])))
+    monkeypatch.setattr(demo_reset, "owner_pet_ids", lambda *_: ["pet-1"])
+    db = world()
+
+    def run(state):
+        calls.clear()
+        inserted.clear()
+        demo_reset.book_for_state(db, OWNER, SITTER, TODAY, state)
+        return [fn for _t, fn in calls]
+
+    base = ["request_booking", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
+    assert run("confirmed") == base
+    assert inserted == []
+    assert run("ready") == [*base, "required_consents", "pay_booking_demo"]
+    assert inserted == [("owner-token", "booking_consents", "emergency_vet", OWNER), ("owner-token", "booking_consents", "safe_return", OWNER)]
+    assert run("in_care") == [*base, "required_consents", "pay_booking_demo", "complete_handoff"]
+    assert calls[-1] == ("sitter-token", "complete_handoff")  # Received is the sitter's, after the owner paid

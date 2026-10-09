@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/demo", tags=["demo"])
 
 
 class ResetRequest(BaseModel):
-    state: Literal["empty", "pets", "confirmed"]
+    state: Literal["empty", "pets", "confirmed", "ready", "in_care"]
 
 
 class ResetResponse(BaseModel):

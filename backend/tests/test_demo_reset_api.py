@@ -45,6 +45,17 @@ def test_only_the_demo_accounts_may_reset(client: TestClient, monkeypatch: pytes
     assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 403
 
 
+@pytest.mark.parametrize("state", ["ready", "in_care"])
+def test_the_new_states_are_accepted(client: TestClient, monkeypatch: pytest.MonkeyPatch, state: str):
+    enable(monkeypatch)
+    sign_in_as("demo-owner@goldito.test")
+    monkeypatch.setattr(demo, "get_service_client", lambda: object())
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c: ("o1", "s1"))
+    monkeypatch.setattr(demo.demo_reset, "reset", lambda *a, **k: [])
+
+    assert client.post("/api/demo/reset", json={"state": state}).json()["state"] == state
+
+
 def test_an_unknown_state_is_refused(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     enable(monkeypatch)
     sign_in_as("demo-owner@goldito.test")

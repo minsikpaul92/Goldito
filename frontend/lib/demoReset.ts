@@ -6,12 +6,14 @@ import { DEMO_ACCOUNTS } from "./demo";
  * known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
  * judging (docs/plan/TODO.md, "Demo reset").
  */
-export type DemoState = "empty" | "pets" | "confirmed";
+export type DemoState = "empty" | "pets" | "confirmed" | "ready" | "in_care";
 
 export const DEMO_STATES: { value: DemoState; label: string; hint: string }[] = [
   { value: "empty", label: "Empty", hint: "No pets yet. The sitter is ready (schedule, prices)." },
   { value: "pets", label: "Pets only", hint: "Max and Mochi, no booking. The start of the booking flow." },
   { value: "confirmed", label: "Booking accepted", hint: "Chloe accepted a stay. Next: Finish booking." },
+  { value: "ready", label: "Ready for drop-off", hint: "Paid, drop-off in an hour. Chloe can tap Received." },
+  { value: "in_care", label: "In care", hint: "Max and Mochi are with Chloe. Check-ins, photos and reports work." },
 ];
 
 export const isDemoToolsEnabled = process.env.EXPO_PUBLIC_DEMO_TOOLS === "1";

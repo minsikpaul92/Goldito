@@ -8,7 +8,8 @@ A hosted-database write that cannot be undone, so it is a dry run unless you say
     .venv/bin/python -m scripts.reset_demo --apply               # asks you to type reset, then does it
 
 States: `empty` (owner has no pets) · `pets` (Max + Mochi, before any booking, the default) ·
-`confirmed` (a booking the sitter accepted, before checkout). What is deleted and kept:
+`confirmed` (a booking the sitter accepted, before checkout) · `ready` (paid, drop-off in an hour: Received is open) ·
+`in_care` (paid and received: the pets are with the sitter). What is deleted and kept:
 app/services/demo_reset.py. The same thing is behind the temporary Demo tools button
 (`POST /api/demo/reset`, only while DEMO_RESET_ENABLED=1).
 

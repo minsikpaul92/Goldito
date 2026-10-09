@@ -1,10 +1,12 @@
 """Put the two demo accounts into a known test state (review FB-10 + the temporary demo reset).
 
-Three states, each a point to start a manual test from:
+Five states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
 - `pets`       Max + Mochi, nothing else (before any booking)
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
+- `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
+- `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
 
 Everything the stays, inquiries and reports of the two accounts created is deleted first;
 Cloudinary files, the sitter's policy text and index, her style card and her seeded tone
@@ -26,8 +28,8 @@ from app.config import get_settings
 from app.services import authz
 from app.services.demo_accounts import DEMO_USERS, ensure_sitter_rates, find_user_id
 
-State = Literal["empty", "pets", "confirmed"]
-STATES: tuple[State, ...] = ("empty", "pets", "confirmed")
+State = Literal["empty", "pets", "confirmed", "ready", "in_care"]
+STATES: tuple[State, ...] = ("empty", "pets", "confirmed", "ready", "in_care")
 
 OPEN_DAYS = 60
 # Knowledge chunks that come from stays; the sitter's own policy text (`sitter_policy`) stays.
@@ -203,18 +205,72 @@ def sign_in(email: str) -> str:
     return response.json()["access_token"]
 
 
-# A booking creator takes (client, owner_id, sitter_id, today) and returns the booking id; tests pass a fake.
-Booker = Callable[[Client, str, str, date], str]
+def stay_times(state: State, now: datetime, today: date) -> tuple[datetime, datetime]:
+    """Drop-off and pick-up for a state. `ready` and `in_care` start soon on purpose: the sitter's Received
+    opens 2 h before the agreed drop-off, and care tools work from 30 min before it."""
+    if state == "ready":
+        drop_off = now + timedelta(hours=1)
+    elif state == "in_care":
+        drop_off = now + timedelta(minutes=3)  # a request cannot start in the past, so a little ahead
+    else:
+        drop_off = datetime.combine(today + timedelta(days=2), time(9, 30), now.tzinfo)
+    pick_up = datetime.combine(drop_off.date() + timedelta(days=3), time(17, 0), now.tzinfo)
+    return drop_off, pick_up
 
 
-def book_and_accept(client: Client, owner_id: str, sitter_id: str, today: date) -> str:
-    """Owner requests a boarding stay (both pets, sitter's place), the Meet & Greet is skipped by
-    agreement and the sitter accepts: the state "Chloe accepted — Finish booking"."""
-    owner_email, sitter_email = (demo.email for demo in sorted(DEMO_USERS, key=lambda d: d.role != "owner"))
-    owner_token, sitter_token = sign_in(owner_email), sign_in(sitter_email)
+def _insert_as(token: str, table: str, row: dict) -> None:
+    """Insert a row as a signed-in user (their JWT), the way the app does, so row-level rules apply."""
+    settings = get_settings()
+    response = httpx.post(
+        f"{settings.supabase_url.rstrip('/')}/rest/v1/{table}",
+        headers={
+            "apikey": settings.supabase_service_role_key,
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        },
+        json=row,
+        timeout=10.0,
+    )
+    if response.status_code >= 400:
+        raise RuntimeError(f"Could not insert into {table} ({response.status_code}): {response.text[:200]}")
+
+
+def _sign_and_pay(owner_token: str, owner_id: str, owner_name: str, booking: str) -> None:
+    """What the checkout does: sign every required consent (demo values), then the demo payment."""
+    for kind in authz.rpc_json(owner_token, "required_consents", {"p_booking": booking}):
+        details: dict = {}
+        if kind == "emergency_vet":
+            details = {"limit_cad": 500, "vet_clinic_name": "Demo Vet Clinic"}
+        elif kind == "safe_return":
+            details = {"receiver_name": owner_name}
+        _insert_as(
+            owner_token,
+            "booking_consents",
+            {
+                "booking_id": booking,
+                "kind": kind,
+                "version": "1",
+                "signer_id": owner_id,
+                "signer_name": owner_name,
+                "details": details,
+            },
+        )
+    authz.rpc_json(owner_token, "pay_booking_demo", {"p_booking": booking}, timeout=20.0)
+
+
+# A booking creator takes (client, owner_id, sitter_id, today, state) and returns the booking id; tests pass a fake.
+Booker = Callable[[Client, str, str, date, State], str]
+
+
+def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State) -> str:
+    """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
+    agreement and the sitter accepts ("Chloe accepted — Finish booking"). `ready` and `in_care` go on with
+    the checkout (consents + demo payment); `in_care` also has the sitter tap Received."""
+    owner_demo, sitter_demo = (next(d for d in DEMO_USERS if d.role == role) for role in ("owner", "sitter"))
+    owner_token, sitter_token = sign_in(owner_demo.email), sign_in(sitter_demo.email)
     tz = ZoneInfo(get_settings().app_timezone)
-    drop_off = datetime.combine(today + timedelta(days=2), time(9, 30), tz)
-    pick_up = datetime.combine(today + timedelta(days=5), time(17, 0), tz)
+    drop_off, pick_up = stay_times(state, datetime.now(tz), today)
     booking = authz.rpc_json(
         owner_token,
         "request_booking",
@@ -235,6 +291,10 @@ def book_and_accept(client: Client, owner_id: str, sitter_id: str, today: date) 
     authz.rpc_json(owner_token, "request_skip_meet_greet", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_skip_meet_greet", {"p_booking": booking, "p_accept": True})
     authz.rpc_json(sitter_token, "respond_booking", {"p_booking": booking, "p_accept": True})
+    if state in ("ready", "in_care"):
+        _sign_and_pay(owner_token, owner_id, owner_demo.display_name, booking)
+    if state == "in_care":
+        authz.rpc_json(sitter_token, "complete_handoff", {"p_booking": booking, "p_kind": "drop_off"})
     return booking
 
 
@@ -246,7 +306,7 @@ def reset(
     *,
     state: State = "pets",
     apply: bool,
-    book: Booker = book_and_accept,
+    book: Booker = book_for_state,
 ) -> list[tuple[str, int]]:
     """Dry run counts each step; apply deletes, then builds the state. Returns (label, rows)."""
     if state not in STATES:
@@ -262,6 +322,6 @@ def reset(
         ensure_sitter_rates(client, sitter_id)
         open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id)
-        if state == "confirmed":
-            book(client, owner_id, sitter_id, today)
+        if state in ("confirmed", "ready", "in_care"):
+            book(client, owner_id, sitter_id, today, state)
     return report

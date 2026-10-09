@@ -14,7 +14,7 @@ test.describe("demo tools", () => {
     const requests: Record<string, unknown>[] = [];
     await page.route("**/api/demo/reset", (route) => {
       requests.push(route.request().postDataJSON());
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ state: "confirmed", deleted: {} }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ state: "in_care", deleted: {} }) });
     });
     await signIn(page, DEMO_OWNER);
     await expect(page).toHaveURL(/\/owner$/);
@@ -23,16 +23,20 @@ test.describe("demo tools", () => {
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("demo-tools")).toBeVisible();
     await expect(screen.getByTestId("demo-state-pets")).toHaveAttribute("aria-checked", "true");
+    // Every starting point is on the list, the later ones too (they skip the time limits of a real stay).
+    for (const state of ["empty", "pets", "confirmed", "ready", "in_care"]) {
+      await expect(screen.getByTestId(`demo-state-${state}`)).toBeVisible();
+    }
 
-    await screen.getByTestId("demo-state-confirmed").click();
+    await screen.getByTestId("demo-state-in_care").click();
     await screen.getByTestId("demo-reset-open").click();
     // It asks first; nothing is sent until the owner confirms.
-    await expect(screen.getByTestId("demo-reset-sheet")).toContainText("Booking accepted");
+    await expect(screen.getByTestId("demo-reset-sheet")).toContainText("In care");
     expect(requests).toHaveLength(0);
 
     await screen.getByTestId("demo-reset-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Demo reset: Booking accepted");
-    expect(requests).toEqual([{ state: "confirmed" }]);
+    await expect(screen.getByTestId("toast")).toContainText("Demo reset: In care");
+    expect(requests).toEqual([{ state: "in_care" }]);
     await expect(page).toHaveURL(/\/owner$/);
   });
 
