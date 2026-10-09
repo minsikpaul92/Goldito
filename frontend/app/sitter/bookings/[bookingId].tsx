@@ -38,6 +38,7 @@ import {
   respondHandoff,
 } from "../../../lib/bookings";
 import { PetRecordFold } from "../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../components/ReceivedReview";
 import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
@@ -349,9 +350,12 @@ export default function SitterBookingDetail() {
               testID="handoff-returned"
             />
           ) : (
-            <Text style={styles.muted} testID="stay-complete">
-              Stay complete 🐾
-            </Text>
+            <>
+              <Text style={styles.muted} testID="stay-complete">
+                Stay complete 🐾
+              </Text>
+              <ReceivedReview bookingId={booking.id} ownerName={owner} />
+            </>
           )}
           {!booking.dropOff?.completedAt ? (
             <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />

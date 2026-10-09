@@ -68,6 +68,7 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
+    await expect(screen.getByTestId("received-review")).toContainText("Robert hasn't left a review yet."); // FB-29
     // Returned also asks the backend to write the stay's Life Record (once).
     await expect.poll(() => lifeRecordAsked).toEqual([{ booking_id: BOOKING }]);
 
@@ -78,6 +79,20 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("✓ Returned");
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Completed — pets home"); // not "Confirmed" (FB-26)
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("Confirmed");
+  });
+
+  test("the sitter reads the owner's stars and comment on the finished booking (FB-29)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -72 * HOUR);
+    for (const h of db.booking_handoffs) h.completed_at = h.scheduled_at;
+    db.booking_handoffs[1].completed_at = new Date(Date.now() - HOUR).toISOString();
+    db.reviews.push({ id: "rv1", booking_id: BOOKING, owner_id: OWNER.id, sitter_id: SITTER.id, rating: 4, comment: "Max came home so happy!", created_at: new Date().toISOString() });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const review = app(page).getByTestId("received-review");
+    await expect(review).toContainText("Robert's review");
+    await expect(review).toContainText("Max came home so happy!");
   });
 
   test("Received waits until 2 hours before drop-off", async ({ page }) => {
