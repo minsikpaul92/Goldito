@@ -132,8 +132,12 @@ test.describe("sitter home dashboard", () => {
       media_id: null,
       created_at: new Date(now - 600_000).toISOString(),
     });
+    db.daily_reports.push({ id: "r-sent", pet_id: MAX.id, sitter_id: SITTER.id, report_date: new Date(now).toISOString().slice(0, 10), body: "Max had a lovely day at the park.", status: "sent", source_snapshot: null, created_at: new Date(now - 300_000).toISOString(), sent_at: new Date(now - 300_000).toISOString() });
+    db.daily_reports.push({ id: "r-draft", pet_id: MAX.id, sitter_id: SITTER.id, report_date: new Date(now).toISOString().slice(0, 10), body: "UNSENT DRAFT", status: "draft", source_snapshot: null, created_at: new Date(now).toISOString(), sent_at: null });
     await page.goto("/sitter/history");
     const screen = app(page);
+    await expect(screen.getByTestId("diary-entry-report-r-sent")).toContainText("Max had a lovely day at the park."); // FB-23
+    await expect(screen.getByText("UNSENT DRAFT")).toHaveCount(0);
     await expect(screen.getByText("Mood · Calm")).toBeVisible();
     await expect(screen.getByText("Purred on my lap")).toBeVisible();
     await expect(screen.getByText("Breakfast · Done")).toBeVisible();

@@ -13,7 +13,7 @@ export type DiaryEntry = {
   id: string;
   /** When it happened (task: completed time, or the due time when missed). */
   at: string;
-  kind: "task" | "checkin" | "feed";
+  kind: "task" | "checkin" | "feed" | "report";
   emoji: string;
   label: string;
   /** Sitter's memo / caption, shown under the label. */
@@ -153,6 +153,31 @@ export function buildDiary(
   }
 
   return entries.sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/** The daily reports I sent about one pet, last 7 days, as diary rows (the sitter's My history, FB-23). */
+export async function listMySentReports(petId: string, sitterId: string): Promise<DiaryEntry[]> {
+  const { data, error } = await getSupabase()
+    .from("daily_reports")
+    .select("id, body, sent_at")
+    .eq("pet_id", petId)
+    .eq("sitter_id", sitterId)
+    .eq("status", "sent")
+    .gte("report_date", addDays(appToday(), -DIARY_DAYS));
+  if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
+  return ((data ?? []) as { id: string; body: string; sent_at: string | null }[])
+    .filter((r) => r.sent_at)
+    .map((r) => ({
+      id: `report-${r.id}`,
+      at: r.sent_at as string,
+      kind: "report" as const,
+      emoji: "📓",
+      label: "Daily report · Sent",
+      memo: r.body,
+      media: null,
+      by: "You",
+      missed: false,
+    }));
 }
 
 /** One pet's Diary for today + the last 7 days. Everything is read through RLS. */
