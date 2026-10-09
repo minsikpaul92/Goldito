@@ -31,7 +31,12 @@
 | `NEBIUS_API_KEY` | Nebius Token Factory (추론 API) |
 | `TAVILY_API_KEY` | [Tavily](https://tavily.com) 대시보드 — [tavily.ko.md](tavily.ko.md). Builders & Brews Toronto **8,000 credits** |
 
-**배포 (Phase 10):** Nebius **AI Cloud Serverless Endpoint** URL·시크릿은 GitHub Actions secrets 또는 Nebius 콘솔에 두고, 로컬 `.env`의 `EXPO_PUBLIC_API_URL`만 프로덕션 URL로 바꿉니다.
+**배포 (U0 — 10.3을 2026-10-09에 앞당김):** Nebius **AI Cloud Serverless Endpoint** URL·시크릿은 GitHub Actions secrets 또는 Nebius 콘솔에 둡니다. 배포된 백엔드 env는 위 표 + 아래 두 줄이 다릅니다. 프론트가 백엔드를 보게 하는 것은 **Vercel**의 `EXPO_PUBLIC_API_URL`입니다 (아래 § Vercel).
+
+| 변수 (배포된 백엔드) | 값 |
+| :--- | :--- |
+| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` 추가 (로컬 값 `http://localhost:8081,…`은 유지해도 됨). Preview(`*-git-*.vercel.app`)는 기본으로 막힘 — 업로드 · AI 확인은 main(Production)에서 |
+| `DEMO_RESET_ENABLED` | 테스트 기간에만 `1` (Profile → Demo tools). **심사 전에 `0`** — TODO "Demo accounts for judging" |
 
 ---
 
@@ -49,9 +54,11 @@
 
 ### Vercel (frontend 배포 — 10.4를 2026-10-02에 앞당김)
 
+**Production 주소: https://goldito-petcare.vercel.app** — 수동 테스트는 항상 여기서 `main`으로 합니다 ([test-run.ko.md](test-run.ko.md) §0).
+
 빌드 설정은 [`frontend/vercel.json`](../../frontend/vercel.json)에 있습니다: `npm ci` → `npx expo export -p web` → `dist/`, 모든 경로 → `index.html` (새로고침·딥링크), `Content-Security-Policy: frame-ancestors 'self'` (데스크톱 폰 프레임이 같은 도메인 iframe — `X-Frame-Options: DENY` 금지, D25).
 
-1. Vercel → **Add New → Project** → GitHub `minsikpaul92/Pawddy` Import
+1. Vercel → **Add New → Project** → GitHub `minsikpaul92/Goldito` Import (옛 이름 `Pawddy`로 연결된 프로젝트는 GitHub이 새 이름으로 넘겨 줌 — 다시 연결할 필요 없음)
 2. **Root Directory = `frontend`** (Framework Preset은 vercel.json이 덮어씀 — "Other")
 3. **Environment Variables** (Production · Preview 둘 다):
 
@@ -60,7 +67,8 @@
 | `EXPO_PUBLIC_SUPABASE_URL` · `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 로컬 `frontend/.env`와 동일 (anon/publishable만) |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
 | `EXPO_PUBLIC_DEMO_PASSWORD` | 데모 계정 비밀번호 (데모 전용 값) |
-| `EXPO_PUBLIC_API_URL` | 백엔드 배포 전(3B.11 직전까지)에는 비워 둠 — 지금 앱 화면은 Supabase만 씀 |
+| `EXPO_PUBLIC_API_URL` | 배포된 백엔드 URL (U0). **비어 있으면 `http://localhost:8000`으로 폴백**(`frontend/lib/api.ts`) → Vercel에서 업로드 · AI · 데모 리셋이 안 됨 (U0 전 상태) |
+| `EXPO_PUBLIC_DEMO_TOOLS` | 테스트 기간에만 `1` (백엔드 `DEMO_RESET_ENABLED=1`과 함께 — Profile → Demo tools). **심사 전에 비움** |
 | `EXPO_PUBLIC_DEV_ROUTES` | **설정하지 않음** (dev 화면은 로컬·CI만) |
 
 4. Deploy → main = Production, 다른 브랜치·PR = Preview URL (PR 코멘트). `EXPO_PUBLIC_*`는 **빌드 시점**에 번들에 들어가므로 값을 바꾸면 Redeploy.

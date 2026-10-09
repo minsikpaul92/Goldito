@@ -5,21 +5,22 @@
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
 > 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
 
-**마지막 갱신:** 2026-10-08 · 첫 수동 테스트 결과 반영 (§3.0) · 코드 리뷰 시나리오 추가 (§3.17, [review-2026-10-08.ko.md](review-2026-10-08.ko.md))
+**마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
 
 ---
 
 ## 1. 시작하기
 
-### 1.1 접속
+### 1.1 접속 — 테스트는 항상 main을 Vercel에서 (2026-10-09 결정)
 
 | 환경 | 주소 | 비고 |
 | :--- | :--- | :--- |
-| 로컬 앱 | `http://localhost:8081` | `cd frontend && npx expo start --web --port 8081` |
-| 로컬 백엔드 | `http://localhost:8000` | `cd backend && .venv/bin/uvicorn app.main:app --port 8000` — **사진·영상 업로드와 피드 삭제에 필요** |
-| Vercel preview | PR마다 자동 생성 (PR 코멘트의 Preview 링크) | 백엔드가 없으면 업로드는 안 됨 |
+| **Production (main) — 손 테스트는 여기** | **https://goldito-petcare.vercel.app** | main이 머지될 때마다 자동 배포. 결과(✅)는 여기서 한 것만 기록 |
+| Vercel preview (선택) | PR 코멘트의 Preview 링크 | 머지 전 미리 보기용 — 결과 기록은 main 기준 |
+| 로컬 (개발할 때만) | `http://localhost:8081` + 백엔드 `http://localhost:8000` | `cd frontend && npx expo start --web --port 8081`, `cd backend && .venv/bin/uvicorn app.main:app --port 8000` |
 
-> 로컬 앱은 **호스티드 Supabase(실제 DB)** 에 붙는다. 테스트가 실제 데이터를 만든다는 뜻이다 (1.4 참고).
+> ⚠️ **백엔드 배포 전까지 (민식 U0):** Vercel 빌드의 `EXPO_PUBLIC_API_URL`이 비어 있어 `localhost:8000`을 본다 → Vercel에서는 **업로드 · AI(REPORT · INQ · CAP · DONE의 Life Record · 케어 체크리스트) · 데모 리셋이 안 된다.** 그 시나리오는 U0 뒤에 Vercel에서, 그 전에는 민식이 main을 로컬로 확인한다.
+> 어느 환경이든 **호스티드 Supabase(실제 DB)** 에 붙는다. 테스트가 실제 데이터를 만든다는 뜻이다 (1.4 참고).
 
 ### 1.2 데모 계정
 
@@ -30,7 +31,7 @@
 | `demo-owner@goldito.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
 | `demo-sitter@goldito.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
-> **데모 이메일 (2026-10-08):** 호스팅 DB 계정은 `@goldito.test`(이름 Robert / Chloe). 스택 브랜치(#58)와 main 핫픽스(`fix/demo-login-emails`)가 이 이메일을 쓴다 — 핫픽스가 머지되기 전의 main 빌드와 #55~#57 프리뷰에서는 Try demo가 실패한다. 호스팅 DB에 main의 옛 `seed_demo.py`(`@pawddy.test`)를 돌리지 말 것(엉뚱한 계정이 생김).
+> **데모 이메일:** 호스팅 DB 계정은 `@goldito.test`(이름 Robert / Chloe). 호스팅 DB에 옛 `seed_demo.py`(`@pawddy.test`)를 돌리지 말 것.
 
 ### 1.3 데모 데이터 (2026-10-04 기준 — 2026-10-08 현재 아래 참고)
 
@@ -38,8 +39,7 @@
 - 드롭오프 완료(10/4), **픽업 예정 10/7 05:37 UTC (토론토 10/7 새벽 1:37)**.
 - 그래서 **지금 Chloe는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
 - ⚠️ **픽업 시각이 지나면** 시터 쪽 시나리오(TASK · CHK)가 "Tasks open once the stay has started" 등으로 막힌다. 그때는 새 예약을 만들어 드롭오프를 완료 처리하거나 시드 스크립트(Phase 10, 10.1)를 쓴다.
-- 데이터 시드·리셋 스크립트는 아직 없다 (Phase 10).
-- **2026-10-08 현재:** 위 예약의 픽업 시각(10/7)이 지나 Chloe는 돌보는 중이 아니다. 시터 · 완료 시나리오는 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2로 새 예약을 만들어야 한다. Chloe의 `sitter_rates`는 **임시 행**(보딩 $55 · +50% · +25%)이 들어가 있다. 깨끗한 상태로 되돌리는 `backend/scripts/reset_demo.py`가 있다(FB-10 — dry run이 기본, `--apply` 후 `reset` 입력). 상태는 `empty` · `pets` · `confirmed`(시터가 수락한, 체크아웃 전 예약) · `ready`(결제 끝, 드롭오프 1시간 뒤 — 시터가 바로 Received) · `in_care`(Received까지 끝, 돌보는 중) — `--state`로 고르거나 앱 **Profile → Demo tools**(테스트 전용, `DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`일 때만). 🤖 pytest `test_reset_demo` · `test_demo_reset_api`, Playwright `demo-tools`. **호스팅 DB에서 `--state confirmed` 실행 확인(10/09)** — Finish booking → 견적 $268.13 CAD까지 열림(동의서 · 결제는 사람이) — 사람이 실행한 뒤 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2를 처음부터 다시.
+- **상태는 누가 마지막에 무엇을 했는지에 따라 다르다.** 원하는 시작 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`)로 리셋하는 법은 [test-run.ko.md](test-run.ko.md) §1 (`backend/scripts/reset_demo.py`, dry run 먼저 — 민식 PC에서; 백엔드 배포 뒤에는 앱의 Profile → Demo tools).
 
 ### 1.4 테스트가 남기는 데이터
 
@@ -47,7 +47,7 @@
 | :--- | :--- |
 | 돌봄 할 일 (Delete), 피드 사진 (🗑️) | 체크인, 완료 기록, 알림 — 클라이언트는 읽기 전용 |
 
-→ 테스트 후 알림·체크인이 쌓인다. 데모 전에는 시드 스크립트로 리셋할 예정 (Phase 10).
+→ 테스트 후 알림·체크인이 쌓인다. 필요하면 `reset_demo.py` / Demo tools로 리셋한다. 심사용으로는 Phase 10에서 고정 데모 계정으로 바꾼다.
 
 ---
 
@@ -301,7 +301,7 @@
 | BF-6 | 결제한 예약에서 찾기 장소를 오너 집으로 바꾸고 시터가 수락 / 찾기 시간을 늦추고 수락 | 오너 집 → 체크아웃이 다시 열림(결제 취소, 지난 견적 유지) + 오너에게 `checkout_needed` 알림, 예약 화면 배너 "Your stay changed — sign to finish", Checkout에서는 **home_access 하나만** 체크하면 결제 완료. 그 전까지 시터의 출입 정보는 잠김. 기간 변경 → 새 총액으로 다시 견적 + `price_updated` 알림(결제 상태 유지). 동의서는 체크아웃 중(확정 · 미결제 · 필요한 종류)에만 서명. 오너 주소·긴급 연락처는 결제 후에만 시터에게 보임 | SQL `rls_smoke` (BF.6) · 🤖 `checkout` | ➖ |
 | BF-7 | BF-6처럼 체크아웃이 다시 열린 상태에서 오너 · 시터가 예약 화면을 엶 | 오너: 시터 집 카드(주소 · 주차 · 로비)가 그대로 보임. 시터: 맡기기 · 찾기 주소(펫을 데려다줄 오너 집 포함)가 그대로 보이고, 출입 정보 카드는 사라지지 않고 "Waiting for {오너} to sign"을 보여 줌(코드는 서명 전까지 잠김). 한 번도 결제하지 않은 예약은 예전처럼 주소가 안 보임 | SQL `rls_smoke` (BF.7) · 🤖 `checkout` | ➖ |
 
-### 3.10 알림장 (REPORT) — Phase 07 · *사전: 시터가 돌보는 중, 오늘 체크인 몇 개, 백엔드 실행 (`uvicorn`) + `NEBIUS_API_KEY`*
+### 3.10 알림장 (REPORT) — Phase 07 · *사전: 시터가 돌보는 중, 오늘 체크인 몇 개, 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤***
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -316,9 +316,9 @@
 | REPORT-9 | 오너 → **Diary** 탭 | 보낸 알림장만 날짜순 카드(첫 문장 미리보기). 카드 → 본문 · 그날 사진 스트립 · 할 일 체크리스트. 초안은 절대 안 보임 | 🤖 `report` · SQL | ➖ |
 | REPORT-10 | **실제 두 계정**: 시터가 Send → 오너 벨 알림 → 탭 | 알림을 누르면 해당 알림장 항목이 열림. 새로고침 없이 이어짐 | **👤만** | ➖ |
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
-| REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send *(호스팅 DB에 `011f` 필요)* | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
+| REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 
-### 3.11 문의 AI (INQ) — Phase 07B · *사전: 호스팅 DB에 `010`~`010d` 적용, 백엔드 실행 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
+### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤**, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -342,7 +342,7 @@
 | INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
 | INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
 
-### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 실행 + `NEBIUS_API_KEY`*
+### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤***
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -354,7 +354,7 @@
 | CAP-6 | 오너 → Feed → **Timeline / Album** 토글 | Timeline = 최신순 카드. Album = 날짜 헤더("Oct 9, 2026") 아래 분류별 3열, **빈 분류는 안 보임**, "Meals · 2" 같은 개수. 사진을 누르면 뷰어 | 🤖 `caption` | ➖ |
 | CAP-7 | 할 일(밥 · 산책 · 낮잠 · 놀이)을 사진과 함께 완료 | 오너 Album에서 그 사진이 할 일 종류대로 Meals · Walks · Naps · Play에 들어감 | **👤** | ➖ |
 
-### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: 호스팅 DB에 `011` · `011b` 적용, 백엔드 실행 + `NEBIUS_API_KEY`, 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2*
+### 3.13 완료 · 리뷰 · Life Record (DONE) — Phase 07C · *사전: Life Record는 백엔드 + `NEBIUS_API_KEY` · **Vercel에서는 백엔드 배포(U0) 뒤** (리뷰 · home safe는 지금도 Vercel에서), 돌봄이 끝난(Returned) 예약 — 만드는 법은 [test-run.ko.md](test-run.ko.md) §2*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -393,7 +393,7 @@
 | NAME-4 | Meet & Greet 영상 링크 · `.ics` 파일 | 제목이 "Goldito Meet & Greet — …", 파일명 `goldito-meet-greet.ics` | **👤** | ➖ |
 | NAME-5 | 동의서 문구 | "demo template for the Goldito hackathon" | **👤** | ➖ |
 
-### 3.16 예약 흐름 피드백 (FLOW) — [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) 반영 후 확인할 것 *(아직 고치지 않음 — 지금은 전부 ❌ 예상)*
+### 3.16 예약 흐름 피드백 (FLOW) — [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) 반영 후 확인할 것 *(FLOW-13~23은 #60에서 수정 · FLOW-1~12는 R2(민식) / R4(슬기)에서)*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -417,15 +417,15 @@
 | FLOW-18 | Returned 뒤 오너 Home | ⭐ "How was …'s stay?" 카드가 **리뷰를 남길 때까지** 고정(열어 봐도 남음), 리뷰 후 사라짐 (FB-24) | 🤖 `live-updates` | ➖ |
 | FLOW-19 | 오너가 리뷰를 남긴 뒤 시터 → 그 예약 상세 | "Robert's review" 카드에 별점 · 코멘트. 리뷰 전이면 "hasn't left a review yet" (FB-29) | 🤖 `handoff` | ➖ |
 | FLOW-20 | 오너 리뷰 화면에서 별 5 → 프리셋 칩 / 별 2로 바꿈 | 별점마다 다른 프리셋 3개, 별을 바꾸면 이전 선택이 빠짐. 고른 문구 + 직접 쓴 글이 코멘트로 저장 (FB-27) | 🤖 `completion` | ➖ |
-| FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save *(호스팅 DB에 `011g` 필요)* | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
+| FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
 | FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 | 맨 위에 "Your notes from earlier stays with Robert"(별 · 메모 · 날짜, 본인만 보임) (FB-29) | 🤖 `handoff` | ➖ |
-| FLOW-23 | 오너 리뷰 Send → "Add Chloe to your favorites?" → ⭐ Add *(호스팅 DB에 `011h` 필요)* | 예약으로 돌아감. Bookings의 Your sitters에 "★ Favorite"·맨 위, Book care 검색에서 ★ 시터가 먼저. 시터 프로필의 ☆/★로 끄고 켬. 이미 즐겨찾기면 묻지 않음 (FB-28) | 🤖 `completion` · SQL P | ➖ |
+| FLOW-23 | 오너 리뷰 Send → "Add Chloe to your favorites?" → ⭐ Add | 예약으로 돌아감. Bookings의 Your sitters에 "★ Favorite"·맨 위, Book care 검색에서 ★ 시터가 먼저. 시터 프로필의 ☆/★로 끄고 켬. 이미 즐겨찾기면 묻지 않음 (FB-28) | 🤖 `completion` · SQL P | ➖ |
 
 ---
 
-### 3.17 코드 리뷰 수정 (REV) — [review-2026-10-08.ko.md](review-2026-10-08.ko.md) *(아직 고치지 않음 — ID는 리뷰 문서 항목과 같음)*
+### 3.17 코드 리뷰 수정 (REV) — [review-2026-10-08.ko.md](review-2026-10-08.ko.md) *(RV-6~10은 #60에서 수정 · RV-1~5는 R1b(민식) · M · L은 Phase Q(슬기) — ID는 리뷰 문서 항목과 같음)*
 
-**사전:** 고친 브랜치가 실행 중(백엔드 + `NEBIUS_API_KEY`), 필요한 새 마이그레이션(011c~)이 호스팅 DB에 적용됨, FB-10 리셋 후 깨끗한 상태. "자동" 칸은 고치는 커밋이 채운다.
+**사전:** main이 Vercel에 배포됨(백엔드가 필요한 항목은 U0 뒤), 원하는 상태로 리셋. "자동" 칸은 고치는 커밋이 채운다.
 
 | ID | 무엇을 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -468,13 +468,13 @@
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
-- **문의 AI**: 호스팅 DB에 `010`~`010d`를 적용하기 전에는 앱에서 문의가 동작하지 않는다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
+- **문의 AI**: Vercel에서는 백엔드 배포(U0) 전까지 AI 답장이 안 나온다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
 - History는 **읽기 전용**이다. 시터 Diary(알림장 쓰기)는 7.3에서 생겼다(스택 #55).
 - Heads-up은 시터 **예약 상세와 Home**에 보인다. "도착 카드"(Pet Transit)는 Phase 06B에서 만든다.
 - History는 3가지 기록(할 일 · 체크인 · 피드 사진)을 화면에서 합쳐 보여준다. 같은 사진이 Feed에도 있으면 한 번만 나온다.
 - 체크인은 **전송 후 취소할 수 없다** (연타 잠금만 있음). 필요해지면 "10초 취소"를 추가한다.
 - 알림을 지워도 History에는 남는다 (알림 = 지우는 것, 기록 = 남는 것).
-- AI 기능: 문의 응대(07B) · 알림장(07) · 캡션(09) · Life Record(07C)는 스택 PR #55~#58에 있다(머지 전). 안전 검사(08)는 아직이다. 알려진 문제는 [review-2026-10-08.ko.md](review-2026-10-08.ko.md).
+- AI 기능: 문의 응대(07B) · 알림장(07) · 캡션(09) · Life Record(07C)는 main에 머지됐다(#55~#58, 수정 #60). 안전 검사(08)는 아직이다. 알려진 문제는 [review-2026-10-08.ko.md](review-2026-10-08.ko.md).
 - 샘플 사진 트레이는 **데스크톱 프레임 / 데모 계정**에서만 보인다. 실제 폰 + 일반 계정에서는 **Take photo / Choose from library**.
 - 사진 · 영상 업로드와 피드 삭제는 **백엔드가 떠 있어야** 한다.
 - 안 읽은 알림 숫자는 벨이 있는 화면에서만 보인다 (Welcome · 로그인 화면 제외).

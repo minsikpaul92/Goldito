@@ -1,39 +1,41 @@
 # Goldito — Active TODO
 
-> **Where things stand (snapshot):** [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (code review of the unmerged stack #55–#58 + fix plan) · older: [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Where things stand (snapshot):** [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (review of #55–#58, all merged, + fix plan) · **team split (2026-10-09):** [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) · **testing:** manual tests run on `main` at **https://goldito-petcare.vercel.app** (test-guide §1.1) · older: [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 > **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
 
 **Supplementary docs:** [test-guide.ko.md](test-guide.ko.md) (feature status + test scenarios) · [onboarding.ko.md](onboarding.ko.md) · [tavily.ko.md](tavily.ko.md) · [env-setup.ko.md](env-setup.ko.md) · [Devpost](../hackathon/devpost-submission.ko.md)
 
-**GitHub (execution order stays here):** Milestone [P0 hackathon](https://github.com/minsikpaul92/Pawddy/milestone/1) · Epics [#4](https://github.com/minsikpaul92/Pawddy/issues/4) Phase 01 · [#5](https://github.com/minsikpaul92/Pawddy/issues/5) Phase 02 · [#6](https://github.com/minsikpaul92/Pawddy/issues/6) Phase 03+OB · [#7](https://github.com/minsikpaul92/Pawddy/issues/7) Phase 04–06 · [#8](https://github.com/minsikpaul92/Pawddy/issues/8) Phase 07–09 · [#9](https://github.com/minsikpaul92/Pawddy/issues/9) Phase 10 · [#10](https://github.com/minsikpaul92/Pawddy/issues/10) Phase 11 P1 · [#11](https://github.com/minsikpaul92/Pawddy/issues/11) Nebius IDs (Seulgi) · [#12](https://github.com/minsikpaul92/Pawddy/issues/12) Tavily key (Seulgi) · [#13](https://github.com/minsikpaul92/Pawddy/issues/13) Figma onboarding (Muk)
+**GitHub (execution order stays here):** Milestone [P0 hackathon](https://github.com/minsikpaul92/Goldito/milestone/1) · Epics [#4](https://github.com/minsikpaul92/Goldito/issues/4) Phase 01 · [#5](https://github.com/minsikpaul92/Goldito/issues/5) Phase 02 · [#6](https://github.com/minsikpaul92/Goldito/issues/6) Phase 03+OB · [#7](https://github.com/minsikpaul92/Goldito/issues/7) Phase 04–06 · [#8](https://github.com/minsikpaul92/Goldito/issues/8) Phase 07–09 · [#9](https://github.com/minsikpaul92/Goldito/issues/9) Phase 10 · [#10](https://github.com/minsikpaul92/Goldito/issues/10) Phase 11 P1 · [#11](https://github.com/minsikpaul92/Goldito/issues/11) Nebius IDs (Seulgi) · [#12](https://github.com/minsikpaul92/Goldito/issues/12) Tavily key (Seulgi) · [#13](https://github.com/minsikpaul92/Goldito/issues/13) Figma onboarding (Muk)
 
 ---
 
-## Next session — start here (2026-10-08)
+## Next session — start here (2026-10-09)
 
-Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §1 (rules) · §2 (order) → the item in Current focus.
+Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) → your row in Current focus → its doc ([review-2026-10-08.ko.md](review-2026-10-08.ko.md) for RV / M / L items, [phases/phase-q.md](phases/phase-q.md) for Seulgi).
 
 | Step | State |
 | :--- | :--- |
-| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 ✅ merged (`7f37e94`) → #58 ✅ merged (`734d477`). R0 is done; **R1 is split (2026-10-09):** R1a `fix/review-high` (#60 — report / Life Record fixes + the 2026-10-09 test feedback, 011f–011h) is merged; **R1b `fix/review-inquiry`** (RV-1 → RV-5, 011c–011e) starts from main. Code complete, **DoD pending** (human runs). CI was green on #55 / #56 / #57 after R0-1 / R0-2. |
-| 2 | **Hotfix on main:** ✅ merged as #59 (`780c772`, 2026-10-08) — Try demo uses `@goldito.test`. |
-| 3 | **Plan (review D-R2):** ✅ CI fixed on the stack (R0-1 · R0-2) → merging the stack in order by merging `origin/main` into each next branch (no rebase / force-push; **do not delete a base branch before the PR on top is retargeted**) → review fixes from main in chunks R1 → R2 → R3 → R4 → then 6B.1. |
-| 4 | **Hosted DB** already has `010`–`011b` + a temporary `sitter_rates` row for Chloe (see Hosted DB status). New migrations from the review start at `011c` (`012` is reserved for 06B). |
+| 1 | **Merged:** #55 (`f2cd03a`) · #56 (`07eda25`) · #57 (`7f37e94`) · #58 (`734d477`) · #59 hotfix (`780c772`) · **#60 R1a** report / Life Record fixes + 2026-10-09 test feedback (`ad80583`, 2026-10-09). Next for Minsik: **U0 backend deploy**, then **R1b `fix/review-inquiry`** (RV-1 → RV-5, `011c`–`011e`). |
+| 2 | **Who does what (2026-10-09):** Minsik = urgent demo path (U0 backend deploy → R1b → 06B → R2 → 10); Seulgi = Phase Q in parallel (QA · wording · anonymized data · tone · R3 Medium · R4 Low). |
+| 3 | **Testing:** always on `main`, at the Vercel production deploy **https://goldito-petcare.vercel.app**. Until the backend is deployed (U0), uploads · AI · demo reset do not work there — `EXPO_PUBLIC_API_URL` is empty and falls back to `localhost:8000`. |
+| 4 | **Hosted DB** has `010`–`011b` and `011f`–`011h` (applied 2026-10-09). `011c`–`011e` are for R1b (Minsik ≤ `011l`, Seulgi `011m`–`011z`); `012` = 06B, `013` = 08. |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
 
-**Do not:** revive OB.4 · edit applied migrations (001–011b) · start 06B before the stack is merged. **Stash:** keep `wip privacy oauth docs` separate.
+**Do not:** revive OB.4 · edit applied migrations (001–011b, 011f–011h). **Stash:** keep `wip privacy oauth docs` separate.
 
 ---
 
-## Current focus (one task only)
+## Current focus (one task per person — since 2026-10-09 Minsik and Seulgi each have one)
 
+> Work split (2026-10-09): Minsik = what blocks the demo path (U0 backend deploy → R1b → 06B → R2 → 10); Seulgi = Phase Q (QA · wording · anonymized data · tone · Medium/Low review items). See [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). Each person edits only their own row.
 
-| ID      | Task                                      | Phase doc                         |
-| ------- | ----------------------------------------- | --------------------------------- |
-| **RV-1** | (branch `fix/review-inquiry` from main) Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
+| Who | ID | Task | Phase doc |
+| --- | ------- | ----------------------------------------- | --------------------------------- |
+| **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (ask Minsik until U0) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
+| **Minsik** | **U0** | Backend deploy (10.3 pulled forward): Nebius Serverless Endpoint (Render fallback), `/health` green; Vercel `EXPO_PUBLIC_API_URL` → backend URL, backend `CORS_ORIGINS` += `https://goldito-petcare.vercel.app`, test period only `EXPO_PUBLIC_DEMO_TOOLS=1` + `DEMO_RESET_ENABLED=1`, Redeploy; on Vercel an upload, one AI call and a demo reset work. Then **RV-1** (`fix/review-inquiry`, `011c`) | [phases/phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
 
 ---
 
@@ -43,29 +45,31 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-> Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's; **since 2026-10-04 Minsik owns them all** (Seulgi only delivers the anonymized conversation data) — one Current focus per agent session.
+> Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's, then Minsik's from 2026-10-04. **From 2026-10-09 Seulgi is back on a separate track, Phase Q** (QA, wording, anonymized data, tone, R3/R4 review items) — [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). One Current focus per person.
 
+- [ ] **Seulgi — Phase Q** (in order, one at a time in her Current focus row; detail in [phase-q.md](phases/phase-q.md)): Q.0 environment → Q.1 full manual run + sitter-eye feedback (FB-30+) → Q.2 wording / presets → Q.3 anonymization (+ zero-retention decision) → Q.4 tone data (inquiry + **daily report**) + auto-send delay formula → Q.5 R3 Medium report / caption / Life Record / seed (M-14 · M-20 · M-16 first) → Q.6 R3 Medium inquiry M-1–M-11 (after R1b is merged) → Q.7 measurements → Q.8 final QA (10/27–29) → Q.9 R4 Low → Q.10 SFT (P2)
+- [ ] **Minsik — urgent** (in order): **U0 backend deploy** (Nebius Serverless Endpoint, Render fallback; Vercel `EXPO_PUBLIC_API_URL` + backend `CORS_ORIGINS` + test-period `EXPO_PUBLIC_DEMO_TOOLS` / `DEMO_RESET_ENABLED` — pulled forward from 10.3 so testing on Vercel covers uploads and AI) → R1b RV-1 → RV-5 (`fix/review-inquiry`) → 06B Pet Transit → R2 booking flow (FB-8 → FB-9 → FB-5 → FB-6 → FB-2) → 10 demo & deploy (fixed demo accounts below). R3 / R4 review items moved to Seulgi's Phase Q.
 - [ ] **Demo accounts for judging (before submit — then remove the reset)** Take **Profile → Demo tools** and `POST /api/demo/reset` out (unset `EXPO_PUBLIC_DEMO_TOOLS` + `DEMO_RESET_ENABLED`, delete `components/DemoTools.tsx`, `lib/demoReset.ts`, `e2e/demo-tools.spec.ts`, `app/routers/demo.py`, the CI env line). Replace it with fixed accounts per starting point, built by the same `demo_reset` code (nothing a judge can delete): empty · pets only · booking accepted, later in care · finished. The Try demo buttons pick among them. Needs a decision on the shared-account problem (two judges on one account) — see the 2026-10-09 discussion. Fits Phase 10 seed (10.1)
-- [ ] **PR #60 review follow-ups (2026-10-09, after RV-10 unless they block a test)** — **R60-3** the demo reset is not atomic: a failure after the deletes leaves the accounts half-reset and the API answers a bare 500 (check `DEMO_PASSWORD` + capacity before deleting; map `RpcError` / `RuntimeError` to 409/502 with the message; ideally one `security definer` function) · **R60-4** extra owner pets (e.g. a test "Coco") survive `pets`–`in_care` and all of them go into `request_booking` → over capacity → the reset fails after the deletes (book Max + Mochi only, or delete other pets) · **R60-5** `in_care` fails 00:00–00:57 Toronto (yesterday's overnight slot is not opened: open the schedule from `today - 1`) · **R60-6** FB-7 still says "doesn't offer that service" when a rates row exists but this service's price is null (`quote_booking` should raise `rates_not_set` for a null price; `pay_booking_demo` path not remapped)
+- [ ] **PR #60 review follow-ups (2026-10-09; R60-3–R60-5 fold into 10.1 when the reset becomes fixed demo accounts, R60-6 if time)** — **R60-3** the demo reset is not atomic: a failure after the deletes leaves the accounts half-reset and the API answers a bare 500 (check `DEMO_PASSWORD` + capacity before deleting; map `RpcError` / `RuntimeError` to 409/502 with the message; ideally one `security definer` function) · **R60-4** extra owner pets (e.g. a test "Coco") survive `pets`–`in_care` and all of them go into `request_booking` → over capacity → the reset fails after the deletes (book Max + Mochi only, or delete other pets) · **R60-5** `in_care` fails 00:00–00:57 Toronto (yesterday's overnight slot is not opened: open the schedule from `today - 1`) · **R60-6** FB-7 still says "doesn't offer that service" when a rates row exists but this service's price is null (`quote_booking` should raise `rates_not_set` for a null price; `pay_booking_demo` path not remapped)
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1a `fix/review-high` (PR #60, merged 2026-10-09) then R1b `fix/review-inquiry` (RV-1 → RV-5):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → RV-8 ✅ (plain-list draft without the AI) → **RV-1** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1a `fix/review-high` (PR #60, merged 2026-10-09) then R1b `fix/review-inquiry` (RV-1 → RV-5):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → RV-8 ✅ (plain-list draft without the AI) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
-  - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
-  - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
-- [ ] **Test feedback fixes (2026-10-08)** — recorded with ideas, **not fixed yet**: [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md). Order: **FB-7** checkout says "doesn't offer that service" (`sitter_rates` was empty → **a temporary row for Chloe was added to the hosted DB on 2026-10-08**: boarding $55 / +50% extra pet / +25% holiday, quote $268.13 checked; **FB-7 is fixed in code** — see Completed; no rates UI yet) · **FB-10** a clean test state for both demo accounts (`backend/scripts/reset_demo.py`, dry run by default) · **FB-8** sitter Bookings: add **In progress** · **FB-9** **Returned** needs a confirmation (+ not before 2 h ahead of the agreed pick-up; the photo check comes with 6B) · **FB-5** change-time sheet keeps a draft per Drop-off / Pick-up, one **Send**, **Close** just closes · **FB-6** don't offer a handoff that already happened · **FB-2** live refresh of lists when a request / notice arrives · **FB-3** one date + time input everywhere (`DateField` / `TimeField`, rule in DESIGN.md §7.10) · **FB-4** `RoleBadge` (the header's Sitter / Owner pill) next to people's names · **FB-1** label + small light-grey hint on the care-line input
+  - **R3 (Seulgi, Phase Q.5 · Q.6, branch `fix/q-review-medium`):** M-1 … M-24 in the review's order (inquiry M-1–M-11 after R1b · report M-12 ✅ · M-13–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
+  - **R4 (Seulgi, Phase Q.9, branch `fix/q-review-low`):** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
+- [ ] **Test feedback fixes (2026-10-08 / 10-09)** — [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md): FB-7 ✅ · FB-10 ✅ · FB-12–FB-29 ✅ (#60). Open: **FB-8 · FB-9 · FB-5 · FB-6 · FB-2** (Minsik, R2) · **FB-3 · FB-4 · FB-1** (Seulgi, Q.9) · FB-11 (schedule UI, later) · FB-30+ from Seulgi's Q.1
 - [ ] **Sitter schedule UI/UX overhaul (later, when there is time)** — `SlotCalendar` · `ScheduleSheet` · `/sitter/schedule` as one pass: date / time inputs (DESIGN.md §7.10), prices (rates) input, open / blocked days, opening many days at once, hour editing, the owner's view vs. the sitter's editor ([feedback FB-11](feedback-2026-10-08.ko.md))
 - [ ] **BF.8 (review follow-up to BF.6, low)** 009d `follow_paid_booking_change` asks `required_consents`, which also counts a still-*proposed* owner-home handoff: agreeing an unrelated change (e.g. a new drop-off time) while an owner-home offer is pending reopens checkout early and locks the entry codes for an offer nobody accepted. Fix: in the trigger, count only agreed handoffs for `home_access`. Also: the trigger swallows any error from `required_consents` / `quote_booking` (both need `auth.uid()`), so a change written by the service role would skip both steps — fine today (only user RPCs agree handoffs), note it if a server path ever does
 - [ ] **BF.9 (review follow-up to BF.6, copy)** A reopened checkout still reads like a first payment: the button says "Pay $X (demo)" and the sitter gets "signed and paid — all set" again. When `priceSnapshot` is set, label it "Sign and confirm" and send the sitter "{owner} signed the new consent" instead
-- [ ] **Auto-send delay formula (Seulgi)** The auto-sent inquiry reply uses a placeholder delay (`10 s + 0.06 s per character`, clamped to 15–40 s, "typing" from +4 s, one message — `backend/app/ai/inquiry.py` `human_delay`). Replace with Seulgi's formula and message split (one vs several) when she decides ([phase-07b.md](phases/phase-07b.md) 7B.10)
+- [ ] **Auto-send delay formula (Seulgi — Phase Q.4, after R1b)** The auto-sent inquiry reply uses a placeholder delay (`10 s + 0.06 s per character`, clamped to 15–40 s, "typing" from +4 s, one message — `backend/app/ai/inquiry.py` `human_delay`). Replace with Seulgi's formula and message split (one vs several) when she decides ([phase-07b.md](phases/phase-07b.md) 7B.10)
 - [ ] **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings (later)
 - [ ] **OB.4 (deferred)** `intro_seen` skip — optional polish, **not** blocking Phase 04; keep Welcome every logout for judges ([onboarding.ko.md](onboarding.ko.md) §3.1 · §8)
 - [ ] **OB.5** README + Devpost judge checklist — with Phase 10
 - [ ] **3B.11 app e2e** Video Meet & Greet through the app on the hosted DB needs a first-time pair with the backend reachable from the app — after the demo seed adds a second sitter (10.1, Paul) and the backend is deployed (Nebius Serverless Endpoint) with the Google vars; spike: can both join straight from the invite (full-process §9 #14)
 - [ ] **human (Minsik) OAuth In production** Testing-mode refresh tokens expire every 7 days → after the Vercel deploy: privacy page on our domain (`/privacy`) + Branding home page / privacy links + Authorized domain `<app>.vercel.app` → **Publish app** → get one new refresh token (then it does not expire)
 - [ ] **human (Minsik, before 3B.11)** Google account for Goldito + Google Cloud project with the Calendar API + OAuth consent screen published **In production** (Testing tokens expire in 7 days) + one-time consent → refresh token in backend env (full-process §9 #13)
-- [ ] **data (Seulgi)** Anonymize the 3-year WhatsApp/message history (English) → `{PRICE}`/`{DATE}` placeholders → train / validation / hold-out test JSONL; `data/raw/` never committed; decide zero-retention + third-party notice (D35, [phase-11.md](phases/phase-11.md) 11.7)
+- [ ] **data (Seulgi — Phase Q.3)** Anonymize the 3-year WhatsApp/message history (English) → `{PRICE}`/`{DATE}` placeholders → train / validation / hold-out test JSONL; `data/raw/` never committed; decide zero-retention + third-party notice (D35, [phase-11.md](phases/phase-11.md) 11.7)
 - [ ] **6B.x (P0, last — right after 7C, D41)** Pet Transit — Start trip with location-consent screen, live position + ETA (Simulate the drive), arrival cards, handoff photo check (Vision, MiniCPM-V-4.5) (`012`) ([phase-06b.md](phases/phase-06b.md)); the demo video shows it via Simulate trip
 - [ ] **8.x (P0 stretch, after 6B — only if time remains)** Safety check pipeline + modal + owner notify (`013`) · **8.7 stretch:** Tavily sources (keyword queries, trusted domains, recall search) — Best Use of Tavily
 - [ ] **10.x** Seed (scenario data: rates, entry info, routes, past Life Record, tone data + auto mode, meeting spots, a pending draft; `--fresh-inquiry` makes Robert ↔ Chloe first-time again) + README **Goldito Agent** section (D46) + deploy (Nebius AI Cloud Serverless Endpoint) + CD + README + demo accounts + keep-alive + **OB.5** judge checklist ([onboarding.ko.md](onboarding.ko.md), [devpost-submission.ko.md](../hackathon/devpost-submission.ko.md)) + **10.9** desktop side panel (Try demo, QR, hint) + **10.10 stretch** Split view (Owner + Sitter phones side by side) + mouse-only judge path e2e
@@ -278,18 +282,19 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 | 03 Auth              | **done** (2026-10-01)                                                         |
 | 03B Bookings         | **done** (2026-10-02)                                                         |
 | 03C Agreements       | **done** (2026-10-03)                                                         |
-| 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/Pawddy/pull/45) merged |
+| 04 Cloudinary        | **done** (2026-10-04) — [PR #45](https://github.com/minsikpaul92/Goldito/pull/45) merged |
 | 05 Feed              | **done** (2026-10-04) — PR #47 merged                                          |
 | 06 Care request + checks | **done** (2026-10-05) — PR #48 merged; 6.7 server push stays a stretch     |
-| 06B Pet Transit      | not started — after the stack is merged and R1 is done (review §2)           |
-| 07 Report AI         | 7.1–7.5 merged (PR #49); 7.3 · 7.7 **code complete, unmerged** (PR #55) — DoD pending |
-| 07B Inquiry AI + RAG | **code complete, unmerged** (PR #56) — DoD pending; review RV-1–RV-5         |
-| 07C Completion       | **code complete, unmerged** (PR #58) — DoD pending; review RV-5 · RV-9 · RV-10 |
+| 06B Pet Transit      | not started — after U0 + R1b (Minsik) |
+| 07 Report AI         | **merged** (PR #49 · #55 · fixes #60) — DoD pending (Seulgi Q.1) |
+| 07B Inquiry AI + RAG | **merged** (PR #56) — DoD pending; R1b RV-1–RV-5 (Minsik), M-1–M-11 (Seulgi) |
+| 07C Completion       | **merged** (PR #58 · fixes #60) — DoD pending (Seulgi Q.1) |
 | 08 Safety            | P0 stretch — after 06B, only if time remains (D27, D41)                                                  |
-| 09 Caption + album   | **code complete, unmerged** (PR #57) — DoD pending                          |
-| 10 Demo & deploy     | not started                                                                   |
+| 09 Caption + album   | **merged** (PR #57) — DoD pending (Seulgi Q.1) |
+| 10 Demo & deploy     | frontend on Vercel since 10-02 (https://goldito-petcare.vercel.app); backend deploy pulled forward as U0 |
 | 11 P1                | not started                                                                   |
 | Onboarding UX        | OB.1–OB.3 done; OB.4 deferred; OB.5 with Phase 10                             |
+| Q Quality track      | **Seulgi, from 2026-10-09** — [phase-q.md](phases/phase-q.md) |
 
 
 ---
@@ -328,18 +333,18 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 ---
 
-## Hosted DB status (Supabase project, ca-central-1 — its dashboard name is still `Pawddy` until renamed, see rename-goldito.ko.md §2-4) — 2026-10-08
+## Hosted DB status (Supabase project, ca-central-1 — its dashboard name is still `Pawddy` until renamed, see rename-goldito.ko.md §2-4) — 2026-10-09
 
 - [x] `010` → `010d` applied through the Supabase MCP (advisors: only `knowledge_chunks` / `tone_samples` report "RLS enabled, no policy" — intended, they are service-role only).
 - [x] Demo people renamed in the DB: owner **Robert**, sitter **Chloe** (logins `demo-owner@` / `demo-sitter@` unchanged).
 - [x] `scripts/seed_tone.py --apply`: sitter Chloe has her style card and 3 example replies (emoji-rich, friendly). The second style (plain, no emoji — "Paul") is in the file but there is no second sitter account yet; it is seeded by the Phase 10 demo seed.
 - [x] `011_completion` · `011b_life_record_columns` applied (2026-10-07).
-- [x] **Temporary** `sitter_rates` row for Chloe (2026-10-08, by hand): boarding $55/night · +50% extra pet · +25% holiday (CAD) — quote check $268.13. To be guaranteed by the FB-7 seed / FB-10 reset.
-- [ ] **human (Minsik)** Reset the demo accounts: `cd backend && .venv/bin/python -m scripts.reset_demo --state pets` (dry run — read the counts) then add `--apply` and type `reset` (`--state empty | pets | confirmed`). To use the in-app button too: set `DEMO_RESET_ENABLED=1` in `backend/.env`, `EXPO_PUBLIC_DEMO_TOOLS=1` in `frontend/.env`, restart both, sign in with Try demo → Profile → Demo tools. This also sets Chloe's services + full prices, so the `seed_demo` step below is not needed after it. Check afterwards: `python scripts/seed_tone.py` should list her `history` samples.
-- [ ] **human** Run `cd backend && .venv/bin/python -m scripts.seed_demo` against the hosted DB (needs `backend/.env` with the service key): sets Chloe's services (boarding + house sitting) and the full rates, replacing the temporary row above. `--check` first shows what is missing.
+- [x] **Temporary** `sitter_rates` row for Chloe (2026-10-08, by hand): boarding $55/night · +50% extra pet · +25% holiday (CAD) — quote check $268.13. To be guaranteed by the FB-7 seed / FB-10 reset. **Replaced** by the 2026-10-09 demo reset (`ensure_sitter_rates`: services + full prices).
+- [x] **human (Minsik)** Demo accounts reset on the hosted DB (2026-10-09: `confirmed`, then `ready`). Later resets: `python -m scripts.reset_demo --state …` (dry run first). The in-app Demo tools need a deployed backend with `DEMO_RESET_ENABLED=1` (U0), so they do not work on Vercel yet.
+- [x] **human** `seed_demo` is no longer needed: the reset sets Chloe's services and prices (2026-10-09).
 - [x] Demo logins moved to `@goldito.test` (2026-10-07). `main` still used `@pawddy.test` → hotfix `fix/demo-login-emails`.
-- [ ] New review migrations `011c`… — each added here as `[ ] (not applied yet)` by the commit that creates it.
-- [ ] **`011f_daily_reports_many` (not applied yet)** — several sent daily reports per pet · sitter · day, one draft at a time (FB-22). **The backend and app on `fix/review-high` need it:** without it, a second report the same day fails on the old unique constraint.
-- [ ] **`011g_sitter_owner_notes` (not applied yet)** — the sitter's private note about an owner (`sitter_owner_notes` + `save_owner_note`, FB-25 · FB-29). Without it the sitter's "Rate Robert" card fails to load / save.
-- [ ] **`011h_favorite_sitters` (not applied yet)** — an owner's favorite sitters (FB-28). Without it the favorites list reads as empty and Add to favorites fails (the rest of the app keeps working).
-- [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human) — after R1.
+- [ ] R1b migrations `011c`–`011e` — not created yet; each is added here as `[ ] (not applied yet)` by the commit that creates it.
+- [x] **`011f_daily_reports_many` (applied 2026-10-09)** — several sent daily reports per pet · sitter · day, one draft at a time (FB-22). **Needed by main (#60):** without it, a second report the same day fails on the old unique constraint.
+- [x] **`011g_sitter_owner_notes` (applied 2026-10-09)** — the sitter's private note about an owner (`sitter_owner_notes` + `save_owner_note`, FB-25 · FB-29). Without it the sitter's "Rate Robert" card fails to load / save.
+- [x] **`011h_favorite_sitters` (applied 2026-10-09)** — an owner's favorite sitters (FB-28). Without it the favorites list reads as empty and Add to favorites fails (the rest of the app keeps working).
+- [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human) — after R1b (Seulgi, Phase Q.1 / Q.8).

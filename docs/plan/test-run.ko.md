@@ -2,20 +2,15 @@
 
 > 지금까지 만든 기능을 **손으로** 확인하는 순서입니다. 시나리오 표 자체는 [test-guide.ko.md](test-guide.ko.md) §3에 있고, 이 문서는 **어디서 시작 → 준비 → 순서 → 결과 적기**만 다룹니다.
 >
-> PR #55 · #56 · #57 · #58은 **모두 `main`에 머지**됐고(2026-10-08), 이후 수정은 PR [#60](https://github.com/minsikpaul92/Goldito/pull/60) (`fix/review-high`)에 있습니다. **#60의 브랜치가 `main`을 포함하므로 그 브랜치 하나만 받으면 됩니다.**
+> PR #55~#60은 **모두 `main`에 머지**됐습니다(#60 = `ad80583`, 2026-10-09). **테스트는 항상 `main`을 Vercel에서** 합니다 — 브랜치를 받아서 로컬로 테스트하지 않습니다 (2026-10-09 결정).
 
-## 0. 지금 어디서부터 시작하나 ⬅️ 먼저 읽기
+## 0. 어디서 · 어떤 상태에서 시작하나 ⬅️ 먼저 읽기
 
-**호스팅 DB의 데모 계정은 `ready` 상태입니다** (2026-10-09 09:22 토론토 시각에 만듦).
+**주소: https://goldito-petcare.vercel.app** (main이 머지될 때마다 자동 배포). 로그인 화면 **Try demo → Demo owner / Demo sitter**.
 
-| 항목 | 지금 상태 |
-| :--- | :--- |
-| 오너 Robert | 펫 Max · Mochi, 예약 1건 (**결제 완료** $268.13 CAD, 동의서 4개 서명됨, 앱에서 확인 카드는 **아직 안 닫음**) |
-| 시터 Chloe | 서비스 보딩 + 하우스시팅, 전체 요금표, 앞으로 60일 열린 스케줄, 말투 시드 유지 |
-| 드롭오프 | **오늘 10:22 AM (토론토)** — Received는 2시간 전부터라 **지금 바로 눌림** |
-| 픽업 | 10/12 5:00 PM |
+> ⚠️ **백엔드 배포 전까지(민식 U0)** Vercel에서는 **사진 · 영상 업로드, AI 기능(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record), 데모 리셋이 동작하지 않습니다** (`EXPO_PUBLIC_API_URL`이 비어 `localhost:8000`을 봄). 그동안 Vercel에서는 Supabase만 쓰는 화면(예약 · 체크아웃 · Received/Returned · 체크인 · 리뷰 · 즐겨찾기)만 보고, 업로드 · AI는 민식이 main을 로컬로 띄워 확인합니다. U0가 끝나면 이 경고를 지웁니다.
 
-**그래서 §2의 [A]부터 시작합니다** (체크아웃은 이미 끝난 상태). 처음부터 다시 하고 싶거나 하루 이상 지났으면 §1의 리셋으로 상태를 다시 고르세요.
+**데모 계정의 상태는 누가 마지막에 뭘 했는지에 따라 다릅니다.** 시작하기 전에 원하는 상태로 리셋하세요(§1 아래). 2026-10-09 기준으로는 `ready`에서 시작한 한 번의 돌봄이 Returned까지 진행된 상태입니다.
 
 ### 어떤 시나리오는 어느 상태에서 시작하나
 
@@ -25,30 +20,21 @@
 | 예약 만들기 (Book care · 달력 UX-1) · 문의 INQ-* | `pets` | 오너 Bookings → Book care, 또는 Chloe 프로필 → Ask about a stay |
 | 체크아웃 · 결제 (FLOW-3 · BOOK-5) | `confirmed` | 오너 예약 → Finish booking |
 | 결제 직후 확인 카드 · 준비물 (FLOW-13 · FLOW-14) | `ready` 또는 `confirmed`(직접 결제) | 오너 예약 상세 |
-| 시터 Received · 돌봄 시작 | **`ready` ← 지금** | 시터 예약 → Received |
+| 시터 Received · 돌봄 시작 | `ready` | 시터 예약 → Received |
 | 체크인 · 사진 · 알림장 · 캡션 (REPORT · CAP) | `in_care` | 시터 Home → 체크인 |
-| Returned · 리뷰 · Life Record (DONE-*) | `in_care` → 돌본 뒤 | 시터 예약 → Returned |
+| Returned · 리뷰 · Life Record (DONE-*) · 즐겨찾기 · 시터 비공개 리뷰 | `in_care` → 돌본 뒤 | 시터 예약 → Returned |
 
 ## 1. 준비 (한 번)
 
-호스팅 DB에는 `010`~`011b`가 **이미 적용**돼 있습니다 (`011c` 이후는 아직 없음).
+호스팅 DB에는 `010`~`011b`와 `011f`~`011h`가 **적용**돼 있습니다 (`011c`~`011e`는 R1b에서 만들 예정).
 
-1. **브랜치 받기**
+1. **브라우저 두 개**: 크롬 일반 창 + 시크릿 창에 각각 https://goldito-petcare.vercel.app → 한쪽은 **Demo owner**(Robert), 다른 쪽은 **Demo sitter**(Chloe). 새로고침 없이 이어지는 흐름(알림 · 자동 발송 · 문의)을 볼 수 있습니다.
+2. 결과는 §5대로 test-guide에 적습니다 (`main` 기준).
+3. **(개발자만) 로컬로 띄울 때** — 코드를 고치는 중 확인용이고, 결과 기록(✅)은 Vercel(main) 기준입니다:
    ```bash
-   git fetch origin
-   git checkout fix/review-high
-   git pull
+   cd backend && .venv/bin/uvicorn app.main:app --port 8000    # backend/.env 필요 (env-setup.ko.md)
+   cd frontend && npx expo start --web --port 8081              # 다른 터미널
    ```
-2. **백엔드** (`backend/.env`에 `NEBIUS_API_KEY` · Supabase · Cloudinary · `DEMO_PASSWORD` — [env-setup.ko.md](env-setup.ko.md)):
-   ```bash
-   cd backend && .venv/bin/uvicorn app.main:app --port 8000
-   ```
-3. **프론트** (다른 터미널):
-   ```bash
-   cd frontend && npx expo start --web --port 8081
-   ```
-   → `http://localhost:8081`. 로그인 화면의 **Demo owner / Demo sitter**.
-4. **두 계정을 동시에**: 브라우저 프로필 두 개(또는 일반 창 + 시크릿 창)에 오너와 시터를 따로 로그인해 두면 새로고침 없이 이어지는 흐름(알림 · 자동 발송 · 문의)을 볼 수 있습니다.
 
 ### 상태를 다시 고르고 싶을 때 (리셋)
 
@@ -60,7 +46,7 @@ cd backend
 .venv/bin/python -m scripts.reset_demo --state ready --apply      # reset 입력 (--yes면 생략)
 ```
 
-`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. **앱에서 하려면**: `backend/.env`에 `DEMO_RESET_ENABLED=1`, `frontend/.env`에 `EXPO_PUBLIC_DEMO_TOOLS=1`을 넣고 둘 다 다시 시작 → Demo owner/sitter로 로그인 → **Profile → Demo tools** → 상태 선택 → **Reset demo…** (테스트 전용, 심사 전에 제거).
+`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 명령은 `backend/.env`(서비스 키)가 있는 **민식 PC**에서 실행합니다 — 리셋이 필요하면 민식에게 상태 이름을 알려 주세요. **앱의 Profile → Demo tools**는 백엔드 배포(U0) 뒤 Vercel에서도 켭니다(`DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`, 테스트 전용 — 심사 전에 제거).
 
 | 상태 | 만들어지는 것 |
 | :--- | :--- |
@@ -115,18 +101,18 @@ cd backend
 | 상대 화면 | 요청을 보내도 상대 목록이 실시간으로 안 바뀜 (새로고침 필요) | FB-2 |
 | 날짜 · 시간 입력 | 곳곳이 − + 만 있음 (달력 · 시계 통일은 아직) | FB-3 |
 | 시터 알림 | 오너가 요금표 없는 시터로 체크아웃하면 시터에게 "Set your prices" 알림이 안 감 | FB-7b |
-| Life Record | Returned 직후 오너가 열면 기록이 두 번 만들어지려다 오류 문구가 뜰 수 있음 · 알림장 칩을 꺼도 내용이 초안에 남을 수 있음 · 칩 9개 이상 켜면 오류 | RV-9 · RV-6 · RV-7 |
-| 문의 AI | AI가 "가능해요"라고 했는데 예약이 거절될 수 있음 · 거절 답장에 견적 카드가 붙음 | RV-1 · RV-3 |
+| 문의 AI | AI가 "가능해요"라고 했는데 예약이 거절될 수 있음 · 거절 답장에 견적 카드가 붙음 · 처음 문의한 오너 이름이 시터에게 안 보임 | RV-1 · RV-3 · RV-4 (R1b) |
+| Vercel | 업로드 · AI · 데모 리셋이 안 됨 | 백엔드 배포 전 (U0) |
 
 ## 5. 결과 적는 법
 
-- 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.ko.md`). 사람이 안 해 본 줄은 ➖ 그대로.
-- 버그 · 요청은 [test-guide.ko.md §5](test-guide.ko.md)의 표에 추가하거나, 개발자에게 시나리오 ID와 함께 알려 주세요 ("DONE-7 실패: …").
+- 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.ko.md`). 사람이 안 해 본 줄은 ➖ 그대로. **Vercel(main)에서 한 것만** 기록합니다.
+- 버그 · 요청은 [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md)에 **FB-30부터** 번호를 붙여 적고(본 것 · 원인 짐작 · 생각 · 급함 여부), 급하면 민식에게 바로 알립니다 — [phases/phase-q.md](phases/phase-q.md) Q.1.
 - 막히면 **어느 단계에서 어떤 화면 문구가 떴는지**만 알려 주면 됩니다 (스크린샷이면 더 좋음).
 
 ## 6. 자동 테스트 (참고 — 코드는 이미 통과)
 
 ```bash
-cd backend && .venv/bin/python -m pytest -q          # 354
-cd frontend && npx playwright test --project=flows    # 188 (먼저 npx expo export -p web, 환경변수는 .github/workflows/ci.yml 참고)
+cd backend && .venv/bin/python -m pytest -q          # 380개 (2026-10-09)
+cd frontend && npx playwright test --project=flows    # 약 210개 (먼저 npx expo export -p web, 환경변수는 .github/workflows/ci.yml 참고)
 ```
