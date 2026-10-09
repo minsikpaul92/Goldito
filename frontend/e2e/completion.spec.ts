@@ -85,6 +85,29 @@ test.describe("finished stay", () => {
     await expect(screen.getByText("you already reviewed this stay", { exact: false })).toBeVisible();
   });
 
+  test("each star rating offers its own three phrases; picked ones and your words make the comment (FB-27)", async ({ page }) => {
+    const db = await open(page, `/owner/bookings/${BOOKING}/review`);
+    const screen = app(page);
+    const preset = (p: string) => screen.getByTestId(`review-preset-${p}`);
+    await expect(screen.getByTestId("review-preset-Would book again")).toHaveCount(0); // no stars, no phrases
+    await screen.getByTestId("review-rating-5").click();
+    await preset("Would book again").click();
+    await expect(preset("Would book again")).toHaveAttribute("aria-pressed", "true");
+
+    await screen.getByTestId("review-rating-2").click(); // other stars, other phrases; the 5-star pick is dropped
+    await expect(preset("Updates were rare")).toBeVisible();
+    await expect(preset("Would book again")).toHaveCount(0);
+
+    await screen.getByTestId("review-rating-5").click();
+    await expect(preset("Would book again")).toHaveAttribute("aria-pressed", "false");
+    await preset("Amazing care!").click();
+    await preset("Would book again").click();
+    await screen.getByTestId("review-comment").fill("Max came home happy.");
+    await screen.getByTestId("review-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
+    expect(db.reviews[0]).toMatchObject({ rating: 5, comment: "Amazing care! · Would book again\nMax came home happy." });
+  });
+
   test("before the pets are back there is no summary and no review", async ({ page }) => {
     await open(page, `/owner/bookings/${BOOKING}`, false);
     const screen = app(page);

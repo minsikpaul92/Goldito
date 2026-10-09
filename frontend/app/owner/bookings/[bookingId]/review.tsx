@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 
+import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { StarRating } from "../../../../components/StarRating";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
@@ -10,6 +11,7 @@ import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { TextField } from "../../../../components/ui/TextField";
 import { getReview, submitReview } from "../../../../features/completion/completionApi";
+import { OWNER_REVIEW_PRESETS, composeComment, presetsFor } from "../../../../features/completion/reviewPresets";
 import { BookingSummary, getBooking } from "../../../../lib/bookings";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
@@ -26,6 +28,16 @@ export default function ReviewScreen() {
   const [done, setDone] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  /** Phrases picked for the current stars (FB-27); a new rating offers its own three. */
+  const [picked, setPicked] = useState<string[]>([]);
+  const presets = presetsFor(OWNER_REVIEW_PRESETS, rating);
+  const full = composeComment(picked, comment);
+  const rate = (n: number) => {
+    setRating(n);
+    setPicked((prev) => prev.filter((p) => presetsFor(OWNER_REVIEW_PRESETS, n).includes(p)));
+  };
+  const togglePreset = (phrase: string) =>
+    setPicked((prev) => (prev.includes(phrase) ? prev.filter((p) => p !== phrase) : [...prev, phrase]));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +82,7 @@ export default function ReviewScreen() {
     setSending(true);
     setError(null);
     try {
-      await submitReview(booking.id, rating, comment);
+      await submitReview(booking.id, rating, full);
       toast.show(`Thanks! ${booking.sitterName} was told ⭐`);
       // Back to the booking underneath (it refreshes on focus); a direct link has nothing to go back to.
       if (router.canGoBack()) router.back();
@@ -86,11 +98,19 @@ export default function ReviewScreen() {
     <Screen testID="review-screen" contentStyle={styles.content}>
       <Card style={styles.card}>
         <Text accessibilityRole="header" style={styles.title}>{`How was ${names}'s stay with ${booking.sitterName}?`}</Text>
-        <StarRating value={rating} onChange={setRating} size={40} testID="review-rating" />
+        <StarRating value={rating} onChange={rate} size={40} testID="review-rating" />
+        {presets.length > 0 ? (
+          <ChipSuggestions
+            chips={presets.map((p) => ({ id: p, kind: "episode", label: p, source: "custom", check: null, media_id: null }))}
+            off={new Set(presets.filter((p) => !picked.includes(p)))}
+            onToggle={togglePreset}
+            testIDPrefix="review-preset"
+          />
+        ) : null}
         <TextField
           label="Say a few words (optional)"
           value={comment}
-          maxLength={COMMENT_MAX}
+          maxLength={Math.max(0, COMMENT_MAX - (picked.length ? picked.join(" · ").length + 1 : 0))}
           multiline
           onChangeText={setComment}
           placeholder="What did you like?"
