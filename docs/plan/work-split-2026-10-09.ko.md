@@ -20,7 +20,8 @@
 
 | # | 항목 | 왜 급한가 | 상세 |
 | :--- | :--- | :--- | :--- |
-| U0 | **백엔드 배포** (10.3을 앞당김) — Nebius Serverless Endpoint(막히면 Render), Vercel `EXPO_PUBLIC_API_URL`, 백엔드 `CORS_ORIGINS`에 `https://goldito-petcare.vercel.app`, 테스트 기간에만 `EXPO_PUBLIC_DEMO_TOOLS=1` · `DEMO_RESET_ENABLED=1` | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 **업로드 · AI · 데모 리셋이 전부 안 됨** — 슬기의 Q.1 손 테스트 절반이 막힘 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
+| ~~U0~~ ✅ | **백엔드 배포** (10.3을 앞당김) — **2026-10-09 완료: Render 무료** https://goldito-backend.onrender.com (Nebius AI Cloud는 안 씀 — D18), Vercel `EXPO_PUBLIC_API_URL` · `EXPO_PUBLIC_DEMO_TOOLS=1`, keep-alive 핑 10분마다 (Render 무료는 15분 무요청 시 잠듦 — **작업 전에 핑이 도는지 확인**) | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 업로드 · AI · 데모 리셋이 전부 안 됨 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § 배포된 백엔드 |
+| CW-1 | **알림장 칩의 "맡은 시간" 버그** — 칩 · 초안이 약속된 드롭오프 시각부터 세서, 일찍 Received한 뒤의 사진 · 체크인이 빠짐 (`in_care` 리셋 뒤 3분은 항상). 작은 백엔드 수정 + pytest | 슬기 Q.1 테스트에서 "Feed 사진이 Diary에 안 나옴"으로 바로 보임 | TODO Up next CW-1 |
 | U1 | **R1b — 문의 AI 안전 RV-1 → RV-5** (`fix/review-inquiry`, 마이그레이션 `011c`~`011e`) | 데모 1단계에서 AI가 **막힌 날짜에 "가능해요"**, 거절 답장에 견적 카드 — 시터 이름으로 틀린 약속. 예약 엔진 · RLS와 얽혀 있음 | review §4 RV-1~RV-5 |
 | U2 | **06B Pet Transit** (`012`) — Start trip · 위치 · ETA · 도착 사진 체크 | P0 마지막 기능 (D41), 데모 4단계 | [phase-06b.md](phases/phase-06b.md) |
 | U3 | **R2 — 예약 흐름** FB-8 (시터 In progress) → FB-9 (Returned 확인) → FB-5 · FB-6 (시간 변경 시트) → FB-2 (목록 실시간 갱신) | 심사위원이 직접 누르는 흐름 | feedback FB-2 · 5 · 6 · 8 · 9 |
@@ -41,6 +42,7 @@
 | **QA · 흐름** | 손 테스트로 07 · 07B · 09 · 07C의 DoD 확인, test-guide 시나리오 상태 ✅ 기록, 두 계정 동시 실행(INQ · REPORT-10), 매 단계 "시터 실무에서 이상한 점"을 피드백(FB-30~)으로 | 실제 시터 3년 경험 · 사람만 할 수 있음 |
 | **문구 · 프리셋** | 리뷰 프리셋(오너 → 시터, 시터 → 오너), 알림장 칩 문구, 체크인 선택지, 케어 체크리스트 · 준비물 목록, 알림 제목 | 실무 표현 |
 | **데이터 · 말투** | 3년치 대화 익명화 → JSONL, 문의 답장 말투(스타일 카드 + 예시 답장), **알림장 말투 · few-shot**, 자동 발송 지연 공식 | 원본 데이터를 가진 사람만 익명화 가능 |
+| **프롬프트 · RAG (Q.4b)** | AI가 만드는 대화 · 문장(문의 답장 · 알림장 · 캡션 · Life Record)을 프롬프트 엔지니어링으로 매끄럽게, **답은 먼저 RAG(데이터베이스)에서 — 거기 없는 내용만 AI가 쓰고, 사실은 지어내지 않음** | 실제 시터 답장을 아는 사람이 "자연스러운가"를 판단해야 함 · 말투 데이터와 같은 일 |
 | **AI 품질 (R3 Medium)** | 문의 AI M-1~M-11, 알림장 M-13~M-16, 캡션 M-17~M-19, Life Record M-20~M-23, 시드 M-24 | 말투 · 숫자 검사 · 익명화와 연결, 데모를 막지는 않음 |
 | **다듬기 (R4 Low)** | L-1~L-6 묶음, FB-1 · FB-3 · FB-4 | 급하지 않은 UX |
 | **평가** | 문의 응답 시간 실측(M-1), 캡션 말투 측정(M-19), Life Record 환각 테스트 | 키 + 판단 필요 |
@@ -72,9 +74,9 @@
 
 | 기간 | 민식 | 슬기 |
 | :--- | :--- | :--- |
-| 10/9–10/11 | U0 백엔드 배포 → U1 R1b (RV-1~5) | Q.0 Vercel에서 두 계정 → Q.1 전체 손 테스트 · 피드백 (업로드 · AI는 U0 뒤) |
-| 10/12–10/17 | U2 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터(문의 · 알림장) |
+| 10/9–10/11 | U0 백엔드 배포 ✅ → CW-1 알림장 맡은 시간 → U1 R1b (RV-1~5) | Q.0 Vercel에서 두 계정 → Q.1 전체 손 테스트 · 피드백 |
+| 10/12–10/17 | U2 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터(문의 · 알림장) → Q.4b 프롬프트 다듬기 |
 | 10/18–10/20 | U3 R2 예약 흐름 | Q.5 R3 알림장 · 캡션 · Life Record M 항목 |
-| 10/21–10/26 | U3 마무리, 데모 경로 버그 | Q.6 R3 문의 M-1~M-11 (R1b 머지 뒤) · Q.7 평가 |
+| 10/21–10/26 | U3 마무리, 데모 경로 버그 | Q.4b RAG 우선 코드 · Q.6 R3 문의 M-1~M-11 (둘 다 R1b 머지 뒤) · Q.7 평가 |
 | 10/27–10/29 | U4 고정 데모 계정 · 시드 · README · 영상 · Devpost | Q.8 최종 QA(데모 경로 전체, 두 계정) · R4 Low 여유분 |
 | 10/30 오전 | 제출 | 제출 전 마지막 확인 |

@@ -52,7 +52,7 @@
 | 이름 | 역할 | 할 일 |
 | :--- | :--- | :--- |
 | **민식** | 풀스택 리드 | Expo 앱, FastAPI, Supabase 스키마/인증/실시간, Cloudinary 업로드, 알림·스케줄러, 배포, **Devpost 대표 제출자** |
-| **슬기** | 품질 · 데이터 · QA (2026-10-09부터 [Phase Q](phases/phase-q.md)) | 시터 3년 경험으로 **손 테스트 · 흐름 · 문구 검수**, **데이터 익명화**, 문의 답장 · 알림장 **말투 데이터**, AI 품질 리뷰 항목(R3 Medium) · 측정 |
+| **슬기** | 품질 · 데이터 · QA (2026-10-09부터 [Phase Q](phases/phase-q.md)) | 시터 3년 경험으로 **손 테스트 · 흐름 · 문구 검수**, **데이터 익명화**, 문의 답장 · 알림장 **말투 데이터** · **프롬프트 엔지니어링 + RAG 우선 답변**, AI 품질 리뷰 항목(R3 Medium) · 측정 |
 | **묵** | 프로덕트 & UX/UI | 피그마 디자인 시스템(Auto Layout, 토큰), 견주·펫시터 화면 흐름, 피드/앨범, 경고 모달, 공지 팝업, 데모 영상 비주얼 |
 
 - **묵 님께:** 컴포넌트를 Auto Layout과 토큰 기반으로 잡아주시면 Figma MCP 코드 변환 품질이 올라갑니다. **디자인은 심사 기준의 1/4**이에요. 키즈노트 수준의 완성도를 목표로 해주세요.
@@ -75,8 +75,8 @@
 >
 > | 기간 | 민식 (급함) | 슬기 ([Phase Q](phases/phase-q.md)) |
 > | :--- | :--- | :--- |
-> | 10/9 – 10/11 | U0 백엔드 배포 → R1b 문의 AI 안전(RV-1~5) | Q.0 · Q.1 Vercel에서 전체 손 테스트 · 피드백 |
-> | 10/12 – 10/17 | 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터 |
+> | 10/9 – 10/11 | U0 백엔드 배포 ✅ (Render) → CW-1 → R1b 문의 AI 안전(RV-1~5) | Q.0 · Q.1 Vercel에서 전체 손 테스트 · 피드백 |
+> | 10/12 – 10/17 | 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터 → Q.4b 프롬프트 · RAG 우선 |
 > | 10/18 – 10/26 | R2 예약 흐름 · 데모 경로 버그 | Q.5 · Q.6 R3 Medium · Q.7 평가 |
 > | 10/27 – 10/30 | 10 고정 데모 계정 · README · 영상 · Devpost → 제출 | Q.8 최종 QA |
 
@@ -178,7 +178,6 @@
 - 데모용 사진 속 사람 얼굴 제거
 - **말투**(호칭, 이모지, 문장 스타일)는 유지 — 그게 핵심 가치
 - 원본 데이터는 **리포에 올리지 않기** (`data/raw/`를 `.gitignore`에), 익명화된 Few-shot 샘플만 커밋
-- (선택) 익명화 배치를 **Nebius Serverless Jobs**로 실행 → Nebius 서비스 활용 포인트 추가
 
 ---
 
@@ -204,7 +203,7 @@
 
 - **웹 데모:** Supabase Realtime → 인앱 알림 센터 + 토스트
 - **모바일 (해커톤 이후):** Expo Notifications (푸시)
-- **예약 리마인더:** (stretch 6.7) Nebius Serverless Jobs 또는 APScheduler
+- **예약 리마인더:** (stretch 6.7) APScheduler (Nebius AI Cloud는 안 씀, D18)
 - 시터 스케줄 변경은 알림을 만들지 않음 (D24)
 
 ---
@@ -249,7 +248,7 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 ## 14. 결정 필요
 
 - [x] 데모 언어: **영어 전용** (UI + AI 출력) — 2026-09-29 확정 ([architecture D1](phases/architecture.ko.md#1-결정-로그-확정))
-- [x] 백엔드 API: **Nebius AI Cloud Serverless Endpoint** (정식), Render는 긴급 fallback만 — 2026-09-29 (D18)
+- [x] ~~백엔드 API: Nebius AI Cloud Serverless Endpoint (정식), Render는 긴급 fallback만 — 2026-09-29~~ → **백엔드 API: Render (무료, Docker), Nebius AI Cloud는 안 씀** — 2026-10-09 (D18 — 카드 + $25 선결제 · 행사 크레딧 없음. AI는 Token Factory 그대로. Render 무료는 15분 무요청 시 잠들어 10분마다 핑)
 - [x] Builders & Brews Toronto 참석 — Token Factory $100, AI Cloud $100, Tavily 8k credits
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [x] Few-shot 샘플 규모 → D35 말투 레이어로 대체: 같은 시터의 `tone_samples` top-k, 없을 때만 기본 3편 (2026-10-02)

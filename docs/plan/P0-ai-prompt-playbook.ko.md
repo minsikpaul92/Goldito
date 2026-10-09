@@ -505,7 +505,7 @@ DoD: sitter upload only; caption appears automatically.
 | :--- | :--- | :--- | :--- |
 | 10.1 | `scripts/seed_demo.py` 또는 SQL seed | P0 전부 | owner/sitter/Max(dog)/Mochi(cat) + 시나리오 데이터(요금·정책·가상 출입 정보·좌표·지난 Life Record) |
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
-| 10.3 | 배포: Vercel(front) + Nebius AI Cloud Serverless Endpoint(backend, D18 — Render는 긴급 fallback) | 10.2 | public demo URL |
+| 10.3 | 배포: Vercel(front) + Render(backend, Docker 무료 + 10분 keep-alive 핑 — D18, 2026-10-09) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
 | 10.9–10.10 | 데스크톱 옆 안내 패널 · (stretch) Split view — 번호는 [phase-10](phases/phase-10.md) 기준 | 10.3 | 마우스만으로 심사 경로 |
 

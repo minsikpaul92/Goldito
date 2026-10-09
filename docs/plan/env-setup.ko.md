@@ -31,12 +31,31 @@
 | `NEBIUS_API_KEY` | Nebius Token Factory (추론 API) |
 | `TAVILY_API_KEY` | [Tavily](https://tavily.com) 대시보드 — [tavily.ko.md](tavily.ko.md). Builders & Brews Toronto **8,000 credits** |
 
-**배포 (U0 — 10.3을 2026-10-09에 앞당김):** Nebius **AI Cloud Serverless Endpoint** URL·시크릿은 GitHub Actions secrets 또는 Nebius 콘솔에 둡니다. 배포된 백엔드 env는 위 표 + 아래 두 줄이 다릅니다. 프론트가 백엔드를 보게 하는 것은 **Vercel**의 `EXPO_PUBLIC_API_URL`입니다 (아래 § Vercel).
+### 배포된 백엔드 — Render (U0, 2026-10-09)
+
+**주소: https://goldito-backend.onrender.com** (`/health` → `{"status":"ok"}`). 백엔드는 **Render 무료 플랜**에서만 돌립니다 — **Nebius AI Cloud(Serverless Endpoint · Jobs)는 쓰지 않습니다** (D18, 2026-10-09 결정: 카드 등록 + $25 선결제, 행사 크레딧 없음, 12/15까지 켜 두면 약 $128). AI는 그대로 **Nebius Token Factory**로 부릅니다.
+
+> ⚠️ **Render 무료는 15분 동안 요청이 없으면 잠듭니다** (그 뒤 첫 요청 30~50초 — 심사위원이 첫 화면에서 멈춘 것처럼 봄). 그래서 **10분마다(늦어도 15분 안에) `/health` 핑이 꼭 돌아야** 합니다. **배포 · 테스트 · 데모 녹화 작업 전에 핑이 살아 있는지 먼저 확인하세요:**
+> 1. GitHub → **Actions → keepalive** — 최근 실행이 초록이고, 실행 간격이 15분을 넘지 않는지 (GitHub의 예약 실행은 몇 분씩 늦거나 가끔 건너뜀)
+> 2. 외부 핑 서비스(아래)를 쓰면 그 대시보드의 상태 · 응답 시간
+> 3. 30분쯤 아무도 안 쓴 뒤 `curl -w "%{time_total}" https://goldito-backend.onrender.com/health` — 1초 안이면 깨어 있음, 30초 이상이면 핑이 안 돌고 있음
+>
+> **외부 핑 (사용 중, 2026-10-09):** GitHub cron은 몇 분씩 늦거나 건너뛸 수 있어 **cron-job.org**에 두 번째 핑을 걸어 두었습니다 — 민식 계정(같은 계정에 다른 프로젝트 PairPocket Keepalive도 있음)의 **`Goldito Keepalive`**: `GET https://goldito-backend.onrender.com/health`, **10분마다**(`*/10 * * * *`, America/Toronto), timeout 30초, 기한 없음(12/15까지 유지), 실패 시 이메일 알림. 확인은 console.cron-job.org → Dashboard → Last Events에서 `Successful (200 OK)`.
+
+| Render 설정 | 값 |
+| :--- | :--- |
+| 서비스 | Web Service · GitHub `minsikpaul92/Goldito` · Branch `main` · **Root Directory `backend`** · Language **Docker** · Region Ohio · Instance **Free** |
+| 배포 | **Auto-Deploy On Commit** — main에 머지하면 Render가 Dockerfile로 다시 빌드 (Build Filters에 `backend/**`를 넣으면 백엔드가 바뀔 때만) · Health Check Path `/health` |
+| 환경변수 | **Add from .env**로 `backend/.env`를 붙여넣고 아래 세 줄만 다르게. `PORT`는 넣지 않음(Render가 정함, 이미지가 `$PORT`를 읽음). Secret Files는 안 씀 |
+| 잠듦 | 무료 플랜은 **15분 동안 요청이 없으면 잠들고 첫 요청이 30~50초**. `.github/workflows/keepalive.yml`이 10분마다 `/health`를 불러 깨워 둠 (월 750시간 무료 = 서비스 1개 24시간) |
 
 | 변수 (배포된 백엔드) | 값 |
 | :--- | :--- |
-| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` 추가 (로컬 값 `http://localhost:8081,…`은 유지해도 됨). Preview(`*-git-*.vercel.app`)는 기본으로 막힘 — 업로드 · AI 확인은 main(Production)에서 |
+| `APP_ENV` | `production` |
+| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` (Preview `*-git-*.vercel.app`는 막힘 — 업로드 · AI 확인은 main(Production)에서) |
 | `DEMO_RESET_ENABLED` | 테스트 기간에만 `1` (Profile → Demo tools). **심사 전에 `0`** — TODO "Demo accounts for judging" |
+
+값을 바꾸면 Render → Environment → Save → **Manual Deploy**(또는 저장 시 자동 재시작)를 확인합니다.
 
 ---
 
@@ -46,7 +65,7 @@
 | :--- | :--- |
 | `EXPO_PUBLIC_SUPABASE_URL` | backend와 **동일** Project URL |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Connect → **Publishable** / Settings → API → **anon** |
-| `EXPO_PUBLIC_API_URL` | 로컬: `http://localhost:8000` · 프로덕션: **Nebius AI Cloud Endpoint** URL |
+| `EXPO_PUBLIC_API_URL` | 로컬: `http://localhost:8000` · 프로덕션(Vercel): `https://goldito-backend.onrender.com` |
 | `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
 
@@ -67,9 +86,11 @@
 | `EXPO_PUBLIC_SUPABASE_URL` · `EXPO_PUBLIC_SUPABASE_ANON_KEY` | 로컬 `frontend/.env`와 동일 (anon/publishable만) |
 | `EXPO_PUBLIC_APP_TIMEZONE` | `America/Toronto` |
 | `EXPO_PUBLIC_DEMO_PASSWORD` | 데모 계정 비밀번호 (데모 전용 값) |
-| `EXPO_PUBLIC_API_URL` | 배포된 백엔드 URL (U0). **비어 있으면 `http://localhost:8000`으로 폴백**(`frontend/lib/api.ts`) → Vercel에서 업로드 · AI · 데모 리셋이 안 됨 (U0 전 상태) |
-| `EXPO_PUBLIC_DEMO_TOOLS` | 테스트 기간에만 `1` (백엔드 `DEMO_RESET_ENABLED=1`과 함께 — Profile → Demo tools). **심사 전에 비움** |
+| `EXPO_PUBLIC_API_URL` | `https://goldito-backend.onrender.com` (U0, 2026-10-09). 비어 있으면 업로드 · AI · 데모 리셋이 안 됨 |
+| `EXPO_PUBLIC_DEMO_TOOLS` | 테스트 기간에만 `1` (백엔드 `DEMO_RESET_ENABLED=1`과 함께 — Profile → Demo tools). **심사 전에 지움** |
 | `EXPO_PUBLIC_DEV_ROUTES` | **설정하지 않음** (dev 화면은 로컬·CI만) |
+
+> **Type은 Config로.** Vercel은 `EXPO_PUBLIC_`처럼 공개 접두사가 붙은 변수에 **Secret을 허용하지 않습니다** (수정하면 "cannot use `visibility: secret`" 오류). 어차피 번들에 들어가 브라우저에서 보이는 값이라 Config가 맞습니다. 예전에 Secret으로 만든 변수는 그대로 동작하지만 **수정할 수 없으니, 바꿀 때는 지우고 Config로 다시 추가**합니다 (2026-10-09: `EXPO_PUBLIC_API_URL` · `EXPO_PUBLIC_SUPABASE_URL`을 이렇게 다시 만듦).
 
 4. Deploy → main = Production, 다른 브랜치·PR = Preview URL (PR 코멘트). `EXPO_PUBLIC_*`는 **빌드 시점**에 번들에 들어가므로 값을 바꾸면 Redeploy.
 5. Supabase는 비밀번호 로그인만 쓰므로 Auth URL 설정은 필수 아님 (메일 링크·OAuth를 쓰게 되면 Authentication → URL Configuration에 Vercel 도메인 추가).
@@ -86,7 +107,7 @@
 4. **Audience** → Publishing status **Publish app** → **In production** (Testing이면 refresh token이 7일 뒤 만료). "Google hasn't verified this app" 경고는 우리 계정 하나만 쓰므로 괜찮음
 5. **Clients** (또는 Credentials → Create credentials → OAuth client ID) → **Web application**, 이름 `Goldito backend`, Authorized redirect URI `https://developers.google.com/oauthplayground` → Create → **Client ID / Client secret** 복사
 6. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) → 오른쪽 위 ⚙️ → **Use your own OAuth credentials** 체크 → ID / secret 붙여넣기 → Step 1에 `https://www.googleapis.com/auth/calendar.events` 입력 → **Authorize APIs** → **이벤트를 만들 Goldito Google 계정**으로 로그인 → (경고) Advanced → Go to Goldito → Allow → Step 2 **Exchange authorization code for tokens** → **Refresh token** 복사
-7. `backend/.env` (배포 후에는 Nebius Endpoint env): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
+7. `backend/.env` (배포된 백엔드는 Render → Environment): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
 
 ---
 

@@ -74,4 +74,4 @@ res = client.search(
 ## Supabase / Cloudinary / Nebius와 관계
 
 - **Tavily는 DB·사진 저장을 대체하지 않습니다.**
-- **Supabase** · **Cloudinary** · **Nebius AI Cloud(API 서버)** 그대로 두고, Tavily는 **안전 검사 단계의 웹 검색**만 담당합니다.
+- **Supabase** · **Cloudinary** · **Render(API 서버)** 그대로 두고, Tavily는 **안전 검사 단계의 웹 검색**만 담당합니다.

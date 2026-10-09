@@ -27,10 +27,10 @@
 | D14 | JWT 검증 | Supabase **JWKS**(`{SUPABASE_URL}/auth/v1/.well-known/jwks.json`, ES256/RS256) 우선, 레거시 프로젝트면 `SUPABASE_JWT_SECRET`(HS256) fallback | 신규 프로젝트는 asymmetric key 기본 |
 | D15 | 프로필 생성 | `auth.users` insert 트리거가 `raw_user_meta_data.role/display_name`으로 `profiles` 생성. **이메일 확인(Confirm email) OFF** | 가입 직후 세션 없음 문제 회피 |
 | D16 | sitter 배정 | ~~sitter 이메일로 고정 배정~~ → **D24 기간 예약으로 대체** (2026-09-29) | 실제 펫시팅은 여행 기간 단위 |
-| D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7, Nebius Serverless Jobs) | 스케줄러 없이 데모 08:00 구간 재현 |
-| D18 | 배포 | **Backend API:** **Nebius AI Cloud — Serverless Endpoint** (Docker + FastAPI). **Frontend:** `expo export -p web` → **Vercel**. **Render**는 Nebius 배포가 막힐 때만 **긴급 fallback** (제출·피드백·데모 URL은 Nebius Endpoint를 정식 경로로 기록) | Token Factory=추론, AI Cloud=API 호스팅 (별도 크레딧). 심사·피드백에서 Nebius 인프라 명시 |
+| D17 | 리마인더 (P0) | **클라이언트 인앱 리마인더**: sitter 앱이 열려 있으면 30초마다 due 체크 → 배너+토스트. 서버 푸시는 stretch (6.7 — Nebius AI Cloud는 안 씀, D18) | 스케줄러 없이 데모 08:00 구간 재현 |
+| D18 | 배포 | **Backend API:** **Render** Web Service (Docker + FastAPI, 무료 플랜, GitHub `main` 자동 배포, `backend/Dockerfile`). **Frontend:** `expo export -p web` → **Vercel**. **Nebius AI Cloud(Serverless Endpoint · Jobs)는 쓰지 않음** — 2026-10-09 결정 (처음 2026-09-29에는 AI Cloud가 정식, Render는 fallback이었음) | AI 추론은 전부 **Token Factory**(해커톤 "Runs on Nebius" 충족 — 런타임 호출 또는 AI Cloud 배포 중 하나면 됨). AI Cloud는 카드 등록 + $25 선결제를 요구했고 행사 크레딧이 계정에 없었으며, 엔드포인트는 계속 켜져 12/15까지 약 $128 → Render 무료로 0원. 무료 플랜은 15분 무요청 시 잠들므로 **10분마다 핑**(D20 keep-alive). 경험은 [notes/nebius-ai-cloud-feedback.md](notes/nebius-ai-cloud-feedback.md) |
 | D19 | 시드 계정 생성 | Python + Supabase Admin API (`auth.admin.create_user`) — SQL로 auth.users 직접 insert 금지 | 비밀번호 해시·트리거 정상 동작 |
-| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export+Playwright 마우스 테스트(1.7). **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = `deploy-backend.yml`(main + `backend/**` 변경 시 Docker → Nebius Registry → Serverless Endpoint). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
+| D20 | CI/CD | **CI:** GitHub Actions `ci.yml` (PR·main push) — backend ruff+pytest, frontend tsc+web export+Playwright 마우스 테스트(1.7). **CD:** frontend = Vercel Git 연동(PR Preview, main 자동 배포), backend = **Render Git 연동**(main 머지 시 `backend/Dockerfile`로 빌드 · 배포, Health Check `/health`). **Keep-alive:** `keepalive.yml`이 10분마다 `/health` (Render 무료 잠듦 방지). **DB migration은 수동** (SQL Editor, 순서대로) | 해커톤 중 운영 DB 자동 변경 위험 회피, 워크플로 최소화 |
 | D21 | 프로필 구조 | 공통 `profiles`(id, role, display_name) + 역할별 1:1 `owner_profiles`(긴급 연락처·동물병원) / `sitter_profiles`(소개·활동 지역·경력). 가입 트리거가 role에 맞는 행을 함께 생성. 시터는 강아지·고양이 모두 돌봄 (종 제한 없음) | RLS·폼이 역할별로 깔끔. nullable 컬럼 혼재 방지 |
 | D22 | 종 지원 | **강아지·고양이** — `pets.species in ('dog','cat')`, 생성 후 변경 불가. 모든 FK·API 필드는 `pet_id` | 제품이 dogs & cats 대상. 추후 종 확장은 check만 넓힘 |
 | D23 | 종별 케어 | `care_tasks.type in ('medication','walk','feeding','litter','play','sleep')`. `walk`=강아지만, `litter`=고양이만 (트리거 `guard_care_task_species`). 세이프티 독성 목록도 종별 (phase-08) | 고양이 산책 같은 잘못된 데이터 차단, 고양이 전용 독성(백합 등) 반영 |
@@ -71,8 +71,7 @@ Goldito/
 ├─ .gitignore                 # .env, data/raw/, node_modules, __pycache__, .venv, dist
 ├─ .github/workflows/
 │  ├─ ci.yml                  # Phase 01.5 — PR 검사 (backend / frontend 2 job)
-│  ├─ deploy-backend.yml      # Phase 10.3 — main → Nebius Serverless Endpoint
-│  └─ keepalive.yml           # Phase 10.7 — 매일 /health/deep 호출
+│  └─ keepalive.yml           # Phase 10.7 — 10분마다 /health 호출 (Render 무료 잠듦 방지)
 ├─ docs/
 ├─ supabase/
 │  ├─ README.md               # ERD 요약 + 적용 순서
@@ -423,11 +422,9 @@ PR 열기/업데이트 ──> ci.yml ─┬─ backend: ruff check · pytest -q
                     Vercel ──> Preview URL (PR 코멘트)
 
 main 머지 ─┬─> Vercel ──> 운영 frontend 자동 배포
-           └─> deploy-backend.yml (backend/** 변경 시)
-                 docker build → Nebius Container Registry push (tag = git sha)
-                 → Serverless Endpoint 이미지 갱신 → /health 스모크 (실패 시 job 실패, 이전 이미지 유지)
+           └─> Render ──> backend/Dockerfile 빌드 · 배포 → Health Check /health (실패하면 이전 배포 유지)
 
-매일 cron ──> keepalive.yml ──> GET {BACKEND_URL}/health/deep (Supabase select 1) — 일시정지 방지
+10분 cron ──> keepalive.yml ──> GET https://goldito-backend.onrender.com/health — Render 무료 잠듦 방지 (15분 무요청 시 잠듦)
 DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본문에 "migration 00N 적용 필요" 명시)
 ```
 
@@ -436,7 +433,7 @@ DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본�
 | CI 트리거 | `pull_request` + `push: main`. `paths` 필터로 backend/frontend job 각각 변경 시만 실행 (docs-only PR은 스킵 → 필수 체크는 "skipped = pass" 되도록 job 단위 `if` 사용) |
 | CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright 브라우저(Chromium·WebKit·Firefox) cache. Playwright는 `expo export` 결과를 정적 서버로 띄워 데스크톱 해상도 3종에서 마우스만으로 테스트 (`EXPO_PUBLIC_DEV_ROUTES=1`, 백엔드 불필요). **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
 | 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
-| GitHub Secrets (CD 전용) | `NEBIUS_REGISTRY_*`(레지스트리 로그인), `NEBIUS_ENDPOINT_ID`, `BACKEND_URL`. 앱 런타임 키(Supabase·Cloudinary·Nebius API)는 **Nebius Endpoint env / Vercel env에만** 저장 |
-| 롤백 | backend: 이전 sha 태그로 Endpoint 재지정 (`workflow_dispatch` 입력 `image_tag`). frontend: Vercel 대시보드 "Promote previous deployment" |
-| Fallback | **예외만:** Nebius AI Cloud Endpoint 배포가 막히면 Render(동일 Dockerfile). 정상 경로는 항상 **Nebius AI Cloud Serverless Endpoint** |
+| GitHub Secrets | 없음 — CD는 Render · Vercel의 Git 연동. 앱 런타임 키(Supabase·Cloudinary·Nebius Token Factory API)는 **Render env / Vercel env에만** 저장 |
+| 롤백 | backend: Render 대시보드 → Deploys → 이전 배포 **Rollback**. frontend: Vercel 대시보드 "Promote previous deployment" |
+| Keep-alive | Render 무료는 **15분 동안 요청이 없으면 잠들고** 첫 요청이 30~50초. 10분마다 `/health`를 부른다 — GitHub Actions `keepalive.yml` + **cron-job.org `Goldito Keepalive`** 두 군데 (GitHub cron은 몇 분씩 늦을 수 있어서). **배포 · 테스트 작업 전에 핑이 돌고 있는지 먼저 확인** ([env-setup.ko.md](../env-setup.ko.md) § 배포된 백엔드) |
 
