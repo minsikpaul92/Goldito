@@ -34,6 +34,13 @@ export async function getReview(bookingId: string): Promise<Review | null> {
   return { rating: row.rating, comment: row.comment, createdAt: row.created_at };
 }
 
+/** Bookings I already reviewed (RLS: my own reviews) — Home stops asking for those (FB-24). */
+export async function listReviewedBookingIds(): Promise<string[]> {
+  const { data, error } = await getSupabase().from("reviews").select("booking_id");
+  if (error) fail("load your reviews");
+  return ((data ?? []) as { booking_id: string }[]).map((r) => r.booking_id);
+}
+
 /** One review per stay, by its owner, once the pets are back (submit_review, 011). */
 export async function submitReview(bookingId: string, rating: number, comment: string): Promise<void> {
   const { error } = await getSupabase().rpc("submit_review", {
