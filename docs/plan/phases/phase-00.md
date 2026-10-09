@@ -56,7 +56,7 @@ Phase 01은 키 없이 가능하지만 Phase 02(migration)·03(Auth)은 **즉시
 
 1. Devpost 폼 + 코드 `NEBIUS-DEVPOST-GLOBAL26` ($25 Token Factory)
 2. Nebius Builders Program 가입
-3. **Builders & Brews Toronto (참석 시):** Token Factory **$100**, Nebius AI Cloud **$100**, Tavily **8,000 credits** — Supabase/Cloudinary **유지**, API 서버는 **AI Cloud Endpoint** (D18)
+3. **Builders & Brews Toronto (참석 시):** Token Factory **$100**, Nebius AI Cloud **$100**, Tavily **8,000 credits** — Supabase/Cloudinary **유지**, API 서버는 **Render** (D18 — 2026-10-09에 AI Cloud에서 바꿈, AI Cloud 크레딧은 계정에 없었음)
 
 ---
 

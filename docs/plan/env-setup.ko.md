@@ -33,7 +33,14 @@
 
 ### 배포된 백엔드 — Render (U0, 2026-10-09)
 
-**주소: https://goldito-backend.onrender.com** (`/health` → `{"status":"ok"}`). Nebius AI Cloud Serverless Endpoint가 정식 경로(D18)지만 카드 등록 + $25 선결제를 요구하고 행사 AI Cloud 크레딧이 계정에 안 보여서, D18의 fallback인 **Render 무료 플랜**으로 먼저 띄웠습니다. 이미지가 같아서(`backend/Dockerfile`) 나중에 Nebius로 옮길 때는 Vercel의 `EXPO_PUBLIC_API_URL`만 바꾸면 됩니다 (Nebius 쪽 준비: [phase-10.md](phases/phase-10.md) 10.3).
+**주소: https://goldito-backend.onrender.com** (`/health` → `{"status":"ok"}`). 백엔드는 **Render 무료 플랜**에서만 돌립니다 — **Nebius AI Cloud(Serverless Endpoint · Jobs)는 쓰지 않습니다** (D18, 2026-10-09 결정: 카드 등록 + $25 선결제, 행사 크레딧 없음, 12/15까지 켜 두면 약 $128). AI는 그대로 **Nebius Token Factory**로 부릅니다.
+
+> ⚠️ **Render 무료는 15분 동안 요청이 없으면 잠듭니다** (그 뒤 첫 요청 30~50초 — 심사위원이 첫 화면에서 멈춘 것처럼 봄). 그래서 **10분마다(늦어도 15분 안에) `/health` 핑이 꼭 돌아야** 합니다. **배포 · 테스트 · 데모 녹화 작업 전에 핑이 살아 있는지 먼저 확인하세요:**
+> 1. GitHub → **Actions → keepalive** — 최근 실행이 초록이고, 실행 간격이 15분을 넘지 않는지 (GitHub의 예약 실행은 몇 분씩 늦거나 가끔 건너뜀)
+> 2. 외부 핑 서비스(아래)를 쓰면 그 대시보드의 상태 · 응답 시간
+> 3. 30분쯤 아무도 안 쓴 뒤 `curl -w "%{time_total}" https://goldito-backend.onrender.com/health` — 1초 안이면 깨어 있음, 30초 이상이면 핑이 안 돌고 있음
+>
+> **외부 핑 (선택, 권장):** GitHub cron만으로는 간격이 벌어질 수 있어 무료 모니터링 서비스를 하나 더 붙이면 안전합니다 — 예: **UptimeRobot**(무료 HTTP 모니터 5분 간격) 또는 **cron-job.org**(무료 cron 1분 단위). URL은 `https://goldito-backend.onrender.com/health`, 간격 5~10분. 계정은 사람이 만듭니다.
 
 | Render 설정 | 값 |
 | :--- | :--- |
@@ -100,7 +107,7 @@
 4. **Audience** → Publishing status **Publish app** → **In production** (Testing이면 refresh token이 7일 뒤 만료). "Google hasn't verified this app" 경고는 우리 계정 하나만 쓰므로 괜찮음
 5. **Clients** (또는 Credentials → Create credentials → OAuth client ID) → **Web application**, 이름 `Goldito backend`, Authorized redirect URI `https://developers.google.com/oauthplayground` → Create → **Client ID / Client secret** 복사
 6. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) → 오른쪽 위 ⚙️ → **Use your own OAuth credentials** 체크 → ID / secret 붙여넣기 → Step 1에 `https://www.googleapis.com/auth/calendar.events` 입력 → **Authorize APIs** → **이벤트를 만들 Goldito Google 계정**으로 로그인 → (경고) Advanced → Go to Goldito → Allow → Step 2 **Exchange authorization code for tokens** → **Refresh token** 복사
-7. `backend/.env` (배포 후에는 Nebius Endpoint env): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
+7. `backend/.env` (배포된 백엔드는 Render → Environment): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
 
 ---
 

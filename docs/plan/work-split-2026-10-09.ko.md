@@ -20,7 +20,7 @@
 
 | # | 항목 | 왜 급한가 | 상세 |
 | :--- | :--- | :--- | :--- |
-| ~~U0~~ ✅ | **백엔드 배포** (10.3을 앞당김) — **2026-10-09 완료: Render 무료** https://goldito-backend.onrender.com (Nebius는 카드 · $25 선결제 요구로 보류), Vercel `EXPO_PUBLIC_API_URL` · `EXPO_PUBLIC_DEMO_TOOLS=1`, keep-alive cron | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 업로드 · AI · 데모 리셋이 전부 안 됨 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § 배포된 백엔드 |
+| ~~U0~~ ✅ | **백엔드 배포** (10.3을 앞당김) — **2026-10-09 완료: Render 무료** https://goldito-backend.onrender.com (Nebius AI Cloud는 안 씀 — D18), Vercel `EXPO_PUBLIC_API_URL` · `EXPO_PUBLIC_DEMO_TOOLS=1`, keep-alive 핑 10분마다 (Render 무료는 15분 무요청 시 잠듦 — **작업 전에 핑이 도는지 확인**) | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 업로드 · AI · 데모 리셋이 전부 안 됨 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § 배포된 백엔드 |
 | CW-1 | **알림장 칩의 "맡은 시간" 버그** — 칩 · 초안이 약속된 드롭오프 시각부터 세서, 일찍 Received한 뒤의 사진 · 체크인이 빠짐 (`in_care` 리셋 뒤 3분은 항상). 작은 백엔드 수정 + pytest | 슬기 Q.1 테스트에서 "Feed 사진이 Diary에 안 나옴"으로 바로 보임 | TODO Up next CW-1 |
 | U1 | **R1b — 문의 AI 안전 RV-1 → RV-5** (`fix/review-inquiry`, 마이그레이션 `011c`~`011e`) | 데모 1단계에서 AI가 **막힌 날짜에 "가능해요"**, 거절 답장에 견적 카드 — 시터 이름으로 틀린 약속. 예약 엔진 · RLS와 얽혀 있음 | review §4 RV-1~RV-5 |
 | U2 | **06B Pet Transit** (`012`) — Start trip · 위치 · ETA · 도착 사진 체크 | P0 마지막 기능 (D41), 데모 4단계 | [phase-06b.md](phases/phase-06b.md) |

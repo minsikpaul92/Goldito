@@ -19,6 +19,6 @@ Raw notes for the required Nebius / NVIDIA feedback (phase 10.6, hackathon READM
 5. **Min container disk 100 GiB** for a ~300 MB image; it shows up as a separate storage line in the estimate.
 6. **Always on:** no scale-to-zero for endpoints, so a demo that must stay up until judging ends (Dec 15) costs about $128 on the smallest CPU preset.
 
-**Outcome:** backend went to Render's free plan (D18 fallback) the same day; the image and the endpoint settings above are ready if the credit turns up ([phase-10.md](../phase-10.md) 10.3).
+**Outcome:** the backend went to Render's free plan the same day, and on 2026-10-09 we decided **not to use AI Cloud at all** (D18): Token Factory alone covers "Runs on Nebius", and an always-on endpoint until Dec 15 would cost about $128 with no credit on the account.
 
 **Would we use it again?** For GPU or model serving, yes — the form and the cost estimate are good. For a small always-on CPU API, the billing step and the secrets permission were the blockers, not the product itself.

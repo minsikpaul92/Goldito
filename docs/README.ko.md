@@ -137,9 +137,8 @@ Goldito의 AI는 에이전트처럼 움직입니다. 돌봄 중 일이 생기면
 
 ¹ Token Factory의 NVIDIA 비전 모델(`Nemotron-Nano-V2-12b`·`Cosmos3-Super-Reasoner`·`Nemotron-3-Nano-Omni`)은 Dedicated Endpoint 전용이라 공용 API로 부를 수 없고(2026-10-02 확인), 심사 기간 내내 켜 두면 크레딧을 넘음 → 비전은 공용 API의 MiniCPM-V-4.5. 시나리오 원문의 Qwen-2.5-VL은 카탈로그에 없음. 추론·글쓰기·답장은 Nemotron.
 
-**기타 Nebius 서비스**
-- **Nebius AI Cloud — Serverless Endpoint** — FastAPI 백엔드 호스팅 (Render는 긴급 fallback만)
-- **Serverless Jobs** (계획) — 리마인더, 저녁 알림장 초안
+**호스팅**
+- 프론트 **Vercel**, FastAPI 백엔드 **Render**(Docker, 무료 — 10분마다 keep-alive 핑으로 잠들지 않게). AI 호출은 전부 Token Factory
 
 ---
 
@@ -173,8 +172,8 @@ Goldito의 AI는 에이전트처럼 움직입니다. 돌봄 중 일이 생기면
 
 | 영역 | 스택 |
 | :--- | :--- |
-| 프론트엔드 | Expo (React Native for Web) |
-| 백엔드 | FastAPI (Python 3.12) |
+| 프론트엔드 | Expo (React Native for Web) · **Vercel** |
+| 백엔드 | FastAPI (Python 3.12) · Docker · **Render** |
 | DB / 인증 / 실시간 / 벡터 검색 | Supabase (PostgreSQL, RLS, pgvector) |
 | 미디어 | Cloudinary |
 | AI | NVIDIA Nemotron + MiniCPM-V(비전) + Qwen3 Embedding @ Nebius Token Factory |

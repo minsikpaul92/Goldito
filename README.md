@@ -138,9 +138,8 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 ¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02), and keeping one running through judging would cost more than our credits — so vision uses MiniCPM-V-4.5 on the shared API. Reasoning, writing, and replies stay on Nemotron.
 
-**Other Nebius services**
-- **Nebius AI Cloud — Serverless Endpoint** — hosts the FastAPI backend (Render only as an emergency fallback).
-- **Serverless Jobs** *(planned)* — scheduled reminders and end-of-day report drafts.
+**Hosting**
+- The web app on **Vercel**, the FastAPI backend on **Render** (Docker, free plan — a keep-alive ping every 10 minutes keeps it awake). Every AI call goes to Token Factory.
 
 **Where Token Factory accelerated our workflow:** _to be written after development._
 
@@ -181,8 +180,8 @@ Every AI call runs on **Nebius Token Factory** through its OpenAI-compatible API
 
 | Area | Stack |
 | :--- | :--- |
-| Frontend | Expo (React Native for Web) |
-| Backend | FastAPI (Python 3.12) |
+| Frontend | Expo (React Native for Web) · **Vercel** |
+| Backend | FastAPI (Python 3.12) · Docker · **Render** |
 | Database / Auth / Realtime / Vector search | Supabase (PostgreSQL, RLS, pgvector) |
 | Media | Cloudinary |
 | AI | NVIDIA Nemotron + MiniCPM-V (vision) + Qwen3 Embedding on Nebius Token Factory |

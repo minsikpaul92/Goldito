@@ -178,7 +178,6 @@
 - 데모용 사진 속 사람 얼굴 제거
 - **말투**(호칭, 이모지, 문장 스타일)는 유지 — 그게 핵심 가치
 - 원본 데이터는 **리포에 올리지 않기** (`data/raw/`를 `.gitignore`에), 익명화된 Few-shot 샘플만 커밋
-- (선택) 익명화 배치를 **Nebius Serverless Jobs**로 실행 → Nebius 서비스 활용 포인트 추가
 
 ---
 
@@ -204,7 +203,7 @@
 
 - **웹 데모:** Supabase Realtime → 인앱 알림 센터 + 토스트
 - **모바일 (해커톤 이후):** Expo Notifications (푸시)
-- **예약 리마인더:** (stretch 6.7) Nebius Serverless Jobs 또는 APScheduler
+- **예약 리마인더:** (stretch 6.7) APScheduler (Nebius AI Cloud는 안 씀, D18)
 - 시터 스케줄 변경은 알림을 만들지 않음 (D24)
 
 ---
@@ -249,7 +248,7 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 ## 14. 결정 필요
 
 - [x] 데모 언어: **영어 전용** (UI + AI 출력) — 2026-09-29 확정 ([architecture D1](phases/architecture.ko.md#1-결정-로그-확정))
-- [x] 백엔드 API: **Nebius AI Cloud Serverless Endpoint** (정식), Render는 긴급 fallback만 — 2026-09-29 (D18)
+- [x] ~~백엔드 API: Nebius AI Cloud Serverless Endpoint (정식), Render는 긴급 fallback만 — 2026-09-29~~ → **백엔드 API: Render (무료, Docker), Nebius AI Cloud는 안 씀** — 2026-10-09 (D18 — 카드 + $25 선결제 · 행사 크레딧 없음. AI는 Token Factory 그대로. Render 무료는 15분 무요청 시 잠들어 10분마다 핑)
 - [x] Builders & Brews Toronto 참석 — Token Factory $100, AI Cloud $100, Tavily 8k credits
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [x] Few-shot 샘플 규모 → D35 말투 레이어로 대체: 같은 시터의 `tone_samples` top-k, 없을 때만 기본 3편 (2026-10-02)
