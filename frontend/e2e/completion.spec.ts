@@ -204,7 +204,7 @@ test.describe("life record", () => {
     await screen.getByRole("link", { name: /back/ }).click(); // leave while the request runs…
     await expect(screen.getByTestId("record-writing")).toHaveCount(0);
     await screen.getByRole("tab", { name: /Bookings/ }).click(); // …and come back to the booking in the app
-    await screen.getByRole("button", { name: /^Chloe Confirmed/ }).click();
+    await screen.getByRole("button", { name: /^Chloe Completed/ }).click();
     await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible({ timeout: 10_000 });
     expect(calls).toHaveLength(1);
   });

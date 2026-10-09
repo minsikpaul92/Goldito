@@ -62,6 +62,7 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("toast")).toContainText("Max checked in — Robert gets a notice");
     expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
+    await expect(screen.getByText("In care", { exact: true })).toBeVisible(); // FB-26
 
     await screen.getByTestId("handoff-returned").click();
     await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
@@ -75,6 +76,8 @@ test.describe("handoff check", () => {
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await screen.getByTestId("sitter-bookings-tabs-past").click();
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("✓ Returned");
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Completed — pets home"); // not "Confirmed" (FB-26)
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("Confirmed");
   });
 
   test("Received waits until 2 hours before drop-off", async ({ page }) => {

@@ -21,9 +21,11 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
     return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
   }
   if (b.status === "confirmed") {
+    // The booking row stays "confirmed" for life; what happened at the handoffs says where the stay is (FB-26).
+    if (b.pickUp?.completedAt) return [{ label: "Completed — pets home", tone: "success" }];
     const me = viewer === "owner" ? b.ownerId : b.sitterId;
     const open = [b.pending.drop_off, b.pending.pick_up].filter((p) => p !== null);
-    const badges: Badge[] = [{ label: "Confirmed", tone: "success" }];
+    const badges: Badge[] = [b.dropOff?.completedAt ? { label: "In care", tone: "success" } : { label: "Confirmed", tone: "success" }];
     if (open.some((p) => p.proposedBy !== me)) {
       badges.push({ label: `${viewer === "owner" ? b.sitterName : b.ownerName} suggested a change`, tone: "warning" });
     } else if (open.length > 0) {
