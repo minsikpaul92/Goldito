@@ -15,7 +15,7 @@
 
 | 환경 | 주소 | 비고 |
 | :--- | :--- | :--- |
-| **Production (main) — 손 테스트는 여기** | **https://pawddy.vercel.app** | main이 머지될 때마다 자동 배포 (Vercel 프로젝트 이름은 아직 `pawddy`). 결과(✅)는 여기서 한 것만 기록 |
+| **Production (main) — 손 테스트는 여기** | **https://goldito-petcare.vercel.app** | main이 머지될 때마다 자동 배포. 결과(✅)는 여기서 한 것만 기록 |
 | Vercel preview (선택) | PR 코멘트의 Preview 링크 | 머지 전 미리 보기용 — 결과 기록은 main 기준 |
 | 로컬 (개발할 때만) | `http://localhost:8081` + 백엔드 `http://localhost:8000` | `cd frontend && npx expo start --web --port 8081`, `cd backend && .venv/bin/uvicorn app.main:app --port 8000` |
 

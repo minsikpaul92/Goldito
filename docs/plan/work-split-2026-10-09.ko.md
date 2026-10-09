@@ -20,7 +20,7 @@
 
 | # | 항목 | 왜 급한가 | 상세 |
 | :--- | :--- | :--- | :--- |
-| U0 | **백엔드 배포** (10.3을 앞당김) — Nebius Serverless Endpoint(막히면 Render), Vercel `EXPO_PUBLIC_API_URL`, 백엔드 `CORS_ORIGINS`에 `https://pawddy.vercel.app`, 테스트 기간에만 `EXPO_PUBLIC_DEMO_TOOLS=1` · `DEMO_RESET_ENABLED=1` | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 **업로드 · AI · 데모 리셋이 전부 안 됨** — 슬기의 Q.1 손 테스트 절반이 막힘 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
+| U0 | **백엔드 배포** (10.3을 앞당김) — Nebius Serverless Endpoint(막히면 Render), Vercel `EXPO_PUBLIC_API_URL`, 백엔드 `CORS_ORIGINS`에 `https://goldito-petcare.vercel.app`, 테스트 기간에만 `EXPO_PUBLIC_DEMO_TOOLS=1` · `DEMO_RESET_ENABLED=1` | 테스트는 Vercel(main)에서 하는데 백엔드가 없으면 **업로드 · AI · 데모 리셋이 전부 안 됨** — 슬기의 Q.1 손 테스트 절반이 막힘 | [phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
 | U1 | **R1b — 문의 AI 안전 RV-1 → RV-5** (`fix/review-inquiry`, 마이그레이션 `011c`~`011e`) | 데모 1단계에서 AI가 **막힌 날짜에 "가능해요"**, 거절 답장에 견적 카드 — 시터 이름으로 틀린 약속. 예약 엔진 · RLS와 얽혀 있음 | review §4 RV-1~RV-5 |
 | U2 | **06B Pet Transit** (`012`) — Start trip · 위치 · ETA · 도착 사진 체크 | P0 마지막 기능 (D41), 데모 4단계 | [phase-06b.md](phases/phase-06b.md) |
 | U3 | **R2 — 예약 흐름** FB-8 (시터 In progress) → FB-9 (Returned 확인) → FB-5 · FB-6 (시간 변경 시트) → FB-2 (목록 실시간 갱신) | 심사위원이 직접 누르는 흐름 | feedback FB-2 · 5 · 6 · 8 · 9 |

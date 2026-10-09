@@ -1,6 +1,6 @@
 # Goldito — Active TODO
 
-> **Where things stand (snapshot):** [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (review of #55–#58, all merged, + fix plan) · **team split (2026-10-09):** [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) · **testing:** manual tests run on `main` at **https://pawddy.vercel.app** (test-guide §1.1) · older: [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
+> **Where things stand (snapshot):** [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (review of #55–#58, all merged, + fix plan) · **team split (2026-10-09):** [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) · **testing:** manual tests run on `main` at **https://goldito-petcare.vercel.app** (test-guide §1.1) · older: [status-2026-10-06.ko.md](status-2026-10-06.ko.md). **Agents:** After each task, follow [CLAUDE.md](../../CLAUDE.md) §5 — mark done, set one new **Current focus**, do not skip the queue.
 > **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md)
@@ -19,7 +19,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | :--- | :--- |
 | 1 | **Merged:** #55 (`f2cd03a`) · #56 (`07eda25`) · #57 (`7f37e94`) · #58 (`734d477`) · #59 hotfix (`780c772`) · **#60 R1a** report / Life Record fixes + 2026-10-09 test feedback (`ad80583`, 2026-10-09). Next for Minsik: **U0 backend deploy**, then **R1b `fix/review-inquiry`** (RV-1 → RV-5, `011c`–`011e`). |
 | 2 | **Who does what (2026-10-09):** Minsik = urgent demo path (U0 backend deploy → R1b → 06B → R2 → 10); Seulgi = Phase Q in parallel (QA · wording · anonymized data · tone · R3 Medium · R4 Low). |
-| 3 | **Testing:** always on `main`, at the Vercel production deploy **https://pawddy.vercel.app**. Until the backend is deployed (U0), uploads · AI · demo reset do not work there — `EXPO_PUBLIC_API_URL` is empty and falls back to `localhost:8000`. |
+| 3 | **Testing:** always on `main`, at the Vercel production deploy **https://goldito-petcare.vercel.app**. Until the backend is deployed (U0), uploads · AI · demo reset do not work there — `EXPO_PUBLIC_API_URL` is empty and falls back to `localhost:8000`. |
 | 4 | **Hosted DB** has `010`–`011b` and `011f`–`011h` (applied 2026-10-09). `011c`–`011e` are for R1b (Minsik ≤ `011l`, Seulgi `011m`–`011z`); `012` = 06B, `013` = 08. |
 
 **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab.
@@ -34,8 +34,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
-| **Seulgi** | **Q.0** | Environment + demo accounts: open **https://pawddy.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (ask Minsik until U0) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **U0** | Backend deploy (10.3 pulled forward): Nebius Serverless Endpoint (Render fallback), `/health` green; Vercel `EXPO_PUBLIC_API_URL` → backend URL, backend `CORS_ORIGINS` += `https://pawddy.vercel.app`, test period only `EXPO_PUBLIC_DEMO_TOOLS=1` + `DEMO_RESET_ENABLED=1`, Redeploy; on Vercel an upload, one AI call and a demo reset work. Then **RV-1** (`fix/review-inquiry`, `011c`) | [phases/phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
+| **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (ask Minsik until U0) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
+| **Minsik** | **U0** | Backend deploy (10.3 pulled forward): Nebius Serverless Endpoint (Render fallback), `/health` green; Vercel `EXPO_PUBLIC_API_URL` → backend URL, backend `CORS_ORIGINS` += `https://goldito-petcare.vercel.app`, test period only `EXPO_PUBLIC_DEMO_TOOLS=1` + `DEMO_RESET_ENABLED=1`, Redeploy; on Vercel an upload, one AI call and a demo reset work. Then **RV-1** (`fix/review-inquiry`, `011c`) | [phases/phase-10.md](phases/phase-10.md) 10.3 · [env-setup.ko.md](env-setup.ko.md) § Vercel |
 
 ---
 
@@ -291,7 +291,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | 07C Completion       | **merged** (PR #58 · fixes #60) — DoD pending (Seulgi Q.1) |
 | 08 Safety            | P0 stretch — after 06B, only if time remains (D27, D41)                                                  |
 | 09 Caption + album   | **merged** (PR #57) — DoD pending (Seulgi Q.1) |
-| 10 Demo & deploy     | frontend on Vercel since 10-02 (https://pawddy.vercel.app); backend deploy pulled forward as U0 |
+| 10 Demo & deploy     | frontend on Vercel since 10-02 (https://goldito-petcare.vercel.app); backend deploy pulled forward as U0 |
 | 11 P1                | not started                                                                   |
 | Onboarding UX        | OB.1–OB.3 done; OB.4 deferred; OB.5 with Phase 10                             |
 | Q Quality track      | **Seulgi, from 2026-10-09** — [phase-q.md](phases/phase-q.md) |

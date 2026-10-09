@@ -7,7 +7,7 @@
 
 🇰🇷 [한국어](docs/README.ko.md) · 🛠️ [Development plan](docs/plan/README.md) · 📋 [Hackathon rules](docs/hackathon/README.md)
 
-**Live demo:** _TBD_ · **Demo video:** _TBD_ · **Test accounts:** _TBD_
+**Live demo:** [goldito-petcare.vercel.app](https://goldito-petcare.vercel.app) (sign in with **Try demo → Owner / Sitter**) · **Demo video:** _TBD_ · **Test accounts:** _TBD_
 
 ---
 

@@ -6,7 +6,7 @@
 
 ## 0. 어디서 · 어떤 상태에서 시작하나 ⬅️ 먼저 읽기
 
-**주소: https://pawddy.vercel.app** (main이 머지될 때마다 자동 배포 · Vercel 프로젝트 이름은 아직 `pawddy`). 로그인 화면 **Try demo → Demo owner / Demo sitter**.
+**주소: https://goldito-petcare.vercel.app** (main이 머지될 때마다 자동 배포). 로그인 화면 **Try demo → Demo owner / Demo sitter**.
 
 > ⚠️ **백엔드 배포 전까지(민식 U0)** Vercel에서는 **사진 · 영상 업로드, AI 기능(알림장 칩 · 초안, 문의 답장, 캡션, 케어 체크리스트, Life Record), 데모 리셋이 동작하지 않습니다** (`EXPO_PUBLIC_API_URL`이 비어 `localhost:8000`을 봄). 그동안 Vercel에서는 Supabase만 쓰는 화면(예약 · 체크아웃 · Received/Returned · 체크인 · 리뷰 · 즐겨찾기)만 보고, 업로드 · AI는 민식이 main을 로컬로 띄워 확인합니다. U0가 끝나면 이 경고를 지웁니다.
 
@@ -28,7 +28,7 @@
 
 호스팅 DB에는 `010`~`011b`와 `011f`~`011h`가 **적용**돼 있습니다 (`011c`~`011e`는 R1b에서 만들 예정).
 
-1. **브라우저 두 개**: 크롬 일반 창 + 시크릿 창에 각각 https://pawddy.vercel.app → 한쪽은 **Demo owner**(Robert), 다른 쪽은 **Demo sitter**(Chloe). 새로고침 없이 이어지는 흐름(알림 · 자동 발송 · 문의)을 볼 수 있습니다.
+1. **브라우저 두 개**: 크롬 일반 창 + 시크릿 창에 각각 https://goldito-petcare.vercel.app → 한쪽은 **Demo owner**(Robert), 다른 쪽은 **Demo sitter**(Chloe). 새로고침 없이 이어지는 흐름(알림 · 자동 발송 · 문의)을 볼 수 있습니다.
 2. 결과는 §5대로 test-guide에 적습니다 (`main` 기준).
 3. **(개발자만) 로컬로 띄울 때** — 코드를 고치는 중 확인용이고, 결과 기록(✅)은 Vercel(main) 기준입니다:
    ```bash

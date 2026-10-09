@@ -35,7 +35,7 @@
 
 | 변수 (배포된 백엔드) | 값 |
 | :--- | :--- |
-| `CORS_ORIGINS` | `https://pawddy.vercel.app` 추가 (로컬 값 `http://localhost:8081,…`은 유지해도 됨). Preview(`*-git-*.vercel.app`)는 기본으로 막힘 — 업로드 · AI 확인은 main(Production)에서 |
+| `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` 추가 (로컬 값 `http://localhost:8081,…`은 유지해도 됨). Preview(`*-git-*.vercel.app`)는 기본으로 막힘 — 업로드 · AI 확인은 main(Production)에서 |
 | `DEMO_RESET_ENABLED` | 테스트 기간에만 `1` (Profile → Demo tools). **심사 전에 `0`** — TODO "Demo accounts for judging" |
 
 ---
@@ -54,7 +54,7 @@
 
 ### Vercel (frontend 배포 — 10.4를 2026-10-02에 앞당김)
 
-**Production 주소: https://pawddy.vercel.app** (Vercel 프로젝트 이름은 아직 `pawddy`) — 수동 테스트는 항상 여기서 `main`으로 합니다 ([test-run.ko.md](test-run.ko.md) §0).
+**Production 주소: https://goldito-petcare.vercel.app** — 수동 테스트는 항상 여기서 `main`으로 합니다 ([test-run.ko.md](test-run.ko.md) §0).
 
 빌드 설정은 [`frontend/vercel.json`](../../frontend/vercel.json)에 있습니다: `npm ci` → `npx expo export -p web` → `dist/`, 모든 경로 → `index.html` (새로고침·딥링크), `Content-Security-Policy: frame-ancestors 'self'` (데스크톱 폰 프레임이 같은 도메인 iframe — `X-Frame-Options: DENY` 금지, D25).
 
