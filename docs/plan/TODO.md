@@ -35,7 +35,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
 | **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (Profile → Demo tools) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-40+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **FB-32** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 ✅ owner name (RV-4, `011e`) → FB-32 a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-32: an owner with no booking yet can reach a sitter's profile (and so "Ask before booking") — a profile link on each sitter in Book care, and a way to find sitters from the empty owner Bookings screen | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
+| **Minsik** | **FB-33** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 ✅ owner name (RV-4, `011e`) → FB-32 ✅ a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-33: the sitter profile shows **[Ask before booking] [Book]** side by side; the inquiry sheet's dates are required and its calendar shows the sitter's open / full days like Book care (UX-1) | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
 
 ---
 
@@ -85,6 +85,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 
 ## Completed
+
+- [x] **FB-32** An owner with no booking yet can reach a sitter's profile (2026-10-09, `fix/stage1-booking-ux`): the owner Bookings tab lists **Sitters on Goldito** (`listSitters`: signed-in users can read sitter names and profiles) while the owner has no sitters of their own — instead of an empty page with only Book care — and each sitter in Book care has a **Profile** link (also for sitters who only cover part of the trip). e2e `sitters` +1. test-guide UX-6. Checked locally on the owner Bookings tab (Chloe's card).
 
 - [x] **FB-31 (= RV-4, with RV-5's access limits)** A first-contact owner's name and the pets asked about show for the asked sitter (2026-10-09, `fix/stage1-booking-ux`): new migration **`011e_inquiry_access`** — `has_inquiry_with(other)` opens display names between the two people of an inquiry (any status, like a booking request); `pets_select` / `pet_allergies_select` add `has_open_inquiry_about`, which now ends with the stay asked about and 30 days after the question (RV-5: before, an `open` inquiry opened the pet's Life Records forever). No app change — the Questions card and thread already read `profiles` / `pets`; RLS returned nothing. Smoke +10 (`011e`). **Still RV-5 (later, new letter `011j`):** close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. **Human:** apply `011e` to the hosted DB.
 

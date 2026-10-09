@@ -386,6 +386,7 @@
 | UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 | UX-5 | 시터 Bookings에 대기 요청 · 답할 문의가 있을 때 (폰 너비 402) | Requests · Questions · Upcoming · Past가 **한 줄**, 숫자는 칸 오른쪽 위 **작은 배지**(괄호 "(1)" 없음) (FB-30) | 🤖 `sitter-bookings` · `inquiry` | ➖ |
+| UX-6 | `pets`로 리셋한 오너(예약 · 문의 · 시터 이력 없음) → Bookings 탭 | 빈 화면 대신 **Sitters on Goldito** — 시터 카드(→ 프로필), 아래 Book care. Book care의 시터 목록에도 각 시터 옆 **Profile** (FB-32) | 🤖 `sitters` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
 
 ### 3.15 이름 변경 (NAME) — Pawddy → Goldito
 

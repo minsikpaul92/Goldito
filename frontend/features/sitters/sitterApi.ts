@@ -78,6 +78,50 @@ export async function listMySitters(): Promise<MySitter[]> {
  * Public sitter profile: name from `profiles` (sitters are readable by everyone), the rest
  * from listed `sitter_profiles` columns — select('*') would fail on home_address.
  */
+/**
+ * Sitters on Goldito, for an owner who has none yet (FB-32): without it a first-time owner could only Book
+ * care and never reach a profile to "Ask before booking". Sitter names and profiles are public to signed-in users.
+ */
+export async function listSitters(limit = 20): Promise<SitterSummary[]> {
+  const supabase = getSupabase();
+  const people = await supabase
+    .from("profiles")
+    .select("id, display_name")
+    .eq("role", "sitter")
+    .order("display_name")
+    .limit(limit);
+  if (people.error) fail("load sitters");
+  const rows = (people.data ?? []) as { id: string; display_name: string | null }[];
+  if (rows.length === 0) return [];
+  const details = await supabase
+    .from("sitter_profiles")
+    .select("id, bio, service_area, experience_years, services")
+    .in("id", rows.map((r) => r.id));
+  if (details.error) fail("load sitters");
+  const byId = new Map(
+    ((details.data ?? []) as {
+      id: string;
+      bio: string | null;
+      service_area: string | null;
+      experience_years: number | null;
+      services: ServiceType[] | null;
+    }[]).map((d) => [d.id, d]),
+  );
+  return rows
+    .filter((r) => r.display_name)
+    .map((r) => {
+      const d = byId.get(r.id);
+      return {
+        id: r.id,
+        displayName: r.display_name as string,
+        bio: d?.bio ?? null,
+        serviceArea: d?.service_area ?? null,
+        experienceYears: d?.experience_years ?? null,
+        services: d?.services ?? ["boarding"],
+      };
+    });
+}
+
 export async function getSitterProfile(sitterId: string): Promise<SitterProfileView | null> {
   const supabase = getSupabase();
   const [person, details] = await Promise.all([

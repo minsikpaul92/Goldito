@@ -130,6 +130,24 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");
   });
 
+  test("a first-time owner finds the sitters on Goldito and opens a profile (FB-32)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: "North York", experience_years: 3, services: ["boarding"] });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+
+    // No bookings, no sitters of their own: the sitters on Goldito instead of an empty page.
+    await expect(screen.getByTestId("sitters-on-goldito")).toContainText("Open a profile to ask before booking");
+    await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(2);
+    await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("North York · 3 yrs experience");
+    await expect(screen.getByTestId("book-care")).toBeVisible();
+    await screen.getByTestId("sitter-card-Chloe").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
+    await expect(screen.getByTestId("sitter-name")).toHaveText("Chloe");
+  });
+
   test("an unknown sitter link shows a friendly empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);

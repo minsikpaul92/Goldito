@@ -248,17 +248,26 @@ export default function BookCare() {
     );
   }
 
+  // Each sitter links to their profile (FB-32): read about them, or "Ask before booking" when the dates don't fit.
   const sitterOption = (id: string, name: string, match: SitterMatch | undefined) => (
-    <CheckRow
-      key={id}
-      radio
-      label={favorites.has(id) ? `★ ${name}` : name}
-      hint={match && !offers(match) ? "Doesn't offer house sitting" : fitLines(match, dropOff, pickUp, name)}
-      checked={sitterId === id && pickable(match)}
-      disabled={!pickable(match)}
-      onChange={() => setSitterId(id)}
-      testID={`pick-sitter-${name}`}
-    />
+    <View key={id} style={styles.sitterRow}>
+      <View style={styles.sitterPick}>
+        <CheckRow
+          radio
+          label={favorites.has(id) ? `★ ${name}` : name}
+          hint={match && !offers(match) ? "Doesn't offer house sitting" : fitLines(match, dropOff, pickUp, name)}
+          checked={sitterId === id && pickable(match)}
+          disabled={!pickable(match)}
+          onChange={() => setSitterId(id)}
+          testID={`pick-sitter-${name}`}
+        />
+      </View>
+      <TextButton
+        label="Profile"
+        onPress={() => router.push(`/owner/sitters/${id}`)}
+        testID={`sitter-profile-${name}`}
+      />
+    </View>
   );
 
   return (
@@ -444,6 +453,14 @@ const makeStyles = (theme: Theme) =>
     left: {
       alignSelf: "flex-start",
       paddingHorizontal: 0,
+    },
+    sitterRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.xs,
+    },
+    sitterPick: {
+      flex: 1,
     },
     footer: {
       padding: theme.spacing.md,
