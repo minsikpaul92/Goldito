@@ -21,8 +21,9 @@ import { NoticeDetail, NoticeThumb } from "./NoticeDetail";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
 
-/** What the sitter does during a stay — shown as live cards on the owner's Home. */
+/** What the sitter does during a stay — shown as live cards on the owner's Home (the daily report too, FB-21). */
 const LIVE_TYPES = new Set([
+  "report_sent",
   "task_done",
   "care_checkin",
   "feed_post",
@@ -33,6 +34,7 @@ const LIVE_TYPES = new Set([
 const SHOWN = 3;
 
 const EMOJI: Record<string, string> = {
+  report_sent: "📓",
   task_done: "✅",
   care_checkin: "📝",
   feed_post: "📸",

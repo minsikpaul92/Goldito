@@ -157,6 +157,17 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
   });
 
+  test("a sent daily report is a live update too, and opens the report (FB-21)", async ({ page }) => {
+    const db = await ownerHome(page);
+    db.daily_reports.push({ id: "r-max", pet_id: MAX, sitter_id: SITTER.id, report_date: "2026-10-09", body: "Max had a lovely day.", status: "sent", source_snapshot: null, created_at: ago(1), sent_at: ago(1) });
+    db.notifications.push({ id: nid(6), user_id: OWNER.id, type: "report_sent", title: "Max's daily report is here 📓", body: null, pet_id: MAX, booking_id: null, ref_id: "r-max", read_at: null, created_at: ago(1) });
+    await page.reload();
+    const screen = app(page);
+    await expect(screen.getByTestId(`live-${nid(6)}`)).toContainText("Max's daily report is here");
+    await screen.getByTestId(`live-${nid(6)}`).click();
+    await expect(page).toHaveURL(/\/owner\/diary\/r-max/);
+  });
+
   test("an update you opened leaves Home (it stays in the notification list and History)", async ({ page }) => {
     const db = await ownerHome(page);
     const screen = app(page);
