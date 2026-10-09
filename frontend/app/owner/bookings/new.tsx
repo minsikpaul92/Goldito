@@ -16,7 +16,7 @@ import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { getInquiry, markInquiryBooked } from "../../../features/inquiries/inquiryApi";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
-import { MySitter, SERVICE_LABEL, ServiceType, listMySitters } from "../../../features/sitters/sitterApi";
+import { MySitter, SERVICE_LABEL, ServiceType, favoritesFirst, listFavoriteSitterIds, listMySitters } from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   SitterMatch,
@@ -130,10 +130,14 @@ export default function BookCare() {
       .catch(() => undefined);
   }, [params.inquiry, params.other]);
 
+  const [favorites, setFavorites] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
     listMySitters()
       .then(setMySitters)
       .catch(() => setMySitters([]));
+    listFavoriteSitterIds()
+      .then((ids) => setFavorites(new Set(ids)))
+      .catch(() => undefined);
   }, []);
 
   const problem = tripProblem(petIds, dropOff, pickUp);
@@ -161,7 +165,12 @@ export default function BookCare() {
 
   const matches = search.status === "ready" ? search.matches : [];
   const matchFor = (id: string) => matches.find((m) => m.sitterId === id);
-  const others = matches.filter((m) => !mySitters.some((s) => s.id === m.sitterId));
+  // Favorites first (FB-28), otherwise the search's own order.
+  const others = favoritesFirst(
+    matches.filter((m) => !mySitters.some((s) => s.id === m.sitterId)),
+    favorites,
+    (m) => m.sitterId,
+  );
   const otherWhole = others.filter(coversWholeTrip);
   const otherPartial = others.filter((m) => !coversWholeTrip(m));
 
@@ -243,7 +252,7 @@ export default function BookCare() {
     <CheckRow
       key={id}
       radio
-      label={name}
+      label={favorites.has(id) ? `★ ${name}` : name}
       hint={match && !offers(match) ? "Doesn't offer house sitting" : fitLines(match, dropOff, pickUp, name)}
       checked={sitterId === id && pickable(match)}
       disabled={!pickable(match)}

@@ -9,6 +9,9 @@ import { Card } from "../../../../components/ui/Card";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { listFavoriteSitterIds, setFavoriteSitter } from "../../../../features/sitters/sitterApi";
 import { TextField } from "../../../../components/ui/TextField";
 import { getReview, submitReview } from "../../../../features/completion/completionApi";
 import { OWNER_REVIEW_PRESETS, composeComment, presetsFor } from "../../../../features/completion/reviewPresets";
@@ -40,6 +43,9 @@ export default function ReviewScreen() {
     setPicked((prev) => (prev.includes(phrase) ? prev.filter((p) => p !== phrase) : [...prev, phrase]));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** After the review: offer to add the sitter to favorites unless they already are (FB-28). */
+  const [askFavorite, setAskFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -48,6 +54,11 @@ export default function ReviewScreen() {
         if (!live) return;
         setBooking(b);
         setDone(!!review);
+        if (b) {
+          listFavoriteSitterIds()
+            .then((ids) => live && setIsFavorite(ids.includes(b.sitterId)))
+            .catch(() => undefined);
+        }
       })
       .catch(() => live && setBooking(null));
     return () => {
@@ -63,7 +74,13 @@ export default function ReviewScreen() {
       </Screen>
     );
   }
-  if (done) {
+  // Back to the booking underneath (it refreshes on focus); a direct link has nothing to go back to.
+  const leave = (id: string) => {
+    if (router.canGoBack()) router.back();
+    else router.replace(`/owner/bookings/${id}`);
+  };
+
+  if (done && !askFavorite) {
     return (
       <Screen>
         <EmptyState
@@ -84,9 +101,11 @@ export default function ReviewScreen() {
     try {
       await submitReview(booking.id, rating, full);
       toast.show(`Thanks! ${booking.sitterName} was told ⭐`);
-      // Back to the booking underneath (it refreshes on focus); a direct link has nothing to go back to.
-      if (router.canGoBack()) router.back();
-      else router.replace(`/owner/bookings/${booking.id}`);
+      if (isFavorite) leave(booking.id);
+      else {
+        setDone(true);
+        setAskFavorite(true);
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -119,11 +138,30 @@ export default function ReviewScreen() {
         {error ? <Text style={styles.error} testID="review-error">{error}</Text> : null}
         <Button
           label={sending ? "Sending…" : "Send review"}
-          disabled={rating < 1 || sending}
+          disabled={rating < 1 || sending || done}
           onPress={() => void send()}
           testID="review-send"
         />
       </Card>
+      <Sheet
+        visible={askFavorite}
+        title={`Add ${booking.sitterName} to your favorites?`}
+        onClose={() => leave(booking.id)}
+        testID="favorite-sheet"
+      >
+        <Text style={styles.hint}>{`Favorites show first when you book. ${booking.sitterName} isn't told.`}</Text>
+        <Button
+          label="⭐ Add to favorites"
+          onPress={() => {
+            void setFavoriteSitter(booking.sitterId, true)
+              .then(() => toast.show(`${booking.sitterName} is a favorite ⭐`))
+              .catch((e: Error) => toast.show(e.message))
+              .finally(() => leave(booking.id));
+          }}
+          testID="favorite-add"
+        />
+        <TextButton label="Not now" onPress={() => leave(booking.id)} testID="favorite-skip" />
+      </Sheet>
     </Screen>
   );
 }
@@ -134,4 +172,5 @@ const makeStyles = (theme: Theme) =>
     card: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
+    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

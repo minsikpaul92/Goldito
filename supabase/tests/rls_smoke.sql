@@ -3189,4 +3189,42 @@ begin
 end;
 $$;
 
+
+-- ---------------------------------------------------------------------------
+-- P (011h, FB-28): an owner's favorite sitters
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_err text;
+begin
+  perform _t_as(robert);
+  insert into public.owner_favorite_sitters (sitter_id) values (chloe);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters where sitter_id = chloe) = 1,
+    'P: an owner adds a sitter to their favorites (owner_id defaults to them)');
+  begin
+    insert into public.owner_favorite_sitters (sitter_id) values (joy);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'P: only a sitter can be a favorite');
+  begin
+    insert into public.owner_favorite_sitters (owner_id, sitter_id) values (joy, chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'P: …and only into their own list');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: another owner does not see the list');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: the sitter is not told (cannot read it)');
+  perform _t_as(robert);
+  delete from public.owner_favorite_sitters where sitter_id = chloe;
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: the owner removes a favorite');
+end;
+$$;
+
 rollback;

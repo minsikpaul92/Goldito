@@ -73,6 +73,8 @@ test.describe("finished stay", () => {
     await screen.getByTestId("review-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
+    await expect(screen.getByTestId("favorite-sheet")).toContainText("Add Chloe to your favorites?");
+    await screen.getByTestId("favorite-skip").click();
     expect(db.reviews).toHaveLength(1);
     expect(db.reviews[0]).toMatchObject({ booking_id: BOOKING, rating: 4, comment: "Max came home happy and tired!", sitter_id: SITTER.id });
     expect(db.notifications.find((n) => n.type === "review_received")?.user_id).toBe(SITTER.id);
@@ -106,6 +108,40 @@ test.describe("finished stay", () => {
     await screen.getByTestId("review-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
     expect(db.reviews[0]).toMatchObject({ rating: 5, comment: "Amazing care! · Would book again\nMax came home happy." });
+  });
+
+  test("after the review, Chloe can be added to favorites; she is marked and comes first (FB-28)", async ({ page }) => {
+    const db = await open(page);
+    const screen = app(page);
+    await screen.getByTestId("leave-review").click();
+    await screen.getByTestId("review-rating-5").click();
+    await screen.getByTestId("review-send").click();
+    await screen.getByTestId("favorite-add").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    expect(db.owner_favorite_sitters).toMatchObject([{ owner_id: OWNER.id, sitter_id: SITTER.id }]);
+    await page.goto("/owner/bookings");
+    await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("★ Favorite");
+
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    await expect(screen.getByTestId("sitter-favorite")).toContainText("★ Favorite");
+    await screen.getByTestId("sitter-favorite").click(); // and off again
+    await expect(screen.getByTestId("sitter-favorite")).toContainText("☆ Add to favorites");
+    await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
+  });
+
+  test("a sitter who is already a favorite is not asked about again", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id, created_at: "2026-10-01T10:00:00Z" });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await screen.getByTestId("leave-review").click();
+    await screen.getByTestId("review-rating-4").click();
+    await screen.getByTestId("review-send").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByTestId("favorite-sheet")).toHaveCount(0);
   });
 
   test("before the pets are back there is no summary and no review", async ({ page }) => {

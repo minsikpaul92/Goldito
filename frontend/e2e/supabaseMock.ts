@@ -198,6 +198,7 @@ export type MockDb = {
   /** Reviews of finished stays (Phase 07C). */
   reviews: Row[];
   sitter_owner_notes: Row[];
+  owner_favorite_sitters: Row[];
   /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
   pet_life_records: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
@@ -251,6 +252,7 @@ function createMockDb(): MockDb {
     inquiry_messages: [],
     reviews: [],
     sitter_owner_notes: [],
+    owner_favorite_sitters: [],
     pet_life_records: [],
     sitter_rates: [],
     quote_error: null,
@@ -1262,6 +1264,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011g): the sitter's note about an owner is the sitter's alone.
         (path !== "sitter_owner_notes" || row.sitter_id === me) &&
+        // RLS (011h): an owner's favorites are theirs alone.
+        (path !== "owner_favorite_sitters" || row.owner_id === me) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||
@@ -1413,6 +1417,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       // Column defaults of 010.
       ...(path === "inquiries" ? { status: "open", booking_id: null } : {}),
       ...(path === "inquiry_messages" ? { status: "sent", visible_at: new Date().toISOString(), read_at: null } : {}),
+      // 011h: owner_id defaults to the caller.
+      ...(path === "owner_favorite_sitters" ? { owner_id: me } : {}),
       ...row,
     }));
     if (path === "booking_consents") {

@@ -18,7 +18,7 @@ export type SitterSummary = {
 };
 
 /** "Your sitters": sitters this owner has had a confirmed booking with (list_my_sitters). */
-export type MySitter = SitterSummary & { bookingCount: number; lastBookingAt: string };
+export type MySitter = SitterSummary & { bookingCount: number; lastBookingAt: string; isFavorite: boolean };
 
 export type SitterProfileView = SitterSummary & { homeNotes: string | null };
 
@@ -26,10 +26,32 @@ function fail(action: string): never {
   throw new Error(`Couldn't ${action}. Check your connection and try again.`);
 }
 
+/** My favorite sitters (011h, FB-28) — private to me; they come first wherever I pick a sitter. */
+export async function listFavoriteSitterIds(): Promise<string[]> {
+  const { data, error } = await getSupabase().from("owner_favorite_sitters").select("sitter_id");
+  if (error) fail("load your favorites");
+  return ((data ?? []) as { sitter_id: string }[]).map((r) => r.sitter_id);
+}
+
+export async function setFavoriteSitter(sitterId: string, favorite: boolean): Promise<void> {
+  const table = getSupabase().from("owner_favorite_sitters");
+  const { error } = favorite ? await table.insert({ sitter_id: sitterId }) : await table.delete().eq("sitter_id", sitterId);
+  if (error && !(favorite && error.code === "23505")) fail(favorite ? "add the favorite" : "remove the favorite");
+}
+
+/** Favorites first, otherwise the order stays as it was (a stable sort). */
+export function favoritesFirst<T>(list: T[], favorites: ReadonlySet<string>, idOf: (item: T) => string): T[] {
+  return [...list].sort((a, b) => Number(favorites.has(idOf(b))) - Number(favorites.has(idOf(a))));
+}
+
 export async function listMySitters(): Promise<MySitter[]> {
-  const { data, error } = await getSupabase().rpc("list_my_sitters");
+  const [{ data, error }, favoriteIds] = await Promise.all([
+    getSupabase().rpc("list_my_sitters"),
+    listFavoriteSitterIds().catch(() => [] as string[]),
+  ]);
   if (error) fail("load your sitters");
-  return ((data ?? []) as {
+  const favorites = new Set(favoriteIds);
+  const sitters = ((data ?? []) as {
     sitter_id: string;
     display_name: string;
     bio: string | null;
@@ -47,7 +69,9 @@ export async function listMySitters(): Promise<MySitter[]> {
     services: s.services ?? ["boarding"],
     bookingCount: Number(s.booking_count),
     lastBookingAt: s.last_booking_at,
+    isFavorite: favorites.has(s.sitter_id),
   }));
+  return favoritesFirst(sitters, favorites, (s) => s.id);
 }
 
 /**
