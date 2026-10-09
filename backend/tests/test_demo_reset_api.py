@@ -70,3 +70,16 @@ def test_a_demo_account_resets_to_the_chosen_state(client: TestClient, monkeypat
     assert response.status_code == 200
     assert response.json() == {"state": "confirmed", "deleted": {"bookings (owner side)": 1}}
     assert seen == {"owner": "o1", "sitter": "s1", "state": "confirmed", "apply": True}
+
+
+def test_rpc_json_accepts_the_empty_answer_of_a_void_function(monkeypatch: pytest.MonkeyPatch):
+    import httpx
+    from app.services import authz
+
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role-test")
+    get_settings.cache_clear()
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: httpx.Response(204, request=httpx.Request("POST", "https://x")))
+
+    assert authz.rpc_json("token", "request_skip_meet_greet", {"p_booking": "b1"}) is None
+    get_settings.cache_clear()

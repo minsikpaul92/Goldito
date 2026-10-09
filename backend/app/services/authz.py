@@ -41,7 +41,8 @@ def rpc_json(access_token: str, fn: str, params: dict, *, timeout: float = 10.0)
         except ValueError:
             pass
         raise RpcError(fn, response.status_code, message)
-    return response.json()
+    # A function that returns `void` answers with an empty body.
+    return response.json() if response.content else None
 
 
 class RpcError(RuntimeError):

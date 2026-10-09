@@ -39,7 +39,7 @@
 - 그래서 **지금 Chloe는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
 - ⚠️ **픽업 시각이 지나면** 시터 쪽 시나리오(TASK · CHK)가 "Tasks open once the stay has started" 등으로 막힌다. 그때는 새 예약을 만들어 드롭오프를 완료 처리하거나 시드 스크립트(Phase 10, 10.1)를 쓴다.
 - 데이터 시드·리셋 스크립트는 아직 없다 (Phase 10).
-- **2026-10-08 현재:** 위 예약의 픽업 시각(10/7)이 지나 Chloe는 돌보는 중이 아니다. 시터 · 완료 시나리오는 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2로 새 예약을 만들어야 한다. Chloe의 `sitter_rates`는 **임시 행**(보딩 $55 · +50% · +25%)이 들어가 있다. 깨끗한 상태로 되돌리는 `backend/scripts/reset_demo.py`가 있다(FB-10 — dry run이 기본, `--apply` 후 `reset` 입력). 상태는 `empty` · `pets` · `confirmed`(시터가 수락한, 체크아웃 전 예약) — `--state`로 고르거나 앱 **Profile → Demo tools**(테스트 전용, `DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`일 때만). 🤖 pytest `test_reset_demo` · `test_demo_reset_api`, Playwright `demo-tools`. **아직 호스팅 DB에는 실행 전** — 사람이 실행한 뒤 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2를 처음부터 다시.
+- **2026-10-08 현재:** 위 예약의 픽업 시각(10/7)이 지나 Chloe는 돌보는 중이 아니다. 시터 · 완료 시나리오는 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2로 새 예약을 만들어야 한다. Chloe의 `sitter_rates`는 **임시 행**(보딩 $55 · +50% · +25%)이 들어가 있다. 깨끗한 상태로 되돌리는 `backend/scripts/reset_demo.py`가 있다(FB-10 — dry run이 기본, `--apply` 후 `reset` 입력). 상태는 `empty` · `pets` · `confirmed`(시터가 수락한, 체크아웃 전 예약) — `--state`로 고르거나 앱 **Profile → Demo tools**(테스트 전용, `DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`일 때만). 🤖 pytest `test_reset_demo` · `test_demo_reset_api`, Playwright `demo-tools`. **호스팅 DB에서 `--state confirmed` 실행 확인(10/09)** — Finish booking → 견적 $268.13 CAD까지 열림(동의서 · 결제는 사람이) — 사람이 실행한 뒤 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2를 처음부터 다시.
 
 ### 1.4 테스트가 남기는 데이터
 
