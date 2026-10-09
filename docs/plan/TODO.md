@@ -17,7 +17,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | Step | State |
 | :--- | :--- |
-| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 ✅ merged (`7f37e94`) → #58 ✅ merged (`734d477`). R0 is done; R1 `fix/review-high` is in progress. Code complete, **DoD pending** (human runs). CI was green on #55 / #56 / #57 after R0-1 / R0-2. |
+| 1 | **Unmerged stack:** #55 ✅ merged (`f2cd03a`) → #56 ✅ merged (`07eda25`) → #57 ✅ merged (`7f37e94`) → #58 ✅ merged (`734d477`). R0 is done; **R1 is split (2026-10-09):** R1a `fix/review-high` (#60 — report / Life Record fixes + the 2026-10-09 test feedback, 011f–011h) is merged; **R1b `fix/review-inquiry`** (RV-1 → RV-5, 011c–011e) starts from main. Code complete, **DoD pending** (human runs). CI was green on #55 / #56 / #57 after R0-1 / R0-2. |
 | 2 | **Hotfix on main:** ✅ merged as #59 (`780c772`, 2026-10-08) — Try demo uses `@goldito.test`. |
 | 3 | **Plan (review D-R2):** ✅ CI fixed on the stack (R0-1 · R0-2) → merging the stack in order by merging `origin/main` into each next branch (no rebase / force-push; **do not delete a base branch before the PR on top is retargeted**) → review fixes from main in chunks R1 → R2 → R3 → R4 → then 6B.1. |
 | 4 | **Hosted DB** already has `010`–`011b` + a temporary `sitter_rates` row for Chloe (see Hosted DB status). New migrations from the review start at `011c` (`012` is reserved for 06B). |
@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-1** | Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
+| **RV-1** | (branch `fix/review-inquiry` from main) Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
 
 ---
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → RV-8 ✅ (plain-list draft without the AI) → **RV-1** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1a `fix/review-high` (PR #60, merged 2026-10-09) then R1b `fix/review-inquiry` (RV-1 → RV-5):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → RV-8 ✅ (plain-list draft without the AI) → **RV-1** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
