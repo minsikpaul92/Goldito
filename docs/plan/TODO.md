@@ -28,12 +28,14 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 ---
 
-## Current focus (one task only)
+## Current focus (one task per person — since 2026-10-09 Minsik and Seulgi each have one)
 
+> Work split (2026-10-09): Minsik = what blocks the demo path (R1b → 06B → R2 → 10); Seulgi = Phase Q (QA · wording · anonymized data · tone · Medium/Low review items). See [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). Each person edits only their own row.
 
-| ID      | Task                                      | Phase doc                         |
-| ------- | ----------------------------------------- | --------------------------------- |
-| **RV-1** | (branch `fix/review-inquiry` from main) Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
+| Who | ID | Task | Phase doc |
+| --- | ------- | ----------------------------------------- | --------------------------------- |
+| **Seulgi** | **Q.0** | Environment + demo accounts: run the app locally with the `.env` files from Minsik, sign in with Try demo (owner + sitter), one demo reset — then **Q.1** the full manual run with sitter-eye feedback (FB-30+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
+| **Minsik** | **RV-1** | (branch `fix/review-inquiry` from main) Inquiry "yes I can host" = the booking engine's capacity rule: new migration `011c_stay_capacity_check.sql` (`stay_capacity_check` RPC), `_gather` uses it, an RPC failure forces `needs_sitter` and no price | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-1 |
 
 ---
 
@@ -43,8 +45,10 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 > Phase 00 account tasks (0.3–0.4) may run in parallel with Phase 01 (see phase-00.md).
 
-> Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's; **since 2026-10-04 Minsik owns them all** (Seulgi only delivers the anonymized conversation data) — one Current focus per agent session.
+> Order follows the 5-stage scenario ([full-process.ko.md](full-process.ko.md), D27). The AI tasks (7.1 → 7B backend → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 last, D41) were Seulgi's, then Minsik's from 2026-10-04. **From 2026-10-09 Seulgi is back on a separate track, Phase Q** (QA, wording, anonymized data, tone, R3/R4 review items) — [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md). One Current focus per person.
 
+- [ ] **Seulgi — Phase Q** (in order, one at a time in her Current focus row; detail in [phase-q.md](phases/phase-q.md)): Q.0 environment → Q.1 full manual run + sitter-eye feedback (FB-30+) → Q.2 wording / presets → Q.3 anonymization (+ zero-retention decision) → Q.4 tone data (inquiry + **daily report**) + auto-send delay formula → Q.5 R3 Medium report / caption / Life Record / seed (M-14 · M-20 · M-16 first) → Q.6 R3 Medium inquiry M-1–M-11 (after R1b is merged) → Q.7 measurements → Q.8 final QA (10/27–29) → Q.9 R4 Low → Q.10 SFT (P2)
+- [ ] **Minsik — urgent** (in order): R1b RV-1 → RV-5 (`fix/review-inquiry`) → 06B Pet Transit → R2 booking flow (FB-8 → FB-9 → FB-5 → FB-6 → FB-2) → 10 demo & deploy (fixed demo accounts below). R3 / R4 review items moved to Seulgi's Phase Q.
 - [ ] **Demo accounts for judging (before submit — then remove the reset)** Take **Profile → Demo tools** and `POST /api/demo/reset` out (unset `EXPO_PUBLIC_DEMO_TOOLS` + `DEMO_RESET_ENABLED`, delete `components/DemoTools.tsx`, `lib/demoReset.ts`, `e2e/demo-tools.spec.ts`, `app/routers/demo.py`, the CI env line). Replace it with fixed accounts per starting point, built by the same `demo_reset` code (nothing a judge can delete): empty · pets only · booking accepted, later in care · finished. The Try demo buttons pick among them. Needs a decision on the shared-account problem (two judges on one account) — see the 2026-10-09 discussion. Fits Phase 10 seed (10.1)
 - [ ] **PR #60 review follow-ups (2026-10-09, after RV-10 unless they block a test)** — **R60-3** the demo reset is not atomic: a failure after the deletes leaves the accounts half-reset and the API answers a bare 500 (check `DEMO_PASSWORD` + capacity before deleting; map `RpcError` / `RuntimeError` to 409/502 with the message; ideally one `security definer` function) · **R60-4** extra owner pets (e.g. a test "Coco") survive `pets`–`in_care` and all of them go into `request_booking` → over capacity → the reset fails after the deletes (book Max + Mochi only, or delete other pets) · **R60-5** `in_care` fails 00:00–00:57 Toronto (yesterday's overnight slot is not opened: open the schedule from `today - 1`) · **R60-6** FB-7 still says "doesn't offer that service" when a rates row exists but this service's price is null (`quote_booking` should raise `rates_not_set` for a null price; `pay_booking_demo` path not remapped)
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
