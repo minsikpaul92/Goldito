@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-7** | More than 8 kept chips no longer 422 → "check your connection": request `chips` up to 30 (server still uses 8), a hint under the chips past 8, `explain()` maps 422 | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-7 |
+| **RV-8** | A report without the AI: when the model is down (503) or answers empty (502), save a plain-list draft of the kept chips + note (`model = "template-fallback"`, `fallback: true`), the app says so and Send still works | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-8 |
 
 ---
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → RV-6 ✅ (turned-off chips leave the draft) → RV-7 ✅ (> 8 chips) → **RV-8** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
@@ -80,6 +80,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **RV-7** More than 8 kept highlights no longer fail with a 422 that read as "check your connection". `POST /api/ai/daily-report` takes up to 30 chips and still writes from the first 8 (`clean_chips`); the app sends them in order — the sitter's own chips, notes, photos, then feed captions — shows "Only 8 highlights go into the report — turn a few off to choose." under the chips past 8 (it does not block), and a 422 now says "Too many highlights — turn a few off and try again." pytest +1 (12 chips → 200, 8 in the snapshot), full pytest 377 ✓, flows `report` 10 ✓ (+2), tsc ✓, ruff ✓ (2026-10-09).
 
 - [x] **RV-6** A turned-off chip really stays out of the daily report (D38). Episode chips are named after their record (`note-{checkin_id}`, `feed-{post_id}`, carried as `_ref` in the snapshot; `model_view` strips `_` keys before the model sees it, the saved `source_snapshot` keeps them). `POST /api/ai/daily-report` takes `off` (turned-off episode chips, max 60; unknown ids ignored; saved in `inputs.off`): that check-in's note is dropped (a `note` check-in entirely) and that feed caption is left out. Task / check-in photo captions (`caption_source='task'`, e.g. "🍽️ Dinner — done") are no longer photos or episode chips — they repeated a record and brought a turned-off check back. The app sends `off`, and a photo with **any** chip turned off sends no vision description (before: only when all were off). pytest +5 (all fail on the old code), full pytest 376 ✓, flows `report` + `diary` 12 ✓ (3 fail on the old composer), tsc ✓, ruff ✓ (2026-10-09).
 

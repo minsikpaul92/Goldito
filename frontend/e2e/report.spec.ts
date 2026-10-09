@@ -17,7 +17,7 @@ const CHIPS = [
 const PHOTO_CHIP = { id: "photo-media-proof-0", kind: "episode", label: "Watching a squirrel", source: "vision", check: null, media_id: "media-proof" };
 const PHOTO_CHIP_2 = { id: "photo-media-proof-1", kind: "episode", label: "Park walk", source: "vision", check: null, media_id: "media-proof" };
 
-async function openSitterDiary(page: import("@playwright/test").Page) {
+async function openSitterDiary(page: import("@playwright/test").Page, extraChips: typeof CHIPS = []) {
   // A fixed clock before the first navigation: "today" is a Toronto date, so it must not depend on when CI runs.
   await page.clock.setFixedTime(NOON_TORONTO);
   const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
@@ -33,7 +33,7 @@ async function openSitterDiary(page: import("@playwright/test").Page) {
       contentType: "application/json",
       body: JSON.stringify({
         summary: { tasks_done: 2, tasks_missed: 1, checkins: 4 },
-        chips: withPhoto ? [...CHIPS, PHOTO_CHIP, PHOTO_CHIP_2] : CHIPS,
+        chips: [...CHIPS, ...extraChips, ...(withPhoto ? [PHOTO_CHIP, PHOTO_CHIP_2] : [])],
         photos: withPhoto ? [{ media_id: "media-proof", description: "Max looking up at a squirrel" }] : [],
       }),
     });
@@ -111,7 +111,7 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
     expect(reportRequests[0]).toMatchObject({
-      chips: ["Met a golden retriever", "Zoomies at the park", "Watching a squirrel", "Park walk"],
+      chips: ["Met a golden retriever", "Watching a squirrel", "Park walk", "Zoomies at the park"], // notes, photos, then the feed
       photos: ["Max looking up at a squirrel"],
     });
 
@@ -120,7 +120,30 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
-    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever", "Zoomies at the park", "Park walk"], photos: [] });
+    expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever", "Park walk", "Zoomies at the park"], photos: [] });
+  });
+
+  test("more than 8 highlights on: a hint says only 8 go in, and the report is still written", async ({ page }) => {
+    const notes = Array.from({ length: 7 }, (_, i) => ({ id: `note-c${i}`, kind: "episode", label: `Moment ${i}`, source: "checkin", check: null, media_id: null }));
+    const { reportRequests } = await openSitterDiary(page, notes);
+    const screen = app(page);
+    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveText("Only 8 highlights go into the report — turn a few off to choose.");
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
+    expect((reportRequests[0].chips as string[]).length).toBe(9);
+    expect(reportRequests[0].chips).toEqual(["Met a golden retriever", ...notes.map((n) => n.label), "Zoomies at the park"]);
+
+    await screen.getByTestId(`report-back-${MAX.id}`).click();
+    await screen.getByTestId(`report-chip-${MAX.id}-note-c0`).click(); // back to 8: no hint
+    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveCount(0);
+  });
+
+  test("a refused request (422) says what to do, not \"check your connection\"", async ({ page }) => {
+    await openSitterDiary(page);
+    await page.route("**/api/ai/daily-report", (route) => route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify({ detail: [] }) }));
+    const screen = app(page);
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect(screen.getByText("Too many highlights — turn a few off and try again.")).toBeVisible();
   });
 
   test("a turned-off note or photo chip is sent as `off`, so the server leaves that record out", async ({ page }) => {
@@ -188,7 +211,7 @@ test.describe("daily report", () => {
 
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
-    expect(reportRequests[0]).toMatchObject({ chips: ["Met a golden retriever", "Zoomies at the park", "Learned a new trick"] });
+    expect(reportRequests[0]).toMatchObject({ chips: ["Learned a new trick", "Met a golden retriever", "Zoomies at the park"] }); // the sitter's own first
 
     await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByRole("button", { name: "Learned a new trick: on" }).click();

@@ -21,6 +21,8 @@ export type ChipSuggestions = { summary: DaySummary; chips: ReportChip[]; photos
 export const REPORT_NOTE_MAX = 200;
 export const REPORT_BODY_MAX = 2000;
 export const REPORT_MAX_PHOTOS = 2;
+/** Highlights (episode chips) the report uses; more can stay on, the first ones go in (server MAX_CHIPS). */
+export const REPORT_MAX_HIGHLIGHTS = 8;
 export const CUSTOM_CHIP_MAX = 40;
 
 export type ReportDraft = { id: string; body: string; status: "draft" | "sent" };
@@ -67,6 +69,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
     });
     return { id: res.report_id, body: res.body, status: "draft" };
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights — turn a few off and try again.");
     throw explain(error, "Couldn't write the report. Check your connection and try again.");
   }
 }

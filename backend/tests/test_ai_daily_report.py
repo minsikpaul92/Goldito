@@ -407,9 +407,16 @@ def test_model_trouble_saves_nothing(client, setup, monkeypatch):
     assert db.tables["daily_reports"] == []
 
 
+def test_more_than_eight_kept_chips_write_a_report_from_the_first_eight(client, setup):
+    _, model = setup()
+    response = post(client, chips=[f"Highlight {i}" for i in range(12)])
+    assert response.status_code == 200
+    assert model.snapshot["chips"] == [f"Highlight {i}" for i in range(8)]
+
+
 def test_input_limits(client, setup):
     setup()
-    assert post(client, chips=[f"c{i}" for i in range(9)]).status_code == 422
+    assert post(client, chips=[f"c{i}" for i in range(31)]).status_code == 422
     assert post(client, photos=["a", "b", "c"]).status_code == 422
     assert post(client, sitter_note="x" * 201).status_code == 422
     assert post(client, sitter_note="x" * 200).status_code == 200

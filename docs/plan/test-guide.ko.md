@@ -426,7 +426,7 @@
 | RV-4 | 예약한 적 없는 오너가 처음 문의 | 시터 Questions 카드 · 스레드에 **오너 이름**과 **펫 이름 · 정보**가 보임 | 새로 필요 | ➖ |
 | RV-5 | 오너가 시터 A · B에게 문의 후 A를 예약 / 문의 기간이 지남 | B는 그 펫의 Life Record를 못 읽음, 닫힌 문의에서 Regenerate는 409 | SQL smoke | ➖ |
 | RV-6 | Diary에서 메모 · 사진 칩 하나를 끄고 Write | 초안에 꺼진 칩 내용이 없음 | 🤖 `report` (`off` 전송 · 사진 칩 하나만 꺼도 설명 제외) · pytest `test_ai_daily_report` (꺼진 메모 · 피드 원문이 모델 입력에 없음 · 할 일 사진 캡션 제외 · `_ref` 숨김), `test_ai_report_chips` (칩 id = 기록 id) | ➖ |
-| RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 새로 필요 | ➖ |
+| RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 🤖 `report` (안내 문구 · 9개 전송 · 422 문구) · pytest `test_ai_daily_report` (칩 12개 → 앞 8개) | ➖ |
 | RV-8 | AI가 꺼진 상태(키 없음)로 Write | "plain list" 안내와 함께 칩 목록 초안 → 고쳐서 Send 가능 | 새로 필요 | ➖ |
 | RV-9 | 시터 Returned 직후 오너가 home safe 알림을 눌러 예약 열기 | 오류 없이 "Writing the Life Record…" → 기록 표시, 기록은 펫마다 하나 | 🤖 `completion` (Returned 직후 대기 · 재진입 시 요청 1번 · 실패해도 기록 있으면 표시) · pytest `test_ai_life_record` (23505 재사용 · 모델 전 재확인) | ➖ |
 | RV-10 | 같은 시터와 두 번째 돌봄 후 Life Record | 이번 돌봄의 알림장 내용만 반영 | pytest `test_ai_life_record` (예전 돌봄 제외 · 긴 돌봄은 최신 5개 · 이 예약의 문의 우선 · 끝난 뒤 문의 제외) | ➖ |

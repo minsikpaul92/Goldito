@@ -5,6 +5,7 @@ import {
   CUSTOM_CHIP_MAX,
   ChipPhoto,
   REPORT_BODY_MAX,
+  REPORT_MAX_HIGHLIGHTS,
   REPORT_MAX_PHOTOS,
   REPORT_NOTE_MAX,
   ReportChip,
@@ -34,6 +35,9 @@ import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
+
+/** Which highlights go first when more than REPORT_MAX_HIGHLIGHTS are on (by chip source). */
+const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
 
 /**
  * The sitter's evening note for one pet (phase-07 7.3): chips from the day (and up to two photos) →
@@ -156,6 +160,11 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
   );
   const all = useMemo(() => [...shown, ...custom], [shown, custom]);
   const kept = useMemo(() => all.filter((c) => !off.has(c.id)), [all, off]);
+  // The report uses the first REPORT_MAX_HIGHLIGHTS: what the sitter wrote, then notes, photos, the feed.
+  const highlights = useMemo(
+    () => kept.filter((c) => c.kind === "episode").sort((a, b) => (HIGHLIGHT_ORDER[a.source] ?? 9) - (HIGHLIGHT_ORDER[b.source] ?? 9)),
+    [kept],
+  );
 
   const addCustom = () => {
     const label = customText.trim().replace(/\s+/g, " ").slice(0, CUSTOM_CHIP_MAX);
@@ -174,7 +183,7 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       const skip = chips.filter((c) => c.kind === "record" && c.check && off.has(c.id)).map((c) => c.check as string);
       const result = await generateReport({
         petId: pet.id,
-        chips: kept.filter((c) => c.kind === "episode").map((c) => c.label),
+        chips: highlights.map((c) => c.label),
         note: note.trim() || null,
         // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
@@ -263,7 +272,14 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       ) : null}
       <Text style={styles.label}>Today's chips</Text>
       {all.length > 0 ? (
-        <ChipSuggestions chips={all} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
+        <>
+          <ChipSuggestions chips={all} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
+          {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
+            <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
+              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights go into the report — turn a few off to choose.`}
+            </Text>
+          ) : null}
+        </>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
           {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short note."}

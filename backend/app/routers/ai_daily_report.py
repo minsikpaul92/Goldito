@@ -17,7 +17,6 @@ from pydantic import BaseModel, Field
 from app.ai import tone
 from app.ai.daily_report import (
     CHECK_KEYS,
-    MAX_CHIPS,
     NOTE_MAX,
     broken_rules,
     build_snapshot,
@@ -43,13 +42,15 @@ logger = logging.getLogger("goldito.ai")
 TIMEOUT_S = 60.0
 MAX_TOKENS = 400
 TARGET_WORDS = (60, 220)
+# Kept chips the request may carry: the sitter can keep more than MAX_CHIPS on screen; the first MAX_CHIPS go in.
+MAX_SENT_CHIPS = 30
 
 
 class DailyReportRequest(BaseModel):
     pet_id: UUID
     # The chips the sitter kept (their text), a short note, up to two photo descriptions (7.7),
     # and the checks the sitter turned off ("meal" | "potty" | "walk" | "mood" | "meds").
-    chips: list[str] = Field(default_factory=list, max_length=MAX_CHIPS)
+    chips: list[str] = Field(default_factory=list, max_length=MAX_SENT_CHIPS)
     sitter_note: str | None = Field(default=None, max_length=NOTE_MAX)
     photos: list[str] = Field(default_factory=list, max_length=2)
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
