@@ -3104,4 +3104,48 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Care window follows Received (011f): the pets are at the sitter's early → check-ins open at once
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_pet uuid;
+  v_booking uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Early') returning id into v_pet;
+  -- Agreed drop-off an hour away, pick-up in three days; nothing received yet.
+  v_booking := _t_booking(robert, chloe, array[v_pet], now() + interval '1 hour', now() + interval '3 days', 'confirmed');
+
+  perform _t_as(chloe);
+  perform _t_ok(not in_care_window(v_pet, now()), '011f: before Received and before the agreed drop-off the window is closed');
+  begin
+    perform log_care_checkin(v_pet, 'meal', 'all');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care_window', '011f: …and a check-in is refused');
+
+  -- The sitter taps Received an hour early (allowed from 2 h before).
+  perform complete_handoff(v_booking, 'drop_off');
+  perform _t_ok(in_care_window(v_pet, now()), '011f: after an early Received the window is open now');
+  perform log_care_checkin(v_pet, 'meal', 'all');
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = v_pet and kind = 'meal' and created_by = chloe) = 1,
+    '011f: an early Received lets the sitter log a check-in before the agreed time');
+
+  -- Nobody else gains access, and the owner still cannot log one.
+  perform _t_as(paul);
+  perform _t_ok(not in_care_window(v_pet, now()), '011f: another sitter is not inside the window');
+  perform _t_as(robert);
+  perform _t_ok(not in_care_window(v_pet, now()), '011f: the owner is not inside the window');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
