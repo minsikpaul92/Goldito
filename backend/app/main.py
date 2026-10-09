@@ -12,6 +12,7 @@ from app.routers import (
     ai_inquiry,
     ai_life_record,
     ai_report_chips,
+    demo,
     feed,
     health,
     me,
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(me.router)
 app.include_router(meet_greet.router)
+app.include_router(demo.router)
 app.include_router(media.router)
 app.include_router(feed.router)
 app.include_router(ai_care_plan.router)

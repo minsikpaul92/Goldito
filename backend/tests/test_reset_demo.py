@@ -2,6 +2,7 @@
 
 from datetime import date
 
+from app.services import demo_reset
 from scripts import reset_demo
 
 from tests.fakes import FakeDB
@@ -63,7 +64,7 @@ def test_a_dry_run_counts_and_changes_nothing():
     db = world()
     before = {name: list(rows) for name, rows in db.tables.items()}
 
-    report = dict(reset_demo.reset(db, OWNER, SITTER, TODAY, apply=False))
+    report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=False))
 
     assert {name: db.tables[name] for name in before} == before  # (the fake adds empty tables when queried)
     assert report["bookings (owner side)"] == 1
@@ -74,7 +75,7 @@ def test_a_dry_run_counts_and_changes_nothing():
 def test_apply_removes_only_the_demo_accounts_stay_data():
     db = world()
 
-    reset_demo.reset(db, OWNER, SITTER, TODAY, apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True)
 
     assert ids(db, "bookings") == {"b-other"}
     assert ids(db, "inquiries") == set()
@@ -90,7 +91,7 @@ def test_apply_removes_only_the_demo_accounts_stay_data():
 def test_apply_rebuilds_the_starting_state():
     db = world()
 
-    reset_demo.reset(db, OWNER, SITTER, TODAY, apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True)
 
     # Max is already there (not duplicated); Mochi is added.
     owner_pets = sorted(p["name"] for p in db.tables["pets"] if p["owner_id"] == OWNER)
@@ -111,7 +112,7 @@ def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
     db = world()
     db.tables["pets"] = []
 
-    report = dict(reset_demo.reset(db, OWNER, SITTER, TODAY, apply=True))
+    report = dict(demo_reset.reset(db, OWNER, SITTER, TODAY, apply=True))
 
     assert report["feed posts"] == 0
     assert sorted(p["name"] for p in db.tables["pets"]) == ["Max", "Mochi"]
@@ -120,3 +121,44 @@ def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
 def test_the_confirmation_accepts_reset_in_any_case_and_nothing_else():
     assert all(reset_demo.confirmed(a) for a in ("reset", "RESET", "Reset", "  reset \n"))
     assert not any(reset_demo.confirmed(a) for a in ("", "yes", "resett", "re set"))
+
+
+def test_the_empty_state_leaves_the_owner_without_pets_but_the_sitter_ready():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="empty", apply=True)
+
+    assert [p["id"] for p in db.tables["pets"] if p["owner_id"] == OWNER] == []
+    assert any(p["owner_id"] == OTHER_OWNER for p in db.tables["pets"])  # other owners keep theirs
+    assert len(db.tables["sitter_rates"]) == 1
+    assert len(db.tables["sitter_availability"]) == 3
+
+
+def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not():
+    db = world()
+    calls = []
+
+    def book(client, owner_id, sitter_id, today):
+        # By now the pets, prices and schedule must already exist for the booking RPCs to accept it.
+        calls.append((owner_id, sitter_id, today, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
+        return "b-new"
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, book=book)
+    assert calls == []
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=book)
+    assert calls == [(OWNER, SITTER, TODAY, 3, 1)]
+
+
+def test_a_dry_run_never_books_and_an_unknown_state_is_refused():
+    db = world()
+
+    def book(*_):
+        raise AssertionError("a dry run must not book")
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=False, book=book)
+
+    import pytest
+
+    with pytest.raises(ValueError):
+        demo_reset.reset(db, OWNER, SITTER, TODAY, state="bogus", apply=False)  # type: ignore[arg-type]

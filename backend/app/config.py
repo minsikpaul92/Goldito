@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
+    # Testing only: lets the demo accounts reset the demo (POST /api/demo/reset). Off unless set to 1/true.
+    demo_reset_enabled: bool = Field(default=False, alias="DEMO_RESET_ENABLED")
 
     # Video Meet & Greet (3B.11, D45): the Goldito Google account creates Calendar events
     # with a Google Meet link. The refresh token comes from one consent by that account.
