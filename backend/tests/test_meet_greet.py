@@ -48,7 +48,7 @@ AGREED = MeetGreetBooking(
     sitter_name="Chloe",
     pet_names=["Max", "Mochi"],
     owner_email="robert@example.com",
-    sitter_email="demo-sitter@pawddy.test",
+    sitter_email="demo-sitter@goldito.test",
 )
 
 

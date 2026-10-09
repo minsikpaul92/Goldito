@@ -76,6 +76,24 @@ async function openRequest(page: import("@playwright/test").Page) {
 }
 
 test.describe("sitter requests", () => {
+  test("a request for a pet with an earlier stay shows the previous sitter's Life Record, folded", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "not_needed");
+    db.pet_life_records.push({
+      id: "rec1", pet_id: MAX, booking_id: "old-booking", sitter_id: OWNER.id, // an earlier sitter (any other profile)
+      summary: { eats: "Finishes breakfast.", meds: "Takes the pill in a treat.", potty: null, behavior: null, heads_up: ["Chicken allergy"], sitter_tips: [], changed_since_last: [] },
+      stay_from: "2026-09-01", stay_to: "2026-09-03", created_at: "2026-09-04T00:00:00Z",
+    });
+    const { screen, card } = await openRequest(page);
+    await card.click();
+    await expect(screen.getByTestId(`record-fold-${MAX}`)).toContainText("From Max's Life Record");
+    await expect(screen.getByTestId(`record-fold-card-${MAX}`)).toHaveCount(0); // folded
+    await screen.getByTestId(`record-fold-toggle-${MAX}`).click();
+    await expect(screen.getByTestId(`record-fold-card-${MAX}`)).toContainText("Takes the pill in a treat.");
+    await expect(screen.getByTestId(`record-fold-card-${MAX}`)).toContainText("Chicken allergy");
+    await expect(screen.getByTestId(`record-fold-${MOCHI}`)).toHaveCount(0); // no record for Mochi: nothing shown
+  });
+
   test("a first-time request shows custom time and Meet first, and Accept waits", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { FinishedStay } from "../../../../components/FinishedStay";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
 import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
@@ -198,6 +199,8 @@ export default function OwnerBookingDetail() {
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>
+
+        {booking.status === "confirmed" && booking.pickUp?.completedAt ? <FinishedStay booking={booking} /> : null}
 
         {ended ? (
           <Card style={styles.block} testID="booking-ended">

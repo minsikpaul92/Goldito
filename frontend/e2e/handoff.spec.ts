@@ -47,6 +47,11 @@ test.describe("handoff check", () => {
   test("Received, then Returned, from the sitter's booking", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, HOUR);
+    const lifeRecordAsked: Record<string, unknown>[] = [];
+    await page.route("**/api/ai/life-record", (route) => {
+      lifeRecordAsked.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ records: [] }) });
+    });
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/sitter/bookings/${BOOKING}`);
@@ -59,9 +64,11 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
 
     await screen.getByTestId("handoff-returned").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max on the way home — Robert gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
+    // Returned also asks the backend to write the stay's Life Record (once).
+    await expect.poll(() => lifeRecordAsked).toEqual([{ booking_id: BOOKING }]);
 
     // A finished stay moves to Past.
     await page.goBack();

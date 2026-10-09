@@ -52,7 +52,7 @@ def sitter_token() -> str:
     return jwt.encode(
         {
             "sub": SITTER_ID,
-            "email": "sitter@pawddy.test",
+            "email": "sitter@goldito.test",
             "aud": "authenticated",
             "iss": ISSUER,
             "role": "authenticated",
@@ -69,7 +69,7 @@ def owner_token() -> str:
     return jwt.encode(
         {
             "sub": OWNER_ID,
-            "email": "owner@pawddy.test",
+            "email": "owner@goldito.test",
             "aud": "authenticated",
             "iss": ISSUER,
             "role": "authenticated",

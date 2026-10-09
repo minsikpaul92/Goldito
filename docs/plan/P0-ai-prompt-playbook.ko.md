@@ -513,7 +513,7 @@ DoD: sitter upload only; caption appears automatically.
 
 ```text
 Create scripts/seed_demo.sql or Python using service role:
-- Users: demo-owner@pawddy.test, demo-sitter@pawddy.test (password from env DEMO_PASSWORD — never committed; phase-10 10.1)
+- Users: demo-owner@goldito.test, demo-sitter@goldito.test (password from env DEMO_PASSWORD — never committed; phase-10 10.1)
 - Confirmed booking in progress: bookings + booking_pets + booking_slots + agreed booking_handoffs (see rls_smoke.sql _t_booking)
 - Dog Max with chicken allergy, one medication task 8am, walk 10:30
 - Cat Mochi, feeding 9am, litter 12pm

@@ -10,6 +10,8 @@ import { Chip } from "../../../components/ui/Chip";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { StarRating } from "../../../components/StarRating";
+import { RatingSummary, getRatingSummary } from "../../../features/completion/completionApi";
 import { addMonths, appToday, formatDay, formatTime, monthEnd, monthStart } from "../../../features/schedule/dates";
 import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../features/schedule/scheduleApi";
 import { SERVICE_LABEL, SitterProfileView, getSitterProfile, sitterMeta } from "../../../features/sitters/sitterApi";
@@ -46,6 +48,7 @@ export default function SitterProfileScreen() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [day, setDay] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
+  const [rating, setRating] = useState<RatingSummary | null>(null);
 
   const loadProfile = useCallback(async () => {
     if (!sitterId) return;
@@ -70,6 +73,10 @@ export default function SitterProfileScreen() {
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
+
+  useEffect(() => {
+    if (sitterId) void getRatingSummary(sitterId).then(setRating);
+  }, [sitterId]);
 
   useEffect(() => {
     void loadSchedule();
@@ -120,6 +127,19 @@ export default function SitterProfileScreen() {
               <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
             ))}
           </View>
+          {rating && rating.count > 0 && rating.avg != null ? (
+            <View style={styles.block} testID="sitter-rating">
+              <Text style={styles.label} testID="sitter-rating-line">
+                {`★ ${rating.avg.toFixed(1)} · ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`}
+              </Text>
+              {rating.recent.map((r, i) => (
+                <View key={`${r.createdAt}-${i}`} style={styles.block} testID="sitter-review">
+                  <StarRating value={r.rating} size={14} />
+                  <Text style={styles.body}>{`“${r.comment}” — ${r.reviewer}`}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           {sitter.bio ? <Text style={styles.body}>{sitter.bio}</Text> : null}
           {sitter.homeNotes ? (
             <View style={styles.block}>
