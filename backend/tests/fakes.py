@@ -76,6 +76,11 @@ class _Query:
         rows = self.db.tables.setdefault(self.name, [])
         if self.op == "insert":
             row = {"id": str(uuid4()), **self.payload}
+            if self.name == "inquiry_messages":
+                # The table's `created_at default now()`: the thread's order depends on it (FB-34).
+                from datetime import UTC, datetime
+
+                row.setdefault("created_at", datetime.now(UTC).isoformat())
             rows.append(row)
             return SimpleNamespace(data=[row])
         hit = [r for r in rows if all(f(r) for f in self.filters)]

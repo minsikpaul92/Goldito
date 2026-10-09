@@ -95,18 +95,21 @@ def inquiry_reply(
     )
     messages.sort(key=lambda m: str(m.get("created_at", "")))
     drafts = [m for m in messages if m["author"] == "ai"]
-    if drafts and not body.regenerate:
-        return _redact(
-            _reuse(drafts[-1]), user, inquiry
-        )  # idempotent: asking twice never makes a second draft
-    if drafts and body.regenerate:
-        _note_discarded(db, inquiry, drafts[-1])
     questions = [m for m in messages if m["author"] == "owner"]
     if not questions:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="This inquiry has no question yet."
         )
     question = questions[-1]
+    # A draft answers the owner's latest message (FB-34: the owner can write again after a reply).
+    answered = bool(drafts) and str(drafts[-1].get("created_at", "")) >= str(question.get("created_at", ""))
+    if answered and not body.regenerate:
+        return _redact(
+            _reuse(drafts[-1]), user, inquiry
+        )  # idempotent: asking twice never makes a second draft
+    if answered and body.regenerate:
+        _note_discarded(db, inquiry, drafts[-1])
+    earlier = _earlier_messages(messages, question)
 
     tz = ZoneInfo(get_settings().app_timezone)
     today = _now().astimezone(tz).date()
@@ -139,6 +142,8 @@ def inquiry_reply(
     model_name = "template"
     try:
         grounding = _gather(db, inquiry, question, user, tz, today, owner_name, sitter_name)
+        if earlier:
+            grounding["conversation"] = earlier
         logic.assert_no_secrets(grounding)
     except (authz.RpcError, HTTPException) as exc:
         log.warning("inquiry-reply: could not gather the facts (%s)", exc)
@@ -603,6 +608,22 @@ def _ts(value: str) -> datetime:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
+def _earlier_messages(messages: list[dict], question: dict) -> list[dict]:
+    """The sent conversation before the owner's latest message (FB-34), newest last: a follow-up is answered in
+    context. Drafts never count; texts are trimmed."""
+    sent = [
+        m
+        for m in messages
+        if m["author"] in ("owner", "sitter")
+        and m.get("status", "sent") == "sent"
+        and str(m.get("created_at", "")) < str(question.get("created_at", ""))
+    ]
+    return [
+        {"from": "owner" if m["author"] == "owner" else "me", "text": " ".join(str(m["body"]).split())[:400]}
+        for m in sent[-6:]
+    ]
+
+
 def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
     payload = {
         **{
@@ -617,6 +638,7 @@ def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
             {"id": s["id"], "source": s["label"], "text": s["text"]} for s in grounding["sources"]
         ],
         "sources": [s["id"] for s in grounding["sources"]],
+        **({"conversation_so_far": grounding["conversation"]} if grounding.get("conversation") else {}),
         "owner_question": question,
         **({"sitter_intent": intent} if intent else {}),
     }

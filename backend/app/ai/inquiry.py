@@ -191,7 +191,9 @@ def reply_problems(text: str, grounding: dict, question: str = "", intent: str |
             problems.append(f"the date {match.group(0)} is not in the facts")
             break
     quote = grounding.get("quote")
-    if intent != "decline" and quote and grounding["availability"]["can_host"] and f"{float(quote['total']):.2f}" not in text.replace(",", ""):
+    # A follow-up (FB-34) answers the latest message; the total was given before and is not forced again.
+    follow_up = bool(grounding.get("conversation"))
+    if intent != "decline" and not follow_up and quote and grounding["availability"]["can_host"] and f"{float(quote['total']):.2f}" not in text.replace(",", ""):
         problems.append(f"it must state the total, ${float(quote['total']):.2f} {quote.get('currency', 'CAD')}")
     if _PLACEHOLDER.search(text):
         problems.append("it still contains a placeholder like {PRICE}")
