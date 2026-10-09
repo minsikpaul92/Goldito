@@ -93,6 +93,7 @@ export default function SitterBookingDetail() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmReturn, setConfirmReturn] = useState(false);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -149,6 +150,8 @@ export default function SitterBookingDetail() {
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
+  // Returned is allowed any time, but before the agreed pick-up the sitter is asked first.
+  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at);
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -338,13 +341,7 @@ export default function SitterBookingDetail() {
           ) : !booking.pickUp?.completedAt ? (
             <Button
               label={busy ? "Saving…" : "Returned"}
-              onPress={() =>
-                void run(async () => {
-                  await completeHandoff(booking.id, "pick_up");
-                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
-                  void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe — ${owner} gets a notice`)
-              }
+              onPress={() => setConfirmReturn(true)}
               disabled={busy}
               testID="handoff-returned"
             />
@@ -358,6 +355,36 @@ export default function SitterBookingDetail() {
           ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmReturn}
+        title={`Return ${petNames}?`}
+        onClose={() => setConfirmReturn(false)}
+        testID="return-sheet"
+        footer={
+          <Button
+            label={returnsEarly ? "Return now" : "Confirm Returned"}
+            onPress={() => {
+              setConfirmReturn(false);
+              void run(async () => {
+                await completeHandoff(booking.id, "pick_up");
+                // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                void requestLifeRecord(booking.id).catch(() => undefined);
+              }, `${petNames} home safe — ${owner} gets a notice`);
+            }}
+            testID="return-confirm"
+          />
+        }
+      >
+        {returnsEarly && booking.pickUp ? (
+          <Text style={styles.warning} testID="return-early-warning">
+            {`It's not return time yet. Pick-up is ${formatInstant(booking.pickUp.at)}. Return ${petNames} now?`}
+          </Text>
+        ) : null}
+        <Text style={styles.body}>
+          {`${petNames} go home with ${owner}. This can't be undone, and it writes the Life Record.`}
+        </Text>
+      </Sheet>
 
       <Sheet
         visible={confirmCancel}

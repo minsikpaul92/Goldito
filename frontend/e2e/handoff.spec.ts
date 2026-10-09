@@ -63,7 +63,16 @@ test.describe("handoff check", () => {
     expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
 
+    // Pick-up is days away: Returned asks first, says it is early, and does nothing until confirmed.
     await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-early-warning")).toContainText("It's not return time yet");
+    await expect(screen.getByTestId("return-sheet")).toContainText("This can't be undone");
+    await screen.getByTestId("return-sheet-close").click();
+    await expect(screen.getByTestId("stay-complete")).toHaveCount(0);
+    expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
+
+    await screen.getByTestId("handoff-returned").click();
+    await screen.getByTestId("return-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
@@ -75,6 +84,26 @@ test.describe("handoff check", () => {
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await screen.getByTestId("sitter-bookings-tabs-past").click();
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("✓ Returned");
+  });
+
+  test("Returned after the pick-up time asks once, without the early warning", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -73 * HOUR); // drop-off 73 h ago, so pick-up was an hour ago
+    await page.route("**/api/ai/life-record", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ records: [] }) }),
+    );
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("handoff-received").click();
+    await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
+    await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toContainText("This can't be undone");
+    await expect(screen.getByTestId("return-early-warning")).toHaveCount(0);
+    await screen.getByTestId("return-confirm").click();
+    await expect(screen.getByTestId("stay-complete")).toBeVisible();
   });
 
   test("Received waits until 2 hours before drop-off", async ({ page }) => {
