@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-10** | Life Record uses this stay's reports only: filter `daily_reports` by the stay's Toronto dates (newest 5, oldest first), owner questions from this booking's inquiry first | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-10 |
+| **RV-6** | Turned-off chips really leave the draft (D38): stable episode chip ids (`note-{checkin_id}` · `feed-{post_id}`), `off` in the daily-report request, task-photo captions out of `photos`, no vision description for a photo with a turned-off chip | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-6 |
 
 ---
 
@@ -50,7 +50,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → **RV-10** Life Record uses this stay's reports only → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → RV-10 ✅ (this stay's reports only) → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
@@ -80,6 +80,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **RV-10** The Life Record is written from **this stay's** sent reports only (`report_date` within the stay's Toronto dates; the newest 5, oldest first) — before, a second stay with the same sitter or a stay longer than 5 days used the **oldest** reports, also from earlier stays. Owner questions: the inquiry that became this booking (`inquiries.booking_id`) first, otherwise the pair's inquiries about the pet made before the stay ended; the newest 5 owner messages, oldest first. pytest `test_ai_life_record` +4 (all fail on the old code), full pytest 371 ✓, ruff ✓ (2026-10-09). **Human:** a Life Record already written from the wrong reports cannot be rewritten (one per booking × pet) — on the hosted DB, a demo reset (any state) deletes the demo pets' records and their index; a non-demo record would need a manual delete of its `pet_life_records` row + `knowledge_chunks` (`source_type='life_record'`, `source_id` = the record id).
 
 - [x] **R60-2** The demo reset deleted every booking, inquiry, daily report and inquiry chunk of the demo sitter — another owner's (a judge's) booking with Chloe went too, with its reviews, Life Records, consents and notices (cascade). Now only what the two demo accounts did **with each other** goes: bookings / inquiries of the pair, the owner's pets' care data, the owner's inquiry index, the voice learned from the pair's messages only, their notices not tied to another booking. When Chloe has another owner's confirmed booking her schedule is kept (the availability guard would refuse the delete halfway). `POST /api/demo/reset` checks the caller's **account id** against the two demo accounts instead of the email claim. Demo tools copy says what is cleared. pytest 367 ✓ (`test_reset_demo` +2 with a third account, `test_demo_reset_api` +1), flows `demo-tools` ✓, tsc ✓, ruff ✓ (2026-10-09). Not run against the hosted DB.
 

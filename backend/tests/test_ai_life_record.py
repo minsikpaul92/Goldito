@@ -64,11 +64,11 @@ def make_db(*, finished: bool = True, **extra) -> FakeDB:
             {"pet_id": MAX, "sitter_id": SITTER_ID, "status": "sent", "body": "A calm day with Max.", "report_date": "2026-10-10", "sent_at": at("10", "22:00")},
             {"pet_id": MAX, "sitter_id": SITTER_ID, "status": "draft", "body": "UNSENT DRAFT", "report_date": "2026-10-11", "sent_at": None},
         ],
-        inquiries=[{"id": "i1", "owner_id": OWNER_ID, "sitter_id": SITTER_ID, "pet_ids": [MAX]}],
+        inquiries=[{"id": "i1", "owner_id": OWNER_ID, "sitter_id": SITTER_ID, "pet_ids": [MAX], "booking_id": None, "created_at": at("01")}],
         inquiry_messages=[
-            {"inquiry_id": "i1", "author": "owner", "body": "Can you give Max his pill at 2 PM?"},
-            {"inquiry_id": "i1", "author": "ai", "body": "AI DRAFT"},
-            {"inquiry_id": "i1", "author": "sitter", "body": "SITTER REPLY"},
+            {"inquiry_id": "i1", "author": "owner", "body": "Can you give Max his pill at 2 PM?", "created_at": at("01", "10:00")},
+            {"inquiry_id": "i1", "author": "ai", "body": "AI DRAFT", "created_at": at("01", "10:01")},
+            {"inquiry_id": "i1", "author": "sitter", "body": "SITTER REPLY", "created_at": at("01", "10:05")},
         ],
         pet_life_records=[],
         notifications=[],
@@ -272,6 +272,55 @@ def test_the_snapshot_is_only_this_stay_this_sitter_and_what_was_sent(client, se
     text = json.dumps(snap)
     assert "UNSENT DRAFT" not in text and "AI DRAFT" not in text and "SITTER REPLY" not in text and "not this sitter" not in text
     lr.assert_no_secrets(snap)
+
+
+def sent_report(day: str, body: str) -> dict:
+    return {"pet_id": MAX, "sitter_id": SITTER_ID, "status": "sent", "body": body, "report_date": f"2026-{day}", "sent_at": f"2026-{day}T22:00:00+00:00"}
+
+
+def test_a_second_stay_with_the_same_sitter_uses_only_this_stays_reports(client, setup):
+    db = make_db()
+    db.tables["daily_reports"] = [
+        sent_report("09-02", "OLD STAY day one."),
+        sent_report("09-03", "OLD STAY day two."),
+        sent_report("10-10", "A calm day with Max."),
+    ]
+    ctx = setup(db=db)
+    post(client)
+    assert ctx.model.snapshot(0)["reports"] == ["A calm day with Max."]
+
+
+def test_a_long_stay_gives_the_newest_five_reports_oldest_first(client, setup):
+    db = make_db()
+    db.tables["booking_handoffs"][1].update(scheduled_at=at("16", "20:00"), completed_at=at("16", "20:05"))
+    db.tables["daily_reports"] = [sent_report(f"10-{d:02d}", f"Day {d}.") for d in range(9, 16)]  # 7 reports
+    ctx = setup(db=db)
+    post(client)
+    assert ctx.model.snapshot(0)["reports"] == ["Day 11.", "Day 12.", "Day 13.", "Day 14.", "Day 15."]
+
+
+def test_the_questions_come_from_the_inquiry_that_became_this_booking(client, setup):
+    db = make_db()
+    db.tables["inquiries"] += [
+        {"id": "i-this", "owner_id": OWNER_ID, "sitter_id": SITTER_ID, "pet_ids": [MAX], "booking_id": BOOKING, "created_at": at("05")},
+        {"id": "i-later", "owner_id": OWNER_ID, "sitter_id": SITTER_ID, "pet_ids": [MAX], "booking_id": None, "created_at": at("20")},
+    ]
+    db.tables["inquiry_messages"] += [
+        {"inquiry_id": "i-this", "author": "owner", "body": "He hides under the bed at night.", "created_at": at("05", "09:00")},
+        {"inquiry_id": "i-later", "author": "owner", "body": "AFTER THE STAY", "created_at": at("20", "09:00")},
+    ]
+    ctx = setup(db=db)
+    post(client)
+    assert ctx.model.snapshot(0)["owner_questions"] == ["He hides under the bed at night."]
+
+
+def test_without_a_linked_inquiry_only_ones_made_before_the_stay_ended_count(client, setup):
+    db = make_db()
+    db.tables["inquiries"].append({"id": "i-later", "owner_id": OWNER_ID, "sitter_id": SITTER_ID, "pet_ids": [MAX], "booking_id": None, "created_at": at("20")})
+    db.tables["inquiry_messages"].append({"inquiry_id": "i-later", "author": "owner", "body": "AFTER THE STAY", "created_at": at("20", "09:00")})
+    ctx = setup(db=db)
+    post(client)
+    assert ctx.model.snapshot(0)["owner_questions"] == ["Can you give Max his pill at 2 PM?"]
 
 
 def test_the_previous_record_is_given_to_the_model_and_a_change_is_kept(client, setup):

@@ -93,6 +93,33 @@ def _saved_record(db, booking_id: str, pet: dict) -> PetRecord | None:
     return PetRecord(pet_id=str(pet["id"]), pet_name=pet["name"], record_id=str(saved[0]["id"]), summary=saved[0]["summary"], reused=True)
 
 
+def _stay_reports(db, pet_id: str, sitter_id: str, start: datetime, end: datetime, tz) -> list[str]:
+    """This stay's sent reports only (an earlier stay with the same sitter is not this one): the newest
+    few by day, oldest first."""
+    first, last = start.astimezone(tz).date().isoformat(), end.astimezone(tz).date().isoformat()
+    sent = db.table("daily_reports").select("body, report_date").eq("pet_id", pet_id).eq("sitter_id", sitter_id).eq("status", "sent").execute().data
+    in_stay = sorted((r for r in sent if first <= str(r["report_date"])[:10] <= last), key=lambda r: str(r["report_date"]))
+    return [r["body"] for r in in_stay[-lr.REPORTS_MAX :]]
+
+
+def _stay_questions(db, booking: dict, pet_id: str, end: datetime) -> list[str]:
+    """What the owner asked before this stay: the inquiry that became this booking, else the pair's
+    inquiries about this pet made before it ended. The newest few owner messages, oldest first."""
+    asked = [
+        i
+        for i in db.table("inquiries").select("id, pet_ids, booking_id, created_at").eq("owner_id", booking["owner_id"]).eq("sitter_id", booking["sitter_id"]).execute().data
+        if pet_id in [str(p) for p in i["pet_ids"]]
+    ]
+    linked = [i for i in asked if i.get("booking_id") == booking["id"]]
+    chosen = linked or [i for i in asked if parse_ts(i["created_at"]) <= end]
+    messages = [
+        m
+        for i in chosen
+        for m in db.table("inquiry_messages").select("body, author, created_at").eq("inquiry_id", i["id"]).eq("author", "owner").execute().data
+    ]
+    return [m["body"] for m in sorted(messages, key=lambda m: str(m["created_at"]))[-lr.QUESTIONS_MAX :]]
+
+
 def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, tz) -> PetRecord:
     pet_id = str(pet["id"])
     sitter_id = booking["sitter_id"]
@@ -101,21 +128,8 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
     tasks = db.table("care_tasks").select("id, type, title").eq("pet_id", pet_id).execute().data
     logs = db.table("task_logs").select("task_id, due_at, status, note_text").eq("pet_id", pet_id).execute().data
     checkins = db.table("care_checkins").select("kind, value, note_text, created_at").eq("pet_id", pet_id).eq("created_by", sitter_id).execute().data
-    reports = [
-        r["body"]
-        for r in sorted(
-            db.table("daily_reports").select("body, report_date, sent_at").eq("pet_id", pet_id).eq("sitter_id", sitter_id).eq("status", "sent").execute().data,
-            key=lambda r: str(r.get("sent_at") or ""),
-        )
-    ]
-    questions: list[str] = []
-    for inquiry in db.table("inquiries").select("id, pet_ids").eq("owner_id", booking["owner_id"]).eq("sitter_id", sitter_id).execute().data:
-        if pet_id not in [str(p) for p in inquiry["pet_ids"]]:
-            continue
-        questions += [
-            m["body"]
-            for m in db.table("inquiry_messages").select("body, author").eq("inquiry_id", inquiry["id"]).eq("author", "owner").execute().data
-        ]
+    reports = _stay_reports(db, pet_id, sitter_id, start, end, tz)
+    questions = _stay_questions(db, booking, pet_id, end)
     earlier = sorted(
         (r for r in db.table("pet_life_records").select("summary, created_at, booking_id").eq("pet_id", pet_id).execute().data if r["booking_id"] != booking["id"]),
         key=lambda r: str(r["created_at"]),
