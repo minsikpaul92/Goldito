@@ -8,6 +8,7 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 // the owner reads only what was sent. The AI endpoints are mocked (the real ones are covered by pytest).
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
+const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
 const CHIPS = [
   { id: "rec-meal", kind: "record", label: "Ate everything", source: "checkin", check: "meal", value: "all", media_id: null },
   { id: "rec-walk", kind: "record", label: "Walk · 20 min", source: "checkin", check: "walk", value: "20", media_id: null },
@@ -17,11 +18,11 @@ const CHIPS = [
 const PHOTO_CHIP = { id: "photo-media-proof-0", kind: "episode", label: "Watching a squirrel", source: "vision", check: null, media_id: "media-proof" };
 const PHOTO_CHIP_2 = { id: "photo-media-proof-1", kind: "episode", label: "Park walk", source: "vision", check: null, media_id: "media-proof" };
 
-async function openSitterDiary(page: import("@playwright/test").Page, extraChips: typeof CHIPS = []) {
+async function openSitterDiary(page: import("@playwright/test").Page, extraChips: typeof CHIPS = [], pets: (typeof MAX | typeof MOCHI)[] = [MAX]) {
   // A fixed clock before the first navigation: "today" is a Toronto date, so it must not depend on when CI runs.
   await page.clock.setFixedTime(NOON_TORONTO);
   const { db } = await mockSupabase(page, [OWNER, SITTER], { now: NOON_TORONTO });
-  caring(db, [MAX], NOON_TORONTO);
+  caring(db, pets, NOON_TORONTO);
   const chipRequests: Record<string, unknown>[] = [];
   const reportRequests: Record<string, unknown>[] = [];
   /** What the chips endpoint answers; a test may add to it (something recorded meanwhile). */
@@ -75,15 +76,18 @@ test.describe("daily report", () => {
     await expect(chip("rec-meal")).toHaveAttribute("aria-pressed", "true");
     await chip("rec-walk").click();
     await expect(chip("rec-walk")).toHaveAttribute("aria-pressed", "false");
-    await screen.getByTestId(`report-note-${MAX.id}`).fill("She got so excited");
+    for (const line of ["She got so excited", "Napped on my lap"]) {
+      await screen.getByTestId(`report-custom-input-${MAX.id}`).fill(line);
+      await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
+    }
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
 
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
-    // The walk chip was off → "walk" is skipped; only episode chips go as chips; the note rides along.
+    // The walk chip was off → "walk" is skipped; only episode chips go as chips; the sitter's lines go first (FB-18).
     expect(reportRequests[0]).toMatchObject({
       pet_id: MAX.id,
-      chips: ["Met a golden retriever", "Zoomies at the park"],
-      sitter_note: "She got so excited",
+      chips: ["She got so excited", "Napped on my lap", "Met a golden retriever", "Zoomies at the park"],
+      sitter_note: null,
       photos: [],
       skip: ["walk"],
       off: [],
@@ -176,6 +180,53 @@ test.describe("daily report", () => {
     await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveCount(0);
   });
 
+  test("changing your mind: clearing the line adds nothing, and × removes a line you added (FB-16, FB-17)", async ({ page }) => {
+    const { reportRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    const input = screen.getByTestId(`report-custom-input-${MAX.id}`);
+    await input.fill("Typo here");
+    await input.fill("");
+    await expect(screen.getByTestId(`report-custom-add-${MAX.id}`)).toBeDisabled();
+    for (const line of ["Loved the squirrels", "Slept all afternoon"]) {
+      await input.fill(line);
+      await input.press("Enter");
+    }
+    await screen.getByRole("button", { name: "Remove Loved the squirrels" }).click();
+    await expect(screen.getByRole("button", { name: /Loved the squirrels/ })).toHaveCount(0);
+    // A suggested chip has no ×: it is only turned off (D38).
+    await expect(screen.getByRole("button", { name: "Remove Met a golden retriever" })).toHaveCount(0);
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
+    expect(reportRequests[0]).toMatchObject({ chips: ["Slept all afternoon", "Met a golden retriever", "Zoomies at the park"] });
+  });
+
+  test("two pets in care: pick the pet first, write for that one; each keeps its own lines (FB-19)", async ({ page }) => {
+    const { reportRequests } = await openSitterDiary(page, [], [MAX, MOCHI]);
+    const screen = app(page);
+    await expect(screen.getByTestId(`diary-pet-${MAX.id}`)).toHaveAttribute("aria-pressed", "true");
+    await expect(screen.getByTestId(`report-${MAX.id}`)).toBeVisible();
+    await expect(screen.getByTestId(`report-${MOCHI.id}`)).toBeHidden();
+
+    await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Max line");
+    await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
+    await screen.getByTestId(`diary-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId(`report-${MOCHI.id}`)).toBeVisible();
+    await expect(screen.getByTestId(`report-${MAX.id}`)).toBeHidden();
+    await screen.getByTestId(`report-generate-${MOCHI.id}`).click();
+    await screen.getByTestId(`report-body-${MOCHI.id}`).waitFor();
+    expect(reportRequests[0]).toMatchObject({ pet_id: MOCHI.id });
+    expect(reportRequests[0].chips).not.toContain("Max line");
+    await expect(screen.getByTestId(`diary-pet-${MOCHI.id}`)).toContainText("Draft");
+
+    await screen.getByTestId(`diary-pet-${MAX.id}`).click();
+    await expect(screen.getByRole("button", { name: "Max line: on" })).toBeVisible(); // still there
+  });
+
+  test("one pet in care: no picker", async ({ page }) => {
+    await openSitterDiary(page);
+    await expect(app(page).getByTestId(`diary-pet-${MAX.id}`)).toHaveCount(0);
+  });
+
   test("coming back to the Diary shows what was recorded meanwhile; a chip turned off stays off", async ({ page }) => {
     const { served, chipRequests } = await openSitterDiary(page);
     const screen = app(page);
@@ -244,16 +295,15 @@ test.describe("daily report", () => {
     expect(reportRequests[0]).toMatchObject({ skip: ["walk"], overrides: { meal: "most" } });
   });
 
-  test("+ Add makes the sitter's own chip; it goes to the report like an episode chip and can be turned off", async ({ page }) => {
+  test("a line in \"Anything to add?\" becomes the sitter's own chip; it goes to the report and can be turned off", async ({ page }) => {
     const { reportRequests } = await openSitterDiary(page);
     const screen = app(page);
-    await screen.getByTestId(`report-custom-${MAX.id}`).click();
-    await screen.getByTestId(`report-custom-add-${MAX.id}`).waitFor();
     await expect(screen.getByTestId(`report-custom-add-${MAX.id}`)).toBeDisabled();
     await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Learned a new trick");
     await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
     const chip = screen.getByRole("button", { name: "Learned a new trick: on" });
     await expect(chip).toBeVisible();
+    await expect(screen.getByTestId(`report-custom-input-${MAX.id}`)).toHaveValue(""); // ready for the next line
 
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
