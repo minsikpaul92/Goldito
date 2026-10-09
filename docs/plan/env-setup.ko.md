@@ -40,7 +40,7 @@
 > 2. 외부 핑 서비스(아래)를 쓰면 그 대시보드의 상태 · 응답 시간
 > 3. 30분쯤 아무도 안 쓴 뒤 `curl -w "%{time_total}" https://goldito-backend.onrender.com/health` — 1초 안이면 깨어 있음, 30초 이상이면 핑이 안 돌고 있음
 >
-> **외부 핑 (선택, 권장):** GitHub cron만으로는 간격이 벌어질 수 있어 무료 모니터링 서비스를 하나 더 붙이면 안전합니다 — 예: **UptimeRobot**(무료 HTTP 모니터 5분 간격) 또는 **cron-job.org**(무료 cron 1분 단위). URL은 `https://goldito-backend.onrender.com/health`, 간격 5~10분. 계정은 사람이 만듭니다.
+> **외부 핑 (사용 중, 2026-10-09):** GitHub cron은 몇 분씩 늦거나 건너뛸 수 있어 **cron-job.org**에 두 번째 핑을 걸어 두었습니다 — 민식 계정(같은 계정에 다른 프로젝트 PairPocket Keepalive도 있음)의 **`Goldito Keepalive`**: `GET https://goldito-backend.onrender.com/health`, **10분마다**(`*/10 * * * *`, America/Toronto), timeout 30초, 기한 없음(12/15까지 유지), 실패 시 이메일 알림. 확인은 console.cron-job.org → Dashboard → Last Events에서 `Successful (200 OK)`.
 
 | Render 설정 | 값 |
 | :--- | :--- |

@@ -435,5 +435,5 @@ DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본�
 | 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
 | GitHub Secrets | 없음 — CD는 Render · Vercel의 Git 연동. 앱 런타임 키(Supabase·Cloudinary·Nebius Token Factory API)는 **Render env / Vercel env에만** 저장 |
 | 롤백 | backend: Render 대시보드 → Deploys → 이전 배포 **Rollback**. frontend: Vercel 대시보드 "Promote previous deployment" |
-| Keep-alive | Render 무료는 **15분 동안 요청이 없으면 잠들고** 첫 요청이 30~50초. 10분마다 `/health`를 부른다 (GitHub Actions cron은 몇 분씩 늦을 수 있어 외부 핑 서비스를 함께 써도 됨). **배포 · 테스트 작업 전에 핑이 돌고 있는지 먼저 확인** ([env-setup.ko.md](../env-setup.ko.md) § 배포된 백엔드) |
+| Keep-alive | Render 무료는 **15분 동안 요청이 없으면 잠들고** 첫 요청이 30~50초. 10분마다 `/health`를 부른다 — GitHub Actions `keepalive.yml` + **cron-job.org `Goldito Keepalive`** 두 군데 (GitHub cron은 몇 분씩 늦을 수 있어서). **배포 · 테스트 작업 전에 핑이 돌고 있는지 먼저 확인** ([env-setup.ko.md](../env-setup.ko.md) § 배포된 백엔드) |
 
