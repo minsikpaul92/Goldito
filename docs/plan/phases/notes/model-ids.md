@@ -109,6 +109,10 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 **Fun mood meter (11.9 / D42):** `agentmish/dog-emotion-classifier-v2` — Apache-2.0, ViT-base, 85.6% accuracy on its small eval set, no training-dataset license stated. `Dewa/dog_emotion_v2` has no license tag, do not use.
 
+## Photo caption latency (09.1, 2026-10-07)
+
+`backend/scripts/measure_caption.py` — the 3 demo photos × 3 runs, MiniCPM-V-4.5, JSON `{caption, category}`, reasoning n/a, 120 max tokens, temperature 0.8, local images (no Cloudinary / DB). **Category right 8 / 9, latency median ≈ 1.2 s, max ≈ 1.3 s.** The first prompt got 4 / 9 because the sample "meal" photo is a dog beside a carrot and the sample "nap" photo is a dog lying on a bed with its mouth open; the category hints now say food next to or in the mouth of the pet is a meal, and lying calmly on a bed / blanket / rug is a nap. Captions are 1 short sentence, warm, name used once; no medical claims. Real-world accuracy still needs the team's 5-photo read (phase-09 DoD 1).
+
 ## Inquiry reply latency (07B.7, 2026-10-07)
 
 `backend/scripts/measure_inquiry.py` — 10 runs, real Token Factory, ~2k-token facts (5 policy sources, 2 pets, the quote) plus the sitter's style card and 3 own examples, Nemotron-3 Nano, reasoning off, 350 max tokens. No DB writes.

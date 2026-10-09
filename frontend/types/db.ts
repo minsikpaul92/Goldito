@@ -82,6 +82,9 @@ export type TaskLogRow = {
 /** feed_posts.caption_source — AI in Phase 09, task captions in Phase 06. */
 export type CaptionSource = "ai" | "fallback" | "task";
 
+/** Album bucket of a feed post (Phase 09): the vision model picks one; null = no answer (shown as "Moments"). */
+export type FeedCategory = "meal" | "walk" | "nap" | "play" | "other";
+
 /** One Kidsnote-style feed card (1 post = 1 media, D10). */
 export type FeedVisibility = "shared" | "private";
 
@@ -97,6 +100,7 @@ export type FeedPostRow = {
   media_id: string;
   caption: string | null;
   caption_source: CaptionSource | null;
+  category: FeedCategory | null;
   task_log_id: string | null;
   created_at: string;
 };
