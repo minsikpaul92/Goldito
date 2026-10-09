@@ -66,6 +66,13 @@ def care_intervals(bookings: list[dict], day_start: datetime, day_end: datetime)
     return sorted(out)
 
 
+def after(intervals: list[Interval], moment: datetime | None) -> list[Interval]:
+    """The intervals from `moment` on: a second report of the day covers what happened since the last one went out."""
+    if moment is None:
+        return intervals
+    return [(max(start, moment), end) for start, end in intervals if end > moment]
+
+
 def in_any(moment: datetime, intervals: list[Interval]) -> bool:
     return any(start <= moment < end for start, end in intervals)
 

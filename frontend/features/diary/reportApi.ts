@@ -78,15 +78,19 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
 
 /** Today's report for this pet written by me (the draft is private to me; RLS). */
 export async function getTodayReport(petId: string, sitterId: string): Promise<ReportDraft | null> {
+  // A day can hold several sent reports and at most one draft (011f, FB-22): the draft first, else the last sent.
   const { data, error } = await getSupabase()
     .from("daily_reports")
-    .select("id, body, status")
+    .select("id, body, status, sent_at")
     .eq("pet_id", petId)
     .eq("sitter_id", sitterId)
-    .eq("report_date", appToday())
-    .maybeSingle();
+    .eq("report_date", appToday());
   if (error) throw new Error("Couldn't load today's report.");
-  return (data as ReportDraft | null) ?? null;
+  const rows = (data ?? []) as (ReportDraft & { sent_at: string | null })[];
+  const draft = rows.find((r) => r.status === "draft");
+  const last = rows.filter((r) => r.status === "sent").sort((a, b) => (b.sent_at ?? "").localeCompare(a.sent_at ?? ""))[0];
+  const pick = draft ?? last;
+  return pick ? { id: pick.id, body: pick.body, status: pick.status } : null;
 }
 
 /** The sitter's approval: the text they send is the final text (009). */
@@ -145,6 +149,8 @@ export async function listSentReports(): Promise<SentReport[]> {
     .select(COLUMNS)
     .eq("status", "sent")
     .order("report_date", { ascending: false })
+    // Several reports a day (011f): the later one first.
+    .order("sent_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
   return ((data ?? []) as unknown as ReportRow[]).map(toSent);

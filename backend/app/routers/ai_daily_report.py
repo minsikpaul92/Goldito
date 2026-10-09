@@ -18,6 +18,7 @@ from app.ai import tone
 from app.ai.daily_report import (
     CHECK_KEYS,
     NOTE_MAX,
+    after,
     broken_rules,
     build_snapshot,
     care_intervals,
@@ -26,6 +27,7 @@ from app.ai.daily_report import (
     few_shot_messages,
     has_facts,
     model_view,
+    parse_ts,
     quiet_day_body,
     tidy_body,
     word_count,
@@ -89,21 +91,22 @@ def daily_report(
     if not pet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pet not found.")
 
+    # Today's draft is rewritten until it is sent; after a report went out, the next one is a new draft (011f, FB-22).
     existing = _one(
         db.table("daily_reports")
         .select("id, status")
         .eq("pet_id", pet_id)
         .eq("report_date", day.isoformat())
         .eq("sitter_id", user.id)
+        .eq("status", "draft")
         .limit(1)
         .execute()
     )
-    if existing and existing["status"] == "sent":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="report_already_sent")
 
     intervals = care_intervals(_sitter_bookings(db, user.id, pet_id), day_start, day_end)
     if not intervals:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet today.")
+    intervals = after(intervals, last_sent_at(db, pet_id, user.id, day))
 
     records = load_day_records(db, pet_id, user.id, day_start, day_end)
 
@@ -210,6 +213,22 @@ def daily_report(
         latency_ms=latency_ms,
         fallback=fallback,
     )
+
+
+def last_sent_at(db, pet_id: str, sitter_id: str, day) -> datetime | None:
+    """When this sitter last sent a report about the pet today — the next report starts from there (FB-22)."""
+    sent = (
+        db.table("daily_reports")
+        .select("sent_at")
+        .eq("pet_id", pet_id)
+        .eq("report_date", day.isoformat())
+        .eq("sitter_id", sitter_id)
+        .eq("status", "sent")
+        .execute()
+        .data
+    )
+    times = [parse_ts(r["sent_at"]) for r in sent if r.get("sent_at")]
+    return max(times) if times else None
 
 
 def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_end: datetime) -> dict:

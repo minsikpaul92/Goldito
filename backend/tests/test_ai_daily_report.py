@@ -318,12 +318,30 @@ def test_generating_again_overwrites_the_same_days_draft(client, setup):
     assert row["body"] == "A second take on the day." and row["inputs"]["chips"] == ["Nap in the sun"]
 
 
-def test_a_sent_report_is_never_rewritten(client, setup):
-    db = make_db(daily_reports=[{"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent."}])
-    db, model = setup(db)
+def test_after_a_report_is_sent_the_next_one_is_a_new_draft_about_what_happened_since(client, setup):
+    sent = {"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent.", "sent_at": at("15:00")}
+    db, model = setup(make_db(daily_reports=[sent]))
     response = post(client)
-    assert response.status_code == 409 and response.json()["detail"] == "report_already_sent"
-    assert model.calls == [] and db.tables["daily_reports"][0]["body"] == "Sent."
+    assert response.status_code == 200 and response.json()["report_id"] != "r1"
+    assert db.tables["daily_reports"][0]["body"] == "Sent."  # the sent one is never rewritten
+    assert [r["status"] for r in db.tables["daily_reports"]] == ["sent", "draft"]
+    snap = model.snapshot
+    # Only what happened after 11:00 Toronto (15:00 UTC): the potty and the note, not the meal, walk or pill before it.
+    assert [c["kind"] for c in snap["checkins"]] == ["potty", "note"]
+    assert snap["checks"] == {"potty": "normal"} and snap["tasks"] == []  # the 10:30 walk and 08:00 pill were before
+
+
+def test_the_chips_after_a_sent_report_are_the_records_since(client, setup, monkeypatch):
+    from app.routers import ai_report_chips
+
+    sent = {"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent.", "sent_at": at("15:00")}
+    db, _ = setup(make_db(daily_reports=[sent]))
+    monkeypatch.setattr(ai_report_chips, "get_service_client", lambda: db)
+    monkeypatch.setattr(ai_report_chips, "_now", lambda: NOW)
+    response = client.post("/api/ai/report-chips", headers={"Authorization": f"Bearer {sitter_token()}"}, json={"pet_id": PET_ID})
+    assert response.status_code == 200, response.text
+    chips = response.json()["chips"]
+    assert "rec-meal" not in [c["id"] for c in chips] and "rec-potty" in [c["id"] for c in chips]
 
 
 def test_another_sitters_report_does_not_block_this_one(client, setup):

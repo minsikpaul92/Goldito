@@ -2319,6 +2319,25 @@ begin
   perform _t_ok((select body from public.daily_reports where id = _t_get('report')) = 'Max had a lovely day — my own words.',
     '7.5: a sent report cannot be edited directly');
 
+  -- 011f (FB-22): after one is sent, another report can be written the same day — but only one draft at a time
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, model)
+  values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: the evening went well.', 'draft', 'test-model')
+  returning id into v_id;
+  perform _t_ok(v_id is not null, '011f: a second report the same day can be drafted once the first is sent');
+  begin
+    insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, model)
+    values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: a third one', 'draft', 'test-model');
+    v_err := null;
+  exception when unique_violation then v_err := 'unique_violation';
+  end;
+  perform _t_ok(v_err = 'unique_violation', '011f: …but there is only ever one draft per pet, sitter and day');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform send_daily_report(v_id, 'Evening update: Max is asleep.');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = max and report_date = '2026-10-15' and status = 'sent') = 2,
+    '011f: the owner sees both reports of the day');
+
   -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
   perform _t_as(robert);
   v_id := send_care_change_request(

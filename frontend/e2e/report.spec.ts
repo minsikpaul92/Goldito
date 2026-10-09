@@ -43,8 +43,11 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
   });
   await page.route("**/api/ai/daily-report", (route) => {
     reportRequests.push(route.request().postDataJSON());
+    // One draft at a time: a new id once the earlier report was sent (011f).
+    const draft = db.daily_reports.find((r) => r.pet_id === MAX.id && r.status === "draft");
+    if (draft) db.daily_reports.splice(db.daily_reports.indexOf(draft), 1);
     const row = {
-      id: "r1",
+      id: draft ? (draft.id as string) : `r${db.daily_reports.length + 1}`,
       pet_id: MAX.id,
       sitter_id: SITTER.id,
       report_date: TODAY_TORONTO,
@@ -57,7 +60,7 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ report_id: "r1", body: row.body, status: "draft", model: "m", latency_ms: 1 }),
+      body: JSON.stringify({ report_id: row.id, body: row.body, status: "draft", model: "m", latency_ms: 1 }),
     });
   });
   await signIn(page, SITTER);
@@ -225,6 +228,29 @@ test.describe("daily report", () => {
   test("one pet in care: no picker", async ({ page }) => {
     await openSitterDiary(page);
     await expect(app(page).getByTestId(`diary-pet-${MAX.id}`)).toHaveCount(0);
+  });
+
+  test("after sending, another report can be written the same day (FB-22)", async ({ page }) => {
+    const { db, reportRequests, chipRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
+
+    const asked = chipRequests.length;
+    await screen.getByTestId(`report-another-${MAX.id}`).click();
+    await expect.poll(() => chipRequests.length).toBeGreaterThan(asked); // fresh chips: what happened since
+    await screen.getByTestId(`report-custom-input-${MAX.id}`).fill("Evening walk was calm");
+    await screen.getByTestId(`report-custom-add-${MAX.id}`).click();
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("Evening update: Max is asleep.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
+    expect(reportRequests).toHaveLength(2);
+    expect(db.daily_reports.filter((r) => r.status === "sent").map((r) => r.body)).toEqual([
+      "I had such a lovely day with Max! 🐶 He ate everything.",
+      "Evening update: Max is asleep.",
+    ]);
   });
 
   test("coming back to the Diary shows what was recorded meanwhile; a chip turned off stays off", async ({ page }) => {

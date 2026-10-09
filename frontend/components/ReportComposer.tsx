@@ -293,12 +293,27 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     );
   }
 
+  /** Another report the same day (FB-22): fresh chips from what happened since the last one went out. */
+  const writeAnother = () => {
+    setSent(false);
+    setBody("");
+    setOff(new Set());
+    setCustom([]);
+    setOverrides({});
+    setPhotos([]);
+    setDescriptions([]);
+    setChips([]);
+    void refreshChips([]);
+  };
+
   if (sent) {
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{pet.name}</Text>
         <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
         <Text style={styles.body}>{body}</Text>
+        <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
+        <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>
     );
   }
