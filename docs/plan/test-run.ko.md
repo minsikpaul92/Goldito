@@ -48,7 +48,7 @@ cd backend
 .venv/bin/python -m scripts.reset_demo --state ready --apply      # reset 입력 (--yes면 생략)
 ```
 
-`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. **`in_care`는 드롭오프를 "지금 + 3분"으로 잡기 때문에, 리셋 뒤 3분 안에 남긴 기록은 알림장 칩에서 빠집니다**(CW-1, 고칠 예정) — 3분 기다렸다가 기록하세요.
+`--state`는 `empty` · `pets` · `confirmed` · `ready` · `in_care`. 위 스크립트는 `backend/.env`(서비스 키)가 있는 개발자 PC에서만 — 보통은 앱의 Demo tools를 쓰면 됩니다. `in_care`는 드롭오프를 "지금 + 3분"으로 잡지만 Received까지 끝난 상태라 바로 기록할 수 있습니다(CW-1) — 단 호스팅 DB에 `011i`가 적용되기 전에는 3분 동안 체크인이 막힙니다.
 
 | 상태 | 만들어지는 것 |
 | :--- | :--- |
@@ -104,7 +104,7 @@ cd backend
 | 날짜 · 시간 입력 | 곳곳이 − + 만 있음 (달력 · 시계 통일은 아직) | FB-3 |
 | 시터 알림 | 오너가 요금표 없는 시터로 체크아웃하면 시터에게 "Set your prices" 알림이 안 감 | FB-7b |
 | 문의 AI | AI가 "가능해요"라고 했는데 예약이 거절될 수 있음 · 거절 답장에 견적 카드가 붙음 · 처음 문의한 오너 이름이 시터에게 안 보임 | RV-1 · RV-3 · RV-4 (R1b) |
-| 시터 Diary 알림장 | Received를 약속 시각보다 일찍 누른 뒤(또는 `in_care` 리셋 뒤 3분 안) 남긴 사진 · 체크인이 칩에 안 나옴 | CW-1 (고칠 예정) |
+| 시터 체크인 | Received를 약속 시각보다 일찍 누른 뒤(또는 `in_care` 리셋 뒤 3분 안) 체크인이 "Tasks open once the stay has started"로 막힘 | CW-1 — 호스팅 DB에 `011i` 적용 전까지 |
 | 첫 요청 | 30~50초 걸림 (Render 무료 플랜이 잠들었다 깨는 중) | 설계 — keep-alive cron |
 
 ## 5. 결과 적는 법

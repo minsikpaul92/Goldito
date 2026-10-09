@@ -10,7 +10,7 @@ from app.services import cloudinary as cloudinary_service
 
 from tests import test_media_sign as base
 from tests.fakes import FakeDB
-from tests.test_ai_daily_report import NOW, OTHER_SITTER, make_db
+from tests.test_ai_daily_report import NOW, OTHER_SITTER, at, make_db
 from tests.test_media_sign import PET_ID, SITTER_ID, sitter_token
 
 isolated_settings = base.isolated_settings
@@ -174,6 +174,31 @@ def test_a_sitter_not_on_duty_today_gets_403(client, setup):
         {"booking_id": "b1", "kind": "pick_up", "scheduled_at": "2026-10-14T20:00:00+00:00"},
     ], media=[]))
     assert post(client).status_code == 403
+
+
+def _received_at(completed_at: str | None) -> FakeDB:
+    """Drop-off agreed for 13:00; a shared photo at 12:40, 20 minutes before it."""
+    db = make_db(media=[], booking_handoffs=[
+        {"booking_id": "b1", "kind": "drop_off", "scheduled_at": at("13:00"), "completed_at": completed_at},
+        {"booking_id": "b1", "kind": "pick_up", "scheduled_at": "2026-10-16T12:00:00+00:00", "completed_at": None},
+    ])
+    db.tables["feed_posts"].append(
+        {"id": "f-door", "pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "Waiting at the door", "created_at": at("12:40")}
+    )
+    return db
+
+
+def test_after_an_early_received_the_sitters_hours_start_at_received(client, setup):
+    # CW-1: Received at 12:30, half an hour before the agreed 13:00 — the 12:40 photo is part of the day.
+    setup(db=_received_at(at("12:30")))
+    assert "Waiting at the door" in labels(post(client))
+
+
+def test_before_received_or_after_a_late_one_the_hours_start_at_the_agreed_drop_off(client, setup):
+    setup(db=_received_at(None))
+    assert "Waiting at the door" not in labels(post(client))
+    setup(db=_received_at(at("13:20")))  # received late: the agreed time still starts the day
+    assert "Waiting at the door" not in labels(post(client))
 
 
 def test_it_requires_a_signed_in_user(client, setup):
