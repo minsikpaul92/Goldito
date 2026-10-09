@@ -78,6 +78,8 @@ jobs:
           EXPO_PUBLIC_DEMO_PASSWORD: e2e-demo-password
           # Test-only: media upload specs mock the backend routes on the test server.
           EXPO_PUBLIC_API_URL: http://127.0.0.1:4173/api-mock
+          # Test-only: the Profile → Demo tools sheet (testing reset) is built in so its spec can open it.
+          EXPO_PUBLIC_DEMO_TOOLS: "1"
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
