@@ -42,6 +42,7 @@ import { ReceivedReview } from "../../../components/ReceivedReview";
 import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
 import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -118,6 +119,7 @@ export default function SitterBookingDetail() {
   useEffect(() => {
     void load();
   }, [load]);
+  useOnBookingChange(() => void load());
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "missing") {

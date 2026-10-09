@@ -11,6 +11,7 @@ import type { CaringPet } from "../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { useThemedStyles } from "../providers/ThemeProvider";
+import { useNotifications } from "../providers/NotificationsProvider";
 import { Theme } from "../theme/themes";
 import { DueAlert } from "./DueAlert";
 import { TaskDoneSheet } from "./TaskDoneSheet";
@@ -37,6 +38,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const [requests, setRequests] = useState<(ChangeRequest & { petName: string })[]>([]);
 
   const petKey = pets.map((p) => p.id).join(",");
+  // A new care request from the owner shows without a refresh (FB-2).
+  const { bookingsRevision } = useNotifications();
   useFocusEffect(
     useCallback(() => {
       let live = true;
@@ -53,7 +56,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         live = false;
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [petKey]),
+    }, [petKey, bookingsRevision]),
   );
 
   const items = state.status === "ready" ? state.items : [];

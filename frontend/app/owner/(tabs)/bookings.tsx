@@ -21,6 +21,7 @@ import {
 import { OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type State =
@@ -60,6 +61,8 @@ export default function OwnerBookings() {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [ownerId]);
+
+  useOnBookingChange(() => void load());
 
   useFocusEffect(
     useCallback(() => {

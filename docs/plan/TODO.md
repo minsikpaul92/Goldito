@@ -35,7 +35,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
 | **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (Profile → Demo tools) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-40+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **FB-34** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 ✅ owner name (RV-4, `011e`) → FB-32 ✅ a way to a sitter's profile → FB-33 ✅ "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-34: after the sitter's reply the owner can write again in the thread (a new owner message → a new AI draft for the sitter, same approval and auto-send rules) and **Change dates** (a new inquiry with the pets and trip prefilled); Find other sitters becomes secondary | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
+| **Minsik** | **FB-34** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 ✅ owner name (RV-4, `011e`) → FB-32 ✅ a way to a sitter's profile → FB-33 ✅ "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 ✅ live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-34: after the sitter's reply the owner can write again in the thread (a new owner message → a new AI draft for the sitter, same approval and auto-send rules) and **Change dates** (a new inquiry with the pets and trip prefilled); Find other sitters becomes secondary | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
 
 ---
 
@@ -85,6 +85,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 
 ## Completed
+
+- [x] **FB-2** Lists and booking screens update live (2026-10-09, `fix/stage1-booking-ux`): every booking / inquiry notice already arrives over Realtime (bell + toast), but the screens never listened. `NotificationsProvider` now bumps `bookingsRevision` on booking-type notices (`isBookingNotification`: booking · handoff · meet_greet · checkout · inquiry · care_request · review · access) and `useOnBookingChange(reload)` re-reads on it — sitter Home + Bookings (Requests / Questions), owner Bookings, both booking detail screens, and the sitter dashboard's care requests. Inquiry threads already poll every 3 s. No DB change (notifications were already in the Realtime publication). test-guide FLOW-1 · FLOW-2.
 
 - [x] **FB-33** "Ask before booking" + the sitter's days in the inquiry dates (2026-10-09, `fix/stage1-booking-ux`, decided with Minsik): the sitter profile shows **[Ask before booking] [Book]** side by side (Book stays the one filled button) with "nothing is booked until you send a request"; the sheet is titled "Ask Chloe before booking". Dates stay required (availability and the quote depend on them); the inquiry sheet loads the sitter's next 90 days (`get_sitter_schedule`) and `DayPickerSheet` takes optional `marks` — a dot per day (room for these pets / full / not open) and a legend; a day is full when any open slot lacks room for the chosen pets (the booking engine's rule), and `HandoffPicker` notes "Chloe has no room for your pets that day — you can still ask." Docs say "Ask before booking" now. e2e `inquiry` +1. test-guide INQ-22. Checked locally: Max + Mochi → Oct 16 (one spot) marked full.
 
@@ -359,7 +361,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 - [x] **human** `seed_demo` is no longer needed: the reset sets Chloe's services and prices (2026-10-09).
 - [x] Demo logins moved to `@goldito.test` (2026-10-07). `main` still used `@pawddy.test` → hotfix `fix/demo-login-emails`.
 - [x] **`011c_stay_capacity_check` (applied 2026-10-09)** — the inquiry AI's availability check (RV-1).
-- [ ] **`011e_inquiry_access` (not applied yet)** — names and asked-about pets for the asked sitter, with RV-5's time limits (FB-31). Without it a first-contact owner still reads "An owner" on the sitter's side.
+- [x] **`011e_inquiry_access` (applied 2026-10-09)** — names and asked-about pets for the asked sitter, with RV-5's time limits (FB-31).
 - [ ] R1b migrations `011d` (RV-3) and `011j` (rest of RV-5) — not created yet; each is added here as `[ ] (not applied yet)` by the commit that creates it.
 - [ ] **`011i_care_window_follows_received` (not applied yet)** — the care window starts at an early Received (CW-1). Without it, check-ins and tasks stay closed until the agreed drop-off even after Received.
 - [x] **`011f_daily_reports_many` (applied 2026-10-09)** — several sent daily reports per pet · sitter · day, one draft at a time (FB-22). **Needed by main (#60):** without it, a second report the same day fails on the old unique constraint.

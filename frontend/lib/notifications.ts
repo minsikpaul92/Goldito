@@ -12,6 +12,16 @@ export const DIARY_NOTIFICATION_TYPES = new Set([
   "report_sent",
 ]);
 
+/**
+ * Types that change a booking or an inquiry (FB-2): a new request or question, an answer, a handoff, a
+ * Meet & Greet, a care request, a review. Lists and booking screens re-read when one arrives — no refresh.
+ */
+const BOOKING_NOTIFICATION = /^(booking|handoff|meet_greet|checkout|inquiry|care_request|review|access)_?/;
+
+export function isBookingNotification(type: string): boolean {
+  return BOOKING_NOTIFICATION.test(type);
+}
+
 /** Notification center page size (phase-05 5.5). */
 export const NOTIFICATION_PAGE_SIZE = 50;
 

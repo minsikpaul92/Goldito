@@ -14,6 +14,7 @@ import { formatDay, isoToZoned } from "../../../features/schedule/dates";
 import { BookingSummary, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type Bucket = "requests" | "inquiries" | "upcoming" | "past";
@@ -73,6 +74,8 @@ export default function SitterBookings() {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [sitterId]);
+
+  useOnBookingChange(() => void load());
 
   useFocusEffect(
     useCallback(() => {

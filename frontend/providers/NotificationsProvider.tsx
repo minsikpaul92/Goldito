@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 
-import { DIARY_NOTIFICATION_TYPES, countUnreadNotifications } from "../lib/notifications";
+import { DIARY_NOTIFICATION_TYPES, countUnreadNotifications, isBookingNotification } from "../lib/notifications";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 import type { NotificationRow } from "../types/db";
 import { useSession } from "./SessionProvider";
@@ -24,6 +24,8 @@ type NotificationsValue = {
   diaryRevision: number;
   /** Bumps on any INSERT — notification center soft-refetches while open. */
   inboxRevision: number;
+  /** Bumps on booking / inquiry types (FB-2) — Bookings, Home and booking screens re-read without a refresh. */
+  bookingsRevision: number;
   /** Re-query unread (e.g. after marking read in 5.5). */
   refreshUnread: () => Promise<void>;
 };
@@ -50,6 +52,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [feedRevision, setFeedRevision] = useState(0);
   const [diaryRevision, setDiaryRevision] = useState(0);
   const [inboxRevision, setInboxRevision] = useState(0);
+  const [bookingsRevision, setBookingsRevision] = useState(0);
   const feedBurst = useRef<{ count: number; title: string; timer: ReturnType<typeof setTimeout> } | null>(
     null,
   );
@@ -92,6 +95,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
           const row = payload.new as NotificationRow;
           setUnreadCount((n) => n + 1);
           setInboxRevision((r) => r + 1);
+          if (isBookingNotification(row.type)) setBookingsRevision((r) => r + 1);
           if (row.type === "feed_post") {
             if (feedBurst.current) {
               feedBurst.current.count += 1;
@@ -142,8 +146,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [userId, refreshUnread, toast]);
 
   const value = useMemo<NotificationsValue>(
-    () => ({ unreadCount, feedRevision, diaryRevision, inboxRevision, refreshUnread }),
-    [unreadCount, feedRevision, diaryRevision, inboxRevision, refreshUnread],
+    () => ({ unreadCount, feedRevision, diaryRevision, inboxRevision, bookingsRevision, refreshUnread }),
+    [unreadCount, feedRevision, diaryRevision, inboxRevision, bookingsRevision, refreshUnread],
   );
 
   return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
@@ -153,4 +157,14 @@ export function useNotifications(): NotificationsValue {
   const value = useContext(NotificationsContext);
   if (!value) throw new Error("useNotifications must be used inside NotificationsProvider");
   return value;
+}
+
+/** Re-read when a booking or inquiry notice arrives for me (FB-2): a new request or question shows without a refresh. */
+export function useOnBookingChange(reload: () => void): void {
+  const { bookingsRevision } = useNotifications();
+  const latest = useRef(reload);
+  latest.current = reload;
+  useEffect(() => {
+    if (bookingsRevision > 0) latest.current();
+  }, [bookingsRevision]);
 }
