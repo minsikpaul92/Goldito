@@ -4,6 +4,8 @@ Called by the app right after Returned (and by the booking page's Retry). One re
 returns what is saved. The record is written by Nemotron Super from a facts-only `source_snapshot`, checked against
 that evidence, stored, indexed for search (so the NEXT sitter's request, inquiry answers and care checklist can use it)
 and the owner is told. A stay that was not finished is a 409; a model failure is a 503 and saves nothing for that pet.
+Two requests at once (the sitter's Returned and the owner opening the booking) write one record: the later one reuses
+the row the earlier one stored, without a second notice.
 """
 
 import json
@@ -13,6 +15,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from postgrest.exceptions import APIError
 from pydantic import BaseModel
 
 from app.ai import life_record as lr
@@ -78,14 +81,16 @@ def life_record(body: LifeRecordRequest, user: CurrentUser = Depends(get_current
         if not pet:
             continue
         pet = pet[0]
-        saved = (
-            db.table("pet_life_records").select("id, summary").eq("booking_id", booking_id).eq("pet_id", pet_id).limit(1).execute().data
-        )
-        if saved:
-            records.append(PetRecord(pet_id=pet_id, pet_name=pet["name"], record_id=str(saved[0]["id"]), summary=saved[0]["summary"], reused=True))
-            continue
-        records.append(_write_record(db, booking, pet, start, end, tz))
+        records.append(_saved_record(db, booking_id, pet) or _write_record(db, booking, pet, start, end, tz))
     return LifeRecordResponse(records=records)
+
+
+def _saved_record(db, booking_id: str, pet: dict) -> PetRecord | None:
+    """The record already stored for this booking × pet, if any."""
+    saved = db.table("pet_life_records").select("id, summary").eq("booking_id", booking_id).eq("pet_id", str(pet["id"])).limit(1).execute().data
+    if not saved:
+        return None
+    return PetRecord(pet_id=str(pet["id"]), pet_name=pet["name"], record_id=str(saved[0]["id"]), summary=saved[0]["summary"], reused=True)
 
 
 def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, tz) -> PetRecord:
@@ -123,6 +128,9 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
     )
     lr.assert_no_secrets(snapshot)
 
+    # Another request may have stored it while the evidence was read: don't call the model for nothing.
+    if again := _saved_record(db, booking["id"], pet):
+        return again
     messages = [
         {"role": "system", "content": load_prompt("life_record/system.md")},
         {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)},
@@ -138,18 +146,25 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
 
     summary = lr.enforce(parsed, snapshot)
     text = lr.record_text(summary)
-    row = (
-        db.table("pet_life_records")
-        .insert(
-            {
-                "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
-                "body": text, "source_snapshot": snapshot, "model": result.model,
-                "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
-            }
+    try:
+        row = (
+            db.table("pet_life_records")
+            .insert(
+                {
+                    "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
+                    "body": text, "source_snapshot": snapshot, "model": result.model,
+                    "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
+                }
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
+    except APIError as exc:
+        # unique (booking_id, pet_id): the other request finished first — its row was indexed and announced already.
+        if exc.code == "23505" and (other := _saved_record(db, booking["id"], pet)):
+            log.info("life-record: written by a concurrent request, reusing it")
+            return other
+        raise
     if text:
         try:
             rag.index_source(db, source_type="life_record", source_id=str(row["id"]), text=text, pet_id=pet_id)

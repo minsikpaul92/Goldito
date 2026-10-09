@@ -183,8 +183,19 @@ export async function listBookingRecords(petIds: string[], bookingId: string): P
   return ((data ?? []) as unknown as RecordRow[]).map(toRecord);
 }
 
+/** Requests still running, per booking: a screen that opens again while one runs waits for it instead of asking twice. */
+const inFlight = new Map<string, Promise<void>>();
+
 /** Ask for the stay's Life Records (idempotent: what already exists is returned). Throws a message the owner can read. */
-export async function requestLifeRecord(bookingId: string): Promise<void> {
+export function requestLifeRecord(bookingId: string): Promise<void> {
+  const running = inFlight.get(bookingId);
+  if (running) return running;
+  const request = postLifeRecord(bookingId).finally(() => inFlight.delete(bookingId));
+  inFlight.set(bookingId, request);
+  return request;
+}
+
+async function postLifeRecord(bookingId: string): Promise<void> {
   try {
     await apiPost("/api/ai/life-record", { booking_id: bookingId });
   } catch (error) {

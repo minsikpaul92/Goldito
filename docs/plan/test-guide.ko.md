@@ -428,7 +428,7 @@
 | RV-6 | Diary에서 메모 · 사진 칩 하나를 끄고 Write | 초안에 꺼진 칩 내용이 없음 | 새로 필요 | ➖ |
 | RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 새로 필요 | ➖ |
 | RV-8 | AI가 꺼진 상태(키 없음)로 Write | "plain list" 안내와 함께 칩 목록 초안 → 고쳐서 Send 가능 | 새로 필요 | ➖ |
-| RV-9 | 시터 Returned 직후 오너가 home safe 알림을 눌러 예약 열기 | 오류 없이 "Writing the Life Record…" → 기록 표시, 기록은 펫마다 하나 | 새로 필요 | ➖ |
+| RV-9 | 시터 Returned 직후 오너가 home safe 알림을 눌러 예약 열기 | 오류 없이 "Writing the Life Record…" → 기록 표시, 기록은 펫마다 하나 | 🤖 `completion` (Returned 직후 대기 · 재진입 시 요청 1번 · 실패해도 기록 있으면 표시) · pytest `test_ai_life_record` (23505 재사용 · 모델 전 재확인) | ➖ |
 | RV-10 | 같은 시터와 두 번째 돌봄 후 Life Record | 이번 돌봄의 알림장 내용만 반영 | pytest | ➖ |
 | M-1 | 정책이 있는 시터에게 단순 문의 | 에이전트 안 탐(빠름), 응답 35초 이내 | pytest | ➖ |
 | M-2~M-3 | "1박에 얼마?" · "Oct 9-14" · "10% off?" 문의 | 틀린 금액 · 날짜 · 할인이 초안에 남지 않음 | pytest | ➖ |

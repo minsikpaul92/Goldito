@@ -33,7 +33,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 | ID      | Task                                      | Phase doc                         |
 | ------- | ----------------------------------------- | --------------------------------- |
-| **RV-9** | Life Record concurrent write → the model is called twice + 500 + a false error: catch the unique violation (`23505`) and reuse the row, re-check before the model call, in-flight guard + short polling in `FinishedStay.tsx` | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-9 |
+| **RV-10** | Life Record uses this stay's reports only: filter `daily_reports` by the stay's Toronto dates (newest 5, oldest first), owner questions from this booking's inquiry first | [review-2026-10-08.ko.md](review-2026-10-08.ko.md) §4 RV-10 |
 
 ---
 
@@ -49,7 +49,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 - [ ] **FB-7b** The sitter gets a "Set your prices" notice when an owner hits checkout with no price row — needs a server-side write (a backend route with the service role, or a migration + RPC); the owner already sees the real reason (FB-7). Do it with FB-11 (the Prices input) or when a migration letter is free
 - [ ] **Review queue (2026-10-08)** — full detail per item in [review-2026-10-08.ko.md](review-2026-10-08.ko.md); one commit per ID; Low items as one commit per bundle.
   - **R0 (on the stack, before merge):** R0-1 ✅ · R0-2 ✅ (see Completed) · R0-3 PR bodies (optional, human pastes) · R0-4 merge in order ✅ (#55 · #56 · #57 · #58 all merged)
-  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → **RV-9** Life Record concurrent write → **RV-10** Life Record uses this stay's reports only → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
+  - **R1 `fix/review-high` (from main after the stack):** FB-7 ✅ (rates seed + truthful message) → FB-10 ✅ (`reset_demo.py`) → RV-9 ✅ (Life Record concurrent write) → **RV-10** Life Record uses this stay's reports only → **RV-6** turned-off chips really leave the draft → **RV-7** > 8 chips no longer 422 → **RV-8** report without the AI (plain-list draft) → **RV-1** inquiry availability = booking capacity rule (`011c`) → **RV-2** draft's yes/no must match availability, never auto-send a "no" → **RV-3** a declined reply carries no quote / Request booking (`011d`) → **RV-4 · RV-5** first-contact names + pets visible to the asked sitter, inquiry access ends (`011e`)
   - **R2 `fix/booking-flow-feedback`:** FB-8 → FB-9 → FB-5 → FB-6 → FB-2
   - **R3 `fix/review-medium`:** M-1 … M-24 in the review's order (inquiry M-1–M-11 · report M-12–M-16 · caption M-17–M-19 · Life Record M-20–M-23 · seed M-24)
   - **R4 `fix/review-low`:** L-1 … L-6 bundles, then FB-3 · FB-4 · FB-1
@@ -79,6 +79,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [review-2026-1
 
 
 ## Completed
+
+- [x] **RV-9** Life Record concurrent write (branch `fix/review-high`): the backend checks again for a stored record right before the model call, and an insert that hits `unique (booking_id, pet_id)` (`23505`) reuses the row the other request stored (`reused: true`, no second index / notice); other database errors still raise. The app shares one running `POST /api/ai/life-record` per booking (`completionApi.requestLifeRecord`, module-level so a screen that opens again joins it — stronger than the `useRef` the review suggested, which a remount would reset), the booking page watches for the sitter's records for up to 90 s (every 5 s) when Returned was under 3 minutes ago before asking itself, and a failed request reads the records once more before showing an error. pytest `test_ai_life_record` +3, flows `completion` +3 (the re-open test fails without the shared request: 2 POSTs) (2026-10-09).
 
 - [x] **Demo reset: `ready` and `in_care`** (branch `fix/review-high`): two more starting points so a test never waits for a clock. `ready` = the `confirmed` booking, then the owner signs every required consent and pays (demo), with the **drop-off one hour away** — the sitter's Received opens 2 h before it. `in_care` = the same, drop-off **3 minutes away**, and the sitter taps **Received** right away (care tools work from 30 min before drop-off), so the pets are with the sitter: check-ins, photos, reports. All through the real RPCs / the same insert the app does (`required_consents`, `booking_consents`, `pay_booking_demo`, `complete_handoff`); `scripts/reset_demo.py --state ready|in_care`; **Profile → Demo tools** lists all five. pytest 354 ✓ (stay times per state, call order per state, API accepts them), flows 187 ✓, tsc ✓, ruff ✓ (2026-10-09). **Not yet run against the hosted DB** (it would replace the booking you are looking at) — the consent insert as the owner and `pay_booking_demo` from the script are untested for real.
 

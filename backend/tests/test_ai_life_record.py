@@ -9,6 +9,7 @@ import pytest
 from app.ai import life_record as lr
 from app.routers import ai_life_record
 from app.services import nebius, rag
+from postgrest.exceptions import APIError
 
 from tests import test_media_sign as base
 from tests.fakes import FakeDB
@@ -180,6 +181,80 @@ def test_asking_twice_makes_one_record_per_pet(client, setup):
     assert [r["record_id"] for r in second["records"]] == [r["record_id"] for r in first["records"]]
     assert len(ctx.db.tables["pet_life_records"]) == 2 and len(ctx.model.calls) == 2
     assert len([n for n in ctx.db.tables["notifications"] if n["type"] == "life_record_updated"]) == 2
+
+
+class UniqueRecordsDB(FakeDB):
+    """pet_life_records has unique (booking_id, pet_id), like 011."""
+
+    def table(self, name: str):
+        query = super().table(name)
+        if name == "pet_life_records":
+            execute = query.execute
+
+            def guarded():
+                p = query.payload or {}
+                taken = any(r["booking_id"] == p.get("booking_id") and r["pet_id"] == p.get("pet_id") for r in self.tables[name])
+                if query.op == "insert" and taken:
+                    raise APIError({"message": "duplicate key value violates unique constraint", "code": "23505", "hint": None, "details": None})
+                return execute()
+
+            query.execute = guarded
+        return query
+
+
+def other_request_wrote(db: FakeDB, pet_id: str) -> None:
+    db.tables["pet_life_records"].append({"id": f"other-{pet_id[-2:]}", "booking_id": BOOKING, "pet_id": pet_id, "summary": {"eats": "From the other request."}})
+
+
+def test_a_record_stored_by_a_concurrent_request_is_reused_without_a_500_or_a_second_notice(client, setup, monkeypatch):
+    db = UniqueRecordsDB(**make_db().tables)
+    ctx = setup(db=db)
+
+    def slow_model(role, messages, schema, **kwargs):
+        other_request_wrote(db, MAX if not ctx.model.calls else MOCHI)  # the other request finishes while this one waits
+        return ctx.model(role, messages, schema, **kwargs)
+
+    monkeypatch.setattr(nebius, "chat_json", slow_model)
+    response = post(client)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    assert [r["record_id"] for r in records] == ["other-c1", "other-c2"] and all(r["reused"] for r in records)
+    assert records[0]["summary"] == {"eats": "From the other request."}
+    assert len(db.tables["pet_life_records"]) == 2 and ctx.indexed == [] and db.tables["notifications"] == []
+
+
+def test_a_record_stored_while_the_evidence_is_read_skips_the_model(client, setup, monkeypatch):
+    ctx = setup()
+    build = lr.build_snapshot
+
+    def build_then_other_request_writes(**kwargs):
+        other_request_wrote(ctx.db, kwargs["pet"]["id"])
+        return build(**kwargs)
+
+    monkeypatch.setattr(lr, "build_snapshot", build_then_other_request_writes)
+    response = post(client)
+    assert response.status_code == 200 and all(r["reused"] for r in response.json()["records"])
+    assert ctx.model.calls == [] and ctx.db.tables["notifications"] == []
+
+
+def test_another_database_error_on_insert_is_not_swallowed(client, setup):
+    class BrokenDB(FakeDB):
+        def table(self, name: str):
+            query = super().table(name)
+            if name == "pet_life_records":
+                execute = query.execute
+
+                def failing():
+                    if query.op == "insert":
+                        raise APIError({"message": "boom", "code": "XX000", "hint": None, "details": None})
+                    return execute()
+
+                query.execute = failing
+            return query
+
+    setup(db=BrokenDB(**make_db().tables))
+    with pytest.raises(APIError):
+        post(client)
 
 
 def test_the_snapshot_is_only_this_stay_this_sitter_and_what_was_sent(client, setup):
