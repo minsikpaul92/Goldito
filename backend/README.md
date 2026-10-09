@@ -32,7 +32,7 @@ docker run --rm -p 8000:8000 --env-file .env goldito-backend
 curl -s http://localhost:8000/health
 ```
 
-The image holds `app/` only (no `.env`, tests, or scripts). It listens on `$PORT` (default 8000) so hosts like Render can set their own. CI builds the image and checks `/health` on every backend change. Deployed env: everything in `.env.example`, with `CORS_ORIGINS` including the Vercel URL ([env-setup](../docs/plan/env-setup.ko.md)).
+The image holds `app/` only (no `.env`, tests, or scripts). It listens on `$PORT` (default 8000) so hosts like Render can set their own. CI builds the image and checks `/health` on every backend change; on `main`, `publish-backend.yml` pushes it to `ghcr.io/minsikpaul92/goldito-backend` (`latest` + commit SHA) for the Nebius Serverless AI endpoint. Deployed env: everything in `.env.example`, with `CORS_ORIGINS` including the Vercel URL ([env-setup](../docs/plan/env-setup.ko.md)).
 
 ## Media upload (Phase 04) — manual check
 
