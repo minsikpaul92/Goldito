@@ -13,6 +13,15 @@ export const OWNER_REVIEW_PRESETS: ReviewPresets = {
   5: ["Amazing care!", "Loved the photos and updates", "Would book again"],
 };
 
+/** The sitter about the owner, after a stay — private to the sitter (011g). */
+export const SITTER_REVIEW_PRESETS: ReviewPresets = {
+  1: ["Late for the handoff", "Care info was missing", "Hard to reach"],
+  2: ["Handoff was rushed", "Some info was missing", "Slow to reply"],
+  3: ["Okay to work with", "Instructions could be clearer", "Handoff was fine"],
+  4: ["Clear care notes", "On time for handoffs", "Easy to talk to"],
+  5: ["Great to work with!", "Pets well prepared", "Happy to host again"],
+};
+
 export function presetsFor(presets: ReviewPresets, rating: number): string[] {
   return rating >= 1 && rating <= 5 ? presets[rating as 1 | 2 | 3 | 4 | 5] : [];
 }

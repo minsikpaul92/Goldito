@@ -3123,4 +3123,70 @@ begin
 end;
 $$;
 
+
+-- ---------------------------------------------------------------------------
+-- O (011g, FB-25 · FB-29): the sitter's private note about an owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  pet uuid;
+  v_b uuid;
+  v_err text;
+  v_notes int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Notey') returning id into pet;
+  v_b := _t_booking(robert, chloe, array[pet], now() + interval '310 days', now() + interval '312 days', 'confirmed', true);
+
+  perform _t_as(chloe);
+  begin
+    perform save_owner_note(v_b, 4, 'Clear care notes');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'stay_not_finished', 'O: no owner note before the pets are back');
+
+  perform complete_handoff(v_b, 'pick_up');
+  select count(*) into v_notes from public.notifications where user_id = robert;
+  perform save_owner_note(v_b, 4, '  Clear care notes  ');
+  perform _t_ok((select rating = 4 and comment = 'Clear care notes' from public.sitter_owner_notes where booking_id = v_b),
+    'O: the sitter saves a private note about the owner (trimmed)');
+  perform save_owner_note(v_b, 5, 'Happy to host again');
+  perform _t_ok((select count(*) = 1 and max(rating) = 5 from public.sitter_owner_notes where booking_id = v_b),
+    'O: saving again edits the same note');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert) = v_notes,
+    'O: the owner is not told');
+
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: the owner cannot read it');
+  begin
+    perform save_owner_note(v_b, 1, 'From the owner');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'O: …or write one');
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read it');
+  begin
+    insert into public.sitter_owner_notes (booking_id, sitter_id, owner_id, rating) values (v_b, paul, robert, 1);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'O: no direct insert, only save_owner_note');
+  perform _t_as(chloe);
+  begin
+    perform save_owner_note(v_b, 6, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_rating', 'O: 1 to 5 stars');
+end;
+$$;
+
 rollback;
