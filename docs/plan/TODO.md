@@ -35,7 +35,7 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 | Who | ID | Task | Phase doc |
 | --- | ------- | ----------------------------------------- | --------------------------------- |
 | **Seulgi** | **Q.0** | Environment + demo accounts: open **https://goldito-petcare.vercel.app** in a normal and a private window, sign in with Try demo (owner + sitter), one demo reset (Profile → Demo tools) — a local setup only before Q.2 — then **Q.1** the full manual run with sitter-eye feedback (FB-40+) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **FB-31** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 owner name (RV-4 name part) → FB-32 a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-31: a first-contact owner's name shows on the sitter's Questions card and thread (the name part of RV-4: `has_inquiry_with` in `profiles_select`, migration `011e`) | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
+| **Minsik** | **FB-32** | (branch `fix/stage1-booking-ux` from main — the 2026-10-09 local-test batch, one commit per item: FB-30 ✅ tabs on one line → FB-31 ✅ owner name (RV-4, `011e`) → FB-32 a way to a sitter's profile → FB-33 "Ask before booking" + availability calendar → FB-34 owner replies + Change dates → FB-2 live lists → FB-35 decline reason + suggest instead; then **RV-2**) FB-32: an owner with no booking yet can reach a sitter's profile (and so "Ask before booking") — a profile link on each sitter in Book care, and a way to find sitters from the empty owner Bookings screen | [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) FB-30 – FB-35 |
 
 ---
 
@@ -85,6 +85,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 
 
 ## Completed
+
+- [x] **FB-31 (= RV-4, with RV-5's access limits)** A first-contact owner's name and the pets asked about show for the asked sitter (2026-10-09, `fix/stage1-booking-ux`): new migration **`011e_inquiry_access`** — `has_inquiry_with(other)` opens display names between the two people of an inquiry (any status, like a booking request); `pets_select` / `pet_allergies_select` add `has_open_inquiry_about`, which now ends with the stay asked about and 30 days after the question (RV-5: before, an `open` inquiry opened the pet's Life Records forever). No app change — the Questions card and thread already read `profiles` / `pets`; RLS returned nothing. Smoke +10 (`011e`). **Still RV-5 (later, new letter `011j`):** close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. **Human:** apply `011e` to the hosted DB.
 
 - [x] **FB-30** Sitter Bookings tabs stay on one line (2026-10-09, `fix/stage1-booking-ux`): `SegmentedControl` options take a `count`, shown as a small badge on the segment's corner instead of "Requests (1)"; labels are one line (14 px when there are four segments — each is about 86 px wide on a phone). e2e `sitter-bookings` · `inquiry` read the badge. test-guide UX-5.
 
@@ -353,7 +355,8 @@ Read in order: [CLAUDE.md](../../CLAUDE.md) → **this file** → [work-split-20
 - [x] **human** `seed_demo` is no longer needed: the reset sets Chloe's services and prices (2026-10-09).
 - [x] Demo logins moved to `@goldito.test` (2026-10-07). `main` still used `@pawddy.test` → hotfix `fix/demo-login-emails`.
 - [x] **`011c_stay_capacity_check` (applied 2026-10-09)** — the inquiry AI's availability check (RV-1).
-- [ ] R1b migrations `011d`–`011e` — not created yet; each is added here as `[ ] (not applied yet)` by the commit that creates it.
+- [ ] **`011e_inquiry_access` (not applied yet)** — names and asked-about pets for the asked sitter, with RV-5's time limits (FB-31). Without it a first-contact owner still reads "An owner" on the sitter's side.
+- [ ] R1b migrations `011d` (RV-3) and `011j` (rest of RV-5) — not created yet; each is added here as `[ ] (not applied yet)` by the commit that creates it.
 - [ ] **`011i_care_window_follows_received` (not applied yet)** — the care window starts at an early Received (CW-1). Without it, check-ins and tasks stay closed until the agreed drop-off even after Received.
 - [x] **`011f_daily_reports_many` (applied 2026-10-09)** — several sent daily reports per pet · sitter · day, one draft at a time (FB-22). **Needed by main (#60):** without it, a second report the same day fails on the old unique constraint.
 - [x] **`011g_sitter_owner_notes` (applied 2026-10-09)** — the sitter's private note about an owner (`sitter_owner_notes` + `save_owner_note`, FB-25 · FB-29). Without it the sitter's "Rate Robert" card fails to load / save.

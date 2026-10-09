@@ -343,6 +343,7 @@
 | INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
 | INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
 | INQ-20 | 시터 일정에서 어느 하룻밤의 자리를 1로 줄임(그 밤 `max_pets` 1) → 오너가 **Max + Mochi**로 그 밤을 포함해 문의 | AI 초안이 **"가능해요" 대신 그 날짜는 못 한다**고 하고 견적 카드 · Request booking 없음 — 예약 요청을 해도 같은 판단(`sitter_unavailable`). 시터가 안 연 날짜가 끼어도 같음 (RV-1) | pytest · SQL 011c (호스팅 DB에 `011c` 적용 뒤) | 로컬 ✅ 10/09 민식 (Max+Mochi, 10/16 자리 1 → "unavailable on Oct 16", 견적 없음) · Vercel ➖ |
+| INQ-21 | `pets`로 리셋(예약 이력 없음) → 오너가 Chloe에게 Max + Mochi 문의 → 시터 Bookings → **Questions** | 카드 제목이 **"Robert · Max, Mochi"**("An owner" 아님), 스레드 제목 · 여행 줄에 펫 이름. 머문 기간이 끝나거나 문의가 닫히면 펫 정보는 다시 안 보임(이름은 남음) (FB-31 · RV-4) | SQL 011e (호스팅 DB에 `011e` 적용 뒤) | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 

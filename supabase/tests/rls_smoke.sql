@@ -3322,4 +3322,65 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Inquiry access (011e, RV-4 / FB-31 + RV-5's limits): names and the asked pets for the asked sitter
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  ivy constant uuid := '00000000-0000-4000-8000-0000000000a9';
+  sam constant uuid := '00000000-0000-4000-8000-0000000000b9';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  pip constant uuid := '00000000-0000-4000-8000-0000000000c9';
+  v_inq uuid;
+begin
+  -- A new owner and a new sitter with no booking between them.
+  perform _t_as(null);
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (ivy, 'ivy@example.test', '{"role":"owner","display_name":"Ivy"}'),
+    (sam, 'sam@example.test', '{"role":"sitter","display_name":"Sam"}');
+  insert into public.pets (id, owner_id, species, name) values (pip, ivy, 'dog', 'Pip');
+  insert into public.pet_allergies (pet_id, allergen) values (pip, 'chicken');
+
+  perform _t_as(sam);
+  perform _t_ok(not exists (select 1 from public.profiles where id = ivy), '011e: before any inquiry Sam cannot see Ivy');
+  perform _t_ok(not exists (select 1 from public.pets where id = pip), '011e: …nor her pet');
+
+  perform _t_as(ivy);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (ivy, sam, now() + interval '10 days', now() + interval '12 days', array[pip])
+  returning id into v_inq;
+
+  perform _t_as(sam);
+  perform _t_ok((select display_name from public.profiles where id = ivy) = 'Ivy',
+    '011e: the asked sitter sees the owner''s name (no more "An owner")');
+  perform _t_ok((select name from public.pets where id = pip) = 'Pip', '011e: …and the pet asked about');
+  perform _t_ok(exists (select 1 from public.pet_allergies where pet_id = pip), '011e: …and its allergies');
+
+  perform _t_as(paul);
+  perform _t_ok(not exists (select 1 from public.profiles where id = ivy), '011e: a sitter who was not asked sees no name');
+  perform _t_ok(not exists (select 1 from public.pets where id = pip), '011e: …and no pet');
+
+  -- The stay asked about is over: the pet goes, the name stays.
+  perform _t_as(null);
+  update public.inquiries set drop_off_at = now() - interval '3 days', pick_up_at = now() - interval '1 day' where id = v_inq;
+  perform _t_as(sam);
+  perform _t_ok(not exists (select 1 from public.pets where id = pip), '011e: after the asked stay the pet is hidden again');
+  perform _t_ok(exists (select 1 from public.profiles where id = ivy), '011e: …while the name stays');
+
+  -- Asked more than 30 days ago (stay still ahead), or closed: hidden too.
+  perform _t_as(null);
+  update public.inquiries
+  set drop_off_at = now() + interval '10 days', pick_up_at = now() + interval '12 days', created_at = now() - interval '31 days'
+  where id = v_inq;
+  perform _t_as(sam);
+  perform _t_ok(not exists (select 1 from public.pets where id = pip), '011e: an inquiry older than 30 days no longer opens the pet');
+  perform _t_as(null);
+  update public.inquiries set created_at = now(), status = 'closed' where id = v_inq;
+  perform _t_as(sam);
+  perform _t_ok(not exists (select 1 from public.pets where id = pip), '011e: a closed inquiry no longer opens the pet');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
