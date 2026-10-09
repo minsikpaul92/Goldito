@@ -157,6 +157,37 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
   });
 
+  test("a sent daily report is a live update too, and opens the report (FB-21)", async ({ page }) => {
+    const db = await ownerHome(page);
+    db.daily_reports.push({ id: "r-max", pet_id: MAX, sitter_id: SITTER.id, report_date: "2026-10-09", body: "Max had a lovely day.", status: "sent", source_snapshot: null, created_at: ago(1), sent_at: ago(1) });
+    db.notifications.push({ id: nid(6), user_id: OWNER.id, type: "report_sent", title: "Max's daily report is here 📓", body: null, pet_id: MAX, booking_id: null, ref_id: "r-max", read_at: null, created_at: ago(1) });
+    await page.reload();
+    const screen = app(page);
+    await expect(screen.getByTestId(`live-${nid(6)}`)).toContainText("Max's daily report is here");
+    await screen.getByTestId(`live-${nid(6)}`).click();
+    await expect(page).toHaveURL(/\/owner\/diary\/r-max/);
+  });
+
+  test("after Returned, Home keeps asking for a review until the stay is reviewed (FB-24)", async ({ page }) => {
+    const db = await ownerHome(page);
+    db.notifications.push({ id: nid(7), user_id: OWNER.id, type: "review_requested", title: "Thanks for trusting Chloe! How was Max's stay? ⭐", body: null, pet_id: MAX, booking_id: "b-done", ref_id: null, read_at: null, created_at: ago(1) });
+    await page.reload();
+    const screen = app(page);
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toContainText("How was Max's stay?");
+    await screen.getByTestId(`live-${nid(7)}`).click();
+    await expect(page).toHaveURL(/\/owner\/bookings\/b-done/);
+
+    // Opened but not reviewed yet: it stays on Home.
+    await page.goto("/owner");
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toBeVisible();
+
+    // Reviewed: it leaves Home.
+    db.reviews.push({ id: "rv1", booking_id: "b-done", owner_id: OWNER.id, sitter_id: SITTER.id, rating: 5, comment: null, created_at: ago(0) });
+    await page.reload();
+    await screen.getByTestId("live-updates").waitFor();
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toHaveCount(0);
+  });
+
   test("an update you opened leaves Home (it stays in the notification list and History)", async ({ page }) => {
     const db = await ownerHome(page);
     const screen = app(page);

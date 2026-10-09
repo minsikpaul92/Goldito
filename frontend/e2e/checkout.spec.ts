@@ -76,6 +76,33 @@ test.describe("checkout", () => {
     expect(db.payments).toHaveLength(0);
   });
 
+  test("a sitter with no prices yet is named as the reason, not 'doesn't offer that service'", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.quote_error = "service_not_offered"; // what quote_booking raises with no price row
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    const screen = app(page);
+
+    await expect(screen.getByText("Can't open checkout")).toBeVisible();
+    await expect(screen.getByText("hasn't set their prices yet", { exact: false })).toBeVisible();
+    await expect(screen.getByText("doesn't offer that service", { exact: false })).toHaveCount(0);
+  });
+
+  test("a sitter who has prices but does not offer the service still says so", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.sitter_rates.push({ sitter_id: SITTER.id, boarding_nightly: 55 });
+    db.quote_error = "service_not_offered";
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+
+    await expect(app(page).getByText("doesn't offer that service", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("hasn't set their prices yet", { exact: false })).toHaveCount(0);
+  });
+
   test("checking every consent and Pay completes demo checkout", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedUnpaid(db);
@@ -93,6 +120,15 @@ test.describe("checkout", () => {
     await screen.getByTestId("checkout-pay").click();
 
     await expect(screen.getByTestId("toast")).toContainText("You're all set");
+    // The toast goes in 3 s; the confirmation stays on the booking until it is tapped away (FB-12).
+    await expect(screen.getByTestId("paid-confirmation")).toContainText(`Booked and paid: $${DEMO_QUOTE.total.toFixed(2)} CAD`);
+    await expect(screen.getByTestId("paid-confirmation")).toContainText("Nothing else to do");
+    await screen.getByTestId("paid-confirmation").click();
+    await expect(screen.getByTestId("paid-confirmation")).toHaveCount(0);
+    await expect(screen.getByTestId("paid-chip")).toBeVisible(); // still marked Paid
+    await page.reload();
+    await expect(screen.getByTestId("paid-chip")).toBeVisible();
+    await expect(screen.getByTestId("paid-confirmation")).toHaveCount(0); // and it stays dismissed
     expect(db.payments).toEqual([{ p_booking: BOOKING }]);
     expect(db.booking_consents).toHaveLength(KINDS.length);
     expect(db.bookings[0].paid_at).toBeTruthy();
@@ -103,6 +139,24 @@ test.describe("checkout", () => {
     await expect(screen.getByTestId("checkout-banner")).toHaveCount(0);
     await expect(screen.getByTestId("sitter-place-card")).toContainText("100 Example St");
     await expect(screen.getByTestId("packing-list")).toContainText("food");
+  });
+
+  test("what the owner packed is saved and survives leaving the booking (FB-13)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedReopened(db); // paid once, with the sitter's place notes + packing list visible to the owner
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("packing-list")).toContainText("saved on this device");
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "false");
+    await screen.getByTestId("pack-food").click();
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "true");
+
+    await page.reload();
+    await expect(screen.getByTestId("pack-food")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("pack-bed or cushion")).toHaveAttribute("aria-checked", "false");
   });
 
   test("a change agreed after payment reopens checkout for the new consent only", async ({ page }) => {

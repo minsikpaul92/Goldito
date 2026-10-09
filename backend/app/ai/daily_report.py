@@ -66,6 +66,13 @@ def care_intervals(bookings: list[dict], day_start: datetime, day_end: datetime)
     return sorted(out)
 
 
+def after(intervals: list[Interval], moment: datetime | None) -> list[Interval]:
+    """The intervals from `moment` on: a second report of the day covers what happened since the last one went out."""
+    if moment is None:
+        return intervals
+    return [(max(start, moment), end) for start, end in intervals if end > moment]
+
+
 def in_any(moment: datetime, intervals: list[Interval]) -> bool:
     return any(start <= moment < end for start, end in intervals)
 
@@ -146,8 +153,15 @@ def build_snapshot(
     skip: list[str],
     now: datetime,
     overrides: dict[str, str] | None = None,
+    off: list[str] | None = None,
 ) -> dict:
-    """The JSON that is the model's whole input. Only records inside `intervals`; nothing the sitter turned off."""
+    """The JSON that is the model's whole input. Only records inside `intervals`; nothing the sitter turned off.
+
+    `off` are the episode chips the sitter turned off (`note-{checkin_id}`, `feed-{post_id}`): that note or
+    feed caption is left out. Items that can become an episode chip carry `_ref` (the chip id); `model_view`
+    drops it before the model sees the snapshot.
+    """
+    off_refs = set(off or [])
     off = {k for k in skip if k in CHECK_KEYS}
     off_task_types = {TASK_TYPE_FOR_CHECK[k] for k in off if k in TASK_TYPE_FOR_CHECK}
     off_kinds = {CHECKIN_KIND_FOR_CHECK[k] for k in off if k in CHECKIN_KIND_FOR_CHECK}
@@ -181,22 +195,36 @@ def build_snapshot(
         at = parse_ts(c["created_at"])
         if not in_any(at, intervals) or c["kind"] in off_kinds:
             continue
+        ref = f"note-{c['id']}" if c.get("id") else None
+        note = _clean(c.get("note_text"), NOTE_MAX)
+        if note and ref in off_refs:
+            if c["kind"] == "note":
+                continue  # a note check-in is nothing but its text
+            note = None
         entry = {"time": _hhmm(at, tz), "kind": c["kind"], "has_photo": bool(c.get("media_id"))}
         if c.get("value"):
             entry["value"] = c["value"]
-        note = _clean(c.get("note_text"), NOTE_MAX)
         if note:
             entry["note_text"] = note
+            if ref:
+                entry["_ref"] = ref
         snap_checkins.append(entry)
 
     snap_checkins = apply_overrides(snap_checkins, clean_overrides(overrides))
 
     photos: list[dict] = []
     for post in sorted(feed_posts, key=lambda r: r["created_at"]):
+        # A task / check-in photo's caption ("🍽️ Breakfast — done") repeats a record the sitter can
+        # already turn off or correct, so it is not a separate fact (it would get around that).
+        if post.get("caption_source") == "task":
+            continue
+        ref = f"feed-{post['id']}" if post.get("id") else None
+        if ref in off_refs:
+            continue
         at = parse_ts(post["created_at"])
         caption = _clean(post.get("caption"), CAPTION_MAX)
         if caption and in_any(at, intervals):
-            photos.append({"time": _hhmm(at, tz), "caption": caption, "source": "feed"})
+            photos.append({"time": _hhmm(at, tz), "caption": caption, "source": "feed", **({"_ref": ref} if ref else {})})
     photos = photos[:MAX_FEED_PHOTOS]
     for caption in report_photos[:MAX_REPORT_PHOTOS]:
         text = _clean(caption, CAPTION_MAX)
@@ -256,6 +284,15 @@ def tidy_body(text: str) -> str:
     if len(text) >= 2 and text[0] == text[-1] == '"':
         text = text[1:-1].strip()
     return text
+
+
+def model_view(value):
+    """The snapshot as the model sees it: without internal keys (those starting with `_`)."""
+    if isinstance(value, dict):
+        return {k: model_view(v) for k, v in value.items() if not str(k).startswith("_")}
+    if isinstance(value, list):
+        return [model_view(v) for v in value]
+    return value
 
 
 def word_count(text: str) -> int:

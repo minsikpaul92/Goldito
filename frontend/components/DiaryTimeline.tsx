@@ -63,7 +63,11 @@ export function DiaryTimeline({ entries }: { entries: DiaryEntry[] }) {
                 </Text>
                 <View style={styles.body}>
                   <Text style={styles.label}>{entry.label}</Text>
-                  {entry.memo ? <Text style={styles.memo}>{entry.memo}</Text> : null}
+                  {entry.memo ? (
+                    <Text style={styles.memo} numberOfLines={entry.kind === "report" ? 2 : undefined}>
+                      {entry.memo}
+                    </Text>
+                  ) : null}
                   <Text style={styles.meta}>{`${formatTime(isoToZoned(entry.at).time)} · ${who(entry)}`}</Text>
                 </View>
                 {thumb ? <Image source={{ uri: thumb }} style={styles.thumb} accessibilityIgnoresInvertColors /> : null}

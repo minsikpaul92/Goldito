@@ -2,6 +2,7 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { DemoTools } from "../components/DemoTools";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -20,6 +21,7 @@ import {
   saveProfile,
   setAiReplyMode,
 } from "../features/profile/profileApi";
+import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -350,6 +352,7 @@ export default function ProfileScreen() {
         </Text>
       ) : null}
       <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
+      {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
     </Screen>
   );
 }

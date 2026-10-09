@@ -200,6 +200,56 @@ def test_a_check_the_sitter_turned_off_never_reaches_the_model(client, setup):
     assert "meal" in snap["checks"]  # what stayed on is still there
 
 
+def with_episodes(db: FakeDB) -> FakeDB:
+    """Two notes (one on a meal check-in), a shared photo, and a check-in photo's automatic caption."""
+    db.tables["care_checkins"] += [
+        {"id": "c-note2", "pet_id": PET_ID, "created_by": SITTER_ID, "kind": "note", "value": None, "note_text": "Threw up a little after lunch", "media_id": None, "created_at": at("17:00")},
+        {"id": "c-meal2", "pet_id": PET_ID, "created_by": SITTER_ID, "kind": "meal", "value": "most", "note_text": "Left the carrots", "media_id": None, "created_at": at("19:00")},
+    ]
+    db.tables["feed_posts"] += [
+        {"id": "f-park", "pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "Zoomies at the park", "caption_source": "ai", "created_at": at("16:30")},
+        {"id": "f-task", "pet_id": PET_ID, "posted_by": SITTER_ID, "visibility": "shared", "caption": "🍽️ Dinner — done", "caption_source": "task", "created_at": at("19:05")},
+    ]
+    return db
+
+
+def model_input(model) -> str:
+    return model.calls[-1]["messages"][-1]["content"]
+
+
+def test_a_turned_off_note_chip_never_reaches_the_model(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    assert post(client, off=["note-c-note2", "note-c-meal2"]).status_code == 200
+    assert "Threw up" not in model_input(model) and "carrots" not in model_input(model)
+    # The note check-in is gone; the meal check-in stays with its value, only its note is dropped.
+    assert all(c.get("note_text") != "Threw up a little after lunch" for c in model.snapshot["checkins"])
+    assert {"kind": "meal", "value": "most"}.items() <= next(c for c in model.snapshot["checkins"] if c["time"] == "15:00").items()
+    assert "Met a golden retriever" in model_input(model)  # a note still on stays
+
+
+def test_a_turned_off_feed_chip_never_reaches_the_model(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    post(client, off=["feed-f-park", "feed-unknown", "rec-meal"])  # unknown ids are ignored
+    assert "Zoomies" not in model_input(model) and "Max sniffing autumn leaves" in model_input(model)
+    assert model.snapshot["checks"]["meal"] == "most"  # `off` is for episodes; records are turned off with `skip`
+
+
+def test_a_task_photo_caption_is_not_a_separate_fact(client, setup):
+    _, model = setup(with_episodes(make_db()))
+    post(client, skip=["meal"])
+    assert "Dinner — done" not in model_input(model)  # it would bring the turned-off meal back
+    assert [p["caption"] for p in model.snapshot["photos"]] == ["Max sniffing autumn leaves", "Zoomies at the park"]
+
+
+def test_the_model_never_sees_the_internal_chip_refs_but_the_draft_keeps_them(client, setup):
+    db, model = setup(with_episodes(make_db()))
+    post(client, off=["note-c-note2"])
+    assert "_ref" not in model_input(model) and "c-meal2" not in model_input(model)
+    saved = db.tables["daily_reports"][0]
+    assert saved["inputs"]["off"] == ["note-c-note2"]
+    assert any(p.get("_ref") == "feed-f-park" for p in saved["source_snapshot"]["photos"])
+
+
 def test_without_chips_note_or_photos_the_days_records_still_make_a_report(client, setup):
     db, model = setup()
     assert post(client).status_code == 200
@@ -268,12 +318,30 @@ def test_generating_again_overwrites_the_same_days_draft(client, setup):
     assert row["body"] == "A second take on the day." and row["inputs"]["chips"] == ["Nap in the sun"]
 
 
-def test_a_sent_report_is_never_rewritten(client, setup):
-    db = make_db(daily_reports=[{"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent."}])
-    db, model = setup(db)
+def test_after_a_report_is_sent_the_next_one_is_a_new_draft_about_what_happened_since(client, setup):
+    sent = {"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent.", "sent_at": at("15:00")}
+    db, model = setup(make_db(daily_reports=[sent]))
     response = post(client)
-    assert response.status_code == 409 and response.json()["detail"] == "report_already_sent"
-    assert model.calls == [] and db.tables["daily_reports"][0]["body"] == "Sent."
+    assert response.status_code == 200 and response.json()["report_id"] != "r1"
+    assert db.tables["daily_reports"][0]["body"] == "Sent."  # the sent one is never rewritten
+    assert [r["status"] for r in db.tables["daily_reports"]] == ["sent", "draft"]
+    snap = model.snapshot
+    # Only what happened after 11:00 Toronto (15:00 UTC): the potty and the note, not the meal, walk or pill before it.
+    assert [c["kind"] for c in snap["checkins"]] == ["potty", "note"]
+    assert snap["checks"] == {"potty": "normal"} and snap["tasks"] == []  # the 10:30 walk and 08:00 pill were before
+
+
+def test_the_chips_after_a_sent_report_are_the_records_since(client, setup, monkeypatch):
+    from app.routers import ai_report_chips
+
+    sent = {"id": "r1", "pet_id": PET_ID, "sitter_id": SITTER_ID, "report_date": "2026-10-15", "status": "sent", "body": "Sent.", "sent_at": at("15:00")}
+    db, _ = setup(make_db(daily_reports=[sent]))
+    monkeypatch.setattr(ai_report_chips, "get_service_client", lambda: db)
+    monkeypatch.setattr(ai_report_chips, "_now", lambda: NOW)
+    response = client.post("/api/ai/report-chips", headers={"Authorization": f"Bearer {sitter_token()}"}, json={"pet_id": PET_ID})
+    assert response.status_code == 200, response.text
+    chips = response.json()["chips"]
+    assert "rec-meal" not in [c["id"] for c in chips] and "rec-potty" in [c["id"] for c in chips]
 
 
 def test_another_sitters_report_does_not_block_this_one(client, setup):
@@ -341,25 +409,59 @@ def test_unknown_pet_is_404(client, setup):
     assert post(client).status_code == 404
 
 
-def test_model_trouble_saves_nothing(client, setup, monkeypatch):
-    db, _ = setup()
+def test_a_model_outage_saves_a_plain_list_of_what_the_sitter_kept(client, setup, monkeypatch):
+    db, _ = setup(with_episodes(make_db()))
 
     def down(*a, **k):
         raise nebius.AIUnavailable("down")
 
     monkeypatch.setattr(nebius, "chat", down)
-    response = post(client)
-    assert response.status_code == 503 and "write the note yourself" in response.json()["detail"]
-    assert db.tables["daily_reports"] == []
+    response = post(
+        client, chips=["Met a golden retriever", "Park walk"], sitter_note="Such a sweet boy", photos=["Max looking up at a squirrel"],
+        skip=["potty"], overrides={"meal": "most"}, off=["note-c-note2"],
+    )
+    assert response.status_code == 200
+    out = response.json()
+    assert out["fallback"] is True and out["model"] == "template-fallback" and out["status"] == "draft"
+    assert out["body"].splitlines() == [
+        "Hi Max's family! Here's Max's day:",
+        "• Ate most of it",  # the sitter's correction
+        "• Walk · 20 min",
+        "• Medication given",
+        "• Met a golden retriever",
+        "• Park walk",
+        "• Max looking up at a squirrel",
+        "",
+        "Such a sweet boy",
+    ]
+    assert "potty" not in out["body"].lower() and "Threw up" not in out["body"]  # turned off stays off
+    saved = db.tables["daily_reports"][0]
+    assert saved["status"] == "draft" and saved["body"] == out["body"] and saved["model"] == "template-fallback"
 
+
+def test_an_empty_model_answer_also_falls_back_to_the_plain_list(client, setup, monkeypatch):
+    db, _ = setup()
     monkeypatch.setattr(nebius, "chat", Model("<think>only thoughts</think>"))
-    assert post(client).status_code == 502
-    assert db.tables["daily_reports"] == []
+    out = post(client, chips=["Park walk"]).json()
+    assert out["fallback"] is True and "• Park walk" in out["body"]
+    assert len(db.tables["daily_reports"]) == 1
+
+
+def test_a_written_report_is_not_a_fallback(client, setup):
+    setup()
+    assert post(client).json()["fallback"] is False
+
+
+def test_more_than_eight_kept_chips_write_a_report_from_the_first_eight(client, setup):
+    _, model = setup()
+    response = post(client, chips=[f"Highlight {i}" for i in range(12)])
+    assert response.status_code == 200
+    assert model.snapshot["chips"] == [f"Highlight {i}" for i in range(8)]
 
 
 def test_input_limits(client, setup):
     setup()
-    assert post(client, chips=[f"c{i}" for i in range(9)]).status_code == 422
+    assert post(client, chips=[f"c{i}" for i in range(31)]).status_code == 422
     assert post(client, photos=["a", "b", "c"]).status_code == 422
     assert post(client, sitter_note="x" * 201).status_code == 422
     assert post(client, sitter_note="x" * 200).status_code == 200

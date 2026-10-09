@@ -21,13 +21,17 @@ export type ChipSuggestions = { summary: DaySummary; chips: ReportChip[]; photos
 export const REPORT_NOTE_MAX = 200;
 export const REPORT_BODY_MAX = 2000;
 export const REPORT_MAX_PHOTOS = 2;
+/** Highlights (episode chips) the report uses; more can stay on, the first ones go in (server MAX_CHIPS). */
+export const REPORT_MAX_HIGHLIGHTS = 8;
 export const CUSTOM_CHIP_MAX = 40;
 
-export type ReportDraft = { id: string; body: string; status: "draft" | "sent" };
+/** `fallback`: the writing model was down, so the draft is the plain list of the kept chips (RV-8). */
+export type ReportDraft = { id: string; body: string; status: "draft" | "sent"; fallback?: boolean };
 
 function explain(error: unknown, fallback: string): Error {
-  // The server's 503 / 502 / 403 / 409 messages are already written for the sitter.
-  if (error instanceof ApiError && [403, 409, 502, 503].includes(error.status)) return new Error(error.message);
+  // The server's 403 / 409 messages are already written for the sitter. (A model outage is no longer an error:
+  // the report comes back as a plain-list draft.)
+  if (error instanceof ApiError && [403, 409].includes(error.status)) return new Error(error.message);
   return new Error(fallback);
 }
 
@@ -50,35 +54,43 @@ export type GenerateInput = {
   skip: string[];
   /** Corrected values: { meal: "most", walk: "30" }. */
   overrides?: Record<string, string>;
+  /** Episode chips switched off (`note-…`, `feed-…`): their notes / captions stay out of the report. */
+  off?: string[];
 };
 
 export async function generateReport(input: GenerateInput): Promise<ReportDraft> {
   try {
-    const res = await apiPost<{ report_id: string; body: string; status: "draft" }>("/api/ai/daily-report", {
+    const res = await apiPost<{ report_id: string; body: string; status: "draft"; fallback?: boolean }>("/api/ai/daily-report", {
       pet_id: input.petId,
       chips: input.chips,
       sitter_note: input.note,
       photos: input.photos,
       skip: input.skip,
       overrides: input.overrides ?? {},
+      off: input.off ?? [],
     });
-    return { id: res.report_id, body: res.body, status: "draft" };
+    return { id: res.report_id, body: res.body, status: "draft", fallback: res.fallback ?? false };
   } catch (error) {
+    if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights — turn a few off and try again.");
     throw explain(error, "Couldn't write the report. Check your connection and try again.");
   }
 }
 
 /** Today's report for this pet written by me (the draft is private to me; RLS). */
 export async function getTodayReport(petId: string, sitterId: string): Promise<ReportDraft | null> {
+  // A day can hold several sent reports and at most one draft (011f, FB-22): the draft first, else the last sent.
   const { data, error } = await getSupabase()
     .from("daily_reports")
-    .select("id, body, status")
+    .select("id, body, status, sent_at")
     .eq("pet_id", petId)
     .eq("sitter_id", sitterId)
-    .eq("report_date", appToday())
-    .maybeSingle();
+    .eq("report_date", appToday());
   if (error) throw new Error("Couldn't load today's report.");
-  return (data as ReportDraft | null) ?? null;
+  const rows = (data ?? []) as (ReportDraft & { sent_at: string | null })[];
+  const draft = rows.find((r) => r.status === "draft");
+  const last = rows.filter((r) => r.status === "sent").sort((a, b) => (b.sent_at ?? "").localeCompare(a.sent_at ?? ""))[0];
+  const pick = draft ?? last;
+  return pick ? { id: pick.id, body: pick.body, status: pick.status } : null;
 }
 
 /** The sitter's approval: the text they send is the final text (009). */
@@ -137,6 +149,8 @@ export async function listSentReports(): Promise<SentReport[]> {
     .select(COLUMNS)
     .eq("status", "sent")
     .order("report_date", { ascending: false })
+    // Several reports a day (011f): the later one first.
+    .order("sent_at", { ascending: false })
     .limit(60);
   if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
   return ((data ?? []) as unknown as ReportRow[]).map(toSent);

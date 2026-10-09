@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import {
   CUSTOM_CHIP_MAX,
   ChipPhoto,
   REPORT_BODY_MAX,
+  REPORT_MAX_HIGHLIGHTS,
   REPORT_MAX_PHOTOS,
-  REPORT_NOTE_MAX,
   ReportChip,
   ReportDraft,
   generateReport,
@@ -18,6 +19,7 @@ import {
   type DaySummary,
 } from "../features/diary/reportApi";
 import { CHECKIN_GROUPS } from "../features/care/checkinOptions";
+import { appToday } from "../features/schedule/dates";
 import { UploadError, uploadMedia } from "../lib/cloudinary";
 import { pickMedia } from "../lib/media";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
@@ -35,12 +37,19 @@ import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
 
+/** Which highlights go first when more than REPORT_MAX_HIGHLIGHTS are on (by chip source). */
+const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
+
 /**
  * The sitter's evening note for one pet (phase-07 7.3): chips from the day (and up to two photos) →
- * keep or turn off → optional short note → Generate → edit the preview → Send. Nothing reaches the owner
+ * keep or turn off → optional short lines of their own (each becomes a chip, FB-18) → Generate → edit the
+ * preview → Send. Nothing reaches the owner
  * before Send; the owner only ever sees the text the sitter sent (D36 · D38).
  */
-export function ReportComposer({ pet }: { pet: CaringPet }) {
+/** Where this pet's report stands, for the Diary's pet picker. */
+export type ReportStatus = "sent" | "draft" | null;
+
+export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (status: ReportStatus) => void }) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
@@ -56,11 +65,10 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
   const [descriptions, setDescriptions] = useState<ChipPhoto[]>([]);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [note, setNote] = useState("");
-  /** Chips the sitter typed themselves ("+ Add"); they behave like episode chips. */
+  /** Short lines the sitter typed ("Anything to add?"): each is a chip of their own, like an episode chip. */
   const [custom, setCustom] = useState<ReportChip[]>([]);
-  const [adding, setAdding] = useState(false);
   const [customText, setCustomText] = useState("");
+  const customSeq = useRef(0);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<"chips" | "generate" | "send" | null>(null);
@@ -83,12 +91,12 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     [pet.id, toast],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+  /** Today's saved report (draft or sent), then today's chips. */
+  const loadToday = useCallback(
+    async (isLive: () => boolean) => {
       try {
         const existing = sitterId ? await getTodayReport(pet.id, sitterId) : null;
-        if (cancelled) return;
+        if (!isLive()) return;
         if (existing?.status === "sent") {
           setSent(true);
           setBody(existing.body);
@@ -99,14 +107,60 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       } catch {
         // No saved draft is fine: the sitter starts from the chips.
       }
-      if (!cancelled) setLoading(false);
-      if (!cancelled) void refreshChips([]);
-    })();
+      if (!isLive()) return;
+      setLoading(false);
+      void refreshChips([]);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pet.id, sitterId],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadToday(() => !cancelled);
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pet.id, sitterId]);
+  }, [loadToday]);
+
+  // The Diary tab stays mounted: coming back to it must show what was recorded meanwhile (M-12). The day's record
+  // and note chips are read again quietly (the photo chips stay — no new vision call); what the sitter turned off
+  // or added stays, by chip id. A new day starts over.
+  const day = useRef(appToday());
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false; // the mount already loaded
+        return;
+      }
+      let live = true;
+      if (appToday() !== day.current) {
+        day.current = appToday();
+        setDraft(null);
+        setSent(false);
+        setBody("");
+        setOff(new Set());
+        setCustom([]);
+        setOverrides({});
+        setPhotos([]);
+        setDescriptions([]);
+        setChips([]);
+        void loadToday(() => live);
+      } else {
+        suggestChips(pet.id, [])
+          .then((res) => {
+            if (!live) return;
+            setChips((prev) => [...res.chips, ...prev.filter((c) => c.source === "vision")]);
+            setSummary(res.summary);
+          })
+          .catch(() => undefined); // a quiet refresh: the chips on screen stay
+      }
+      return () => {
+        live = false;
+      };
+    }, [loadToday, pet.id]),
+  );
 
   const toggle = (id: string) =>
     setOff((prev) => {
@@ -156,32 +210,53 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
   );
   const all = useMemo(() => [...shown, ...custom], [shown, custom]);
   const kept = useMemo(() => all.filter((c) => !off.has(c.id)), [all, off]);
+  // The report uses the first REPORT_MAX_HIGHLIGHTS: what the sitter wrote, then notes, photos, the feed.
+  const highlights = useMemo(
+    () => kept.filter((c) => c.kind === "episode").sort((a, b) => (HIGHLIGHT_ORDER[a.source] ?? 9) - (HIGHLIGHT_ORDER[b.source] ?? 9)),
+    [kept],
+  );
 
   const addCustom = () => {
     const label = customText.trim().replace(/\s+/g, " ").slice(0, CUSTOM_CHIP_MAX);
     if (!label) return;
     if (!all.some((c) => c.label.toLowerCase() === label.toLowerCase())) {
-      setCustom((prev) => [...prev, { id: `custom-${prev.length}-${label}`, kind: "episode", label, source: "custom", check: null, media_id: null }]);
+      const id = `custom-${(customSeq.current += 1)}`;
+      setCustom((prev) => [...prev, { id, kind: "episode", label, source: "custom", check: null, media_id: null }]);
     }
     setCustomText("");
-    setAdding(false);
   };
+
+  /** A line the sitter added can be taken back entirely (FB-17); suggested chips are only turned off. */
+  const removeCustom = (id: string) => {
+    setCustom((prev) => prev.filter((c) => c.id !== id));
+    setOff((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    onStatus?.(sent ? "sent" : draft ? "draft" : null);
+  }, [sent, draft, onStatus]);
 
   const generate = async () => {
     if (busy) return;
     setBusy("generate");
     try {
       const skip = chips.filter((c) => c.kind === "record" && c.check && off.has(c.id)).map((c) => c.check as string);
-      const keptPhotoIds = new Set(kept.filter((c) => c.source === "vision").map((c) => c.media_id));
       const result = await generateReport({
         petId: pet.id,
-        chips: kept.filter((c) => c.kind === "episode").map((c) => c.label),
-        note: note.trim() || null,
-        // A photo whose chips were all turned off stays out of the report too (D38).
+        chips: highlights.map((c) => c.label),
+        // The sitter's own words now come as lines (custom chips, FB-18); no separate note.
+        note: null,
+        // A photo with any chip turned off sends no description: it could say what that chip said (D38).
         photos: descriptions
-          .filter((d) => keptPhotoIds.has(d.media_id) || !chips.some((c) => c.media_id === d.media_id))
+          .filter((d) => !chips.some((c) => c.media_id === d.media_id && off.has(c.id)))
           .map((d) => d.description),
         skip: [...new Set(skip)],
+        // Turned-off episode chips of the day's notes and photos: the server leaves those records out.
+        off: [...off].filter((id) => id.startsWith("note-") || id.startsWith("feed-")),
         // Only for chips still on: a corrected value of a switched-off check never goes out.
         overrides: Object.fromEntries(Object.entries(overrides).filter(([check]) => !skip.includes(check))),
       });
@@ -218,12 +293,27 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     );
   }
 
+  /** Another report the same day (FB-22): fresh chips from what happened since the last one went out. */
+  const writeAnother = () => {
+    setSent(false);
+    setBody("");
+    setOff(new Set());
+    setCustom([]);
+    setOverrides({});
+    setPhotos([]);
+    setDescriptions([]);
+    setChips([]);
+    void refreshChips([]);
+  };
+
   if (sent) {
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{pet.name}</Text>
         <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
         <Text style={styles.body}>{body}</Text>
+        <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
+        <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>
     );
   }
@@ -232,6 +322,11 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{`${pet.name} · preview`}</Text>
+        {draft.fallback ? (
+          <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
+            The writing helper is down — here's a plain list. Edit it if you like, then send.
+          </Text>
+        ) : null}
         <Text style={styles.muted}>{`Edit it if you like. ${pet.ownerName} sees it only after you send.`}</Text>
         <TextField
           label="Daily report"
@@ -262,10 +357,17 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
       ) : null}
       <Text style={styles.label}>Today's chips</Text>
       {all.length > 0 ? (
-        <ChipSuggestions chips={all} off={off} onToggle={toggle} testIDPrefix={`report-chip-${pet.id}`} />
+        <>
+          <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
+          {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
+            <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
+              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights go into the report — turn a few off to choose.`}
+            </Text>
+          ) : null}
+        </>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
-          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short note."}
+          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short line below."}
         </Text>
       )}
 
@@ -307,25 +409,6 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
         <Button label="Done" onPress={() => setEditing(false)} testID={`report-edit-done-${pet.id}`} />
       </Sheet>
 
-      {adding ? (
-        <View style={styles.addRow}>
-          <View style={styles.addField}>
-            <TextField
-              label="Your own chip"
-              value={customText}
-              maxLength={CUSTOM_CHIP_MAX}
-              placeholder="e.g. Learned a new trick"
-              onChangeText={setCustomText}
-              onSubmitEditing={addCustom}
-              testID={`report-custom-input-${pet.id}`}
-            />
-          </View>
-          <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
-        </View>
-      ) : (
-        <TextButton label="+ Add" onPress={() => setAdding(true)} testID={`report-custom-${pet.id}`} />
-      )}
-
       <View style={styles.photos}>
         {photos.map((p) => (
           <View key={p.mediaId} style={styles.photoBox}>
@@ -342,14 +425,20 @@ export function ReportComposer({ pet }: { pet: CaringPet }) {
         testID={`report-add-photo-${pet.id}`}
       />
 
-      <TextField
-        label="Anything to add? (optional)"
-        value={note}
-        maxLength={REPORT_NOTE_MAX}
-        placeholder="A short note, in your words"
-        onChangeText={setNote}
-        testID={`report-note-${pet.id}`}
-      />
+      <View style={styles.addRow}>
+        <View style={styles.addField}>
+          <TextField
+            label="Anything to add? One short line at a time"
+            value={customText}
+            maxLength={CUSTOM_CHIP_MAX}
+            placeholder="e.g. Learned a new trick"
+            onChangeText={setCustomText}
+            onSubmitEditing={addCustom}
+            testID={`report-custom-input-${pet.id}`}
+          />
+        </View>
+        <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
+      </View>
       <Button
         label={busy === "generate" ? "Writing…" : "Write the report"}
         disabled={busy != null}

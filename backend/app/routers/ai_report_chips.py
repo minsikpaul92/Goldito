@@ -14,13 +14,13 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.ai.daily_report import build_snapshot, care_intervals, day_bounds, has_facts
+from app.ai.daily_report import after, build_snapshot, care_intervals, day_bounds, has_facts
 from app.ai.prompts import load_prompt
 from app.ai.report_chips import MAX_PHOTOS, PhotoRead, day_summary, photo_messages, record_chips
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
-from app.routers.ai_daily_report import _now, _one, _sitter_bookings, load_day_records
+from app.routers.ai_daily_report import _now, _one, _sitter_bookings, last_sent_at, load_day_records
 from app.services import authz, nebius
 from app.services import cloudinary as cloudinary_service
 
@@ -84,6 +84,8 @@ def report_chips(
     if not intervals:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet today.")
 
+    # A report already went out today: the next one is about what happened since (FB-22).
+    intervals = after(intervals, last_sent_at(db, pet_id, user.id, day))
     # The day's own records (no photo, no chip, nothing turned off yet): what was recorded, as chips.
     snapshot = build_snapshot(
         pet=pet,

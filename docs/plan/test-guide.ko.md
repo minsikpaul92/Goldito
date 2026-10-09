@@ -39,7 +39,7 @@
 - 그래서 **지금 Chloe는 "돌보는 중"** 이다 → 시터 Home의 할 일 · 체크인이 보인다.
 - ⚠️ **픽업 시각이 지나면** 시터 쪽 시나리오(TASK · CHK)가 "Tasks open once the stay has started" 등으로 막힌다. 그때는 새 예약을 만들어 드롭오프를 완료 처리하거나 시드 스크립트(Phase 10, 10.1)를 쓴다.
 - 데이터 시드·리셋 스크립트는 아직 없다 (Phase 10).
-- **2026-10-08 현재:** 위 예약의 픽업 시각(10/7)이 지나 Chloe는 돌보는 중이 아니다. 시터 · 완료 시나리오는 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2로 새 예약을 만들어야 한다. Chloe의 `sitter_rates`는 **임시 행**(보딩 $55 · +50% · +25%)이 들어가 있다. 깨끗한 상태로 되돌리는 `reset_demo.py`는 FB-10(리뷰 R1)에서 만든다.
+- **2026-10-08 현재:** 위 예약의 픽업 시각(10/7)이 지나 Chloe는 돌보는 중이 아니다. 시터 · 완료 시나리오는 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2로 새 예약을 만들어야 한다. Chloe의 `sitter_rates`는 **임시 행**(보딩 $55 · +50% · +25%)이 들어가 있다. 깨끗한 상태로 되돌리는 `backend/scripts/reset_demo.py`가 있다(FB-10 — dry run이 기본, `--apply` 후 `reset` 입력). 상태는 `empty` · `pets` · `confirmed`(시터가 수락한, 체크아웃 전 예약) · `ready`(결제 끝, 드롭오프 1시간 뒤 — 시터가 바로 Received) · `in_care`(Received까지 끝, 돌보는 중) — `--state`로 고르거나 앱 **Profile → Demo tools**(테스트 전용, `DEMO_RESET_ENABLED=1` + `EXPO_PUBLIC_DEMO_TOOLS=1`일 때만). 🤖 pytest `test_reset_demo` · `test_demo_reset_api`, Playwright `demo-tools`. **호스팅 DB에서 `--state confirmed` 실행 확인(10/09)** — Finish booking → 견적 $268.13 CAD까지 열림(동의서 · 결제는 사람이) — 사람이 실행한 뒤 [test-run-unmerged.ko.md](test-run-unmerged.ko.md) §2를 처음부터 다시.
 
 ### 1.4 테스트가 남기는 데이터
 
@@ -113,7 +113,7 @@
 | 오너 **History** (오늘 + 최근 7일 기록, 알림을 지워도 남음) | ✅ 🤖 | 06 / 6.11 |
 | 오너 **Diary 탭** = 시터가 보낸 알림장 목록(첫 문장) → 항목 화면(본문 · 그날 사진 · 할 일), 초안은 안 보임, 알림 탭하면 해당 항목 | ✅ 🤖 `report.spec.ts` (실제 두 계정은 👤) | 07 / 7.3 |
 | 시터 **리마인더 배너** (할 일 시간이 되면 Home 맨 위 배너 + 토스트) | ✅ 🤖 | 06 / 6.6 |
-| 시터 **Diary** (오늘 요약 한 줄 · 펫별 칩 켜기/끄기 · 기록 값 고치기 · + Add 내 칩 · 사진 ≤ 2 · 짧은 메모 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지) | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) | 07 / 7.3 |
+| 시터 **Diary** (펫이 둘 이상이면 먼저 펫 선택 · 오늘 요약 한 줄 · 칩 켜기/끄기 · 기록 값 고치기 · "Anything to add?" 짧은 줄 = 내 칩(× 지우기) · 사진 ≤ 2 → 초안 미리보기 수정 → Send, 새로고침 후 초안 유지, 탭으로 돌아오면 새 기록 칩) | ✅ 🤖 `report.spec.ts` (AI는 mock · 실제 모델 연결은 👤) | 07 / 7.3 |
 | AI 알림장 **초안 API** (`POST /api/ai/daily-report`: 하루 기록 → 시터 1인칭 초안, 같은 날 덮어쓰기, 보낸 뒤엔 409, 기록이 없으면 고정 문장) | ✅ 🤖 pytest (실제 모델로 환각 점검 3회) · 화면은 시터 Diary(7.3) | 07 / 7.2 |
 | **알림장 보내기** (`send_daily_report`: 시터가 고친 **최종 본문**만 게시, 오너는 보낸 것만 보임, 한 번만, 오너 알림) | ✅ SQL `rls_smoke` · 🤖 `report.spec.ts` (Send) | 07 / 7.5 |
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
@@ -305,16 +305,18 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| REPORT-1 | 시터 → **Diary** 탭 | 돌보는 펫마다 카드. 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
+| REPORT-1 | 시터 → **Diary** 탭 | 펫이 둘 이상이면 맨 위 **펫 선택**(이름 + "Draft" / "Sent ✓") — 고른 펫 카드 하나만 보이고, 바꿔도 각 펫의 칩 · 줄이 남음 (FB-19). 카드 맨 위 **"Today: n tasks done · m missed · k check-ins"**, 그날 기록에서 만든 칩(식사 · 배변 · 산책 · 기분 · 약)이 모두 켜진 상태 | 🤖 `report` · pytest | ➖ |
 | REPORT-2 | 칩을 눌러 **끄기** → **Write the report** | 미리보기에 **끈 칩의 내용이 없음**. 끈 칩은 서버로 `skip`으로 감 | 🤖 `report` · pytest | ➖ |
 | REPORT-3 | **✎ Fix a recorded value** → 식사를 Most로, 산책 30 min으로 | 칩 문구가 "Meal: Most" · "Walk: 30 min"으로 바뀌고 알림장에도 그 값이 쓰임. 그 칩을 끄면 고친 값도 안 감 | 🤖 `report` · pytest | ➖ |
-| REPORT-4 | **+ Add** → 직접 칩 입력("Learned a new trick") | 칩이 생기고, 켜 두면 알림장에 반영, 끄면 빠짐 | 🤖 `report` | ➖ |
+| REPORT-4 | **Anything to add?** 칸에 짧은 줄("Learned a new trick") → Add(또는 Enter), 몇 줄 더 | 줄마다 내 칩이 생기고 칸은 비워짐. 켜 두면 알림장에 **맨 앞**으로 반영, 끄면 빠짐. 내 칩만 **×**로 지울 수 있음(제안 칩은 끄기만). 칸을 비우면 아무것도 안 생김 (FB-16 · 17 · 18) | 🤖 `report` | ➖ |
 | REPORT-5 | **📷 Add photo** (최대 2장) → 사진 추가 | 사진 묘사 한 줄 + 에피소드 칩 1–2개가 생김(📷 표시). 사진을 지우면 그 칩도 사라짐. 사진 칩을 전부 끄면 그 사진 내용은 알림장에 안 들어감 | 🤖 `report` (AI는 mock) · **실제 모델 👤** | ➖ |
-| REPORT-6 | 짧은 메모(200자) 입력 → Write the report → 미리보기 **직접 고치기** → **Send to {owner}** | "Sent ✅ … was told". 오너가 받는 글은 **시터가 고친 최종본**. 같은 날 다시 Write하면 덮어쓴 초안(보낸 뒤엔 불가) | 🤖 `report` · SQL | ➖ |
+| REPORT-6 | Write the report → 미리보기 **직접 고치기** → **Send to {owner}** | "Sent ✅ … was told". 오너가 받는 글은 **시터가 고친 최종본**. 같은 날 다시 Write하면 덮어쓴 초안(보낸 뒤엔 불가) | 🤖 `report` · SQL | ➖ |
 | REPORT-7 | 초안을 만든 뒤 앱 새로고침 | 초안이 그대로 다시 보임 (오너에게는 보내기 전까지 안 보임) | 🤖 `report` | ➖ |
 | REPORT-8 | 기록이 하나도 없는 날 Write the report | 고정된 짧은 인사 문장만 (모델을 안 부름, 지어내지 않음) | 🤖 pytest | ➖ |
 | REPORT-9 | 오너 → **Diary** 탭 | 보낸 알림장만 날짜순 카드(첫 문장 미리보기). 카드 → 본문 · 그날 사진 스트립 · 할 일 체크리스트. 초안은 절대 안 보임 | 🤖 `report` · SQL | ➖ |
 | REPORT-10 | **실제 두 계정**: 시터가 Send → 오너 벨 알림 → 탭 | 알림을 누르면 해당 알림장 항목이 열림. 새로고침 없이 이어짐 | **👤만** | ➖ |
+| REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
+| REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send *(호스팅 DB에 `011f` 필요)* | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 호스팅 DB에 `010`~`010d` 적용, 백엔드 실행 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
@@ -397,7 +399,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | FLOW-1 | 오너가 예약 요청 → 시터 화면 (새로고침 없이) | 시터 Bookings의 **Requests (1)** 이 바로 갱신 (FB-2) | 새로 필요 | ❌ 10/08 민식 (실시간 안 뜸) |
 | FLOW-2 | 시터가 Accept → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 새로 필요 | ➖ |
-| FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock) | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음) |
+| FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸, 합의된 픽업 2시간 전 이전에는 비활성, 확인한 뒤에만 처리 (FB-9) | 새로 필요 | ❌ 10/08 민식 (바로 처리됨) |
@@ -407,6 +409,17 @@
 | FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
 | FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-13 | 오너가 체크아웃에서 Pay 한 직후 예약 화면 | 맨 위에 **확인 카드**: 결제 금액 · 드롭오프 시각 · "Nothing else to do"; **누르면 사라지고** 새로 고침해도 그대로, 상단 칩 줄에 `Paid` (FB-12) | 🤖 `checkout` (Pay 후 카드 · 닫기 · 새로 고침) | ❌ 10/09 민식 (Paid 칩만 있어 저장됐는지 모름) → 코드 수정됨, 다시 확인 |
+| FLOW-14 | 예약 화면의 준비물(Pack for …) | 준비물에 체크하고 나갔다 와도(새로 고침) 체크가 남음. "saved on this device" 안내 (FB-13, 이 기기에만 저장 · 시터는 못 봄) | 🤖 `checkout` (체크 → 새로 고침) | ❌ 10/09 민식 (체크가 저장 안 됨) → 코드 수정됨, 다시 확인 |
+| FLOW-15 | 시터가 알림장 Send → 오너 Home | **Live updates**에 📓 알림장 카드, 누르면 그 알림장 (FB-21) | 🤖 `live-updates` | ➖ |
+| FLOW-16 | 시터 Home → **My history** | 보낸 알림장이 📓 "Daily report · Sent"(본문 두 줄, 누르면 전체)로 보임. 초안은 안 보임 (FB-23) | 🤖 `sitter-home` | ➖ |
+| FLOW-17 | Received 뒤 / Returned 뒤 예약 목록 · 상세 (오너 · 시터) | Received 뒤 **In care**, Returned 뒤 **Completed — pets home** (더는 "Confirmed" 아님) (FB-26) | 🤖 `handoff` | ➖ |
+| FLOW-18 | Returned 뒤 오너 Home | ⭐ "How was …'s stay?" 카드가 **리뷰를 남길 때까지** 고정(열어 봐도 남음), 리뷰 후 사라짐 (FB-24) | 🤖 `live-updates` | ➖ |
+| FLOW-19 | 오너가 리뷰를 남긴 뒤 시터 → 그 예약 상세 | "Robert's review" 카드에 별점 · 코멘트. 리뷰 전이면 "hasn't left a review yet" (FB-29) | 🤖 `handoff` | ➖ |
+| FLOW-20 | 오너 리뷰 화면에서 별 5 → 프리셋 칩 / 별 2로 바꿈 | 별점마다 다른 프리셋 3개, 별을 바꾸면 이전 선택이 빠짐. 고른 문구 + 직접 쓴 글이 코멘트로 저장 (FB-27) | 🤖 `completion` | ➖ |
+| FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save *(호스팅 DB에 `011g` 필요)* | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
+| FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 | 맨 위에 "Your notes from earlier stays with Robert"(별 · 메모 · 날짜, 본인만 보임) (FB-29) | 🤖 `handoff` | ➖ |
+| FLOW-23 | 오너 리뷰 Send → "Add Chloe to your favorites?" → ⭐ Add *(호스팅 DB에 `011h` 필요)* | 예약으로 돌아감. Bookings의 Your sitters에 "★ Favorite"·맨 위, Book care 검색에서 ★ 시터가 먼저. 시터 프로필의 ☆/★로 끄고 켬. 이미 즐겨찾기면 묻지 않음 (FB-28) | 🤖 `completion` · SQL P | ➖ |
 
 ---
 
@@ -423,11 +436,11 @@
 | RV-3 | 시터가 Decline 칩 → Send | 오너 화면에 견적 카드 · Request booking이 없음. 토글로 끌 수도 있음 | 새로 필요 | ➖ |
 | RV-4 | 예약한 적 없는 오너가 처음 문의 | 시터 Questions 카드 · 스레드에 **오너 이름**과 **펫 이름 · 정보**가 보임 | 새로 필요 | ➖ |
 | RV-5 | 오너가 시터 A · B에게 문의 후 A를 예약 / 문의 기간이 지남 | B는 그 펫의 Life Record를 못 읽음, 닫힌 문의에서 Regenerate는 409 | SQL smoke | ➖ |
-| RV-6 | Diary에서 메모 · 사진 칩 하나를 끄고 Write | 초안에 꺼진 칩 내용이 없음 | 새로 필요 | ➖ |
-| RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 새로 필요 | ➖ |
-| RV-8 | AI가 꺼진 상태(키 없음)로 Write | "plain list" 안내와 함께 칩 목록 초안 → 고쳐서 Send 가능 | 새로 필요 | ➖ |
-| RV-9 | 시터 Returned 직후 오너가 home safe 알림을 눌러 예약 열기 | 오류 없이 "Writing the Life Record…" → 기록 표시, 기록은 펫마다 하나 | 새로 필요 | ➖ |
-| RV-10 | 같은 시터와 두 번째 돌봄 후 Life Record | 이번 돌봄의 알림장 내용만 반영 | pytest | ➖ |
+| RV-6 | Diary에서 메모 · 사진 칩 하나를 끄고 Write | 초안에 꺼진 칩 내용이 없음 | 🤖 `report` (`off` 전송 · 사진 칩 하나만 꺼도 설명 제외) · pytest `test_ai_daily_report` (꺼진 메모 · 피드 원문이 모델 입력에 없음 · 할 일 사진 캡션 제외 · `_ref` 숨김), `test_ai_report_chips` (칩 id = 기록 id) | ➖ |
+| RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 🤖 `report` (안내 문구 · 9개 전송 · 422 문구) · pytest `test_ai_daily_report` (칩 12개 → 앞 8개) | ➖ |
+| RV-8 | AI가 꺼진 상태(키 없음)로 Write | "plain list" 안내와 함께 칩 목록 초안 → 고쳐서 Send 가능 | 🤖 `report` (안내 · Send) · pytest `test_ai_daily_report` (장애 · 빈 답 → 목록 초안, 꺼진 칩 없음) | ➖ |
+| RV-9 | 시터 Returned 직후 오너가 home safe 알림을 눌러 예약 열기 | 오류 없이 "Writing the Life Record…" → 기록 표시, 기록은 펫마다 하나 | 🤖 `completion` (Returned 직후 대기 · 재진입 시 요청 1번 · 실패해도 기록 있으면 표시) · pytest `test_ai_life_record` (23505 재사용 · 모델 전 재확인) | ➖ |
+| RV-10 | 같은 시터와 두 번째 돌봄 후 Life Record | 이번 돌봄의 알림장 내용만 반영 | pytest `test_ai_life_record` (예전 돌봄 제외 · 긴 돌봄은 최신 5개 · 이 예약의 문의 우선 · 끝난 뒤 문의 제외) | ➖ |
 | M-1 | 정책이 있는 시터에게 단순 문의 | 에이전트 안 탐(빠름), 응답 35초 이내 | pytest | ➖ |
 | M-2~M-3 | "1박에 얼마?" · "Oct 9-14" · "10% off?" 문의 | 틀린 금액 · 날짜 · 할인이 초안에 남지 않음 | pytest | ➖ |
 | M-4 | 다른 오너 대화에 전화번호 · 출입 코드가 있었던 시터 | 새 초안 · 프롬프트 예시에 번호 · 코드 없음 | pytest | ➖ |

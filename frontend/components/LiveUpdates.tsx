@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { listOpenCounterIds } from "../features/care/carePlanApi";
+import { listReviewedBookingIds } from "../features/completion/completionApi";
 import { DETAIL_TYPES, detailNextLabel, useNoticeMedia } from "../features/notifications/noticeMedia";
 import { formatFeedTime } from "../lib/feed";
 import {
@@ -21,8 +22,10 @@ import { NoticeDetail, NoticeThumb } from "./NoticeDetail";
 import { SwipeToDelete } from "./ui/SwipeToDelete";
 import { TextButton } from "./ui/TextButton";
 
-/** What the sitter does during a stay — shown as live cards on the owner's Home. */
+/** What the sitter does during a stay — shown as live cards on the owner's Home (the daily report too, FB-21). */
 const LIVE_TYPES = new Set([
+  "report_sent",
+  "review_requested",
   "task_done",
   "care_checkin",
   "feed_post",
@@ -33,6 +36,8 @@ const LIVE_TYPES = new Set([
 const SHOWN = 3;
 
 const EMOJI: Record<string, string> = {
+  report_sent: "📓",
+  review_requested: "⭐",
   task_done: "✅",
   care_checkin: "📝",
   feed_post: "📸",
@@ -44,10 +49,13 @@ const EMOJI: Record<string, string> = {
 /**
  * What Home keeps showing: anything unread, and a counter-request until the owner has answered it.
  * Opened ("read") updates leave Home — they stay in the notification list and in History.
- * Pinned ones (an unread decline, an unanswered counter-request) can't be swiped away.
+ * Pinned ones (an unread decline, an unanswered counter-request, a stay still waiting for its review — FB-24)
+ * can't be swiped away.
  */
-const pinnedFor = (open: ReadonlySet<string>) => (n: AppNotification) =>
-  (n.type === "care_request_declined" && !n.readAt) || (n.type === "care_request_countered" && !!n.refId && open.has(n.refId));
+const pinnedFor = (open: ReadonlySet<string>, reviewed: ReadonlySet<string>) => (n: AppNotification) =>
+  (n.type === "care_request_declined" && !n.readAt) ||
+  (n.type === "care_request_countered" && !!n.refId && open.has(n.refId)) ||
+  (n.type === "review_requested" && !!n.bookingId && !reviewed.has(n.bookingId));
 
 /**
  * Owner Home "Live updates": the latest few notices about the stay as cards. Swipe one away to dismiss
@@ -60,17 +68,27 @@ export function LiveUpdates() {
   const { inboxRevision, refreshUnread } = useNotifications();
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [openCounters, setOpenCounters] = useState<ReadonlySet<string>>(new Set());
-  const pinned = pinnedFor(openCounters);
+  const [reviewed, setReviewed] = useState<ReadonlySet<string>>(new Set());
+  const pinned = pinnedFor(openCounters, reviewed);
   const media = useNoticeMedia(items);
   const [detail, setDetail] = useState<AppNotification | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [all, counters] = await Promise.all([listNotifications(), listOpenCounterIds().catch(() => [] as string[])]);
+      const [all, counters, reviews] = await Promise.all([
+        listNotifications(),
+        listOpenCounterIds().catch(() => [] as string[]),
+        listReviewedBookingIds().catch(() => [] as string[]),
+      ]);
       const open = new Set(counters);
-      const isPinned = pinnedFor(open);
-      const live = all.filter((n) => LIVE_TYPES.has(n.type) && (!n.readAt || isPinned(n)));
+      const done = new Set(reviews);
+      const isPinned = pinnedFor(open, done);
+      // A review request goes away once that stay is reviewed, read or not.
+      const live = all.filter(
+        (n) => LIVE_TYPES.has(n.type) && (!n.readAt || isPinned(n)) && !(n.type === "review_requested" && n.bookingId && done.has(n.bookingId)),
+      );
       setOpenCounters(open);
+      setReviewed(done);
       setItems([...live.filter(isPinned), ...live.filter((n) => !isPinned(n))]);
     } catch {
       setItems((prev) => prev ?? []);

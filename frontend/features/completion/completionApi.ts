@@ -34,6 +34,52 @@ export async function getReview(bookingId: string): Promise<Review | null> {
   return { rating: row.rating, comment: row.comment, createdAt: row.created_at };
 }
 
+/** The sitter's private note about the owner of a stay (011g): only the sitter can read it; the owner is never told. */
+export type OwnerNote = { bookingId: string; rating: number; comment: string | null; createdAt: string };
+
+function toOwnerNote(row: { booking_id: string; rating: number; comment: string | null; created_at: string }): OwnerNote {
+  return { bookingId: row.booking_id, rating: row.rating, comment: row.comment, createdAt: row.created_at };
+}
+
+export async function getOwnerNote(bookingId: string): Promise<OwnerNote | null> {
+  const { data, error } = await getSupabase()
+    .from("sitter_owner_notes")
+    .select("booking_id, rating, comment, created_at")
+    .eq("booking_id", bookingId)
+    .maybeSingle();
+  if (error) fail("load your note");
+  return data ? toOwnerNote(data as never) : null;
+}
+
+/** My earlier notes about this owner (other stays), newest first — shown when they ask again. */
+export async function listOwnerNotes(ownerId: string, exceptBookingId: string): Promise<OwnerNote[]> {
+  const { data, error } = await getSupabase()
+    .from("sitter_owner_notes")
+    .select("booking_id, rating, comment, created_at")
+    .eq("owner_id", ownerId);
+  if (error) fail("load your notes");
+  return ((data ?? []) as never[])
+    .map(toOwnerNote)
+    .filter((n) => n.bookingId !== exceptBookingId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function saveOwnerNote(bookingId: string, rating: number, comment: string): Promise<void> {
+  const { error } = await getSupabase().rpc("save_owner_note", { p_booking: bookingId, p_rating: rating, p_comment: comment });
+  if (!error) return;
+  if (error.message.includes("stay_not_finished")) throw new Error("You can rate the owner once the pets are back home.");
+  if (error.message.includes("comment_too_long")) throw new Error("Keep the note under 500 characters.");
+  if (error.message.includes("invalid_rating")) throw new Error("Pick 1 to 5 stars.");
+  fail("save your note");
+}
+
+/** Bookings I already reviewed (RLS: my own reviews) — Home stops asking for those (FB-24). */
+export async function listReviewedBookingIds(): Promise<string[]> {
+  const { data, error } = await getSupabase().from("reviews").select("booking_id");
+  if (error) fail("load your reviews");
+  return ((data ?? []) as { booking_id: string }[]).map((r) => r.booking_id);
+}
+
 /** One review per stay, by its owner, once the pets are back (submit_review, 011). */
 export async function submitReview(bookingId: string, rating: number, comment: string): Promise<void> {
   const { error } = await getSupabase().rpc("submit_review", {
@@ -183,8 +229,19 @@ export async function listBookingRecords(petIds: string[], bookingId: string): P
   return ((data ?? []) as unknown as RecordRow[]).map(toRecord);
 }
 
+/** Requests still running, per booking: a screen that opens again while one runs waits for it instead of asking twice. */
+const inFlight = new Map<string, Promise<void>>();
+
 /** Ask for the stay's Life Records (idempotent: what already exists is returned). Throws a message the owner can read. */
-export async function requestLifeRecord(bookingId: string): Promise<void> {
+export function requestLifeRecord(bookingId: string): Promise<void> {
+  const running = inFlight.get(bookingId);
+  if (running) return running;
+  const request = postLifeRecord(bookingId).finally(() => inFlight.delete(bookingId));
+  inFlight.set(bookingId, request);
+  return request;
+}
+
+async function postLifeRecord(bookingId: string): Promise<void> {
   try {
     await apiPost("/api/ai/life-record", { booking_id: bookingId });
   } catch (error) {

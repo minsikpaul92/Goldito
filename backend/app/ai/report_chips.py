@@ -66,13 +66,37 @@ def record_chips(snapshot: dict) -> list[dict]:
     if meds := checks.get("meds"):
         add("rec-meds", "Medication given" if meds == "done" else "Missed a medication", "task", "meds")
 
+    # Episode chips are named after their record (`_ref`), so turning one off (`off`) removes that record.
     for i, c in enumerate(c for c in snapshot["checkins"] if c.get("note_text")):
         if label := _clean(c["note_text"], CHIP_MAX):
-            out.append({"id": f"note-{i}", "kind": "episode", "label": label, "source": "checkin", "check": None})
+            out.append({"id": c.get("_ref") or f"note-{i}", "kind": "episode", "label": label, "source": "checkin", "check": None})
     for i, p in enumerate(p for p in snapshot["photos"] if p["source"] == "feed"):
         if label := _clean(p["caption"], CHIP_MAX):
-            out.append({"id": f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
+            out.append({"id": p.get("_ref") or f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
     return out
+
+
+def fallback_report_body(pet_name: str, snapshot: dict) -> str | None:
+    """The report when the writing model is down: the kept chips and the note as they are, nothing new.
+
+    Records still on (with the sitter's corrections), the highlights the sitter kept, the photo descriptions
+    they picked, then their note. None when there is nothing to list.
+    """
+    items: list[str] = []
+    for text in (
+        *(c["label"] for c in record_chips(snapshot) if c["kind"] == "record"),
+        *snapshot["chips"],
+        *(p["caption"] for p in snapshot["photos"] if p["source"] == "report"),
+    ):
+        if text and text.lower() not in {i.lower() for i in items}:
+            items.append(text)
+    note = snapshot.get("sitter_note")
+    if not items and not note:
+        return None
+    lines = [f"Hi {pet_name}'s family! Here's {pet_name}'s day:", *(f"• {i}" for i in items)]
+    if note:
+        lines += ["", note]
+    return "\n".join(lines)
 
 
 def day_summary(snapshot: dict) -> dict:
@@ -98,4 +122,4 @@ def photo_messages(system: str, pet_name: str, data_url: str) -> list[dict]:
     ]
 
 
-__all__ = ["MAX_PHOTOS", "NOTE_MAX", "PhotoRead", "day_summary", "photo_messages", "record_chips"]
+__all__ = ["MAX_PHOTOS", "NOTE_MAX", "PhotoRead", "day_summary", "fallback_report_body", "photo_messages", "record_chips"]

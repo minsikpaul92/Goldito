@@ -4,6 +4,8 @@ Called by the app right after Returned (and by the booking page's Retry). One re
 returns what is saved. The record is written by Nemotron Super from a facts-only `source_snapshot`, checked against
 that evidence, stored, indexed for search (so the NEXT sitter's request, inquiry answers and care checklist can use it)
 and the owner is told. A stay that was not finished is a 409; a model failure is a 503 and saves nothing for that pet.
+Two requests at once (the sitter's Returned and the owner opening the booking) write one record: the later one reuses
+the row the earlier one stored, without a second notice.
 """
 
 import json
@@ -13,6 +15,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from postgrest.exceptions import APIError
 from pydantic import BaseModel
 
 from app.ai import life_record as lr
@@ -78,14 +81,43 @@ def life_record(body: LifeRecordRequest, user: CurrentUser = Depends(get_current
         if not pet:
             continue
         pet = pet[0]
-        saved = (
-            db.table("pet_life_records").select("id, summary").eq("booking_id", booking_id).eq("pet_id", pet_id).limit(1).execute().data
-        )
-        if saved:
-            records.append(PetRecord(pet_id=pet_id, pet_name=pet["name"], record_id=str(saved[0]["id"]), summary=saved[0]["summary"], reused=True))
-            continue
-        records.append(_write_record(db, booking, pet, start, end, tz))
+        records.append(_saved_record(db, booking_id, pet) or _write_record(db, booking, pet, start, end, tz))
     return LifeRecordResponse(records=records)
+
+
+def _saved_record(db, booking_id: str, pet: dict) -> PetRecord | None:
+    """The record already stored for this booking × pet, if any."""
+    saved = db.table("pet_life_records").select("id, summary").eq("booking_id", booking_id).eq("pet_id", str(pet["id"])).limit(1).execute().data
+    if not saved:
+        return None
+    return PetRecord(pet_id=str(pet["id"]), pet_name=pet["name"], record_id=str(saved[0]["id"]), summary=saved[0]["summary"], reused=True)
+
+
+def _stay_reports(db, pet_id: str, sitter_id: str, start: datetime, end: datetime, tz) -> list[str]:
+    """This stay's sent reports only (an earlier stay with the same sitter is not this one): the newest
+    few by day, oldest first."""
+    first, last = start.astimezone(tz).date().isoformat(), end.astimezone(tz).date().isoformat()
+    sent = db.table("daily_reports").select("body, report_date").eq("pet_id", pet_id).eq("sitter_id", sitter_id).eq("status", "sent").execute().data
+    in_stay = sorted((r for r in sent if first <= str(r["report_date"])[:10] <= last), key=lambda r: str(r["report_date"]))
+    return [r["body"] for r in in_stay[-lr.REPORTS_MAX :]]
+
+
+def _stay_questions(db, booking: dict, pet_id: str, end: datetime) -> list[str]:
+    """What the owner asked before this stay: the inquiry that became this booking, else the pair's
+    inquiries about this pet made before it ended. The newest few owner messages, oldest first."""
+    asked = [
+        i
+        for i in db.table("inquiries").select("id, pet_ids, booking_id, created_at").eq("owner_id", booking["owner_id"]).eq("sitter_id", booking["sitter_id"]).execute().data
+        if pet_id in [str(p) for p in i["pet_ids"]]
+    ]
+    linked = [i for i in asked if i.get("booking_id") == booking["id"]]
+    chosen = linked or [i for i in asked if parse_ts(i["created_at"]) <= end]
+    messages = [
+        m
+        for i in chosen
+        for m in db.table("inquiry_messages").select("body, author, created_at").eq("inquiry_id", i["id"]).eq("author", "owner").execute().data
+    ]
+    return [m["body"] for m in sorted(messages, key=lambda m: str(m["created_at"]))[-lr.QUESTIONS_MAX :]]
 
 
 def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, tz) -> PetRecord:
@@ -96,21 +128,8 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
     tasks = db.table("care_tasks").select("id, type, title").eq("pet_id", pet_id).execute().data
     logs = db.table("task_logs").select("task_id, due_at, status, note_text").eq("pet_id", pet_id).execute().data
     checkins = db.table("care_checkins").select("kind, value, note_text, created_at").eq("pet_id", pet_id).eq("created_by", sitter_id).execute().data
-    reports = [
-        r["body"]
-        for r in sorted(
-            db.table("daily_reports").select("body, report_date, sent_at").eq("pet_id", pet_id).eq("sitter_id", sitter_id).eq("status", "sent").execute().data,
-            key=lambda r: str(r.get("sent_at") or ""),
-        )
-    ]
-    questions: list[str] = []
-    for inquiry in db.table("inquiries").select("id, pet_ids").eq("owner_id", booking["owner_id"]).eq("sitter_id", sitter_id).execute().data:
-        if pet_id not in [str(p) for p in inquiry["pet_ids"]]:
-            continue
-        questions += [
-            m["body"]
-            for m in db.table("inquiry_messages").select("body, author").eq("inquiry_id", inquiry["id"]).eq("author", "owner").execute().data
-        ]
+    reports = _stay_reports(db, pet_id, sitter_id, start, end, tz)
+    questions = _stay_questions(db, booking, pet_id, end)
     earlier = sorted(
         (r for r in db.table("pet_life_records").select("summary, created_at, booking_id").eq("pet_id", pet_id).execute().data if r["booking_id"] != booking["id"]),
         key=lambda r: str(r["created_at"]),
@@ -123,6 +142,9 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
     )
     lr.assert_no_secrets(snapshot)
 
+    # Another request may have stored it while the evidence was read: don't call the model for nothing.
+    if again := _saved_record(db, booking["id"], pet):
+        return again
     messages = [
         {"role": "system", "content": load_prompt("life_record/system.md")},
         {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)},
@@ -138,18 +160,25 @@ def _write_record(db, booking: dict, pet: dict, start: datetime, end: datetime, 
 
     summary = lr.enforce(parsed, snapshot)
     text = lr.record_text(summary)
-    row = (
-        db.table("pet_life_records")
-        .insert(
-            {
-                "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
-                "body": text, "source_snapshot": snapshot, "model": result.model,
-                "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
-            }
+    try:
+        row = (
+            db.table("pet_life_records")
+            .insert(
+                {
+                    "pet_id": pet_id, "booking_id": booking["id"], "sitter_id": sitter_id, "summary": summary,
+                    "body": text, "source_snapshot": snapshot, "model": result.model,
+                    "stay_from": snapshot["stay"]["from"], "stay_to": snapshot["stay"]["to"],
+                }
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
+    except APIError as exc:
+        # unique (booking_id, pet_id): the other request finished first — its row was indexed and announced already.
+        if exc.code == "23505" and (other := _saved_record(db, booking["id"], pet)):
+            log.info("life-record: written by a concurrent request, reusing it")
+            return other
+        raise
     if text:
         try:
             rag.index_source(db, source_type="life_record", source_id=str(row["id"]), text=text, pet_id=pet_id)

@@ -14,7 +14,15 @@ import { StarRating } from "../../../components/StarRating";
 import { RatingSummary, getRatingSummary } from "../../../features/completion/completionApi";
 import { addMonths, appToday, formatDay, formatTime, monthEnd, monthStart } from "../../../features/schedule/dates";
 import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../features/schedule/scheduleApi";
-import { SERVICE_LABEL, SitterProfileView, getSitterProfile, sitterMeta } from "../../../features/sitters/sitterApi";
+import {
+  SERVICE_LABEL,
+  SitterProfileView,
+  getSitterProfile,
+  listFavoriteSitterIds,
+  setFavoriteSitter,
+  sitterMeta,
+} from "../../../features/sitters/sitterApi";
+import { TextButton } from "../../../components/ui/TextButton";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -49,6 +57,23 @@ export default function SitterProfileScreen() {
   const [day, setDay] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const [rating, setRating] = useState<RatingSummary | null>(null);
+  /** Mine only (011h): favorites come first when I book. */
+  const [favorite, setFavorite] = useState<boolean | null>(null);
+  useEffect(() => {
+    listFavoriteSitterIds()
+      .then((ids) => setFavorite(ids.includes(sitterId)))
+      .catch(() => setFavorite(null));
+  }, [sitterId]);
+  const toggleFavorite = async () => {
+    if (favorite == null) return;
+    const next = !favorite;
+    setFavorite(next);
+    try {
+      await setFavoriteSitter(sitterId, next);
+    } catch {
+      setFavorite(!next);
+    }
+  };
 
   const loadProfile = useCallback(async () => {
     if (!sitterId) return;
@@ -122,6 +147,13 @@ export default function SitterProfileScreen() {
             {sitter.displayName}
           </Text>
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          {favorite != null ? (
+            <TextButton
+              label={favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites"}
+              onPress={() => void toggleFavorite()}
+              testID="sitter-favorite"
+            />
+          ) : null}
           <View style={styles.chips}>
             {sitter.services.map((service) => (
               <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />

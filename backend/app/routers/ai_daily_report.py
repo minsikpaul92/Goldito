@@ -17,8 +17,8 @@ from pydantic import BaseModel, Field
 from app.ai import tone
 from app.ai.daily_report import (
     CHECK_KEYS,
-    MAX_CHIPS,
     NOTE_MAX,
+    after,
     broken_rules,
     build_snapshot,
     care_intervals,
@@ -26,11 +26,14 @@ from app.ai.daily_report import (
     day_bounds,
     few_shot_messages,
     has_facts,
+    model_view,
+    parse_ts,
     quiet_day_body,
     tidy_body,
     word_count,
 )
 from app.ai.prompts import load_json, load_prompt
+from app.ai.report_chips import fallback_report_body
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
@@ -42,18 +45,22 @@ logger = logging.getLogger("goldito.ai")
 TIMEOUT_S = 60.0
 MAX_TOKENS = 400
 TARGET_WORDS = (60, 220)
+# Kept chips the request may carry: the sitter can keep more than MAX_CHIPS on screen; the first MAX_CHIPS go in.
+MAX_SENT_CHIPS = 30
 
 
 class DailyReportRequest(BaseModel):
     pet_id: UUID
     # The chips the sitter kept (their text), a short note, up to two photo descriptions (7.7),
     # and the checks the sitter turned off ("meal" | "potty" | "walk" | "mood" | "meds").
-    chips: list[str] = Field(default_factory=list, max_length=MAX_CHIPS)
+    chips: list[str] = Field(default_factory=list, max_length=MAX_SENT_CHIPS)
     sitter_note: str | None = Field(default=None, max_length=NOTE_MAX)
     photos: list[str] = Field(default_factory=list, max_length=2)
     skip: list[str] = Field(default_factory=list, max_length=len(CHECK_KEYS))
     # Corrections to a recorded value: {"meal": "most", "walk": "30"} (see `clean_overrides`).
     overrides: dict[str, str] = Field(default_factory=dict, max_length=len(CHECK_KEYS))
+    # Episode chips the sitter turned off ("note-{checkin_id}" | "feed-{post_id}"): those records stay out (D38).
+    off: list[str] = Field(default_factory=list, max_length=60)
 
 
 class DailyReportResponse(BaseModel):
@@ -62,6 +69,8 @@ class DailyReportResponse(BaseModel):
     status: str
     model: str
     latency_ms: int
+    # True when the model was unavailable and the draft is the plain list of kept chips (the sitter can edit it).
+    fallback: bool = False
 
 
 @router.post("/daily-report", response_model=DailyReportResponse)
@@ -82,21 +91,22 @@ def daily_report(
     if not pet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pet not found.")
 
+    # Today's draft is rewritten until it is sent; after a report went out, the next one is a new draft (011f, FB-22).
     existing = _one(
         db.table("daily_reports")
         .select("id, status")
         .eq("pet_id", pet_id)
         .eq("report_date", day.isoformat())
         .eq("sitter_id", user.id)
+        .eq("status", "draft")
         .limit(1)
         .execute()
     )
-    if existing and existing["status"] == "sent":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="report_already_sent")
 
     intervals = care_intervals(_sitter_bookings(db, user.id, pet_id), day_start, day_end)
     if not intervals:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet today.")
+    intervals = after(intervals, last_sent_at(db, pet_id, user.id, day))
 
     records = load_day_records(db, pet_id, user.id, day_start, day_end)
 
@@ -112,8 +122,10 @@ def daily_report(
         skip=body.skip,
         now=now,
         overrides=body.overrides,
+        off=body.off,
     )
 
+    fallback = False
     if not has_facts(snapshot):
         # Nothing was recorded: a fixed, honest line — the model is not asked, so it cannot make anything up.
         text, model_name, latency_ms = quiet_day_body(pet["name"]), "template", 0
@@ -122,7 +134,7 @@ def daily_report(
         messages = [
             {"role": "system", "content": load_prompt("daily_report/system.md") + f"\n\nStyle notes for this sitter: {voice.style_notes}"},
             *few_shot_messages(load_json("daily_report/few_shot.json")),
-            {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)},
+            {"role": "user", "content": json.dumps(model_view(snapshot), ensure_ascii=False)},
         ]
         try:
             result = nebius.chat(
@@ -133,7 +145,7 @@ def daily_report(
                 temperature=0.4,
                 timeout=TIMEOUT_S,
             )
-            broken = broken_rules(tidy_body(result.text), snapshot)
+            broken = broken_rules(tidy_body(result.text), model_view(snapshot))
             if broken:
                 # One more try, told exactly what to fix and a little more careful.
                 logger.info("daily-report broke rules %s; retrying once", broken)
@@ -155,20 +167,19 @@ def daily_report(
                     temperature=0.2,
                     timeout=TIMEOUT_S,
                 )
+            text, model_name, latency_ms = tidy_body(result.text), result.model, result.latency_ms
         except nebius.AIUnavailable as exc:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="The report helper is unavailable right now. You can write the note yourself.",
-            ) from exc
-        text, model_name, latency_ms = tidy_body(result.text), result.model, result.latency_ms
+            logger.warning("daily-report: model unavailable (%s); saving the plain list", exc)
+            text = ""
         if not text:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Couldn't write the report. Try again.",
-            )
-        words = word_count(text)
-        if not TARGET_WORDS[0] <= words <= TARGET_WORDS[1]:
-            logger.info("daily-report length outside target: %s words", words)
+            # No model text (down, or only thoughts): the kept chips and note as a plain list, so the sitter can
+            # still edit and send it — never an error with nothing to send (RV-8).
+            text = fallback_report_body(pet["name"], snapshot) or quiet_day_body(pet["name"])
+            model_name, latency_ms, fallback = "template-fallback", 0, True
+        else:
+            words = word_count(text)
+            if not TARGET_WORDS[0] <= words <= TARGET_WORDS[1]:
+                logger.info("daily-report length outside target: %s words", words)
 
     row = {
         "body": text,
@@ -179,6 +190,7 @@ def daily_report(
             "photos": [p["caption"] for p in snapshot["photos"] if p["source"] == "report"],
             "skip": [k for k in body.skip if k in CHECK_KEYS],
             "overrides": clean_overrides(body.overrides),
+            "off": [ref for ref in body.off if ref.startswith(("note-", "feed-"))],
         },
         "source_snapshot": snapshot,
         "model": model_name,
@@ -199,7 +211,24 @@ def daily_report(
         status="draft",
         model=model_name,
         latency_ms=latency_ms,
+        fallback=fallback,
     )
+
+
+def last_sent_at(db, pet_id: str, sitter_id: str, day) -> datetime | None:
+    """When this sitter last sent a report about the pet today — the next report starts from there (FB-22)."""
+    sent = (
+        db.table("daily_reports")
+        .select("sent_at")
+        .eq("pet_id", pet_id)
+        .eq("report_date", day.isoformat())
+        .eq("sitter_id", sitter_id)
+        .eq("status", "sent")
+        .execute()
+        .data
+    )
+    times = [parse_ts(r["sent_at"]) for r in sent if r.get("sent_at")]
+    return max(times) if times else None
 
 
 def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_end: datetime) -> dict:
@@ -217,7 +246,7 @@ def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_e
     )
     checkins = (
         db.table("care_checkins")
-        .select("kind, value, note_text, media_id, created_at")
+        .select("id, kind, value, note_text, media_id, created_at")
         .eq("pet_id", pet_id)
         .eq("created_by", sitter_id)
         .gte("created_at", lo)
@@ -227,7 +256,7 @@ def load_day_records(db, pet_id: str, sitter_id: str, day_start: datetime, day_e
     )
     posts = (
         db.table("feed_posts")
-        .select("caption, created_at")
+        .select("id, caption, caption_source, created_at")
         .eq("pet_id", pet_id)
         .eq("posted_by", sitter_id)
         .eq("visibility", "shared")

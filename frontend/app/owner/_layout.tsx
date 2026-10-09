@@ -14,7 +14,7 @@ export default function OwnerLayout() {
       <Stack.Screen name="pets/[petId]/care-request" options={{ title: "Care request" }} />
       <Stack.Screen name="sitters/[sitterId]" options={{ title: "Sitter" }} />
       <Stack.Screen name="bookings/new" options={{ title: "Book care" }} />
-      <Stack.Screen name="bookings/[bookingId]/index" options={{ title: "Booking" }} />
+      <Stack.Screen name="bookings/[bookingId]/index" options={{ title: "Booking details" }} />
       <Stack.Screen name="bookings/[bookingId]/checkout" options={{ title: "Checkout" }} />
       <Stack.Screen name="bookings/[bookingId]/review" options={{ title: "Review" }} />
       <Stack.Screen name="home-access" options={{ title: "Entry info" }} />

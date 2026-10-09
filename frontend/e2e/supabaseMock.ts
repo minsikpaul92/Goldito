@@ -197,8 +197,14 @@ export type MockDb = {
   inquiry_messages: Row[];
   /** Reviews of finished stays (Phase 07C). */
   reviews: Row[];
+  sitter_owner_notes: Row[];
+  owner_favorite_sitters: Row[];
   /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
   pet_life_records: Row[];
+  /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
+  sitter_rates: Row[];
+  /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
+  quote_error: string | null;
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -245,7 +251,11 @@ function createMockDb(): MockDb {
     inquiries: [],
     inquiry_messages: [],
     reviews: [],
+    sitter_owner_notes: [],
+    owner_favorite_sitters: [],
     pet_life_records: [],
+    sitter_rates: [],
+    quote_error: null,
   };
 }
 
@@ -765,6 +775,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/quote_booking") {
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: null });
     return json(route, 200, DEMO_QUOTE);
   }
 
@@ -1011,6 +1022,25 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row);
   }
 
+  if (path === "rpc/save_owner_note") {
+    // 011g: the stay's sitter, after Returned, ★1–5; one note per booking, saving again edits it; nobody is told.
+    const { p_booking, p_rating, p_comment } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    if (!booking || booking.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    const returned = db.booking_handoffs.some((h) => h.booking_id === p_booking && h.kind === "pick_up" && h.completed_at);
+    if (booking.status !== "confirmed" || !returned) return json(route, 400, { code: "P0001", message: "stay_not_finished" });
+    if (!(p_rating >= 1 && p_rating <= 5)) return json(route, 400, { code: "P0001", message: "invalid_rating" });
+    const comment = String(p_comment ?? "").trim() || null;
+    const now = new Date().toISOString();
+    let row = db.sitter_owner_notes.find((n) => n.booking_id === p_booking);
+    if (row) Object.assign(row, { rating: p_rating, comment, updated_at: now });
+    else {
+      row = { id: crypto.randomUUID(), booking_id: p_booking, sitter_id: me, owner_id: booking.owner_id, rating: p_rating, comment, created_at: now, updated_at: now };
+      db.sitter_owner_notes.push(row);
+    }
+    return json(route, 200, row);
+  }
+
   if (path === "rpc/sitter_rating_summary") {
     const { p_sitter } = request.postDataJSON();
     const mine = db.reviews.filter((r) => r.sitter_id === p_sitter);
@@ -1232,6 +1262,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "inquiries" || row.owner_id === me || row.sitter_id === me) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
+        // RLS (011g): the sitter's note about an owner is the sitter's alone.
+        (path !== "sitter_owner_notes" || row.sitter_id === me) &&
+        // RLS (011h): an owner's favorites are theirs alone.
+        (path !== "owner_favorite_sitters" || row.owner_id === me) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||
@@ -1383,6 +1417,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       // Column defaults of 010.
       ...(path === "inquiries" ? { status: "open", booking_id: null } : {}),
       ...(path === "inquiry_messages" ? { status: "sent", visible_at: new Date().toISOString(), read_at: null } : {}),
+      // 011h: owner_id defaults to the caller.
+      ...(path === "owner_favorite_sitters" ? { owner_id: me } : {}),
       ...row,
     }));
     if (path === "booking_consents") {

@@ -139,7 +139,7 @@ export default function OwnerBookings() {
               <SitterCard
                 key={sitter.id}
                 sitter={sitter}
-                note={sitter.bookingCount === 1 ? "1 booking with you" : `${sitter.bookingCount} bookings with you`}
+                note={`${sitter.isFavorite ? "★ Favorite · " : ""}${sitter.bookingCount === 1 ? "1 booking with you" : `${sitter.bookingCount} bookings with you`}`}
                 onPress={() => router.push(`/owner/sitters/${sitter.id}`)}
               />
             ))}

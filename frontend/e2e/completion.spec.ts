@@ -11,7 +11,7 @@ const MOCHI = "00000000-0000-4000-8000-0000000000c2";
 const BOOKING = "00000000-0000-4000-8000-0000000000e1";
 const HOUR = 3_600_000;
 
-function seed(db: MockDb, returned = true) {
+function seed(db: MockDb, returned = true, returnedAgo = 2 * HOUR) {
   const now = Date.now();
   db.pets.push(
     { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null },
@@ -23,7 +23,7 @@ function seed(db: MockDb, returned = true) {
     meet_greet_status: "not_needed", paid_at: new Date(now - 100 * HOUR).toISOString(), created_at: "2026-10-01T10:00:00Z",
   });
   db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX }, { booking_id: BOOKING, pet_id: MOCHI });
-  for (const [kind, at, done] of [["drop_off", now - 72 * HOUR, true], ["pick_up", now - 2 * HOUR, returned]] as const) {
+  for (const [kind, at, done] of [["drop_off", now - 72 * HOUR, true], ["pick_up", now - returnedAgo, returned]] as const) {
     db.booking_handoffs.push({
       id: `h-${kind}`, booking_id: BOOKING, kind, scheduled_at: new Date(at).toISOString(), location_type: "sitter_home", location_note: null,
       within_sitter_hours: true, status: "agreed", proposed_by: OWNER.id, completed_at: done ? new Date(at).toISOString() : null, created_at: "2026-10-01T10:00:00Z",
@@ -73,6 +73,8 @@ test.describe("finished stay", () => {
     await screen.getByTestId("review-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
+    await expect(screen.getByTestId("favorite-sheet")).toContainText("Add Chloe to your favorites?");
+    await screen.getByTestId("favorite-skip").click();
     expect(db.reviews).toHaveLength(1);
     expect(db.reviews[0]).toMatchObject({ booking_id: BOOKING, rating: 4, comment: "Max came home happy and tired!", sitter_id: SITTER.id });
     expect(db.notifications.find((n) => n.type === "review_received")?.user_id).toBe(SITTER.id);
@@ -83,6 +85,63 @@ test.describe("finished stay", () => {
     await expect(screen.getByTestId("leave-review")).toHaveCount(0);
     await page.goto(`/owner/bookings/${BOOKING}/review`);
     await expect(screen.getByText("you already reviewed this stay", { exact: false })).toBeVisible();
+  });
+
+  test("each star rating offers its own three phrases; picked ones and your words make the comment (FB-27)", async ({ page }) => {
+    const db = await open(page, `/owner/bookings/${BOOKING}/review`);
+    const screen = app(page);
+    const preset = (p: string) => screen.getByTestId(`review-preset-${p}`);
+    await expect(screen.getByTestId("review-preset-Would book again")).toHaveCount(0); // no stars, no phrases
+    await screen.getByTestId("review-rating-5").click();
+    await preset("Would book again").click();
+    await expect(preset("Would book again")).toHaveAttribute("aria-pressed", "true");
+
+    await screen.getByTestId("review-rating-2").click(); // other stars, other phrases; the 5-star pick is dropped
+    await expect(preset("Updates were rare")).toBeVisible();
+    await expect(preset("Would book again")).toHaveCount(0);
+
+    await screen.getByTestId("review-rating-5").click();
+    await expect(preset("Would book again")).toHaveAttribute("aria-pressed", "false");
+    await preset("Amazing care!").click();
+    await preset("Would book again").click();
+    await screen.getByTestId("review-comment").fill("Max came home happy.");
+    await screen.getByTestId("review-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
+    expect(db.reviews[0]).toMatchObject({ rating: 5, comment: "Amazing care! · Would book again\nMax came home happy." });
+  });
+
+  test("after the review, Chloe can be added to favorites; she is marked and comes first (FB-28)", async ({ page }) => {
+    const db = await open(page);
+    const screen = app(page);
+    await screen.getByTestId("leave-review").click();
+    await screen.getByTestId("review-rating-5").click();
+    await screen.getByTestId("review-send").click();
+    await screen.getByTestId("favorite-add").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    expect(db.owner_favorite_sitters).toMatchObject([{ owner_id: OWNER.id, sitter_id: SITTER.id }]);
+    await page.goto("/owner/bookings");
+    await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("★ Favorite");
+
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    await expect(screen.getByTestId("sitter-favorite")).toContainText("★ Favorite");
+    await screen.getByTestId("sitter-favorite").click(); // and off again
+    await expect(screen.getByTestId("sitter-favorite")).toContainText("☆ Add to favorites");
+    await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
+  });
+
+  test("a sitter who is already a favorite is not asked about again", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id, created_at: "2026-10-01T10:00:00Z" });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await screen.getByTestId("leave-review").click();
+    await screen.getByTestId("review-rating-4").click();
+    await screen.getByTestId("review-send").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByTestId("favorite-sheet")).toHaveCount(0);
   });
 
   test("before the pets are back there is no summary and no review", async ({ page }) => {
@@ -115,8 +174,16 @@ test.describe("life record", () => {
     behavior: "Excited by squirrels, calm indoors.", heads_up: ["Chicken allergy"], sitter_tips: ["Text instead of knocking"], changed_since_last: [],
   };
 
-  /** The backend writes one record per pet (here: Max has notes, Mochi has none). */
-  async function mockRecordApi(page: Page, db: MockDb, options: { failFirst?: boolean; delayMs?: number } = {}) {
+  /** What the backend stores: one record per pet (here: Max has notes, Mochi has none). */
+  function writeRecords(db: MockDb) {
+    for (const [petId, summary] of [[MAX, RECORD], [MOCHI, { eats: null, meds: null, potty: null, behavior: null, heads_up: [], sitter_tips: [], changed_since_last: [] }]] as const) {
+      if (!db.pet_life_records.some((r) => r.booking_id === BOOKING && r.pet_id === petId)) {
+        db.pet_life_records.push({ id: `rec-${petId.slice(-2)}`, pet_id: petId, booking_id: BOOKING, sitter_id: SITTER.id, summary, stay_from: "2026-10-09", stay_to: "2026-10-12", created_at: new Date().toISOString() });
+      }
+    }
+  }
+
+  async function mockRecordApi(page: Page, db: MockDb, options: { failFirst?: boolean; delayMs?: number; failAfterWriting?: boolean } = {}) {
     const calls: Record<string, unknown>[] = [];
     await page.route("**/api/ai/life-record", async (route) => {
       calls.push(route.request().postDataJSON());
@@ -124,11 +191,8 @@ test.describe("life record", () => {
       if (options.failFirst && calls.length === 1) {
         return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Couldn't write Max's Life Record right now. Try again." }) });
       }
-      for (const [petId, summary] of [[MAX, RECORD], [MOCHI, { eats: null, meds: null, potty: null, behavior: null, heads_up: [], sitter_tips: [], changed_since_last: [] }]] as const) {
-        if (!db.pet_life_records.some((r) => r.booking_id === BOOKING && r.pet_id === petId)) {
-          db.pet_life_records.push({ id: `rec-${petId.slice(-2)}`, pet_id: petId, booking_id: BOOKING, sitter_id: SITTER.id, summary, stay_from: "2026-10-09", stay_to: "2026-10-12", created_at: new Date().toISOString() });
-        }
-      }
+      writeRecords(db);
+      if (options.failAfterWriting) return route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "Internal Server Error" }) });
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ records: [] }) });
     });
     return calls;
@@ -170,6 +234,51 @@ test.describe("life record", () => {
     await page.reload();
     await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
     expect(calls).toHaveLength(2); // already written: no new request
+  });
+
+  test("right after Returned the owner's screen waits for the sitter's request instead of asking again", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, true, 30_000);
+    const calls = await mockRecordApi(page, db);
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("record-writing")).toContainText("Writing the Life Record");
+    setTimeout(() => writeRecords(db), 2_000); // the sitter's Returned request finishes
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible({ timeout: 15_000 });
+    await expect(screen.getByTestId("record-writing")).toHaveCount(0);
+    expect(calls).toEqual([]);
+  });
+
+  test("opening the booking again while the record is being written asks only once", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const calls = await mockRecordApi(page, db, { delayMs: 3_000 });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("record-writing")).toBeVisible();
+    await screen.getByRole("link", { name: /back/ }).click(); // leave while the request runs…
+    await expect(screen.getByTestId("record-writing")).toHaveCount(0);
+    await screen.getByRole("tab", { name: /Bookings/ }).click(); // …and come back to the booking in the app
+    await screen.getByRole("button", { name: /^Chloe Completed/ }).click();
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible({ timeout: 10_000 });
+    expect(calls).toHaveLength(1);
+  });
+
+  test("a failed request whose records were stored anyway shows them, not an error", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const calls = await mockRecordApi(page, db, { failAfterWriting: true });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
+    await expect(screen.getByTestId("record-failed")).toHaveCount(0);
+    expect(calls).toHaveLength(1);
   });
 
   test("the pet's Life Record page shows the newest stay first and earlier stays below", async ({ page }) => {

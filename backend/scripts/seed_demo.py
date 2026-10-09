@@ -1,7 +1,8 @@
 """Create or refresh the demo accounts (phase-10 10.1 — accounts part).
 
 Judges and the Try demo buttons sign in with these. Safe to run again: it resets
-their password, name, and role metadata. Uses the Supabase Admin API with the service
+their password, name, and role metadata, and gives the demo sitter her services and
+prices (without prices checkout cannot quote). Uses the Supabase Admin API with the service
 role (D19 — never insert into auth.users with SQL); the signup trigger creates the
 `profiles` + owner/sitter rows from user_metadata. Pets, bookings, and tasks join
 this script in Phase 10.1.
@@ -16,38 +17,17 @@ Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_PASSWORD from backend/.env.
 
 import argparse
 import sys
-from dataclasses import dataclass
 
 from app.config import get_settings
 from app.deps.supabase import get_service_client
-from supabase import Client
-
-PAGE_SIZE = 200
-
-
-@dataclass(frozen=True)
-class DemoUser:
-    email: str
-    role: str
-    display_name: str
-
-
-DEMO_USERS = (
-    DemoUser("demo-owner@goldito.test", "owner", "Robert"),
-    DemoUser("demo-sitter@goldito.test", "sitter", "Chloe"),
+from app.services.demo_accounts import (
+    DEMO_USERS,
+    DemoUser,
+    check_sitter_rates,
+    ensure_sitter_rates,
+    find_user_id,
 )
-
-
-def find_user_id(client: Client, email: str) -> str | None:
-    page = 1
-    while True:
-        users = client.auth.admin.list_users(page=page, per_page=PAGE_SIZE)
-        for user in users:
-            if (user.email or "").lower() == email:
-                return user.id
-        if len(users) < PAGE_SIZE:
-            return None
-        page += 1
+from supabase import Client
 
 
 def ensure_user(client: Client, demo: DemoUser, password: str) -> tuple[str, str]:
@@ -108,6 +88,11 @@ def main() -> int:
         else:
             user_id, action = ensure_user(client, demo, settings.demo_password)
         problem = check_profile(client, user_id, demo) if user_id else "account not created yet"
+        if user_id and demo.role == "sitter" and problem is None:
+            if args.check:
+                problem = check_sitter_rates(client, user_id)
+            else:
+                action = f"{action}, rates {ensure_sitter_rates(client, user_id)}"
         all_ok = all_ok and problem is None
         status = "ok" if problem is None else problem
         print(f"{demo.email:<26} {demo.role:<6} {action:<8} {status}")

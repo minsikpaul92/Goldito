@@ -2319,6 +2319,25 @@ begin
   perform _t_ok((select body from public.daily_reports where id = _t_get('report')) = 'Max had a lovely day — my own words.',
     '7.5: a sent report cannot be edited directly');
 
+  -- 011f (FB-22): after one is sent, another report can be written the same day — but only one draft at a time
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, model)
+  values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: the evening went well.', 'draft', 'test-model')
+  returning id into v_id;
+  perform _t_ok(v_id is not null, '011f: a second report the same day can be drafted once the first is sent');
+  begin
+    insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, model)
+    values (max, _t_get('ccr_sitter'), '2026-10-15', 'AI DRAFT: a third one', 'draft', 'test-model');
+    v_err := null;
+  exception when unique_violation then v_err := 'unique_violation';
+  end;
+  perform _t_ok(v_err = 'unique_violation', '011f: …but there is only ever one draft per pet, sitter and day');
+  perform _t_as(_t_get('ccr_sitter'));
+  perform send_daily_report(v_id, 'Evening update: Max is asleep.');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = max and report_date = '2026-10-15' and status = 'sent') = 2,
+    '011f: the owner sees both reports of the day');
+
   -- Phase 06 (6.21): a decline can carry a note; the sitter can send a counter-request instead
   perform _t_as(robert);
   v_id := send_care_change_request(
@@ -3101,6 +3120,112 @@ begin
   exception when others then v_err := sqlstate;
   end;
   perform _t_ok(v_err is null, 'N: a query on someone else''s pet just returns nothing');
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- O (011g, FB-25 · FB-29): the sitter's private note about an owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  pet uuid;
+  v_b uuid;
+  v_err text;
+  v_notes int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Notey') returning id into pet;
+  v_b := _t_booking(robert, chloe, array[pet], now() + interval '310 days', now() + interval '312 days', 'confirmed', true);
+
+  perform _t_as(chloe);
+  begin
+    perform save_owner_note(v_b, 4, 'Clear care notes');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'stay_not_finished', 'O: no owner note before the pets are back');
+
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null); -- count every notice of the owner (RLS hides them from the sitter)
+  select count(*) into v_notes from public.notifications where user_id = robert;
+  perform _t_as(chloe);
+  perform save_owner_note(v_b, 4, '  Clear care notes  ');
+  perform _t_ok((select rating = 4 and comment = 'Clear care notes' from public.sitter_owner_notes where booking_id = v_b),
+    'O: the sitter saves a private note about the owner (trimmed)');
+  perform save_owner_note(v_b, 5, 'Happy to host again');
+  perform _t_ok((select count(*) = 1 and max(rating) = 5 from public.sitter_owner_notes where booking_id = v_b),
+    'O: saving again edits the same note');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert) = v_notes,
+    'O: the owner is not told');
+
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: the owner cannot read it');
+  begin
+    perform save_owner_note(v_b, 1, 'From the owner');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'O: …or write one');
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.sitter_owner_notes where booking_id = v_b) = 0, 'O: another sitter cannot read it');
+  begin
+    insert into public.sitter_owner_notes (booking_id, sitter_id, owner_id, rating) values (v_b, paul, robert, 1);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'O: no direct insert, only save_owner_note');
+  perform _t_as(chloe);
+  begin
+    perform save_owner_note(v_b, 6, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_rating', 'O: 1 to 5 stars');
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- P (011h, FB-28): an owner's favorite sitters
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_err text;
+begin
+  perform _t_as(robert);
+  insert into public.owner_favorite_sitters (sitter_id) values (chloe);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters where sitter_id = chloe) = 1,
+    'P: an owner adds a sitter to their favorites (owner_id defaults to them)');
+  begin
+    insert into public.owner_favorite_sitters (sitter_id) values (joy);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'P: only a sitter can be a favorite');
+  begin
+    insert into public.owner_favorite_sitters (owner_id, sitter_id) values (joy, chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is not null, 'P: …and only into their own list');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: another owner does not see the list');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: the sitter is not told (cannot read it)');
+  perform _t_as(robert);
+  delete from public.owner_favorite_sitters where sitter_id = chloe;
+  perform _t_ok((select count(*) from public.owner_favorite_sitters) = 0, 'P: the owner removes a favorite');
 end;
 $$;
 

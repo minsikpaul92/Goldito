@@ -38,6 +38,8 @@ import {
   respondHandoff,
 } from "../../../lib/bookings";
 import { PetRecordFold } from "../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../components/ReceivedReview";
+import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
 import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
@@ -191,6 +193,8 @@ export default function SitterBookingDetail() {
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
           </View>
         </Card>
+
+        <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
 
         <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
 
@@ -349,9 +353,13 @@ export default function SitterBookingDetail() {
               testID="handoff-returned"
             />
           ) : (
-            <Text style={styles.muted} testID="stay-complete">
-              Stay complete 🐾
-            </Text>
+            <>
+              <Text style={styles.muted} testID="stay-complete">
+                Stay complete 🐾
+              </Text>
+              <ReceivedReview bookingId={booking.id} ownerName={owner} />
+              <OwnerNoteCard bookingId={booking.id} ownerName={owner} />
+            </>
           )}
           {!booking.dropOff?.completedAt ? (
             <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />
