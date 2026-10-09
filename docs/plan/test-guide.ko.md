@@ -342,6 +342,7 @@
 | INQ-17 | **실제 두 계정** 전체 흐름 (문의 → 초안 → Send → 오너 알림 → Request booking) | 새로고침 없이 이어지고 오너는 초안을 한 번도 못 봄 | **👤만** | ➖ |
 | INQ-18 | **보안 (실제 DB 👤)**: 제3자 · 다른 시터가 남의 문의 열기, 오너가 `author='ai'` 행 조회, 클라이언트가 `knowledge_chunks` · `tone_samples` 읽기 | 모두 0행 / 거부 | SQL `rls_smoke` M | ➖ |
 | INQ-19 | 오너 → **Bookings** 탭 → **Your questions** | 내가 보낸 문의가 최신순으로 (시터 · 반려동물 · 날짜), 상태: "Waiting for Chloe" / "💬 Reply ready" / "Booking requested". 카드를 누르면 그 대화로. 시터가 아직 안 보낸 답(초안 · 자동 발송 대기 중)은 "Reply ready"로 안 보임 | 🤖 `inquiry` | ➖ |
+| INQ-20 | 시터 일정에서 어느 하룻밤의 자리를 1로 줄임(그 밤 `max_pets` 1) → 오너가 **Max + Mochi**로 그 밤을 포함해 문의 | AI 초안이 **"가능해요" 대신 그 날짜는 못 한다**고 하고 견적 카드 · Request booking 없음 — 예약 요청을 해도 같은 판단(`sitter_unavailable`). 시터가 안 연 날짜가 끼어도 같음 (RV-1) | pytest · SQL 011c (호스팅 DB에 `011c` 적용 뒤) | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
@@ -470,6 +471,7 @@
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
+- **문의 AI의 가능 여부 = 예약 엔진의 규칙 (RV-1):** 펫 수만큼 자리가 없는 슬롯이나 시터가 안 연 날이 하나라도 있으면 "못 해요"다. 호스팅 DB에 **`011c`가 적용되기 전에는** 이 검사를 못 해서 모든 답장이 "확인해서 알려 드릴게요"(가격 없음, 자동 발송 안 됨)로 나온다.
 - **일찍 Received한 뒤의 기록 (CW-1, 2026-10-09 수정):** 체크인 · 할 일 · 알림장 칩 · 초안이 모두 "약속된 드롭오프와 Received 중 **이른 쪽**"부터 센다(끝은 약속된 픽업 그대로). 체크인 · 할 일 쪽은 DB 함수라 **`011i`가 호스팅 DB에 적용돼야** 바뀐다 — 적용 전에는 `in_care` 리셋 뒤 3분 동안 체크인이 "Tasks open once the stay has started"로 막힌다(알림장 칩은 백엔드 배포만으로 고쳐짐).
 - History는 **읽기 전용**이다. 시터 Diary(알림장 쓰기)는 7.3에서 생겼다(스택 #55).
 - Heads-up은 시터 **예약 상세와 Home**에 보인다. "도착 카드"(Pet Transit)는 Phase 06B에서 만든다.
