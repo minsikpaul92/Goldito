@@ -123,6 +123,20 @@ export async function requestInquiryReply(inquiryId: string): Promise<boolean> {
   }
 }
 
+/** Owner: a follow-up in an open thread. RLS lets the owner insert only their own message; the draft is asked for next. */
+export async function sendOwnerMessage(inquiryId: string, body: string): Promise<void> {
+  const supabase = getSupabase();
+  const { data: sessionData } = await supabase.auth.getSession();
+  const ownerId = sessionData.session?.user.id;
+  if (!ownerId) throw new Error("Sign in to continue.");
+  const text = body.trim();
+  if (!text) throw new Error("Write something before sending.");
+  const { error } = await supabase
+    .from("inquiry_messages")
+    .insert({ inquiry_id: inquiryId, author: "owner", sender_id: ownerId, body: text.slice(0, 2000) });
+  if (error) fail("send your message");
+}
+
 type MessageRow = {
   id: string;
   author: "owner" | "sitter" | "ai";
