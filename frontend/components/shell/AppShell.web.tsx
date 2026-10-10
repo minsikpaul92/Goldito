@@ -83,7 +83,7 @@ function AppFrame() {
   return (
     <iframe
       src={src}
-      title="PawNote app"
+      title="Goldito app"
       allow="camera; microphone"
       style={{
         border: 0,

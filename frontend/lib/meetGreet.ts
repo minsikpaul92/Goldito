@@ -115,13 +115,13 @@ export function addMeetGreetToCalendar(b: BookingSummary): void {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//PawNote//Meet & Greet//EN",
+    "PRODID:-//Goldito//Meet & Greet//EN",
     "BEGIN:VEVENT",
-    `UID:meet-greet-${b.id}@pawnote`,
+    `UID:meet-greet-${b.id}@goldito`,
     `DTSTAMP:${icsStamp(new Date())}`,
     `DTSTART:${icsStamp(start)}`,
     `DTEND:${icsStamp(end)}`,
-    `SUMMARY:PawNote Meet & Greet — ${pets} with ${b.ownerName} & ${b.sitterName}`,
+    `SUMMARY:Goldito Meet & Greet — ${pets} with ${b.ownerName} & ${b.sitterName}`,
     `LOCATION:${where.replace(/[,;]/g, " ")}`,
     "END:VEVENT",
     "END:VCALENDAR",
@@ -129,7 +129,7 @@ export function addMeetGreetToCalendar(b: BookingSummary): void {
   const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
   const a = document.createElement("a");
   a.href = url;
-  a.download = "pawnote-meet-greet.ics";
+  a.download = "goldito-meet-greet.ics";
   a.click();
   URL.revokeObjectURL(url);
 }

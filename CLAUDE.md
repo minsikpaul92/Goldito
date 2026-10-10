@@ -1,8 +1,8 @@
-# CLAUDE.md — PawNote agent instructions
+# CLAUDE.md — Goldito agent instructions
 
-This file guides AI assistants (Claude, Cursor, etc.) working in **PawNote**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
+This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too**), Seulgi (only the 3-year conversation-history anonymization — she is away), Muk (UX/UI).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
@@ -19,7 +19,7 @@ Every feature must pass:
 
 **Product flow (source of truth):** `docs/plan/full-process.ko.md` — 5 stages: **Inquiry → Meet & Greet → Booking → Care & Pet Transit → Completion** (architecture D27–D47).
 
-**Demo north star:** The 5-stage flow in root `README.md` — *How PawNote Works* and the demo path *A Stay with PawNote* — must work end-to-end before hackathon submit.
+**Demo north star:** The 5-stage flow in root `README.md` — *How Goldito Works* and the demo path *A Stay with Goldito* — must work end-to-end before hackathon submit.
 
 **Hackathon hard rules:** Runtime on Token Factory; at least one **NVIDIA open-source model (Nemotron)**; public repo + MIT; demo stays up until judging ends; no real PII in repo or prompts.
 
@@ -33,7 +33,7 @@ Every feature must pass:
 | Backend | FastAPI (Python 3.12) — media sign, `/api/ai/*`, JWT |
 | Data / Auth / Realtime | Supabase (Postgres + RLS + Realtime notifications) |
 | Media | Cloudinary (signed upload, `f_auto,q_auto` delivery) |
-| Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; PawNote Google account OAuth — D45) |
+| Video Meet & Greet | Google Meet links from the Google Calendar API (backend only; Goldito Google account OAuth — D45) |
 | AI | Token Factory (backend only; keys never in client) — Nemotron for replies/reasoning/reports, MiniCPM-V for vision (final — NVIDIA vision models are Dedicated-Endpoint-only), Qwen3 Embedding for RAG (final; Supabase pgvector) — US/NVIDIA models first (D39) ([model-ids.md](docs/plan/phases/notes/model-ids.md)) |
 
 **Preferred pattern:** Frontend uses **Supabase client + RLS** for CRUD; FastAPI for Cloudinary, AI, and authenticated helpers.
@@ -157,7 +157,7 @@ English only for commit messages and GitHub PR content.
 ### Phase order
 
 `00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session.
+After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
 
 ### Coding discipline
 
@@ -238,7 +238,7 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 - Public demo URL + test owner/sitter accounts documented
 - Root README Getting Started runs the project
-- Video path matches *A Stay with PawNote* (5 stages, `docs/plan/full-process.ko.md` §6)
+- Video path matches *A Stay with Goldito* (5 stages, `docs/plan/full-process.ko.md` §6)
 - Feedback on Token Factory / Nemotron filled in README log
 - Design feels like a **product**, not a single API demo page
 

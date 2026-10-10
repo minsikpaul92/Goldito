@@ -1,22 +1,27 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useCallback, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
+import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
-import { BookingSummary, listSitterBookings, sitterBucket } from "../../../lib/bookings";
+import { SitterInquiryCard, listSitterInquiries } from "../../../features/inquiries/inquiryApi";
+import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
+import { formatDay, isoToZoned } from "../../../features/schedule/dates";
+import { BookingSummary, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
-type Bucket = "requests" | "upcoming" | "past";
+type Bucket = "requests" | "inquiries" | "upcoming" | "past";
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; bookings: BookingSummary[] }
+  | { status: "ready"; bookings: BookingSummary[]; inquiries: SitterInquiryCard[] }
   | { status: "error"; message: string };
 
 const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> = {
@@ -24,6 +29,11 @@ const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> =
     emoji: "📬",
     title: "No requests yet",
     message: "Booking requests from owners will show here for you to accept.",
+  },
+  inquiries: {
+    emoji: "💬",
+    title: "No questions yet",
+    message: "When an owner asks about a stay, your draft reply waits here.",
   },
   upcoming: {
     emoji: "📅",
@@ -44,15 +54,28 @@ export default function SitterBookings() {
   const sitterId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
   const [bucket, setBucket] = useState<Bucket>("requests");
+  const picked = useRef(false);
 
   const load = useCallback(async () => {
     if (!sitterId) return;
     try {
-      setState({ status: "ready", bookings: await listSitterBookings(sitterId) });
+      const [bookings, inquiries] = await Promise.all([
+        listSitterBookings(sitterId),
+        listSitterInquiries().catch(() => [] as SitterInquiryCard[]),
+      ]);
+      setState({ status: "ready", bookings, inquiries });
+      // Open on what matters most, once: a stay that is on or about to start, else open requests (the
+      // Requests count stays on its tab). Never override a tab the sitter picked themselves.
+      if (!picked.current) {
+        picked.current = true;
+        setBucket(firstSitterBucket(bookings));
+      }
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [sitterId]);
+
+  useOnBookingChange(() => void load());
 
   useFocusEffect(
     useCallback(() => {
@@ -75,15 +98,19 @@ export default function SitterBookings() {
     );
   }
 
-  const count = (b: Bucket) => state.bookings.filter((x) => sitterBucket(x) === b).length;
-  const shown = state.bookings.filter((b) => sitterBucket(b) === bucket);
+  const count = (b: "requests" | "upcoming" | "past") => state.bookings.filter((x) => sitterBucket(x) === b).length;
+  const shown = bucket === "inquiries" ? [] : state.bookings.filter((b) => sitterBucket(b) === bucket);
   const requests = count("requests");
+  // Open questions that still wait for the sitter's reply.
+  const waiting = state.inquiries.filter((i) => i.status === "open" && i.state !== "replied").length;
+  const empty = bucket === "inquiries" ? state.inquiries.length === 0 : shown.length === 0;
 
   return (
     <Screen contentStyle={styles.content}>
       <SegmentedControl
         options={[
-          { value: "requests", label: requests > 0 ? `Requests (${requests})` : "Requests" },
+          { value: "requests", label: "Requests", count: requests },
+          { value: "inquiries", label: "Questions", count: waiting },
           { value: "upcoming", label: "Upcoming" },
           { value: "past", label: "Past" },
         ]}
@@ -91,8 +118,29 @@ export default function SitterBookings() {
         onChange={setBucket}
         testID="sitter-bookings-tabs"
       />
-      {shown.length === 0 ? (
+      {empty ? (
         <EmptyState {...EMPTY[bucket]} />
+      ) : bucket === "inquiries" ? (
+        <View style={styles.list} testID="sitter-inquiries">
+          {state.inquiries.map((inq) => (
+            <Pressable
+              key={inq.id}
+              accessibilityRole="button"
+              onPress={() => router.push(`/sitter/inquiries/${inq.id}`)}
+              testID={`inquiry-card-${inq.id}`}
+            >
+              <Card style={styles.inquiry}>
+                <Text style={styles.inquiryTitle}>{`${inq.ownerName} · ${inq.petNames.join(", ")}`}</Text>
+                <Text style={styles.muted}>
+                  {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} – ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
+                </Text>
+                <Text style={inq.state === "draft" ? styles.ready : styles.muted}>
+                  {inq.state === "draft" ? "✍️ Draft ready" : inq.state === "replied" ? "Replied" : "Writing the draft…"}
+                </Text>
+              </Card>
+            </Pressable>
+          ))}
+        </View>
       ) : (
         <View style={styles.list}>
           {shown.map((booking) => (
@@ -117,4 +165,8 @@ const makeStyles = (theme: Theme) =>
     list: {
       gap: theme.spacing.md,
     },
+    inquiry: { gap: theme.spacing.xs },
+    inquiryTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    ready: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
   });

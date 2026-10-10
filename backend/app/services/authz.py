@@ -23,22 +23,44 @@ def _rest_headers(access_token: str) -> dict[str, str]:
     }
 
 
-def _rpc_bool(access_token: str, fn: str, params: dict) -> bool:
+def rpc_json(access_token: str, fn: str, params: dict, *, timeout: float = 10.0):
+    """Call a Postgres function as the signed-in user (their JWT), so `auth.uid()` works inside it."""
     settings = get_settings()
     url = f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/{fn}"
     try:
-        response = httpx.post(url, headers=_rest_headers(access_token), json=params, timeout=10.0)
+        response = httpx.post(url, headers=_rest_headers(access_token), json=params, timeout=timeout)
     except httpx.HTTPError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Could not reach Supabase for authorization.",
         ) from exc
     if response.status_code >= 400:
+        message = ""
+        try:
+            message = str(response.json().get("message", ""))
+        except ValueError:
+            pass
+        raise RpcError(fn, response.status_code, message)
+    # A function that returns `void` answers with an empty body.
+    return response.json() if response.content else None
+
+
+class RpcError(RuntimeError):
+    """A user-scoped RPC refused (its Postgres `raise exception` text is in `.message`)."""
+
+    def __init__(self, fn: str, status_code: int, message: str) -> None:
+        super().__init__(f"{fn} failed ({status_code}): {message}")
+        self.fn, self.status_code, self.message = fn, status_code, message
+
+
+def _rpc_bool(access_token: str, fn: str, params: dict) -> bool:
+    try:
+        return bool(rpc_json(access_token, fn, params))
+    except RpcError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Authorization check failed.",
-        )
-    return bool(response.json())
+        ) from exc
 
 
 def assert_on_duty_for(user: CurrentUser, pet_id: UUID) -> None:
@@ -78,14 +100,25 @@ def assert_owner_of(user: CurrentUser, pet_id: UUID) -> None:
         )
 
 
+def _parse_ts(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def _agreed(handoffs: list[dict], kind: str) -> dict | None:
+    return next((h for h in handoffs if h.get("kind") == kind and h.get("status") == "agreed"), None)
+
+
 def assert_booked_sitter(
     user: CurrentUser,
     booking_id: UUID,
     *,
     pet_id: UUID | None = None,
     from_hours_before: float = 2,
+    until_hours_after: float = 2,
 ) -> None:
-    """Sitter on the booking, from `from_hours_before` before agreed drop-off (handoff photos)."""
+    """Sitter on a confirmed booking, from `from_hours_before` before the agreed drop-off
+    to `until_hours_after` after the pick-up (handoff photos)."""
     if user.role != "sitter":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -94,7 +127,10 @@ def assert_booked_sitter(
     db = get_service_client()
     result = (
         db.table("bookings")
-        .select("id, sitter_id, status, booking_pets(pet_id), booking_handoffs(kind, status, agreed_at)")
+        .select(
+            "id, sitter_id, status, booking_pets(pet_id, active), "
+            "booking_handoffs(kind, status, scheduled_at, completed_at)"
+        )
         .eq("id", str(booking_id))
         .limit(1)
         .execute()
@@ -107,37 +143,35 @@ def assert_booked_sitter(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not the sitter for this booking.",
         )
-    if row["status"] not in ("confirmed", "in_progress"):
+    if row["status"] != "confirmed":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This booking is not ready for handoff photos.",
         )
     if pet_id is not None:
-        pet_ids = {bp["pet_id"] for bp in (row.get("booking_pets") or [])}
+        pet_ids = {bp["pet_id"] for bp in (row.get("booking_pets") or []) if bp.get("active", True)}
         if str(pet_id) not in pet_ids:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="That pet is not on this booking.",
             )
-    drop = next(
-        (
-            h
-            for h in (row.get("booking_handoffs") or [])
-            if h.get("kind") == "drop_off" and h.get("status") == "agreed"
-        ),
-        None,
-    )
-    if not drop or not drop.get("agreed_at"):
+    handoffs = row.get("booking_handoffs") or []
+    drop = _agreed(handoffs, "drop_off")
+    if not drop or not drop.get("scheduled_at"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Drop-off time is not agreed yet.",
         )
-    agreed = datetime.fromisoformat(drop["agreed_at"].replace("Z", "+00:00"))
-    if agreed.tzinfo is None:
-        agreed = agreed.replace(tzinfo=UTC)
-    earliest = agreed - timedelta(hours=from_hours_before)
-    if datetime.now(UTC) < earliest:
+    now = datetime.now(UTC)
+    if now < _parse_ts(drop["scheduled_at"]) - timedelta(hours=from_hours_before):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Handoff photos unlock 2 hours before drop-off.",
+        )
+    pick = _agreed(handoffs, "pick_up")
+    pick_at = pick and (pick.get("completed_at") or pick.get("scheduled_at"))
+    if pick_at and now > _parse_ts(pick_at) + timedelta(hours=until_hours_after):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This stay has ended.",
         )

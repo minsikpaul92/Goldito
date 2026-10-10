@@ -8,7 +8,7 @@ const STEPS: TourStep[] = [
       kind: "image",
       title: "Owner home — next booking + pets",
       brief:
-        "Still of Chloe’s Home: Max & Mochi cards, “Next: Lucy · Thanksgiving stay,” warm Kidsnote-style layout. No real address or faces.",
+        "Still of Robert’s Home: Max & Mochi cards, “Next: Chloe · Thanksgiving stay,” warm Kidsnote-style layout. No real address or faces.",
     },
   },
   {

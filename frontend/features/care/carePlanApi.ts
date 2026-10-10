@@ -52,8 +52,8 @@ export function draftFromPlan(plan: CarePlanResponse): DraftTask[] {
 export type ChangeRequest = {
   id: string;
   petId: string;
-  /** pending → approved | declined | countered; countered → accepted | withdrawn. */
-  status: "pending" | "approved" | "declined" | "countered" | "accepted" | "withdrawn";
+  /** pending → approved | declined | countered; countered → accepted | withdrawn; open → closed when the stay ends. */
+  status: "pending" | "approved" | "declined" | "countered" | "accepted" | "withdrawn" | "closed";
   tasks: { type: CareTaskType; time: string; title: string; dose: string | null; notes: string | null; repeat?: boolean }[];
   cautions: string[];
   declineReason: string | null;

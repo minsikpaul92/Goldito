@@ -2,6 +2,7 @@
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 
@@ -28,8 +29,8 @@ AT = datetime(2030, 10, 6, 23, 0, tzinfo=UTC)
 MEET = "https://meet.google.com/abc-defg-hij"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Robert"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Chloe"),
     OUTSIDER_ID: Profile(id=OUTSIDER_ID, role="sitter", display_name="Paul"),
 }
 
@@ -43,11 +44,11 @@ AGREED = MeetGreetBooking(
     at=AT,
     link=None,
     event_id=None,
-    owner_name="Chloe",
-    sitter_name="Lucy",
+    owner_name="Robert",
+    sitter_name="Chloe",
     pet_names=["Max", "Mochi"],
-    owner_email="chloe@example.com",
-    sitter_email="demo-sitter@pawnote.test",
+    owner_email="robert@example.com",
+    sitter_email="demo-sitter@goldito.test",
 )
 
 
@@ -63,6 +64,14 @@ class FakeStore:
     def save_event(self, booking_id: str, *, link: str | None, event_id: str | None) -> None:
         self.saved.append({"booking_id": booking_id, "link": link, "event_id": event_id})
 
+    def claim_event(self, booking_id: str, *, link: str | None, event_id: str, expect_event_id: str | None) -> bool:
+        current = self.get(booking_id)
+        if current is None or current.link is not None or current.event_id != expect_event_id:
+            return False
+        self.booking = replace(current, link=link, event_id=event_id)
+        self.saved.append({"booking_id": booking_id, "link": link, "event_id": event_id})
+        return True
+
     def notify(self, user_ids: list[str], booking_id: str, title: str, body: str | None) -> None:
         self.notices.append({"user_ids": user_ids, "title": title, "body": body})
 
@@ -73,8 +82,12 @@ class FakeMeet:
     fail: bool = False
     calls: list[tuple] = field(default_factory=list)
 
+    on_create: Callable[[], None] | None = None
+
     def create(self, **kwargs) -> MeetEvent:
         self.calls.append(("create", kwargs))
+        if self.on_create:
+            self.on_create()
         if self.fail:
             raise GoogleMeetError("boom")
         return MeetEvent(event_id="evt-1", link=self.link)
@@ -167,12 +180,12 @@ def test_creates_the_event_saves_the_link_and_tells_both_sides() -> None:
     assert response.json() == {"link": MEET, "status": "created"}
     kind, kwargs = meet.calls[0]
     assert kind == "create"
-    assert kwargs["summary"] == "PawNote Meet & Greet — Max, Mochi & Lucy"
+    assert kwargs["summary"] == "Goldito Meet & Greet — Max, Mochi & Chloe"
     assert kwargs["start"] == AT
     assert kwargs["timezone"] == "America/Toronto"
     # The demo .test address never gets an invite.
-    assert kwargs["attendees"] == ["chloe@example.com"]
-    assert kwargs["request_id"] == f"pawnote-{BOOKING_ID}-{int(AT.timestamp())}"
+    assert kwargs["attendees"] == ["robert@example.com"]
+    assert kwargs["request_id"] == f"goldito-{BOOKING_ID}-{int(AT.timestamp())}"
     assert store.saved == [{"booking_id": BOOKING_ID, "link": MEET, "event_id": "evt-1"}]
     assert store.notices == [
         {
@@ -215,6 +228,23 @@ def test_a_still_pending_conference_saves_the_event_without_notices() -> None:
     response = post("video-link")
     assert response.json() == {"link": None, "status": "pending"}
     assert store.saved == [{"booking_id": BOOKING_ID, "link": None, "event_id": "evt-1"}]
+    assert store.notices == []
+
+
+def test_when_both_sides_ask_at_once_the_first_link_wins() -> None:
+    store = FakeStore(AGREED)
+    first = "https://meet.google.com/first-one"
+
+    def other_request_saves_first() -> None:
+        store.booking = replace(AGREED, link=first, event_id="evt-0")
+
+    meet = FakeMeet(on_create=other_request_saves_first)
+    use(store, meet)
+    response = post("video-link", SITTER_ID)
+    assert response.json() == {"link": first, "status": "existing"}
+    # Our duplicate Calendar event is deleted; the saved one stays, and nobody gets a second notice.
+    assert meet.calls[-1] == ("delete", "evt-1")
+    assert store.booking.event_id == "evt-0"
     assert store.notices == []
 
 
@@ -287,9 +317,9 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
     event = client.create(
         request_id="req-1",
-        summary="PawNote Meet & Greet — Max & Lucy",
+        summary="Goldito Meet & Greet — Max & Chloe",
         start=AT,
-        attendees=["chloe@example.com"],
+        attendees=["robert@example.com"],
         timezone="America/Toronto",
     )
 
@@ -304,7 +334,7 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
         "requestId": "req-1",
         "conferenceSolutionKey": {"type": "hangoutsMeet"},
     }
-    assert body["attendees"] == [{"email": "chloe@example.com"}]
+    assert body["attendees"] == [{"email": "robert@example.com"}]
     assert body["start"]["timeZone"] == "America/Toronto"
     assert poll.method == "GET" and poll.url.path.endswith("/events/evt-9")
 

@@ -7,14 +7,14 @@ import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 const PAUL: MockUser = {
   id: "00000000-0000-4000-8000-000000000003",
-  email: "paul@pawnote.test",
+  email: "paul@goldito.test",
   password: "nap-time",
   role: "sitter",
   displayName: "Paul",
 };
 const ALLEN: MockUser = {
   id: "00000000-0000-4000-8000-000000000004",
-  email: "allen@pawnote.test",
+  email: "allen@goldito.test",
   password: "zoomies",
   role: "sitter",
   displayName: "Allen",
@@ -54,7 +54,7 @@ function match(user: MockUser, covered: number, extra: Record<string, unknown> =
   };
 }
 
-/** Lucy is "your sitter" (a past confirmed booking); Paul is free but starts later; Allen covers part. */
+/** Chloe is "your sitter" (a past confirmed booking); Paul is free but starts later; Allen covers part. */
 function seed(db: MockDb, pets: ReturnType<typeof pet>[]) {
   db.pets.push(...pets);
   db.bookings.push({
@@ -82,7 +82,7 @@ function torontoTime(iso: string): string {
 }
 
 test.describe("book care", () => {
-  test("an owner books Lucy for Max and Mochi", async ({ page }) => {
+  test("an owner books Chloe for Max and Mochi", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
     seed(db, [pet(MAX, "Max", "dog"), pet(MOCHI, "Mochi", "cat")]);
     await signIn(page, OWNER);
@@ -99,7 +99,7 @@ test.describe("book care", () => {
     await expect(screen.getByTestId("sitter-options")).toBeVisible();
     expect(db.searches.at(-1)).toMatchObject({ p_pet_count: 2 });
 
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toContainText("Available for your whole trip");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toContainText("Available for your whole trip");
     await expect(screen.getByTestId("pick-sitter-Paul")).toContainText("outside Paul's hours — you can still ask");
     await expect(screen.getByTestId("pick-sitter-Allen")).toHaveCount(0);
     await screen.getByTestId("toggle-partial").click();
@@ -107,20 +107,20 @@ test.describe("book care", () => {
     await expect(screen.getByTestId("pick-sitter-Allen")).toHaveAttribute("aria-disabled", "true");
 
     await expect(screen.getByTestId("request-booking")).toBeDisabled();
-    await screen.getByTestId("pick-sitter-Lucy").click();
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("drop_off-place-sitter_home")).toContainText("at Lucy's place");
+    await screen.getByTestId("pick-sitter-Chloe").click();
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("drop_off-place-sitter_home")).toContainText("at Chloe's place");
 
-    // Drop-off 9:00 → 9:30 AM; Lucy brings them home.
+    // Drop-off 9:00 → 9:30 AM; Chloe brings them home.
     await screen.getByTestId("drop_off-time-plus").click();
     await screen.getByTestId("drop_off-time-plus").click();
     await expect(screen.getByTestId("drop_off-time-value")).toHaveText("9:30 AM");
     await screen.getByTestId("pick_up-place-owner_home").click();
     await screen.getByTestId("booking-note").fill("Max gets anxious with loud noises");
 
-    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Lucy");
+    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Chloe");
     await screen.getByTestId("request-booking").click();
-    await expect(screen.getByTestId("toast")).toContainText("Request sent to Lucy");
+    await expect(screen.getByTestId("toast")).toContainText("Request sent to Chloe");
     await expect(page).toHaveURL(/\/owner\/bookings$/);
 
     expect(db.requests).toHaveLength(1);
@@ -140,8 +140,33 @@ test.describe("book care", () => {
     await expect(card).toContainText("Requested");
     await expect(card).toContainText("Max");
     await expect(card).toContainText("Mochi");
-    await expect(card).toContainText("9:30 AM · Lucy's place");
+    await expect(card).toContainText("9:30 AM · Chloe's place");
     await expect(card).toContainText("5:00 PM · My place");
+  });
+
+  test("tapping the date opens a calendar; a tap picks the day and − / + still nudge it", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
+    seed(db, [pet(MAX, "Max", "dog")]);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto("/owner/bookings/new");
+    const screen = app(page);
+
+    const dropDay = screen.getByTestId("drop_off-day-value");
+    const start = await dropDay.innerText();
+    await screen.getByTestId("drop_off-day-open").click();
+    const sheet = screen.getByTestId("drop_off-calendar");
+    await expect(sheet).toBeVisible();
+    // Next month, then its 15th: never the default drop-off (tomorrow), whatever day the test runs.
+    await screen.getByTestId("drop_off-calendar-next").click();
+    await sheet.locator('[data-testid^="drop_off-calendar-20"][data-testid$="-15"]').click();
+    await expect(sheet).toHaveCount(0);
+    expect(await dropDay.innerText()).not.toBe(start);
+
+    // The − button still works from the picked day.
+    const picked = await dropDay.innerText();
+    await screen.getByTestId("drop_off-day-minus").click();
+    expect(await dropDay.innerText()).not.toBe(picked);
   });
 
   test("somewhere else needs a place, and a double booking names the pet", async ({ page }) => {
@@ -155,7 +180,7 @@ test.describe("book care", () => {
 
     // The only pet is picked for you.
     await expect(screen.getByTestId("pick-pet-Max")).toHaveAttribute("aria-checked", "true");
-    await screen.getByTestId("pick-sitter-Lucy").click();
+    await screen.getByTestId("pick-sitter-Chloe").click();
     await screen.getByTestId("drop_off-place-other").click();
     await expect(screen.getByText("Tell the sitter where to meet.")).toBeVisible();
     await expect(screen.getByTestId("request-booking")).toBeDisabled();
@@ -188,8 +213,8 @@ test.describe("book care", () => {
     await expect(screen.getByTestId("pick_up-place-fixed")).toHaveText("🔑 At my place");
     await expect(screen.getByTestId("drop_off-place-sitter_home")).toHaveCount(0);
 
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toContainText("Doesn't offer house sitting");
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toHaveAttribute("aria-disabled", "true");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toContainText("Doesn't offer house sitting");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-disabled", "true");
     await screen.getByTestId("pick-sitter-Paul").click();
     await expect(screen.getByTestId("drop_off-place-fixed")).toHaveText("🔑 Paul comes to my place");
     await screen.getByTestId("request-booking").click();
@@ -216,8 +241,8 @@ test.describe("book care", () => {
 
     await screen.getByTestId("book-this-sitter").click();
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/new\\?sitter=${SITTER.id}$`));
-    await expect(screen.getByTestId("pick-sitter-Lucy")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Lucy");
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Chloe");
   });
 
   test("no sitter free for the whole trip says so, and no pets asks for one", async ({ page }) => {

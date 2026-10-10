@@ -8,7 +8,7 @@
 
 - [ ]
 
-## Desktop check (UI changes — [DESIGN.md §7.7](https://github.com/minsikpaul92/PawNote/blob/main/DESIGN.md#77-works-with-a-mouse))
+## Desktop check (UI changes — [DESIGN.md §7.7](https://github.com/minsikpaul92/Pawddy/blob/main/DESIGN.md#77-works-with-a-mouse))
 
 Phone frame, mouse only, 1366 × 768:
 

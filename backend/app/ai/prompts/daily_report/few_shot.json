@@ -1,0 +1,149 @@
+[
+  {
+    "input": {
+      "pet": {
+        "species": "dog",
+        "name": "Max",
+        "breed": "Maltese",
+        "age_years": 4,
+        "owner_notes": "Loves squirrels, shy with strangers",
+        "allergies": [
+          "chicken"
+        ],
+        "heads_up": [
+          "No knocking or doorbell — text me instead"
+        ]
+      },
+      "date": "2026-10-15",
+      "tasks": [
+        {
+          "type": "medication",
+          "title": "Skin pill",
+          "due": "08:00",
+          "status": "done",
+          "completed_at": "08:04",
+          "owner_dose": "1 skin pill, hidden in a lickable treat"
+        },
+        {
+          "type": "walk",
+          "title": "Walk",
+          "due": "10:30",
+          "status": "done",
+          "completed_at": "10:52",
+          "owner_dose": "20 minutes around the block"
+        }
+      ],
+      "photos": [
+        {
+          "time": "10:55",
+          "caption": "Max sniffing autumn leaves with a wagging tail",
+          "source": "feed"
+        },
+        {
+          "time": "17:40",
+          "caption": "Max looking up at a squirrel on a tree",
+          "source": "report"
+        }
+      ],
+      "checkins": [
+        {
+          "time": "08:15",
+          "kind": "meal",
+          "value": "all",
+          "has_photo": false
+        },
+        {
+          "time": "11:02",
+          "kind": "potty",
+          "value": "normal",
+          "has_photo": false
+        }
+      ],
+      "checks": {
+        "meal": "all",
+        "potty": "normal",
+        "walk_minutes": 20,
+        "meds": "done"
+      },
+      "chips": [
+        "Watching a squirrel",
+        "Park walk"
+      ],
+      "sitter_note": "Max got so excited"
+    },
+    "output": "Hi Max's family! Max took the skin pill this morning, hidden in a lickable treat just as you asked, and finished every bit of their meal. On our 20-minute walk Max sniffed through the autumn leaves with a wagging tail, and later spotted a squirrel up a tree and got so excited — it was adorable! Potty was perfectly normal, too. 🐶🍂"
+  },
+  {
+    "input": {
+      "pet": {
+        "species": "cat",
+        "name": "Mochi",
+        "owner_notes": "Hides when guests visit",
+        "allergies": [
+          "fish"
+        ],
+        "heads_up": [
+          "Keep the bedroom door closed"
+        ]
+      },
+      "date": "2026-10-15",
+      "tasks": [
+        {
+          "type": "feeding",
+          "title": "Dinner",
+          "due": "18:00",
+          "status": "done",
+          "completed_at": "18:05",
+          "owner_dose": "Half a can of wet food"
+        }
+      ],
+      "photos": [],
+      "checkins": [
+        {
+          "time": "18:05",
+          "kind": "meal",
+          "value": "most",
+          "has_photo": false
+        }
+      ],
+      "checks": {
+        "meal": "most"
+      },
+      "chips": [],
+      "sitter_note": null
+    },
+    "output": "Hi Mochi's family! Mochi had dinner at 6 — half a can of wet food, as you asked — and ate most of it. That's all I have to report today. 🐱"
+  },
+  {
+    "input": {
+      "pet": {
+        "species": "dog",
+        "name": "Bori"
+      },
+      "date": "2026-10-15",
+      "tasks": [
+        {
+          "type": "walk",
+          "title": "Walk",
+          "due": "10:30",
+          "status": "missed"
+        }
+      ],
+      "photos": [],
+      "checkins": [
+        {
+          "time": "13:20",
+          "kind": "mood",
+          "value": "happy",
+          "has_photo": false
+        }
+      ],
+      "checks": {
+        "mood": "happy"
+      },
+      "chips": [],
+      "sitter_note": null
+    },
+    "output": "Hi Bori's family! We missed the 10:30 walk today. Bori was in a happy mood when I checked in this afternoon. 🐾"
+  }
+]

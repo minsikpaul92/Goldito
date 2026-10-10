@@ -1,4 +1,4 @@
-# PawNote — Development Plan (Team Internal)
+# Goldito — Development Plan (Team Internal)
 
 🇰🇷 Korean: [README.ko.md](README.ko.md) · Product README: [../../README.md](../../README.md) · Hackathon rules: [../hackathon/README.md](../hackathon/README.md)
 
@@ -47,7 +47,7 @@ Two developers, ~4 weeks. Build in this order (the 5 stages first); P2 only if t
 
 The old P2 "Private Q&A with AI first reply" is now the Stage 1 inquiry AI (07B, P0).
 
-Demo priority: the **5-stage flow** in the main README (*How PawNote Works* → *A Stay with PawNote*) must work end-to-end.
+Demo priority: the **5-stage flow** in the main README (*How Goldito Works* → *A Stay with Goldito*) must work end-to-end.
 
 ### Post-hackathon roadmap (not built for the hackathon)
 
@@ -181,7 +181,7 @@ client.chat.completions.create(
 
 ### D. Inquiry auto-reply (Nano + RAG) — Stage 1, Phase 07B
 - Input: server-collected JSON only — sitter availability, `quote_booking` result, pet profiles, sitter public profile, top-5 RAG chunks (sitter policy, Life Record, past questions, care request).
-- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Lucy will confirm" + `needs_sitter`.
+- Output JSON `{reply, can_host, needs_sitter, used_sources}`. Never computes prices (copies the quote), never mentions other owners, addresses, or entry codes. Unsure → "Chloe will confirm" + `needs_sitter`.
 - A first-person draft in the sitter's voice (D35); the sitter approves it with **Send** / Edit / Regenerate (D36). Auto-send is a sitter opt-in with human pacing (D37).
 
 ### E. Care plan (Super) — Stage 2, Phase 06
@@ -203,7 +203,6 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 - Remove faces of people in photos used for demos.
 - Keep the **tone** (nicknames, emojis, sentence style) — that's the value.
 - Keep raw data **out of the repo** (`data/raw/` in `.gitignore`); commit only anonymized few-shot samples.
-- Optionally run anonymization as a batch on **Nebius Serverless Jobs** (another Nebius service to highlight).
 
 ---
 
@@ -229,7 +228,7 @@ Notification types, recipients, and where each is created: **[architecture §7 n
 
 - **Web demo:** Supabase Realtime → in-app notification center + toast.
 - **Mobile (post-hackathon):** Expo Notifications (push).
-- **Scheduled reminders:** (stretch 6.7) Nebius Serverless Jobs or APScheduler.
+- **Scheduled reminders:** (stretch 6.7) APScheduler (Nebius AI Cloud not used, D18).
 - Sitter schedule changes never notify owners (D24).
 
 ---
@@ -272,7 +271,7 @@ Required in the Devpost submission (and eligible for Most Valuable Feedback). Lo
 ## 14. Open Questions
 
 - [x] Demo language: **English only** (UI + AI output) — decided 2026-09-29 (architecture D1)
-- [x] Backend API: **Nebius AI Cloud Serverless Endpoint** (primary), Render emergency fallback only — 2026-09-29 (D18)
+- [x] ~~Backend API: Nebius AI Cloud Serverless Endpoint (primary), Render emergency fallback only — 2026-09-29~~ → **Backend API: Render (free, Docker); Nebius AI Cloud not used** — 2026-10-09 (D18 — AI Cloud asked for a card + $25 top-up and the event credit was not on the account; all AI still runs on Token Factory; Render free sleeps after 15 min idle, so a ping every 10 min)
 - [x] Few-shot source language: **English** (anonymized only) — 2026-09-29 (D1)
 - [x] Few-shot sample size → replaced by the D35 tone layer: the same sitter's `tone_samples` top-k, 3 default examples only when there are none (2026-10-02)
 - [x] Nano Omni availability — not on the shared API (2026-09-29); all three NVIDIA vision models are dedicated-endpoint only (2026-10-02, D39) → vision stays MiniCPM-V-4_5 (final)

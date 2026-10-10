@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { formatInstant } from "../features/schedule/dates";
 import {
+  BookingError,
   getHomeAccess,
   type HomeAccess,
   type HomeAccessLocked,
@@ -16,6 +17,11 @@ type Props = {
   bookingId: string;
   /** Hide when this booking does not need owner-home access. */
   visible: boolean;
+  /**
+   * The owner's name when checkout was reopened by an agreed change (009d): the codes stay locked
+   * until they sign the new consent, so say so instead of hiding the card.
+   */
+  waitingForSignature?: string | null;
 };
 
 const HIDE_MS = 10_000;
@@ -23,9 +29,12 @@ const HIDE_MS = 10_000;
 /**
  * Sitter entry-info card (03C): locked until T−2h, then Show code (auto-hides after 10 s).
  */
-export function EntryInfoCard({ bookingId, visible }: Props) {
+export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const [state, setState] = useState<HomeAccess | HomeAccessLocked | { error: string } | null>(null);
+  // `code` is the RPC error code (not_paid, forbidden, …); `error` is the message to show.
+  const [state, setState] = useState<
+    HomeAccess | HomeAccessLocked | { error: string; code: string | null } | null
+  >(null);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -36,7 +45,9 @@ export function EntryInfoCard({ bookingId, visible }: Props) {
         const result = await getHomeAccess(bookingId);
         if (!cancelled) setState(result);
       } catch (err) {
-        if (!cancelled) setState({ error: (err as Error).message });
+        if (!cancelled) {
+          setState({ error: (err as Error).message, code: err instanceof BookingError ? err.code : null });
+        }
       }
     })();
     return () => {
@@ -59,7 +70,18 @@ export function EntryInfoCard({ bookingId, visible }: Props) {
     );
   }
   if ("error" in state) {
-    if (state.error === "forbidden" || state.error === "not_paid") return null;
+    if (state.code === "not_paid" && waitingForSignature) {
+      return (
+        <Card style={styles.card} testID="entry-info-waiting">
+          <Text style={styles.title}>🔒 Entry info</Text>
+          <Text style={styles.body}>{`Waiting for ${waitingForSignature} to sign`}</Text>
+          <Text style={styles.muted}>
+            The new plan needs their home-access consent. The codes open here once they sign.
+          </Text>
+        </Card>
+      );
+    }
+    if (state.code === "forbidden" || state.code === "not_paid") return null;
     return (
       <Card style={styles.card} testID="entry-info-error">
         <Text style={styles.muted}>{state.error}</Text>

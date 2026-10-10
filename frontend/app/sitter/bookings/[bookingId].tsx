@@ -33,10 +33,16 @@ import {
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
+  requestExpired,
   respondBooking,
   respondHandoff,
 } from "../../../lib/bookings";
+import { PetRecordFold } from "../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../components/ReceivedReview";
+import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
+import { requestLifeRecord } from "../../../features/completion/completionApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -113,6 +119,7 @@ export default function SitterBookingDetail() {
   useEffect(() => {
     void load();
   }, [load]);
+  useOnBookingChange(() => void load());
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "missing") {
@@ -137,10 +144,12 @@ export default function SitterBookingDetail() {
 
   const { booking, pets, addresses } = state;
   const owner = booking.ownerName;
+  // Paid once, then an agreed change needed a new consent (009d): entry codes wait for the owner.
+  const checkoutReopened = booking.status === "confirmed" && !booking.paidAt && booking.priceSnapshot != null;
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
-  const canAccept = isRequest && !meetFirst && !waiting && !busy;
+  const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
@@ -187,6 +196,8 @@ export default function SitterBookingDetail() {
           </View>
         </Card>
 
+        <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
+
         <MeetGreetCard booking={booking} viewer="sitter" onChanged={load} />
 
         <EntryInfoCard
@@ -197,6 +208,7 @@ export default function SitterBookingDetail() {
               booking.dropOff?.locationType === "owner_home" ||
               booking.pickUp?.locationType === "owner_home")
           }
+          waitingForSignature={checkoutReopened ? owner : null}
         />
 
         {KINDS.filter((kind) => showsProposal(booking, "sitter", kind)).map((kind) => (
@@ -289,6 +301,7 @@ export default function SitterBookingDetail() {
               </Text>
             ))}
             {pet.notes ? <Text style={styles.muted}>{pet.notes}</Text> : null}
+            <PetRecordFold petId={pet.id} petName={pet.name} />
           </Card>
         ))}
 
@@ -332,15 +345,23 @@ export default function SitterBookingDetail() {
             <Button
               label={busy ? "Saving…" : "Returned"}
               onPress={() =>
-                void run(() => completeHandoff(booking.id, "pick_up"), `${petNames} on the way home — ${owner} gets a notice`)
+                void run(async () => {
+                  await completeHandoff(booking.id, "pick_up");
+                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                  void requestLifeRecord(booking.id).catch(() => undefined);
+                }, `${petNames} home safe — ${owner} gets a notice`)
               }
               disabled={busy}
               testID="handoff-returned"
             />
           ) : (
-            <Text style={styles.muted} testID="stay-complete">
-              Stay complete 🐾
-            </Text>
+            <>
+              <Text style={styles.muted} testID="stay-complete">
+                Stay complete 🐾
+              </Text>
+              <ReceivedReview bookingId={booking.id} ownerName={owner} />
+              <OwnerNoteCard bookingId={booking.id} ownerName={owner} />
+            </>
           )}
           {!booking.dropOff?.completedAt ? (
             <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />
@@ -396,7 +417,15 @@ export default function SitterBookingDetail() {
             label="Decline request"
             onPress={() => {
               setConfirmDecline(false);
-              void run(() => respondBooking(booking.id, false), "Request declined", () => router.back());
+              void run(
+                async () => {
+                  await respondBooking(booking.id, false);
+                  // A video Meet & Greet's Calendar event goes with the declined request (3B.11).
+                  await releaseVideoLink(booking.id);
+                },
+                "Request declined",
+                () => router.back(),
+              );
             }}
             testID="decline-confirm"
           />

@@ -20,7 +20,7 @@ type Props = {
   visible: boolean;
   booking: BookingSummary;
   spots: MeetSpots;
-  /** Who gets the suggestion ("Send to Lucy"). */
+  /** Who gets the suggestion ("Send to Chloe"). */
   otherName: string;
   onSubmit: (mode: MeetGreetMode, at: string, place: string | null) => void;
   onClose: () => void;

@@ -20,8 +20,8 @@ SITTER_ID = "00000000-0000-4000-8000-000000000002"
 NO_PROFILE_ID = "00000000-0000-4000-8000-000000000009"
 
 PROFILES = {
-    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Chloe"),
-    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Lucy"),
+    OWNER_ID: Profile(id=OWNER_ID, role="owner", display_name="Robert"),
+    SITTER_ID: Profile(id=SITTER_ID, role="sitter", display_name="Chloe"),
 }
 
 
@@ -46,7 +46,7 @@ def claims(user_id: str = OWNER_ID, **overrides) -> dict:
     now = int(time.time())
     base = {
         "sub": user_id,
-        "email": "owner@pawnote.test",
+        "email": "owner@goldito.test",
         "aud": "authenticated",
         "iss": ISSUER,
         "role": "authenticated",
@@ -113,14 +113,14 @@ def test_me_with_valid_legacy_hs256_token_returns_profile(client: TestClient) ->
     assert response.status_code == 200
     assert response.json() == {
         "id": OWNER_ID,
-        "email": "owner@pawnote.test",
+        "email": "owner@goldito.test",
         "role": "owner",
-        "display_name": "Chloe",
+        "display_name": "Robert",
     }
 
 
 def test_me_with_es256_token_is_checked_against_jwks(client: TestClient, es256_key) -> None:
-    token = jwt.encode(claims(SITTER_ID, email="sitter@pawnote.test"), es256_key, algorithm="ES256")
+    token = jwt.encode(claims(SITTER_ID, email="sitter@goldito.test"), es256_key, algorithm="ES256")
     response = client.get("/api/me", headers=bearer(token))
     assert response.status_code == 200
     assert response.json()["role"] == "sitter"
@@ -142,7 +142,7 @@ def test_role_comes_from_profiles_not_token_metadata(client: TestClient) -> None
 def test_me_without_profile_is_403(client: TestClient) -> None:
     response = client.get("/api/me", headers=bearer(hs256(claims(NO_PROFILE_ID))))
     assert response.status_code == 403
-    assert response.json() == {"detail": "No PawNote profile for this account.", "code": "forbidden"}
+    assert response.json() == {"detail": "No Goldito profile for this account.", "code": "forbidden"}
 
 
 def test_require_role_lets_only_that_role_through() -> None:

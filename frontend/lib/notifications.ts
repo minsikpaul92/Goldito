@@ -12,6 +12,16 @@ export const DIARY_NOTIFICATION_TYPES = new Set([
   "report_sent",
 ]);
 
+/**
+ * Types that change a booking or an inquiry (FB-2): a new request or question, an answer, a handoff, a
+ * Meet & Greet, a care request, a review. Lists and booking screens re-read when one arrives — no refresh.
+ */
+const BOOKING_NOTIFICATION = /^(booking|handoff|meet_greet|checkout|inquiry|care_request|review|access)_?/;
+
+export function isBookingNotification(type: string): boolean {
+  return BOOKING_NOTIFICATION.test(type);
+}
+
 /** Notification center page size (phase-05 5.5). */
 export const NOTIFICATION_PAGE_SIZE = 50;
 
@@ -135,10 +145,21 @@ export function hrefForNotification(
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
     case "care_counter_accepted":
       return role === "sitter" ? "/sitter/tasks" : null;
+    case "inquiry_replied":
+      return role === "owner" && notice.refId ? `/owner/inquiries/${notice.refId}` : null;
+    case "inquiry_received":
+    case "inquiry_needs_you":
+      return role === "sitter" && notice.refId ? `/sitter/inquiries/${notice.refId}` : null;
     case "report_sent":
-      return role === "owner" ? "/owner/diary" : null;
+      if (role !== "owner") return null;
+      return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";
     case "booking_requested":
       return role === "sitter" ? bookingHref(notice.bookingId) : null;
+    case "checkout_needed":
+      // An agreed change needs a new consent (009d) — straight to Checkout.
+      if (role !== "owner") return null;
+      return notice.bookingId ? `/owner/bookings/${notice.bookingId}/checkout` : "/owner/bookings";
+    case "price_updated":
     case "booking_confirmed":
     case "booking_declined":
     case "booking_cancelled":
@@ -161,12 +182,7 @@ export function hrefForNotification(
     case "trip_arrived":
       return bookingHref(notice.bookingId);
     case "life_record_updated":
-      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
-    case "inquiry_received":
-      // Inquiry thread UI lands in 07B — Bookings is the closest home for sitters.
-      return role === "sitter" ? "/sitter/bookings" : null;
-    case "inquiry_replied":
-      return role === "owner" ? "/owner/bookings" : null;
+      return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}/record` : null;
     case "safety_danger":
     case "photo_request":
     case "task_due":

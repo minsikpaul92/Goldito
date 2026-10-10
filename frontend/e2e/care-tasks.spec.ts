@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, center, drag, signIn } from "./helpers";
+import { NOON_TORONTO, app, box, center, drag, signIn } from "./helpers";
 import { OWNER, mockSupabase } from "./supabaseMock";
 
 // Owner care tasks on the pet detail screen (phase-06 6.1).
@@ -9,8 +9,10 @@ import { OWNER, mockSupabase } from "./supabaseMock";
 const MAX = "00000000-0000-4000-8000-0000000000aa";
 const MOCHI = "00000000-0000-4000-8000-0000000000bb";
 
-async function setup(page: Page, petId = MAX) {
-  const { db } = await mockSupabase(page, [OWNER]);
+async function setup(page: Page, petId = MAX, now?: Date) {
+  // A fixed clock, set before the first navigation, so "today" does not depend on when CI runs.
+  if (now) await page.clock.setFixedTime(now);
+  const { db } = await mockSupabase(page, [OWNER], { now });
   db.pets.push(
     { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" },
     { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" },
@@ -190,8 +192,8 @@ test.describe("care tasks", () => {
   });
 
   test("today's status shows once the sitter has logged the task", async ({ page }) => {
-    const db = await setup(page);
-    const now = Date.now();
+    const db = await setup(page, MAX, NOON_TORONTO);
+    const now = NOON_TORONTO.getTime();
     db.care_tasks.push(
       { id: "t-done", pet_id: MAX, type: "feeding", title: "Breakfast", dose: null, scheduled_time: "08:00:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:00:00Z" },
       { id: "t-missed", pet_id: MAX, type: "walk", title: "Walk", dose: null, scheduled_time: "09:00:00", repeat_daily: true, notes: null, active: true, created_at: "2026-10-01T10:01:00Z" },

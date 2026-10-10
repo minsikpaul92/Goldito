@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AlbumView } from "../../../components/AlbumView";
 import { FeedCard } from "../../../components/FeedCard";
 import { FeedViewer } from "../../../components/FeedViewer";
 import { ShareToggle } from "../../../components/ShareToggle";
@@ -56,6 +57,8 @@ export default function OwnerFeed() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  /** Timeline = newest first, Album = by day then by what the photo shows (phase-09 9.5). */
+  const [mode, setMode] = useState<"timeline" | "album">("timeline");
   // Owner posts are private unless this chip is on (5.8).
   const [visibleToSitter, setVisibleToSitter] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -208,27 +211,43 @@ export default function OwnerFeed() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <FlatList
-        data={posts}
+        data={mode === "album" ? [] : posts}
         keyExtractor={(item) => item.id}
         numColumns={3}
-        columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
+        columnWrapperStyle={posts.length > 0 && mode === "timeline" ? styles.row : undefined}
         contentContainerStyle={[styles.list, posts.length === 0 && styles.listEmpty]}
         onEndReached={() => void loadMore()}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
-          petOptions.length > 1 ? (
-            <View style={styles.petSwitch}>
-              <SegmentedControl
-                options={petOptions}
-                value={petId}
-                onChange={setPetId}
-                testID="feed-pet"
-              />
-            </View>
-          ) : null
+          <>
+            {petOptions.length > 1 ? (
+              <View style={styles.petSwitch}>
+                <SegmentedControl
+                  options={petOptions}
+                  value={petId}
+                  onChange={setPetId}
+                  testID="feed-pet"
+                />
+              </View>
+            ) : null}
+            {posts.length > 0 ? (
+              <View style={styles.petSwitch}>
+                <SegmentedControl
+                  options={[
+                    { value: "timeline", label: "Timeline" },
+                    { value: "album", label: "Album" },
+                  ]}
+                  value={mode}
+                  onChange={setMode}
+                  testID="feed-mode"
+                />
+              </View>
+            ) : null}
+            {mode === "album" && posts.length > 0 ? <AlbumView posts={posts} onOpen={setViewerPostId} /> : null}
+          </>
         }
         ListEmptyComponent={
-          feed.status === "error" ? (
+          mode === "album" && posts.length > 0 ? null : feed.status === "error" ? (
             <EmptyState
               emoji="📸"
               title="Couldn't load the feed"

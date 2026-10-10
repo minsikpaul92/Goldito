@@ -1,7 +1,15 @@
-"""Tiny in-memory stand-in for the supabase-py table builder (select / eq / neq / limit / insert / delete)."""
+"""Tiny in-memory stand-in for the supabase-py table builder (select / eq / neq / gte / lt / limit / insert / update / delete)."""
 
 from types import SimpleNamespace
 from uuid import uuid4
+
+
+def _when(value):
+    """Timestamps compare as instants, not as strings."""
+    from datetime import UTC, datetime
+
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 class FakeDB:
@@ -31,6 +39,27 @@ class _Query:
         self.filters.append(lambda r: r.get(col) != val)
         return self
 
+    def in_(self, col, vals):
+        self.filters.append(lambda r: r.get(col) in list(vals))
+        return self
+
+    def is_(self, col, val):
+        assert val == "null"
+        self.filters.append(lambda r: r.get(col) is None)
+        return self
+
+    def gte(self, col, val):
+        self.filters.append(lambda r: _when(r.get(col)) >= _when(val))
+        return self
+
+    def lt(self, col, val):
+        self.filters.append(lambda r: _when(r.get(col)) < _when(val))
+        return self
+
+    def update(self, row):
+        self.op, self.payload = "update", row
+        return self
+
     def limit(self, n):
         self.max_rows = n
         return self
@@ -47,9 +76,18 @@ class _Query:
         rows = self.db.tables.setdefault(self.name, [])
         if self.op == "insert":
             row = {"id": str(uuid4()), **self.payload}
+            if self.name == "inquiry_messages":
+                # The table's `created_at default now()`: the thread's order depends on it (FB-34).
+                from datetime import UTC, datetime
+
+                row.setdefault("created_at", datetime.now(UTC).isoformat())
             rows.append(row)
             return SimpleNamespace(data=[row])
         hit = [r for r in rows if all(f(r) for f in self.filters)]
+        if self.op == "update":
+            for r in hit:
+                r.update(self.payload)
+            return SimpleNamespace(data=hit)
         if self.op == "delete":
             self.db.tables[self.name] = [r for r in rows if r not in hit]
             return SimpleNamespace(data=hit)

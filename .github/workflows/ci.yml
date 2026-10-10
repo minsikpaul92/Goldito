@@ -46,6 +46,16 @@ jobs:
         run: ruff check .
       - name: Pytest
         run: pytest -q
+      - name: Docker image builds and serves /health
+        run: |
+          docker build -t goldito-backend .
+          docker run -d --name goldito-backend -p 8000:8000 goldito-backend
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            curl -fsS http://127.0.0.1:8000/health && exit 0
+            sleep 2
+          done
+          docker logs goldito-backend
+          exit 1
 
   frontend:
     needs: changes
@@ -78,6 +88,8 @@ jobs:
           EXPO_PUBLIC_DEMO_PASSWORD: e2e-demo-password
           # Test-only: media upload specs mock the backend routes on the test server.
           EXPO_PUBLIC_API_URL: http://127.0.0.1:4173/api-mock
+          # Test-only: the Profile → Demo tools sheet (testing reset) is built in so its spec can open it.
+          EXPO_PUBLIC_DEMO_TOOLS: "1"
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
@@ -112,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_PASSWORD: postgres
         ports:

@@ -1,7 +1,7 @@
 """Video Meet & Greet links (phase-03b 3B.11, D45).
 
 After both sides agree on a video Meet & Greet (005 `respond_meet_greet`), the app calls
-`POST /api/meet-greet/video-link`: the PawNote Google account creates a 30-minute Calendar
+`POST /api/meet-greet/video-link`: the Goldito Google account creates a 30-minute Calendar
 event with a Google Meet link, the link is saved on the booking (service role) and both
 sides get `meet_greet_link_ready`. Calling it again is safe. After a reschedule the same
 event is patched (same link). `…/release` deletes the event once the booking is cancelled
@@ -48,6 +48,12 @@ class BookingStore(Protocol):
     def get(self, booking_id: str) -> MeetGreetBooking | None: ...
 
     def save_event(self, booking_id: str, *, link: str | None, event_id: str | None) -> None: ...
+
+    def claim_event(
+        self, booking_id: str, *, link: str | None, event_id: str, expect_event_id: str | None
+    ) -> bool:
+        """Save only if the booking still has no link and the event we started from; False = someone else saved first."""
+        ...
 
     def notify(self, user_ids: list[str], booking_id: str, title: str, body: str | None) -> None: ...
 
@@ -106,6 +112,21 @@ class SupabaseBookingStore:
             {"meet_greet_link": link, "meet_greet_event_id": event_id}
         ).eq("id", booking_id).execute()
 
+    def claim_event(
+        self, booking_id: str, *, link: str | None, event_id: str, expect_event_id: str | None
+    ) -> bool:
+        query = (
+            self._db.table("bookings")
+            .update({"meet_greet_link": link, "meet_greet_event_id": event_id})
+            .eq("id", booking_id)
+            .is_("meet_greet_link", "null")
+        )
+        if expect_event_id is None:
+            query = query.is_("meet_greet_event_id", "null")
+        else:
+            query = query.eq("meet_greet_event_id", expect_event_id)
+        return bool(query.execute().data)
+
     def notify(self, user_ids: list[str], booking_id: str, title: str, body: str | None) -> None:
         self._db.table("notifications").insert(
             [
@@ -132,7 +153,7 @@ def _meet_client() -> GoogleCalendarMeetClient:
 
 
 def get_meet_client() -> MeetClient | None:
-    """None until the PawNote Google account is set up — the app then keeps its fallback."""
+    """None until the Goldito Google account is set up — the app then keeps its fallback."""
     if not get_settings().google_meet_configured:
         return None
     return _meet_client()
@@ -205,9 +226,9 @@ def create_video_link(
             pets = ", ".join(booking.pet_names) or "your pet"
             event = client.create(
                 # Same booking + time → same conference request (Google de-duplicates it).
-                request_id=f"pawnote-{booking.id}-{int(booking.at.timestamp())}",
-                # "PawNote Meet & Greet — Max, Mochi & Lucy"
-                summary=f"PawNote Meet & Greet — {pets} & {booking.sitter_name}",
+                request_id=f"goldito-{booking.id}-{int(booking.at.timestamp())}",
+                # "Goldito Meet & Greet — Max, Mochi & Chloe"
+                summary=f"Goldito Meet & Greet — {pets} & {booking.sitter_name}",
                 start=booking.at,
                 attendees=_invitees(booking),
                 timezone=timezone,
@@ -219,7 +240,16 @@ def create_video_link(
             detail="Google Meet could not create the link. Try again.",
         ) from exc
 
-    store.save_event(booking.id, link=event.link, event_id=event.event_id)
+    # Owner and sitter can ask at the same moment: the first save wins, the other keeps that link.
+    if not store.claim_event(booking.id, link=event.link, event_id=event.event_id, expect_event_id=booking.event_id):
+        if outcome == "created":
+            try:
+                client.delete(event.event_id)
+            except GoogleMeetError:
+                pass  # an extra Calendar event is harmless; the saved one is what both sides see
+        current = store.get(booking.id)
+        link = current.link if current else None
+        return VideoLinkResponse(link=link, status="existing" if link else "pending")
     if not event.link:
         return VideoLinkResponse(link=None, status="pending")
     store.notify(

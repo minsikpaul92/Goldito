@@ -222,7 +222,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
 | `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity. **Target (§6.1):** Secondary + Loading variants, press = scale 0.97 + opacity 0.85 (§5.1), disabled = neutral `border` fill (a faded brand color reads as enabled) |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
-| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below |
+| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below. An optional **hint** goes on the label line, right after the label: `small`, `textMuted` at reduced opacity, regular weight (e.g. **Meals** `what to give or do (empty = the hint)`). Never join label and hint into one string with a dash |
 | `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
@@ -232,12 +232,13 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 | `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |
-| `Stepper` | − value + (44 × 44 buttons) — times in 30-min steps and counts; the stand-in for native pickers (§7.7) |
+| `Stepper` | − value + (44 × 44 buttons) — counts (pets, times a day). **Not for dates and times** — those use `DateField` / `TimeField` (§7.10). The stand-in for native pickers (§7.7) |
 | `CheckRow` | Checkbox + label (+ hint line) as one 44-tall click target; `aria-checked` for screen readers |
 | `SitterCard` (`components/`) | "Your sitters" row (3B.2): initial on `accent`, name, area · years, note ("2 bookings with you"), service chips (🏠 Boarding / 🔑 House sitting); tap → sitter profile |
-| `HandoffPicker` (`components/`) | Book care drop-off / pick-up (3B.3): day stepper (± 1 day), time stepper (± 15 min), place as radio rows = who drives (🚗 I'll drive — at Lucy's place / 🚙 Lucy picks up — at my place / 📍 Somewhere else + "Where to meet") |
-| `BookingCard` (`components/`) | Owner booking row (3B.3): sitter, pets with species emoji, drop-off / pick-up time · place label (never the address), status badge with text (Requested · Time suggested by Lucy · Confirmed · Declined · Cancelled — find a new sitter) |
-| `ProposalCard` (`components/`) | One open handoff offer (3B.5), `warning` border: the other side's "Lucy suggested a new drop-off · Oct 5, 10:00 AM · Lucy's place" with **Accept** (filled) + Suggest another time + Decline (`danger` link), or my own "Change pending — until Lucy agrees, it stays at …"; history line "You: 9:30 AM → Lucy: 10:00 AM" |
+| `HandoffPicker` (`components/`) | Book care drop-off / pick-up (3B.3): day stepper (± 1 day), time stepper (± 15 min), place as radio rows = who drives (🚗 I'll drive — at Chloe's place / 🚙 Chloe picks up — at my place / 📍 Somewhere else + "Where to meet") |
+| `BookingCard` (`components/`) | Owner booking row (3B.3): sitter, pets with species emoji, drop-off / pick-up time · place label (never the address), status badge with text (Requested · Time suggested by Chloe · Confirmed · Declined · Cancelled — find a new sitter) |
+| `PaidConfirmation` (`components/`) | Owner booking detail after checkout (FB-12): an `accent` card with `primary` border — **Booked and paid: $X CAD**, the drop-off time, "Nothing else to do. We'll tell you when {sitter} receives {pets}.", **Tap to dismiss**. It stays until tapped (remembered per booking on this device); the header chip row keeps a small `Paid` chip |
+| `ProposalCard` (`components/`) | One open handoff offer (3B.5), `warning` border: the other side's "Chloe suggested a new drop-off · Oct 5, 10:00 AM · Chloe's place" with **Accept** (filled) + Suggest another time + Decline (`danger` link), or my own "Change pending — until Chloe agrees, it stays at …"; history line "You: 9:30 AM → Chloe: 10:00 AM" |
 | `HandoffChangeSheet` (`components/`) | Sheet for a new handoff time (Drop-off / Pick-up switch, day ± 1, time ± 15 min); after confirm also the place (radio rows) — **Change time or place** |
 | `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
 
@@ -249,6 +250,8 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 
 | Component | Notes |
 | :--- | :--- |
+| `DateField` / `TimeField` **(proposed)** | The one way to enter a day or a time — [§7.10](#710-dates-and-times). `[−] value [+]`; tapping the value opens the calendar (`DayPickerSheet`) or the clock (`TimePickerSheet`) |
+| `RoleBadge` **(proposed)** | The green pill that says **Owner** / **Sitter** in the header, as its own component. Shown next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards): the other person gets the badge of *their* role. Same colors, shape and type as the header pill — never plain text like "(sitter)" |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
 | `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b**: both **Home · Bookings · Feed · Diary · Mood**. Settings (and sitter Earnings later) = header Profile |
@@ -256,7 +259,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` (built: `components/FeedCard.tsx`) | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
-| `MessageBubble` | Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message (no per-message AI label, D36) with source chips ("From Max's Life Record") and the quote card. The sitter's draft view carries the warning "AI drafts can be wrong. You're responsible for what you send." Auto-send mode shows "Lucy is typing…", then the reply (D37); a read marker appears only when the sitter really opens the thread |
+| `MessageBubble` | Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message (no per-message AI label, D36) with source chips ("From Max's Life Record") and the quote card. The sitter's draft view carries the warning "AI drafts can be wrong. You're responsible for what you send." Auto-send mode shows "Chloe is typing…", then the reply (D37); a read marker appears only when the sitter really opens the thread |
 | `QuoteCard` (built: `components/QuoteCard.tsx`) | Price breakdown (03C): nights × rate, extra pet, holiday lines, **Total** in bold, currency. Same component in the inquiry thread and checkout |
 | `MeetGreetCard` (`components/`, built in 3B.9 with `MeetGreetSheet`) | Booking detail, first-time pairs only (03B, D44). Done / skipped collapse to one muted line; once agreed a local "Go over together" checklist (Care needs · Quirks · Route · Handoff · Heads-up). States: to schedule (**Schedule Meet & Greet** · **Skip Meet & Greet**) → proposed → set (in person: spot + time / video: **Join Google Meet** opens a new tab + **Add to calendar**) → **Done**. A skip request shows the other side **Continue without meeting** and **Decline — cancels the booking** |
 | `ChipSuggestions` | Report screen (07, D38). AI-suggested chips in two rows: from today's records and from photos. Tap to turn a chip off or on, tap a value to change it. Wrong suggestions are expected, so turning one off is a single tap |
@@ -265,7 +268,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `ChecklistCard` (built: `components/ChecklistCard.tsx`) | AI checklist preview from a care request (06): editable rows (time · title · dose), delete, Heads-up chips |
 | `TripMap` (web) | View-only Leaflet + OpenStreetMap map (06B): auto-fits traveler + destination, **±** buttons only, no drag-pan (drags scroll the screen, §7.7). Shows OSM attribution. A "Sharing your location until you arrive" banner sits above it while sharing |
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
-| `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Lucy · Oct 9–12") |
+| `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Chloe · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout. After 10 s add "Still loading…" + **Retry** |
 | `Tag` | Status label (Figma: Tone = Danger · Warning · Success · Brand · Neutral). Text on the tone's surface (D3). Not tappable |
 | `Banner` | Inline notice at the top of the content for an edge state (§10). Tone = Info · Warning · Error · Offline. Icon + title (tone color) + one line saying what happens next + optional action link. Never for DANGER (§7.4) |
@@ -406,6 +409,27 @@ Public intro for **signed-out** visitors (`/welcome`, `/welcome/owner`, `/welcom
 | Media | `MediaPlaceholder` fills the leftover column (photo-sized area, no large empty bands). Real demo stills/clips replace it later; keep the dashed brief until then |
 | Exit to auth | Last step → Sign in / Try demo / Create account → existing `/login` · `/signup` (login keeps `BackLink` → `/welcome`) |
 
+
+### 7.10 Dates and times
+
+One way to enter a day or a time, everywhere — booking, inquiry, change-time sheet, Meet & Greet, the sitter's schedule, care tasks. No screen invents its own.
+
+| Part | Rule |
+| :--- | :--- |
+| **Layout** | A **date** field and a **time** field, in that order, each `[−] value [+]` (44 × 44 buttons, value between). Label above the pair ("Drop-off", "Pick-up"); a one-line error below, in `error`. |
+| **Tap the date** | Opens the **calendar** sheet (`DayPickerSheet`): month grid, previous/next month, today's and the selected day marked, days before the earliest allowed day disabled. Tapping a day picks it and closes the sheet. |
+| **Tap the time** | Opens the **clock** sheet (`TimePickerSheet`): hour · minute · AM/PM wheels, the same iPhone-style wheel everywhere. Set picks it and closes the sheet. |
+| **− / +** | Stay on both fields, because they are the quickest way to nudge. **Date: one day** per tap. **Time: 15 minutes** per tap (crossing midnight moves the date). − is disabled at the earliest allowed value. |
+| **Format** | Date `Oct 7` (add the year when it is not the current year, `Oct 7, 2027`); time `11:37 PM`; always the app time zone (America/Toronto), 12-hour with AM/PM. |
+| **Limits** | The earliest allowed day/time is passed in (`min`): now for a new booking; the drop-off for a pick-up; the current offer for a change. An invalid pair shows the message ("Pick a time in the future.") and the sheet's primary button is disabled — it never silently changes the value. |
+| **Several parts in one sheet** | When a sheet edits more than one date/time (Drop-off and Pick-up tabs), each part keeps its **own draft** while the user switches between them. **Send** (the one primary button) saves and sends everything that changed; **Close** or a tap on the backdrop discards the drafts and just closes. Nothing is stored or sent before Send. |
+| **Finished things** | A handoff that already happened (Received / Returned) is shown as done and cannot be edited — disable or hide it, never let the server refuse it. |
+| **Mouse** | Everything works by click; the wheels also take the mouse wheel and drag (§7.7). No native date/time pickers. |
+
+Counts (number of pets, times a day) are the only thing that still uses the plain `Stepper`.
+
+**Applies to (all of them, none left on the old stepper-only input):** Book care and the Ask-about-a-stay sheet (`HandoffPicker`), Change time or place and Suggest another time (`HandoffChangeSheet`), Meet & Greet (`MeetGreetSheet`), the sitter's schedule (`ScheduleSheet`), the care checklist's "Several times" (`CareLineBuilder`), care task times.
+
 ---
 
 ## 8. Imagery & icons
@@ -453,17 +477,17 @@ Each has a screen in Figma (*2. Screens → Edge states*).
 | Stage | Situation | Owner sees | Sitter sees |
 | :--- | :--- | :--- | :--- |
 | ① | Dates are full | Reply with the next open dates as chips; prices only from the server | Nothing to do — the calendar answers |
-| ① | Health or out-of-scope question | `Banner` (Info) "Lucy will answer this one herself · usually within 2 hours" | Thread flagged for a personal reply |
+| ① | Health or out-of-scope question | `Banner` (Info) "Chloe will answer this one herself · usually within 2 hours" | Thread flagged for a personal reply |
 | ② | Dose missing, or a task conflicts with an allergy | The row is tagged (Warning: "Add the dose — the assistant never guesses doses"; Danger: "chicken — Max is allergic"); **Save** disabled with "Fix 2 items" | Only ever the confirmed checklist |
 | ③ | Sitter declines, or doesn't answer within 24 h | `Banner` (Info) "You weren't charged" + another open sitter. Not red: nothing failed | — |
 | ③ | Payment fails | `Banner` (Error); the 5 consents and the typed name are kept; **Try again** | — |
 | ③ | Entry info not added by pick-up day | Reminder notification | `Banner` (Warning); the card stays 🔒 |
 | ④ | Sitter running late (ETA grows by 5+ min) | `Banner` (Warning) with the new ETA, updated on its own — no action needed | Nothing extra; the ETA comes from the trip |
 | ④ | Location off or denied | Status lines instead of the map | **Leaving now** · **10 min away** · **I'm here** |
-| ④ | Handoff photo check unsure | "Checked by Lucy" instead of "Photo verified" | Photo Check (Retake): **Retake photo** or **Confirm by eye**. Never blocks the handoff (D5) |
+| ④ | Handoff photo check unsure | "Checked by Chloe" instead of "Photo verified" | Photo Check (Retake): **Retake photo** or **Confirm by eye**. Never blocks the handoff (D5) |
 | ④ | Offline | "Last update 9:02" on the stay card | `Banner` (Offline); tasks show "Waiting to send" (D8) |
 | ④ | Medication late | Neutral "Not checked off yet" — no red, no alarm | `Banner` (Warning) + the task as the next action; the real time is recorded |
-| ④ | No photos yet today | `EmptyState` with the usual time ("Lucy usually posts after the morning walk") | — |
+| ④ | No photos yet today | `EmptyState` with the usual time ("Chloe usually posts after the morning walk") | — |
 | ④ | Treat label unreadable | Asked to confirm the treat | `Banner` (Warning) "Don't feed it yet" — unsure means no (D5) |
 | ⑤ | Rating of 1–2 stars | Optional private note | Sees the note; no public low score |
 | ⑤ | AI learned a new fact ("scared of the vacuum") | `Banner` (Info) + **Add to Max's profile** / **Not accurate** (D9) | — |
@@ -497,7 +521,7 @@ Everything above is a placeholder until these are decided.
 - [x] Button variants, Chip, Toast, AlertModal (DANGER), EmptyState, TabBar, Banner, Tag — in Figma (*3. Components*)
 - [ ] ProposalCard, ReportCard (P1 report themes)
 - [ ] Report themes (4) + preset sticker set (Phase 11.8)
-- [ ] Welcome / Login screens ([#13](https://github.com/minsikpaul92/PawNote/issues/13))
+- [ ] Welcome / Login screens ([#13](https://github.com/minsikpaul92/Pawddy/issues/13))
 - [ ] Figma frames at **402 × 874**; spot-check at 360 and 440
 - [ ] Desktop backdrop, side panel, and phone-frame style (§2.1)
 - [ ] Sample photo set for the demo tray: dog / cat daily photos + treat labels with fictional brands (§8)

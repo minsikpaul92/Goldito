@@ -5,11 +5,26 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
-from app.routers import ai_care_plan, feed, health, me, media, meet_greet
+from app.routers import (
+    ai_caption,
+    ai_care_plan,
+    ai_daily_report,
+    ai_inquiry,
+    ai_life_record,
+    ai_report_chips,
+    demo,
+    feed,
+    health,
+    me,
+    media,
+    meet_greet,
+    rag,
+    tone,
+)
 
 settings = get_settings()
 
-app = FastAPI(title="PawNote API", version="0.1.0")
+app = FastAPI(title="Goldito API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,9 +37,17 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(me.router)
 app.include_router(meet_greet.router)
+app.include_router(demo.router)
 app.include_router(media.router)
 app.include_router(feed.router)
 app.include_router(ai_care_plan.router)
+app.include_router(ai_caption.router)
+app.include_router(ai_daily_report.router)
+app.include_router(ai_inquiry.router)
+app.include_router(ai_life_record.router)
+app.include_router(ai_report_chips.router)
+app.include_router(rag.router)
+app.include_router(tone.router)
 
 
 @app.exception_handler(StarletteHTTPException)

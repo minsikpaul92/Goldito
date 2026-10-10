@@ -1,6 +1,6 @@
-# PawNote — Supabase (Postgres + Auth + Realtime)
+# Goldito — Supabase (Postgres + Auth + Realtime)
 
-SQL migrations for the PawNote demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
+SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
 **Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
@@ -24,9 +24,17 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `008h_care_counter_requests.sql` | 06 | A decline can carry a note; the sitter can send a counter-request instead (`counter_care_change_request`: note + optional extra fee + tasks the owner does themselves) and the owner accepts or declines it (`answer_care_counter`); statuses `countered` · `accepted` · `withdrawn`; notices `care_request_countered` · `care_counter_accepted` · `care_counter_declined` |
 | `008i_revoke_trigger_functions.sql` | 06 | Trigger functions (`care_task_reset_today`, `guard_care_checkin_species`, `notify_feed_post`) are no longer callable as RPCs by `anon` / `authenticated` (Supabase advisor) |
 | `008j_no_direct_edits_during_stay.sql` | 06 | `pet_has_open_stay`: while a stay is on the owner can't INSERT care tasks or Heads-ups directly (RLS) — they send a care request; edits and deletes unchanged |
-| `009_reports.sql` | 07 | Daily report send |
-| `010_inquiries_rag.sql` | 07B | pgvector, inquiries + messages, `knowledge_chunks`, `match_knowledge` |
-| `011_completion.sql` | 07C | Reviews, Pet Life Records |
+| `009_reports.sql` | 07 | `send_daily_report(p_report, p_body)`: the writing sitter sends the report once — the text they send (their edits) is published, status draft → sent, owner notice `report_sent`; the owner only ever sees sent reports |
+| `009b_care_requests_follow_the_stay.sql` | review fix | Open care change requests close when their stay ends (cancel / decline / pick-up); `save_care_request` refuses while a stay is on |
+| `009c_handoffs_stay_consistent.sql` | review fix | A checked handoff can't be replaced, Received / Returned closes that kind's proposals, passed times can't be agreed or confirmed, house-sitting handoffs stay at the owner's home |
+| `009d_paid_bookings_follow_changes.sql` | review fix | A change agreed on a paid booking re-quotes it (owner notice `price_updated`) or, when it needs a new consent (`home_access`), reopens checkout (`paid_at` cleared, notice `checkout_needed`); consents are signed at checkout only; owner profile (address, emergency contact) shared only once the booking was paid (a reopened checkout keeps it) |
+| `009e_reopened_checkout_keeps_addresses.sql` | review fix | `get_handoff_details` returns the handoff places for a booking paid at least once (`paid_at` or `price_snapshot`), so a checkout reopened by 009d keeps the addresses for both sides; only the entry codes wait for the new consent |
+| `010_inquiries_rag.sql` | 07B | pgvector (in `extensions`), `inquiries` + `inquiry_messages` (owner never sees `author='ai'` or an unsent / not-yet-visible sitter message), `sitter_profiles.policies`, notices `inquiry_received` · `inquiry_replied`, service-role-only `knowledge_chunks` + `match_knowledge` (per-source scope) |
+| `010b_send_inquiry_reply.sql` | 07B | `send_inquiry_reply` (the only way a sitter message is written: quote / sources / can_host copied from the draft, nothing else; the direct INSERT policy is dropped) + `mark_inquiry_read` (the sitter opening the thread is the owner's only read mark) |
+| `010c_tone_samples.sql` | 07B | `tone_samples` (the sitter's own approved / edited / seeded replies, `regenerated` = thrown-away drafts), `match_tone`, `sitter_profiles.style_card` — all service-role only |
+| `010d_auto_reply.sql` | 07B | Auto-send: `sitter_profiles.ai_reply_mode` / `ai_consent_at` via `set_ai_reply_mode` (consent first) + `get_my_ai_reply_mode`, `inquiries.reply_typing_at` / `reply_visible_at` (times only), `notifications.visible_at` (a notice that appears later; the select policy hides it until then) |
+| `011_completion.sql` | 07C | Returned says "home safe 🏠"; `reviews` + `submit_review` (owner, once, only after Returned) + `sitter_rating_summary` (public: average, count, 3 recent comments with a first name); notices `review_requested` / `review_received`; `pet_life_records` (service-role writes; owner, a sitter asked about the pet by request or open inquiry, and the current sitter read) |
+| `011b_life_record_columns.sql` | 07C | `pet_life_records.stay_from` / `stay_to`; clients read named columns only — the raw `source_snapshot` (check-ins, notes, the owner's questions) stays backend-only |
 | `012_transit.sql` | 06B (last in P0, D41) | Trips (last position only), handoff photo checks, home coordinates |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |
@@ -53,16 +61,16 @@ profiles 1─* notifications ─0..1 pets / bookings
 
 **Hosted (task 2.9):** after the latest migration (`003` includes API table grants at the end of the file; `004` adds column grants for its new profile columns), paste [`tests/rls_smoke.sql`](tests/rls_smoke.sql) into the SQL Editor and run it. If smoke fails with `permission denied for table pets`, run the **API table grants** section at the bottom of `003_functions_triggers.sql` (do not use a bare `grant update on all tables` — that allows changing `profiles.role` and breaks smoke). If smoke fails with `FAIL: user cannot change own role`, re-run that same grants section to restore column-level UPDATE rules — and then the **Column grants** lines at the end of `004_booking_options.sql`, which that section would otherwise drop. It creates fictional users, checks permissions and booking scenarios A–H from phase-02, then rolls everything back. Success = no error; any failure stops with `FAIL: <check>`.
 
-**Local / CI:** plain Postgres 17 plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
+**Local / CI:** Postgres 17 with pgvector (`010` needs the `vector` extension) plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 
 ```bash
-docker run -d --name pawnote-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:17
+docker run -d --name goldito-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 pgvector/pgvector:pg17
 ```
 
 ```bash
 export PGHOST=localhost PGUSER=postgres PGPASSWORD=postgres
 psql -v ON_ERROR_STOP=1 -q -f supabase/tests/supabase_stub.sql
-for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -f "$f"; done
+for f in $(ls supabase/migrations/*.sql | LC_ALL=C sort); do psql -v ON_ERROR_STOP=1 -q -f "$f"; done
 psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 ```
 
@@ -73,6 +81,7 @@ psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_smoke.sql
 - **Meet & Greet (004, D44):** `request_booking` sets `bookings.meet_greet_status` to `required` for a first-time pair (no earlier booking that reached the drop-off and no done Meet & Greet), else `not_needed`. `respond_booking` accepts only when it is `not_needed`, `done` or `skipped`.
 - **Booking pets on cards:** use `rpc('get_booking_pets', { p_booking })` — the pets table hides a pet from the sitter once the booking has ended.
 - **Writes:** bookings, handoffs, `booking_pets`, `booking_slots` change only through the RPCs in `003`.
+- **Consents (009d):** the owner inserts `booking_consents` only during checkout — booking `confirmed`, `paid_at` null, and a kind from `rpc('required_consents')`; anything else is an RLS error (`42501`). A booking with `paid_at` null but a `price_snapshot` was paid once and reopened by an agreed change — show "sign to finish", not "accepted"; `get_handoff_details` still answers for it (009e), `get_home_access` answers `not_paid` until the owner signs.
 
 ## RPC errors
 
@@ -83,12 +92,12 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `not_authenticated`, `not_owner`, `not_a_sitter`, `not_allowed` | Caller is not allowed for this pet / booking / role |
 | `invalid_window` | Pick-up not after drop-off, drop-off in the past, trip over 31 days (schedule over 92 days) |
 | `invalid_status`, `invalid_kind` | Booking is not in a state that allows this / handoff kind is not `drop_off`/`pick_up` |
-| `invalid_location`, `location_note_required` | Unknown place type / "Somewhere else" without a note |
+| `invalid_location`, `location_note_required` | Unknown place type, or a house-sitting handoff away from the owner's home (009c) / "Somewhere else" without a note |
 | `invalid_service`, `service_not_offered` | Service type is not `boarding`/`house_sitting` (or `daycare` for `quote_booking`) / the sitter has no matching rate or `sitter_profiles.services` entry |
 | `invalid_pet_count` | `quote_booking` / `pay_booking_demo` pet count is missing or less than 1 |
 | `consents_missing` | Demo pay before every required consent is signed — detail = missing kinds |
 | `already_paid` | `pay_booking_demo` called again on a booking that already has `paid_at` |
-| `not_paid` | Address / entry info requested before demo pay (03C.4+) |
+| `not_paid` | Address / entry info requested before demo pay (03C.4+); entry info also while a checkout reopened by a change waits for the new consent (009d) — addresses stay (009e) |
 | `access_locked` | Entry codes outside the 2 h-before → pick-up window — detail JSON `unlocks_at` or `locked_since` |
 | `forbidden` | `get_home_access` by anyone other than the booked sitter |
 | `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |
@@ -97,9 +106,20 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `sitter_unavailable` | A slot is full or closed — detail = `YYYY-MM-DD slot, …`, or `no_open_slot` |
 | `pet_already_booked` | The pet already has a sitter (or a pending request) for overlapping hours |
 | `handoff_pending` | The sitter's own counter-offer is waiting for the owner |
-| `handoff_missing`, `handoff_completed` | No agreed handoff yet / already marked Received or Returned |
+| `handoff_missing`, `handoff_completed` | No agreed handoff yet / already marked Received or Returned (it can't be replaced either, 009c) |
+| `proposal_expired`, `request_expired` | Accepting a proposed time that has passed / confirming a request whose agreed pick-up has passed (009c) |
 | `handoff_too_early`, `drop_off_not_completed` | Received more than 2 h before the drop-off / Returned before Received |
 | `booking_in_progress` | Cancel after the pets were received or after the pick-up time |
 | `booking_finished` | Handoff addresses are hidden 24 h after the pick-up |
 | `overlaps_confirmed_booking` | Schedule change would drop below confirmed pets — detail = booking ids |
 | `task_type_not_allowed_for_species` | `walk` for a cat or `litter` for a dog |
+| `checkin_not_allowed_for_species` | A check-in kind that does not fit the pet (e.g. `walk` for a cat) |
+| `not_on_duty`, `not_in_care_window` | Today's task list / a task or check-in outside the sitter's care window |
+| `task_log_not_found`, `already_done` | Completing a task that is not on today's list / that is already done |
+| `invalid_media` | The attached photo is not the sitter's own upload for this pet |
+| `note_required` | A note check-in or a counter-request without a note |
+| `too_many_items`, `empty_request` | More than 12 tasks or 8 Heads-ups / a care request with neither |
+| `stay_in_progress` | `save_care_request` while a stay is on — send a change request instead (009b) |
+| `no_active_stay`, `request_pending` | Change request with no stay on / one is already open (pending or countered) for the pet |
+| `already_answered`, `invalid_tasks` | The change request was already answered or closed / counter-request names tasks that are not on it |
+| `report_already_sent`, `body_required`, `body_too_long` | Daily report sent twice / empty / over 2000 characters |

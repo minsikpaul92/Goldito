@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { SERVICE_LABEL } from "../features/sitters/sitterApi";
-import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept } from "../lib/bookings";
+import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept, requestExpired } from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -16,13 +16,16 @@ type Badge = { label: string; tone: Tone };
 /** Status badges per side (phase-03b screens table). Text always says it — never color alone. */
 export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   if (b.status === "declined") return [{ label: "Declined", tone: "muted" }];
+  if (requestExpired(b)) return [{ label: "Expired — the times have passed", tone: "muted" }];
   if (b.status === "cancelled") {
     return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
   }
   if (b.status === "confirmed") {
+    // The booking row stays "confirmed" for life; what happened at the handoffs says where the stay is (FB-26).
+    if (b.pickUp?.completedAt) return [{ label: "Completed — pets home", tone: "success" }];
     const me = viewer === "owner" ? b.ownerId : b.sitterId;
     const open = [b.pending.drop_off, b.pending.pick_up].filter((p) => p !== null);
-    const badges: Badge[] = [{ label: "Confirmed", tone: "success" }];
+    const badges: Badge[] = [b.dropOff?.completedAt ? { label: "In care", tone: "success" } : { label: "Confirmed", tone: "success" }];
     if (open.some((p) => p.proposedBy !== me)) {
       badges.push({ label: `${viewer === "owner" ? b.sitterName : b.ownerName} suggested a change`, tone: "warning" });
     } else if (open.length > 0) {
@@ -55,7 +58,7 @@ export function placeLabel(type: LocationType, note: string | null, b: BookingSu
 }
 
 /**
- * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Lucy brings them home". House
+ * Who drives, per D28 (place = transport): "🚗 You drive · 🚙 Chloe brings them home". House
  * sitting has no drive — the sitter comes to the owner's home.
  */
 export function transportLine(b: BookingSummary, viewer: Viewer): string | null {

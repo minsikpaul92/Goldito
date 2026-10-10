@@ -13,12 +13,16 @@ const MESSAGES: Record<string, string> = {
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
   location_note_required: "Tell the sitter where to meet.",
   service_not_offered: "This sitter doesn't offer that service.",
+  rates_not_set: "This sitter hasn't set their prices yet, so there is nothing to pay. Ask them to add prices, then try again.",
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
   access_locked: "Entry info isn't available yet — or the stay has ended.",
   forbidden: "You can't view this entry info.",
   not_paid: "Addresses unlock after checkout.",
+  proposal_expired: "That time has already passed — suggest another time.",
+  request_expired: "This request's pick-up time has passed, so it can't be accepted.",
+  invalid_location: "House sitting happens at the owner's home.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -64,6 +68,12 @@ function asQuote(raw: unknown): PriceQuote {
   };
 }
 
+async function sitterHasRates(sitterId: string): Promise<boolean> {
+  const { data, error } = await getSupabase().from("sitter_rates").select("sitter_id").eq("sitter_id", sitterId).maybeSingle();
+  // If we can't tell, keep the old wording rather than blame the sitter.
+  return error != null || data != null;
+}
+
 /** Read-only quote for Checkout / inquiry card (same RPC Checkout freezes at pay). */
 export async function quoteBooking(input: {
   sitterId: string;
@@ -80,11 +90,11 @@ export async function quoteBooking(input: {
     p_pet_count: input.petCount,
   });
   if (error) {
-    throw new BookingError(
-      error.message,
-      bookingErrorMessage(error.message, "Couldn't load the price. Try again."),
-      error.details ?? null,
-    );
+    // quote_booking raises service_not_offered both for a service the sitter doesn't offer and for a
+    // sitter with no price row at all. The rates are readable by every signed-in user, so tell them apart.
+    let code = error.message;
+    if (code === "service_not_offered" && !(await sitterHasRates(input.sitterId))) code = "rates_not_set";
+    throw new BookingError(code, bookingErrorMessage(code, "Couldn't load the price. Try again."), error.details ?? null);
   }
   return asQuote(data);
 }
@@ -364,9 +374,12 @@ export type BookingSummary = {
   /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
   cancelledBy: string | null;
   cancelReason: string | null;
-  /** Set by pay_booking_demo (03C). Null until checkout finishes. */
+  /**
+   * Set by pay_booking_demo (03C). Null until checkout finishes — and again when an agreed change
+   * needs a new consent (009d); priceSnapshot then still holds the last paid quote.
+   */
   paidAt: string | null;
-  /** Quote frozen at demo pay — same shape as quote_booking. */
+  /** Quote frozen at demo pay, re-quoted when an agreed change moves the total (009d). */
   priceSnapshot: PriceQuote | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
   dropOff: Handoff | null;
@@ -392,7 +405,7 @@ export type MeetGreet = {
 
 export type OwnerBooking = BookingSummary;
 
-/** "You: 7:00 AM → Lucy: 8:30 AM → You: 8:00 AM" for a handoff with more than one offer. */
+/** "You: 7:00 AM → Chloe: 8:30 AM → You: 8:00 AM" for a handoff with more than one offer. */
 export function historyLine(b: BookingSummary, kind: HandoffKind, me: string, format: (iso: string) => string): string | null {
   const steps = b.history[kind];
   if (steps.length < 2) return null;
@@ -566,11 +579,27 @@ export async function getBooking(bookingId: string): Promise<BookingSummary | nu
   return toSummary(data as unknown as BookingRow, await getBookingPets(bookingId));
 }
 
+/** A request nobody answered before its pick-up time — it can't be accepted any more (009c). */
+export function requestExpired(b: BookingSummary, now: number = Date.now()): boolean {
+  return b.status === "requested" && !!b.pickUp && Date.parse(b.pickUp.at) <= now;
+}
+
 /** Requests · Upcoming · Past for the sitter's Bookings tab. */
 export function sitterBucket(b: BookingSummary): "requests" | "upcoming" | "past" {
-  if (b.status === "requested") return "requests";
+  if (b.status === "requested") return requestExpired(b) ? "past" : "requests";
   if (b.status === "confirmed" && !b.pickUp?.completedAt) return "upcoming";
   return "past";
+}
+
+const SOON_MS = 48 * 3_600_000;
+
+/** Which sitter segment to open on: a stay in care or starting within 48 h → Upcoming; else Requests if any; else Upcoming if any. */
+export function firstSitterBucket(bookings: BookingSummary[], now = Date.now()): "requests" | "upcoming" | "past" {
+  const upcoming = bookings.filter((b) => sitterBucket(b) === "upcoming");
+  const soon = upcoming.some((b) => !!b.dropOff && (!!b.dropOff.completedAt || Date.parse(b.dropOff.at) - now <= SOON_MS));
+  if (soon) return "upcoming";
+  if (bookings.some((b) => sitterBucket(b) === "requests")) return "requests";
+  return upcoming.length > 0 ? "upcoming" : "requests";
 }
 
 // ---------------------------------------------------------------------------

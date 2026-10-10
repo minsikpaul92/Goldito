@@ -1,4 +1,4 @@
-# PawNote — 개발 계획 (팀 내부용)
+# Goldito — 개발 계획 (팀 내부용)
 
 🇺🇸 English: [README.md](README.md) · 제품 소개: [../README.ko.md](../README.ko.md) · 해커톤 규정: [../hackathon/README.ko.md](../hackathon/README.ko.md) · **P0 Todo & AI 프롬프트:** [P0-ai-prompt-playbook.ko.md](P0-ai-prompt-playbook.ko.md) · **Phase별 Goal:** [phases/README.ko.md](phases/README.ko.md) · **진행 Todo:** [TODO.md](TODO.md) · **AI 규칙:** [CLAUDE.md](../../CLAUDE.md)
 
@@ -41,7 +41,7 @@
 
 구 P2 "AI 1차 답변 Q&A"는 Stage 1 문의 AI(07B, P0)로 흡수되었습니다.
 
-데모 기준: README의 **5단계 흐름**(*How PawNote Works* → *A Stay with PawNote*)이 처음부터 끝까지 동작해야 합니다.
+데모 기준: README의 **5단계 흐름**(*How Goldito Works* → *A Stay with Goldito*)이 처음부터 끝까지 동작해야 합니다.
 
 해커톤 이후 (우선순위 마지막): **시터 전용 데스크톱 웹** — 스케줄 작성·알림장 작업을 컴퓨터에서 빠르게 (사이드바 레이아웃). 견주는 계속 폰 화면. 전체 로드맵은 [README.md](README.md#post-hackathon-roadmap-not-built-for-the-hackathon), 설계 대비는 architecture D25.
 
@@ -52,7 +52,7 @@
 | 이름 | 역할 | 할 일 |
 | :--- | :--- | :--- |
 | **민식** | 풀스택 리드 | Expo 앱, FastAPI, Supabase 스키마/인증/실시간, Cloudinary 업로드, 알림·스케줄러, 배포, **Devpost 대표 제출자** |
-| **슬기** | AI & 프롬프트 | **데이터 익명화**, Few-shot 프롬프트, Token Factory Nemotron 파이프라인, 캡션/알림장/안전 프롬프트, JSON 검증, Tavily 연동 |
+| **슬기** | 품질 · 데이터 · QA (2026-10-09부터 [Phase Q](phases/phase-q.md)) | 시터 3년 경험으로 **손 테스트 · 흐름 · 문구 검수**, **데이터 익명화**, 문의 답장 · 알림장 **말투 데이터** · **프롬프트 엔지니어링 + RAG 우선 답변**, AI 품질 리뷰 항목(R3 Medium) · 측정 |
 | **묵** | 프로덕트 & UX/UI | 피그마 디자인 시스템(Auto Layout, 토큰), 견주·펫시터 화면 흐름, 피드/앨범, 경고 모달, 공지 팝업, 데모 영상 비주얼 |
 
 - **묵 님께:** 컴포넌트를 Auto Layout과 토큰 기반으로 잡아주시면 Figma MCP 코드 변환 품질이 올라갑니다. **디자인은 심사 기준의 1/4**이에요. 키즈노트 수준의 완성도를 목표로 해주세요.
@@ -70,6 +70,15 @@
 | **3. 단계 ④** | 10/12 – 10/18 | Trip 화면·지도, 앨범, 마이크로 인터랙션 | 7.2 알림장 · 7.7 칩 제안, 9.1 캡션·분류 | 06, 07, 배포 리허설(10/18) |
 | **4. 단계 ⑤ + 이동 + 데모** | 10/19 – 10/25 | 영상 비주얼, 썸네일, Life Record 화면 | 7C.4 Life Record, 6B.5 인계 사진 체크(마지막 — D41), 프롬프트 튜닝, 피드백 정리 · (stretch) 08 세이프티 | 07B UI, 09, 07C, **06B**(P0 맨 마지막 — D41, 10/27까지), (stretch 08), README, 테스트 계정, Devpost 초안 |
 | **5. 제출** | 10/26 – 10/30 | 최종 폴리싱 | 최종 피드백 | 버그 수정 · **내부 마감 10/28** · 10/29–10/30 최종 Submit (마감 10/30 10:00 AM PT) |
+
+> **2026-10-09 다시 짠 일정 (위 표보다 우선):** 실제로는 03B~07C · 09가 10/9까지 끝났고(#55~#60), AI 백엔드는 10/4부터 민식이 맡았습니다. 남은 3주는 [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) §5를 따릅니다.
+>
+> | 기간 | 민식 (급함) | 슬기 ([Phase Q](phases/phase-q.md)) |
+> | :--- | :--- | :--- |
+> | 10/9 – 10/11 | U0 백엔드 배포 ✅ (Render) → CW-1 → R1b 문의 AI 안전(RV-1~5) | Q.0 · Q.1 Vercel에서 전체 손 테스트 · 피드백 |
+> | 10/12 – 10/17 | 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터 → Q.4b 프롬프트 · RAG 우선 |
+> | 10/18 – 10/26 | R2 예약 흐름 · 데모 경로 버그 | Q.5 · Q.6 R3 Medium · Q.7 평가 |
+> | 10/27 – 10/30 | 10 고정 데모 계정 · README · 영상 · Devpost → 제출 | Q.8 최종 QA |
 
 ---
 
@@ -147,7 +156,7 @@
 
 ### D. 문의 자동 답장 (Nano + RAG) — Stage 1, Phase 07B
 - 입력: 서버가 모은 JSON뿐 — 시터 가능 여부, `quote_booking` 결과, 반려동물 프로필, 시터 공개 프로필, RAG 상위 5개(시터 정책·Life Record·지난 문의·케어 의뢰서)
-- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Lucy will confirm" + `needs_sitter`
+- 출력 JSON `{reply, can_host, needs_sitter, used_sources}`. 가격은 계산하지 않고 견적을 그대로 사용, 다른 견주·주소·출입 코드 언급 금지. 불확실하면 "Chloe will confirm" + `needs_sitter`
 - 시터 1인칭 말투 초안(D35) → 시터가 **Send** / Edit / Regenerate로 승인(D36). 자동 발송은 시터가 켜는 옵션 + 사람 속도(D37)
 
 ### E. 케어 플랜 (Super) — Stage 2, Phase 06
@@ -169,7 +178,6 @@
 - 데모용 사진 속 사람 얼굴 제거
 - **말투**(호칭, 이모지, 문장 스타일)는 유지 — 그게 핵심 가치
 - 원본 데이터는 **리포에 올리지 않기** (`data/raw/`를 `.gitignore`에), 익명화된 Few-shot 샘플만 커밋
-- (선택) 익명화 배치를 **Nebius Serverless Jobs**로 실행 → Nebius 서비스 활용 포인트 추가
 
 ---
 
@@ -195,7 +203,7 @@
 
 - **웹 데모:** Supabase Realtime → 인앱 알림 센터 + 토스트
 - **모바일 (해커톤 이후):** Expo Notifications (푸시)
-- **예약 리마인더:** (stretch 6.7) Nebius Serverless Jobs 또는 APScheduler
+- **예약 리마인더:** (stretch 6.7) APScheduler (Nebius AI Cloud는 안 씀, D18)
 - 시터 스케줄 변경은 알림을 만들지 않음 (D24)
 
 ---
@@ -240,7 +248,7 @@ Devpost 제출 필수 항목이자 최우수 피드백 상 대상. 개발하면�
 ## 14. 결정 필요
 
 - [x] 데모 언어: **영어 전용** (UI + AI 출력) — 2026-09-29 확정 ([architecture D1](phases/architecture.ko.md#1-결정-로그-확정))
-- [x] 백엔드 API: **Nebius AI Cloud Serverless Endpoint** (정식), Render는 긴급 fallback만 — 2026-09-29 (D18)
+- [x] ~~백엔드 API: Nebius AI Cloud Serverless Endpoint (정식), Render는 긴급 fallback만 — 2026-09-29~~ → **백엔드 API: Render (무료, Docker), Nebius AI Cloud는 안 씀** — 2026-10-09 (D18 — 카드 + $25 선결제 · 행사 크레딧 없음. AI는 Token Factory 그대로. Render 무료는 15분 무요청 시 잠들어 10분마다 핑)
 - [x] Builders & Brews Toronto 참석 — Token Factory $100, AI Cloud $100, Tavily 8k credits
 - [x] Few-shot 원본 언어: **영어** (익명화만) — 2026-09-29 ([D1](phases/architecture.ko.md#1-결정-로그-확정))
 - [x] Few-shot 샘플 규모 → D35 말투 레이어로 대체: 같은 시터의 `tone_samples` top-k, 없을 때만 기본 3편 (2026-10-02)

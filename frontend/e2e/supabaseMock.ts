@@ -18,28 +18,35 @@ export type MockUser = {
 
 export const OWNER: MockUser = {
   id: "00000000-0000-4000-8000-000000000001",
-  email: "owner@pawnote.test",
+  email: "owner@goldito.test",
   password: "max-and-mochi",
   role: "owner",
-  displayName: "Chloe",
+  displayName: "Robert",
 };
 
 export const SITTER: MockUser = {
   id: "00000000-0000-4000-8000-000000000002",
-  email: "sitter@pawnote.test",
+  email: "sitter@goldito.test",
   password: "care-snap-tap",
   role: "sitter",
-  displayName: "Lucy",
+  displayName: "Chloe",
 };
+
+// "Now" for the mock's own rules and timestamps: the real clock, or the fixed time a test passes to
+// mockSupabase({ now }) so it matches the browser clock (page.clock) the test installs.
+let fixedNow: number | null = null;
+function nowMs(): number {
+  return fixedNow ?? Date.now();
+}
 
 function base64url(value: object): string {
   return btoa(JSON.stringify(value)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function sessionFor(user: MockUser) {
-  const now = Math.floor(Date.now() / 1000);
+  const now = Math.floor(nowMs() / 1000);
   const claims = { sub: user.id, email: user.email, role: "authenticated", aud: "authenticated", iat: now, exp: now + 3600 };
-  const timestamp = new Date().toISOString();
+  const timestamp = new Date(nowMs()).toISOString();
   return {
     access_token: `${base64url({ alg: "HS256", typ: "JWT" })}.${base64url(claims)}.e2e-signature`,
     token_type: "bearer",
@@ -64,7 +71,8 @@ function json(route: Route, status: number, body: unknown) {
   return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 }
 
-export async function mockSupabase(page: Page, initialUsers: MockUser[]) {
+export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date } = {}) {
+  fixedNow = options.now ? options.now.getTime() : null;
   // Copies, so a test that edits a user (e.g. display name) never leaks into the next one.
   const users = initialUsers.map((user) => ({ ...user }));
   const signups: { email: string; role: string; display_name: string }[] = [];
@@ -182,6 +190,21 @@ export type MockDb = {
   /** Feed posts + media rows (Phase 05 upload path). */
   feed_posts: Row[];
   media: Row[];
+  /** AI drafts (private to the sitter) and sent reports (Phase 07). */
+  daily_reports: Row[];
+  /** Inquiries and their thread (Phase 07B). */
+  inquiries: Row[];
+  inquiry_messages: Row[];
+  /** Reviews of finished stays (Phase 07C). */
+  reviews: Row[];
+  sitter_owner_notes: Row[];
+  owner_favorite_sitters: Row[];
+  /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
+  pet_life_records: Row[];
+  /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
+  sitter_rates: Row[];
+  /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
+  quote_error: string | null;
 };
 
 const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
@@ -224,6 +247,15 @@ function createMockDb(): MockDb {
     notifications: [],
     feed_posts: [],
     media: [],
+    daily_reports: [],
+    inquiries: [],
+    inquiry_messages: [],
+    reviews: [],
+    sitter_owner_notes: [],
+    owner_favorite_sitters: [],
+    pet_life_records: [],
+    sitter_rates: [],
+    quote_error: null,
   };
 }
 
@@ -346,9 +378,9 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
 
   if (fn === "get_meet_greet_options") {
     return json(route, 200, {
-      owner_name: "Chloe",
+      owner_name: "Robert",
       owner_spots: db.owner_profiles.find((p) => p.id === b.owner_id)?.meet_spots ?? [],
-      sitter_name: "Lucy",
+      sitter_name: "Chloe",
       sitter_spots: db.sitter_profiles.find((p) => p.id === b.sitter_id)?.meet_spots ?? [],
     });
   }
@@ -360,7 +392,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     case "propose_meet_greet": {
       if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
       if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
-      if (Date.parse(String(args.p_at)) <= Date.now()) return fail("invalid_window");
+      if (Date.parse(String(args.p_at)) <= nowMs()) return fail("invalid_window");
       Object.assign(b, {
         meet_greet_status: "proposed",
         meet_greet_mode: args.p_mode,
@@ -388,7 +420,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     }
     case "complete_meet_greet": {
       if (status !== "agreed") return fail("invalid_status");
-      if (Date.now() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
+      if (nowMs() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
       b.meet_greet_status = "done";
       return done();
     }
@@ -418,6 +450,8 @@ function matches(row: Row, params: URLSearchParams): boolean {
       if (!(String(row[key]) <= raw.slice(4))) return false;
     } else if (raw.startsWith("gte.")) {
       if (!(String(row[key]) >= raw.slice(4))) return false;
+    } else if (raw.startsWith("lt.")) {
+      if (!(String(row[key]) < raw.slice(3))) return false;
     } else if (raw.startsWith("in.(")) {
       const values = raw.slice(4, -1).split(",").map((v) => v.replace(/^"|"$/g, ""));
       if (!values.includes(String(row[key]))) return false;
@@ -428,6 +462,19 @@ function matches(row: Row, params: URLSearchParams): boolean {
     }
   }
   return true;
+}
+
+/** The 010 RLS for inquiry_messages. */
+function inquiryMessageVisible(db: MockDb, row: Row, me: string | null): boolean {
+  const inquiry = db.inquiries.find((i) => i.id === row.inquiry_id);
+  if (!inquiry) return false;
+  if (inquiry.sitter_id === me) return true;
+  return (
+    inquiry.owner_id === me &&
+    (row.author === "owner" || row.author === "sitter") &&
+    (row.status ?? "sent") === "sent" &&
+    Date.parse(String(row.visible_at ?? row.created_at ?? 0)) <= Date.now()
+  );
 }
 
 /** Same as the SQL `pet_has_open_stay`. */
@@ -455,7 +502,7 @@ function applyChangeRequest(db: MockDb, req: Row) {
       notes: t.notes ?? null,
       repeat_daily: t.repeat ?? true,
       active: true,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
   });
   for (const text of req.cautions as string[]) {
@@ -543,7 +590,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const forced = db.search_results.find((r) => r.sitter_id === args.p_sitter)?.request_error;
     if (forced) return json(route, 400, { code: "P0001", message: forced, details: null });
     const id = crypto.randomUUID();
-    const created = new Date().toISOString();
+    const created = new Date(nowMs()).toISOString();
     db.bookings.push({
       id,
       owner_id: me,
@@ -629,7 +676,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       status: "proposed",
       proposed_by: me,
       completed_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
   }
@@ -651,11 +698,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const h = agreed(p_kind);
     if (!h) return fail("handoff_missing");
     if (h.completed_at) return fail("handoff_completed");
-    if (p_kind === "drop_off" && Date.now() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
+    if (p_kind === "drop_off" && nowMs() < Date.parse(String(h.scheduled_at)) - 2 * 3_600_000) {
       return fail("handoff_too_early");
     }
     if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
-    h.completed_at = new Date().toISOString();
+    h.completed_at = new Date(nowMs()).toISOString();
     return route.fulfill({ status: 204 });
   }
 
@@ -683,11 +730,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/get_handoff_details") {
-    // Agreed handoffs with the real address after demo pay (3C.4), confirmed only.
+    // Agreed handoffs with the real address after demo pay (3C.4), confirmed only. Paid once is enough —
+    // a checkout reopened by an agreed change keeps them (009e).
     const { p_booking } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
     if (!booking || booking.status !== "confirmed") return json(route, 400, { code: "P0001", message: "invalid_status" });
-    if (!booking.paid_at) return json(route, 400, { code: "P0001", message: "not_paid" });
+    if (!booking.paid_at && !booking.price_snapshot) return json(route, 400, { code: "P0001", message: "not_paid" });
     const sitter = db.sitter_profiles.find((p) => p.id === booking.sitter_id);
     const address = (h: Row) =>
       h.location_type === "sitter_home"
@@ -727,6 +775,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/quote_booking") {
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: null });
     return json(route, 200, DEMO_QUOTE);
   }
 
@@ -753,7 +802,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     );
     const missing = required.filter((k) => !signed.has(k));
     if (missing.length > 0) return fail("consents_missing", missing.join(","));
-    booking.paid_at = new Date().toISOString();
+    booking.paid_at = new Date(nowMs()).toISOString();
     booking.price_snapshot = DEMO_QUOTE;
     return json(route, 200, DEMO_QUOTE);
   }
@@ -772,7 +821,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           status: "pending",
           completed_at: null,
           media_id: null,
-          created_at: new Date().toISOString(),
+          created_at: new Date(nowMs()).toISOString(),
         });
       }
     }
@@ -810,7 +859,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         repeat_daily: true,
         active: true,
         request_id: id,
-        created_at: new Date().toISOString(),
+        created_at: new Date(nowMs()).toISOString(),
       });
     }
     for (const text of p_cautions as string[]) {
@@ -844,7 +893,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       tasks: p_tasks,
       cautions: p_cautions,
       decline_reason: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     db.notifications.push({
       id: crypto.randomUUID(),
@@ -856,7 +905,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: booking.id,
       ref_id: id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
   }
@@ -879,7 +928,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
   }
@@ -902,7 +951,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
   }
@@ -924,9 +973,146 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: req.booking_id,
       ref_id: req.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, req);
+  }
+
+  if (path === "rpc/send_daily_report") {
+    const { p_report, p_body } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report || report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (report.status !== "draft") return json(route, 400, { code: "P0001", message: "report_already_sent" });
+    if (!String(p_body ?? "").trim()) return json(route, 400, { code: "P0001", message: "body_required" });
+    Object.assign(report, { body: String(p_body).trim(), status: "sent", sent_at: new Date(nowMs()).toISOString() });
+    const pet = db.pets.find((p) => p.id === report.pet_id);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: pet?.owner_id,
+      type: "report_sent",
+      title: `${users.find((u) => u.id === me)?.displayName} sent ${pet?.name}'s daily report 📓`,
+      body: String(p_body).trim().slice(0, 140),
+      pet_id: report.pet_id,
+      booking_id: null,
+      ref_id: report.id,
+      read_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+    });
+    return json(route, 200, report);
+  }
+
+  if (path === "rpc/submit_review") {
+    // 011: only the booking's owner, only after Returned, ★1–5, once.
+    const { p_booking, p_rating, p_comment } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    if (!booking || booking.owner_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    const returned = db.booking_handoffs.some((h) => h.booking_id === p_booking && h.kind === "pick_up" && h.completed_at);
+    if (booking.status !== "confirmed" || !returned) return json(route, 400, { code: "P0001", message: "stay_not_finished" });
+    if (!(p_rating >= 1 && p_rating <= 5)) return json(route, 400, { code: "P0001", message: "invalid_rating" });
+    if (db.reviews.some((r) => r.booking_id === p_booking)) return json(route, 400, { code: "P0001", message: "already_reviewed" });
+    const row = {
+      id: crypto.randomUUID(), booking_id: p_booking, owner_id: me, sitter_id: booking.sitter_id, rating: p_rating,
+      comment: String(p_comment ?? "").trim() || null, created_at: new Date().toISOString(),
+    };
+    db.reviews.push(row);
+    db.notifications.push({
+      id: crypto.randomUUID(), user_id: booking.sitter_id, type: "review_received", title: "review", body: row.comment,
+      pet_id: null, booking_id: p_booking, ref_id: row.id, read_at: null, created_at: row.created_at,
+    });
+    return json(route, 200, row);
+  }
+
+  if (path === "rpc/save_owner_note") {
+    // 011g: the stay's sitter, after Returned, ★1–5; one note per booking, saving again edits it; nobody is told.
+    const { p_booking, p_rating, p_comment } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    if (!booking || booking.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    const returned = db.booking_handoffs.some((h) => h.booking_id === p_booking && h.kind === "pick_up" && h.completed_at);
+    if (booking.status !== "confirmed" || !returned) return json(route, 400, { code: "P0001", message: "stay_not_finished" });
+    if (!(p_rating >= 1 && p_rating <= 5)) return json(route, 400, { code: "P0001", message: "invalid_rating" });
+    const comment = String(p_comment ?? "").trim() || null;
+    const now = new Date().toISOString();
+    let row = db.sitter_owner_notes.find((n) => n.booking_id === p_booking);
+    if (row) Object.assign(row, { rating: p_rating, comment, updated_at: now });
+    else {
+      row = { id: crypto.randomUUID(), booking_id: p_booking, sitter_id: me, owner_id: booking.owner_id, rating: p_rating, comment, created_at: now, updated_at: now };
+      db.sitter_owner_notes.push(row);
+    }
+    return json(route, 200, row);
+  }
+
+  if (path === "rpc/sitter_rating_summary") {
+    const { p_sitter } = request.postDataJSON();
+    const mine = db.reviews.filter((r) => r.sitter_id === p_sitter);
+    const avg = mine.length ? Math.round((mine.reduce((n, r) => n + Number(r.rating), 0) / mine.length) * 10) / 10 : null;
+    const recent = mine
+      .filter((r) => r.comment)
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+      .slice(0, 3)
+      .map((r) => ({
+        rating: r.rating, comment: r.comment, created_at: r.created_at,
+        reviewer: (users.find((u) => u.id === r.owner_id)?.displayName ?? "An owner").split(" ")[0],
+      }));
+    return json(route, 200, { avg, count: mine.length, recent });
+  }
+
+  if (path === "rpc/send_inquiry_reply") {
+    // 010b: only the thread's sitter; quote / sources / can_host are copied from the draft, nothing else.
+    const { p_inquiry, p_body, p_draft } = request.postDataJSON();
+    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
+    if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    const body = String(p_body ?? "").trim();
+    if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
+    let grounding: Row | null = null;
+    if (p_draft) {
+      const draft = db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai");
+      if (!draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+      const g = (draft.grounding ?? {}) as Row;
+      grounding = { quote: g.quote ?? null, sources: g.sources ?? [], availability: { can_host: (g.availability as Row | undefined)?.can_host ?? true } };
+    }
+    const row = {
+      id: crypto.randomUUID(),
+      inquiry_id: p_inquiry,
+      author: "sitter",
+      sender_id: me,
+      body,
+      grounding,
+      drafted_by_ai: !!p_draft,
+      status: "sent",
+      confirmed_by_sitter_at: new Date().toISOString(),
+      visible_at: new Date().toISOString(),
+      read_at: null,
+      created_at: new Date().toISOString(),
+    };
+    db.inquiry_messages.push(row);
+    db.notifications.push({
+      id: crypto.randomUUID(), user_id: inquiry.owner_id, type: "inquiry_replied", title: "reply", body: body.slice(0, 140),
+      pet_id: null, booking_id: null, ref_id: p_inquiry, read_at: null, created_at: row.created_at,
+    });
+    return json(route, 200, row);
+  }
+
+  if (path === "rpc/get_my_ai_reply_mode" || path === "rpc/set_ai_reply_mode") {
+    const profile = db.sitter_profiles.find((p) => p.id === me);
+    if (!profile) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (path === "rpc/set_ai_reply_mode") {
+      const { p_mode, p_consent } = request.postDataJSON();
+      if (p_mode === "auto" && !p_consent && !profile.ai_consent_at) return json(route, 400, { code: "P0001", message: "consent_required" });
+      profile.ai_reply_mode = p_mode;
+      if (p_mode === "auto" && p_consent) profile.ai_consent_at = new Date().toISOString();
+    }
+    return json(route, 200, { mode: profile.ai_reply_mode ?? "manual", consented: !!profile.ai_consent_at });
+  }
+
+  if (path === "rpc/mark_inquiry_read") {
+    const { p_inquiry } = request.postDataJSON();
+    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
+    if (inquiry?.sitter_id === me) {
+      for (const m of db.inquiry_messages) {
+        if (m.inquiry_id === p_inquiry && m.author === "owner" && !m.read_at) m.read_at = new Date().toISOString();
+      }
+    }
+    return route.fulfill({ status: 204 });
   }
 
   if (path === "rpc/log_care_checkin") {
@@ -945,7 +1131,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       value: p_kind === "note" ? null : p_value,
       note_text: note,
       media_id: p_media_id,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     };
     db.care_checkins.push(row);
     // Same rule as the SQL: preset line, or only the typed memo.
@@ -974,7 +1160,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (log.status === "done") return json(route, 400, { code: "P0001", message: "already_done" });
     Object.assign(log, {
       status: "done",
-      completed_at: new Date().toISOString(),
+      completed_at: new Date(nowMs()).toISOString(),
       completed_by: me,
       media_id: p_media_id,
       note_text: note,
@@ -991,7 +1177,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       booking_id: null,
       ref_id: log.id,
       read_at: null,
-      created_at: new Date().toISOString(),
+      created_at: new Date(nowMs()).toISOString(),
     });
     if (p_media_id) {
       db.feed_posts.push({
@@ -1004,7 +1190,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         caption: note ?? `${task?.title} — done`,
         caption_source: "task",
         task_log_id: log.id,
-        created_at: new Date().toISOString(),
+        created_at: new Date(nowMs()).toISOString(),
       });
     }
     return json(route, 200, log);
@@ -1029,8 +1215,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         h.status === "agreed" &&
         (booking.service_type === "house_sitting" || h.location_type === "owner_home"),
     );
-    const unlockAt = drop ? Date.parse(String(drop.scheduled_at)) - 2 * 3_600_000 : Date.now();
-    if (Date.now() < unlockAt) {
+    const unlockAt = drop ? Date.parse(String(drop.scheduled_at)) - 2 * 3_600_000 : nowMs();
+    if (nowMs() < unlockAt) {
       return fail("access_locked", JSON.stringify({ unlocks_at: new Date(unlockAt).toISOString() }));
     }
     const access = db.owner_home_access.find((r) => r.owner_id === booking.owner_id);
@@ -1041,7 +1227,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         buzzer: access?.buzzer ?? null,
         fob_notes: access?.fob_notes ?? null,
         sitter_parking: access?.sitter_parking ?? null,
-        first_revealed_at: new Date().toISOString(),
+        first_revealed_at: new Date(nowMs()).toISOString(),
       },
     ]);
   }
@@ -1067,9 +1253,30 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     let rows = table.filter(
       (row) =>
         matches(row, params) &&
-        (path !== "notifications" || row.user_id === me) &&
+        (path !== "notifications" || (row.user_id === me && (row.visible_at == null || Date.parse(String(row.visible_at)) <= Date.now()))) &&
         // RLS: a private post is only visible to its author (5.8).
-        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private"),
+        (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
+        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
+        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent") &&
+        // RLS: a party sees their own inquiries; the owner never sees an AI draft or an unsent / not-yet-visible reply (010).
+        (path !== "inquiries" || row.owner_id === me || row.sitter_id === me) &&
+        // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
+        (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
+        // RLS (011g): the sitter's note about an owner is the sitter's alone.
+        (path !== "sitter_owner_notes" || row.sitter_id === me) &&
+        // RLS (011h): an owner's favorites are theirs alone.
+        (path !== "owner_favorite_sitters" || row.owner_id === me) &&
+        // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
+        // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
+        (path !== "pet_life_records" ||
+          db.pets.some((p) => p.id === row.pet_id && p.owner_id === me) ||
+          db.bookings.some(
+            (b) =>
+              b.sitter_id === me &&
+              (b.status === "requested" || b.status === "confirmed") &&
+              db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === row.pet_id),
+          )) &&
+        (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -1137,6 +1344,20 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
+    if (path === "inquiries" && select.includes("sitter:profiles")) {
+      const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
+      rows = rows.map((r) => ({ ...r, sitter: name(r.sitter_id), owner: name(r.owner_id) }));
+    }
+    if (path === "pet_life_records" && select.includes("sitter:profiles")) {
+      rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
+    if (path === "daily_reports" && select.includes("pets(")) {
+      rows = rows.map((r) => ({
+        ...r,
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
+      }));
+    }
     if (path === "care_change_requests") {
       rows = rows
         .filter((r) => r.requested_by === me || r.sitter_id === me)
@@ -1172,9 +1393,14 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
+    }
+    // Reads ordered by a report's sent time (Stay summary).
+    if ((params.get("order") ?? "").startsWith("sent_at")) {
+      rows = [...rows].sort((a, b) => String(a.sent_at).localeCompare(String(b.sent_at)));
+      if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
     const wantsCount = (headers.prefer ?? "").includes("count=");
     return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
@@ -1184,17 +1410,25 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const body = request.postDataJSON();
     const inserted: Row[] = (Array.isArray(body) ? body : [body]).map((row: Row): Row => ({
       id: crypto.randomUUID(),
-      created_at: new Date().toISOString(),
-      ...(path === "booking_consents" ? { signed_at: new Date().toISOString() } : {}),
+      created_at: new Date(nowMs()).toISOString(),
+      ...(path === "booking_consents" ? { signed_at: new Date(nowMs()).toISOString() } : {}),
       ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...(path === "pet_cautions" ? { active: true } : {}),
+      // Column defaults of 010.
+      ...(path === "inquiries" ? { status: "open", booking_id: null } : {}),
+      ...(path === "inquiry_messages" ? { status: "sent", visible_at: new Date().toISOString(), read_at: null } : {}),
+      // 011h: owner_id defaults to the caller.
+      ...(path === "owner_favorite_sitters" ? { owner_id: me } : {}),
       ...row,
     }));
     if (path === "booking_consents") {
       for (const row of inserted) {
         const dupe = db.booking_consents.some((c) => c.booking_id === row.booking_id && c.kind === row.kind);
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
-        if (row.signer_id !== me) {
+        // 009d: the owner signs at checkout only — confirmed, not paid yet, a kind the booking requires.
+        const booking = db.bookings.find((b) => b.id === row.booking_id);
+        const open = !!booking && booking.owner_id === me && booking.status === "confirmed" && !booking.paid_at;
+        if (row.signer_id !== me || !open || !requiredKinds(db, String(row.booking_id)).includes(String(row.kind))) {
           return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
         }
       }

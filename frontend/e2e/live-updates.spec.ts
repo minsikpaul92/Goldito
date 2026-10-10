@@ -30,7 +30,7 @@ async function ownerHome(page: import("@playwright/test").Page) {
   n(2, "care_checkin", "Max ate a little 🍽️", 40);
   db.notifications[db.notifications.length - 1].body = "Left the chicken bits";
   n(3, "feed_post", "New photo of Max 📸", 30);
-  n(4, "booking_confirmed", "Lucy confirmed your booking", 20); // not part of the live stream
+  n(4, "booking_confirmed", "Chloe confirmed your booking", 20); // not part of the live stream
   n(5, "care_checkin", "Max seems calm 😊", 10);
   // The record the notices point at stays in History whatever happens to them.
   db.care_checkins.push({ id: "c-mood", pet_id: MAX, created_by: SITTER.id, kind: "mood", value: "calm", note_text: null, media_id: null, created_at: ago(10) });
@@ -99,7 +99,7 @@ test.describe("owner live updates", () => {
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
 
-  test("with nothing new Home says so; the Diary tab waits for the sitter's written diary", async ({ page }) => {
+  test("with nothing new Home says so; the Diary tab waits for the sitter's daily note", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" });
     await signIn(page, OWNER);
@@ -107,7 +107,7 @@ test.describe("owner live updates", () => {
     await expect(app(page).getByTestId("live-empty")).toContainText("Nothing new");
 
     await page.goto("/owner/diary");
-    await expect(app(page).getByText("When your sitter writes up the day", { exact: false })).toBeVisible();
+    await expect(app(page).getByText("When a stay is on, updates show up here live", { exact: false })).toBeVisible();
     await app(page).getByRole("button", { name: "Open History" }).click();
     await expect(page).toHaveURL(/\/owner\/history(\?pet=.*)?$/);
   });
@@ -119,7 +119,7 @@ test.describe("owner live updates", () => {
       { id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" },
       { id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" },
     );
-    db.media.push({ id: "m-nap", pet_id: MOCHI, cloudinary_public_id: `pawnote/${MOCHI}/task_proof/m-nap`, resource_type: "image", purpose: "task_proof" });
+    db.media.push({ id: "m-nap", pet_id: MOCHI, cloudinary_public_id: `goldito/${MOCHI}/task_proof/m-nap`, resource_type: "image", purpose: "task_proof" });
     db.care_tasks.push({ id: "t-nap", pet_id: MOCHI, type: "sleep", title: "Nap", scheduled_time: "13:00:00", active: true });
     db.task_logs.push({ id: "l-nap", task_id: "t-nap", pet_id: MOCHI, due_at: ago(30), status: "done", completed_at: ago(20), completed_by: SITTER.id, media_id: "m-nap" });
     const base = { user_id: OWNER.id, pet_id: MOCHI, booking_id: null, read_at: null };
@@ -155,6 +155,37 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("in-care-Max")).toContainText("with ");
     await expect(screen.getByTestId("in-care-Max")).toContainText("until");
     await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
+  });
+
+  test("a sent daily report is a live update too, and opens the report (FB-21)", async ({ page }) => {
+    const db = await ownerHome(page);
+    db.daily_reports.push({ id: "r-max", pet_id: MAX, sitter_id: SITTER.id, report_date: "2026-10-09", body: "Max had a lovely day.", status: "sent", source_snapshot: null, created_at: ago(1), sent_at: ago(1) });
+    db.notifications.push({ id: nid(6), user_id: OWNER.id, type: "report_sent", title: "Max's daily report is here 📓", body: null, pet_id: MAX, booking_id: null, ref_id: "r-max", read_at: null, created_at: ago(1) });
+    await page.reload();
+    const screen = app(page);
+    await expect(screen.getByTestId(`live-${nid(6)}`)).toContainText("Max's daily report is here");
+    await screen.getByTestId(`live-${nid(6)}`).click();
+    await expect(page).toHaveURL(/\/owner\/diary\/r-max/);
+  });
+
+  test("after Returned, Home keeps asking for a review until the stay is reviewed (FB-24)", async ({ page }) => {
+    const db = await ownerHome(page);
+    db.notifications.push({ id: nid(7), user_id: OWNER.id, type: "review_requested", title: "Thanks for trusting Chloe! How was Max's stay? ⭐", body: null, pet_id: MAX, booking_id: "b-done", ref_id: null, read_at: null, created_at: ago(1) });
+    await page.reload();
+    const screen = app(page);
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toContainText("How was Max's stay?");
+    await screen.getByTestId(`live-${nid(7)}`).click();
+    await expect(page).toHaveURL(/\/owner\/bookings\/b-done/);
+
+    // Opened but not reviewed yet: it stays on Home.
+    await page.goto("/owner");
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toBeVisible();
+
+    // Reviewed: it leaves Home.
+    db.reviews.push({ id: "rv1", booking_id: "b-done", owner_id: OWNER.id, sitter_id: SITTER.id, rating: 5, comment: null, created_at: ago(0) });
+    await page.reload();
+    await screen.getByTestId("live-updates").waitFor();
+    await expect(screen.getByTestId(`live-${nid(7)}`)).toHaveCount(0);
   });
 
   test("an update you opened leaves Home (it stays in the notification list and History)", async ({ page }) => {

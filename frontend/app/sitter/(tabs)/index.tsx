@@ -14,6 +14,7 @@ import { appToday, formatInstant, formatTime, isoToZoned } from "../../../featur
 import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type State =
@@ -44,6 +45,8 @@ export default function SitterHome() {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [sitterId]);
+
+  useOnBookingChange(() => void load());
 
   useFocusEffect(
     useCallback(() => {

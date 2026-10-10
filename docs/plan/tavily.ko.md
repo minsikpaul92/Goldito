@@ -1,4 +1,4 @@
-# Tavily — PawNote에서 쓰는 방법
+# Tavily — Goldito에서 쓰는 방법
 
 ## Tavily가 뭐야?
 
@@ -9,11 +9,11 @@
 | 링크 목록 위주 | LLM이 바로 읽을 **정리된 본문** + (선택) **짧은 답변** |
 | 앱이 직접 크롤링·파싱 | 검색·추출을 API 한 번에 |
 
-PawNote에서는 **Nemotron(고정된 학습 지식)** 만으로는 모르는 **최신 정보**를 가져올 때 씁니다.
+Goldito에서는 **Nemotron(고정된 학습 지식)** 만으로는 모르는 **최신 정보**를 가져올 때 씁니다.
 
 ---
 
-## PawNote에서 어디에 쓰나?
+## Goldito에서 어디에 쓰나?
 
 **간식 세이프티 가드** — [Phase 08.7](phases/phase-08.md) (stretch, 8.1–8.6 끝나면 바로). Phase 08 자체가 시나리오 코어(03B–07C) 뒤 P0 stretch (D27). 못 하면 Phase 11.3:
 
@@ -74,4 +74,4 @@ res = client.search(
 ## Supabase / Cloudinary / Nebius와 관계
 
 - **Tavily는 DB·사진 저장을 대체하지 않습니다.**
-- **Supabase** · **Cloudinary** · **Nebius AI Cloud(API 서버)** 그대로 두고, Tavily는 **안전 검사 단계의 웹 검색**만 담당합니다.
+- **Supabase** · **Cloudinary** · **Render(API 서버)** 그대로 두고, Tavily는 **안전 검사 단계의 웹 검색**만 담당합니다.

@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { InquirySheet } from "../../../components/InquirySheet";
 import { STATE_LABEL, SlotCalendar } from "../../../components/SlotCalendar";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -9,9 +10,19 @@ import { Chip } from "../../../components/ui/Chip";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
+import { StarRating } from "../../../components/StarRating";
+import { RatingSummary, getRatingSummary } from "../../../features/completion/completionApi";
 import { addMonths, appToday, formatDay, formatTime, monthEnd, monthStart } from "../../../features/schedule/dates";
 import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../features/schedule/scheduleApi";
-import { SERVICE_LABEL, SitterProfileView, getSitterProfile, sitterMeta } from "../../../features/sitters/sitterApi";
+import {
+  SERVICE_LABEL,
+  SitterProfileView,
+  getSitterProfile,
+  listFavoriteSitterIds,
+  setFavoriteSitter,
+  sitterMeta,
+} from "../../../features/sitters/sitterApi";
+import { TextButton } from "../../../components/ui/TextButton";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -44,6 +55,25 @@ export default function SitterProfileScreen() {
   const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [day, setDay] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [rating, setRating] = useState<RatingSummary | null>(null);
+  /** Mine only (011h): favorites come first when I book. */
+  const [favorite, setFavorite] = useState<boolean | null>(null);
+  useEffect(() => {
+    listFavoriteSitterIds()
+      .then((ids) => setFavorite(ids.includes(sitterId)))
+      .catch(() => setFavorite(null));
+  }, [sitterId]);
+  const toggleFavorite = async () => {
+    if (favorite == null) return;
+    const next = !favorite;
+    setFavorite(next);
+    try {
+      await setFavoriteSitter(sitterId, next);
+    } catch {
+      setFavorite(!next);
+    }
+  };
 
   const loadProfile = useCallback(async () => {
     if (!sitterId) return;
@@ -70,6 +100,10 @@ export default function SitterProfileScreen() {
   }, [loadProfile]);
 
   useEffect(() => {
+    if (sitterId) void getRatingSummary(sitterId).then(setRating);
+  }, [sitterId]);
+
+  useEffect(() => {
     void loadSchedule();
   }, [loadSchedule]);
 
@@ -84,7 +118,7 @@ export default function SitterProfileScreen() {
   if (profile.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left PawNote." />
+        <EmptyState emoji="🔍" title="Sitter not found" message="This sitter may have left Goldito." />
       </Screen>
     );
   }
@@ -113,11 +147,31 @@ export default function SitterProfileScreen() {
             {sitter.displayName}
           </Text>
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+          {favorite != null ? (
+            <TextButton
+              label={favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites"}
+              onPress={() => void toggleFavorite()}
+              testID="sitter-favorite"
+            />
+          ) : null}
           <View style={styles.chips}>
             {sitter.services.map((service) => (
               <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
             ))}
           </View>
+          {rating && rating.count > 0 && rating.avg != null ? (
+            <View style={styles.block} testID="sitter-rating">
+              <Text style={styles.label} testID="sitter-rating-line">
+                {`★ ${rating.avg.toFixed(1)} · ${rating.count} ${rating.count === 1 ? "review" : "reviews"}`}
+              </Text>
+              {rating.recent.map((r, i) => (
+                <View key={`${r.createdAt}-${i}`} style={styles.block} testID="sitter-review">
+                  <StarRating value={r.rating} size={14} />
+                  <Text style={styles.body}>{`“${r.comment}” — ${r.reviewer}`}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           {sitter.bio ? <Text style={styles.body}>{sitter.bio}</Text> : null}
           {sitter.homeNotes ? (
             <View style={styles.block}>
@@ -167,12 +221,25 @@ export default function SitterProfileScreen() {
         </Card>
       </Screen>
       <View style={styles.footer}>
-        <Button
-          label={`Book ${sitter.displayName}`}
-          onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
-          testID="book-this-sitter"
-        />
+        {/* FB-33: asking first reads as "before booking", next to Book — Book stays the one filled button. */}
+        <View style={styles.actions}>
+          <Button
+            label="Ask before booking"
+            variant="secondary"
+            onPress={() => setAsking(true)}
+            style={styles.action}
+            testID="ask-about-stay"
+          />
+          <Button
+            label="Book"
+            onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
+            style={styles.action}
+            testID="book-this-sitter"
+          />
+        </View>
+        <Text style={styles.actionsHint}>Ask about dates, price or care first — nothing is booked until you send a request.</Text>
       </View>
+      <InquirySheet visible={asking} onClose={() => setAsking(false)} sitter={sitter} />
     </View>
   );
 }
@@ -188,6 +255,19 @@ const makeStyles = (theme: Theme) =>
       maxWidth: 480,
       width: "100%",
       alignSelf: "center",
+    },
+    actions: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    action: {
+      flex: 1,
+    },
+    actionsHint: {
+      marginTop: theme.spacing.xs,
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
+      textAlign: "center",
     },
     content: {
       gap: theme.spacing.md,

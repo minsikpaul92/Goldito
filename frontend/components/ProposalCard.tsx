@@ -18,6 +18,8 @@ const KIND_LABEL: Record<HandoffKind, string> = { drop_off: "drop-off", pick_up:
 export function showsProposal(b: BookingSummary, viewer: Viewer, kind: HandoffKind): boolean {
   const open = b.pending[kind];
   if (!open) return false;
+  // A handoff that already happened can't change (009c closes its leftover offers too).
+  if ((kind === "drop_off" ? b.dropOff : b.pickUp)?.completedAt) return false;
   if (b.status === "confirmed") return true;
   if (viewer === "owner") return open.proposedBy === b.sitterId;
   return open.proposedBy === b.ownerId && b.history[kind].length > 1;

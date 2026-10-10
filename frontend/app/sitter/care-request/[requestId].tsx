@@ -106,6 +106,7 @@ export default function SitterCareRequest() {
             countered: "💬 You sent a counter-request — waiting for the owner.",
             accepted: "✅ The owner accepted your counter-request.",
             withdrawn: "The owner declined your counter-request.",
+            closed: "The stay ended before this request was answered.",
             pending: "",
           }[request.status]}
         </Text>
