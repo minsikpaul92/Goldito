@@ -123,6 +123,7 @@ export default function SitterInquiry() {
     try {
       await regenerateDraft(inquiry.id, intent);
       await load();
+      toast.show("New draft ready ✍️");
     } catch (e) {
       errorDialog.show({ title: "No new draft", message: (e as Error).message });
     } finally {
@@ -160,6 +161,12 @@ export default function SitterInquiry() {
           {draft?.needsSitter ? (
             <Text style={styles.check} testID="inquiry-needs-you">
               ⚠️ Check this one — something needs your confirmation.
+            </Text>
+          ) : null}
+          {draft?.canHost === false ? (
+            <Text style={styles.noRoom} testID="inquiry-no-room">
+              📅 Your calendar has no room for these dates, so a draft can't say yes. Open the days in your schedule and tap
+              Regenerate, or use Edit / Add to write your own.
             </Text>
           ) : null}
           {editing ? (
@@ -206,7 +213,7 @@ export default function SitterInquiry() {
                 key={i.value}
                 label={i.label}
                 variant="secondary"
-                disabled={busy != null}
+                disabled={busy != null || (i.value === "accept" && draft?.canHost === false)}
                 onPress={() => void regenerate(i.value)}
                 testID={`inquiry-intent-${i.value}`}
               />
@@ -231,6 +238,7 @@ const makeStyles = (theme: Theme) =>
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     draft: { gap: theme.spacing.sm },
     warning: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    noRoom: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     check: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
