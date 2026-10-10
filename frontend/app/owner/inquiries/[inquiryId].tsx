@@ -20,13 +20,12 @@ import {
   sendOwnerMessage,
   tripSummary,
 } from "../../../features/inquiries/inquiryApi";
+import { useLiveThread } from "../../../features/inquiries/useLiveThread";
 import { SitterSummary, getSitterProfile } from "../../../features/sitters/sitterApi";
 import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { formatStamp } from "../../../features/schedule/dates";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
-
-const POLL_MS = 3000;
 
 /**
  * The owner's side of one inquiry (phase-07B 7B.5): their question, then the sitter's reply — shown as the
@@ -81,12 +80,7 @@ export default function OwnerInquiry() {
   useEffect(() => {
     void load();
   }, [load]);
-  // Wait for the sitter with a slow poll; stops once the reply is in.
-  useEffect(() => {
-    if (reply || inquiry === null) return;
-    const timer = setInterval(() => void load(), POLL_MS);
-    return () => clearInterval(timer);
-  }, [reply, inquiry, load]);
+  useLiveThread(inquiryId, load);
 
   if (error && inquiry === undefined) {
     return (

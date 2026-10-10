@@ -22,13 +22,13 @@ import {
   sendInquiryReply,
   tripSummary,
 } from "../../../features/inquiries/inquiryApi";
+import { useLiveThread } from "../../../features/inquiries/useLiveThread";
 import { formatStamp } from "../../../features/schedule/dates";
 import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
-const POLL_MS = 3000;
 const INTENTS: { value: ReplyIntent; label: string }[] = [
   { value: "accept", label: "Accept" },
   { value: "decline", label: "Decline" },
@@ -68,12 +68,12 @@ export default function SitterInquiry() {
   // Judged from the LATEST message: a new owner message after the reply needs an answer again (FB-34).
   const replied = inquiry?.messages.at(-1)?.author === "sitter";
   const draft = inquiry?.draft ?? null;
-  // Waiting for the draft: a slow poll until it arrives.
+  useLiveThread(inquiryId, load);
+  // The owner's newest message is read the moment it is on this screen (the only read mark there is).
+  const unread = inquiry?.messages.some((m) => m.author === "owner" && !m.readAt) ?? false;
   useEffect(() => {
-    if (!inquiry || draft || replied) return;
-    const timer = setInterval(() => void load(), POLL_MS);
-    return () => clearInterval(timer);
-  }, [inquiry, draft, replied, load]);
+    if (unread) void markInquiryRead(inquiryId);
+  }, [unread, inquiryId]);
 
   // A fresh draft replaces whatever was being edited.
   useEffect(() => {
