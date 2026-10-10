@@ -1,3 +1,5 @@
+> **Before starting any work, update `main` first:** `git checkout main && git pull origin main`. Only then read the TODO, create the phase branch (from that updated `main`, §4.1) and begin.
+
 # CLAUDE.md — Goldito agent instructions
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
@@ -108,7 +110,7 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 │ 5. Verify DoD (commands, manual steps)                        │
 │ 6. Commit (one commit per task, §4.3) → push                  │
 │ 7. Update TODO.md (see §5) in the same commit                 │
-│ 8. Phase done (or chunk large)? → finish the PR (§4.2)        │
+│ 8. Phase done (or chunk large)? → tidy TODO, finish PR (§4.2)│
 │ 9. Report to user: commit + next focus item (PR link at end)  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -133,6 +135,7 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 - When the phase DoD passes: update the PR title/body for the whole phase, mark it ready (`gh pr ready`).
 - **PR title:** same style as commit message (see §4.3), e.g. `feat: phase 03 auth, roles, and pet profiles`. Describe *what* and *why* for reviewers (Minsik / Seulgi / Muk).
 - **PR body:** Summary bullets / task table, test plan checklist, link to phase doc.
+- **TODO tidy on every PR (required):** before opening a PR, and again before marking it ready, re-read `docs/plan/TODO.md` and tidy it in that PR — delete lines the PR finished, fix anything it made stale (statuses, migration letters, hosted-DB notes, "Current focus"), move new findings to the right section (P0 path vs Later), and archive documents it closed (§5.1). A PR that leaves TODO.md out of date is not ready.
 - **Do not merge** unless the user explicitly asks (squash merge, delete branch).
 
 ### 4.3 Commits, PRs, branches — no AI attribution
@@ -174,13 +177,22 @@ After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 �
 
 When a task is **done** (DoD met):
 
-1. **Remove** its line from **Current focus** / **Up next** (or check `[x]` and move to **Completed** with date `YYYY-MM-DD`).
+1. **Delete** its line from **Current focus** / the queue (TODO lists only open work). The record of finished work is the commit, the PR and `test-guide.ko.md`; closed docs move to `docs/archive/` (frozen — read only when asked, never a source of truth).
 2. Set **Current focus** to exactly **one** next task ID (e.g. `1.2 FastAPI health`).
-3. If the whole phase is done, note `Phase N complete` in **Completed** and set focus to first task of phase N+1.
-4. If you discovered new work, add it to **Up next** with a short ID — do not silently expand scope in the same task.
+3. If the whole phase is done, update its row in the TODO **Phase status** table and set focus to the first task of phase N+1.
+4. If you discovered new work, add it with a short ID to **P0 demo path** (only if it blocks the demo or makes the app say something untrue) or to **Later** — do not silently expand scope in the same task.
 5. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3 — new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
 If TODO.md and phase docs disagree, **phase Goal/DoD wins**; fix TODO to match.
+
+### 5.1 Docs hygiene — open work in the queue, finished work in the archive
+
+- **One question, one document.** If two docs answer the same question, merge them and delete one — do not archive a duplicate.
+- **TODO.md lists only open work.** No "Completed" section. Finished work is recorded by the commit, the PR and `test-guide.ko.md`; never add finished items to an archive file.
+- **`docs/archive/` is for whole documents that are closed** (every item in a `feedback-*` / `review-*` / `status-*` file is done or moved to TODO). Move them with `git mv` — do not delete — and add a first line: `Frozen record — not the plan. The queue is docs/plan/TODO.md.` `docs/archive/todo-completed-2026-10.md` is the lookup for everything finished before 2026-10-10.
+- **Archive = read only when asked** ("did we do X?"). Never use it as a source of truth, never edit it, never follow a plan or decision from it without checking the current docs.
+- When you archive or merge a doc, fix the links that pointed to it in the same commit (`grep -rn <filename> .`).
+- **Weekly sweep** (Mon · Thu sync): TODO has only open items, "Current focus" is real, closed feedback / review docs are archived.
 
 ---
 
@@ -192,7 +204,7 @@ Work ONLY on the "Current focus" task.
 Read the linked docs/plan/phases/phase-XX.md for Goal and DoD.
 Work on the phase branch (CLAUDE.md §4.1 — create it from main at the phase's first task; no claude/cursor/ai prefixes).
 When DoD passes: update TODO.md (§5), commit (§4.3), push — the phase draft PR updates itself (§4.2).
-When the phase is done: finish the phase PR. Report the commit, verify steps, and next focus.
+Before opening or readying a PR: tidy TODO.md (§4.2, §5.1). When the phase is done: finish the phase PR. Report the commit, verify steps, and next focus.
 ```
 
 Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1.

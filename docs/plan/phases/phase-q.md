@@ -89,6 +89,6 @@
 2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
 3. **마이그레이션:** 슬기는 `011m`~`011z`. 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
 4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
-5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus → Completed(날짜), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
+5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus 줄 삭제(완료 기록은 커밋 · PR · test-guide), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
 6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
 7. **급한 문제를 찾으면:** 데모 경로가 막히거나 틀린 약속을 하는 것 → FB에 "급함"으로 적고 민식에게 바로 알린다(민식 큐로 감).
