@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { InquiryReplySheet, ReplyKind } from "../../../components/InquiryReplySheet";
 import { MessageBubble } from "../../../components/MessageBubble";
 import { QuoteCard } from "../../../components/QuoteCard";
 import { Button } from "../../../components/ui/Button";
@@ -14,7 +15,6 @@ import { TextButton } from "../../../components/ui/TextButton";
 import { TextField } from "../../../components/ui/TextField";
 import {
   InquiryView,
-  ReplyIntent,
   getInquiry,
   markInquiryRead,
   recordReplySample,
@@ -29,10 +29,10 @@ import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
-const INTENTS: { value: ReplyIntent; label: string }[] = [
+const QUICK: { value: ReplyKind; label: string }[] = [
   { value: "accept", label: "Accept" },
   { value: "decline", label: "Decline" },
-  { value: "suggest_dates", label: "Suggest other dates" },
+  { value: "suggest", label: "Suggest other dates" },
 ];
 
 /**
@@ -50,6 +50,7 @@ export default function SitterInquiry() {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<"send" | "regenerate" | null>(null);
+  const [quick, setQuick] = useState<ReplyKind | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -117,11 +118,11 @@ export default function SitterInquiry() {
     }
   };
 
-  const regenerate = async (intent?: ReplyIntent) => {
+  const regenerate = async () => {
     if (busy) return;
     setBusy("regenerate");
     try {
-      await regenerateDraft(inquiry.id, intent);
+      await regenerateDraft(inquiry.id);
       await load();
       toast.show("New draft ready ✍️");
     } catch (e) {
@@ -163,7 +164,7 @@ export default function SitterInquiry() {
           {draft?.canHost === false ? (
             <Text style={styles.noRoom} testID="inquiry-no-room">
               📅 Your calendar has no room for these dates, so a draft can't say yes. Open the days in your schedule and tap
-              Regenerate, or use Edit / Add to write your own.
+              Regenerate, decline, or suggest other dates.
             </Text>
           ) : null}
           {editing ? (
@@ -206,16 +207,16 @@ export default function SitterInquiry() {
               testID="inquiry-regenerate"
             />
           </View>
-          <Text style={styles.label}>Lean the draft</Text>
+          <Text style={styles.label}>Or reply with</Text>
           <View style={styles.row}>
-            {INTENTS.map((i) => (
+            {QUICK.map((q) => (
               <Button
-                key={i.value}
-                label={i.label}
+                key={q.value}
+                label={q.label}
                 variant="secondary"
-                disabled={busy != null || (i.value === "accept" && draft?.canHost === false)}
-                onPress={() => void regenerate(i.value)}
-                testID={`inquiry-intent-${i.value}`}
+                disabled={busy != null}
+                onPress={() => setQuick(q.value)}
+                testID={`inquiry-intent-${q.value}`}
               />
             ))}
           </View>
@@ -226,6 +227,7 @@ export default function SitterInquiry() {
           <TextButton label="Write it myself" onPress={() => setEditing(true)} testID="inquiry-write-myself" />
         </Card>
       )}
+      <InquiryReplySheet kind={quick} inquiry={inquiry} draft={draft} onClose={() => setQuick(null)} onSent={() => void load()} />
     </Screen>
   );
 }

@@ -281,16 +281,13 @@ test.describe("sitter inquiry", () => {
     expect(db.inquiry_messages.find((m) => m.author === "sitter")?.body).toBe("Hi Robert! Yes — pill at 2 PM works. $268.13 CAD total.");
   });
 
-  test("Regenerate and the intent chips ask for another draft (the newest one is shown)", async ({ page }) => {
+  test("Regenerate asks for another draft and the newest one is shown", async ({ page }) => {
     const { asked } = await openSitterThread(page);
     const screen = app(page);
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
     await screen.getByTestId("inquiry-regenerate").click();
     await expect(screen.getByTestId("inquiry-draft-body")).toContainText("A fresh take");
     expect(asked[0]).toEqual({ inquiry_id: INQ, regenerate: true });
-    await screen.getByTestId("inquiry-intent-decline").click();
-    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("I can't this time");
-    expect(asked[1]).toEqual({ inquiry_id: INQ, regenerate: true, intent: "decline" });
   });
 
   test("with no draft yet the sitter sees it is being written and can write it themselves", async ({ page }) => {
@@ -485,22 +482,35 @@ test.describe("owner follow-up (FB-34)", () => {
     await expect(screen.getByTestId("inquiry-change-dates")).toHaveCount(0);
   });
 
-  test("a declined reply offers Change dates first and Find other sitters second; Change dates opens a new inquiry with the trip prefilled", async ({ page }) => {
-    const { db } = await openOwnerThread(page);
+  test("a declined reply offers Change dates first and Find other sitters second; Change dates moves the dates of the same thread", async ({ page }) => {
+    const { db, asked } = await openOwnerThread(page);
     const screen = app(page);
     await expect(screen.getByTestId("inquiry-change-dates")).toBeVisible();
     await expect(screen.getByTestId("inquiry-find-others")).toBeVisible();
+    const before = String(db.inquiries[0].drop_off_at);
     await screen.getByTestId("inquiry-change-dates").click();
 
     await expect(screen.getByTestId("inquiry-sheet")).toBeVisible();
-    await expect(screen.getByTestId("inquiry-pet-Max")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("inquiry-pet-Mochi")).not.toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByText("Change dates").first()).toBeVisible();
+    await expect(screen.getByTestId("inquiry-pet-Max")).toHaveCount(0); // the pets stay as asked
+    // Move the drop-off a day later: the pick-up moves with it (same length of stay).
+    const dropDay = await screen.getByTestId("drop_off-day-value").innerText();
+    const pickDay = await screen.getByTestId("pick_up-day-value").innerText();
+    await screen.getByTestId("drop_off-day-plus").click();
+    await expect(screen.getByTestId("drop_off-day-value")).not.toHaveText(dropDay);
+    await expect(screen.getByTestId("pick_up-day-value")).not.toHaveText(pickDay);
     await screen.getByTestId("inquiry-send").click();
 
-    await expect(page).toHaveURL(/\/owner\/inquiries\/(?!00000000-0000-4000-8000-0000000000d1).+/);
-    expect(db.inquiries).toHaveLength(2);
-    expect(db.inquiries[1]).toMatchObject({ sitter_id: SITTER.id, service_type: "boarding", pet_ids: [MAX] });
-    expect(db.inquiries[1].id).not.toBe(INQ);
+    // Still one inquiry, same URL: the conversation goes on.
+    await expect(screen.getByTestId("inquiry-waiting")).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/owner/inquiries/${INQ}`));
+    expect(db.inquiries).toHaveLength(1);
+    expect(db.inquiries[0].id).toBe(INQ);
+    expect(Date.parse(String(db.inquiries[0].drop_off_at))).toBe(Date.parse(before) + 86_400_000);
+    const mine = db.inquiry_messages.filter((m) => m.author === "owner");
+    expect(String(mine.at(-1)?.body)).toMatch(/^Changed dates: /);
+    expect(asked).toEqual([{ inquiry_id: INQ }]);
+    await expect(screen.getByTestId("inquiry-question-bubble").last()).toContainText("Changed dates");
   });
 
   test("the sitter's list and thread follow the latest owner message: a reply, then a new question, needs an answer again", async ({ page }) => {
@@ -590,15 +600,15 @@ test.describe("inquiry thread polish (FB-34)", () => {
     await expect(app(page).getByTestId("inquiry-sources")).not.toContainText("earlier messages");
   });
 
-  test("a draft for dates with no room says why, and Accept waits until there is room", async ({ page }) => {
+  test("a draft for dates with no room says why, and Accept explains instead of sending a yes", async ({ page }) => {
     await openSitterThread(page, { grounding: { quote: null, sources: [], availability: { can_host: false }, needs_sitter: false, intent: null } });
     const screen = app(page);
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
     await expect(screen.getByTestId("inquiry-no-room")).toContainText("no room");
-    await expect(screen.getByTestId("inquiry-intent-accept")).toBeDisabled();
-    await expect(screen.getByTestId("inquiry-intent-decline")).toBeEnabled();
-    await screen.getByTestId("inquiry-intent-decline").click();
-    await expect(screen.getByTestId("toast")).toContainText("New draft ready", { timeout: 8000 });
+    await screen.getByTestId("inquiry-intent-accept").click();
+    await expect(screen.getByTestId("reply-no-room")).toContainText("no room");
+    await expect(screen.getByTestId("reply-send")).toHaveCount(0);
+    await expect(screen.getByTestId("reply-open-schedule")).toBeVisible();
   });
 });
 
@@ -618,5 +628,61 @@ test.describe("sitter lands on what is waiting (FB-34)", () => {
     await page.goto("/sitter");
     await expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
     await expect(screen.getByTestId("today-questions")).toHaveCount(0);
+  });
+});
+
+test.describe("sitter quick replies (FB-34)", () => {
+  test("Accept writes the reply in a popup; confirming sends it with the quote", async ({ page }) => {
+    const { db, asked } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-accept").click();
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/A fresh take/, { timeout: 8000 });
+    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "accept" });
+    await screen.getByTestId("reply-send").click();
+    await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+    const sent = db.inquiry_messages.find((m) => m.author === "sitter");
+    expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id });
+    expect((sent?.grounding as { quote: { total: number } }).quote.total).toBe(268.13);
+    expect((sent?.grounding as { availability: { can_host: boolean } }).availability.can_host).toBe(true);
+  });
+
+  test("Decline writes a decline in a popup; confirming sends it as a no, with no quote", async ({ page }) => {
+    const { db, asked } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-decline").click();
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/I can't this time/, { timeout: 8000 });
+    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "decline" });
+    await screen.getByTestId("reply-text").fill("Hi Robert! Sorry, I can't that week.");
+    await screen.getByTestId("reply-send").click();
+    await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+    const sent = db.inquiry_messages.find((m) => m.author === "sitter");
+    expect(sent?.body).toBe("Hi Robert! Sorry, I can't that week.");
+    expect(sent?.grounding).toEqual({ availability: { can_host: false } });
+  });
+
+  test("Suggest other dates: pick the days, the message carries them, confirming sends it as a no for the asked dates", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-suggest").click();
+    await expect(screen.getByTestId("handoff-drop_off")).toBeVisible();
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/I can host Max from .+ to .+\. Would that work/);
+    await screen.getByTestId("reply-send").click();
+    await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+    const sent = db.inquiry_messages.find((m) => m.author === "sitter");
+    expect(sent?.drafted_by_ai).toBe(false);
+    expect(sent?.grounding).toEqual({ availability: { can_host: false } });
+  });
+
+  test("Suggest other dates won't send days the sitter has no room for", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    db.stayShortfall = "2030-10-20 overnight";
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-suggest").click();
+    await expect(screen.getByTestId("reply-problem")).toContainText("no room");
+    await expect(screen.getByTestId("reply-send")).toBeDisabled();
   });
 });

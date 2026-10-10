@@ -353,6 +353,10 @@
 | INQ-28 | 시터 초안에 **"From your earlier messages"** 칩 | 오너 · 시터 화면 어디에도 안 나옴(오너의 이전 메시지는 AI의 참고일 뿐, 출처 칩이 아님). 정책 · Life Record 출처 칩은 그대로 (FB-34) | 🤖 `inquiry` | ➖ |
 | INQ-29 | 시터 일정에 자리가 없는 날로 온 문의의 초안을 시터가 연다 → Accept / Decline / Suggest other dates / Regenerate | 초안 위에 **"📅 Your calendar has no room … a draft can't say yes"** 안내, **Accept는 비활성**(자리가 없으면 "가능"이라 쓸 수 없는 RV-1 안전 규칙). Decline · Suggest · Regenerate는 새 초안을 만들고 **"New draft ready ✍️"** 토스트. 문구가 비슷해 보여도 정상 — 사실(자리 없음)이 같기 때문. 일정을 열고 Regenerate하면 가능 답이 나옴 (FB-34) | 🤖 `inquiry` (안내 · 비활성) · 실제 AI 답은 👤 | ➖ |
 | INQ-30 | 시터에게 답 안 한 문의가 있고 다른 대기 요청 · 임박한 stay가 없을 때 | **Home**에 "💬 Questions (n) — tap to answer" 배너(누르면 Bookings). **Bookings 탭을 누르면 Questions 탭이 바로 열림**(요청이 있으면 Requests가 우선, 임박한 stay는 Upcoming). 직접 탭을 고른 뒤에는 자동으로 옮기지 않음. 답하면 배너가 사라지고, 오너가 새 메시지를 쓰면 다시 나타남. 면책 문구("AI drafts can be wrong…")는 **Send 아래 작은 회색 글씨** (FB-34) | 🤖 `inquiry` | ➖ |
+| INQ-31 | 오너가 거절 답을 받은 대화에서 **Change dates** → 날짜 하루 뒤로(+) → **Send** | **같은 대화**에서 시트가 닫히고(새 문의 아님, URL 그대로) 내 말풍선 **"Changed dates: Oct 12, 9:00 AM – Oct 14, 5:00 PM"**이 이어 붙음. 픽업도 같은 길이만큼 같이 이동. 시터에게 "draft is ready" 알림, 새 초안은 **새 날짜** 기준(견적 · 자리 포함). 펫 · 서비스는 그대로 (011j, FB-34) | 🤖 `inquiry` (앱) · SQL 011j (호스팅 DB에 `011j` 적용 뒤) | ➖ |
+| INQ-32 | 시터가 초안 아래 **Accept** | 팝업에 **수락 답장이 써져 있음**(AI, 시터 말투, 수정 가능, 견적 카드) → **Send acceptance** 하면 바로 대화에 전송. 자리가 없는 날이면 팝업은 "📅 no room … " 설명 + **Open my schedule**만 (가짜 "yes"는 안 나감) (FB-34) | 🤖 `inquiry` · 실제 AI 문구는 👤 | ➖ |
+| INQ-33 | 시터가 **Decline** | 팝업에 거절 답장 → **Send decline** → 바로 전송. 오너 화면은 **Change dates**(Request booking · 견적 없음) (011k) | 🤖 `inquiry` · SQL 011k (`011k` 적용 뒤) | ➖ |
+| INQ-34 | 시터가 **Suggest other dates** | 팝업에서 **날짜 · 시간을 고르고**(내 일정 달력 표시) 메시지에 그 날짜가 자동으로 들어감(수정 가능) → **Send suggestion**. 내 일정에 자리 없는 날을 고르면 빨간 안내 + Send 비활성. 오너는 Change dates로 이어 감 (FB-34) | 🤖 `inquiry` | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
@@ -485,6 +489,7 @@
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
 - **문의 AI의 가능 여부 = 예약 엔진의 규칙 (RV-1):** 펫 수만큼 자리가 없는 슬롯이나 시터가 안 연 날이 하나라도 있으면 "못 해요"다. 호스팅 DB에 **`011c`가 적용되기 전에는** 이 검사를 못 해서 모든 답장이 "확인해서 알려 드릴게요"(가격 없음, 자동 발송 안 됨)로 나온다.
 - **후속 질문의 AI 답 (FB-34, 알려진 한계):** 모델은 최신 오너 메시지 + 앞선 대화(최대 6개)를 읽지만, **날짜 · 견적 · 가능 여부는 문의에 저장된 원래 일정** 기준이다. 그래서 "Could you open for me?" 같은 후속에도 "그날은 자리가 없다"로 답할 수 있다 — 시터가 일정을 열거나 직접 쓰는 것이 맞는 경우다(오너가 일정을 열어 달라는 요청이면 시터 확인이 필요하다고 표시하는 프롬프트는 Q.4b / RV-2 몫).
+- **Change dates와 011j · 011k:** 오너의 Change dates는 `011j`, 시터의 Decline · Suggest(can_host=false, 견적 없음)는 `011k`가 호스팅 DB에 적용돼 있어야 한다(없으면 "Couldn't change the dates / send the reply"). 새 앱은 옛 DB에서 답장 전송이 실패하고, 옛 앱(Vercel main)은 011k 뒤에도 그대로 동작한다(`p_outcome`은 선택). 시터의 **Suggest** 메시지는 일반 글이라 오너가 "이 날짜로 바꾸기" 한 번에 쓰는 버튼은 아직 없다(Change dates로 직접 고름).
 - **문의 이어 쓰기 (FB-34):** 오너의 **Write back** 칸은 *시터의 답이 마지막 메시지일 때만* 보이고(내가 보낸 뒤에는 시터가 답할 때까지 숨김), 문의가 `booked` · `closed`면 없다. 새 초안은 백엔드가 "마지막 초안 이후의 새 오너 메시지"로 만든다 — Render가 잠들어 있거나 모델이 실패하면 초안이 늦거나 없고, 시터는 **Write it myself**로 직접 답할 수 있다. **Change dates**는 새 문의를 만들 뿐 이전 문의는 닫지 않는다. 장소가 *Somewhere else*였던 문의는 메모를 저장하지 않아서 시트에서 장소 메모를 다시 써야 한다.
 - **일찍 Received한 뒤의 기록 (CW-1, 2026-10-09 수정):** 체크인 · 할 일 · 알림장 칩 · 초안이 모두 "약속된 드롭오프와 Received 중 **이른 쪽**"부터 센다(끝은 약속된 픽업 그대로). 체크인 · 할 일 쪽은 DB 함수라 **`011i`가 호스팅 DB에 적용돼야** 바뀐다 — 적용 전에는 `in_care` 리셋 뒤 3분 동안 체크인이 "Tasks open once the stay has started"로 막힌다(알림장 칩은 백엔드 배포만으로 고쳐짐).
 - History는 **읽기 전용**이다. 시터 Diary(알림장 쓰기)는 7.3에서 생겼다(스택 #55).
