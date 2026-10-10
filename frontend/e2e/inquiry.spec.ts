@@ -686,3 +686,37 @@ test.describe("sitter quick replies (FB-34)", () => {
     await expect(screen.getByTestId("reply-send")).toBeDisabled();
   });
 });
+
+test.describe("asking for days with no room (FB-33 follow-up)", () => {
+  test("Send on days the sitter has no room for asks first: Pick other dates goes back, Ask anyway sends", async ({ page }) => {
+    const { db } = await openProfile(page);
+    db.stayShortfall = "2030-10-20 overnight";
+    const screen = app(page);
+    await screen.getByTestId("inquiry-pet-Max").click();
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("inquiry-no-room")).toContainText("no room");
+    expect(db.inquiries).toHaveLength(0);
+
+    await screen.getByTestId("inquiry-pick-other").click();
+    await expect(screen.getByTestId("inquiry-send")).toBeVisible();
+    expect(db.inquiries).toHaveLength(0);
+
+    await screen.getByTestId("inquiry-send").click();
+    await screen.getByTestId("inquiry-ask-anyway").click();
+    await expect(page).toHaveURL(/\/owner\/inquiries\/.+/);
+    expect(db.inquiries).toHaveLength(1);
+  });
+
+  test("with room, Send goes straight through; Change dates asks the same way", async ({ page }) => {
+    const { db } = await openOwnerThread(page);
+    const screen = app(page);
+    await screen.getByTestId("inquiry-change-dates").click();
+    db.stayShortfall = "2030-10-20 overnight";
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("inquiry-ask-anyway")).toBeVisible();
+    expect(db.inquiry_messages.filter((m) => m.author === "owner")).toHaveLength(1);
+    await screen.getByTestId("inquiry-ask-anyway").click();
+    await expect(screen.getByTestId("inquiry-waiting")).toBeVisible();
+    expect(db.inquiry_messages.filter((m) => m.author === "owner").at(-1)?.body).toMatch(/^Changed dates: /);
+  });
+});

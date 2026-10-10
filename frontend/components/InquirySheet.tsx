@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { QUESTION_MAX, changeInquiryDates, createInquiry, requestInquiryReply } from "../features/inquiries/inquiryApi";
+import { QUESTION_MAX, changeInquiryDates, createInquiry, requestInquiryReply, stayShortfall } from "../features/inquiries/inquiryApi";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
 import { addDays, appToday, daySpan, formatStamp, isoToZoned, zonedToIso } from "../features/schedule/dates";
@@ -84,6 +84,8 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
   const [pickUp, setPickUp] = useState<HandoffDraft>(() => draftFrom(prefill?.pickUp, addDays(today, 3), "17:00", today));
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
+  // The booking engine says the sitter has no room on these dates: ask before sending (Ask anyway / Pick other dates).
+  const [noRoom, setNoRoom] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
 
@@ -111,7 +113,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
       ? "Tell the sitter where to meet."
       : null;
 
-  const send = async () => {
+  const submit = async () => {
     if (problem || placeProblem || sending) return;
     setSending(true);
     setError(null);
@@ -151,6 +153,23 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
     }
   };
 
+  useEffect(() => {
+    setNoRoom(false);
+  }, [dropOff.day, dropOff.time, pickUp.day, pickUp.time, petIds.length, service]);
+
+  const send = async () => {
+    if (problem || placeProblem || sending) return;
+    setSending(true);
+    setError(null);
+    const short = await stayShortfall(sitter.id, zonedToIso(dropOff.day, dropOff.time), zonedToIso(pickUp.day, pickUp.time), Math.max(1, petIds.length));
+    setSending(false);
+    if (short && short !== "invalid_window") {
+      setNoRoom(true);
+      return;
+    }
+    await submit();
+  };
+
   return (
     <Sheet
       visible={visible}
@@ -158,12 +177,20 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
       onClose={onClose}
       testID="inquiry-sheet"
       footer={
-        <Button
-          label={sending ? "Sending…" : "Send"}
-          disabled={!!problem || !!placeProblem || sending}
-          onPress={() => void send()}
-          testID="inquiry-send"
-        />
+        noRoom ? (
+          <View style={styles.ask} testID="inquiry-no-room">
+            <Text style={styles.askText}>{`${sitter.displayName} has no room on these dates. You can still ask — they may open them — or pick other dates.`}</Text>
+            <Button label={sending ? "Sending…" : "Ask anyway"} disabled={sending} onPress={() => void submit()} testID="inquiry-ask-anyway" />
+            <Button label="Pick other dates" variant="secondary" onPress={() => setNoRoom(false)} testID="inquiry-pick-other" />
+          </View>
+        ) : (
+          <Button
+            label={sending ? "Sending…" : "Send"}
+            disabled={!!problem || !!placeProblem || sending}
+            onPress={() => void send()}
+            testID="inquiry-send"
+          />
+        )
       }
     >
       <View style={styles.body}>
@@ -239,4 +266,6 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
+    ask: { gap: theme.spacing.sm },
+    askText: { fontSize: theme.fontSize.small, color: theme.color.text },
   });

@@ -357,6 +357,7 @@
 | INQ-32 | 시터가 초안 아래 **Accept** | 팝업에 **수락 답장이 써져 있음**(AI, 시터 말투, 수정 가능, 견적 카드) → **Send acceptance** 하면 바로 대화에 전송. 자리가 없는 날이면 팝업은 "📅 no room … " 설명 + **Open my schedule**만 (가짜 "yes"는 안 나감) (FB-34) | 🤖 `inquiry` · 실제 AI 문구는 👤 | ➖ |
 | INQ-33 | 시터가 **Decline** | 팝업에 거절 답장 → **Send decline** → 바로 전송. 오너 화면은 **Change dates**(Request booking · 견적 없음) (011k) | 🤖 `inquiry` · SQL 011k (`011k` 적용 뒤) | ➖ |
 | INQ-34 | 시터가 **Suggest other dates** | 팝업에서 **날짜 · 시간을 고르고**(내 일정 달력 표시) 메시지에 그 날짜가 자동으로 들어감(수정 가능) → **Send suggestion**. 내 일정에 자리 없는 날을 고르면 빨간 안내 + Send 비활성. 오너는 Change dates로 이어 감 (FB-34) | 🤖 `inquiry` | ➖ |
+| INQ-35 | 오너가 시터가 안 연(또는 꽉 찬) 날짜로 문의 시트 → **Send** (새 문의, 그리고 Change dates 둘 다) | 바로 보내지 않고 시트 아래가 **"Chloe has no room on these dates. You can still ask…" + [Ask anyway] [Pick other dates]**로 바뀜. Pick other dates → 시트로 돌아가 날짜 수정(아무것도 안 보내짐). Ask anyway → 그대로 문의 전송. 자리가 있는 날은 확인 없이 바로 전송. 날짜를 바꾸면 안내는 사라짐 (FB-33 후속) | 🤖 `inquiry` | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
