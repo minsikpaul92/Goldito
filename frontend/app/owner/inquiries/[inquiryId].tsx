@@ -22,7 +22,7 @@ import {
 } from "../../../features/inquiries/inquiryApi";
 import { SitterSummary, getSitterProfile } from "../../../features/sitters/sitterApi";
 import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
-import { formatTime, isoToZoned } from "../../../features/schedule/dates";
+import { formatStamp } from "../../../features/schedule/dates";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -118,7 +118,7 @@ export default function OwnerInquiry() {
       setSending(false);
     }
   };
-  const when = (at: string) => `${isoToZoned(at).day.slice(5)} ${formatTime(isoToZoned(at).time)}`;
+  const when = formatStamp;
   const canHost = reply?.canHost !== false;
 
   return (

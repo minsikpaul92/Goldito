@@ -22,7 +22,7 @@ import {
   sendInquiryReply,
   tripSummary,
 } from "../../../features/inquiries/inquiryApi";
-import { formatTime, isoToZoned } from "../../../features/schedule/dates";
+import { formatStamp } from "../../../features/schedule/dates";
 import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useToast } from "../../../providers/ToastProvider";
@@ -99,7 +99,7 @@ export default function SitterInquiry() {
     );
   }
 
-  const when = (at: string) => `${isoToZoned(at).day.slice(5)} ${formatTime(isoToZoned(at).time)}`;
+  const when = formatStamp;
   const question = inquiry.messages.filter((m) => m.author === "owner").at(-1);
 
   const send = async () => {
