@@ -208,6 +208,7 @@ export default function OwnerInquiry() {
           visible
           onClose={() => setChanging(false)}
           sitter={{ id: inquiry.sitterId, displayName: inquiry.sitterName, services: sitter?.services ?? [inquiry.serviceType] }}
+          change={{ inquiryId: inquiry.id, onChanged: () => void load() }}
           prefill={{
             serviceType: inquiry.serviceType,
             petIds: inquiry.petIds,

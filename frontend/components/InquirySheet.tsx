@@ -2,10 +2,10 @@ import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { QUESTION_MAX, createInquiry, requestInquiryReply } from "../features/inquiries/inquiryApi";
+import { QUESTION_MAX, changeInquiryDates, createInquiry, requestInquiryReply } from "../features/inquiries/inquiryApi";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
-import { addDays, appToday, isoToZoned, zonedToIso } from "../features/schedule/dates";
+import { addDays, appToday, daySpan, formatStamp, isoToZoned, zonedToIso } from "../features/schedule/dates";
 import { DaySlot, loadSitterMonth } from "../features/schedule/scheduleApi";
 import { SERVICE_LABEL, ServiceType } from "../features/sitters/sitterApi";
 import type { LocationType } from "../lib/bookings";
@@ -24,13 +24,15 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   sitter: { id: string; displayName: string; services: ServiceType[] };
-  /** "Change dates" in a thread: a NEW inquiry that starts from the earlier trip (pets, service, times, places). */
+  /** "Change dates" in a thread: starts from the earlier trip (pets, service, times, places). */
   prefill?: {
     serviceType: ServiceType;
     petIds: string[];
     dropOff: { at: string; locationType: LocationType };
     pickUp: { at: string; locationType: LocationType };
   };
+  /** With this, Send moves the trip of THIS inquiry (011j) instead of opening a new one: the conversation goes on. */
+  change?: { inquiryId: string; onChanged: () => void };
 };
 
 /** How far ahead the date picker shows the sitter's days. */
@@ -72,7 +74,7 @@ function draftFrom(
  * "Ask before booking" (phase-07B 7B.5, FB-33): the trip, the pets, and an optional question. Sending creates the
  * inquiry, asks for the sitter's draft in the background and opens the thread — the owner never waits on the model.
  */
-export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
+export function InquirySheet({ visible, onClose, sitter, prefill, change }: Props) {
   const styles = useThemedStyles(makeStyles);
   const { pets } = useMyPets();
   const today = useMemo(() => appToday(), []);
@@ -115,11 +117,26 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
     setError(null);
     const place = (h: HandoffDraft) => (houseSitting ? ("owner_home" as const) : h.locationType);
     try {
+      const dropOffAt = zonedToIso(dropOff.day, dropOff.time);
+      const pickUpAt = zonedToIso(pickUp.day, pickUp.time);
+      if (change) {
+        const note = question.trim();
+        await changeInquiryDates({
+          inquiryId: change.inquiryId,
+          dropOff: { at: dropOffAt, locationType: place(dropOff) },
+          pickUp: { at: pickUpAt, locationType: place(pickUp) },
+          body: `Changed dates: ${formatStamp(dropOffAt)} – ${formatStamp(pickUpAt)}${note ? `\n${note}` : ""}`,
+        });
+        void requestInquiryReply(change.inquiryId); // the thread keeps waiting for the sitter either way
+        onClose();
+        change.onChanged();
+        return;
+      }
       const id = await createInquiry({
         sitterId: sitter.id,
         serviceType: service,
-        dropOff: { at: zonedToIso(dropOff.day, dropOff.time), locationType: place(dropOff) },
-        pickUp: { at: zonedToIso(pickUp.day, pickUp.time), locationType: place(pickUp) },
+        dropOff: { at: dropOffAt, locationType: place(dropOff) },
+        pickUp: { at: pickUpAt, locationType: place(pickUp) },
         petIds,
         petNames: pets.filter((p) => petIds.includes(p.id)).map((p) => p.name),
         question,
@@ -137,7 +154,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
   return (
     <Sheet
       visible={visible}
-      title={`Ask ${sitter.displayName} before booking`}
+      title={change ? "Change dates" : `Ask ${sitter.displayName} before booking`}
       onClose={onClose}
       testID="inquiry-sheet"
       footer={
@@ -150,7 +167,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
       }
     >
       <View style={styles.body}>
-        {sitter.services.length > 1 ? (
+        {sitter.services.length > 1 && !change ? (
           <SegmentedControl
             options={sitter.services.map((s) => ({ value: s, label: SERVICE_LABEL[s] }))}
             value={service}
@@ -158,8 +175,8 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
             testID="inquiry-service"
           />
         ) : null}
-        <Text style={styles.label}>Who's staying?</Text>
-        {pets.map((pet) => (
+        {change ? null : <Text style={styles.label}>Who's staying?</Text>}
+        {(change ? [] : pets).map((pet) => (
           <CheckRow
             key={pet.id}
             label={`${SPECIES_EMOJI[pet.species]} ${pet.name}`}
@@ -169,7 +186,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
           />
         ))}
         <Text style={styles.hint}>
-          {petIds.length > 0
+          {!change && petIds.length > 0
             ? `${pets.filter((p) => petIds.includes(p.id)).map((p) => `${p.name}'s`).join(", ")} profile and Life Record are shared with ${sitter.displayName}.`
             : ""}
         </Text>
@@ -181,8 +198,11 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
           dayMarks={marks}
           fixedPlace={houseSitting ? `🔑 ${sitter.displayName} comes to my place` : undefined}
           onChange={(value) => {
+            const moved = daySpan(dropOff.day, value.day) - 1;
             setDropOff(value);
-            if (value.day > pickUp.day) setPickUp((p) => ({ ...p, day: value.day }));
+            // Changing the dates of a stay moves the whole stay: the pick-up keeps its distance from the drop-off.
+            if (change && moved !== 0) setPickUp((p) => ({ ...p, day: addDays(p.day, moved) }));
+            else if (value.day > pickUp.day) setPickUp((p) => ({ ...p, day: value.day }));
           }}
         />
         <HandoffPicker
@@ -195,7 +215,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill }: Props) {
           onChange={setPickUp}
         />
         <TextField
-          label="Your question (optional)"
+          label={change ? "Add a note (optional)" : "Your question (optional)"}
           value={question}
           maxLength={QUESTION_MAX}
           multiline

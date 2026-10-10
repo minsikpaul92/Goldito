@@ -268,14 +268,65 @@ export async function regenerateDraft(inquiryId: string, intent?: ReplyIntent): 
   }
 }
 
-/** Sitter: send the text they approved (the draft as is, or their edit). `draftId` keeps the quote and sources. */
-export async function sendInquiryReply(inquiryId: string, body: string, draftId: string | null): Promise<void> {
-  const { error } = await getSupabase().rpc("send_inquiry_reply", { p_inquiry: inquiryId, p_body: body, p_draft: draftId });
+export type ReplyOutcome = "accept" | "decline" | "suggest";
+
+/**
+ * Sitter: send the text they approved (the draft as is, or their edit). `draftId` keeps the quote and sources.
+ * `outcome` says what the reply is: a decline or a suggestion can't host and carries no quote (011k).
+ */
+export async function sendInquiryReply(
+  inquiryId: string,
+  body: string,
+  draftId: string | null,
+  outcome?: ReplyOutcome,
+): Promise<void> {
+  const { error } = await getSupabase().rpc("send_inquiry_reply", {
+    p_inquiry: inquiryId,
+    p_body: body,
+    p_draft: draftId,
+    ...(outcome ? { p_outcome: outcome } : {}),
+  });
   if (!error) return;
   if (error.message.includes("body_required")) throw new Error("Write something before sending.");
   if (error.message.includes("body_too_long")) throw new Error("Keep the reply under 2000 characters.");
   if (error.message.includes("inquiry_closed")) throw new Error("The owner closed this question.");
   fail("send the reply");
+}
+
+/** Owner: new dates in the same thread (011j). One owner message records the change; ask for the new draft next. */
+export async function changeInquiryDates(input: {
+  inquiryId: string;
+  dropOff: { at: string; locationType: LocationType };
+  pickUp: { at: string; locationType: LocationType };
+  body: string;
+}): Promise<void> {
+  const { error } = await getSupabase().rpc("change_inquiry_dates", {
+    p_inquiry: input.inquiryId,
+    p_drop_off_at: input.dropOff.at,
+    p_pick_up_at: input.pickUp.at,
+    p_drop_off_place: input.dropOff.locationType,
+    p_pick_up_place: input.pickUp.locationType,
+    p_body: input.body.slice(0, 2000),
+  });
+  if (!error) return;
+  if (error.message.includes("invalid_window")) throw new Error("Check the dates — a stay can be up to 31 days.");
+  if (error.message.includes("inquiry_closed")) throw new Error("This question is closed. Start a new one.");
+  fail("change the dates");
+}
+
+/**
+ * The booking engine's own answer for a stay at this sitter (null = it fits). The sitter checks the dates they
+ * are about to suggest, so a suggestion is never one the owner can't book.
+ */
+export async function stayShortfall(sitterId: string, dropOffAt: string, pickUpAt: string, petCount: number): Promise<string | null> {
+  const { data, error } = await getSupabase().rpc("stay_capacity_check", {
+    p_sitter: sitterId,
+    p_drop_off_at: dropOffAt,
+    p_pick_up_at: pickUpAt,
+    p_pet_count: petCount,
+  });
+  if (error) return null; // can't check: don't block the sitter
+  return (data as string | null) ?? null;
 }
 
 /** After a send: let the assistant learn from what the sitter did with the draft. Never blocks or fails. */
