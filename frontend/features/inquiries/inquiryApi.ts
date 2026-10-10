@@ -70,6 +70,11 @@ export type InquiryDraft = {
   intent: string | null;
 };
 
+/** What the answer stood on, as chips. The owner's own earlier messages are context, not a source worth showing. */
+function shownSources(sources: InquirySource[] | undefined): InquirySource[] {
+  return (sources ?? []).filter((s) => s.type !== "inquiry");
+}
+
 type Embed<T> = T | T[] | null;
 const first = <T,>(v: Embed<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 
@@ -222,7 +227,7 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
         body: m.body,
         at: m.created_at,
         quote: m.grounding?.quote ?? null,
-        sources: m.grounding?.sources ?? [],
+        sources: shownSources(m.grounding?.sources),
         canHost: m.grounding?.availability?.can_host ?? null,
         readAt: m.read_at,
         auto: m.author === "sitter" && m.drafted_by_ai && !m.confirmed_by_sitter_at,
@@ -244,7 +249,7 @@ function latestDraft(rows: MessageRow[]): InquiryDraft | null {
     body: m.body,
     at: m.created_at,
     quote: m.grounding?.quote ?? null,
-    sources: m.grounding?.sources ?? [],
+    sources: shownSources(m.grounding?.sources),
     canHost: m.grounding?.availability?.can_host ?? null,
     needsSitter: !!m.grounding?.needs_sitter,
     intent: m.grounding?.intent ?? null,
