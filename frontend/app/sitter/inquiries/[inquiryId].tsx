@@ -155,9 +155,6 @@ export default function SitterInquiry() {
         <Text style={styles.muted} testID="inquiry-replied">{`You replied. ${inquiry.ownerName} was told.`}</Text>
       ) : draft || editing ? (
         <Card style={styles.draft} testID="inquiry-draft">
-          <Text style={styles.warning} testID="inquiry-warning">
-            AI drafts can be wrong. You're responsible for what you send.
-          </Text>
           {draft?.needsSitter ? (
             <Text style={styles.check} testID="inquiry-needs-you">
               ⚠️ Check this one — something needs your confirmation.
@@ -190,6 +187,9 @@ export default function SitterInquiry() {
             onPress={() => void send()}
             testID="inquiry-send"
           />
+          <Text style={styles.warning} testID="inquiry-warning">
+            AI drafts can be wrong. You're responsible for what you send.
+          </Text>
           <View style={styles.row}>
             <TextButton
               label={editing ? "Use the draft text" : "Edit / Add"}
@@ -237,7 +237,7 @@ const makeStyles = (theme: Theme) =>
     tripTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     draft: { gap: theme.spacing.sm },
-    warning: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    warning: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, textAlign: "center" },
     noRoom: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     check: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },

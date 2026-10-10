@@ -601,3 +601,22 @@ test.describe("inquiry thread polish (FB-34)", () => {
     await expect(screen.getByTestId("toast")).toContainText("New draft ready", { timeout: 8000 });
   });
 });
+
+test.describe("sitter lands on what is waiting (FB-34)", () => {
+  test("Home shows the waiting question, and Bookings opens on Questions when nothing else needs an answer", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    await signIn(page, SITTER);
+    const screen = app(page);
+    await expect(screen.getByTestId("today-questions")).toContainText("Questions (1)");
+    await screen.getByTestId("today-questions").click();
+    await expect(page).toHaveURL(/\/sitter\/bookings/);
+    // No tab tap needed: the Questions list is already open.
+    await expect(screen.getByTestId(`inquiry-card-${INQ}`)).toBeVisible();
+    // Once answered, the banner is gone.
+    db.inquiry_messages.push({ ...SENT_REPLY, id: "answered", created_at: "2026-10-06T10:30:00Z" });
+    await page.goto("/sitter");
+    await expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    await expect(screen.getByTestId("today-questions")).toHaveCount(0);
+  });
+});
