@@ -339,8 +339,8 @@ test.describe("auto-send", () => {
     seedThread(db);
     // The AI draft is the sitter's; the auto reply is stored now but only appears at visible_at.
     const now = Date.now();
-    const visible = new Date(now + 7000).toISOString();
-    db.inquiries[0].reply_typing_at = new Date(now + 2000).toISOString();
+    const visible = new Date(now + 12000).toISOString();
+    db.inquiries[0].reply_typing_at = new Date(now + 6000).toISOString();
     db.inquiries[0].reply_visible_at = visible;
     db.inquiry_messages.push({
       id: "auto1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true, confirmed_by_sitter_at: null,
@@ -353,8 +353,8 @@ test.describe("auto-send", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("inquiry-waiting")).toContainText("will reply soon");
-    await expect(screen.getByTestId("inquiry-typing")).toHaveText("Chloe is typing…", { timeout: 6000 });
-    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("268.13", { timeout: 9000 });
+    await expect(screen.getByTestId("inquiry-typing")).toHaveText("Chloe is typing…", { timeout: 9000 });
+    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("268.13", { timeout: 12000 });
     await expect(screen.getByTestId("inquiry-typing")).toHaveCount(0);
     // Nobody has opened the thread: no "Read", whatever the screen was doing.
     await expect(screen.getByTestId("inquiry-question-bubble")).not.toContainText("Read");
@@ -534,5 +534,70 @@ test.describe("owner follow-up (FB-34)", () => {
     await screen.getByTestId("inquiry-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Sent");
     await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// FB-34 follow-ups from the 2026-10-10 local run: stamps, live threads, source chips, no-room drafts
+// ---------------------------------------------------------------------------------------------
+
+test.describe("inquiry thread polish (FB-34)", () => {
+  test("message times read like Oct 6, 10:05 AM, and another year adds the year", async ({ page }) => {
+    await openOwnerThread(page, { ...SENT_REPLY, created_at: "2031-02-03T15:05:00Z" });
+    const screen = app(page);
+    await expect(screen.getByTestId("inquiry-question-bubble")).toContainText("Oct 6, 6:00 AM"); // this year: no year
+    await expect(screen.getByTestId("inquiry-question-bubble")).not.toContainText("2026");
+    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("Feb 3, 2031, 10:05 AM");
+    await expect(screen.getByTestId("inquiry-reply-bubble")).not.toContainText("02-03");
+  });
+
+  test("a sitter reply shows on the owner's open thread, and an owner message on the sitter's, with no reload", async ({ browser }) => {
+    const ownerPage = await browser.newPage();
+    const { db } = await openOwnerThread(ownerPage, { ...SENT_REPLY, id: "reply0" });
+    await expect(app(ownerPage).getByTestId("inquiry-reply-bubble")).toHaveCount(1);
+    db.inquiry_messages.push({
+      ...SENT_REPLY, id: "reply-live", body: "One more thing: I can do the 14th!",
+      visible_at: new Date().toISOString(), created_at: new Date(Date.now() + 1000).toISOString(),
+    });
+    await expect(app(ownerPage).getByTestId("inquiry-reply-bubble")).toHaveCount(2, { timeout: 12000 });
+    await expect(app(ownerPage).getByTestId("inquiry-reply-bubble").last()).toContainText("the 14th");
+    await ownerPage.close();
+
+    const sitterPage = await browser.newPage();
+    const mock = await mockSupabase(sitterPage, [OWNER, SITTER]);
+    seedThread(mock.db);
+    await signIn(sitterPage, SITTER);
+    await app(sitterPage).getByRole("heading", { name: "Home" }).waitFor();
+    await sitterPage.goto(`/sitter/inquiries/${INQ}`);
+    await expect(app(sitterPage).getByTestId("inquiry-message-owner")).toHaveCount(1);
+    mock.db.inquiry_messages.push({
+      id: "q-live", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "Are you free the 14th too?", status: "sent",
+      drafted_by_ai: false, visible_at: new Date().toISOString(), read_at: null, created_at: new Date(Date.now() + 2000).toISOString(), grounding: null,
+    });
+    await expect(app(sitterPage).getByTestId("inquiry-message-owner")).toHaveCount(2, { timeout: 12000 });
+    // The new message is marked read the moment it is on the sitter's screen.
+    await expect.poll(() => mock.db.inquiry_messages.find((m) => m.id === "q-live")?.read_at, { timeout: 12000 }).toBeTruthy();
+    await sitterPage.close();
+  });
+
+  test("the earlier-messages source is not shown to the owner or the sitter", async ({ page }) => {
+    const sources = [
+      { id: "earlier-0", type: "inquiry", label: "From your earlier messages", text: "x" },
+      { id: "policy-0", type: "sitter_policy", label: "From Chloe's policies", text: "y" },
+    ];
+    await openOwnerThread(page, { ...SENT_REPLY, grounding: { quote: null, sources, availability: { can_host: true } } });
+    await expect(app(page).getByTestId("inquiry-sources")).toContainText("From Chloe's policies");
+    await expect(app(page).getByTestId("inquiry-sources")).not.toContainText("earlier messages");
+  });
+
+  test("a draft for dates with no room says why, and Accept waits until there is room", async ({ page }) => {
+    await openSitterThread(page, { grounding: { quote: null, sources: [], availability: { can_host: false }, needs_sitter: false, intent: null } });
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-no-room")).toContainText("no room");
+    await expect(screen.getByTestId("inquiry-intent-accept")).toBeDisabled();
+    await expect(screen.getByTestId("inquiry-intent-decline")).toBeEnabled();
+    await screen.getByTestId("inquiry-intent-decline").click();
+    await expect(screen.getByTestId("toast")).toContainText("New draft ready", { timeout: 8000 });
   });
 });
