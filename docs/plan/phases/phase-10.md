@@ -40,7 +40,7 @@
 
 | # | Stage | 액션 | 검증 (상대방 화면) | Phase |
 | :--- | :--- | :--- | :--- | :--- |
-| 1 | Inquiry | Owner: Chloe 프로필 → **Ask about a stay** (Boarding · 2마리 · 연휴 포함 · 맡기기 Sitter drives · 찾기 Owner drives) → 답장 후 **Request booking** | Chloe(자동 발송 모드) "typing" → 약 30초 뒤 시터 말투 답장 + 견적 카드(공휴일·다두) + Life Record 출처 칩 / Sitter 알림 "your draft reply is ready" → 요청 카드 | 07B · 03C · 03B |
+| 1 | Inquiry | Owner: Chloe 프로필 → **Ask before booking** (Boarding · 2마리 · 연휴 포함 · 맡기기 Sitter drives · 찾기 Owner drives) → 답장 후 **Request booking** | Chloe(자동 발송 모드) "typing" → 약 30초 뒤 시터 말투 답장 + 견적 카드(공휴일·다두) + Life Record 출처 칩 / Sitter 알림 "your draft reply is ready" → 요청 카드 | 07B · 03C · 03B |
 | 2 | Meet & Greet | Owner: **Care request** → AI 체크리스트 → Save · 처음 만나는 사이라 Meet & Greet: **Video** Oct 6 7 PM 제안 → Sitter Accept → **Join Google Meet** 링크 생성 → Done (대면이면 선호 장소 칩에서 고름) | Sitter 요청 카드: "Meet first" · 🚙/🚗 · Heads-up · From Max's Life Record · 수락 뒤 양쪽 카드에 Join Google Meet · M&G 전에는 Sitter Accept 비활성 | 06 · 03B (3B.9 · 3B.11) |
 | 3 | Booking | Sitter **Accept** → Owner **Checkout**: 견적 → 동의서 → **Pay (demo)** | Owner: Chloe's place · Visitor parking · 짐 체크리스트 / Sitter: "Robert signed and paid" · 출입 정보 🔒 "Unlocks …" | 03C |
 | 4a | Transit | (시드 시각 = 픽업 2시간 안) Sitter **Show code** → **Start trip → Simulate the drive** | Owner `access_unlocked` · 지도·ETA · "Chloe has arrived" → Sitter 차량 샘플 사진 → Vision ✅ → **Received** → Owner "Pick-up complete — care has started · photo verified" | 06B |

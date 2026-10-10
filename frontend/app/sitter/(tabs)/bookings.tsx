@@ -14,6 +14,7 @@ import { formatDay, isoToZoned } from "../../../features/schedule/dates";
 import { BookingSummary, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type Bucket = "requests" | "inquiries" | "upcoming" | "past";
@@ -74,6 +75,8 @@ export default function SitterBookings() {
     }
   }, [sitterId]);
 
+  useOnBookingChange(() => void load());
+
   useFocusEffect(
     useCallback(() => {
       void load();
@@ -106,8 +109,8 @@ export default function SitterBookings() {
     <Screen contentStyle={styles.content}>
       <SegmentedControl
         options={[
-          { value: "requests", label: requests > 0 ? `Requests (${requests})` : "Requests" },
-          { value: "inquiries", label: waiting > 0 ? `Questions (${waiting})` : "Questions" },
+          { value: "requests", label: "Requests", count: requests },
+          { value: "inquiries", label: "Questions", count: waiting },
           { value: "upcoming", label: "Upcoming" },
           { value: "past", label: "Past" },
         ]}

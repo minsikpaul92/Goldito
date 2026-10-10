@@ -9,6 +9,11 @@ import { Sheet } from "./Sheet";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
+/** A sitter's day as an owner picks dates (FB-33): room for these pets, no room, or not open. */
+export type DayMark = "open" | "full" | "closed";
+
+const MARK_LABEL: Record<DayMark, string> = { open: "open", full: "full", closed: "not open" };
+
 type Props = {
   visible: boolean;
   title: string;
@@ -18,11 +23,13 @@ type Props = {
   minDay: string;
   onPick: (day: string) => void;
   onClose: () => void;
+  /** The sitter's days, when known: a dot under each day and a legend. Any day can still be picked. */
+  marks?: Map<string, DayMark>;
   testID?: string;
 };
 
 /** A month grid in a sheet: tap a day to pick it. The − / + buttons stay for one-day nudges. */
-export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose, testID }: Props) {
+export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose, marks, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [month, setMonth] = useState(monthStart(value));
@@ -71,11 +78,12 @@ export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose,
             if (!day) return <View key={di} style={styles.cell} />;
             const disabled = day < minDay;
             const selected = day === value;
+            const mark = disabled ? undefined : marks?.get(day);
             return (
               <Pressable
                 key={day}
                 accessibilityRole="button"
-                accessibilityLabel={day}
+                accessibilityLabel={mark ? `${day}, ${MARK_LABEL[mark]}` : day}
                 accessibilityState={{ selected, disabled }}
                 disabled={disabled}
                 onPress={() => {
@@ -86,11 +94,27 @@ export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose,
                 testID={testID ? `${testID}-${day}` : undefined}
               >
                 <Text style={[styles.dayText, selected && styles.selectedText]}>{dayOfMonth(day)}</Text>
+                {mark ? (
+                  <View
+                    style={[styles.dot, styles[mark], selected && styles.dotOnSelected]}
+                    testID={testID ? `${testID}-${day}-${mark}` : undefined}
+                  />
+                ) : null}
               </Pressable>
             );
           })}
         </View>
       ))}
+      {marks ? (
+        <View style={styles.legend} testID={testID ? `${testID}-legend` : undefined}>
+          {(["open", "full", "closed"] as DayMark[]).map((m) => (
+            <View key={m} style={styles.legendItem}>
+              <View style={[styles.dot, styles[m]]} />
+              <Text style={styles.legendText}>{m === "open" ? "Room for your pets" : m === "full" ? "Full" : "Not open"}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </Sheet>
   );
 }
@@ -117,4 +141,12 @@ const makeStyles = (theme: Theme) =>
     selected: { backgroundColor: theme.color.primary },
     selectedText: { color: theme.color.primaryText, fontWeight: "700" },
     disabled: { opacity: 0.3 },
+    dot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
+    open: { backgroundColor: theme.color.success },
+    full: { backgroundColor: theme.color.warning },
+    closed: { borderWidth: 1, borderColor: theme.color.textMuted },
+    dotOnSelected: { borderWidth: 1, borderColor: theme.color.primaryText },
+    legend: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md, paddingTop: theme.spacing.sm },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs },
+    legendText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

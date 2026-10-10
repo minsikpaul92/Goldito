@@ -11,15 +11,29 @@ import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { OwnerInquiryCard, listOwnerInquiries } from "../../../features/inquiries/inquiryApi";
 import { formatDay, isoToZoned } from "../../../features/schedule/dates";
-import { MySitter, SERVICE_LABEL, listMySitters } from "../../../features/sitters/sitterApi";
+import {
+  MySitter,
+  SERVICE_LABEL,
+  SitterSummary,
+  listMySitters,
+  listSitters,
+} from "../../../features/sitters/sitterApi";
 import { OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; bookings: OwnerBooking[]; sitters: MySitter[]; inquiries: OwnerInquiryCard[] }
+  | {
+      status: "ready";
+      bookings: OwnerBooking[];
+      sitters: MySitter[];
+      inquiries: OwnerInquiryCard[];
+      /** Sitters on Goldito, when the owner has none of their own yet (FB-32). */
+      others: SitterSummary[];
+    }
   | { status: "error"; message: string };
 
 /**
@@ -40,11 +54,15 @@ export default function OwnerBookings() {
         listMySitters(),
         listOwnerInquiries().catch(() => [] as OwnerInquiryCard[]),
       ]);
-      setState({ status: "ready", bookings, sitters, inquiries });
+      // A first-time owner sees the sitters on Goldito, so a profile (and "Ask before booking") is one tap away.
+      const others = sitters.length === 0 ? await listSitters().catch(() => [] as SitterSummary[]) : [];
+      setState({ status: "ready", bookings, sitters, inquiries, others });
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [ownerId]);
+
+  useOnBookingChange(() => void load());
 
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +87,8 @@ export default function OwnerBookings() {
     );
   }
 
-  if (state.bookings.length === 0 && state.sitters.length === 0 && state.inquiries.length === 0) {
+  const nothingYet = state.bookings.length === 0 && state.inquiries.length === 0;
+  if (nothingYet && state.sitters.length === 0 && state.others.length === 0) {
     return (
       <Screen>
         <EmptyState
@@ -142,6 +161,21 @@ export default function OwnerBookings() {
                 note={`${sitter.isFavorite ? "★ Favorite · " : ""}${sitter.bookingCount === 1 ? "1 booking with you" : `${sitter.bookingCount} bookings with you`}`}
                 onPress={() => router.push(`/owner/sitters/${sitter.id}`)}
               />
+            ))}
+          </View>
+        ) : null}
+        {state.others.length > 0 ? (
+          <View style={styles.section} testID="sitters-on-goldito">
+            <Text accessibilityRole="header" style={styles.heading}>
+              Sitters on Goldito
+            </Text>
+            <Text style={styles.hint}>
+              {nothingYet
+                ? "Open a profile to ask before booking — or Book care to see who's free for your dates."
+                : "Open a profile to ask before booking."}
+            </Text>
+            {state.others.map((sitter) => (
+              <SitterCard key={sitter.id} sitter={sitter} onPress={() => router.push(`/owner/sitters/${sitter.id}`)} />
             ))}
           </View>
         ) : null}

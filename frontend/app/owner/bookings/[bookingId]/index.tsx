@@ -34,6 +34,7 @@ import {
   respondHandoff,
 } from "../../../../lib/bookings";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 
@@ -120,6 +121,7 @@ export default function OwnerBookingDetail() {
   useEffect(() => {
     void load();
   }, [load]);
+  useOnBookingChange(() => void load());
 
   if (state.status === "loading") return <LoadingView />;
   if (state.status === "missing") {

@@ -402,6 +402,27 @@ def test_an_unknown_inquiry_is_a_404(client, setup):
     assert post(client).status_code == 404
 
 
+def test_a_new_owner_message_after_the_reply_gets_a_new_draft_with_the_conversation(client, setup):
+    # FB-34: the owner writes again after the sitter answered — a fresh draft, written in context.
+    ctx = setup(GOOD, "Hi Robert! Yes, I can give Max his pill at 2 PM — no problem. 🐾")
+    first = post(client).json()
+    ctx.db.tables["inquiry_messages"] += [
+        {"id": "s1", "inquiry_id": INQ, "author": "sitter", "body": GOOD, "status": "sent", "created_at": "2026-10-07T10:05:00+00:00"},
+        {"id": "q2", "inquiry_id": INQ, "author": "owner", "body": "Great — and can he sleep on the sofa?", "status": "sent", "created_at": "2099-01-01T00:00:00+00:00"},
+    ]
+    second = post(client).json()
+    assert second["reused"] is False and second["message_id"] != first["message_id"]
+    assert len(drafts(ctx)) == 2 and len(ctx.model.calls) == 2
+    facts = json.loads(ctx.model.calls[1]["messages"][-1]["content"])
+    assert facts["owner_question"] == "Great — and can he sleep on the sofa?"
+    assert facts["conversation_so_far"] == [
+        {"from": "owner", "text": "Can you give Max his pill at 2 PM?"},
+        {"from": "me", "text": GOOD},
+    ]
+    # A follow-up need not repeat the total (the first answer gave it).
+    assert "$" not in second["body"]
+
+
 def test_asking_twice_makes_one_draft(client, setup):
     ctx = setup()
     first = post(client).json()

@@ -17,7 +17,7 @@
 | 보고 싶은 것 | 시작 상태 | 처음 할 일 |
 | :--- | :--- | :--- |
 | 펫 등록 · 처음 사용 | `empty` | 오너 로그인 → Add pet |
-| 예약 만들기 (Book care · 달력 UX-1) · 문의 INQ-* | `pets` | 오너 Bookings → Book care, 또는 Chloe 프로필 → Ask about a stay |
+| 예약 만들기 (Book care · 달력 UX-1) · 문의 INQ-* | `pets` | 오너 Bookings → Book care, 또는 Chloe 프로필 → Ask before booking |
 | 체크아웃 · 결제 (FLOW-3 · BOOK-5) | `confirmed` | 오너 예약 → Finish booking |
 | 결제 직후 확인 카드 · 준비물 (FLOW-13 · FLOW-14) | `ready` 또는 `confirmed`(직접 결제) | 오너 예약 상세 |
 | 시터 Received · 돌봄 시작 | `ready` | 시터 예약 → Received |
@@ -26,7 +26,7 @@
 
 ## 1. 준비 (한 번)
 
-호스팅 DB에는 `010`~`011b`와 `011f`~`011h`가 **적용**돼 있습니다 (`011c`~`011e`는 R1b에서 만들 예정).
+호스팅 DB에는 `010`~`011i`가 **적용**돼 있습니다 (`011c`~`011i`는 2026-10-09 호스팅 DB에서 확인).
 
 1. **브라우저 두 개**: 크롬 일반 창 + 시크릿 창에 각각 https://goldito-petcare.vercel.app → 한쪽은 **Demo owner**(Robert), 다른 쪽은 **Demo sitter**(Chloe). 새로고침 없이 이어지는 흐름(알림 · 자동 발송 · 문의)을 볼 수 있습니다.
 2. 결과는 §5대로 test-guide에 적습니다 (`main` 기준).
@@ -76,7 +76,7 @@ cd backend
 1. **FLOW-13 · FLOW-14** (§3.16) — [A] 오너 예약 상세. 가장 먼저 (닫으면 확인 카드가 다시 안 나옴).
 2. **REPORT** (§3.10) — D 중에. 시터 Diary → 오너 Diary / 알림.
 3. **CAP** (§3.12) — D 중 사진 올릴 때마다 + 오너 Feed Album. **CAP-4**(백엔드 끄고 올리기)는 마지막에.
-4. **INQ** (§3.11) — 완료와 별개로 언제든. 오너 → Chloe 프로필 → **Ask about a stay**. 자동 발송(INQ-13~14)은 시터가 `/profile` → **AI replies → Auto-send**를 켠 뒤 한 번 더. 정책(INQ-12)은 시터 `/profile`의 **House rules & policies**에 "No dogs over 20 kg."를 적고 시작하면 INQ-9도 볼 수 있음(Max의 체중을 25 kg으로 바꿔서).
+4. **INQ** (§3.11) — 완료와 별개로 언제든. 오너 → Chloe 프로필 → **Ask before booking**. 자동 발송(INQ-13~14)은 시터가 `/profile` → **AI replies → Auto-send**를 켠 뒤 한 번 더. 정책(INQ-12)은 시터 `/profile`의 **House rules & policies**에 "No dogs over 20 kg."를 적고 시작하면 INQ-9도 볼 수 있음(Max의 체중을 25 kg으로 바꿔서).
 5. **DONE** (§3.13) — E(Returned) 직후부터. DONE-12는 **다른 시터 계정**이 필요합니다(아래 §4).
 6. **UX** (§3.14) · **NAME** (§3.15) — 화면 돌아다니며.
 
@@ -103,14 +103,14 @@ cd backend
 | 상대 화면 | 요청을 보내도 상대 목록이 실시간으로 안 바뀜 (새로고침 필요) | FB-2 |
 | 날짜 · 시간 입력 | 곳곳이 − + 만 있음 (달력 · 시계 통일은 아직) | FB-3 |
 | 시터 알림 | 오너가 요금표 없는 시터로 체크아웃하면 시터에게 "Set your prices" 알림이 안 감 | FB-7b |
-| 문의 AI | 거절 답장에 견적 카드가 붙음 · 처음 문의한 오너 이름이 시터에게 안 보임 | RV-3 · RV-4 (R1b) — RV-1(가능 여부)은 고침, 호스팅 DB `011c` 적용 뒤 |
+| 문의 AI | 거절 답장에 견적 카드가 붙음 | RV-3 (R1b) — RV-1(가능 여부)은 고침, 호스팅 DB `011c` 적용 뒤 |
 | 시터 체크인 | Received를 약속 시각보다 일찍 누른 뒤(또는 `in_care` 리셋 뒤 3분 안) 체크인이 "Tasks open once the stay has started"로 막힘 | CW-1 — 호스팅 DB에 `011i` 적용 전까지 |
 | 첫 요청 | 30~50초 걸림 (Render 무료 플랜이 잠들었다 깨는 중) | 설계 — keep-alive cron |
 
 ## 5. 결과 적는 법
 
 - 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.ko.md`). 사람이 안 해 본 줄은 ➖ 그대로. **Vercel(main)에서 한 것만** 기록합니다.
-- 버그 · 요청은 [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md)에 **FB-30부터** 번호를 붙여 적고(본 것 · 원인 짐작 · 생각 · 급함 여부), 급하면 민식에게 바로 알립니다 — [phases/phase-q.md](phases/phase-q.md) Q.1.
+- 버그 · 요청은 [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md)에 **FB-40부터** 번호를 붙여 적고(본 것 · 원인 짐작 · 생각 · 급함 여부), 급하면 민식에게 바로 알립니다 — [phases/phase-q.md](phases/phase-q.md) Q.1.
 - 막히면 **어느 단계에서 어떤 화면 문구가 떴는지**만 알려 주면 됩니다 (스크린샷이면 더 좋음).
 
 ## 6. 자동 테스트 (참고 — 코드는 이미 통과)
