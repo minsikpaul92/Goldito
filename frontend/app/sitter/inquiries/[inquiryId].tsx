@@ -65,7 +65,8 @@ export default function SitterInquiry() {
     void markInquiryRead(inquiryId); // opening the thread is the only "read" the owner ever sees
   }, [load, inquiryId]);
 
-  const replied = !!inquiry?.messages.some((m) => m.author === "sitter");
+  // Judged from the LATEST message: a new owner message after the reply needs an answer again (FB-34).
+  const replied = inquiry?.messages.at(-1)?.author === "sitter";
   const draft = inquiry?.draft ?? null;
   // Waiting for the draft: a slow poll until it arrives.
   useEffect(() => {

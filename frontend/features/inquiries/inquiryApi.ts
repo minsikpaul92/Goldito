@@ -231,10 +231,14 @@ export async function getInquiry(id: string): Promise<InquiryView | null> {
   };
 }
 
+/** The draft the sitter still has to act on: it answers the owner's latest message and no sent reply came after it. */
 function latestDraft(rows: MessageRow[]): InquiryDraft | null {
-  const drafts = rows.filter((m) => m.author === "ai");
-  const m = drafts[drafts.length - 1];
+  const m = rows.filter((r) => r.author === "ai").at(-1);
   if (!m) return null;
+  const lastOwner = rows.filter((r) => r.author === "owner").at(-1);
+  const lastSitter = rows.filter((r) => r.author === "sitter").at(-1);
+  if (lastOwner && lastOwner.created_at > m.created_at) return null;
+  if (lastSitter && lastSitter.created_at > m.created_at) return null;
   return {
     id: m.id,
     body: m.body,
@@ -296,6 +300,14 @@ export type SitterInquiryCard = {
   state: "waiting" | "draft" | "replied";
 };
 
+/** Where a thread stands, judged from the owner's LATEST message: a reply or draft older than it doesn't count (FB-34). */
+export function threadState(list: { author: string; created_at: string }[]): SitterInquiryCard["state"] {
+  const latest = (author: string) => list.filter((m) => m.author === author).reduce((at, m) => (m.created_at > at ? m.created_at : at), "");
+  const owner = latest("owner");
+  if (latest("sitter") > owner) return "replied";
+  return latest("ai") > owner ? "draft" : "waiting";
+}
+
 /** The sitter's inquiries, newest first, each with where it stands. */
 export async function listSitterInquiries(): Promise<SitterInquiryCard[]> {
   const supabase = getSupabase();
@@ -318,7 +330,7 @@ export async function listSitterInquiries(): Promise<SitterInquiryCard[]> {
   }
   return rows.map((r) => {
     const list = byInquiry.get(r.id) ?? [];
-    const replied = list.some((m) => m.author === "sitter");
+    const state = threadState(list);
     return {
       id: r.id,
       ownerName: first(r.owner)?.display_name ?? "An owner",
@@ -328,7 +340,7 @@ export async function listSitterInquiries(): Promise<SitterInquiryCard[]> {
       pickUpAt: r.pick_up_at,
       createdAt: r.created_at,
       status: r.status,
-      state: replied ? "replied" : list.some((m) => m.author === "ai") ? "draft" : "waiting",
+      state,
     };
   });
 }
@@ -363,11 +375,14 @@ export async function listOwnerInquiries(): Promise<OwnerInquiryCard[]> {
   const rows = (found.data ?? []) as unknown as InquiryRow[];
   if (rows.length === 0) return [];
   const [msgs, pets] = await Promise.all([
-    supabase.from("inquiry_messages").select("inquiry_id, author").eq("author", "sitter").in("inquiry_id", rows.map((r) => r.id)),
+    supabase.from("inquiry_messages").select("inquiry_id, author, created_at").in("inquiry_id", rows.map((r) => r.id)),
     supabase.from("pets").select("id, name").in("id", [...new Set(rows.flatMap((r) => r.pet_ids))]),
   ]);
   const names = new Map(((pets.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]));
-  const replied = new Set(((msgs.data ?? []) as { inquiry_id: string }[]).map((m) => m.inquiry_id));
+  const byInquiry = new Map<string, { author: string; created_at: string }[]>();
+  for (const m of (msgs.data ?? []) as { inquiry_id: string; author: string; created_at: string }[]) {
+    byInquiry.set(m.inquiry_id, [...(byInquiry.get(m.inquiry_id) ?? []), m]);
+  }
   return rows.map((r) => ({
     id: r.id,
     sitterName: first(r.sitter)?.display_name ?? "Your sitter",
@@ -377,6 +392,6 @@ export async function listOwnerInquiries(): Promise<OwnerInquiryCard[]> {
     pickUpAt: r.pick_up_at,
     createdAt: r.created_at,
     status: r.status,
-    state: replied.has(r.id) ? "replied" : "waiting",
+    state: threadState(byInquiry.get(r.id) ?? []) === "replied" ? "replied" : "waiting",
   }));
 }
