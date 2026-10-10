@@ -435,3 +435,104 @@ test.describe("owner questions list", () => {
     await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("Yes!");
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// FB-34: the owner writes again, Change dates, and "replied" follows the latest owner message
+// ---------------------------------------------------------------------------------------------
+
+const SENT_REPLY = {
+  id: "reply1", inquiry_id: INQ, author: "sitter", sender_id: SITTER.id, status: "sent", drafted_by_ai: true,
+  body: "Hi Robert! I can't take Max that weekend.", visible_at: "2026-10-06T10:05:00Z", read_at: null,
+  created_at: "2026-10-06T10:05:00Z", confirmed_by_sitter_at: "2026-10-06T10:05:00Z",
+  grounding: { quote: null, sources: [], availability: { can_host: false } },
+};
+
+async function openOwnerThread(page: import("@playwright/test").Page, reply: Record<string, unknown> = SENT_REPLY) {
+  const { db } = await mockSupabase(page, [OWNER, SITTER]);
+  seedThread(db);
+  db.inquiry_messages.push(reply);
+  const asked: Record<string, unknown>[] = [];
+  await page.route("**/api/ai/inquiry-reply", (route) => {
+    asked.push(route.request().postDataJSON());
+    return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+  await signIn(page, OWNER);
+  await expect(page).toHaveURL(/\/owner$/);
+  await page.goto(`/owner/inquiries/${INQ}`);
+  return { db, asked };
+}
+
+test.describe("owner follow-up (FB-34)", () => {
+  test("the thread shows every message in order; writing back adds the message and asks for a new draft", async ({ page }) => {
+    const { db, asked } = await openOwnerThread(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("inquiry-question-bubble")).toHaveCount(1);
+    await expect(screen.getByTestId("inquiry-reply-bubble")).toContainText("can't take Max");
+    await expect(screen.getByTestId("inquiry-compose")).toBeVisible();
+
+    await screen.getByTestId("inquiry-followup").fill("What about the weekend after?");
+    await screen.getByTestId("inquiry-followup-send").click();
+
+    await expect(screen.getByTestId("inquiry-question-bubble")).toHaveCount(2);
+    await expect(screen.getByTestId("inquiry-question-bubble").last()).toContainText("weekend after");
+    expect(db.inquiry_messages.filter((m) => m.author === "owner").at(-1)).toMatchObject({
+      sender_id: OWNER.id, body: "What about the weekend after?",
+    });
+    expect(asked).toEqual([{ inquiry_id: INQ }]);
+    // Waiting for the sitter again: no reply box, no stale buttons from the earlier answer.
+    await expect(screen.getByTestId("inquiry-waiting")).toBeVisible();
+    await expect(screen.getByTestId("inquiry-compose")).toHaveCount(0);
+    await expect(screen.getByTestId("inquiry-change-dates")).toHaveCount(0);
+  });
+
+  test("a declined reply offers Change dates first and Find other sitters second; Change dates opens a new inquiry with the trip prefilled", async ({ page }) => {
+    const { db } = await openOwnerThread(page);
+    const screen = app(page);
+    await expect(screen.getByTestId("inquiry-change-dates")).toBeVisible();
+    await expect(screen.getByTestId("inquiry-find-others")).toBeVisible();
+    await screen.getByTestId("inquiry-change-dates").click();
+
+    await expect(screen.getByTestId("inquiry-sheet")).toBeVisible();
+    await expect(screen.getByTestId("inquiry-pet-Max")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("inquiry-pet-Mochi")).not.toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("inquiry-send").click();
+
+    await expect(page).toHaveURL(/\/owner\/inquiries\/(?!00000000-0000-4000-8000-0000000000d1).+/);
+    expect(db.inquiries).toHaveLength(2);
+    expect(db.inquiries[1]).toMatchObject({ sitter_id: SITTER.id, service_type: "boarding", pet_ids: [MAX] });
+    expect(db.inquiries[1].id).not.toBe(INQ);
+  });
+
+  test("the sitter's list and thread follow the latest owner message: a reply, then a new question, needs an answer again", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    // The draft was sent; then the owner wrote again after it.
+    db.inquiry_messages.push(
+      { ...SENT_REPLY, id: "reply1" },
+      { id: "q2", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "What about the weekend after?", status: "sent", drafted_by_ai: false, visible_at: "2026-10-06T11:00:00Z", read_at: null, created_at: "2026-10-06T11:00:00Z", grounding: null },
+    );
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto("/sitter/bookings");
+    await app(page).getByTestId("sitter-bookings-tabs-inquiries").click();
+    const screen = app(page);
+    await expect(screen.getByTestId("sitter-bookings-tabs-inquiries-count")).toHaveText("1");
+    await expect(screen.getByTestId(`inquiry-card-${INQ}`)).toContainText("Writing the draft");
+
+    // The draft for the new message lands: the card says so, and the thread offers it (the old draft stays out).
+    db.inquiry_messages.push({
+      id: "draft2", inquiry_id: INQ, author: "ai", sender_id: null, body: "Hi Robert! The weekend after works.", status: "draft", drafted_by_ai: true,
+      visible_at: "2026-10-06T11:00:05Z", read_at: null, created_at: "2026-10-06T11:00:05Z",
+      grounding: { quote: null, sources: [], availability: { can_host: true }, needs_sitter: false, intent: null },
+    });
+    await page.reload();
+    await app(page).getByTestId("sitter-bookings-tabs-inquiries").click();
+    await expect(screen.getByTestId(`inquiry-card-${INQ}`)).toContainText("Draft ready");
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("weekend after works");
+    await expect(screen.getByTestId("inquiry-replied")).toHaveCount(0);
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
+    await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
+  });
+});

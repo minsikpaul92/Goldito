@@ -59,7 +59,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 오너 **문의 보내기** (시터 프로필 → Ask before booking: 서비스 · 반려동물 · 날짜 · 장소 · 질문(선택) → 대화 화면, 시터가 보낸 답만 보임, 견적 카드 · 출처 칩, Request booking 자동 입력, 불가 날짜면 Find other sitters) | ✅ 🤖 `inquiry.spec.ts` (실제 두 계정 · 실제 DB는 👤 — 호스팅 DB에 010 적용됨 2026-10-07) | 07B / 7B.5 |
+| 오너 **문의 보내기** (시터 프로필 → Ask before booking: 서비스 · 반려동물 · 날짜 · 장소 · 질문(선택) → 대화 화면, 시터가 보낸 답만 보임, 견적 카드 · 출처 칩, Request booking 자동 입력, 불가 날짜면 **Change dates**(날짜 · 펫이 채워진 새 문의) + Find other sitters(보조), 시터 답장 뒤 오너가 **Write back**으로 이어 쓰기 → 새 AI 초안, 시터 목록은 **마지막 오너 메시지** 기준으로 "답함" 판정 — FB-34) | ✅ 🤖 `inquiry.spec.ts` (실제 두 계정 · 실제 DB는 👤 — 호스팅 DB에 010 적용됨 2026-10-07) | 07B / 7B.5 |
 | 시터 **문의함** (Questions 탭 · 초안 Send 한 번 / Edit·Add / Regenerate / 의도 칩 · 경고 문구 · 열면 읽음) + 정책 편집 | ✅ 🤖 `inquiry.spec.ts` | 07B / 7B.6 |
 | 문의 답장 **초안 API** (일정 · 견적 · 반려동물 · RAG 근거 → Nano, 금액 · 날짜 · 1인칭 · 출입 정보 검사, 정책 체중 한도, 멱등, 오너에게는 초안을 안 줌) | ✅ 🤖 pytest a–k (실제 모델 확인 · 지연 p50 3.2 s) | 07B / 7B.3–7B.4 · 7B.7 |
 | RAG (문단 청크 · 재색인 · 범위 제한 검색) | ✅ 🤖 pytest + SQL smoke M | 07B / 7B.2 |
@@ -345,6 +345,9 @@
 | INQ-20 | 시터 일정에서 어느 하룻밤의 자리를 1로 줄임(그 밤 `max_pets` 1) → 오너가 **Max + Mochi**로 그 밤을 포함해 문의 | AI 초안이 **"가능해요" 대신 그 날짜는 못 한다**고 하고 견적 카드 · Request booking 없음 — 예약 요청을 해도 같은 판단(`sitter_unavailable`). 시터가 안 연 날짜가 끼어도 같음 (RV-1) | pytest · SQL 011c (호스팅 DB에 `011c` 적용 뒤) | 로컬 ✅ 10/09 민식 (Max+Mochi, 10/16 자리 1 → "unavailable on Oct 16", 견적 없음) · Vercel ➖ |
 | INQ-21 | `pets`로 리셋(예약 이력 없음) → 오너가 Chloe에게 Max + Mochi 문의 → 시터 Bookings → **Questions** | 카드 제목이 **"Robert · Max, Mochi"**("An owner" 아님), 스레드 제목 · 여행 줄에 펫 이름. 머문 기간이 끝나거나 문의가 닫히면 펫 정보는 다시 안 보임(이름은 남음) (FB-31 · RV-4) | SQL 011e (호스팅 DB에 `011e` 적용 뒤) | ➖ |
 | INQ-22 | Chloe 일정에서 하루를 Max pets 1로 → 오너가 Chloe 프로필 | 버튼이 **[Ask before booking] [Book]** 나란히. 문의 시트에서 Max만 고르면 그날 초록 점, **Max + Mochi**면 그날 **주황 점(Full)** + "Chloe has no room for your pets that day — you can still ask." 달력 아래 범례 (FB-33) | 🤖 `inquiry` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
+| INQ-23 | 시터가 답한 문의(가능/불가 아무거나)에서 오너 대화 화면을 연다 → **Write back** 칸에 "What about the weekend after?" → **Send** | 대화에 **모든 메시지가 시간순**으로 보임(내 질문 · 시터 답 · 새 질문). 보낸 뒤 "Chloe will reply soon"으로 돌아가고 입력칸 · 이전 답의 버튼은 사라짐. 새 초안이 생기며 시터에게 "your draft is ready" 알림. 자동 발송 시터면 같은 규칙으로 약 30초 뒤 답이 나타남 (시터 승인 · 자동 발송 규칙은 첫 문의와 동일) (FB-34) | 🤖 `inquiry` (오너 이어 쓰기) · AI 초안 자체는 pytest(#67) | ➖ |
+| INQ-24 | 시터가 **불가**로 답한 문의 → 오너 대화 | 큰 버튼 **Change dates**, 그 아래 글자 버튼 **Find other sitters**(보조). Change dates → 문의 시트가 **같은 서비스 · 반려동물 · 시간 · 장소**로 채워져 열림(지난 날짜면 오늘로) → Send → **새 문의**(이전 대화는 그대로)로 이동 (FB-34) | 🤖 `inquiry` | ➖ |
+| INQ-25 | 시터가 답한 문의에 오너가 새 메시지를 씀 → 시터 Bookings → **Questions** | 그 카드가 다시 **"Writing the draft…"**(Questions 숫자에 포함), 초안이 생기면 **"Draft ready"**, 열면 **새 질문에 대한 초안만** 보임(이전 초안 X) → Send 하면 "Replied" (목록 · 스레드 모두 마지막 오너 메시지 기준) (FB-34) | 🤖 `inquiry` | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
@@ -476,6 +479,7 @@
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.
 - **문의 AI의 가능 여부 = 예약 엔진의 규칙 (RV-1):** 펫 수만큼 자리가 없는 슬롯이나 시터가 안 연 날이 하나라도 있으면 "못 해요"다. 호스팅 DB에 **`011c`가 적용되기 전에는** 이 검사를 못 해서 모든 답장이 "확인해서 알려 드릴게요"(가격 없음, 자동 발송 안 됨)로 나온다.
+- **문의 이어 쓰기 (FB-34):** 오너의 **Write back** 칸은 *시터의 답이 마지막 메시지일 때만* 보이고(내가 보낸 뒤에는 시터가 답할 때까지 숨김), 문의가 `booked` · `closed`면 없다. 새 초안은 백엔드가 "마지막 초안 이후의 새 오너 메시지"로 만든다 — Render가 잠들어 있거나 모델이 실패하면 초안이 늦거나 없고, 시터는 **Write it myself**로 직접 답할 수 있다. **Change dates**는 새 문의를 만들 뿐 이전 문의는 닫지 않는다. 장소가 *Somewhere else*였던 문의는 메모를 저장하지 않아서 시트에서 장소 메모를 다시 써야 한다.
 - **일찍 Received한 뒤의 기록 (CW-1, 2026-10-09 수정):** 체크인 · 할 일 · 알림장 칩 · 초안이 모두 "약속된 드롭오프와 Received 중 **이른 쪽**"부터 센다(끝은 약속된 픽업 그대로). 체크인 · 할 일 쪽은 DB 함수라 **`011i`가 호스팅 DB에 적용돼야** 바뀐다 — 적용 전에는 `in_care` 리셋 뒤 3분 동안 체크인이 "Tasks open once the stay has started"로 막힌다(알림장 칩은 백엔드 배포만으로 고쳐짐).
 - History는 **읽기 전용**이다. 시터 Diary(알림장 쓰기)는 7.3에서 생겼다(스택 #55).
 - Heads-up은 시터 **예약 상세와 Home**에 보인다. "도착 카드"(Pet Transit)는 Phase 06B에서 만든다.
