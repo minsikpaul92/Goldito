@@ -160,7 +160,7 @@ Mon 22:40  ① Robert asks Chloe about Oct 9–12 → Chloe's auto-send is on �
 Tue        ② Booking request → care request → AI checklist → first stay together, so a video Meet & Greet
               (Google Meet link + calendar invite) → drop-off: Sitter drives, pick-up: Owner drives
 Wed        ③ Chloe accepts → Robert signs 5 consents → pays (demo) → Chloe's address + visitor parking unlock
-Fri 05:30     Entry info unlocks for Chloe (2 h before pick-up) → Robert is notified
+Fri 05:30     Entry info becomes available to Chloe (2 h before pick-up); Robert is told the moment she first opens it
 Fri 07:30  ④ 🚧 Chloe starts the trip (taps Allow on the location screen) → Robert watches the ETA → buzzer + lockbox card on arrival
               → photo of Max's crate in the car → ✅ "Pick-up complete — care has started"
 Fri 18:00     ✅ Suggested chips from the day + 2 photos → Chloe adds one short line → AI daily note → she approves
