@@ -56,6 +56,7 @@
 
 > New feedback goes here unless it blocks the demo path or makes a false promise. Triage question: *does a judge hit it on the 5-stage path, or does the app say something untrue?*
 
+- **Use-case review findings** ([use-cases.ko.md](use-cases.ko.md) §3, 2026-10-11) — **A** entry info is not required before paying (the sitter would open an empty card at the door; candidate for the P0 path once confirmed) · **C** a per-booking progress bar with one next action per role · **D** deadlines (sitter reply, payment) · **E** arrival check-in · **F** notification tiers + quiet hours · G – L polish. Decide after the team's feedback
 - **BK-1** Sitter Bookings tab landing — every time the tab is entered: the last-clicked tab if it still has a count, else the first tab with a count (Upcoming → Requests → Questions), else the last clicked ([IQ-10](feedback-2026-10-10.ko.md); `bookings.tsx`, `userPicked`)
 - **RK-1 – RK-4** Reply kind + owner hint chips: the sitter's reply carries a kind (dates can't work · pet type not accepted · price / policy · yes · other; extends `011k`), the owner thread shows what fits (Change dates, hint chips that fill Write back), and **IQ-15** a one-tap *Use Oct 20 – Oct 22* from a Suggest message (`change_inquiry_dates`). RK-4: "Ask anyway" / "Pick other dates" pattern ([IQ-11 · IQ-15](feedback-2026-10-10.ko.md))
 - **IQ-16** Start the sitter's draft on the server (DB trigger / webhook) so closing the owner's window right after Send cannot lose it
@@ -84,7 +85,8 @@
 5. **QA feedback as GitHub issues** — everyone uses the QA feedback form; severity labels `blocks-demo` / `false-promise` / `polish`; `ui-polish` for Muk.
 6. **Demo accounts for judges** — fixed accounts per starting point; the "two judges, one account" problem.
 7. **Demo video** — who records and who edits (proposed: Minsik records, Muk edits), the recording slot around 10/27.
-8. **Archive timing** — when the old `feedback-*` / `review-*` documents move to `docs/archive/` (after Seulgi's Q.1).
+8. **Use-case review** — go through [use-cases.ko.md](use-cases.ko.md) §4 (entry info required, progress bar, deadlines, arrival check-in, notification tiers, invite link).
+9. **Archive timing** — when the old `feedback-*` / `review-*` documents move to `docs/archive/` (after Seulgi's Q.1).
 
 ---
 

@@ -249,6 +249,8 @@ Oct 9, 2026
 
 ## 6. 데모 경로 (A Stay with Goldito)
 
+> 오너 · 시터 각자의 입장에서 단계별로 푼 표와 발견한 문제: [use-cases.ko.md](use-cases.ko.md).
+
 추수감사절 연휴(2026-10-09 금 ~ 10-12 월, 10-12 = Thanksgiving) Max(강아지·Maltese·닭고기 알레르기) + Mochi(고양이)를 Chloe에게 보딩. 시드는 상대 날짜(`--relative`)로 언제든 재현.
 
 | # | 장면 | 화면 (역할) | Phase |
