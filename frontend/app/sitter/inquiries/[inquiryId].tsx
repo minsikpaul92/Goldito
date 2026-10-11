@@ -8,6 +8,7 @@ import { QuoteCard } from "../../../components/QuoteCard";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Chip } from "../../../components/ui/Chip";
+import { CheckRow } from "../../../components/ui/CheckRow";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
@@ -51,6 +52,8 @@ export default function SitterInquiry() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<"send" | "regenerate" | null>(null);
   const [quick, setQuick] = useState<ReplyKind | null>(null);
+  // RV-3: does this reply offer the price and Request booking? On only for a draft that has both and says yes.
+  const [offer, setOffer] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -81,6 +84,7 @@ export default function SitterInquiry() {
     if (draft) {
       setText(draft.body);
       setEditing(false);
+      setOffer(!!draft.quote && draft.canHost !== false);
     }
   }, [draft?.id]);
 
@@ -107,7 +111,8 @@ export default function SitterInquiry() {
     if (busy || !text.trim()) return;
     setBusy("send");
     try {
-      await sendInquiryReply(inquiry.id, text.trim(), draft?.id ?? null);
+      // Without the offer the reply goes out as a "no" (011k): no price card, no Request booking — Change dates instead.
+      await sendInquiryReply(inquiry.id, text.trim(), draft?.id ?? null, draft?.canHost !== false && !offer ? "decline" : undefined);
       void recordReplySample(inquiry.id);
       toast.show(`Sent ✅ ${inquiry.ownerName} was told`);
       await load();
@@ -181,6 +186,15 @@ export default function SitterInquiry() {
                 <Chip key={label} label={label} />
               ))}
             </View>
+          ) : null}
+          {draft && draft.canHost !== false ? (
+            <CheckRow
+              label="Include the price and a Request booking button"
+              hint={offer ? undefined : `${inquiry.ownerName} gets your message with Change dates instead`}
+              checked={offer}
+              onChange={setOffer}
+              testID="inquiry-offer"
+            />
           ) : null}
           <Button
             label={busy === "send" ? "Sending…" : "Send"}

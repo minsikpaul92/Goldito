@@ -281,6 +281,37 @@ test.describe("sitter inquiry", () => {
     expect(db.inquiry_messages.find((m) => m.author === "sitter")?.body).toBe("Hi Robert! Yes — pill at 2 PM works. $268.13 CAD total.");
   });
 
+  test("the sitter can turn off the price and Request booking, e.g. after editing the draft into a no", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-offer")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("inquiry-edit-toggle").click();
+    await screen.getByTestId("inquiry-edit").fill("Hi Robert! Sorry, I can't take Max after all.");
+    await screen.getByTestId("inquiry-offer").click();
+    await expect(screen.getByTestId("inquiry-offer")).toHaveAttribute("aria-checked", "false");
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    const sent = db.inquiry_messages.find((m) => m.author === "sitter");
+    expect(sent?.grounding).toEqual({ availability: { can_host: false } }); // no quote, no Request booking for the owner
+  });
+
+  test("a draft with no price starts with the offer off", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    db.inquiry_messages.find((m) => m.id === "draft1")!.grounding = { quote: null, sources: [], availability: { can_host: true }, needs_sitter: true };
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-offer")).toHaveAttribute("aria-checked", "false");
+  });
+
+  test("a draft that can't host has no offer to switch", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    db.inquiry_messages.find((m) => m.id === "draft1")!.grounding = { quote: null, sources: [], availability: { can_host: false, unavailable_days: [] }, needs_sitter: true };
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-offer")).toHaveCount(0);
+  });
+
   test("Regenerate asks for another draft and the newest one is shown", async ({ page }) => {
     const { asked } = await openSitterThread(page);
     const screen = app(page);

@@ -235,6 +235,14 @@ def test_a_no_always_asks_for_the_sitter(client, setup):
     assert body["can_host"] is False and body["needs_sitter"] is True
 
 
+def test_the_fallback_when_the_model_is_down_carries_no_price(client, setup):
+    ctx = setup(nebius.AIUnavailable("down"))  # → the "I'll reply properly very soon" text
+    body = post(client).json()
+    (saved,) = drafts(ctx)
+    assert "reply properly" in body["body"] and saved["grounding"]["quote"] is None
+    assert saved["grounding"]["availability"]["can_host"] is True
+
+
 def test_when_the_capacity_check_fails_nothing_is_promised_and_the_sitter_decides(client, setup):
     ctx = setup(
         "Hi Robert! Thanks for asking about Max — I'll check my calendar and confirm shortly. 🐾",

@@ -191,7 +191,8 @@ def inquiry_reply(
                 "model": model_name,
                 "latency_ms": int((datetime.now(UTC) - started).total_seconds() * 1000),
                 "grounding": {
-                    "quote": grounding["quote"] if grounding else None,
+                    # RV-3: the "I'll reply properly very soon" fallback states no price, so it carries none.
+                    "quote": grounding["quote"] if grounding and model_name != "failed" else None,
                     "availability": grounding["availability"] if grounding else None,
                     "sources": [s for s in sources if not used or s["id"] in used],
                     "needs_sitter": needs,

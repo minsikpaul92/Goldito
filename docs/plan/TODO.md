@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011d` (RV-3, not created) and `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); Seulgi `011m`–`011z`; `012` = 06B, `013` = 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); Seulgi `011m`–`011z`; `012` = 06B, `013` = 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---
@@ -23,14 +23,14 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **RV-3** | a declined reply carries no quote / Request booking — re-check what `011k` already did (the sitter-side quick replies send `can_host=false` with no quote); what is left: a hand-edited "no", the model's failed fallback sentence, the sitter's "include the price" toggle (`011d` only if still needed) | [review §4](review-2026-10-08.ko.md) RV-3 |
+| **Minsik** | **RV-5 rest** | close the owner's other open inquiries (same pet and dates) when a booking is made, `match_knowledge` returns `pet_id`, backend 409 `inquiry_closed` for a closed inquiry. Needs a migration whose file name sorts **after `011l`** (CI applies files in name order; `011m`–`011z` are Seulgi's — agree a letter with her first) | [review §4](review-2026-10-08.ko.md) RV-5 · [phases/phase-07b.md](phases/phase-07b.md) |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **RV-3** a declined reply carries no quote / Request booking (`011d`; the sitter-side quick replies in `011k` already send `can_host=false` with no quote — re-check what is left) → **RV-5 rest** (next free migration letter — `011l` is the booking steps; the review's `011j` is taken): close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. One commit per ID. [review §4](review-2026-10-08.ko.md)
+1. **RV-5 rest** (a migration whose name sorts after `011l`; agree the letter with Seulgi): close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. One commit per ID. [review §4](review-2026-10-08.ko.md)
 2. **06B Pet Transit** (`012`) — Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check (MiniCPM-V). **Decided 2026-10-10:** if the person declines (or the browser denies), no live location / map / ETA — both screens show the meeting place + an **Open in Google Maps** button (6B.8). **FB-9 joins 06B (6B.6):** the Returned confirm sheet + the 2-hour guard — the written commit `ade2301` on the closed `fix/booking-flow-feedback` is the starting point. Last P0 feature (D41). [phase-06b.md](phases/phase-06b.md)
 3. **R2 (new branch from main):** **FB-8** sitter In progress → **FB-5 · FB-6** time-change sheet (FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
 4. **10 Demo & deploy** — seed (rates, entry info, routes, past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
@@ -106,7 +106,7 @@
 | --- | --- |
 | 00 – 06, 03B, 03C | done |
 | 07 Report AI · 07B Inquiry AI + RAG · 07C Completion · 09 Caption + album | merged; DoD hand-check pending (Seulgi Q.1) |
-| 06B Pet Transit | not started (Minsik, after RV-3/5) |
+| 06B Pet Transit | not started (Minsik, after RV-5) |
 | 08 Safety | P0 stretch, only if time remains |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
 | 11 P1 | not started |
@@ -118,6 +118,6 @@
 ## Hosted DB — still to do
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
-- [ ] Apply new migrations as they are created (`011d` RV-3 if needed, RV-5 rest, `012` 06B, `013` 08) and add a line here when a commit creates one.
+- [ ] Apply new migrations as they are created (RV-5 rest, `012` 06B, `013` 08) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).
