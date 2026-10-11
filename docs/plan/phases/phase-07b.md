@@ -124,7 +124,6 @@ Playbook §9B — (7B.1 SQL) / (7B.2–7B.4 민식) / (7B.5–7B.6 UI)
 
 | ID | 내용 | 담당 |
 | :--- | :--- | :--- |
-| **RV-2** | 초안의 예/아니오가 실제 가용성과 맞는지 검사: `can_host=false`인데 긍정 표현("Yes, I can host…")이면 문제로 되돌려 재생성, 모델의 `can_host`가 서버 값과 다르면 문제, `can_host=false`면 `needs_sitter=true`로 **자동 발송 금지**, 에이전트가 `check_availability`를 안 부르면 한 번 호출 경로로 대체. 테스트: 실행 확인된 문장 → 문제 1개 이상, 자동 발송 미호출 | 민식 |
 | **RV-3** | 거절 답장에 견적 카드 · "Request booking"이 붙지 않게 (`011d`). 시터의 Decline · Suggest 빠른 답장은 `011k`가 이미 `can_host=false` + 견적 없음으로 보낸다. **남은 확인:** 시터가 "가능" 초안을 손으로 "불가"로 고쳐 보낸 경우 → Send 위의 토글 "Include the price and a Request booking button"으로 막을지, `011k`로 충분하면 `011d` 글자를 비워 두고 닫는다 | 민식 |
 | **RV-5 나머지** | (`011l` — 리뷰에는 `011j`로 적혀 있으나 그 글자는 FB-34가 씀) ① 예약이 만들어지면 같은 오너 · 시터의 다른 열린 문의를 닫기 ② `match_knowledge`가 `pet_id`를 돌려줘 펫 범위를 확인 ③ 닫힌 문의에 백엔드가 409 | 민식 |
 | **RK-1 – RK-4 · IQ-15** | 시터 답장의 **종류**(날짜 불가 · 반려동물 종류 불가 · 가격/정책 · 수락 · 기타)를 함께 보내고(`011k` outcome 확장, 팝업에서 시터가 고칠 수 있음), 오너 스레드는 종류에 맞는 다음 행동(Change dates · "강아지만 맡기기" · "다른 때 예약하기" 같은 힌트 칩 — 누르면 Write back에 문장이 채워짐)을 보여 줌. Suggest 메시지에는 `suggested` 날짜를 구조로 실어 **Use Oct 20 – Oct 22** 한 번에 적용(`change_inquiry_dates`). 새 문의 · Change dates의 "Ask anyway / Pick other dates"도 같은 패턴 | 나중에 |

@@ -32,6 +32,15 @@ _CLAIMS_HUMAN = re.compile(
 _THIRD_PERSON = re.compile(r"\b(assistant|chatbot|virtual|language model|as an ai|i am an ai|i'm an ai)\b", re.IGNORECASE)
 _MONEY = re.compile(r"\$\s?(\d[\d,]*(?:\.\d{1,2})?)")
 _DATE = re.compile(r"\b(" + "|".join(MONTHS) + r")[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b", re.IGNORECASE)
+# RV-2: a draft's yes / no must agree with the booking engine's answer (`availability.can_host`).
+_SAYS_YES = re.compile(
+    r"\b(yes,? i can|i can (?:host|take|watch|look after)|i'?m (?:free|available)|happy to (?:host|take)|works for me)\b",
+    re.IGNORECASE,
+)
+_SAYS_NO = re.compile(
+    r"\b(?:i )?(?:can'?t|cannot|can not) (?:host|take|watch|look after|do|make)\b|\bunable to\b|\bnot available\b|\bfully booked\b",
+    re.IGNORECASE,
+)
 _PLACEHOLDER = re.compile(r"\{[A-Z_]{2,}\}|\{\{[^}]*\}\}")
 
 
@@ -171,9 +180,35 @@ def _allowed_dates(grounding: dict) -> set[tuple[int, int]]:
     return out
 
 
-def reply_problems(text: str, grounding: dict, question: str = "", intent: str | None = None) -> list[str]:
-    """What is wrong with a draft, in words the model can act on. Empty = it passes."""
+def reply_problems(
+    text: str,
+    grounding: dict,
+    question: str = "",
+    intent: str | None = None,
+    model_can_host: bool | None = None,
+) -> list[str]:
+    """What is wrong with a draft, in words the model can act on. Empty = it passes.
+
+    `model_can_host` is the `can_host` the model itself gave (None = it left it out)."""
     problems: list[str] = []
+    availability = grounding["availability"]
+    if model_can_host is not None and model_can_host != availability["can_host"]:
+        problems.append(
+            f"`can_host` must be {str(availability['can_host']).lower()}, exactly as `availability.can_host` in the facts"
+        )
+    if not availability["can_host"]:
+        if _SAYS_YES.search(text):
+            problems.append("it says you can host, but these dates are not available")
+        labels = [d["label"] for d in availability.get("unavailable_days", [])]
+        if labels and not any(label in text for label in labels):
+            problems.append("it must name the days you can't take: " + ", ".join(labels))
+    elif (
+        intent not in ("decline", "suggest_dates")
+        and not availability.get("unchecked")
+        and _SAYS_NO.search(text)
+        and not _SAYS_YES.search(text)
+    ):
+        problems.append("it declines, but the dates are open")
     allowed_money = _money_values(grounding.get("quote")) if grounding["availability"]["can_host"] else set()
     for match in _MONEY.finditer(text):
         amount = round(float(match.group(1).replace(",", "")), 2)
@@ -284,6 +319,6 @@ def fixed_reply(owner_name: str, sitter_first: str, grounding: dict | None, *, m
         return (
             f"Hi {owner_name}! Thanks for asking about {pets} for {window} 🐾 "
             f"The total would be ${float(quote['total']):.2f} {quote.get('currency', 'CAD')}. "
-            "I'll confirm the details shortly. Tap **Request booking** to hold these dates."
+            "I'll confirm the details shortly. Tap **Request booking** to send your request."
         )
     return f"Hi {owner_name}! Thanks for asking about {pets} for {window}. I'll confirm the details shortly."

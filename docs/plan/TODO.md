@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011k` applied. Letters: Minsik `011d` (RV-3, not created) and `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); Seulgi `011m`–`011z`; `012` = 06B, `013` = 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011d` (RV-3, not created) and `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); Seulgi `011m`–`011z`; `012` = 06B, `013` = 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---
@@ -23,14 +23,14 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **RV-2** | the draft's yes / no must match availability; a "no" is never auto-sent (RV-3 and RV-5 rest follow) | [review §4](review-2026-10-08.ko.md) · [phases/phase-07b.md](phases/phase-07b.md) |
+| **Minsik** | **RV-3** | a declined reply carries no quote / Request booking — re-check what `011k` already did (the sitter-side quick replies send `can_host=false` with no quote); what is left: a hand-edited "no", the model's failed fallback sentence, the sitter's "include the price" toggle (`011d` only if still needed) | [review §4](review-2026-10-08.ko.md) RV-3 |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **RV-2** the draft's yes / no must match availability; a "no" is never auto-sent → **RV-3** a declined reply carries no quote / Request booking (`011d`; the sitter-side quick replies in `011k` already send `can_host=false` with no quote — re-check what is left) → **RV-5 rest** (next free migration letter — `011l` is the booking steps; the review's `011j` is taken): close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. One commit per ID. [review §4](review-2026-10-08.ko.md)
+1. **RV-3** a declined reply carries no quote / Request booking (`011d`; the sitter-side quick replies in `011k` already send `can_host=false` with no quote — re-check what is left) → **RV-5 rest** (next free migration letter — `011l` is the booking steps; the review's `011j` is taken): close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. One commit per ID. [review §4](review-2026-10-08.ko.md)
 2. **06B Pet Transit** (`012`) — Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check (MiniCPM-V). **Decided 2026-10-10:** if the person declines (or the browser denies), no live location / map / ETA — both screens show the meeting place + an **Open in Google Maps** button (6B.8). **FB-9 joins 06B (6B.6):** the Returned confirm sheet + the 2-hour guard — the written commit `ade2301` on the closed `fix/booking-flow-feedback` is the starting point. Last P0 feature (D41). [phase-06b.md](phases/phase-06b.md)
 3. **R2 (new branch from main):** **FB-8** sitter In progress → **FB-5 · FB-6** time-change sheet (FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
 4. **10 Demo & deploy** — seed (rates, entry info, routes, past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
@@ -57,6 +57,7 @@
 > New feedback goes here unless it blocks the demo path or makes a false promise. Triage question: *does a judge hit it on the 5-stage path, or does the app say something untrue?*
 
 - **Flow findings from the demo-stay walkthrough (2026-10-11)** — **A** an owner can pay without saving entry info for a Sitter-drives drop-off, and `get_home_access` then returns empty fields, so the sitter would open a blank card at the door (candidate for the P0 path once re-checked in the code) · **E** no arrival check-in between pick-up and the evening note · **F** no notification tiers or quiet hours · owner reaction / question on the daily note (with an AI-drafted reply the sitter approves) is not in the plan · the progress bar and the deadlines (C, D) are the Booking steps (done, PR #79)
+- **HOLD-1** The owner's view of a sitter's calendar (ask sheet, Book care month, schedule dots) does not show days another owner holds or has booked while the sitter takes one owner at a time — the owner only learns it when `sitter_unavailable` comes back on Send. Search and the inquiry AI's can-host check already count holds (`011l`); `get_sitter_schedule` should report them as taken for the asking owner
 - **BK-1** Sitter Bookings tab landing — every time the tab is entered: the last-clicked tab if it still has a count, else the first tab with a count (Upcoming → Requests → Questions), else the last clicked ([IQ-10](feedback-2026-10-10.ko.md); `bookings.tsx`, `userPicked`)
 - **RK-1 – RK-4** Reply kind + owner hint chips: the sitter's reply carries a kind (dates can't work · pet type not accepted · price / policy · yes · other; extends `011k`), the owner thread shows what fits (Change dates, hint chips that fill Write back), and **IQ-15** a one-tap *Use Oct 20 – Oct 22* from a Suggest message (`change_inquiry_dates`). RK-4: "Ask anyway" / "Pick other dates" pattern ([IQ-11 · IQ-15](feedback-2026-10-10.ko.md))
 - **IQ-16** Start the sitter's draft on the server (DB trigger / webhook) so closing the owner's window right after Send cannot lose it
@@ -105,7 +106,7 @@
 | --- | --- |
 | 00 – 06, 03B, 03C | done |
 | 07 Report AI · 07B Inquiry AI + RAG · 07C Completion · 09 Caption + album | merged; DoD hand-check pending (Seulgi Q.1) |
-| 06B Pet Transit | not started (Minsik, after RV-2/3/5) |
+| 06B Pet Transit | not started (Minsik, after RV-3/5) |
 | 08 Safety | P0 stretch, only if time remains |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
 | 11 P1 | not started |
@@ -116,6 +117,7 @@
 
 ## Hosted DB — still to do
 
-- [ ] Apply new migrations as they are created (`011l` booking steps — at the merge of its PR [#79](https://github.com/minsikpaul92/Goldito/pull/79) + `CRON_SECRET` on Render + the 15-minute cron-job.org call, `011d` RV-3, RV-5 rest, `012` 06B, `013` 08) and add a line here when a commit creates one.
+- [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
+- [ ] Apply new migrations as they are created (`011d` RV-3 if needed, RV-5 rest, `012` 06B, `013` 08) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).

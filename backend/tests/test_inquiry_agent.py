@@ -188,6 +188,14 @@ def test_an_agent_answer_that_fails_a_check_falls_back_to_the_single_call(client
     assert body["body"] == GOOD and len(ctx.model.calls) == 1 and "$300" not in body["body"]
 
 
+def test_an_agent_that_never_looked_at_the_calendar_is_not_trusted(client, agent_on):
+    # A clean-looking answer, but no check_availability call: the single grounded call answers instead (RV-2).
+    script = Script(reply(json.dumps({"reply": GOOD, "used_sources": []})))
+    ctx = agent_on(script=script)
+    body = post(client, sitter_token()).json()
+    assert body["body"] == GOOD and body["model"] == "nano" and len(ctx.model.calls) == 1
+
+
 def test_the_owner_still_gets_no_draft_in_agent_mode(client, agent_on):
     agent_on(script=good_script())
     body = post(client, owner_token()).json()
