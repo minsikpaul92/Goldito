@@ -52,7 +52,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 | Stage | What the AI does | Status |
 | :--- | :--- | :--- |
 | **① Inquiry** | Drafts the reply **in the sitter's own writing style**, from the sitter's calendar, a server-side quote, house policy, and the pet's Life Record | ✅ |
-| **② Meet & Greet** | Turns the owner's care note into a timed **mission checklist** and Heads-up cards | ✅ · Google Meet link ✅ server, app check 🚧 |
+| **② Meet & Greet** | Turns the owner's care note into a timed **mission checklist** and Heads-up cards | ✅ · Google Meet link ✅ server, app check 🚧 · step bar + date hold 🚧 |
 | **③ Booking** | Stays out of the way on purpose: consents, prices, and the timed unlock come from fixed rules, never from the model | ✅ |
 | **④ Care & Pet Transit** | Suggests the day's chips, writes the **daily note**, captions and sorts photos · live trip + photo check 🚧 | ✅ care · 🚧 transit |
 | **⑤ Completion** | Writes the pet's **Life Record** and remembers it for the next stay — even with a new sitter | ✅ |
@@ -89,7 +89,7 @@ Tap a stage to expand it.
 <summary><b>② Meet & Greet — the care request becomes a checklist ✅</b></summary>
 
 - The owner writes a **care & medication request** like a note: *"8 AM — 1 cup of kibble · 2 PM — skin pill in a treat · No knocking — text me · Keep other dogs away on walks."* Nemotron turns it into timed tasks and **Heads-up** cards, and the owner reviews it before saving. While a stay is on, changes go through a request the sitter approves.
-- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at a spot either of them saved, or on video with a **Google Meet** link and calendar invite created the moment they agree on a time (server done, app check 🚧). Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. Repeat clients skip this step.
+- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at a spot either of them saved, or on video with a **Google Meet** link and calendar invite created the moment they agree on a time (server done, app check 🚧). Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. The sitter first says **Yes, let's meet** — from then on the dates are held for the owner — and if no meeting time is set within 2 days, both are asked to set one, skip it, or decline; with no answer the request is cancelled 🚧. After meeting, either side can still say no 🚧. Repeat clients skip this step.
 - They choose how the pet travels: **Owner drives** or **Sitter drives**.
 
 </details>
@@ -161,27 +161,28 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 | | 3 · Owner | Reads the reply and the quote and taps **Request booking** — a request, not yet a booking. ✅ |
 | **Meet & Greet** | 4 · Owner | Writes the care note — *"8 AM kibble · 2 PM pill in a treat · no knocking"* — by typing ✅ or, soon, by speaking 🚧. |
 | | 5 · System | Nemotron turns the note into a timed **checklist** and **Heads-up** cards; the owner reviews and saves. ✅ |
-| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). It is a **first stay together**, so Accept stays locked until they have met. ✅ |
-| | 7 · Owner | Proposes a first meeting — **in person** at a public spot either of them saved (for example a park near Chloe's), or **on video** — with a date and time. ✅ |
-| | 8 · Sitter | Accepts the time. For video, Goldito creates the **Google Meet** link and calendar invites. ✅ (link: server ✅, app check 🚧) |
-| | 9 · Owner & Sitter | Meet — with the pets, if in person — and go through the "things to cover" list. One of them taps **Done**. ✅ |
-| **Booking** | 10 · Sitter | Taps **Accept**. ✅ |
-| | 11 · Owner | Reviews the final quote, signs the consent forms, and **pays (demo)**. A "Booked and paid" card says what happens next. ✅ |
-| | 12 · System | Opens Chloe's address, visitor parking, and a packing list to the owner. ✅ |
-| **Care & Pet Transit** | 13 · Owner | On drop-off day taps **Start trip** and agrees to share live location until arrival. Declining is fine — the meeting place still shows, with **Open in Google Maps**. 🚧 |
-| | 14 · System | Tells Chloe that Robert is on the way, shows the live map and ETA, and announces the arrival with visitor-parking directions. 🚧 |
-| | 15 · Sitter | Receives the pets at the meeting place and taps **Received**; one photo lets a vision model confirm the pet is there. The owner hears "care has started". ✅ Received · 🚧 photo check |
-| | 16 · Sitter | During the stay: sees the checklist and Heads-up cards, gets a reminder when a task is due, and taps to tick tasks (the pill, with a photo) and quick check-ins — meal, potty, walk, mood — plus photos. ✅ |
-| | 17 · Owner | Sees every update live and the photos in the Feed — no need to ask. ✅ |
-| | 18 · System → Sitter | Each evening, suggests chips from the day's records and photos. The sitter turns off any that are wrong and adds one short line; Nemotron writes the **daily note** in her voice; she approves it and it is posted. The album sorts itself into Meals · Walks · Naps. ✅ |
-| | 19 · Owner | Reads the daily note. Reacting or asking a question — with an AI-drafted reply the sitter approves — comes later 🔭. |
-| **Completion** | 20 · Owner | On pick-up day taps **Start trip** and shares location. 🚧 |
-| | 21 · Sitter | Sees the ETA, meets the owner at the agreed spot, and taps **Returned** after a confirm sheet. ✅ Returned · 🚧 confirm sheet |
-| | 22 · System | Tells the owner *"Max and Mochi are home safe 🏠"* and asks for a review. ✅ |
-| | 23 · Owner | Reviews the sitter (stars, preset phrases, own words) and can add her to favorites. ✅ |
-| | 24 · System | Nemotron turns the stay into the pet's **Life Record** and indexes it, so the next sitter's request card, reply, and checklist already know the pets. ✅ |
-| | 25 · Sitter | Leaves a **private note about the owner** — only she sees it, and it comes back when the same owner asks again. ✅ |
-| **Exceptions** | — | The sitter declines → a reason and a suggested time (reason chips 🚧). Either side skips the Meet & Greet → the other must agree, or the booking is cancelled. No pet or crate in the handoff photo → retake, or continue with a reason (advice only) 🚧. The AI is down → plain-list drafts instead of an error ✅. **If the sitter drives to the owner's home**, the entry codes open only 2 hours before, and the owner is told when the sitter first opens them ✅. |
+| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). Declines — or says **"Yes, let's meet"**, the first agreement. For a repeat client one **Accept** covers it and the Meet & Greet steps are skipped. 🚧 |
+| | 7 · System | Holds Chloe's dates for Robert so nobody else can book them, tells him she would like to meet, and shows both of them a **progress bar** — the current step and the one next action. 🚧 |
+| | 8 · Owner | Proposes a first meeting — **in person** at a public spot either of them saved (for example a park near Chloe's), or **on video** — with a date and time. ✅ |
+| | 9 · Sitter | Accepts the time. For video, Goldito creates the **Google Meet** link and calendar invites. ✅ (link: server ✅, app check 🚧) |
+| | 10 · Owner & Sitter | Meet — with the pets, if in person — and go through the "things to cover" list. One of them taps **Done**. ✅ |
+| **Booking** | 11 · Sitter | After the meeting, taps **Confirm booking** — or declines with a reason chip. ✅ confirm · 🚧 reason chips |
+| | 12 · Owner | Reviews the final quote, signs the consent forms, and **pays (demo)**. A "Booked and paid" card says what happens next. ✅ Or taps **Not this sitter** with a reason chip, which releases the dates. 🚧 |
+| | 13 · System | Opens Chloe's address, visitor parking, and a packing list to the owner. ✅ |
+| **Care & Pet Transit** | 14 · Owner | On drop-off day taps **Start trip** and agrees to share live location until arrival. Declining is fine — the meeting place still shows, with **Open in Google Maps**. 🚧 |
+| | 15 · System | Tells Chloe that Robert is on the way, shows the live map and ETA, and announces the arrival with visitor-parking directions. 🚧 |
+| | 16 · Sitter | Receives the pets at the meeting place and taps **Received**; one photo lets a vision model confirm the pet is there. The owner hears "care has started". ✅ Received · 🚧 photo check |
+| | 17 · Sitter | During the stay: sees the checklist and Heads-up cards, gets a reminder when a task is due, and taps to tick tasks (the pill, with a photo) and quick check-ins — meal, potty, walk, mood — plus photos. ✅ |
+| | 18 · Owner | Sees every update live and the photos in the Feed — no need to ask. ✅ |
+| | 19 · System → Sitter | Each evening, suggests chips from the day's records and photos. The sitter turns off any that are wrong and adds one short line; Nemotron writes the **daily note** in her voice; she approves it and it is posted. The album sorts itself into Meals · Walks · Naps. ✅ |
+| | 20 · Owner | Reads the daily note. Reacting or asking a question — with an AI-drafted reply the sitter approves — comes later 🔭. |
+| **Completion** | 21 · Owner | On pick-up day taps **Start trip** and shares location. 🚧 |
+| | 22 · Sitter | Sees the ETA, meets the owner at the agreed spot, and taps **Returned** after a confirm sheet. ✅ Returned · 🚧 confirm sheet |
+| | 23 · System | Tells the owner *"Max and Mochi are home safe 🏠"* and asks for a review. ✅ |
+| | 24 · Owner | Reviews the sitter (stars, preset phrases, own words) and can add her to favorites. ✅ |
+| | 25 · System | Nemotron turns the stay into the pet's **Life Record** and indexes it, so the next sitter's request card, reply, and checklist already know the pets. ✅ |
+| | 26 · Sitter | Leaves a **private note about the owner** — only she sees it, and it comes back when the same owner asks again. ✅ |
+| **Exceptions** | — | The sitter declines → a reason and a suggested time (reason chips 🚧). Either side skips the Meet & Greet → the other must agree, or the booking is cancelled. No pet or crate in the handoff photo → retake, or continue with a reason (advice only) 🚧. The AI is down → plain-list drafts instead of an error ✅. **If the sitter drives to the owner's home**, the entry codes open only 2 hours before, and the owner is told when the sitter first opens them ✅. **No Meet & Greet time within 2 days** → both are asked to set one, skip it, or decline; **3 more days of silence** → the request is cancelled and the dates are released 🚧. After meeting, the sitter or the owner can still say no 🚧. |
 
 </details>
 
