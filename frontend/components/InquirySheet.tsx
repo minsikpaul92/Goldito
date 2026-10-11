@@ -7,7 +7,7 @@ import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
 import { addDays, appToday, daySpan, formatStamp, isoToZoned, zonedToIso } from "../features/schedule/dates";
 import { DaySlot, loadSitterMonth } from "../features/schedule/scheduleApi";
-import { SERVICE_LABEL, ServiceType } from "../features/sitters/sitterApi";
+import { SERVICE_LABEL, ServiceType, ownersSetting } from "../features/sitters/sitterApi";
 import type { LocationType } from "../lib/bookings";
 import { tripProblem } from "../lib/trip";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -23,7 +23,7 @@ import { TextField } from "./ui/TextField";
 type Props = {
   visible: boolean;
   onClose: () => void;
-  sitter: { id: string; displayName: string; services: ServiceType[] };
+  sitter: { id: string; displayName: string; services: ServiceType[]; acceptsMultipleOwners?: boolean };
   /** "Change dates" in a thread: starts from the earlier trip (pets, service, times, places). */
   prefill?: {
     serviceType: ServiceType;
@@ -194,6 +194,11 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
       }
     >
       <View style={styles.body}>
+        {sitter.acceptsMultipleOwners !== undefined ? (
+          <Text style={styles.hint} testID="inquiry-owners-setting">
+            {`${ownersSetting(sitter.acceptsMultipleOwners).badge} — ${ownersSetting(sitter.acceptsMultipleOwners).hint}`}
+          </Text>
+        ) : null}
         {sitter.services.length > 1 && !change ? (
           <SegmentedControl
             options={sitter.services.map((s) => ({ value: s, label: SERVICE_LABEL[s] }))}

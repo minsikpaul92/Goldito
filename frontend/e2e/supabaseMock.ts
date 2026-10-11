@@ -393,6 +393,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
   switch (fn) {
     case "propose_meet_greet": {
       if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      if (status === "required" && !b.sitter_interest_at) return fail("interest_required"); // 011l guard
       if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
       if (Date.parse(String(args.p_at)) <= nowMs()) return fail("invalid_window");
       Object.assign(b, {
@@ -694,6 +695,65 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
+  }
+
+  if (path === "rpc/express_interest") {
+    // express_interest (011l): the sitter's first yes — only a first-time pair, once; the dates are held from then on.
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    if (!booking || booking.sitter_id !== me) return fail("not_allowed");
+    if (booking.status !== "requested") return fail("invalid_status");
+    if (booking.sitter_interest_at) return route.fulfill({ status: 204 });
+    if (booking.meet_greet_status !== "required") return fail("interest_not_needed");
+    booking.sitter_interest_at = new Date(nowMs()).toISOString();
+    booking.meet_greet_due_at = new Date(nowMs() + 2 * 86_400_000).toISOString();
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: booking.owner_id,
+      type: "booking_interest",
+      title: `${users.find((u) => u.id === me)?.displayName} would like to meet first`,
+      body: null,
+      pet_id: null,
+      booking_id: booking.id,
+      ref_id: booking.id,
+      read_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+    });
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/get_booking_stages") {
+    // booking_stage / booking_next_actor (011l), for the caller's own bookings.
+    const { p_ids } = request.postDataJSON();
+    const rows = db.bookings
+      .filter((b) => p_ids.includes(b.id) && [b.owner_id, b.sitter_id].includes(me))
+      .map((b) => {
+        const done = (kind: string) =>
+          db.booking_handoffs.some((h) => h.booking_id === b.id && h.kind === kind && h.completed_at);
+        const mg = String(b.meet_greet_status ?? "not_needed");
+        let stage: string;
+        if (b.status === "declined" || b.status === "cancelled") stage = String(b.status);
+        else if (b.status === "requested") {
+          stage = mg === "not_needed" || !b.sitter_interest_at ? "requested" : ["done", "skipped"].includes(mg) ? "confirm" : "meet_greet";
+        } else if (done("pick_up")) stage = "completed";
+        else if (done("drop_off")) stage = "in_care";
+        else stage = b.paid_at ? "paid" : "awaiting_payment";
+        const next =
+          stage === "requested" || stage === "confirm"
+            ? "sitter"
+            : stage === "awaiting_payment"
+              ? "owner"
+              : stage === "meet_greet"
+                ? mg === "proposed"
+                  ? b.meet_greet_proposed_by === b.owner_id ? "sitter" : "owner"
+                  : mg === "skip_requested"
+                    ? b.meet_greet_skip_requested_by === b.owner_id ? "sitter" : "owner"
+                    : "both"
+                : "none";
+        return { booking_id: b.id, stage, next_actor: next };
+      });
+    return json(route, 200, rows);
   }
 
   if (path.startsWith("rpc/") && path.includes("meet_greet")) {

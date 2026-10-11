@@ -54,6 +54,7 @@
 | `APP_ENV` | `production` |
 | `CORS_ORIGINS` | `https://goldito-petcare.vercel.app` (Preview `*-git-*.vercel.app`는 막힘 — 업로드 · AI 확인은 main(Production)에서) |
 | `DEMO_RESET_ENABLED` | 테스트 기간에만 `1` (Profile → Demo tools). **심사 전에 `0`** — TODO "Demo accounts for judging" |
+| `CRON_SECRET` | 긴 임의 문자열. **예약 단계 스윕**(BS-2)을 부르는 비밀 헤더 값 — 비어 있으면 `POST /api/sweep/bookings`는 404(없는 척). 아래 "예약 단계 스윕" 참고 |
 
 값을 바꾸면 Render → Environment → Save → **Manual Deploy**(또는 저장 시 자동 재시작)를 확인합니다.
 
@@ -110,6 +111,14 @@
 7. `backend/.env` (배포된 백엔드는 Render → Environment): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` (+ `GOOGLE_CALENDAR_ID=primary`, `MEET_INVITE_ATTENDEES=true`). 세 값은 비밀번호 관리자에 보관 — frontend에는 절대 넣지 않음
 
 ---
+
+## 예약 단계 스윕 (BS-2, 011l) — cron-job.org
+
+첫 동의("Yes, let's meet") 2일 뒤에도 만남 시간이 없으면 양쪽에 알림, 알림 3일 뒤에도 답이 없으면 자동 취소하는 일은 DB 함수 `sweep_stale_bookings()`가 합니다. 이를 15분마다 부르는 곳이 백엔드 `POST /api/sweep/bookings`입니다(`pg_cron`은 CI 이미지에 없고 호스팅 지원도 확인하지 않아 쓰지 않음).
+
+1. Render → Environment에 `CRON_SECRET`(긴 임의 값) 추가.
+2. cron-job.org에 새 job `Goldito Booking Sweep`: `POST https://goldito-backend.onrender.com/api/sweep/bookings`, 헤더 `X-Cron-Secret: <같은 값>`, **15분마다**, 타임아웃 60초(첫 요청이 잠든 Render를 깨울 수 있음).
+3. 확인: 헤더 없이 부르면 404, 맞게 부르면 `{"stalled":N,"cancelled":M}` 200. 타임아웃은 15분 주기라 정확히 5일째가 아니라 그 뒤 최대 15분 안에 처리됩니다.
 
 ## 팀 공유 (1Password 없이)
 

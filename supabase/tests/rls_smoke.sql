@@ -93,8 +93,15 @@ language sql security definer set search_path = public as $$
   update bookings set meet_greet_status = p_status where id = p_booking
 $$;
 
+-- Stand-in for the sitter's first yes (011l) on a fixture booking: starts the hold without the capacity check.
+create function public._t_interest(p_booking uuid) returns void
+language sql security definer set search_path = public as $$
+  update bookings set sitter_interest_at = now(), meet_greet_due_at = now() + interval '2 days'
+  where id = p_booking
+$$;
+
 grant execute on function public._t_put(text, uuid), public._t_get(text), public._t_as(uuid, text),
-  public._t_ok(boolean, text), public._t_meet(uuid, text) to authenticated, anon;
+  public._t_ok(boolean, text), public._t_meet(uuid, text), public._t_interest(uuid) to authenticated, anon;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (signup trigger creates profiles)
@@ -491,6 +498,8 @@ begin
   values (chloe, 'open', d - 1, d + 20, 'morning', '08:00', '12:00', 3),
          (chloe, 'open', d - 1, d + 20, 'afternoon', '12:00', '18:00', 3),
          (chloe, 'open', d - 1, d + 20, 'overnight', '18:00', '08:00', 3);
+  -- 011l: the default is one owner at a time; B / H below race two owners for Chloe's last spot.
+  update public.sitter_profiles set accepts_multiple_owners = true where id = chloe;
   perform _t_as(paul);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (paul, 'open', d - 1, d + 20, 'morning', '09:00', '13:00', 2),
@@ -977,6 +986,7 @@ declare
   r record;
 begin
   perform _t_meet(v_a, 'required');
+  perform _t_interest(v_a);
 
   -- Proposals are checked
   perform _t_as(robert);
@@ -1084,6 +1094,7 @@ begin
   -- Skip accepted: Joy asks, Nora continues without meeting
   v_b := _t_booking(joy, nora, array[toto], now() + interval '50 days', now() + interval '51 days', 'requested');
   perform _t_meet(v_b, 'required');
+  perform _t_interest(v_b);
   perform _t_as(joy);
   perform request_skip_meet_greet(v_b);
   begin
@@ -1104,6 +1115,7 @@ begin
   -- Skip declined: the booking is cancelled and the owner is told to find a new sitter
   v_b := _t_booking(joy, nora, array[coco], now() + interval '60 days', now() + interval '61 days', 'requested');
   perform _t_meet(v_b, 'required');
+  perform _t_interest(v_b);
   perform _t_as(joy);
   perform request_skip_meet_greet(v_b);
   perform _t_as(nora);
@@ -3470,6 +3482,237 @@ begin
   perform _t_as(kai);
   perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 4, '011k: the owner sees the sent replies');
   perform _t_ok(not exists (select 1 from public.inquiry_messages where inquiry_id = v_inq and body = 'Sorry, I cannot.' and grounding ? 'quote'), '011k: …the decline among them has no quote');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 011l booking steps (D60): the sitter's first yes holds the dates; one owner at a time;
+-- the stage is computed; the sweep nudges after 2 days and cancels 3 days later.
+-- Robert / Joy ↔ Allen are first-time pairs (Allen takes one owner at a time by default);
+-- Robert ↔ Chloe have met.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  toto constant uuid := '00000000-0000-4000-8000-0000000000c4';
+  e constant date := app_today() + 120;
+  v1 uuid;
+  v2 uuid;
+  v3 uuid;
+  v4 uuid;
+  vc uuid;
+  v_err text;
+  v_detail text;
+  s jsonb;
+  r record;
+begin
+  perform _t_as(allen);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (allen, 'open', e - 1, e + 10, 'morning', '08:00', '12:00', 3),
+         (allen, 'open', e - 1, e + 10, 'afternoon', '12:00', '18:00', 3),
+         (allen, 'open', e - 1, e + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', e - 1, e + 10, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', e - 1, e + 10, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', e - 1, e + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_ok(not (select accepts_multiple_owners from public.sitter_profiles where id = paul),
+    '011l: a sitter takes one owner at a time by default');
+
+  -- A first-time request starts at "requested"; nothing happens without the sitter's first yes.
+  perform _t_as(robert);
+  v1 := request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'requested' and r.next_actor = 'sitter', '011l: a first request waits for the sitter');
+  v_err := null;
+  begin
+    perform propose_meet_greet(v1, 'video', now() + interval '1 day');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_required', '011l: no Meet & Greet proposal before the sitter''s first yes');
+  v_err := null;
+  begin
+    perform request_skip_meet_greet(v1);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_required', '011l: no skip request before the sitter''s first yes');
+  v_err := null;
+  begin
+    perform express_interest(v1);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '011l: the owner cannot give the sitter''s first yes');
+
+  -- Before the first yes nothing is held: Joy can ask for the same dates too.
+  perform _t_as(joy);
+  v2 := request_booking(allen, array[toto], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_ok(v2 is not null, '011l: a request without a first yes holds nothing');
+  -- Joy and Allen have met in an earlier scenario; make this one a first-time pair.
+  perform _t_as(null);
+  perform _t_meet(v2, 'required');
+
+  -- The first yes holds the dates.
+  perform _t_as(allen);
+  perform express_interest(v1);
+  perform express_interest(v1);
+  perform _t_as(null);
+  perform _t_ok((select sitter_interest_at is not null and meet_greet_due_at > now() + interval '1 day 23 hours'
+      from public.bookings where id = v1),
+    '011l: the first yes starts the hold and a 2-day clock (and is idempotent)');
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'booking_interest'
+      and booking_id = v1) = 1,
+    '011l: the owner is told once');
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'meet_greet' and r.next_actor = 'both', '011l: after the first yes the stage is meet_greet');
+  perform propose_meet_greet(v1, 'video', now() + interval '1 day');
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'meet_greet' and r.next_actor = 'sitter', '011l: a proposal waits for the other side');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from get_booking_stages(array[v1])) = 0, '011l: stages are only readable by the two parties');
+
+  -- One owner at a time: Joy cannot take the held dates, in any way.
+  perform _t_as(allen);
+  v_err := null;
+  begin
+    perform express_interest(v2);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'sitter_unavailable', '011l: a second owner cannot be held on the same dates');
+  perform _t_as(joy);
+  v_err := null;
+  begin
+    perform request_booking(allen, array[coco], local_ts(e + 1, '09:00'), 'sitter_home', null,
+      local_ts(e + 1, '17:00'), 'sitter_home', null, null);
+  exception when others then
+    v_err := sqlerrm;
+    get stacked diagnostics v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'sitter_unavailable' and v_detail like '%' || (e + 1)::text || '%',
+    '011l: a new request on held dates is refused with the slot in detail');
+  perform _t_ok(not exists (select 1 from search_sitters(local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 1) x
+      where x.sitter_id = allen),
+    '011l: search does not offer a sitter whose dates another owner holds');
+  perform _t_ok(stay_capacity_check(allen, local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 1) is not null,
+    '011l: the inquiry AI''s can-host check sees the hold too');
+  perform _t_ok(stay_capacity_check(allen, local_ts(e + 5, '09:00'), local_ts(e + 6, '17:00'), 1) is null,
+    '011l: …and free dates still fit');
+  select * into r from search_sitters(local_ts(e + 5, '09:00'), local_ts(e + 6, '17:00'), 1) x where x.sitter_id = allen;
+  perform _t_ok(r.sitter_id = allen and r.accepts_multiple_owners = false,
+    '011l: search shows the sitter''s setting');
+
+  -- The sitter cannot block the held days.
+  perform _t_as(allen);
+  v_err := null;
+  begin
+    insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+    values (allen, 'blocked', e, e + 2, 'morning');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'overlaps_confirmed_booking', '011l: a hold cannot be blocked over');
+
+  -- A repeat pair has nothing to say yes to.
+  perform _t_as(robert);
+  vc := request_booking(chloe, array[mochi], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_as(chloe);
+  v_err := null;
+  begin
+    perform express_interest(vc);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_not_needed', '011l: a pair that has met just Accepts');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from get_booking_stages(array[vc])) = 0, '011l: the service role is not a party');
+
+  -- Cancelling releases the hold; then Joy gets her yes.
+  perform _t_as(robert);
+  perform cancel_booking(v1, 'schedule changed');
+  perform _t_as(allen);
+  perform express_interest(v2);
+  perform _t_as(robert);
+  v_err := null;
+  begin
+    perform request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+      local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'sitter_unavailable', '011l: a cancelled hold frees the dates for the next owner');
+
+  -- Several owners: the same dates are fine within max_pets.
+  perform _t_as(allen);
+  update public.sitter_profiles set accepts_multiple_owners = true where id = allen;
+  perform _t_as(robert);
+  v3 := request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_as(allen);
+  perform express_interest(v3);
+  perform _t_as(null);
+  perform _t_ok((select status = 'requested' and sitter_interest_at is not null from public.bookings where id = v3),
+    '011l: with "several owners" on, a second owner is held beside the first');
+  perform _t_ok(public.sitter_used(allen, e, 'morning') = 2, '011l: holds count against max_pets');
+
+  -- The sweep: 2 days → both are asked, 3 more → cancelled.
+  update public.bookings set meet_greet_due_at = now() - interval '1 minute' where id in (v2, v3);
+  update public.bookings set meet_greet_status = 'agreed', meet_greet_mode = 'video',
+    meet_greet_at = now() + interval '1 day', meet_greet_proposed_by = robert where id = v3;
+  perform _t_as(robert);
+  v_err := null;
+  begin
+    perform sweep_stale_bookings();
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '011l: the sweep is not callable by users');
+  perform _t_as(null);
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'stalled')::int = 1 and (s ->> 'cancelled')::int = 0, '011l: the sweep asks only the stalled booking');
+  perform _t_ok((select count(*) from public.notifications where booking_id = v2 and type = 'meet_greet_stalled') = 2,
+    '011l: both sides are asked to set a time, skip or decline');
+  perform _t_ok(not exists (select 1 from public.notifications where booking_id = v3 and type = 'meet_greet_stalled'),
+    '011l: an agreed time stops the clock');
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'stalled')::int = 0, '011l: nobody is asked twice');
+  update public.bookings set meet_greet_nudged_at = now() - interval '3 days 1 minute' where id = v2;
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'cancelled')::int = 1, '011l: 3 days after the question the booking is cancelled');
+  perform _t_ok((select status = 'cancelled' and cancel_reason = 'meet_greet_timeout' from public.bookings where id = v2),
+    '011l: …with the timeout as the reason');
+  perform _t_ok((select count(*) from public.notifications where booking_id = v2 and type = 'meet_greet_timeout') = 2,
+    '011l: …and both sides are told');
+  perform _t_ok(public.sitter_used(allen, e, 'morning') = 1, '011l: …and the hold is released');
+
+  -- Stages of every kind.
+  v4 := _t_booking(robert, paul, array[max], local_ts(e + 40, '10:00'), local_ts(e + 41, '10:00'), 'confirmed');
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'awaiting_payment' and r.next_actor = 'owner', '011l: confirmed and unpaid → awaiting_payment');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v4;
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'paid', '011l: paid');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v4 and kind = 'drop_off';
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'in_care', '011l: dropped off → in_care');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v4 and kind = 'pick_up';
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'completed', '011l: picked up → completed');
+  perform _t_as(null);
+  perform _t_as(robert);
+  perform _t_ok((select stage from get_booking_stages(array[v1])) = 'cancelled', '011l: cancelled');
+  perform _t_as(joy);
+  perform _t_ok((select stage from get_booking_stages(array[v2])) = 'cancelled', '011l: timed out → cancelled');
+  perform _t_as(null);
+  update public.bookings set meet_greet_status = 'done' where id = v3;
+  perform _t_as(robert);
+  perform _t_ok((select stage from get_booking_stages(array[v3])) = 'confirm', '011l: met → the sitter confirms');
   perform _t_as(null);
 end;
 $$;

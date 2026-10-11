@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../components/BookingCard";
+import { BookingStageBar } from "../../../components/BookingStageBar";
 import { EntryInfoCard } from "../../../components/EntryInfoCard";
 import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../components/MeetGreetCard";
@@ -25,8 +26,10 @@ import { releaseVideoLink } from "../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
+  awaitingFirstYes,
   cancelBooking,
   CHECK_IN_WINDOW_MS,
+  expressInterest,
   HandoffKind,
   PetCare,
   completeHandoff,
@@ -80,6 +83,7 @@ function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
   if (error.code === "meet_greet_required") return `Meet ${owner} first — or agree to skip the Meet & Greet.`;
+  if (error.code === "interest_required") return `Say "Yes, let's meet" to ${owner} first.`;
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
     const slot = firstSlot(error.detail);
@@ -158,7 +162,19 @@ export default function SitterBookingDetail() {
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
+  // Why the booking ended, from the sitter's side (the owner's reason after the Meet & Greet started, or the timeout).
+  const endedLine =
+    booking.status !== "cancelled"
+      ? null
+      : booking.cancelReason === "meet_greet_timeout"
+        ? `No time to meet ${owner} was set, so this booking was cancelled.`
+        : booking.cancelledBy === booking.ownerId && booking.cancelReason && booking.cancelReason !== "Owner cancelled"
+          ? `${owner} passed: “${booking.cancelReason}”`
+          : null;
+  const firstYes = isRequest && awaitingFirstYes(booking);
   const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
+  // First-time pairs (D60): "Yes, let's meet" holds the dates; after the Meet & Greet the same button confirms.
+  const firstTimePair = isRequest && booking.meetGreetStatus !== "not_needed";
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
@@ -210,6 +226,16 @@ export default function SitterBookingDetail() {
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
           </View>
         </Card>
+
+        <Card style={styles.block}>
+          <BookingStageBar booking={booking} viewer="sitter" />
+        </Card>
+
+        {endedLine ? (
+          <Card style={styles.block} testID="booking-ended">
+            <Text style={styles.label}>{endedLine}</Text>
+          </Card>
+        ) : null}
 
         <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
 
@@ -330,12 +356,21 @@ export default function SitterBookingDetail() {
       {isRequest ? (
         <View style={styles.footer}>
           {waiting ? <Text style={styles.muted}>{`Waiting for ${owner} to confirm the new time.`}</Text> : null}
-          <Button
-            label={busy ? "Saving…" : "Accept"}
-            onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed — ${owner} gets a notice`)}
-            disabled={!canAccept}
-            testID="accept-booking"
-          />
+          {firstYes ? (
+            <Button
+              label={busy ? "Saving…" : "Yes, let's meet"}
+              onPress={() => void run(() => expressInterest(booking.id), `Dates held — ${owner} is asked to set a time`)}
+              disabled={busy || requestExpired(booking)}
+              testID="interest-booking"
+            />
+          ) : (
+            <Button
+              label={busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept"}
+              onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed — ${owner} gets a notice`)}
+              disabled={!canAccept}
+              testID="accept-booking"
+            />
+          )}
           <TextButton label="Decline" danger onPress={() => setConfirmDecline(true)} testID="decline-booking" />
         </View>
       ) : null}

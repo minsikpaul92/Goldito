@@ -19,6 +19,7 @@ from app.routers import (
     media,
     meet_greet,
     rag,
+    sweep,
     tone,
 )
 
@@ -47,6 +48,7 @@ app.include_router(ai_inquiry.router)
 app.include_router(ai_life_record.router)
 app.include_router(ai_report_chips.router)
 app.include_router(rag.router)
+app.include_router(sweep.router)
 app.include_router(tone.router)
 
 

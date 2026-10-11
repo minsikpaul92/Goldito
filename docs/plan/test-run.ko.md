@@ -69,6 +69,8 @@ cd backend
 | D | 시터 | 돌보는 동안 쌓기: **체크인** 몇 개(식사 · 배변 · 산책 · 메모, 사진 포함 1개), **할 일 완료**(사진 1~2장 포함), Feed **+ Photo** 2~3장(밥 · 산책 · 낮잠을 섞어서 = CAP), **Diary**에서 알림장 보내기(= REPORT) | Home 숫자가 올라감 |
 | E | 시터 | 예약 상세 → **Returned** | = DONE-1 |
 
+> **직접 요청부터 해 볼 때(`pets` 상태):** 리셋하면 Robert와 Chloe는 "처음 만나는 사이"라서 시터 버튼이 **Accept**가 아니라 **Yes, let\'s meet**입니다. 시터가 Yes → (오너가 일정을 잡거나 **Skip Meet & Greet**를 요청하고 시터가 Continue) → 시터 **Confirm booking** → 오너 결제 순서이고, 단계 막대가 양쪽에 보입니다 (test-guide BOOK-8 ~ 13). 빠르게 가려면 `confirmed` / `ready` / `in_care` 상태를 쓰세요. 같은 날짜에 오너 둘을 받는 시나리오는 Chloe의 Profile에서 **Take pets from more than one owner at a time**을 켠 뒤에 합니다.
+
 > 한 번의 흐름으로 **REPORT · CAP · DONE**을 모두 볼 수 있습니다. D에서 일부러 **하지 않는 것**을 하나 정해 두면(예: 산책 기록을 안 남김) DONE-8의 "지어내지 않음"을 확인하기 좋습니다. **돌보는 중(`in_care`)에서 바로 시작**하려면 C를 건너뛰고 B → D로 가면 됩니다.
 
 ## 3. 권장 순서

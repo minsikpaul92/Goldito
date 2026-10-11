@@ -94,7 +94,7 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId(`record-fold-${MOCHI}`)).toHaveCount(0); // no record for Mochi: nothing shown
   });
 
-  test("a first-time request shows custom time and Meet first, and Accept waits", async ({ page }) => {
+  test("a first-time request shows custom time and Meet first; the sitter's button is Yes, let's meet", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");
     const { screen, card } = await openRequest(page);
@@ -108,12 +108,14 @@ test.describe("sitter requests", () => {
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));
-    await expect(screen.getByTestId("meet-greet")).toContainText("Meet Robert first — or agree to skip the Meet & Greet.");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Say \"Yes, let's meet\" to hold these dates");
+    await expect(screen.getByTestId("stage-caption")).toHaveText("Your turn");
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("Custom time — outside your hours, needs your OK.");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("chicken");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("8:00 AM · Breakfast");
     await expect(screen.getByTestId("pet-care-Mochi")).toContainText("No allergies listed");
-    await expect(screen.getByTestId("accept-booking")).toBeDisabled();
+    await expect(screen.getByTestId("interest-booking")).toHaveText("Yes, let's meet");
+    await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
   });
 
   test("the tab opens on Requests, but on Upcoming once a stay is on or about to start", async ({ page }) => {

@@ -369,6 +369,16 @@ def test_only_this_inquirys_pets_reach_the_facts(client, setup):
     assert "SECRET" not in json.dumps(ctx.model.facts) and "beef" not in json.dumps(ctx.model.facts)
 
 
+def test_the_facts_say_whether_the_sitter_takes_one_owner_at_a_time(client, setup):
+    ctx = setup()
+    post(client)
+    assert ctx.model.facts["sitter"]["takes_one_owner_at_a_time"] is True  # the default
+    ctx = setup()
+    ctx.db.tables["sitter_profiles"][0]["accepts_multiple_owners"] = True
+    post(client)
+    assert ctx.model.facts["sitter"]["takes_one_owner_at_a_time"] is False
+
+
 def test_f_the_facts_hold_no_entry_address_or_contact_keys(client, setup):
     ctx = setup()
     post(client)

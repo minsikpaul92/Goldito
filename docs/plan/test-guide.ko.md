@@ -71,7 +71,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기) | ✅ 🤖 | 03B.9 |
+| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 시터의 첫 동의 뒤에만 가능, BOOK-8 ~ 13) | ✅ 🤖 | 03B.9 · Booking steps |
 | Google Meet 링크 자동 생성 | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
 | AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
@@ -83,6 +83,7 @@
 | 시터 스케줄 열기 / 막기 | ✅ 🤖 | 03B.1 |
 | 내 시터 목록 · 시터 프로필 | ✅ 🤖 | 03B.2 |
 | 예약 요청 (펫 · 시간 · 장소 · 서비스) | ✅ 🤖 | 03B.3 · 03B.10 |
+| **예약 단계 (D60)** — 시터의 첫 동의 "Yes, let's meet" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) | 03B Booking steps |
 | 시터 요청 함 (수락 · 시간 제안 · 거절 — 거절 시트에 사유 칩 · 짧은 메모 · Suggest another time instead, 오너 알림 · 예약 상세에 사유 표시) | ✅ 🤖 (FB-35 부분은 사람 확인 대기) | 03B.4 · FB-35 |
 | 협상 · 확정 후 변경 | ✅ 🤖 | 03B.5 |
 | 도착 / 인계 체크 (Received · Returned) | ✅ 🤖 | 03B.6 |
@@ -282,13 +283,19 @@
 
 | ID | 확인 내용 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- |
-| BOOK-1 | 예약 요청 → 시터 수락 → 확정 | 🤖 `booking` · `sitter-bookings` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
+| BOOK-1 | 예약 요청 → 시터 수락 → 확정. **이미 만난 사이(단골)** 는 버튼이 **Accept** 하나, **처음 만나는 사이**는 BOOK-8 ~ 9의 **Yes, let's meet → Meet & Greet → Confirm booking** (같은 동작, 이름만 다름) | 🤖 `booking` · `sitter-bookings` · `meet-greet` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
 | BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) |
-| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기) | 🤖 `meet-greet` | ➖ |
+| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Yes, let's meet(BOOK-9)를 눌러 홀드가 걸려 있어야 함 — 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
 | BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서) | 서버만 확인 (**앱 e2e 미확인**, 3B.11) | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음 | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
+| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Yes, let's meet / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
+| BOOK-9 | 시터가 **Yes, let's meet** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
+| BOOK-10 | 첫 동의 전에 일정 제안 · 건너뛰기를 API로 시도 / 단골에게 Yes 시도 | `interest_required` / `interest_not_needed` | SQL `rls_smoke` | ➖ |
+| BOOK-11 | **홀드와 한 번에 한 오너.** Chloe(기본 설정)에게 오너 A가 첫 동의를 받은 날짜에 오너 B가 요청 · 검색 · 문의 | B의 요청은 `sitter_unavailable`(날짜가 상세에), 시터 검색에 안 나옴, 문의 AI의 "can host"도 불가. 시터가 일정 막기로 덮으려 해도 거부. 시터 프로필에서 **Take pets from more than one owner at a time**을 켜면 정원(max pets) 안에서 허용. 오너에게는 시터 프로필 · 문의 시트 · 검색 결과에 "One owner at a time" / "Hosts several owners' pets" 배지 | 🤖 `profile` · SQL · pytest `test_inquiry` | ➖ |
+| BOOK-12 | 만난 뒤 **오너가 Not this sitter**(사유 칩 + 짧은 메모) / 취소 · 거절 · 타임아웃 | 오너 버튼 이름이 첫 동의 뒤에는 **Not this sitter**(그 전에는 Cancel booking), 사유가 취소 이유로 저장되고 시터 화면에 "Robert passed: …" 표시. 취소되면 홀드가 풀려 다음 오너가 요청 가능 | 🤖 `meet-greet` · SQL | ➖ |
+| BOOK-13 | **2일 · 3일 규칙.** 첫 동의 2일 뒤에도 만남 시간이 없음 → 알림 → 3일 더 무응답 | 양쪽에 "Still no time to meet …"(시간 잡기 · 건너뛰기 · 거절), 카드에 같은 문구. 3일 뒤 자동 취소(`meet_greet_timeout`), 홀드 해제, 양쪽 알림. 시간이 **agreed**가 되면 시계가 멈춤 | SQL `rls_smoke` (스윕) · pytest `test_sweep` · 실제 15분 cron은 👤 | ➖ |
 
 ### 3.9 리뷰 버그 수정 (BF) — 2026-10-06 코드 리뷰에서 나온 버그
 
@@ -418,7 +425,7 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | FLOW-1 | 오너가 예약 요청 → 시터 화면 (새로고침 없이) | 시터 Home · Bookings가 새로고침 없이 갱신 — Requests 탭 모서리 배지 1, 문의면 Questions (FB-2) | 👤 (실시간) | ❌ 10/08 민식 (실시간 안 뜸) |
-| FLOW-2 | 시터가 Accept → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
+| FLOW-2 | 시터가 Accept(처음 만나는 사이면 **Confirm booking**) → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
 | FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
@@ -492,6 +499,7 @@
 - **문의 AI의 가능 여부 = 예약 엔진의 규칙 (RV-1):** 펫 수만큼 자리가 없는 슬롯이나 시터가 안 연 날이 하나라도 있으면 "못 해요"다. 호스팅 DB에 **`011c`가 적용되기 전에는** 이 검사를 못 해서 모든 답장이 "확인해서 알려 드릴게요"(가격 없음, 자동 발송 안 됨)로 나온다.
 - **후속 질문의 AI 답 (FB-34, 알려진 한계):** 모델은 최신 오너 메시지 + 앞선 대화(최대 6개)를 읽지만, **날짜 · 견적 · 가능 여부는 문의에 저장된 원래 일정** 기준이다. 그래서 "Could you open for me?" 같은 후속에도 "그날은 자리가 없다"로 답할 수 있다 — 시터가 일정을 열거나 직접 쓰는 것이 맞는 경우다(오너가 일정을 열어 달라는 요청이면 시터 확인이 필요하다고 표시하는 프롬프트는 Q.4b / RV-2 몫).
 - **Change dates와 011j · 011k:** 오너의 Change dates는 `011j`, 시터의 Decline · Suggest(can_host=false, 견적 없음)는 `011k`가 호스팅 DB에 적용돼 있어야 한다(없으면 "Couldn't change the dates / send the reply"). 새 앱은 옛 DB에서 답장 전송이 실패하고, 옛 앱(Vercel main)은 011k 뒤에도 그대로 동작한다(`p_outcome`은 선택). 시터의 **Suggest** 메시지는 일반 글이라 오너가 "이 날짜로 바꾸기" 한 번에 쓰는 버튼은 아직 없다(Change dates로 직접 고름).
+- **예약 단계 (011l):** 마이그레이션 `011l`은 앱과 **같은 PR로 배포**(먼저 적용하면 옛 앱의 첫 만남 제안이 `interest_required`로 막힘). 시터의 기본 설정은 **한 번에 한 오너**라, 같은 날짜에 오너 두 명을 받으려면 시터 프로필에서 설정을 켜야 한다(테스트 계정 Chloe는 켜 두고 시작하려면 Profile에서 켠다). **홀드는 시터가 동의한 요청에만** 걸린다 — 동의 전 요청은 날짜를 잡지 않으므로 같은 날짜에 오너 둘의 요청이 함께 보일 수 있고, 한쪽이 홀드되면 다른 쪽의 동의는 실패한다. 오너가 보는 시터 달력(빈 날 / 꽉 찬 날)은 **다른 오너의 홀드를 아직 반영하지 않는다**(요청을 보내는 순간 `sitter_unavailable`로 알려 줌). 스윕은 15분마다 도는 cron이라 2일 · 3일 규칙은 최대 15분 늦게 적용된다. 첫 동의 전 상태의 요청은 단계가 `requested`로만 보이고, 오너 거절 사유(칩)는 시터 화면에 취소 이유로만 보이며 알림 본문에는 없다.
 - **Decline 메모 길이 (FB-35):** 200자 제한은 앱 입력칸에서만 건다(서버 `respond_booking`은 길이를 검사하지 않음). 사유 칩과 메모는 한 문장(`sitter_note` · 알림 본문)으로 합쳐져 저장되므로 오너 화면에서 칩과 메모를 따로 구분해 보여 주지 않는다.
 - **문의 이어 쓰기 (FB-34):** 오너의 **Write back** 칸은 *시터의 답이 마지막 메시지일 때만* 보이고(내가 보낸 뒤에는 시터가 답할 때까지 숨김), 문의가 `booked` · `closed`면 없다. 새 초안은 백엔드가 "마지막 초안 이후의 새 오너 메시지"로 만든다 — Render가 잠들어 있거나 모델이 실패하면 초안이 늦거나 없고, 시터는 **Write it myself**로 직접 답할 수 있다. **Change dates**는 새 문의를 만들 뿐 이전 문의는 닫지 않는다. 장소가 *Somewhere else*였던 문의는 메모를 저장하지 않아서 시트에서 장소 메모를 다시 써야 한다.
 - **일찍 Received한 뒤의 기록 (CW-1, 2026-10-09 수정):** 체크인 · 할 일 · 알림장 칩 · 초안이 모두 "약속된 드롭오프와 Received 중 **이른 쪽**"부터 센다(끝은 약속된 픽업 그대로). 체크인 · 할 일 쪽은 DB 함수라 **`011i`가 호스팅 DB에 적용돼야** 바뀐다 — 적용 전에는 `in_care` 리셋 뒤 3분 동안 체크인이 "Tasks open once the stay has started"로 막힌다(알림장 칩은 백엔드 배포만으로 고쳐짐).

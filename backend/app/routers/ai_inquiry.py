@@ -557,7 +557,7 @@ def _gather(
     profile = (
         _one(
             db.table("sitter_profiles")
-            .select("bio, service_area, experience_years, policies")
+            .select("bio, service_area, experience_years, policies, accepts_multiple_owners")
             .eq("id", inquiry["sitter_id"])
             .limit(1)
             .execute()
@@ -576,6 +576,8 @@ def _gather(
                 if profile.get("experience_years") is not None
                 else {}
             ),
+            # D60: the sitter's own setting. The default (column missing or false) is one owner at a time.
+            "takes_one_owner_at_a_time": not profile.get("accepts_multiple_owners"),
         },
         "inquiry": {
             "service": inquiry["service_type"],

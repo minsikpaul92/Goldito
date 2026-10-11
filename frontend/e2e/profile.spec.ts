@@ -88,6 +88,21 @@ test.describe("profile", () => {
     });
   });
 
+  test("a sitter chooses between one owner at a time (default) and several owners", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    const screen = app(page);
+    await screen.getByTestId("open-profile").click();
+
+    await expect(screen.getByTestId("profile-multi-owner")).toHaveAttribute("aria-checked", "false");
+    await screen.getByTestId("profile-multi-owner").click();
+    await screen.getByTestId("profile-save").click();
+    await expect(page).toHaveURL(/\/sitter$/);
+    expect(db.sitter_profiles.find((r) => r.id === SITTER.id)).toMatchObject({ accepts_multiple_owners: true });
+  });
+
   test("an owner saves preferred meeting spots", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);

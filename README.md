@@ -52,7 +52,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 | Stage | What the AI does | Status |
 | :--- | :--- | :--- |
 | **① Inquiry** | Drafts the reply **in the sitter's own writing style**, from the sitter's calendar, a server-side quote, house policy, and the pet's Life Record | ✅ |
-| **② Meet & Greet** | Turns the owner's care note into a timed **mission checklist** and Heads-up cards | ✅ · Google Meet link ✅ server, app check 🚧 · step bar + date hold 🚧 |
+| **② Meet & Greet** | Turns the owner's care note into a timed **mission checklist** and Heads-up cards | ✅ · Google Meet link ✅ server, app check 🚧 · step bar + date hold ✅ |
 | **③ Booking** | Stays out of the way on purpose: consents, prices, and the timed unlock come from fixed rules, never from the model | ✅ |
 | **④ Care & Pet Transit** | Suggests the day's chips, writes the **daily note**, captions and sorts photos · live trip + photo check 🚧 | ✅ care · 🚧 transit |
 | **⑤ Completion** | Writes the pet's **Life Record** and remembers it for the next stay — even with a new sitter | ✅ |
@@ -79,7 +79,7 @@ Tap a stage to expand it.
 <details>
 <summary><b>① Inquiry — a reply in the sitter's own writing style ✅</b></summary>
 
-- The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question. With **Ask before booking**, nothing is booked until a request is sent. The sitter's profile also says whether she takes **one owner's pets at a time or several** (her setting) 🚧.
+- The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question. With **Ask before booking**, nothing is booked until a request is sent. The sitter's profile also says whether she takes **one owner's pets at a time or several** (her setting) ✅.
 - **Goldito AI drafts the reply in seconds** (about 3 s median), in the sitter's own style learned from their past conversations: availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, answers from the house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, which answers at a human pace after a clear responsibility prompt — so a busy or sleeping sitter still answers first. The thread keeps going: the owner can write back, **change the dates in the same conversation**, and the sitter's Accept / Decline / Suggest other dates are drafted for them too.
 - Prices and availability are calculated by the server, never by the model — "can she take these dates?" uses the same rule as the booking engine, and the reply and the checkout always show the same numbers.
 
@@ -89,7 +89,7 @@ Tap a stage to expand it.
 <summary><b>② Meet & Greet — the care request becomes a checklist ✅</b></summary>
 
 - The owner writes a **care & medication request** like a note: *"8 AM — 1 cup of kibble · 2 PM — skin pill in a treat · No knocking — text me · Keep other dogs away on walks."* Nemotron turns it into timed tasks and **Heads-up** cards, and the owner reviews it before saving. While a stay is on, changes go through a request the sitter approves.
-- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at a spot either of them saved, or on video with a **Google Meet** link and calendar invite created the moment they agree on a time (server done, app check 🚧). Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. The sitter first says **Yes, let's meet** — from then on the dates are held for the owner — and if no meeting time is set within 2 days, both are asked to set one, skip it, or decline; with no answer the request is cancelled 🚧. After meeting, either side can still say no 🚧. Repeat clients skip this step.
+- **First stay together? Meet first.** After the booking request, a first-time owner and sitter meet in person, at a spot either of them saved, or on video with a **Google Meet** link and calendar invite created the moment they agree on a time (server done, app check 🚧). Either side can ask to skip; if the other says no, the booking is cancelled and the owner finds another sitter. The sitter first says **Yes, let's meet** — from then on the dates are held for the owner — and if no meeting time is set within 2 days, both are asked to set one, skip it, or decline; with no answer the request is cancelled ✅. After meeting, either side can still say no ✅. Repeat clients skip this step.
 - They choose how the pet travels: **Owner drives** or **Sitter drives**.
 
 </details>
@@ -161,13 +161,13 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 | | 3 · Owner | Reads the reply and the quote and taps **Request booking** — a request, not yet a booking. ✅ |
 | **Meet & Greet** | 4 · Owner | Writes the care note — *"8 AM kibble · 2 PM pill in a treat · no knocking"* — by typing ✅ or, soon, by speaking 🚧. |
 | | 5 · System | Nemotron turns the note into a timed **checklist** and **Heads-up** cards; the owner reviews and saves. ✅ |
-| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). Declines — or says **"Yes, let's meet"**, the first agreement. For a repeat client one **Accept** covers it and the Meet & Greet steps are skipped. 🚧 |
-| | 7 · System | Holds Chloe's dates for Robert so nobody else can book them, tells him she would like to meet, and shows both of them a **progress bar** — the current step and the one next action. 🚧 |
+| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). Declines — or says **"Yes, let's meet"**, the first agreement. For a repeat client one **Accept** covers it and the Meet & Greet steps are skipped. ✅ |
+| | 7 · System | Holds Chloe's dates for Robert so nobody else can book them, tells him she would like to meet, and shows both of them a **progress bar** — the current step and the one next action. ✅ |
 | | 8 · Owner | Proposes a first meeting — **in person** at a public spot either of them saved (for example a park near Chloe's), or **on video** — with a date and time. ✅ |
 | | 9 · Sitter | Accepts the time. For video, Goldito creates the **Google Meet** link and calendar invites. ✅ (link: server ✅, app check 🚧) |
 | | 10 · Owner & Sitter | Meet — with the pets, if in person — and go through the "things to cover" list. One of them taps **Done**. ✅ |
-| **Booking** | 11 · Sitter | After the meeting, taps **Confirm booking** — or declines with a reason chip. ✅ confirm · 🚧 reason chips |
-| | 12 · Owner | Reviews the final quote, signs the consent forms, and **pays (demo)**. A "Booked and paid" card says what happens next. ✅ Or taps **Not this sitter** with a reason chip, which releases the dates. 🚧 |
+| **Booking** | 11 · Sitter | After the meeting, taps **Confirm booking** — or declines with a reason chip. ✅ confirm · ✅ reason chips |
+| | 12 · Owner | Reviews the final quote, signs the consent forms, and **pays (demo)**. A "Booked and paid" card says what happens next. ✅ Or taps **Not this sitter** with a reason chip, which releases the dates. ✅ |
 | | 13 · System | Opens Chloe's address, visitor parking, and a packing list to the owner. ✅ |
 | **Care & Pet Transit** | 14 · Owner | On drop-off day taps **Start trip** and agrees to share live location until arrival. Declining is fine — the meeting place still shows, with **Open in Google Maps**. 🚧 |
 | | 15 · System | Tells Chloe that Robert is on the way, shows the live map and ETA, and announces the arrival with visitor-parking directions. 🚧 |
@@ -187,10 +187,10 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 
 | When | What happens | Status |
 | :--- | :--- | :--- |
-| The sitter declines (at the request, or after meeting) | A reason chip and a suggested time; the owner can pick another sitter | 🚧 reason chips |
-| The owner decides against the sitter after meeting | **Not this sitter** with a reason chip; the dates are released | 🚧 |
+| The sitter declines (at the request, or after meeting) | A reason chip and a suggested time; the owner can pick another sitter | ✅ reason chips |
+| The owner decides against the sitter after meeting | **Not this sitter** with a reason chip; the dates are released | ✅ |
 | Either side wants to skip the Meet & Greet | The other must agree — if not, the booking is cancelled and the owner finds another sitter | ✅ |
-| No Meet & Greet time within 2 days | Both are asked to set one, skip it, or decline; after 3 more days of silence the request is cancelled and the dates are released | 🚧 |
+| No Meet & Greet time within 2 days | Both are asked to set one, skip it, or decline; after 3 more days of silence the request is cancelled and the dates are released | ✅ |
 | No pet or crate in the handoff photo | Retake it, or continue with a reason (advice only) | 🚧 |
 | The owner declines to share location | No live map — the meeting place is shown with **Open in Google Maps** | 🚧 |
 | The AI is unavailable | A plain-list draft instead of an error | ✅ |

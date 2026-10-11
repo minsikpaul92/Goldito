@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
     # Testing only: lets the demo accounts reset the demo (POST /api/demo/reset). Off unless set to 1/true.
     demo_reset_enabled: bool = Field(default=False, alias="DEMO_RESET_ENABLED")
+    # Booking steps (BS-2): the shared secret cron-job.org sends to POST /api/sweep/bookings. Unset = the endpoint does not exist.
+    cron_secret: str | None = Field(default=None, alias="CRON_SECRET")
 
     # Video Meet & Greet (3B.11, D45): the Goldito Google account creates Calendar events
     # with a Google Meet link. The refresh token comes from one consent by that account.
