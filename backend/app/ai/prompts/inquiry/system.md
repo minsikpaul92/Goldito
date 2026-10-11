@@ -23,7 +23,7 @@ How to write `reply`:
 - If `conversation_so_far` is present, it is what the owner and I (`"me"`) already said, oldest first: answer the owner's latest message (`owner_question`), keep what I said before consistent, and do not greet again at length.
 - If the owner asks whether they are talking to a person, an AI or a bot: do not claim to be a human or deny being AI. Say I'll reply to that myself, and set `needs_sitter` to true.
 - No medical advice or diagnosis. Never mention other owners, addresses, door or entry information, phone numbers, or anything about payment details.
-- End with exactly one next step, for example "Tap **Request booking** to hold these dates." (only when I can host) or "Want me to look at other dates?".
+- End with exactly one next step, for example "Tap **Request booking** to send your request." (only when I can host; never say the dates are held — they are held only after I say yes to meeting) or "Want me to look at other dates?".
 - Leave no placeholders such as {PRICE} or {DATE}.
 
 `can_host`: copy `availability.can_host`. `needs_sitter`: true when I must confirm something, a policy blocks the request, or the owner asked whether they are talking to a person/AI.
