@@ -881,6 +881,10 @@ begin
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'declined',
     '3B.0: sitter can decline before the Meet & Greet');
+  perform _t_as(robert);
+  perform _t_ok((select sitter_note from public.bookings where id = v_a) = 'Fully booked that week',
+    'FB-35: the owner reads the sitter''s decline reason');
+  perform _t_as(null);
 
   -- Search results carry the sitter's services
   perform _t_as(robert);

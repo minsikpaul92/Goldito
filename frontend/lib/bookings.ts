@@ -374,6 +374,8 @@ export type BookingSummary = {
   /** Who cancelled and why (cancel_booking reason, or meet_greet_declined / handoff_declined). */
   cancelledBy: string | null;
   cancelReason: string | null;
+  /** The sitter's reason when they declined the request (FB-35). */
+  sitterNote: string | null;
   /**
    * Set by pay_booking_demo (03C). Null until checkout finishes — and again when an agreed change
    * needs a new consent (009d); priceSnapshot then still holds the last paid quote.
@@ -449,7 +451,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
-  "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, " +
+  "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, sitter_note, " +
   "paid_at, price_snapshot, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
@@ -471,6 +473,7 @@ type BookingRow = {
   meet_greet_skip_requested_by: string | null;
   cancelled_by: string | null;
   cancel_reason: string | null;
+  sitter_note: string | null;
   paid_at: string | null;
   price_snapshot: PriceQuote | null;
   created_at: string;
@@ -517,6 +520,7 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     },
     cancelledBy: b.cancelled_by ?? null,
     cancelReason: b.cancel_reason ?? null,
+    sitterNote: b.sitter_note ?? null,
     paidAt: b.paid_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
@@ -614,9 +618,9 @@ export function firstSitterBucket(
 // Sitter actions (3B.4)
 // ---------------------------------------------------------------------------
 
-/** respond_booking — Accept also accepts the owner's pending times; Decline ends the request. */
-export async function respondBooking(bookingId: string, accept: boolean): Promise<void> {
-  const { error } = await getSupabase().rpc("respond_booking", { p_booking: bookingId, p_accept: accept, p_note: null });
+/** respond_booking — Accept also accepts the owner's pending times; Decline ends the request (`note` = the reason the owner reads). */
+export async function respondBooking(bookingId: string, accept: boolean, note: string | null = null): Promise<void> {
+  const { error } = await getSupabase().rpc("respond_booking", { p_booking: bookingId, p_accept: accept, p_note: note });
   if (error) {
     throw new BookingError(
       error.message,

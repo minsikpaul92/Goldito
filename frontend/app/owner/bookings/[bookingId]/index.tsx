@@ -213,6 +213,9 @@ export default function OwnerBookingDetail() {
         {ended ? (
           <Card style={styles.block} testID="booking-ended">
             <Text style={styles.label}>{ended}</Text>
+            {booking.status === "declined" && booking.sitterNote ? (
+              <Text style={styles.body} testID="declined-reason">{`“${booking.sitterNote}”`}</Text>
+            ) : null}
             <Text style={styles.muted}>Same pets, times and places — pick another sitter.</Text>
           </Card>
         ) : null}

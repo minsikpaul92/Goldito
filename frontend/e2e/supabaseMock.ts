@@ -645,7 +645,20 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const open = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.status === "proposed");
     if (!args.p_accept) {
       booking.status = "declined";
+      booking.sitter_note = args.p_note ?? null;
       for (const h of open) h.status = "rejected";
+      db.notifications.push({
+        id: crypto.randomUUID(),
+        user_id: booking.owner_id,
+        type: "booking_declined",
+        title: `${users.find((u) => u.id === me)?.displayName} declined your booking request`,
+        body: args.p_note ?? null,
+        pet_id: null,
+        booking_id: booking.id,
+        ref_id: booking.id,
+        read_at: null,
+        created_at: new Date(nowMs()).toISOString(),
+      });
       return route.fulfill({ status: 204 });
     }
     if (!["not_needed", "done", "skipped", undefined].includes(booking.meet_greet_status as string | undefined)) {

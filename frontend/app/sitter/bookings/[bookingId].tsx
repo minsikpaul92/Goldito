@@ -10,11 +10,14 @@ import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Chip } from "../../../components/ui/Chip";
+import { ChipSuggestions } from "../../../components/ChipSuggestions";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
+import { TextField } from "../../../components/ui/TextField";
+import { composeComment } from "../../../features/completion/reviewPresets";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { formatDay, formatInstant, formatTime } from "../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
@@ -47,6 +50,10 @@ import { useToast } from "../../../providers/ToastProvider";
 import { Theme } from "../../../theme/themes";
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
+
+/** Polite reasons for a "no" — the owner reads the ones picked, plus the optional note (FB-35). */
+const DECLINE_REASONS = ["Fully booked those dates", "Can't take this pet type", "Not a good fit", "Let's talk first"];
+const DECLINE_NOTE_MAX = 200;
 
 type State =
   | { status: "loading" }
@@ -95,6 +102,8 @@ export default function SitterBookingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
+  const [declineReasons, setDeclineReasons] = useState<string[]>([]);
+  const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
@@ -167,6 +176,12 @@ export default function SitterBookingDetail() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const closeDecline = () => {
+    setConfirmDecline(false);
+    setDeclineReasons([]);
+    setDeclineNote("");
   };
 
   const send = (change: HandoffChange) => {
@@ -410,16 +425,17 @@ export default function SitterBookingDetail() {
       <Sheet
         visible={confirmDecline}
         title={`Decline ${owner}'s request?`}
-        onClose={() => setConfirmDecline(false)}
+        onClose={closeDecline}
         testID="decline-sheet"
         footer={
           <Button
             label="Decline request"
             onPress={() => {
-              setConfirmDecline(false);
+              const reason = composeComment(declineReasons, declineNote) || null;
+              closeDecline();
               void run(
                 async () => {
-                  await respondBooking(booking.id, false);
+                  await respondBooking(booking.id, false, reason);
                   // A video Meet & Greet's Calendar event goes with the declined request (3B.11).
                   await releaseVideoLink(booking.id);
                 },
@@ -432,6 +448,33 @@ export default function SitterBookingDetail() {
         }
       >
         <Text style={styles.body}>{`${owner} gets a notice and can find another sitter.`}</Text>
+        <Text style={styles.muted}>Pick a reason and/or leave a short note — {owner} sees both.</Text>
+        <ChipSuggestions
+          chips={DECLINE_REASONS.map((r, i) => ({ id: String(i), kind: "episode", label: r, source: "custom", check: null, media_id: null }))}
+          off={new Set(DECLINE_REASONS.flatMap((r, i) => (declineReasons.includes(r) ? [] : [String(i)])))}
+          onToggle={(id) => {
+            const r = DECLINE_REASONS[Number(id)];
+            setDeclineReasons((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]));
+          }}
+          testIDPrefix="decline-reason"
+        />
+        <TextField
+          label="Note to the owner (optional)"
+          value={declineNote}
+          multiline
+          numberOfLines={3}
+          maxLength={DECLINE_NOTE_MAX}
+          onChangeText={setDeclineNote}
+          testID="decline-note"
+        />
+        <TextButton
+          label="Suggest another time instead"
+          onPress={() => {
+            closeDecline();
+            setSheet({ key: Date.now(), kind: "drop_off", mode: "suggest" });
+          }}
+          testID="decline-suggest"
+        />
       </Sheet>
     </View>
   );
