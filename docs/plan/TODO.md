@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011d` (RV-3, not created) and `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); Seulgi `011m`–`011z`; `012` = 06B, `013` = 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); `011z` = RV-5 rest (applied at merge of its PR); Seulgi `011m`–`011y`; `012` = 06B, `013` = 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---
@@ -23,19 +23,18 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **RV-3** | a declined reply carries no quote / Request booking — re-check what `011k` already did (the sitter-side quick replies send `can_host=false` with no quote); what is left: a hand-edited "no", the model's failed fallback sentence, the sitter's "include the price" toggle (`011d` only if still needed) | [review §4](review-2026-10-08.ko.md) RV-3 |
+| **Minsik** | **06B Pet Transit** | Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check; declining location shows the meeting place + **Open in Google Maps**; FB-9 (Returned confirm sheet + 2-hour guard) joins as 6B.6. Migration `012` | [phases/phase-06b.md](phases/phase-06b.md) |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **RV-3** a declined reply carries no quote / Request booking (`011d`; the sitter-side quick replies in `011k` already send `can_host=false` with no quote — re-check what is left) → **RV-5 rest** (next free migration letter — `011l` is the booking steps; the review's `011j` is taken): close other open inquiries when a booking is made, `match_knowledge` returns `pet_id`, backend 409 for a closed inquiry. One commit per ID. [review §4](review-2026-10-08.ko.md)
-2. **06B Pet Transit** (`012`) — Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check (MiniCPM-V). **Decided 2026-10-10:** if the person declines (or the browser denies), no live location / map / ETA — both screens show the meeting place + an **Open in Google Maps** button (6B.8). **FB-9 joins 06B (6B.6):** the Returned confirm sheet + the 2-hour guard — the written commit `ade2301` on the closed `fix/booking-flow-feedback` is the starting point. Last P0 feature (D41). [phase-06b.md](phases/phase-06b.md)
-3. **R2 (new branch from main):** **FB-8** sitter In progress → **FB-5 · FB-6** time-change sheet (FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
-4. **10 Demo & deploy** — seed (rates, entry info, routes, past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
-5. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
-6. **08 Safety guard** (`013`) — P0 **stretch**, only if time remains after 06B + 10; 8.7 Tavily is a further stretch. [phase-08.md](phases/phase-08.md)
+1. **06B Pet Transit** (`012`) — Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check (MiniCPM-V). **Decided 2026-10-10:** if the person declines (or the browser denies), no live location / map / ETA — both screens show the meeting place + an **Open in Google Maps** button (6B.8). **FB-9 joins 06B (6B.6):** the Returned confirm sheet + the 2-hour guard — the written commit `ade2301` on the closed `fix/booking-flow-feedback` is the starting point. Last P0 feature (D41). [phase-06b.md](phases/phase-06b.md)
+2. **R2 (new branch from main):** **FB-8** sitter In progress → **FB-5 · FB-6** time-change sheet (FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
+3. **10 Demo & deploy** — seed (rates, entry info, routes, past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
+4. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
+5. **08 Safety guard** (`013`) — P0 **stretch**, only if time remains after 06B + 10; 8.7 Tavily is a further stretch. [phase-08.md](phases/phase-08.md)
 
 **Seulgi — Phase Q** (one at a time in her row; detail in [phase-q.md](phases/phase-q.md)): Q.0 environment → Q.1 full manual run + findings as GitHub issues (QA feedback form) → Q.2 wording / presets → Q.3 anonymization (+ zero-retention decision) → Q.4 tone data (inquiry + daily report) + auto-send delay formula → Q.4b prompt engineering + RAG-first answers → Q.5 R3 Medium report / caption / Life Record / seed (M-14 · M-20 · M-16 first; M-12 done) → Q.6 R3 Medium inquiry M-1–M-11 → Q.7 measurements → Q.8 final QA (10/27–29, two accounts: test-guide **INQ-1 … INQ-19**, **REPORT-10**; plus the real phone camera on the Vercel URL — Take photo / Choose from library) → Q.9 R4 Low (L-1–L-6, FB-3 · FB-4 · FB-1) → Q.10 SFT (P2). Branches `fix/q-review-medium`, `fix/q-review-low`.
 
@@ -106,7 +105,7 @@
 | --- | --- |
 | 00 – 06, 03B, 03C | done |
 | 07 Report AI · 07B Inquiry AI + RAG · 07C Completion · 09 Caption + album | merged; DoD hand-check pending (Seulgi Q.1) |
-| 06B Pet Transit | not started (Minsik, after RV-3/5) |
+| 06B Pet Transit | not started (Minsik, next) |
 | 08 Safety | P0 stretch, only if time remains |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
 | 11 P1 | not started |
@@ -118,6 +117,7 @@
 ## Hosted DB — still to do
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
-- [ ] Apply new migrations as they are created (`011d` RV-3 if needed, RV-5 rest, `012` 06B, `013` 08) and add a line here when a commit creates one.
+- [ ] **`011z` (RV-5 rest) — apply to the hosted DB at the merge of its PR [#81](https://github.com/minsikpaul92/Goldito/pull/81)** (the backend 409 and the app work without it; the sibling-inquiry closing and `pet_id` need it).
+- [ ] Apply new migrations as they are created (`012` 06B, `013` 08) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).

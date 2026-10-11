@@ -460,9 +460,9 @@
 | R0-2 | CI를 토론토 자정 · 저녁 · 월말에 | `care-tasks` · `report` · `booking` · `caption` spec이 시각과 무관하게 통과 | 🤖 고정 시계(`NOON_TORONTO`) · CI `frontend` (#55 · #56 초록, flows 182 ✓ — 2026-10-08) | ➖ |
 | RV-1 | 시터가 밤 슬롯을 열지 않았거나 남은 자리 1인데 펫 2마리로 문의 | AI가 "가능"이라고 하지 않고, 안 되는 날을 말함 · 견적 없음 | 새로 필요 | ➖ |
 | RV-2 | 막힌 날짜로 문의(자동 발송 켬) | "Yes, I can host" 같은 답이 나가지 않음(검사에 걸려 다시 쓰거나 고정 문구), 안 되는 날을 문장에 적음, **불가인 답은 자동 발송 안 되고 시터 확인 대기**. 날짜가 열려 있는데 "I can't take…"만 하는 답도 걸림 | pytest `test_inquiry` · `test_inquiry_agent` (실제 AI 문장은 👤) | ➖ |
-| RV-3 | 시터가 Decline 칩 → Send | 오너 화면에 견적 카드 · Request booking이 없음. 토글로 끌 수도 있음 | 새로 필요 | ➖ |
+| RV-3 | 시터가 Decline 칩 → Send / 가능 초안을 **Edit / Add**로 거절 문장으로 고치고 **"Include the price and a Request booking button"**을 끄고 Send / 가격 없는 초안(모델 장애 대체 문장 포함) | 오너 화면에 견적 카드 · Request booking이 없고 **Change dates**가 주 버튼. 토글은 가능 + 견적이 있는 초안에서만 기본 켜짐, 불가 초안에는 토글 자체가 없음 | 🤖 `inquiry` · pytest `test_inquiry` · SQL 011k | ➖ |
 | RV-4 | 예약한 적 없는 오너가 처음 문의 | 시터 Questions 카드 · 스레드에 **오너 이름**과 **펫 이름 · 정보**가 보임 | 새로 필요 | ➖ |
-| RV-5 | 오너가 시터 A · B에게 문의 후 A를 예약 / 문의 기간이 지남 | B는 그 펫의 Life Record를 못 읽음, 닫힌 문의에서 Regenerate는 409 | SQL smoke | ➖ |
+| RV-5 | 오너가 시터 A · B에게 같은 펫 · 겹치는 날짜로 문의 후 A를 예약 / 문의 기간이 지남 | B의 문의는 **closed**(A의 문의는 앱이 booked로, 다른 펫 · 다른 날짜의 문의는 그대로 open). B는 그 펫의 Life Record를 못 읽음. 닫힌 · booked 문의에서 새 초안 · Regenerate · 의도 칩은 **409**("This question is closed…"), Life Record 근거 칩의 라벨은 문장이 속한 펫 이름 (`011z`) | SQL `rls_smoke` (011z) · pytest `test_inquiry` · 호스팅 DB에 `011z` 적용 뒤 👤 | ➖ |
 | RV-6 | Diary에서 메모 · 사진 칩 하나를 끄고 Write | 초안에 꺼진 칩 내용이 없음 | 🤖 `report` (`off` 전송 · 사진 칩 하나만 꺼도 설명 제외) · pytest `test_ai_daily_report` (꺼진 메모 · 피드 원문이 모델 입력에 없음 · 할 일 사진 캡션 제외 · `_ref` 숨김), `test_ai_report_chips` (칩 id = 기록 id) | ➖ |
 | RV-7 | 켜진 칩 9개 이상으로 Write | 안내 문구가 보이고 초안이 생김 (422 없음) | 🤖 `report` (안내 문구 · 9개 전송 · 422 문구) · pytest `test_ai_daily_report` (칩 12개 → 앞 8개) | ➖ |
 | RV-8 | AI가 꺼진 상태(키 없음)로 Write | "plain list" 안내와 함께 칩 목록 초안 → 고쳐서 Send 가능 | 🤖 `report` (안내 · Send) · pytest `test_ai_daily_report` (장애 · 빈 답 → 목록 초안, 꺼진 칩 없음) | ➖ |

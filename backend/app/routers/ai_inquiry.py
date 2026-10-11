@@ -107,6 +107,12 @@ def inquiry_reply(
         return _redact(
             _reuse(drafts[-1]), user, inquiry
         )  # idempotent: asking twice never makes a second draft
+    if inquiry["status"] != "open":
+        # RV-5: a booked or closed inquiry gets no new draft, no Regenerate and no intent — and its sources
+        # (a Life Record sentence) are no longer shown.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This question is closed, so there is nothing to answer."
+        )
     if answered and body.regenerate:
         _note_discarded(db, inquiry, drafts[-1])
     earlier = _earlier_messages(messages, question)
@@ -191,7 +197,8 @@ def inquiry_reply(
                 "model": model_name,
                 "latency_ms": int((datetime.now(UTC) - started).total_seconds() * 1000),
                 "grounding": {
-                    "quote": grounding["quote"] if grounding else None,
+                    # RV-3: the "I'll reply properly very soon" fallback states no price, so it carries none.
+                    "quote": grounding["quote"] if grounding and model_name != "failed" else None,
                     "availability": grounding["availability"] if grounding else None,
                     "sources": [s for s in sources if not used or s["id"] in used],
                     "needs_sitter": needs,

@@ -3717,4 +3717,62 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 011z (RV-5 rest): a booking closes the owner's other open inquiries about that pet and those dates
+-- (to other sitters only); match_knowledge says which pet a Life Record hit is about.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  d timestamptz := now() + interval '400 days';
+  v_same uuid;
+  v_sibling uuid;
+  v_later uuid;
+  v_other_pet uuid;
+  v_hit record;
+begin
+  perform _t_as(robert);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, chloe, d, d + interval '2 days', array[max]) returning id into v_same;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, paul, d, d + interval '2 days', array[max]) returning id into v_sibling;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, allen, d + interval '40 days', d + interval '42 days', array[max]) returning id into v_later;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, allen, d, d + interval '2 days', array[mochi]) returning id into v_other_pet;
+
+  -- Robert books Max with Chloe for those dates.
+  perform _t_as(null);
+  perform _t_booking(robert, chloe, array[max], d, d + interval '2 days', 'requested');
+
+  perform _t_ok((select status from public.inquiries where id = v_sibling) = 'closed',
+    '011z: booking one sitter closes the owner''s other open inquiry about the same pet and dates');
+  perform _t_ok((select status from public.inquiries where id = v_same) = 'open',
+    '011z: …but not the inquiry to the booked sitter (the app marks it booked)');
+  perform _t_ok((select status from public.inquiries where id = v_later) = 'open',
+    '011z: …nor an inquiry for other dates');
+  perform _t_ok((select status from public.inquiries where id = v_other_pet) = 'open',
+    '011z: …nor one about another pet');
+  perform _t_as(paul);
+  perform _t_ok(not public.has_open_inquiry_about(max), '011z: the closed inquiry no longer opens Max''s Life Record to Paul');
+  perform _t_as(allen);
+  perform _t_ok(public.has_open_inquiry_about(mochi), '011z: Allen still has his open inquiry about Mochi');
+
+  -- A Life Record hit names its pet.
+  perform _t_as(null);
+  insert into public.knowledge_chunks (scope, pet_id, source_type, source_id, content, embedding)
+  values ('pet', max, 'life_record', gen_random_uuid(), 'Max finishes breakfast', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  select * into v_hit from public.match_knowledge(
+    (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), chloe, array[max], robert, 20) m
+  where m.source_type = 'life_record';
+  perform _t_ok(v_hit.pet_id = max and v_hit.content = 'Max finishes breakfast', '011z: match_knowledge returns the pet of a Life Record hit');
+end;
+$$;
+
 rollback;
