@@ -117,6 +117,7 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [spots, setSpots] = useState<string[]>(padSpots([]));
   const [services, setServices] = useState<Service[]>(["boarding"]);
+  const [multiOwner, setMultiOwner] = useState(false);
   const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
   const [consenting, setConsenting] = useState(false);
 
@@ -132,6 +133,7 @@ export default function ProfileScreen() {
         setSpots(padSpots(result.fields.meet_spots));
         if (result.role === "sitter") {
           setServices(result.fields.services);
+          setMultiOwner(result.fields.accepts_multiple_owners ?? false);
           void getAiReplyMode().then(setAiMode);
         }
       })
@@ -198,6 +200,7 @@ export default function ProfileScreen() {
               visitor_parking: value("visitor_parking"),
               lobby_notes: value("lobby_notes"),
               packing_list: packing.length > 0 ? packing : [],
+              accepts_multiple_owners: multiOwner,
               policies: value("policies"),
             },
           };
@@ -320,6 +323,13 @@ export default function ProfileScreen() {
             />
           ))}
           {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
+          <CheckRow
+            label="Take pets from more than one owner at a time"
+            hint="Off: one owner's pets at a time — other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
+            checked={multiOwner}
+            onChange={setMultiOwner}
+            testID="profile-multi-owner"
+          />
         </View>
       ) : null}
       <View style={styles.group} testID="profile-spots">

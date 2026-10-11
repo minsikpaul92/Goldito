@@ -207,7 +207,12 @@ export default function OwnerInquiry() {
         <InquirySheet
           visible
           onClose={() => setChanging(false)}
-          sitter={{ id: inquiry.sitterId, displayName: inquiry.sitterName, services: sitter?.services ?? [inquiry.serviceType] }}
+          sitter={{
+            id: inquiry.sitterId,
+            displayName: inquiry.sitterName,
+            services: sitter?.services ?? [inquiry.serviceType],
+            acceptsMultipleOwners: sitter?.acceptsMultipleOwners,
+          }}
           change={{ inquiryId: inquiry.id, onChanged: () => void load() }}
           prefill={{
             serviceType: inquiry.serviceType,

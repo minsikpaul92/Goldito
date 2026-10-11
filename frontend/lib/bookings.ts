@@ -23,6 +23,8 @@ const MESSAGES: Record<string, string> = {
   proposal_expired: "That time has already passed — suggest another time.",
   request_expired: "This request's pick-up time has passed, so it can't be accepted.",
   invalid_location: "House sitting happens at the owner's home.",
+  interest_required: "Say yes to meeting first — then the Meet & Greet can be planned.",
+  interest_not_needed: "You've met before, so there is no first yes — just Accept.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -220,6 +222,7 @@ export type SitterMatch = {
   totalSlots: number;
   dropOffWithinHours: boolean;
   pickUpWithinHours: boolean;
+  acceptsMultipleOwners: boolean;
 };
 
 export function coversWholeTrip(m: SitterMatch): boolean {
@@ -248,6 +251,7 @@ export async function searchSitters(dropOffAt: string, pickUpAt: string, petCoun
     total_slots: number;
     drop_off_within_hours: boolean;
     pick_up_within_hours: boolean;
+    accepts_multiple_owners?: boolean | null;
   }[]).map((r) => ({
     sitterId: r.sitter_id,
     displayName: r.display_name,
@@ -260,6 +264,7 @@ export async function searchSitters(dropOffAt: string, pickUpAt: string, petCoun
     totalSlots: r.total_slots,
     dropOffWithinHours: r.drop_off_within_hours,
     pickUpWithinHours: r.pick_up_within_hours,
+    acceptsMultipleOwners: r.accepts_multiple_owners ?? false,
   }));
 }
 
@@ -299,6 +304,20 @@ export async function requestBooking(input: BookingRequest): Promise<string> {
 // ---------------------------------------------------------------------------
 
 export type BookingStatus = "requested" | "confirmed" | "declined" | "cancelled";
+
+/** requested → meet_greet → confirm → awaiting_payment → paid → in_care → completed (+ declined, cancelled) — D60. */
+export type BookingStage =
+  | "requested"
+  | "meet_greet"
+  | "confirm"
+  | "awaiting_payment"
+  | "paid"
+  | "in_care"
+  | "completed"
+  | "declined"
+  | "cancelled";
+
+export type NextActor = "sitter" | "owner" | "both" | "none";
 
 export type MeetGreetStatus =
   | "not_needed"
@@ -376,6 +395,13 @@ export type BookingSummary = {
   cancelReason: string | null;
   /** The sitter's reason when they declined the request (FB-35). */
   sitterNote: string | null;
+  /** The sitter's first yes to meeting (011l): the dates are held from then on. Null = not yet. */
+  sitterInterestAt: string | null;
+  /** First yes + 2 days: with no Meet & Greet time by then both sides are asked (stalled). */
+  meetGreetDueAt: string | null;
+  /** Computed by the database (booking_stage) and who has to act next (booking_next_actor). */
+  stage: BookingStage;
+  nextActor: NextActor;
   /**
    * Set by pay_booking_demo (03C). Null until checkout finishes — and again when an agreed change
    * needs a new consent (009d); priceSnapshot then still holds the last paid quote.
@@ -427,6 +453,24 @@ export function meetGreetBlocksAccept(b: BookingSummary): boolean {
   return !["not_needed", "done", "skipped"].includes(b.meetGreetStatus);
 }
 
+/** Why an owner says no after the Meet & Greet started ("Not this sitter", D60). The chosen ones go to cancel_booking. */
+export const OWNER_PASS_REASONS = [
+  "Doesn't seem like a fit",
+  "Found another sitter",
+  "My schedule changed",
+  "Something else",
+];
+
+/** The sitter said yes and the Meet & Greet isn't settled: the dates are held (D60). */
+export function datesOnHold(b: BookingSummary): boolean {
+  return b.status === "requested" && !!b.sitterInterestAt;
+}
+
+/** A first-time request the sitter hasn't said yes to yet — nothing can be planned or held. */
+export function awaitingFirstYes(b: BookingSummary): boolean {
+  return b.status === "requested" && b.meetGreetStatus === "required" && !b.sitterInterestAt;
+}
+
 /** Same rule as current_handoff (003): confirmed → agreed; requested → pending proposal, else agreed. */
 function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: BookingStatus): Handoff | null {
   const ofKind = rows.filter((h) => h.kind === kind);
@@ -452,7 +496,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
   "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, sitter_note, " +
-  "paid_at, price_snapshot, created_at, " +
+  "paid_at, price_snapshot, sitter_interest_at, meet_greet_due_at, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -476,6 +520,8 @@ type BookingRow = {
   sitter_note: string | null;
   paid_at: string | null;
   price_snapshot: PriceQuote | null;
+  sitter_interest_at: string | null;
+  meet_greet_due_at: string | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -521,6 +567,10 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     cancelledBy: b.cancelled_by ?? null,
     cancelReason: b.cancel_reason ?? null,
     sitterNote: b.sitter_note ?? null,
+    sitterInterestAt: b.sitter_interest_at ?? null,
+    meetGreetDueAt: b.meet_greet_due_at ?? null,
+    stage: "requested",
+    nextActor: "none",
     paidAt: b.paid_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
@@ -534,6 +584,20 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
   };
 }
 
+/** The database computes the stage (011l booking_stage); one call for the whole list. A failure leaves the defaults. */
+async function withStages(list: BookingSummary[]): Promise<BookingSummary[]> {
+  if (list.length === 0) return list;
+  const { data, error } = await getSupabase().rpc("get_booking_stages", { p_ids: list.map((b) => b.id) });
+  if (error) return list;
+  const byId = new Map(
+    ((data ?? []) as { booking_id: string; stage: BookingStage; next_actor: NextActor }[]).map((r) => [r.booking_id, r]),
+  );
+  return list.map((b) => {
+    const row = byId.get(b.id);
+    return row ? { ...b, stage: row.stage, nextActor: row.next_actor } : b;
+  });
+}
+
 function newestFirst(a: BookingSummary, b: BookingSummary): number {
   return b.createdAt.localeCompare(a.createdAt);
 }
@@ -545,9 +609,11 @@ export async function listOwnerBookings(ownerId: string): Promise<OwnerBooking[]
     .eq("owner_id", ownerId)
     .order("created_at", { ascending: false });
   if (error) throw new Error("Couldn't load your bookings. Check your connection and try again.");
-  return ((data ?? []) as unknown as BookingRow[])
-    .map((b) => toSummary(b, (b.booking_pets ?? []).flatMap((bp) => (bp.pets ? [bp.pets] : []))))
-    .sort(newestFirst);
+  return withStages(
+    ((data ?? []) as unknown as BookingRow[]).map((b) =>
+      toSummary(b, (b.booking_pets ?? []).flatMap((bp) => (bp.pets ? [bp.pets] : []))),
+    ),
+  ).then((list) => list.sort(newestFirst));
 }
 
 /**
@@ -573,14 +639,15 @@ export async function listSitterBookings(sitterId: string): Promise<BookingSumma
   if (error) throw new Error("Couldn't load your bookings. Check your connection and try again.");
   const rows = (data ?? []) as unknown as BookingRow[];
   const pets = await Promise.all(rows.map((b) => getBookingPets(b.id)));
-  return rows.map((b, i) => toSummary(b, pets[i])).sort(newestFirst);
+  return (await withStages(rows.map((b, i) => toSummary(b, pets[i])))).sort(newestFirst);
 }
 
 export async function getBooking(bookingId: string): Promise<BookingSummary | null> {
   const { data, error } = await getSupabase().from("bookings").select(BOOKING_COLUMNS).eq("id", bookingId).maybeSingle();
   if (error) throw new Error("Couldn't load this booking. Check your connection and try again.");
   if (!data) return null;
-  return toSummary(data as unknown as BookingRow, await getBookingPets(bookingId));
+  const [summary] = await withStages([toSummary(data as unknown as BookingRow, await getBookingPets(bookingId))]);
+  return summary;
 }
 
 /** A request nobody answered before its pick-up time — it can't be accepted any more (009c). */
@@ -617,6 +684,21 @@ export function firstSitterBucket(
 // ---------------------------------------------------------------------------
 // Sitter actions (3B.4)
 // ---------------------------------------------------------------------------
+
+/**
+ * express_interest — the sitter's first yes to a first-time pair ("Yes, let's meet"): the dates are held from then on,
+ * the owner is told, and the Meet & Greet can be planned (011l).
+ */
+export async function expressInterest(bookingId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("express_interest", { p_booking: bookingId });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't hold these dates. Try again."),
+      error.details ?? null,
+    );
+  }
+}
 
 /** respond_booking — Accept also accepts the owner's pending times; Decline ends the request (`note` = the reason the owner reads). */
 export async function respondBooking(bookingId: string, accept: boolean, note: string | null = null): Promise<void> {

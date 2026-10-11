@@ -44,6 +44,8 @@ export type SitterProfile = {
   visitor_parking: string | null;
   lobby_notes: string | null;
   packing_list: string[] | null;
+  /** One owner at a time (false, the default) or several owners' pets at once, within max_pets (011l, D60). */
+  accepts_multiple_owners?: boolean;
   /** House rules & policies — read by the inquiry AI and shown to owners as a source (07B). */
   policies?: string | null;
 };

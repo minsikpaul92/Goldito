@@ -44,6 +44,7 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
       visitor_parking: row.visitor_parking ?? null,
       lobby_notes: row.lobby_notes ?? null,
       packing_list: row.packing_list ?? null,
+      accepts_multiple_owners: row.accepts_multiple_owners ?? false,
       policies: (extra.data as { policies: string | null } | null)?.policies ?? null,
     },
   };

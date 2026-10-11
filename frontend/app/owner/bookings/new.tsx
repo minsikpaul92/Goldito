@@ -16,7 +16,15 @@ import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { getInquiry, markInquiryBooked } from "../../../features/inquiries/inquiryApi";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
-import { MySitter, SERVICE_LABEL, ServiceType, favoritesFirst, listFavoriteSitterIds, listMySitters } from "../../../features/sitters/sitterApi";
+import {
+  MySitter,
+  SERVICE_LABEL,
+  ServiceType,
+  favoritesFirst,
+  listFavoriteSitterIds,
+  listMySitters,
+  ownersSetting,
+} from "../../../features/sitters/sitterApi";
 import {
   BookingError,
   SitterMatch,
@@ -255,7 +263,13 @@ export default function BookCare() {
         <CheckRow
           radio
           label={favorites.has(id) ? `★ ${name}` : name}
-          hint={match && !offers(match) ? "Doesn't offer house sitting" : fitLines(match, dropOff, pickUp, name)}
+          hint={
+            match && !offers(match)
+              ? "Doesn't offer house sitting"
+              : [fitLines(match, dropOff, pickUp, name), match ? ownersSetting(match.acceptsMultipleOwners).badge : null]
+                  .filter(Boolean)
+                  .join("\n")
+          }
           checked={sitterId === id && pickable(match)}
           disabled={!pickable(match)}
           onChange={() => setSitterId(id)}

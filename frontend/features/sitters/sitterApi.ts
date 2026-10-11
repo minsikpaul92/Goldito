@@ -15,7 +15,16 @@ export type SitterSummary = {
   serviceArea: string | null;
   experienceYears: number | null;
   services: ServiceType[];
+  /** One owner at a time (false) or several owners' pets at once (true) — the sitter's setting, D60. */
+  acceptsMultipleOwners?: boolean;
 };
+
+/** The sitter's one-owner-at-a-time setting, as owners read it: a badge and a one-line explanation. */
+export function ownersSetting(multiple: boolean | undefined): { badge: string; hint: string } {
+  return multiple
+    ? { badge: "Hosts several owners' pets", hint: "Takes pets from more than one owner at a time, within their pet limit." }
+    : { badge: "One owner at a time", hint: "Takes one owner's pets at a time — dates held for another owner aren't available." };
+}
 
 /** "Your sitters": sitters this owner has had a confirmed booking with (list_my_sitters). */
 export type MySitter = SitterSummary & { bookingCount: number; lastBookingAt: string; isFavorite: boolean };
@@ -60,6 +69,7 @@ export async function listMySitters(): Promise<MySitter[]> {
     services: ServiceType[] | null;
     booking_count: number;
     last_booking_at: string;
+    accepts_multiple_owners?: boolean | null;
   }[]).map((s) => ({
     id: s.sitter_id,
     displayName: s.display_name,
@@ -67,6 +77,7 @@ export async function listMySitters(): Promise<MySitter[]> {
     serviceArea: s.service_area,
     experienceYears: s.experience_years,
     services: s.services ?? ["boarding"],
+    acceptsMultipleOwners: s.accepts_multiple_owners ?? false,
     bookingCount: Number(s.booking_count),
     lastBookingAt: s.last_booking_at,
     isFavorite: favorites.has(s.sitter_id),
@@ -95,7 +106,7 @@ export async function listSitters(limit = 20): Promise<SitterSummary[]> {
   if (rows.length === 0) return [];
   const details = await supabase
     .from("sitter_profiles")
-    .select("id, bio, service_area, experience_years, services")
+    .select("id, bio, service_area, experience_years, services, accepts_multiple_owners")
     .in("id", rows.map((r) => r.id));
   if (details.error) fail("load sitters");
   const byId = new Map(
@@ -105,6 +116,7 @@ export async function listSitters(limit = 20): Promise<SitterSummary[]> {
       service_area: string | null;
       experience_years: number | null;
       services: ServiceType[] | null;
+      accepts_multiple_owners: boolean | null;
     }[]).map((d) => [d.id, d]),
   );
   return rows
@@ -118,6 +130,7 @@ export async function listSitters(limit = 20): Promise<SitterSummary[]> {
         serviceArea: d?.service_area ?? null,
         experienceYears: d?.experience_years ?? null,
         services: d?.services ?? ["boarding"],
+        acceptsMultipleOwners: d?.accepts_multiple_owners ?? false,
       };
     });
 }
@@ -128,7 +141,7 @@ export async function getSitterProfile(sitterId: string): Promise<SitterProfileV
     supabase.from("profiles").select("id, display_name, role").eq("id", sitterId).maybeSingle(),
     supabase
       .from("sitter_profiles")
-      .select("id, bio, service_area, experience_years, home_notes, services")
+      .select("id, bio, service_area, experience_years, home_notes, services, accepts_multiple_owners")
       .eq("id", sitterId)
       .maybeSingle(),
   ]);
@@ -140,6 +153,7 @@ export async function getSitterProfile(sitterId: string): Promise<SitterProfileV
     experience_years: number | null;
     home_notes: string | null;
     services: ServiceType[] | null;
+    accepts_multiple_owners: boolean | null;
   } | null;
   if (!p || p.role !== "sitter") return null;
   return {
@@ -150,6 +164,7 @@ export async function getSitterProfile(sitterId: string): Promise<SitterProfileV
     experienceYears: d?.experience_years ?? null,
     homeNotes: d?.home_notes ?? null,
     services: d?.services ?? ["boarding"],
+    acceptsMultipleOwners: d?.accepts_multiple_owners ?? false,
   };
 }
 

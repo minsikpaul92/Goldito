@@ -20,6 +20,9 @@ function seed(db: MockDb, meetGreet: Record<string, unknown>) {
     service_type: "boarding",
     created_at: "2026-10-02T18:00:00Z",
     meet_greet_status: "required",
+    // The sitter already said "Yes, let's meet" (011l) — the dates are held, the Meet & Greet can be planned.
+    sitter_interest_at: new Date().toISOString(),
+    meet_greet_due_at: new Date(Date.now() + 2 * 86_400_000).toISOString(),
     ...meetGreet,
   });
   db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });
@@ -57,7 +60,8 @@ test.describe("meet & greet", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, {});
     const screen = await openDetail(page, OWNER);
-    await expect(screen.getByTestId("meet-greet")).toContainText("Chloe can accept once you've met");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Chloe is holding your dates");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Pick a time with Chloe");
 
     await screen.getByTestId("meet-schedule").click();
     await expect(screen.getByTestId("meet-time-value")).toHaveText("7:00 PM");
@@ -142,6 +146,57 @@ test.describe("meet & greet", () => {
     await expect(sitter.getByTestId("toast")).toContainText("Meet & Greet skipped");
     await expect(sitter.getByTestId("meet-greet")).toContainText("Meet & Greet skipped — you both agreed");
     await expect(sitter.getByTestId("accept-booking")).toBeEnabled();
+  });
+
+  test("before the sitter's first yes nothing can be planned, and the dates are not held", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Waiting for Chloe to say yes to meeting");
+    await expect(screen.getByTestId("meet-schedule")).toHaveCount(0);
+    await expect(screen.getByTestId("meet-skip")).toHaveCount(0);
+    await expect(screen.getByTestId("stage-caption")).toHaveText("Waiting for Chloe");
+    await expect(screen.getByTestId("hold-note")).toHaveCount(0);
+  });
+
+  test("the sitter's \"Yes, let's meet\" holds the dates and opens the Meet & Greet", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
+    const screen = await openDetail(page, SITTER);
+    await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Say \"Yes, let's meet\" to hold these dates");
+
+    await screen.getByTestId("interest-booking").click();
+    await expect(screen.getByTestId("toast")).toContainText("Dates held");
+    expect(db.bookings[0].sitter_interest_at).toBeTruthy();
+    expect(db.notifications.find((n) => n.type === "booking_interest")).toMatchObject({ user_id: OWNER.id });
+    await expect(screen.getByTestId("meet-greet")).toContainText("These dates are on hold for Robert");
+    await expect(screen.getByTestId("stage-caption")).toContainText("Day 1");
+    await expect(screen.getByTestId("accept-booking")).toHaveText("Confirm booking");
+    await expect(screen.getByTestId("accept-booking")).toBeDisabled();
+  });
+
+  test("two days without a time: the card asks for a time, a skip or a decline", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, { meet_greet_due_at: new Date(Date.now() - 3_600_000).toISOString() });
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("meet-greet")).toContainText("Still no time to meet");
+    await expect(screen.getByTestId("meet-greet")).toContainText("With no answer in 3 days the booking is cancelled");
+  });
+
+  test("after the first yes the owner can still say \"Not this sitter\" with a reason, which frees the dates", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, {});
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("hold-note")).toContainText("Chloe is holding your dates");
+    await expect(screen.getByTestId("cancel-booking")).toHaveText("Not this sitter");
+    await screen.getByTestId("cancel-booking").click();
+    await screen.getByTestId("pass-reason-1").click();
+    await screen.getByTestId("pass-note").fill("We went with a neighbour");
+    await screen.getByTestId("cancel-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Booking cancelled");
+    expect(db.cancellations.at(-1)).toMatchObject({ p_reason: "Found another sitter\nWe went with a neighbour" });
+    expect(db.bookings[0].status).toBe("cancelled");
   });
 
   test("declining a skip asks first and cancels the booking", async ({ page }) => {

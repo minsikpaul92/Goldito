@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Chip } from "./ui/Chip";
-import { SERVICE_LABEL, SitterSummary, sitterMeta } from "../features/sitters/sitterApi";
+import { SERVICE_LABEL, SitterSummary, ownersSetting, sitterMeta } from "../features/sitters/sitterApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -38,6 +38,7 @@ export function SitterCard({ sitter, note, onPress }: Props) {
           {sitter.services.map((service) => (
             <Chip key={service} label={SERVICE_LABEL[service]} />
           ))}
+          {sitter.acceptsMultipleOwners !== undefined ? <Chip label={ownersSetting(sitter.acceptsMultipleOwners).badge} /> : null}
         </View>
       </View>
       <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />

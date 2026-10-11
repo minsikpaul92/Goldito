@@ -176,6 +176,9 @@ export function hrefForNotification(
     case "meet_greet_skip_requested":
     case "meet_greet_skipped":
     case "meet_greet_link_ready":
+    case "booking_interest":
+    case "meet_greet_stalled":
+    case "meet_greet_timeout":
     case "review_requested":
     case "review_received":
     case "trip_started":

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { FinishedStay } from "../../../../components/FinishedStay";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
@@ -17,6 +19,8 @@ import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { Sheet } from "../../../../components/ui/Sheet";
 import { TextButton } from "../../../../components/ui/TextButton";
+import { TextField } from "../../../../components/ui/TextField";
+import { composeComment } from "../../../../features/completion/reviewPresets";
 import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
 import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
 import { loadLocal, saveLocal } from "../../../../lib/localState";
@@ -27,6 +31,8 @@ import {
   cancelBooking,
   HandoffKind,
   HandoffPlace,
+  OWNER_PASS_REASONS,
+  datesOnHold,
   declinedChange,
   getBooking,
   getHandoffDetails,
@@ -67,6 +73,7 @@ const packKey = (bookingId: string) => `goldito:packed:${bookingId}`;
 function endedNote(b: BookingSummary): string | null {
   if (b.status === "declined") return `${b.sitterName} can't take this one.`;
   if (b.status !== "cancelled") return null;
+  if (b.cancelReason === "meet_greet_timeout") return `No time to meet ${b.sitterName} was set, so this booking was cancelled.`;
   if (b.cancelReason === "meet_greet_declined") return `${b.sitterName} would like to meet first, so this booking was cancelled.`;
   if (b.cancelledBy === b.sitterId) return `${b.sitterName} cancelled this booking.`;
   return "You cancelled this booking.";
@@ -87,6 +94,8 @@ export default function OwnerBookingDetail() {
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
   const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [passReasons, setPassReasons] = useState<string[]>([]);
+  const [passNote, setPassNote] = useState("");
 
   const load = useCallback(async () => {
     if (!bookingId) return;
@@ -151,6 +160,8 @@ export default function OwnerBookingDetail() {
   // Cancel only before the pets are handed over (cancel_booking, 003).
   const canCancel = open && !booking.dropOff?.completedAt;
   const ended = endedNote(booking);
+  // After the sitter's first yes the owner can still say no — with a reason ("Not this sitter", D60).
+  const passing = datesOnHold(booking);
   const needsCheckout = booking.status === "confirmed" && !booking.paidAt;
   // Paid once, then an agreed change needed a new consent (009d).
   const checkoutReopened = needsCheckout && booking.priceSnapshot != null;
@@ -206,6 +217,13 @@ export default function OwnerBookingDetail() {
             {booking.paidAt ? <Chip label="Paid" testID="paid-chip" /> : null}
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
+        </Card>
+
+        <Card style={styles.block}>
+          <BookingStageBar booking={booking} viewer="owner" />
+          {passing ? (
+            <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
+          ) : null}
         </Card>
 
         {booking.status === "confirmed" && booking.pickUp?.completedAt ? <FinishedStay booking={booking} /> : null}
@@ -331,23 +349,31 @@ export default function OwnerBookingDetail() {
             />
           ) : null}
           {canCancel ? (
-            <TextButton label="Cancel booking" danger onPress={() => setConfirmCancel(true)} testID="cancel-booking" />
+            <TextButton
+              label={passing ? "Not this sitter" : "Cancel booking"}
+              danger
+              onPress={() => setConfirmCancel(true)}
+              testID="cancel-booking"
+            />
           ) : null}
         </View>
       ) : null}
 
       <Sheet
         visible={confirmCancel}
-        title="Cancel this booking?"
+        title={passing ? "Not this sitter?" : "Cancel this booking?"}
         onClose={() => setConfirmCancel(false)}
         testID="cancel-sheet"
         footer={
           <Button
-            label="Cancel booking"
+            label={passing ? "Release the dates" : "Cancel booking"}
             onPress={() => {
               setConfirmCancel(false);
+              const reason = passing ? composeComment(passReasons, passNote) : "";
+              setPassReasons([]);
+              setPassNote("");
               void run(async () => {
-                await cancelBooking(booking.id, "Owner cancelled");
+                await cancelBooking(booking.id, reason || "Owner cancelled");
                 // A video Meet & Greet's Calendar event goes with the booking (3B.11).
                 await releaseVideoLink(booking.id);
               }, "Booking cancelled");
@@ -357,6 +383,29 @@ export default function OwnerBookingDetail() {
         }
       >
         <Text style={styles.body}>{`${sitter} gets a notice. You can book again any time.`}</Text>
+        {passing ? (
+          <>
+            <Text style={styles.muted}>Pick a reason and/or leave a short note — optional.</Text>
+            <ChipSuggestions
+              chips={OWNER_PASS_REASONS.map((r, i) => ({ id: String(i), kind: "episode", label: r, source: "custom", check: null, media_id: null }))}
+              off={new Set(OWNER_PASS_REASONS.flatMap((r, i) => (passReasons.includes(r) ? [] : [String(i)])))}
+              onToggle={(id) => {
+                const r = OWNER_PASS_REASONS[Number(id)];
+                setPassReasons((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]));
+              }}
+              testIDPrefix="pass-reason"
+            />
+            <TextField
+              label="Note to the sitter (optional)"
+              value={passNote}
+              multiline
+              numberOfLines={3}
+              maxLength={200}
+              onChangeText={setPassNote}
+              testID="pass-note"
+            />
+          </>
+        ) : null}
       </Sheet>
 
       {sheet ? (
