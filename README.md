@@ -182,7 +182,19 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 | | 24 · Owner | Reviews the sitter (stars, preset phrases, own words) and can add her to favorites. ✅ |
 | | 25 · System | Nemotron turns the stay into the pet's **Life Record** and indexes it, so the next sitter's request card, reply, and checklist already know the pets. ✅ |
 | | 26 · Sitter | Leaves a **private note about the owner** — only she sees it, and it comes back when the same owner asks again. ✅ |
-| **Exceptions** | — | The sitter declines → a reason and a suggested time (reason chips 🚧). Either side skips the Meet & Greet → the other must agree, or the booking is cancelled. No pet or crate in the handoff photo → retake, or continue with a reason (advice only) 🚧. The AI is down → plain-list drafts instead of an error ✅. **If the sitter drives to the owner's home**, the entry codes open only 2 hours before, and the owner is told when the sitter first opens them ✅. **No Meet & Greet time within 2 days** → both are asked to set one, skip it, or decline; **3 more days of silence** → the request is cancelled and the dates are released 🚧. After meeting, the sitter or the owner can still say no 🚧. |
+
+**Exceptions**
+
+| When | What happens | Status |
+| :--- | :--- | :--- |
+| The sitter declines (at the request, or after meeting) | A reason chip and a suggested time; the owner can pick another sitter | 🚧 reason chips |
+| The owner decides against the sitter after meeting | **Not this sitter** with a reason chip; the dates are released | 🚧 |
+| Either side wants to skip the Meet & Greet | The other must agree — if not, the booking is cancelled and the owner finds another sitter | ✅ |
+| No Meet & Greet time within 2 days | Both are asked to set one, skip it, or decline; after 3 more days of silence the request is cancelled and the dates are released | 🚧 |
+| No pet or crate in the handoff photo | Retake it, or continue with a reason (advice only) | 🚧 |
+| The owner declines to share location | No live map — the meeting place is shown with **Open in Google Maps** | 🚧 |
+| The AI is unavailable | A plain-list draft instead of an error | ✅ |
+| The sitter drives to the owner's home | The entry codes open only 2 hours before, and the owner is told when the sitter first opens them | ✅ |
 
 </details>
 
