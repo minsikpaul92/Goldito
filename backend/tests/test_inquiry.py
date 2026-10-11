@@ -235,6 +235,25 @@ def test_a_no_always_asks_for_the_sitter(client, setup):
     assert body["can_host"] is False and body["needs_sitter"] is True
 
 
+@pytest.mark.parametrize("inquiry_status", ["closed", "booked"])
+def test_a_closed_or_booked_inquiry_gets_no_new_draft(client, setup, inquiry_status):
+    db = make_db()
+    db.tables["inquiries"][0]["status"] = inquiry_status
+    ctx = setup(db=db)
+    assert post(client).status_code == 409
+    assert post(client, sitter_token(), regenerate=True).status_code == 409
+    assert post(client, sitter_token(), intent="decline").status_code == 409
+    assert drafts(ctx) == [] and ctx.model.calls == []
+
+
+def test_a_draft_that_already_exists_is_still_returned_for_an_open_inquiry_only(client, setup):
+    ctx = setup()
+    first = post(client).json()
+    assert first["reused"] is False
+    assert post(client).json()["reused"] is True  # asking twice never makes a second draft
+    assert len(drafts(ctx)) == 1
+
+
 def test_the_fallback_when_the_model_is_down_carries_no_price(client, setup):
     ctx = setup(nebius.AIUnavailable("down"))  # → the "I'll reply properly very soon" text
     body = post(client).json()

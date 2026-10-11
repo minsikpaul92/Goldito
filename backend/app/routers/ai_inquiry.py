@@ -107,6 +107,12 @@ def inquiry_reply(
         return _redact(
             _reuse(drafts[-1]), user, inquiry
         )  # idempotent: asking twice never makes a second draft
+    if inquiry["status"] != "open":
+        # RV-5: a booked or closed inquiry gets no new draft, no Regenerate and no intent — and its sources
+        # (a Life Record sentence) are no longer shown.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This question is closed, so there is nothing to answer."
+        )
     if answered and body.regenerate:
         _note_discarded(db, inquiry, drafts[-1])
     earlier = _earlier_messages(messages, question)
