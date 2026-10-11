@@ -79,7 +79,7 @@ Tap a stage to expand it.
 <details>
 <summary><b>① Inquiry — a reply in the sitter's own writing style ✅</b></summary>
 
-- The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question. With **Ask before booking**, nothing is booked until a request is sent.
+- The owner picks **Boarding** (at the sitter's home) or **House sitting** (at the owner's home), the dates, and the pets — their profiles (breed, age, allergies) go with the question. With **Ask before booking**, nothing is booked until a request is sent. The sitter's profile also says whether she takes **one owner's pets at a time or several** (her setting) 🚧.
 - **Goldito AI drafts the reply in seconds** (about 3 s median), in the sitter's own style learned from their past conversations: availability from the sitter's calendar, a quote with **holiday** and **multi-pet** rates, answers from the house policy and the pet's **Life Record** (RAG). The sitter sends it with one tap — or opts in to auto-send, which answers at a human pace after a clear responsibility prompt — so a busy or sleeping sitter still answers first. The thread keeps going: the owner can write back, **change the dates in the same conversation**, and the sitter's Accept / Decline / Suggest other dates are drafted for them too.
 - Prices and availability are calculated by the server, never by the model — "can she take these dates?" uses the same rule as the booking engine, and the reply and the checkout always show the same numbers.
 
