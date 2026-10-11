@@ -51,7 +51,7 @@
 | D38 | 시터 글쓰기 거의 제로 (2026-10-02 개정) | 알림장: AI가 하루 기록·사진에서 칩 제안(`/api/ai/report-chips`) → 시터가 고르고(틀린 칩은 끔) 짧은 메모(선택, ≤ 200자) → AI가 시터 말투로 작성 → 시터 승인 후 게시. 문의: 의도 칩 + Send. 메모·수정은 언제나 선택 | UX 원칙 5 — 사진 분석은 부족하거나 틀릴 수 있음 |
 | D39 | 모델 정책 | 미국 모델 우선·NVIDIA 모델 우선, 중국 모델은 대안 없음/가성비 큰 차이일 때만 + `model-ids.md`에 이유 기록. 예외: 임베딩 Qwen3-Embedding(**확정 2026-10-02, 다른 임베딩 모델은 비교하지 않음**), 비전 MiniCPM-V(**확정** — NVIDIA 비전 모델 3종은 Dedicated Endpoint 전용이라 상시 비용이 $48~113/일). NVIDIA가 양자화만 한 중국 모델(GLM·MiniMax·Qwen NVFP4)은 NVIDIA 모델로 치지 않음 | 해커톤 트랙 + 선호 |
 | D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
-| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
+| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의. **동의·권한 거부 시(2026-10-10):** 실시간 위치·ETA 없이 만날 장소 + Open in Google Maps 링크 버튼만 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
 | D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
 | D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
@@ -86,9 +86,18 @@ Goldito/
 │  │  ├─ 007b_feed_posts_realtime.sql  # feed_posts Realtime (008은 care 예약이라 b/c 접미사)
 │  │  ├─ 007c_feed_visibility.sql      # posted_by + visibility(shared/private), 오너 게시
 │  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
+│  │  ├─ 008g_care_change_requests.sql   # 돌보는 중 오너 → 시터 요청, 승인·거절
+│  │  ├─ 008h_care_counter_requests.sql  # 거절 노트, counter-request(추가 비용·오너가 할 일), 오너 Accept·Decline
+│  │  ├─ 008i_revoke_trigger_functions.sql # 트리거 함수를 RPC로 호출 못 하게 (Supabase 보안 점검)
+│  │  ├─ 008j_no_direct_edits_during_stay.sql # 돌보는 중에는 오너가 할 일·Heads-up을 직접 INSERT 못 함
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
+│  │  ├─ 009b_care_requests_follow_the_stay.sql · 009c_handoffs_stay_consistent.sql · 009d_paid_bookings_follow_changes.sql · 009e_reopened_checkout_keeps_addresses.sql  # 확정·결제 뒤 변경이 예약·요청·체크아웃과 어긋나지 않게 (BF.x)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
+│  │  ├─ 010b_send_inquiry_reply.sql · 010c_tone_samples.sql · 010d_auto_reply.sql  # 시터 답장 RPC, 말투 샘플, 자동 발송
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
+│  │  ├─ 011b_life_record_columns.sql · 011c_stay_capacity_check.sql · 011e_inquiry_access.sql  # Life Record 컬럼, 문의 가능 여부 = 예약 정원 규칙, 문의 사이 공개 범위 (011d는 RV-3용으로 비워 둠)
+│  │  ├─ 011f_daily_reports_many.sql · 011g_sitter_owner_notes.sql · 011h_favorite_sitters.sql  # 같은 날 알림장 여러 개, 시터의 비공개 오너 노트, 즐겨찾기 시터 (11.5를 앞당김)
+│  │  ├─ 011i_care_window_follows_received.sql · 011j_change_inquiry_dates.sql · 011k_inquiry_reply_outcome.sql  # 일찍 Received한 시각부터 돌봄 구간, 같은 문의에서 날짜 변경, 시터 답장 결과(거절·제안은 견적 없음)
 │  │  ├─ 012_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막 (D41)
 │  │  ├─ 013_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch, 06B 뒤 시간이 남을 때
 │  │  └─ 014_p1.sql                   # Phase 11 (P1)

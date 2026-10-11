@@ -63,6 +63,8 @@ profiles 1─* notifications ─0..1 pets / bookings
 
 **Local / CI:** Postgres 17 with pgvector (`010` needs the `vector` extension) plus [`tests/supabase_stub.sql`](tests/supabase_stub.sql) (API roles, `auth.users`, `auth.uid()`, `extensions` schema, realtime publication). Never run the stub on Supabase. The CI `supabase` job runs the same steps on every PR that touches `supabase/**`.
 
+Start a **fresh** container for every run — reusing one leaves roles behind and the stub fails.
+
 ```bash
 docker run -d --name goldito-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 pgvector/pgvector:pg17
 ```
