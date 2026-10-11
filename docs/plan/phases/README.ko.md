@@ -61,4 +61,5 @@ Stretch:        08 세이프티 (06B 뒤 시간이 남을 때, 10 최종 배포 
 1. [TODO.md](../TODO.md) Current focus의 task ID 확인
 2. 해당 phase 문서의 **작업 상세 행 + DoD**만 구현 (범위 "제외" 칸은 손대지 않음)
 3. 새 파일 위치·이름은 [architecture §2](architecture.ko.md#2-리포-구조-최종-형태), 화면 route는 [§3](architecture.ko.md#3-화면--라우트-맵-최종-형태)
-4. 결정이 필요한데 문서에 없으면 → architecture §1에 D## 추가 제안 후 사람에게 확인
+4. 끝난 phase 뒤에 생긴 후속 작업(리뷰 · 피드백에서 나온 것)은 그 phase 문서의 **Open items** 절이 명세이고, 순서와 담당은 TODO가 정한다. 끝난 phase 문서의 체크박스는 갱신하지 않는다(상태의 정본 = test-guide 현황표 + TODO Phase status)
+5. 결정이 필요한데 문서에 없으면 → architecture §1에 D## 추가 제안 후 사람에게 확인

@@ -96,6 +96,17 @@ Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각�
 
 ---
 
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+
+| ID | 내용 | 담당 |
+| :--- | :--- | :--- |
+| **10.1 고정 데모 계정** | Profile → Demo tools · `POST /api/demo/reset`을 제거하고(`EXPO_PUBLIC_DEMO_TOOLS` · `DEMO_RESET_ENABLED` 끄기, `DemoTools.tsx` · `demoReset.ts` · `demo-tools.spec.ts` · `routers/demo.py` · CI env 줄 삭제) 시작 지점별 고정 계정(빈 · 펫만 · 수락됨→돌보는 중 · 끝남)으로 대체. 결정 필요: 한 계정을 두 심사위원이 동시에 쓰는 문제. **R60-3 – R60-5 흡수:** 리셋이 원자적이지 않음(삭제 뒤 실패하면 반쯤 리셋 — 로컬에서 실제로 겪음) · 오너의 여분 펫이 정원을 넘겨 리셋 실패 · `in_care`가 토론토 00:00–00:57에 실패 | 민식 |
+| **10.7 보강** | ① **`GET /health/deep`**(Supabase `select 1`)과 하루 한 번 핑 — 아직 없음(`health.py`에 `/health`뿐), Supabase 무료는 7일 쉬면 멈추고 심사는 12/1–12/15 ② 대시보드에서 **Leaked password protection** 켜기 ③ **KA-1**: 배포 · 테스트 · 녹화 전에 `keepalive` 간격 ≤ 15분과 cron-job.org `200 OK` 확인, 12/15까지 유지 | 민식 |
+| **10.11 `/privacy` 페이지** | 라우트가 아직 없음. 저장하는 것 · AI 사용 · 데모 데이터를 적은 짧은 개인정보 페이지, Google OAuth 동의 화면과 Profile에서 링크 (OAuth "In production" — Testing 토큰은 7일 만료 — 에 필요, 도메인 `goldito-petcare.vercel.app`) | 민식 |
+| **10.12 제출 체크리스트** | [해커톤 규칙 §4](../../hackathon/README.md) 기준: 데모 영상(< 3분, YouTube 공개, Token Factory + NVIDIA 모델 사용을 설명하는 음성, 저작권 음악 없음 — 민식 녹화 · 묵 편집 제안, 확인 필요, 10/27 녹화) · Devpost 설명 + 트랙 + Token Factory · 쓴 모델별 피드백(10.6) · README Getting Started + "How we use Nemotron"(10.2) · `docs/DEMO_ACCOUNTS.md`(10.5) · 레포 공개 + MIT가 About에 표시 + 실제 PII 없음 · 전부 영어 · **내부 초안 10/28** | 민식 · 묵 |
+
+---
+
 ## 다음
 
 → [Phase 11 — P1 기능](phase-11.md) (P0 데모가 배포 URL에서 동작한 뒤에만)

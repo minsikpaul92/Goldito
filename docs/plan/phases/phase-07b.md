@@ -1,5 +1,7 @@
 # Phase 07B — 문의 AI 자동 답변 + RAG Knowledge Base (Stage 1 Inquiry)
 
+> **상태 (2026-10-10):** 머지됨 (PR #56; 이후 #66 · #67 · #68) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — **D29 견적**, **D31 출입 정보 제외**, **D33 임베딩**, **D35 말투 레이어**, **D36 승인·고지**, **D37 사람 속도**, **D38 글쓰기 거의 제로**, **D46 에이전트 설명**, AI 규칙 §9, API §5, 알림 §7
 > 제품 흐름: [full-process.ko.md — Stage 1](../full-process.ko.md#stage-1--inquiry-초기-문의--목표-rag-기반-초고속-맞춤-응대)
 > 구 P2 11.4 "Q&A 1차 답변"을 이 Phase가 대신한다 (D27).
@@ -115,6 +117,23 @@
 ## AI 프롬프트
 
 Playbook §9B — (7B.1 SQL) / (7B.2–7B.4 민식) / (7B.5–7B.6 UI)
+
+---
+
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+
+| ID | 내용 | 담당 |
+| :--- | :--- | :--- |
+| **RV-2** | 초안의 예/아니오가 실제 가용성과 맞는지 검사: `can_host=false`인데 긍정 표현("Yes, I can host…")이면 문제로 되돌려 재생성, 모델의 `can_host`가 서버 값과 다르면 문제, `can_host=false`면 `needs_sitter=true`로 **자동 발송 금지**, 에이전트가 `check_availability`를 안 부르면 한 번 호출 경로로 대체. 테스트: 실행 확인된 문장 → 문제 1개 이상, 자동 발송 미호출 | 민식 |
+| **RV-3** | 거절 답장에 견적 카드 · "Request booking"이 붙지 않게 (`011d`). 시터의 Decline · Suggest 빠른 답장은 `011k`가 이미 `can_host=false` + 견적 없음으로 보낸다. **남은 확인:** 시터가 "가능" 초안을 손으로 "불가"로 고쳐 보낸 경우 → Send 위의 토글 "Include the price and a Request booking button"으로 막을지, `011k`로 충분하면 `011d` 글자를 비워 두고 닫는다 | 민식 |
+| **RV-5 나머지** | (`011l` — 리뷰에는 `011j`로 적혀 있으나 그 글자는 FB-34가 씀) ① 예약이 만들어지면 같은 오너 · 시터의 다른 열린 문의를 닫기 ② `match_knowledge`가 `pet_id`를 돌려줘 펫 범위를 확인 ③ 닫힌 문의에 백엔드가 409 | 민식 |
+| **RK-1 – RK-4 · IQ-15** | 시터 답장의 **종류**(날짜 불가 · 반려동물 종류 불가 · 가격/정책 · 수락 · 기타)를 함께 보내고(`011k` outcome 확장, 팝업에서 시터가 고칠 수 있음), 오너 스레드는 종류에 맞는 다음 행동(Change dates · "강아지만 맡기기" · "다른 때 예약하기" 같은 힌트 칩 — 누르면 Write back에 문장이 채워짐)을 보여 줌. Suggest 메시지에는 `suggested` 날짜를 구조로 실어 **Use Oct 20 – Oct 22** 한 번에 적용(`change_inquiry_dates`). 새 문의 · Change dates의 "Ask anyway / Pick other dates"도 같은 패턴 | 나중에 |
+| **IQ-16** | 시터 초안을 서버가 시작(DB 트리거 · 웹훅): 지금은 오너 앱이 메시지를 보낸 직후 백엔드를 호출해서, 곧바로 창을 닫으면 초안이 안 생길 수 있음 | 나중에 |
+| **7B.10 지연 공식** | 자동 발송의 사람 속도 지연(`human_delay` — 지금 10 s + 0.06 s/글자, 15–40 s로 제한)과 메시지 분할을 슬기의 공식으로 교체 | 슬기 (Q.4) |
+| **M-1 – M-11 · RAG 우선** | 리뷰 R3 Medium 문의 항목, 유사도 기준값을 둔 RAG 우선 답변(근거가 있으면 근거대로, 없으면 사실을 지어내지 않고 시터 확인) | 슬기 (Q.4b · Q.6) |
+| **DoD #6 블라인드 평가** | 숨겨 둔 약 50건으로 few-shot 초안 vs 실제 시터 답을 시터가 블라인드 비교 — **담당이 정해지지 않음** (제안: 슬기 Q.7, 확인 필요) | 미정 |
+
+원문: [review-2026-10-08](../review-2026-10-08.ko.md) §4 · §5, [feedback-2026-10-10](../feedback-2026-10-10.ko.md) IQ-11 · IQ-15 · IQ-16.
 
 ---
 
