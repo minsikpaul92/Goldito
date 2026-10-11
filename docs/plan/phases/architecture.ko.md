@@ -51,7 +51,7 @@
 | D38 | 시터 글쓰기 거의 제로 (2026-10-02 개정) | 알림장: AI가 하루 기록·사진에서 칩 제안(`/api/ai/report-chips`) → 시터가 고르고(틀린 칩은 끔) 짧은 메모(선택, ≤ 200자) → AI가 시터 말투로 작성 → 시터 승인 후 게시. 문의: 의도 칩 + Send. 메모·수정은 언제나 선택 | UX 원칙 5 — 사진 분석은 부족하거나 틀릴 수 있음 |
 | D39 | 모델 정책 | 미국 모델 우선·NVIDIA 모델 우선, 중국 모델은 대안 없음/가성비 큰 차이일 때만 + `model-ids.md`에 이유 기록. 예외: 임베딩 Qwen3-Embedding(**확정 2026-10-02, 다른 임베딩 모델은 비교하지 않음**), 비전 MiniCPM-V(**확정** — NVIDIA 비전 모델 3종은 Dedicated Endpoint 전용이라 상시 비용이 $48~113/일). NVIDIA가 양자화만 한 중국 모델(GLM·MiniMax·Qwen NVFP4)은 NVIDIA 모델로 치지 않음 | 해커톤 트랙 + 선호 |
 | D40 | 확정 후 변경 요청 | 서비스·이동 방식은 확정 시 고정. 양쪽 모두 변경 요청 가능, 상대 승인 필요, 거부 시 변경 요청만 취소(예약 유지) | 일방 변경 방지 |
-| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
+| D41 | 위치 공유 동의 · 범위 | Start trip → 앱 동의(누구에게·도착까지) → 브라우저 권한. P0 웹은 화면이 켜진 동안만. 06B는 P0 맨 마지막(07C 바로 다음, 08 stretch보다 먼저 — 2026-10-02), 심사는 데모 영상(Simulate trip 유지). 출시는 네이티브 앱 + 사전 위치 동의. **동의·권한 거부 시(2026-10-10):** 실시간 위치·ETA 없이 만날 장소 + Open in Google Maps 링크 버튼만 | Supabase Realtime Free(동시 200, 월 200만 메시지) 안에서 충분 |
 | D42 | Fun mood meter (P1) | "재미용" 문구 필수, 행동 태그 + 프레임 비율을 서버가 계산, 부정 감정 퍼센트 금지. 후보 = 비전 모델 태그(A) + `agentmish/dog-emotion-classifier-v2`(Apache-2.0, B). 비용·라이선스 문제면 제외 | 임팩트용 비핵심 기능 (11.9) |
 | D43 | SFT는 보여주기용 | 앱 런타임의 말투는 Nemotron + 말투 카드 + few-shot(D35)만 사용. 파인튜닝 모델은 앱에 연결·서빙하지 않음(튜닝한 Gemma 4는 Dedicated Endpoint 필요, 새 데이터도 부족). 11.7은 README Future work + 데이터 형식 명세, 데이터가 있으면 학습 1회(선택) | 상시 서빙 비용 없이 확장 가능성을 보여줌 |
 | D44 | Meet & Greet 규칙 | **처음 만나는 견주·시터만**(이전 예약에서 인수인계를 했거나 M&G를 마친 적이 없을 때) — `request_booking`이 `meet_greet_status`를 `required` / `not_needed`로 정함. 예약 요청 뒤 · 시터 수락 전이고, `respond_booking` 수락은 done·skipped 뒤에만(`meet_greet_required`). 대면 = 양쪽 `meet_spots`(각 ≤ 3, 공개 장소) 중 선택 + 시각, 집 주소는 결제 전 비공개(D31). 건너뛰기 = 한쪽 요청 → 상대 "Continue the booking without a Meet & Greet?" → 거부 시 `cancel_booking`(reason `meet_greet_declined`) + 견주 Find a new sitter | 처음 맡기는 사이의 신뢰 확인, 단골은 생략 (2026-10-02 민식) |
@@ -59,6 +59,16 @@
 | D46 | 에이전트 설명 | P0 구조(서버가 근거를 모아 기능마다 1회 호출)는 유지. README·영상·Devpost에서 **일이 생길 때마다 스스로 움직이고 사람이 승인하는 에이전트**로 설명(트리거 → 행동 → 승인 표). tool calling은 7.1에서 Token Factory 동작이 확인되면 07B에만 선택(7B.11) — 숫자 대조·출입 정보 제외 규칙은 그대로 | 트랙(Best Apps and Agents) + 원문 마지막 문장, 안정성 유지 |
 | D47 | Owner 탭 IA · Feed vs Diary | Owner 탭 **5개 유지:** `Home · Bookings · Feed · Diary · Mood`. **Feed** = 영구 펫 앨범(인스타형 그리드→상세; 오너·시터 모두 작성; 펫 칩 = 선택/해제 멀티토글, 둘 다 켜면 날짜·시간순 합침; 케어 종료 후에도 유지). **Diary** = 돌봄/일기 스트림(내가 씀 + 맡긴 동안 Live/On air로 시터 업데이트 시간순; 히스토리는 펫·시터·날짜 필터). **Diary에 사진이 있으면 Feed에도 미러** (같은 media/post). 구 Care 탭은 없앰 → **Home → 펫 디테일**에서 Care request(추후 디테일). 구 Reports 탭 = Diary. **Mood** = 5번째 자리(플레이스홀더 → 11.9 사진/영상 기분, Fun only). **Settings는 탭이 아님** — 헤더 아바타 `/profile` 안에 둠(11.11과 합침). 알림 벨은 헤더 유지. Sitter = **D47b** | Care/Reports가 탭으로 얇음; Live와 앨범 멘탈모델 분리 (2026-10-04 민식) |
 | D47b | Sitter 탭 IA (**확정**) | Sitter **5탭:** `Home · Bookings · Feed · Diary · Mood` (Owner와 대칭; 구 Today→**Home**). **Home** = 대시보드: (A) 지금 케어 중이면 그 펫 정보·퀵액션 중심 · (B) 아니면 **승인 대기 요청** · **Upcoming** · **drop-off/pick-up 시간순**. 추후 케어 중 **다마고치/8bit status**(11.12). 구 Tasks는 Home(할 일)·Diary(완료 기록)로 흡수. **Bookings** = 요청·Meet & Greet·Past. **Feed** = + Photo. **Diary** = 스테이 로그 + 저녁 칩 알림장(구 Report). **Mood** = Owner와 동일. Treat scan = Home 버튼(08). Settings = Profile. **수익·돌봄 히스토리(추후):** 탭 추가 없음 — Bookings **Past**(스테이·견주별) + Profile **Earnings / payouts** 섹션(데모 pay 금액·기간 요약). 활동 디테일은 Diary 필터 | Owner 대칭 + 시터 대시보드 (2026-10-04 민식) |
+| D48 | 테스트 환경 (2026-10-09) | 손 테스트는 **항상 `main`을 Vercel production**(https://goldito-petcare.vercel.app)에서. 백엔드는 Render(D18). PR Preview는 CORS에 없어 업로드 · AI가 안 되므로 결과(✅)는 main 기준으로만 기록 | 브랜치를 받아 로컬에서 돌리면 환경이 사람마다 달라짐 |
+| D49 | 문의 AI의 "가능" = 예약 엔진의 규칙 (RV-1, `011c`) | `stay_capacity_check`가 `request_booking`의 일정 부분(창 확인 → `capacity_shortfall`)을 그대로 돌린다. 펫 수만큼 자리가 없거나 시터가 안 연 날이 하나라도 있으면 "불가". 이 확인이 실패하면 아무것도 약속하지 않는다: 견적 없음, 가능 여부를 말하지 말라는 `availability_note`, `needs_sitter` 강제(자동 발송 안 함) | 예약 요청이 나중에 `sitter_unavailable`로 깨지는 약속을 시터 이름으로 하지 않기 |
+| D50 | 문의 사이 공개 범위 (RV-4 · RV-5, `011e`) | 문의를 받은 시터는 오너의 표시 이름과 문의한 펫을 본다(예약 요청과 같은 수준). 펫의 Life Record · 알레르기는 `has_open_inquiry_about`이 참인 동안만 — 문의가 `open`이고, 문의한 stay가 아직 안 끝났고(`pick_up_at > now()`), 문의한 지 30일 안일 때. 하나라도 어긋나면 닫힘 | `open` 문의가 영원히 펫 기록을 열어 두던 문제 |
+| D51 | "Ask before booking" (FB-33) | 시터 프로필에 **[Ask before booking] [Book]** 나란히(Book이 주 버튼), "예약이 되는 건 요청을 보낼 때뿐"이라고 적는다. 문의 날짜는 필수(가능 여부 · 견적이 날짜에 달림). 시트 달력에 시터가 연 날 · 꽉 찬 날(펫 수 기준)을 표시, 꽉 찬 날은 보낼 때 **Ask anyway / Pick other dates** | 예약 전 질문과 예약 요청을 구분 |
+| D52 | 문의 스레드의 오너 · 시터 행동 (FB-34, `011j` · `011k`) | 오너는 시터 답장이 마지막일 때 **Write back**(AI가 다시 초안 → 시터 승인, 자동 발송 규칙 그대로)으로 이어 쓴다. **Change dates**는 새 문의가 아니라 **같은 문의**의 날짜를 바꾼다(`change_inquiry_dates`, 오너만 · 열린 문의만 · 31일 이하 · 옛 날짜의 예약된 자동 답장은 거둠). 시터의 Accept / Decline / Suggest는 팝업에 답장이 써져 있고 **Send**가 곧 발송이며, Decline · Suggest는 `can_host=false` + 견적 없음으로 나간다(`send_inquiry_reply(…, p_outcome)`) | 거절 답장 아래 견적 카드 · Request booking이 붙던 문제, 대화가 끊기던 문제 |
+| D53 | 시터가 쓰는 오너 노트 (FB-25 · FB-29, `011g`) | 시터는 끝난 stay의 오너에 대해 별점 + 문구(별마다 프리셋)를 남긴다. **본인만** 읽고(`save_owner_note`, 다시 저장하면 수정), 오너에게 알림이 가지 않으며 오너는 그 사실을 모른다. 같은 오너가 다시 요청하면 시터의 요청 · 예약 화면에 "Your notes from earlier stays" | 시터가 안전하게 솔직할 수 있어야 함 |
+| D54 | 즐겨찾기 시터를 앞당김 (FB-28, `011h`) | 11.5를 P0로 당겼다: 리뷰 뒤 "Add Chloe to your favorites?", 프로필 ☆ / ★, Your sitters · 검색에서 즐겨찾기 먼저. 시터는 모른다 | 첫 손 테스트에서 단골 재예약 경로가 필요했음 |
+| D55 | 돌봄 구간은 이른 쪽부터 (CW-1, `011i`) | 체크인 · 할 일 · 알림장 칩 · 초안의 시터 구간은 **합의한 드롭오프와 Received 중 이른 쪽**부터, 끝은 그대로. Received는 드롭오프 2시간 전부터 되므로 | 일찍 받은 뒤 체크인이 `not_in_care_window`로 막히고 사진이 칩이 안 되던 문제 |
+| D56 | 알림장 규칙 (FB-22 · RV-6 – RV-8, `011f`) | 같은 날 같은 펫 · 시터가 알림장을 **여러 개** 보낼 수 있다(초안은 한 번에 하나, 다음 알림장의 칩 · 스냅샷은 마지막으로 보낸 알림장 이후 것만). **끈 칩은 알림장에 안 들어간다**(`off`로 서버에 전달). 하이라이트는 8개까지만 글에 쓰고 더 켜면 안내. 쓰기 모델이 내려가면 plain-list 초안(`template-fallback`)으로 200 | D38 "시터가 끈 것은 쓰지 않는다"를 서버가 지킴 |
+| D57 | 데모 리셋은 테스트 전용 (2026-10-09) | Profile → Demo tools · `POST /api/demo/reset`은 테스트 기간에만. **심사 전에 제거하고** 같은 `demo_reset` 코드로 시작 지점별 고정 계정을 만든다(심사위원이 데이터를 지울 수 없게). 리셋은 두 데모 계정이 서로 한 일만 지운다(다른 오너의 예약은 건드리지 않음) | 심사위원 데이터 보호, 리셋이 다른 사람 예약을 지우던 R60-2 |
 
 ---
 
@@ -86,9 +96,18 @@ Goldito/
 │  │  ├─ 007b_feed_posts_realtime.sql  # feed_posts Realtime (008은 care 예약이라 b/c 접미사)
 │  │  ├─ 007c_feed_visibility.sql      # posted_by + visibility(shared/private), 오너 게시
 │  │  ├─ 008_care.sql                 # Phase 06 (task_logs RPC, care_checkins, care_requests, pet_cautions)
+│  │  ├─ 008g_care_change_requests.sql   # 돌보는 중 오너 → 시터 요청, 승인·거절
+│  │  ├─ 008h_care_counter_requests.sql  # 거절 노트, counter-request(추가 비용·오너가 할 일), 오너 Accept·Decline
+│  │  ├─ 008i_revoke_trigger_functions.sql # 트리거 함수를 RPC로 호출 못 하게 (Supabase 보안 점검)
+│  │  ├─ 008j_no_direct_edits_during_stay.sql # 돌보는 중에는 오너가 할 일·Heads-up을 직접 INSERT 못 함
 │  │  ├─ 009_reports.sql              # Phase 07 (send_daily_report)
+│  │  ├─ 009b_care_requests_follow_the_stay.sql · 009c_handoffs_stay_consistent.sql · 009d_paid_bookings_follow_changes.sql · 009e_reopened_checkout_keeps_addresses.sql  # 확정·결제 뒤 변경이 예약·요청·체크아웃과 어긋나지 않게 (BF.x)
 │  │  ├─ 010_inquiries_rag.sql        # Phase 07B (pgvector, inquiries, knowledge_chunks)
+│  │  ├─ 010b_send_inquiry_reply.sql · 010c_tone_samples.sql · 010d_auto_reply.sql  # 시터 답장 RPC, 말투 샘플, 자동 발송
 │  │  ├─ 011_completion.sql           # Phase 07C (reviews, pet_life_records)
+│  │  ├─ 011b_life_record_columns.sql · 011c_stay_capacity_check.sql · 011e_inquiry_access.sql  # Life Record 컬럼, 문의 가능 여부 = 예약 정원 규칙, 문의 사이 공개 범위 (011d는 RV-3용으로 비워 둠)
+│  │  ├─ 011f_daily_reports_many.sql · 011g_sitter_owner_notes.sql · 011h_favorite_sitters.sql  # 같은 날 알림장 여러 개, 시터의 비공개 오너 노트, 즐겨찾기 시터 (11.5를 앞당김)
+│  │  ├─ 011i_care_window_follows_received.sql · 011j_change_inquiry_dates.sql · 011k_inquiry_reply_outcome.sql  # 일찍 Received한 시각부터 돌봄 구간, 같은 문의에서 날짜 변경, 시터 답장 결과(거절·제안은 견적 없음)
 │  │  ├─ 012_transit.sql              # Phase 06B (trips, handoff_checks, home 좌표) — P0 맨 마지막 (D41)
 │  │  ├─ 013_safety.sql               # Phase 08 (DANGER 알림 트리거) — stretch, 06B 뒤 시간이 남을 때
 │  │  └─ 014_p1.sql                   # Phase 11 (P1)

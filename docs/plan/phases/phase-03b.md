@@ -1,5 +1,7 @@
 # Phase 03B — 시터 스케줄 · 서비스·이동 방식 · 예약 · Meet & Greet · 인수인계 (Bookings)
 
+> **상태 (2026-10-10):** 완료 (2026-10-02; 3B.11 Google Meet는 서버만 끝나고 앱 e2e는 대기). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D24, **D28 서비스·이동 방식**, 라우트 맵 §3, 알림 §7
 > 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2 (Meet & Greet · 이동 방식) · Stage 3 (예약). 문의 AI(Stage 1)는 [07B](phase-07b.md), 견적·동의서·결제·보안 해제는 [03C](phase-03c.md), 실시간 이동은 [06B](phase-06b.md)
 > 스키마·RPC·예시 시나리오 정본: [phase-02.md §시터 스케줄·예약·인수인계](phase-02.md#시터-스케줄--예약--인수인계-d24)
@@ -115,6 +117,23 @@
 - `frontend/lib/bookings.ts` (RPC 래퍼)
 - `supabase/migrations/004_booking_options.sql` (3B.0), `005_meet_greet.sql` (3B.9), `frontend/components/MeetGreetCard.tsx`, `MeetGreetSheet.tsx`
 - `backend/app/services/google_meet.py`, `backend/app/routers/meet_greet.py`, `backend/tests/test_meet_greet.py` (Google 호출은 mock) (3B.11)
+
+---
+
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+
+| ID | 내용 | 담당 |
+| :--- | :--- | :--- |
+| **FB-35** | 예약 **Decline**에 사유 칩 + 짧은 메모(선택, ≤ 200자)를 붙이고 오너의 알림 · 예약 상세에 보여 줌. 거절 시트 안에 **Suggest another time instead**(지금은 작은 글자 버튼이라 안 보임). 서버는 이미 `respond_booking(p_note → bookings.sitter_note)`를 받는다 | 민식 (Current focus) |
+| **FB-8** | 시터 Bookings 분류를 **Requests · In progress · Upcoming · Past**(+ Questions)로. In progress = `confirmed` + 드롭오프 완료 + 픽업 미완료. 오너 쪽도 같은 배지. `firstSitterBucket`은 픽업 시각이 미래인 것만 "곧"으로 (L-2) | 민식 (R2) |
+| **BK-1** | 시터 Bookings 탭에 **들어올 때마다**: 마지막에 누른 탭에 숫자가 있으면 그 탭 → 아니면 숫자가 있는 첫 탭(Upcoming → Requests → Questions) → 숫자가 없을 때만 마지막에 누른 탭 (`bookings.tsx` `userPicked`) | 나중에 |
+| **FB-5 · FB-6** | 시간 변경 시트: Drop-off ↔ Pick-up을 오가도 각각의 값 유지, **Send** 한 번에 바뀐 것 전부(성공한 뒤에 시트 닫기), Close는 아무것도 안 보냄. 끝난 인수인계는 비활성, 픽업까지 끝나면 Change 버튼 숨김 | 민식 (R2) |
+| **FB-4** | 예약 상세에서 상대가 시터인지 오너인지 `RoleBadge`로 | 슬기 (Q.9) |
+| **MG-1 – MG-6** | Meet & Greet 체크리스트: 이름을 "Things to cover"로, 체크 즉시 저장 · 양쪽에 보임(`meet_greet_items` 테이블 — 마이그레이션 필요), 항목 상세 + 메모, 햄버거 핸들로 순서 변경, + 추가 · 드래그해서 삭제, 영상 모드에서 유지할지는 디자인과 함께 결정 | 나중에 |
+| **CAL-1 – CAL-4 · FB-11** | 시터 캘린더 UX (묵 Figma 뒤): 오너에게 M·A·N 표시 숨김, 스케줄을 누르면 달력이 접히고 그 시터의 슬롯이 나옴, 슬롯 · 시간 텍스트를 한눈에 읽게, 접힌 달력 다시 내리기. 시터 스케줄 편집(`SlotCalendar` · `ScheduleSheet` · `/sitter/schedule`)은 한 번에: 날짜 · 시간 입력(DESIGN.md §7.10), 요금 입력, 여러 날 한 번에 열기 | 나중에 |
+| **3B.11 앱 e2e** | 영상 Meet & Greet를 호스팅 DB에서 처음 만나는 쌍으로 끝까지 (Google 변수가 Render에 있어야 하고 두 번째 시터가 시드에 들어간 뒤, full-process §9 #14) | 민식 (사람) |
+
+원문: [feedback-2026-10-08](../feedback-2026-10-08.ko.md) FB-4 · 5 · 6 · 8 · 11 · 35, [feedback-2026-10-10](../feedback-2026-10-10.ko.md) IQ-8 · IQ-10 · IQ-13.
 
 ---
 

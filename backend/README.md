@@ -21,6 +21,8 @@ curl -s http://localhost:8000/health
 pytest -q   # auth tests use their own test keys — no real project needed
 ```
 
+Notes: `pytest.ini` collects `tests/` only, so live-model scripts under `scripts/` never run as tests. On macOS, Python needs `certifi` for TLS (`app/deps/auth.py` sets it) or the JWKS fetch fails.
+
 Default port **8000**. Set `CORS_ORIGINS` to include Expo web (`http://localhost:8081`, `http://localhost:19006`).
 
 ### Docker (deploy image)

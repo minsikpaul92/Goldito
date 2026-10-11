@@ -64,7 +64,7 @@
 | **Q.5** | **R3 Medium — 알림장 · 캡션 · Life Record · 시드** ([review §5](../review-2026-10-08.ko.md)). 먼저: **M-14**(기록 칩을 끄면 오너 체크리스트에서 놓친 약이 숨음) · **M-20**(메모 속 번호 · 코드가 Life Record에 — D31) · **M-16**(보낸 알림장이 초안으로 — `011f` 뒤 다시 확인). 그다음 M-13 · M-15 · M-17 · M-18 · M-19 · M-21 · M-22 · M-23 · M-24 (M-12는 완료) | 항목마다 커밋 하나, 브랜치 `fix/q-review-medium` | review 문서의 "테스트" 칸대로 pytest / Playwright 추가, 항목 제목에 ✅ | 3~4일 |
 | **Q.6** | **R3 Medium — 문의 AI M-1~M-11** (**R1b `fix/review-inquiry` 머지 뒤** — 같은 파일). 특히 M-4(말투 예시에 다른 오너의 글 · 연락처가 섞임 — 익명화와 같은 일) | 같은 방식 | 같은 방식 | 3일 |
 | **Q.7** | **평가 (키 필요)** — `scripts/measure_inquiry.py` 기본 경로 재측정(M-1), `scripts/measure_caption.py`로 말투 카드 유무 비교(M-19), Life Record 환각 테스트 3회(07C DoD) | `phases/notes/model-ids.md` 표 갱신 | 수치 · 날짜 · 결론 한 줄 | 1일 |
-| **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
+| **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 + **실제 폰 카메라**(Take photo / Choose from library, Vercel 주소에서) | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
 | Q.9 | (여유) **R4 Low** L-1~L-6 묶음, FB-1 · FB-3 · FB-4 | 묶음마다 커밋 | review §6 | 여유 |
 | Q.10 | (P2, 여유) **11.7 SFT 보여주기** — 앱 런타임에는 안 씀(D43) | [phase-11.md](phase-11.md) 11.7 | | 여유 |
 
@@ -89,6 +89,6 @@
 2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
 3. **마이그레이션:** 슬기는 `011m`~`011z`. 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
 4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
-5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus → Completed(날짜), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
+5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus 줄 삭제(완료 기록은 커밋 · PR · test-guide), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
 6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
 7. **급한 문제를 찾으면:** 데모 경로가 막히거나 틀린 약속을 하는 것 → FB에 "급함"으로 적고 민식에게 바로 알린다(민식 큐로 감).
