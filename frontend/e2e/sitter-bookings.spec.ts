@@ -201,10 +201,54 @@ test.describe("sitter requests", () => {
     await screen.getByTestId("decline-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Request declined");
     expect(db.bookings[0].status).toBe("declined");
+    expect(db.responses.at(-1)).toMatchObject({ p_accept: false, p_note: null }); // reason and note are optional
 
     await expect(page).toHaveURL(/\/sitter\/bookings$/);
     await expect(screen.getByText("No requests yet")).toBeVisible();
     await screen.getByTestId("sitter-bookings-tabs-past").click();
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Declined");
+  });
+
+  test("Decline can carry reason chips and a short note, which the owner is told", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    const { screen, card } = await openRequest(page);
+    await card.click();
+
+    await screen.getByTestId("decline-booking").click();
+    await screen.getByTestId("decline-reason-0").click();
+    await screen.getByTestId("decline-reason-3").click();
+    await screen.getByTestId("decline-note").fill("Try the week after?");
+    await screen.getByTestId("decline-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Request declined");
+
+    const note = "Fully booked those dates · Let's talk first\nTry the week after?";
+    expect(db.responses.at(-1)).toMatchObject({ p_accept: false, p_note: note });
+    expect(db.bookings[0]).toMatchObject({ status: "declined", sitter_note: note });
+    expect(db.notifications.find((n) => n.type === "booking_declined")).toMatchObject({ user_id: OWNER.id, body: note });
+  });
+
+  test("the decline sheet's \"Suggest another time instead\" opens the time sheet without declining", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    const { screen, card } = await openRequest(page);
+    await card.click();
+
+    await screen.getByTestId("decline-booking").click();
+    await screen.getByTestId("decline-suggest").click();
+    await expect(screen.getByTestId("decline-sheet")).toHaveCount(0);
+    await expect(screen.getByText("Suggest another time", { exact: true })).toBeVisible();
+    expect(db.bookings[0].status).toBe("requested");
+  });
+
+  test("the owner sees why a request was declined", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    Object.assign(db.bookings[0], { status: "declined", sitter_note: "Fully booked those dates" });
+    await signIn(page, OWNER);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("booking-ended")).toContainText("Chloe can't take this one.");
+    await expect(screen.getByTestId("declined-reason")).toHaveText("“Fully booked those dates”");
   });
 });
