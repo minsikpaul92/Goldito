@@ -96,6 +96,43 @@ Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각�
 
 ---
 
+## README 재작성 방침 (2026-10-11 결정 — 쓰는 시점은 제출 직전, 10.2)
+
+> 심사위원이 README를 열자마자 **"기존 앱이 있는데 왜?"와 "왜 AI?"**가 보여야 한다. 아래는 브레인스토밍에서 정한 방침과 맨 위 블록 초안이다(확정 전).
+
+**정한 것**
+
+1. **제품 먼저, 이야기는 맨 위 두 줄.** 이야기 두 줄(왜 만들었나 · 왜 AI인가)을 README **가장 위**에 두고, 바로 아래에 제목 · 한 줄 소개 · 데모 링크를 둔다. 길게 늘어놓지 않는다.
+2. **경쟁 서비스 이름은 쓰지 않는다.** 차이는 *기능이 있냐*가 아니라 **"그 일을 누가 하냐"**로 쓴다 — 시중 앱은 연결하고 예약마다 수수료를 가져가지만, 머무는 동안의 답장 · 규칙 · 일일 노트는 사람이 직접 친다. **우리가 수수료를 얼마 받는다/덜 받는다는 말은 쓰지 않는다**(만들어 둔 것이 없다 — 데모 결제뿐). 수수료 이야기를 더 하고 싶으면 What's Next에 비전으로만.
+3. **근거는 경험으로:** "수십 번의 케어, 같은 반려동물을 여러 번 맡았다." 숫자는 쓰지 않는다. 시니어 이야기는 통계가 아니라 **관찰**("in our experience")로 쓴다.
+4. **앱에 머물 이유(시팅 밖의 기능)** 한 줄을 5단계 띠 아래에 넣는다 — **지금 만들어진 것만 단정하고**, 계획은 "coming"으로 표시한다(아래).
+5. **한국어 판(`docs/README.ko.md`)도 같이** 바꾼다.
+6. 첫 화면 이미지/GIF(문의 → AI 초안 → 승인)는 **나중에**(영상과 함께).
+7. 모든 문장은 쓰기 직전에 [test-guide 현황표](../test-guide.ko.md)와 대조해 **안 만든 것은 지우거나 "coming"** 으로 (10.2의 기존 규칙).
+
+**맨 위 블록 초안 v0 (EN)**
+
+```md
+> **Why we built this.** After dozens of stays as pet sitters — many with the same dogs and cats — we kept seeing the same thing: apps connect owners and sitters, and take a cut of every booking, but the stay itself (replies, house rules, daily notes) is still typed by hand, and a lot of it happens outside the app.
+> **Why AI.** In our experience, owners who find typing hard — often seniors — leave their pet's profile half empty, and sitters spend their time writing instead of caring. Goldito's AI does the typing; people approve.
+
+# 🐾 Goldito
+**Leave your pet, keep your peace of mind.** The whole stay — inquiry to the ride home — in one app, for dogs and cats.
+[Live demo](https://goldito-petcare.vercel.app) · Demo video · Test accounts · *Nebius x NVIDIA Global AI Hackathon — Best Apps and Agents*
+```
+
+그 아래: ① "Why it matters" 두 칸 — **Owner:** your pet's status arrives on its own, without asking · **Sitter:** replies, notes and checklists are drafted for you, details aren't missed, more time to care → ② 5단계 띠(각 단계에 AI가 하는 일 한 문장) → ③ **More than sitting**(아래) → ④ 기존 상세(How It Works, Agent 표, Nemotron 사용, 아키텍처, Getting Started).
+
+**More than sitting — 앱에 머물 이유 (README에 쓸 때의 기준)**
+
+| 지금 만들어짐 (단정해도 됨, 제출 전 재확인) | 계획 (README에는 "coming"으로만) |
+| :--- | :--- |
+| Feed 앨범(날짜 · 분류) · Diary(시터의 일기 + 알림장) · **Pet Life Record**(다음 시터에게도 이어짐) · 즐겨찾기 시터 · 리뷰(양방향, 시터의 비공개 노트) · 알림 | Mood meter(재미용) · 8-bit Pet room · 스티커 · 카드 알림장 · 사진 요청 · 펫 스킨 · 가입 직후 "Max at a glance" 온보딩(11.15 — 마지막에 구현, 잘릴 수 있음) |
+
+예문(EN): *"Between stays, Goldito keeps the pet's story: a photo album, a diary, and a Life Record that follows the pet to any sitter. Coming next: a mood meter and an 8-bit pet room."*
+
+---
+
 ## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
 
 | ID | 내용 | 담당 |
