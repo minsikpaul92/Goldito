@@ -71,7 +71,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기) | ✅ 🤖 | 03B.9 |
+| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 시터의 첫 동의 뒤에만 가능, BOOK-8 ~ 13) | ✅ 🤖 | 03B.9 · Booking steps |
 | Google Meet 링크 자동 생성 | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
 | AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
@@ -283,9 +283,9 @@
 
 | ID | 확인 내용 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- |
-| BOOK-1 | 예약 요청 → 시터 수락 → 확정 | 🤖 `booking` · `sitter-bookings` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
+| BOOK-1 | 예약 요청 → 시터 수락 → 확정. **이미 만난 사이(단골)** 는 버튼이 **Accept** 하나, **처음 만나는 사이**는 BOOK-8 ~ 9의 **Yes, let's meet → Meet & Greet → Confirm booking** (같은 동작, 이름만 다름) | 🤖 `booking` · `sitter-bookings` · `meet-greet` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
 | BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) |
-| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기) | 🤖 `meet-greet` | ➖ |
+| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Yes, let's meet(BOOK-9)를 눌러 홀드가 걸려 있어야 함 — 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
 | BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서) | 서버만 확인 (**앱 e2e 미확인**, 3B.11) | ➖ |
@@ -425,7 +425,7 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | FLOW-1 | 오너가 예약 요청 → 시터 화면 (새로고침 없이) | 시터 Home · Bookings가 새로고침 없이 갱신 — Requests 탭 모서리 배지 1, 문의면 Questions (FB-2) | 👤 (실시간) | ❌ 10/08 민식 (실시간 안 뜸) |
-| FLOW-2 | 시터가 Accept → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
+| FLOW-2 | 시터가 Accept(처음 만나는 사이면 **Confirm booking**) → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
 | FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
