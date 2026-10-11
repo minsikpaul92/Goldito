@@ -1,5 +1,7 @@
 # Phase 05 — 피드 앨범 · Diary Live · 알림 센터 (AI 없음)
 
+> **상태 (2026-10-10):** 완료 (2026-10-04, PR #47). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — 알림 매트릭스 §7, UX 규칙 §8, **D47 · D47b** 탭 IA  
 > 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4 — 견주 Push + **Feed 앨범** + **Diary** Live 스트림 (분류는 [09](phase-09.md))
 

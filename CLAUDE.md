@@ -223,7 +223,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
+The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 
