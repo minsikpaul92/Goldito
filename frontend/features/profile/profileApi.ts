@@ -4,7 +4,7 @@ import { Role } from "../../providers/SessionProvider";
 import { OwnerProfile, SitterProfile } from "../../types/db";
 
 const OWNER_COLUMNS =
-  "home_address, emergency_contact_name, emergency_contact_phone, vet_clinic_name, vet_clinic_phone, meet_spots";
+  "home_address, home_lat, home_lng, emergency_contact_name, emergency_contact_phone, vet_clinic_name, vet_clinic_phone, meet_spots";
 
 export type RoleProfile =
   | { role: "owner"; fields: OwnerProfile }
@@ -24,7 +24,7 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
     const { data, error } = await supabase.from("owner_profiles").select(OWNER_COLUMNS).eq("id", userId).single();
     if (error || !data) fail("load your profile");
     const row = data as OwnerProfile;
-    return { role, fields: { ...row, meet_spots: row.meet_spots ?? [] } };
+    return { role, fields: { ...row, home_lat: row.home_lat ?? null, home_lng: row.home_lng ?? null, meet_spots: row.meet_spots ?? [] } };
   }
   const { data, error } = await supabase.rpc("get_my_sitter_profile").maybeSingle();
   if (error || !data) fail("load your profile");
@@ -39,6 +39,8 @@ export async function loadRoleProfile(userId: string, role: Role): Promise<RoleP
       experience_years: row.experience_years,
       home_notes: row.home_notes,
       home_address: row.home_address,
+      home_lat: row.home_lat ?? null,
+      home_lng: row.home_lng ?? null,
       services: row.services ?? ["boarding"],
       meet_spots: row.meet_spots ?? [],
       visitor_parking: row.visitor_parking ?? null,

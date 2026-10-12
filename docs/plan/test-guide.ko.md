@@ -121,7 +121,9 @@
 | **사진 자동 캡션 · 앨범 분류** (시터는 올리기만 → AI가 캡션 + 분류 → 피드 게시, "Writing a caption…" 단계, 실패해도 게시, 오너 Feed **Timeline / Album**) | ✅ 🤖 `caption.spec.ts` + pytest (실제 비전 모델로 샘플 9장 중 8장 분류 · 지연 약 1.2초 · 실제 사진 5장 합의는 👤) | 09 / 9.1–9.3 · 9.5 |
 | Pet Transit **DB** (홈 좌표 · `trips` 마지막 위치 1개 · `start_trip` · `update_trip_position` · `end_trip` · 150 m 도착 알림 · Realtime) | ✅ SQL `rls_smoke` L (사람 확인 ➖ — 화면은 아직 없음) | 06B / 6B.1 |
 | Pet Transit **사진 체크 API** (`POST /api/ai/handoff-check`: 사진 → 보이는 것만 보고, ok / warning은 서버 규칙, 실패하면 unchecked, `handoff_checks`에 저장) | ✅ 🤖 pytest + SQL `rls_smoke` L · 실제 모델은 개 사진 3장(종 일치 · 불일치)만 확인 — **크레이트 · 안전벨트 감지는 임시 이미지라 미확인, 진짜 샘플 4장 대기** | 06B / 6B.5 |
-| Pet Transit (위치 공유 동의 · 지도 · ETA · 도착 카드 · 인수인계 연결 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S3–S7 |
+| Pet Transit **홈 핀** (Profile → Map pin for trips: 동의 화면 후 현재 위치 1회 · 주소 저장 시 OSM 조회 + 한 줄 안내 · 못 찾으면 옛 핀 삭제) | ✅ 🤖 `home-location.spec.ts` + pytest `test_geo` (실제 Nominatim은 공개 주소 1건만 손으로 확인, 실제 폰 GPS는 👤) | 06B / 6B.2 |
+| Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
+| Pet Transit (지도 · ETA · 도착 카드 · 인수인계 연결 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S4–S7 |
 
 ### Stage 5 — Completion · 기타
 
@@ -502,6 +504,9 @@
 | TRIP-4 | 예약 당사자 아닌 계정, 시터 프로필 목록에서 좌표 | `trips` 행이 0건, 시터의 `home_lat` 열은 읽기 거부, 클라이언트가 직접 INSERT · UPDATE 하면 거부 | SQL `rls_smoke` L | ➖ |
 | TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
 | TRIP-6 | 시터가 인수인계 사진을 올리고 사진 체크를 요청 (강아지 사진 / 동물 없는 방 / 차 안 크레이트 없음) | 강아지가 보이고 종이 맞으면 `ok`, 동물이 없거나 종이 다르면 `warning`, 차 사진은 크레이트나 안전벨트가 보여야 `ok`(모델이 "안전해 보임"이라고 해도 서버 규칙이 우선). 모델이 실패·20초 초과여도 200 `unchecked`로 저장. 예약의 시터가 아니거나 남의 사진이면 403 | 🤖 pytest `test_ai_handoff_check` · SQL `rls_smoke` L(행 읽기·쓰기 권한) · **차 안 크레이트 감지는 진짜 사진으로 확인 대기 👤** | ➖ |
+| TRIP-7 | Profile → Map pin for trips → **Use my current location** | 동의 화면이 먼저 뜨고, **Not now** / Close면 위치를 읽지 않음. **Use my location** 후에만 브라우저 권한이 뜨고 위치를 1번 읽어 "Pin set from your location — Save to keep it." Save하면 저장. 브라우저가 거절하면 "Location is off for Goldito…" 안내, 핀은 그대로 | 🤖 `home-location.spec.ts` · 실제 폰 👤 | ➖ |
+| TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved ✅ · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
+| TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
 
 ---
 

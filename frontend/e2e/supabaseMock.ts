@@ -209,8 +209,8 @@ export type MockDb = {
   quote_error: string | null;
 };
 
-const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
-const SITTER_PROFILE_FIELDS = ["bio", "service_area", "experience_years", "home_notes", "home_address"];
+const OWNER_PROFILE_FIELDS = ["home_address", "home_lat", "home_lng", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
+const SITTER_PROFILE_FIELDS = ["bio", "service_area", "experience_years", "home_notes", "home_address", "home_lat", "home_lng"];
 
 function emptyRow(id: string, fields: string[]): Row {
   return Object.fromEntries([["id", id], ...fields.map((f) => [f, null])]);

@@ -40,7 +40,7 @@
 | `trips` 마지막 위치 1개 + Realtime 구독 + 직선거리 ETA | 도로 경로·교통 반영 ETA(라우팅 API), 경로 이력 |
 | 보기 전용 지도 (웹 Leaflet + OSM, 자동 맞춤 + ±) | 드래그 팬·핀치 줌, 네이티브 지도(`react-native-maps`) |
 | 위치 소스: 실제 GPS(foreground) + **Simulate trip** | 백그라운드 위치 추적, 배터리 최적화 |
-| 도착 150 m 지오펜스 → 알림 + 안내 카드 | 주소 지오코딩 (좌표는 "Use my current location" 또는 시드) |
+| 도착 150 m 지오펜스 → 알림 + 안내 카드 | 주소 자동완성 · 도로 단위 정밀도 (좌표 = 주소 저장 때 OSM Nominatim 1회 조회, 또는 "Use my current location", 또는 시드) |
 | 인수인계 사진 Vision 체크 3종 (pet_checkin · vehicle_safety · return) | 영상 기반 체크, 얼굴 인식 |
 
 ---
@@ -65,7 +65,7 @@
 | ID | 작업 | 상세 | DoD |
 | :--- | :--- | :--- | :--- |
 | 6B.1 | DB `012_transit.sql` | `owner_profiles`·`sitter_profiles`에 `home_lat double precision`, `home_lng double precision` (본인 RLS; 상대방에게는 아래 RPC로만). `trips(id, booking_id → bookings cascade, handoff_kind text check in ('drop_off','pick_up'), traveler_id → profiles, status text check in ('en_route','arrived','completed','cancelled'), dest_lat, dest_lng, last_lat null, last_lng null, last_at null, eta_at null, distance_m int null, simulated boolean default false, started_at, arrived_at, ended_at)` · unique(booking_id, handoff_kind) where status in ('en_route','arrived') · RLS select = 예약 당사자, 쓰기는 RPC만 · Realtime publication 추가. RPC: `start_trip(p_booking, p_kind, p_simulated default false, p_lat default null, p_lng default null)` — 첫 위치를 같이 보내면 상대방 알림에 ETA가 들어간다(없으면 "is on the way 🚗"). 호출자 = 이동하는 쪽(장소 `sitter_home`이면 견주, `owner_home`이면 시터, `other`면 둘 다 가능), 결제 완료(03C), agreed 시각 2시간 전부터(`trip_too_early`) · pick_up은 drop_off 완료 뒤(`drop_off_not_completed`), 목적지 = 장소 좌표(`other`는 null → 지도 없이 ETA 생략) → 상대방 `trip_started`. `update_trip_position(p_trip, p_lat, p_lng)` — 호출자 = traveler, 1초 이내 중복 무시, 거리·ETA 계산(D32), 150 m 안이면 status `arrived` + `arrived_at` + 양쪽 `trip_arrived`(1회). `end_trip(p_trip, p_cancel boolean default false)` — 위치 null, `completed`/`cancelled` | rls_smoke L: 제3자 select 0행, 다른 사람 update 거부 |
-| 6B.2 | `lib/location.ts` | `startLocationSource({mode:'gps'\|'simulate', route?}) → stop()` — gps: `expo-location` foreground watch (웹은 `navigator.geolocation.watchPosition`), 5초 간격 `update_trip_position`. 권한·동의 거부 → 위치를 보내지 않고 6B.8의 장소 카드로 전환(데모 계정은 **Simulate** 제안도). simulate: 경로 JSON 재생. 화면이 닫혀도 같은 탭이면 계속(앱 수준 provider `TripProvider`) | 실제 폰 1회 + 데스크톱 simulate |
+| 6B.2 | `lib/location.ts` · `TripProvider` · 홈 좌표 | `startLocationSource({mode:'gps'\|'simulate', …}) → stop()` — gps: 웹 `navigator.geolocation`(P0는 웹 앱이라 `expo-location`은 네이티브 출시 때), 첫 위치는 바로, 이후 5초 간격 `update_trip_position`. 권한·동의 거부 → 위치를 보내지 않고 6B.8의 장소 카드로 전환(데모 계정은 **Simulate** 제안도). simulate: **정적 경로 JSON 대신 두 집 좌표로 만든 가상 경로**(`buildSimulatedRoute`, 목적지 ~60 m 앞에서 끝나 150 m 규칙이 실제로 동작, 1.2초 간격 ≈ 30초 — 서버가 1초 안 중복을 무시하므로 5초의 10배속(0.5초)은 못 씀). 화면이 닫혀도 같은 탭이면 계속(앱 수준 `TripProvider`, 동의 화면 `ShareLocationSheet`은 Allow 전에는 위치를 읽지도 보내지도 않음). **홈 좌표:** Profile의 Home address 아래 **Map pin for trips** — ① **Use my current location**(동의 화면 후 GPS 1회) ② 주소를 저장하면 `POST /api/geo/geocode`(OSM Nominatim, 키 없음, User-Agent · 초당 1회)로 좌표를 구하고 토스트 한 줄 "Pin placed near …"(못 찾으면 옛 핀 삭제 + 안내). 이번 방문에 GPS로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 실제 폰 1회 + 데스크톱 simulate |
 | 6B.3 | TripMap + Trip 화면 | `components/TripMap.web.tsx` — Leaflet + OSM 타일(`© OpenStreetMap contributors` 표기), `dragging:false, scrollWheelZoom:false, touchZoom:false`, ± 버튼만, 마커 2개 자동 맞춤. 네이티브 `TripMap.tsx`는 지도 없이 거리·ETA 카드 (해커톤 후 지도). Realtime 구독 `trips` (booking_id 필터) → 마커·ETA 갱신 | 1.7 마우스 테스트: 지도 위 드래그가 화면 스크롤로 동작 |
 | 6B.4 | 도착 안내 카드 | 시터(Sitter drives): `get_home_access` → **EntryInfoCard**(03C) — Buzzer 1-tap = `tel:` 링크(견주 전화, 데모는 가짜 번호) + buzzer 코드, Lockbox **Show code**. 견주(Owner drives): `get_handoff_details` → Chloe's place(주소·Visitor parking·로비 안내) | 도착 시 자동 표시 |
 | 6B.5 | `POST /api/ai/handoff-check` (민식) | `routers/ai_handoff_check.py` (요청·응답·모델 출력 스키마는 라우터 안, 다른 AI 라우터와 같음) — 요청 `{booking_id, media_id, check_type, handoff_kind}`(pet_checkin은 drop_off, return은 pick_up에만) · `assert_booked_sitter(booking, from_hours_before=2)`, media가 그 시터가 올린 `handoff` 사진이고 그 예약 반려동물 것인지 확인 → `fetch_as_data_url` → `MODEL_VISION` + `prompts/handoff_check/system.md` (check_type별 지시) → `HandoffFindings {pet_visible, species_match, crate_visible?, restraint_visible?, concerns:[str]}` (`chat_json`) → 서버 규칙으로 status: pet_checkin/return = `pet_visible && species_match` → ok / vehicle_safety = `pet_visible && (crate_visible \|\| restraint_visible)` → ok / 그 외 warning. 의학적 판단 금지("looks calm" 같은 관찰만). 실패·20 s 타임아웃 → `unchecked` (200, **이것도 행으로 저장**해 Received가 사진을 가리킬 수 있게 함). `handoff_checks(id, booking_id, handoff_kind, check_type, media_id, status, findings jsonb, override_reason text null, model, latency_ms, created_at)` service role insert, 예약 당사자 둘이 select, 시터만 `override_reason` update(200자 이하) — `012_transit.sql` | 샘플 4장 기대 결과 일치 (아래) |
@@ -151,8 +151,8 @@ Before S1, tell me which of the "blocking" items in the 준비 list are still op
 
 - `supabase/migrations/012_transit.sql`, `supabase/tests/rls_smoke.sql` (L)
 - `backend/app/routers/ai_handoff_check.py`, `backend/app/ai/prompts/handoff_check/system.md`
-- `frontend/lib/location.ts`, `frontend/providers/TripProvider.tsx`, `frontend/components/TripMap.web.tsx` / `TripMap.tsx`, `frontend/app/{owner,sitter}/bookings/[bookingId]/trip.tsx`, `frontend/assets/demo/{routes,handoff}/*`
-- 의존성: `leaflet` (웹 전용 import), `expo-location`
+- `frontend/lib/location.ts`, `frontend/lib/transit.ts`, `frontend/providers/TripProvider.tsx`, `frontend/components/ShareLocationSheet.tsx`, `backend/app/routers/geo.py`, `frontend/components/TripMap.web.tsx` / `TripMap.tsx`, `frontend/app/{owner,sitter}/bookings/[bookingId]/trip.tsx`, `frontend/assets/demo/handoff/*`
+- 의존성: `leaflet` (웹 전용 import) — `expo-location`은 네이티브 출시 때
 
 ---
 
