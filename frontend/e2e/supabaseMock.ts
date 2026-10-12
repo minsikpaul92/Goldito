@@ -72,7 +72,7 @@ function json(route: Route, status: number, body: unknown) {
   return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 }
 
-export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date } = {}) {
+export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date; db?: MockDb } = {}) {
   fixedNow = options.now ? options.now.getTime() : null;
   // Copies, so a test that edits a user (e.g. display name) never leaks into the next one.
   const users = initialUsers.map((user) => ({ ...user }));
@@ -129,7 +129,8 @@ export async function mockSupabase(page: Page, initialUsers: MockUser[], options
     return json(route, 404, { msg: `Not mocked: ${request.method()} ${url.pathname}` });
   });
 
-  const db = createMockDb();
+  // `options.db` lets two browser contexts (an owner and a sitter) work on the same data.
+  const db = options.db ?? createMockDb();
   await page.route("**/rest/v1/**", (route) => handleRest(route, users, db));
 
   return { signups, db };

@@ -91,7 +91,8 @@ export function TripScreen({ role }: { role: Role }) {
   const live = trips.find(isLive);
   const me = profile?.id;
   const other = role === "owner" ? b.sitterName : b.ownerName;
-  const openBooking = () => router.replace(`/${role}/bookings/${b.id}`);
+  // Back to the booking that is already open underneath (a fresh copy would leave two of them in the stack).
+  const openBooking = () => router.dismissTo(`/${role}/bookings/${b.id}`);
 
   if (!live) {
     const next = nextHandoff(b);

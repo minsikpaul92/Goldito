@@ -34,7 +34,7 @@ Stretch:        08 세이프티 (06B 뒤 시간이 남을 때, 10 최종 배포 
 | [04](phase-04.md) | Cloudinary | 4 | secret 없이 사진·영상 업로드 헬퍼 + 샘플 트레이 | 민식 | 10/8–10/9 | - |
 | [05](phase-05.md) | 케어 피드 + 알림 | 4 | 업로드 → 견주 타임라인·Realtime 알림 센터 | 민식 | 10/9–10/11 | 006 |
 | [06](phase-06.md) | 케어 의뢰서 · 5초 체크 · Activity | 2 · 4 | 의뢰서 → AI 미션 체크리스트 · 탭 체크 → 즉시 알림 · 히스토리 | 민식 | 10/11–10/14 | 007 |
-| [06B](phase-06b.md) | Pet Transit | 4 | Start trip → 실시간 위치·ETA → 도착 안내 → 사진 Vision 체크 → Received/Returned | 민식 | P0 맨 마지막 (D41) — 07C 바로 다음, 08보다 먼저 · 10/23–10/27 | 012 |
+| [06B](phase-06b.md) | Pet Transit | 4 | Start trip → 실시간 위치·ETA → 도착 안내 · Google Maps 링크 → Received/Returned (사진 체크는 앱에서 뺌, API만) | 민식 | P0 맨 마지막 (D41) — 07C 바로 다음, 08보다 먼저 · 10/23–10/27 | 012 |
 | [07](phase-07.md) | 알림장 AI | 4 | AI 칩 제안 + 짧은 메모(선택) + 사진 2장 + 하루 데이터 → Super 초안 → 시터 승인 후 게시 | 민식 | 7.1: 10/1–10/4 · 나머지 10/16–10/18 | 009 |
 | [07B](phase-07b.md) | 문의 AI + RAG | 1 | 문의 → 몇 초 안(초안 p50 10초) 시터 말투 AI 초안 → 시터 승인(자동 발송은 사람 속도) — 스케줄·견적·정책·Life Record 근거 | 민식 | 백엔드 10/5–10/10 · UI 10/18–10/20 | 010 |
 | [09](phase-09.md) | 캡션 · 앨범 분류 | 4 | 업로드만으로 AI 캡션 + Meals/Walks/Naps 앨범 (fallback 보장) | 민식 | 10/19–10/21 | - |
@@ -53,7 +53,7 @@ Stretch:        08 세이프티 (06B 뒤 시간이 남을 때, 10 최종 배포 
 | 1 Inquiry | 07B (+03C 견적, 07C 기록) | ① 문의 → AI 초안(몇 초) → 자동 모드면 약 30초 뒤 답 + 견적 카드 |
 | 2 Meet & Greet | 06 (의뢰서) · 03B (Meet & Greet · 3B.11 Google Meet · 이동 방식) | ② 의뢰서 → 체크리스트 · 첫 만남 Meet & Greet(Google Meet) · Sitter/Owner drives |
 | 3 Booking | 03B · 03C | ③ 수락 → 동의서 → Pay (demo) → 정보 해제 |
-| 4 Care & Transit | 04 · 05 · 06 · 06B · 07 · 09 (+08 stretch) | ④ Trip → 사진 체크 → 5초 체크 → 알림장 → 앨범 |
+| 4 Care & Transit | 04 · 05 · 06 · 06B · 07 · 09 (+08 stretch) | ④ Trip → 5초 체크 → 알림장 → 앨범 |
 | 5 Completion | 07C | ⑤ 귀가 → home safe → ★ 리뷰 → Life Record |
 
 ## Phase 문서 사용법 (에이전트·사람 공통)

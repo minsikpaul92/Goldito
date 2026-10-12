@@ -54,7 +54,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 | **① Inquiry** | Drafts the reply **in the sitter's own writing style**, from the sitter's calendar, a server-side quote, house policy, and the pet's Life Record | ✅ |
 | **② Meet & Greet** | Turns the owner's care note into a timed **mission checklist** and Heads-up cards | ✅ · Google Meet link ✅ server, app check 🚧 · step bar + date hold ✅ |
 | **③ Booking** | Stays out of the way on purpose: consents, prices, and the timed unlock come from fixed rules, never from the model | ✅ |
-| **④ Care & Pet Transit** | Suggests the day's chips, writes the **daily note**, captions and sorts photos · live trip + photo check 🚧 | ✅ care · 🚧 transit |
+| **④ Care & Pet Transit** | Suggests the day's chips, writes the **daily note**, captions and sorts photos · live trip ✅ | ✅ care · ✅ transit |
 | **⑤ Completion** | Writes the pet's **Life Record** and remembers it for the next stay — even with a new sitter | ✅ |
 
 **More than sitting — reasons to stay in the app.** Between stays, Goldito keeps the pet's story: a photo **album**, a **diary** of every stay, a **Life Record** that follows the pet to any sitter, **favorite sitters**, two-way **reviews**, and live notifications ✅. Coming next: a **pet profile** built from a photo, your voice, and a few big-button questions 🚧, a **mood meter**, and an **8-bit pet room** 🔭.
@@ -108,8 +108,8 @@ Tap a stage to expand it.
 
 - ✅ **5-second check:** Goldito suggests chips from the day's check-ins and photos — Meal ✅ · Potty ✅ · Walk 20 min ✅ · Meds ✅ · 🐿️ Squirrel at the park. The sitter turns off anything wrong and adds a short line if they want. **Nemotron writes the daily note** in the sitter's own voice from only those facts, and it is posted once the sitter approves it. Need another note the same day? Write another.
 - ✅ **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day.
-- 🚧 **Uber-style transit:** whoever is driving taps **Start trip** (after a clear location prompt); the other side sees a live map and ETA, and on arrival the owner gets visitor-parking directions while the sitter gets the buzzer and lockbox card. If someone declines to share location, both sides still see the meeting place with an **Open in Google Maps** button.
-- 🚧 **Photo check-in:** one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt) — advice only, the sitter can continue.
+- ✅ **Uber-style transit:** whoever is driving taps **Start trip** (after a clear location prompt); the other side sees a live map and ETA, and on arrival the owner gets the sitter's place card (visitor parking, lobby notes) while the sitter gets the entry-info card. Both sides get **Open in Google Maps** — directions for the traveller, the place for the host. Anyone can also **start without sharing**: the other side then sees the meeting place instead of a map. On the web the traveller's screen has to stay on (browsers pause location in the background); the app after the hackathon shares in the background. A demo account can **simulate the drive**.
+- 🔭 **Photo check-in:** one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt) — advice only, the sitter can continue. The check runs on the server; it is not in the app yet, because owner and sitter meet in person.
 - 🚧 **Treat Safety Guard** *(stretch)*: scan a treat label; Nemotron Ultra and a curated toxic-ingredient table catch allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited — it was adorable. Her potty was perfectly healthy, too. 🐶"*
@@ -136,7 +136,7 @@ Goldito's AI works like an agent. Each event in a stay triggers it; it gathers t
 | :--- | :--- | :--- |
 | An owner asks about a stay | Checks the calendar, gets the server's quote, searches the pet's Life Record, and drafts a reply in the sitter's voice | The sitter taps **Send**, or turns on auto-send |
 | The owner writes a care request | Turns it into timed tasks and Heads-up cards | The owner reviews and saves |
-| A handoff photo is taken 🚧 | Checks that the pet is there and secured in the car | Advice only — the sitter can continue |
+| A handoff photo is taken 🔭 | Checks that the pet is there and secured in the car | Advice only — the sitter can continue |
 | The day ends | Suggests chips from check-ins and photos, then writes the daily note | The sitter fixes the chips, adds a line, and approves |
 | The stay ends | Writes the pet's Life Record and indexes it for next time | The owner reads it |
 | The next inquiry arrives | Retrieves that Life Record, so even a new sitter starts informed | — |
@@ -169,15 +169,15 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 | **Booking** | 11 · Sitter | After the meeting, taps **Confirm booking** — or declines with a reason chip. ✅ confirm · ✅ reason chips |
 | | 12 · Owner | Reviews the final quote, signs the consent forms, and **pays (demo)**. A "Booked and paid" card says what happens next. ✅ Or taps **Not this sitter** with a reason chip, which releases the dates. ✅ |
 | | 13 · System | Opens Chloe's address, visitor parking, and a packing list to the owner. ✅ |
-| **Care & Pet Transit** | 14 · Owner | On drop-off day taps **Start trip** and agrees to share live location until arrival. Declining is fine — the meeting place still shows, with **Open in Google Maps**. 🚧 |
-| | 15 · System | Tells Chloe that Robert is on the way, shows the live map and ETA, and announces the arrival with visitor-parking directions. 🚧 |
-| | 16 · Sitter | Receives the pets at the meeting place and taps **Received**; one photo lets a vision model confirm the pet is there. The owner hears "care has started". ✅ Received · 🚧 photo check |
+| **Care & Pet Transit** | 14 · Owner | On drop-off day taps **Start trip** and agrees to share live location until arrival. Declining is fine — the meeting place still shows, with **Open in Google Maps**. ✅ |
+| | 15 · System | Tells Chloe that Robert is on the way, shows the live map and ETA, and announces the arrival with the visitor-parking card. ✅ |
+| | 16 · Sitter | Receives the pets at the meeting place and taps **Received**. The owner hears "care has started". ✅ |
 | | 17 · Sitter | During the stay: sees the checklist and Heads-up cards, gets a reminder when a task is due, and taps to tick tasks (the pill, with a photo) and quick check-ins — meal, potty, walk, mood — plus photos. ✅ |
 | | 18 · Owner | Sees every update live and the photos in the Feed — no need to ask. ✅ |
 | | 19 · System → Sitter | Each evening, suggests chips from the day's records and photos. The sitter turns off any that are wrong and adds one short line; Nemotron writes the **daily note** in her voice; she approves it and it is posted. The album sorts itself into Meals · Walks · Naps. ✅ |
 | | 20 · Owner | Reads the daily note. Reacting or asking a question — with an AI-drafted reply the sitter approves — comes later 🔭. |
-| **Completion** | 21 · Owner | On pick-up day taps **Start trip** and shares location. 🚧 |
-| | 22 · Sitter | Sees the ETA, meets the owner at the agreed spot, and taps **Returned** after a confirm sheet. ✅ Returned · 🚧 confirm sheet |
+| **Completion** | 21 · Owner | On pick-up day taps **Start trip** and shares location. ✅ |
+| | 22 · Sitter | Sees the ETA, meets the owner at the agreed spot, and taps **Returned** after a confirm sheet (a warning if it is not yet pick-up time). ✅ |
 | | 23 · System | Tells the owner *"Max and Mochi are home safe 🏠"* and asks for a review. ✅ |
 | | 24 · Owner | Reviews the sitter (stars, preset phrases, own words) and can add her to favorites. ✅ |
 | | 25 · System | Nemotron turns the stay into the pet's **Life Record** and indexes it, so the next sitter's request card, reply, and checklist already know the pets. ✅ |
@@ -191,8 +191,8 @@ Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic 
 | The owner decides against the sitter after meeting | **Not this sitter** with a reason chip; the dates are released | ✅ |
 | Either side wants to skip the Meet & Greet | The other must agree — if not, the booking is cancelled and the owner finds another sitter | ✅ |
 | No Meet & Greet time within 2 days | Both are asked to set one, skip it, or decline; after 3 more days of silence the request is cancelled and the dates are released | ✅ |
-| No pet or crate in the handoff photo | Retake it, or continue with a reason (advice only) | 🚧 |
-| The owner declines to share location | No live map — the meeting place is shown with **Open in Google Maps** | 🚧 |
+| No pet or crate in the handoff photo | Retake it, or continue with a reason (advice only) | 🔭 |
+| The owner declines to share location | No live map — the meeting place is shown with **Open in Google Maps** | ✅ |
 | The AI is unavailable | A plain-list draft instead of an error | ✅ |
 | The sitter drives to the owner's home | The entry codes open only 2 hours before, and the owner is told when the sitter first opens them | ✅ |
 
@@ -211,7 +211,7 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 | ① Inquiry | Inquiry auto-reply — a draft in the sitter's tone, grounded in the sitter's calendar, server-side quote, house policy, and the pet's Life Record. About 3 s (median) | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` + Qwen3 Embedding | Fast enough to answer in seconds; facts and prices come from the server, and every amount in the draft is checked against the quote |
 | ① ⑤ Retrieval | Embeddings for the RAG knowledge base (Life Records, policies, past questions) | `Qwen/Qwen3-Embedding-8B` (1024-dim) | The embedding model on Token Factory; stored in Supabase pgvector |
 | ② Meet & Greet | Care & medication request → structured mission checklist | `nvidia/nemotron-3-super-120b-a12b` | Reliable structure for times, doses, and cautions |
-| ④ Transit 🚧 | Handoff photo check — pet visible, crate or seatbelt in the car | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory |
+| ④ Transit 🔭 | Handoff photo check — pet visible, crate or seatbelt in the car (server API ready, not in the app yet) | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory |
 | ④ Care | Photo descriptions → warm daily note from the 5-second check | `openbmb/MiniCPM-V-4_5` → `nvidia/nemotron-3-super-120b-a12b` | Few-shot tone from 3 years of (anonymized) real reports |
 | ④ Album | Caption + category (Meals · Walks · Naps · Play) | `openbmb/MiniCPM-V-4_5` | One call per photo (about 1 s), no sitter typing |
 | ④ Treat guard 🚧 *(stretch)* | Allergen & hidden-ingredient reasoning | `nvidia/Nemotron-3-Ultra-550b-a55b` | Safety-critical → strongest reasoning |
@@ -232,7 +232,7 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 
 - **Entry info unlocks on time.** Lockbox and buzzer codes are readable only by the booked sitter, from 2 hours before the visit until the stay ends, and the owner is notified when they open. They never enter AI prompts or the RAG knowledge base.
 - **Need-to-know access.** A sitter sees an owner's name and the pet asked about only for as long as the question or booking is live.
-- **Location only while moving.** Trips share one live position, only with the other person on the booking, and stop when you arrive. No route history is stored. Declining is fine — the meeting place is still shown. 🚧
+- **Location only while moving.** Trips share one live position, only with the other person on the booking, and stop when you arrive. No route history is stored. Declining is fine — the meeting place is still shown. ✅
 - **The AI never invents facts.** Prices, dates, and availability come from the database; daily notes and Life Records use only what was recorded that day; a person approves every AI message that reaches the other side.
 - **AI drafts can be wrong, and are not veterinary advice.** The pet profile (🚧) is the owner's description, **not a behavior assessment**.
 - **No real personal data.** Demo accounts, pets, addresses, and codes are fictional; real messages used for tone are anonymized before they reach a prompt.
@@ -258,7 +258,7 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
           │     ├── Nemotron Nano   → inquiry auto-replies, profile facts from speech
           │     ├── Nemotron Super  → checklists, daily notes, Life Records
           │     ├── Nemotron Ultra  → treat safety reasoning (stretch)
-          │     ├── MiniCPM-V       → captions, album sorting, handoff checks
+          │     ├── MiniCPM-V       → captions, album sorting, daily-note photo chips
           │     └── Qwen3 Embedding → RAG retrieval
           ├── Google Calendar → Google Meet links + invites (video Meet & Greet)
           ├── OpenStreetMap → trip map (view only)

@@ -366,6 +366,57 @@ test.describe("pet transit", () => {
     await expect(app(page).getByTestId("trip-last-seen")).toContainText("Last location 3 min ago");
   });
 
+  test("two people at once: the sitter's drive shows up live for the owner, ends in an arrival, and Received closes it", async ({ browser }) => {
+    test.setTimeout(150_000);
+    // One shared database, two browsers: what the sitter does is what the owner's screen reads next.
+    const sitterCtx = await browser.newContext();
+    const ownerCtx = await browser.newContext();
+    const sitterPage = await sitterCtx.newPage();
+    const ownerPage = await ownerCtx.newPage();
+    await stubTiles(sitterPage);
+    await stubTiles(ownerPage);
+    const { db } = await mockSupabase(sitterPage, [OWNER, SITTER]);
+    await mockSupabase(ownerPage, [OWNER, SITTER], { db });
+    seed(db, "owner_home"); // the sitter drives to the owner's home
+    db.owner_home_access.push({ owner_id: OWNER.id, entry_steps: "Side door", lockbox_code: "4821", buzzer: "1204" });
+    const sitter = app(sitterPage);
+    const owner = app(ownerPage);
+
+    await signIn(ownerPage, OWNER);
+    await expect(owner.getByTestId("active-trip-card")).toHaveCount(0); // nothing is running yet
+
+    await signIn(sitterPage, SITTER);
+    await sitterPage.goto(`/sitter/bookings/${BOOKING}`);
+    await sitter.getByTestId("trip-start").click();
+    await sitter.getByTestId("share-trip-sheet-simulate").click();
+    await expect(sitterPage).toHaveURL(/\/trip$/);
+
+    // The owner's Home picks the trip up without a refresh, and the Trip screen follows the drive.
+    await expect(owner.getByTestId("active-trip-card")).toContainText("Chloe is on the way", { timeout: 20_000 });
+    await owner.getByTestId("active-trip-card").click();
+    await expect(ownerPage).toHaveURL(/\/owner\/bookings\/.*\/trip$/);
+    await expect(owner.getByTestId("trip-map")).toBeVisible();
+    await expect(owner.getByTestId("trip-sharing-banner")).toHaveCount(0); // it is Chloe's location, not mine
+    const first = await owner.getByTestId("trip-eta").innerText();
+    await expect.poll(() => owner.getByTestId("trip-eta").innerText(), { timeout: 30_000 }).not.toBe(first); // the distance shrinks
+
+    await expect(owner.getByTestId("trip-eta")).toContainText("Chloe has arrived", { timeout: 70_000 });
+    await expect(owner.getByTestId("trip-arrived-card")).toBeVisible();
+    await expect(sitter.getByTestId("trip-screen").getByTestId("entry-info-open")).toBeVisible();
+
+    // Received on the sitter's booking page: the trip ends for both.
+    await sitter.getByTestId("trip-open-booking").click();
+    await sitter.getByTestId("handoff-received").click();
+    await expect(sitter.getByTestId("toast")).toContainText("checked in");
+    await expect(owner.getByTestId("trip-none")).toBeVisible({ timeout: 20_000 });
+    expect(db.trips[0]).toMatchObject({ status: "completed", last_lat: null, eta_at: null });
+    await owner.getByTestId("trip-open-booking").click();
+    await expect(owner.getByTestId("handoff-drop_off")).toContainText("Received");
+
+    await sitterCtx.close();
+    await ownerCtx.close();
+  });
+
   test("the map is view only: dragging over it scrolls the screen, and ± are buttons", async ({ page }) => {
     await stubTiles(page);
     await page.goto("/dev/gestures");

@@ -94,6 +94,20 @@
 5. 지도 화면이 데스크톱 프레임에서 마우스만으로 동작하고 드래그가 스크롤을 막지 않음 (DESIGN.md §7.7)
 6. 동의 거부 경로(6B.8)와 Returned 확인 시트·이른 Returned 경고(FB-9, 6B.6)를 Playwright로 확인
 
+
+### 확인 결과 (2026-10-12, S8)
+
+| DoD | 결과 |
+| :--- | :--- |
+| 1 두 창에서 새로고침 없이 ETA · 도착 반영 | 🤖 `transit.spec.ts`의 두 브라우저 테스트(같은 DB, 4초 폴링 · Realtime은 e2e에서 안 씀)로 확인. **사람이 두 창 · 두 폰으로 확인하는 일은 남음** (test-guide TRIP-13 · 22) |
+| 2 위치 프라이버시 | 스모크 L: 끝나면 위치 null, 제3자는 `trips` 0행, 클라이언트는 직접 쓰기 불가, `complete_handoff`도 위치를 지움 |
+| 3 출입 정보 시간 조건 | 03C 그대로(`EntryInfoCard` → `get_home_access`). Start trip이 인수인계 2시간 전부터라 도착은 항상 해제 이후 — 잠긴 카드는 03C 테스트가 확인 |
+| 4 pytest | `handoff-check`(비당사자 403 · crate=false → warning · 타임아웃 → unchecked) 통과. **앱에는 연결하지 않음(2026-10-11)** |
+| 5 데스크톱 프레임 마우스 | `/dev/gestures`의 지도 위 드래그 = 화면 스크롤, ± 버튼 확인 |
+| 6 거부 경로 · Returned 시트 | 공유 없이 시작 · 브라우저 거절 · Returned 확인 시트와 이른 경고 모두 Playwright로 확인 |
+
+**남은 사람 일:** 실제 폰 GPS 1회(Vercel URL, Start trip → 위치 팝업 → 상대 창에 지도 · ETA), 두 계정 두 창 시나리오, 머지 때 `012` 호스팅 적용(요청 시).
+
 ---
 
 ## 작업 순서 — 한 PR · 단계별 커밋 (CLAUDE.md §4.1a · §4.2)
