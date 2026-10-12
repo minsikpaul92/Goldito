@@ -5,7 +5,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 /** `count` > 0 shows a small number badge after the label (FB-30: "Requests (1)" wrapped to two lines). */
-type Option<T extends string> = { value: T; label: string; count?: number };
+type Option<T extends string> = { value: T; label: string; count?: number; /** This one can't be picked. */ disabled?: boolean };
 
 type Props<T extends string> = {
   options: Option<T>[];
@@ -42,10 +42,10 @@ export function SegmentedControl<T extends string>({
             accessibilityRole="radio"
             accessibilityLabel={count > 0 ? `${option.label}, ${count}` : option.label}
             aria-checked={selected}
-            disabled={disabled}
+            disabled={disabled || option.disabled}
             onPress={() => onChange(option.value)}
             testID={testID ? `${testID}-${option.value}` : undefined}
-            style={[styles.segment, scrollable && styles.scrollSegment, selected && styles.selected, disabled && !selected && styles.dimmed]}
+            style={[styles.segment, scrollable && styles.scrollSegment, selected && styles.selected, (disabled || option.disabled) && !selected && styles.dimmed]}
           >
             <Text
               numberOfLines={1}

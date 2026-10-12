@@ -208,9 +208,13 @@ export default function SitterBookingDetail() {
     setDeclineNote("");
   };
 
-  const send = (change: HandoffChange) => {
-    setSheet(null);
-    void run(() => proposeHandoff(booking.id, change.kind, change.at, change.place), `New time sent to ${owner}`);
+  // The sheet sends, shows what went wrong inside itself, and stays open until everything went through (FB-5).
+  const sendChange = async (change: HandoffChange) => {
+    try {
+      await proposeHandoff(booking.id, change.kind, change.at, change.place);
+    } catch (err) {
+      throw new Error(actionError(err, owner));
+    }
   };
 
   const handoffNote = (kind: HandoffKind) => {
@@ -310,7 +314,7 @@ export default function SitterBookingDetail() {
               />
             </View>
           ) : null}
-          {booking.status === "confirmed" ? (
+          {booking.status === "confirmed" && !booking.pickUp?.completedAt ? (
             <TextButton
               label="Change time or place"
               onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
@@ -512,7 +516,12 @@ export default function SitterBookingDetail() {
           allowPlace={sheet.mode === "change"}
           title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
           submitLabel={`Send to ${owner}`}
-          onSubmit={send}
+          onSend={sendChange}
+          onChanged={() => void load()}
+          onDone={() => {
+            setSheet(null);
+            toast.show(`New time sent to ${owner}`);
+          }}
           onClose={() => setSheet(null)}
         />
       ) : null}

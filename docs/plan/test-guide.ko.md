@@ -154,7 +154,7 @@
 | 영역 | 결과 | 비고 |
 | :--- | :--- | :--- |
 | 예약 요청 → 수락 → Confirmed (BOOK-1) | 🟡 | 진행은 됨. 실시간 갱신 ❌ (FLOW-1) |
-| 시간 · 장소 변경 (BOOK-2) | ❌ | FLOW-7 · 8 · 9 |
+| 시간 · 장소 변경 (BOOK-2) | 🤖 (FLOW-7 · 8 · 9) · 사람 확인 대기 | 시트가 Drop-off · Pick-up 값을 각각 유지하고 한 번에 Send, 끝난 인수인계는 비활성 (FB-5 · FB-6) — 사람이 다시 확인 필요 |
 | 체크아웃 · 결제 (BOOK-5) | ❌ → 다시 확인 필요 | 요금표 없음이 원인이었음 — **10/08 Chloe 요금 행을 임시로 넣어 풀림**(견적 $268.13 확인). 예약을 새로 만들거나 기존 예약의 Finish booking을 다시 눌러 보세요 (FLOW-3) |
 | Received → Returned (BOOK-4) | 🤖 (FLOW-5 · 6) · 사람 확인 대기 | 시터 Bookings **In progress** 탭 추가 (FB-8) — 사람이 다시 확인 필요 |
 | 날짜 · 시간 입력 통일 (FLOW-10) · 이름 옆 역할 표시 (FLOW-11) · 입력칸 힌트 (FLOW-12) | ❌ | 모양 · 통일 |
@@ -291,7 +291,7 @@
 | ID | 확인 내용 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- |
 | BOOK-1 | 예약 요청 → 시터 수락 → 확정. **이미 만난 사이(단골)** 는 버튼이 **Accept** 하나, **처음 만나는 사이**는 BOOK-8 ~ 9의 **Yes, let's meet → Meet & Greet → Confirm booking** (같은 동작, 이름만 다름) | 🤖 `booking` · `sitter-bookings` · `meet-greet` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
-| BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) |
+| BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) → 고침, 다시 확인 필요 |
 | BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Yes, let's meet(BOOK-9)를 눌러 홀드가 걸려 있어야 함 — 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
 | BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
@@ -437,9 +437,9 @@
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음. 탭은 가로 스크롤(5개), 진행 중 예약이 있으면 그 탭으로 열림. 픽업 시각이 지났는데 Returned 안 된 옛 예약은 Upcoming을 열게 하지 않음 (FB-8 · L-2) | 🤖 `sitter-bookings.spec.ts` (2개) | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸("Return Max?" · 되돌릴 수 없고 Life Record가 써진다는 문구 · 오늘 남은 할 일 수 · 알림장 미발송이면 "Send today's note first"). 합의된 픽업 **30분 전보다 이르면** "It's not pick-up time yet … Do you really want to return Max now?"가 더 붙고 **Return이 빨간 바탕 · 흰 글씨**(막지는 않음, 2026-10-11 결정). 30분 전부터는 경고 없이 평소 버튼. **Return**을 눌러야만 처리, **Cancel**은 아무것도 안 바꿈 (FB-9) | 🤖 `handoff.spec.ts` (5개) | ❌ 10/08 민식 (바로 처리됨) → 다시 확인 필요 |
-| FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 새로 필요 | ❌ 10/08 민식 |
-| FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 저장 · 전송. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 새로 필요 | ❌ 10/08 민식 |
-| FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성/숨김, 에러("That handoff already happened.")가 안 나옴 (FB-6) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
+| FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 전송(새 드롭오프가 옛 픽업보다 늦으면 픽업을 먼저). 하나가 실패하면 시트가 열린 채로 "Drop-off was sent. Pick-up didn't go through …"를 보이고 Send가 나머지만 다시 보냄. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 🤖 `negotiation.spec.ts` (4개) | ❌ 10/08 민식 → 다시 확인 필요 |
+| FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성("Drop-off · done ✓"), 에러("That handoff already happened.")가 안 나옴. 픽업까지 끝났으면 Change time or place 버튼이 없음 (FB-6) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
 | FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
