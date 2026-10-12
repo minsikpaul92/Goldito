@@ -162,6 +162,111 @@ test.describe("negotiation", () => {
     await expect(screen.getByTestId("proposal-pick_up")).toHaveCount(0);
   });
 
+  test("the change sheet keeps each handoff's edits while flipping between them, and Send proposes both (FB-5)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    await screen.getByTestId("change-time-plus").click(); // pick-up 5:00 → 5:15 PM
+    await screen.getByTestId("change-kind-drop_off").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("8:30 AM");
+    await screen.getByTestId("change-time-plus").click(); // drop-off 8:30 → 8:45 AM
+    await screen.getByTestId("change-kind-pick_up").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("5:15 PM"); // kept
+    await screen.getByTestId("change-kind-drop_off").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("8:45 AM"); // kept
+
+    await screen.getByTestId("change-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    await expect(screen.getByTestId("change-sheet")).toHaveCount(0);
+    expect(db.proposals.map((p) => [p.p_kind, p.p_at])).toEqual([
+      ["drop_off", "2030-10-05T12:45:00.000Z"],
+      ["pick_up", "2030-10-08T21:15:00.000Z"],
+    ]);
+  });
+
+  test("Send goes pick-up first when the new drop-off lands after the old pick-up", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    for (let i = 0; i < 6; i++) await screen.getByTestId("change-day-plus").click(); // pick-up Oct 8 → Oct 14
+    await screen.getByTestId("change-kind-drop_off").click();
+    for (let i = 0; i < 5; i++) await screen.getByTestId("change-day-plus").click(); // drop-off Oct 5 → Oct 10, after the old pick-up
+    await screen.getByTestId("change-send").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    expect(db.proposals.map((p) => p.p_kind)).toEqual(["pick_up", "drop_off"]);
+  });
+
+  test("Close sends and saves nothing, and the next sheet starts from the booking again (FB-5)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    await screen.getByTestId("change-time-plus").click();
+    await screen.getByTestId("change-sheet-close").click();
+    await expect(screen.getByTestId("change-sheet")).toHaveCount(0);
+    expect(db.proposals).toEqual([]);
+
+    await screen.getByTestId("change-booking").click();
+    await expect(screen.getByTestId("change-time-value")).toHaveText("5:00 PM");
+    await expect(screen.getByTestId("change-send")).toBeDisabled(); // nothing changed yet
+  });
+
+  test("when the second proposal fails the sheet stays open, says which one went, and Send retries only the rest", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    let calls = 0;
+    await page.route("**/rpc/propose_handoff", (route) => {
+      calls += 1;
+      if (calls === 2) {
+        return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "P0001", message: "sitter_unavailable", details: null }) });
+      }
+      return route.fallback();
+    });
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    await screen.getByTestId("change-time-plus").click();
+    await screen.getByTestId("change-kind-drop_off").click();
+    await screen.getByTestId("change-time-plus").click();
+    await screen.getByTestId("change-send").click();
+
+    await expect(screen.getByTestId("change-error")).toContainText("Drop-off was sent. Pick-up didn't go through: Chloe no longer has room");
+    await expect(screen.getByTestId("change-sheet")).toBeVisible();
+    expect(db.proposals.map((p) => p.p_kind)).toEqual(["drop_off"]);
+
+    await screen.getByTestId("change-send").click(); // retries only the pick-up
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    expect(db.proposals.map((p) => p.p_kind)).toEqual(["drop_off", "pick_up"]);
+  });
+
+  test("a handoff that already happened can't be picked, and a finished stay has no change button (FB-6)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    db.booking_handoffs.find((h) => h.kind === "drop_off")!.completed_at = "2030-10-05T12:40:00.000Z";
+    const screen = await openDetail(page, OWNER);
+
+    await screen.getByTestId("change-booking").click();
+    await expect(screen.getByTestId("change-kind-drop_off")).toBeDisabled();
+    await expect(screen.getByTestId("change-kind-drop_off")).toContainText("done ✓");
+    await expect(screen.getByTestId("change-kind-pick_up")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("change-time-plus").click();
+    await screen.getByTestId("change-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    expect(db.proposals.map((p) => p.p_kind)).toEqual(["pick_up"]);
+
+    // Once the pets are home there is nothing left to change.
+    db.booking_handoffs.find((h) => h.kind === "pick_up" && h.status === "agreed")!.completed_at = "2030-10-08T21:00:00.000Z";
+    await page.reload();
+    await expect(screen.getByTestId("handoff-pick_up")).toContainText("Returned");
+    await expect(screen.getByTestId("change-booking")).toHaveCount(0);
+  });
+
   test("house sitting: after confirm only the time can change — the place stays at the owner's home", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", [
