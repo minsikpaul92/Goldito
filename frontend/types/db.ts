@@ -22,6 +22,9 @@ export type Pet = {
 
 export type OwnerProfile = {
   home_address: string | null;
+  /** The home point on the map (012, 6B) — where trips to or from this home end; not shown to anyone as numbers. */
+  home_lat: number | null;
+  home_lng: number | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   vet_clinic_name: string | null;
@@ -37,6 +40,8 @@ export type SitterProfile = {
   experience_years: number | null;
   home_notes: string | null;
   home_address: string | null;
+  home_lat: number | null;
+  home_lng: number | null;
   /** At least one of boarding / house_sitting (004, D28). */
   services: ("boarding" | "house_sitting")[];
   meet_spots: string[];
@@ -134,4 +139,28 @@ export type NotificationRow = {
   body: string | null;
   read_at: string | null;
   created_at: string;
+};
+
+export type TripStatus = "en_route" | "arrived" | "completed" | "cancelled";
+
+/** One handoff trip (012, 6B): the traveller's LAST position only — erased when the trip ends. */
+export type Trip = {
+  id: string;
+  booking_id: string;
+  handoff_kind: "drop_off" | "pick_up";
+  traveler_id: string;
+  status: TripStatus;
+  dest_lat: number | null;
+  dest_lng: number | null;
+  last_lat: number | null;
+  last_lng: number | null;
+  last_at: string | null;
+  eta_at: string | null;
+  distance_m: number | null;
+  simulated: boolean;
+  /** false = started without sharing a live position: no map, no ETA (the meeting place is shown instead). */
+  sharing: boolean;
+  started_at: string;
+  arrived_at: string | null;
+  ended_at: string | null;
 };

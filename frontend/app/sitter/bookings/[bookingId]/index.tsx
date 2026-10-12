@@ -2,33 +2,35 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { bookingBadges, handoffLine } from "../../../components/BookingCard";
-import { BookingStageBar } from "../../../components/BookingStageBar";
-import { EntryInfoCard } from "../../../components/EntryInfoCard";
-import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
-import { MeetGreetCard } from "../../../components/MeetGreetCard";
-import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import { Chip } from "../../../components/ui/Chip";
-import { ChipSuggestions } from "../../../components/ChipSuggestions";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
-import { TextField } from "../../../components/ui/TextField";
-import { composeComment } from "../../../features/completion/reviewPresets";
-import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { formatDay, formatInstant, formatTime } from "../../../features/schedule/dates";
-import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
-import { releaseVideoLink } from "../../../lib/meetGreet";
+import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { EntryInfoCard } from "../../../../components/EntryInfoCard";
+import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
+import { MeetGreetCard } from "../../../../components/MeetGreetCard";
+import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
+import { TripEntry } from "../../../../components/TripEntry";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import { Chip } from "../../../../components/ui/Chip";
+import { ChipSuggestions } from "../../../../components/ChipSuggestions";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { TextField } from "../../../../components/ui/TextField";
+import { composeComment } from "../../../../features/completion/reviewPresets";
+import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
+import { formatDay, formatInstant, formatTime } from "../../../../features/schedule/dates";
+import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
   awaitingFirstYes,
   cancelBooking,
   CHECK_IN_WINDOW_MS,
+  EARLY_RETURN_MS,
   expressInterest,
   HandoffKind,
   PetCare,
@@ -42,15 +44,16 @@ import {
   requestExpired,
   respondBooking,
   respondHandoff,
-} from "../../../lib/bookings";
-import { PetRecordFold } from "../../../components/PetRecordFold";
-import { ReceivedReview } from "../../../components/ReceivedReview";
-import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
-import { requestLifeRecord } from "../../../features/completion/completionApi";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useOnBookingChange } from "../../../providers/NotificationsProvider";
-import { useToast } from "../../../providers/ToastProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../lib/bookings";
+import { PetRecordFold } from "../../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../../components/ReceivedReview";
+import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
+import { requestLifeRecord } from "../../../../features/completion/completionApi";
+import { ReturnChecks, loadReturnChecks } from "../../../../features/completion/returnChecks";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
+import { useToast } from "../../../../providers/ToastProvider";
+import { Theme } from "../../../../theme/themes";
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 
@@ -109,6 +112,8 @@ export default function SitterBookingDetail() {
   const [declineReasons, setDeclineReasons] = useState<string[]>([]);
   const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmReturn, setConfirmReturn] = useState(false);
+  const [returnChecks, setReturnChecks] = useState<ReturnChecks | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -178,6 +183,9 @@ export default function SitterBookingDetail() {
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
+  // Returned is allowed any time (a stay can end early). From 30 minutes before the agreed pick-up on it is the normal
+  // case; earlier than that the sitter is asked "really?" and the button turns red.
+  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at) - EARLY_RETURN_MS;
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -312,6 +320,8 @@ export default function SitterBookingDetail() {
           ) : null}
         </Card>
 
+        <TripEntry booking={booking} role="sitter" addresses={addresses} />
+
         {pets.map((pet) => (
           <Card key={pet.id} style={styles.block} testID={`pet-care-${pet.name}`}>
             <Text style={styles.label}>
@@ -394,13 +404,11 @@ export default function SitterBookingDetail() {
           ) : !booking.pickUp?.completedAt ? (
             <Button
               label={busy ? "Saving…" : "Returned"}
-              onPress={() =>
-                void run(async () => {
-                  await completeHandoff(booking.id, "pick_up");
-                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
-                  void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe — ${owner} gets a notice`)
-              }
+              onPress={() => {
+                setReturnChecks(null);
+                setConfirmReturn(true);
+                void loadReturnChecks(booking.pets, booking.sitterId).then(setReturnChecks).catch(() => undefined);
+              }}
               disabled={busy}
               testID="handoff-returned"
             />
@@ -418,6 +426,58 @@ export default function SitterBookingDetail() {
           ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmReturn}
+        title={`Return ${petNames}?`}
+        onClose={() => setConfirmReturn(false)}
+        testID="return-sheet"
+        footer={
+          <View style={styles.returnActions}>
+            <Button
+              label="Return"
+              variant={returnsEarly ? "danger" : "primary"}
+              onPress={() => {
+                setConfirmReturn(false);
+                void run(async () => {
+                  await completeHandoff(booking.id, "pick_up");
+                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                  void requestLifeRecord(booking.id).catch(() => undefined);
+                }, `${petNames} home safe — ${owner} gets a notice`);
+              }}
+              testID="return-confirm"
+            />
+            <Button label="Cancel" variant="secondary" onPress={() => setConfirmReturn(false)} testID="return-cancel" />
+          </View>
+        }
+      >
+        {returnsEarly && booking.pickUp ? (
+          <Text style={styles.warning} testID="return-early-warning">
+            {`It's not pick-up time yet — pick-up is ${formatInstant(booking.pickUp.at)}. Do you really want to return ${petNames} now?`}
+          </Text>
+        ) : null}
+        <Text style={styles.body}>{`${petNames} ${booking.pets.length > 1 ? "go" : "goes"} home with ${owner}. This can't be undone, and it writes the Life Record.`}</Text>
+        {returnChecks && returnChecks.tasksLeft > 0 ? (
+          <Text style={styles.body} testID="return-tasks-left">
+            {`• ${returnChecks.tasksLeft} care task${returnChecks.tasksLeft === 1 ? "" : "s"} still open today`}
+          </Text>
+        ) : null}
+        {returnChecks && returnChecks.petsWithoutNote.length > 0 ? (
+          <>
+            <Text style={styles.body} testID="return-note-missing">
+              {`• You haven't sent today's note for ${returnChecks.petsWithoutNote.join(" & ")}`}
+            </Text>
+            <TextButton
+              label="Send today's note first"
+              onPress={() => {
+                setConfirmReturn(false);
+                router.push("/sitter/diary");
+              }}
+              testID="return-send-note"
+            />
+          </>
+        ) : null}
+      </Sheet>
 
       <Sheet
         visible={confirmCancel}
@@ -544,6 +604,9 @@ const makeStyles = (theme: Theme) =>
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
+    },
+    returnActions: {
+      gap: theme.spacing.sm,
     },
     warning: {
       fontSize: theme.fontSize.small,

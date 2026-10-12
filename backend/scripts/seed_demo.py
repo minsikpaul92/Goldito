@@ -24,6 +24,7 @@ from app.services.demo_accounts import (
     DEMO_USERS,
     DemoUser,
     check_sitter_rates,
+    ensure_home_point,
     ensure_sitter_rates,
     find_user_id,
 )
@@ -93,6 +94,8 @@ def main() -> int:
                 problem = check_sitter_rates(client, user_id)
             else:
                 action = f"{action}, rates {ensure_sitter_rates(client, user_id)}"
+        if user_id and problem is None and not args.check:
+            ensure_home_point(client, demo.role, user_id)
         all_ok = all_ok and problem is None
         status = "ok" if problem is None else problem
         print(f"{demo.email:<26} {demo.role:<6} {action:<8} {status}")

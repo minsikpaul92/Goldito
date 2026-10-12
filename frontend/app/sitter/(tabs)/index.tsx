@@ -2,6 +2,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { ActiveTripCard } from "../../../components/ActiveTripCard";
 import { placeLabel } from "../../../components/BookingCard";
 import { SitterDashboard } from "../../../components/SitterDashboard";
 import { Card } from "../../../components/ui/Card";
@@ -111,6 +112,7 @@ export default function SitterHome() {
 
   return (
     <Screen contentStyle={styles.content} testID="sitter-home">
+      <ActiveTripCard role="sitter" />
       {requests > 0 ? (
         <Pressable
           accessibilityRole="button"

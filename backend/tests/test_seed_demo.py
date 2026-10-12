@@ -39,3 +39,13 @@ def test_check_reports_a_sitter_with_no_prices():
 
     seeded = FakeDB(sitter_rates=[{"sitter_id": SITTER}])
     assert seed_demo.check_sitter_rates(seeded, SITTER) is None
+
+
+def test_each_demo_account_gets_a_home_point_for_its_role():
+    db = FakeDB(owner_profiles=[{"id": "o"}], sitter_profiles=[{"id": SITTER}])
+
+    seed_demo.ensure_home_point(db, "owner", "o")
+    seed_demo.ensure_home_point(db, "sitter", SITTER)
+
+    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6644, -79.3573)
+    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6477, -79.4194)

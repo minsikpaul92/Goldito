@@ -3775,4 +3775,346 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- L (012, Phase 06B, 6B.1): Pet Transit — home points, trips, start / update / end
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  scout uuid;
+  v_b uuid;
+  v_trip public.trips;
+  v_err text;
+  v_n int;
+  v_eta_title text;
+  v_media uuid;
+  v_check uuid;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Scout') returning id into scout;
+  v_b := _t_booking(robert, chloe, array[scout], now() + interval '400 days', now() + interval '402 days', 'confirmed');
+
+  -- Home points: own row only, both coordinates or neither, never in the public sitter list
+  perform _t_as(chloe);
+  update public.sitter_profiles set home_lat = 43.6532, home_lng = -79.3832 where id = chloe;
+  perform _t_ok((select home_lat from public.get_my_sitter_profile()) = 43.6532, 'L: a sitter saves and reads their own home point');
+  begin
+    update public.sitter_profiles set home_lat = null where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: a home point needs both coordinates');
+  begin
+    update public.sitter_profiles set home_lat = 91, home_lng = 0 where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: …and real ones');
+  perform _t_as(robert);
+  begin
+    perform home_lat from public.sitter_profiles where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: another account cannot read a sitter''s home point from the profile list');
+  update public.sitter_profiles set home_lat = 0, home_lng = 0 where id = chloe;
+  perform _t_as(chloe);
+  perform _t_ok((select home_lat from public.get_my_sitter_profile()) = 43.6532, 'L: …nor change it');
+  perform _t_as(robert);
+  update public.owner_profiles set home_lat = 43.7, home_lng = -79.4 where id = robert;
+
+  -- Start rules
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', 'L: no trip before the booking is paid');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_b;
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_too_early', 'L: …nor earlier than 2 h before the agreed time');
+  perform _t_as(null);
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour' where booking_id = v_b and kind = 'drop_off';
+
+  perform _t_as(chloe);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_traveler', 'L: at the sitter''s home the owner travels, not the sitter');
+  perform _t_as(joy);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: a third party cannot start a trip');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'pick_up');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'drop_off_not_completed', 'L: no pick-up trip before the drop-off is done');
+  begin
+    perform start_trip(v_b, 'drop_off', false, 91, 0);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', 'L: a start position must be a real point');
+
+  -- Owner drives: Robert starts about 2.2 km away
+  v_trip := start_trip(v_b, 'drop_off', true, 43.6732, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.traveler_id = robert and v_trip.simulated
+      and v_trip.dest_lat = 43.6532 and v_trip.distance_m between 2200 and 2250 and v_trip.eta_at > now(),
+    'L: Start trip → en route, destination = the sitter''s home, distance and ETA from the first point');
+  perform _t_as(null);
+  select title into v_eta_title from public.notifications where user_id = chloe and type = 'trip_started' and ref_id = v_trip.id;
+  perform _t_ok(v_eta_title like 'Robert is on the way — ETA % 🚗', 'L: the sitter is told, with the ETA');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_active', 'L: one live trip per handoff');
+
+  -- Who sees and writes the row
+  perform _t_ok((select count(*) from public.trips where booking_id = v_b) = 1, 'L: the traveler reads the trip');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.trips where booking_id = v_b) = 1, 'L: …and so does the other person on the booking');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.trips) = 0, 'L: a third party sees no trip');
+  perform _t_as(robert);
+  begin
+    update public.trips set last_lat = 0, last_lng = 0 where id = v_trip.id;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: positions are not written around update_trip_position');
+  begin
+    insert into public.trips (booking_id, handoff_kind, traveler_id) values (v_b, 'pick_up', robert);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: trips are not inserted around start_trip');
+
+  -- Positions
+  perform _t_as(chloe);
+  begin
+    perform update_trip_position(v_trip.id, 43.66, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: only the traveler shares a position');
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6732 and v_trip.status = 'en_route', 'L: a call within a second of the last one is ignored');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.status = 'en_route' and v_trip.distance_m between 770 and 790,
+    'L: a later position replaces the last one; still far → en route');
+  begin
+    perform update_trip_position(v_trip.id, null, 0);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', 'L: a position must be a real point');
+
+  -- Within 150 m → arrived, both told once, no more positions stored
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832);
+  perform _t_ok(v_trip.status = 'arrived' and v_trip.arrived_at is not null and v_trip.distance_m between 100 and 120,
+    'L: within 150 m of the destination → arrived');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6535, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6542, 'L: after arrival positions are no longer stored');
+  perform _t_as(null);
+  select count(*) into v_n from public.notifications where type = 'trip_arrived' and ref_id = v_trip.id;
+  perform _t_ok(v_n = 2 and exists (select 1 from public.notifications where user_id = chloe and type = 'trip_arrived' and title = 'Robert has arrived 🚗')
+      and exists (select 1 from public.notifications where user_id = robert and type = 'trip_arrived'),
+    'L: both are told, once');
+
+  -- End: only the traveler, and the position is erased
+  perform _t_as(chloe);
+  begin
+    perform end_trip(v_trip.id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: only the traveler ends the trip');
+  perform _t_as(robert);
+  v_trip := end_trip(v_trip.id);
+  perform _t_ok(v_trip.status = 'completed' and v_trip.ended_at is not null and v_trip.last_lat is null
+      and v_trip.last_lng is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'L: End trip → completed, position / ETA / distance erased');
+  perform _t_ok((end_trip(v_trip.id)).status = 'completed', 'L: ending twice is harmless');
+  begin
+    perform update_trip_position(v_trip.id, 43.6, -79.38);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_not_active', 'L: no positions after the trip ended');
+
+  -- A new trip for the same handoff after the first one ended; cancel erases too
+  v_trip := start_trip(v_b, 'drop_off');
+  perform _t_ok(v_trip.last_lat is null and v_trip.eta_at is null, 'L: without a first point there is no ETA yet');
+  perform _t_as(null);
+  select title into v_eta_title from public.notifications where user_id = chloe and type = 'trip_started' and ref_id = v_trip.id;
+  perform _t_ok(v_eta_title = 'Robert is on the way 🚗', 'L: …and the notice says on the way, without a time');
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  v_trip := end_trip(v_trip.id, true);
+  perform _t_ok(v_trip.status = 'cancelled' and v_trip.last_lat is null, 'L: Cancel trip → cancelled, position erased');
+
+  -- Sitter drives to the owner's home (D28): the owner cannot be the traveler there
+  perform _t_as(null);
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_b and kind = 'drop_off';
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_traveler', 'L: at the owner''s home the sitter travels, not the owner');
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6532, -79.3832);
+  perform _t_ok(v_trip.dest_lat = 43.7 and v_trip.dest_lng = -79.4 and v_trip.traveler_id = chloe,
+    'L: destination = the owner''s home point');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'trip_started' and ref_id = v_trip.id),
+    'L: the owner is told');
+  perform _t_as(chloe);
+  perform end_trip(v_trip.id);
+
+  -- Somewhere else: either of them may travel; no destination, no ETA
+  perform _t_as(null);
+  update public.booking_handoffs set location_type = 'other', location_note = 'Riverside Park gate' where booking_id = v_b and kind = 'drop_off';
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6532, -79.3832);
+  perform _t_ok(v_trip.dest_lat is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'L: at another place there is no destination, so no ETA');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_active', 'L: …and still one live trip per handoff');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(chloe);
+  v_trip := update_trip_position(v_trip.id, 43.6540, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6540, 'L: no destination → never "arrived" by distance');
+  perform end_trip(v_trip.id);
+
+  -- Starting without sharing: the trip exists, but never carries a position, an ETA or an arrival
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832, false);
+  perform _t_ok(not v_trip.sharing and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.distance_m is null
+      and v_trip.status = 'en_route', 'L: a trip started without sharing carries no position, ETA or distance');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'trip_started' and ref_id = v_trip.id
+      and title = 'Chloe is on the way 🚗'), 'L: …and the other person is still told she is on the way');
+  perform _t_as(chloe);
+  begin
+    perform update_trip_position(v_trip.id, 43.6540, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_sharing', 'L: a position is refused on a trip that is not shared');
+  perform end_trip(v_trip.id);
+
+  -- Received ends the drop-off trip that is still running (whoever travelled)
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832);
+  perform complete_handoff(v_b, 'drop_off');
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.ended_at is not null,
+    'L: Received ends the running trip and erases its position');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'pet_dropped_off' and booking_id = v_b),
+    'L: …and still tells the owner');
+
+  -- Once the drop-off is done, the pick-up trip is open (Owner drives back to the sitter's home)
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour', location_type = 'sitter_home', location_note = null
+  where booking_id = v_b and kind = 'pick_up';
+  perform _t_as(robert);
+  v_trip := start_trip(v_b, 'pick_up');
+  perform _t_ok(v_trip.handoff_kind = 'pick_up', 'L: after Received the owner can start the pick-up trip');
+  perform _t_as(chloe);
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null, 'L: Returned ends the pick-up trip');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'pick_up');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err in ('handoff_completed', 'trip_active'), 'L: no trip for a handoff that is done');
+
+  -- Handoff photo checks (6B.5): the backend writes, the two parties read, only the sitter adds a reason
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (scout, chloe, 'goldito/scout/handoff/abc', 'image', 'handoff') returning id into v_media;
+  insert into public.handoff_checks (booking_id, handoff_kind, check_type, media_id, status, findings, model, latency_ms)
+  values (v_b, 'drop_off', 'vehicle_safety', v_media, 'warning', '{"pet_visible":true,"crate_visible":false}', 'vision-model', 900)
+  returning id into v_check;
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: the sitter reads the check of their photo');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: …and so does the owner');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.handoff_checks) = 0, 'L: a third party reads no check');
+  perform _t_as(chloe);
+  begin
+    insert into public.handoff_checks (booking_id, handoff_kind, check_type, status) values (v_b, 'drop_off', 'pet_checkin', 'ok');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: a check is never written by a client (only by the backend)');
+  begin
+    update public.handoff_checks set status = 'ok' where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: the sitter cannot rewrite what the model found');
+  update public.handoff_checks set override_reason = 'Crate is in the trunk' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the sitter adds why they continue past a warning');
+  perform _t_as(robert);
+  update public.handoff_checks set override_reason = 'x' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the owner cannot change that reason');
+  perform _t_as(chloe);
+  begin
+    update public.handoff_checks set override_reason = repeat('x', 201) where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: the reason is at most 200 characters');
+end;
+$$;
+
+
 rollback;
