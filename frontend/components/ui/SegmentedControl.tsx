@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { HorizontalList } from "./HorizontalList";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -12,6 +13,8 @@ type Props<T extends string> = {
   onChange: (value: T) => void;
   /** Read-only, e.g. pet species after creation (D22). */
   disabled?: boolean;
+  /** Too many segments for the width: natural-width segments in a row that scrolls sideways. */
+  scrollable?: boolean;
   testID?: string;
 };
 
@@ -21,14 +24,15 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   disabled,
+  scrollable,
   testID,
 }: Props<T>) {
   const styles = useThemedStyles(makeStyles);
   // Four segments on a phone are about 86 px each: a smaller label keeps "Questions" + a badge on one line.
-  const dense = options.length >= 4;
+  const dense = options.length >= 4 && !scrollable;
 
-  return (
-    <View accessibilityRole="radiogroup" style={styles.group} testID={testID}>
+  const segments = (
+    <>
       {options.map((option) => {
         const selected = option.value === value;
         const count = option.count ?? 0;
@@ -41,11 +45,11 @@ export function SegmentedControl<T extends string>({
             disabled={disabled}
             onPress={() => onChange(option.value)}
             testID={testID ? `${testID}-${option.value}` : undefined}
-            style={[styles.segment, selected && styles.selected, disabled && !selected && styles.dimmed]}
+            style={[styles.segment, scrollable && styles.scrollSegment, selected && styles.selected, disabled && !selected && styles.dimmed]}
           >
             <Text
               numberOfLines={1}
-              style={[styles.label, dense && styles.denseLabel, selected && styles.selectedLabel]}
+              style={[styles.label, scrollable && styles.scrollLabel, dense && styles.denseLabel, selected && styles.selectedLabel]}
             >
               {option.label}
             </Text>
@@ -57,6 +61,19 @@ export function SegmentedControl<T extends string>({
           </Pressable>
         );
       })}
+    </>
+  );
+
+  if (scrollable) {
+    return (
+      <View accessibilityRole="radiogroup" testID={testID}>
+        <HorizontalList contentStyle={styles.group}>{segments}</HorizontalList>
+      </View>
+    );
+  }
+  return (
+    <View accessibilityRole="radiogroup" style={styles.group} testID={testID}>
+      {segments}
     </View>
   );
 }
@@ -79,6 +96,14 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
+    // Natural width: never squeezed to fit, the row scrolls instead.
+    scrollSegment: {
+      flexGrow: 0,
+      flexShrink: 0,
+      flexBasis: "auto",
+      minWidth: undefined,
+      paddingHorizontal: theme.spacing.md,
+    },
     selected: {
       borderColor: theme.color.primary,
       backgroundColor: theme.color.accent,
@@ -90,6 +115,9 @@ const makeStyles = (theme: Theme) =>
       flexShrink: 1,
       fontSize: theme.fontSize.body,
       color: theme.color.text,
+    },
+    scrollLabel: {
+      flexShrink: 0,
     },
     denseLabel: {
       fontSize: theme.fontSize.small,

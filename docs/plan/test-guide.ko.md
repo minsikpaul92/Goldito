@@ -156,7 +156,7 @@
 | 예약 요청 → 수락 → Confirmed (BOOK-1) | 🟡 | 진행은 됨. 실시간 갱신 ❌ (FLOW-1) |
 | 시간 · 장소 변경 (BOOK-2) | ❌ | FLOW-7 · 8 · 9 |
 | 체크아웃 · 결제 (BOOK-5) | ❌ → 다시 확인 필요 | 요금표 없음이 원인이었음 — **10/08 Chloe 요금 행을 임시로 넣어 풀림**(견적 $268.13 확인). 예약을 새로 만들거나 기존 예약의 Finish booking을 다시 눌러 보세요 (FLOW-3) |
-| Received → Returned (BOOK-4) | ❌ | Returned 확인 단계 없음 (FLOW-6), 진행 중이 Upcoming에 (FLOW-5) |
+| Received → Returned (BOOK-4) | 🤖 (FLOW-5 · 6) · 사람 확인 대기 | 시터 Bookings **In progress** 탭 추가 (FB-8) — 사람이 다시 확인 필요 |
 | 날짜 · 시간 입력 통일 (FLOW-10) · 이름 옆 역할 표시 (FLOW-11) · 입력칸 힌트 (FLOW-12) | ❌ | 모양 · 통일 |
 | 데모 로그인 (NAME-2) | 🟡 | Claude 확인 |
 | **REPORT · CAP · INQ · DONE · UX-1~4 · NAME-1 · 3~5** | ➖ | 체크아웃이 막혀 아직 못 감 (INQ · UX-1~4 일부는 막히지 않음) |
@@ -435,7 +435,7 @@
 | FLOW-2 | 시터가 Accept(처음 만나는 사이면 **Confirm booking**) → 오너 화면 | 오너 예약이 새로고침 없이 Confirmed로 | 👤 (실시간) | ➖ |
 | FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
-| FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
+| FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음. 탭은 가로 스크롤(5개), 진행 중 예약이 있으면 그 탭으로 열림. 픽업 시각이 지났는데 Returned 안 된 옛 예약은 Upcoming을 열게 하지 않음 (FB-8 · L-2) | 🤖 `sitter-bookings.spec.ts` (2개) | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸("Return Max?" · 되돌릴 수 없고 Life Record가 써진다는 문구 · 오늘 남은 할 일 수 · 알림장 미발송이면 "Send today's note first"). 합의된 픽업 **30분 전보다 이르면** "It's not pick-up time yet … Do you really want to return Max now?"가 더 붙고 **Return이 빨간 바탕 · 흰 글씨**(막지는 않음, 2026-10-11 결정). 30분 전부터는 경고 없이 평소 버튼. **Return**을 눌러야만 처리, **Cancel**은 아무것도 안 바꿈 (FB-9) | 🤖 `handoff.spec.ts` (5개) | ❌ 10/08 민식 (바로 처리됨) → 다시 확인 필요 |
 | FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 저장 · 전송. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 새로 필요 | ❌ 10/08 민식 |

@@ -23,14 +23,14 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **R2 → FB-8** | New branch from `main` once [#83](https://github.com/minsikpaul92/Goldito/pull/83) (06B) is merged: **FB-8** sitter In progress, then **FB-5 · FB-6** time-change sheet. Then 10 Demo & deploy | [feedback FB-5 – FB-8](feedback-2026-10-08.ko.md) · [phases/phase-10.md](phases/phase-10.md) |
+| **Minsik** | **R2 → FB-5 · FB-6** | On `fix/r2-booking-flow` (FB-8 sitter In progress done in the first commit): **FB-5 · FB-6** time-change sheet. Then 10 Demo & deploy | [feedback FB-5 – FB-8](feedback-2026-10-08.ko.md) · [phases/phase-10.md](phases/phase-10.md) |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **R2 (new branch from main):** **FB-8** sitter In progress → **FB-5 · FB-6** time-change sheet (FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
+1. **R2 (`fix/r2-booking-flow`):** **FB-5 · FB-6** time-change sheet (FB-8 done; FB-9 moved into 06B). [feedback FB-5 – FB-9](feedback-2026-10-08.ko.md)
 2. **10 Demo & deploy** — seed (rates, entry info, home points ✅ (06B), past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
 3. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
 4. **08 Safety guard** (`013`) — P0 **stretch**, only if time remains after 06B + 10; 8.7 Tavily is a further stretch. [phase-08.md](phases/phase-08.md)

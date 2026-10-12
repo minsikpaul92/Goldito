@@ -11,13 +11,13 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { SitterInquiryCard, listSitterInquiries } from "../../../features/inquiries/inquiryApi";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import { formatDay, isoToZoned } from "../../../features/schedule/dates";
-import { BookingSummary, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
+import { BookingSummary, SitterBucket, firstSitterBucket, listSitterBookings, sitterBucket } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
-type Bucket = "requests" | "inquiries" | "upcoming" | "past";
+type Bucket = SitterBucket | "inquiries";
 
 type State =
   | { status: "loading" }
@@ -35,10 +35,15 @@ const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> =
     title: "No questions yet",
     message: "When an owner asks about a stay, your draft reply waits here.",
   },
+  in_progress: {
+    emoji: "🐾",
+    title: "No stays in progress",
+    message: "Stays where the pets are with you show here until they go home.",
+  },
   upcoming: {
     emoji: "📅",
     title: "No upcoming stays",
-    message: "Stays you accept show here until the pets go home.",
+    message: "Stays you accept show here until the pets arrive.",
   },
   past: {
     emoji: "🐾",
@@ -47,7 +52,7 @@ const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> =
   },
 };
 
-/** Sitter Bookings tab (phase-03b 3B.4): Requests · Upcoming · Past → booking detail. */
+/** Sitter Bookings tab (phase-03b 3B.4): Requests · Questions · In progress · Upcoming · Past → booking detail. */
 export default function SitterBookings() {
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
@@ -102,7 +107,7 @@ export default function SitterBookings() {
     );
   }
 
-  const count = (b: "requests" | "upcoming" | "past") => state.bookings.filter((x) => sitterBucket(x) === b).length;
+  const count = (b: SitterBucket) => state.bookings.filter((x) => sitterBucket(x) === b).length;
   const shown = bucket === "inquiries" ? [] : state.bookings.filter((b) => sitterBucket(b) === bucket);
   const requests = count("requests");
   // Open questions that still wait for the sitter's reply.
@@ -115,6 +120,7 @@ export default function SitterBookings() {
         options={[
           { value: "requests", label: "Requests", count: requests },
           { value: "inquiries", label: "Questions", count: waiting },
+          { value: "in_progress", label: "In progress", count: count("in_progress") },
           { value: "upcoming", label: "Upcoming" },
           { value: "past", label: "Past" },
         ]}
@@ -123,6 +129,7 @@ export default function SitterBookings() {
           userPicked.current = true;
           setBucket(next);
         }}
+        scrollable
         testID="sitter-bookings-tabs"
       />
       {empty ? (

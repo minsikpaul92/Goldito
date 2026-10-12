@@ -655,26 +655,33 @@ export function requestExpired(b: BookingSummary, now: number = Date.now()): boo
   return b.status === "requested" && !!b.pickUp && Date.parse(b.pickUp.at) <= now;
 }
 
-/** Requests · Upcoming · Past for the sitter's Bookings tab. */
-export function sitterBucket(b: BookingSummary): "requests" | "upcoming" | "past" {
+export type SitterBucket = "requests" | "in_progress" | "upcoming" | "past";
+
+/** Requests · In progress · Upcoming · Past for the sitter's Bookings tab (In progress = the pets are with the sitter). */
+export function sitterBucket(b: BookingSummary): SitterBucket {
   if (b.status === "requested") return requestExpired(b) ? "past" : "requests";
-  if (b.status === "confirmed" && !b.pickUp?.completedAt) return "upcoming";
+  if (b.status === "confirmed" && !b.pickUp?.completedAt) return b.dropOff?.completedAt ? "in_progress" : "upcoming";
   return "past";
 }
 
 const SOON_MS = 48 * 3_600_000;
 
 /**
- * Which sitter segment to open on: a stay in care or starting within 48 h → Upcoming; else open Requests; else
- * Questions waiting for an answer; else Upcoming if any.
+ * Which sitter segment to open on: a stay in progress; else one starting within 48 h → Upcoming; else open Requests;
+ * else Questions waiting for an answer; else Upcoming if any.
  */
 export function firstSitterBucket(
   bookings: BookingSummary[],
   now = Date.now(),
   waitingQuestions = 0,
-): "requests" | "inquiries" | "upcoming" | "past" {
+): "requests" | "inquiries" | "in_progress" | "upcoming" | "past" {
+  if (bookings.some((b) => sitterBucket(b) === "in_progress")) return "in_progress";
   const upcoming = bookings.filter((b) => sitterBucket(b) === "upcoming");
-  const soon = upcoming.some((b) => !!b.dropOff && (!!b.dropOff.completedAt || Date.parse(b.dropOff.at) - now <= SOON_MS));
+  // "Soon" = the drop-off is within 48 h (or a little late) and the pick-up is still ahead — an old booking nobody
+  // marked Returned doesn't pull the tab (L-2).
+  const soon = upcoming.some(
+    (b) => !!b.dropOff && Date.parse(b.dropOff.at) - now <= SOON_MS && (!b.pickUp || Date.parse(b.pickUp.at) > now),
+  );
   if (soon) return "upcoming";
   if (bookings.some((b) => sitterBucket(b) === "requests")) return "requests";
   if (waitingQuestions > 0) return "inquiries";
