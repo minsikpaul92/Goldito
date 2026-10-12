@@ -502,7 +502,8 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
           ? db.owner_profiles.find((p) => p.id === booking.owner_id)
           : undefined;
     const dest = home?.home_lat != null ? { lat: Number(home.home_lat), lng: Number(home.home_lng) } : null;
-    const first = args.p_lat != null ? { lat: Number(args.p_lat), lng: Number(args.p_lng) } : null;
+    const share = args.p_share !== false;
+    const first = share && args.p_lat != null ? { lat: Number(args.p_lat), lng: Number(args.p_lng) } : null;
     const distance = first && dest ? distanceMeters(first, dest) : null;
     const trip: Row = {
       id: crypto.randomUUID(),
@@ -518,6 +519,7 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
       eta_at: distance != null ? eta(distance) : null,
       distance_m: distance != null ? Math.round(distance) : null,
       simulated: !!args.p_simulated,
+      sharing: share,
       started_at: iso(),
       arrived_at: null,
       ended_at: null,
@@ -531,6 +533,7 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
 
   if (name === "update_trip_position") {
     if (!["en_route", "arrived"].includes(String(trip.status))) return fail("trip_not_active");
+    if (trip.sharing === false) return fail("not_sharing");
     if (trip.status === "arrived" || (trip.last_at && nowMs() - Date.parse(String(trip.last_at)) < 1000)) return json(route, 200, trip);
     const at = { lat: Number(args.p_lat), lng: Number(args.p_lng) };
     const distance = trip.dest_lat != null ? distanceMeters(at, { lat: Number(trip.dest_lat), lng: Number(trip.dest_lng) }) : null;

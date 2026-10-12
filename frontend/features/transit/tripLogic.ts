@@ -1,4 +1,6 @@
 import type { BookingSummary, Handoff, HandoffKind, LocationType } from "../../lib/bookings";
+import type { LatLng } from "../../lib/location";
+import type { PlaceQuery } from "../../lib/maps";
 
 /** The Start trip button opens this long before the agreed time (start_trip, 012) — same window as Received. */
 export const START_WINDOW_MS = 2 * 60 * 60 * 1000;
@@ -24,3 +26,11 @@ export function nextHandoff(booking: BookingSummary): { kind: HandoffKind; hando
 
 /** When Start trip opens for a handoff (ms since the epoch). */
 export const startOpensAt = (handoff: Handoff): number => Date.parse(handoff.at) - START_WINDOW_MS;
+
+/**
+ * What Google Maps is asked to open: the address the person can already see (or the place written for "somewhere
+ * else"), and only without any text the point itself. Never an entry code.
+ */
+export function placeFor(handoff: Handoff | null | undefined, address: string | null | undefined, point: LatLng | null): PlaceQuery {
+  return { text: address ?? (handoff?.locationType === "other" ? handoff.note : null) ?? null, point };
+}

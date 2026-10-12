@@ -325,7 +325,7 @@ export default function OwnerBookingDetail() {
           ) : null}
         </Card>
 
-        <TripEntry booking={booking} role="owner" />
+        <TripEntry booking={booking} role="owner" addresses={addresses} />
 
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="booking-action-error">

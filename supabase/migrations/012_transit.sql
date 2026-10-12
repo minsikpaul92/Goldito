@@ -52,6 +52,8 @@ create table public.trips (
   eta_at timestamptz,
   distance_m int,
   simulated boolean not null default false,
+  -- false = the traveller started the trip but chose not to share a live position: no map, no ETA, no arrival check.
+  sharing boolean not null default true,
   started_at timestamptz not null default now(),
   arrived_at timestamptz,
   ended_at timestamptz,
@@ -130,9 +132,12 @@ revoke execute on function public.trip_eta(timestamptz, double precision) from p
 -- The traveler follows D28: the place is the sitter's home → the owner drives; the owner's home → the sitter drives;
 -- anywhere else → either of them. Allowed once the booking is paid and from 2 h before the agreed time (the same
 -- window as Received). A first position may come with it, so the other person's notice can say when to expect them.
+-- `p_share = false`: the traveller says "I'm on my way" without sharing a position — the trip exists (the other person sees
+-- the meeting place), but it carries no position, ETA or arrival check.
 create or replace function public.start_trip(
   p_booking uuid, p_kind text, p_simulated boolean default false,
-  p_lat double precision default null, p_lng double precision default null
+  p_lat double precision default null, p_lng double precision default null,
+  p_share boolean default true
 )
 returns public.trips
 language plpgsql
@@ -208,19 +213,20 @@ begin
     select op.home_lat, op.home_lng into v_dest_lat, v_dest_lng from public.owner_profiles op where op.id = b.owner_id;
   end if;
 
-  if p_lat is not null and v_dest_lat is not null then
+  if coalesce(p_share, true) and p_lat is not null and v_dest_lat is not null then
     v_dist := public.distance_m(p_lat, p_lng, v_dest_lat, v_dest_lng);
     v_eta := public.trip_eta(v_now, v_dist);
   end if;
 
   insert into public.trips (
     booking_id, handoff_kind, traveler_id, dest_lat, dest_lng,
-    last_lat, last_lng, last_at, eta_at, distance_m, simulated, started_at
+    last_lat, last_lng, last_at, eta_at, distance_m, simulated, sharing, started_at
   )
   values (
     p_booking, p_kind, auth.uid(), v_dest_lat, v_dest_lng,
-    p_lat, p_lng, case when p_lat is not null then v_now end, v_eta, round(v_dist)::int,
-    coalesce(p_simulated, false), v_now
+    case when coalesce(p_share, true) then p_lat end, case when coalesce(p_share, true) then p_lng end,
+    case when coalesce(p_share, true) and p_lat is not null then v_now end, v_eta, round(v_dist)::int,
+    coalesce(p_simulated, false), coalesce(p_share, true), v_now
   )
   returning * into v_trip;
 
@@ -239,8 +245,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.start_trip(uuid, text, boolean, double precision, double precision) from public, anon;
-grant execute on function public.start_trip(uuid, text, boolean, double precision, double precision)
+revoke execute on function public.start_trip(uuid, text, boolean, double precision, double precision, boolean) from public, anon;
+grant execute on function public.start_trip(uuid, text, boolean, double precision, double precision, boolean)
   to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
@@ -273,6 +279,9 @@ begin
   end if;
   if t.status not in ('en_route', 'arrived') then
     raise exception 'trip_not_active';
+  end if;
+  if not t.sharing then
+    raise exception 'not_sharing';
   end if;
   if p_lat is null or p_lng is null or p_lat not between -90 and 90 or p_lng not between -180 and 180 then
     raise exception 'invalid_position';

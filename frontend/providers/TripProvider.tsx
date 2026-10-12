@@ -25,8 +25,9 @@ export type StartTripArgs = {
 };
 
 export type StartTripResult =
-  | { started: true; trip: Trip }
-  | { started: false; reason: "declined" | "denied" | "error"; message?: string };
+  // `sharing: false` = the trip runs without a live position (the person chose that, or the browser said no: `because`).
+  | { started: true; trip: Trip; sharing: boolean; because?: "chosen" | "denied" }
+  | { started: false; reason: "declined" | "error"; message?: string };
 
 type Sharing = { trip: Trip; mode: "gps" | "simulate"; otherName: string };
 
@@ -92,9 +93,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
   );
 
   const begin = useCallback(
-    async (args: StartTripArgs, mode: "gps" | "simulate"): Promise<StartTripResult> => {
+    async (args: StartTripArgs, mode: "gps" | "simulate" | "none"): Promise<StartTripResult> => {
       if (sharingRef.current) return { started: false, reason: "error", message: "A trip is already being shared." };
       try {
+        if (mode === "none") {
+          // "I'm on my way" without a position: the other person sees the meeting place instead of a map.
+          const trip = await startTrip(args.bookingId, args.kind, false, undefined, false);
+          return { started: true, trip, sharing: false, because: "chosen" };
+        }
         if (mode === "gps") {
           const first = await getCurrentPosition(); // the browser's own permission prompt
           const trip = await startTrip(args.bookingId, args.kind, false, first);
@@ -104,7 +110,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
             onError: () => undefined, // a lost fix just means nothing to send this round
           });
           setSharing({ trip, mode, otherName: args.otherName });
-          return { started: true, trip };
+          return { started: true, trip, sharing: true };
         }
         // The drive starts at the traveller's home; the destination is whatever the server holds for this handoff.
         const from = args.from ?? { lat: 43.6532, lng: -79.3832 };
@@ -116,9 +122,17 @@ export function TripProvider({ children }: { children: ReactNode }) {
           onPosition: (p) => send(trip.id, p),
         });
         setSharing({ trip, mode, otherName: args.otherName });
-        return { started: true, trip };
+        return { started: true, trip, sharing: true };
       } catch (error) {
-        if (error instanceof LocationError && error.reason === "denied") return { started: false, reason: "denied" };
+        if (error instanceof LocationError && error.reason === "denied") {
+          // The browser (or the phone) said no after the person said yes: go on without a position (D41).
+          try {
+            const trip = await startTrip(args.bookingId, args.kind, false, undefined, false);
+            return { started: true, trip, sharing: false, because: "denied" };
+          } catch (fallback) {
+            return { started: false, reason: "error", message: fallback instanceof Error ? fallback.message : "Couldn't start the trip. Try again." };
+          }
+        }
         const message =
           error instanceof LocationError
             ? "We couldn't read your location. Check that location is on and try again."
@@ -137,7 +151,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   );
 
   const decide = useCallback(
-    async (mode: "gps" | "simulate" | null) => {
+    async (mode: "gps" | "simulate" | "none" | null) => {
       if (!pending) return;
       const { args, resolve } = pending;
       if (mode === null) {
@@ -175,10 +189,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
           `${pending?.args.otherName ?? "They"} will see where you are on a map, with your ETA, until you arrive.`,
           "It stops by itself when you arrive. Goldito keeps only your latest spot — no route history.",
           "Keep this screen on while you travel — the browser stops sharing when it sleeps.",
+          `Prefer not to share? ${pending?.args.otherName ?? "They"} will see the meeting place and an Open in Google Maps button instead.`,
         ]}
         allowLabel="Allow"
         onAllow={() => void decide("gps")}
         onDecline={() => void decide(null)}
+        declineLabel="Cancel"
+        alternative={{ label: "Start without sharing my location", onPress: () => void decide("none") }}
         simulate={canSimulate ? { label: "Simulate the drive (demo)", onPress: () => void decide("simulate") } : undefined}
         busy={busy}
         testID="share-trip-sheet"

@@ -38,14 +38,21 @@ function fail(code: string | undefined, fallback: string): never {
   throw new TransitError(code ?? "unknown", (code && MESSAGES[code]) || fallback);
 }
 
-/** Start trip. A first position (optional) lets the other person's notice say when to expect you. */
-export async function startTrip(bookingId: string, kind: HandoffKind, simulated: boolean, first?: LatLng): Promise<Trip> {
+/** Start trip. A first position (optional) lets the other person's notice say when to expect you; `share = false` starts it without any position. */
+export async function startTrip(
+  bookingId: string,
+  kind: HandoffKind,
+  simulated: boolean,
+  first?: LatLng,
+  share = true,
+): Promise<Trip> {
   const { data, error } = await getSupabase().rpc("start_trip", {
     p_booking: bookingId,
     p_kind: kind,
     p_simulated: simulated,
     p_lat: first?.lat ?? null,
     p_lng: first?.lng ?? null,
+    p_share: share,
   });
   if (error || !data) fail(error?.message, "Couldn't start the trip. Try again.");
   return data as Trip;

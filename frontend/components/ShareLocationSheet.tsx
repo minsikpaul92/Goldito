@@ -14,6 +14,10 @@ type Props = {
   allowLabel: string;
   onAllow: () => void;
   onDecline: () => void;
+  /** The label of the way out; "Not now" suits a one-off ask, "Cancel" a choice that has other answers. */
+  declineLabel?: string;
+  /** A third answer: go ahead without sharing a position. */
+  alternative?: { label: string; onPress: () => void };
   /** Demo accounts and the desktop frame: a drive that needs no GPS, through the same consent screen. */
   simulate?: { label: string; onPress: () => void };
   busy?: boolean;
@@ -32,6 +36,8 @@ export function ShareLocationSheet({
   allowLabel,
   onAllow,
   onDecline,
+  declineLabel = "Not now",
+  alternative,
   simulate,
   busy,
   error,
@@ -51,7 +57,10 @@ export function ShareLocationSheet({
           {simulate ? (
             <Button label={simulate.label} variant="secondary" onPress={simulate.onPress} disabled={busy} testID={`${testID}-simulate`} />
           ) : null}
-          <TextButton label="Not now" onPress={onDecline} disabled={busy} testID={`${testID}-decline`} />
+          {alternative ? (
+            <Button label={alternative.label} variant="secondary" onPress={alternative.onPress} disabled={busy} testID={`${testID}-alternative`} />
+          ) : null}
+          <TextButton label={declineLabel} onPress={onDecline} disabled={busy} testID={`${testID}-decline`} />
         </View>
       }
     >

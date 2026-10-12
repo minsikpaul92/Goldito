@@ -158,6 +158,8 @@ export type Trip = {
   eta_at: string | null;
   distance_m: number | null;
   simulated: boolean;
+  /** false = started without sharing a live position: no map, no ETA (the meeting place is shown instead). */
+  sharing: boolean;
   started_at: string;
   arrived_at: string | null;
   ended_at: string | null;

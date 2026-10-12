@@ -126,7 +126,7 @@
 | Pet Transit **Start trip · 지도 · ETA · 도착 카드** (동의 화면 → 가상 운전 → 지도 · ETA 갱신 → 도착 시 Chloe's place / 출입 정보, 상대 화면은 새로고침 없이 따라감, Home 카드, Cancel trip) | ✅ 🤖 `transit.spec.ts` (Realtime은 e2e에서 안 쓰고 4초 폴링으로 확인 · 실제 두 화면 동시 확인과 실제 폰 GPS는 👤) | 06B / 6B.3 · 6B.4 |
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
-| Pet Transit (위치 거절 대체 화면) | ⬜ | 06B / S7 |
+| Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 
 ### Stage 5 — Completion · 기타
 
@@ -511,13 +511,17 @@
 | TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved ✅ · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
 | TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
 | TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
-| TRIP-11 | 같은 화면에서 **Not now** | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-11 | 동의 화면에서 **Cancel** (또는 Close) | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-12 | 이동하지 않는 쪽(시터 집이면 시터) | Start trip 없음. 2시간 전 이전의 견주는 "You can start the trip from 7:00 AM" 한 줄만 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-13 | 시터가 Home에서 "Robert is on the way · ETA …" 카드 → Trip 화면, 이어서 견주가 도착 | 지도 + ETA(거리 포함), 내 위치 배너 · Cancel trip 없음. 도착하면 새로고침 없이(폴링 4초 안) "Robert has arrived" 카드. trip이 끝나면 Home 카드가 사라짐 | 🤖 `transit.spec.ts` · 두 창 실시간은 👤 | ➖ |
 | TRIP-14 | 시터가 견주 집으로 이동(Sitter drives) → 도착 | Trip 화면에 **EntryInfoCard**(03C 시간 조건 그대로, Show code), Chloe's place 카드는 없음 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-15 | 이동 중 **Cancel trip** (새로고침해서 이 기기가 공유 중이 아닐 때 포함) | 상태 `cancelled`, 위치 · ETA 삭제, "No trip running" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-16 | 지도 위에서 마우스로 드래그 · ± 버튼 | 드래그는 지도가 아니라 화면을 스크롤(지도가 움직이지 않음), ±는 확대 · 축소 | 🤖 `transit.spec.ts` (`/dev/gestures`) | ➖ |
 | TRIP-17 | 시터가 예약 상세에서 **Received**(맡기기) 또는 **Returned**(찾기)를 누름 — 이동 중이거나 막 도착한 trip이 있을 때 | 그 trip이 `completed`가 되고 위치 · ETA가 지워짐. 양쪽 Home의 이동 카드와 예약 상세의 Track 카드가 사라짐. 견주 알림은 예전 그대로 | SQL `rls_smoke` L · 🤖 `transit.spec.ts` | ➖ |
+| TRIP-18 | 동의 화면에서 **Start without sharing my location** | trip은 생기지만 위치 · ETA · 지도 없음. 이동하는 쪽: "You're not sharing your location — Chloe sees the meeting place." + 만날 장소 카드 + Open in Google Maps(**길 안내**, `maps/dir`, `destination=` 주소). 상대에게는 "Robert is on the way" 알림 | 🤖 `transit.spec.ts` + SQL `rls_smoke` L | ➖ |
+| TRIP-19 | 기다리는 쪽이 공유 없는 trip을 봄 | "Robert is on the way / Robert isn't sharing a live location", 지도 없음, 장소 카드(주소 · 출입 코드는 없음) + Open in Google Maps(**장소**, `maps/search`, `query=` 주소). 주소 글자가 없으면 저장된 좌표로 | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-20 | 공유 중인 trip과 Start trip 직전 | Trip 화면과 예약 상세의 Start trip 카드에서도 **양쪽 모두** Open in Google Maps가 보임(이동하는 쪽 = 길 안내, 기다리는 쪽 = 장소). 지도 앱으로 넘어가면 브라우저가 백그라운드가 되어 위치 공유가 멈추고, 상대 화면에 "Last location N min ago — sharing pauses while the browser is in the background" | 🤖 `transit.spec.ts` · 실제 폰에서 Maps로 넘어갔다 돌아오기 👤 | ➖ |
+| TRIP-21 | Allow를 눌렀는데 브라우저가 위치를 거절 | 자동으로 공유 없는 trip으로 시작되고 토스트 "Location is off in this browser, so Chloe sees the meeting place instead" | 🤖 `transit.spec.ts` | ➖ |
 
 ---
 

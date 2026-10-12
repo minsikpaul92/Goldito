@@ -320,7 +320,7 @@ export default function SitterBookingDetail() {
           ) : null}
         </Card>
 
-        <TripEntry booking={booking} role="sitter" />
+        <TripEntry booking={booking} role="sitter" addresses={addresses} />
 
         {pets.map((pet) => (
           <Card key={pet.id} style={styles.block} testID={`pet-care-${pet.name}`}>

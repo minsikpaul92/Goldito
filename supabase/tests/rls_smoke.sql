@@ -4024,6 +4024,23 @@ begin
   perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6540, 'L: no destination → never "arrived" by distance');
   perform end_trip(v_trip.id);
 
+  -- Starting without sharing: the trip exists, but never carries a position, an ETA or an arrival
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832, false);
+  perform _t_ok(not v_trip.sharing and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.distance_m is null
+      and v_trip.status = 'en_route', 'L: a trip started without sharing carries no position, ETA or distance');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'trip_started' and ref_id = v_trip.id
+      and title = 'Chloe is on the way 🚗'), 'L: …and the other person is still told she is on the way');
+  perform _t_as(chloe);
+  begin
+    perform update_trip_position(v_trip.id, 43.6540, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_sharing', 'L: a position is refused on a trip that is not shared');
+  perform end_trip(v_trip.id);
+
   -- Received ends the drop-off trip that is still running (whoever travelled)
   perform _t_as(chloe);
   v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832);

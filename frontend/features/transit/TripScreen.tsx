@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { EntryInfoCard } from "../../components/EntryInfoCard";
+import { OpenInMapsButton } from "../../components/OpenInMapsButton";
 import { TripMap } from "../../components/TripMap";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -18,7 +19,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useTrip } from "../../providers/TripProvider";
 import { Theme } from "../../theme/themes";
 import { formatTime, isoToZoned } from "../schedule/dates";
-import { Role, canTravel, nextHandoff, startOpensAt } from "./tripLogic";
+import { Role, canTravel, nextHandoff, placeFor, startOpensAt } from "./tripLogic";
 import { useLiveTrips } from "./useLiveTrips";
 import { useStartTrip } from "./useStartTrip";
 
@@ -110,6 +111,13 @@ export function TripScreen({ role }: { role: Role }) {
           {mayStart && next && Date.now() >= opens ? (
             <Button label="Start trip" onPress={() => void startTrip(next.kind)} testID="trip-start" />
           ) : null}
+          {next ? (
+            <OpenInMapsButton
+              place={placeFor(next.handoff, places[next.kind]?.address, null)}
+              travelling={mayStart}
+              testID="trip-maps"
+            />
+          ) : null}
         </Card>
         <Button label="Open booking" variant="secondary" onPress={openBooking} testID="trip-open-booking" />
       </Screen>
@@ -123,6 +131,9 @@ export function TripScreen({ role }: { role: Role }) {
   const here = sharing?.trip.id === live.id;
   const position = livePosition(live);
   const place = destination(live);
+  const shared = live.sharing !== false; // a trip started without sharing has no map, no ETA and no arrival check
+  const mapsPlace = placeFor(handoff, places[live.handoff_kind]?.address, place);
+  const lastSeenMin = shared && !arrived && live.last_at ? Math.floor((Date.now() - Date.parse(live.last_at)) / 60_000) : 0;
 
   const cancel = async () => {
     setCancelling(true);
@@ -137,7 +148,7 @@ export function TripScreen({ role }: { role: Role }) {
 
   return (
     <Screen contentStyle={styles.content} testID="trip-screen">
-      {mine && !arrived ? (
+      {mine && !arrived && shared ? (
         <Card style={styles.banner} testID="trip-sharing-banner">
           <Text style={styles.bannerText}>
             {here
@@ -146,10 +157,17 @@ export function TripScreen({ role }: { role: Role }) {
           </Text>
         </Card>
       ) : null}
+      {mine && !shared ? (
+        <Card style={styles.banner} testID="trip-not-sharing-banner">
+          <Text style={styles.bannerText}>{`You're not sharing your location — ${other} sees the meeting place.`}</Text>
+        </Card>
+      ) : null}
 
       <View style={styles.head} testID="trip-status">
         <Text style={styles.eta} testID="trip-eta">
-          {arrived
+          {!shared
+            ? `${travelerName === "You" ? "You're" : `${travelerName} is`} on the way`
+            : arrived
             ? `${travelerName === "You" ? "You've" : `${travelerName} has`} arrived 🚗`
             : live.eta_at
               ? `ETA ${clock(live.eta_at)}${live.distance_m != null ? ` · ${formatDistance(live.distance_m)}` : ""}`
@@ -157,15 +175,25 @@ export function TripScreen({ role }: { role: Role }) {
                 ? "On the way"
                 : `Waiting for ${mine ? "your" : `${other}'s`} first location…`}
         </Text>
-        <Text style={styles.muted}>
-          {arrived
+        <Text style={styles.muted} testID="trip-substatus">
+          {!shared
+            ? mine
+              ? "Not sharing a live location"
+              : `${other} isn't sharing a live location`
+            : arrived
             ? `Arrived at ${live.arrived_at ? clock(live.arrived_at) : "—"}`
             : `${mine ? "You're" : `${other} is`} on the way${live.simulated ? " (simulated drive)" : ""}`}
         </Text>
       </View>
 
-      {place ? <TripMap traveler={position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} /> : null}
-      {!place && handoff?.note ? (
+      {lastSeenMin >= 1 ? (
+        <Text style={styles.muted} testID="trip-last-seen">
+          {`Last location ${lastSeenMin} min ago — sharing pauses while the browser is in the background.`}
+        </Text>
+      ) : null}
+      {shared && place ? <TripMap traveler={position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} /> : null}
+      {!shared ? <MeetingPlaceCard booking={b} handoffKind={live.handoff_kind} address={places[live.handoff_kind]?.address ?? null} /> : null}
+      {shared && !place && handoff?.note ? (
         <Card style={styles.card}>
           <Text style={styles.title}>Meeting place</Text>
           <Text style={styles.body}>{handoff.note}</Text>
@@ -185,11 +213,26 @@ export function TripScreen({ role }: { role: Role }) {
         </Card>
       ) : null}
 
+      <OpenInMapsButton place={mapsPlace} travelling={mine} testID="trip-maps" />
       {mine && !arrived ? (
         <TextButton label={cancelling ? "Cancelling…" : "Cancel trip"} danger onPress={() => void cancel()} disabled={cancelling} testID="trip-cancel" />
       ) : null}
       <Button label="Open booking" variant="secondary" onPress={openBooking} testID="trip-open-booking" />
     </Screen>
+  );
+}
+
+/** The meeting place when nobody shares a live position: who it belongs to and the address the person can already see. */
+function MeetingPlaceCard({ booking, handoffKind, address }: { booking: BookingSummary; handoffKind: HandoffKind; address: string | null }) {
+  const styles = useThemedStyles(makeStyles);
+  const handoff = handoffKind === "drop_off" ? booking.dropOff : booking.pickUp;
+  const owner = handoff?.locationType === "sitter_home" ? `${booking.sitterName}'s place` : handoff?.locationType === "owner_home" ? `${booking.ownerName}'s place` : "Meeting place";
+  const text = address ?? (handoff?.locationType === "other" ? handoff.note : null);
+  return (
+    <Card style={styles.card} testID="trip-meeting-place">
+      <Text style={styles.title}>{`📍 ${owner}`}</Text>
+      {text ? <Text style={styles.body}>{text}</Text> : <Text style={styles.muted}>The address is in the booking.</Text>}
+    </Card>
   );
 }
 

@@ -21,8 +21,15 @@ export function useStartTrip(booking: BookingSummary, role: Role): (kind: Handof
     async (kind) => {
       const from = profile ? await getMyHomePoint(profile.id, role).catch(() => null) : null;
       const result = await requestStart({ bookingId: booking.id, kind, otherName, from });
-      if (result.started) toast.show(`Sharing your location with ${otherName}`);
-      else if (result.reason === "error" && result.message) toast.show(result.message);
+      if (result.started) {
+        toast.show(
+          result.sharing
+            ? `Sharing your location with ${otherName}`
+            : result.because === "denied"
+              ? `Location is off in this browser, so ${otherName} sees the meeting place instead`
+              : `Trip started — ${otherName} sees the meeting place`,
+        );
+      } else if (result.reason === "error" && result.message) toast.show(result.message);
       return result;
     },
     [booking.id, otherName, profile, requestStart, role, toast],

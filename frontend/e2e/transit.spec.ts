@@ -1,8 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect as baseExpect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, center, drag, scrollOffset, signIn } from "./helpers";
+import { app, box, center, drag, scrollOffset, signIn as rawSignIn } from "./helpers";
 import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+
+// These screens load their trips through a poll as well as Realtime, so under a loaded CI machine they need a little
+// longer than the default 5 s to show up.
+const expect = baseExpect.configure({ timeout: 10_000 });
+
+/** Signs in and waits for Home: going to another page before the session is stored loses the login. */
+async function signIn(page: Page, user: typeof OWNER | typeof SITTER) {
+  await rawSignIn(page, user);
+  await baseExpect(page).toHaveURL(new RegExp(`/${user.role}$`), { timeout: 15_000 });
+}
 
 // Pet Transit screens (phase-06b 6B.3 · 6B.4): Start trip behind the consent screen, a simulated drive that fills the
 // map and the ETA, the arrival cards, and the other person following along. Realtime is not mocked in e2e, so the
@@ -73,6 +83,15 @@ async function stubTiles(page: Page) {
   await page.route("**/tile.openstreetmap.org/**", (route) => route.fulfill({ status: 200, contentType: "image/png", body: TILE }));
 }
 
+/** Opening Google Maps opens a new tab; the test answers it locally and returns the URL it was sent to. */
+async function mapsUrlAfter(page: Page, click: () => Promise<void>): Promise<URL> {
+  await page.context().route("https://www.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "maps" }));
+  const [tab] = await Promise.all([page.context().waitForEvent("page"), click()]);
+  const url = new URL(tab.url() === "about:blank" ? await tab.waitForURL(/google\.com/).then(() => tab.url()) : tab.url());
+  await tab.close();
+  return url;
+}
+
 const runningTrip = (patch: Record<string, unknown> = {}) => ({
   id: "trip-1",
   booking_id: BOOKING,
@@ -87,6 +106,7 @@ const runningTrip = (patch: Record<string, unknown> = {}) => ({
   eta_at: new Date(Date.now() + 12 * 60_000).toISOString(),
   distance_m: 5200,
   simulated: false,
+  sharing: true,
   started_at: new Date().toISOString(),
   arrived_at: null,
   ended_at: null,
@@ -127,7 +147,7 @@ test.describe("pet transit", () => {
     await expect(screen.getByTestId("trip-sharing-banner")).toHaveCount(0); // arrived: sharing is over
   });
 
-  test("Not now keeps the trip unstarted", async ({ page }) => {
+  test("Cancel on the consent screen keeps the trip unstarted", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]).then(({ db }) => seed(db, "sitter_home"));
     await signIn(page, OWNER);
     await page.goto(`/owner/bookings/${BOOKING}`);
@@ -241,6 +261,109 @@ test.describe("pet transit", () => {
     await screen.getByTestId("trip-cancel").click();
     await expect(screen.getByTestId("trip-none")).toBeVisible();
     expect(db.trips[0]).toMatchObject({ status: "cancelled", last_lat: null, last_lng: null, eta_at: null });
+  });
+
+  test("Start without sharing: the trip exists, the other person sees the meeting place — and both can open Google Maps", async ({ browser }) => {
+    const ctxOwner = await browser.newContext();
+    const owner = await ctxOwner.newPage();
+    const { db } = await mockSupabase(owner, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    await signIn(owner, OWNER);
+    await owner.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(owner);
+
+    // Before the trip even starts, the owner can already open the place in Google Maps (directions: they will travel).
+    const early = await mapsUrlAfter(owner, () => screen.getByTestId("trip-entry-maps").click());
+    expect(early.pathname).toBe("/maps/dir/");
+    expect(early.searchParams.get("destination")).toBe("12 Maple St");
+    expect(early.searchParams.get("travelmode")).toBe("driving");
+
+    await screen.getByTestId("trip-start").click();
+    await screen.getByTestId("share-trip-sheet-alternative").click();
+    await expect(owner).toHaveURL(/\/trip$/);
+    expect(db.trips).toHaveLength(1);
+    expect(db.trips[0]).toMatchObject({ sharing: false, last_lat: null, eta_at: null, traveler_id: OWNER.id });
+    await expect(screen.getByTestId("trip-not-sharing-banner")).toContainText("You're not sharing your location — Chloe sees the meeting place");
+    await expect(screen.getByTestId("trip-map")).toHaveCount(0);
+    await expect(screen.getByTestId("trip-meeting-place")).toContainText("Chloe's place");
+    await expect(screen.getByTestId("trip-meeting-place")).toContainText("12 Maple St");
+    const mine = await mapsUrlAfter(owner, () => screen.getByTestId("trip-maps").click());
+    expect(mine.pathname).toBe("/maps/dir/"); // the traveller gets directions
+    await ctxOwner.close();
+  });
+
+  test("the person waiting sees \"isn't sharing a live location\", the meeting place and an Open in Google Maps button", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    db.trips.push(runningTrip({ sharing: false, last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null }));
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}/trip`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("trip-eta")).toHaveText("Robert is on the way");
+    await expect(screen.getByTestId("trip-substatus")).toHaveText("Robert isn't sharing a live location");
+    await expect(screen.getByTestId("trip-map")).toHaveCount(0);
+    await expect(screen.getByTestId("trip-meeting-place")).toContainText("Chloe's place");
+    await expect(screen.getByTestId("trip-meeting-place")).toContainText("12 Maple St");
+    await expect(screen.getByTestId("trip-meeting-place")).not.toContainText("Buzz"); // no entry codes in this card
+    const url = await mapsUrlAfter(page, () => screen.getByTestId("trip-maps").click());
+    expect(url.pathname).toBe("/maps/search/"); // the host sees the place itself, not directions
+    expect(url.searchParams.get("query")).toBe("12 Maple St");
+    expect(url.toString()).not.toContain("43.64"); // the address text is used, not the saved point
+  });
+
+  test("a live trip has the Google Maps button for both people too", async ({ page }) => {
+    await stubTiles(page);
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    db.trips.push(runningTrip());
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}/trip`);
+    await expect(app(page).getByTestId("trip-map")).toBeVisible();
+    const url = await mapsUrlAfter(page, () => app(page).getByTestId("trip-maps").click());
+    expect(url.pathname).toBe("/maps/search/");
+  });
+
+  test("a place with no written address falls back to the saved point", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    setProfile(db.sitter_profiles, SITTER.id, { home_address: null });
+    db.trips.push(runningTrip({ sharing: false, last_lat: null, last_lng: null, eta_at: null }));
+    await signIn(page, OWNER);
+    await page.goto(`/owner/bookings/${BOOKING}/trip`);
+    const url = await mapsUrlAfter(page, () => app(page).getByTestId("trip-maps").click());
+    expect(url.searchParams.get("destination")).toBe(`${CHLOE_HOME.lat},${CHLOE_HOME.lng}`);
+  });
+
+  test("the browser saying no after Allow starts the trip without sharing, and says so", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: { getCurrentPosition: (_ok: unknown, fail: (e: unknown) => void) => fail({ code: 1 }), watchPosition: () => 1, clearWatch: () => undefined },
+      });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    await signIn(page, OWNER);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("trip-start").click();
+    await screen.getByTestId("share-trip-sheet-allow").click();
+    await expect(page).toHaveURL(/\/trip$/);
+    await expect(screen.getByTestId("toast")).toContainText("Location is off in this browser, so Chloe sees the meeting place instead");
+    expect(db.trips[0]).toMatchObject({ sharing: false, last_lat: null });
+    await expect(screen.getByTestId("trip-not-sharing-banner")).toBeVisible();
+  });
+
+  test("a position that is a few minutes old says so, and why", async ({ page }) => {
+    await stubTiles(page);
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    db.trips.push(runningTrip({ last_at: new Date(Date.now() - 3 * 60_000).toISOString() }));
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}/trip`);
+    await expect(app(page).getByTestId("trip-last-seen")).toContainText("Last location 3 min ago");
   });
 
   test("the map is view only: dragging over it scrolls the screen, and ± are buttons", async ({ page }) => {

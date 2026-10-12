@@ -2,14 +2,15 @@ import { router } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 
 import { formatTime, isoToZoned } from "../features/schedule/dates";
-import { Role, canTravel, nextHandoff, startOpensAt } from "../features/transit/tripLogic";
+import { Role, canTravel, nextHandoff, placeFor, startOpensAt } from "../features/transit/tripLogic";
 import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { useStartTrip } from "../features/transit/useStartTrip";
-import type { BookingSummary } from "../lib/bookings";
+import type { BookingSummary, HandoffKind } from "../lib/bookings";
 import { isLive } from "../lib/transit";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { OpenInMapsButton } from "./OpenInMapsButton";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 
@@ -17,7 +18,16 @@ import { Card } from "./ui/Card";
  * The booking page's way into a trip: **Start trip** for the person who travels (from 2 hours before), and
  * **Track {name}** / **Open trip** while one is running (phase-06b 6B.3).
  */
-export function TripEntry({ booking, role }: { booking: BookingSummary; role: Role }) {
+export function TripEntry({
+  booking,
+  role,
+  addresses,
+}: {
+  booking: BookingSummary;
+  role: Role;
+  /** The handoff places the person can already see (after payment) — what Open in Google Maps opens. */
+  addresses?: Partial<Record<HandoffKind, string>>;
+}) {
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const { trips } = useLiveTrips(booking.id);
@@ -46,6 +56,12 @@ export function TripEntry({ booking, role }: { booking: BookingSummary; role: Ro
           onPress={() => router.push(tripHref)}
           testID="trip-track"
         />
+        <OpenInMapsButton
+          place={placeFor(live.handoff_kind === "drop_off" ? booking.dropOff : booking.pickUp, addresses?.[live.handoff_kind], null)}
+          travelling={mine}
+          style="link"
+          testID="trip-entry-maps"
+        />
       </Card>
     );
   }
@@ -73,6 +89,7 @@ export function TripEntry({ booking, role }: { booking: BookingSummary; role: Ro
         }}
         testID="trip-start"
       />
+      <OpenInMapsButton place={placeFor(next.handoff, addresses?.[next.kind], null)} travelling style="link" testID="trip-entry-maps" />
     </Card>
   );
 }
