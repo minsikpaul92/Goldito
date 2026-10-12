@@ -167,8 +167,8 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
+`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → (08 safety, stretch) → 10 deploy → 11 P1` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
+After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
 
 ### Coding discipline
 
