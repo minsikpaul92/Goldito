@@ -70,7 +70,7 @@
 | 6B.3 | TripMap + Trip 화면 | `components/TripMap.web.tsx` — Leaflet + OSM 타일(`© OpenStreetMap contributors` 표기), `dragging:false, scrollWheelZoom:false, touchZoom:false`, ± 버튼만, 마커 2개(🚗 · 📍) 자동 맞춤(± 쓰면 자동 맞춤 멈춤). 네이티브 `TripMap.tsx`는 지도 없음(ETA·상태 줄이 대신). `useLiveTrips`(`postgres_changes` + 4초 폴링 — Realtime이 막혀도 갱신). Trip 화면 `features/transit/TripScreen.tsx`(양쪽 라우트 `…/bookings/[bookingId]/trip.tsx`): 공유 중 배너 · ETA 큰 글씨 · 지도 · 도착 카드 · Cancel trip. 예약 상세에 `TripEntry`(Start trip / Track …), Home에 `ActiveTripCard`. 시터 예약 상세는 `[bookingId]/index.tsx`로 옮김 | 1.7 마우스 테스트: 지도 위 드래그가 화면 스크롤로 동작(`app/dev/gestures.tsx`에 지도 케이스) |
 | 6B.4 | 도착 안내 카드 | 이동한 사람(traveler)의 Trip 화면에 `arrived`가 되면 자동 표시. 시터(Sitter drives): 기존 **EntryInfoCard**(03C — `get_home_access`, 시간 조건 그대로, Show code). 견주(Owner drives): `get_handoff_details`로 **Chloe's place**(주소 · Visitor parking · 로비 안내). 기다린 쪽은 "{이름} has arrived" 카드. **Buzzer 1-tap `tel:` 링크는 보류** — 견주 전화번호가 앱에 없고(비상 연락처는 다른 용도) 지어내지 않기로 함 | 도착 시 자동 표시 |
 | 6B.5 | `POST /api/ai/handoff-check` (민식) — **API만, 앱 연결 없음(2026-10-11)** | `routers/ai_handoff_check.py` (요청·응답·모델 출력 스키마는 라우터 안, 다른 AI 라우터와 같음) — 요청 `{booking_id, media_id, check_type, handoff_kind}`(pet_checkin은 drop_off, return은 pick_up에만) · `assert_booked_sitter(booking, from_hours_before=2)`, media가 그 시터가 올린 `handoff` 사진이고 그 예약 반려동물 것인지 확인 → `fetch_as_data_url` → `MODEL_VISION` + `prompts/handoff_check/system.md` (check_type별 지시) → `HandoffFindings {pet_visible, species_match, crate_visible?, restraint_visible?, concerns:[str]}` (`chat_json`) → 서버 규칙으로 status: pet_checkin/return = `pet_visible && species_match` → ok / vehicle_safety = `pet_visible && (crate_visible \|\| restraint_visible)` → ok / 그 외 warning. 의학적 판단 금지("looks calm" 같은 관찰만). 실패·20 s 타임아웃 → `unchecked` (200, **이것도 행으로 저장**해 Received가 사진을 가리킬 수 있게 함). `handoff_checks(id, booking_id, handoff_kind, check_type, media_id, status, findings jsonb, override_reason text null, model, latency_ms, created_at)` service role insert, 예약 당사자 둘이 select, 시터만 `override_reason` update(200자 이하) — `012_transit.sql` | 샘플 4장 기대 결과 일치 (아래) |
-| 6B.6 | Received / Returned가 trip을 끝냄 + FB-9 | `complete_handoff(p_booking, p_kind)` — **시그니처는 그대로**, 해당 인수인계의 열린 trip(`en_route`·`arrived`)을 `completed`로 닫고 위치를 지움(맞이하는 쪽이 눌러도 이동한 사람의 trip이 닫힘). ~~사진 → 체크 → `p_check` → photo verified~~는 보류. **FB-9 합류 (2026-10-10):** Returned는 **확인 시트**("Max & Mochi are going home with Robert. This can't be undone." + 아직 안 한 오늘 할 일 수 · 알림장을 안 보냈다면 "Send today's note first?") 뒤에만 처리하고, 합의된 픽업 시각 **2시간 전부터**만 활성(Received와 같은 규칙, 서버에도 pick_up `handoff_too_early`) | Received · Returned가 trip을 닫음(스모크 L) · Returned 확인 시트 · 너무 이른 시각이면 비활성 |
+| 6B.6 | Received / Returned가 trip을 끝냄 + FB-9 | `complete_handoff(p_booking, p_kind)` — **시그니처는 그대로**, 해당 인수인계의 열린 trip(`en_route`·`arrived`)을 `completed`로 닫고 위치를 지움(맞이하는 쪽이 눌러도 이동한 사람의 trip이 닫힘). ~~사진 → 체크 → `p_check` → photo verified~~는 보류. **FB-9 (2026-10-11 결정: 막지 않고 묻는다):** Returned는 언제든 누를 수 있다(일찍 돌려보내는 경우가 있음). 누르면 **확인 시트**("Return Max?" · "Max goes home with Robert. This can't be undone, and it writes the Life Record." + 아직 안 한 오늘 할 일 수 · 오늘 알림장을 안 보냈다면 "Send today's note first" 링크) → **Return**(빨간 바탕 · 흰 글씨, `Button variant="danger"`) / **Cancel**. **합의된 픽업 시각 전이면** 시트에 "It's not pick-up time yet — … Do you really want to return Max now?"가 더 붙는다. **서버는 바꾸지 않음**(pick_up `handoff_too_early` 없음) | Received · Returned가 trip을 닫음(스모크 L) · Returned 확인 시트 · 일찍 누르면 경고 · Cancel은 아무것도 안 바꿈 |
 | 6B.8 | 동의 거부 대체 화면 (2026-10-10) | 위치를 공유하지 않는 이동의 **장소 카드**: 인수인계 장소 이름·주소 + **Open in Google Maps** 버튼 = `https://www.google.com/maps/search/?api=1&query=<주소 또는 좌표>` (새 탭, 앱 안 지도 없음). 보는 사람이 **이미 볼 수 있는 장소만** 쓴다 — 시터 집은 결제 후 견주(D31), 견주 집 주소는 예약 당사자 규칙(D24), `other`는 적어 둔 장소 문구. 출입 코드·buzzer는 링크·카드에 넣지 않음(03C 시간 조건 그대로). 상대 화면: "{name} isn't sharing a live location" 한 줄 + 같은 장소 버튼. 자동 도착 알림은 불가(위치 없음) — 수동 "I've arrived" 버튼 여부는 구현 때 확인 | 동의 거부 → 지도·ETA 없이 장소 + 버튼, 링크가 올바른 장소로 열림, 코드·좌표 외 개인정보 없음 |
 | 6B.7 | 테스트 | Playwright `flows`: 데모 owner·sitter 두 컨텍스트 — sitter Simulate trip → owner ETA 갱신 → 도착 카드 → Received → owner 토스트. (Realtime mock은 `supabaseMock.ts`에 `trips` 채널 추가) | CI 통과 |
 
@@ -92,7 +92,7 @@
 3. 출입 정보는 03C 시간 조건 밖에서 안 보임 (도착해도 2시간 전 이전이면 잠김 카드)
 4. `pytest`: handoff-check 비당사자 403, 상태 규칙(모델이 crate=false면 vehicle_safety warning), 타임아웃 → unchecked
 5. 지도 화면이 데스크톱 프레임에서 마우스만으로 동작하고 드래그가 스크롤을 막지 않음 (DESIGN.md §7.7)
-6. 동의 거부 경로(6B.8)와 Returned 확인 시트·시각 가드(FB-9, 6B.6)를 Playwright로 확인
+6. 동의 거부 경로(6B.8)와 Returned 확인 시트·이른 Returned 경고(FB-9, 6B.6)를 Playwright로 확인
 
 ---
 
@@ -109,7 +109,7 @@
 | **S3 위치 소스** | 6B.2 — `lib/location.ts` · `TripProvider` · 데모 경로 JSON · 위치 공유 **동의 화면**(Allow 전에는 아무것도 안 보냄) · Profile **Home location** | 타입체크 · 단위/e2e(동의 → Allow 전 전송 없음) |
 | **S4 지도 · Trip 화면** | 6B.3 + 6B.4 — `TripMap(.web)` · `trip.tsx` 양쪽 · 예약 상세 **Start trip / Track …** · Home의 이동 카드 · 도착 안내 카드(EntryInfoCard · Chloe's place) · `supabaseMock.ts` `trips` | 타입체크 · Playwright(Simulate → ETA 갱신 → 도착 카드) · 마우스만으로 지도 위 드래그 = 스크롤 |
 | **S5 trip 종료** | 6B.6 전반 — `complete_handoff`가 열린 trip을 닫음(시그니처 불변). 사진 UI는 뺌(2026-10-11) | 스모크 L · Playwright(Received가 도착한 trip을 닫음) |
-| **S6 FB-9** | Returned **확인 시트** + 픽업 2시간 전 가드(서버 `handoff_too_early`는 S5와 같은 마이그레이션). **시작점: 닫힌 브랜치의 커밋 `ade2301`**(`git show ade2301`) — 그 뒤로 시터 예약 상세가 많이 바뀌었으니 cherry-pick 대신 읽고 다시 적용 | `handoff.spec.ts` |
+| **S6 FB-9** | Returned **확인 시트**(오늘 남은 할 일 · 알림장 미발송) + 픽업 시각 전이면 "정말 지금 Return?" 경고 + 빨간 **Return** / **Cancel**. 서버 변경 없음. **시작점: 닫힌 브랜치의 커밋 `ade2301`**(`git show ade2301`)은 확인 시트 + 이른 경고만 있었음 — 읽고 다시 적용 | `handoff.spec.ts` |
 | **S7 동의 거부** | 6B.8 — 지도 · ETA 없이 **장소 + Open in Google Maps**, 상대 화면 "isn't sharing a live location" | Playwright · 링크가 올바른 장소 · 코드 · 좌표 노출 없음 |
 | **S8 마무리** | 6B.7 두 컨텍스트 e2e, 루트 `README.md` · `docs/README.ko.md`의 🚧(Transit · Returned 확인 시트 · 위치 거절 — 사진 체크는 앱에 없음) → ✅, test-guide 시나리오, TODO tidy, DoD 1~6 확인 | CI 통과 · 사용자에게 "Phase 완료" 보고 |
 
@@ -131,7 +131,7 @@
 | :--- | :--- | :--- |
 | 4 | Muk | Trip 화면(지도 · ETA · 도착 카드 · 사진 체크) **Figma 프레임**이 없으면 에이전트는 `DESIGN.md`로 와이어프레임 수준으로 만든다 — 나중에 Muk이 다듬을 화면이라고 PR에 적어 둔다 |
 | 5 | Minsik | **실제 폰 1회**(GPS): Vercel URL에서 Start trip → 위치 팝업 → 상대 창에 지도 · ETA. S4 뒤, 머지 전에 (6B.2 DoD) |
-| 6 | Minsik | 머지 때 에이전트에게 **"012 호스팅 DB에 적용해줘"** 라고 말하기(Supabase 연결). 적용하기 **전에 Seulgi에게 알리기**(S6에서 `complete_handoff`의 pick_up에 `handoff_too_early`가 생기고, Received · Returned가 trip을 닫음 — 시그니처는 그대로) |
+| 6 | Minsik | 머지 때 에이전트에게 **"012 호스팅 DB에 적용해줘"** 라고 말하기(Supabase 연결). 적용하기 **전에 Seulgi에게 알리기**(Received · Returned가 열린 trip을 닫는 동작이 추가됨 — 시그니처는 그대로, S6의 Returned 경고는 앱 화면만 바뀜) |
 | 7 | Minsik | 지난 마무리 중 남은 것(06B와 별개): Render `CRON_SECRET` + cron-job.org 15분 호출([env-setup.ko.md](../env-setup.ko.md)) · `/privacy` 페이지 · Supabase Leaked password protection |
 
 새 외부 서비스나 환경 변수는 없다: 지도는 Leaflet + OSM 타일(무료, `© OpenStreetMap contributors` 표기), Google Maps 링크는 키가 필요 없다.

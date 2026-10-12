@@ -48,6 +48,7 @@ import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
 import { requestLifeRecord } from "../../../../features/completion/completionApi";
+import { ReturnChecks, loadReturnChecks } from "../../../../features/completion/returnChecks";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
 import { useToast } from "../../../../providers/ToastProvider";
@@ -110,6 +111,8 @@ export default function SitterBookingDetail() {
   const [declineReasons, setDeclineReasons] = useState<string[]>([]);
   const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmReturn, setConfirmReturn] = useState(false);
+  const [returnChecks, setReturnChecks] = useState<ReturnChecks | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -179,6 +182,8 @@ export default function SitterBookingDetail() {
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
+  // Returned is allowed any time (a stay can end early), but before the agreed pick-up the sitter is asked twice over.
+  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at);
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -397,13 +402,11 @@ export default function SitterBookingDetail() {
           ) : !booking.pickUp?.completedAt ? (
             <Button
               label={busy ? "Saving…" : "Returned"}
-              onPress={() =>
-                void run(async () => {
-                  await completeHandoff(booking.id, "pick_up");
-                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
-                  void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe — ${owner} gets a notice`)
-              }
+              onPress={() => {
+                setReturnChecks(null);
+                setConfirmReturn(true);
+                void loadReturnChecks(booking.pets, booking.sitterId).then(setReturnChecks).catch(() => undefined);
+              }}
               disabled={busy}
               testID="handoff-returned"
             />
@@ -421,6 +424,58 @@ export default function SitterBookingDetail() {
           ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmReturn}
+        title={`Return ${petNames}?`}
+        onClose={() => setConfirmReturn(false)}
+        testID="return-sheet"
+        footer={
+          <View style={styles.returnActions}>
+            <Button
+              label="Return"
+              variant="danger"
+              onPress={() => {
+                setConfirmReturn(false);
+                void run(async () => {
+                  await completeHandoff(booking.id, "pick_up");
+                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                  void requestLifeRecord(booking.id).catch(() => undefined);
+                }, `${petNames} home safe — ${owner} gets a notice`);
+              }}
+              testID="return-confirm"
+            />
+            <Button label="Cancel" variant="secondary" onPress={() => setConfirmReturn(false)} testID="return-cancel" />
+          </View>
+        }
+      >
+        {returnsEarly && booking.pickUp ? (
+          <Text style={styles.warning} testID="return-early-warning">
+            {`It's not pick-up time yet — pick-up is ${formatInstant(booking.pickUp.at)}. Do you really want to return ${petNames} now?`}
+          </Text>
+        ) : null}
+        <Text style={styles.body}>{`${petNames} ${booking.pets.length > 1 ? "go" : "goes"} home with ${owner}. This can't be undone, and it writes the Life Record.`}</Text>
+        {returnChecks && returnChecks.tasksLeft > 0 ? (
+          <Text style={styles.body} testID="return-tasks-left">
+            {`• ${returnChecks.tasksLeft} care task${returnChecks.tasksLeft === 1 ? "" : "s"} still open today`}
+          </Text>
+        ) : null}
+        {returnChecks && returnChecks.petsWithoutNote.length > 0 ? (
+          <>
+            <Text style={styles.body} testID="return-note-missing">
+              {`• You haven't sent today's note for ${returnChecks.petsWithoutNote.join(" & ")}`}
+            </Text>
+            <TextButton
+              label="Send today's note first"
+              onPress={() => {
+                setConfirmReturn(false);
+                router.push("/sitter/diary");
+              }}
+              testID="return-send-note"
+            />
+          </>
+        ) : null}
+      </Sheet>
 
       <Sheet
         visible={confirmCancel}
@@ -547,6 +602,9 @@ const makeStyles = (theme: Theme) =>
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
+    },
+    returnActions: {
+      gap: theme.spacing.sm,
     },
     warning: {
       fontSize: theme.fontSize.small,

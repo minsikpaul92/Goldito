@@ -125,7 +125,8 @@
 | Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
 | Pet Transit **Start trip · 지도 · ETA · 도착 카드** (동의 화면 → 가상 운전 → 지도 · ETA 갱신 → 도착 시 Chloe's place / 출입 정보, 상대 화면은 새로고침 없이 따라감, Home 카드, Cancel trip) | ✅ 🤖 `transit.spec.ts` (Realtime은 e2e에서 안 쓰고 4초 폴링으로 확인 · 실제 두 화면 동시 확인과 실제 폰 GPS는 👤) | 06B / 6B.3 · 6B.4 |
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
-| Pet Transit (Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S6–S7 |
+| Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
+| Pet Transit (위치 거절 대체 화면) | ⬜ | 06B / S7 |
 
 ### Stage 5 — Completion · 기타
 
@@ -435,7 +436,7 @@
 | FLOW-3 | 오너 **Finish booking** (시터 요금표가 있는 상태 — **10/08에 Chloe 요금 행을 임시로 넣음**: 보딩 $55 · 추가 펫 +50% · 공휴일 +25%, 다시 눌러 확인) | 체크아웃이 열려 **견적 · 동의서 · 데모 결제**가 진행됨 (FB-7) | 🤖 `checkout` (mock — 요금표 없음 → "hasn't set their prices yet" · 서비스 안 함 → "doesn't offer" 2건 추가) · pytest `test_seed_demo` | ❌ 10/08 민식 ("This sitter doesn't offer that service" — `sitter_rates` 비어 있음). 코드 수정됨 — 호스팅 DB에 `seed_demo` 실행 후 다시 확인 |
 | FLOW-4 | 요금표가 **없는** 시터로 체크아웃 | "Chloe hasn't set her prices yet"처럼 **진짜 이유** 문구 (서비스 문구 아님) | 새로 필요 | ➖ |
 | FLOW-5 | 시터 Bookings: 드롭오프 끝난 예약 | **In progress** 에만 나옴, Upcoming에 없음 (FB-8) | 새로 필요 | ❌ 10/08 민식 |
-| FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸, 합의된 픽업 2시간 전 이전에는 비활성, 확인한 뒤에만 처리 (FB-9) | 새로 필요 | ❌ 10/08 민식 (바로 처리됨) |
+| FLOW-6 | 시터 **Returned** | **확인 시트**가 먼저 뜸("Return Max?" · 되돌릴 수 없고 Life Record가 써진다는 문구 · 오늘 남은 할 일 수 · 알림장 미발송이면 "Send today's note first"). 픽업 시각 전이면 "It's not pick-up time yet … Do you really want to return Max now?"가 더 붙음(막지는 않음, 2026-10-11 결정). **Return**(빨간 바탕 · 흰 글씨)을 눌러야만 처리, **Cancel**은 아무것도 안 바꿈 (FB-9) | 🤖 `handoff.spec.ts` (3개) | ❌ 10/08 민식 (바로 처리됨) → 다시 확인 필요 |
 | FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 저장 · 전송. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성/숨김, 에러("That handoff already happened.")가 안 나옴 (FB-6) | 새로 필요 | ❌ 10/08 민식 |

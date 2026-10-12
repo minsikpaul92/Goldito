@@ -64,7 +64,20 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
     await expect(screen.getByText("In care", { exact: true })).toBeVisible(); // FB-26
 
+    // FB-9: Returned asks first. The pick-up is days away, so the sheet also asks "really?"; Cancel changes nothing.
     await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toContainText("Return Max?");
+    await expect(screen.getByTestId("return-early-warning")).toContainText("It's not pick-up time yet");
+    await expect(screen.getByTestId("return-early-warning")).toContainText("Do you really want to return Max now?");
+    await screen.getByTestId("return-cancel").click();
+    await expect(screen.getByTestId("return-sheet")).toHaveCount(0);
+    expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
+    await screen.getByTestId("handoff-returned").click();
+    // Return is the red, white-lettered button; Cancel is the plain one.
+    await expect(screen.getByTestId("return-confirm")).toHaveCSS("background-color", "rgb(180, 35, 24)");
+    await expect(screen.getByTestId("return-confirm")).toHaveText("Return");
+    await expect(screen.getByTestId("return-confirm").locator("div").first()).toHaveCSS("color", "rgb(255, 255, 255)");
+    await screen.getByTestId("return-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
@@ -79,6 +92,47 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("✓ Returned");
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Completed — pets home"); // not "Confirmed" (FB-26)
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("Confirmed");
+  });
+
+  test("Returned on time asks once, with no early warning; open tasks and a missing note are listed (FB-9)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -3 * HOUR);
+    Object.assign(db.booking_handoffs[0], { completed_at: new Date(Date.now() - 2 * HOUR).toISOString() });
+    Object.assign(db.booking_handoffs[1], { scheduled_at: new Date(Date.now() - HOUR).toISOString() });
+    db.care_tasks.push({
+      id: "task-1", pet_id: MAX, type: "feeding", title: "Dinner", dose: null, scheduled_time: "23:50:00",
+      repeat_daily: true, notes: null, active: true, created_by: OWNER.id, created_at: "2026-10-01T00:00:00Z",
+    });
+    await page.route("**/api/ai/life-record", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toContainText("This can't be undone, and it writes the Life Record.");
+    await expect(screen.getByTestId("return-early-warning")).toHaveCount(0);
+    await expect(screen.getByTestId("return-tasks-left")).toContainText("1 care task still open today");
+    await expect(screen.getByTestId("return-note-missing")).toContainText("You haven't sent today's note for Max");
+    await screen.getByTestId("return-send-note").click();
+    await expect(page).toHaveURL(/\/sitter\/diary$/);
+    expect(db.completions).toEqual([]);
+  });
+
+  test("with the note sent and nothing open, the Returned sheet has only the confirmation", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -3 * HOUR);
+    Object.assign(db.booking_handoffs[0], { completed_at: new Date(Date.now() - 2 * HOUR).toISOString() });
+    Object.assign(db.booking_handoffs[1], { scheduled_at: new Date(Date.now() - HOUR).toISOString() });
+    db.daily_reports.push({ id: "r1", pet_id: MAX, sitter_id: SITTER.id, report_date: new Date().toLocaleDateString("en-CA", { timeZone: "America/Toronto" }), body: "Great day", status: "sent", sent_at: new Date().toISOString() });
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toContainText("Max goes home with Robert");
+    await expect(screen.getByTestId("return-confirm")).toBeVisible();
+    await expect(screen.getByTestId("return-tasks-left")).toHaveCount(0);
+    await expect(screen.getByTestId("return-note-missing")).toHaveCount(0);
   });
 
   test("the sitter reads the owner's stars and comment on the finished booking (FB-29)", async ({ page }) => {
