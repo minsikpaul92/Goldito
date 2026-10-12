@@ -374,6 +374,11 @@ node_daily_updates -->|"media"| node_cloudinary
 node_meet -->|"link"| node_google_meet
 node_transit -->|"map"| node_osm
 
+node_google_meet & node_nebius & node_supabase & node_cloudinary & node_osm & node_planned ~~~ node_pad
+node_pad[" <br/> <br/> <br/> <br/> <br/> "]
+classDef padNone fill:none,stroke:none,color:transparent
+class node_pad padNone
+
 classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
 classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
 classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
