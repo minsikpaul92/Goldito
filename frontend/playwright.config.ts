@@ -27,6 +27,8 @@ const viewports = only && only !== "all" ? allViewports.filter((v) => String(v.w
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // GitHub's public-repo runners have 4 vCPUs; Playwright's default would use only half of them.
+  workers: process.env.CI ? 4 : undefined,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
