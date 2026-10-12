@@ -95,6 +95,58 @@
 
 ---
 
+## 작업 순서 — 한 PR · 단계별 커밋 (CLAUDE.md §4.1a · §4.2)
+
+- **브랜치 `feat/phase-06b-transit`**(최신 `main`에서). **PR은 이 Phase가 끝날 때까지 하나** — 첫 단계 커밋을 push하면서 **ready for review**로 열고(`feat: phase 06B pet transit — live trip, arrival cards, handoff photo check`), 이후 단계는 모두 같은 PR에 쌓는다. PR 본문에 아래 단계 표를 넣고 단계마다 체크한다.
+- **단계마다 커밋 하나** — 그 단계의 확인(타입체크 · 해당 테스트 · SQL 스모크 / pytest)이 통과한 뒤에 커밋 · push하고, 같은 커밋에서 TODO · test-guide를 고친다. 단계가 끝나면 사용자에게 "커밋 · 확인한 방법 · 다음 단계"를 보고한다.
+- **`012_transit.sql`은 호스팅 DB에 적용하기 전까지 하나의 파일**이다 — S1에서 만들고 S5가 `complete_handoff`를 같은 파일에서 고친다(적용 전이라 "적용한 마이그레이션은 고치지 않는다" 규칙에 안 걸림). 호스팅 적용은 **머지할 때 사용자가 요청하면** 한다(Supabase 연결로).
+
+| 단계 | 내용 | 커밋 전 확인 |
+| :--- | :--- | :--- |
+| **S1 DB** | 6B.1 — `012_transit.sql`(홈 좌표 · `trips` · `start_trip` · `update_trip_position` · `end_trip` · Realtime) + `rls_smoke.sql` L. 데모 계정 시드 좌표는 `backend/app/services/demo_reset.py` | Docker `pgvector/pgvector:pg17`에 stub → 모든 마이그레이션 → 스모크 통과 |
+| **S2 백엔드 비전** | 6B.5 — `POST /api/ai/handoff-check` · `handoff_checks` · 프롬프트 · 샘플 사진 4장 fixtures · pytest(비당사자 403 · crate=false → warning · 타임아웃 → unchecked) | `pytest` · `ruff check` + 실제 모델로 샘플 4장 기대 결과(키 있을 때) |
+| **S3 위치 소스** | 6B.2 — `lib/location.ts` · `TripProvider` · 데모 경로 JSON · 위치 공유 **동의 화면**(Allow 전에는 아무것도 안 보냄) · Profile **Home location** | 타입체크 · 단위/e2e(동의 → Allow 전 전송 없음) |
+| **S4 지도 · Trip 화면** | 6B.3 + 6B.4 — `TripMap(.web)` · `trip.tsx` 양쪽 · 예약 상세 **Start trip / Track …** · Home의 이동 카드 · 도착 안내 카드(EntryInfoCard · Chloe's place) · `supabaseMock.ts` `trips` | 타입체크 · Playwright(Simulate → ETA 갱신 → 도착 카드) · 마우스만으로 지도 위 드래그 = 스크롤 |
+| **S5 인수인계 연결** | 6B.6 — 사진 → 체크 결과 → Retake / Continue anyway(이유 칩) → `complete_handoff(p_check)` · "photo verified ✅" 알림 · 맡기기 Received 때 `end_trip` | Playwright 3경로(ok / warning / 사진 없음) · 스모크 |
+| **S6 FB-9** | Returned **확인 시트** + 픽업 2시간 전 가드(서버 `handoff_too_early`는 S5와 같은 마이그레이션). **시작점: 닫힌 브랜치의 커밋 `ade2301`**(`git show ade2301`) — 그 뒤로 시터 예약 상세가 많이 바뀌었으니 cherry-pick 대신 읽고 다시 적용 | `handoff.spec.ts` |
+| **S7 동의 거부** | 6B.8 — 지도 · ETA 없이 **장소 + Open in Google Maps**, 상대 화면 "isn't sharing a live location" | Playwright · 링크가 올바른 장소 · 코드 · 좌표 노출 없음 |
+| **S8 마무리** | 6B.7 두 컨텍스트 e2e, 루트 `README.md` · `docs/README.ko.md`의 🚧(Transit · 사진 체크 · Returned 확인 시트 · 위치 거절) → ✅, test-guide 시나리오, TODO tidy, DoD 1~6 확인 | CI 통과 · 사용자에게 "Phase 완료" 보고 |
+
+---
+
+## 시작 전에 사람이 준비할 것 (Minsik · Muk)
+
+**막힘 — 이게 없으면 해당 단계의 마지막 확인을 못 한다**
+
+| # | 누가 | 무엇을 | 언제까지 / 어디에 |
+| :--- | :--- | :--- | :--- |
+| 1 | Muk (또는 Minsik) | **인수인계 샘플 사진 4장** 직접 촬영 · 생성: `dog_at_door.jpg`(문 앞의 강아지) · `car_crate_ok.jpg`(차 안, 크레이트 있음) · `car_no_crate.jpg`(차 안, 크레이트 · 안전벨트 없음) · `empty_room.jpg`(반려동물 없는 방). **사람 · 번호판 · 주소 · 실제 브랜드 라벨이 없어야 함**, 각 1 MB 이하 JPG | **S2 시작 전**(없으면 에이전트가 표시된 임시 이미지로 진행하고 S2의 "실제 모델 확인"만 남김). 같은 파일을 `frontend/assets/demo/handoff/` 와 `backend/tests/fixtures/handoff/` 에 둔다 |
+| 2 | Minsik | **Token Factory 확인**: `backend/.env`와 Render에 `NEBIUS_API_KEY`가 있고, `openbmb/MiniCPM-V-4_5`가 `GET /v1/models`에 나오는지 ([model-ids.md](notes/model-ids.md)) | S2 전. 안 나오면 에이전트가 멈추고 알린다(CLAUDE.md §3 "Ask the human when blocked") |
+| 3 | Minsik | **시작 전 결정 2개** — (a) 위치 공유를 안 하는 이동에서 수동 **"I've arrived"** 버튼을 둘까? (추천: P0에서는 **두지 않음** — 장소 카드만, 자동 도착 알림은 위치가 있을 때만) (b) 데모 경로: 에이전트가 만드는 **가상 좌표**(공원 · 교차로 수준, 실제 주소 아님)를 그대로 써도 되는지 | S1 전. 말이 없으면 위 추천대로 진행 |
+
+**병행 — 막지는 않지만 해 두면 좋은 것**
+
+| # | 누가 | 무엇을 |
+| :--- | :--- | :--- |
+| 4 | Muk | Trip 화면(지도 · ETA · 도착 카드 · 사진 체크) **Figma 프레임**이 없으면 에이전트는 `DESIGN.md`로 와이어프레임 수준으로 만든다 — 나중에 Muk이 다듬을 화면이라고 PR에 적어 둔다 |
+| 5 | Minsik | **실제 폰 1회**(GPS): Vercel URL에서 Start trip → 위치 팝업 → 상대 창에 지도 · ETA. S4 뒤, 머지 전에 (6B.2 DoD) |
+| 6 | Minsik | 머지 때 에이전트에게 **"012 호스팅 DB에 적용해줘"** 라고 말하기(Supabase 연결). 적용하기 **전에 Seulgi에게 알리기**(그녀의 Q.1 테스트 중 `complete_handoff` 시그니처가 바뀜) |
+| 7 | Minsik | 지난 마무리 중 남은 것(06B와 별개): Render `CRON_SECRET` + cron-job.org 15분 호출([env-setup.ko.md](../env-setup.ko.md)) · `/privacy` 페이지 · Supabase Leaked password protection |
+
+새 외부 서비스나 환경 변수는 없다: 지도는 Leaflet + OSM 타일(무료, `© OpenStreetMap contributors` 표기), Google Maps 링크는 키가 필요 없다.
+
+### 새 세션에서 붙여 넣을 프롬프트
+
+```text
+Read CLAUDE.md and docs/plan/TODO.md.
+Work ONLY on the "Current focus" task: Phase 06B Pet Transit.
+Read docs/plan/phases/phase-06b.md — the Goal, DoD, 작업 순서 (steps S1–S8) and 시작 전에 사람이 준비할 것.
+Update main, create feat/phase-06b-transit, work step by step: one commit per step, one PR (ready for review) for the whole phase, same PR until it is done.
+Before S1, tell me which of the "blocking" items in the 준비 list are still open. After each step report the commit, how you verified it, and the next step.
+```
+
+---
+
 ## 산출물
 
 - `supabase/migrations/012_transit.sql`, `supabase/tests/rls_smoke.sql` (L)
