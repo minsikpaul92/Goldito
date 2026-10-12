@@ -15,6 +15,8 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 [![Hackathon](https://img.shields.io/badge/Nebius%20x%20NVIDIA-Best%20Apps%20%26%20Agents-76b900?style=flat-square)](docs/hackathon/README.md)
 [![Nemotron on Token Factory](https://img.shields.io/badge/NVIDIA%20Nemotron-on%20Nebius%20Token%20Factory-76b900?style=flat-square)](#how-we-use-nvidia-nemotron--nebius-token-factory)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![Watch a one-minute video tour of goldito](https://gitdiagram.com/video-badge.svg)](https://gitdiagram.com/minsikpaul92/goldito/video)
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/minsikpaul92/goldito)
 
 [Try it](#try-it-in-60-seconds) · [What changes](#what-changes) · [How it works](#how-goldito-works) · [Agent](#the-goldito-agent) · [Nemotron](#how-we-use-nvidia-nemotron--nebius-token-factory) · [Privacy](#privacy--safety-by-design) · [Run it](#run-it-yourself)
 
@@ -34,6 +36,10 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 > The backend runs on a free plan: the first request after a quiet spell can take 30–50 s while it wakes up (we ping it every 10 minutes).
 
 **Demo video:** _coming_
+
+**One-minute tour** (auto-generated from this repo by [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito/video) — not our submission video; click to watch on gitdiagram.com):
+
+[![minsikpaul92/goldito, explained in a one-minute video](https://gitdiagram.com/api/video/file?username=minsikpaul92&repo=goldito&format=poster)](https://gitdiagram.com/minsikpaul92/goldito/video)
 
 > [!NOTE]
 > **Status legend** (as of 2026-10-11; refreshed at submission): ✅ works in the live demo · 🚧 being built before the deadline · 🔭 after the hackathon
@@ -277,6 +283,121 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 | Video Meet & Greet | Google Meet (via the Google Calendar API) |
 | Web search | Tavily (stretch) |
 | Notifications | Supabase Realtime in-app alerts (web demo) · Expo push notifications (native apps, after the hackathon) |
+
+</details>
+
+<details>
+<summary><b>Diagram — how the pieces connect</b> (click to expand)</summary>
+
+Starts from a [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito) export, with Pet Transit, vision, retrieval, and the planned services added. Dashed boxes are not built yet (🚧 before the deadline · 🔭 after).
+
+```mermaid
+flowchart LR
+
+subgraph group_experience["Owner And Sitter App · Expo"]
+  node_mobile["Role-Based App<br/>[frontend/app]"]
+  node_session["Session And Roles"]
+end
+
+subgraph group_stay["Stay Lifecycle — the five stages"]
+  node_booking["① Inquiry · ③ Booking<br/>[bookings.ts]"]
+  node_meet["② Meet And Greet<br/>[meet_greet.py]"]
+  node_care_request["Care Request<br/>[features/care]"]
+  node_transit["④ Pet Transit<br/>live trip · arrival cards<br/>[features/transit]"]
+  node_care_tasks["Care Tasks<br/>[useTodayTasks.ts]"]
+  node_daily_updates["Daily Updates And Feed<br/>[features/diary]"]
+  node_completion["⑤ Completion And Reviews<br/>[completionApi.ts]"]
+end
+
+subgraph group_ai["AI And Memory — a person approves every message"]
+  node_ai_inquiry["Inquiry Drafting<br/>[inquiry.py]"]
+  node_ai_care["Care Plan AI<br/>[care_plan.py]"]
+  node_ai_chips["Report Chips<br/>[report_chips.py]"]
+  node_ai_daily["Daily Note<br/>[daily_report.py]"]
+  node_ai_caption["Photo Captions<br/>[ai_caption.py]"]
+  node_ai_handoff["Handoff Photo Check 🔭<br/>[ai_handoff_check.py]"]
+  node_ai_life["Life Record<br/>[life_record.py]"]
+  node_rag["Pet Memory Search<br/>[rag.py]"]
+end
+
+subgraph group_platform["Backend And State · FastAPI"]
+  node_api["API Router<br/>[main.py]"]
+  node_auth["Authentication And Access<br/>[auth.py]"]
+  node_supabase_client["Supabase Access<br/>[supabase.py]"]
+  node_rules["Server Rules<br/>price · dates · timed unlock"]
+end
+
+subgraph group_integrations["External Services"]
+  node_nemotron{{"Nebius Token Factory<br/>Nemotron Nano · Super"}}
+  node_vision{{"MiniCPM-V<br/>vision"}}
+  node_embed{{"Qwen3 Embedding"}}
+  node_supabase[("Supabase<br/>Postgres · RLS · Realtime · pgvector")]
+  node_cloudinary{{"Cloudinary Media"}}
+  node_google_meet{{"Google Calendar · Meet"}}
+  node_osm{{"OpenStreetMap"}}
+  node_groq{{"Groq Whisper 🚧<br/>pet-profile voice"}}
+  node_tavily{{"Tavily 🚧<br/>treat safety search"}}
+end
+
+node_owner(("Pet Owner"))
+node_sitter(("Pet Sitter"))
+
+node_owner -->|"uses"| node_mobile
+node_sitter -->|"uses"| node_mobile
+node_mobile -->|"loads identity"| node_session
+node_mobile -->|"starts stay"| node_booking
+
+node_api -->|"checks token"| node_auth
+node_api -->|"price, dates, unlock"| node_rules
+node_api --> node_supabase_client
+node_supabase_client -->|"data"| node_supabase
+node_mobile -->|"REST"| node_api
+node_mobile -->|"CRUD, realtime"| node_supabase
+node_transit -.->|"live position"| node_supabase
+node_ai_handoff -.-> node_vision
+node_api --> node_ai_inquiry
+
+node_booking -->|"first meeting"| node_meet
+node_meet -->|"creates link"| node_google_meet
+node_owner -->|"writes care note"| node_care_request
+node_care_request -->|"structures tasks"| node_ai_care
+node_booking -->|"after payment"| node_transit
+node_transit -->|"map tiles"| node_osm
+node_transit -.->|"handoff photo"| node_ai_handoff
+node_transit -->|"arrival, then care starts"| node_care_tasks
+node_sitter -->|"ticks tasks"| node_care_tasks
+node_care_tasks -->|"records care"| node_ai_chips
+node_ai_chips -->|"kept chips"| node_ai_daily
+node_sitter -->|"adds photos"| node_ai_caption
+node_ai_daily -->|"sitter approves"| node_daily_updates
+node_daily_updates -->|"shares updates"| node_owner
+node_daily_updates -->|"stores media"| node_cloudinary
+node_daily_updates -->|"stay ends"| node_completion
+node_completion -->|"writes pet record"| node_ai_life
+node_ai_life -->|"indexes memory"| node_rag
+node_rag -->|"embeds and searches"| node_embed
+node_rag -.->|"next stay starts informed"| node_ai_inquiry
+
+node_ai_inquiry -->|"drafts in sitter's voice"| node_nemotron
+node_ai_care -->|"checklist"| node_nemotron
+node_ai_daily -->|"daily note"| node_nemotron
+node_ai_life -->|"life record"| node_nemotron
+node_ai_caption -->|"describes photo"| node_vision
+node_ai_caption -->|"sorts album"| node_daily_updates
+node_api -.->|"voice to text"| node_groq
+node_api -.->|"ingredient search"| node_tavily
+
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+class node_mobile,node_session toneBlue
+class node_booking,node_meet,node_care_request,node_transit,node_care_tasks,node_daily_updates,node_completion toneAmber
+class node_ai_inquiry,node_ai_care,node_ai_chips,node_ai_daily,node_ai_caption,node_ai_handoff,node_ai_life,node_rag toneMint
+class node_api,node_auth,node_supabase_client,node_rules toneRose
+class node_nemotron,node_vision,node_embed,node_supabase,node_cloudinary,node_google_meet,node_osm,node_groq,node_tavily,node_owner,node_sitter toneIndigo
+```
 
 </details>
 
