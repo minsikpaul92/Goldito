@@ -287,79 +287,103 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 </details>
 
 <details>
-<summary><b>Diagram 1 — the stay, and the services behind it</b> (click to expand)</summary>
+<summary><b>Architecture diagram — who talks to what</b> (click to expand)</summary>
 
-Starts from a [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito) export, redrawn around the five stages. The dashed arrow is the loop: the next stay starts with everything learned.
-
-```mermaid
-flowchart TD
-
-owner(("Pet Owner"))
-sitter(("Pet Sitter"))
-app["Expo app<br/>role chosen at login"]
-platform["Platform<br/>FastAPI: auth, AI routes,<br/>server rules<br/>Supabase: data, realtime<br/>Nebius: Nemotron,<br/>MiniCPM-V, Qwen3<br/>Planned: Groq, Tavily"]
-
-subgraph stay["Stay lifecycle"]
-  s1["① Inquiry<br/>AI drafts the reply"]
-  s2["② Meet and Greet<br/>care note to checklist<br/>Google Meet link"]
-  s3["③ Booking<br/>consents, payment,<br/>timed unlock"]
-  s4["④ Care and Transit<br/>live trip on OSM<br/>photos on Cloudinary<br/>AI daily note"]
-  s5["⑤ Completion<br/>home safe, review,<br/>Life Record"]
-end
-
-owner --> app
-sitter --> app
-app -->|"REST, realtime"| platform
-platform --> s1
-s1 --> s2 --> s3 --> s4 --> s5
-s5 -.->|"next stay"| s1
-
-classDef actor fill:#e0e7ff,stroke:#4f46e5,color:#312e81
-classDef stage fill:#fef3c7,stroke:#d97706,color:#78350f
-classDef back fill:#ffe4e6,stroke:#e11d48,color:#881337
-class owner,sitter,app actor
-class s1,s2,s3,s4,s5 stage
-class platform back
-```
-
-</details>
-
-<details>
-<summary><b>Diagram 2 — what the AI does, and who decides</b> (click to expand)</summary>
-
-Each AI task, the model behind it, and the person who approves it. Life Records are indexed for retrieval, so the next inquiry starts informed.
+Based on a [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito) export, with Pet Transit, photo captions, OpenStreetMap, and the planned Groq / Tavily added. Dotted arrows are loops and planned parts.
 
 ```mermaid
+%%{init: {"themeVariables": {"fontSize": "20px"}}}%%
 flowchart TD
 
-subgraph agent["AI tasks and approvals"]
-  inquiry["① Inquiry<br/>Reply in sitter's voice<br/>Nemotron Nano<br/>Sitter taps Send"]
-  care["② Care note<br/>Checklist, Heads-up<br/>Nemotron Super<br/>Owner saves"]
-  daily["④ Day ends<br/>Chips, daily note<br/>MiniCPM-V, Super<br/>Sitter approves"]
-  caption["④ Photo added<br/>Caption, album tag<br/>MiniCPM-V<br/>Automatic"]
-  life["⑤ Stay ends<br/>Pet Life Record<br/>Nemotron Super<br/>Owner reads it"]
+subgraph group_experience["<b>Owner And Sitter App</b>"]
+  node_mobile["Role-Based App"]
+  node_session["Session And Roles"]
 end
 
-subgraph memory["Memory"]
-  rag[("Pet memory<br/>pgvector")]
-  embed{{"Qwen3 Embedding"}}
+subgraph group_stay["<b>Stay Lifecycle</b>"]
+  node_booking["Inquiry And Booking"]
+  node_meet["Meet And Greet"]
+  node_care_request["Care Request"]
+  node_transit["Pet Transit"]
+  node_care_tasks["Care Tasks"]
+  node_daily_updates["Daily Feed"]
+  node_completion["Completion"]
 end
 
-inquiry ~~~ care
-care ~~~ daily
-daily ~~~ caption
-caption ~~~ life
+subgraph group_ai["<b>AI And Memory</b>"]
+  node_ai_inquiry["Inquiry Draft"]
+  node_ai_care["Care Plan"]
+  node_ai_daily["Daily Note"]
+  node_ai_caption["Photo Captions"]
+  node_ai_life["Life Record"]
+  node_rag["Pet Memory"]
+end
 
-life -->|"indexes"| rag
-rag -->|"embeds"| embed
-inquiry -.->|"retrieves"| rag
+subgraph group_platform["<b>Backend And State</b>"]
+  node_api["API Router"]
+  node_auth["Auth"]
+  node_supabase_client["Supabase Access"]
+  node_app_state[("App State")]
+end
 
-classDef task fill:#dcfce7,stroke:#16a34a,color:#14532d
-classDef ext fill:#e0e7ff,stroke:#4f46e5,color:#312e81
-classDef mem fill:#fef3c7,stroke:#d97706,color:#78350f
-class inquiry,care,daily,caption,life task
-class embed ext
-class rag mem
+subgraph group_integrations["<b>External Services</b>"]
+  node_nebius{{"Nebius AI"}}
+  node_supabase[("Supabase")]
+  node_cloudinary{{"Cloudinary"}}
+  node_google_meet{{"Google Meet"}}
+  node_osm{{"OpenStreetMap"}}
+  node_planned{{"Groq, Tavily<br/>planned"}}
+end
+
+node_owner(("Pet Owner"))
+node_sitter(("Pet Sitter"))
+
+node_owner -->|"uses"| node_mobile
+node_sitter -->|"uses"| node_mobile
+node_mobile --> node_session
+node_session -->|"profile"| node_app_state
+node_mobile -.->|"starts stay"| node_booking
+node_booking -.->|"requests"| node_api
+node_api --> node_ai_inquiry
+node_api --> node_ai_care
+node_api --> node_ai_daily
+node_api --> node_ai_life
+node_owner -->|"care notes"| node_care_request
+node_care_request --> node_ai_care
+node_booking -->|"first meeting"| node_meet
+node_booking -->|"after payment"| node_transit
+node_transit -->|"arrival"| node_care_tasks
+node_sitter -->|"completes tasks"| node_care_tasks
+node_care_tasks -.->|"records care"| node_daily_updates
+node_daily_updates -->|"updates"| node_owner
+node_daily_updates --> node_ai_caption
+node_daily_updates -->|"stay ends"| node_completion
+node_completion --> node_ai_life
+node_ai_inquiry --> node_nebius
+node_ai_care --> node_nebius
+node_ai_daily --> node_nebius
+node_ai_caption --> node_nebius
+node_ai_life -->|"indexes"| node_rag
+node_rag --> node_nebius
+node_rag -.->|"next stay"| node_ai_inquiry
+node_api -.-> node_auth
+node_api -.-> node_supabase_client
+node_supabase_client -.-> node_supabase
+node_api -.-> node_planned
+node_daily_updates -->|"media"| node_cloudinary
+node_meet -->|"link"| node_google_meet
+node_transit -->|"map"| node_osm
+
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+class node_mobile,node_session toneBlue
+class node_booking,node_meet,node_care_request,node_transit,node_care_tasks,node_daily_updates,node_completion toneAmber
+class node_ai_inquiry,node_ai_care,node_ai_daily,node_ai_caption,node_ai_life,node_rag toneMint
+class node_api,node_auth,node_supabase_client,node_app_state toneRose
+class node_nebius,node_supabase,node_cloudinary,node_google_meet,node_osm,node_planned,node_owner,node_sitter toneIndigo
 ```
 
 </details>
