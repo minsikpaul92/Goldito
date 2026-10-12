@@ -20,6 +20,10 @@ const allViewports = [
   { width: 1920, height: 1080 },
 ];
 
+// PW_BROWSERS="chromium" runs the frame checks in one browser (CI on PRs); unset runs chromium, firefox and webkit.
+const wanted = (process.env.PW_BROWSERS ?? "").split(/[\s,]+/).filter(Boolean);
+const frameBrowsers = wanted.length ? browsers.filter((b) => wanted.includes(b.name)) : browsers;
+
 // PW_FRAME_VIEWPORTS=1366 runs the frame checks at one size (CI on PRs); unset or "all" runs every size.
 const only = process.env.PW_FRAME_VIEWPORTS;
 const viewports = only && only !== "all" ? allViewports.filter((v) => String(v.width) === only) : allViewports;
@@ -42,7 +46,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
   },
   projects: [
-    ...browsers.flatMap((browser) =>
+    ...frameBrowsers.flatMap((browser) =>
       viewports.map((viewport) => ({
         name: `${browser.name}-${viewport.width}x${viewport.height}`,
         testIgnore: /(phone|auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit)\.spec\.ts/,

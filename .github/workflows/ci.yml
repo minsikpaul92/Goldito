@@ -67,6 +67,10 @@ jobs:
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # PRs check the frame in Chromium only (the app flows and the phone run in Chromium anyway); main also runs
+      # Firefox and WebKit, so a browser-specific break shows up there.
+      PW_BROWSERS: ${{ github.event_name == 'push' && 'chromium firefox webkit' || 'chromium' }}
     defaults:
       run:
         working-directory: frontend
@@ -100,16 +104,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ env.PW_BROWSERS }}-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install Playwright browsers
         # A stuck browser/apt download once hung this step; fail fast and re-run instead.
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         timeout-minutes: 8
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps ${{ env.PW_BROWSERS }}
       - name: Install Playwright system libraries (browsers come from the cache)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         timeout-minutes: 8
-        run: npx playwright install-deps chromium firefox webkit
+        run: npx playwright install-deps ${{ env.PW_BROWSERS }}
       - name: Playwright (desktop phone frame + mouse)
         env:
           # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
