@@ -1,6 +1,3 @@
-> **Why we built this.** After dozens of stays as pet sitters — many with the same dogs and cats — we kept seeing the same thing: apps connect owners and sitters, and take a cut of every booking, but the stay itself (replies, house rules, daily notes) is still typed by hand, and a lot of it happens outside the app.
-> **Why AI.** In our experience, owners who find typing hard — often seniors — leave their pet's profile half empty, and sitters spend their time writing instead of caring. Goldito's AI does the typing; people approve.
-
 <div align="center">
 
 <!-- TODO(logo): put the Goldito logo here, e.g. <img src="docs/assets/logo.png" alt="Goldito" width="120"> — waiting for Muk's design. The Expo template icon in frontend/assets is only a placeholder; do not use it. -->
@@ -21,6 +18,10 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 [Try it](#try-it-in-60-seconds) · [What changes](#what-changes) · [How it works](#how-goldito-works) · [Agent](#the-goldito-agent) · [Nemotron](#how-we-use-nvidia-nemotron--nebius-token-factory) · [Privacy](#privacy--safety-by-design) · [Run it](#run-it-yourself)
 
 </div>
+
+> **Why we built this.** After dozens of stays as pet sitters — many with the same dogs and cats — we kept seeing the same thing: apps connect owners and sitters, and take a cut of every booking, but the stay itself (replies, house rules, daily notes) is still typed by hand, and a lot of it happens outside the app.
+>
+> **Why AI.** In our experience, owners who find typing hard — often seniors — leave their pet's profile half empty, and sitters spend their time writing instead of caring. Goldito's AI does the typing; people approve.
 
 ---
 
@@ -157,8 +158,8 @@ Goldito's AI works like an agent. Each event in a stay triggers it; it gathers t
 
 Thanksgiving weekend, Oct 9–12: Robert leaves **Max** (dog, Maltese, allergic to chicken) and **Mochi** (cat) with sitter Chloe, whom he has never met. **System** means Goldito's AI and rules; a person approves everything the AI sends to the other side.
 
-<details open>
-<summary><b>The stay, step by step</b></summary>
+<details>
+<summary><b>The stay, step by step</b> — 26 steps and 8 exceptions (click to expand)</summary>
 
 | Flow | Actor | What happens |
 | :--- | :--- | :--- |
@@ -224,11 +225,16 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 | ⑤ Completion | Stay → Pet Life Record (eating, potty, meds, behavior, cautions) | `nvidia/nemotron-3-super-120b-a12b` | Long-context summarizing that only uses recorded facts |
 | New pet 🚧 | Spoken description → profile facts, each with the sentence it came from | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Server drops any value that has no matching quote |
 
+<details>
+<summary><b>Footnote, other services, and hosting</b> (click to expand)</summary>
+
 ¹ NVIDIA's vision models on Token Factory (`Nemotron-Nano-V2-12b`, `Cosmos3-Super-Reasoner`, `Nemotron-3-Nano-Omni`) are offered only as dedicated endpoints, not on the shared API (checked 2026-10-02), and keeping one running through judging would cost more than our credits — so vision uses MiniCPM-V-4.5 on the shared API. Reasoning, writing, and replies stay on Nemotron.
 
 **Other services we use:** **Tavily** (web search for ingredients and recalls, and breed needs — 🚧), **Groq Whisper** for speech-to-text on the pet-profile voice step 🚧 (Token Factory has no speech model — checked 2026-10-10), **Cloudinary** (photos), **Supabase** (database, auth, realtime, pgvector), **Google Calendar / Meet**, **OpenStreetMap**.
 
 **Hosting.** The web app is on **Vercel**; the FastAPI backend is on **Render** (Docker, free plan). Render's free plan sleeps after 15 minutes, so a GitHub Actions job and an external cron both ping `/health` every 10 minutes; a daily database ping keeps Supabase from pausing 🚧.
+
+</details>
 
 <!-- TODO(10.6, before submission): "Where Token Factory accelerated our workflow" + the per-model feedback table. Do not invent content. -->
 
@@ -399,6 +405,9 @@ class node_nebius,node_supabase,node_cloudinary,node_google_meet,node_osm,node_p
 
 The live demo above is the fastest way to see Goldito. To run your own copy you need a **Supabase** project, a **Nebius Token Factory** key, and a **Cloudinary** account (Tavily and Google OAuth are optional). Secrets setup: [env-setup.ko.md](docs/plan/env-setup.ko.md).
 
+<details>
+<summary><b>Setup steps and docs</b> (click to expand)</summary>
+
 ```bash
 git clone https://github.com/minsikpaul92/Goldito.git && cd Goldito
 
@@ -425,6 +434,8 @@ Open `http://localhost:8081` and use **Try demo**. Tests: `pytest -q` in `backen
 | DB migrations | [supabase/README.md](supabase/README.md) |
 | Product flow · decisions · test guide | [full-process.ko.md](docs/plan/full-process.ko.md) · [architecture.ko.md](docs/plan/phases/architecture.ko.md) · [test-guide.ko.md](docs/plan/test-guide.ko.md) |
 
+</details>
+
 ---
 
 ## What's Next
@@ -448,9 +459,14 @@ Open `http://localhost:8081` and use **Try demo**. Tests: `pytest -q` in `backen
 
 ## Resources
 
+<details>
+<summary><b>Docs and links</b> (click to expand)</summary>
+
 - Product flow and decisions: [full-process.ko.md](docs/plan/full-process.ko.md) · [architecture.ko.md](docs/plan/phases/architecture.ko.md) · [test-guide.ko.md](docs/plan/test-guide.ko.md)
 - Code: [backend](backend/README.md) · [frontend](frontend/README.md) · [database](supabase/README.md) · [development plan](docs/plan/README.md)
 - [Hackathon rules](docs/hackathon/README.md) · [한국어 README](docs/README.ko.md)
+
+</details>
 
 ---
 
