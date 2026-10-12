@@ -3790,6 +3790,8 @@ declare
   v_err text;
   v_n int;
   v_eta_title text;
+  v_media uuid;
+  v_check uuid;
 begin
   perform _t_as(null);
   insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Scout') returning id into scout;
@@ -4039,6 +4041,49 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err in ('handoff_completed', 'trip_active'), 'L: no trip for a handoff that is done');
+
+  -- Handoff photo checks (6B.5): the backend writes, the two parties read, only the sitter adds a reason
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (scout, chloe, 'goldito/scout/handoff/abc', 'image', 'handoff') returning id into v_media;
+  insert into public.handoff_checks (booking_id, handoff_kind, check_type, media_id, status, findings, model, latency_ms)
+  values (v_b, 'drop_off', 'vehicle_safety', v_media, 'warning', '{"pet_visible":true,"crate_visible":false}', 'vision-model', 900)
+  returning id into v_check;
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: the sitter reads the check of their photo');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: …and so does the owner');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.handoff_checks) = 0, 'L: a third party reads no check');
+  perform _t_as(chloe);
+  begin
+    insert into public.handoff_checks (booking_id, handoff_kind, check_type, status) values (v_b, 'drop_off', 'pet_checkin', 'ok');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: a check is never written by a client (only by the backend)');
+  begin
+    update public.handoff_checks set status = 'ok' where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: the sitter cannot rewrite what the model found');
+  update public.handoff_checks set override_reason = 'Crate is in the trunk' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the sitter adds why they continue past a warning');
+  perform _t_as(robert);
+  update public.handoff_checks set override_reason = 'x' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the owner cannot change that reason');
+  perform _t_as(chloe);
+  begin
+    update public.handoff_checks set override_reason = repeat('x', 201) where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: the reason is at most 200 characters');
 end;
 $$;
 

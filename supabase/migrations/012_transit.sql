@@ -9,6 +9,7 @@
 -- * start_trip / update_trip_position / end_trip. ETA is a straight line × 1.3 at 30 km/h (D32, no routing API);
 --   within 150 m of the destination the trip becomes `arrived` and both people are told once.
 -- * Realtime: `trips` is published so the other person's screen follows without a refresh (RLS applies).
+-- * handoff_checks: the vision model's read of the handoff photo (ok / warning / unchecked), written by the backend.
 
 -- ---------------------------------------------------------------------------
 -- Home location
@@ -351,5 +352,53 @@ $$;
 
 revoke execute on function public.end_trip(uuid, boolean) from public, anon;
 grant execute on function public.end_trip(uuid, boolean) to authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- handoff_checks (6B.5): what the vision model made of the sitter's handoff photo
+-- ---------------------------------------------------------------------------
+
+-- One row per photo check, written by the backend (service role) from POST /api/ai/handoff-check — `unchecked`
+-- (the model failed or timed out) is stored too, so Received can still point at the photo. The two people on the
+-- booking read it; only the sitter may add their reason for continuing past a warning.
+create table public.handoff_checks (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid not null references public.bookings (id) on delete cascade,
+  handoff_kind text not null check (handoff_kind in ('drop_off', 'pick_up')),
+  check_type text not null check (check_type in ('pet_checkin', 'vehicle_safety', 'return')),
+  media_id uuid references public.media (id) on delete set null,
+  status text not null check (status in ('ok', 'warning', 'unchecked')),
+  findings jsonb not null default '{}',
+  override_reason text check (override_reason is null or char_length(override_reason) <= 200),
+  model text,
+  latency_ms int,
+  created_at timestamptz not null default now()
+);
+
+create index handoff_checks_booking_idx on public.handoff_checks (booking_id, handoff_kind, created_at desc);
+
+alter table public.handoff_checks enable row level security;
+
+create policy handoff_checks_select on public.handoff_checks
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.bookings b
+      where b.id = booking_id and (select auth.uid()) in (b.owner_id, b.sitter_id)
+    )
+  );
+
+create policy handoff_checks_update on public.handoff_checks
+  for update to authenticated
+  using (
+    exists (select 1 from public.bookings b where b.id = booking_id and b.sitter_id = (select auth.uid()))
+  )
+  with check (
+    exists (select 1 from public.bookings b where b.id = booking_id and b.sitter_id = (select auth.uid()))
+  );
+
+revoke all on public.handoff_checks from anon, authenticated;
+grant select on public.handoff_checks to authenticated;
+grant update (override_reason) on public.handoff_checks to authenticated;
+grant all on public.handoff_checks to service_role;
 
 notify pgrst, 'reload schema';

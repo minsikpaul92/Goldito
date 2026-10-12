@@ -9,6 +9,7 @@ from app.routers import (
     ai_caption,
     ai_care_plan,
     ai_daily_report,
+    ai_handoff_check,
     ai_inquiry,
     ai_life_record,
     ai_report_chips,
@@ -44,6 +45,7 @@ app.include_router(feed.router)
 app.include_router(ai_care_plan.router)
 app.include_router(ai_caption.router)
 app.include_router(ai_daily_report.router)
+app.include_router(ai_handoff_check.router)
 app.include_router(ai_inquiry.router)
 app.include_router(ai_life_record.router)
 app.include_router(ai_report_chips.router)
