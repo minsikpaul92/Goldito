@@ -756,6 +756,9 @@ export async function respondHandoff(handoffId: string, accept: boolean): Promis
 /** How early the sitter may tap Received before the agreed drop-off (complete_handoff, 003). */
 export const CHECK_IN_WINDOW_MS = 2 * 60 * 60 * 1000;
 
+/** Returned more than this long before the agreed pick-up counts as early: the sitter is asked twice (FB-9). */
+export const EARLY_RETURN_MS = 30 * 60 * 1000;
+
 /**
  * complete_handoff (sitter) — Received from 2 h before the agreed drop-off, Returned after
  * Received. The owner gets `pet_dropped_off` / `pet_picked_up` (3B.6).

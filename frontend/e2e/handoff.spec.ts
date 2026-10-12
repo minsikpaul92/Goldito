@@ -73,7 +73,7 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("return-sheet")).toHaveCount(0);
     expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
     await screen.getByTestId("handoff-returned").click();
-    // Return is the red, white-lettered button; Cancel is the plain one.
+    // Early: Return is the red, white-lettered button; Cancel is the plain one.
     await expect(screen.getByTestId("return-confirm")).toHaveCSS("background-color", "rgb(180, 35, 24)");
     await expect(screen.getByTestId("return-confirm")).toHaveText("Return");
     await expect(screen.getByTestId("return-confirm").locator("div").first()).toHaveCSS("color", "rgb(255, 255, 255)");
@@ -111,6 +111,7 @@ test.describe("handoff check", () => {
     await screen.getByTestId("handoff-returned").click();
     await expect(screen.getByTestId("return-sheet")).toContainText("This can't be undone, and it writes the Life Record.");
     await expect(screen.getByTestId("return-early-warning")).toHaveCount(0);
+    await expect(screen.getByTestId("return-confirm")).not.toHaveCSS("background-color", "rgb(180, 35, 24)"); // normal button
     await expect(screen.getByTestId("return-tasks-left")).toContainText("1 care task still open today");
     await expect(screen.getByTestId("return-note-missing")).toContainText("You haven't sent today's note for Max");
     await screen.getByTestId("return-send-note").click();
@@ -133,6 +134,35 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("return-confirm")).toBeVisible();
     await expect(screen.getByTestId("return-tasks-left")).toHaveCount(0);
     await expect(screen.getByTestId("return-note-missing")).toHaveCount(0);
+  });
+
+  test("Returned from 30 minutes before the pick-up is the normal case: no warning, the usual button", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -3 * HOUR);
+    Object.assign(db.booking_handoffs[0], { completed_at: new Date(Date.now() - 2 * HOUR).toISOString() });
+    Object.assign(db.booking_handoffs[1], { scheduled_at: new Date(Date.now() + 20 * 60_000).toISOString() });
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toContainText("This can't be undone");
+    await expect(screen.getByTestId("return-early-warning")).toHaveCount(0);
+    await expect(screen.getByTestId("return-confirm")).not.toHaveCSS("background-color", "rgb(180, 35, 24)");
+  });
+
+  test("Returned 45 minutes before the pick-up is still early: warning and the red button", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, -3 * HOUR);
+    Object.assign(db.booking_handoffs[0], { completed_at: new Date(Date.now() - 2 * HOUR).toISOString() });
+    Object.assign(db.booking_handoffs[1], { scheduled_at: new Date(Date.now() + 45 * 60_000).toISOString() });
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await screen.getByTestId("handoff-returned").click();
+    await expect(screen.getByTestId("return-early-warning")).toContainText("Do you really want to return Max now?");
+    await expect(screen.getByTestId("return-confirm")).toHaveCSS("background-color", "rgb(180, 35, 24)");
   });
 
   test("the sitter reads the owner's stars and comment on the finished booking (FB-29)", async ({ page }) => {

@@ -30,6 +30,7 @@ import {
   awaitingFirstYes,
   cancelBooking,
   CHECK_IN_WINDOW_MS,
+  EARLY_RETURN_MS,
   expressInterest,
   HandoffKind,
   PetCare,
@@ -182,8 +183,9 @@ export default function SitterBookingDetail() {
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
-  // Returned is allowed any time (a stay can end early), but before the agreed pick-up the sitter is asked twice over.
-  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at);
+  // Returned is allowed any time (a stay can end early). From 30 minutes before the agreed pick-up on it is the normal
+  // case; earlier than that the sitter is asked "really?" and the button turns red.
+  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at) - EARLY_RETURN_MS;
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -434,7 +436,7 @@ export default function SitterBookingDetail() {
           <View style={styles.returnActions}>
             <Button
               label="Return"
-              variant="danger"
+              variant={returnsEarly ? "danger" : "primary"}
               onPress={() => {
                 setConfirmReturn(false);
                 void run(async () => {
