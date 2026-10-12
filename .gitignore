@@ -81,6 +81,7 @@ __pycache__/
 dist/
 web-build/
 frontend/dist/
+scripts/anonymize_dataset.py
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
