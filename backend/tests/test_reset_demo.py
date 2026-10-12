@@ -53,6 +53,7 @@ def world() -> FakeDB:
             }
         ],
         sitter_rates=[],
+        owner_profiles=[{"id": OWNER}],
         profiles=[{"id": OWNER, "display_name": "x"}, {"id": SITTER, "display_name": "y"}],
     )
 
@@ -149,6 +150,9 @@ def test_apply_rebuilds_the_starting_state():
     assert len(db.tables["sitter_rates"]) == 1
     assert {p["id"]: p["display_name"] for p in db.tables["profiles"]} == {OWNER: "Robert", SITTER: "Chloe"}
     assert db.tables["sitter_profiles"][0]["services"] == ["boarding", "house_sitting"]
+    # Both homes have a map point, so Start trip has a destination (06B).
+    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6477, -79.4194)
+    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6644, -79.3573)
 
 
 def test_an_owner_with_no_pets_yet_does_not_break_the_plan():

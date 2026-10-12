@@ -119,7 +119,8 @@
 | **알림장 보내기** (`send_daily_report`: 시터가 고친 **최종 본문**만 게시, 오너는 보낸 것만 보임, 한 번만, 오너 알림) | ✅ SQL `rls_smoke` · 🤖 `report.spec.ts` (Send) | 07 / 7.5 |
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
 | **사진 자동 캡션 · 앨범 분류** (시터는 올리기만 → AI가 캡션 + 분류 → 피드 게시, "Writing a caption…" 단계, 실패해도 게시, 오너 Feed **Timeline / Album**) | ✅ 🤖 `caption.spec.ts` + pytest (실제 비전 모델로 샘플 9장 중 8장 분류 · 지연 약 1.2초 · 실제 사진 5장 합의는 👤) | 09 / 9.1–9.3 · 9.5 |
-| Pet Transit (실시간 위치 · 도착) | ⬜ | 06B |
+| Pet Transit **DB** (홈 좌표 · `trips` 마지막 위치 1개 · `start_trip` · `update_trip_position` · `end_trip` · 150 m 도착 알림 · Realtime) | ✅ SQL `rls_smoke` L (사람 확인 ➖ — 화면은 아직 없음) | 06B / 6B.1 |
+| Pet Transit (위치 공유 동의 · 지도 · ETA · 도착 카드 · 인수인계 사진 체크 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S2–S7 |
 
 ### Stage 5 — Completion · 기타
 
@@ -489,6 +490,16 @@
 | M-22 | 옛 예약을 열어 기록을 쓴 뒤 다음 시터 요청 | "From Max's Life Record"가 가장 최근 돌봄 기준 | pytest | ➖ |
 | M-23 | 모델이 빈 답 | 빈 기록 대신 이전 Heads-up을 이어받음, 알림 없음 | pytest | ➖ |
 | M-24 | `seed_demo.py --check` (이름이 다른 DB) | 이름 차이를 알려 줌, `--apply`로 고쳐짐 | 수동 | ➖ |
+
+### 3.18 Pet Transit (TRIP) — Phase 06B · *지금은 DB(S1)만 — 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| TRIP-1 | 결제 전 · 합의 시각 2시간보다 이른 때 · 이동하는 쪽이 아닌 사람(시터 집이면 시터)이 Start trip | 모두 거절 (`not_paid` · `trip_too_early` · `not_traveler`), 제3자는 `not_allowed` | SQL `rls_smoke` L | ➖ |
+| TRIP-2 | 견주가 첫 위치와 함께 Start trip → 위치 몇 번 갱신 → 목적지 150 m 안 | `en_route` + 거리 · ETA, 1초 안의 중복 호출은 무시, 150 m 안에서 `arrived`와 양쪽 알림 1회, 이후엔 위치를 저장하지 않음 | SQL `rls_smoke` L | ➖ |
+| TRIP-3 | End trip · Cancel trip | 위치 · ETA · 거리가 지워지고 `completed` / `cancelled`, 같은 예약 · 같은 인수인계에 새 Start trip 가능 | SQL `rls_smoke` L | ➖ |
+| TRIP-4 | 예약 당사자 아닌 계정, 시터 프로필 목록에서 좌표 | `trips` 행이 0건, 시터의 `home_lat` 열은 읽기 거부, 클라이언트가 직접 INSERT · UPDATE 하면 거부 | SQL `rls_smoke` L | ➖ |
+| TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
 
 ---
 

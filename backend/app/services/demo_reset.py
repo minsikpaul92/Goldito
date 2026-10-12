@@ -30,7 +30,12 @@ from supabase import Client
 
 from app.config import get_settings
 from app.services import authz
-from app.services.demo_accounts import DEMO_USERS, ensure_sitter_rates, find_user_id
+from app.services.demo_accounts import (
+    DEMO_USERS,
+    ensure_home_point,
+    ensure_sitter_rates,
+    find_user_id,
+)
 
 State = Literal["empty", "pets", "confirmed", "ready", "in_care"]
 STATES: tuple[State, ...] = ("empty", "pets", "confirmed", "ready", "in_care")
@@ -359,6 +364,8 @@ def reset(
         if state != "empty":
             ensure_pets(client, owner_id, today)
         ensure_sitter_rates(client, sitter_id)
+        ensure_home_point(client, "owner", owner_id)
+        ensure_home_point(client, "sitter", sitter_id)
         if not keep_schedule:
             open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id)
