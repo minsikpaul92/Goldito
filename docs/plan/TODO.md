@@ -107,7 +107,7 @@
 | --- | --- |
 | 00 – 06, 03B, 03C | done |
 | 07 Report AI · 07B Inquiry AI + RAG · 07C Completion · 09 Caption + album | merged; DoD hand-check pending (Seulgi Q.1) |
-| 06B Pet Transit | done on [#83](https://github.com/minsikpaul92/Goldito/pull/83) — merge, then apply `012` to the hosted DB (Minsik) |
+| 06B Pet Transit | done on [#83](https://github.com/minsikpaul92/Goldito/pull/83) — `012` already applied to the hosted DB (2026-10-12); waiting for the merge |
 | 08 Safety | P0 stretch, only if time remains |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
 | 11 P1 | not started |
