@@ -2,7 +2,7 @@
 
 > **Rule of this file: it lists only what is still open.** When a task is done, delete its line (CLAUDE.md §5) — the commit, the PR and [test-guide.ko.md](test-guide.ko.md) are the record. No "Completed" section: finished items up to 2026-10-10 are in [../archive/todo-completed-2026-10.md](../archive/todo-completed-2026-10.md) (frozen lookup), later ones in `git log` / `gh pr list --state merged`.
 > **Always start by updating `main`** (`git checkout main && git pull origin main`), then read this file ([CLAUDE.md](../../CLAUDE.md) top line).
-> **Specs:** each open item's detail lives in its phase doc's **Open items** section ([03B 예약](phases/phase-03b.md) · [03C 결제](phases/phase-03c.md) · [06 체크](phases/phase-06.md) · [06B 이동](phases/phase-06b.md) · [07B 문의AI](phases/phase-07b.md) · [10 배포](phases/phase-10.md) · [Q 품질·QA](phases/phase-q.md)); the pet-profile onboarding has its own spec ([pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md)); this file keeps the order and owners. **Docs rules:** [CLAUDE.md §5.1](../../CLAUDE.md) — tidy this file in every PR. **Git:** one branch + one draft PR per phase, one commit per task ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). **Testing:** on `main`, at **https://goldito-petcare.vercel.app** (test-guide §1.1).
+> **Specs:** each open item's detail lives in its phase doc's **Open items** section ([03B 예약](phases/phase-03b.md) · [03C 결제](phases/phase-03c.md) · [06 체크](phases/phase-06.md) · [06B 이동](phases/phase-06b.md) · [07B 문의AI](phases/phase-07b.md) · [10 배포](phases/phase-10.md) · [Q 품질·QA](phases/phase-q.md)); the pet-profile onboarding has its own spec ([pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md)); this file keeps the order and owners. **Docs rules:** [CLAUDE.md §5.1](../../CLAUDE.md) — tidy this file in every PR. **Git:** one branch + one PR per phase, one commit per step ([CLAUDE.md](../../CLAUDE.md) §4.1–4.2). **Testing:** on `main`, at **https://goldito-petcare.vercel.app** (test-guide §1.1).
 
 **Product flow (source of truth):** [full-process.ko.md](full-process.ko.md) — 5 stages, D27–D47 · **Phase index:** [phases/README.ko.md](phases/README.ko.md) · **Blueprint:** [phases/architecture.ko.md](phases/architecture.ko.md) · **Team split:** [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) · **Feedback / review detail:** [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) · [feedback-2026-10-10.ko.md](feedback-2026-10-10.ko.md) · [review-2026-10-08.ko.md](review-2026-10-08.ko.md) · **Other:** [test-guide.ko.md](test-guide.ko.md) · [onboarding.ko.md](onboarding.ko.md) · [tavily.ko.md](tavily.ko.md) · [env-setup.ko.md](env-setup.ko.md) · [Devpost](../hackathon/devpost-submission.ko.md)
 
@@ -106,7 +106,7 @@
 | --- | --- |
 | 00 준비 · 01 틀 · 02 DB · 03 인증 · 03B 예약 · 03C 결제 · 04 업로드 · 05 피드 · 06 체크 | done |
 | 07 알림장 AI · 07B 문의 AI + RAG · 07C 완료 · 09 캡션 + 앨범 | merged; DoD hand-check pending (Seulgi Q.1) |
-| 06B Pet Transit | done on [#83](https://github.com/minsikpaul92/Goldito/pull/83) — `012` already applied to the hosted DB (2026-10-12); waiting for the merge |
+| 06B Pet Transit | done, merged ([#83](https://github.com/minsikpaul92/Goldito/pull/83)); `012` applied to the hosted DB (2026-10-12) |
 | 08 Safety | P0 stretch, only if time remains |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
 | 11 P1 | not started |
@@ -118,7 +118,6 @@
 ## Hosted DB — still to do
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
-- [ ] **`011z` (RV-5 rest) — apply to the hosted DB at the merge of its PR [#81](https://github.com/minsikpaul92/Goldito/pull/81)** (the backend 409 and the app work without it; the sibling-inquiry closing and `pet_id` need it).
 - [ ] Apply new migrations as they are created (`013` 08) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).
