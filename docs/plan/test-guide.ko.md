@@ -125,6 +125,7 @@
 | Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
 | Pet Transit **Start trip · 지도 · ETA · 도착 카드 (두 컨텍스트 e2e 포함)** (동의 화면 → 가상 운전 → 지도 · ETA 갱신 → 도착 시 Chloe's place / 출입 정보, 상대 화면은 새로고침 없이 따라감, Home 카드, Cancel trip) | ✅ 🤖 `transit.spec.ts` (Realtime은 e2e에서 안 쓰고 4초 폴링으로 확인 · 실제 두 화면 동시 확인과 실제 폰 GPS는 👤) | 06B / 6B.3 · 6B.4 |
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
+| Privacy 페이지 `/privacy` (로그아웃 상태 · Welcome · Profile에서 열림) | 🤖 `privacy.spec.ts` · 사람 확인 대기 (PRIV) | 10.11 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 
@@ -523,6 +524,14 @@
 | TRIP-20 | 공유 중인 trip과 Start trip 직전 | Trip 화면과 예약 상세의 Start trip 카드에서도 **양쪽 모두** Open in Google Maps가 보임(이동하는 쪽 = 길 안내, 기다리는 쪽 = 장소). 지도 앱으로 넘어가면 브라우저가 백그라운드가 되어 위치 공유가 멈추고, 상대 화면에 "Last location N min ago — sharing pauses while the browser is in the background" | 🤖 `transit.spec.ts` · 실제 폰에서 Maps로 넘어갔다 돌아오기 👤 | ➖ |
 | TRIP-21 | Allow를 눌렀는데 브라우저가 위치를 거절 | 자동으로 공유 없는 trip으로 시작되고 토스트 "Location is off in this browser, so Chloe sees the meeting place instead" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-22 | **두 사람 동시** — 시터(Chloe)가 견주 집으로 Start trip → Simulate, 견주는 Home에 있음 | 견주 Home에 새로고침 없이 "Chloe is on the way" 카드 → 탭하면 지도 + ETA가 줄어들며 갱신 → "Chloe has arrived" 카드. 시터 화면에는 출입 정보 카드. 시터가 Received를 누르면 견주 Trip 화면이 "No trip running"이 되고 예약에 ✓ Received | 🤖 `transit.spec.ts`(브라우저 둘, 같은 DB, 폴링으로 갱신) · **실제 두 계정 · 두 폰 👤** | ➖ |
+
+### 3.19 개인정보 페이지 (PRIV) — Phase 10 · 10.11
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| PRIV-1 | 로그아웃 상태로 Welcome 하단 **Privacy** | `/privacy`가 열리고 무엇을 저장하는지 · AI(Nebius Token Factory, 진입 코드는 모델에 안 감) · 다른 서비스(OpenStreetMap Nominatim에 집 주소가 한 번, Cloudinary, Google Calendar) 문단이 있음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
+| PRIV-2 | 로그인 후 Profile 아래 **Privacy**, 그리고 주소창으로 `/privacy` 직접 열기 | 열리고, 새로고침해도 역할 홈으로 튕기지 않음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
+| PRIV-3 | 실제 문구가 앱 동작과 맞는지 읽기 (저장 항목 · 보내는 곳 · 보존 기간) | 새 서비스를 붙일 때마다 페이지도 같이 고침 | 수동 | 사람 확인 대기 |
 
 ---
 

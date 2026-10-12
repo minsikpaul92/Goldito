@@ -49,7 +49,7 @@ export default defineConfig({
     ...frameBrowsers.flatMap((browser) =>
       viewports.map((viewport) => ({
         name: `${browser.name}-${viewport.width}x${viewport.height}`,
-        testIgnore: /(phone|auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit)\.spec\.ts/,
+        testIgnore: /(phone|auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit|privacy)\.spec\.ts/,
         use: { ...browser.device, viewport },
       })),
     ),
@@ -61,7 +61,7 @@ export default defineConfig({
     {
       // App flows — logic, not layout, so one desktop browser is enough.
       name: "flows",
-      testMatch: /(auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit)\.spec\.ts/,
+      testMatch: /(auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit|privacy)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
   ],

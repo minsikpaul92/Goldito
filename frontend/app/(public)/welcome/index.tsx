@@ -71,6 +71,7 @@ export default function WelcomeLanding() {
           onPress={() => router.push("/signup")}
           testID="welcome-sign-up"
         />
+        <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="welcome-privacy" />
       </View>
     </View>
   );

@@ -454,6 +454,7 @@ export default function ProfileScreen() {
       ) : null}
       <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
       {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
+      <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="profile-privacy" />
     </Screen>
   );
 }
