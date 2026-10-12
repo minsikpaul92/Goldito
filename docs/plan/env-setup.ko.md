@@ -41,6 +41,8 @@
 > 3. 30분쯤 아무도 안 쓴 뒤 `curl -w "%{time_total}" https://goldito-backend.onrender.com/health` — 1초 안이면 깨어 있음, 30초 이상이면 핑이 안 돌고 있음
 >
 > **외부 핑 (사용 중, 2026-10-09):** GitHub cron은 몇 분씩 늦거나 건너뛸 수 있어 **cron-job.org**에 두 번째 핑을 걸어 두었습니다 — 민식 계정(같은 계정에 다른 프로젝트 PairPocket Keepalive도 있음)의 **`Goldito Keepalive`**: `GET https://goldito-backend.onrender.com/health`, **10분마다**(`*/10 * * * *`, America/Toronto), timeout 30초, 기한 없음(12/15까지 유지), 실패 시 이메일 알림. 확인은 console.cron-job.org → Dashboard → Last Events에서 `Successful (200 OK)`.
+>
+> **Supabase 일시정지 방지 (10.7):** Supabase 무료는 7일 쉬면 프로젝트가 멈춥니다. `GET /health/deep`이 Supabase에서 한 줄을 읽고(실패하면 503), `keepalive.yml`이 **하루 한 번**(06:17 UTC) 부릅니다 — `/health`는 Supabase를 건드리지 않는 가벼운 핑으로 그대로 둡니다. 수동 확인: `curl -fsS https://goldito-backend.onrender.com/health/deep` → `{"status":"ok","database":"ok"}`.
 
 | Render 설정 | 값 |
 | :--- | :--- |

@@ -3,9 +3,13 @@ name: keepalive
 # Render's free plan puts the backend to sleep after 15 minutes without requests, and the next
 # request then waits 30–50 s. Ping /health so testers and judges get a warm backend (phase 10.7).
 # GitHub may delay scheduled runs by a few minutes; every 10 minutes keeps it inside the 15-minute window.
+#
+# Once a day it also calls /health/deep, which reads one row from Supabase: the free Supabase plan pauses a
+# project after 7 days without activity, and judging runs 12/1–12/15 (phase 10.7).
 on:
   schedule:
     - cron: "*/10 * * * *"
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -17,3 +21,6 @@ jobs:
     steps:
       - name: GET /health
         run: curl -fsS --retry 3 --retry-delay 20 --max-time 90 https://goldito-backend.onrender.com/health
+      - name: GET /health/deep (once a day, and on a manual run)
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '17 6 * * *'
+        run: curl -fsS --retry 3 --retry-delay 20 --max-time 90 https://goldito-backend.onrender.com/health/deep
