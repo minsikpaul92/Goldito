@@ -98,7 +98,7 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 
 ## 4. How work progresses (mandatory loop)
 
-**Never jump ahead of the queue.** One task → implement → verify → commit on the phase branch → update TODO. **PRs are per phase** (or per large chunk), not per task.
+**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update TODO. **One PR per phase (or per large chunk)** — it stays the same PR until the phase / chunk is done; never one PR per task or per step.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -108,18 +108,19 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 │    the phase's first task — see §4.1)                         │
 │ 4. Implement ONLY that task (minimal diff)                    │
 │ 5. Verify DoD (commands, manual steps)                        │
-│ 6. Commit (one commit per task, §4.3) → push                  │
-│ 7. Update TODO.md (see §5) in the same commit                 │
-│ 8. Phase done (or chunk large)? → tidy TODO, finish PR (§4.2)│
-│ 9. Report to user: commit + next focus item (PR link at end)  │
+│ 6. Commit (one commit per STEP, §4.1a) → push                 │
+│ 7. Update TODO.md + test-guide in the step's commit (§5)      │
+│ 8. More steps in this phase? → back to 4, same branch, same PR│
+│    Phase / chunk done? → tidy TODO, update the PR (§4.2)      │
+│ 9. Report to user: commits + next step (PR link at end)       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.1 Branch per phase
 
-- **One phase = one branch** (e.g. all of Phase 03 on `feat/phase-03-auth`). Each TODO task is **one commit** on it. Do not mix tasks from other phases.
+- **One phase = one branch = one PR** (e.g. all of Phase 03 on `feat/phase-03-auth`), from its first task until its DoD passes. Do not mix tasks from other phases.
 - Start the branch from latest `main` (`git pull origin main` then `git checkout -b <branch>`); merge `main` into it when `main` moves.
-- A very large or risky chunk inside a phase may get its own branch + PR — decide with the user.
+- A very large or risky chunk inside a phase may get its own branch + PR — decide with the user. Once a chunk has its branch and PR, everything of that chunk goes into that one PR.
 - Small standalone fixes (typo, config, one-file chore) can be a small branch + PR when they can't wait for the phase.
 - **Naming:** short, descriptive, **kebab-case**.
 
@@ -129,14 +130,21 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 - **Never rename a branch that has an open PR** — GitHub closes the PR.
 - Do not commit directly to `main` for feature work. Merge via PR after review (or when the user asks to merge).
 
+### 4.1a Commits — one per step
+
+- A **step** is one coherent, verifiable slice of a task that could be reviewed alone, in the order the work depends on itself — typically *database* → *backend* → *app* → *tests / e2e* → *docs*, or one numbered task of the phase doc (e.g. `6B.1`). A step never mixes tasks of different IDs.
+- **One commit per step**, made when that step's checks pass (typecheck, the tests that touch it, `ruff` / smoke for backend / SQL), then pushed. No "wip" commits, no squashing steps together afterwards, no step left uncommitted at the end of a session.
+- Each commit updates `docs/plan/TODO.md` and `docs/plan/test-guide.ko.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
+- A step that needs a person (a photo, a key, a hosted-DB apply) is committed as far as it can go, and the phase doc's "Before you start" list says what the person does.
+
 ### 4.2 Pull request (per phase)
 
-- Open the phase PR as a **draft** after the first task commit (`gh pr create --draft`) so CI runs on every push; keep its task table up to date.
-- When the phase DoD passes: update the PR title/body for the whole phase, mark it ready (`gh pr ready`).
+- Open the phase PR **after the first step's commit, as ready for review** (`gh pr create`, no `--draft`) unless there is a reason to keep it a draft (work that cannot be reviewed yet, a human step it is blocked on) — then say why in the PR body. CI runs on every push to it. Keep the PR body's step table up to date after each step; **keep pushing to this same PR** for every later step.
 - **PR title:** same style as commit message (see §4.3), e.g. `feat: phase 03 auth, roles, and pet profiles`. Describe *what* and *why* for reviewers (Minsik / Seulgi / Muk).
 - **PR body:** Summary bullets / task table, test plan checklist, link to phase doc.
 - **TODO tidy on every PR (required):** before opening a PR, and again before marking it ready, re-read `docs/plan/TODO.md` and tidy it in that PR — delete lines the PR finished, fix anything it made stale (statuses, migration letters, hosted-DB notes, "Current focus"), move new findings to the right section (P0 path vs Later), and archive documents it closed (§5.1). A PR that leaves TODO.md out of date is not ready.
-- **Do not merge** unless the user explicitly asks (squash merge, delete branch).
+- Before the phase is done, report after each step with: the commit, how it was verified, and the next step. When the phase DoD passes, update the PR title / body for the whole phase and tell the user it is complete.
+- **Do not merge** unless the user explicitly asks (squash merge, delete branch). A migration that has to reach the hosted DB is applied only when the user asks, at the merge of its PR.
 
 ### 4.3 Commits, PRs, branches — no AI attribution
 
@@ -166,7 +174,7 @@ After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 �
 
 - Minimize scope; no drive-by refactors.
 - No secrets in git; extend `.env.example` only.
-- **Git:** follow §4.1–4.3 (phase branch → one commit per task → push → phase PR). Do not commit on `main` for features. If the user says “commit and push” for the current task, do it on the **phase branch** (the draft PR updates itself).
+- **Git:** follow §4.1–4.3 (phase branch → one commit per step → push → one phase PR). Do not commit on `main` for features. If the user says “commit and push” for the current task, do it on the **phase branch** (the PR updates itself).
 - Anonymize any real customer data (Seulgi owns policy; never commit `data/raw/`).
 
 ---
@@ -203,8 +211,8 @@ Read CLAUDE.md and docs/plan/TODO.md.
 Work ONLY on the "Current focus" task.
 Read the linked docs/plan/phases/phase-XX.md for Goal and DoD.
 Work on the phase branch (CLAUDE.md §4.1 — create it from main at the phase's first task; no claude/cursor/ai prefixes).
-When DoD passes: update TODO.md (§5), commit (§4.3), push — the phase draft PR updates itself (§4.2).
-Before opening or readying a PR: tidy TODO.md (§4.2, §5.1). When the phase is done: finish the phase PR. Report the commit, verify steps, and next focus.
+Work in steps (§4.1a): when a step's checks pass, update TODO.md + test-guide (§5), make ONE commit (§4.3), push. The first push opens the phase PR (ready for review, §4.2); every later step goes into the same PR.
+Before opening the PR and again when the phase is done: tidy TODO.md (§4.2, §5.1). Report after each step: the commit, how it was verified, and the next step.
 ```
 
 Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1.

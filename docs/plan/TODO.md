@@ -23,7 +23,7 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **06B Pet Transit** | Start trip with location consent, live position + ETA (Simulate the drive), arrival cards, handoff photo check; declining location shows the meeting place + **Open in Google Maps**; FB-9 (Returned confirm sheet + 2-hour guard) joins as 6B.6. Migration `012` | [phases/phase-06b.md](phases/phase-06b.md) |
+| **Minsik** | **06B Pet Transit** | One branch `feat/phase-06b-transit`, **one PR, one commit per step (S1–S8)**: DB `012` → handoff-check backend → location source + consent → map + Trip screens → handoff photo check → FB-9 → consent-denied fallback → e2e + docs. **Prepare first:** 4 handoff sample photos, Token Factory check, two small decisions — [phase-06b.md](phases/phase-06b.md) "작업 순서" · "시작 전에 사람이 준비할 것" |
 
 ---
 
