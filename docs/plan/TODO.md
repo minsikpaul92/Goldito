@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l` applied. Letters: Minsik `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); `011z` = RV-5 rest (applied at merge of its PR); Seulgi `011m`–`011y`; `012` = 06B, `013` = 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l`, `011z` and `012` (06B, applied 2026-10-12 while PR #83 was still open) applied. Letters: Minsik `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); `011z` = RV-5 rest (applied at merge of its PR); Seulgi `011m`–`011y`; `012` = 06B, `013` = 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---
@@ -120,7 +120,6 @@
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
 - [ ] **`011z` (RV-5 rest) — apply to the hosted DB at the merge of its PR [#81](https://github.com/minsikpaul92/Goldito/pull/81)** (the backend 409 and the app work without it; the sibling-inquiry closing and `pet_id` need it).
-- [ ] **`012` (06B Pet Transit) — apply to the hosted DB at the merge of [#83](https://github.com/minsikpaul92/Goldito/pull/83), on request.** Tell Seulgi first: `complete_handoff` keeps its signature but now also closes the running trip. Apps before the merge keep working (nothing reads `trips` until the app ships)
 - [ ] Apply new migrations as they are created (`013` 08) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).
