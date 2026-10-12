@@ -190,6 +190,22 @@ test.describe("pet transit", () => {
     await expect(app(page).getByTestId("active-trip-card")).toHaveCount(0, { timeout: 12_000 });
   });
 
+  test("Received ends the trip that is still running, and the cards go away", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    db.trips.push(runningTrip({ status: "arrived", arrived_at: new Date().toISOString(), distance_m: 60 }));
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("trip-entry-live")).toContainText("Robert has arrived");
+    await screen.getByTestId("handoff-received").click();
+    await expect(screen.getByTestId("toast")).toContainText("checked in");
+    expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
+    expect(db.trips[0]).toMatchObject({ status: "completed", last_lat: null, eta_at: null });
+    await expect(screen.getByTestId("trip-entry-live")).toHaveCount(0, { timeout: 12_000 });
+  });
+
   test("the sitter drives to the owner's home: the entry info card opens on arrival", async ({ page }) => {
     test.setTimeout(100_000);
     await stubTiles(page);

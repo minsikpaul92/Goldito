@@ -875,6 +875,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
     h.completed_at = new Date(nowMs()).toISOString();
+    // 012: the trip for this handoff is over — its position is erased.
+    for (const trip of db.trips.filter((t) => t.booking_id === p_booking && t.handoff_kind === p_kind && ["en_route", "arrived"].includes(String(t.status)))) {
+      Object.assign(trip, { status: "completed", last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null, ended_at: new Date(nowMs()).toISOString() });
+    }
     return route.fulfill({ status: 204 });
   }
 

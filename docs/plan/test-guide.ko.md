@@ -120,11 +120,12 @@
 | AI 알림장 **칩 제안 API** (`POST /api/ai/report-chips`: 하루 기록 → 칩(모델 없음), 사진 ≤ 2 → 한 줄 묘사 + 에피소드 칩, 느리거나 실패한 사진은 빼고 기록 칩은 유지, 남의 사진 403) | ✅ 🤖 pytest · 실제 비전 모델로 데모 사진 3장 확인(2026-10-07) · 화면은 시터 Diary(7.3) | 07 / 7.7 |
 | **사진 자동 캡션 · 앨범 분류** (시터는 올리기만 → AI가 캡션 + 분류 → 피드 게시, "Writing a caption…" 단계, 실패해도 게시, 오너 Feed **Timeline / Album**) | ✅ 🤖 `caption.spec.ts` + pytest (실제 비전 모델로 샘플 9장 중 8장 분류 · 지연 약 1.2초 · 실제 사진 5장 합의는 👤) | 09 / 9.1–9.3 · 9.5 |
 | Pet Transit **DB** (홈 좌표 · `trips` 마지막 위치 1개 · `start_trip` · `update_trip_position` · `end_trip` · 150 m 도착 알림 · Realtime) | ✅ SQL `rls_smoke` L (사람 확인 ➖ — 화면은 아직 없음) | 06B / 6B.1 |
-| Pet Transit **사진 체크 API** (`POST /api/ai/handoff-check`: 사진 → 보이는 것만 보고, ok / warning은 서버 규칙, 실패하면 unchecked, `handoff_checks`에 저장) | ✅ 🤖 pytest + SQL `rls_smoke` L · 실제 모델은 개 사진 3장(종 일치 · 불일치)만 확인 — **크레이트 · 안전벨트 감지는 임시 이미지라 미확인, 진짜 샘플 4장 대기** | 06B / 6B.5 |
+| Pet Transit **사진 체크 API — 앱에는 연결하지 않음(2026-10-11 결정, P1 후보)** (`POST /api/ai/handoff-check`: 사진 → 보이는 것만 보고, ok / warning은 서버 규칙, 실패하면 unchecked, `handoff_checks`에 저장) | ✅ 🤖 pytest + SQL `rls_smoke` L · 실제 모델은 개 사진 3장(종 일치 · 불일치)만 확인 — **크레이트 · 안전벨트 감지는 임시 이미지라 미확인, 진짜 샘플 4장 대기** | 06B / 6B.5 |
 | Pet Transit **홈 핀** (Profile → Map pin for trips: 동의 화면 후 현재 위치 1회 · 주소 저장 시 OSM 조회 + 한 줄 안내 · 못 찾으면 옛 핀 삭제) | ✅ 🤖 `home-location.spec.ts` + pytest `test_geo` (실제 Nominatim은 공개 주소 1건만 손으로 확인, 실제 폰 GPS는 👤) | 06B / 6B.2 |
 | Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
 | Pet Transit **Start trip · 지도 · ETA · 도착 카드** (동의 화면 → 가상 운전 → 지도 · ETA 갱신 → 도착 시 Chloe's place / 출입 정보, 상대 화면은 새로고침 없이 따라감, Home 카드, Cancel trip) | ✅ 🤖 `transit.spec.ts` (Realtime은 e2e에서 안 쓰고 4초 폴링으로 확인 · 실제 두 화면 동시 확인과 실제 폰 GPS는 👤) | 06B / 6B.3 · 6B.4 |
-| Pet Transit (인수인계 연결 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S5–S7 |
+| Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
+| Pet Transit (Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S6–S7 |
 
 ### Stage 5 — Completion · 기타
 
@@ -515,6 +516,7 @@
 | TRIP-14 | 시터가 견주 집으로 이동(Sitter drives) → 도착 | Trip 화면에 **EntryInfoCard**(03C 시간 조건 그대로, Show code), Chloe's place 카드는 없음 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-15 | 이동 중 **Cancel trip** (새로고침해서 이 기기가 공유 중이 아닐 때 포함) | 상태 `cancelled`, 위치 · ETA 삭제, "No trip running" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-16 | 지도 위에서 마우스로 드래그 · ± 버튼 | 드래그는 지도가 아니라 화면을 스크롤(지도가 움직이지 않음), ±는 확대 · 축소 | 🤖 `transit.spec.ts` (`/dev/gestures`) | ➖ |
+| TRIP-17 | 시터가 예약 상세에서 **Received**(맡기기) 또는 **Returned**(찾기)를 누름 — 이동 중이거나 막 도착한 trip이 있을 때 | 그 trip이 `completed`가 되고 위치 · ETA가 지워짐. 양쪽 Home의 이동 카드와 예약 상세의 Track 카드가 사라짐. 견주 알림은 예전 그대로 | SQL `rls_smoke` L · 🤖 `transit.spec.ts` | ➖ |
 
 ---
 

@@ -354,6 +354,81 @@ revoke execute on function public.end_trip(uuid, boolean) from public, anon;
 grant execute on function public.end_trip(uuid, boolean) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
+-- Received / Returned end the trip (6B.6)
+-- ---------------------------------------------------------------------------
+
+-- Same as 011's complete_handoff, plus one thing: the live trip for this handoff is over, so its position is erased
+-- and the other person's Home card goes away (whoever was travelling — the sitter taps Received / Returned either way).
+create or replace function public.complete_handoff(p_booking uuid, p_kind text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  b public.bookings;
+  v_h public.booking_handoffs;
+  v_pets text;
+  v_many boolean;
+  v_sitter_name text;
+begin
+  select * into b from public.bookings where id = p_booking for update;
+  if not found or b.sitter_id is distinct from auth.uid() then
+    raise exception 'not_allowed';
+  end if;
+  if b.status <> 'confirmed' then
+    raise exception 'invalid_status';
+  end if;
+  if p_kind is null or p_kind not in ('drop_off', 'pick_up') then
+    raise exception 'invalid_kind';
+  end if;
+
+  select * into v_h from public.booking_handoffs
+  where booking_id = p_booking and kind = p_kind and status = 'agreed';
+  if v_h.id is null then
+    raise exception 'handoff_missing';
+  end if;
+  if v_h.completed_at is not null then
+    raise exception 'handoff_completed';
+  end if;
+  if p_kind = 'drop_off' and now() < v_h.scheduled_at - interval '2 hours' then
+    raise exception 'handoff_too_early';
+  end if;
+  if p_kind = 'pick_up' and not exists (
+    select 1 from public.booking_handoffs
+    where booking_id = p_booking and kind = 'drop_off' and status = 'agreed' and completed_at is not null
+  ) then
+    raise exception 'drop_off_not_completed';
+  end if;
+
+  update public.booking_handoffs set completed_at = now() where id = v_h.id;
+
+  update public.trips set
+    status = 'completed',
+    last_lat = null, last_lng = null, last_at = null, eta_at = null, distance_m = null,
+    ended_at = now()
+  where booking_id = p_booking and handoff_kind = p_kind and status in ('en_route', 'arrived');
+
+  v_pets := public.booking_pet_names(p_booking);
+  v_many := cardinality(public.booking_pet_ids(p_booking)) > 1;
+  select display_name into v_sitter_name from public.profiles where id = b.sitter_id;
+  if p_kind = 'drop_off' then
+    perform public.notify_user(
+      b.owner_id, 'pet_dropped_off',
+      format('%s arrived at %s''s 🏠', v_pets, v_sitter_name),
+      null, null, p_booking, v_h.id
+    );
+  else
+    perform public.notify_user(
+      b.owner_id, 'pet_picked_up',
+      format('%s %s home safe 🏠', v_pets, case when v_many then 'are' else 'is' end),
+      null, null, p_booking, v_h.id
+    );
+  end if;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- handoff_checks (6B.5): what the vision model made of the sitter's handoff photo
 -- ---------------------------------------------------------------------------
 

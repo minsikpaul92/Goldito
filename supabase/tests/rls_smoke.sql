@@ -4024,16 +4024,28 @@ begin
   perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6540, 'L: no destination → never "arrived" by distance');
   perform end_trip(v_trip.id);
 
-  -- Once the drop-off is done, the pick-up trip is open (Owner drives back… here at the same "other" place)
+  -- Received ends the drop-off trip that is still running (whoever travelled)
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832);
+  perform complete_handoff(v_b, 'drop_off');
   perform _t_as(null);
-  update public.booking_handoffs set completed_at = now() where booking_id = v_b and kind = 'drop_off';
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.ended_at is not null,
+    'L: Received ends the running trip and erases its position');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'pet_dropped_off' and booking_id = v_b),
+    'L: …and still tells the owner');
+
+  -- Once the drop-off is done, the pick-up trip is open (Owner drives back to the sitter's home)
   update public.booking_handoffs set scheduled_at = now() + interval '1 hour', location_type = 'sitter_home', location_note = null
   where booking_id = v_b and kind = 'pick_up';
   perform _t_as(robert);
   v_trip := start_trip(v_b, 'pick_up');
   perform _t_ok(v_trip.handoff_kind = 'pick_up', 'L: after Received the owner can start the pick-up trip');
+  perform _t_as(chloe);
+  perform complete_handoff(v_b, 'pick_up');
   perform _t_as(null);
-  update public.booking_handoffs set completed_at = now() where booking_id = v_b and kind = 'pick_up';
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null, 'L: Returned ends the pick-up trip');
   perform _t_as(robert);
   begin
     perform start_trip(v_b, 'pick_up');
