@@ -289,65 +289,37 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 <details>
 <summary><b>Diagram 1 — the stay, and the services behind it</b> (click to expand)</summary>
 
-Starts from a [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito) export, redrawn around the five stages. Dashed means planned (Groq, Tavily) or a loop (the next stay).
+Starts from a [GitDiagram](https://gitdiagram.com/minsikpaul92/goldito) export, redrawn around the five stages. The dashed arrow is the loop: the next stay starts with everything learned.
 
 ```mermaid
 flowchart TD
 
 owner(("Pet Owner"))
 sitter(("Pet Sitter"))
-app["Expo app<br/>one codebase, role chosen at login"]
+app["Expo app<br/>role chosen at login"]
+platform["Platform<br/>FastAPI: auth, AI routes,<br/>server rules<br/>Supabase: data, realtime<br/>Nebius: Nemotron,<br/>MiniCPM-V, Qwen3<br/>Planned: Groq, Tavily"]
 
 subgraph stay["Stay lifecycle"]
   s1["① Inquiry<br/>AI drafts the reply"]
-  s2["② Meet and Greet<br/>care request to checklist"]
-  s3["③ Booking<br/>consents, payment, timed unlock"]
-  s4["④ Care and Pet Transit<br/>live trip, daily note, album"]
-  s5["⑤ Completion<br/>home safe, review, Life Record"]
-end
-
-subgraph platform["Backend and services"]
-  api["FastAPI<br/>auth, AI routes, media signing<br/>server rules: price, dates, unlock"]
-  db[("Supabase<br/>Postgres, RLS, Realtime, pgvector")]
-  ai{{"Nebius Token Factory<br/>Nemotron, MiniCPM-V, Qwen3"}}
-  meet{{"Google Calendar and Meet"}}
-  media{{"Cloudinary photos"}}
-  osm{{"OpenStreetMap trip map"}}
-  planned{{"Groq Whisper, Tavily<br/>planned"}}
+  s2["② Meet and Greet<br/>care note to checklist<br/>Google Meet link"]
+  s3["③ Booking<br/>consents, payment,<br/>timed unlock"]
+  s4["④ Care and Transit<br/>live trip on OSM<br/>photos on Cloudinary<br/>AI daily note"]
+  s5["⑤ Completion<br/>home safe, review,<br/>Life Record"]
 end
 
 owner --> app
 sitter --> app
-app --> s1
+app -->|"REST, realtime"| platform
+platform --> s1
 s1 --> s2 --> s3 --> s4 --> s5
-s5 -.->|"next stay starts informed"| s1
-
-app -->|"REST"| api
-app -->|"CRUD and realtime"| db
-api -->|"reads and writes"| db
-api -->|"AI calls"| ai
-api -.-> planned
-s2 -->|"video link"| meet
-s4 -->|"photos"| media
-s4 -->|"live position"| osm
-
-api ~~~ db
-db ~~~ ai
-ai ~~~ meet
-meet ~~~ media
-media ~~~ osm
-osm ~~~ planned
+s5 -.->|"next stay"| s1
 
 classDef actor fill:#e0e7ff,stroke:#4f46e5,color:#312e81
 classDef stage fill:#fef3c7,stroke:#d97706,color:#78350f
 classDef back fill:#ffe4e6,stroke:#e11d48,color:#881337
-classDef ext fill:#e0e7ff,stroke:#4f46e5,color:#312e81
-classDef plan fill:#f1f5f9,stroke:#64748b,stroke-dasharray:4 3,color:#334155
 class owner,sitter,app actor
 class s1,s2,s3,s4,s5 stage
-class api back
-class db,ai,meet,media,osm ext
-class planned plan
+class platform back
 ```
 
 </details>
@@ -360,16 +332,16 @@ Each AI task, the model behind it, and the person who approves it. Life Records 
 ```mermaid
 flowchart TD
 
-subgraph agent["What the agent does, and who decides"]
-  inquiry["① Owner asks about a stay<br/>Reply in the sitter's voice<br/>Model: Nemotron Nano<br/>Sitter taps Send"]
-  care["② Owner writes a care note<br/>Timed checklist and Heads-up cards<br/>Model: Nemotron Super<br/>Owner reviews and saves"]
-  daily["④ The day ends<br/>Chips, then the daily note<br/>Models: MiniCPM-V, Nemotron Super<br/>Sitter approves"]
-  caption["④ A photo is added<br/>Caption and album category<br/>Model: MiniCPM-V<br/>Automatic"]
-  life["⑤ The stay ends<br/>Pet Life Record<br/>Model: Nemotron Super<br/>Owner reads it"]
+subgraph agent["AI tasks and approvals"]
+  inquiry["① Inquiry<br/>Reply in sitter's voice<br/>Nemotron Nano<br/>Sitter taps Send"]
+  care["② Care note<br/>Checklist, Heads-up<br/>Nemotron Super<br/>Owner saves"]
+  daily["④ Day ends<br/>Chips, daily note<br/>MiniCPM-V, Super<br/>Sitter approves"]
+  caption["④ Photo added<br/>Caption, album tag<br/>MiniCPM-V<br/>Automatic"]
+  life["⑤ Stay ends<br/>Pet Life Record<br/>Nemotron Super<br/>Owner reads it"]
 end
 
 subgraph memory["Memory"]
-  rag[("Pet memory<br/>Supabase pgvector")]
+  rag[("Pet memory<br/>pgvector")]
   embed{{"Qwen3 Embedding"}}
 end
 
@@ -380,7 +352,7 @@ caption ~~~ life
 
 life -->|"indexes"| rag
 rag -->|"embeds"| embed
-inquiry -.->|"retrieves Life Records"| rag
+inquiry -.->|"retrieves"| rag
 
 classDef task fill:#dcfce7,stroke:#16a34a,color:#14532d
 classDef ext fill:#e0e7ff,stroke:#4f46e5,color:#312e81
