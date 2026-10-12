@@ -454,7 +454,7 @@ DB migration ──> 사람이 SQL Editor에서 00N_*.sql 순서대로 (PR 본�
 | 항목 | 규칙 |
 | :--- | :--- |
 | CI 트리거 | `pull_request` + `push: main`. `paths` 필터로 backend/frontend job 각각 변경 시만 실행 (docs-only PR은 스킵 → 필수 체크는 "skipped = pass" 되도록 job 단위 `if` 사용) |
-| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright 브라우저 cache. Playwright는 `expo export` 결과를 정적 서버로 띄워 마우스만으로 테스트 (`EXPO_PUBLIC_DEV_ROUTES=1`, 백엔드 불필요). **PR은 Chromium · 1366×768만, main push는 Chromium·Firefox·WebKit × 3 해상도** (`PW_BROWSERS` · `PW_FRAME_VIEWPORTS`), 워커 4개, 같은 PR의 새 push는 이전 run을 취소. **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
+| CI 환경 | Python 3.12 + pip cache, Node 20 LTS + npm cache + Playwright 브라우저 cache. Playwright는 `expo export` 결과를 정적 서버로 띄워 마우스만으로 테스트 (`EXPO_PUBLIC_DEV_ROUTES=1`, 백엔드 불필요). **PR은 Chromium · 1366×768만, main push는 Chromium·Firefox·WebKit × 3 해상도** (`PW_BROWSERS` · `PW_FRAME_VIEWPORTS`), Playwright는 러너 2개로 나눠(shard) 각 워커 4개, 필수 체크 이름 `frontend`는 두 shard 결과를 모으는 job이 맡음, 같은 PR의 새 push는 이전 run을 취소. **시크릿 없음** — AI 테스트는 `NEBIUS_API_KEY` 없으면 skip, Supabase 호출은 mock |
 | 브랜치 보호 | 1.5 완료 후 GitHub Settings → `main`: PR 필수, `ci / backend`·`ci / frontend` 통과 필수 (민식이 설정) |
 | GitHub Secrets | 없음 — CD는 Render · Vercel의 Git 연동. 앱 런타임 키(Supabase·Cloudinary·Nebius Token Factory API)는 **Render env / Vercel env에만** 저장 |
 | 롤백 | backend: Render 대시보드 → Deploys → 이전 배포 **Rollback**. frontend: Vercel 대시보드 "Promote previous deployment" |
