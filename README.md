@@ -355,7 +355,7 @@ node_booking -->|"after payment"| node_transit
 node_transit -->|"arrival"| node_care_tasks
 node_sitter -->|"completes tasks"| node_care_tasks
 node_care_tasks -.->|"records care"| node_daily_updates
-node_daily_updates -->|"updates"| node_owner
+node_owner -.->|"reads updates"| node_daily_updates
 node_daily_updates --> node_ai_caption
 node_daily_updates -->|"stay ends"| node_completion
 node_completion --> node_ai_life
