@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import { TripMap } from "../../components/TripMap";
 import { Button } from "../../components/ui/Button";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -110,6 +111,14 @@ function GestureLabScreen() {
             ))}
           </ScrollView>
         </View>
+
+        <Text style={styles.section}>Trip map (view only: ± and drag-to-scroll)</Text>
+        <TripMap
+          traveler={{ lat: 43.6566, lng: -79.3911 }}
+          dest={{ lat: 43.6477, lng: -79.4194 }}
+          travelerLabel="Robert"
+          testID="lab-map"
+        />
 
         <View style={styles.actions}>
           <Button label="Open modal" onPress={() => setModalOpen(true)} />

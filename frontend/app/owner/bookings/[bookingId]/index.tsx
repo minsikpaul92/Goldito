@@ -9,6 +9,7 @@ import { FinishedStay } from "../../../../components/FinishedStay";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
 import { PaidConfirmation } from "../../../../components/PaidConfirmation";
+import { TripEntry } from "../../../../components/TripEntry";
 import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
@@ -323,6 +324,8 @@ export default function OwnerBookingDetail() {
             <Text style={styles.muted}>{`Waiting for ${sitter} to answer your request.`}</Text>
           ) : null}
         </Card>
+
+        <TripEntry booking={booking} role="owner" />
 
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="booking-action-error">

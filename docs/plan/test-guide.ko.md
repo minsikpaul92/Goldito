@@ -123,7 +123,8 @@
 | Pet Transit **사진 체크 API** (`POST /api/ai/handoff-check`: 사진 → 보이는 것만 보고, ok / warning은 서버 규칙, 실패하면 unchecked, `handoff_checks`에 저장) | ✅ 🤖 pytest + SQL `rls_smoke` L · 실제 모델은 개 사진 3장(종 일치 · 불일치)만 확인 — **크레이트 · 안전벨트 감지는 임시 이미지라 미확인, 진짜 샘플 4장 대기** | 06B / 6B.5 |
 | Pet Transit **홈 핀** (Profile → Map pin for trips: 동의 화면 후 현재 위치 1회 · 주소 저장 시 OSM 조회 + 한 줄 안내 · 못 찾으면 옛 핀 삭제) | ✅ 🤖 `home-location.spec.ts` + pytest `test_geo` (실제 Nominatim은 공개 주소 1건만 손으로 확인, 실제 폰 GPS는 👤) | 06B / 6B.2 |
 | Pet Transit **위치 소스 · 동의** (`lib/location.ts`: GPS / 가상 경로, `TripProvider` + 위치 공유 동의 화면 — Start trip 버튼이 붙는 S4에서 화면 단위로 확인) | 🟡 🤖 `location.spec.ts`(소스 단위) · 동의 화면은 프로필 핀으로만 e2e | 06B / 6B.2 |
-| Pet Transit (지도 · ETA · 도착 카드 · 인수인계 연결 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S4–S7 |
+| Pet Transit **Start trip · 지도 · ETA · 도착 카드** (동의 화면 → 가상 운전 → 지도 · ETA 갱신 → 도착 시 Chloe's place / 출입 정보, 상대 화면은 새로고침 없이 따라감, Home 카드, Cancel trip) | ✅ 🤖 `transit.spec.ts` (Realtime은 e2e에서 안 쓰고 4초 폴링으로 확인 · 실제 두 화면 동시 확인과 실제 폰 GPS는 👤) | 06B / 6B.3 · 6B.4 |
+| Pet Transit (인수인계 연결 · Returned 확인 시트 · 위치 거절 대체 화면) | ⬜ | 06B / S5–S7 |
 
 ### Stage 5 — Completion · 기타
 
@@ -507,6 +508,13 @@
 | TRIP-7 | Profile → Map pin for trips → **Use my current location** | 동의 화면이 먼저 뜨고, **Not now** / Close면 위치를 읽지 않음. **Use my location** 후에만 브라우저 권한이 뜨고 위치를 1번 읽어 "Pin set from your location — Save to keep it." Save하면 저장. 브라우저가 거절하면 "Location is off for Goldito…" 안내, 핀은 그대로 | 🤖 `home-location.spec.ts` · 실제 폰 👤 | ➖ |
 | TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved ✅ · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
 | TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
+| TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-11 | 같은 화면에서 **Not now** | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-12 | 이동하지 않는 쪽(시터 집이면 시터) | Start trip 없음. 2시간 전 이전의 견주는 "You can start the trip from 7:00 AM" 한 줄만 | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-13 | 시터가 Home에서 "Robert is on the way · ETA …" 카드 → Trip 화면, 이어서 견주가 도착 | 지도 + ETA(거리 포함), 내 위치 배너 · Cancel trip 없음. 도착하면 새로고침 없이(폴링 4초 안) "Robert has arrived" 카드. trip이 끝나면 Home 카드가 사라짐 | 🤖 `transit.spec.ts` · 두 창 실시간은 👤 | ➖ |
+| TRIP-14 | 시터가 견주 집으로 이동(Sitter drives) → 도착 | Trip 화면에 **EntryInfoCard**(03C 시간 조건 그대로, Show code), Chloe's place 카드는 없음 | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-15 | 이동 중 **Cancel trip** (새로고침해서 이 기기가 공유 중이 아닐 때 포함) | 상태 `cancelled`, 위치 · ETA 삭제, "No trip running" | 🤖 `transit.spec.ts` | ➖ |
+| TRIP-16 | 지도 위에서 마우스로 드래그 · ± 버튼 | 드래그는 지도가 아니라 화면을 스크롤(지도가 움직이지 않음), ±는 확대 · 축소 | 🤖 `transit.spec.ts` (`/dev/gestures`) | ➖ |
 
 ---
 

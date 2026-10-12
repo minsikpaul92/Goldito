@@ -2,27 +2,28 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { bookingBadges, handoffLine } from "../../../components/BookingCard";
-import { BookingStageBar } from "../../../components/BookingStageBar";
-import { EntryInfoCard } from "../../../components/EntryInfoCard";
-import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
-import { MeetGreetCard } from "../../../components/MeetGreetCard";
-import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import { Chip } from "../../../components/ui/Chip";
-import { ChipSuggestions } from "../../../components/ChipSuggestions";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
-import { TextField } from "../../../components/ui/TextField";
-import { composeComment } from "../../../features/completion/reviewPresets";
-import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { formatDay, formatInstant, formatTime } from "../../../features/schedule/dates";
-import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
-import { releaseVideoLink } from "../../../lib/meetGreet";
+import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { EntryInfoCard } from "../../../../components/EntryInfoCard";
+import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
+import { MeetGreetCard } from "../../../../components/MeetGreetCard";
+import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
+import { TripEntry } from "../../../../components/TripEntry";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import { Chip } from "../../../../components/ui/Chip";
+import { ChipSuggestions } from "../../../../components/ChipSuggestions";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { TextField } from "../../../../components/ui/TextField";
+import { composeComment } from "../../../../features/completion/reviewPresets";
+import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
+import { formatDay, formatInstant, formatTime } from "../../../../features/schedule/dates";
+import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
@@ -42,15 +43,15 @@ import {
   requestExpired,
   respondBooking,
   respondHandoff,
-} from "../../../lib/bookings";
-import { PetRecordFold } from "../../../components/PetRecordFold";
-import { ReceivedReview } from "../../../components/ReceivedReview";
-import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
-import { requestLifeRecord } from "../../../features/completion/completionApi";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useOnBookingChange } from "../../../providers/NotificationsProvider";
-import { useToast } from "../../../providers/ToastProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../lib/bookings";
+import { PetRecordFold } from "../../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../../components/ReceivedReview";
+import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
+import { requestLifeRecord } from "../../../../features/completion/completionApi";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
+import { useToast } from "../../../../providers/ToastProvider";
+import { Theme } from "../../../../theme/themes";
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 
@@ -311,6 +312,8 @@ export default function SitterBookingDetail() {
             />
           ) : null}
         </Card>
+
+        <TripEntry booking={booking} role="sitter" />
 
         {pets.map((pet) => (
           <Card key={pet.id} style={styles.block} testID={`pet-care-${pet.name}`}>

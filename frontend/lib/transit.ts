@@ -89,3 +89,56 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   }
   return { found: false };
 }
+
+/** The trips of one booking, newest first (the two parties can read them — RLS). */
+export async function listTrips(bookingId: string): Promise<Trip[]> {
+  const { data, error } = await getSupabase()
+    .from("trips")
+    .select("*")
+    .eq("booking_id", bookingId)
+    .order("started_at", { ascending: false });
+  if (error) throw new Error("Couldn't load the trip. Check your connection and try again.");
+  return (data ?? []) as Trip[];
+}
+
+/** Every trip of mine that is running right now (on the way, or arrived and not yet handed over). */
+export async function listActiveTrips(): Promise<Trip[]> {
+  const { data, error } = await getSupabase()
+    .from("trips")
+    .select("*")
+    .in("status", ["en_route", "arrived"])
+    .order("started_at", { ascending: false });
+  if (error) throw new Error("Couldn't load your trips.");
+  return (data ?? []) as Trip[];
+}
+
+/** First names for the trips on screen (the traveller may be the other person). */
+export async function loadNames(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const { data } = await getSupabase().from("profiles").select("id, display_name").in("id", ids);
+  return Object.fromEntries(((data ?? []) as { id: string; display_name: string }[]).map((p) => [p.id, p.display_name]));
+}
+
+/** My own home point, where a simulated drive starts. Null until I have one. */
+export async function getMyHomePoint(userId: string, role: "owner" | "sitter"): Promise<LatLng | null> {
+  const supabase = getSupabase();
+  const row =
+    role === "owner"
+      ? (await supabase.from("owner_profiles").select("home_lat, home_lng").eq("id", userId).maybeSingle()).data
+      : (await supabase.rpc("get_my_sitter_profile").maybeSingle()).data;
+  const point = row as { home_lat: number | null; home_lng: number | null } | null;
+  return point?.home_lat != null && point.home_lng != null ? { lat: point.home_lat, lng: point.home_lng } : null;
+}
+
+export const livePosition = (trip: Trip): LatLng | null =>
+  trip.last_lat != null && trip.last_lng != null ? { lat: trip.last_lat, lng: trip.last_lng } : null;
+
+export const destination = (trip: Trip): LatLng | null =>
+  trip.dest_lat != null && trip.dest_lng != null ? { lat: trip.dest_lat, lng: trip.dest_lng } : null;
+
+export const isLive = (trip: Trip) => trip.status === "en_route" || trip.status === "arrived";
+
+/** "3.2 km" / "850 m". */
+export function formatDistance(meters: number): string {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.max(10, Math.round(meters / 10) * 10)} m`;
+}

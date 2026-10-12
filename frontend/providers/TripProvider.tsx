@@ -20,8 +20,6 @@ export type StartTripArgs = {
   kind: HandoffKind;
   /** First name of the person who will watch — the consent screen says who sees the location. */
   otherName: string;
-  /** The handoff place's point (null for "somewhere else": no map, no arrival check). */
-  dest: LatLng | null;
   /** The traveller's own home point — where a simulated drive starts (optional). */
   from?: LatLng | null;
 };
@@ -108,12 +106,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
           setSharing({ trip, mode, otherName: args.otherName });
           return { started: true, trip };
         }
-        const to = args.dest ?? offsetPoint(args.from ?? { lat: 43.6532, lng: -79.3832 }, 2000, 90);
-        const route = buildSimulatedRoute(args.from ?? offsetPoint(to, 4000, 270), to);
-        const trip = await startTrip(args.bookingId, args.kind, true, route[0]);
+        // The drive starts at the traveller's home; the destination is whatever the server holds for this handoff.
+        const from = args.from ?? { lat: 43.6532, lng: -79.3832 };
+        const trip = await startTrip(args.bookingId, args.kind, true, from);
+        const to = trip.dest_lat != null && trip.dest_lng != null ? { lat: trip.dest_lat, lng: trip.dest_lng } : offsetPoint(from, 2000, 90);
         stopSource.current = startLocationSource({
           mode: "simulate",
-          route: route.slice(1), // the first point went with Start trip
+          route: buildSimulatedRoute(from, to).slice(1), // the first point went with Start trip
           onPosition: (p) => send(trip.id, p),
         });
         setSharing({ trip, mode, otherName: args.otherName });

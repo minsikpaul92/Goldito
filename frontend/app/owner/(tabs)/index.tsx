@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
+import { ActiveTripCard } from "../../../components/ActiveTripCard";
 import { LiveUpdates } from "../../../components/LiveUpdates";
 import { PetCard } from "../../../components/PetCard";
 import { Button } from "../../../components/ui/Button";
@@ -50,6 +51,7 @@ export default function OwnerHome() {
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.list}>
+        <ActiveTripCard role="owner" />
         <LiveUpdates />
         {pets.map((pet) => (
           <PetCard key={pet.id} pet={pet} inCare={inCare[pet.id]} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
