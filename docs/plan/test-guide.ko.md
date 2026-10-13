@@ -517,7 +517,7 @@
 | TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-11 | 동의 화면에서 **Cancel** (또는 Close) | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-12 | 이동하지 않는 쪽(시터 집이면 시터) | Start trip 없음. 2시간 전 이전의 견주는 "You can start the trip from 7:00 AM" 한 줄만 | 🤖 `transit.spec.ts` | ➖ |
-| TRIP-13 | 시터가 Home에서 "Robert is on the way · ETA …" 카드 → Trip 화면, 이어서 견주가 도착 | 지도 + ETA(거리 포함), 내 위치 배너 · Cancel trip 없음. 도착하면 새로고침 없이(폴링 4초 안) "Robert has arrived" 카드. trip이 끝나면 Home 카드가 사라짐 | 🤖 `transit.spec.ts` · 두 창 실시간은 👤 | ➖ |
+| TRIP-13 | 시터가 Home에서 "Robert is on the way · ETA …" 카드 → Trip 화면, 이어서 견주가 도착 | 지도 + ETA(거리 포함), 내 위치 배너 · Cancel trip 없음. 도착하면 새로고침 없이(폴링 4초 안) "Robert has arrived" 카드. trip이 끝나면 Home 카드가 사라짐. 진행 중인 trip이 없을 때는 15초마다만 읽고(Realtime이 시작을 알림), 확정되지 않은 예약 화면은 trip을 읽지 않음 (CR-9) | 🤖 `transit.spec.ts` · 두 창 실시간은 👤 | ➖ |
 | TRIP-14 | 시터가 견주 집으로 이동(Sitter drives) → 도착 | Trip 화면에 **EntryInfoCard**(03C 시간 조건 그대로, Show code), Chloe's place 카드는 없음 | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-15 | 이동 중 **Cancel trip** (새로고침해서 이 기기가 공유 중이 아닐 때 포함) | 상태 `cancelled`, 위치 · ETA 삭제, "No trip running" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-16 | 지도 위에서 마우스로 드래그 · ± 버튼 | 드래그는 지도가 아니라 화면을 스크롤(지도가 움직이지 않음), ±는 확대 · 축소 | 🤖 `transit.spec.ts` (`/dev/gestures`) | ➖ |
