@@ -23,16 +23,16 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **10 Demo & deploy** | `/health/deep` (10.7) and `/privacy` (10.11) merged early ([#88](https://github.com/minsikpaul92/Goldito/pull/88), 2026-10-13); the rest of Phase 10 goes on a new branch + PR — next **fixed demo accounts** (10.1), then seed top-ups, README, OB.5, 10.9 | [phases/phase-10.md](phases/phase-10.md) |
+| **Minsik** | **12.0 Snap tab** | Phase 12 on `feat/phase-12-snap` (10/14–10/22): rename the fifth tab Mood → **Snap** with three tools — **Treat check** (the Phase 08 design + Tavily, owners too), **Mood** (a box per pet + emotion %), **Sticker** (cut the pet out → decorate the diary, owner + sitter). Then the rest of Phase 10 (fixed demo accounts 10.1, seed, README, OB.5, 10.9) | [phases/phase-12.md](phases/phase-12.md) |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **10 Demo & deploy** — seed (rates, entry info, home points ✅ (06B), past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
-2. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
-3. **08 Safety guard** (`013`) — P0 **stretch**, only if time remains after 06B + 10; 8.7 Tavily is a further stretch. [phase-08.md](phases/phase-08.md)
+1. **12 Snap tab** (D61, 10/14–10/22) — 12.0 tab + shell → 12.1 Treat check (`013`, Tavily, DANGER modal) → 12.S2 MediaPipe spike → 12.2 Mood → 12.3 Sticker + diary decorating (`013b`) → 12.5 polish. Cut order if late: video mood → sitter-side decorating → dog classifier mix → Tavily re-judge. [phase-12.md](phases/phase-12.md). Phase 08 is now 12.1.
+2. **10 Demo & deploy** — seed (rates, entry info, home points ✅ (06B), past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e, **10.10 stretch** Split view. [phase-10.md](phases/phase-10.md)
+3. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
 
 **Seulgi — Phase Q** (one at a time in her row; detail in [phase-q.md](phases/phase-q.md)): Q.0 environment → Q.1 full manual run + findings as GitHub issues (QA feedback form) → Q.2 wording / presets → Q.3 anonymization (+ zero-retention decision) → Q.4 tone data (inquiry + daily report) + auto-send delay formula → Q.4b prompt engineering + RAG-first answers → Q.5 R3 Medium report / caption / Life Record / seed (M-14 · M-20 · M-16 first; M-12 done) → Q.6 R3 Medium inquiry M-1–M-11 → Q.7 measurements → Q.8 final QA (10/27–29, two accounts: test-guide **INQ-1 … INQ-19**, **REPORT-10**; plus the real phone camera on the Vercel URL — Take photo / Choose from library) → Q.9 R4 Low (L-1–L-6, FB-3 · FB-4 · FB-1) → Q.10 SFT (P2). Branches `fix/q-review-medium`, `fix/q-review-low`.
 
@@ -106,9 +106,10 @@
 | 00 준비 · 01 틀 · 02 DB · 03 인증 · 03B 예약 · 03C 결제 · 04 업로드 · 05 피드 · 06 체크 | done |
 | 07 알림장 AI · 07B 문의 AI + RAG · 07C 완료 · 09 캡션 + 앨범 | merged; DoD hand-check pending (Seulgi Q.1) |
 | 06B Pet Transit | done, merged ([#83](https://github.com/minsikpaul92/Goldito/pull/83)); `012` applied to the hosted DB (2026-10-12) |
-| 08 Safety | P0 stretch, only if time remains |
+| 08 Safety | moved into Phase 12.1 Treat check (D61) |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open |
-| 11 P1 | not started |
+| 12 Snap (treat check · mood · sticker) | in progress from 2026-10-13 ([phase-12.md](phases/phase-12.md)) |
+| 11 P1 | not started (11.8 sticker-making and 11.9 mood tool pulled into 12) |
 | Onboarding UX | OB.1 – OB.3 done; OB.4 deferred; OB.5 with Phase 10 |
 | Q Quality track | Seulgi, from 2026-10-09 — [phases/phase-q.md](phases/phase-q.md) |
 
@@ -117,6 +118,6 @@
 ## Hosted DB — still to do
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
-- [ ] Apply new migrations as they are created (`013` 08) and add a line here when a commit creates one.
+- [ ] Apply new migrations as they are created (`013` · `013b` Phase 12) and add a line here when a commit creates one.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).
