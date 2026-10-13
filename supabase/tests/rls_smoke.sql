@@ -4286,5 +4286,63 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012e (CR-4): inquiries a request closed open again when that request is declined or cancelled
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  d timestamptz := now() + interval '800 days';
+  juno uuid;
+  kiwi uuid;
+  v_q uuid;
+  v_a uuid;
+  v_b uuid;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Juno') returning id into juno;
+  insert into public.pets (owner_id, species, name) values (robert, 'cat', 'Kiwi') returning id into kiwi;
+  perform _t_as(robert);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, paul, d, d + interval '2 days', array[juno, kiwi]) returning id into v_q;
+
+  -- One request closes Paul's inquiry; declining it opens it again.
+  perform _t_as(null);
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'requested');
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_a from public.inquiries where id = v_q),
+    'CR-4: the request closes the other sitter''s inquiry and remembers which booking did');
+  update public.bookings set status = 'declined', responded_at = now() where id = v_a;
+  perform _t_ok((select status = 'open' and closed_by_booking is null from public.inquiries where id = v_q),
+    'CR-4: the request is declined → the inquiry is open again');
+  perform _t_as(paul);
+  perform _t_ok(public.has_open_inquiry_about(juno), 'CR-4: …and Paul can answer it again');
+
+  -- Two live requests cover the inquiry: it stays closed until the last one ends.
+  perform _t_as(null);
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'requested');
+  v_b := _t_booking(robert, allen, array[kiwi], d, d + interval '2 days', 'requested');
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_a from public.inquiries where id = v_q),
+    'CR-4: closed by the first request');
+  update public.bookings set status = 'cancelled' where id = v_a;
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_b from public.inquiries where id = v_q),
+    'CR-4: another live request still covers the dates → stays closed, now held by that one');
+  update public.bookings set status = 'cancelled' where id = v_b;
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'open',
+    'CR-4: the last one cancelled → open again');
+
+  -- A confirmed booking keeps it closed; an inquiry closed by hand never reopens.
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'confirmed');
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'closed', 'CR-4: a confirmed booking closes it too');
+  update public.inquiries set closed_by_booking = null where id = v_q;
+  update public.bookings set status = 'cancelled' where id = v_a;
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'closed',
+    'CR-4: an inquiry not closed by that booking stays closed');
+end;
+$$;
+
 
 rollback;
