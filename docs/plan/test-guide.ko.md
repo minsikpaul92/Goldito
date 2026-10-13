@@ -373,9 +373,9 @@
 | INQ-33 | 시터가 **Decline** | 팝업에 거절 답장(화면 초안이 이미 거절이면 그대로, CR-5) → **Send decline** → 바로 전송. 오너 화면은 **Change dates**(Request booking · 견적 없음) (011k) | 🤖 `inquiry` · SQL 011k (`011k` 적용 뒤) | ➖ |
 | INQ-34 | 시터가 **Suggest other dates** | 팝업에서 **날짜 · 시간을 고르고**(내 일정 달력 표시) 메시지에 그 날짜가 자동으로 들어감(수정 가능) → **Send suggestion**. 내 일정에 자리 없는 날을 고르면 빨간 안내 + Send 비활성. 오너는 Change dates로 이어 감 (FB-34) | 🤖 `inquiry` | ➖ |
 | INQ-35 | 오너가 시터가 안 연(또는 꽉 찬) 날짜로 문의 시트 → **Send** (새 문의, 그리고 Change dates 둘 다) | 바로 보내지 않고 시트 아래가 **"Chloe has no room on these dates. You can still ask…" + [Ask anyway] [Pick other dates]**로 바뀜. Pick other dates → 시트로 돌아가 날짜 수정(아무것도 안 보내짐). Ask anyway → 그대로 문의 전송. 자리가 있는 날은 확인 없이 바로 전송. 날짜를 바꾸면 안내는 사라짐 (FB-33 후속) | 🤖 `inquiry` | ➖ |
-| INQ-36 | 한 번에 한 오너만 받는 시터와 이미 확정 · 홀드된 날짜에 **같은 오너**가 더 묻는 문의 → 시터가 **Regenerate** / **Accept** / **Suggest other dates** (CR-3) | 오너가 처음 받은 답과 시터가 다시 만든 초안의 가능 여부가 같음(오너 본인의 예약을 "다른 오너"로 세지 않음). 다른 오너에게는 그 슬롯이 계속 막힘. 제3자가 다른 오너 이름으로 묻으면 `forbidden` | 🤖 pytest `test_inquiry`(`p_owner` 전달) · `inquiry.spec.ts`(Suggest 확인에 `p_owner`) · SQL `rls_smoke` CR-3 · 👤 (`012d` 적용 후) | ➖ |
-| INQ-37 | 오너가 같은 펫 · 날짜로 시터 A, B에게 문의 → A에게 예약 요청 → A가 **거절**(또는 오너 취소 · 만남 시간 초과로 자동 취소) (CR-4) | 요청 순간 B 문의는 `closed`(B는 Life Record를 더 못 봄). 요청이 끝나면 B 문의가 다시 `open` — 오너 · B 모두 이어서 대화 가능. 같은 날짜를 덮는 다른 살아 있는 예약이 있으면 그 예약이 끝날 때까지 닫힌 채. 지난 날짜 · 손으로 닫은 문의는 다시 안 열림 | SQL `rls_smoke` CR-4 · 👤 (`012e` 적용 후) | ➖ |
-| INQ-38 | 시터 화면에 초안이 떠 있는 동안 오너가 **Change dates**(또는 새 메시지) → 시터가 그 옛 초안을 **Send** / Accept (CR-7) | 보내지지 않고 "The owner wrote again after this draft …" 안내(Retry 없음), 스레드가 다시 읽혀 새 메시지용 초안을 기다림 — 옛 견적 · 옛 날짜의 "yes"가 나가지 않음. 시터가 직접 쓴 답(초안 없이)은 그대로 전송 | SQL `rls_smoke` CR-7 · 🤖 `inquiry.spec.ts` · 👤 (`012f` 적용 후) | ➖ |
+| INQ-36 | 한 번에 한 오너만 받는 시터와 이미 확정 · 홀드된 날짜에 **같은 오너**가 더 묻는 문의 → 시터가 **Regenerate** / **Accept** / **Suggest other dates** (CR-3) | 오너가 처음 받은 답과 시터가 다시 만든 초안의 가능 여부가 같음(오너 본인의 예약을 "다른 오너"로 세지 않음). 다른 오너에게는 그 슬롯이 계속 막힘. 제3자가 다른 오너 이름으로 묻으면 `forbidden` | 🤖 pytest `test_inquiry`(`p_owner` 전달) · `inquiry.spec.ts`(Suggest 확인에 `p_owner`) · SQL `rls_smoke` CR-3 · 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
+| INQ-37 | 오너가 같은 펫 · 날짜로 시터 A, B에게 문의 → A에게 예약 요청 → A가 **거절**(또는 오너 취소 · 만남 시간 초과로 자동 취소) (CR-4) | 요청 순간 B 문의는 `closed`(B는 Life Record를 더 못 봄). 요청이 끝나면 B 문의가 다시 `open` — 오너 · B 모두 이어서 대화 가능. 같은 날짜를 덮는 다른 살아 있는 예약이 있으면 그 예약이 끝날 때까지 닫힌 채. 지난 날짜 · 손으로 닫은 문의는 다시 안 열림 | SQL `rls_smoke` CR-4 · 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
+| INQ-38 | 시터 화면에 초안이 떠 있는 동안 오너가 **Change dates**(또는 새 메시지) → 시터가 그 옛 초안을 **Send** / Accept (CR-7) | 보내지지 않고 "The owner wrote again after this draft …" 안내(Retry 없음), 스레드가 다시 읽혀 새 메시지용 초안을 기다림 — 옛 견적 · 옛 날짜의 "yes"가 나가지 않음. 시터가 직접 쓴 답(초안 없이)은 그대로 전송 | SQL `rls_smoke` CR-7 · 🤖 `inquiry.spec.ts` · 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 
@@ -443,7 +443,7 @@
 | FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 전송(새 드롭오프가 옛 픽업보다 늦으면 픽업을 먼저). 하나가 실패하면 시트가 열린 채로 "Drop-off was sent. Pick-up didn't go through …"를 보이고 Send가 나머지만 다시 보냄. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 🤖 `negotiation.spec.ts` (4개) | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성("Drop-off · done ✓"), 에러("That handoff already happened.")가 안 나옴. 픽업까지 끝났으면 Change time or place 버튼이 없음 (FB-6) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
-| FLOW-9b | **확정된** 예약에서 일정 전체를 옛 픽업보다 뒤로 옮김 (예: Oct 5–8 → Oct 10–14, CR-2) | 두 제안이 모두 전송됨(예전엔 픽업만 가고 드롭오프는 `invalid_window`). 상대의 드롭오프 카드에 "Comes with the new pick-up (…) — Accept or Decline answers both." Accept 한 번에 두 시간이 모두 합의되고 슬롯이 새 기간으로 다시 만들어짐, Decline은 둘 다 거절하고 원래 일정 유지. 혼자 맞는 변경은 예전처럼 하나씩 | 🤖 `negotiation.spec.ts`(안내 문구) · SQL `rls_smoke` CR-2(수락 · 거절 · 단독) · 👤 (`012c` 적용 후) | ➖ |
+| FLOW-9b | **확정된** 예약에서 일정 전체를 옛 픽업보다 뒤로 옮김 (예: Oct 5–8 → Oct 10–14, CR-2) | 두 제안이 모두 전송됨(예전엔 픽업만 가고 드롭오프는 `invalid_window`). 상대의 드롭오프 카드에 "Comes with the new pick-up (…) — Accept or Decline answers both." Accept 한 번에 두 시간이 모두 합의되고 슬롯이 새 기간으로 다시 만들어짐, Decline은 둘 다 거절하고 원래 일정 유지. 혼자 맞는 변경은 예전처럼 하나씩 | 🤖 `negotiation.spec.ts`(안내 문구) · SQL `rls_smoke` CR-2(수락 · 거절 · 단독) · 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
 | FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
 | FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
@@ -527,7 +527,7 @@
 | TRIP-20 | 공유 중인 trip과 Start trip 직전 | Trip 화면과 예약 상세의 Start trip 카드에서도 **양쪽 모두** Open in Google Maps가 보임(이동하는 쪽 = 길 안내, 기다리는 쪽 = 장소). 지도 앱으로 넘어가면 브라우저가 백그라운드가 되어 위치 공유가 멈추고, 상대 화면에 "Last location N min ago — sharing pauses while the browser is in the background" | 🤖 `transit.spec.ts` · 실제 폰에서 Maps로 넘어갔다 돌아오기 👤 | ➖ |
 | TRIP-21 | Allow를 눌렀는데 브라우저가 위치를 거절 | 자동으로 공유 없는 trip으로 시작되고 토스트 "Location is off in this browser, so Chloe sees the meeting place instead" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-22 | **두 사람 동시** — 시터(Chloe)가 견주 집으로 Start trip → Simulate, 견주는 Home에 있음 | 견주 Home에 새로고침 없이 "Chloe is on the way" 카드 → 탭하면 지도 + ETA가 줄어들며 갱신 → "Chloe has arrived" 카드. 시터 화면에는 출입 정보 카드. 시터가 Received를 누르면 견주 Trip 화면이 "No trip running"이 되고 예약에 ✓ Received | 🤖 `transit.spec.ts`(브라우저 둘, 같은 DB, 폴링으로 갱신) · **실제 두 계정 · 두 폰 👤** | ➖ |
-| TRIP-23 | 견주가 드롭오프 2시간 전 Start trip(위치 공유 중) → 둘 중 한 명이 예약을 **Cancel** (CR-1) | 그 trip이 같은 순간 `cancelled`가 되고 위치 · ETA · 거리가 지워짐. 이동하던 기기의 다음 위치는 `trip_not_active`로 거절돼 공유가 멈추고, 양쪽 Home의 이동 카드가 사라짐 | SQL `rls_smoke` CR-1 · 화면은 👤 (`012b` 적용 후) | ➖ |
+| TRIP-23 | 견주가 드롭오프 2시간 전 Start trip(위치 공유 중) → 둘 중 한 명이 예약을 **Cancel** (CR-1) | 그 trip이 같은 순간 `cancelled`가 되고 위치 · ETA · 거리가 지워짐. 이동하던 기기의 다음 위치는 `trip_not_active`로 거절돼 공유가 멈추고, 양쪽 Home의 이동 카드가 사라짐 | SQL `rls_smoke` CR-1 · 화면은 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
 
 ---
 
