@@ -30,7 +30,7 @@ export function TripEntry({
 }) {
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
-  const { trips } = useLiveTrips(booking.id);
+  const { trips } = useLiveTrips(booking.id, booking.status === "confirmed");
   const start = useStartTrip(booking, role);
   const live = trips?.find(isLive);
   const tripHref = `/${role}/bookings/${booking.id}/trip` as const;

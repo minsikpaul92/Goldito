@@ -200,6 +200,19 @@ test.describe("pet transit", () => {
     await expect(screen.getByTestId("trip-arrived-card")).toContainText("Robert has arrived");
   });
 
+  test("with no trip running, Home reads trips slowly — not every 4 seconds (CR-9)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "sitter_home");
+    await signIn(page, SITTER);
+    await expect(app(page).getByRole("heading", { name: "Home" })).toBeVisible();
+    let reads = 0;
+    page.on("request", (r) => {
+      if (r.url().includes("/rest/v1/trips")) reads += 1;
+    });
+    await page.waitForTimeout(9_000);
+    expect(reads).toBeLessThanOrEqual(1);
+  });
+
   test("a trip that ends takes its card off Home", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "sitter_home");

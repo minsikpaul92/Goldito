@@ -62,7 +62,7 @@
    | R2 머지 전 | `app/*/bookings/` · `components/HandoffChangeSheet.tsx` · `lib/bookings.ts` |
    | 06B 머지 전 | `trips` · `handoff_checks` 관련 전부 |
    슬기가 그 사이에 할 수 있는 것: QA, 문구, 데이터, `backend/app/ai/prompts/**`(프롬프트 파일 — 코드 수정 없이 튜닝, architecture §9), 알림장 · 캡션 · Life Record 쪽 M 항목.
-3. **마이그레이션 글자:** 민식 `011c`~`011l`, 슬기 `011m`~`011z`. `012`는 06B, `013`은 08 예약. 만들면 TODO의 "Hosted DB status"에 `[ ] (not applied yet)` 줄 추가, 호스팅 DB 적용은 민식이.
+3. **마이그레이션 이름 (2026-10-13 변경, CR-6):** 사람별 글자 범위는 없앴다 — 범위를 나누면 나중 사람의 파일이 이미 적용된 파일보다 앞에 정렬돼 CI(이름순)와 호스팅 DB(적용순)의 결과가 달라진다. 새 파일은 `main`과 열린 PR에 있는 가장 뒤 이름의 다음 빈 이름(예: `012e` 다음은 `012f`)을 쓰고, 적용할 때도 이미 적용된 모든 파일보다 뒤인지 확인한다([supabase/README.md](../../supabase/README.md) § Naming). `013`은 08 예약. 만들면 TODO의 "Hosted DB status"에 `[ ] (not applied yet)` 줄 추가, 호스팅 DB 적용은 민식이.
 4. **TODO.md:** "Current focus"가 **두 개**(민식 · 슬기 각 하나). 자기 줄만 바꾼다.
 5. **피드백은 GitHub 이슈로 (2026-10-10 변경):** 이슈 양식 **QA feedback**(`.github/ISSUE_TEMPLATE/qa-feedback.yml`, 폰에서 작성 가능)으로 올린다 — 번호는 이슈 번호. 심각도 칸이 `blocks-demo`(데모 경로를 막음) · `false-promise`(앱이 사실과 다른 말을 함) · `polish`이고, 앞의 둘은 민식 큐로, 나머지는 슬기 큐 · `ui-polish`는 묵에게. 예전 FB-40+ 번호 체계는 쓰지 않는다.
 6. **실제 데이터:** 원본은 **리포 · 프롬프트 · 영상 · 스크린샷 어디에도 넣지 않음**(`data/raw/`는 gitignore). 익명화된 샘플만 커밋(README.ko.md §8, D35). Nebius zero-retention 여부는 슬기가 결정해 기록.

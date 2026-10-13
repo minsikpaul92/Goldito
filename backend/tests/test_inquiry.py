@@ -171,8 +171,16 @@ def test_availability_is_the_booking_engines_rule_for_this_stay_and_these_pets(c
     assert post(client).json()["can_host"] is True
     assert ctx.capacity_calls == [{
         "p_sitter": SITTER_ID, "p_drop_off_at": "2026-10-09T11:30:00+00:00",
-        "p_pick_up_at": "2026-10-12T21:00:00+00:00", "p_pet_count": 1,
+        "p_pick_up_at": "2026-10-12T21:00:00+00:00", "p_pet_count": 1, "p_owner": OWNER_ID,
     }]
+
+
+def test_the_sitters_regenerate_checks_availability_for_the_inquiring_owner(client, setup):
+    # CR-3: with the sitter's token the database would otherwise treat the sitter as the owner (one owner at a time).
+    ctx = setup(GOOD, GOOD)
+    post(client)
+    assert post(client, sitter_token(), regenerate=True).status_code == 200
+    assert [call["p_owner"] for call in ctx.capacity_calls] == [OWNER_ID, OWNER_ID]
 
 
 def test_a_slot_without_room_for_all_the_pets_means_cannot_host_even_when_no_day_is_blocked(client, setup):
@@ -602,6 +610,17 @@ def test_a_discarded_draft_is_kept_as_a_negative_signal_anonymized(client, setup
     (sample,) = ctx.db.tables["tone_samples"]
     assert sample["source"] == "regenerated" and sample["final_text"] == "" and sample["edit_ratio"] is None
     assert "Robert" not in sample["draft"] and "$268.13" not in sample["draft"] and "{PRICE}" in sample["draft"]
+
+
+def test_steering_to_another_intent_is_not_kept_as_a_discarded_draft(client, setup):
+    # CR-5: Accept / Decline ask for a draft leaning that way; the draft before it wasn't rejected for its voice.
+    ctx = setup(GOOD, "Hi Robert! Sorry, I can't take Max this time.", "Hi Robert! Sorry, I'm unable to host Max then.")
+    post(client)
+    post(client, sitter_token(), regenerate=True, intent="decline")
+    assert ctx.db.tables.get("tone_samples", []) == []
+    post(client, sitter_token(), regenerate=True, intent="decline")
+    (sample,) = ctx.db.tables["tone_samples"]
+    assert sample["source"] == "regenerated" and sample["intent"] == "decline"
 
 
 def test_an_are_you_an_ai_question_also_tells_the_sitter_directly(client, setup):

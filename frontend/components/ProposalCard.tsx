@@ -5,7 +5,7 @@ import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { TextButton } from "./ui/TextButton";
 import { formatInstant } from "../features/schedule/dates";
-import { BookingSummary, HandoffKind, historyLine } from "../lib/bookings";
+import { BookingSummary, HandoffKind, historyLine, pairedProposal } from "../lib/bookings";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -51,6 +51,7 @@ export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest,
   const when = `${formatInstant(open.at)} · ${where}`;
   const agreed = kind === "drop_off" ? booking.dropOff : booking.pickUp;
   const history = historyLine(booking, kind, me, formatInstant);
+  const partner = pairedProposal(booking, kind);
 
   return (
     <Card style={styles.card} testID={`proposal-${kind}`}>
@@ -68,6 +69,13 @@ export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest,
           <Text style={styles.body}>{when}</Text>
         </>
       )}
+      {partner ? (
+        <Text style={styles.muted} testID={`proposal-${kind}-paired`}>
+          {mine
+            ? `Goes with your new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}) — ${other} answers both at once.`
+            : `Comes with the new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}) — Accept or Decline answers both.`}
+        </Text>
+      ) : null}
       {history ? <Text style={styles.muted}>{history}</Text> : null}
       {!mine ? (
         <View style={styles.actions}>

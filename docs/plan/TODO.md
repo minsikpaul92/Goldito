@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): migrations `010`–`011l`, `011z` and `012` (06B, applied 2026-10-12 while PR #83 was still open) applied. Letters: Minsik `011l` (= booking steps, applied at merge of its PR; RV-5 rest takes the next free letter when it is created); `011z` = RV-5 rest (applied at merge of its PR); Seulgi `011m`–`011y`; `012` = 06B, `013` = 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): applied `010`–`011l`, `011z`, `012` (06B, applied 2026-10-12 while PR #83 was still open) and `012b`–`012f` (code review CR-1 – CR-7, applied 2026-10-13 before the merge of their PR; smoke test passed). Nothing is waiting to be applied. **Names:** no per-person letter ranges any more (CR-6) — a new file takes the next free name after the highest one on `main` and in open PRs, and must still sort after everything already applied when it is applied ([supabase/README.md](../../supabase/README.md) § Naming); `013` stays reserved for 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---

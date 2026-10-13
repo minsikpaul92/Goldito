@@ -145,6 +145,10 @@ type Row = Record<string, unknown>;
 export type MockDb = {
   /** rpc/stay_capacity_check answer: null = the stay fits. */
   stayShortfall?: string | null;
+  /** rpc/get_booking_stages fails (CR-8: the app falls back to its own reading of the booking). */
+  stagesFail?: boolean;
+  /** rpc/stay_capacity_check calls with their parameters. */
+  stayChecks: Row[];
   pets: Row[];
   pet_allergies: Row[];
   owner_profiles: Row[];
@@ -243,6 +247,7 @@ function createMockDb(): MockDb {
     care_change_requests: [],
     responses: [],
     proposals: [],
+    stayChecks: [],
     meetGreetCalls: [],
     completions: [],
     trips: [],
@@ -822,6 +827,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/get_booking_stages") {
     // booking_stage / booking_next_actor (011l), for the caller's own bookings.
+    if (db.stagesFail) return json(route, 500, { code: "XX000", message: "boom" });
     const { p_ids } = request.postDataJSON();
     const rows = db.bookings
       .filter((b) => p_ids.includes(b.id) && [b.owner_id, b.sitter_id].includes(me))
@@ -1243,13 +1249,17 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
     const body = String(p_body ?? "").trim();
     if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
+    const draft = p_draft ? db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai") : null;
+    if (p_draft && !draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    // 012f (CR-7): a draft older than the owner's latest message is refused.
+    if (draft && db.inquiry_messages.some((m) => m.inquiry_id === p_inquiry && m.author === "owner" && String(m.created_at) > String(draft.created_at))) {
+      return json(route, 400, { code: "P0001", message: "draft_stale" });
+    }
     let grounding: Row | null = null;
     if (p_outcome === "decline" || p_outcome === "suggest") {
       // 011k: a decline / suggestion can't host and carries no quote.
       grounding = { availability: { can_host: false } };
-    } else if (p_draft) {
-      const draft = db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai");
-      if (!draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    } else if (draft) {
       const g = (draft.grounding ?? {}) as Row;
       grounding = { quote: g.quote ?? null, sources: g.sources ?? [], availability: { can_host: (g.availability as Row | undefined)?.can_host ?? true } };
     }
@@ -1296,6 +1306,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/stay_capacity_check") {
     // 011c: null = fits; a spec sets `db.stayShortfall` to see the refusal.
+    db.stayChecks.push(request.postDataJSON());
     return json(route, 200, db.stayShortfall ?? null);
   }
 

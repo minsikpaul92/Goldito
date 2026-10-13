@@ -113,7 +113,9 @@ def inquiry_reply(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="This question is closed, so there is nothing to answer."
         )
-    if answered and body.regenerate:
+    previous_intent = (drafts[-1].get("grounding") or {}).get("intent") if drafts else None
+    if answered and body.regenerate and (not body.intent or body.intent == previous_intent):
+        # CR-5: asking for a different intent (Accept / Decline) steers the answer; it isn't a verdict on the voice.
         _note_discarded(db, inquiry, drafts[-1])
     earlier = _earlier_messages(messages, question)
 
@@ -468,6 +470,7 @@ def _gather(
 
     def capacity():
         # The booking engine's own rule (RV-1). (checked, shortfall): unchecked when the check itself failed.
+        # p_owner (012d, CR-3): the sitter's token runs this too (Regenerate, quick replies), so name the owner.
         try:
             return True, authz.rpc_json(
                 user.access_token,
@@ -477,6 +480,7 @@ def _gather(
                     "p_drop_off_at": inquiry["drop_off_at"],
                     "p_pick_up_at": inquiry["pick_up_at"],
                     "p_pet_count": len(pet_ids),
+                    "p_owner": inquiry["owner_id"],
                 },
             )
         except authz.RpcError as exc:
