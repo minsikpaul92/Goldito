@@ -132,6 +132,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
+| Privacy 페이지 `/privacy` (로그아웃 상태 · Welcome · Profile에서 열림, Google Calendar · Meet 문단과 Limited Use 문구 — OAuth 동의 화면 Branding의 개인정보 링크) | 🤖 `privacy.spec.ts` · 사람 확인 대기 (PRIV) | 10.11 |
 | **귀가 알림** (Returned → "Max and Mochi are home safe 🏠" → 바로 뒤 리뷰 요청 알림) · **Stay summary** (기간 · 알림장 수 · 사진 수 · 완료 할 일 수 · 마지막 알림장 첫 문장) | ✅ 🤖 `completion.spec.ts` + SQL smoke N (실제 두 계정 👤) | 07C / 7C.1–7C.2 |
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
@@ -528,6 +529,14 @@
 | TRIP-21 | Allow를 눌렀는데 브라우저가 위치를 거절 | 자동으로 공유 없는 trip으로 시작되고 토스트 "Location is off in this browser, so Chloe sees the meeting place instead" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-22 | **두 사람 동시** — 시터(Chloe)가 견주 집으로 Start trip → Simulate, 견주는 Home에 있음 | 견주 Home에 새로고침 없이 "Chloe is on the way" 카드 → 탭하면 지도 + ETA가 줄어들며 갱신 → "Chloe has arrived" 카드. 시터 화면에는 출입 정보 카드. 시터가 Received를 누르면 견주 Trip 화면이 "No trip running"이 되고 예약에 ✓ Received | 🤖 `transit.spec.ts`(브라우저 둘, 같은 DB, 폴링으로 갱신) · **실제 두 계정 · 두 폰 👤** | ➖ |
 | TRIP-23 | 견주가 드롭오프 2시간 전 Start trip(위치 공유 중) → 둘 중 한 명이 예약을 **Cancel** (CR-1) | 그 trip이 같은 순간 `cancelled`가 되고 위치 · ETA · 거리가 지워짐. 이동하던 기기의 다음 위치는 `trip_not_active`로 거절돼 공유가 멈추고, 양쪽 Home의 이동 카드가 사라짐 | SQL `rls_smoke` CR-1 · 화면은 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
+
+### 3.19 개인정보 페이지 (PRIV) — Phase 10 · 10.11
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| PRIV-1 | 로그아웃 상태로 Welcome 하단 **Privacy** | `/privacy`가 열리고 무엇을 저장하는지 · AI(Nebius Token Factory, 진입 코드는 모델에 안 감) · 다른 서비스(OpenStreetMap Nominatim에 집 주소가 한 번, Cloudinary) 문단, **Google Calendar and Meet** 문단(Google 로그인 없음 · `calendar.events`만 · 이벤트에 들어가는 것 · Google API Services User Data Policy / Limited Use 준수 문구)이 있음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
+| PRIV-2 | 로그인 후 Profile 아래 **Privacy**, 그리고 주소창으로 `/privacy` 직접 열기 | 열리고, 새로고침해도 역할 홈으로 튕기지 않음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
+| PRIV-3 | 실제 문구가 앱 동작과 맞는지 읽기 (저장 항목 · 보내는 곳 · 보존 기간) | 새 서비스를 붙일 때마다 페이지도 같이 고침 | 수동 | 사람 확인 대기 |
 
 ---
 
