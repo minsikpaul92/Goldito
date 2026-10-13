@@ -233,6 +233,22 @@ async function openSitterThread(page: import("@playwright/test").Page, extra: Re
 }
 
 test.describe("sitter inquiry", () => {
+  test("a draft older than the owner's latest message is not sent, and there is no Retry for it (CR-7)", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("$268.13");
+    // The owner changes the dates while the old draft is still on the sitter's screen.
+    db.inquiry_messages.push({
+      id: "q-dates", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "Changed dates: Oct 20 – Oct 22", status: "sent",
+      drafted_by_ai: false, visible_at: "2026-10-06T10:05:00Z", read_at: null, created_at: "2026-10-06T10:05:00Z", grounding: null,
+    });
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("error-dialog-message")).toContainText("The owner wrote again after this draft");
+    await expect(screen.getByTestId("error-dialog-retry")).toHaveCount(0);
+    expect(db.inquiry_messages.filter((m) => m.author === "sitter")).toHaveLength(0);
+  });
+
   test("Questions lists the thread with a draft ready; one tap on Send keeps the quote and tells the owner", async ({ page }) => {
     const learned: Record<string, unknown>[] = [];
     await page.route("**/api/tone/record-reply", (route) => {
@@ -663,19 +679,31 @@ test.describe("sitter lands on what is waiting (FB-34)", () => {
 });
 
 test.describe("sitter quick replies (FB-34)", () => {
-  test("Accept writes the reply in a popup; confirming sends it with the quote", async ({ page }) => {
+  test("Accept on a yes draft reuses it in the popup (no new draft); confirming sends it with the quote", async ({ page }) => {
     const { db, asked } = await openSitterThread(page);
     const screen = app(page);
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
     await screen.getByTestId("inquiry-intent-accept").click();
-    await expect(screen.getByTestId("reply-text")).toHaveValue(/A fresh take/, { timeout: 8000 });
-    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "accept" });
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/I'm available\. The total is \$268\.13/);
+    // CR-5: the draft on screen already says yes — no model call, and it isn't logged as a thrown-away draft.
+    expect(asked).toEqual([]);
     await screen.getByTestId("reply-send").click();
     await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
     const sent = db.inquiry_messages.find((m) => m.author === "sitter");
     expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id });
     expect((sent?.grounding as { quote: { total: number } }).quote.total).toBe(268.13);
     expect((sent?.grounding as { availability: { can_host: boolean } }).availability.can_host).toBe(true);
+  });
+
+  test("Accept on a draft that leans the other way asks for a yes draft", async ({ page }) => {
+    const { asked } = await openSitterThread(page, {
+      grounding: { quote: QUOTE, sources: [], availability: { can_host: true }, needs_sitter: false, intent: "decline" },
+    });
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-accept").click();
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/A fresh take/, { timeout: 8000 });
+    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "accept" });
   });
 
   test("Decline writes a decline in a popup; confirming sends it as a no, with no quote", async ({ page }) => {
@@ -715,6 +743,8 @@ test.describe("sitter quick replies (FB-34)", () => {
     await screen.getByTestId("inquiry-intent-suggest").click();
     await expect(screen.getByTestId("reply-problem")).toContainText("no room");
     await expect(screen.getByTestId("reply-send")).toBeDisabled();
+    // CR-3: the sitter's check is for the asking owner, not the sitter (one owner at a time).
+    expect(db.stayChecks.at(-1)?.p_owner).toBe(db.inquiries[0].owner_id);
   });
 });
 

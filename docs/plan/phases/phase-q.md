@@ -87,7 +87,7 @@
 
 1. **브랜치 · 커밋 · PR:** CLAUDE.md §4. 브랜치 `qa/…` · `fix/q-…` · `data/…` · `docs/…` (`claude/` · `cursor/` 같은 도구 접두어 금지), 작업 하나 = 커밋 하나, 영어 한 줄 conventional commit, **AI 표기 금지**. 묶음마다 draft PR → 끝나면 ready, 머지는 민식과 확인 후.
 2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
-3. **마이그레이션:** 슬기는 `011m`~`011z`. 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
+3. **마이그레이션:** 사람별 글자 범위 없음 (2026-10-13, CR-6) — `main`과 열린 PR에서 가장 뒤 이름의 다음 빈 이름을 쓴다([supabase/README.md](../../../supabase/README.md) § Naming). 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
 4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
 5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus 줄 삭제(완료 기록은 커밋 · PR · test-guide), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
 6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
