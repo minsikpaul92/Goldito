@@ -19,6 +19,9 @@ test.describe("privacy page", () => {
     await expect(screen.getByTestId("privacy-ai")).toContainText("Entry codes are never sent to a model.");
     // The saved home address goes to OpenStreetMap's Nominatim once, to place the pin.
     await expect(screen.getByTestId("privacy-other-services-that-receive-data")).toContainText("Nominatim");
+    // What the Google OAuth consent screen's privacy link must find: the Calendar use and the Limited Use statement.
+    await expect(screen.getByTestId("privacy-google-calendar-and-meet")).toContainText("calendar.events");
+    await expect(screen.getByTestId("privacy-google-calendar-and-meet")).toContainText("Limited Use requirements");
   });
 
   test("a signed-in person can open it from Profile and a direct link stays on the page", async ({ page }) => {

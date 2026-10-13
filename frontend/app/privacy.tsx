@@ -8,7 +8,7 @@ type Section = { title: string; body: string[] };
 
 // What Goldito stores and who else receives it — kept next to the code that does it (backend/app/routers/geo.py,
 // meet_greet.py, ai/*). Update this page in the same change when a new service or kind of data is added.
-const UPDATED = "October 12, 2026";
+const UPDATED = "October 13, 2026";
 
 const SECTIONS: Section[] = [
   {
@@ -30,7 +30,7 @@ const SECTIONS: Section[] = [
   {
     title: "Who can see it",
     body: [
-      "A sitter sees an owner's pets and care notes for the booking. An owner's home address is shown only to a sitter with a confirmed booking, and entry codes only after the booking is paid and the hand-off is close.",
+      "A sitter sees an owner's pets and care notes for the booking. An owner's home address, emergency contact and vet are shown to a sitter only once their booking is paid, and only until a day after the pick-up. Entry codes open only after payment and close to the hand-off.",
       "While a trip is running, the person travelling shares their position with the other person in that booking, and only then. On the web it works only while the screen stays on.",
     ],
   },
@@ -47,8 +47,15 @@ const SECTIONS: Section[] = [
     body: [
       "OpenStreetMap: when you save a home address, the address text is sent once to OpenStreetMap's Nominatim search to place the pin on the map. The map pictures on the trip screen load from OpenStreetMap tile servers in your browser, so they see your IP address and the map area you view.",
       "Cloudinary stores and delivers photos.",
-      "Google Calendar creates the video link for a first Meet & Greet, from a Goldito account. When invites are switched on, the owner's and the sitter's email addresses go on the invite. Demo accounts never get invites.",
       "Vercel hosts the website and Render hosts our server. Both see ordinary request logs such as IP addresses.",
+    ],
+  },
+  {
+    title: "Google Calendar and Meet",
+    body: [
+      "Goldito does not ask you to sign in with Google and never reads your Google account. One Google account owned by the Goldito team uses the Google Calendar API (only the calendar.events permission) to create, move and cancel the calendar event that carries the Google Meet link for a video Meet & Greet.",
+      "That event holds the meeting time, a title with the pets' names and the sitter's name, and — when invites are switched on — the owner's and the sitter's email addresses as guests, so Google sends them the invite. Demo accounts never get invites. Goldito keeps only the event's ID and the Meet link, on the booking. A cancelled meeting's event is deleted.",
+      "Goldito's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. That information is used only to run the video Meet & Greet; it is never sold, never used for advertising, and never sent to an AI model or used to train one.",
     ],
   },
   {
@@ -66,7 +73,7 @@ const SECTIONS: Section[] = [
   },
 ];
 
-/** Public privacy page (10.11): reachable signed out — the Google sign-in consent screen and the Welcome screen link here. */
+/** Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. */
 export default function Privacy() {
   const styles = useThemedStyles(makeStyles);
 
