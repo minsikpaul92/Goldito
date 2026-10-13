@@ -375,6 +375,7 @@
 | INQ-35 | 오너가 시터가 안 연(또는 꽉 찬) 날짜로 문의 시트 → **Send** (새 문의, 그리고 Change dates 둘 다) | 바로 보내지 않고 시트 아래가 **"Chloe has no room on these dates. You can still ask…" + [Ask anyway] [Pick other dates]**로 바뀜. Pick other dates → 시트로 돌아가 날짜 수정(아무것도 안 보내짐). Ask anyway → 그대로 문의 전송. 자리가 있는 날은 확인 없이 바로 전송. 날짜를 바꾸면 안내는 사라짐 (FB-33 후속) | 🤖 `inquiry` | ➖ |
 | INQ-36 | 한 번에 한 오너만 받는 시터와 이미 확정 · 홀드된 날짜에 **같은 오너**가 더 묻는 문의 → 시터가 **Regenerate** / **Accept** / **Suggest other dates** (CR-3) | 오너가 처음 받은 답과 시터가 다시 만든 초안의 가능 여부가 같음(오너 본인의 예약을 "다른 오너"로 세지 않음). 다른 오너에게는 그 슬롯이 계속 막힘. 제3자가 다른 오너 이름으로 묻으면 `forbidden` | 🤖 pytest `test_inquiry`(`p_owner` 전달) · `inquiry.spec.ts`(Suggest 확인에 `p_owner`) · SQL `rls_smoke` CR-3 · 👤 (`012d` 적용 후) | ➖ |
 | INQ-37 | 오너가 같은 펫 · 날짜로 시터 A, B에게 문의 → A에게 예약 요청 → A가 **거절**(또는 오너 취소 · 만남 시간 초과로 자동 취소) (CR-4) | 요청 순간 B 문의는 `closed`(B는 Life Record를 더 못 봄). 요청이 끝나면 B 문의가 다시 `open` — 오너 · B 모두 이어서 대화 가능. 같은 날짜를 덮는 다른 살아 있는 예약이 있으면 그 예약이 끝날 때까지 닫힌 채. 지난 날짜 · 손으로 닫은 문의는 다시 안 열림 | SQL `rls_smoke` CR-4 · 👤 (`012e` 적용 후) | ➖ |
+| INQ-38 | 시터 화면에 초안이 떠 있는 동안 오너가 **Change dates**(또는 새 메시지) → 시터가 그 옛 초안을 **Send** / Accept (CR-7) | 보내지지 않고 "The owner wrote again after this draft …" 안내(Retry 없음), 스레드가 다시 읽혀 새 메시지용 초안을 기다림 — 옛 견적 · 옛 날짜의 "yes"가 나가지 않음. 시터가 직접 쓴 답(초안 없이)은 그대로 전송 | SQL `rls_smoke` CR-7 · 🤖 `inquiry.spec.ts` · 👤 (`012f` 적용 후) | ➖ |
 
 ### 3.12 사진 캡션 · 앨범 (CAP) — Phase 09 · *사전: 시터가 돌보는 중, 백엔드 + `NEBIUS_API_KEY`*
 

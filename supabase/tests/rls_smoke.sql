@@ -4344,5 +4344,62 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012f (CR-7): a reply is never sent from a draft older than the owner's latest message
+-- (Kai / Lou / Kip come from the 011j block above)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  kai constant uuid := '00000000-0000-4000-8000-0000000000aa';
+  lou constant uuid := '00000000-0000-4000-8000-0000000000ba';
+  kip constant uuid := '00000000-0000-4000-8000-0000000000ca';
+  v_inq uuid;
+  v_draft uuid;
+  v_err text;
+  v_msg public.inquiry_messages;
+begin
+  perform _t_as(kai);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (kai, lou, now() + interval '50 days', now() + interval '52 days', array[kip]) returning id into v_inq;
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, created_at)
+  values (v_inq, 'owner', kai, 'Can you host Kip?', now() - interval '10 minutes');
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, status, grounding, created_at)
+  values (v_inq, 'ai', null, 'Yes! $100', true, 'draft',
+    '{"quote":{"total":100},"availability":{"can_host":true}}', now() - interval '5 minutes') returning id into v_draft;
+  -- The owner moves the dates after the draft was written (change_inquiry_dates leaves this message).
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, created_at)
+  values (v_inq, 'owner', kai, 'Changed dates: Dec 1 – Dec 3', now() - interval '1 minute');
+
+  perform _t_as(lou);
+  begin
+    perform send_inquiry_reply(v_inq, 'Yes! $100', v_draft);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'draft_stale', 'CR-7: a draft older than the owner''s latest message is refused (no old quote goes out)');
+  begin
+    perform send_inquiry_reply(v_inq, 'Yes, happy to!', v_draft, 'accept');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'draft_stale', 'CR-7: …also as an Accept');
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 0,
+    'CR-7: …and nothing was sent');
+  v_msg := send_inquiry_reply(v_inq, 'Let me check those dates and come back to you.', null);
+  perform _t_ok(v_msg.author = 'sitter' and v_msg.grounding is null, 'CR-7: a reply written by the sitter still goes out');
+
+  -- A draft written after the latest owner message is fine.
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, status, grounding, created_at)
+  values (v_inq, 'ai', null, 'Yes for Dec 1 – 3! $120', true, 'draft',
+    '{"quote":{"total":120},"availability":{"can_host":true}}', now()) returning id into v_draft;
+  perform _t_as(lou);
+  v_msg := send_inquiry_reply(v_inq, 'Yes for Dec 1 – 3! $120', v_draft);
+  perform _t_ok((v_msg.grounding #>> '{quote,total}') = '120', 'CR-7: the new draft for the latest message is sent with its quote');
+end;
+$$;
+
 
 rollback;

@@ -20,6 +20,7 @@ import {
   markInquiryRead,
   recordReplySample,
   regenerateDraft,
+  StaleDraftError,
   sendInquiryReply,
   tripSummary,
 } from "../../../features/inquiries/inquiryApi";
@@ -117,6 +118,11 @@ export default function SitterInquiry() {
       toast.show(`Sent ✅ ${inquiry.ownerName} was told`);
       await load();
     } catch (e) {
+      if (e instanceof StaleDraftError) {
+        errorDialog.show({ title: "Not sent", message: e.message });
+        await load();
+        return;
+      }
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
     } finally {
       setBusy(null);

@@ -274,6 +274,13 @@ export type ReplyOutcome = "accept" | "decline" | "suggest";
  * Sitter: send the text they approved (the draft as is, or their edit). `draftId` keeps the quote and sources.
  * `outcome` says what the reply is: a decline or a suggestion can't host and carries no quote (011k).
  */
+/** The owner wrote again (or changed the dates) after this draft was written (012f, CR-7): reload, a new draft is coming. */
+export class StaleDraftError extends Error {
+  constructor() {
+    super("The owner wrote again after this draft, so it no longer answers them. A new draft is on its way — check the thread.");
+  }
+}
+
 export async function sendInquiryReply(
   inquiryId: string,
   body: string,
@@ -290,6 +297,7 @@ export async function sendInquiryReply(
   if (error.message.includes("body_required")) throw new Error("Write something before sending.");
   if (error.message.includes("body_too_long")) throw new Error("Keep the reply under 2000 characters.");
   if (error.message.includes("inquiry_closed")) throw new Error("The owner closed this question.");
+  if (error.message.includes("draft_stale")) throw new StaleDraftError();
   fail("send the reply");
 }
 

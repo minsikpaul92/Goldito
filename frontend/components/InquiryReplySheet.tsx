@@ -9,6 +9,7 @@ import {
   getInquiry,
   recordReplySample,
   regenerateDraft,
+  StaleDraftError,
   sendInquiryReply,
   stayShortfall,
 } from "../features/inquiries/inquiryApi";
@@ -173,6 +174,13 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
       onClose();
       onSent();
     } catch (e) {
+      if (e instanceof StaleDraftError) {
+        // Retrying would send the same old draft: close, and the thread reloads with the new one.
+        errorDialog.show({ title: "Not sent", message: e.message });
+        onClose();
+        onSent();
+        return;
+      }
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
     } finally {
       setSending(false);

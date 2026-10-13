@@ -1246,13 +1246,17 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
     const body = String(p_body ?? "").trim();
     if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
+    const draft = p_draft ? db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai") : null;
+    if (p_draft && !draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    // 012f (CR-7): a draft older than the owner's latest message is refused.
+    if (draft && db.inquiry_messages.some((m) => m.inquiry_id === p_inquiry && m.author === "owner" && String(m.created_at) > String(draft.created_at))) {
+      return json(route, 400, { code: "P0001", message: "draft_stale" });
+    }
     let grounding: Row | null = null;
     if (p_outcome === "decline" || p_outcome === "suggest") {
       // 011k: a decline / suggestion can't host and carries no quote.
       grounding = { availability: { can_host: false } };
-    } else if (p_draft) {
-      const draft = db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai");
-      if (!draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    } else if (draft) {
       const g = (draft.grounding ?? {}) as Row;
       grounding = { quote: g.quote ?? null, sources: g.sources ?? [], availability: { can_host: (g.availability as Row | undefined)?.can_host ?? true } };
     }

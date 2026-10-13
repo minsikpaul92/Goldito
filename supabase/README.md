@@ -41,6 +41,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `012c_handoff_pair_change.sql` | review fix (CR-2) | After confirm, a drop-off / pick-up change that only fits with the same person's open proposal for the other handoff is checked against it, and `respond_handoff` accepts / declines the pair at once |
 | `012d_capacity_check_for_owner.sql` | review fix (CR-3) | `stay_capacity_check(…, p_owner)`: the one-owner-at-a-time rule is checked for the named owner (the sitter's token runs it too) |
 | `012e_inquiries_reopen.sql` | review fix (CR-4) | `inquiries.closed_by_booking`; a declined / cancelled request reopens the inquiries it closed (011z) unless another live booking still covers them |
+| `012f_reply_from_fresh_draft.sql` | review fix (CR-7) | `send_inquiry_reply` refuses (`draft_stale`) an AI draft older than the owner's latest message — a follow-up or `change_inquiry_dates` — so no old quote goes out |
 | `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |
 

@@ -233,6 +233,22 @@ async function openSitterThread(page: import("@playwright/test").Page, extra: Re
 }
 
 test.describe("sitter inquiry", () => {
+  test("a draft older than the owner's latest message is not sent, and there is no Retry for it (CR-7)", async ({ page }) => {
+    const { db } = await openSitterThread(page);
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await expect(screen.getByTestId("inquiry-draft-body")).toContainText("$268.13");
+    // The owner changes the dates while the old draft is still on the sitter's screen.
+    db.inquiry_messages.push({
+      id: "q-dates", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "Changed dates: Oct 20 – Oct 22", status: "sent",
+      drafted_by_ai: false, visible_at: "2026-10-06T10:05:00Z", read_at: null, created_at: "2026-10-06T10:05:00Z", grounding: null,
+    });
+    await screen.getByTestId("inquiry-send").click();
+    await expect(screen.getByTestId("error-dialog-message")).toContainText("The owner wrote again after this draft");
+    await expect(screen.getByTestId("error-dialog-retry")).toHaveCount(0);
+    expect(db.inquiry_messages.filter((m) => m.author === "sitter")).toHaveLength(0);
+  });
+
   test("Questions lists the thread with a draft ready; one tap on Send keeps the quote and tells the owner", async ({ page }) => {
     const learned: Record<string, unknown>[] = [];
     await page.route("**/api/tone/record-reply", (route) => {
