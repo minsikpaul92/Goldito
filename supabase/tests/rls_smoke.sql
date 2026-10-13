@@ -4254,6 +4254,8 @@ declare
   v_err text;
 begin
   perform _t_as(allen);
+  -- The 011l block above switched Allen to several owners; this check is about one owner at a time.
+  update public.sitter_profiles set accepts_multiple_owners = false where id = allen;
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (allen, 'open', d - 1, d + 3, 'morning', '08:00', '12:00', 3),
          (allen, 'open', d - 1, d + 3, 'afternoon', '12:00', '18:00', 3),
@@ -4268,6 +4270,8 @@ begin
   perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
     'CR-3: …the same when the owner names themselves');
   perform _t_as(allen);
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1) is not null,
+    'CR-3: without p_owner the sitter''s own call still counts the owner as "another owner" (the old bug, kept for old callers)');
   perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
     'CR-3: the sitter asking for that owner gets the same answer (Regenerate, quick replies, Suggest)');
   perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, joy) is not null,
