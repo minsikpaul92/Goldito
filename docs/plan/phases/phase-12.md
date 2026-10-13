@@ -148,6 +148,100 @@ Snap 탭
 
 ---
 
+## 다음에 이어서 — 남은 작업 상세 (2026-10-13 마감 메모)
+
+> 이 절만 읽고 이어서 할 수 있게 적었다. 브랜치 `feat/phase-12-snap`, PR [#90](https://github.com/minsikpaul92/Goldito/pull/90) (**Draft** — 12.1c까지 끝나면 Ready로). 단계마다 커밋 하나 + TODO · test-guide 같이 고치기 (CLAUDE.md §4.1a).
+
+### 지금 상태 (2026-10-13)
+
+| 커밋 | 내용 |
+| :--- | :--- |
+| `7010762` · `ece0e1b` | 이 문서 · D61 · Tavily는 매번 신뢰 도메인만 |
+| `2aedfc4` 12.0 | 탭 Mood → **Snap**(`camera-outline`), `features/snap/{SnapScreen,SnapToolCard,SnapToolPlaceholder,tools}`, 라우트 `app/{owner,sitter}/(tabs)/snap.tsx` · `app/{owner,sitter}/snap/{treat,mood,sticker}.tsx`(지금은 자리 화면), e2e `snap.spec.ts` |
+| `15f5443` 12.1a (+12.1b) | `POST /api/ai/safety-check` — `routers/ai_safety_check.py`, 규칙 `ai/safety.py` + `ai/prompts/safety/{vision_system.md, reasoning_system.md, toxic_rules.json}`, Tavily `services/tavily.py`(httpx, 신뢰 도메인 5개, 8초, 쿼리 ≤ 4), 견주도 `safety_label` 업로드(`routers/media.py`), `013_safety.sql`, pytest 3개 파일, `rls_smoke` 013 블록 |
+
+**아직 확인 안 된 것:** 실제 MiniCPM-V가 라벨을 읽는지, Ultra(추론 켬) 응답 시간, Tavily 실제 응답 — 로컬 `backend/.env`에 키가 없었다.
+
+### 다시 시작할 때 사람이 먼저 할 것 (민식)
+
+1. **`013_safety.sql` 적용** → `supabase/tests/rls_smoke.sql` 전체 실행 → 마지막 블록 `PASS: 013: …` 8줄.
+2. **키:** `backend/.env`에 `NEBIUS_API_KEY`, `TAVILY_API_KEY`(그 밖의 값은 `backend/.env.example`). Render → Environment에도 `TAVILY_API_KEY`.
+3. **샘플 라벨 4장**(직접 촬영 · 상표 가림, 긴 변 1200px 이하 JPG): `chicken_jerky.jpg`(DANGER · Max), `animal_fat_biscuit.jpg`(WARNING · Max), `sweet_potato_chew.jpg`(SAFE), `lily_scented_cat_treat.jpg`(DANGER · Mochi) → `frontend/assets/demo/labels/`와 `backend/tests/fixtures/labels/` 둘 다.
+4. (12.2–12.3용, 늦어도 10/16) 펫 사진 4장 · 5초 영상 2개 → `frontend/assets/demo/mood/`.
+
+### 12.1 실제 호출 확인 (키가 들어오면 맨 먼저, 30분)
+
+- `backend/scripts/measure_safety.py` 작성: `scripts/measure_handoff.py`처럼 fixtures 라벨을 Cloudinary 없이 data URL로 만들어 `nebius.chat_json("vision", …)` → `ai.safety.check_rules` → `tavily.search_many` → `chat_json("safety", reasoning=True)` 순서로 부르고, 단계별 시간 · 판정 · 출처 수를 표로 출력. 기대값은 위 3번.
+- 결과를 [notes/model-ids.md](notes/model-ids.md)에 한 줄(vision / Ultra / Tavily ms)로 남기고, 이 문서 § 12.1에 "확인 2026-10-…".
+- 볼 점: Ultra는 추론 토큰이 많아 `max_tokens=2000`이 모자라면 `AIInvalidOutput` → `REASONING_TIMEOUT_S` · `max_tokens`를 올림. 전체가 60초를 넘으면 12.1c 진행 표시를 3단계로.
+
+### 12.1c — Treat check 화면 (10/14–15)
+
+- **화면** `features/snap/TreatCheckScreen.tsx`(`{role}`) → `app/{owner,sitter}/snap/treat.tsx`가 자리 화면 대신 렌더.
+  1. **펫 고르기:** 견주 = 내 펫(`PetCard` 재사용 가능), 시터 = 지금 돌보는 펫(`features/care/useInCare`; 없으면 "No pet in your care right now"). 펫이 하나면 자동 선택.
+  2. **사진:** 기존 미디어 피커(데스크톱은 샘플 트레이) → `uploadMedia({petId, purpose: "safety_label"})`.
+  3. **진행 표시:** "Reading the label…" → "Checking for {name}…" (서버가 단계를 안 알려 주므로 시간으로: 0–8초 / 그 뒤).
+  4. **결과:**
+     - DANGER = 새 `components/ui/AlertModal.tsx` — 전체 화면 빨강 `#B42318`(스킨으로 안 바뀜), ⚠️, `warning_message`, 일치 · 독성 칩, **"I understand — don't feed"**로만 닫힘(바깥 클릭 · X 없음, DESIGN.md §7.4). 닫을 때 `safety_checks.acknowledged_at` 업데이트(클라이언트 RLS, 013).
+     - WARNING = 주황 카드 + 숨은 출처 이유 + "Ask the owner first"(시터) / "Check with your vet"(견주).
+     - SAFE = 초록 "Looks fine for {name} ✅".
+     - 공통: 읽은 성분 목록(접기), **Sources 칩**(제목 · 도메인, 새 탭), `sources_unavailable`면 "Sources unavailable right now", `double_checked=false`면 "We couldn't double-check this one".
+  5. **맨 아래 작은 회색 디스클레이머(항상):** "AI can be wrong. Always double-check the label, and ask your vet if you're unsure."
+  6. **최근 검사 10개:** `safety_checks` select(펫별, 최신순, `result_json->>product_name`, 상태 칩). Snap 탭 카드 아래 "Recent checks" 3개.
+- **오류:** 422 → "Couldn't read the label. Try a closer, well-lit photo." + 다시 찍기, 503/502 → ErrorDialog + Retry.
+- **API 클라이언트** `features/snap/treatApi.ts`: `checkTreat(petId, mediaId)`(`apiPost`, 타임아웃 120초 — `lib/api.ts` 기본값 확인), `listRecentChecks(petId)`, `acknowledge(checkId)`.
+- **알림:** `lib/notifications.ts`의 `safety_danger` → `/owner/snap/treat?check={ref_id}`(그 검사 결과를 바로 보여 줌).
+- **샘플:** `lib/demoSamples.ts`의 `safety_label: []` → 라벨 4장.
+- **e2e** `e2e/treat-check.spec.ts`(FLOW_SPECS에 `"treat-check"` 추가): `page.route("**/api/ai/safety-check")`로 결과 주입(`e2e/caption.spec.ts:18` 방식) — DANGER 모달이 확인 전 안 닫힘 + 확인 시 `acknowledged_at` 기록, WARNING 출처 칩, SAFE, 422 안내, 디스클레이머 항상, 시터는 돌보는 펫만, 마우스만으로. 업로드는 기존 `supabaseMock`의 sign/complete 목업.
+- **DoD:** 1366 × 768 폰 프레임에서 `chicken_jerky` 샘플 → DANGER 모달이 프레임 안에 있고 확인 전 안 닫힘.
+
+### 12.S2 — 브라우저 모델 스파이크 (반나절, 10/16)
+
+- 패키지 `@mediapipe/tasks-vision` — **2주 이상 된 정확한 버전**으로 고정(`npm view @mediapipe/tasks-vision time`). 웹 전용(`Platform.OS === "web"`). 앱은 데스크톱에서 iframe 안이라 WASM 경로는 CDN(`cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@<버전>/wasm`).
+- 모델 파일: ObjectDetector `efficientdet_lite0`(int8) · InteractiveSegmenter `magic_touch` — `storage.googleapis.com/mediapipe-models/...`에서 바로 로드되는지(배포 `vercel.json` CSP는 `frame-ancestors`만), 아니면 `frontend/public/models/`(크기 확인).
+- **측정:** 폰 프레임 안에서 모델 로딩 · 사진 1장 검출 · 분할 시간(데스크톱 Chrome, 실제 폰 1회).
+- **라이선스:** 두 모델 카드(Apache-2.0인지). 아니면 12.3은 대안(백엔드 `rembg` + `u2netp`, MIT)으로.
+- **개 분류기:** `agentmish/dog-emotion-classifier-v2` 학습 데이터 라이선스(슬기 확인)와 ONNX 크기 → 쓸지 결정. 기본은 **안 씀**(관찰 태그 규칙만).
+- 결과는 이 문서 § 12.2 · 12.3에 "스파이크 결과" 표로.
+
+### 12.2a/b — Mood (10/17–18)
+
+- **API** `POST /api/ai/pet-mood`(`routers/ai_pet_mood.py`)
+  - 요청 `{pet_id?: uuid, frames: [{index, crops: [{box: {x, y, w, h}(0–1 비율), image: data-url JPEG ≤ 512px}]}]}` — 크롭 ≤ 8개, 각 ≤ 300KB. 로그인한 누구나(사진 · 결과 기본 저장 안 함).
+  - 크롭마다 `chat_json("vision", …, MoodTags)` 병렬(≤ 4) → 태그 `{species, ears, eyes, mouth, tail, posture, body_tension, activity}`(각각 고정 선택지).
+  - `ai/mood_rules.py`: 태그 → 8개 감정 가중치 합 → 정규화(정수, 합 100, 반올림 오차는 최댓값에) → 같은 펫(박스 순서)의 프레임 평균.
+  - `chat("fast")`로 요약 한 줄("seems", 의학 · 통증 표현 금지 — 검사 후 실패하면 규칙 문장).
+  - 응답 `{pets: [{frame, box, emotions: {happy, relaxed, excited, curious, sleepy, anxious, angry, sad}, top, summary}], disclaimer: "For fun only — not a behavior or health assessment."}`.
+- **규칙 예:** `mouth=open_relaxed` → happy +3 · relaxed +1 / `tail=high_wagging` → excited +3 · happy +2 / `ears=pinned_back` → anxious +3 · angry +1 / `body_tension=stiff` → angry +2 · anxious +2 / `eyes=half_closed` → sleepy +3 · relaxed +1 … 단위 테스트: 같은 태그 → 같은 %, 합 100.
+- **화면** `features/snap/MoodScreen.tsx`: 사진/영상 선택(샘플 포함) → `features/snap/vision.ts`의 `detectPets(image)`(12.S2) → 영상은 `<video>` + canvas로 4프레임 → 크롭 → API → 원본 위 **박스**(표시 크기에 맞춘 절대 위치) + 박스 옆 **감정 % 표 8줄**(최댓값 굵게, 예시 사진처럼) + 요약 + 디스클레이머. 펫이 안 잡히면 "We couldn't find a pet — try a clearer photo". 박스가 여러 개면 탭해서 표 전환.
+- **테스트:** pytest(규칙 · 정규화 · 권한 · 크롭 하나 실패 시 그 크롭만 제외), e2e(테스트 훅으로 고정 박스 주입, API는 route 목업).
+
+### 12.3a/b — Sticker + 다이어리 꾸미기 (10/19–21)
+
+- **`013b_mood_stickers.sql`:**
+  - `media.purpose` check에 `sticker` 추가(+ `routers/media.py` `Purpose` · `services/cloudinary.py` `PURPOSES` · 프론트 `MediaPurpose`; 견주 · 돌보는 시터 허용; PNG 투명이 업로드 변환에서 유지되는지 확인).
+  - `pet_stickers(id, pet_id, media_id unique, created_by, created_at)` — 읽기 `can_access_pet`, 쓰기 본인 + `can_access_pet`.
+  - `report_decor(report_id → daily_reports, user_id, items jsonb, updated_at, primary key(report_id, user_id))` — 읽기 = 그 보고서의 펫에 접근 가능한 사람, 쓰기 = 자기 행 + (견주 또는 그 보고서의 시터), `items` ≤ 20개.
+  - `rls_smoke` 블록.
+- **스티커 만들기** `features/snap/StickerScreen.tsx`: 사진 → `detectPets` 가장 큰 박스 중앙 → `segmentAt(image, point)`(12.S2) → 마스크 → canvas로 투명 PNG + 흰 테두리 6px(마스크를 팽창시켜 흰색으로 먼저 그림) + 그림자 → 미리보기 → "Tap your pet if we picked the wrong thing"(다른 점으로 다시) → **Save sticker** → `uploadMedia({purpose: "sticker"})` + `pet_stickers` insert. 내 스티커함(펫별 그리드, 삭제).
+- **꾸미기** `components/DecorateSheet.tsx` + `components/StickerLayer.tsx`: 견주 `app/owner/diary/[entryId].tsx` 카드 위, 시터 `components/ReportComposer.tsx`(보낸 보고서) — **Decorate** → 스티커함에서 고르기 → 드래그 이동(`dataSet={{gestureOwner: "true"}}`, DESIGN.md) + **크기 ± · 회전 ↺↻ · 삭제 버튼**(D25 마우스) → Save(`report_decor` upsert). 표시는 두 층(내 것 위), 좌표는 카드 기준 0–1.
+- **테스트:** pytest(업로드 목적), `rls_smoke`, e2e(마우스 드래그 → 저장 → 새로고침해도 같은 자리, 상대 역할에서도 보임; 분할은 테스트 훅으로 고정 마스크).
+
+### 12.5 — 마무리 (10/22)
+
+- test-guide SNAP 시나리오 상태 · 사람 확인, Snap 줄 ✅, README 메모(Treat check = Nemotron Ultra + MiniCPM-V + Tavily, Mood · Sticker = 브라우저 MediaPipe + Token Factory), 데모 샘플 정리, PR #90 본문 단계 표 갱신 → **Ready for review** → CI → 머지(사용자 요청 시). 호스팅 DB `013` · `013b` 적용 확인.
+
+### 새 세션에서 붙여 넣을 프롬프트
+
+```text
+Read CLAUDE.md, docs/plan/TODO.md and docs/plan/phases/phase-12.md (§ 다음에 이어서).
+Branch feat/phase-12-snap, PR #90 (draft). Continue from the first unfinished item there:
+the 12.1 real-model check if keys are in backend/.env, otherwise 12.1c (Treat check screen).
+One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
+```
+
+---
+
 ## 산출물
 
 - Backend: `routers/ai_safety.py` · `schemas/safety.py` · `ai/prompts/safety/*` · `services/tavily.py` · `routers/ai_pet_mood.py` · `ai/mood_rules.py` · `ai/prompts/mood/*` · (대안) `routers/sticker_cut.py`
