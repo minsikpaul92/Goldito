@@ -115,7 +115,7 @@ Snap 탭
 
 | 단계 | 내용 | 날짜 |
 | :--- | :--- | :--- |
-| **12.0** | 탭 이름 Mood → Snap · Snap 화면 틀(카드 3개, 각 화면은 "Coming in this phase" 자리) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/14 |
+| **12.0** ✅ | 탭 이름 Mood → Snap(아이콘 `camera-outline`) · Snap 화면 틀(`features/snap/SnapScreen` + 카드 3개, 각 도구 화면은 `SnapToolPlaceholder` "Coming soon" 자리 — `/{role}/snap/{treat,mood,sticker}`) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/13 |
 | **12.1a** | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → Ultra) + pytest(알러지 강제 DANGER · 스키마) | 10/14–15 |
 | **12.1b** | Tavily 서비스(신뢰 도메인 · 8초 · 실패 시 무시) + 출처 | 10/15 |
 | **12.1c** | Treat check 화면 + `AlertModal` + 샘플 라벨 4장 + e2e | 10/16 |

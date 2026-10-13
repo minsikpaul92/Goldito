@@ -180,7 +180,7 @@ System font for now (Figma will pick one family).
 | `RoleBadge` **(proposed)** | The green pill that says **Owner** / **Sitter** in the header, as its own component. Shown next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards): the other person gets the badge of *their* role. Same colors, shape and type as the header pill — never plain text like "(sitter)" |
 | `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
-| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b**: both **Home · Bookings · Feed · Diary · Mood**. Settings (and sitter Earnings later) = header Profile |
+| `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera-outline`). Settings (and sitter Earnings later) = header Profile |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |

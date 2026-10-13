@@ -17,6 +17,9 @@ export default function SitterLayout() {
       <Stack.Screen name="care-request/[requestId]" options={{ title: "Care request" }} />
       <Stack.Screen name="inquiries/[inquiryId]" options={{ title: "Question" }} />
       <Stack.Screen name="history" options={{ title: "My history" }} />
+      <Stack.Screen name="snap/treat" options={{ title: "Treat check" }} />
+      <Stack.Screen name="snap/mood" options={{ title: "Mood" }} />
+      <Stack.Screen name="snap/sticker" options={{ title: "Sticker" }} />
     </RoleStack>
   );
 }
