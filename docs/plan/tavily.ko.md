@@ -34,7 +34,7 @@ Tavily 권장: **챗봇에게 묻듯 문장으로 쓰지 말고, 검색창에 �
 | 숨은 알레르기 출처 | `"{ingredient} {allergen} derived"` → `animal fat chicken derived` | `include_domains` = 신뢰 도메인 |
 | 리콜 (제품명 있을 때 1회) | `"{product} {species} treat recall"` | `topic="news"`, `time_range="year"` |
 
-- **신뢰 도메인:** `aspca.org`, `fda.gov`, `avma.org`, `petpoisonhelpline.com`, `vcahospitals.com` — 결과가 0개면 도메인 필터 없이 1회 재시도.
+- **신뢰 도메인:** `aspca.org`, `fda.gov`, `avma.org`, `petpoisonhelpline.com`, `vcahospitals.com` — 결과가 0개면 도메인 필터 없이 1회 재시도 — **Phase 12 Treat check는 재시도하지 않는다**(검증된 사이트만, 2026-10-13: 매 검사마다 신뢰 도메인으로만 호출).
 - 한 번의 스캔에서 쿼리 **최대 4개**(성분 3 + 리콜 1), 병렬 호출, **총 8초** 제한. 실패하면 Tavily 없이 Ultra 1차 결과를 그대로 반환.
 
 ### 펫 온보딩에서 쓰는 곳 (P1, [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md) §8.1)

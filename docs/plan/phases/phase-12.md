@@ -69,9 +69,10 @@ Snap 탭
 | :--- | :--- |
 | `assert_on_duty_for` (시터만) | 견주는 `is_owner_of(pet)`, 시터는 `assert_on_duty_for` |
 | 진입: sitter Home **Scan a treat** | Snap 탭 카드 (Home 버튼은 Snap으로 가는 바로가기로 남겨도 됨) |
-| 8.7 Tavily = stretch | **포함** (Tavily 상금 조건: 런타임 호출 + 출처 1개 이상 표시) |
+| 8.7 Tavily = stretch, WARNING · 모르는 성분일 때만, 결과 0개면 도메인 필터 없이 재시도 | **매 검사마다 항상 호출, 신뢰 도메인만**(`aspca.org` · `fda.gov` · `avma.org` · `petpoisonhelpline.com` · `vcahospitals.com`) — 필터 없는 재시도 없음. 순서: 비전이 성분을 읽음 → Tavily 쿼리 ≤ 4개 병렬(8초) → **Ultra가 출처와 함께 한 번에 판단**(재판단 2회 대신 1회) → 서버 규칙이 알러지 · 독성은 강제 DANGER. Tavily가 실패 · 타임아웃이면 판정은 규칙 + 모델로 그대로 내고 "Sources unavailable right now"를 표시 |
 | DANGER 알림 = 항상 견주 | 시터가 검사했을 때만 견주에게(견주 본인 검사면 알림 없음) |
 
+- **쿼리(매번, 최대 4개):** 펫 알러지마다 숨은 출처 `"{ingredient} {allergen} derived"`(가장 애매한 성분부터) · 모르는 성분 `"{ingredient} toxic {species}s"` · 제품 리콜 `"{product} {species} treat recall"`(`topic=news`, 1년). 애매한 성분이 없으면 주 성분 1–2개의 `"{ingredient} safe for {species}s"`로 채워 **출처가 항상 1개 이상** 붙게 한다. 크레딧: 기본 search 1 크레딧 → 검사 1번에 ≤ 4 (무료 월 1,000 + 이벤트 8,000)
 - `POST /api/ai/safety-check {pet_id, media_id}` → `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], hidden_sources[], toxic_ingredients[], unknown_ingredients[], sources[], warning_message, model, latency_ms}`
 - 마이그레이션 **`013_safety.sql`**: `safety_danger` 알림 트리거(08 설계) + 견주 RLS(본인 펫 검사 기록 읽기 · `acknowledged_at` 갱신).
 
