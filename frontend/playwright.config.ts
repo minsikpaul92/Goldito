@@ -28,6 +28,19 @@ const frameBrowsers = wanted.length ? browsers.filter((b) => wanted.includes(b.n
 const only = process.env.PW_FRAME_VIEWPORTS;
 const viewports = only && only !== "all" ? allViewports.filter((v) => String(v.width) === only) : allViewports;
 
+// App flows — logic, not layout: they run once, in the "flows" project. Every other spec (except the phone one) is a
+// frame check that runs in each frame browser × viewport. One list for both, so a new spec can't land in both or
+// neither (CR-10). `privacy` is the public privacy page spec (10.11).
+const FLOW_SPECS = new RegExp(
+  `(${[
+    "auth", "pets", "profile", "schedule", "sitters", "booking", "sitter-bookings", "negotiation", "meet-greet",
+    "handoff", "rebook", "today", "checkout", "welcome", "media-picker", "feed", "care-tasks", "sitter-tasks",
+    "quick-checkin", "diary", "sitter-home", "live-updates", "due-reminder", "care-request", "heads-up", "report",
+    "inquiry", "caption", "completion", "demo-tools", "location", "home-location", "transit", "privacy",
+  ].join("|")})\\.spec\\.ts$`,
+);
+const PHONE_SPEC = /phone\.spec\.ts$/;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -49,19 +62,19 @@ export default defineConfig({
     ...frameBrowsers.flatMap((browser) =>
       viewports.map((viewport) => ({
         name: `${browser.name}-${viewport.width}x${viewport.height}`,
-        testIgnore: /(phone|auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit)\.spec\.ts/,
+        testIgnore: [PHONE_SPEC, FLOW_SPECS],
         use: { ...browser.device, viewport },
       })),
     ),
     {
       name: "phone",
-      testMatch: /phone\.spec\.ts/,
+      testMatch: PHONE_SPEC,
       use: { ...devices["Pixel 7"] },
     },
     {
       // App flows — logic, not layout, so one desktop browser is enough.
       name: "flows",
-      testMatch: /(auth|pets|profile|schedule|sitters|booking|sitter-bookings|negotiation|meet-greet|handoff|rebook|today|checkout|welcome|media-picker|feed|care-tasks|sitter-tasks|quick-checkin|diary|sitter-home|live-updates|due-reminder|care-request|heads-up|report|inquiry|caption|completion|demo-tools|location|home-location|transit)\.spec\.ts/,
+      testMatch: FLOW_SPECS,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
   ],
