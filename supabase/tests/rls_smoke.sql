@@ -4116,5 +4116,47 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012b (CR-1): cancelling the booking ends its live trip and erases the position
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  rex uuid;
+  v_b uuid;
+  v_trip public.trips;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Rex') returning id into rex;
+  v_b := _t_booking(robert, chloe, array[rex], now() + interval '500 days', now() + interval '502 days', 'confirmed');
+  update public.bookings set paid_at = now() where id = v_b;
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour' where booking_id = v_b and kind = 'drop_off';
+
+  perform _t_as(robert);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6732, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat is not null, 'CR-1: the owner is on the way before the drop-off');
+  perform cancel_booking(v_b, 'schedule_changed');
+
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'cancelled' and v_trip.ended_at is not null and v_trip.last_lat is null
+      and v_trip.last_lng is null and v_trip.last_at is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'CR-1: cancelling the booking cancels the live trip and erases its position');
+  perform _t_as(robert);
+  begin
+    perform update_trip_position(v_trip.id, 43.6602, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_not_active', 'CR-1: …so the traveller''s next position is refused');
+  perform _t_as(chloe);
+  perform _t_ok(not exists (select 1 from public.trips where booking_id = v_b and status in ('en_route', 'arrived')),
+    'CR-1: …and the other person has no live trip left to follow');
+end;
+$$;
+
 
 rollback;
