@@ -318,12 +318,20 @@ export async function changeInquiryDates(input: {
  * The booking engine's own answer for a stay at this sitter (null = it fits). The sitter checks the dates they
  * are about to suggest, so a suggestion is never one the owner can't book.
  */
-export async function stayShortfall(sitterId: string, dropOffAt: string, pickUpAt: string, petCount: number): Promise<string | null> {
+export async function stayShortfall(
+  sitterId: string,
+  dropOffAt: string,
+  pickUpAt: string,
+  petCount: number,
+  /** The owner the stay is for, when the sitter asks (012d, CR-3); omitted = the caller is the owner. */
+  ownerId?: string,
+): Promise<string | null> {
   const { data, error } = await getSupabase().rpc("stay_capacity_check", {
     p_sitter: sitterId,
     p_drop_off_at: dropOffAt,
     p_pick_up_at: pickUpAt,
     p_pet_count: petCount,
+    ...(ownerId ? { p_owner: ownerId } : {}),
   });
   if (error) return null; // can't check: don't block the sitter
   return (data as string | null) ?? null;

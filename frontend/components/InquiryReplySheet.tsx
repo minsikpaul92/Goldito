@@ -119,13 +119,17 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
   useEffect(() => {
     if (kind !== "suggest") return;
     let live = true;
-    void stayShortfall(inquiry.sitterId, zonedToIso(dropOff.day, dropOff.time), zonedToIso(pickUp.day, pickUp.time), Math.max(1, inquiry.petIds.length)).then(
-      (found) => live && setShortfall(found),
-    );
+    void stayShortfall(
+      inquiry.sitterId,
+      zonedToIso(dropOff.day, dropOff.time),
+      zonedToIso(pickUp.day, pickUp.time),
+      Math.max(1, inquiry.petIds.length),
+      inquiry.ownerId,
+    ).then((found) => live && setShortfall(found));
     return () => {
       live = false;
     };
-  }, [kind, inquiry.sitterId, inquiry.petIds.length, dropOff.day, dropOff.time, pickUp.day, pickUp.time]);
+  }, [kind, inquiry.sitterId, inquiry.ownerId, inquiry.petIds.length, dropOff.day, dropOff.time, pickUp.day, pickUp.time]);
 
   if (!kind) return null;
 

@@ -715,6 +715,8 @@ test.describe("sitter quick replies (FB-34)", () => {
     await screen.getByTestId("inquiry-intent-suggest").click();
     await expect(screen.getByTestId("reply-problem")).toContainText("no room");
     await expect(screen.getByTestId("reply-send")).toBeDisabled();
+    // CR-3: the sitter's check is for the asking owner, not the sitter (one owner at a time).
+    expect(db.stayChecks.at(-1)?.p_owner).toBe(db.inquiries[0].owner_id);
   });
 });
 

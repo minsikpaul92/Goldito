@@ -145,6 +145,8 @@ type Row = Record<string, unknown>;
 export type MockDb = {
   /** rpc/stay_capacity_check answer: null = the stay fits. */
   stayShortfall?: string | null;
+  /** rpc/stay_capacity_check calls with their parameters. */
+  stayChecks: Row[];
   pets: Row[];
   pet_allergies: Row[];
   owner_profiles: Row[];
@@ -243,6 +245,7 @@ function createMockDb(): MockDb {
     care_change_requests: [],
     responses: [],
     proposals: [],
+    stayChecks: [],
     meetGreetCalls: [],
     completions: [],
     trips: [],
@@ -1296,6 +1299,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/stay_capacity_check") {
     // 011c: null = fits; a spec sets `db.stayShortfall` to see the refusal.
+    db.stayChecks.push(request.postDataJSON());
     return json(route, 200, db.stayShortfall ?? null);
   }
 

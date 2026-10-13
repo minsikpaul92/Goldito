@@ -4239,5 +4239,48 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012d (CR-3): the can-host check is for a named owner, also when the sitter asks
+-- (Allen takes one owner at a time; Robert already has those dates booked with him)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  d constant date := app_today() + 700;
+  pip uuid;
+  v_err text;
+begin
+  perform _t_as(allen);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (allen, 'open', d - 1, d + 3, 'morning', '08:00', '12:00', 3),
+         (allen, 'open', d - 1, d + 3, 'afternoon', '12:00', '18:00', 3),
+         (allen, 'open', d - 1, d + 3, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, allen, array[pip], local_ts(d, '09:00'), local_ts(d, '11:00'), 'confirmed');
+
+  perform _t_as(robert);
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1) is null,
+    'CR-3: the owner asking about dates they already have with the sitter → it fits');
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
+    'CR-3: …the same when the owner names themselves');
+  perform _t_as(allen);
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
+    'CR-3: the sitter asking for that owner gets the same answer (Regenerate, quick replies, Suggest)');
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, joy) is not null,
+    'CR-3: …while for another owner the slot is taken');
+  perform _t_as(joy);
+  begin
+    perform stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'CR-3: a third person cannot ask on another owner''s behalf');
+end;
+$$;
+
 
 rollback;

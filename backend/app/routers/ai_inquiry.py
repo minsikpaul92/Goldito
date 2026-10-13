@@ -468,6 +468,7 @@ def _gather(
 
     def capacity():
         # The booking engine's own rule (RV-1). (checked, shortfall): unchecked when the check itself failed.
+        # p_owner (012d, CR-3): the sitter's token runs this too (Regenerate, quick replies), so name the owner.
         try:
             return True, authz.rpc_json(
                 user.access_token,
@@ -477,6 +478,7 @@ def _gather(
                     "p_drop_off_at": inquiry["drop_off_at"],
                     "p_pick_up_at": inquiry["pick_up_at"],
                     "p_pet_count": len(pet_ids),
+                    "p_owner": inquiry["owner_id"],
                 },
             )
         except authz.RpcError as exc:

@@ -171,8 +171,16 @@ def test_availability_is_the_booking_engines_rule_for_this_stay_and_these_pets(c
     assert post(client).json()["can_host"] is True
     assert ctx.capacity_calls == [{
         "p_sitter": SITTER_ID, "p_drop_off_at": "2026-10-09T11:30:00+00:00",
-        "p_pick_up_at": "2026-10-12T21:00:00+00:00", "p_pet_count": 1,
+        "p_pick_up_at": "2026-10-12T21:00:00+00:00", "p_pet_count": 1, "p_owner": OWNER_ID,
     }]
+
+
+def test_the_sitters_regenerate_checks_availability_for_the_inquiring_owner(client, setup):
+    # CR-3: with the sitter's token the database would otherwise treat the sitter as the owner (one owner at a time).
+    ctx = setup(GOOD, GOOD)
+    post(client)
+    assert post(client, sitter_token(), regenerate=True).status_code == 200
+    assert [call["p_owner"] for call in ctx.capacity_calls] == [OWNER_ID, OWNER_ID]
 
 
 def test_a_slot_without_room_for_all_the_pets_means_cannot_host_even_when_no_day_is_blocked(client, setup):
