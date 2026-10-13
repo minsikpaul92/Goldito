@@ -471,6 +471,21 @@ export function awaitingFirstYes(b: BookingSummary): boolean {
   return b.status === "requested" && b.meetGreetStatus === "required" && !b.sitterInterestAt;
 }
 
+/**
+ * After confirm, an offer that only fits together with the same person's offer for the other handoff (CR-2, 012c):
+ * the whole stay moved past its old window. The server answers both at once — Accept or Decline takes the pair.
+ */
+export function pairedProposal(b: BookingSummary, kind: HandoffKind): ProposalStep | null {
+  if (b.status !== "confirmed") return null;
+  const offer = b.pending[kind];
+  const partner = b.pending[kind === "drop_off" ? "pick_up" : "drop_off"];
+  if (!offer || !partner || partner.proposedBy !== offer.proposedBy) return null;
+  const agreedOther = kind === "drop_off" ? b.pickUp : b.dropOff;
+  if (!agreedOther) return null;
+  const [from, to] = kind === "drop_off" ? [offer.at, agreedOther.at] : [agreedOther.at, offer.at];
+  return Date.parse(to) <= Date.parse(from) ? partner : null;
+}
+
 /** Same rule as current_handoff (003): confirmed → agreed; requested → pending proposal, else agreed. */
 function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: BookingStatus): Handoff | null {
   const ofKind = rows.filter((h) => h.kind === kind);

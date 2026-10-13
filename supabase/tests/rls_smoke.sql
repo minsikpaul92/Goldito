@@ -4158,5 +4158,86 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012c (CR-2): after confirm, the drop-off and the pick-up can move together past the old window
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 600;
+  bolt uuid;
+  v_b uuid;
+  v_drop uuid;
+  v_pick uuid;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 10, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 10, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Bolt') returning id into bolt;
+  v_b := _t_booking(robert, chloe, array[bolt], local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 'confirmed');
+
+  -- Alone, a drop-off after the agreed pick-up still does not fit.
+  perform _t_as(robert);
+  begin
+    perform propose_handoff(v_b, 'drop_off', local_ts(d + 3, '09:00'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_window', 'CR-2: a drop-off after the agreed pick-up does not fit on its own');
+
+  -- With my own new pick-up first, it does.
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 5, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 3, '09:00'));
+  perform _t_ok(v_drop is not null, 'CR-2: …but it fits together with my open pick-up proposal');
+
+  -- The sitter's Accept on the drop-off takes both, and the stay moves.
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_pick) = 'agreed',
+    'CR-2: accepting the paired drop-off agrees the pick-up too');
+  perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v_b and status = 'agreed') = 2,
+    'CR-2: …and the old agreed times are superseded');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 3, '09:00'), local_ts(d + 5, '17:00'), '[)'),
+    'CR-2: …and the stay is rebuilt for the new window');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'handoff_agreed'
+      and ref_id = v_drop and title like 'Chloe agreed to the new drop-off and pick-up%'),
+    'CR-2: …and the owner is told once, for both');
+
+  -- Declining one of a pair declines the other; the agreed stay is kept.
+  perform _t_as(robert);
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 8, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 6, '09:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, false);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'rejected'
+      and (select status from public.booking_handoffs where id = v_pick) = 'rejected',
+    'CR-2: declining the paired drop-off declines the pick-up too');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 3, '09:00'), local_ts(d + 5, '17:00'), '[)'),
+    'CR-2: …and the agreed stay stays');
+
+  -- A change that fits on its own is still answered on its own.
+  perform _t_as(robert);
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 6, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 4, '09:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_pick) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_drop) = 'proposed',
+    'CR-2: an offer that fits alone is agreed alone; the other one still waits');
+end;
+$$;
+
 
 rollback;

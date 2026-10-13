@@ -154,7 +154,7 @@
 | 영역 | 결과 | 비고 |
 | :--- | :--- | :--- |
 | 예약 요청 → 수락 → Confirmed (BOOK-1) | 🟡 | 진행은 됨. 실시간 갱신 ❌ (FLOW-1) |
-| 시간 · 장소 변경 (BOOK-2) | 🤖 (FLOW-7 · 8 · 9) · 사람 확인 대기 | 시트가 Drop-off · Pick-up 값을 각각 유지하고 한 번에 Send, 끝난 인수인계는 비활성 (FB-5 · FB-6) — 사람이 다시 확인 필요 |
+| 시간 · 장소 변경 (BOOK-2) | 🤖 (FLOW-7 · 8 · 9 · FLOW-9b) + SQL `rls_smoke` CR-2 · 사람 확인 대기 | 시트가 Drop-off · Pick-up 값을 각각 유지하고 한 번에 Send, 끝난 인수인계는 비활성 (FB-5 · FB-6). 확정 뒤 일정 전체를 옛 기간 밖으로 옮기면 두 제안이 한 쌍으로 수락 · 거절됨 (`012c`, CR-2 — 호스팅 DB 적용 대기) — 사람이 다시 확인 필요 |
 | 체크아웃 · 결제 (BOOK-5) | ❌ → 다시 확인 필요 | 요금표 없음이 원인이었음 — **10/08 Chloe 요금 행을 임시로 넣어 풀림**(견적 $268.13 확인). 예약을 새로 만들거나 기존 예약의 Finish booking을 다시 눌러 보세요 (FLOW-3) |
 | Received → Returned (BOOK-4) | 🤖 (FLOW-5 · 6) · 사람 확인 대기 | 시터 Bookings **In progress** 탭 추가 (FB-8) — 사람이 다시 확인 필요 |
 | 날짜 · 시간 입력 통일 (FLOW-10) · 이름 옆 역할 표시 (FLOW-11) · 입력칸 힌트 (FLOW-12) | ❌ | 모양 · 통일 |
@@ -440,6 +440,7 @@
 | FLOW-7 | 시간 변경 시트에서 Drop-off 를 바꾸고 Pick-up 탭 → 다시 Drop-off | 각각 고친 값이 **유지** (FB-5) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-8 | 두 탭을 고치고 **Send to …** | 바뀐 것 **전부** 한 번에 전송(새 드롭오프가 옛 픽업보다 늦으면 픽업을 먼저). 하나가 실패하면 시트가 열린 채로 "Drop-off was sent. Pick-up didn't go through …"를 보이고 Send가 나머지만 다시 보냄. **Close** 는 아무것도 저장 · 전송하지 않고 그냥 닫힘 | 🤖 `negotiation.spec.ts` (4개) | ❌ 10/08 민식 → 다시 확인 필요 |
 | FLOW-9 | Received 가 끝난 예약에서 **Change time or place** | 끝난 Drop-off 는 비활성("Drop-off · done ✓"), 에러("That handoff already happened.")가 안 나옴. 픽업까지 끝났으면 Change time or place 버튼이 없음 (FB-6) | 🤖 `negotiation.spec.ts` | ❌ 10/08 민식 → 다시 확인 필요 |
+| FLOW-9b | **확정된** 예약에서 일정 전체를 옛 픽업보다 뒤로 옮김 (예: Oct 5–8 → Oct 10–14, CR-2) | 두 제안이 모두 전송됨(예전엔 픽업만 가고 드롭오프는 `invalid_window`). 상대의 드롭오프 카드에 "Comes with the new pick-up (…) — Accept or Decline answers both." Accept 한 번에 두 시간이 모두 합의되고 슬롯이 새 기간으로 다시 만들어짐, Decline은 둘 다 거절하고 원래 일정 유지. 혼자 맞는 변경은 예전처럼 하나씩 | 🤖 `negotiation.spec.ts`(안내 문구) · SQL `rls_smoke` CR-2(수락 · 거절 · 단독) · 👤 (`012c` 적용 후) | ➖ |
 | FLOW-10 | 모든 날짜 · 시간 입력(Book care · 문의 · 변경 시트 · M&G · 스케줄 · 케어) | 날짜 탭 → 달력, 시간 탭 → 시계, − + 는 하루 / 15분 (DESIGN.md §7.10) (FB-3) | 새로 필요 | ❌ 10/08 민식 (변경 시트는 − + 만) |
 | FLOW-11 | 예약 상세 · 카드 (오너) | 시터 이름 옆에 헤더와 같은 **Sitter 알약**, 시터 쪽엔 **Owner** 알약 (FB-4) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
