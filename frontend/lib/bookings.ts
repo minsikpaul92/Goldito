@@ -555,6 +555,33 @@ function toStep(h: HandoffRow): ProposalStep {
   };
 }
 
+/**
+ * The stage by the same rule as the database's booking_stage / booking_next_actor (011l). The database's answer wins
+ * (withStages); this is what shows when that call fails, so a paid, finished or cancelled booking never reads as a
+ * new request (CR-8).
+ */
+export function localStage(b: Omit<BookingSummary, "stage" | "nextActor">): Pick<BookingSummary, "stage" | "nextActor"> {
+  let stage: BookingStage;
+  if (b.status === "declined" || b.status === "cancelled") stage = b.status;
+  else if (b.status === "requested") {
+    if (b.meetGreetStatus === "not_needed" || !b.sitterInterestAt) stage = "requested";
+    else stage = b.meetGreetStatus === "done" || b.meetGreetStatus === "skipped" ? "confirm" : "meet_greet";
+  } else if (b.pickUp?.completedAt) stage = "completed";
+  else if (b.dropOff?.completedAt) stage = "in_care";
+  else stage = b.paidAt ? "paid" : "awaiting_payment";
+
+  const otherThan = (by: string | null): NextActor => (by === b.ownerId ? "sitter" : "owner");
+  let nextActor: NextActor = "none";
+  if (stage === "requested" || stage === "confirm") nextActor = "sitter";
+  else if (stage === "awaiting_payment") nextActor = "owner";
+  else if (stage === "meet_greet") {
+    if (b.meetGreetStatus === "proposed") nextActor = otherThan(b.meetGreet.proposedBy);
+    else if (b.meetGreetStatus === "skip_requested") nextActor = otherThan(b.meetGreet.skipRequestedBy);
+    else nextActor = "both";
+  }
+  return { stage, nextActor };
+}
+
 function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary {
   const handoffs = [...(b.booking_handoffs ?? [])].sort((x, y) => x.created_at.localeCompare(y.created_at));
   const steps = (kind: HandoffKind) => handoffs.filter((h) => h.kind === kind).map(toStep);
@@ -562,7 +589,7 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     b.status === "requested" || b.status === "confirmed"
       ? (steps(kind).find((s) => s.status === "proposed") ?? null)
       : null;
-  return {
+  const summary: Omit<BookingSummary, "stage" | "nextActor"> = {
     id: b.id,
     status: b.status,
     ownerId: b.owner_id,
@@ -584,8 +611,6 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     sitterNote: b.sitter_note ?? null,
     sitterInterestAt: b.sitter_interest_at ?? null,
     meetGreetDueAt: b.meet_greet_due_at ?? null,
-    stage: "requested",
-    nextActor: "none",
     paidAt: b.paid_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
@@ -597,9 +622,10 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     pending: { drop_off: open("drop_off"), pick_up: open("pick_up") },
     createdAt: b.created_at,
   };
+  return { ...summary, ...localStage(summary) };
 }
 
-/** The database computes the stage (011l booking_stage); one call for the whole list. A failure leaves the defaults. */
+/** The database computes the stage (011l booking_stage); one call for the whole list. A failure keeps localStage. */
 async function withStages(list: BookingSummary[]): Promise<BookingSummary[]> {
   if (list.length === 0) return list;
   const { data, error } = await getSupabase().rpc("get_booking_stages", { p_ids: list.map((b) => b.id) });

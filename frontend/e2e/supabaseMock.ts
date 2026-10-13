@@ -145,6 +145,8 @@ type Row = Record<string, unknown>;
 export type MockDb = {
   /** rpc/stay_capacity_check answer: null = the stay fits. */
   stayShortfall?: string | null;
+  /** rpc/get_booking_stages fails (CR-8: the app falls back to its own reading of the booking). */
+  stagesFail?: boolean;
   /** rpc/stay_capacity_check calls with their parameters. */
   stayChecks: Row[];
   pets: Row[];
@@ -825,6 +827,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/get_booking_stages") {
     // booking_stage / booking_next_actor (011l), for the caller's own bookings.
+    if (db.stagesFail) return json(route, 500, { code: "XX000", message: "boom" });
     const { p_ids } = request.postDataJSON();
     const rows = db.bookings
       .filter((b) => p_ids.includes(b.id) && [b.owner_id, b.sitter_id].includes(me))

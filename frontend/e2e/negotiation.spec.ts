@@ -312,6 +312,15 @@ test.describe("negotiation", () => {
     await expect(screen.getByTestId("proposal-pick_up-paired")).toHaveCount(0);
   });
 
+  test("if the database can't say the stage, a paid booking still shows Stay, not Request (CR-8)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    db.stagesFail = true;
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("stage-bar")).toHaveAttribute("aria-label", "Step 4 of 4");
+    await expect(screen.getByTestId("stage-caption")).toHaveCount(0); // paid: nobody's turn
+  });
+
   test("a whole stay moved past its old window shows both offers as one answer (CR-2)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", [

@@ -83,7 +83,7 @@
 | 시터 스케줄 열기 / 막기 | ✅ 🤖 | 03B.1 |
 | 내 시터 목록 · 시터 프로필 | ✅ 🤖 | 03B.2 |
 | 예약 요청 (펫 · 시간 · 장소 · 서비스) | ✅ 🤖 | 03B.3 · 03B.10 |
-| **예약 단계 (D60)** — 시터의 첫 동의 "Yes, let's meet" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) | 03B Booking steps |
+| **예약 단계 (D60)** — 시터의 첫 동의 "Yes, let's meet" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) · 단계 조회(`get_booking_stages`)가 실패해도 앱이 같은 규칙으로 단계를 계산해 결제된 예약이 "Request"로 보이지 않음 (CR-8, 🤖 `negotiation.spec.ts`) | 03B Booking steps |
 | 시터 요청 함 (수락 · 시간 제안 · 거절 — 거절 시트에 사유 칩 · 짧은 메모 · Suggest another time instead, 오너 알림 · 예약 상세에 사유 표시) | ✅ 🤖 (FB-35 부분은 사람 확인 대기) | 03B.4 · FB-35 |
 | 협상 · 확정 후 변경 | ✅ 🤖 | 03B.5 |
 | 도착 / 인계 체크 (Received · Returned) | ✅ 🤖 | 03B.6 |
