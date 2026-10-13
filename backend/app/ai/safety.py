@@ -1,0 +1,135 @@
+"""Treat check rules (Phase 12.1, D23 · D61): what the server knows without asking a model.
+
+The rule table (`prompts/safety/toxic_rules.json`) gives the first verdict: a registered allergen or an ingredient toxic
+to the species is DANGER, an ingredient that may hide an allergen is WARNING. The model may add findings but the final
+status is never lower than the rules' (`worst`). Matching is whole-word and case-insensitive.
+"""
+
+import re
+from dataclasses import dataclass, field
+from typing import Literal
+
+from app.ai.prompts import load_json
+
+Status = Literal["SAFE", "WARNING", "DANGER"]
+SEVERITY: dict[str, int] = {"SAFE": 0, "WARNING": 1, "DANGER": 2}
+
+MAX_QUERIES = 4
+
+
+def worst(*statuses: str) -> Status:
+    """The most serious of the given statuses."""
+    return max(statuses, key=lambda s: SEVERITY[s])  # type: ignore[return-value]
+
+
+def _rules() -> dict:
+    return load_json("safety/toxic_rules.json")
+
+
+def _mentions(text: str, word: str) -> bool:
+    return re.search(rf"(?<![a-z]){re.escape(word.lower())}(?![a-z])", text.lower()) is not None
+
+
+def _mentions_any(text: str, words: list[str], exclude: list[str] | None = None) -> bool:
+    if exclude and any(_mentions(text, e) for e in exclude):
+        return False
+    return any(_mentions(text, w) for w in words)
+
+
+def allergen_words(allergen: str) -> list[str]:
+    """The allergen plus the ingredient names that are clearly made from it (chicken → poultry, chicken fat…)."""
+    key = allergen.strip().lower()
+    return sorted({key, *_rules()["allergen_aliases"].get(key, [])})
+
+
+@dataclass
+class RuleFindings:
+    status: Status = "SAFE"
+    matched_allergens: list[str] = field(default_factory=list)
+    toxic_ingredients: list[str] = field(default_factory=list)
+    hidden_sources: list[dict] = field(default_factory=list)
+    sources: list[dict] = field(default_factory=list)
+
+
+def check_rules(ingredients: list[str], allergens: list[str], species: str) -> RuleFindings:
+    """The server's first verdict from the label alone."""
+    rules = _rules()
+    found = RuleFindings()
+    pet_allergens = [a.strip().lower() for a in allergens if a.strip()]
+
+    for allergen in pet_allergens:
+        words = allergen_words(allergen)
+        if any(_mentions_any(ingredient, words) for ingredient in ingredients):
+            found.matched_allergens.append(allergen)
+
+    for rule in rules["toxic"]:
+        if species not in rule["species"]:
+            continue
+        for ingredient in ingredients:
+            if _mentions_any(ingredient, rule["aliases"], rule.get("not")):
+                if ingredient not in found.toxic_ingredients:
+                    found.toxic_ingredients.append(ingredient)
+                source = {"title": f"ASPCA — {rule['name']}", "url": rule["source"], "domain": "aspca.org"}
+                if source not in found.sources:
+                    found.sources.append(source)
+
+    named = {i for i in ingredients for a in pet_allergens if _mentions_any(i, allergen_words(a))}
+    for hidden in rules["hidden_sources"]:
+        for ingredient in ingredients:
+            # "chicken liver" already names the animal: it is a match above, not a hidden source.
+            if ingredient in named or not _mentions(ingredient, hidden["term"]):
+                continue
+            # Only an allergen this pet has makes it a warning; name the first one the term may hide.
+            hit = next((a for a in pet_allergens if a in hidden["may_contain"]), None)
+            if hit and not any(h["ingredient"] == ingredient for h in found.hidden_sources):
+                found.hidden_sources.append({"ingredient": ingredient, "may_contain": hit, "reason": hidden["reason"]})
+
+    if found.matched_allergens or found.toxic_ingredients:
+        found.status = "DANGER"
+    elif found.hidden_sources:
+        found.status = "WARNING"
+    return found
+
+
+@dataclass
+class Query:
+    text: str
+    topic: Literal["general", "news"] = "general"
+    time_range: str | None = None
+
+
+def search_queries(
+    ingredients: list[str], allergens: list[str], species: str, product: str | None, findings: RuleFindings
+) -> list[Query]:
+    """Up to four keyword searches for every check (D61: Tavily always, trusted sites only).
+
+    Hidden allergen sources first, then toxic ingredients, then a recall check for the product; whatever room is left
+    goes to the first ingredients, so there is always at least one source to show.
+    """
+    queries: list[Query] = []
+
+    def add(query: Query) -> None:
+        if len(queries) < MAX_QUERIES and query.text not in (q.text for q in queries):
+            queries.append(query)
+
+    for hidden in findings.hidden_sources[:2]:
+        add(Query(f"{hidden['ingredient']} {hidden['may_contain']} derived"))
+    for ingredient in findings.toxic_ingredients[:1]:
+        add(Query(f"{ingredient} toxic {species}s"))
+    if product:
+        add(Query(f"{product} {species} treat recall", topic="news", time_range="year"))
+    for ingredient in ingredients:
+        add(Query(f"{ingredient} safe for {species}s"))
+    return queries
+
+
+def fallback_message(pet_name: str, status: Status, findings: RuleFindings) -> str:
+    """What the result says when the reasoning model could not answer (rules only)."""
+    if findings.matched_allergens:
+        return f"{pet_name} is allergic to {', '.join(findings.matched_allergens)}, and this treat contains it. Don't feed it."
+    if findings.toxic_ingredients:
+        return f"This treat contains {', '.join(findings.toxic_ingredients)}, which is unsafe for {pet_name}. Don't feed it."
+    if findings.hidden_sources:
+        hidden = findings.hidden_sources[0]
+        return f"The {hidden['ingredient']} may contain {hidden['may_contain']}, which {pet_name} is allergic to. Ask the owner first."
+    return f"Nothing on this label is on our list for {pet_name}, but we couldn't double-check it. Read the label once more before feeding."

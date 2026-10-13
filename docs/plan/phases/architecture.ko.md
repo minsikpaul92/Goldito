@@ -147,7 +147,7 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
-│  │  │  └─ ai_safety.py      # POST /api/ai/safety-check (08, stretch)
+│  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check — 08 설계)
 │  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
 │  │  └─ ai/prompts/
 │  │     ├─ caption/{system.md}
@@ -313,7 +313,7 @@ Goldito/
 | POST | `/api/ai/report-chips` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", media_ids?:[≤2]}` | `{chips:[{id, kind, label, source:"checkin"\|"task"\|"photo", media_id?}], photos:[{media_id, description}], model, latency_ms}` — 하루 기록 칩은 서버가 DB에서(모델 없음), 사진 칩만 `MODEL_VISION`. 사진 묘사는 draft에 저장해 daily-report가 재사용 | 07 (7.7, D38) |
 | POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?}, chips:[시터가 고른 칩], note?:(≤ 200자), media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}` — 게시는 시터 승인(`send_daily_report`) 뒤 | 07 |
 | POST | `/api/ai/life-record` | booking party (찾기 완료 후) | `{booking_id}` | `{records:[{pet_id, record_id, summary}], model, latency_ms}` + RAG 인덱싱 | 07C |
-| POST | `/api/ai/safety-check` | on-duty sitter | `{pet_id, media_id}` | `{safety_check_id, safety_status, matched_allergens[], detected_ingredients[], unknown_ingredients[], warning_message, model, latency_ms}` | 08 (stretch) |
+| POST | `/api/ai/safety-check` | **pet owner** or on-duty sitter (D61) | `{pet_id, media_id}` (media = own `safety_label` upload of that pet) | `{safety_check_id, safety_status, product_name, detected_ingredients[], matched_allergens[], hidden_sources[{ingredient, may_contain, reason}], toxic_ingredients[], unknown_ingredients[], sources[{title, url, domain}], sources_unavailable, double_checked, warning_message, model, latency_ms}` — 422 unreadable label · 503 vision down | 12.1 |
 | POST | `/api/ai/pet-theme` | owner of pet | `{pet_id, media_id}` | `{theme, coat_colors[], confidence, model, latency_ms}` (실패·저신뢰 시 `theme:"default"`) | 11.10 (P1) |
 | POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (실패 시 `theme:"calm"`, `[]`) | 11.8 (P1) |
 
@@ -351,7 +351,7 @@ Goldito/
 | 알림장 칩 제안 | FastAPI `/api/ai/report-chips` (하루 기록 칩 + 사진 칩, 사진 묘사는 draft에 저장) | - |
 | 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert — 고른 칩·메모·사진 묘사만 입력) | - |
 | 알림장 전송 | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
-| 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER면 owner `safety_danger` |
+| 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER이고 **견주가 아닌 사람(시터)이 검사했을 때만** owner `safety_danger` (013) |
 | 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (sitter RLS) | - |
 | 알림 읽음 | Supabase client update `notifications.read_at` (본인 RLS) | - |
 

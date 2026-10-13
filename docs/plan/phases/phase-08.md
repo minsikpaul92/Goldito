@@ -54,7 +54,7 @@ POST /api/ai/safety-check {pet_id, media_id}
   7. return SafetyResult + safety_check_id + model + latency_ms
 ```
 
-### JSON Schema (pydantic — `schemas/safety.py`)
+### JSON Schema (pydantic — 구현은 `routers/ai_safety_check.py` 안, 다른 라우터처럼 파일 안에 둠 · 12.1a)
 
 | 필드 | 타입 | 규칙 |
 | :--- | :--- | :--- |
@@ -115,7 +115,7 @@ POST /api/ai/safety-check {pet_id, media_id}
 
 ## 산출물
 
-- `backend/app/routers/ai_safety.py`, `backend/app/schemas/safety.py`, `backend/app/ai/prompts/safety/*`
+- `backend/app/routers/ai_safety_check.py` (모델 포함), `backend/app/ai/safety.py`(규칙 · 검색 쿼리), `backend/app/services/tavily.py`, `backend/app/ai/prompts/safety/*` (`vision_system.md` · `reasoning_system.md` · `toxic_rules.json`) — 12.1a
 - `frontend/app/sitter/scan.tsx`, `frontend/components/ui/AlertModal.tsx`
 - `supabase/migrations/013_safety.sql`
 

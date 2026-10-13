@@ -129,6 +129,30 @@ def test_owner_signs_feed_photo_for_own_pet(client: TestClient, monkeypatch: pyt
     assert other.status_code == 403
 
 
+def test_owner_signs_a_treat_label_for_own_pet_only(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Snap → Treat check (12.1, D61): owners check treats for their own pets too.
+    def check(user, pet_id):
+        from fastapi import HTTPException, status
+
+        if str(pet_id) != PET_ID:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That is not your pet.")
+
+    monkeypatch.setattr(authz, "assert_owner_of", check)
+    monkeypatch.setattr(
+        cloudinary_service,
+        "sign",
+        lambda **kw: SimpleNamespace(
+            cloud_name="c", api_key="k", timestamp=1, signature="s",
+            folder=f"goldito/{kw['pet_id']}/{kw['purpose']}", upload_url="u", transformation="t",
+        ),
+    )
+    headers = {"Authorization": f"Bearer {owner_token()}"}
+    mine = client.post("/api/media/sign", headers=headers, json={"pet_id": PET_ID, "resource_type": "image", "purpose": "safety_label"})
+    assert mine.status_code == 200 and mine.json()["folder"] == f"goldito/{PET_ID}/safety_label"
+    other = client.post("/api/media/sign", headers=headers, json={"pet_id": str(uuid4()), "resource_type": "image", "purpose": "safety_label"})
+    assert other.status_code == 403
+
+
 def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     def deny(_user, _pet_id):
         from fastapi import HTTPException, status

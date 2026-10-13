@@ -13,7 +13,7 @@
 ## Environment (facts to know before you start)
 
 - **Frontend:** Vercel production **https://goldito-petcare.vercel.app** (auto-deploys from `main`). **Backend:** Render free **https://goldito-backend.onrender.com** — sleeps after 15 min idle (first request 30–50 s); `keepalive.yml` + cron-job.org ping `/health` every 10 min. PR previews are not in CORS.
-- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): applied `010`–`011l`, `011z`, `012` (06B, applied 2026-10-12 while PR #83 was still open) and `012b`–`012f` (code review CR-1 – CR-7, applied 2026-10-13 before the merge of their PR; smoke test passed). Nothing is waiting to be applied. **Names:** no per-person letter ranges any more (CR-6) — a new file takes the next free name after the highest one on `main` and in open PRs, and must still sort after everything already applied when it is applied ([supabase/README.md](../../supabase/README.md) § Naming); `013` stays reserved for 08. Edit no applied migration.
+- **Hosted DB** (Supabase, ca-central-1; dashboard name still `Pawddy`, see [rename-goldito.ko.md](rename-goldito.ko.md)): applied `010`–`011l`, `011z`, `012` (06B, applied 2026-10-12 while PR #83 was still open) and `012b`–`012f` (code review CR-1 – CR-7, applied 2026-10-13 before the merge of their PR; smoke test passed). **Not applied yet:** `013_safety.sql` (12.1a Treat check: owner acknowledge + sitter-DANGER notice) — apply, then run `rls_smoke.sql` (new 013 block). **Names:** no per-person letter ranges any more (CR-6) — a new file takes the next free name after the highest one on `main` and in open PRs, and must still sort after everything already applied when it is applied ([supabase/README.md](../../supabase/README.md) § Naming); `013` stays reserved for 08. Edit no applied migration.
 - **IA reminders:** Diary photo → Feed mirror · Feed multi-pet toggle · Settings/Earnings in Profile · no 6th tab. **Do not** revive OB.4.
 
 ---
@@ -23,7 +23,7 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **12.1a Treat check API** | Phase 12 on `feat/phase-12-snap` (10/14–10/22) — 12.0 done (tab Mood → **Snap**, three tool cards, placeholder screens). Next: `013_safety.sql` + `POST /api/ai/safety-check` (owner + on-duty sitter; vision → rules → Tavily on trusted domains every time → Ultra once → server forces DANGER on allergens / toxins) + pytest, then 12.1b–c. After Phase 12: the rest of Phase 10 (fixed demo accounts 10.1, seed, README, OB.5, 10.9) | [phases/phase-12.md](phases/phase-12.md) |
+| **Minsik** | **12.1c Treat check screen** | Phase 12 on `feat/phase-12-snap` ([#90](https://github.com/minsikpaul92/Goldito/pull/90), draft) — 12.0 Snap tab and 12.1a Treat check API (+ Tavily) done. Next: apply `013` + smoke, put `NEBIUS_API_KEY` / `TAVILY_API_KEY` in `backend/.env` and run the real-model check, then the Treat check screen + `AlertModal` + sample labels (12.1c). Full order and notes: [phase-12.md § 다음에 이어서](phases/phase-12.md) | [phases/phase-12.md](phases/phase-12.md) |
 
 ---
 

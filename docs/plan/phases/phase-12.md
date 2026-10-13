@@ -116,8 +116,7 @@ Snap 탭
 | 단계 | 내용 | 날짜 |
 | :--- | :--- | :--- |
 | **12.0** ✅ | 탭 이름 Mood → Snap(아이콘 `camera-outline`) · Snap 화면 틀(`features/snap/SnapScreen` + 카드 3개, 각 도구 화면은 `SnapToolPlaceholder` "Coming soon" 자리 — `/{role}/snap/{treat,mood,sticker}`) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/13 |
-| **12.1a** | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → Ultra) + pytest(알러지 강제 DANGER · 스키마) | 10/14–15 |
-| **12.1b** | Tavily 서비스(신뢰 도메인 · 8초 · 실패 시 무시) + 출처 | 10/15 |
+| **12.1a** ✅ (12.1b 포함) | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → **Tavily 매번 · 신뢰 도메인만** → Ultra 한 번) + 업로드 권한(견주 `safety_label`) + pytest · `rls_smoke` 013 블록 — 실제 모델 · Tavily 호출 확인은 남음(로컬 키 없음, 아래 § 다음에 이어서) | 10/13 |
 | **12.1c** | Treat check 화면 + `AlertModal` + 샘플 라벨 4장 + e2e | 10/16 |
 | **12.S2** | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 이 문서에 결과 기록 | 10/16 |
 | **12.2a** | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest | 10/17 |

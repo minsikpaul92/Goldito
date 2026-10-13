@@ -4401,5 +4401,80 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 013 (Phase 12.1 Treat check, D61): owner + sitter read and acknowledge, a sitter's DANGER tells the owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  biscuit uuid;
+  v_media uuid;
+  v_by_sitter uuid;
+  v_by_owner uuid;
+  v_warning uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Biscuit') returning id into biscuit;
+  perform _t_booking(robert, chloe, array[biscuit], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (biscuit, chloe, 'goldito/biscuit/safety_label/a', 'image', 'safety_label') returning id into v_media;
+
+  -- The backend writes the checks (service role).
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'DANGER', '{"warning_message":"Biscuit is allergic to chicken. Don''t feed it."}')
+  returning id into v_by_sitter;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, robert, v_media, 'DANGER', '{"warning_message":"x"}') returning id into v_by_owner;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'WARNING', '{"warning_message":"y"}') returning id into v_warning;
+
+  select count(*) into v_n from public.notifications where user_id = robert and type = 'safety_danger' and pet_id = biscuit;
+  perform _t_ok(v_n = 1, '013: only the sitter''s DANGER notifies the owner (not the owner''s own, not a WARNING)');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'safety_danger'
+      and ref_id = v_by_sitter and title = 'Blocked a risky treat for Biscuit ⚠️'
+      and body = 'Biscuit is allergic to chicken. Don''t feed it.'),
+    '013: the notice names the pet and carries the warning');
+
+  -- Who reads them
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: the owner reads every check of their pet');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: …and so does the sitter');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.safety_checks) = 0, '013: a third party reads none');
+
+  -- Acknowledge: the owner now too; nothing else is writable by a client
+  perform _t_as(robert);
+  update public.safety_checks set acknowledged_at = now() where id = v_by_sitter;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is not null from public.safety_checks where id = v_by_sitter),
+    '013: the owner records "I understand — don''t feed"');
+  perform _t_as(joy);
+  update public.safety_checks set acknowledged_at = now() where id = v_warning;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is null from public.safety_checks where id = v_warning), '013: a third party cannot');
+  perform _t_as(robert);
+  begin
+    update public.safety_checks set safety_status = 'SAFE' where id = v_by_owner;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: the verdict cannot be changed by a client');
+  begin
+    insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+    values (biscuit, robert, v_media, 'SAFE', '{}');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: a check is never written by a client (only by the backend)');
+  perform _t_as(null);
+end;
+$$;
+
 
 rollback;

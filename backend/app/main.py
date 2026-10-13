@@ -13,6 +13,7 @@ from app.routers import (
     ai_inquiry,
     ai_life_record,
     ai_report_chips,
+    ai_safety_check,
     demo,
     feed,
     geo,
@@ -51,6 +52,7 @@ app.include_router(ai_handoff_check.router)
 app.include_router(ai_inquiry.router)
 app.include_router(ai_life_record.router)
 app.include_router(ai_report_chips.router)
+app.include_router(ai_safety_check.router)
 app.include_router(rag.router)
 app.include_router(sweep.router)
 app.include_router(tone.router)

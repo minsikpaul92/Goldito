@@ -71,11 +71,12 @@ def _authorize_media(
     booking_id: UUID | None,
 ) -> None:
     if user.role == "owner":
-        # Owners add their own feed photos (5.8); every other purpose belongs to the sitter.
-        if purpose != "feed":
+        # Owners add their own feed photos (5.8) and treat labels for Snap → Treat check (12.1, D61); every other
+        # purpose belongs to the sitter.
+        if purpose not in ("feed", "safety_label"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Owners can only upload feed photos.",
+                detail="Owners can only upload feed photos and treat labels.",
             )
         authz.assert_owner_of(user, pet_id)
     elif purpose == "handoff":
