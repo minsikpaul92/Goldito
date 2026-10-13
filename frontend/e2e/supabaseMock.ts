@@ -1,5 +1,6 @@
 import type { Page, Route } from "@playwright/test";
 
+import { distanceMeters } from "../lib/location";
 import { addDays, appToday, zonedToIso } from "../features/schedule/dates";
 
 /**
@@ -71,7 +72,7 @@ function json(route: Route, status: number, body: unknown) {
   return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
 }
 
-export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date } = {}) {
+export async function mockSupabase(page: Page, initialUsers: MockUser[], options: { now?: Date; db?: MockDb } = {}) {
   fixedNow = options.now ? options.now.getTime() : null;
   // Copies, so a test that edits a user (e.g. display name) never leaks into the next one.
   const users = initialUsers.map((user) => ({ ...user }));
@@ -128,7 +129,8 @@ export async function mockSupabase(page: Page, initialUsers: MockUser[], options
     return json(route, 404, { msg: `Not mocked: ${request.method()} ${url.pathname}` });
   });
 
-  const db = createMockDb();
+  // `options.db` lets two browser contexts (an owner and a sitter) work on the same data.
+  const db = options.db ?? createMockDb();
   await page.route("**/rest/v1/**", (route) => handleRest(route, users, db));
 
   return { signups, db };
@@ -141,6 +143,8 @@ export async function mockSupabase(page: Page, initialUsers: MockUser[], options
 type Row = Record<string, unknown>;
 
 export type MockDb = {
+  /** rpc/stay_capacity_check answer: null = the stay fits. */
+  stayShortfall?: string | null;
   pets: Row[];
   pet_allergies: Row[];
   owner_profiles: Row[];
@@ -175,6 +179,8 @@ export type MockDb = {
   meetGreetCalls: Row[];
   /** complete_handoff calls. */
   completions: Row[];
+  /** Pet Transit (012): the trips of the two parties; the RPCs below follow the SQL rules. */
+  trips: Row[];
   /** complete_task_log calls (phase 06). */
   taskCompletions: Row[];
   /** save_care_request calls, even refused ones (phase 06 6.13). */
@@ -207,8 +213,8 @@ export type MockDb = {
   quote_error: string | null;
 };
 
-const OWNER_PROFILE_FIELDS = ["home_address", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
-const SITTER_PROFILE_FIELDS = ["bio", "service_area", "experience_years", "home_notes", "home_address"];
+const OWNER_PROFILE_FIELDS = ["home_address", "home_lat", "home_lng", "emergency_contact_name", "emergency_contact_phone", "vet_clinic_name", "vet_clinic_phone"];
+const SITTER_PROFILE_FIELDS = ["bio", "service_area", "experience_years", "home_notes", "home_address", "home_lat", "home_lng"];
 
 function emptyRow(id: string, fields: string[]): Row {
   return Object.fromEntries([["id", id], ...fields.map((f) => [f, null])]);
@@ -239,6 +245,7 @@ function createMockDb(): MockDb {
     proposals: [],
     meetGreetCalls: [],
     completions: [],
+    trips: [],
     taskCompletions: [],
     saves: [],
     booking_consents: [],
@@ -391,6 +398,7 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
   switch (fn) {
     case "propose_meet_greet": {
       if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      if (status === "required" && !b.sitter_interest_at) return fail("interest_required"); // 011l guard
       if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
       if (Date.parse(String(args.p_at)) <= nowMs()) return fail("invalid_window");
       Object.assign(b, {
@@ -462,6 +470,98 @@ function matches(row: Row, params: URLSearchParams): boolean {
     }
   }
   return true;
+}
+
+/** start_trip / update_trip_position / end_trip (012): the same rules as the SQL, in the order it checks them. */
+function handleTrip(route: Route, name: string, args: Record<string, unknown>, me: string | null, db: MockDb) {
+  const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+  const iso = () => new Date(nowMs()).toISOString();
+  const eta = (m: number) => new Date(nowMs() + ((m * 1.3) / (30000 / 3600)) * 1000).toISOString();
+
+  if (name === "start_trip") {
+    const booking = db.bookings.find((b) => b.id === args.p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return fail("not_allowed");
+    if (booking.status !== "confirmed") return fail("invalid_status");
+    if (!booking.paid_at) return fail("not_paid");
+    const handoff = db.booking_handoffs.find((h) => h.booking_id === booking.id && h.kind === args.p_kind && h.status === "agreed");
+    if (!handoff) return fail("handoff_missing");
+    if (handoff.completed_at) return fail("handoff_completed");
+    if (args.p_kind === "pick_up" && !db.booking_handoffs.find((h) => h.booking_id === booking.id && h.kind === "drop_off" && h.status === "agreed")?.completed_at) {
+      return fail("drop_off_not_completed");
+    }
+    if (nowMs() < Date.parse(String(handoff.scheduled_at)) - 2 * 3_600_000) return fail("trip_too_early");
+    if ((handoff.location_type === "sitter_home" && me !== booking.owner_id) || (handoff.location_type === "owner_home" && me !== booking.sitter_id)) {
+      return fail("not_traveler");
+    }
+    if (db.trips.some((t) => t.booking_id === booking.id && t.handoff_kind === args.p_kind && ["en_route", "arrived"].includes(String(t.status)))) {
+      return fail("trip_active");
+    }
+    const home =
+      handoff.location_type === "sitter_home"
+        ? db.sitter_profiles.find((p) => p.id === booking.sitter_id)
+        : handoff.location_type === "owner_home"
+          ? db.owner_profiles.find((p) => p.id === booking.owner_id)
+          : undefined;
+    const dest = home?.home_lat != null ? { lat: Number(home.home_lat), lng: Number(home.home_lng) } : null;
+    const share = args.p_share !== false;
+    const first = share && args.p_lat != null ? { lat: Number(args.p_lat), lng: Number(args.p_lng) } : null;
+    const distance = first && dest ? distanceMeters(first, dest) : null;
+    const trip: Row = {
+      id: crypto.randomUUID(),
+      booking_id: booking.id,
+      handoff_kind: args.p_kind,
+      traveler_id: me,
+      status: "en_route",
+      dest_lat: dest?.lat ?? null,
+      dest_lng: dest?.lng ?? null,
+      last_lat: first?.lat ?? null,
+      last_lng: first?.lng ?? null,
+      last_at: first ? iso() : null,
+      eta_at: distance != null ? eta(distance) : null,
+      distance_m: distance != null ? Math.round(distance) : null,
+      simulated: !!args.p_simulated,
+      sharing: share,
+      started_at: iso(),
+      arrived_at: null,
+      ended_at: null,
+    };
+    db.trips.push(trip);
+    return json(route, 200, trip);
+  }
+
+  const trip = db.trips.find((t) => t.id === args.p_trip);
+  if (!trip || trip.traveler_id !== me) return fail("not_allowed");
+
+  if (name === "update_trip_position") {
+    if (!["en_route", "arrived"].includes(String(trip.status))) return fail("trip_not_active");
+    if (trip.sharing === false) return fail("not_sharing");
+    if (trip.status === "arrived" || (trip.last_at && nowMs() - Date.parse(String(trip.last_at)) < 1000)) return json(route, 200, trip);
+    const at = { lat: Number(args.p_lat), lng: Number(args.p_lng) };
+    const distance = trip.dest_lat != null ? distanceMeters(at, { lat: Number(trip.dest_lat), lng: Number(trip.dest_lng) }) : null;
+    Object.assign(trip, {
+      last_lat: at.lat,
+      last_lng: at.lng,
+      last_at: iso(),
+      distance_m: distance != null ? Math.round(distance) : null,
+      eta_at: distance != null ? eta(distance) : null,
+    });
+    if (distance != null && distance <= 150) Object.assign(trip, { status: "arrived", arrived_at: iso() });
+    return json(route, 200, trip);
+  }
+
+  // end_trip
+  if (!["completed", "cancelled"].includes(String(trip.status))) {
+    Object.assign(trip, {
+      status: args.p_cancel ? "cancelled" : "completed",
+      last_lat: null,
+      last_lng: null,
+      last_at: null,
+      eta_at: null,
+      distance_m: null,
+      ended_at: iso(),
+    });
+  }
+  return json(route, 200, trip);
 }
 
 /** The 010 RLS for inquiry_messages. */
@@ -643,7 +743,20 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const open = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.status === "proposed");
     if (!args.p_accept) {
       booking.status = "declined";
+      booking.sitter_note = args.p_note ?? null;
       for (const h of open) h.status = "rejected";
+      db.notifications.push({
+        id: crypto.randomUUID(),
+        user_id: booking.owner_id,
+        type: "booking_declined",
+        title: `${users.find((u) => u.id === me)?.displayName} declined your booking request`,
+        body: args.p_note ?? null,
+        pet_id: null,
+        booking_id: booking.id,
+        ref_id: booking.id,
+        read_at: null,
+        created_at: new Date(nowMs()).toISOString(),
+      });
       return route.fulfill({ status: 204 });
     }
     if (!["not_needed", "done", "skipped", undefined].includes(booking.meet_greet_status as string | undefined)) {
@@ -681,8 +794,71 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/express_interest") {
+    // express_interest (011l): the sitter's first yes — only a first-time pair, once; the dates are held from then on.
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking);
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    if (!booking || booking.sitter_id !== me) return fail("not_allowed");
+    if (booking.status !== "requested") return fail("invalid_status");
+    if (booking.sitter_interest_at) return route.fulfill({ status: 204 });
+    if (booking.meet_greet_status !== "required") return fail("interest_not_needed");
+    booking.sitter_interest_at = new Date(nowMs()).toISOString();
+    booking.meet_greet_due_at = new Date(nowMs() + 2 * 86_400_000).toISOString();
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: booking.owner_id,
+      type: "booking_interest",
+      title: `${users.find((u) => u.id === me)?.displayName} would like to meet first`,
+      body: null,
+      pet_id: null,
+      booking_id: booking.id,
+      ref_id: booking.id,
+      read_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+    });
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/get_booking_stages") {
+    // booking_stage / booking_next_actor (011l), for the caller's own bookings.
+    const { p_ids } = request.postDataJSON();
+    const rows = db.bookings
+      .filter((b) => p_ids.includes(b.id) && [b.owner_id, b.sitter_id].includes(me))
+      .map((b) => {
+        const done = (kind: string) =>
+          db.booking_handoffs.some((h) => h.booking_id === b.id && h.kind === kind && h.completed_at);
+        const mg = String(b.meet_greet_status ?? "not_needed");
+        let stage: string;
+        if (b.status === "declined" || b.status === "cancelled") stage = String(b.status);
+        else if (b.status === "requested") {
+          stage = mg === "not_needed" || !b.sitter_interest_at ? "requested" : ["done", "skipped"].includes(mg) ? "confirm" : "meet_greet";
+        } else if (done("pick_up")) stage = "completed";
+        else if (done("drop_off")) stage = "in_care";
+        else stage = b.paid_at ? "paid" : "awaiting_payment";
+        const next =
+          stage === "requested" || stage === "confirm"
+            ? "sitter"
+            : stage === "awaiting_payment"
+              ? "owner"
+              : stage === "meet_greet"
+                ? mg === "proposed"
+                  ? b.meet_greet_proposed_by === b.owner_id ? "sitter" : "owner"
+                  : mg === "skip_requested"
+                    ? b.meet_greet_skip_requested_by === b.owner_id ? "sitter" : "owner"
+                    : "both"
+                : "none";
+        return { booking_id: b.id, stage, next_actor: next };
+      });
+    return json(route, 200, rows);
+  }
+
   if (path.startsWith("rpc/") && path.includes("meet_greet")) {
     return handleMeetGreet(route, path.slice(4), request.postDataJSON(), me, db);
+  }
+
+  if (path === "rpc/start_trip" || path === "rpc/update_trip_position" || path === "rpc/end_trip") {
+    return handleTrip(route, path.slice(4), request.postDataJSON(), me, db);
   }
 
   if (path === "rpc/complete_handoff") {
@@ -703,6 +879,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if (p_kind === "pick_up" && !agreed("drop_off")?.completed_at) return fail("drop_off_not_completed");
     h.completed_at = new Date(nowMs()).toISOString();
+    // 012: the trip for this handoff is over — its position is erased.
+    for (const trip of db.trips.filter((t) => t.booking_id === p_booking && t.handoff_kind === p_kind && ["en_route", "arrived"].includes(String(t.status)))) {
+      Object.assign(trip, { status: "completed", last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null, ended_at: new Date(nowMs()).toISOString() });
+    }
     return route.fulfill({ status: 204 });
   }
 
@@ -1058,13 +1238,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/send_inquiry_reply") {
     // 010b: only the thread's sitter; quote / sources / can_host are copied from the draft, nothing else.
-    const { p_inquiry, p_body, p_draft } = request.postDataJSON();
+    const { p_inquiry, p_body, p_draft, p_outcome } = request.postDataJSON();
     const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
     if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
     const body = String(p_body ?? "").trim();
     if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
     let grounding: Row | null = null;
-    if (p_draft) {
+    if (p_outcome === "decline" || p_outcome === "suggest") {
+      // 011k: a decline / suggestion can't host and carries no quote.
+      grounding = { availability: { can_host: false } };
+    } else if (p_draft) {
       const draft = db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai");
       if (!draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
       const g = (draft.grounding ?? {}) as Row;
@@ -1090,6 +1273,30 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       pet_id: null, booking_id: null, ref_id: p_inquiry, read_at: null, created_at: row.created_at,
     });
     return json(route, 200, row);
+  }
+
+  if (path === "rpc/change_inquiry_dates") {
+    // 011j: the owner's own open inquiry only; one owner message records the change.
+    const { p_inquiry, p_drop_off_at, p_pick_up_at, p_drop_off_place, p_pick_up_place, p_body } = request.postDataJSON();
+    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
+    if (!inquiry || inquiry.owner_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
+    if (inquiry.status !== "open") return json(route, 400, { code: "P0001", message: "inquiry_closed" });
+    if (!(Date.parse(p_pick_up_at) > Date.parse(p_drop_off_at))) return json(route, 400, { code: "P0001", message: "invalid_window" });
+    inquiry.drop_off_at = p_drop_off_at;
+    inquiry.pick_up_at = p_pick_up_at;
+    if (p_drop_off_place) inquiry.drop_off_location_type = p_drop_off_place;
+    if (p_pick_up_place) inquiry.pick_up_location_type = p_pick_up_place;
+    const row = {
+      id: crypto.randomUUID(), inquiry_id: p_inquiry, author: "owner", sender_id: me, body: String(p_body), grounding: null,
+      drafted_by_ai: false, status: "sent", visible_at: new Date().toISOString(), read_at: null, created_at: new Date().toISOString(),
+    };
+    db.inquiry_messages.push(row);
+    return json(route, 200, row);
+  }
+
+  if (path === "rpc/stay_capacity_check") {
+    // 011c: null = fits; a spec sets `db.stayShortfall` to see the refusal.
+    return json(route, 200, db.stayShortfall ?? null);
   }
 
   if (path === "rpc/get_my_ai_reply_mode" || path === "rpc/set_ai_reply_mode") {
@@ -1253,6 +1460,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     let rows = table.filter(
       (row) =>
         matches(row, params) &&
+        // RLS (012): a trip is readable by the two people on its booking.
+        (path !== "trips" || db.bookings.some((b) => b.id === row.booking_id && (b.owner_id === me || b.sitter_id === me))) &&
         (path !== "notifications" || (row.user_id === me && (row.visible_at == null || Date.parse(String(row.visible_at)) <= Date.now()))) &&
         // RLS: a private post is only visible to its author (5.8).
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
@@ -1396,6 +1605,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
+    }
+    if ((params.get("order") ?? "").startsWith("started_at")) {
+      rows = [...rows].sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+      if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
     // Reads ordered by a report's sent time (Stay summary).
     if ((params.get("order") ?? "").startsWith("sent_at")) {

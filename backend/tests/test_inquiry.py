@@ -25,7 +25,7 @@ QUOTE = {
     "holiday_days": [{"day": "2026-10-12", "name": "Thanksgiving"}], "holiday_surcharge": 20.63,
     "total": 268.13, "currency": "CAD", "rate_version": "t",
 }
-GOOD = "Hi Robert! I'm available for Max from Oct 9 to Oct 12 🐾 The total is $268.13 CAD, including Thanksgiving. Tap **Request booking** to hold these dates."
+GOOD = "Hi Robert! I'm available for Max from Oct 9 to Oct 12 🐾 The total is $268.13 CAD, including Thanksgiving. Tap **Request booking** to send your request."
 
 
 def schedule_rows(blocked: str | None = None) -> list[dict]:
@@ -185,10 +185,81 @@ def test_a_slot_without_room_for_all_the_pets_means_cannot_host_even_when_no_day
 
 
 def test_a_stay_in_no_open_slot_is_unavailable_on_every_day(client, setup):
-    setup("Hi Robert! I can't take Max on those days — want me to look at other dates?", shortfall="no_open_slot")
+    setup("Hi Robert! I can't take Max on Oct 9 to Oct 12 — want me to look at other dates?", shortfall="no_open_slot")
     availability = post(client).json()["availability"]
     assert availability["can_host"] is False and availability["reason"] == "no_open_slot"
     assert [d["label"] for d in availability["unavailable_days"]] == ["Oct 9", "Oct 10", "Oct 11", "Oct 12"]
+
+
+# --- RV-2: the draft's yes / no must match the booking engine --------------------------------------------------
+
+YES_BLOCKED = "Hi Robert! Yes, I can host Max from Oct 9 to Oct 12! 🐾"
+NO_BLOCKED = "Hi Robert! Sorry, I can't take Max on Oct 10 — want me to look at other dates?"
+
+
+def test_a_yes_on_blocked_dates_is_a_problem_and_the_retry_is_used(client, setup):
+    ctx = setup(YES_BLOCKED, NO_BLOCKED, blocked="2026-10-10")
+    body = post(client).json()
+    assert body["body"] == NO_BLOCKED and body["can_host"] is False
+    assert len(ctx.model.calls) == 2
+    retry = ctx.model.calls[1]["messages"][-1]["content"]
+    assert "it says you can host, but these dates are not available" in retry
+
+
+def test_a_no_that_names_no_blocked_day_is_a_problem(client, setup):
+    problems = logic.reply_problems(
+        "Hi Robert! Sorry, I can't take Max then.",
+        {"availability": {"can_host": False, "unavailable_days": [{"day": "2026-10-10", "label": "Oct 10", "state": "blocked"}]}, "quote": None, "sitter": {"name": "Chloe"}},
+    )
+    assert any("it must name the days you can't take" in p for p in problems)
+
+
+def test_a_no_when_the_dates_are_open_is_a_problem_unless_it_is_a_decline(client, setup):
+    grounding = {"availability": {"can_host": True, "unavailable_days": []}, "quote": None, "sitter": {"name": "Chloe"}}
+    text = "Hi Robert! Sorry, I can't take Max on Oct 9."
+    assert any("the dates are open" in p for p in logic.reply_problems(text, grounding))
+    assert not any("the dates are open" in p for p in logic.reply_problems(text, grounding, intent="decline"))
+    assert not any("the dates are open" in p for p in logic.reply_problems("I can't wait to meet Max!", grounding))
+
+
+def test_the_model_cannot_flip_can_host(client, setup):
+    grounding = {"availability": {"can_host": False, "unavailable_days": [{"day": "2026-10-10", "label": "Oct 10", "state": "blocked"}]}, "quote": None, "sitter": {"name": "Chloe"}}
+    problems = logic.reply_problems(NO_BLOCKED, grounding, model_can_host=True)
+    assert any("`can_host` must be false" in p for p in problems)
+    assert logic.reply_problems(NO_BLOCKED, grounding, model_can_host=None) == []
+
+
+def test_a_no_always_asks_for_the_sitter(client, setup):
+    setup(NO_BLOCKED, blocked="2026-10-10")
+    body = post(client).json()
+    assert body["can_host"] is False and body["needs_sitter"] is True
+
+
+@pytest.mark.parametrize("inquiry_status", ["closed", "booked"])
+def test_a_closed_or_booked_inquiry_gets_no_new_draft(client, setup, inquiry_status):
+    db = make_db()
+    db.tables["inquiries"][0]["status"] = inquiry_status
+    ctx = setup(db=db)
+    assert post(client).status_code == 409
+    assert post(client, sitter_token(), regenerate=True).status_code == 409
+    assert post(client, sitter_token(), intent="decline").status_code == 409
+    assert drafts(ctx) == [] and ctx.model.calls == []
+
+
+def test_a_draft_that_already_exists_is_still_returned_for_an_open_inquiry_only(client, setup):
+    ctx = setup()
+    first = post(client).json()
+    assert first["reused"] is False
+    assert post(client).json()["reused"] is True  # asking twice never makes a second draft
+    assert len(drafts(ctx)) == 1
+
+
+def test_the_fallback_when_the_model_is_down_carries_no_price(client, setup):
+    ctx = setup(nebius.AIUnavailable("down"))  # → the "I'll reply properly very soon" text
+    body = post(client).json()
+    (saved,) = drafts(ctx)
+    assert "reply properly" in body["body"] and saved["grounding"]["quote"] is None
+    assert saved["grounding"]["availability"]["can_host"] is True
 
 
 def test_when_the_capacity_check_fails_nothing_is_promised_and_the_sitter_decides(client, setup):
@@ -367,6 +438,16 @@ def test_only_this_inquirys_pets_reach_the_facts(client, setup):
     pets = ctx.model.facts["pets"]
     assert [p["name"] for p in pets] == ["Max"] and pets[0]["allergies"] == ["chicken"] and pets[0]["heads_up"] == ["No knocking"]
     assert "SECRET" not in json.dumps(ctx.model.facts) and "beef" not in json.dumps(ctx.model.facts)
+
+
+def test_the_facts_say_whether_the_sitter_takes_one_owner_at_a_time(client, setup):
+    ctx = setup()
+    post(client)
+    assert ctx.model.facts["sitter"]["takes_one_owner_at_a_time"] is True  # the default
+    ctx = setup()
+    ctx.db.tables["sitter_profiles"][0]["accepts_multiple_owners"] = True
+    post(client)
+    assert ctx.model.facts["sitter"]["takes_one_owner_at_a_time"] is False
 
 
 def test_f_the_facts_hold_no_entry_address_or_contact_keys(client, setup):
@@ -581,6 +662,15 @@ def test_in_auto_mode_the_reply_is_scheduled_not_shown_and_the_owner_notice_wait
     assert body["auto_scheduled_at"] == reply["visible_at"] and body["body"] is None
     (notice,) = [n for n in ctx.db.tables["notifications"] if n["type"] == "inquiry_replied"]
     assert notice["user_id"] == OWNER_ID and notice["visible_at"] == reply["visible_at"] and notice["ref_id"] == INQ
+
+
+def test_a_no_waits_for_the_sitter_even_in_auto_mode(client, setup):
+    # RV-2: dates that cannot be hosted are never auto-sent, whatever the model says about needing the sitter.
+    ctx = setup(NO_BLOCKED, db=auto_db(), blocked="2026-10-10")
+    body = post(client, owner_token()).json()
+    assert not sitter_messages(ctx) and body.get("auto_scheduled_at") is None
+    (saved,) = drafts(ctx)
+    assert saved["status"] == "draft"
 
 
 @pytest.mark.parametrize(

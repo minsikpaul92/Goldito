@@ -1,3 +1,5 @@
+> **Before starting any work, update `main` first:** `git checkout main && git pull origin main`. Only then read the TODO, create the phase branch (from that updated `main`, §4.1) and begin.
+
 # CLAUDE.md — Goldito agent instructions
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
@@ -96,7 +98,7 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 
 ## 4. How work progresses (mandatory loop)
 
-**Never jump ahead of the queue.** One task → implement → verify → commit on the phase branch → update TODO. **PRs are per phase** (or per large chunk), not per task.
+**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update TODO. **One PR per phase (or per large chunk)** — it stays the same PR until the phase / chunk is done; never one PR per task or per step.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -106,18 +108,19 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 │    the phase's first task — see §4.1)                         │
 │ 4. Implement ONLY that task (minimal diff)                    │
 │ 5. Verify DoD (commands, manual steps)                        │
-│ 6. Commit (one commit per task, §4.3) → push                  │
-│ 7. Update TODO.md (see §5) in the same commit                 │
-│ 8. Phase done (or chunk large)? → finish the PR (§4.2)        │
-│ 9. Report to user: commit + next focus item (PR link at end)  │
+│ 6. Commit (one commit per STEP, §4.1a) → push                 │
+│ 7. Update TODO.md + test-guide in the step's commit (§5)      │
+│ 8. More steps in this phase? → back to 4, same branch, same PR│
+│    Phase / chunk done? → tidy TODO, update the PR (§4.2)      │
+│ 9. Report to user: commits + next step (PR link at end)       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
 ### 4.1 Branch per phase
 
-- **One phase = one branch** (e.g. all of Phase 03 on `feat/phase-03-auth`). Each TODO task is **one commit** on it. Do not mix tasks from other phases.
+- **One phase = one branch = one PR** (e.g. all of Phase 03 on `feat/phase-03-auth`), from its first task until its DoD passes. Do not mix tasks from other phases.
 - Start the branch from latest `main` (`git pull origin main` then `git checkout -b <branch>`); merge `main` into it when `main` moves.
-- A very large or risky chunk inside a phase may get its own branch + PR — decide with the user.
+- A very large or risky chunk inside a phase may get its own branch + PR — decide with the user. Once a chunk has its branch and PR, everything of that chunk goes into that one PR.
 - Small standalone fixes (typo, config, one-file chore) can be a small branch + PR when they can't wait for the phase.
 - **Naming:** short, descriptive, **kebab-case**.
 
@@ -127,13 +130,21 @@ Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
 - **Never rename a branch that has an open PR** — GitHub closes the PR.
 - Do not commit directly to `main` for feature work. Merge via PR after review (or when the user asks to merge).
 
+### 4.1a Commits — one per step
+
+- A **step** is one coherent, verifiable slice of a task that could be reviewed alone, in the order the work depends on itself — typically *database* → *backend* → *app* → *tests / e2e* → *docs*, or one numbered task of the phase doc (e.g. `6B.1`). A step never mixes tasks of different IDs.
+- **One commit per step**, made when that step's checks pass (typecheck, the tests that touch it, `ruff` / smoke for backend / SQL), then pushed. No "wip" commits, no squashing steps together afterwards, no step left uncommitted at the end of a session.
+- Each commit updates `docs/plan/TODO.md` and `docs/plan/test-guide.ko.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
+- A step that needs a person (a photo, a key, a hosted-DB apply) is committed as far as it can go, and the phase doc's "Before you start" list says what the person does.
+
 ### 4.2 Pull request (per phase)
 
-- Open the phase PR as a **draft** after the first task commit (`gh pr create --draft`) so CI runs on every push; keep its task table up to date.
-- When the phase DoD passes: update the PR title/body for the whole phase, mark it ready (`gh pr ready`).
+- Open the phase PR **after the first step's commit, as ready for review** (`gh pr create`, no `--draft`) unless there is a reason to keep it a draft (work that cannot be reviewed yet, a human step it is blocked on) — then say why in the PR body. CI runs on every push to it. Keep the PR body's step table up to date after each step; **keep pushing to this same PR** for every later step.
 - **PR title:** same style as commit message (see §4.3), e.g. `feat: phase 03 auth, roles, and pet profiles`. Describe *what* and *why* for reviewers (Minsik / Seulgi / Muk).
 - **PR body:** Summary bullets / task table, test plan checklist, link to phase doc.
-- **Do not merge** unless the user explicitly asks (squash merge, delete branch).
+- **TODO tidy on every PR (required):** before opening a PR, and again before marking it ready, re-read `docs/plan/TODO.md` and tidy it in that PR — delete lines the PR finished, fix anything it made stale (statuses, migration letters, hosted-DB notes, "Current focus"), move new findings to the right section (P0 path vs Later), and archive documents it closed (§5.1). A PR that leaves TODO.md out of date is not ready.
+- Before the phase is done, report after each step with: the commit, how it was verified, and the next step. When the phase DoD passes, update the PR title / body for the whole phase and tell the user it is complete.
+- **Do not merge** unless the user explicitly asks (squash merge, delete branch). A migration that has to reach the hosted DB is applied only when the user asks, at the merge of its PR.
 
 ### 4.3 Commits, PRs, branches — no AI attribution
 
@@ -156,14 +167,14 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 → 01 → 02 → 03 → 03B → 03C → 04 → 05 → 06 → 07 → 07B → 09 → 07C → 06B → (08 stretch) → 10 → 11 (P1)` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 → 9.1 → 7C.4 → 6B.5 — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
+`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → (08 safety, stretch) → 10 deploy → 11 P1` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
+After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
 
 ### Coding discipline
 
 - Minimize scope; no drive-by refactors.
 - No secrets in git; extend `.env.example` only.
-- **Git:** follow §4.1–4.3 (phase branch → one commit per task → push → phase PR). Do not commit on `main` for features. If the user says “commit and push” for the current task, do it on the **phase branch** (the draft PR updates itself).
+- **Git:** follow §4.1–4.3 (phase branch → one commit per step → push → one phase PR). Do not commit on `main` for features. If the user says “commit and push” for the current task, do it on the **phase branch** (the PR updates itself).
 - Anonymize any real customer data (Seulgi owns policy; never commit `data/raw/`).
 
 ---
@@ -174,13 +185,22 @@ After **07.1** (Nebius client), the AI backend track (07B → 6.12 → 7.2/7.4 �
 
 When a task is **done** (DoD met):
 
-1. **Remove** its line from **Current focus** / **Up next** (or check `[x]` and move to **Completed** with date `YYYY-MM-DD`).
+1. **Delete** its line from **Current focus** / the queue (TODO lists only open work). The record of finished work is the commit, the PR and `test-guide.ko.md`; closed docs move to `docs/archive/` (frozen — read only when asked, never a source of truth).
 2. Set **Current focus** to exactly **one** next task ID (e.g. `1.2 FastAPI health`).
-3. If the whole phase is done, note `Phase N complete` in **Completed** and set focus to first task of phase N+1.
-4. If you discovered new work, add it to **Up next** with a short ID — do not silently expand scope in the same task.
+3. If the whole phase is done, update its row in the TODO **Phase status** table and set focus to the first task of phase N+1.
+4. If you discovered new work, add it with a short ID to **P0 demo path** (only if it blocks the demo or makes the app say something untrue) or to **Later** — do not silently expand scope in the same task.
 5. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3 — new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
 If TODO.md and phase docs disagree, **phase Goal/DoD wins**; fix TODO to match.
+
+### 5.1 Docs hygiene — open work in the queue, finished work in the archive
+
+- **One question, one document.** If two docs answer the same question, merge them and delete one — do not archive a duplicate.
+- **TODO.md lists only open work.** No "Completed" section. Finished work is recorded by the commit, the PR and `test-guide.ko.md`; never add finished items to an archive file.
+- **`docs/archive/` is for whole documents that are closed** (every item in a `feedback-*` / `review-*` / `status-*` file is done or moved to TODO). Move them with `git mv` — do not delete — and add a first line: `Frozen record — not the plan. The queue is docs/plan/TODO.md.` `docs/archive/todo-completed-2026-10.md` is the lookup for everything finished before 2026-10-10.
+- **Archive = read only when asked** ("did we do X?"). Never use it as a source of truth, never edit it, never follow a plan or decision from it without checking the current docs.
+- When you archive or merge a doc, fix the links that pointed to it in the same commit (`grep -rn <filename> .`).
+- **Weekly sweep** (Mon · Thu sync): TODO has only open items, "Current focus" is real, closed feedback / review docs are archived.
 
 ---
 
@@ -191,8 +211,8 @@ Read CLAUDE.md and docs/plan/TODO.md.
 Work ONLY on the "Current focus" task.
 Read the linked docs/plan/phases/phase-XX.md for Goal and DoD.
 Work on the phase branch (CLAUDE.md §4.1 — create it from main at the phase's first task; no claude/cursor/ai prefixes).
-When DoD passes: update TODO.md (§5), commit (§4.3), push — the phase draft PR updates itself (§4.2).
-When the phase is done: finish the phase PR. Report the commit, verify steps, and next focus.
+Work in steps (§4.1a): when a step's checks pass, update TODO.md + test-guide (§5), make ONE commit (§4.3), push. The first push opens the phase PR (ready for review, §4.2); every later step goes into the same PR.
+Before opening the PR and again when the phase is done: tidy TODO.md (§4.2, §5.1). Report after each step: the commit, how it was verified, and the next step.
 ```
 
 Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1.
@@ -211,7 +231,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | Treat safety guard (stretch, after 07C) | 08 |
 | Deploy & submit README | 10 |
 
-The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, favorite sitters, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
+The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
 
 ---
 
@@ -229,6 +249,8 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/daily-report` | Stage 4 — report draft from the chips the sitter kept, an optional short note, and photos; posted only after the sitter approves |
 | `POST /api/ai/life-record` | Stage 5 — stay → Pet Life Record + RAG indexing |
 | `POST /api/ai/safety-check` | Stretch — label photo → JSON safety (+ Tavily sources, 8.7) |
+| `POST /api/ai/pet-photo` | P1 (11.15) — pet photo → breed guesses (≤ 3, owner confirms) + coat color |
+| `POST /api/ai/pet-voice` | 11.15 — audio (or text) → speech-to-text (Groq Whisper free plan; Token Factory has none) → profile facts from Nemotron, each with a quote from the transcript; safety answers are never pre-selected |
 
 Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; checked with `GET /v1/models`) and phase-07/08 docs.
 

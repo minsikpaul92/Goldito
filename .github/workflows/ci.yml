@@ -5,6 +5,11 @@ on:
   push:
     branches: [main]
 
+# A newer push to the same PR replaces the run still going; main runs are never cancelled.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -57,11 +62,22 @@ jobs:
           docker logs goldito-backend
           exit 1
 
-  frontend:
+  # The Playwright suite is split over two runners (public repos run GitHub-hosted runners for free). The `frontend`
+  # job below reports their result under the name branch protection requires.
+  frontend-tests:
+    name: frontend tests (${{ matrix.shard }}/2)
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      # PRs check the frame in Chromium only (the app flows and the phone run in Chromium anyway); main also runs
+      # Firefox and WebKit, so a browser-specific break shows up there.
+      PW_BROWSERS: ${{ github.event_name == 'push' && 'chromium firefox webkit' || 'chromium' }}
     defaults:
       run:
         working-directory: frontend
@@ -95,28 +111,40 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          key: playwright-${{ runner.os }}-${{ env.PW_BROWSERS }}-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install Playwright browsers
         # A stuck browser/apt download once hung this step; fail fast and re-run instead.
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         timeout-minutes: 8
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps ${{ env.PW_BROWSERS }}
       - name: Install Playwright system libraries (browsers come from the cache)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         timeout-minutes: 8
-        run: npx playwright install-deps chromium firefox webkit
+        run: npx playwright install-deps ${{ env.PW_BROWSERS }}
       - name: Playwright (desktop phone frame + mouse)
         env:
           # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
           PW_FRAME_VIEWPORTS: ${{ github.event_name == 'push' && 'all' || '1366' }}
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shard }}/2
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-results
+          name: playwright-results-${{ matrix.shard }}
           path: frontend/test-results
           retention-days: 7
+
+  # Required status check (branch protection): passes when both shards pass, or when nothing in frontend/ changed.
+  frontend:
+    needs: [changes, frontend-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Frontend result
+        run: |
+          result="${{ needs.frontend-tests.result }}"
+          echo "changes: ${{ needs.changes.result }}, frontend tests: $result"
+          [ "${{ needs.changes.result }}" = "success" ] && { [ "$result" = "success" ] || [ "$result" = "skipped" ]; }
 
   supabase:
     needs: changes

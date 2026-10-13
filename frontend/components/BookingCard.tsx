@@ -4,7 +4,15 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatInstant, formatTime, isoToZoned } from "../features/schedule/dates";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { SERVICE_LABEL } from "../features/sitters/sitterApi";
-import { BookingSummary, Handoff, LocationType, meetGreetBlocksAccept, requestExpired } from "../lib/bookings";
+import {
+  BookingSummary,
+  Handoff,
+  LocationType,
+  awaitingFirstYes,
+  datesOnHold,
+  meetGreetBlocksAccept,
+  requestExpired,
+} from "../lib/bookings";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -34,18 +42,31 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
     return badges;
   }
 
+  // First-time pairs (D60): meet first → dates held while the Meet & Greet is arranged → the sitter confirms.
+  const meetBadge = (): Badge | null => {
+    if (awaitingFirstYes(b)) return { label: "Meet first", tone: "info" };
+    if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet & Greet", tone: "info" };
+    if (datesOnHold(b)) {
+      return viewer === "sitter"
+        ? { label: "Met — ready to confirm", tone: "warning" }
+        : { label: `Waiting for ${b.sitterName} to confirm`, tone: "muted" };
+    }
+    return null;
+  };
   if (viewer === "owner") {
     const owner: Badge[] = [
       b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" },
     ];
-    if (meetGreetBlocksAccept(b)) owner.push({ label: "Meet first", tone: "info" });
+    const meet = meetBadge();
+    if (meet) owner.push(meet);
     return owner;
   }
   const badges: Badge[] = [];
   if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "muted" });
   const custom = [b.dropOff, b.pickUp].some((h) => h && h.pending && !h.withinSitterHours);
   if (custom && !b.sitterSuggested) badges.push({ label: "Custom time — needs your OK", tone: "warning" });
-  if (meetGreetBlocksAccept(b)) badges.push({ label: "Meet first", tone: "info" });
+  const meet = meetBadge();
+  if (meet) badges.push(meet);
   if (badges.length === 0) badges.push({ label: "New request", tone: "info" });
   return badges;
 }

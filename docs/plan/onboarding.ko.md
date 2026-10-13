@@ -90,6 +90,8 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 **풀 튜토리얼(coach marks)은 P0 제외.** Empty state + 데모 데이터로 충분.
 
+> **오너 가입 직후의 반려동물 등록(오너의 첫 입력)은 별도 명세:** 한 화면 한 질문 · 큰 글씨 · 사진 · 음성으로 채우기 — [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md) (11.15). 이 문서는 로그인 **전** 경험(Welcome · Try demo)을 다룬다.
+
 ---
 
 ## 4. 데모 데이터 · Devpost · README (Phase 10 연동)

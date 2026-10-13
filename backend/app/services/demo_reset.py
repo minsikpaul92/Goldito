@@ -30,7 +30,12 @@ from supabase import Client
 
 from app.config import get_settings
 from app.services import authz
-from app.services.demo_accounts import DEMO_USERS, ensure_sitter_rates, find_user_id
+from app.services.demo_accounts import (
+    DEMO_USERS,
+    ensure_home_point,
+    ensure_sitter_rates,
+    find_user_id,
+)
 
 State = Literal["empty", "pets", "confirmed", "ready", "in_care"]
 STATES: tuple[State, ...] = ("empty", "pets", "confirmed", "ready", "in_care")
@@ -297,7 +302,7 @@ Booker = Callable[[Client, str, str, date, State], str]
 
 def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State) -> str:
     """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
-    agreement and the sitter accepts ("Chloe accepted — Finish booking"). `ready` and `in_care` go on with
+    agreement (after the sitter's first yes) and the sitter accepts ("Chloe accepted — Finish booking"). `ready` and `in_care` go on with
     the checkout (consents + demo payment); `in_care` also has the sitter tap Received."""
     owner_demo, sitter_demo = (next(d for d in DEMO_USERS if d.role == role) for role in ("owner", "sitter"))
     owner_token, sitter_token = sign_in(owner_demo.email), sign_in(sitter_demo.email)
@@ -320,6 +325,13 @@ def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, s
         },
         timeout=20.0,
     )
+    # The sitter's first yes (011l) comes first: it holds the dates and opens the Meet & Greet step that is then skipped.
+    # A pair that has met before has no first yes to give (`interest_not_needed`).
+    try:
+        authz.rpc_json(sitter_token, "express_interest", {"p_booking": booking})
+    except authz.RpcError as exc:
+        if "interest_not_needed" not in str(exc):
+            raise
     authz.rpc_json(owner_token, "request_skip_meet_greet", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_skip_meet_greet", {"p_booking": booking, "p_accept": True})
     authz.rpc_json(sitter_token, "respond_booking", {"p_booking": booking, "p_accept": True})
@@ -359,6 +371,8 @@ def reset(
         if state != "empty":
             ensure_pets(client, owner_id, today)
         ensure_sitter_rates(client, sitter_id)
+        ensure_home_point(client, "owner", owner_id)
+        ensure_home_point(client, "sitter", sitter_id)
         if not keep_schedule:
             open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id)

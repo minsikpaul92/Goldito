@@ -50,4 +50,6 @@ npm run test:e2e
 
 PowerShell: `$env:EXPO_PUBLIC_DEV_ROUTES="1"; $env:EXPO_PUBLIC_SUPABASE_URL="http://127.0.0.1:4173/supabase-mock"; $env:EXPO_PUBLIC_SUPABASE_ANON_KEY="e2e-anon-key"; npx expo export -p web`. Rebuild with your real `.env` before running the app for real (`dist/` is only for tests).
 
+**Gotchas:** build the mock-backed export with the CI values from `.github/workflows/ci.yml` and `npx expo export -c -p web` (`-c` clears the cache so a real `.env` does not leak into the build). Commit only after the whole suite passes **three runs in a row**. Never write a test that depends on the time of day — use a fake clock (`page.clock`) or set the DB state. Do not run Prettier over existing files (it rewrites unrelated lines).
+
 Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 (phone frame + mouse), a touch phone (no frame, layout at 360 / 402 / 440), and `auth` (sign in / sign up / role routing / log out in the frame). CI runs the same suite on every frontend PR. Note: Playwright's Firefox needs the Visual C++ runtime on Windows — run `--project=chromium-*` / `webkit-*` / `phone` / `auth` locally if it is missing.

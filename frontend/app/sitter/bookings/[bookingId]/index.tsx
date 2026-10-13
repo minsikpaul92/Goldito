@@ -2,28 +2,36 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { bookingBadges, handoffLine } from "../../../components/BookingCard";
-import { EntryInfoCard } from "../../../components/EntryInfoCard";
-import { HandoffChange, HandoffChangeSheet } from "../../../components/HandoffChangeSheet";
-import { MeetGreetCard } from "../../../components/MeetGreetCard";
-import { ProposalCard, showsProposal } from "../../../components/ProposalCard";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import { Chip } from "../../../components/ui/Chip";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { Sheet } from "../../../components/ui/Sheet";
-import { TextButton } from "../../../components/ui/TextButton";
-import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { formatDay, formatInstant, formatTime } from "../../../features/schedule/dates";
-import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
-import { releaseVideoLink } from "../../../lib/meetGreet";
+import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
+import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { EntryInfoCard } from "../../../../components/EntryInfoCard";
+import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
+import { MeetGreetCard } from "../../../../components/MeetGreetCard";
+import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
+import { TripEntry } from "../../../../components/TripEntry";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import { Chip } from "../../../../components/ui/Chip";
+import { ChipSuggestions } from "../../../../components/ChipSuggestions";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { Sheet } from "../../../../components/ui/Sheet";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { TextField } from "../../../../components/ui/TextField";
+import { composeComment } from "../../../../features/completion/reviewPresets";
+import { SPECIES_EMOJI } from "../../../../features/pets/petFormat";
+import { formatDay, formatInstant, formatTime } from "../../../../features/schedule/dates";
+import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
+import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
   BookingError,
   BookingSummary,
+  awaitingFirstYes,
   cancelBooking,
   CHECK_IN_WINDOW_MS,
+  EARLY_RETURN_MS,
+  expressInterest,
   HandoffKind,
   PetCare,
   completeHandoff,
@@ -36,17 +44,22 @@ import {
   requestExpired,
   respondBooking,
   respondHandoff,
-} from "../../../lib/bookings";
-import { PetRecordFold } from "../../../components/PetRecordFold";
-import { ReceivedReview } from "../../../components/ReceivedReview";
-import { OwnerNoteCard, PastOwnerNotes } from "../../../components/OwnerNote";
-import { requestLifeRecord } from "../../../features/completion/completionApi";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useOnBookingChange } from "../../../providers/NotificationsProvider";
-import { useToast } from "../../../providers/ToastProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../lib/bookings";
+import { PetRecordFold } from "../../../../components/PetRecordFold";
+import { ReceivedReview } from "../../../../components/ReceivedReview";
+import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
+import { requestLifeRecord } from "../../../../features/completion/completionApi";
+import { ReturnChecks, loadReturnChecks } from "../../../../features/completion/returnChecks";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
+import { useToast } from "../../../../providers/ToastProvider";
+import { Theme } from "../../../../theme/themes";
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
+
+/** Polite reasons for a "no" — the owner reads the ones picked, plus the optional note (FB-35). */
+const DECLINE_REASONS = ["Fully booked those dates", "Can't take this pet type", "Not a good fit", "Let's talk first"];
+const DECLINE_NOTE_MAX = 200;
 
 type State =
   | { status: "loading" }
@@ -73,6 +86,7 @@ function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
   if (error.code === "meet_greet_required") return `Meet ${owner} first — or agree to skip the Meet & Greet.`;
+  if (error.code === "interest_required") return `Say "Yes, let's meet" to ${owner} first.`;
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
     const slot = firstSlot(error.detail);
@@ -95,7 +109,11 @@ export default function SitterBookingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDecline, setConfirmDecline] = useState(false);
+  const [declineReasons, setDeclineReasons] = useState<string[]>([]);
+  const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmReturn, setConfirmReturn] = useState(false);
+  const [returnChecks, setReturnChecks] = useState<ReturnChecks | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -149,10 +167,25 @@ export default function SitterBookingDetail() {
   const isRequest = booking.status === "requested";
   const meetFirst = isRequest && meetGreetBlocksAccept(booking);
   const waiting = isRequest && booking.sitterSuggested;
+  // Why the booking ended, from the sitter's side (the owner's reason after the Meet & Greet started, or the timeout).
+  const endedLine =
+    booking.status !== "cancelled"
+      ? null
+      : booking.cancelReason === "meet_greet_timeout"
+        ? `No time to meet ${owner} was set, so this booking was cancelled.`
+        : booking.cancelledBy === booking.ownerId && booking.cancelReason && booking.cancelReason !== "Owner cancelled"
+          ? `${owner} passed: “${booking.cancelReason}”`
+          : null;
+  const firstYes = isRequest && awaitingFirstYes(booking);
   const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
+  // First-time pairs (D60): "Yes, let's meet" holds the dates; after the Meet & Greet the same button confirms.
+  const firstTimePair = isRequest && booking.meetGreetStatus !== "not_needed";
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
+  // Returned is allowed any time (a stay can end early). From 30 minutes before the agreed pick-up on it is the normal
+  // case; earlier than that the sitter is asked "really?" and the button turns red.
+  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at) - EARLY_RETURN_MS;
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -169,9 +202,19 @@ export default function SitterBookingDetail() {
     }
   };
 
-  const send = (change: HandoffChange) => {
-    setSheet(null);
-    void run(() => proposeHandoff(booking.id, change.kind, change.at, change.place), `New time sent to ${owner}`);
+  const closeDecline = () => {
+    setConfirmDecline(false);
+    setDeclineReasons([]);
+    setDeclineNote("");
+  };
+
+  // The sheet sends, shows what went wrong inside itself, and stays open until everything went through (FB-5).
+  const sendChange = async (change: HandoffChange) => {
+    try {
+      await proposeHandoff(booking.id, change.kind, change.at, change.place);
+    } catch (err) {
+      throw new Error(actionError(err, owner));
+    }
   };
 
   const handoffNote = (kind: HandoffKind) => {
@@ -195,6 +238,16 @@ export default function SitterBookingDetail() {
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
           </View>
         </Card>
+
+        <Card style={styles.block}>
+          <BookingStageBar booking={booking} viewer="sitter" />
+        </Card>
+
+        {endedLine ? (
+          <Card style={styles.block} testID="booking-ended">
+            <Text style={styles.label}>{endedLine}</Text>
+          </Card>
+        ) : null}
 
         <PastOwnerNotes ownerId={booking.ownerId} ownerName={owner} bookingId={booking.id} />
 
@@ -261,7 +314,7 @@ export default function SitterBookingDetail() {
               />
             </View>
           ) : null}
-          {booking.status === "confirmed" ? (
+          {booking.status === "confirmed" && !booking.pickUp?.completedAt ? (
             <TextButton
               label="Change time or place"
               onPress={() => setSheet({ key: Date.now(), kind: "pick_up", mode: "change" })}
@@ -270,6 +323,8 @@ export default function SitterBookingDetail() {
             />
           ) : null}
         </Card>
+
+        <TripEntry booking={booking} role="sitter" addresses={addresses} />
 
         {pets.map((pet) => (
           <Card key={pet.id} style={styles.block} testID={`pet-care-${pet.name}`}>
@@ -315,12 +370,21 @@ export default function SitterBookingDetail() {
       {isRequest ? (
         <View style={styles.footer}>
           {waiting ? <Text style={styles.muted}>{`Waiting for ${owner} to confirm the new time.`}</Text> : null}
-          <Button
-            label={busy ? "Saving…" : "Accept"}
-            onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed — ${owner} gets a notice`)}
-            disabled={!canAccept}
-            testID="accept-booking"
-          />
+          {firstYes ? (
+            <Button
+              label={busy ? "Saving…" : "Yes, let's meet"}
+              onPress={() => void run(() => expressInterest(booking.id), `Dates held — ${owner} is asked to set a time`)}
+              disabled={busy || requestExpired(booking)}
+              testID="interest-booking"
+            />
+          ) : (
+            <Button
+              label={busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept"}
+              onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed — ${owner} gets a notice`)}
+              disabled={!canAccept}
+              testID="accept-booking"
+            />
+          )}
           <TextButton label="Decline" danger onPress={() => setConfirmDecline(true)} testID="decline-booking" />
         </View>
       ) : null}
@@ -344,13 +408,11 @@ export default function SitterBookingDetail() {
           ) : !booking.pickUp?.completedAt ? (
             <Button
               label={busy ? "Saving…" : "Returned"}
-              onPress={() =>
-                void run(async () => {
-                  await completeHandoff(booking.id, "pick_up");
-                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
-                  void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe — ${owner} gets a notice`)
-              }
+              onPress={() => {
+                setReturnChecks(null);
+                setConfirmReturn(true);
+                void loadReturnChecks(booking.pets, booking.sitterId).then(setReturnChecks).catch(() => undefined);
+              }}
               disabled={busy}
               testID="handoff-returned"
             />
@@ -368,6 +430,58 @@ export default function SitterBookingDetail() {
           ) : null}
         </View>
       ) : null}
+
+      <Sheet
+        visible={confirmReturn}
+        title={`Return ${petNames}?`}
+        onClose={() => setConfirmReturn(false)}
+        testID="return-sheet"
+        footer={
+          <View style={styles.returnActions}>
+            <Button
+              label="Return"
+              variant={returnsEarly ? "danger" : "primary"}
+              onPress={() => {
+                setConfirmReturn(false);
+                void run(async () => {
+                  await completeHandoff(booking.id, "pick_up");
+                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+                  void requestLifeRecord(booking.id).catch(() => undefined);
+                }, `${petNames} home safe — ${owner} gets a notice`);
+              }}
+              testID="return-confirm"
+            />
+            <Button label="Cancel" variant="secondary" onPress={() => setConfirmReturn(false)} testID="return-cancel" />
+          </View>
+        }
+      >
+        {returnsEarly && booking.pickUp ? (
+          <Text style={styles.warning} testID="return-early-warning">
+            {`It's not pick-up time yet — pick-up is ${formatInstant(booking.pickUp.at)}. Do you really want to return ${petNames} now?`}
+          </Text>
+        ) : null}
+        <Text style={styles.body}>{`${petNames} ${booking.pets.length > 1 ? "go" : "goes"} home with ${owner}. This can't be undone, and it writes the Life Record.`}</Text>
+        {returnChecks && returnChecks.tasksLeft > 0 ? (
+          <Text style={styles.body} testID="return-tasks-left">
+            {`• ${returnChecks.tasksLeft} care task${returnChecks.tasksLeft === 1 ? "" : "s"} still open today`}
+          </Text>
+        ) : null}
+        {returnChecks && returnChecks.petsWithoutNote.length > 0 ? (
+          <>
+            <Text style={styles.body} testID="return-note-missing">
+              {`• You haven't sent today's note for ${returnChecks.petsWithoutNote.join(" & ")}`}
+            </Text>
+            <TextButton
+              label="Send today's note first"
+              onPress={() => {
+                setConfirmReturn(false);
+                router.push("/sitter/diary");
+              }}
+              testID="return-send-note"
+            />
+          </>
+        ) : null}
+      </Sheet>
 
       <Sheet
         visible={confirmCancel}
@@ -402,7 +516,12 @@ export default function SitterBookingDetail() {
           allowPlace={sheet.mode === "change"}
           title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
           submitLabel={`Send to ${owner}`}
-          onSubmit={send}
+          onSend={sendChange}
+          onChanged={() => void load()}
+          onDone={() => {
+            setSheet(null);
+            toast.show(`New time sent to ${owner}`);
+          }}
           onClose={() => setSheet(null)}
         />
       ) : null}
@@ -410,16 +529,17 @@ export default function SitterBookingDetail() {
       <Sheet
         visible={confirmDecline}
         title={`Decline ${owner}'s request?`}
-        onClose={() => setConfirmDecline(false)}
+        onClose={closeDecline}
         testID="decline-sheet"
         footer={
           <Button
             label="Decline request"
             onPress={() => {
-              setConfirmDecline(false);
+              const reason = composeComment(declineReasons, declineNote) || null;
+              closeDecline();
               void run(
                 async () => {
-                  await respondBooking(booking.id, false);
+                  await respondBooking(booking.id, false, reason);
                   // A video Meet & Greet's Calendar event goes with the declined request (3B.11).
                   await releaseVideoLink(booking.id);
                 },
@@ -432,6 +552,33 @@ export default function SitterBookingDetail() {
         }
       >
         <Text style={styles.body}>{`${owner} gets a notice and can find another sitter.`}</Text>
+        <Text style={styles.muted}>Pick a reason and/or leave a short note — {owner} sees both.</Text>
+        <ChipSuggestions
+          chips={DECLINE_REASONS.map((r, i) => ({ id: String(i), kind: "episode", label: r, source: "custom", check: null, media_id: null }))}
+          off={new Set(DECLINE_REASONS.flatMap((r, i) => (declineReasons.includes(r) ? [] : [String(i)])))}
+          onToggle={(id) => {
+            const r = DECLINE_REASONS[Number(id)];
+            setDeclineReasons((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]));
+          }}
+          testIDPrefix="decline-reason"
+        />
+        <TextField
+          label="Note to the owner (optional)"
+          value={declineNote}
+          multiline
+          numberOfLines={3}
+          maxLength={DECLINE_NOTE_MAX}
+          onChangeText={setDeclineNote}
+          testID="decline-note"
+        />
+        <TextButton
+          label="Suggest another time instead"
+          onPress={() => {
+            closeDecline();
+            setSheet({ key: Date.now(), kind: "drop_off", mode: "suggest" });
+          }}
+          testID="decline-suggest"
+        />
       </Sheet>
     </View>
   );
@@ -466,6 +613,9 @@ const makeStyles = (theme: Theme) =>
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
+    },
+    returnActions: {
+      gap: theme.spacing.sm,
     },
     warning: {
       fontSize: theme.fontSize.small,

@@ -2,6 +2,7 @@
 
 from datetime import date
 
+import pytest
 from app.services import demo_reset
 from scripts import reset_demo
 
@@ -53,6 +54,7 @@ def world() -> FakeDB:
             }
         ],
         sitter_rates=[],
+        owner_profiles=[{"id": OWNER}],
         profiles=[{"id": OWNER, "display_name": "x"}, {"id": SITTER, "display_name": "y"}],
     )
 
@@ -149,6 +151,9 @@ def test_apply_rebuilds_the_starting_state():
     assert len(db.tables["sitter_rates"]) == 1
     assert {p["id"]: p["display_name"] for p in db.tables["profiles"]} == {OWNER: "Robert", SITTER: "Chloe"}
     assert db.tables["sitter_profiles"][0]["services"] == ["boarding", "house_sitting"]
+    # Both homes have a map point, so Start trip has a destination (06B).
+    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6477, -79.4194)
+    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6644, -79.3573)
 
 
 def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
@@ -253,10 +258,42 @@ def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
         demo_reset.book_for_state(db, OWNER, SITTER, TODAY, state)
         return [fn for _t, fn in calls]
 
-    base = ["request_booking", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
+    base = ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
     assert run("confirmed") == base
     assert inserted == []
     assert run("ready") == [*base, "required_consents", "pay_booking_demo"]
     assert inserted == [("owner-token", "booking_consents", "emergency_vet", OWNER), ("owner-token", "booking_consents", "safe_return", OWNER)]
     assert run("in_care") == [*base, "required_consents", "pay_booking_demo", "complete_handoff"]
     assert calls[-1] == ("sitter-token", "complete_handoff")  # Received is the sitter's, after the owner paid
+
+
+def test_a_pair_that_has_met_before_just_goes_on_without_a_first_yes(monkeypatch):
+    calls = []
+
+    def fake_rpc(token, fn, args, **kw):
+        calls.append(fn)
+        if fn == "express_interest":
+            raise demo_reset.authz.RpcError(fn, 400, "interest_not_needed")
+        return ["emergency_vet", "safe_return"] if fn == "required_consents" else "b-1"
+
+    monkeypatch.setattr(demo_reset.authz, "rpc_json", fake_rpc)
+    monkeypatch.setattr(demo_reset, "sign_in", lambda email: "token")
+    monkeypatch.setattr(demo_reset, "owner_pet_ids", lambda *_: ["pet-1"])
+
+    demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")
+
+    assert calls == ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
+
+
+def test_any_other_error_on_the_first_yes_stops_the_reset(monkeypatch):
+    def fake_rpc(token, fn, args, **kw):
+        if fn == "express_interest":
+            raise demo_reset.authz.RpcError(fn, 400, "sitter_unavailable")
+        return "b-1"
+
+    monkeypatch.setattr(demo_reset.authz, "rpc_json", fake_rpc)
+    monkeypatch.setattr(demo_reset, "sign_in", lambda email: "token")
+    monkeypatch.setattr(demo_reset, "owner_pet_ids", lambda *_: ["pet-1"])
+
+    with pytest.raises(demo_reset.authz.RpcError):
+        demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")

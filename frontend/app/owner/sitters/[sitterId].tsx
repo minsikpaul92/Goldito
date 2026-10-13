@@ -19,6 +19,7 @@ import {
   SitterProfileView,
   getSitterProfile,
   listFavoriteSitterIds,
+  ownersSetting,
   setFavoriteSitter,
   sitterMeta,
 } from "../../../features/sitters/sitterApi";
@@ -158,7 +159,9 @@ export default function SitterProfileScreen() {
             {sitter.services.map((service) => (
               <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
             ))}
+            <Chip label={ownersSetting(sitter.acceptsMultipleOwners).badge} testID="sitter-owners-badge" />
           </View>
+          <Text style={styles.ownersHint} testID="sitter-owners-hint">{ownersSetting(sitter.acceptsMultipleOwners).hint}</Text>
           {rating && rating.count > 0 && rating.avg != null ? (
             <View style={styles.block} testID="sitter-rating">
               <Text style={styles.label} testID="sitter-rating-line">
@@ -262,6 +265,10 @@ const makeStyles = (theme: Theme) =>
     },
     action: {
       flex: 1,
+    },
+    ownersHint: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.textMuted,
     },
     actionsHint: {
       marginTop: theme.spacing.xs,

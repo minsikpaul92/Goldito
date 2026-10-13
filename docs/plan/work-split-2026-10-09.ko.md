@@ -64,7 +64,7 @@
    슬기가 그 사이에 할 수 있는 것: QA, 문구, 데이터, `backend/app/ai/prompts/**`(프롬프트 파일 — 코드 수정 없이 튜닝, architecture §9), 알림장 · 캡션 · Life Record 쪽 M 항목.
 3. **마이그레이션 글자:** 민식 `011c`~`011l`, 슬기 `011m`~`011z`. `012`는 06B, `013`은 08 예약. 만들면 TODO의 "Hosted DB status"에 `[ ] (not applied yet)` 줄 추가, 호스팅 DB 적용은 민식이.
 4. **TODO.md:** "Current focus"가 **두 개**(민식 · 슬기 각 하나). 자기 줄만 바꾼다.
-5. **피드백 번호:** FB-40부터 슬기가 이어서 붙인다([feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) 형식 — 본 것 · 원인 · 생각 · 급함 여부). 급한 것은 민식 큐로, 나머지는 슬기 큐로.
+5. **피드백은 GitHub 이슈로 (2026-10-10 변경):** 이슈 양식 **QA feedback**(`.github/ISSUE_TEMPLATE/qa-feedback.yml`, 폰에서 작성 가능)으로 올린다 — 번호는 이슈 번호. 심각도 칸이 `blocks-demo`(데모 경로를 막음) · `false-promise`(앱이 사실과 다른 말을 함) · `polish`이고, 앞의 둘은 민식 큐로, 나머지는 슬기 큐 · `ui-polish`는 묵에게. 예전 FB-40+ 번호 체계는 쓰지 않는다.
 6. **실제 데이터:** 원본은 **리포 · 프롬프트 · 영상 · 스크린샷 어디에도 넣지 않음**(`data/raw/`는 gitignore). 익명화된 샘플만 커밋(README.ko.md §8, D35). Nebius zero-retention 여부는 슬기가 결정해 기록.
 7. **매주 동기화:** 월 · 목 — 각자 TODO의 Completed · Current focus 확인, 막힌 것 공유.
 

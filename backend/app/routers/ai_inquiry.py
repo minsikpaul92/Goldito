@@ -107,6 +107,12 @@ def inquiry_reply(
         return _redact(
             _reuse(drafts[-1]), user, inquiry
         )  # idempotent: asking twice never makes a second draft
+    if inquiry["status"] != "open":
+        # RV-5: a booked or closed inquiry gets no new draft, no Regenerate and no intent — and its sources
+        # (a Life Record sentence) are no longer shown.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This question is closed, so there is nothing to answer."
+        )
     if answered and body.regenerate:
         _note_discarded(db, inquiry, drafts[-1])
     earlier = _earlier_messages(messages, question)
@@ -173,6 +179,8 @@ def inquiry_reply(
         needs = True
     if grounding and grounding["availability"].get("unchecked"):
         needs = True  # RV-1: unknown availability is never auto-sent
+    if grounding and not grounding["availability"]["can_host"]:
+        needs = True  # RV-2: a "no" is never auto-sent — the sitter reads it first
 
     sources = grounding["sources"] if grounding else []
     used = set(draft.used_sources) if draft else set()
@@ -189,7 +197,8 @@ def inquiry_reply(
                 "model": model_name,
                 "latency_ms": int((datetime.now(UTC) - started).total_seconds() * 1000),
                 "grounding": {
-                    "quote": grounding["quote"] if grounding else None,
+                    # RV-3: the "I'll reply properly very soon" fallback states no price, so it carries none.
+                    "quote": grounding["quote"] if grounding and model_name != "failed" else None,
                     "availability": grounding["availability"] if grounding else None,
                     "sources": [s for s in sources if not used or s["id"] in used],
                     "needs_sitter": needs,
@@ -392,13 +401,22 @@ def _try_agent(grounding: dict, system: str, question: str, intent: str | None):
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.info("inquiry-agent: falling back to one call (%s)", exc)
         return None
+    if "check_availability" not in called:
+        # RV-2: the agent must have looked at the calendar before saying yes or no.
+        log.info("inquiry-agent: answered without checking availability (%s); falling back to one call", called)
+        return None
     draft.reply = logic.fill_placeholders(draft.reply, grounding)
-    problems = logic.reply_problems(draft.reply, grounding, question, intent)
+    problems = logic.reply_problems(draft.reply, grounding, question, intent, _given_can_host(draft))
     if problems:
         log.info("inquiry-agent: answer failed the checks %s; falling back to one call", problems)
         return None
     draft.tools = called
     return draft, f"{model}+agent"
+
+
+def _given_can_host(draft: logic.Draft) -> bool | None:
+    """The `can_host` the model wrote, or None when it left it out (the field defaults to true)."""
+    return draft.can_host if "can_host" in draft.model_fields_set else None
 
 
 def _reuse(message: dict) -> InquiryReplyResponse:
@@ -557,7 +575,7 @@ def _gather(
     profile = (
         _one(
             db.table("sitter_profiles")
-            .select("bio, service_area, experience_years, policies")
+            .select("bio, service_area, experience_years, policies, accepts_multiple_owners")
             .eq("id", inquiry["sitter_id"])
             .limit(1)
             .execute()
@@ -576,6 +594,8 @@ def _gather(
                 if profile.get("experience_years") is not None
                 else {}
             ),
+            # D60: the sitter's own setting. The default (column missing or false) is one owner at a time.
+            "takes_one_owner_at_a_time": not profile.get("accepts_multiple_owners"),
         },
         "inquiry": {
             "service": inquiry["service_type"],
@@ -684,7 +704,7 @@ def _write(
             timeout=TIMEOUT_S,
         )
         draft.reply = logic.fill_placeholders(draft.reply, grounding)
-        problems = logic.reply_problems(draft.reply, grounding, question, intent)
+        problems = logic.reply_problems(draft.reply, grounding, question, intent, _given_can_host(draft))
         if problems:
             log.info("inquiry-reply broke rules %s; retrying once", problems)
             messages += [
@@ -706,7 +726,7 @@ def _write(
                 timeout=TIMEOUT_S,
             )
             draft.reply = logic.fill_placeholders(draft.reply, grounding)
-            if logic.reply_problems(draft.reply, grounding, question, intent):
+            if logic.reply_problems(draft.reply, grounding, question, intent, _given_can_host(draft)):
                 return None, "checked-template"
         return draft, result.model
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:

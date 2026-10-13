@@ -1,0 +1,78 @@
+name: QA feedback
+description: Something you saw while testing Goldito (works from a phone)
+title: "[QA] "
+labels: ["qa-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Test on **https://goldito-petcare.vercel.app** (the `main` build). One finding per issue. English is preferred; short is fine.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How bad is it?
+      description: Ask yourself — does a judge hit it on the 5-stage path, or does the app say something untrue?
+      options:
+        - Blocks the demo path
+        - The app says something untrue
+        - Polish — nice to have
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Stage
+      options:
+        - "1 Inquiry"
+        - "2 Meet & Greet"
+        - "3 Booking"
+        - "4 Care & Pet Transit"
+        - "5 Completion"
+        - Not tied to one stage
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Role
+      options:
+        - Owner
+        - Sitter
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: scenario
+    attributes:
+      label: Scenario ID (optional)
+      description: From the test guide, for example INQ-3 or REPORT-10.
+  - type: textarea
+    id: did
+    attributes:
+      label: What I did
+      placeholder: "1. Signed in as the demo sitter\n2. Opened Bookings → Questions\n3. ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What I expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Drag a screenshot or a screen recording into this box.
+    validations:
+      required: true
+  - type: textarea
+    id: sitter-eye
+    attributes:
+      label: In real pet sitting, this would be…
+      description: Optional. What a working sitter would expect or say instead.
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15, Safari

@@ -16,7 +16,7 @@ export const DIARY_NOTIFICATION_TYPES = new Set([
  * Types that change a booking or an inquiry (FB-2): a new request or question, an answer, a handoff, a
  * Meet & Greet, a care request, a review. Lists and booking screens re-read when one arrives — no refresh.
  */
-const BOOKING_NOTIFICATION = /^(booking|handoff|meet_greet|checkout|inquiry|care_request|review|access)_?/;
+const BOOKING_NOTIFICATION = /^(booking|handoff|meet_greet|checkout|inquiry|care_request|review|access|trip)_?/;
 
 export function isBookingNotification(type: string): boolean {
   return BOOKING_NOTIFICATION.test(type);
@@ -176,11 +176,16 @@ export function hrefForNotification(
     case "meet_greet_skip_requested":
     case "meet_greet_skipped":
     case "meet_greet_link_ready":
+    case "booking_interest":
+    case "meet_greet_stalled":
+    case "meet_greet_timeout":
     case "review_requested":
     case "review_received":
+      return bookingHref(notice.bookingId);
     case "trip_started":
     case "trip_arrived":
-      return bookingHref(notice.bookingId);
+      // Straight to the Trip screen: the map and the ETA are what the notice is about.
+      return notice.bookingId ? (`/${role}/bookings/${notice.bookingId}/trip` as Href) : bookingHref(null);
     case "life_record_updated":
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}/record` : null;
     case "safety_danger":

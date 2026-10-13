@@ -1,5 +1,7 @@
 # Phase 00 — 사전 준비 (Prerequisites)
 
+> **상태 (2026-10-10):** 완료 (2026-09-29). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+
 > 공통 전제: [architecture.ko.md](architecture.ko.md) (결정 로그 D1–D46, env 마스터 §4)
 
 ## Goal

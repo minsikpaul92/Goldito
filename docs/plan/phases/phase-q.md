@@ -18,7 +18,7 @@
 | 4 | **이 문서** | 내 작업 목록 Q.0~Q.10 |
 | 5 | [test-guide.ko.md](../test-guide.ko.md) §2 · §3 · §4 | 기능 상태표, 시나리오(ID · 기대 결과), 알려진 제약 |
 | 6 | [test-run.ko.md](../test-run.ko.md) | 손 테스트 시작점 · 데모 리셋 상태(`empty` · `pets` · `confirmed` · `ready` · `in_care`) |
-| 7 | [feedback-2026-10-08.ko.md](../feedback-2026-10-08.ko.md) | 피드백을 쓰는 형식 (FB-1~29 예시) |
+| 7 | GitHub 이슈 양식 **QA feedback** (`.github/ISSUE_TEMPLATE/qa-feedback.yml`) · 예전 사례는 [feedback-2026-10-08.ko.md](../feedback-2026-10-08.ko.md) | 피드백을 올리는 곳과 형식 |
 | 8 | [review-2026-10-08.ko.md](../review-2026-10-08.ko.md) §5 · §6 | 내가 맡을 M · L 항목 상세 (현상 → 원인 → 수정 → 테스트) |
 | 필요할 때 | [P0-ai-prompt-playbook.ko.md](../P0-ai-prompt-playbook.ko.md) · [README.ko.md](../README.ko.md) §8 (익명화) · [DESIGN.md](../../../DESIGN.md) | 프롬프트 · 익명화 규칙 · UI 토큰 |
 
@@ -56,7 +56,7 @@
 | # | 작업 | 출력물 | 완료 기준 | 예상 |
 | :--- | :--- | :--- | :--- | :--- |
 | **Q.0** | 환경 · 계정 (§0.2) | Vercel에서 두 계정이 동시에 열림 | https://goldito-petcare.vercel.app 에서 오너 · 시터 데모 로그인(일반 창 + 시크릿 창), Demo tools로 원하는 상태로 리셋 1회. 로컬 환경은 Q.2 전까지만 준비하면 됨 | 0.5일 |
-| **Q.1** | **전체 손 테스트 + 시터 관점 피드백** — 데모 경로를 처음부터: 문의(INQ) → Meet & Greet → 예약 · 체크아웃(FLOW) → Received · 체크인 · 사진 · 알림장(REPORT · CAP) → Returned · 리뷰 · Life Record(DONE). 특히 새 기능 REPORT-11 · 12, FLOW-15~23 | test-guide 상태 칸 갱신, `feedback-2026-10-08.ko.md`에 **FB-40~** (본 것 · 실무에서는 · 생각 · 급함 여부) | 시나리오마다 ✅ 또는 FB 번호. 급한 FB는 민식에게 바로 알림 | 1.5일 |
+| **Q.1** | **전체 손 테스트 + 시터 관점 피드백** — 데모 경로를 처음부터: 문의(INQ) → Meet & Greet → 예약 · 체크아웃(FLOW) → Received · 체크인 · 사진 · 알림장(REPORT · CAP) → Returned · 리뷰 · Life Record(DONE). 특히 새 기능 REPORT-11 · 12, FLOW-15~23 | test-guide 상태 칸 갱신, 발견한 것마다 GitHub 이슈 양식 **QA feedback** (본 것 · 기대 · 실무에서는 · 심각도) | 시나리오마다 ✅ 또는 이슈 번호. `blocks-demo` · `false-promise`는 민식에게 바로 알림 | 1.5일 |
 | **Q.2** | **문구 · 프리셋 검수 (실무 표현)** — ① 리뷰 프리셋 `frontend/features/completion/reviewPresets.ts` (오너 → 시터 · 시터 → 오너, 별마다 3개) ② 알림장 기록 칩 문구 `backend/app/ai/report_chips.py` (`MEAL` · `POTTY` · `MOOD`) ③ 체크인 선택지 `frontend/features/care/checkinOptions.ts` ④ 화면 안내 문구(빈 화면 · 버튼). 알림 제목은 SQL 함수 안에 있으니 **목록만** 피드백으로 | 코드 수정 PR (`fix/q-wording`) | 영어(D1) 유지, 관련 e2e · pytest 통과(문구를 고치면 테스트 기대값도) | 1일 |
 | **Q.3** | **익명화** (기존 담당) — 3년치 대화 · 알림장 → 이름 · 연락처 · 주소 · 위치 · 실견명 치환, 말투 유지 → train / validation / hold-out JSONL. `{PRICE}` · `{DATE}` 자리표시자 규칙. Nebius **zero-retention** 사용 여부와 제3자 처리 고지 결정 | 익명화 규칙 문서(`docs/plan/anonymization.ko.md`), JSONL은 **리포 밖** 또는 gitignore된 `data/` | 샘플 20개를 민식이 무작위로 봐서 개인정보 0. full-process §9 #5 · #8 답 기록 | 2일 |
 | **Q.4** | **말투 데이터 넣기** — ① 문의: 데모 시터 Chloe의 스타일 카드 + 예시 답장 5~10개를 익명화 기록에서 골라 `backend/app/ai/prompts/tone/demo_sitters.json` → `scripts/seed_tone.py` (dry run → `--apply`) ② **알림장:** `backend/app/ai/prompts/daily_report/few_shot.json` 예시를 실제 알림장(익명화) 스타일로, 필요하면 `tone_samples` `kind='report'` 샘플 ③ **자동 발송 지연 공식 · 메시지 분할** (7B.10, `backend/app/ai/inquiry.py` `human_delay`) — **R1b 머지 뒤** | PR (`data/tone-samples`) + `docs/plan/phases/notes/tone-before-after.ko.md`(같은 질문 3개 · 같은 하루 3개의 전/후) | 문의 · 알림장 전/후 예시가 "슬기다운" 말투, pytest 통과, 프롬프트에 원본 데이터 없음 | 2일 |
@@ -64,7 +64,7 @@
 | **Q.5** | **R3 Medium — 알림장 · 캡션 · Life Record · 시드** ([review §5](../review-2026-10-08.ko.md)). 먼저: **M-14**(기록 칩을 끄면 오너 체크리스트에서 놓친 약이 숨음) · **M-20**(메모 속 번호 · 코드가 Life Record에 — D31) · **M-16**(보낸 알림장이 초안으로 — `011f` 뒤 다시 확인). 그다음 M-13 · M-15 · M-17 · M-18 · M-19 · M-21 · M-22 · M-23 · M-24 (M-12는 완료) | 항목마다 커밋 하나, 브랜치 `fix/q-review-medium` | review 문서의 "테스트" 칸대로 pytest / Playwright 추가, 항목 제목에 ✅ | 3~4일 |
 | **Q.6** | **R3 Medium — 문의 AI M-1~M-11** (**R1b `fix/review-inquiry` 머지 뒤** — 같은 파일). 특히 M-4(말투 예시에 다른 오너의 글 · 연락처가 섞임 — 익명화와 같은 일) | 같은 방식 | 같은 방식 | 3일 |
 | **Q.7** | **평가 (키 필요)** — `scripts/measure_inquiry.py` 기본 경로 재측정(M-1), `scripts/measure_caption.py`로 말투 카드 유무 비교(M-19), Life Record 환각 테스트 3회(07C DoD) | `phases/notes/model-ids.md` 표 갱신 | 수치 · 날짜 · 결론 한 줄 | 1일 |
-| **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
+| **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 + **실제 폰 카메라**(Take photo / Choose from library, Vercel 주소에서) | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
 | Q.9 | (여유) **R4 Low** L-1~L-6 묶음, FB-1 · FB-3 · FB-4 | 묶음마다 커밋 | review §6 | 여유 |
 | Q.10 | (P2, 여유) **11.7 SFT 보여주기** — 앱 런타임에는 안 씀(D43) | [phase-11.md](phase-11.md) 11.7 | | 여유 |
 
@@ -89,6 +89,6 @@
 2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
 3. **마이그레이션:** 슬기는 `011m`~`011z`. 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
 4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
-5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus → Completed(날짜), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
+5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus 줄 삭제(완료 기록은 커밋 · PR · test-guide), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
 6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
 7. **급한 문제를 찾으면:** 데모 경로가 막히거나 틀린 약속을 하는 것 → FB에 "급함"으로 적고 민식에게 바로 알린다(민식 큐로 감).

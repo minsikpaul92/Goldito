@@ -35,6 +35,13 @@ DEMO_SITTER_RATES = {
     "holiday_pct": 25,
 }
 
+# Where the two demo homes are on the map (Phase 06B, D32): made-up points at park level, not real addresses.
+# Chloe's place sits by Trinity Bellwoods Park, Robert's by Riverdale Park, about 7 km apart.
+DEMO_HOME_POINTS = {
+    "sitter": (43.6477, -79.4194),
+    "owner": (43.6644, -79.3573),
+}
+
 
 def find_user_id(client: Client, email: str) -> str | None:
     page = 1
@@ -67,3 +74,9 @@ def check_sitter_rates(client: Client, sitter_id: str) -> str | None:
     """None when the sitter has a price row, otherwise what is wrong."""
     rows = client.table("sitter_rates").select("sitter_id").eq("sitter_id", sitter_id).limit(1).execute().data
     return None if rows else "no sitter_rates row — checkout cannot quote (run without --check)"
+
+
+def ensure_home_point(client: Client, role: str, user_id: str) -> None:
+    """Give a demo account a home point so Start trip has a destination (06B)."""
+    lat, lng = DEMO_HOME_POINTS[role]
+    client.table(f"{role}_profiles").update({"home_lat": lat, "home_lng": lng}).eq("id", user_id).execute()

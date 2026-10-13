@@ -1,5 +1,7 @@
 # Phase 07C — 완료: 귀가 리포트 · 리뷰 · Pet Life Record → RAG (Stage 5 Completion)
 
+> **상태 (2026-10-10):** 머지됨 (PR #58, 수정 #60) — DoD 손 확인 대기(슬기 Q.1). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — **D31 출입 정보 제외**, **D33 RAG**, AI 규칙 §9, 알림 §7
 > 제품 흐름: [full-process.ko.md — Stage 5](../full-process.ko.md#stage-5--completion-완료--목표-돌봄-데이터를-pet-life-record--rag에-축적)
 
@@ -90,6 +92,12 @@
 ## AI 프롬프트
 
 Playbook §9C — (7C.1 SQL) / (7C.4 민식) / (7C.2–7C.3·7C.5 UI)
+
+---
+
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+
+- 리뷰 R3 Medium Life Record 항목 M-20 – M-23 (M-20 먼저: 메모 속 번호 · 코드가 Life Record에 들어가는 D31 문제) — 슬기 Q.5. [review §5](../review-2026-10-08.ko.md)
 
 ---
 

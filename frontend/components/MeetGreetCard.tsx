@@ -9,7 +9,7 @@ import { CheckRow } from "./ui/CheckRow";
 import { Sheet } from "./ui/Sheet";
 import { TextButton } from "./ui/TextButton";
 import { formatInstant } from "../features/schedule/dates";
-import { BookingSummary } from "../lib/bookings";
+import { BookingSummary, awaitingFirstYes, datesOnHold } from "../lib/bookings";
 import {
   MeetGreetMode,
   MeetSpots,
@@ -109,15 +109,35 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
     );
   }
 
+  const stalled = !!booking.meetGreetDueAt && Date.parse(booking.meetGreetDueAt) <= Date.now();
+  const holdLine = datesOnHold(booking)
+    ? viewer === "owner"
+      ? `${other} is holding your dates while you arrange this.`
+      : `These dates are on hold for ${other}.`
+    : null;
+
   let body: ReactNode = null;
-  if (status === "required") {
+  if (status === "required" && awaitingFirstYes(booking)) {
+    // Nothing can be planned until the sitter says yes to meeting (D60) — the sitter's button is in the footer.
     body = (
       <>
         <Text style={styles.title}>First stay together — meet first</Text>
         <Text style={styles.muted}>
           {viewer === "sitter"
-            ? `Meet ${other} first — or agree to skip the Meet & Greet.`
-            : `${other} can accept once you've met — or you both agree to skip it.`}
+            ? `Say "Yes, let's meet" to hold these dates, then set a time with ${other}.`
+            : `Waiting for ${other} to say yes to meeting. Your dates are held once they do.`}
+        </Text>
+      </>
+    );
+  } else if (status === "required") {
+    body = (
+      <>
+        <Text style={styles.title}>{stalled ? "Still no time to meet" : "Set a time to meet"}</Text>
+        {holdLine ? <Text style={styles.muted}>{holdLine}</Text> : null}
+        <Text style={styles.muted}>
+          {stalled
+            ? "Set a time, skip the Meet & Greet, or decline. With no answer in 3 days the booking is cancelled."
+            : `Pick a time with ${other} — or agree to skip the Meet & Greet.`}
         </Text>
         <Button label="Schedule Meet & Greet" onPress={() => void openSheet()} disabled={busy} testID="meet-schedule" />
         <TextButton label="Skip Meet & Greet" onPress={() => setConfirm("skip")} style={styles.left} testID="meet-skip" />

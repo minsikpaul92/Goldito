@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
+import { ShareLocationSheet } from "../components/ShareLocationSheet";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -22,6 +23,8 @@ import {
   setAiReplyMode,
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
+import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
+import { geocodeAddress } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -117,8 +120,15 @@ export default function ProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [spots, setSpots] = useState<string[]>(padSpots([]));
   const [services, setServices] = useState<Service[]>(["boarding"]);
+  const [multiOwner, setMultiOwner] = useState(false);
   const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
   const [consenting, setConsenting] = useState(false);
+  const [home, setHome] = useState<LatLng | null>(null);
+  // The pin came from "Use my current location" this visit: an address typed later must not replace it.
+  const [pinFromGps, setPinFromGps] = useState(false);
+  const [askingLocation, setAskingLocation] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [homeNote, setHomeNote] = useState<string | null>(null);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -130,8 +140,14 @@ export default function ProfileScreen() {
         setLoaded(result);
         setDraft(toDraft(result));
         setSpots(padSpots(result.fields.meet_spots));
+        setHome(
+          result.fields.home_lat != null && result.fields.home_lng != null
+            ? { lat: result.fields.home_lat, lng: result.fields.home_lng }
+            : null,
+        );
         if (result.role === "sitter") {
           setServices(result.fields.services);
+          setMultiOwner(result.fields.accepts_multiple_owners ?? false);
           void getAiReplyMode().then(setAiMode);
         }
       })
@@ -172,12 +188,30 @@ export default function ProfileScreen() {
       return trimmed === "" ? null : trimmed;
     };
     const packing = packingListFromDraft(draft.packing_list ?? "");
+    // The map pin follows the address: a new address is looked up (unless the pin was just set from the phone's
+    // location); one that can't be placed clears the old pin, which belonged to the old address.
+    const address = value("home_address");
+    let pin = home;
+    let pinNote: string | null = null;
+    if (address && address !== (loaded.fields.home_address ?? null) && !pinFromGps) {
+      setSaving(true);
+      const placed = await geocodeAddress(address);
+      if (placed.found) {
+        pin = placed.point;
+        pinNote = placed.label ? `Pin placed near ${placed.label}` : "Pin placed from your address";
+      } else {
+        pin = null;
+        pinNote = "We couldn't place that address on the map — use your current location for the pin";
+      }
+    }
     const next: RoleProfile =
       loaded.role === "owner"
         ? {
             role: "owner",
             fields: {
-              home_address: value("home_address"),
+              home_address: address,
+              home_lat: pin?.lat ?? null,
+              home_lng: pin?.lng ?? null,
               emergency_contact_name: value("emergency_contact_name"),
               emergency_contact_phone: value("emergency_contact_phone"),
               vet_clinic_name: value("vet_clinic_name"),
@@ -192,12 +226,15 @@ export default function ProfileScreen() {
               service_area: value("service_area"),
               experience_years: experience ? Number(experience) : null,
               home_notes: value("home_notes"),
-              home_address: value("home_address"),
+              home_address: address,
+              home_lat: pin?.lat ?? null,
+              home_lng: pin?.lng ?? null,
               services,
               meet_spots: meetSpots,
               visitor_parking: value("visitor_parking"),
               lobby_notes: value("lobby_notes"),
               packing_list: packing.length > 0 ? packing : [],
+              accepts_multiple_owners: multiOwner,
               policies: value("policies"),
             },
           };
@@ -211,13 +248,34 @@ export default function ProfileScreen() {
       }
       session.patchProfile({ displayName: name });
       setLoaded(next);
-      toast.show("Profile saved ✅");
+      setHome(pin);
+      toast.show(pinNote ? `Profile saved ✅ · ${pinNote}` : "Profile saved ✅");
       if (router.canGoBack()) router.back();
       else router.replace(homeFor(profile.role));
     } catch (error) {
       setSaveError((error as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function useCurrentLocation() {
+    setLocating(true);
+    setHomeNote(null);
+    try {
+      setHome(await getCurrentPosition());
+      setPinFromGps(true);
+      setAskingLocation(false);
+      setHomeNote("Pin set from your location — Save to keep it.");
+    } catch (error) {
+      setAskingLocation(false);
+      setHomeNote(
+        error instanceof LocationError && error.reason === "denied"
+          ? "Location is off for Goldito in this browser. Allow it in the browser's site settings, or save your address to place the pin from it."
+          : "We couldn't read your location. Try again, or save your address to place the pin from it.",
+      );
+    } finally {
+      setLocating(false);
     }
   }
 
@@ -232,18 +290,54 @@ export default function ProfileScreen() {
         testID="profile-display_name"
       />
       {fields.map((field) => (
-        <TextField
-          key={field.key}
-          label={`${field.label} (optional)`}
-          value={draft[field.key] ?? ""}
-          onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
-          placeholder={field.placeholder}
-          multiline={field.multiline}
-          inputMode={field.numeric ? "numeric" : undefined}
-          error={errors[field.key]}
-          testID={`profile-${field.key}`}
-        />
+        <View key={field.key} style={styles.fieldWithPin}>
+          <TextField
+            label={`${field.label} (optional)`}
+            value={draft[field.key] ?? ""}
+            onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+            placeholder={field.placeholder}
+            multiline={field.multiline}
+            inputMode={field.numeric ? "numeric" : undefined}
+            error={errors[field.key]}
+            testID={`profile-${field.key}`}
+          />
+          {field.key === "home_address" ? (
+            <View style={styles.group} testID="profile-home-pin">
+              <Text style={styles.groupTitle}>Map pin for trips</Text>
+              <Text style={styles.muted} testID="profile-home-pin-status">
+                {home
+                  ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
+                  : "No pin yet. Save your address to place one, or use your current location while you're home."}
+              </Text>
+              {homeNote ? (
+                <Text style={styles.muted} testID="profile-home-pin-note">
+                  {homeNote}
+                </Text>
+              ) : null}
+              <TextButton
+                label={locating ? "Locating…" : "Use my current location"}
+                onPress={() => setAskingLocation(true)}
+                disabled={locating}
+                testID="profile-use-location"
+              />
+            </View>
+          ) : null}
+        </View>
       ))}
+      <ShareLocationSheet
+        visible={askingLocation}
+        title="Use your current location as your home pin?"
+        lines={[
+          "Goldito reads your location once, right now.",
+          "It only marks your home on the map for trips — nothing is tracked, and nobody sees the numbers.",
+          "Do this while you're at home, so the pin is in the right place.",
+        ]}
+        allowLabel="Use my location"
+        onAllow={() => void useCurrentLocation()}
+        onDecline={() => setAskingLocation(false)}
+        busy={locating}
+        testID="home-location-sheet"
+      />
       {loaded.role === "owner" ? (
         <View style={styles.group} testID="profile-entry-info">
           <Text style={styles.groupTitle}>Entry info for sitters</Text>
@@ -320,6 +414,13 @@ export default function ProfileScreen() {
             />
           ))}
           {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
+          <CheckRow
+            label="Take pets from more than one owner at a time"
+            hint="Off: one owner's pets at a time — other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
+            checked={multiOwner}
+            onChange={setMultiOwner}
+            testID="profile-multi-owner"
+          />
         </View>
       ) : null}
       <View style={styles.group} testID="profile-spots">
@@ -367,6 +468,9 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "600",
       color: theme.color.textMuted,
       textTransform: "uppercase",
+    },
+    fieldWithPin: {
+      gap: theme.spacing.md,
     },
     group: {
       gap: theme.spacing.sm,

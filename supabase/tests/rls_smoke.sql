@@ -93,8 +93,15 @@ language sql security definer set search_path = public as $$
   update bookings set meet_greet_status = p_status where id = p_booking
 $$;
 
+-- Stand-in for the sitter's first yes (011l) on a fixture booking: starts the hold without the capacity check.
+create function public._t_interest(p_booking uuid) returns void
+language sql security definer set search_path = public as $$
+  update bookings set sitter_interest_at = now(), meet_greet_due_at = now() + interval '2 days'
+  where id = p_booking
+$$;
+
 grant execute on function public._t_put(text, uuid), public._t_get(text), public._t_as(uuid, text),
-  public._t_ok(boolean, text), public._t_meet(uuid, text) to authenticated, anon;
+  public._t_ok(boolean, text), public._t_meet(uuid, text), public._t_interest(uuid) to authenticated, anon;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (signup trigger creates profiles)
@@ -491,6 +498,8 @@ begin
   values (chloe, 'open', d - 1, d + 20, 'morning', '08:00', '12:00', 3),
          (chloe, 'open', d - 1, d + 20, 'afternoon', '12:00', '18:00', 3),
          (chloe, 'open', d - 1, d + 20, 'overnight', '18:00', '08:00', 3);
+  -- 011l: the default is one owner at a time; B / H below race two owners for Chloe's last spot.
+  update public.sitter_profiles set accepts_multiple_owners = true where id = chloe;
   perform _t_as(paul);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (paul, 'open', d - 1, d + 20, 'morning', '09:00', '13:00', 2),
@@ -881,6 +890,10 @@ begin
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'declined',
     '3B.0: sitter can decline before the Meet & Greet');
+  perform _t_as(robert);
+  perform _t_ok((select sitter_note from public.bookings where id = v_a) = 'Fully booked that week',
+    'FB-35: the owner reads the sitter''s decline reason');
+  perform _t_as(null);
 
   -- Search results carry the sitter's services
   perform _t_as(robert);
@@ -973,6 +986,7 @@ declare
   r record;
 begin
   perform _t_meet(v_a, 'required');
+  perform _t_interest(v_a);
 
   -- Proposals are checked
   perform _t_as(robert);
@@ -1080,6 +1094,7 @@ begin
   -- Skip accepted: Joy asks, Nora continues without meeting
   v_b := _t_booking(joy, nora, array[toto], now() + interval '50 days', now() + interval '51 days', 'requested');
   perform _t_meet(v_b, 'required');
+  perform _t_interest(v_b);
   perform _t_as(joy);
   perform request_skip_meet_greet(v_b);
   begin
@@ -1100,6 +1115,7 @@ begin
   -- Skip declined: the booking is cancelled and the owner is told to find a new sitter
   v_b := _t_booking(joy, nora, array[coco], now() + interval '60 days', now() + interval '61 days', 'requested');
   perform _t_meet(v_b, 'required');
+  perform _t_interest(v_b);
   perform _t_as(joy);
   perform request_skip_meet_greet(v_b);
   perform _t_as(nora);
@@ -3382,5 +3398,723 @@ begin
   perform _t_as(null);
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Same-thread date change (011j) and the sitter's reply outcome (011k), FB-34
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  kai constant uuid := '00000000-0000-4000-8000-0000000000aa';
+  lou constant uuid := '00000000-0000-4000-8000-0000000000ba';
+  kip constant uuid := '00000000-0000-4000-8000-0000000000ca';
+  v_inq uuid;
+  v_draft uuid;
+  v_err text;
+  v_msg public.inquiry_messages;
+begin
+  perform _t_as(null);
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (kai, 'kai@example.test', '{"role":"owner","display_name":"Kai"}'),
+    (lou, 'lou@example.test', '{"role":"sitter","display_name":"Lou"}');
+  insert into public.pets (id, owner_id, species, name) values (kip, kai, 'dog', 'Kip');
+
+  perform _t_as(kai);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (kai, lou, now() + interval '5 days', now() + interval '7 days', array[kip]) returning id into v_inq;
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body) values (v_inq, 'owner', kai, 'Can you host Kip?');
+
+  -- 011j: the owner moves the dates in the same thread; one owner message records it.
+  v_msg := public.change_inquiry_dates(v_inq, now() + interval '20 days', now() + interval '22 days', 'owner_home', null, 'Changed dates');
+  perform _t_ok(v_msg.author = 'owner' and v_msg.inquiry_id = v_inq and v_msg.body = 'Changed dates', '011j: the change leaves an owner message in the thread');
+  perform _t_ok((select drop_off_at from public.inquiries where id = v_inq) > now() + interval '19 days', '011j: the inquiry has the new drop-off');
+  perform _t_ok((select drop_off_location_type from public.inquiries where id = v_inq) = 'owner_home', '011j: …a given place is changed');
+  perform _t_ok((select pick_up_location_type from public.inquiries where id = v_inq) = 'sitter_home', '011j: …a null place is kept');
+  perform _t_ok((select count(*) from public.inquiries where owner_id = kai) = 1, '011j: still one inquiry (the thread continues)');
+
+  v_err := null;
+  begin
+    perform public.change_inquiry_dates(v_inq, now() + interval '22 days', now() + interval '20 days', null, null, 'x');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '011j: a pick-up before the drop-off is refused');
+  v_err := null;
+  begin
+    perform public.change_inquiry_dates(v_inq, now() + interval '20 days', now() + interval '60 days', null, null, 'x');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '011j: a trip over 31 days is refused');
+  v_err := null;
+  begin
+    perform public.change_inquiry_dates(v_inq, now() + interval '20 days', now() + interval '22 days', null, null, '   ');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_required', '011j: an empty message is refused');
+
+  perform _t_as(lou);
+  v_err := null;
+  begin
+    perform public.change_inquiry_dates(v_inq, now() + interval '20 days', now() + interval '22 days', null, null, 'x');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '011j: the sitter cannot change the owner''s dates');
+
+  -- 011k: the outcome the sitter chose decides what the owner sees.
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, status, grounding)
+  values (v_inq, 'ai', null, 'Yes! $100', true, 'draft',
+    '{"quote":{"total":100},"sources":[{"id":"policy-0"}],"availability":{"can_host":true}}') returning id into v_draft;
+
+  perform _t_as(lou);
+  v_msg := public.send_inquiry_reply(v_inq, 'Sorry, I cannot.', v_draft, 'decline');
+  perform _t_ok((v_msg.grounding #>> '{availability,can_host}') = 'false', '011k: a decline says can_host false');
+  perform _t_ok(v_msg.grounding -> 'quote' is null, '011k: …and carries no quote');
+  perform _t_ok(v_msg.drafted_by_ai and v_msg.confirmed_by_sitter_at is not null, '011k: …yet it is still the approved draft');
+  v_msg := public.send_inquiry_reply(v_inq, 'How about Nov 3?', null, 'suggest');
+  perform _t_ok((v_msg.grounding #>> '{availability,can_host}') = 'false' and not v_msg.drafted_by_ai, '011k: a suggestion says can_host false');
+  v_msg := public.send_inquiry_reply(v_inq, 'Yes, happy to!', v_draft, 'accept');
+  perform _t_ok((v_msg.grounding #>> '{quote,total}') = '100' and (v_msg.grounding #>> '{availability,can_host}') = 'true', '011k: an accept keeps the draft''s quote and availability');
+  v_msg := public.send_inquiry_reply(v_inq, 'Plain', v_draft);
+  perform _t_ok((v_msg.grounding #>> '{quote,total}') = '100', '011k: no outcome behaves as before');
+  v_err := null;
+  begin
+    perform public.send_inquiry_reply(v_inq, 'x', v_draft, 'maybe');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_outcome', '011k: an unknown outcome is refused');
+
+  -- The owner sees the decline without a quote.
+  perform _t_as(kai);
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 4, '011k: the owner sees the sent replies');
+  perform _t_ok(not exists (select 1 from public.inquiry_messages where inquiry_id = v_inq and body = 'Sorry, I cannot.' and grounding ? 'quote'), '011k: …the decline among them has no quote');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 011l booking steps (D60): the sitter's first yes holds the dates; one owner at a time;
+-- the stage is computed; the sweep nudges after 2 days and cancels 3 days later.
+-- Robert / Joy ↔ Allen are first-time pairs (Allen takes one owner at a time by default);
+-- Robert ↔ Chloe have met.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  toto constant uuid := '00000000-0000-4000-8000-0000000000c4';
+  e constant date := app_today() + 120;
+  v1 uuid;
+  v2 uuid;
+  v3 uuid;
+  v4 uuid;
+  vc uuid;
+  v_err text;
+  v_detail text;
+  s jsonb;
+  r record;
+begin
+  perform _t_as(allen);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (allen, 'open', e - 1, e + 10, 'morning', '08:00', '12:00', 3),
+         (allen, 'open', e - 1, e + 10, 'afternoon', '12:00', '18:00', 3),
+         (allen, 'open', e - 1, e + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', e - 1, e + 10, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', e - 1, e + 10, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', e - 1, e + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_ok(not (select accepts_multiple_owners from public.sitter_profiles where id = paul),
+    '011l: a sitter takes one owner at a time by default');
+
+  -- A first-time request starts at "requested"; nothing happens without the sitter's first yes.
+  perform _t_as(robert);
+  v1 := request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'requested' and r.next_actor = 'sitter', '011l: a first request waits for the sitter');
+  v_err := null;
+  begin
+    perform propose_meet_greet(v1, 'video', now() + interval '1 day');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_required', '011l: no Meet & Greet proposal before the sitter''s first yes');
+  v_err := null;
+  begin
+    perform request_skip_meet_greet(v1);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_required', '011l: no skip request before the sitter''s first yes');
+  v_err := null;
+  begin
+    perform express_interest(v1);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '011l: the owner cannot give the sitter''s first yes');
+
+  -- Before the first yes nothing is held: Joy can ask for the same dates too.
+  perform _t_as(joy);
+  v2 := request_booking(allen, array[toto], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_ok(v2 is not null, '011l: a request without a first yes holds nothing');
+  -- Joy and Allen have met in an earlier scenario; make this one a first-time pair.
+  perform _t_as(null);
+  perform _t_meet(v2, 'required');
+
+  -- The first yes holds the dates.
+  perform _t_as(allen);
+  perform express_interest(v1);
+  perform express_interest(v1);
+  perform _t_as(null);
+  perform _t_ok((select sitter_interest_at is not null and meet_greet_due_at > now() + interval '1 day 23 hours'
+      from public.bookings where id = v1),
+    '011l: the first yes starts the hold and a 2-day clock (and is idempotent)');
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'booking_interest'
+      and booking_id = v1) = 1,
+    '011l: the owner is told once');
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'meet_greet' and r.next_actor = 'both', '011l: after the first yes the stage is meet_greet');
+  perform propose_meet_greet(v1, 'video', now() + interval '1 day');
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'meet_greet' and r.next_actor = 'sitter', '011l: a proposal waits for the other side');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from get_booking_stages(array[v1])) = 0, '011l: stages are only readable by the two parties');
+
+  -- One owner at a time: Joy cannot take the held dates, in any way.
+  perform _t_as(allen);
+  v_err := null;
+  begin
+    perform express_interest(v2);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'sitter_unavailable', '011l: a second owner cannot be held on the same dates');
+  perform _t_as(joy);
+  v_err := null;
+  begin
+    perform request_booking(allen, array[coco], local_ts(e + 1, '09:00'), 'sitter_home', null,
+      local_ts(e + 1, '17:00'), 'sitter_home', null, null);
+  exception when others then
+    v_err := sqlerrm;
+    get stacked diagnostics v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'sitter_unavailable' and v_detail like '%' || (e + 1)::text || '%',
+    '011l: a new request on held dates is refused with the slot in detail');
+  perform _t_ok(not exists (select 1 from search_sitters(local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 1) x
+      where x.sitter_id = allen),
+    '011l: search does not offer a sitter whose dates another owner holds');
+  perform _t_ok(stay_capacity_check(allen, local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 1) is not null,
+    '011l: the inquiry AI''s can-host check sees the hold too');
+  perform _t_ok(stay_capacity_check(allen, local_ts(e + 5, '09:00'), local_ts(e + 6, '17:00'), 1) is null,
+    '011l: …and free dates still fit');
+  select * into r from search_sitters(local_ts(e + 5, '09:00'), local_ts(e + 6, '17:00'), 1) x where x.sitter_id = allen;
+  perform _t_ok(r.sitter_id = allen and r.accepts_multiple_owners = false,
+    '011l: search shows the sitter''s setting');
+
+  -- The sitter cannot block the held days.
+  perform _t_as(allen);
+  v_err := null;
+  begin
+    insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+    values (allen, 'blocked', e, e + 2, 'morning');
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'overlaps_confirmed_booking', '011l: a hold cannot be blocked over');
+
+  -- A repeat pair has nothing to say yes to.
+  perform _t_as(robert);
+  vc := request_booking(chloe, array[mochi], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_as(chloe);
+  v_err := null;
+  begin
+    perform express_interest(vc);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'interest_not_needed', '011l: a pair that has met just Accepts');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from get_booking_stages(array[vc])) = 0, '011l: the service role is not a party');
+
+  -- Cancelling releases the hold; then Joy gets her yes.
+  perform _t_as(robert);
+  perform cancel_booking(v1, 'schedule changed');
+  perform _t_as(allen);
+  perform express_interest(v2);
+  perform _t_as(robert);
+  v_err := null;
+  begin
+    perform request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+      local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'sitter_unavailable', '011l: a cancelled hold frees the dates for the next owner');
+
+  -- Several owners: the same dates are fine within max_pets.
+  perform _t_as(allen);
+  update public.sitter_profiles set accepts_multiple_owners = true where id = allen;
+  perform _t_as(robert);
+  v3 := request_booking(allen, array[max], local_ts(e, '09:00'), 'sitter_home', null,
+    local_ts(e + 2, '17:00'), 'sitter_home', null, null);
+  perform _t_as(allen);
+  perform express_interest(v3);
+  perform _t_as(null);
+  perform _t_ok((select status = 'requested' and sitter_interest_at is not null from public.bookings where id = v3),
+    '011l: with "several owners" on, a second owner is held beside the first');
+  perform _t_ok(public.sitter_used(allen, e, 'morning') = 2, '011l: holds count against max_pets');
+
+  -- The sweep: 2 days → both are asked, 3 more → cancelled.
+  update public.bookings set meet_greet_due_at = now() - interval '1 minute' where id in (v2, v3);
+  update public.bookings set meet_greet_status = 'agreed', meet_greet_mode = 'video',
+    meet_greet_at = now() + interval '1 day', meet_greet_proposed_by = robert where id = v3;
+  perform _t_as(robert);
+  v_err := null;
+  begin
+    perform sweep_stale_bookings();
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '011l: the sweep is not callable by users');
+  perform _t_as(null);
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'stalled')::int = 1 and (s ->> 'cancelled')::int = 0, '011l: the sweep asks only the stalled booking');
+  perform _t_ok((select count(*) from public.notifications where booking_id = v2 and type = 'meet_greet_stalled') = 2,
+    '011l: both sides are asked to set a time, skip or decline');
+  perform _t_ok(not exists (select 1 from public.notifications where booking_id = v3 and type = 'meet_greet_stalled'),
+    '011l: an agreed time stops the clock');
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'stalled')::int = 0, '011l: nobody is asked twice');
+  update public.bookings set meet_greet_nudged_at = now() - interval '3 days 1 minute' where id = v2;
+  s := sweep_stale_bookings();
+  perform _t_ok((s ->> 'cancelled')::int = 1, '011l: 3 days after the question the booking is cancelled');
+  perform _t_ok((select status = 'cancelled' and cancel_reason = 'meet_greet_timeout' from public.bookings where id = v2),
+    '011l: …with the timeout as the reason');
+  perform _t_ok((select count(*) from public.notifications where booking_id = v2 and type = 'meet_greet_timeout') = 2,
+    '011l: …and both sides are told');
+  perform _t_ok(public.sitter_used(allen, e, 'morning') = 1, '011l: …and the hold is released');
+
+  -- Stages of every kind.
+  v4 := _t_booking(robert, paul, array[max], local_ts(e + 40, '10:00'), local_ts(e + 41, '10:00'), 'confirmed');
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'awaiting_payment' and r.next_actor = 'owner', '011l: confirmed and unpaid → awaiting_payment');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v4;
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'paid', '011l: paid');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v4 and kind = 'drop_off';
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'in_care', '011l: dropped off → in_care');
+  perform _t_as(null);
+  update public.booking_handoffs set completed_at = now() where booking_id = v4 and kind = 'pick_up';
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v4]);
+  perform _t_ok(r.stage = 'completed', '011l: picked up → completed');
+  perform _t_as(null);
+  perform _t_as(robert);
+  perform _t_ok((select stage from get_booking_stages(array[v1])) = 'cancelled', '011l: cancelled');
+  perform _t_as(joy);
+  perform _t_ok((select stage from get_booking_stages(array[v2])) = 'cancelled', '011l: timed out → cancelled');
+  perform _t_as(null);
+  update public.bookings set meet_greet_status = 'done' where id = v3;
+  perform _t_as(robert);
+  perform _t_ok((select stage from get_booking_stages(array[v3])) = 'confirm', '011l: met → the sitter confirms');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 011z (RV-5 rest): a booking closes the owner's other open inquiries about that pet and those dates
+-- (to other sitters only); match_knowledge says which pet a Life Record hit is about.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  mochi constant uuid := '00000000-0000-4000-8000-0000000000c2';
+  d timestamptz := now() + interval '400 days';
+  v_same uuid;
+  v_sibling uuid;
+  v_later uuid;
+  v_other_pet uuid;
+  v_hit record;
+begin
+  perform _t_as(robert);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, chloe, d, d + interval '2 days', array[max]) returning id into v_same;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, paul, d, d + interval '2 days', array[max]) returning id into v_sibling;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, allen, d + interval '40 days', d + interval '42 days', array[max]) returning id into v_later;
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, allen, d, d + interval '2 days', array[mochi]) returning id into v_other_pet;
+
+  -- Robert books Max with Chloe for those dates.
+  perform _t_as(null);
+  perform _t_booking(robert, chloe, array[max], d, d + interval '2 days', 'requested');
+
+  perform _t_ok((select status from public.inquiries where id = v_sibling) = 'closed',
+    '011z: booking one sitter closes the owner''s other open inquiry about the same pet and dates');
+  perform _t_ok((select status from public.inquiries where id = v_same) = 'open',
+    '011z: …but not the inquiry to the booked sitter (the app marks it booked)');
+  perform _t_ok((select status from public.inquiries where id = v_later) = 'open',
+    '011z: …nor an inquiry for other dates');
+  perform _t_ok((select status from public.inquiries where id = v_other_pet) = 'open',
+    '011z: …nor one about another pet');
+  perform _t_as(paul);
+  perform _t_ok(not public.has_open_inquiry_about(max), '011z: the closed inquiry no longer opens Max''s Life Record to Paul');
+  perform _t_as(allen);
+  perform _t_ok(public.has_open_inquiry_about(mochi), '011z: Allen still has his open inquiry about Mochi');
+
+  -- A Life Record hit names its pet.
+  perform _t_as(null);
+  insert into public.knowledge_chunks (scope, pet_id, source_type, source_id, content, embedding)
+  values ('pet', max, 'life_record', gen_random_uuid(), 'Max finishes breakfast', (select array_fill(0.1::real, array[1024])::extensions.vector(1024)));
+  select * into v_hit from public.match_knowledge(
+    (select array_fill(0.1::real, array[1024])::extensions.vector(1024)), chloe, array[max], robert, 20) m
+  where m.source_type = 'life_record';
+  perform _t_ok(v_hit.pet_id = max and v_hit.content = 'Max finishes breakfast', '011z: match_knowledge returns the pet of a Life Record hit');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- L (012, Phase 06B, 6B.1): Pet Transit — home points, trips, start / update / end
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  scout uuid;
+  v_b uuid;
+  v_trip public.trips;
+  v_err text;
+  v_n int;
+  v_eta_title text;
+  v_media uuid;
+  v_check uuid;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Scout') returning id into scout;
+  v_b := _t_booking(robert, chloe, array[scout], now() + interval '400 days', now() + interval '402 days', 'confirmed');
+
+  -- Home points: own row only, both coordinates or neither, never in the public sitter list
+  perform _t_as(chloe);
+  update public.sitter_profiles set home_lat = 43.6532, home_lng = -79.3832 where id = chloe;
+  perform _t_ok((select home_lat from public.get_my_sitter_profile()) = 43.6532, 'L: a sitter saves and reads their own home point');
+  begin
+    update public.sitter_profiles set home_lat = null where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: a home point needs both coordinates');
+  begin
+    update public.sitter_profiles set home_lat = 91, home_lng = 0 where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: …and real ones');
+  perform _t_as(robert);
+  begin
+    perform home_lat from public.sitter_profiles where id = chloe;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: another account cannot read a sitter''s home point from the profile list');
+  update public.sitter_profiles set home_lat = 0, home_lng = 0 where id = chloe;
+  perform _t_as(chloe);
+  perform _t_ok((select home_lat from public.get_my_sitter_profile()) = 43.6532, 'L: …nor change it');
+  perform _t_as(robert);
+  update public.owner_profiles set home_lat = 43.7, home_lng = -79.4 where id = robert;
+
+  -- Start rules
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_paid', 'L: no trip before the booking is paid');
+  perform _t_as(null);
+  update public.bookings set paid_at = now() where id = v_b;
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_too_early', 'L: …nor earlier than 2 h before the agreed time');
+  perform _t_as(null);
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour' where booking_id = v_b and kind = 'drop_off';
+
+  perform _t_as(chloe);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_traveler', 'L: at the sitter''s home the owner travels, not the sitter');
+  perform _t_as(joy);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: a third party cannot start a trip');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'pick_up');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'drop_off_not_completed', 'L: no pick-up trip before the drop-off is done');
+  begin
+    perform start_trip(v_b, 'drop_off', false, 91, 0);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', 'L: a start position must be a real point');
+
+  -- Owner drives: Robert starts about 2.2 km away
+  v_trip := start_trip(v_b, 'drop_off', true, 43.6732, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.traveler_id = robert and v_trip.simulated
+      and v_trip.dest_lat = 43.6532 and v_trip.distance_m between 2200 and 2250 and v_trip.eta_at > now(),
+    'L: Start trip → en route, destination = the sitter''s home, distance and ETA from the first point');
+  perform _t_as(null);
+  select title into v_eta_title from public.notifications where user_id = chloe and type = 'trip_started' and ref_id = v_trip.id;
+  perform _t_ok(v_eta_title like 'Robert is on the way — ETA % 🚗', 'L: the sitter is told, with the ETA');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_active', 'L: one live trip per handoff');
+
+  -- Who sees and writes the row
+  perform _t_ok((select count(*) from public.trips where booking_id = v_b) = 1, 'L: the traveler reads the trip');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.trips where booking_id = v_b) = 1, 'L: …and so does the other person on the booking');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.trips) = 0, 'L: a third party sees no trip');
+  perform _t_as(robert);
+  begin
+    update public.trips set last_lat = 0, last_lng = 0 where id = v_trip.id;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: positions are not written around update_trip_position');
+  begin
+    insert into public.trips (booking_id, handoff_kind, traveler_id) values (v_b, 'pick_up', robert);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: trips are not inserted around start_trip');
+
+  -- Positions
+  perform _t_as(chloe);
+  begin
+    perform update_trip_position(v_trip.id, 43.66, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: only the traveler shares a position');
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6732 and v_trip.status = 'en_route', 'L: a call within a second of the last one is ignored');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6602 and v_trip.status = 'en_route' and v_trip.distance_m between 770 and 790,
+    'L: a later position replaces the last one; still far → en route');
+  begin
+    perform update_trip_position(v_trip.id, null, 0);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_position', 'L: a position must be a real point');
+
+  -- Within 150 m → arrived, both told once, no more positions stored
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6542, -79.3832);
+  perform _t_ok(v_trip.status = 'arrived' and v_trip.arrived_at is not null and v_trip.distance_m between 100 and 120,
+    'L: within 150 m of the destination → arrived');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6535, -79.3832);
+  perform _t_ok(v_trip.last_lat = 43.6542, 'L: after arrival positions are no longer stored');
+  perform _t_as(null);
+  select count(*) into v_n from public.notifications where type = 'trip_arrived' and ref_id = v_trip.id;
+  perform _t_ok(v_n = 2 and exists (select 1 from public.notifications where user_id = chloe and type = 'trip_arrived' and title = 'Robert has arrived 🚗')
+      and exists (select 1 from public.notifications where user_id = robert and type = 'trip_arrived'),
+    'L: both are told, once');
+
+  -- End: only the traveler, and the position is erased
+  perform _t_as(chloe);
+  begin
+    perform end_trip(v_trip.id);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', 'L: only the traveler ends the trip');
+  perform _t_as(robert);
+  v_trip := end_trip(v_trip.id);
+  perform _t_ok(v_trip.status = 'completed' and v_trip.ended_at is not null and v_trip.last_lat is null
+      and v_trip.last_lng is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'L: End trip → completed, position / ETA / distance erased');
+  perform _t_ok((end_trip(v_trip.id)).status = 'completed', 'L: ending twice is harmless');
+  begin
+    perform update_trip_position(v_trip.id, 43.6, -79.38);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_not_active', 'L: no positions after the trip ended');
+
+  -- A new trip for the same handoff after the first one ended; cancel erases too
+  v_trip := start_trip(v_b, 'drop_off');
+  perform _t_ok(v_trip.last_lat is null and v_trip.eta_at is null, 'L: without a first point there is no ETA yet');
+  perform _t_as(null);
+  select title into v_eta_title from public.notifications where user_id = chloe and type = 'trip_started' and ref_id = v_trip.id;
+  perform _t_ok(v_eta_title = 'Robert is on the way 🚗', 'L: …and the notice says on the way, without a time');
+  perform _t_as(robert);
+  v_trip := update_trip_position(v_trip.id, 43.6602, -79.3832);
+  v_trip := end_trip(v_trip.id, true);
+  perform _t_ok(v_trip.status = 'cancelled' and v_trip.last_lat is null, 'L: Cancel trip → cancelled, position erased');
+
+  -- Sitter drives to the owner's home (D28): the owner cannot be the traveler there
+  perform _t_as(null);
+  update public.booking_handoffs set location_type = 'owner_home' where booking_id = v_b and kind = 'drop_off';
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_traveler', 'L: at the owner''s home the sitter travels, not the owner');
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6532, -79.3832);
+  perform _t_ok(v_trip.dest_lat = 43.7 and v_trip.dest_lng = -79.4 and v_trip.traveler_id = chloe,
+    'L: destination = the owner''s home point');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'trip_started' and ref_id = v_trip.id),
+    'L: the owner is told');
+  perform _t_as(chloe);
+  perform end_trip(v_trip.id);
+
+  -- Somewhere else: either of them may travel; no destination, no ETA
+  perform _t_as(null);
+  update public.booking_handoffs set location_type = 'other', location_note = 'Riverside Park gate' where booking_id = v_b and kind = 'drop_off';
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6532, -79.3832);
+  perform _t_ok(v_trip.dest_lat is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'L: at another place there is no destination, so no ETA');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'drop_off');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_active', 'L: …and still one live trip per handoff');
+  perform _t_as(null);
+  update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
+  perform _t_as(chloe);
+  v_trip := update_trip_position(v_trip.id, 43.6540, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat = 43.6540, 'L: no destination → never "arrived" by distance');
+  perform end_trip(v_trip.id);
+
+  -- Starting without sharing: the trip exists, but never carries a position, an ETA or an arrival
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832, false);
+  perform _t_ok(not v_trip.sharing and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.distance_m is null
+      and v_trip.status = 'en_route', 'L: a trip started without sharing carries no position, ETA or distance');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'trip_started' and ref_id = v_trip.id
+      and title = 'Chloe is on the way 🚗'), 'L: …and the other person is still told she is on the way');
+  perform _t_as(chloe);
+  begin
+    perform update_trip_position(v_trip.id, 43.6540, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_sharing', 'L: a position is refused on a trip that is not shared');
+  perform end_trip(v_trip.id);
+
+  -- Received ends the drop-off trip that is still running (whoever travelled)
+  perform _t_as(chloe);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6540, -79.3832);
+  perform complete_handoff(v_b, 'drop_off');
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null and v_trip.eta_at is null and v_trip.ended_at is not null,
+    'L: Received ends the running trip and erases its position');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'pet_dropped_off' and booking_id = v_b),
+    'L: …and still tells the owner');
+
+  -- Once the drop-off is done, the pick-up trip is open (Owner drives back to the sitter's home)
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour', location_type = 'sitter_home', location_note = null
+  where booking_id = v_b and kind = 'pick_up';
+  perform _t_as(robert);
+  v_trip := start_trip(v_b, 'pick_up');
+  perform _t_ok(v_trip.handoff_kind = 'pick_up', 'L: after Received the owner can start the pick-up trip');
+  perform _t_as(chloe);
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'completed' and v_trip.last_lat is null, 'L: Returned ends the pick-up trip');
+  perform _t_as(robert);
+  begin
+    perform start_trip(v_b, 'pick_up');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err in ('handoff_completed', 'trip_active'), 'L: no trip for a handoff that is done');
+
+  -- Handoff photo checks (6B.5): the backend writes, the two parties read, only the sitter adds a reason
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (scout, chloe, 'goldito/scout/handoff/abc', 'image', 'handoff') returning id into v_media;
+  insert into public.handoff_checks (booking_id, handoff_kind, check_type, media_id, status, findings, model, latency_ms)
+  values (v_b, 'drop_off', 'vehicle_safety', v_media, 'warning', '{"pet_visible":true,"crate_visible":false}', 'vision-model', 900)
+  returning id into v_check;
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: the sitter reads the check of their photo');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.handoff_checks where booking_id = v_b) = 1, 'L: …and so does the owner');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.handoff_checks) = 0, 'L: a third party reads no check');
+  perform _t_as(chloe);
+  begin
+    insert into public.handoff_checks (booking_id, handoff_kind, check_type, status) values (v_b, 'drop_off', 'pet_checkin', 'ok');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: a check is never written by a client (only by the backend)');
+  begin
+    update public.handoff_checks set status = 'ok' where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', 'L: the sitter cannot rewrite what the model found');
+  update public.handoff_checks set override_reason = 'Crate is in the trunk' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the sitter adds why they continue past a warning');
+  perform _t_as(robert);
+  update public.handoff_checks set override_reason = 'x' where id = v_check;
+  perform _t_as(null);
+  perform _t_ok((select override_reason from public.handoff_checks where id = v_check) = 'Crate is in the trunk',
+    'L: the owner cannot change that reason');
+  perform _t_as(chloe);
+  begin
+    update public.handoff_checks set override_reason = repeat('x', 201) where id = v_check;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', 'L: the reason is at most 200 characters');
+end;
+$$;
+
 
 rollback;
