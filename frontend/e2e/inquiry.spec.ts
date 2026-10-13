@@ -663,19 +663,31 @@ test.describe("sitter lands on what is waiting (FB-34)", () => {
 });
 
 test.describe("sitter quick replies (FB-34)", () => {
-  test("Accept writes the reply in a popup; confirming sends it with the quote", async ({ page }) => {
+  test("Accept on a yes draft reuses it in the popup (no new draft); confirming sends it with the quote", async ({ page }) => {
     const { db, asked } = await openSitterThread(page);
     const screen = app(page);
     await screen.getByTestId(`inquiry-card-${INQ}`).click();
     await screen.getByTestId("inquiry-intent-accept").click();
-    await expect(screen.getByTestId("reply-text")).toHaveValue(/A fresh take/, { timeout: 8000 });
-    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "accept" });
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/I'm available\. The total is \$268\.13/);
+    // CR-5: the draft on screen already says yes — no model call, and it isn't logged as a thrown-away draft.
+    expect(asked).toEqual([]);
     await screen.getByTestId("reply-send").click();
     await expect(screen.getByTestId("inquiry-replied")).toBeVisible();
     const sent = db.inquiry_messages.find((m) => m.author === "sitter");
     expect(sent).toMatchObject({ drafted_by_ai: true, sender_id: SITTER.id });
     expect((sent?.grounding as { quote: { total: number } }).quote.total).toBe(268.13);
     expect((sent?.grounding as { availability: { can_host: boolean } }).availability.can_host).toBe(true);
+  });
+
+  test("Accept on a draft that leans the other way asks for a yes draft", async ({ page }) => {
+    const { asked } = await openSitterThread(page, {
+      grounding: { quote: QUOTE, sources: [], availability: { can_host: true }, needs_sitter: false, intent: "decline" },
+    });
+    const screen = app(page);
+    await screen.getByTestId(`inquiry-card-${INQ}`).click();
+    await screen.getByTestId("inquiry-intent-accept").click();
+    await expect(screen.getByTestId("reply-text")).toHaveValue(/A fresh take/, { timeout: 8000 });
+    expect(asked.at(-1)).toEqual({ inquiry_id: INQ, regenerate: true, intent: "accept" });
   });
 
   test("Decline writes a decline in a popup; confirming sends it as a no, with no quote", async ({ page }) => {

@@ -113,7 +113,9 @@ def inquiry_reply(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="This question is closed, so there is nothing to answer."
         )
-    if answered and body.regenerate:
+    previous_intent = (drafts[-1].get("grounding") or {}).get("intent") if drafts else None
+    if answered and body.regenerate and (not body.intent or body.intent == previous_intent):
+        # CR-5: asking for a different intent (Accept / Decline) steers the answer; it isn't a verdict on the voice.
         _note_discarded(db, inquiry, drafts[-1])
     earlier = _earlier_messages(messages, question)
 

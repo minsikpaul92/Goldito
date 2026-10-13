@@ -45,6 +45,16 @@ const SEND: Record<ReplyKind, string> = { accept: "Send acceptance", decline: "S
 const first = (name: string) => name.trim().split(/\s+/)[0] || "there";
 
 /**
+ * The draft on screen already answers this way (CR-5): reuse it — no new model call, and it isn't logged as a draft
+ * the sitter threw away. A draft steered by an intent chip says which; an unsteered one says yes unless it can't host.
+ */
+export function draftFits(draft: InquiryDraft | null, kind: "accept" | "decline"): boolean {
+  if (!draft?.body.trim()) return false;
+  if (draft.intent) return draft.intent === kind;
+  return kind === "accept" ? draft.canHost !== false : draft.canHost === false;
+}
+
+/**
  * The sitter's quick replies (FB-34): **Accept** and **Decline** show a ready reply in a popup (the assistant's, in
  * the sitter's voice, editable) and **Send** puts it straight in the thread; **Suggest other dates** asks for the days
  * first (checked against the sitter's own calendar), writes the message with them and sends on confirm. Nothing
@@ -66,6 +76,9 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
   const [writing, setWriting] = useState(false);
   const [sending, setSending] = useState(false);
   const run = useRef(0);
+  // Read when the sheet opens (not an effect dependency: a later poll of the thread must not reset the sitter's edits).
+  const latestDraft = useRef(draft);
+  latestDraft.current = draft;
 
   useEffect(() => {
     if (kind !== "accept" && kind !== "decline") return;
@@ -77,6 +90,13 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
     (async () => {
       let body: string | null = null;
       let found: InquiryDraft | null = null;
+      const onScreen = latestDraft.current;
+      if (onScreen && draftFits(onScreen, kind)) {
+        setWritten(onScreen);
+        setText(onScreen.body);
+        setWriting(false);
+        return;
+      }
       try {
         await regenerateDraft(inquiry.id, kind);
         found = (await getInquiry(inquiry.id))?.draft ?? null;

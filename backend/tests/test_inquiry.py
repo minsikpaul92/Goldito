@@ -612,6 +612,17 @@ def test_a_discarded_draft_is_kept_as_a_negative_signal_anonymized(client, setup
     assert "Robert" not in sample["draft"] and "$268.13" not in sample["draft"] and "{PRICE}" in sample["draft"]
 
 
+def test_steering_to_another_intent_is_not_kept_as_a_discarded_draft(client, setup):
+    # CR-5: Accept / Decline ask for a draft leaning that way; the draft before it wasn't rejected for its voice.
+    ctx = setup(GOOD, "Hi Robert! Sorry, I can't take Max this time.", "Hi Robert! Sorry, I'm unable to host Max then.")
+    post(client)
+    post(client, sitter_token(), regenerate=True, intent="decline")
+    assert ctx.db.tables.get("tone_samples", []) == []
+    post(client, sitter_token(), regenerate=True, intent="decline")
+    (sample,) = ctx.db.tables["tone_samples"]
+    assert sample["source"] == "regenerated" and sample["intent"] == "decline"
+
+
 def test_an_are_you_an_ai_question_also_tells_the_sitter_directly(client, setup):
     ctx = setup(GOOD, db=make_db("Are you an AI?"))
     post(client)
