@@ -105,7 +105,7 @@ Snap 탭
    items = [{sticker_id, x, y, scale, rotate, z}]  (x,y = 카드 기준 0–1 비율)
 ```
 
-- **대안(12.S2에서 결정):** Magic Touch 모델 파일 라이선스가 맞지 않거나 펫 분할이 나쁘면 → 백엔드 `rembg`(MIT, `u2netp` 4.7MB) `POST /api/media/sticker-cut`.
+- **대안(12.S2에서 결정):** Magic Touch 모델 파일 라이선스가 맞지 않거나 펫 분할이 나쁘면 → 백엔드 `rembg`(MIT, `u2netp` 4.7MB) `POST /api/media/sticker-cut`. **12.S2 결과(10/14):** 분할 품질 10 / 10 → MediaPipe(v2 `interactive_segmentation.task`, CPU, Web Worker). 대안은 모델 라이선스 확인에서 막힐 때만.
 - 견주 · 시터 각자 자기 층(`report_decor`의 자기 행)만 고치고, 둘 다 상대 층을 본다. 알림장 본문(`daily_reports.body`)은 건드리지 않는다.
 - 마이그레이션 **`013b_mood_stickers.sql`**: `media.purpose`에 `sticker` 추가, `pet_stickers(id, pet_id, media_id, created_by, created_at)`, `report_decor(report_id, user_id, items jsonb, updated_at, primary key(report_id, user_id))` + RLS(펫에 접근 가능한 사람 읽기 · 자기 행만 쓰기 · 시터는 그 예약의 시터일 때만).
 
@@ -118,7 +118,7 @@ Snap 탭
 | **12.0** ✅ | 탭 이름 Mood → Snap(아이콘 `camera-outline`) · Snap 화면 틀(`features/snap/SnapScreen` + 카드 3개, 각 도구 화면은 `SnapToolPlaceholder` "Coming soon" 자리 — `/{role}/snap/{treat,mood,sticker}`) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/13 |
 | **12.1a** ✅ (12.1b 포함) | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → **Tavily 매번 · 신뢰 도메인만** → Ultra 한 번) + 업로드 권한(견주 `safety_label`) + pytest · `rls_smoke` 013 블록 — 실제 모델 · Tavily 호출 확인은 남음(로컬 키 없음, 아래 § 다음에 이어서) | 10/13 |
 | **12.1c** ✅ | Treat check 화면 + `AlertModal` + 샘플 라벨 4장(만든 그림) + e2e — 실제 판정 확인은 키 · `013` 뒤 | 10/14 |
-| **12.S2** | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 이 문서에 결과 기록 | 10/16 |
+| **12.S2** ✅ | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 결과는 § 다음에 이어서 › 12.S2 "스파이크 결과" (실제 폰 측정 · 모델 라이선스 확인은 👤) | 10/14 |
 | **12.2a** | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest | 10/17 |
 | **12.2b** | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e | 10/18 |
 | **12.3a** | `013b` + 스티커 만들기 화면 + 업로드 + e2e | 10/19–20 |
@@ -168,7 +168,7 @@ Snap 탭
 1. ✅ (2026-10-14) **`013_safety.sql` 적용** → `supabase/tests/rls_smoke.sql` 전체 실행 → 마지막 블록 `PASS: 013: …` 8줄.
 2. **키:** `backend/.env`에 `NEBIUS_API_KEY`, `TAVILY_API_KEY`(그 밖의 값은 `backend/.env.example`). Render → Environment에도 `TAVILY_API_KEY`.
 3. **샘플 라벨 4장** — ✅ 10/14 만든 그림으로 들어가 있음(바꾸려면 같은 이름으로)(직접 촬영 · 상표 가림, 긴 변 1200px 이하 JPG): `chicken_jerky.jpg`(DANGER · Max), `animal_fat_biscuit.jpg`(WARNING · Max), `sweet_potato_chew.jpg`(SAFE), `lily_scented_cat_treat.jpg`(DANGER · Mochi) → `frontend/assets/demo/labels/`와 `backend/tests/fixtures/labels/` 둘 다.
-4. (12.2–12.3용, 늦어도 10/16) 펫 사진 4장 · 5초 영상 2개 → `frontend/assets/demo/mood/`.
+4. (12.2–12.3용, 늦어도 10/16) 펫 사진 4장 · 5초 영상 2개 → `frontend/assets/demo/mood/`. — 🟡 10/14 우리가 찍은 개 사진 10장 들어감(`assets/demo/mood/` = `backend/tests/fixtures/mood/`, 메타데이터 지움). **아직:** 개 2마리 한 장 · 고양이 · 5초 영상 2개.
 
 ### 12.1 실제 호출 확인 (키가 들어오면 맨 먼저, 30분)
 
@@ -204,6 +204,20 @@ Snap 탭
 - **라이선스:** 두 모델 카드(Apache-2.0인지). 아니면 12.3은 대안(백엔드 `rembg` + `u2netp`, MIT)으로.
 - **개 분류기:** `agentmish/dog-emotion-classifier-v2` 학습 데이터 라이선스(슬기 확인)와 ONNX 크기 → 쓸지 결정. 기본은 **안 씀**(관찰 태그 규칙만).
 - 결과는 이 문서 § 12.2 · 12.3에 "스파이크 결과" 표로.
+
+#### 스파이크 결과 (2026-10-14, 데스크톱 Chrome 계열 브라우저 · CPU, 우리가 찍은 강아지 사진 10장 `assets/demo/mood/`)
+
+| 항목 | 결과 → 결정 |
+| :--- | :--- |
+| 패키지 | `@mediapipe/tasks-vision` **`1.0.1`**(2026-07-31, Apache-2.0)으로 고정 — `1.1.0`(10/06)은 2주 규칙에 걸림. 번들 · WASM은 jsdelivr `…@1.0.1/{vision_bundle.mjs, wasm}`에서 로드(WASM 11 MB, 1년 캐시) |
+| 박스 (ObjectDetector) | `efficientdet_lite0` **int8 · CPU**: 로딩 ≈ 150 ms, 사진 1장 ≈ 60 ms, **10 / 10장에서 개를 찾음**(점수 ≥ 0.3, `categoryAllowlist: dog, cat`). ⚠️ **int8 + GPU는 0 / 10**(결과가 비어 있음) → **CPU로 고정**. float16은 CPU · GPU 모두 10 / 10(파일 7 MB)이라 대안 |
+| 오리기 (InteractiveSegmenter) | 1.0.1은 **새 API**: `setImage(img)` → `segment([{ brushMode: 1 /* POSITIVE */, point: [{x, y}], isCompleted: true }])` → `MPMask`(float, > 0.5 = 펫). 예전 `magic_touch.tflite`는 `InteractiveSegmenterLegacy` 전용 → 새 파일 `interactive_segmenter_v2/magic_touch/int8/latest/interactive_segmentation.task` **30 MB**(1시간 캐시). `BrushMode`는 번들에서 값으로 export되지 않아 숫자 `1` |
+| 오리기 품질 | 가장 큰 박스 중앙 한 번 탭으로 **10 / 10장 모두 펫만 깔끔하게**(마스크의 94–100 %가 박스 안; 가방 속 치와와만 68 % — 가방 일부 포함) → **MediaPipe로 감**(백엔드 `rembg` 대안 안 씀, 라이선스 확인이 막히지 않는 한) |
+| 오리기 속도 | **CPU: 탭마다 ≈ 4.8초**(인코더가 첫 `segment`에서 돌고, 다시 탭해도 같음). GPU는 첫 탭 1.9초 · 다시 탭 0.6초지만 **int8 GPU 마스크가 비어 있음**(전경 0.1 % vs CPU 12 %) → **CPU로 고정**, 그 대신 **Web Worker에서 실행**(4.8초 동안 화면이 멈추지 않게) + "Cutting out…" 진행 표시. 실제 폰은 2–3배 느릴 수 있음 → 👤 실제 폰 1회 측정 남음 |
+| 모델 로딩 위치 | `storage.googleapis.com`에서 바로 로드됨(교차 출처 OK, `vercel.json` CSP는 `frame-ancestors`만). 캐시가 1시간뿐이라 30 MB를 자주 받게 되면 `frontend/public/models/`로 옮길지 12.3a에서 결정 |
+| 라이선스 | ❓ **공식 문서에 모델 라이선스가 안 보임** — EfficientDet-Lite0(Google 문서는 파일 링크만, 제3자 패키지가 Apache-2.0이라 주장), Magic Touch([모델 카드 PDF](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf) — 브라우저에서 열면 다운로드됨). 👤 **사람이 모델 카드 PDF를 열어 확인** → 문제가 있으면 12.3만 `rembg`(MIT)로 |
+| 개 감정 분류기 | `agentmish/dog-emotion-classifier-v2`: 모델은 Apache-2.0이지만 학습 데이터 "unknown dataset", ViT-base 85.8M(웹에서 쓰기엔 큼) → **안 씀**(관찰 태그 규칙만) |
+| 아직 없는 샘플 | **개 2마리가 한 장에 있는 사진**(DoD 3), 고양이 사진, 5초 영상 2개 — 지금 10장은 모두 개 한 마리 |
 
 ### 12.2a/b — Mood (10/17–18)
 
