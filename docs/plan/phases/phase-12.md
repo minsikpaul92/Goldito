@@ -161,11 +161,11 @@ Snap 탭
 | `15f5443` 12.1a (+12.1b) | `POST /api/ai/safety-check` — `routers/ai_safety_check.py`, 규칙 `ai/safety.py` + `ai/prompts/safety/{vision_system.md, reasoning_system.md, toxic_rules.json}`, Tavily `services/tavily.py`(httpx, 신뢰 도메인 5개, 8초, 쿼리 ≤ 4), 견주도 `safety_label` 업로드(`routers/media.py`), `013_safety.sql`, pytest 3개 파일, `rls_smoke` 013 블록 |
 | 12.1c | `features/snap/{TreatCheckScreen.tsx, treatApi.ts}`, `components/ui/AlertModal.tsx`(빨강 전체 화면, 버튼으로만 닫힘), 라우트 `app/{owner,sitter}/snap/treat.tsx`, 샘플 `assets/demo/labels/*.jpg`(= `backend/tests/fixtures/labels/`), 알림 `safety_danger` → `/owner/snap/treat?check=…`, e2e `treat-check.spec.ts`. Snap 탭의 "Recent checks" 3개는 12.5로 미룸 |
 
-**확인 2026-10-14 (모델 직접 호출, [notes/model-ids.md § Treat check calls](notes/model-ids.md)):** MiniCPM-V가 샘플 라벨 4장을 다 읽음(장당 0.9–1.4초), Tavily 신뢰 도메인 3건(2.9초), Ultra(추론 켬) WARNING 판정 2.7초 · 토큰 614(2000 충분) → 검사 1번 약 7–8초 예상. **아직 안 한 것:** FastAPI 라우트 전체(Cloudinary · DB · 알림)를 호스팅 DB에서 — `013` 적용 뒤, 그리고 `scripts/measure_safety.py`.
+**확인 2026-10-14 (모델 직접 호출, [notes/model-ids.md § Treat check calls](notes/model-ids.md)):** MiniCPM-V가 샘플 라벨 4장을 다 읽음(장당 0.9–1.4초), Tavily 신뢰 도메인 3건(2.9초), Ultra(추론 켬) WARNING 판정 2.7초 · 토큰 614(2000 충분) → 검사 1번 약 7–8초 예상. `013`은 2026-10-14 호스팅 DB에 적용, `rls_smoke` 전부 PASS. **아직 안 한 것:** FastAPI 라우트 전체(Cloudinary · DB · 알림) — Render는 `main`을 배포하므로 #90 머지 뒤, 그리고 `scripts/measure_safety.py`.
 
 ### 다시 시작할 때 사람이 먼저 할 것 (민식)
 
-1. **`013_safety.sql` 적용** → `supabase/tests/rls_smoke.sql` 전체 실행 → 마지막 블록 `PASS: 013: …` 8줄.
+1. ✅ (2026-10-14) **`013_safety.sql` 적용** → `supabase/tests/rls_smoke.sql` 전체 실행 → 마지막 블록 `PASS: 013: …` 8줄.
 2. **키:** `backend/.env`에 `NEBIUS_API_KEY`, `TAVILY_API_KEY`(그 밖의 값은 `backend/.env.example`). Render → Environment에도 `TAVILY_API_KEY`.
 3. **샘플 라벨 4장** — ✅ 10/14 만든 그림으로 들어가 있음(바꾸려면 같은 이름으로)(직접 촬영 · 상표 가림, 긴 변 1200px 이하 JPG): `chicken_jerky.jpg`(DANGER · Max), `animal_fat_biscuit.jpg`(WARNING · Max), `sweet_potato_chew.jpg`(SAFE), `lily_scented_cat_treat.jpg`(DANGER · Mochi) → `frontend/assets/demo/labels/`와 `backend/tests/fixtures/labels/` 둘 다.
 4. (12.2–12.3용, 늦어도 10/16) 펫 사진 4장 · 5초 영상 2개 → `frontend/assets/demo/mood/`.
