@@ -102,6 +102,8 @@ test.describe("snap mood", () => {
     await expect(screen.getByTestId("mood-box-0")).toBeVisible();
     await expect(screen.getByTestId("mood-box-1")).toBeVisible();
     expect(isInside(await box(screen.getByTestId("mood-box-1")), await box(screen.getByTestId("mood-image")))).toBe(true);
+    // The picture with its boxes sits inside the phone frame (the table below it scrolls).
+    expect(isInside(await box(screen.getByTestId("mood-image")), await box(page.locator(APP_FRAME)))).toBe(true);
     await expect(screen.getByTestId("mood-summary")).toHaveText("This pup looks excited to play.");
     await expect(screen.locator('[data-testid^="mood-row-"]')).toHaveCount(8);
     await expect(screen.getByTestId("mood-value-excited")).toHaveText("60%");
@@ -113,7 +115,6 @@ test.describe("snap mood", () => {
     await screen.getByTestId("mood-pet-0").click();
     await expect(screen.getByTestId("mood-summary")).toHaveText("This pup looks excited to play.");
     await expect(screen.getByTestId("mood-disclaimer")).toHaveText(DISCLAIMER);
-    expect(isInside(await box(screen.getByTestId("mood-result")), await box(page.locator(APP_FRAME)))).toBe(true);
   });
 
   test("a sitter's one pet in care is named, so the line can use its name", async ({ page }) => {

@@ -15,6 +15,7 @@ const contentTypes = {
   ".ico": "image/x-icon",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".mp4": "video/mp4",
   ".svg": "image/svg+xml",
   ".ttf": "font/ttf",
   ".woff2": "font/woff2",

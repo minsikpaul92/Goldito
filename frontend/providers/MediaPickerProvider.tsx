@@ -151,7 +151,8 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
       const blob = await (await fetch(uri)).blob();
       const kind = sample.kind ?? "image";
       const ext = kind === "video" ? "mp4" : "jpg";
-      const type = kind === "video" ? blob.type || "video/mp4" : blob.type || "image/jpeg";
+      // A host that serves the file as application/octet-stream must not turn a sample into "not a photo or video".
+      const type = blob.type.startsWith(`${kind}/`) ? blob.type : kind === "video" ? "video/mp4" : "image/jpeg";
       await settle(new File([blob], `${sample.id}.${ext}`, { type }));
     } catch {
       toast.show("Could not load that sample. Try again.");
