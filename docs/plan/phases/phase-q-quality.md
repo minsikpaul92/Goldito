@@ -31,7 +31,7 @@
 3. 업로드 · AI · 데모 리셋은 Render에 배포된 백엔드로 Vercel에서 다 됩니다 (U0, 2026-10-09). 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 첫 요청이 30~50초** 걸립니다 — 고장이 아닙니다.
 4. 상태 되돌리기: 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠) → `empty` · `pets` · `confirmed` · `ready` · `in_care` 중 선택. (`011i`가 호스팅 DB에 적용되기 전에는 `in_care` 직후 3분 동안 체크인이 막힙니다 — CW-1.)
 5. **코드를 고칠 때만(Q.2부터) 로컬 환경:** 저장소 받기 → `main`에서 작은 브랜치(아래 §3). `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지, 형식은 각 `.env.example`. 백엔드 `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, 프론트 `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. 로컬은 고치는 중 확인용이고, PR이 머지된 뒤 Vercel에서 다시 확인해 기록합니다.
-6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q.md. Work only on that task."*
+6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q-quality.md. Work only on that task."*
 
 ---
 
@@ -66,7 +66,7 @@
 | **Q.7** | **평가 (키 필요)** — `scripts/measure_inquiry.py` 기본 경로 재측정(M-1), `scripts/measure_caption.py`로 말투 카드 유무 비교(M-19), Life Record 환각 테스트 3회(07C DoD) | `phases/notes/model-ids.md` 표 갱신 | 수치 · 날짜 · 결론 한 줄 | 1일 |
 | **Q.8** | **최종 QA (10/27~29)** — 배포 URL에서 데모 경로 전체, 두 계정, **마우스만**(데스크톱 폰 프레임) + 폰 너비 + **실제 폰 카메라**(Take photo / Choose from library, Vercel 주소에서) | test-guide ✅, 남은 FB | 데모 영상 경로가 막힘 없이 끝남 | 1일 |
 | Q.9 | (여유) **R4 Low** L-1~L-6 묶음, FB-1 · FB-3 · FB-4 | 묶음마다 커밋 | review §6 | 여유 |
-| Q.10 | (P2, 여유) **11.7 SFT 보여주기** — 앱 런타임에는 안 씀(D43) | [phase-11.md](phase-11.md) 11.7 | | 여유 |
+| Q.10 | (P2, 여유) **11.7 SFT 보여주기** — 앱 런타임에는 안 씀(D43) | [phase-11-p1.md](phase-11-p1.md) 11.7 | | 여유 |
 
 > 순서를 바꾸고 싶으면 민식과 먼저 얘기한다(특히 Q.6은 R1b 머지 전에는 시작하지 않음).
 

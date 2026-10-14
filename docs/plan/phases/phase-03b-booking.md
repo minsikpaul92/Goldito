@@ -3,8 +3,8 @@
 > **상태 (2026-10-10):** 완료 (2026-10-02; 3B.11 Google Meet는 서버만 끝나고 앱 e2e는 대기). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D24, **D28 서비스·이동 방식**, 라우트 맵 §3, 알림 §7
-> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2 (Meet & Greet · 이동 방식) · Stage 3 (예약). 문의 AI(Stage 1)는 [07B](phase-07b.md), 견적·동의서·결제·보안 해제는 [03C](phase-03c.md), 실시간 이동은 [06B](phase-06b.md)
-> 스키마·RPC·예시 시나리오 정본: [phase-02.md §시터 스케줄·예약·인수인계](phase-02.md#시터-스케줄--예약--인수인계-d24)
+> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2 (Meet & Greet · 이동 방식) · Stage 3 (예약). 문의 AI(Stage 1)는 [07B](phase-07b-inquiry.md), 견적·동의서·결제·보안 해제는 [03C](phase-03c-payment.md), 실시간 이동은 [06B](phase-06b-transit.md)
+> 스키마·RPC·예시 시나리오 정본: [phase-02-db.md §시터 스케줄·예약·인수인계](phase-02-db.md#시터-스케줄--예약--인수인계-d24)
 
 ## Goal
 
@@ -35,8 +35,8 @@
 
 ## 선행 조건
 
-- [Phase 02](phase-02.md) `sitter_availability`, `bookings`, `booking_slots`, `booking_handoffs`, 스케줄·예약·인수인계 RPC, 겹침 가드
-- [Phase 03](phase-03.md) 로그인·역할 탭·pet 프로필·역할별 프로필(주소)
+- [Phase 02](phase-02-db.md) `sitter_availability`, `bookings`, `booking_slots`, `booking_handoffs`, 스케줄·예약·인수인계 RPC, 겹침 가드
+- [Phase 03](phase-03-auth.md) 로그인·역할 탭·pet 프로필·역할별 프로필(주소)
 
 ---
 
@@ -48,9 +48,9 @@
 | 견주: 단골 시터 스케줄 보기 + 여행 전체 가능 시터 검색 + 요청 | 즐겨찾기(별표) 시터 — P0 단골 = 예약한 적 있는 시터 |
 | **맡기기·찾기 시각 + 장소** (시터 집 / 견주 집 / 기타 텍스트) | 지도·주소 자동완성, 이동 거리 |
 | 시간 밖·장소 변경 **협의** — 제안 카드 주고받기(횟수 제한 없음, 선택 메모 1줄), 확정 전 거절 = 요청 종료, 확정 후 변경 제안 | 인앱 채팅 (P0는 제안 카드로만 협의) |
-| 시터 **Received / Returned** 체크 → 견주 알림 | 견적·동의서·결제·보안 해제 → [03C](phase-03c.md), 리뷰 → [07C](phase-07c.md) |
-| 시터 요청함: 수락 / 거절, 예약 목록·상세·취소 (양쪽) | 실시간 이동·지도·도착 알림 → [06B](phase-06b.md) |
-| 취소 → **Find a new sitter** (같은 조건 재검색, `rebooked_from`) | 문의 스레드·AI 답 → [07B](phase-07b.md) |
+| 시터 **Received / Returned** 체크 → 견주 알림 | 견적·동의서·결제·보안 해제 → [03C](phase-03c-payment.md), 리뷰 → [07C](phase-07c-completion.md) |
+| 시터 요청함: 수락 / 거절, 예약 목록·상세·취소 (양쪽) | 실시간 이동·지도·도착 알림 → [06B](phase-06b-transit.md) |
+| 취소 → **Find a new sitter** (같은 조건 재검색, `rebooked_from`) | 문의 스레드·AI 답 → [07B](phase-07b-inquiry.md) |
 | **서비스 방식** Boarding / House sitting (D28) + 시터 제공 서비스 `services` | Drop-in(짧은 방문) 전용 정원 — house sitting도 칸 정원으로 계산 (해커톤 후) |
 | **이동 방식** 라벨 (Owner drives / Sitter drives = 인수인계 장소) | |
 | **Meet & Greet** (첫 만남만, D44) — 대면(선호 장소 + 시각) · 영상(Google Meet 링크 자동 생성, D45) · Done · 건너뛰기 동의(거부 = 예약 취소) | 앱 안 영상 통화(통화는 Google Meet에서), 만남 장소 지도·검색 |
@@ -72,7 +72,7 @@
 
 - 진입점: owner Home 상단 "Next booking" 카드 / 예약 없으면 **Book care**. sitter `Today` 상단 "Requests (2)" · "Drop-off at 09:30 today" 배지, 헤더 메뉴 **Schedule**.
 - **장소 = 이동 방식 (D28):** `🚗 I'll drive — at Chloe's place` (Owner drives, 기본·보딩) · `🚙 Chloe picks up — at my place` (Sitter drives) · `📍 Somewhere else` (텍스트 1줄 필수, 예: "Trinity Bellwoods Park, north gate"). House sitting이면 두 인수인계 모두 `My place` 고정(선택 숨김). 주소는 **결제 후**(03C) 상대방에게만 보인다 — 03C 전까지는 확정 후. 시각만 바꾸는 역제안은 장소를 그대로 둔다 (`p_location_type` 생략).
-- **시각 입력:** 15분 단위, 지난 시각 불가. 시터 칸 시간 밖을 골라도 막지 않고 "needs Paul's OK"로 안내 (협의 가능). 단, 시터가 열지 않은 칸을 절반 넘게 덮으면(예: Overnight 없는 시터에게 1박) 그 시터는 "일부 가능" — [phase-02 칸·시간 규칙](phase-02.md#칸--시간-규칙-d24).
+- **시각 입력:** 15분 단위, 지난 시각 불가. 시터 칸 시간 밖을 골라도 막지 않고 "needs Paul's OK"로 안내 (협의 가능). 단, 시터가 열지 않은 칸을 절반 넘게 덮으면(예: Overnight 없는 시터에게 1박) 그 시터는 "일부 가능" — [phase-02 칸·시간 규칙](phase-02-db.md#칸--시간-규칙-d24).
 - **나눠 맡기기** (견주가 고를 때만): 검색 결과의 **Other options** 접힘 영역 — "Covers Oct 5–6 only".
 - 텍스트: 견주 메모·장소 텍스트 허용. 시터는 제안 시 **선택 메모 1줄**만 (P0 시터 텍스트 최소화 원칙).
 - **Meet & Greet 카드 (D44, 첫 만남만):** 요청 직후 양쪽 예약 상세에 — 미정: **Schedule Meet & Greet**(In person / Video) · **Skip Meet & Greet** / 제안 대기 / 확정: 대면이면 장소·시각, 영상이면 **Join Google Meet**(새 탭) + **Add to calendar**(.ics) / 지난 뒤 **Done**. 대면 시트는 양쪽 선호 장소 칩(각 ≤ 3) + "Somewhere else" 1줄 + 날짜·시각(15분 단위). 건너뛰기 요청을 받은 쪽은 **Continue without meeting** / **Decline — cancels the booking**. 시터 요청 카드에는 "Meet first" 뱃지.
@@ -88,7 +88,7 @@
 | 3B.2 | 단골 시터 + 스케줄 보기 | `rpc('list_my_sitters')` → "Your sitters". `/owner/sitters/[id]` → `rpc('get_sitter_schedule')` 월 캘린더 | 단골 스케줄 표시 |
 | 3B.3 | 예약 만들기 | `/owner/bookings/new`: 맡기기·찾기 시각·장소 입력 → 단골마다 `get_sitter_schedule`로 전체 가능 여부 + 시간 안 여부 → 없으면 `rpc('search_sitters', {p_drop_off_at, p_pick_up_at, p_pet_count})`. 요청 → `rpc('request_booking', …)`. 에러 문구: `pet_already_booked` → "{name} already has a sitter (or a pending request) at that time." · `invalid_window` → "Pick a drop-off in the future and a pick-up after it." · `location_note_required` → "Tell the sitter where to meet." | 요청 + handoff 2개 + 시터 알림 |
 | 3B.4 | 시터 요청함 + 시각 제안 | `/sitter/bookings` → 카드 반려동물은 `rpc('get_booking_pets')`, 상세는 `pets`·`pet_allergies`·`care_tasks` select(요청 받은 시터 허용). **Accept** `rpc('respond_booking')` / **Suggest another time** → `rpc('propose_handoff')`. `handoff_pending` → "Waiting for Robert to confirm the new time." `sitter_unavailable` → "You no longer have room on {day} {slot}." `meet_greet_required` → "Meet Robert first — or agree to skip the Meet & Greet." | 수락·거절·역제안 |
-| 3B.5 | 협의 응답 + 확정 후 변경 | 양쪽 상세에서 제안 카드 **Accept / Suggest another time / Decline** → `rpc('respond_handoff')` 또는 `rpc('propose_handoff')`(역제안, 횟수 제한 없음). 카드에 이전 제안 이력 표시 ("You: 07:00 → Chloe: 07:30 → You: 07:15 …"). 확정 전 **Decline** → 확인 다이얼로그 "This will end the booking request." → 요청 종료. 확정 후 **Change time or place** → 제안 (P0는 시각·장소(=이동 방식)만. 서비스 방식 Boarding ↔ House sitting 변경은 P1 [11.14](phase-11.md)), 거절되면 "Chloe kept the original time." (예약 유지). 동의 전엔 기존 값 + "Change pending" | 주고받기 → 동의 → 반영 / 거절 규칙 |
+| 3B.5 | 협의 응답 + 확정 후 변경 | 양쪽 상세에서 제안 카드 **Accept / Suggest another time / Decline** → `rpc('respond_handoff')` 또는 `rpc('propose_handoff')`(역제안, 횟수 제한 없음). 카드에 이전 제안 이력 표시 ("You: 07:00 → Chloe: 07:30 → You: 07:15 …"). 확정 전 **Decline** → 확인 다이얼로그 "This will end the booking request." → 요청 종료. 확정 후 **Change time or place** → 제안 (P0는 시각·장소(=이동 방식)만. 서비스 방식 Boarding ↔ House sitting 변경은 P1 [11.14](phase-11-p1.md)), 거절되면 "Chloe kept the original time." (예약 유지). 동의 전엔 기존 값 + "Change pending" | 주고받기 → 동의 → 반영 / 거절 규칙 |
 | 3B.6 | 인수인계 체크 | sitter 상세 **Received**(맡기는 시각 2시간 전부터) / **Returned**(Received 후) → `rpc('complete_handoff')` → 견주 알림. `handoff_too_early` → "You can check in from 2 hours before drop-off." `get_handoff_details`로 주소 표시 (확정 후 ~ 찾은 뒤 24시간) | 도착·출발 알림 |
 | 3B.7 | 취소 · 다시 예약 | 취소(맡기기 전만) → `rpc('cancel_booking', {p_reason})`. Received 뒤엔 `booking_in_progress` → "Max is already with Chloe — change the pick-up time instead." 견주 알림 `booking_cancelled` → 상세 → **Find a new sitter** → `/owner/bookings/new?rebook=<id>` (반려동물·시각·장소 자동 입력) → `p_rebooked_from` | 취소 → 재예약 |
 | 3B.9 | Meet & Greet (D44) | `request_booking`이 첫 만남 여부(이 견주·시터 사이에 인수인계를 한 예약이나 done인 M&G가 없음)로 `meet_greet_status`를 required / not_needed로 정함. RPC `propose_meet_greet(p_booking, p_mode, p_at, p_place)` (당사자, required·proposed일 때, 미래 시각, 대면이면 place 필수 → proposed + 상대방 `meet_greet_proposed`) · `respond_meet_greet(p_booking, p_accept)` (상대방 → agreed + 제안자 `meet_greet_agreed` / 거절이면 required로 되돌려 다시 제안) · `complete_meet_greet(p_booking)` (당사자, 약속 시각 이후 → done) · `request_skip_meet_greet(p_booking)` (당사자 → skip_requested + 상대방 `meet_greet_skip_requested`) · `respond_skip_meet_greet(p_booking, p_accept)` (상대방 → 수락이면 skipped + 요청자 `meet_greet_skipped` / 거부면 `cancel_booking(reason 'meet_greet_declined')` → `booking_cancelled` + 견주 Find a new sitter) · `get_meet_greet_options(p_booking)` (당사자에게 양쪽 `meet_spots`). `respond_booking` 수락은 not_needed·done·skipped일 때만. 카드·시트는 위 화면 설명대로 + 확인할 것 체크리스트(Care needs · Quirks · Route · Handoff · Heads-up — 로컬 체크) | 첫 만남: 제안 → 수락 → Done → Accept / 건너뛰기 수락·거부(취소) / 이미 만난 사이는 단계 없음 |
@@ -136,4 +136,4 @@
 
 ## 다음 Phase
 
-→ [Phase 03C — 견적 · 동의서 · 데모 결제 · 보안 해제](phase-03c.md) → [Phase 04 — Cloudinary](phase-04.md) (업로드 서명은 `is_on_duty_for` 기준)
+→ [Phase 03C — 견적 · 동의서 · 데모 결제 · 보안 해제](phase-03c-payment.md) → [Phase 04 — Cloudinary](phase-04-upload.md) (업로드 서명은 `is_on_duty_for` 기준)

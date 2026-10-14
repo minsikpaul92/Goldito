@@ -23,8 +23,8 @@
 
 ## 선행 조건
 
-- [Phase 03B](phase-03b.md) 예약·수락·인수인계(장소 = 이동 방식, D28) · `service_type`
-- [Phase 03](phase-03.md) 역할별 프로필 (`owner_profiles.home_address`, `sitter_profiles.home_address`)
+- [Phase 03B](phase-03b-booking.md) 예약·수락·인수인계(장소 = 이동 방식, D28) · `service_type`
+- [Phase 03](phase-03-auth.md) 역할별 프로필 (`owner_profiles.home_address`, `sitter_profiles.home_address`)
 
 ---
 
@@ -113,4 +113,4 @@ Playbook §5B — (3C.1·3C.3–3C.5 SQL) / (3C.2·3C.6 UI) 두 번
 
 ## 다음 Phase
 
-→ [Phase 04 — Cloudinary](phase-04.md)
+→ [Phase 04 — Cloudinary](phase-04-upload.md)

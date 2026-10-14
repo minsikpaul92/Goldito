@@ -9,7 +9,7 @@
 -- Cast (all fictional): owners Robert (dog Max, cat Mochi) and Joy (dogs Coco, Toto);
 -- sitters Chloe (08–12 / 12–18 / 18–08, 3 pets), Paul (09–13 / 13–17, 2 pets),
 -- Allen (08–12 / 12–18 / 18–08, 3 pets), Nora (no schedule).
--- Scenario letters match docs/plan/phases/phase-02.md "예시 시나리오".
+-- Scenario letters match docs/plan/phases/phase-02-db.md "예시 시나리오".
 -- H (last-spot race) runs sequentially here; the advisory lock serializes real concurrent calls.
 
 begin;

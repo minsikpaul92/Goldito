@@ -26,8 +26,8 @@
 
 ## 선행 조건
 
-- [Phase 05](phase-05.md) 알림 인프라
-- [Phase 04](phase-04.md) `uploadMedia()` · `pickMedia()` (4.7)
+- [Phase 05](phase-05-feed.md) 알림 인프라
+- [Phase 04](phase-04-upload.md) `uploadMedia()` · `pickMedia()` (4.7)
 
 ---
 
@@ -106,4 +106,4 @@ Playbook §8 — extend with check-in RPC + Activity (see [sitter-care-loop.ko.m
 
 ## 다음 Phase
 
-→ [Phase 07 — 알림장 AI](phase-07.md) ([Phase 06B — Pet Transit](phase-06b.md)은 P0 맨 마지막 — D41)
+→ [Phase 07 — 알림장 AI](phase-07-report.md) ([Phase 06B — Pet Transit](phase-06b-transit.md)은 P0 맨 마지막 — D41)

@@ -60,8 +60,8 @@ Trim + compress live in `pickMedia()` / `MediaPicker` (4.7). Mouse must work in 
 
 ## 선행 조건
 
-- [Phase 00](phase-00.md) 0.2 Cloudinary
-- [Phase 03](phase-03.md) JWT + sitter role · [Phase 03B](phase-03b.md) 확정 예약 (서명 권한 = `is_on_duty_for`)
+- [Phase 00](phase-00-prep.md) 0.2 Cloudinary
+- [Phase 03](phase-03-auth.md) JWT + sitter role · [Phase 03B](phase-03b-booking.md) 확정 예약 (서명 권한 = `is_on_duty_for`)
 
 ---
 
@@ -116,4 +116,4 @@ Playbook §6 — (4.1–4.2, 4.6) 후 (4.3–4.5)
 
 ## 다음 Phase
 
-→ [Phase 05 — 케어 피드](phase-05.md)
+→ [Phase 05 — 케어 피드](phase-05-feed.md)

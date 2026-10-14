@@ -40,7 +40,7 @@ OpenBMB **MiniCPM-V-4.5** is a **multimodal (vision) model** on the same Token F
   1. **Caption** — “what is in this picture?”
   2. **Safety step 1** — “list ingredients from this packaging photo.”
 
-Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in [phase-08.md](../phase-08.md).
+Step 2 safety **judgment** is **Ultra** (text-only Nemotron), not MiniCPM — two-step pipeline in [phase-08-safety.md](../phase-08-safety.md).
 
 **Hackathon note:** Still **NVIDIA Nemotron on Token Factory** for core AI story; MiniCPM (OpenBMB, **not an NVIDIA model**) is an **additional** vision endpoint on the same Token Factory API; the hackathon rule (at least one NVIDIA model) is met by Nano (inquiry replies) and Super (checklists, reports, Life Records); Ultra runs only in the Phase 08 safety stretch. Mention Nemotron and MiniCPM in README feedback and the demo script.
 

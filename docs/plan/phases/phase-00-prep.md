@@ -88,4 +88,4 @@ curl -s https://api.tokenfactory.nebius.com/v1/models -H "Authorization: Bearer 
 
 ## 다음 Phase
 
-→ [Phase 01 — 모노레포 틀](phase-01.md)
+→ [Phase 01 — 모노레포 틀](phase-01-repo.md)

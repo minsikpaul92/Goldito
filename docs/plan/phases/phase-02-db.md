@@ -34,8 +34,8 @@ P0에 필요한 **전체 데이터 모델**을 PostgreSQL migration으로 정의
 
 ## 선행 조건
 
-- [Phase 00](phase-00.md) 0.1 Supabase 프로젝트
-- [Phase 01](phase-01.md) `supabase/migrations/` 폴더
+- [Phase 00](phase-00-prep.md) 0.1 Supabase 프로젝트
+- [Phase 01](phase-01-repo.md) `supabase/migrations/` 폴더
 
 ---
 
@@ -301,7 +301,7 @@ has_current_booking_with(other uuid) → 결제(`paid_at`)까지 끝난 confirme
 | 실행 권한 | DDL | `revoke execute on all functions in schema public from public, anon` + 내부 헬퍼(`slots_for_window`, `sitter_remaining`, `capacity_shortfall`, `rebuild_booking`, `notify_user` 등)는 `authenticated`에서도 회수 — 클라이언트는 위 RPC와 정책 헬퍼만 호출 |
 | Realtime | DDL | `alter publication supabase_realtime add table public.notifications;` |
 
-> 기능별 RPC(`ensure_today_task_logs`, `complete_task_log`, `send_daily_report`)와 알림 트리거는 **해당 Phase가 자기 migration에 추가**합니다. 예약 화면은 [Phase 03B](phase-03b.md).
+> 기능별 RPC(`ensure_today_task_logs`, `complete_task_log`, `send_daily_report`)와 알림 트리거는 **해당 Phase가 자기 migration에 추가**합니다. 예약 화면은 [Phase 03B](phase-03b-booking.md).
 >
 > **알림 원칙 (D24):** 시터가 스케줄을 열거나 바꿔도 견주에게 알림은 없다. 견주는 필요할 때 직접 스케줄을 본다. 견주 알림은 ① 예약·인수인계 결과(수락·거절·취소·시각 제안/동의) ② **맡긴 동안의 케어 소식**(도착·출발, 사진, 할 일 완료, 알림장, 세이프티 경고)뿐.
 
@@ -392,4 +392,4 @@ Playbook §4 — **001 / 002 / 003 각각 별도 프롬프트**, 이 문서의 �
 
 ## 다음 Phase
 
-→ [Phase 03 — 인증·역할](phase-03.md) → [Phase 03B — 예약](phase-03b.md)
+→ [Phase 03 — 인증·역할](phase-03-auth.md) → [Phase 03B — 예약](phase-03b-booking.md)

@@ -1,6 +1,6 @@
 # Phase 08 — 간식 세이프티 가드 (Safety)
 
-> **2026-10-13 (D61):** 이 설계는 [Phase 12](phase-12.md)의 **12.1 Treat check**로 구현한다 — Snap 탭에서 진입, 견주도 자기 펫 검사 가능, Tavily(8.7) 포함. 바뀐 점은 phase-12.md § 12.1 표에 있고, 나머지(파이프라인 · 스키마 · 판정 기준 · 샘플)는 이 문서 그대로.
+> **2026-10-13 (D61):** 이 설계는 [Phase 12](phase-12-snap.md)의 **12.1 Treat check**로 구현한다 — Snap 탭에서 진입, 견주도 자기 펫 검사 가능, Tavily(8.7) 포함. 바뀐 점은 phase-12-snap.md § 12.1 표에 있고, 나머지(파이프라인 · 스키마 · 판정 기준 · 샘플)는 이 문서 그대로.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D12–D13, AI 규칙 §9, UX 규칙 §8-4
 > **우선순위 (D27, 2026-10-01):** 시나리오([full-process.ko.md](../full-process.ko.md))에는 없는 기능 → Stage 4 돌봄 중 보조 안전장치로 두고 **시나리오 코어(03B–07C)와 06B(P0 맨 마지막) 뒤, 시간이 남을 때만 하는 P0 stretch** (2026-10-02). 시간이 없으면 Phase 10 이후 P1. 진입은 탭이 아니라 sitter Today의 **Scan a treat** 버튼 → `/sitter/scan` (3B.0에서 Scan 탭 제거)
@@ -20,8 +20,8 @@
 
 ## 선행 조건
 
-- [Phase 07.1](phase-07.md) Nebius client (`chat_json`)
-- [Phase 04](phase-04.md) `uploadMedia({purpose:'safety_label'})`, `fetch_as_data_url`
+- [Phase 07.1](phase-07-report.md) Nebius client (`chat_json`)
+- [Phase 04](phase-04-upload.md) `uploadMedia({purpose:'safety_label'})`, `fetch_as_data_url`
 - Max `pet_allergies = chicken` (Phase 03.5)
 
 ---
@@ -129,4 +129,4 @@ Playbook §10 — (8.1–8.3) / (8.4–8.6)
 
 ## 다음 Phase
 
-→ [Phase 10 — 데모·배포](phase-10.md) (08은 06B 뒤 시간이 남을 때만 하는 stretch — D27·D41)
+→ [Phase 10 — 데모·배포](phase-10-deploy.md) (08은 06B 뒤 시간이 남을 때만 하는 stretch — D27·D41)

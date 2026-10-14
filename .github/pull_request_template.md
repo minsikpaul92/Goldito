@@ -2,7 +2,7 @@
 
 -
 
-**Task:** <!-- TODO ID + phase doc, e.g. 3.1 · docs/plan/phases/phase-03.md -->
+**Task:** <!-- TODO ID + phase doc, e.g. 3.1 · docs/plan/phases/phase-03-auth.md -->
 
 ## Test plan
 

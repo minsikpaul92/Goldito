@@ -22,9 +22,9 @@
 
 ## 선행 조건
 
-- [Phase 03B](phase-03b.md) Returned(`complete_handoff`) · [Phase 06](phase-06.md) check-in·task · [Phase 07](phase-07.md) 알림장
-- [Phase 06B](phase-06b.md)의 `return` 사진 체크는 **선택** — 06B는 P0 맨 마지막(D41)이라 07C는 사진 체크 없이 먼저 동작하고, 06B가 붙으면 "photo verified"와 `handoff_checks` 요약이 자동으로 더해진다
-- [Phase 07B](phase-07b.md) `rag.index_source` · `match_knowledge`
+- [Phase 03B](phase-03b-booking.md) Returned(`complete_handoff`) · [Phase 06](phase-06-checks.md) check-in·task · [Phase 07](phase-07-report.md) 알림장
+- [Phase 06B](phase-06b-transit.md)의 `return` 사진 체크는 **선택** — 06B는 P0 맨 마지막(D41)이라 07C는 사진 체크 없이 먼저 동작하고, 06B가 붙으면 "photo verified"와 `handoff_checks` 요약이 자동으로 더해진다
+- [Phase 07B](phase-07b-inquiry.md) `rag.index_source` · `match_knowledge`
 
 ---
 
@@ -103,4 +103,4 @@ Playbook §9C — (7C.1 SQL) / (7C.4 민식) / (7C.2–7C.3·7C.5 UI)
 
 ## 다음 Phase
 
-→ [Phase 06B — Pet Transit](phase-06b.md) (P0 맨 마지막, D41) → (시간 있으면 [Phase 08 — 세이프티 stretch](phase-08.md)) → [Phase 10 — 데모·배포](phase-10.md)
+→ [Phase 06B — Pet Transit](phase-06b-transit.md) (P0 맨 마지막, D41) → (시간 있으면 [Phase 08 — 세이프티 stretch](phase-08-safety.md)) → [Phase 10 — 데모·배포](phase-10-deploy.md)

@@ -3,7 +3,7 @@
 > **상태 (2026-10-10):** 완료 (2026-10-04, PR #47). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — 알림 매트릭스 §7, UX 규칙 §8, **D47 · D47b** 탭 IA  
-> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4 — 견주 Push + **Feed 앨범** + **Diary** Live 스트림 (분류는 [09](phase-09.md))
+> 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 4 — 견주 Push + **Feed 앨범** + **Diary** Live 스트림 (분류는 [09](phase-09-caption.md))
 
 ## Goal
 
@@ -20,8 +20,8 @@
 
 ## 선행 조건
 
-- [Phase 04](phase-04.md) `uploadMedia()`
-- [Phase 03](phase-03.md) pet 프로필 · [Phase 03B](phase-03b.md) 확정 예약 (게시 권한 = `is_on_duty_for`)
+- [Phase 04](phase-04-upload.md) `uploadMedia()`
+- [Phase 03](phase-03-auth.md) pet 프로필 · [Phase 03B](phase-03b-booking.md) 확정 예약 (게시 권한 = `is_on_duty_for`)
 
 ---
 
@@ -115,4 +115,4 @@ Playbook §7 — "without AI captions first"; (5.1–5.2) / (5.3–5.5) 두 번
 
 ## 다음 Phase
 
-→ [Phase 06 — 투약·산책](phase-06.md)
+→ [Phase 06 — 투약·산책](phase-06-checks.md)

@@ -63,7 +63,7 @@ Snap 탭
 
 ## 12.1 Treat check — 파이프라인
 
-[Phase 08](phase-08.md)의 파이프라인 · JSON 스키마 · 판정 기준 · 테스트 샘플 · Tavily 계획(8.7)을 **그대로** 쓴다. 바뀌는 것만:
+[Phase 08](phase-08-safety.md)의 파이프라인 · JSON 스키마 · 판정 기준 · 테스트 샘플 · Tavily 계획(8.7)을 **그대로** 쓴다. 바뀌는 것만:
 
 | 08 원래 | 12.1 |
 | :--- | :--- |
@@ -258,7 +258,7 @@ Snap 탭
 ### 새 세션에서 붙여 넣을 프롬프트
 
 ```text
-Read CLAUDE.md, docs/plan/TODO.md and docs/plan/phases/phase-12.md (§ 다음에 이어서).
+Read CLAUDE.md, docs/plan/TODO.md and docs/plan/phases/phase-12-snap.md (§ 다음에 이어서).
 Branch feat/phase-12-snap, PR #90. Continue from the first unfinished item there:
 the 12.1 real-model check if keys are in backend/.env, otherwise 12.S2 (the MediaPipe spike).
 One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
@@ -275,4 +275,4 @@ One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), 
 
 ## 다음 Phase
 
-[Phase 10](phase-10.md) 나머지(고정 데모 계정 · README · 영상) → [11.15](../pet-profile-onboarding.ko.md) 온보딩(10/24–27).
+[Phase 10](phase-10-deploy.md) 나머지(고정 데모 계정 · README · 영상) → [11.15](../pet-profile-onboarding.ko.md) 온보딩(10/24–27).

@@ -208,7 +208,7 @@ The 3-year dataset contains real owners' personal data. It must be anonymized **
 
 ## 9. Data Model (summary)
 
-> **Source of truth: [phases/phase-02.md](phases/phase-02.md)** (17 P0 tables, RLS, RPCs) and [phase-11.md](phases/phase-11.md) (P1). This is an at-a-glance list only — change phase-02 first when the schema changes.
+> **Source of truth: [phases/phase-02-db.md](phases/phase-02-db.md)** (17 P0 tables, RLS, RPCs) and [phase-11-p1.md](phases/phase-11-p1.md) (P1). This is an at-a-glance list only — change phase-02 first when the schema changes.
 
 | Area | Tables |
 | :--- | :--- |
@@ -242,7 +242,7 @@ Why: Supabase free storage is too small for photos and videos. Cloudinary's free
 - **Video:** max **30 s** (shorter OK); if longer, **trim UI** then client compress (~720p) before upload. Free max video **100 MB**.
 - **Thumbnails:** `c_fill,w_400,h_400` for feed grid; video poster via `so_0` + `.jpg`.
 - **Privacy:** use a dedicated folder per pet; don't expose the API secret to the client.
-- **Detail:** [phases/phase-04.md](phases/phase-04.md) § Media normalize policy
+- **Detail:** [phases/phase-04-upload.md](phases/phase-04-upload.md) § Media normalize policy
 
 ---
 

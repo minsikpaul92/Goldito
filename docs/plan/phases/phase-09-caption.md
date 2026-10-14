@@ -21,9 +21,9 @@
 
 ## 선행 조건
 
-- [Phase 05](phase-05.md) `createFeedPost` 플로우
-- [Phase 07.1](phase-07.md) Nebius client
-- [Phase 04](phase-04.md) `fetch_as_data_url` (영상은 `so_0` poster 사용 — D12)
+- [Phase 05](phase-05-feed.md) `createFeedPost` 플로우
+- [Phase 07.1](phase-07-report.md) Nebius client
+- [Phase 04](phase-04-upload.md) `fetch_as_data_url` (영상은 `so_0` poster 사용 — D12)
 
 ---
 
@@ -31,7 +31,7 @@
 
 | 포함 | 제외 |
 | :--- | :--- |
-| Vision 캡션 + 분류 태그 (image + video poster) | 영상 여러 프레임 기반 기분 한 줄 → [Phase 11.9](phase-11.md) |
+| Vision 캡션 + 분류 태그 (image + video poster) | 영상 여러 프레임 기반 기분 한 줄 → [Phase 11.9](phase-11-p1.md) |
 | Owner Feed **Timeline / Album** 토글 — Album = 날짜 → 분류 그리드 | 분류 직접 수정, 사용자 정의 앨범 |
 | Backend-only API key | client-side AI |
 | 업로드 카드 "Writing a caption…" 로딩 UX | task 완료 게시물 캡션 (Phase 06 고정 문구 유지) |
@@ -87,4 +87,4 @@ Playbook §11
 
 ## 다음 Phase
 
-→ [Phase 07C — 완료 · Life Record](phase-07c.md) → [Phase 06B — Pet Transit](phase-06b.md) → (08 stretch) → [Phase 10 — 데모·배포](phase-10.md)
+→ [Phase 07C — 완료 · Life Record](phase-07c-completion.md) → [Phase 06B — Pet Transit](phase-06b-transit.md) → (08 stretch) → [Phase 10 — 데모·배포](phase-10-deploy.md)

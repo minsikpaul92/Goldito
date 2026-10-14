@@ -27,10 +27,10 @@
 
 ## 선행 조건
 
-- [Phase 07.1](phase-07.md) Nebius client (`chat_json`, 지표 로그) + 이 Phase에서 `embed()` 추가
-- [Phase 03B](phase-03b.md) 시터 스케줄·`get_sitter_schedule`·서비스 방식 · [Phase 03C](phase-03c.md) `quote_booking`
-- [Phase 05](phase-05.md) 알림 인프라 (UI 연결 시)
-- Life Record 근거는 [Phase 07C](phase-07c.md) 이후 자동으로 들어옴 (그 전엔 펫 프로필·케어 의뢰서·정책만)
+- [Phase 07.1](phase-07-report.md) Nebius client (`chat_json`, 지표 로그) + 이 Phase에서 `embed()` 추가
+- [Phase 03B](phase-03b-booking.md) 시터 스케줄·`get_sitter_schedule`·서비스 방식 · [Phase 03C](phase-03c-payment.md) `quote_booking`
+- [Phase 05](phase-05-feed.md) 알림 인프라 (UI 연결 시)
+- Life Record 근거는 [Phase 07C](phase-07c-completion.md) 이후 자동으로 들어옴 (그 전엔 펫 프로필·케어 의뢰서·정책만)
 
 ---
 
@@ -136,4 +136,4 @@ Playbook §9B — (7B.1 SQL) / (7B.2–7B.4 민식) / (7B.5–7B.6 UI)
 
 ## 다음 Phase
 
-→ [Phase 09 — 캡션·앨범 분류](phase-09.md) · 그다음 [Phase 07C — 완료·Life Record](phase-07c.md)
+→ [Phase 09 — 캡션·앨범 분류](phase-09-caption.md) · 그다음 [Phase 07C — 완료·Life Record](phase-07c-completion.md)

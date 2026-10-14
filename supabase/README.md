@@ -2,7 +2,7 @@
 
 SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
-**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
+**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02-db.md](../docs/plan/phases/phase-02-db.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
 ## Migration order
 

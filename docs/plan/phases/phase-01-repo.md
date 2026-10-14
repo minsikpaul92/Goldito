@@ -112,4 +112,4 @@ frontend/app/dev/gestures.tsx, frontend/e2e/*, frontend/playwright.config.ts
 
 ## 다음 Phase
 
-→ [Phase 02 — DB + RLS](phase-02.md) (Supabase 0.1 완료 후)
+→ [Phase 02 — DB + RLS](phase-02-db.md) (Supabase 0.1 완료 후)

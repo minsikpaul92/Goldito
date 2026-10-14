@@ -147,4 +147,4 @@ Playbook §12 — seed(10.1) / deploy backend(10.3) / deploy frontend(10.4) 각�
 
 ## 다음
 
-→ [Phase 11 — P1 기능](phase-11.md) (P0 데모가 배포 URL에서 동작한 뒤에만)
+→ [Phase 11 — P1 기능](phase-11-p1.md) (P0 데모가 배포 URL에서 동작한 뒤에만)

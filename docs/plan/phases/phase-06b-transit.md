@@ -27,10 +27,10 @@
 
 ## 선행 조건
 
-- [Phase 03B](phase-03b.md) 인수인계·`complete_handoff` · [Phase 03C](phase-03c.md) `get_home_access`, 시터 집 정보
-- [Phase 04](phase-04.md) `uploadMedia({purpose:'handoff'})` · `pickMedia()` 샘플 트레이 (4.7)
-- [Phase 05](phase-05.md) 알림 인프라 (Realtime + 알림 센터)
-- [Phase 07.1](phase-07.md) Nebius client (6B.5)
+- [Phase 03B](phase-03b-booking.md) 인수인계·`complete_handoff` · [Phase 03C](phase-03c-payment.md) `get_home_access`, 시터 집 정보
+- [Phase 04](phase-04-upload.md) `uploadMedia({purpose:'handoff'})` · `pickMedia()` 샘플 트레이 (4.7)
+- [Phase 05](phase-05-feed.md) 알림 인프라 (Realtime + 알림 센터)
+- [Phase 07.1](phase-07-report.md) Nebius client (6B.5)
 
 ---
 
@@ -155,7 +155,7 @@
 ```text
 Read CLAUDE.md and docs/plan/TODO.md.
 Work ONLY on the "Current focus" task: Phase 06B Pet Transit.
-Read docs/plan/phases/phase-06b.md — the Goal, DoD, 작업 순서 (steps S1–S8) and 시작 전에 사람이 준비할 것.
+Read docs/plan/phases/phase-06b-transit.md — the Goal, DoD, 작업 순서 (steps S1–S8) and 시작 전에 사람이 준비할 것.
 Update main, create feat/phase-06b-transit, work step by step: one commit per step, one PR (ready for review) for the whole phase, same PR until it is done.
 Before S1, tell me which of the "blocking" items in the 준비 list are still open. After each step report the commit, how you verified it, and the next step.
 ```
@@ -179,4 +179,4 @@ Playbook §8B — (6B.1 SQL) / (6B.2–6B.4 UI) / (6B.5 Vision) 세 번
 
 ## 다음 Phase
 
-→ (시간이 남으면 [Phase 08 — 세이프티 stretch](phase-08.md)) → [Phase 10 — 데모·배포](phase-10.md) (06B가 P0 맨 마지막 — D41)
+→ (시간이 남으면 [Phase 08 — 세이프티 stretch](phase-08-safety.md)) → [Phase 10 — 데모·배포](phase-10-deploy.md) (06B가 P0 맨 마지막 — D41)

@@ -24,8 +24,8 @@
 
 ## 선행 조건
 
-- [Phase 05–06](phase-05.md) 당일 feed + task_logs
-- [Phase 00](phase-00.md) 0.3 Nebius key + model ID
+- [Phase 05–06](phase-05-feed.md) 당일 feed + task_logs
+- [Phase 00](phase-00-prep.md) 0.3 Nebius key + model ID
 - 민식: 7.4 few-shot (슬기가 익명화해 준 데이터를 사용 — 원본은 영어)
 
 ---
@@ -135,4 +135,4 @@ Playbook §9 — 7.1 / 7.2 / 7.3+7.5 / 7.4(민식) 분리
 
 ## 다음 Phase
 
-→ [Phase 07B — 문의 AI](phase-07b.md) · [Phase 09 — 캡션·앨범](phase-09.md) (둘 다 7.1 후 시작 가능) → [Phase 07C — 완료](phase-07c.md). [Phase 08 — 세이프티](phase-08.md)는 시나리오 코어 뒤 stretch (D27)
+→ [Phase 07B — 문의 AI](phase-07b-inquiry.md) · [Phase 09 — 캡션·앨범](phase-09-caption.md) (둘 다 7.1 후 시작 가능) → [Phase 07C — 완료](phase-07c-completion.md). [Phase 08 — 세이프티](phase-08-safety.md)는 시나리오 코어 뒤 stretch (D27)
