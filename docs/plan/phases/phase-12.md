@@ -161,7 +161,7 @@ Snap 탭
 | `15f5443` 12.1a (+12.1b) | `POST /api/ai/safety-check` — `routers/ai_safety_check.py`, 규칙 `ai/safety.py` + `ai/prompts/safety/{vision_system.md, reasoning_system.md, toxic_rules.json}`, Tavily `services/tavily.py`(httpx, 신뢰 도메인 5개, 8초, 쿼리 ≤ 4), 견주도 `safety_label` 업로드(`routers/media.py`), `013_safety.sql`, pytest 3개 파일, `rls_smoke` 013 블록 |
 | 12.1c | `features/snap/{TreatCheckScreen.tsx, treatApi.ts}`, `components/ui/AlertModal.tsx`(빨강 전체 화면, 버튼으로만 닫힘), 라우트 `app/{owner,sitter}/snap/treat.tsx`, 샘플 `assets/demo/labels/*.jpg`(= `backend/tests/fixtures/labels/`), 알림 `safety_danger` → `/owner/snap/treat?check=…`, e2e `treat-check.spec.ts`. Snap 탭의 "Recent checks" 3개는 12.5로 미룸 |
 
-**아직 확인 안 된 것:** 실제 MiniCPM-V가 라벨을 읽는지, Ultra(추론 켬) 응답 시간, Tavily 실제 응답 — 로컬 `backend/.env`에 키가 없었다.
+**확인 2026-10-14 (모델 직접 호출, [notes/model-ids.md § Treat check calls](notes/model-ids.md)):** MiniCPM-V가 샘플 라벨 4장을 다 읽음(장당 0.9–1.4초), Tavily 신뢰 도메인 3건(2.9초), Ultra(추론 켬) WARNING 판정 2.7초 · 토큰 614(2000 충분) → 검사 1번 약 7–8초 예상. **아직 안 한 것:** FastAPI 라우트 전체(Cloudinary · DB · 알림)를 호스팅 DB에서 — `013` 적용 뒤, 그리고 `scripts/measure_safety.py`.
 
 ### 다시 시작할 때 사람이 먼저 할 것 (민식)
 

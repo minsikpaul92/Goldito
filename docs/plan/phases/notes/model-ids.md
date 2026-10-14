@@ -113,6 +113,18 @@ Input: one fictional sentence ("Max is a Maltese who is allergic to chicken."). 
 
 `GET /v1/models` with our key (read-only): **25 models** on `api.tokenfactory.nebius.com`, **18** on the us-central1 URL. **No speech-to-text / audio model** (no whisper · asr · speech · audio · parakeet · canary · voxtral). Image-input models in the list: `openbmb/MiniCPM-V-4_5`, `moonshotai/Kimi-K2.6` (and K3 on the first URL), `google/gemma-3-27b-it`. So voice input in the pet profile onboarding ([pet-profile-onboarding.ko.md](../../pet-profile-onboarding.ko.md) §6.2) records audio in the browser, turns it into text with an **external speech-to-text service — Groq `whisper-large-v3-turbo`, free plan (decided 2026-10-10)** — and uses Nemotron only to extract facts from the text. Check Safari / Chrome recordings and Groq's terms when building. Re-check the list if a speech model is announced.
 
+## Treat check calls (12.1, 2026-10-14)
+
+Direct HTTP calls with the keys in local `backend/.env` (the same prompts and parameters as `routers/ai_safety_check.py`; not through the FastAPI route, Cloudinary or the DB — no local Python on that machine; `scripts/measure_safety.py` is still to write). `GET /v1/models`: `MODEL_VISION` `openbmb/MiniCPM-V-4_5`, `MODEL_SAFETY` `nvidia/Nemotron-3-Ultra-550b-a55b`, `MODEL_REPORT`, `MODEL_FAST` all listed.
+
+| Step | Result |
+| :--- | :--- |
+| **Vision** (MiniCPM-V-4.5, `vision_system.md`, JSON mode, temperature 0) on the four made-up sample labels | All four `readable: true`, product name and every ingredient right, in order — **0.9–1.4 s** each. Bracketed text stays on the ingredient (`"animal fat (preserved with mixed tocopherols)"`, `"mixed tocopherols (preservative)"`) instead of being split as the prompt asks; the rule table still matches `animal fat` (whole word). |
+| **Tavily** (`search_depth: basic`, 3 results, the five trusted domains) — `xylitol toxic dogs` | 3 results (petpoisonhelpline.com · vcahospitals.com · fda.gov) in **2.9 s** |
+| **Ultra** (thinking on, `reasoning_system.md`, JSON mode, `max_tokens` 2000) — Max (chicken allergy) + the animal-fat biscuit with the rule findings and one excerpt | **WARNING** (matches the rules), both hidden sources kept, message names Max and the chicken risk — **2.7 s**, 614 completion tokens, `finish_reason: stop` (2000 is enough) |
+
+Estimated route total ≈ vision 1.4 s + Tavily ≤ 3 s (parallel, 8 s cap) + Ultra ≈ 3 s → **about 7–8 s**, so the app's "Checking for {name}…" (switches at 8 s) rarely shows. Still to do: the full route on the hosted DB once `013` is applied (Cloudinary fetch, all four labels, DANGER notice to the owner).
+
 ## Photo caption latency (09.1, 2026-10-07)
 
 `backend/scripts/measure_caption.py` — the 3 demo photos × 3 runs, MiniCPM-V-4.5, JSON `{caption, category}`, reasoning n/a, 120 max tokens, temperature 0.8, local images (no Cloudinary / DB). **Category right 8 / 9, latency median ≈ 1.2 s, max ≈ 1.3 s.** The first prompt got 4 / 9 because the sample "meal" photo is a dog beside a carrot and the sample "nap" photo is a dog lying on a bed with its mouth open; the category hints now say food next to or in the mouth of the pet is a meal, and lying calmly on a bed / blanket / rug is a nap. Captions are 1 short sentence, warm, name used once; no medical claims. Real-world accuracy still needs the team's 5-photo read (phase-09 DoD 1).

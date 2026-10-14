@@ -23,7 +23,7 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q.md](phases/phase-q.md) §0 · §1 |
-| **Minsik** | **12.S2 MediaPipe spike** | Phase 12 on `feat/phase-12-snap` ([#90](https://github.com/minsikpaul92/Goldito/pull/90)) — 12.0 Snap tab, 12.1a Treat check API (+ Tavily) and 12.1c Treat check screen (+ `AlertModal`, four made-up sample labels) done. **By hand first:** apply `013` + smoke, put `NEBIUS_API_KEY` / `TAVILY_API_KEY` in `backend/.env` and run the real-model check (`scripts/measure_safety.py`, not written yet) with the sample labels; then the browser-model spike (12.S2) → 12.2 Mood. Full order and notes: [phase-12.md § 다음에 이어서](phases/phase-12.md) | [phases/phase-12.md](phases/phase-12.md) |
+| **Minsik** | **12.S2 MediaPipe spike** | Phase 12 on `feat/phase-12-snap` ([#90](https://github.com/minsikpaul92/Goldito/pull/90)) — 12.0 Snap tab, 12.1a Treat check API (+ Tavily) and 12.1c Treat check screen (+ `AlertModal`, four made-up sample labels) done. Keys are in `backend/.env` and the models answer (vision · Tavily · Ultra checked 2026-10-14, [model-ids.md](phases/notes/model-ids.md)). **By hand first:** apply `013` + smoke, then one full Treat check on the hosted DB (sitter DANGER → owner notice); then the browser-model spike (12.S2) → 12.2 Mood. Full order and notes: [phase-12.md § 다음에 이어서](phases/phase-12.md) | [phases/phase-12.md](phases/phase-12.md) |
 
 ---
 
