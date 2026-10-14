@@ -94,7 +94,7 @@ Heads-up: No knocking or doorbell — text me instead.
 | **Video** (영상) | 날짜·시각을 제안 → 상대가 수락하는 순간 **Google Meet 링크가 자동으로 생성**되어 양쪽 예약 카드에 **Join Google Meet**, 양쪽 이메일로 **Google Calendar 초대** (D45). 앱 설치 없이 브라우저로 참여(폰은 Meet 앱 권장), 링크는 새 탭으로 연다 |
 | **건너뛰기** | 한쪽이 **Skip Meet & Greet** → 먼저 "If Chloe says no, this booking will be cancelled." 확인 → 상대에게 "Continue the booking without a Meet & Greet?" → **Continue**면 그대로 진행 / **Decline**이면 **예약이 취소**되고 견주는 **Find a new sitter**로 다른 시터를 찾는다 |
 
-> **예약 단계 (2026-10-11 결정 — 구현 예정, [phase-03B](phases/phase-03b.md) Booking steps · D60):** 요청 → **시터의 첫 동의**("Yes, let's meet") → 밋&그릿(제안 · 수락 · Done, 또는 양쪽이 동의해 건너뛰기) → **시터의 최종 컨펌** → 오너 서명 · 결제. 단골이거나 이미 만난 사이면 요청 → 시터 **Accept** → 오너 서명 · 결제로 끝난다.
+> **예약 단계 (2026-10-11 결정 — 구현 예정, [phase-03B](phases/phase-03b-booking.md) Booking steps · D60):** 요청 → **시터의 첫 동의**("Yes, let's meet") → 밋&그릿(제안 · 수락 · Done, 또는 양쪽이 동의해 건너뛰기) → **시터의 최종 컨펌** → 오너 서명 · 결제. 단골이거나 이미 만난 사이면 요청 → 시터 **Accept** → 오너 서명 · 결제로 끝난다.
 > - 시터가 첫 동의를 누른 순간부터 그 날짜는 **홀드**된다(다른 오너의 예약 · 요청과 시터의 일정 막기가 안 됨). 확정 · 거절 · 취소 · 시간 초과 때 풀린다.
 > - 만난 뒤에는 시터도 **오너도** 거절할 수 있다(오너의 "Not this sitter"는 사유 칩).
 > - 밋&그릿 시간이 2일 안에 안 잡히면 양쪽에게 시간 잡기 · 스킵 · 거절을 묻고, 3일 더 답이 없으면 자동 취소(홀드 해제).
@@ -273,12 +273,12 @@ Oct 9, 2026
 
 | Stage | Phase | 핵심 Task |
 | :--- | :--- | :--- |
-| 1 Inquiry | [07B](phases/phase-07b.md) · [03C](phases/phase-03c.md) 3C.1 | 문의 스레드 · `/api/ai/inquiry-reply` · RAG 인덱싱 · 견적 · **말투 레이어 7B.8 · 승인 UX 7B.9 · 사람 속도 7B.10** · (선택) tool calling 7B.11 (D46) |
-| 2 Meet & Greet | [06](phases/phase-06.md) 6.12–6.14 · [03B](phases/phase-03b.md) 3B.9–3B.11 | 케어 의뢰서 → `/api/ai/care-plan` · Meet & Greet(첫 만남 · 대면 장소 · 건너뛰기 동의) · Google Meet 링크 `/api/meet-greet/video-link` · 서비스·이동 방식 |
-| 3 Booking | [03B](phases/phase-03b.md) · [03C](phases/phase-03c.md) | 예약·협의·취소 · 동의서 · 데모 결제 · 조건부 해제 |
-| 4 Care & Transit | [04](phases/phase-04.md) · [05](phases/phase-05.md) · [06](phases/phase-06.md) · [06B](phases/phase-06b.md) (**P0 맨 마지막**, D41) · [07](phases/phase-07.md) · [09](phases/phase-09.md) · ([08](phases/phase-08.md) stretch) · P1 [11.9](phases/phase-11.md) mood meter | 업로드 · 피드·알림 · 5초 체크 · 칩 제안 `/api/ai/report-chips` · 실시간 이동 · `/api/ai/handoff-check` · 알림장 · 앨범 분류 |
-| 5 Completion | [07C](phases/phase-07c.md) | 귀가 리포트 · 리뷰 · `/api/ai/life-record` · Life Record 화면 |
-| 전체 | [10](phases/phase-10.md) | 시드 · 배포 · 심사 경로 · README |
+| 1 Inquiry | [07B](phases/phase-07b-inquiry.md) · [03C](phases/phase-03c-payment.md) 3C.1 | 문의 스레드 · `/api/ai/inquiry-reply` · RAG 인덱싱 · 견적 · **말투 레이어 7B.8 · 승인 UX 7B.9 · 사람 속도 7B.10** · (선택) tool calling 7B.11 (D46) |
+| 2 Meet & Greet | [06](phases/phase-06-checks.md) 6.12–6.14 · [03B](phases/phase-03b-booking.md) 3B.9–3B.11 | 케어 의뢰서 → `/api/ai/care-plan` · Meet & Greet(첫 만남 · 대면 장소 · 건너뛰기 동의) · Google Meet 링크 `/api/meet-greet/video-link` · 서비스·이동 방식 |
+| 3 Booking | [03B](phases/phase-03b-booking.md) · [03C](phases/phase-03c-payment.md) | 예약·협의·취소 · 동의서 · 데모 결제 · 조건부 해제 |
+| 4 Care & Transit | [04](phases/phase-04-upload.md) · [05](phases/phase-05-feed.md) · [06](phases/phase-06-checks.md) · [06B](phases/phase-06b-transit.md) (**P0 맨 마지막**, D41) · [07](phases/phase-07-report.md) · [09](phases/phase-09-caption.md) · ([08](phases/phase-08-safety.md) stretch) · P1 [11.9](phases/phase-11-p1.md) mood meter | 업로드 · 피드·알림 · 5초 체크 · 칩 제안 `/api/ai/report-chips` · 실시간 이동 · `/api/ai/handoff-check` · 알림장 · 앨범 분류 |
+| 5 Completion | [07C](phases/phase-07c-completion.md) | 귀가 리포트 · 리뷰 · `/api/ai/life-record` · Life Record 화면 |
+| 전체 | [10](phases/phase-10-deploy.md) | 시드 · 배포 · 심사 경로 · README |
 
 ---
 
@@ -286,7 +286,7 @@ Oct 9, 2026
 
 - 실결제(Stripe 등)·환불·세금, 법률 검토를 거친 동의서
 - 도로 경로 기반 ETA(라우팅 API)·주소 자동완성(주소 저장 때의 OSM 조회 1회는 06B에 포함), **백그라운드 위치 추적**(네이티브 앱에서 사전 동의 후 — D41)
-- 시터 말투 SFT 파인튜닝 — 보여주기용(앱에는 연결하지 않음, Dedicated Endpoint 비용·데이터 부족) ([phase-11.md](phases/phase-11.md) 11.7). RFT(강화 파인튜닝)는 신청하지 않음
+- 시터 말투 SFT 파인튜닝 — 보여주기용(앱에는 연결하지 않음, Dedicated Endpoint 비용·데이터 부족) ([phase-11-p1.md](phases/phase-11-p1.md) 11.7). RFT(강화 파인튜닝)는 신청하지 않음
 - Drop-in(짧은 방문) 전용 정원 계산 — P0는 house sitting도 보딩과 같은 칸 정원으로 계산
 - 실제 마켓플레이스(Rover 등) 문의 연동 — P0는 앱 안 문의만
 - AI 에이전트의 도구 호출(tool calling) 방식 응답 — P0는 서버가 근거를 모아 한 번 호출. 7.1 spike에서 동작하면 07B 문의 AI에만 선택적으로 붙인다 (7B.11, D46)

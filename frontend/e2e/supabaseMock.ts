@@ -213,6 +213,12 @@ export type MockDb = {
   pet_life_records: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
+  /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
+  safety_checks: Row[];
+  /** Stickers of a pet (12.3, 013b): rows point at a `media` row; read newest first with the media embedded. */
+  pet_stickers: Row[];
+  /** Sticker layers on a report (12.3b, 013b): one row per report and person; an upsert replaces it. */
+  report_decor: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
 };
@@ -267,6 +273,9 @@ function createMockDb(): MockDb {
     owner_favorite_sitters: [],
     pet_life_records: [],
     sitter_rates: [],
+    safety_checks: [],
+    pet_stickers: [],
+    report_decor: [],
     quote_error: null,
   };
 }
@@ -1522,6 +1531,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         owner: { display_name: users.find((u) => u.id === pet.owner_id)?.displayName ?? null },
       }));
     }
+    if (path === "pet_stickers" && select.includes("media")) {
+      rows = rows.map((sticker) => {
+        const media = db.media.find((m) => m.id === sticker.media_id);
+        return { ...sticker, media: media ? { cloudinary_public_id: media.cloudinary_public_id } : null };
+      });
+    }
     if (path === "feed_posts" && select.includes("media")) {
       rows = rows.map((post) => {
         const media = db.media.find((m) => m.id === post.media_id) ?? null;
@@ -1613,7 +1628,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -1698,6 +1713,14 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           (a) => a.pet_id === row.pet_id && String(a.allergen).toLowerCase() === String(row.allergen).toLowerCase(),
         );
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
+      }
+    }
+    if (path === "report_decor") {
+      // upsert on (report_id, user_id): my layer replaces my earlier one; RLS (013b) — only my own row.
+      for (const row of inserted) {
+        if (row.user_id !== me) return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        const keep = db.report_decor.filter((r) => !(r.report_id === row.report_id && r.user_id === row.user_id));
+        db.report_decor.splice(0, db.report_decor.length, ...keep);
       }
     }
     table.push(...inserted);

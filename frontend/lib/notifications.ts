@@ -189,6 +189,9 @@ export function hrefForNotification(
     case "life_record_updated":
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}/record` : null;
     case "safety_danger":
+      // The sitter's Treat check found a DANGER (013): open that check — its red screen if nobody confirmed it yet.
+      if (role !== "owner") return null;
+      return notice.refId ? `/owner/snap/treat?check=${notice.refId}` : "/owner/snap/treat";
     case "photo_request":
     case "task_due":
       return null;

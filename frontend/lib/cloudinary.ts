@@ -5,7 +5,7 @@ import { UploadError, type UploadStep } from "./uploadError";
 export { UploadError, VideoTooLongError, type UploadStep } from "./uploadError";
 export type { VideoTrim } from "./mediaNormalize";
 
-export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label";
+export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label" | "sticker";
 export type ResourceType = "image" | "video";
 
 export type UploadMediaInput = {
@@ -60,7 +60,8 @@ function guessResourceType(file: File | Blob, explicit?: ResourceType): Resource
  */
 export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaResult> {
   const resourceType = guessResourceType(input.file, input.resourceType);
-  const file = await prepareForUpload(input.file, resourceType, input.trim);
+  // A sticker is our own small transparent PNG (Snap → Sticker): re-encoding it as JPEG would paint its background white.
+  const file = input.purpose === "sticker" ? input.file : await prepareForUpload(input.file, resourceType, input.trim);
 
   let sign: SignResponse;
   try {
@@ -145,6 +146,13 @@ export function thumbUrl(publicId: string, w = 400): string {
   const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
   if (!cloud) return "";
   return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,c_fill,g_auto,w_${w},h_${w}/${publicId}`;
+}
+
+/** The original PNG as a file download (`fl_attachment`, so the browser saves it instead of opening it). */
+export function downloadUrl(publicId: string, filename: string): string {
+  const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
+  if (!cloud) return "";
+  return `https://res.cloudinary.com/${cloud}/image/upload/fl_attachment:${encodeURIComponent(filename)}/${publicId}.png`;
 }
 
 /** Full photo for the expand sheet — fits inside the frame, no crop. */

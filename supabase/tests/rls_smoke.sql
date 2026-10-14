@@ -9,7 +9,7 @@
 -- Cast (all fictional): owners Robert (dog Max, cat Mochi) and Joy (dogs Coco, Toto);
 -- sitters Chloe (08–12 / 12–18 / 18–08, 3 pets), Paul (09–13 / 13–17, 2 pets),
 -- Allen (08–12 / 12–18 / 18–08, 3 pets), Nora (no schedule).
--- Scenario letters match docs/plan/phases/phase-02.md "예시 시나리오".
+-- Scenario letters match docs/plan/phases/phase-02-db.md "예시 시나리오".
 -- H (last-spot race) runs sequentially here; the advisory lock serializes real concurrent calls.
 
 begin;
@@ -4401,5 +4401,181 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 013 (Phase 12.1 Treat check, D61): owner + sitter read and acknowledge, a sitter's DANGER tells the owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  biscuit uuid;
+  v_media uuid;
+  v_by_sitter uuid;
+  v_by_owner uuid;
+  v_warning uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Biscuit') returning id into biscuit;
+  perform _t_booking(robert, chloe, array[biscuit], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (biscuit, chloe, 'goldito/biscuit/safety_label/a', 'image', 'safety_label') returning id into v_media;
+
+  -- The backend writes the checks (service role).
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'DANGER', '{"warning_message":"Biscuit is allergic to chicken. Don''t feed it."}')
+  returning id into v_by_sitter;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, robert, v_media, 'DANGER', '{"warning_message":"x"}') returning id into v_by_owner;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'WARNING', '{"warning_message":"y"}') returning id into v_warning;
+
+  select count(*) into v_n from public.notifications where user_id = robert and type = 'safety_danger' and pet_id = biscuit;
+  perform _t_ok(v_n = 1, '013: only the sitter''s DANGER notifies the owner (not the owner''s own, not a WARNING)');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'safety_danger'
+      and ref_id = v_by_sitter and title = 'Blocked a risky treat for Biscuit ⚠️'
+      and body = 'Biscuit is allergic to chicken. Don''t feed it.'),
+    '013: the notice names the pet and carries the warning');
+
+  -- Who reads them
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: the owner reads every check of their pet');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: …and so does the sitter');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.safety_checks) = 0, '013: a third party reads none');
+
+  -- Acknowledge: the owner now too; nothing else is writable by a client
+  perform _t_as(robert);
+  update public.safety_checks set acknowledged_at = now() where id = v_by_sitter;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is not null from public.safety_checks where id = v_by_sitter),
+    '013: the owner records "I understand — don''t feed"');
+  perform _t_as(joy);
+  update public.safety_checks set acknowledged_at = now() where id = v_warning;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is null from public.safety_checks where id = v_warning), '013: a third party cannot');
+  perform _t_as(robert);
+  begin
+    update public.safety_checks set safety_status = 'SAFE' where id = v_by_owner;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: the verdict cannot be changed by a client');
+  begin
+    insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+    values (biscuit, robert, v_media, 'SAFE', '{}');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: a check is never written by a client (only by the backend)');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 013b (Phase 12.3 Sticker, D61): stickers of a pet, and each person's own sticker layer on a sent report
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  v_sticker_media uuid;
+  v_spare_media uuid;
+  v_feed_media uuid;
+  v_sticker uuid;
+  v_report uuid;
+  v_draft uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  -- The backend registers uploads (service role); 'sticker' is now a purpose.
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/a', 'image', 'sticker') returning id into v_sticker_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/b', 'image', 'sticker') returning id into v_spare_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/feed/c', 'image', 'feed') returning id into v_feed_media;
+  perform _t_ok(v_sticker_media is not null, '013b: media takes the sticker purpose');
+
+  -- Saving a sticker: only from your own sticker upload of that pet
+  perform _t_as(chloe);
+  insert into public.pet_stickers (pet_id, media_id) values (pip, v_sticker_media) returning id into v_sticker;
+  perform _t_ok(v_sticker is not null, '013b: the sitter on duty saves a sticker from her own sticker upload');
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_feed_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: a feed photo cannot be saved as a sticker');
+  perform _t_as(robert);
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_spare_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot save someone else''s upload as their sticker');
+
+  -- Who sees them, who removes them
+  perform _t_ok((select count(*) from public.pet_stickers where pet_id = pip) = 1, '013b: the owner sees the stickers of their pet');
+  delete from public.pet_stickers where id = v_sticker;
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.pet_stickers where id = v_sticker), '013b: only the maker deletes a sticker');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_stickers) = 0, '013b: a third party sees no stickers');
+
+  -- Decorating a report: own layer only, both layers visible, sent reports only for the owner
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+  values (pip, chloe, current_date, 'Pip had a lovely day.', 'sent', now()) returning id into v_report;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body)
+  values (pip, chloe, current_date - 1, 'Draft') returning id into v_draft;
+
+  perform _t_as(robert);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.2, 'y', 0.3, 'scale', 1, 'rotate', 0, 'z', 1)));
+  perform _t_as(chloe);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.8, 'y', 0.6, 'scale', 1.5, 'rotate', 15, 'z', 1)));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.report_decor where report_id = v_report) = 2, '013b: the owner sees both layers on the report');
+  update public.report_decor set items = '[]'::jsonb where report_id = v_report and user_id = chloe;
+  perform _t_as(chloe);
+  perform _t_ok((select jsonb_array_length(items) from public.report_decor where report_id = v_report and user_id = chloe) = 1,
+    '013b: nobody changes the other person''s layer');
+  perform _t_as(robert);
+  begin
+    insert into public.report_decor (report_id, items) values (v_draft, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot decorate a draft');
+  begin
+    update public.report_decor set items = (select jsonb_agg(jsonb_build_object('x', g)) from generate_series(1, 21) g)
+    where report_id = v_report and user_id = robert;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '013b: at most 20 stickers in one layer');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.report_decor) = 0, '013b: a third party sees no layer');
+  begin
+    insert into public.report_decor (report_id, items) values (v_report, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: …and cannot add one');
+  perform _t_as(null);
+end;
+$$;
 
 rollback;

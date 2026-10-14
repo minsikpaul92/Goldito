@@ -2,7 +2,7 @@
 
 SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
-**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
+**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02-db.md](../docs/plan/phases/phase-02-db.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
 ## Migration order
 
@@ -42,7 +42,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `012d_capacity_check_for_owner.sql` | review fix (CR-3) | `stay_capacity_check(…, p_owner)`: the one-owner-at-a-time rule is checked for the named owner (the sitter's token runs it too) |
 | `012e_inquiries_reopen.sql` | review fix (CR-4) | `inquiries.closed_by_booking`; a declined / cancelled request reopens the inquiries it closed (011z) unless another live booking still covers them |
 | `012f_reply_from_fresh_draft.sql` | review fix (CR-7) | `send_inquiry_reply` refuses (`draft_stale`) an AI draft older than the owner's latest message — a follow-up or `change_inquiry_dates` — so no old quote goes out |
-| `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
+| `013_safety.sql` | 12.1 (Treat check — the 08 design, D61) | The owner may also acknowledge (`acknowledged_at`) their pet's checks; trigger `notify_safety_danger`: a DANGER checked by someone other than the owner sends the owner one `safety_danger` notice |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.

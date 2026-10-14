@@ -5,7 +5,7 @@
 > **목적:** P0 — [Full Process 5단계](full-process.ko.md)(문의 → 사전 미팅 → 예약 → 돌봄 & 이동 → 완료) — 까지 **AI(Cursor·Claude)에게 줄 명령**을 단계별로 정리. 세이프티 가드는 시나리오 코어 뒤 stretch (D27).
 > **원칙:** 한 프롬프트 = 한 산출물. 항상 *수용 기준(DoD)* 를 붙인다.
 
-관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [스키마 정본 phase-02](phases/phase-02.md) · [제품 README](../README.ko.md)
+관련 문서: [개발 계획](README.ko.md) · **[Phase별 Goal & 상세](phases/README.ko.md)** · [스키마 정본 phase-02](phases/phase-02-db.md) · [제품 README](../README.ko.md)
 
 ---
 
@@ -144,20 +144,20 @@ DoD: CI green; phone-browser touch scrolling unchanged.
 
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
-| 2.1–2.6 | 스키마 17개 테이블 — [phase-02 §2.1–2.6](phases/phase-02.md#2126-스키마-001_initial_schemasql) | 0.1 | `001_initial_schema.sql` |
-| 2.7 | RLS + 컬럼 권한 — [phase-02 §2.7](phases/phase-02.md#27-rls-002_rls_policiessql) | 2.1–2.6 | `002_rls_policies.sql` |
-| 2.8 | 함수·트리거·예약 RPC + smoke test — [phase-02 §2.8](phases/phase-02.md#28-공통-함수트리거-003_functions_triggerssql) | 2.7 | `003_functions_triggers.sql`, `tests/rls_smoke.sql` |
+| 2.1–2.6 | 스키마 17개 테이블 — [phase-02 §2.1–2.6](phases/phase-02-db.md#2126-스키마-001_initial_schemasql) | 0.1 | `001_initial_schema.sql` |
+| 2.7 | RLS + 컬럼 권한 — [phase-02 §2.7](phases/phase-02-db.md#27-rls-002_rls_policiessql) | 2.1–2.6 | `002_rls_policies.sql` |
+| 2.8 | 함수·트리거·예약 RPC + smoke test — [phase-02 §2.8](phases/phase-02-db.md#28-공통-함수트리거-003_functions_triggerssql) | 2.7 | `003_functions_triggers.sql`, `tests/rls_smoke.sql` |
 
-> Phase 02는 완료(2.9 호스팅 적용만 남음). 스키마를 바꿀 때는 **phase-02.md 표를 먼저 고치고**, 아래 프롬프트에 그 표를 붙여 넣습니다.
+> Phase 02는 완료(2.9 호스팅 적용만 남음). 스키마를 바꿀 때는 **phase-02-db.md 표를 먼저 고치고**, 아래 프롬프트에 그 표를 붙여 넣습니다.
 
 ### AI 프롬프트 — 001 / 002 / 003 (각각 별도)
 
 ```text
-Update supabase/migrations/00N_*.sql to match docs/plan/phases/phase-02.md.
+Update supabase/migrations/00N_*.sql to match docs/plan/phases/phase-02-db.md.
 Paste: the phase-02 table(s) for this file (§2.1–2.6 schema / §2.7 RLS / §2.8 functions).
 
 Rules:
-- phase-02.md is the source of truth; if the SQL needs a different rule, stop and propose a doc change first.
+- phase-02-db.md is the source of truth; if the SQL needs a different rule, stop and propose a doc change first.
 - Keep rls_smoke.sql passing: stub + migrations + smoke on Postgres 17 (supabase/README.md "Local / CI").
 - Add a smoke check for every new rule (expected result in a comment).
 
@@ -208,14 +208,14 @@ DoD: curl with valid access token returns 200; invalid returns 401.
 | ID | Todo | 선행 | DoD |
 | :--- | :--- | :--- | :--- |
 | 3B.0 | 탭 변경 + `004_booking_options.sql` (service_type, services, Meet & Greet, media purpose) | 03 | 탭 라벨 안 잘림 |
-| 3B.1–3B.8 | 스케줄 · 단골·검색 · 요청 · 협의 · Received/Returned · 취소·재예약 | 3B.0 | [phase-03b](phases/phase-03b.md) Goal |
+| 3B.1–3B.8 | 스케줄 · 단골·검색 · 요청 · 협의 · Received/Returned · 취소·재예약 | 3B.0 | [phase-03b](phases/phase-03b-booking.md) Goal |
 | 3B.9–3B.11 | Meet & Greet(첫 만남만 — 대면 장소·건너뛰기 동의, D44) · 서비스·이동 방식 UI · Google Meet 링크(D45) | 3B.3 | 제안 → 수락 → Done / 건너뛰기 거부 = 취소 / 영상 수락 → Meet 링크 |
 | 3C.1–3C.7 | `quote_booking` · 동의서 · `pay_booking_demo` · 시터 집 정보 · 출입 정보 2시간 전 해제 | 3B | rls_smoke I–K |
 
 ### AI 프롬프트 — 3C SQL (견적·결제·해제)
 
 ```text
-Implement supabase/migrations/006_agreements.sql per docs/plan/phases/phase-03c.md (3C.1, 3C.3–3C.5) and architecture D29–D31:
+Implement supabase/migrations/006_agreements.sql per docs/plan/phases/phase-03c-payment.md (3C.1, 3C.3–3C.5) and architecture D29–D31:
 - sitter_rates, holidays (Ontario 2026–2027), quote_booking(p_sitter, p_service, p_drop_off_at, p_pick_up_at, p_pet_count) returning the breakdown JSON — no AI involved
 - booking_consents + required_consents(p_booking); pay_booking_demo(p_booking) → paid_at + price_snapshot, error codes consents_missing / already_paid
 - owner_home_access (owner-only RLS) + get_home_access(p_booking): paid, booked sitter, window = first owner_home handoff − 2 h … stay end; access_reveals + access_unlocked notification once
@@ -239,7 +239,7 @@ DoD: Pay is disabled until every required consent is signed; Playwright flow cov
 ### AI 프롬프트 — 3B.9·3B.11 Meet & Greet
 
 ```text
-Implement Meet & Greet per docs/plan/phases/phase-03b.md 3B.9 and 3B.11 (architecture D44–D45):
+Implement Meet & Greet per docs/plan/phases/phase-03b-booking.md 3B.9 and 3B.11 (architecture D44–D45):
 - 004_booking_options.sql: meet_greet_status (not_needed / required / proposed / agreed / done / skip_requested / skipped), set by request_booking — required only when this owner and sitter have never met (no earlier booking with a finished handoff and no finished Meet & Greet); meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_link, meet_greet_event_id, proposed_by / skip_requested_by; owner_profiles.meet_spots and sitter_profiles.meet_spots (up to 3 labels each)
 - RPCs: propose_meet_greet, respond_meet_greet, complete_meet_greet, request_skip_meet_greet, respond_skip_meet_greet (decline → cancel_booking with reason 'meet_greet_declined'), get_meet_greet_options; respond_booking(accept) raises meet_greet_required until the status is not_needed, done, or skipped
 - FastAPI POST /api/meet-greet/video-link {booking_id}: Google Calendar events.insert with conferenceDataVersion=1 and conferenceData.createRequest (conferenceSolutionKey.type = hangoutsMeet); organizer = the Goldito Google account via a stored refresh token; attendees = both emails unless MEET_INVITE_ATTENDEES=false or the address ends in .test; idempotent; events.patch on reschedule, events.delete on cancel
@@ -319,7 +319,7 @@ DoD: owner creates an 8am medication; the sitter marks it done without a photo (
 ### AI 프롬프트 — 6.12–6.14 케어·투약 의뢰서 (Stage 2)
 
 ```text
-Implement the care request per docs/plan/phases/phase-06.md 6.12–6.14:
+Implement the care request per docs/plan/phases/phase-06-checks.md 6.12–6.14:
 - Backend: POST /api/ai/care-plan {pet_id, text} — assert_owner_of, MODEL_REPORT + prompts/care_plan/system.md → chat_json CarePlan; the server enforces species rules (walk = dogs, litter = cats → skipped), HH:MM times, dedupe. Draft only, nothing saved.
 - Frontend: /owner/pets/[petId]/care-request — text box → Make a checklist → ChecklistCard (editable rows, Heads-up chips) → Save checklist inserts care_requests + care_tasks + pet_cautions; Heads-up cards on sitter Today and the booking request card.
 
@@ -340,7 +340,7 @@ DoD: the phase-06 example request becomes Feeding 8:00 + Medication 14:00 + 2 He
 ### AI 프롬프트 — 6B.1–6B.4
 
 ```text
-Implement Pet Transit per docs/plan/phases/phase-06b.md and architecture D32:
+Implement Pet Transit per docs/plan/phases/phase-06b-transit.md and architecture D32:
 - supabase/migrations/012_transit.sql: trips (one last position, cleared on end), RPCs start_trip / update_trip_position (ETA = straight-line × 1.3 / 30 km/h, arrived within 150 m → trip_arrived once) / end_trip, Realtime publication, RLS = booking parties only
 - frontend/lib/location.ts: one source for real GPS (expo-location / navigator.geolocation) and "Simulate the drive" (assets/demo/routes/*.json at 10×), posting every 5 s
 - TripMap.web.tsx: Leaflet + OSM, dragging/scrollWheelZoom/touchZoom off, ± buttons, fit both markers, OSM attribution; native TripMap.tsx = distance + ETA card
@@ -370,7 +370,7 @@ Implement POST /api/ai/handoff-check per phase-06b 6B.5: assert_booked_sitter(bo
 ### AI 프롬프트 — 7.1 Nebius 클라이언트
 
 ```text
-Implement backend/app/services/nebius.py per docs/plan/phases/phase-07.md 7.1 and architecture §9:
+Implement backend/app/services/nebius.py per docs/plan/phases/phase-07-report.md 7.1 and architecture §9:
 - OpenAI-compatible clients cached per base URL; model role (MODEL_FAST / MODEL_REPORT / MODEL_SAFETY / MODEL_VISION / MODEL_EMBED) -> (model id, base URL) from env
 - chat(role, messages, **kw), chat_json(role, messages, schema) with the strip-<think> / first-JSON-block / one-retry rules, embed(texts) with dimensions=MODEL_EMBED_DIM
 - One structured metrics log line per call: role, model, endpoint, ttft_ms, latency_ms, tokens, retried, ok (no prompt or response text)
@@ -382,7 +382,7 @@ DoD: scripts/test_nebius.py calls every role 5 times (vision with one sample ima
 ### AI 프롬프트 — 7.2–7.3 알림장 API + UI
 
 ```text
-POST /api/ai/daily-report { pet_id, date, inputs, media_ids? } per docs/plan/phases/phase-07.md 7.2:
+POST /api/ai/daily-report { pet_id, date, inputs, media_ids? } per docs/plan/phases/phase-07-report.md 7.2:
 - Build source_snapshot server-side (service role): the day's tasks, feed captions, care_checkins, the chips the sitter kept from POST /api/ai/report-chips (7.7), the sitter's optional short note, and the report photo descriptions saved by 7.7 (no second vision call)
 - Compose the prompt through tone.compose() (the sitter's style card + the same sitter's past reports, D35; few_shot.json only as the fallback) and call MODEL_REPORT (Super); facts only from source_snapshot
 - Save daily_reports status draft
@@ -417,7 +417,7 @@ Do not change app code. Create backend/app/ai/prompts/daily_report/few_shot.json
 ### AI 프롬프트 (구 슬기 전용) — 7B.2–7B.4
 
 ```text
-Implement the inquiry auto-reply per docs/plan/phases/phase-07b.md and architecture §9 (grounding rules, D29, D31, D33):
+Implement the inquiry auto-reply per docs/plan/phases/phase-07b-inquiry.md and architecture §9 (grounding rules, D29, D31, D33):
 - nebius.embed(texts) with MODEL_EMBED and dimensions=MODEL_EMBED_DIM (1024); services/rag.py index_source / search using rpc match_knowledge (service role)
 - POST /api/ai/inquiry-reply {inquiry_id}: collect availability (get_sitter_schedule), quote_booking, pet profiles + pet_cautions, sitter public profile, rag.search top-5 → MODEL_FAST + prompts/inquiry/system.md → chat_json {reply, can_host, needs_sitter, used_sources}
 - Number check: any $ amount or date in reply must exist in the grounding JSON, else regenerate once, else fixed fallback text
@@ -507,7 +507,7 @@ DoD: sitter upload only; caption appears automatically.
 | 10.2 | README Getting Started 실제 명령 | 10.1 | 심사위원 재현 |
 | 10.3 | 배포: Vercel(front) + Render(backend, Docker 무료 + 10분 keep-alive 핑 — D18, 2026-10-09) | 10.2 | public demo URL |
 | 10.4 | 테스트 계정 Devpost용 문서 | 10.3 | |
-| 10.9–10.10 | 데스크톱 옆 안내 패널 · (stretch) Split view — 번호는 [phase-10](phases/phase-10.md) 기준 | 10.3 | 마우스만으로 심사 경로 |
+| 10.9–10.10 | 데스크톱 옆 안내 패널 · (stretch) Split view — 번호는 [phase-10](phases/phase-10-deploy.md) 기준 | 10.3 | 마우스만으로 심사 경로 |
 
 ### AI 프롬프트 — 10.1 seed
 

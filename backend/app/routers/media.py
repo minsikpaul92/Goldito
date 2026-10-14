@@ -14,7 +14,7 @@ from app.services import cloudinary as cloudinary_service
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
-Purpose = Literal["feed", "task_proof", "report", "handoff", "safety_label"]
+Purpose = Literal["feed", "task_proof", "report", "handoff", "safety_label", "sticker"]
 ResourceType = Literal["image", "video"]
 
 
@@ -71,11 +71,12 @@ def _authorize_media(
     booking_id: UUID | None,
 ) -> None:
     if user.role == "owner":
-        # Owners add their own feed photos (5.8); every other purpose belongs to the sitter.
-        if purpose != "feed":
+        # Owners add their own feed photos (5.8), treat labels for Snap → Treat check (12.1, D61) and stickers cut out
+        # of their pet's photos (12.3); every other purpose belongs to the sitter.
+        if purpose not in ("feed", "safety_label", "sticker"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Owners can only upload feed photos.",
+                detail="Owners can only upload feed photos, treat labels and stickers.",
             )
         authz.assert_owner_of(user, pet_id)
     elif purpose == "handoff":

@@ -5,7 +5,7 @@
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
 > 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
 
-**마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
+**마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q-quality.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
 
 ---
 
@@ -137,7 +137,7 @@
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
-| 간식 안전 스캐너 | ⬜ (스트레치) | 08 |
+| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) | 12 (08 설계 포함) |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -538,9 +538,44 @@
 | PRIV-2 | 로그인 후 Profile 아래 **Privacy**, 그리고 주소창으로 `/privacy` 직접 열기 | 열리고, 새로고침해도 역할 홈으로 튕기지 않음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
 | PRIV-3 | 실제 문구가 앱 동작과 맞는지 읽기 (저장 항목 · 보내는 곳 · 보존 기간) | 새 서비스를 붙일 때마다 페이지도 같이 고침 | 수동 | 사람 확인 대기 |
 
+### 3.20 Snap 탭 (SNAP) — Phase 12 · D61
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| SNAP-1 | 견주 · 시터로 로그인 → 탭 바 | 탭 5개 `Home · Bookings · Feed · Diary · Snap`(카메라 아이콘), Mood 탭은 없음 | 🤖 `auth.spec.ts` | 사람 확인 대기 |
+| SNAP-2 | **Snap** 탭 → 카드 3개(Treat check · Mood · Sticker) → 각각 클릭 → 뒤로 | 각 도구 화면(`/{역할}/snap/treat` · `mood` · `sticker`)이 열리고(Mood · Sticker는 아직 "Coming soon — …" 안내, Treat check는 SNAP-5) 뒤로 가면 Snap 탭. 마우스만으로 가능 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
+| SNAP-3 | (API) 견주가 본인 펫 성분표 사진으로 `POST /api/ai/safety-check` — chicken 알러지 Max에 `chicken breast` 라벨 / 개에게 `raisins` / 고양이에게 `lily extract` / `animal fat` / 평범한 라벨 | 차례로 DANGER(모델이 SAFE라 해도) · DANGER · DANGER · WARNING(숨은 출처 설명) · SAFE. 결과에 신뢰 도메인 출처, Tavily가 안 되면 `sources_unavailable`, Ultra가 안 되면 SAFE 대신 WARNING(`double_checked: false`). 라벨을 못 읽으면 422. 남의 사진 · 다른 펫 · 돌보는 중이 아닌 시터는 403 | 🤖 pytest · 실제 모델은 👤 — 모델 직접 호출 확인(라벨 4장 읽기 · Tavily · Ultra WARNING, 2026-10-14 [model-ids.md](phases/notes/model-ids.md)), 라우트 전체는 배포 백엔드에 이 코드가 올라간 뒤(#90 머지) | ➖ |
+| SNAP-4 | (DB) 시터가 검사한 DANGER / 견주가 검사한 DANGER / WARNING | 시터 DANGER만 견주에게 "Blocked a risky treat for {이름} ⚠️" 알림 1건. 견주도 "I understand"(`acknowledged_at`)를 남길 수 있음, 판정은 앱에서 못 바꿈 | SQL `rls_smoke` 013 — 호스팅 DB에서 전부 PASS | ✅ 2026-10-14 민식 (SQL) |
+| SNAP-5 | 견주(Max chicken 알러지 · Mochi) → Snap → **Treat check** → Max 고르기 → **Snap a label** → 샘플 **Chicken jerky** → **Check for Max** | "Reading the label…" → (8초 뒤) "Checking for Max…" → **빨간 전체 화면** "Don't give this to Max" + 이유 + `chicken` 칩. 폰 프레임 안, 바깥 클릭 · Esc로 안 닫힘, **I understand — don't feed**로만 닫힘 → `acknowledged_at` 기록, 결과 카드 · Recent checks 1줄이 남음. 맨 아래 작은 회색 "AI can be wrong…" 항상 | 🤖 `treat-check.spec.ts`(API 목업) · 실제 판정은 👤(배포 백엔드에 이 코드가 올라간 뒤) | 사람 확인 대기 |
+| SNAP-6 | 시터(돌보는 펫 Max 하나) → Treat check → 샘플 **Biscuit** | 펫이 이미 골라져 있고 이 예약에 없는 펫은 안 보임 → 주황 "Ask the owner first", "animal fat may contain chicken — …", 출처 칩(제목 · 도메인, 클릭하면 새 탭), "Ingredients we read" 펼치기. 돌보는 펫이 없으면 "No pet in your care right now" | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-7 | 견주 → 샘플 **Sweet potato** / 출처 없이 온 결과 / Ultra 없이 온 결과 | 초록 "Looks fine for Max ✅" · "Sources unavailable right now." · "We couldn't double-check this one." (견주 WARNING은 "Check with your vet first") | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-8 | 흐린 사진(422) / 서버 오류(503) | 422 → "Couldn't read the label. Try a closer, well-lit photo." + 버튼 **Retake photo**. 503 → 오류 창 + **Try again** → 같은 사진으로 다시 검사(재업로드 없음) | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-9 | 시터가 DANGER를 낸 뒤 견주가 알림 "Blocked a risky treat for Max ⚠️"를 탭 | `/owner/snap/treat?check=…` → 그 검사가 열리고 아직 아무도 확인 안 했으면 빨간 화면 → 확인하면 결과 카드 | 🤖 `treat-check.spec.ts`(링크 직접 열기) · 알림 탭은 👤(`013` 적용됨 — 배포 백엔드에 이 코드가 올라간 뒤) | 사람 확인 대기 |
+| SNAP-10 | (API) `POST /api/ai/pet-mood` — 개 1마리 사진(크롭 1개) / 개 2마리(크롭 2개) / 영상(프레임 4장) / 펫이 없는 크롭 / 같은 사진 두 번 | 펫마다 박스 + 감정 8개가 **정수 %로 합 100**(서버 규칙, 모델은 태그만) + "seems" 한 줄 + "For fun only — not a behavior or health assessment.". 영상은 프레임 평균 + 평균에 가장 가까운 프레임의 박스. 같은 사진 → 같은 %. 요약에 건강 · 통증 · vet 단어가 있거나 "seems/looks"가 없으면 규칙 문장으로. 못 읽은 크롭만 빠지고, 펫이 하나도 없으면 422, 비전 모델이 다 안 되면 503. 크롭 9개 · 프레임 5장 · 300 KB 초과 · data URL 아님 · 박스 범위 밖은 모델 호출 전에 422. `pet_id`를 주면 그 펫의 견주 · 돌보는 시터만(아니면 403), 저장은 안 함 | 🤖 pytest `test_mood_rules` · `test_ai_pet_mood` · 비전 태그 실제 호출은 👤(우리 사진 8장 직접 호출 확인 2026-10-14) | ➖ |
+| SNAP-11 | 견주(Max · Mochi) → Snap → **Mood** → **Pick a photo or clip** → 샘플 사진(예: **Tug of war**) | "Getting your photo ready…" → "Finding your pet…"(첫 사용은 MediaPipe 내려받기로 몇 초) → "Reading the mood…" → 사진 위에 펫마다 **박스**(라벨: 펫 · 1등 감정 %) + **감정 8줄 표**(큰 순, 1등 굵게) + "seems" 한 줄. 맨 아래 "For fun only — not a behavior or health assessment."는 고르기 전부터 항상. 펫 칩은 선택(하나뿐이면 미리 골라짐, 다시 누르면 해제) — 고르면 요약에 이름. 마우스만으로 | 🤖 `mood.spec.ts`(박스는 테스트 훅, API 목업) · 실제 MediaPipe · 모델은 👤 | 사람 확인 대기 |
+| SNAP-12 | 개 2마리 사진 → 다른 펫의 박스나 아래 "Pet 2" 칩 클릭 | 박스가 왼쪽부터 Pet 1 · Pet 2, 클릭한 펫의 표 · 요약으로 바뀜. 서버에는 크롭이 왼쪽→오른쪽 순서로 감(사진은 펫 ≤ 4, 영상은 프레임당 ≤ 2) | 🤖 `mood.spec.ts` · 실제 2마리 사진은 👤(샘플 없음) | 사람 확인 대기 |
+| SNAP-13 | 샘플 **Fetch play**(영상) | 프레임 4장(20 · 40 · 60 · 80 % 지점)을 보내고 "Average of 4 frames from the clip", 평균에 가장 가까운 프레임과 그 박스를 보여 줌. 30초 넘는 영상은 자르기 시트에서 고른 부분 안에서 | 🤖 `mood.spec.ts`(프레임은 테스트 훅) · 실제 영상 디코딩은 👤 | 사람 확인 대기 |
+| SNAP-14 | 펫이 없는 사진 / 서버 422 / 서버 503 | "We couldn't find a pet — try a clearer photo." + **Try another photo**(서버를 부르지 않음) · 422도 같은 문장 · 503은 오류 창 **Try again** → 같은 크롭으로 다시 | 🤖 `mood.spec.ts` | 사람 확인 대기 |
+| SNAP-15 | 견주(Max) → Snap → **Sticker** → **Pick a photo** → 샘플(예: **Grass walk**) | "Finding your pet…" → "Cutting out your pet… (a few seconds)"(첫 사용은 모델 30 MB 내려받기, 오리기는 Web Worker라 화면은 계속 움직임) → 사진 위에 탭한 점 · 아래에 **흰 테두리 · 그림자가 있는 투명 스티커** 미리보기. 사진의 다른 곳을 클릭하면 그 자리로 다시 오림. **Save sticker** → "Sticker saved ✂️", Sticker box에 1개. 마우스만으로 | 🤖 `sticker.spec.ts`(오리기 마스크는 테스트 훅, 스티커 그림은 실제 캔버스 코드) · 실제 Magic Touch는 👤(`013b` 적용됨 — 백엔드가 이 코드를 배포한 뒤) | 사람 확인 대기 |
+| SNAP-16 | 스티커가 저장된 뒤 Cloudinary · DB 확인 | 올라간 파일은 **PNG 그대로**(`sticker.png`, `image/png` — JPEG로 다시 인코딩하지 않음, 배경 투명), `media.purpose = sticker`, `pet_stickers` 행(만든 사람). 원본 사진은 올라가지 않음 | 🤖 `sticker.spec.ts`(업로드 본문) · SQL `rls_smoke` 013b — 호스팅 DB 전부 PASS (2026-10-14, 민식) · Cloudinary 투명 배경은 👤 | ✅ 2026-10-14 민식 (SQL) |
+| SNAP-17 | 시터(Max 돌보는 중)로 Sticker 탭 / 견주가 만든 스티커에 × / 못 오린 사진 | 견주의 스티커도 Sticker box에 보이지만 ×(삭제)는 만든 사람에게만, 삭제는 확인 시트 뒤. 펫을 못 잡은 오리기 → "We couldn't cut out a pet there — tap your pet." + Save 없음. 돌보는 펫이 없으면 "No pet in your care right now" | 🤖 `sticker.spec.ts` · SQL `rls_smoke` 013b(남의 업로드 · 피드 사진으로 스티커 못 만듦, 만든 사람만 삭제) | 사람 확인 대기 |
+| SNAP-18 | 견주 → Diary → 보낸 알림장 하나 → **✨ Decorate** → 스티커함에서 하나 클릭 → 스티커를 **마우스로 끌기** → **+** 두 번 · **↻** 한 번 → **Save stickers** → 새로고침 | 알림장 글이 "종이" 위에 있고, 스티커가 종이 가운데에 붙어 끌리는 대로 따라옴(화면 스크롤로 바뀌지 않음), 크기 · 회전 반영, "Stickers saved ✨". 새로고침해도 같은 자리 · 크기 · 각도. 글은 그대로. **Cancel**은 저장한 상태로 되돌리고, 고른 스티커 **Remove**. 스티커가 없으면 "No stickers yet — make one in Snap." + **Make a sticker** | 🤖 `decor.spec.ts`(마우스 드래그) | 사람 확인 대기 |
+| SNAP-19 | 시터 → Diary → 오늘 보낸 알림장 카드 / 그 알림장을 견주가 열기 | 시터 카드의 종이에 견주 스티커가 **같은 자리**에(아래 층), 시터도 자기 층을 꾸밀 수 있고 견주 화면에서도 같은 자리에 보임. 서로의 층은 못 바꿈, 알림장 초안에는 견주가 못 붙임 | 🤖 `decor.spec.ts` · SQL `rls_smoke` 013b · 두 계정 실제 확인은 👤(`013b` 적용됨 — #90 머지 뒤) | 사람 확인 대기 |
+| SNAP-20 | 견주 → Diary → 보낸 알림장 / 시터 → Diary → 오늘 보낸 알림장 | **그림일기 한 장**: 맨 위 "📅 Monday, Oct 5" · "Max's day 🐾", 가운데 그림 칸(그날 첫 사진, 없으면 🖍️), 아래 줄 공책 위에 손글씨 글꼴(Gaegu)로 알림장 글. 두 화면의 종이가 같아서 스티커가 같은 자리 | 🤖 `decor.spec.ts`(머리말 · 그림 칸) · 손글씨 글꼴 · 사진은 👤 | 사람 확인 대기 |
+| SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 지정(다시 **⬆ Over text**) — 꾸미는 동안은 반투명으로 위에 떠서 마우스로 끌 수 있고, **Save** 뒤에는 글씨가 스티커 위에 보임. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
+| SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **입구 정보 없이도 결제된다 (ENTRY-1, P0 — 고칠 예정):** 하우스 시팅 · 견주 집 인수인계 예약에서 견주가 입구 정보를 저장하지 않으면, 시간이 되어 시터가 **Show code**를 눌러도 빈 카드다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
+- **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭 카드 아래 "Recent checks"는 아직 없다(Treat check 화면 안에만, 12.5).
+- **Mood 퍼센트는 재미용 규칙 계산이다** — 비전 모델은 귀 · 눈 · 입 · 꼬리 · 자세 · 긴장 · 행동 태그만 고르고, `backend/app/ai/mood_rules.py` 표가 %를 만든다. 그래서 같은 사진 → 같은 %, 하지만 태그를 잘못 읽으면 %도 같이 틀린다. 장난감은 입 모양 선택지로는 잘 못 잡아서 **`toy` 태그를 따로 묻고**(우리 사진 10장 중 터그 사진만 `in_mouth`, 2026-10-14), 입에 장난감이 있으면 "놀이"로 계산해 **excited**가 1등이 된다. 감정 전용으로 검증된 모델이 아니다(D61, "For fun only").
+- **Mood는 웹에서만**, 펫 찾기(MediaPipe `tasks-vision@1.0.1`)는 실행할 때 jsdelivr · Google 저장소에서 받아 온다(WASM 11 MB + 모델 4.5 MB, 첫 사용에 몇 초). 네트워크가 막히면 "Couldn't get the pet finder ready…". 영상 프레임은 브라우저가 그 코덱을 열 수 있어야 한다(데스크톱 Chrome · Safari의 mp4 OK). 결과는 저장하지 않는다.
+- **Sticker 오리기는 한 번에 약 5초**(Magic Touch, CPU — GPU는 빈 마스크라 안 씀). classic Web Worker에서 돌아 화면은 멈추지 않는다(워커가 안 되는 브라우저는 메인 스레드로 — 그동안 화면이 잠깐 멈춤). 모델 파일 30 MB는 Google 저장소에서 받고 캐시가 1시간이다. 목줄 · 하네스는 펫과 같이 잘릴 수 있고, 사진 가장자리에 걸친 펫은 그 가장자리에서 잘린다. 스티커를 지워도 이미 꾸민 다이어리에는 남는다(꾸미기 항목이 이미지 `public_id`를 같이 가짐, Cloudinary 파일은 지우지 않음).
+- **다이어리 꾸미기는 알림장 글이 있는 "종이" 기준 좌표(0–1)** — 견주와 시터가 같은 종이(같은 글 · 같은 크기)를 보므로 같은 자리지만, 화면 폭이 크게 다르면(폰 프레임 밖 넓은 창) 글 줄바꿈이 달라 글과 스티커의 상대 위치가 조금 달라질 수 있다. 한 사람 층에 스티커 20개까지. 꾸미기는 웹에서만(앱 빌드는 스티커를 그리지 않음).
+- **그림일기 손글씨 글꼴(Gaegu)은 Google Fonts에서 받는다**(웹만) — 막히면 시스템 글꼴로 보이고, 글꼴이 늦게 오면 처음 잠깐 다른 글꼴. **Goldito 기본 스티커 9장은 코드로 그린 임시본**이다(`frontend/assets/stickers/`, 같은 이름으로 디자인 파일 교체). 그림 칸 사진은 그날 첫 공유 사진이라 견주가 못 보는 비공개 사진이 있으면 두 화면의 그림이 다를 수 있다(칸 크기는 같아 스티커 자리는 같음).
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.

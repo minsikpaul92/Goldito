@@ -1,0 +1,45 @@
+{
+  "_comment": "Treat check rules (Phase 12.1, D23). Ingredient names and where they come from only — no copied article text. Matching is whole-word and case-insensitive; `not` lists ingredients that merely contain the word.",
+  "toxic": [
+    {"name": "xylitol", "aliases": ["xylitol", "birch sugar"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "chocolate", "aliases": ["chocolate", "cocoa", "cacao", "theobromine"], "not": ["cocoa butter"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "caffeine", "aliases": ["caffeine", "coffee", "guarana"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "alcohol", "aliases": ["alcohol", "ethanol", "beer", "wine"], "not": ["sugar alcohol", "cetyl alcohol", "stearyl alcohol"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "grapes / raisins", "aliases": ["grape", "grapes", "raisin", "raisins", "currant", "currants", "sultana", "sultanas"], "not": ["grapeseed", "grape seed"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "onion", "aliases": ["onion", "onions", "onion powder", "shallot", "shallots", "leek", "leeks", "chive", "chives"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "garlic", "aliases": ["garlic", "garlic powder"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "macadamia nuts", "aliases": ["macadamia", "macadamia nut", "macadamia nuts"], "species": ["dog"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
+    {"name": "lily", "aliases": ["lily", "lilies", "lilium", "daylily"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/toxic-and-non-toxic-plants"},
+    {"name": "essential oils", "aliases": ["essential oil", "essential oils", "tea tree oil", "melaleuca oil", "eucalyptus oil", "peppermint oil", "wintergreen oil"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control"},
+    {"name": "propylene glycol", "aliases": ["propylene glycol"], "species": ["cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control"},
+    {"name": "raw yeast dough", "aliases": ["yeast dough", "raw dough", "bread dough"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"}
+  ],
+  "hidden_sources": [
+    {"term": "animal fat", "may_contain": ["chicken", "beef", "pork", "lamb", "turkey"], "reason": "Animal fat is often rendered from poultry or beef and the label does not say which."},
+    {"term": "animal digest", "may_contain": ["chicken", "beef", "pork", "fish"], "reason": "Animal digest can come from any animal tissue."},
+    {"term": "meat meal", "may_contain": ["chicken", "beef", "pork", "lamb"], "reason": "Meat meal does not name the animal."},
+    {"term": "meat by-products", "may_contain": ["chicken", "beef", "pork"], "reason": "By-products do not name the animal."},
+    {"term": "natural flavor", "may_contain": ["chicken", "beef", "pork", "fish", "dairy"], "reason": "Natural flavors are often made from meat, fish or dairy."},
+    {"term": "natural flavors", "may_contain": ["chicken", "beef", "pork", "fish", "dairy"], "reason": "Natural flavors are often made from meat, fish or dairy."},
+    {"term": "hydrolyzed protein", "may_contain": ["chicken", "soy", "beef", "fish"], "reason": "Hydrolyzed protein does not always name its source."},
+    {"term": "broth", "may_contain": ["chicken", "beef", "fish"], "reason": "Broth is usually chicken or beef unless the label says otherwise."},
+    {"term": "gelatin", "may_contain": ["beef", "pork", "fish"], "reason": "Gelatin is made from beef, pork or fish."},
+    {"term": "liver", "may_contain": ["chicken", "beef", "pork"], "reason": "Liver does not always name the animal."}
+  ],
+  "allergen_aliases": {
+    "chicken": ["chicken", "poultry", "hen", "chicken meal", "chicken fat", "chicken liver", "chicken broth"],
+    "turkey": ["turkey", "poultry"],
+    "beef": ["beef", "bovine", "veal", "beef tallow"],
+    "pork": ["pork", "swine", "lard", "bacon", "ham"],
+    "lamb": ["lamb", "mutton"],
+    "fish": ["fish", "salmon", "tuna", "whitefish", "cod", "menhaden", "anchovy", "sardine", "fish oil"],
+    "dairy": ["dairy", "milk", "whey", "casein", "cheese", "lactose", "yogurt", "butter"],
+    "milk": ["milk", "whey", "casein", "cheese", "lactose", "yogurt", "butter"],
+    "egg": ["egg", "eggs", "albumen", "dried egg"],
+    "wheat": ["wheat", "gluten", "semolina", "durum"],
+    "gluten": ["wheat", "gluten", "barley", "rye"],
+    "soy": ["soy", "soya", "soybean", "soybeans", "tofu"],
+    "corn": ["corn", "maize", "cornmeal", "corn starch"],
+    "peanut": ["peanut", "peanuts", "peanut butter"]
+  }
+}
