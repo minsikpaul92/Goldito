@@ -137,7 +137,7 @@
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
-| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 대기, 실제 모델 · Tavily 호출 미확인), 화면은 12.1c · Mood · Sticker는 12.2–12.3 | 12 (08 설계 포함) |
+| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 대기, 실제 모델 · Tavily 호출 미확인) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · Mood · Sticker는 12.2–12.3 | 12 (08 설계 포함) |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -543,13 +543,20 @@
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
 | SNAP-1 | 견주 · 시터로 로그인 → 탭 바 | 탭 5개 `Home · Bookings · Feed · Diary · Snap`(카메라 아이콘), Mood 탭은 없음 | 🤖 `auth.spec.ts` | 사람 확인 대기 |
-| SNAP-2 | **Snap** 탭 → 카드 3개(Treat check · Mood · Sticker) → 각각 클릭 → 뒤로 | 각 도구 화면(`/{역할}/snap/treat` · `mood` · `sticker`)이 열리고 지금은 "Coming soon — …" 안내, 뒤로 가면 Snap 탭. 마우스만으로 가능 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
+| SNAP-2 | **Snap** 탭 → 카드 3개(Treat check · Mood · Sticker) → 각각 클릭 → 뒤로 | 각 도구 화면(`/{역할}/snap/treat` · `mood` · `sticker`)이 열리고(Mood · Sticker는 아직 "Coming soon — …" 안내, Treat check는 SNAP-5) 뒤로 가면 Snap 탭. 마우스만으로 가능 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
 | SNAP-3 | (API) 견주가 본인 펫 성분표 사진으로 `POST /api/ai/safety-check` — chicken 알러지 Max에 `chicken breast` 라벨 / 개에게 `raisins` / 고양이에게 `lily extract` / `animal fat` / 평범한 라벨 | 차례로 DANGER(모델이 SAFE라 해도) · DANGER · DANGER · WARNING(숨은 출처 설명) · SAFE. 결과에 신뢰 도메인 출처, Tavily가 안 되면 `sources_unavailable`, Ultra가 안 되면 SAFE 대신 WARNING(`double_checked: false`). 라벨을 못 읽으면 422. 남의 사진 · 다른 펫 · 돌보는 중이 아닌 시터는 403 | 🤖 pytest · 실제 모델은 👤(키 필요) | ➖ |
 | SNAP-4 | (DB) 시터가 검사한 DANGER / 견주가 검사한 DANGER / WARNING | 시터 DANGER만 견주에게 "Blocked a risky treat for {이름} ⚠️" 알림 1건. 견주도 "I understand"(`acknowledged_at`)를 남길 수 있음, 판정은 앱에서 못 바꿈 | SQL `rls_smoke` 013 (`013` 적용 후) | ➖ |
+| SNAP-5 | 견주(Max chicken 알러지 · Mochi) → Snap → **Treat check** → Max 고르기 → **Snap a label** → 샘플 **Chicken jerky** → **Check for Max** | "Reading the label…" → (8초 뒤) "Checking for Max…" → **빨간 전체 화면** "Don't give this to Max" + 이유 + `chicken` 칩. 폰 프레임 안, 바깥 클릭 · Esc로 안 닫힘, **I understand — don't feed**로만 닫힘 → `acknowledged_at` 기록, 결과 카드 · Recent checks 1줄이 남음. 맨 아래 작은 회색 "AI can be wrong…" 항상 | 🤖 `treat-check.spec.ts`(API 목업) · 실제 판정은 👤(키 + `013`) | 사람 확인 대기 |
+| SNAP-6 | 시터(돌보는 펫 Max 하나) → Treat check → 샘플 **Biscuit** | 펫이 이미 골라져 있고 이 예약에 없는 펫은 안 보임 → 주황 "Ask the owner first", "animal fat may contain chicken — …", 출처 칩(제목 · 도메인, 클릭하면 새 탭), "Ingredients we read" 펼치기. 돌보는 펫이 없으면 "No pet in your care right now" | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-7 | 견주 → 샘플 **Sweet potato** / 출처 없이 온 결과 / Ultra 없이 온 결과 | 초록 "Looks fine for Max ✅" · "Sources unavailable right now." · "We couldn't double-check this one." (견주 WARNING은 "Check with your vet first") | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-8 | 흐린 사진(422) / 서버 오류(503) | 422 → "Couldn't read the label. Try a closer, well-lit photo." + 버튼 **Retake photo**. 503 → 오류 창 + **Try again** → 같은 사진으로 다시 검사(재업로드 없음) | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
+| SNAP-9 | 시터가 DANGER를 낸 뒤 견주가 알림 "Blocked a risky treat for Max ⚠️"를 탭 | `/owner/snap/treat?check=…` → 그 검사가 열리고 아직 아무도 확인 안 했으면 빨간 화면 → 확인하면 결과 카드 | 🤖 `treat-check.spec.ts`(링크 직접 열기) · 알림 탭은 👤(`013` 적용 후) | 사람 확인 대기 |
 
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭 카드 아래 "Recent checks"는 아직 없다(Treat check 화면 안에만, 12.5).
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.

@@ -1,5 +1,6 @@
-import { SnapToolPlaceholder } from "../../../features/snap/SnapToolPlaceholder";
+import { TreatCheckScreen } from "../../../features/snap/TreatCheckScreen";
 
+/** Sitter Snap → Treat check (12.1c). */
 export default function SitterSnapTreat() {
-  return <SnapToolPlaceholder tool="treat" />;
+  return <TreatCheckScreen role="sitter" />;
 }

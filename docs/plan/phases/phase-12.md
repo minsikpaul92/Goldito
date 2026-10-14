@@ -117,7 +117,7 @@ Snap 탭
 | :--- | :--- | :--- |
 | **12.0** ✅ | 탭 이름 Mood → Snap(아이콘 `camera-outline`) · Snap 화면 틀(`features/snap/SnapScreen` + 카드 3개, 각 도구 화면은 `SnapToolPlaceholder` "Coming soon" 자리 — `/{role}/snap/{treat,mood,sticker}`) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/13 |
 | **12.1a** ✅ (12.1b 포함) | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → **Tavily 매번 · 신뢰 도메인만** → Ultra 한 번) + 업로드 권한(견주 `safety_label`) + pytest · `rls_smoke` 013 블록 — 실제 모델 · Tavily 호출 확인은 남음(로컬 키 없음, 아래 § 다음에 이어서) | 10/13 |
-| **12.1c** | Treat check 화면 + `AlertModal` + 샘플 라벨 4장 + e2e | 10/16 |
+| **12.1c** ✅ | Treat check 화면 + `AlertModal` + 샘플 라벨 4장(만든 그림) + e2e — 실제 판정 확인은 키 · `013` 뒤 | 10/14 |
 | **12.S2** | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 이 문서에 결과 기록 | 10/16 |
 | **12.2a** | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest | 10/17 |
 | **12.2b** | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e | 10/18 |
@@ -132,7 +132,7 @@ Snap 탭
 ## 시작 전에 사람이 준비할 것
 
 - **민식:** `TAVILY_API_KEY`를 Render · 로컬 `.env`에 (무료 플랜 확인). 데모용 펫 사진 4장(개 1 · 개 2마리 · 고양이 · 개+고양이)과 5초 영상 2개 — 사람 얼굴 · 주소 없이, 직접 찍은 것.
-- **민식 · 묵:** 성분표 샘플 4장(08 표: `chicken_jerky` · `animal_fat_biscuit` · `sweet_potato_chew` · `lily_scented_cat_treat`) — 직접 만들거나 촬영, 상표 가림.
+- **민식 · 묵:** 성분표 샘플 4장(08 표: `chicken_jerky` · `animal_fat_biscuit` · `sweet_potato_chew` · `lily_scented_cat_treat`) — 직접 만들거나 촬영, 상표 가림. → 10/14 상표 없는 가짜 라벨 4장을 그림으로 만들어 넣음(같은 이름으로 실제 촬영본으로 바꿔도 됨).
 - **슬기:** 감정 규칙표 문구 검토(8개 감정 이름 · 요약 문장 톤, "seems" 표현), `dog-emotion-classifier-v2` 학습 데이터 라이선스 확인(12.S2 전).
 - **묵:** Snap 탭 아이콘 · 카드 3개 · 스티커 테두리 스타일(없으면 DESIGN.md 토큰으로 진행).
 
@@ -150,15 +150,16 @@ Snap 탭
 
 ## 다음에 이어서 — 남은 작업 상세 (2026-10-13 마감 메모)
 
-> 이 절만 읽고 이어서 할 수 있게 적었다. 브랜치 `feat/phase-12-snap`, PR [#90](https://github.com/minsikpaul92/Goldito/pull/90) (**Draft** — 12.1c까지 끝나면 Ready로). 단계마다 커밋 하나 + TODO · test-guide 같이 고치기 (CLAUDE.md §4.1a).
+> 이 절만 읽고 이어서 할 수 있게 적었다. 브랜치 `feat/phase-12-snap`, PR [#90](https://github.com/minsikpaul92/Goldito/pull/90) (12.1c 뒤 **Ready for review**). 단계마다 커밋 하나 + TODO · test-guide 같이 고치기 (CLAUDE.md §4.1a).
 
-### 지금 상태 (2026-10-13)
+### 지금 상태 (2026-10-14)
 
 | 커밋 | 내용 |
 | :--- | :--- |
 | `7010762` · `ece0e1b` | 이 문서 · D61 · Tavily는 매번 신뢰 도메인만 |
 | `2aedfc4` 12.0 | 탭 Mood → **Snap**(`camera-outline`), `features/snap/{SnapScreen,SnapToolCard,SnapToolPlaceholder,tools}`, 라우트 `app/{owner,sitter}/(tabs)/snap.tsx` · `app/{owner,sitter}/snap/{treat,mood,sticker}.tsx`(지금은 자리 화면), e2e `snap.spec.ts` |
 | `15f5443` 12.1a (+12.1b) | `POST /api/ai/safety-check` — `routers/ai_safety_check.py`, 규칙 `ai/safety.py` + `ai/prompts/safety/{vision_system.md, reasoning_system.md, toxic_rules.json}`, Tavily `services/tavily.py`(httpx, 신뢰 도메인 5개, 8초, 쿼리 ≤ 4), 견주도 `safety_label` 업로드(`routers/media.py`), `013_safety.sql`, pytest 3개 파일, `rls_smoke` 013 블록 |
+| 12.1c | `features/snap/{TreatCheckScreen.tsx, treatApi.ts}`, `components/ui/AlertModal.tsx`(빨강 전체 화면, 버튼으로만 닫힘), 라우트 `app/{owner,sitter}/snap/treat.tsx`, 샘플 `assets/demo/labels/*.jpg`(= `backend/tests/fixtures/labels/`), 알림 `safety_danger` → `/owner/snap/treat?check=…`, e2e `treat-check.spec.ts`. Snap 탭의 "Recent checks" 3개는 12.5로 미룸 |
 
 **아직 확인 안 된 것:** 실제 MiniCPM-V가 라벨을 읽는지, Ultra(추론 켬) 응답 시간, Tavily 실제 응답 — 로컬 `backend/.env`에 키가 없었다.
 
@@ -166,7 +167,7 @@ Snap 탭
 
 1. **`013_safety.sql` 적용** → `supabase/tests/rls_smoke.sql` 전체 실행 → 마지막 블록 `PASS: 013: …` 8줄.
 2. **키:** `backend/.env`에 `NEBIUS_API_KEY`, `TAVILY_API_KEY`(그 밖의 값은 `backend/.env.example`). Render → Environment에도 `TAVILY_API_KEY`.
-3. **샘플 라벨 4장**(직접 촬영 · 상표 가림, 긴 변 1200px 이하 JPG): `chicken_jerky.jpg`(DANGER · Max), `animal_fat_biscuit.jpg`(WARNING · Max), `sweet_potato_chew.jpg`(SAFE), `lily_scented_cat_treat.jpg`(DANGER · Mochi) → `frontend/assets/demo/labels/`와 `backend/tests/fixtures/labels/` 둘 다.
+3. **샘플 라벨 4장** — ✅ 10/14 만든 그림으로 들어가 있음(바꾸려면 같은 이름으로)(직접 촬영 · 상표 가림, 긴 변 1200px 이하 JPG): `chicken_jerky.jpg`(DANGER · Max), `animal_fat_biscuit.jpg`(WARNING · Max), `sweet_potato_chew.jpg`(SAFE), `lily_scented_cat_treat.jpg`(DANGER · Mochi) → `frontend/assets/demo/labels/`와 `backend/tests/fixtures/labels/` 둘 다.
 4. (12.2–12.3용, 늦어도 10/16) 펫 사진 4장 · 5초 영상 2개 → `frontend/assets/demo/mood/`.
 
 ### 12.1 실제 호출 확인 (키가 들어오면 맨 먼저, 30분)
@@ -175,10 +176,10 @@ Snap 탭
 - 결과를 [notes/model-ids.md](notes/model-ids.md)에 한 줄(vision / Ultra / Tavily ms)로 남기고, 이 문서 § 12.1에 "확인 2026-10-…".
 - 볼 점: Ultra는 추론 토큰이 많아 `max_tokens=2000`이 모자라면 `AIInvalidOutput` → `REASONING_TIMEOUT_S` · `max_tokens`를 올림. 전체가 60초를 넘으면 12.1c 진행 표시를 3단계로.
 
-### 12.1c — Treat check 화면 (10/14–15)
+### 12.1c — Treat check 화면 ✅ (10/14, 아래는 만든 대로의 설계)
 
 - **화면** `features/snap/TreatCheckScreen.tsx`(`{role}`) → `app/{owner,sitter}/snap/treat.tsx`가 자리 화면 대신 렌더.
-  1. **펫 고르기:** 견주 = 내 펫(`PetCard` 재사용 가능), 시터 = 지금 돌보는 펫(`features/care/useInCare`; 없으면 "No pet in your care right now"). 펫이 하나면 자동 선택.
+  1. **펫 고르기:** 견주 = 내 펫(`PetCard` 재사용 가능), 시터 = 지금 돌보는 펫(`features/care/useCaringPets`; 없으면 "No pet in your care right now"). 펫이 하나면 자동 선택.
   2. **사진:** 기존 미디어 피커(데스크톱은 샘플 트레이) → `uploadMedia({petId, purpose: "safety_label"})`.
   3. **진행 표시:** "Reading the label…" → "Checking for {name}…" (서버가 단계를 안 알려 주므로 시간으로: 0–8초 / 그 뒤).
   4. **결과:**
@@ -229,14 +230,14 @@ Snap 탭
 
 ### 12.5 — 마무리 (10/22)
 
-- test-guide SNAP 시나리오 상태 · 사람 확인, Snap 줄 ✅, README 메모(Treat check = Nemotron Ultra + MiniCPM-V + Tavily, Mood · Sticker = 브라우저 MediaPipe + Token Factory), 데모 샘플 정리, PR #90 본문 단계 표 갱신 → **Ready for review** → CI → 머지(사용자 요청 시). 호스팅 DB `013` · `013b` 적용 확인.
+- test-guide SNAP 시나리오 상태 · 사람 확인, Snap 줄 ✅, Snap 탭 카드 아래 "Recent checks" 3개(12.1c에서 미룸), README 메모(Treat check = Nemotron Ultra + MiniCPM-V + Tavily, Mood · Sticker = 브라우저 MediaPipe + Token Factory), 데모 샘플 정리, PR #90 본문 단계 표 갱신 → **Ready for review** → CI → 머지(사용자 요청 시). 호스팅 DB `013` · `013b` 적용 확인.
 
 ### 새 세션에서 붙여 넣을 프롬프트
 
 ```text
 Read CLAUDE.md, docs/plan/TODO.md and docs/plan/phases/phase-12.md (§ 다음에 이어서).
-Branch feat/phase-12-snap, PR #90 (draft). Continue from the first unfinished item there:
-the 12.1 real-model check if keys are in backend/.env, otherwise 12.1c (Treat check screen).
+Branch feat/phase-12-snap, PR #90. Continue from the first unfinished item there:
+the 12.1 real-model check if keys are in backend/.env, otherwise 12.S2 (the MediaPipe spike).
 One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
 ```
 

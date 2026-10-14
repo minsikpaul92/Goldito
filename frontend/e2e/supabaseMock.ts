@@ -213,6 +213,8 @@ export type MockDb = {
   pet_life_records: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
+  /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
+  safety_checks: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
 };
@@ -267,6 +269,7 @@ function createMockDb(): MockDb {
     owner_favorite_sitters: [],
     pet_life_records: [],
     sitter_rates: [],
+    safety_checks: [],
     quote_error: null,
   };
 }

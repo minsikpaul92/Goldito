@@ -7,7 +7,8 @@ import type { MediaKind } from "./media";
  * so the AI really analyzes it (no fake results).
  *
  * Photos/video live in `assets/demo/`. No people or addresses.
- * `handoff` / `safety_label` samples land with Phase 06B / 08.
+ * `safety_label`: made-up treat labels (no brands) for the four Treat check outcomes (phase-08 sample table).
+ * `handoff` has none (the in-app photo check was dropped from 06B).
  */
 export type DemoSample = {
   id: string;
@@ -29,12 +30,20 @@ const DAILY: DemoSample[] = [
   },
 ];
 
+// Expected with the seeded pets: DANGER for Max (chicken), WARNING for Max (animal fat), SAFE, DANGER for Mochi (lily).
+const LABELS: DemoSample[] = [
+  { id: "chicken_jerky", label: "Chicken jerky", source: require("../assets/demo/labels/chicken_jerky.jpg") },
+  { id: "animal_fat_biscuit", label: "Biscuit", source: require("../assets/demo/labels/animal_fat_biscuit.jpg") },
+  { id: "sweet_potato_chew", label: "Sweet potato", source: require("../assets/demo/labels/sweet_potato_chew.jpg") },
+  { id: "lily_scented_cat_treat", label: "Cat treat", source: require("../assets/demo/labels/lily_scented_cat_treat.jpg") },
+];
+
 const SAMPLES: Record<MediaPurpose, DemoSample[]> = {
   feed: DAILY,
   task_proof: DAILY,
   report: DAILY,
   handoff: [],
-  safety_label: [],
+  safety_label: LABELS,
 };
 
 export function samplesFor(purpose: MediaPurpose, mediaTypes?: MediaKind[]): DemoSample[] {
