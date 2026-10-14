@@ -9,7 +9,7 @@ import type { VideoTrim } from "../../lib/mediaNormalize";
  * in any of our ten photos (12.S2), on the CPU it found all ten in ≈ 60 ms each.
  */
 
-const TASKS_VISION = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1";
+export const TASKS_VISION = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1";
 const DETECTOR_MODEL =
   "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/latest/efficientdet_lite0.tflite";
 const SCORE_MIN = 0.3;
@@ -31,18 +31,23 @@ type Detection = {
 };
 type Detector = { detect(image: HTMLCanvasElement): { detections: Detection[] } };
 
+/** A cut-out mask: one value per pixel, > 0.5 = the tapped pet. */
+export type Mask = { width: number; height: number; data: Float32Array };
+
 /**
- * Test hooks (e2e): fixed boxes and frames, so the specs never download MediaPipe or decode video.
+ * Test hooks (e2e): fixed boxes, frames and masks, so the specs never download MediaPipe or decode video.
  * Set `window.__goldiVision` before the app loads.
  */
-type Hooks = {
+export type Hooks = {
   detectPets?: (frame: HTMLCanvasElement) => PetBox[] | Promise<PetBox[]>;
   loadFrames?: (file: File) => HTMLCanvasElement[] | Promise<HTMLCanvasElement[]>;
+  /** Sticker cut-out (12.3): a mask for a tap at `point` (0–1 of the frame). */
+  segmentAt?: (frame: HTMLCanvasElement, point: { x: number; y: number }) => Mask | Promise<Mask>;
 };
-const hooks = (): Hooks => (globalThis as { __goldiVision?: Hooks }).__goldiVision ?? {};
+export const hooks = (): Hooks => (globalThis as { __goldiVision?: Hooks }).__goldiVision ?? {};
 
 // A real dynamic import of a URL at run time; written this way so the bundler leaves it alone.
-const importUrl = new Function("url", "return import(url)") as (url: string) => Promise<Record<string, any>>;
+export const importUrl = new Function("url", "return import(url)") as (url: string) => Promise<Record<string, any>>;
 
 let detector: Promise<Detector> | null = null;
 

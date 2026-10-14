@@ -354,7 +354,9 @@ Goldito/
 | 알림장 초안 | FastAPI `/api/ai/daily-report` (service role upsert — 고른 칩·메모·사진 묘사만 입력) | - |
 | 알림장 전송 | RPC `send_daily_report(report_id, body)` | owner `report_sent` |
 | 세이프티 결과 | FastAPI `/api/ai/safety-check` (service role insert) | DANGER이고 **견주가 아닌 사람(시터)이 검사했을 때만** owner `safety_danger` (013) |
-| 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (sitter RLS) | - |
+| 경고 확인 | Supabase client update `safety_checks.acknowledged_at` (견주 · 시터 RLS, 013) | - |
+| 스티커 저장 | 브라우저에서 오린 투명 PNG → `uploadMedia({purpose: "sticker"})`(JPEG 변환 없이) → Supabase client insert `pet_stickers` (본인 `sticker` 업로드만, 013b) | - |
+| 다이어리 꾸미기 (12.3b) | Supabase client upsert `report_decor` — 자기 층만 쓰고 두 층 다 읽음(견주는 보낸 알림장, 시터는 자기 알림장, 013b) | - |
 | 알림 읽음 | Supabase client update `notifications.read_at` (본인 RLS) | - |
 
 ---

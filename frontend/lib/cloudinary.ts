@@ -5,7 +5,7 @@ import { UploadError, type UploadStep } from "./uploadError";
 export { UploadError, VideoTooLongError, type UploadStep } from "./uploadError";
 export type { VideoTrim } from "./mediaNormalize";
 
-export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label";
+export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label" | "sticker";
 export type ResourceType = "image" | "video";
 
 export type UploadMediaInput = {
@@ -60,7 +60,8 @@ function guessResourceType(file: File | Blob, explicit?: ResourceType): Resource
  */
 export async function uploadMedia(input: UploadMediaInput): Promise<UploadMediaResult> {
   const resourceType = guessResourceType(input.file, input.resourceType);
-  const file = await prepareForUpload(input.file, resourceType, input.trim);
+  // A sticker is our own small transparent PNG (Snap → Sticker): re-encoding it as JPEG would paint its background white.
+  const file = input.purpose === "sticker" ? input.file : await prepareForUpload(input.file, resourceType, input.trim);
 
   let sign: SignResponse;
   try {

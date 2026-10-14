@@ -215,6 +215,8 @@ export type MockDb = {
   sitter_rates: Row[];
   /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
   safety_checks: Row[];
+  /** Stickers of a pet (12.3, 013b): rows point at a `media` row; read newest first with the media embedded. */
+  pet_stickers: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
 };
@@ -270,6 +272,7 @@ function createMockDb(): MockDb {
     pet_life_records: [],
     sitter_rates: [],
     safety_checks: [],
+    pet_stickers: [],
     quote_error: null,
   };
 }
@@ -1525,6 +1528,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         owner: { display_name: users.find((u) => u.id === pet.owner_id)?.displayName ?? null },
       }));
     }
+    if (path === "pet_stickers" && select.includes("media")) {
+      rows = rows.map((sticker) => {
+        const media = db.media.find((m) => m.id === sticker.media_id);
+        return { ...sticker, media: media ? { cloudinary_public_id: media.cloudinary_public_id } : null };
+      });
+    }
     if (path === "feed_posts" && select.includes("media")) {
       rows = rows.map((post) => {
         const media = db.media.find((m) => m.id === post.media_id) ?? null;
@@ -1616,7 +1625,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }

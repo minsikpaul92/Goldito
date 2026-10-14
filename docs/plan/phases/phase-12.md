@@ -102,7 +102,7 @@ Snap 탭
    → (사용자가 다른 곳을 탭하면 그 점으로 다시 분할)
    → uploadMedia({purpose:'sticker'}) → pet_stickers 행
 [다이어리] Decorate → report_decor(report_id, user_id, items jsonb) upsert
-   items = [{sticker_id, x, y, scale, rotate, z}]  (x,y = 카드 기준 0–1 비율)
+   items = [{sticker_id, public_id, x, y, scale, rotate, z}]  (x,y = 카드 기준 0–1 비율; public_id도 넣어 스티커함에서 지운 스티커도 꾸민 자리에 남음)
 ```
 
 - **대안(12.S2에서 결정):** Magic Touch 모델 파일 라이선스가 맞지 않거나 펫 분할이 나쁘면 → 백엔드 `rembg`(MIT, `u2netp` 4.7MB) `POST /api/media/sticker-cut`. **12.S2 결과(10/14):** 분할 품질 10 / 10 → MediaPipe(v2 `interactive_segmentation.task`, CPU, Web Worker). 대안은 쓰지 않음(Magic Touch 모델 카드: Apache-2.0).
@@ -121,7 +121,7 @@ Snap 탭
 | **12.S2** ✅ | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 결과는 § 다음에 이어서 › 12.S2 "스파이크 결과" (실제 폰 측정은 👤; Magic Touch 라이선스 Apache-2.0 확인 10/14) | 10/14 |
 | **12.2a** ✅ | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest (`test_mood_rules` · `test_ai_pet_mood`) — 실제 모델 호출 확인은 12.2b 화면과 함께 | 10/14 |
 | **12.2b** ✅ | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e — `features/snap/{MoodScreen.tsx, vision.ts, moodApi.ts, SnapPets.tsx}`(펫 칩은 Treat check와 공용), MediaPipe는 CDN에서 실행 시 로드(번들 X), e2e는 `window.__goldiVision` 훅 | 10/14 |
-| **12.3a** | `013b` + 스티커 만들기 화면 + 업로드 + e2e | 10/19–20 |
+| **12.3a** ✅ | `013b` + 스티커 만들기 화면 + 업로드 + e2e — `features/snap/{StickerScreen.tsx, cutout.ts, stickerApi.ts}`, 오리기는 classic Web Worker(module 워커는 MediaPipe WASM 로더가 안 됨), 스티커 PNG는 JPEG 변환 없이 업로드, 스티커함(견주 · 시터 같이 봄, 만든 사람만 삭제). `013b` 호스팅 DB 적용은 👤 | 10/14 |
 | **12.3b** | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) | 10/21 |
 | **12.5** | 마무리 · test-guide · README 메모 · 데모 샘플 정리 | 10/22 |
 

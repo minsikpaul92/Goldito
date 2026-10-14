@@ -4476,5 +4476,106 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 013b (Phase 12.3 Sticker, D61): stickers of a pet, and each person's own sticker layer on a sent report
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  v_sticker_media uuid;
+  v_spare_media uuid;
+  v_feed_media uuid;
+  v_sticker uuid;
+  v_report uuid;
+  v_draft uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  -- The backend registers uploads (service role); 'sticker' is now a purpose.
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/a', 'image', 'sticker') returning id into v_sticker_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/b', 'image', 'sticker') returning id into v_spare_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/feed/c', 'image', 'feed') returning id into v_feed_media;
+  perform _t_ok(v_sticker_media is not null, '013b: media takes the sticker purpose');
+
+  -- Saving a sticker: only from your own sticker upload of that pet
+  perform _t_as(chloe);
+  insert into public.pet_stickers (pet_id, media_id) values (pip, v_sticker_media) returning id into v_sticker;
+  perform _t_ok(v_sticker is not null, '013b: the sitter on duty saves a sticker from her own sticker upload');
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_feed_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: a feed photo cannot be saved as a sticker');
+  perform _t_as(robert);
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_spare_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot save someone else''s upload as their sticker');
+
+  -- Who sees them, who removes them
+  perform _t_ok((select count(*) from public.pet_stickers where pet_id = pip) = 1, '013b: the owner sees the stickers of their pet');
+  delete from public.pet_stickers where id = v_sticker;
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.pet_stickers where id = v_sticker), '013b: only the maker deletes a sticker');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_stickers) = 0, '013b: a third party sees no stickers');
+
+  -- Decorating a report: own layer only, both layers visible, sent reports only for the owner
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+  values (pip, chloe, current_date, 'Pip had a lovely day.', 'sent', now()) returning id into v_report;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body)
+  values (pip, chloe, current_date - 1, 'Draft') returning id into v_draft;
+
+  perform _t_as(robert);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.2, 'y', 0.3, 'scale', 1, 'rotate', 0, 'z', 1)));
+  perform _t_as(chloe);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.8, 'y', 0.6, 'scale', 1.5, 'rotate', 15, 'z', 1)));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.report_decor where report_id = v_report) = 2, '013b: the owner sees both layers on the report');
+  update public.report_decor set items = '[]'::jsonb where report_id = v_report and user_id = chloe;
+  perform _t_as(chloe);
+  perform _t_ok((select jsonb_array_length(items) from public.report_decor where report_id = v_report and user_id = chloe) = 1,
+    '013b: nobody changes the other person''s layer');
+  perform _t_as(robert);
+  begin
+    insert into public.report_decor (report_id, items) values (v_draft, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot decorate a draft');
+  begin
+    update public.report_decor set items = (select jsonb_agg(jsonb_build_object('x', g)) from generate_series(1, 21) g)
+    where report_id = v_report and user_id = robert;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '013b: at most 20 stickers in one layer');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.report_decor) = 0, '013b: a third party sees no layer');
+  begin
+    insert into public.report_decor (report_id, items) values (v_report, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: …and cannot add one');
+  perform _t_as(null);
+end;
+$$;
 
 rollback;

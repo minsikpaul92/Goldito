@@ -8,6 +8,7 @@ import type { MediaKind, PickPurpose } from "./media";
  * Photos/video live in `assets/demo/`. No people or addresses.
  * `safety_label`: made-up treat labels (no brands) for the four Treat check outcomes (phase-08 sample table).
  * `mood`: our own dog photos (metadata removed) + the fetch clip — read in the browser only, never uploaded.
+ * `sticker`: the same photos — only the cut-out PNG is uploaded, never the photo.
  * `handoff` has none (the in-app photo check was dropped from 06B).
  */
 export type DemoSample = {
@@ -56,6 +57,7 @@ const SAMPLES: Record<PickPurpose, DemoSample[]> = {
   handoff: [],
   safety_label: LABELS,
   mood: MOOD,
+  sticker: MOOD.filter((sample) => sample.kind !== "video"),
 };
 
 export function samplesFor(purpose: PickPurpose, mediaTypes?: MediaKind[]): DemoSample[] {

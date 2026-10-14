@@ -5,11 +5,11 @@ import { MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Snap tab (Phase 12.0, D61): three tool cards for both roles, each opening its own screen.
 
-// `screen` / `text`: what the tool screen shows — Treat check (12.1c; no pets here → its empty state) and Mood (12.2b) are built.
+// `screen` / `text`: what each tool screen shows to an owner with no pets yet (12.1c · 12.2b · 12.3a).
 const TOOLS = [
   { key: "treat", title: "Treat check", screen: "treat-no-pets", text: "Add a pet first" },
   { key: "mood", title: "Mood", screen: "mood", text: "For fun only" },
-  { key: "sticker", title: "Sticker", screen: "snap-tool-sticker", text: "Sticker" },
+  { key: "sticker", title: "Sticker", screen: "sticker-no-pets", text: "Add a pet first" },
 ];
 
 async function openSnap(page: Page, user: MockUser) {
@@ -43,6 +43,6 @@ test.describe("snap tab", () => {
     await expect(screen.getByTestId("snap-card-mood")).toBeVisible();
     await screen.getByTestId("snap-card-sticker").click();
     await expect(page).toHaveURL(/\/sitter\/snap\/sticker$/);
-    await expect(screen.getByTestId("snap-tool-sticker")).toContainText("Sticker");
+    await expect(screen.getByTestId("sticker-no-pets")).toContainText("No pet in your care right now");
   });
 });
