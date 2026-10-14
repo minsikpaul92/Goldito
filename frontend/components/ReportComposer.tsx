@@ -319,7 +319,14 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         <Text style={styles.title}>{pet.name}</Text>
         <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
         {sentId ? (
-          <DecoratedReport reportId={sentId} petId={pet.id} body={body} testID={`report-sent-paper-${pet.id}`} />
+          <DecoratedReport
+            reportId={sentId}
+            petId={pet.id}
+            petName={pet.name}
+            day={day.current}
+            body={body}
+            testID={`report-sent-paper-${pet.id}`}
+          />
         ) : (
           <Text style={styles.body}>{body}</Text>
         )}

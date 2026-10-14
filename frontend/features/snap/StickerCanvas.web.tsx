@@ -11,11 +11,11 @@ type Drag = { index: number; x0: number; y0: number; ix: number; iy: number; wid
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
 /**
- * The stickers on a daily report's paper (Phase 12.3b). Plain DOM, like the trim sheet: pointer events give a real
- * mouse drag inside the phone frame, and `data-gesture-owner` keeps TouchEmulation from turning that drag into a
- * scroll (DESIGN.md §7.7). Outside edit mode it ignores the mouse, so the text and buttons under it still work.
+ * One side of the stickers on a daily report's paper (Phase 12.3b; front / back of the text 12.4). Plain DOM, like the
+ * trim sheet: pointer events give a real mouse drag inside the phone frame, and `data-gesture-owner` keeps
+ * TouchEmulation from turning that drag into a scroll (DESIGN.md §7.7). Outside edit mode it ignores the mouse, so the text and buttons under it still work.
  */
-export function StickerCanvas({ layers, editing, selected, onSelect, onMove, urlFor }: StickerCanvasProps) {
+export function StickerCanvas({ which, zIndex, layers, editing, selected, onSelect, onMove, urlFor }: StickerCanvasProps) {
   const theme = useTheme();
   const root = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
@@ -43,20 +43,31 @@ export function StickerCanvas({ layers, editing, selected, onSelect, onMove, url
   return (
     <div
       ref={root}
-      data-testid="decor-canvas"
+      data-testid={`decor-canvas-${which}`}
       data-gesture-owner={editing ? "true" : undefined}
-      onPointerDown={editing ? () => onSelect(null) : undefined}
-      style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: editing ? "auto" : "none", touchAction: editing ? "none" : "auto" }}
+      onPointerDown={editing && which === "back" ? () => onSelect(null) : undefined}
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex,
+        overflow: "hidden",
+        // The back canvas takes clicks on bare paper (to clear the pick); the front one lets them through to what is
+        // under it, except on its own stickers.
+        pointerEvents: editing && which === "back" ? "auto" : "none",
+        touchAction: editing ? "none" : "auto",
+      }}
     >
       {/* DOM order never changes (zIndex stacks them): moving a node while it is dragged would drop the pointer. */}
       {layers.flatMap((layer, layerIndex) =>
         layer.items.map((item, index) => {
+          if ((item.layer ?? "front") !== which) return null;
           const live = editing && layer.mine;
           const isSelected = live && selected === index;
           return (
             <div
               key={`${layerIndex}-${index}-${item.sticker_id}`}
               data-testid={layer.mine ? "decor-mine" : "decor-other"}
+              data-layer={which}
               data-selected={isSelected ? "true" : undefined}
               role={live ? "button" : undefined}
               aria-label={live ? "Sticker — drag to move" : undefined}

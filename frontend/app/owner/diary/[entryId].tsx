@@ -61,7 +61,14 @@ export default function OwnerDiaryEntry() {
       <Stack.Screen options={{ title: `${report.petName} · ${formatDay(report.day)}` }} />
       <Card style={styles.card}>
         <Text style={styles.meta}>{`From ${report.sitterName}`}</Text>
-        <DecoratedReport reportId={report.id} petId={report.petId} body={report.body} testID="diary-entry" />
+        <DecoratedReport
+          reportId={report.id}
+          petId={report.petId}
+          petName={report.petName}
+          day={report.day}
+          body={report.body}
+          testID="diary-entry"
+        />
       </Card>
       {photos.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} testID="diary-entry-photos">

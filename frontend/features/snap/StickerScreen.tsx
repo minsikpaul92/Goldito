@@ -17,7 +17,7 @@ import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
 import { Sheet } from "../../components/ui/Sheet";
 import { TextButton } from "../../components/ui/TextButton";
-import { deliveryUrl, uploadMedia } from "../../lib/cloudinary";
+import { deliveryUrl, downloadUrl, uploadMedia } from "../../lib/cloudinary";
 import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
@@ -25,6 +25,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { Sticker, coverage, makeSticker, segmentAt } from "./cutout";
+import { downloadBlob, downloadFromUrl, stickerFilename } from "./download";
 import { PetChips, PetsState, Role, SnapPets } from "./SnapPets";
 import { PetSticker, deleteSticker, listStickers, saveSticker } from "./stickerApi";
 import { detectPets, loadFrames } from "./vision";
@@ -219,6 +220,8 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
   }
 
   const ready = !!sticker && !step;
+  const petName = petList.find((p) => p.id === petId)?.name ?? "pet";
+  const fileName = stickerFilename(petName);
 
   return (
     <Screen contentStyle={styles.content} testID="sticker">
@@ -286,6 +289,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       {ready ? (
         <>
           <Button label="Save sticker" onPress={() => void save()} disabled={!petId || !me} testID="sticker-save" />
+          <TextButton label="⬇ Download sticker" onPress={() => sticker && downloadBlob(sticker.blob, fileName)} testID="sticker-download" />
           <TextButton label="Pick another photo" onPress={() => void pickPhoto()} testID="sticker-pick-again" />
         </>
       ) : (
@@ -312,6 +316,17 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
                 ) : (
                   <Text style={styles.tileEmoji}>🐾</Text>
                 )}
+                {downloadUrl(s.publicId, fileName) ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Download sticker"
+                    onPress={() => downloadFromUrl(downloadUrl(s.publicId, fileName.replace(/\.png$/, "")), fileName)}
+                    style={styles.save}
+                    testID="sticker-tile-download"
+                  >
+                    <Text style={styles.removeLabel}>⬇</Text>
+                  </Pressable>
+                ) : null}
                 {s.createdBy === me ? (
                   <Pressable
                     accessibilityRole="button"
@@ -386,6 +401,17 @@ const makeStyles = (theme: Theme) =>
     },
     tileImage: { width: 84, height: 84 },
     tileEmoji: { fontSize: theme.icon.md },
+    save: {
+      position: "absolute",
+      bottom: 2,
+      right: 2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.surface,
+    },
     remove: {
       position: "absolute",
       top: 2,

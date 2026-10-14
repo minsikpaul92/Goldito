@@ -123,7 +123,8 @@ Snap 탭
 | **12.2b** ✅ | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e — `features/snap/{MoodScreen.tsx, vision.ts, moodApi.ts, SnapPets.tsx}`(펫 칩은 Treat check와 공용), MediaPipe는 CDN에서 실행 시 로드(번들 X), e2e는 `window.__goldiVision` 훅 | 10/14 |
 | **12.3a** ✅ | `013b` + 스티커 만들기 화면 + 업로드 + e2e — `features/snap/{StickerScreen.tsx, cutout.ts, stickerApi.ts}`, 오리기는 classic Web Worker(module 워커는 MediaPipe WASM 로더가 안 됨), 스티커 PNG는 JPEG 변환 없이 업로드, 스티커함(견주 · 시터 같이 봄, 만든 사람만 삭제). `013b` 호스팅 DB 적용은 👤 | 10/14 |
 | **12.3b** ✅ | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) — `features/snap/{DecoratedReport.tsx, StickerCanvas.web.tsx, decorApi.ts}`: 두 화면이 같은 "종이"(알림장 글)를 그리고 좌표는 종이 기준 0–1, 드래그는 DOM 포인터 + `data-gesture-owner`, 항목에 `public_id` | 10/14 |
-| **12.5** | 마무리 · test-guide · README 메모 · 데모 샘플 정리 | 10/22 |
+| **12.4** ✅ | **그림일기 · 스티커 앞/뒤 · 다운로드 · 기본 스티커** (2026-10-14 민식 요청) — 보낸 알림장을 그림일기 한 장으로(날짜 · 펫 머리말, 그날 첫 사진이 든 그림 칸, 줄 공책 위 손글씨 글꼴 Gaegu), 스티커마다 **글 위 / 글 아래**(`layer`), 스티커 **다운로드**(만든 직후 PNG · 스티커함의 원본), **Goldito 기본 스티커 9장**(코드로 그린 임시본 — 묵 디자인으로 같은 이름 교체) | 10/14 |
+| **12.5** | 마무리 · Snap 탭 "Recent checks" · test-guide · README 메모 · 데모 샘플 정리 · PR #90 Ready for review | 10/15–16 |
 
 **일정이 밀리면 자르는 순서:** ① 영상 기분(사진만) → ② 시터 쪽 꾸미기(견주만) → ③ 개 분류기 혼합(태그 규칙만) → ④ Tavily 재판단(출처 표시만). **Treat check DANGER 장면과 사진 기분 · 스티커 1장은 반드시 남긴다.**
 
@@ -242,7 +243,15 @@ Snap 탭
 - **꾸미기** `components/DecorateSheet.tsx` + `components/StickerLayer.tsx`: 견주 `app/owner/diary/[entryId].tsx` 카드 위, 시터 `components/ReportComposer.tsx`(보낸 보고서) — **Decorate** → 스티커함에서 고르기 → 드래그 이동(`dataSet={{gestureOwner: "true"}}`, DESIGN.md) + **크기 ± · 회전 ↺↻ · 삭제 버튼**(D25 마우스) → Save(`report_decor` upsert). 표시는 두 층(내 것 위), 좌표는 카드 기준 0–1.
 - **테스트:** pytest(업로드 목적), `rls_smoke`, e2e(마우스 드래그 → 저장 → 새로고침해도 같은 자리, 상대 역할에서도 보임; 분할은 테스트 훅으로 고정 마스크).
 
-### 12.5 — 마무리 (10/22)
+### 12.4 — 그림일기 · 스티커 앞/뒤 · 다운로드 · 기본 스티커 ✅ (10/14)
+
+- **그림일기 종이** `features/snap/DecoratedReport.tsx`: 머리말(📅 요일, 날짜 · "{펫}'s day 🐾") → **그림 칸**(높이 180 고정 — 그날 첫 공유 사진, 없으면 🖍️) → **줄 공책**(30 px 줄, 글은 Gaegu 손글씨 — 웹만, Google Fonts SIL OFL, DESIGN.md §4 예외). 견주 다이어리 상세와 시터의 보낸 알림장이 같은 종이를 그려 좌표(종이 기준 0–1)가 같다.
+- **층 순서(아래→위):** 종이 → 그림 칸 · 줄 → **글 아래 스티커**(`layer: "back"`) → 글 → **글 위 스티커**(기본). 꾸미는 동안 글 · 그림은 클릭을 통과시켜 글 아래 스티커도 끌 수 있다. 도구 **⬇ Behind text / ⬆ Over text**. 항목에 `layer`가 없으면 "front"(12.3b에 저장한 것 그대로).
+- **기본 스티커** `features/snap/presetStickers.ts` + `frontend/assets/stickers/*.png` 9장(heart · star · sun · cloud · paw · bone · ball · zzz · best_day): 앱에 들어 있어 업로드 없음, 꾸미기 항목에는 `preset:<id>`. 지금 파일은 코드로 그린 임시본 → 묵이 같은 이름으로 바꾸면 끝.
+- **다운로드** `features/snap/download.ts`: Sticker 미리보기 **⬇ Download sticker**(브라우저에서 만든 PNG 그대로), 스티커함 타일 ⬇(Cloudinary `fl_attachment` 원본 PNG). 파일 이름 `goldito-{펫}-sticker.png`.
+- **남은 것(11.8 쪽):** 꾸민 그림일기 한 장을 이미지로 저장(**Save image**) — P1 창에서 시간이 남으면.
+
+### 12.5 — 마무리 (10/15–16)
 
 - test-guide SNAP 시나리오 상태 · 사람 확인, Snap 줄 ✅, Snap 탭 카드 아래 "Recent checks" 3개(12.1c에서 미룸), README 메모(Treat check = Nemotron Ultra + MiniCPM-V + Tavily, Mood · Sticker = 브라우저 MediaPipe + Token Factory), 데모 샘플 정리, PR #90 본문 단계 표 갱신 → **Ready for review** → CI → 머지(사용자 요청 시). 호스팅 DB `013` · `013b` 적용 확인.
 

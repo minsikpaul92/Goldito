@@ -84,6 +84,11 @@ test.describe("snap sticker", () => {
     expect(taps[1].y).toBeCloseTo(0.4, 1);
     await expect(screen.getByTestId("sticker-preview")).toBeVisible();
 
+    // The cut-out can be saved to the computer before (or without) saving it to the box.
+    const download = page.waitForEvent("download");
+    await screen.getByTestId("sticker-download").click();
+    expect((await download).suggestedFilename()).toBe("goldito-max-sticker.png");
+
     await screen.getByTestId("sticker-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Sticker saved");
     expect(signed[0]).toMatchObject({ pet_id: MAX, purpose: "sticker", resource_type: "image" });

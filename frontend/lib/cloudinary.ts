@@ -148,6 +148,13 @@ export function thumbUrl(publicId: string, w = 400): string {
   return `https://res.cloudinary.com/${cloud}/image/upload/f_auto,q_auto,c_fill,g_auto,w_${w},h_${w}/${publicId}`;
 }
 
+/** The original PNG as a file download (`fl_attachment`, so the browser saves it instead of opening it). */
+export function downloadUrl(publicId: string, filename: string): string {
+  const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();
+  if (!cloud) return "";
+  return `https://res.cloudinary.com/${cloud}/image/upload/fl_attachment:${encodeURIComponent(filename)}/${publicId}.png`;
+}
+
 /** Full photo for the expand sheet — fits inside the frame, no crop. */
 export function deliveryUrl(publicId: string, w = 1200): string {
   const cloud = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME?.trim();

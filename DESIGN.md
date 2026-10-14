@@ -106,6 +106,8 @@ A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `pr
 
 System font for now (Figma will pick one family).
 
+**One exception — the picture-diary page (12.4):** a sent daily report is drawn as a 그림일기 page (date + pet on top, the day's photo in a picture box, the words on ruled lines) in **Gaegu** (Google Fonts, SIL OFL), loaded on web only from `fonts.googleapis.com`; native keeps the system font. Body `fontSize.body + 4` on a 30 px rule. Nowhere else.
+
 | Token | Size | Weight | Use |
 | :--- | :--- | :--- | :--- |
 | `fontSize.title` | 24 | 700 | Screen title, pet name on profile |

@@ -124,9 +124,7 @@
 
 | ID | 내용 | 담당 |
 | :--- | :--- | :--- |
-| **FB-8** | 시터 Bookings 분류를 **Requests · In progress · Upcoming · Past**(+ Questions)로. In progress = `confirmed` + 드롭오프 완료 + 픽업 미완료. 오너 쪽도 같은 배지. `firstSitterBucket`은 픽업 시각이 미래인 것만 "곧"으로 (L-2) | 민식 (R2) |
 | **BK-1** | 시터 Bookings 탭에 **들어올 때마다**: 마지막에 누른 탭에 숫자가 있으면 그 탭 → 아니면 숫자가 있는 첫 탭(Upcoming → Requests → Questions) → 숫자가 없을 때만 마지막에 누른 탭 (`bookings.tsx` `userPicked`) | 나중에 |
-| **FB-5 · FB-6** | 시간 변경 시트: Drop-off ↔ Pick-up을 오가도 각각의 값 유지, **Send** 한 번에 바뀐 것 전부(성공한 뒤에 시트 닫기), Close는 아무것도 안 보냄. 끝난 인수인계는 비활성, 픽업까지 끝나면 Change 버튼 숨김 | 민식 (R2) |
 | **FB-4** | 예약 상세에서 상대가 시터인지 오너인지 `RoleBadge`로 | 슬기 (Q.9) |
 | **MG-1 – MG-6** | Meet & Greet 체크리스트: 이름을 "Things to cover"로, 체크 즉시 저장 · 양쪽에 보임(`meet_greet_items` 테이블 — 마이그레이션 필요), 항목 상세 + 메모, 햄버거 핸들로 순서 변경, + 추가 · 드래그해서 삭제, 영상 모드에서 유지할지는 디자인과 함께 결정 | 나중에 |
 | **CAL-1 – CAL-4 · FB-11** | 시터 캘린더 UX (묵 Figma 뒤): 오너에게 M·A·N 표시 숨김, 스케줄을 누르면 달력이 접히고 그 시터의 슬롯이 나옴, 슬롯 · 시간 텍스트를 한눈에 읽게, 접힌 달력 다시 내리기. 시터 스케줄 편집(`SlotCalendar` · `ScheduleSheet` · `/sitter/schedule`)은 한 번에: 날짜 · 시간 입력(DESIGN.md §7.10), 요금 입력, 여러 날 한 번에 열기 | 나중에 |

@@ -15,6 +15,8 @@ export type DecorItem = {
   /** Degrees, clockwise. */
   rotate: number;
   z: number;
+  /** "back" sits under the text (the writing shows over it), "front" (the default) over it (12.4). */
+  layer?: "front" | "back";
 };
 
 export type DecorLayer = { userId: string; items: DecorItem[] };
@@ -43,9 +45,13 @@ export async function saveDecor(reportId: string, me: string, items: DecorItem[]
 
 /** What the paper's sticker canvas draws (web: `StickerCanvas.web.tsx`; native draws nothing for now). */
 export type StickerCanvasProps = {
+  /** Which side of the text this canvas is: the paper draws a back canvas under the writing and a front one over it. */
+  which: "front" | "back";
+  /** Stacking order on the paper. */
+  zIndex: number;
   /** Drawn in this order: the other person's layer first, mine last (on top). */
   layers: { items: DecorItem[]; mine: boolean }[];
-  /** My stickers can be picked and dragged. */
+  /** My stickers can be picked and dragged; a click on the back canvas (bare paper) clears the pick. */
   editing: boolean;
   /** Index into my layer's items. */
   selected: number | null;
