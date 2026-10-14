@@ -37,7 +37,7 @@ const FLOW_SPECS = new RegExp(
     "handoff", "rebook", "today", "checkout", "welcome", "media-picker", "feed", "care-tasks", "sitter-tasks",
     "quick-checkin", "diary", "sitter-home", "live-updates", "due-reminder", "care-request", "heads-up", "report",
     "inquiry", "caption", "completion", "demo-tools", "location", "home-location", "transit", "privacy", "snap",
-    "treat-check", "mood", "sticker",
+    "treat-check", "mood", "sticker", "decor",
   ].join("|")})\\.spec\\.ts$`,
 );
 const PHONE_SPEC = /phone\.spec\.ts$/;

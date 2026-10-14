@@ -122,7 +122,7 @@ Snap 탭
 | **12.2a** ✅ | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest (`test_mood_rules` · `test_ai_pet_mood`) — 실제 모델 호출 확인은 12.2b 화면과 함께 | 10/14 |
 | **12.2b** ✅ | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e — `features/snap/{MoodScreen.tsx, vision.ts, moodApi.ts, SnapPets.tsx}`(펫 칩은 Treat check와 공용), MediaPipe는 CDN에서 실행 시 로드(번들 X), e2e는 `window.__goldiVision` 훅 | 10/14 |
 | **12.3a** ✅ | `013b` + 스티커 만들기 화면 + 업로드 + e2e — `features/snap/{StickerScreen.tsx, cutout.ts, stickerApi.ts}`, 오리기는 classic Web Worker(module 워커는 MediaPipe WASM 로더가 안 됨), 스티커 PNG는 JPEG 변환 없이 업로드, 스티커함(견주 · 시터 같이 봄, 만든 사람만 삭제). `013b` 호스팅 DB 적용은 👤 | 10/14 |
-| **12.3b** | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) | 10/21 |
+| **12.3b** ✅ | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) — `features/snap/{DecoratedReport.tsx, StickerCanvas.web.tsx, decorApi.ts}`: 두 화면이 같은 "종이"(알림장 글)를 그리고 좌표는 종이 기준 0–1, 드래그는 DOM 포인터 + `data-gesture-owner`, 항목에 `public_id` | 10/14 |
 | **12.5** | 마무리 · test-guide · README 메모 · 데모 샘플 정리 | 10/22 |
 
 **일정이 밀리면 자르는 순서:** ① 영상 기분(사진만) → ② 시터 쪽 꾸미기(견주만) → ③ 개 분류기 혼합(태그 규칙만) → ④ Tavily 재판단(출처 표시만). **Treat check DANGER 장면과 사진 기분 · 스티커 1장은 반드시 남긴다.**
