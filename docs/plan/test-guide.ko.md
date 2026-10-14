@@ -137,7 +137,7 @@
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
-| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · Mood 화면은 12.2b · Sticker는 12.3 | 12 (08 설계 포함) |
+| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · Sticker는 12.3 | 12 (08 설계 포함) |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -552,6 +552,10 @@
 | SNAP-8 | 흐린 사진(422) / 서버 오류(503) | 422 → "Couldn't read the label. Try a closer, well-lit photo." + 버튼 **Retake photo**. 503 → 오류 창 + **Try again** → 같은 사진으로 다시 검사(재업로드 없음) | 🤖 `treat-check.spec.ts` | 사람 확인 대기 |
 | SNAP-9 | 시터가 DANGER를 낸 뒤 견주가 알림 "Blocked a risky treat for Max ⚠️"를 탭 | `/owner/snap/treat?check=…` → 그 검사가 열리고 아직 아무도 확인 안 했으면 빨간 화면 → 확인하면 결과 카드 | 🤖 `treat-check.spec.ts`(링크 직접 열기) · 알림 탭은 👤(`013` 적용됨 — 배포 백엔드에 이 코드가 올라간 뒤) | 사람 확인 대기 |
 | SNAP-10 | (API) `POST /api/ai/pet-mood` — 개 1마리 사진(크롭 1개) / 개 2마리(크롭 2개) / 영상(프레임 4장) / 펫이 없는 크롭 / 같은 사진 두 번 | 펫마다 박스 + 감정 8개가 **정수 %로 합 100**(서버 규칙, 모델은 태그만) + "seems" 한 줄 + "For fun only — not a behavior or health assessment.". 영상은 프레임 평균 + 평균에 가장 가까운 프레임의 박스. 같은 사진 → 같은 %. 요약에 건강 · 통증 · vet 단어가 있거나 "seems/looks"가 없으면 규칙 문장으로. 못 읽은 크롭만 빠지고, 펫이 하나도 없으면 422, 비전 모델이 다 안 되면 503. 크롭 9개 · 프레임 5장 · 300 KB 초과 · data URL 아님 · 박스 범위 밖은 모델 호출 전에 422. `pet_id`를 주면 그 펫의 견주 · 돌보는 시터만(아니면 403), 저장은 안 함 | 🤖 pytest `test_mood_rules` · `test_ai_pet_mood` · 비전 태그 실제 호출은 👤(우리 사진 8장 직접 호출 확인 2026-10-14) | ➖ |
+| SNAP-11 | 견주(Max · Mochi) → Snap → **Mood** → **Pick a photo or clip** → 샘플 사진(예: **Tug of war**) | "Getting your photo ready…" → "Finding your pet…"(첫 사용은 MediaPipe 내려받기로 몇 초) → "Reading the mood…" → 사진 위에 펫마다 **박스**(라벨: 펫 · 1등 감정 %) + **감정 8줄 표**(큰 순, 1등 굵게) + "seems" 한 줄. 맨 아래 "For fun only — not a behavior or health assessment."는 고르기 전부터 항상. 펫 칩은 선택(하나뿐이면 미리 골라짐, 다시 누르면 해제) — 고르면 요약에 이름. 마우스만으로 | 🤖 `mood.spec.ts`(박스는 테스트 훅, API 목업) · 실제 MediaPipe · 모델은 👤 | 사람 확인 대기 |
+| SNAP-12 | 개 2마리 사진 → 다른 펫의 박스나 아래 "Pet 2" 칩 클릭 | 박스가 왼쪽부터 Pet 1 · Pet 2, 클릭한 펫의 표 · 요약으로 바뀜. 서버에는 크롭이 왼쪽→오른쪽 순서로 감(사진은 펫 ≤ 4, 영상은 프레임당 ≤ 2) | 🤖 `mood.spec.ts` · 실제 2마리 사진은 👤(샘플 없음) | 사람 확인 대기 |
+| SNAP-13 | 샘플 **Fetch play**(영상) | 프레임 4장(20 · 40 · 60 · 80 % 지점)을 보내고 "Average of 4 frames from the clip", 평균에 가장 가까운 프레임과 그 박스를 보여 줌. 30초 넘는 영상은 자르기 시트에서 고른 부분 안에서 | 🤖 `mood.spec.ts`(프레임은 테스트 훅) · 실제 영상 디코딩은 👤 | 사람 확인 대기 |
+| SNAP-14 | 펫이 없는 사진 / 서버 422 / 서버 503 | "We couldn't find a pet — try a clearer photo." + **Try another photo**(서버를 부르지 않음) · 422도 같은 문장 · 503은 오류 창 **Try again** → 같은 크롭으로 다시 | 🤖 `mood.spec.ts` | 사람 확인 대기 |
 
 ---
 
@@ -559,6 +563,7 @@
 
 - **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭 카드 아래 "Recent checks"는 아직 없다(Treat check 화면 안에만, 12.5).
 - **Mood 퍼센트는 재미용 규칙 계산이다** — 비전 모델은 귀 · 눈 · 입 · 꼬리 · 자세 · 긴장 · 행동 태그만 고르고, `backend/app/ai/mood_rules.py` 표가 %를 만든다. 그래서 같은 사진 → 같은 %, 하지만 태그를 잘못 읽으면 %도 같이 틀린다. 장난감은 입 모양 선택지로는 잘 못 잡아서 **`toy` 태그를 따로 묻고**(우리 사진 10장 중 터그 사진만 `in_mouth`, 2026-10-14), 입에 장난감이 있으면 "놀이"로 계산해 **excited**가 1등이 된다. 감정 전용으로 검증된 모델이 아니다(D61, "For fun only").
+- **Mood는 웹에서만**, 펫 찾기(MediaPipe `tasks-vision@1.0.1`)는 실행할 때 jsdelivr · Google 저장소에서 받아 온다(WASM 11 MB + 모델 4.5 MB, 첫 사용에 몇 초). 네트워크가 막히면 "Couldn't get the pet finder ready…". 영상 프레임은 브라우저가 그 코덱을 열 수 있어야 한다(데스크톱 Chrome · Safari의 mp4 OK). 결과는 저장하지 않는다.
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).
 - **문의 AI**: Render가 잠들어 있으면 첫 답장이 30~50초 더 걸린다. 자동 발송 지연(약 30초)은 임시 공식이다(슬기 확정 전). 오너는 Bookings 탭의 "Your questions"에서 지난 문의로 다시 들어갈 수 있다.

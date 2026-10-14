@@ -5,10 +5,10 @@ import { MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Snap tab (Phase 12.0, D61): three tool cards for both roles, each opening its own screen.
 
-// `screen` / `text`: what the tool screen shows — Treat check is built (12.1c; no pets here → its empty state).
+// `screen` / `text`: what the tool screen shows — Treat check (12.1c; no pets here → its empty state) and Mood (12.2b) are built.
 const TOOLS = [
   { key: "treat", title: "Treat check", screen: "treat-no-pets", text: "Add a pet first" },
-  { key: "mood", title: "Mood", screen: "snap-tool-mood", text: "Mood" },
+  { key: "mood", title: "Mood", screen: "mood", text: "For fun only" },
   { key: "sticker", title: "Sticker", screen: "snap-tool-sticker", text: "Sticker" },
 ];
 

@@ -1,5 +1,6 @@
-import { SnapToolPlaceholder } from "../../../features/snap/SnapToolPlaceholder";
+import { MoodScreen } from "../../../features/snap/MoodScreen";
 
+/** Sitter Snap → Mood (12.2b). */
 export default function SitterSnapMood() {
-  return <SnapToolPlaceholder tool="mood" />;
+  return <MoodScreen role="sitter" />;
 }

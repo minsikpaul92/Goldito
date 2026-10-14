@@ -1,5 +1,4 @@
-import type { MediaPurpose } from "./cloudinary";
-import type { MediaKind } from "./media";
+import type { MediaKind, PickPurpose } from "./media";
 
 /**
  * Sample media for the desktop frame and demo accounts (no camera there — D25, phase-04 4.7).
@@ -8,6 +7,7 @@ import type { MediaKind } from "./media";
  *
  * Photos/video live in `assets/demo/`. No people or addresses.
  * `safety_label`: made-up treat labels (no brands) for the four Treat check outcomes (phase-08 sample table).
+ * `mood`: our own dog photos (metadata removed) + the fetch clip — read in the browser only, never uploaded.
  * `handoff` has none (the in-app photo check was dropped from 06B).
  */
 export type DemoSample = {
@@ -38,15 +38,27 @@ const LABELS: DemoSample[] = [
   { id: "lily_scented_cat_treat", label: "Cat treat", source: require("../assets/demo/labels/lily_scented_cat_treat.jpg") },
 ];
 
-const SAMPLES: Record<MediaPurpose, DemoSample[]> = {
+// Snap → Mood (12.2): one look each — playing, happy, sleeping, watchful — and a clip for the four-frame average.
+const MOOD: DemoSample[] = [
+  { id: "mood_tug", label: "Tug of war", source: require("../assets/demo/mood/maltese_tug_toy.jpg") },
+  { id: "mood_tongue", label: "Tongue out", source: require("../assets/demo/mood/terrier_tongue_out_kitchen.jpg") },
+  { id: "mood_grass", label: "Grass walk", source: require("../assets/demo/mood/maltese_grass_leash.jpg") },
+  { id: "mood_sleeping", label: "Fast asleep", source: require("../assets/demo/mood/chihuahua_sleeping_blanket.jpg") },
+  { id: "mood_watchful", label: "Watching", source: require("../assets/demo/mood/chihuahua_lying_watchful.jpg") },
+  { id: "mood_couch", label: "Couch nap", source: require("../assets/demo/mood/terrier_sleeping_couch.jpg") },
+  { id: "play_fetch", label: "Fetch play", source: require("../assets/demo/play_fetch.mp4"), kind: "video" },
+];
+
+const SAMPLES: Record<PickPurpose, DemoSample[]> = {
   feed: DAILY,
   task_proof: DAILY,
   report: DAILY,
   handoff: [],
   safety_label: LABELS,
+  mood: MOOD,
 };
 
-export function samplesFor(purpose: MediaPurpose, mediaTypes?: MediaKind[]): DemoSample[] {
+export function samplesFor(purpose: PickPurpose, mediaTypes?: MediaKind[]): DemoSample[] {
   const all = SAMPLES[purpose];
   if (!mediaTypes || mediaTypes.length === 0) return all;
   return all.filter((s) => mediaTypes.includes(s.kind ?? "image"));

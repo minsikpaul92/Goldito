@@ -12,15 +12,11 @@ import { ApiError } from "../../lib/api";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
-import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
-import { useCaringPets } from "../care/useCaringPets";
-import { listMyPets } from "../pets/petApi";
+import { PetChips, PetOption, PetsState, Role, SnapPets } from "./SnapPets";
 import { SafetyCheck, acknowledgeCheck, checkTreat, getCheck, listRecentChecks } from "./treatApi";
 
-type Role = "owner" | "sitter";
-type PetOption = { id: string; name: string; species: "dog" | "cat" };
 type Step = "uploading" | "reading" | "checking";
 
 /** The server does not report its steps: after this long the vision model has usually read the label. */
@@ -35,18 +31,7 @@ const UNREADABLE = "Couldn't read the label. Try a closer, well-lit photo.";
  * Owners check their own pets; a sitter only the pets in their care right now (the API enforces both).
  */
 export function TreatCheckScreen({ role }: { role: Role }) {
-  return role === "owner" ? <OwnerTreatCheck /> : <SitterTreatCheck />;
-}
-
-function OwnerTreatCheck() {
-  return <TreatCheck role="owner" pets={useOwnedPets()} />;
-}
-
-function SitterTreatCheck() {
-  const { state } = useCaringPets();
-  const pets: PetsState =
-    state.status === "ready" ? { status: "ready", pets: state.pets.map(({ id, name, species }) => ({ id, name, species })) } : state;
-  return <TreatCheck role="sitter" pets={pets} />;
+  return <SnapPets role={role}>{(pets) => <TreatCheck role={role} pets={pets} />}</SnapPets>;
 }
 
 function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
@@ -203,32 +188,18 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
     <Screen contentStyle={styles.content} testID="treat-check">
       <View style={styles.section}>
         <Text style={styles.label}>{role === "sitter" ? "Which pet in your care?" : "Which pet?"}</Text>
-        <View style={styles.pets}>
-          {pets.pets.map((p) => {
-            const selected = p.id === petId;
-            return (
-              <Pressable
-                key={p.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                aria-selected={selected}
-                disabled={!!step}
-                onPress={() => {
-                  if (p.id === petId) return;
-                  setPetId(p.id);
-                  setResult(null);
-                  setUnreadable(false);
-                }}
-                style={[styles.pet, selected && styles.petSelected]}
-                testID={`treat-pet-${p.id}`}
-              >
-                <Text style={styles.petLabel}>
-                  {p.species === "cat" ? "🐱" : "🐶"} {p.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <PetChips
+          pets={pets.pets}
+          selectedId={petId}
+          disabled={!!step}
+          onSelect={(id) => {
+            if (!id || id === petId) return;
+            setPetId(id);
+            setResult(null);
+            setUnreadable(false);
+          }}
+          testIDPrefix="treat-pet"
+        />
       </View>
 
       {busyText ? (
@@ -305,28 +276,6 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
       />
     </Screen>
   );
-}
-
-type PetsState = { status: "loading" } | { status: "ready"; pets: PetOption[] } | { status: "error"; message: string };
-
-/** The owner's own pets (a sitter gets the pets in their care — the API checks on-duty again). */
-function useOwnedPets(): PetsState {
-  const session = useSession();
-  const ownerId = session.status === "signedIn" ? session.profile.id : null;
-  const [owned, setOwned] = useState<PetsState>({ status: "loading" });
-
-  useEffect(() => {
-    if (!ownerId) return;
-    let live = true;
-    listMyPets(ownerId)
-      .then((list) => live && setOwned({ status: "ready", pets: list.map(({ id, name, species }) => ({ id, name, species })) }))
-      .catch((error: Error) => live && setOwned({ status: "error", message: error.message }));
-    return () => {
-      live = false;
-    };
-  }, [ownerId]);
-
-  return owned;
 }
 
 function StatusBadge({ status }: { status: SafetyCheck["safety_status"] }) {
@@ -462,17 +411,6 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md },
     section: { gap: theme.spacing.sm },
     label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
-    pets: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
-    pet: {
-      paddingVertical: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.lg,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-    },
-    petSelected: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
-    petLabel: { fontSize: theme.fontSize.body, color: theme.color.text },
     busy: {
       flexDirection: "row",
       alignItems: "center",
