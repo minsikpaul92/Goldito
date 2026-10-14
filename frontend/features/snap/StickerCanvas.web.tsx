@@ -60,14 +60,18 @@ export function StickerCanvas({ which, zIndex, layers, editing, selected, onSele
       {/* DOM order never changes (zIndex stacks them): moving a node while it is dragged would drop the pointer. */}
       {layers.flatMap((layer, layerIndex) =>
         layer.items.map((item, index) => {
-          if ((item.layer ?? "front") !== which) return null;
+          const side = item.layer ?? "front";
+          // While I decorate, my own "behind the text" stickers float on the front canvas (faded) so they can be grabbed —
+          // the text above the back canvas would otherwise catch the mouse. Saved, they go back under the writing.
+          const lifted = editing && layer.mine && side === "back";
+          if (which === "back" ? side !== "back" || lifted : side !== "front" && !lifted) return null;
           const live = editing && layer.mine;
           const isSelected = live && selected === index;
           return (
             <div
               key={`${layerIndex}-${index}-${item.sticker_id}`}
               data-testid={layer.mine ? "decor-mine" : "decor-other"}
-              data-layer={which}
+              data-layer={side}
               data-selected={isSelected ? "true" : undefined}
               role={live ? "button" : undefined}
               aria-label={live ? "Sticker — drag to move" : undefined}
@@ -86,6 +90,7 @@ export function StickerCanvas({ which, zIndex, layers, editing, selected, onSele
                 cursor: live ? "grab" : "default",
                 pointerEvents: live ? "auto" : "none",
                 outline: isSelected ? `2px dashed ${theme.color.primary}` : "none",
+                opacity: lifted ? 0.6 : 1,
                 outlineOffset: 2,
                 userSelect: "none",
               }}

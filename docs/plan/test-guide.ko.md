@@ -562,7 +562,7 @@
 | SNAP-18 | 견주 → Diary → 보낸 알림장 하나 → **✨ Decorate** → 스티커함에서 하나 클릭 → 스티커를 **마우스로 끌기** → **+** 두 번 · **↻** 한 번 → **Save stickers** → 새로고침 | 알림장 글이 "종이" 위에 있고, 스티커가 종이 가운데에 붙어 끌리는 대로 따라옴(화면 스크롤로 바뀌지 않음), 크기 · 회전 반영, "Stickers saved ✨". 새로고침해도 같은 자리 · 크기 · 각도. 글은 그대로. **Cancel**은 저장한 상태로 되돌리고, 고른 스티커 **Remove**. 스티커가 없으면 "No stickers yet — make one in Snap." + **Make a sticker** | 🤖 `decor.spec.ts`(마우스 드래그) | 사람 확인 대기 |
 | SNAP-19 | 시터 → Diary → 오늘 보낸 알림장 카드 / 그 알림장을 견주가 열기 | 시터 카드의 종이에 견주 스티커가 **같은 자리**에(아래 층), 시터도 자기 층을 꾸밀 수 있고 견주 화면에서도 같은 자리에 보임. 서로의 층은 못 바꿈, 알림장 초안에는 견주가 못 붙임 | 🤖 `decor.spec.ts` · SQL `rls_smoke` 013b · 두 계정 실제 확인은 👤(`013b` 적용됨 — #90 머지 뒤) | 사람 확인 대기 |
 | SNAP-20 | 견주 → Diary → 보낸 알림장 / 시터 → Diary → 오늘 보낸 알림장 | **그림일기 한 장**: 맨 위 "📅 Monday, Oct 5" · "Max's day 🐾", 가운데 그림 칸(그날 첫 사진, 없으면 🖍️), 아래 줄 공책 위에 손글씨 글꼴(Gaegu)로 알림장 글. 두 화면의 종이가 같아서 스티커가 같은 자리 | 🤖 `decor.spec.ts`(머리말 · 그림 칸) · 손글씨 글꼴 · 사진은 👤 | 사람 확인 대기 |
-| SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 가서 글씨가 스티커 위에 보임(다시 **⬆ Over text**). 글 아래 스티커도 마우스로 끌림. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
+| SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 지정(다시 **⬆ Over text**) — 꾸미는 동안은 반투명으로 위에 떠서 마우스로 끌 수 있고, **Save** 뒤에는 글씨가 스티커 위에 보임. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
 | SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
 
 ---

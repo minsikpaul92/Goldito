@@ -246,7 +246,7 @@ Snap 탭
 ### 12.4 — 그림일기 · 스티커 앞/뒤 · 다운로드 · 기본 스티커 ✅ (10/14)
 
 - **그림일기 종이** `features/snap/DecoratedReport.tsx`: 머리말(📅 요일, 날짜 · "{펫}'s day 🐾") → **그림 칸**(높이 180 고정 — 그날 첫 공유 사진, 없으면 🖍️) → **줄 공책**(30 px 줄, 글은 Gaegu 손글씨 — 웹만, Google Fonts SIL OFL, DESIGN.md §4 예외). 견주 다이어리 상세와 시터의 보낸 알림장이 같은 종이를 그려 좌표(종이 기준 0–1)가 같다.
-- **층 순서(아래→위):** 종이 → 그림 칸 · 줄 → **글 아래 스티커**(`layer: "back"`) → 글 → **글 위 스티커**(기본). 꾸미는 동안 글 · 그림은 클릭을 통과시켜 글 아래 스티커도 끌 수 있다. 도구 **⬇ Behind text / ⬆ Over text**. 항목에 `layer`가 없으면 "front"(12.3b에 저장한 것 그대로).
+- **층 순서(아래→위):** 종이 → 그림 칸 · 줄 → **글 아래 스티커**(`layer: "back"`) → 글 → **글 위 스티커**(기본). 꾸미는 동안에는 내 "글 아래" 스티커가 위 편집 층에 반투명으로 떠서 잡고 끌 수 있고, 저장하면 글 아래로 돌아간다(react-native-web에서 글이 클릭을 통과시키는 데 기대지 않음 — CI에서 확인). 도구 **⬇ Behind text / ⬆ Over text**. 항목에 `layer`가 없으면 "front"(12.3b에 저장한 것 그대로).
 - **기본 스티커** `features/snap/presetStickers.ts` + `frontend/assets/stickers/*.png` 9장(heart · star · sun · cloud · paw · bone · ball · zzz · best_day): 앱에 들어 있어 업로드 없음, 꾸미기 항목에는 `preset:<id>`. 지금 파일은 코드로 그린 임시본 → 묵이 같은 이름으로 바꾸면 끝.
 - **다운로드** `features/snap/download.ts`: Sticker 미리보기 **⬇ Download sticker**(브라우저에서 만든 PNG 그대로), 스티커함 타일 ⬇(Cloudinary `fl_attachment` 원본 PNG). 파일 이름 `goldito-{펫}-sticker.png`.
 - **남은 것(11.8 쪽):** 꾸민 그림일기 한 장을 이미지로 저장(**Save image**) — P1 창에서 시간이 남으면.
