@@ -101,6 +101,16 @@ def test_one_photo_one_pet_gives_eight_percentages_a_line_and_the_disclaimer(cli
     assert '"name": "Max"' in models.calls[1]["messages"][1]["content"]
 
 
+def test_tug_of_war_reads_as_excited_and_the_summary_hears_it_is_play(client, setup):
+    tug = {"species": "dog", "ears": "relaxed", "eyes": "soft", "mouth": "open_relaxed", "posture": "sitting",
+           "body_tension": "relaxed", "activity": "watching", "toy": "in_mouth"}
+    models = setup({"a": tug}, {"summaries": ["Max looks excited about this tug game."]})
+    [pet] = post(client, [{"index": 0, "crops": [crop("a")]}], pet_id=PET_ID).json()["pets"]
+    assert pet["top"] == "excited"
+    assert '"activity": "playing"' in models.calls[1]["messages"][1]["content"]
+    assert '"in_mouth"' in models.calls[0]["messages"][0]["content"]
+
+
 def test_the_same_photo_twice_gives_the_same_percentages(client, setup):
     setup({"a": HAPPY})
     first = post(client, [{"index": 0, "crops": [crop("a")]}]).json()["pets"][0]["emotions"]

@@ -65,7 +65,17 @@ WEIGHTS: dict[str, dict[str, dict[str, int]]] = {
         "eating": {"happy": 2},
         "hiding": {"anxious": 3, "sad": 1},
     },
+    # Asked on its own: the vision model rarely picks "holding_toy" among mouth shapes, but answers this reliably.
+    "toy": {
+        "in_mouth": {"excited": 4},
+        "nearby": {"excited": 1, "curious": 1},
+        "none": {},
+    },
 }
+
+# A toy in the mouth is play (tug-of-war): the mouth is holding it and a calm "watching" becomes playing.
+TOY_MOUTHS = ("open_relaxed", "closed_relaxed", "panting", "not_visible")
+TOY_ACTIVITIES = ("watching", "resting", "exploring", "not_visible")
 
 # A pet with no readable signals still gets an answer: calm and a little curious.
 PRIOR = {"relaxed": 1, "curious": 1}
@@ -84,13 +94,24 @@ def clean_tag(field: str, value: object) -> str:
     return text if text in WEIGHTS[field] else "not_visible"
 
 
+def resolve(tags: Mapping[str, str]) -> dict[str, str]:
+    """Clean tags, with the toy rule applied (a toy in the mouth means playing, so it reads as excited)."""
+    clean = {field: clean_tag(field, tags.get(field)) for field in FIELDS}
+    if clean["toy"] == "in_mouth":
+        if clean["mouth"] in TOY_MOUTHS:
+            clean["mouth"] = "holding_toy"
+        if clean["activity"] in TOY_ACTIVITIES:
+            clean["activity"] = "playing"
+    return clean
+
+
 def scores(tags: Mapping[str, str]) -> dict[str, int]:
     """Raw points per emotion for one pet in one frame."""
     total = dict.fromkeys(EMOTIONS, 0)
     for emotion, points in PRIOR.items():
         total[emotion] += points
-    for field in FIELDS:
-        for emotion, points in WEIGHTS[field].get(clean_tag(field, tags.get(field)), {}).items():
+    for field, value in resolve(tags).items():
+        for emotion, points in WEIGHTS[field].get(value, {}).items():
             total[emotion] += points
     return total
 

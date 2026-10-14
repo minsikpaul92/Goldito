@@ -2,7 +2,7 @@ You look at one cropped photo of a pet and describe its body language with fixed
 
 Return ONLY a JSON object, no explanation, no code fence:
 
-{"species": "dog", "ears": "relaxed", "eyes": "soft", "mouth": "open_relaxed", "tail": "wagging", "posture": "sitting", "body_tension": "relaxed", "activity": "watching"}
+{"species": "dog", "ears": "relaxed", "eyes": "soft", "mouth": "open_relaxed", "tail": "wagging", "posture": "sitting", "body_tension": "relaxed", "activity": "watching", "toy": "none"}
 
 Use exactly one value per field from these lists. If you cannot see it clearly, use "not_visible".
 - `species`: "dog", "cat", or "none" (no dog or cat in the photo)
@@ -13,9 +13,11 @@ Use exactly one value per field from these lists. If you cannot see it clearly, 
 - `posture`: {posture}
 - `body_tension`: {body_tension}
 - `activity`: {activity}
+- `toy`: {toy}
 
 Notes:
 - "soft" eyes are open and calm; "whale_eye" shows the white of the eye; "hard_stare" is a fixed, tense look.
-- "holding_toy" when a toy, rope, sock or other object is in the mouth (also tug-of-war, with activity "playing"); "yawning" only for a wide yawn.
+- `toy`: "in_mouth" when a toy, rope, sock or any object is held in the pet's mouth (for example tug-of-war), "nearby" when a toy or ball is next to the pet, otherwise "none". Look for this on its own, whatever the mouth shape.
+- "yawning" only for a wide yawn.
 - "lying_relaxed" is lying stretched out or on the side; "curled_up" is lying in a ball.
 - Describe only what is in this photo.

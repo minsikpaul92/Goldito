@@ -26,6 +26,25 @@ def test_the_strongest_emotion_follows_the_body_language(tags, expected):
     assert rules.top(rules.percentages(tags)) == expected
 
 
+# What the vision model returned for our tug-of-war photo (2026-10-14): a calm face, but a toy in the mouth.
+TUG = {"ears": "relaxed", "eyes": "soft", "mouth": "open_relaxed", "posture": "sitting", "body_tension": "relaxed", "activity": "watching", "toy": "in_mouth"}
+
+
+def test_a_toy_in_the_mouth_is_play_and_reads_as_excited():
+    assert rules.resolve(TUG)["mouth"] == "holding_toy"
+    assert rules.resolve(TUG)["activity"] == "playing"
+    pct = rules.percentages(TUG)
+    assert rules.top(pct) == "excited" and sum(pct.values()) == 100
+    # The same face without the toy is happy.
+    assert rules.top(rules.percentages({**TUG, "toy": "none"})) == "happy"
+
+
+def test_the_toy_rule_does_not_hide_a_warning_sign_or_another_activity():
+    assert rules.resolve({**TUG, "mouth": "teeth_showing"})["mouth"] == "teeth_showing"
+    assert rules.resolve({**TUG, "activity": "eating"})["activity"] == "eating"
+    assert rules.resolve({**TUG, "toy": "nearby"})["mouth"] == "open_relaxed"
+
+
 def test_the_same_tags_always_give_the_same_percentages():
     assert rules.percentages(dict(HAPPY)) == rules.percentages(dict(HAPPY))
 

@@ -102,6 +102,7 @@ class MoodTags(BaseModel):
     posture: str = "not_visible"
     body_tension: str = "not_visible"
     activity: str = "not_visible"
+    toy: str = "not_visible"
 
     @field_validator("species", mode="before")
     @classmethod
@@ -280,7 +281,7 @@ def pet_mood(body: PetMoodRequest, user: CurrentUser = Depends(get_current_user)
         moods.append(
             {
                 "frame": shown["frame"], "box": shown["box"], "emotions": emotions, "species": species,
-                "activity": shown["tags"].activity, "frames_used": len(seen),
+                "activity": mood_rules.resolve(shown["tags"].model_dump())["activity"], "frames_used": len(seen),
             }
         )
     lines = _summaries(pet, moods)
