@@ -105,7 +105,7 @@ Snap 탭
    items = [{sticker_id, x, y, scale, rotate, z}]  (x,y = 카드 기준 0–1 비율)
 ```
 
-- **대안(12.S2에서 결정):** Magic Touch 모델 파일 라이선스가 맞지 않거나 펫 분할이 나쁘면 → 백엔드 `rembg`(MIT, `u2netp` 4.7MB) `POST /api/media/sticker-cut`. **12.S2 결과(10/14):** 분할 품질 10 / 10 → MediaPipe(v2 `interactive_segmentation.task`, CPU, Web Worker). 대안은 모델 라이선스 확인에서 막힐 때만.
+- **대안(12.S2에서 결정):** Magic Touch 모델 파일 라이선스가 맞지 않거나 펫 분할이 나쁘면 → 백엔드 `rembg`(MIT, `u2netp` 4.7MB) `POST /api/media/sticker-cut`. **12.S2 결과(10/14):** 분할 품질 10 / 10 → MediaPipe(v2 `interactive_segmentation.task`, CPU, Web Worker). 대안은 쓰지 않음(Magic Touch 모델 카드: Apache-2.0).
 - 견주 · 시터 각자 자기 층(`report_decor`의 자기 행)만 고치고, 둘 다 상대 층을 본다. 알림장 본문(`daily_reports.body`)은 건드리지 않는다.
 - 마이그레이션 **`013b_mood_stickers.sql`**: `media.purpose`에 `sticker` 추가, `pet_stickers(id, pet_id, media_id, created_by, created_at)`, `report_decor(report_id, user_id, items jsonb, updated_at, primary key(report_id, user_id))` + RLS(펫에 접근 가능한 사람 읽기 · 자기 행만 쓰기 · 시터는 그 예약의 시터일 때만).
 
@@ -118,7 +118,7 @@ Snap 탭
 | **12.0** ✅ | 탭 이름 Mood → Snap(아이콘 `camera-outline`) · Snap 화면 틀(`features/snap/SnapScreen` + 카드 3개, 각 도구 화면은 `SnapToolPlaceholder` "Coming soon" 자리 — `/{role}/snap/{treat,mood,sticker}`) · 결정 D61 · 이 문서 · TODO · test-guide · CLAUDE.md 탭 줄 | 10/13 |
 | **12.1a** ✅ (12.1b 포함) | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → **Tavily 매번 · 신뢰 도메인만** → Ultra 한 번) + 업로드 권한(견주 `safety_label`) + pytest · `rls_smoke` 013 블록 — 실제 모델 · Tavily 호출 확인은 남음(로컬 키 없음, 아래 § 다음에 이어서) | 10/13 |
 | **12.1c** ✅ | Treat check 화면 + `AlertModal` + 샘플 라벨 4장(만든 그림) + e2e — 실제 판정 확인은 키 · `013` 뒤 | 10/14 |
-| **12.S2** ✅ | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 결과는 § 다음에 이어서 › 12.S2 "스파이크 결과" (실제 폰 측정 · 모델 라이선스 확인은 👤) | 10/14 |
+| **12.S2** ✅ | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 결과는 § 다음에 이어서 › 12.S2 "스파이크 결과" (실제 폰 측정은 👤; Magic Touch 라이선스 Apache-2.0 확인 10/14) | 10/14 |
 | **12.2a** | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest | 10/17 |
 | **12.2b** | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e | 10/18 |
 | **12.3a** | `013b` + 스티커 만들기 화면 + 업로드 + e2e | 10/19–20 |
@@ -215,7 +215,7 @@ Snap 탭
 | 오리기 품질 | 가장 큰 박스 중앙 한 번 탭으로 **10 / 10장 모두 펫만 깔끔하게**(마스크의 94–100 %가 박스 안; 가방 속 치와와만 68 % — 가방 일부 포함) → **MediaPipe로 감**(백엔드 `rembg` 대안 안 씀, 라이선스 확인이 막히지 않는 한) |
 | 오리기 속도 | **CPU: 탭마다 ≈ 4.8초**(인코더가 첫 `segment`에서 돌고, 다시 탭해도 같음). GPU는 첫 탭 1.9초 · 다시 탭 0.6초지만 **int8 GPU 마스크가 비어 있음**(전경 0.1 % vs CPU 12 %) → **CPU로 고정**, 그 대신 **Web Worker에서 실행**(4.8초 동안 화면이 멈추지 않게) + "Cutting out…" 진행 표시. 실제 폰은 2–3배 느릴 수 있음 → 👤 실제 폰 1회 측정 남음 |
 | 모델 로딩 위치 | `storage.googleapis.com`에서 바로 로드됨(교차 출처 OK, `vercel.json` CSP는 `frame-ancestors`만). 캐시가 1시간뿐이라 30 MB를 자주 받게 되면 `frontend/public/models/`로 옮길지 12.3a에서 결정 |
-| 라이선스 | ❓ **공식 문서에 모델 라이선스가 안 보임** — EfficientDet-Lite0(Google 문서는 파일 링크만, 제3자 패키지가 Apache-2.0이라 주장), Magic Touch([모델 카드 PDF](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf) — 브라우저에서 열면 다운로드됨). 👤 **사람이 모델 카드 PDF를 열어 확인** → 문제가 있으면 12.3만 `rembg`(MIT)로 |
+| 라이선스 | **Magic Touch: Apache License 2.0** ✅ — [모델 카드 PDF](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf)(Google, 2023-03-13; MediaPipe 문서가 v2 `.task`에도 같은 카드를 링크) "LICENSED UNDER Apache License, Version 2.0". 용도: 사진 속 물체 · **동물** · 사람 분할(사진 편집 · 주석) → 스티커에 맞음. 범위 밖: 동의 없는 사람 분할, 감시 · 신원 인식, 4 m보다 먼 작은 물체 → 사람이 찍힌 사진은 펫 쪽을 탭하게 안내. **EfficientDet-Lite0**: Google 문서에 모델 카드 · 라이선스가 따로 없음(파일 링크만; 제3자 패키지가 Apache-2.0이라 함) — 박스만 그리는 용도라 위험은 낮음, README 크레딧에 "MediaPipe EfficientDet-Lite0 (Google)"로 적음 |
 | 개 감정 분류기 | `agentmish/dog-emotion-classifier-v2`: 모델은 Apache-2.0이지만 학습 데이터 "unknown dataset", ViT-base 85.8M(웹에서 쓰기엔 큼) → **안 씀**(관찰 태그 규칙만) |
 | 아직 없는 샘플 | **개 2마리가 한 장에 있는 사진**(DoD 3), 고양이 사진, 5초 영상 2개 — 지금 10장은 모두 개 한 마리 |
 
