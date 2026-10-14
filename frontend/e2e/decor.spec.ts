@@ -154,6 +154,8 @@ test.describe("diary decorating", () => {
 
     // It still follows the mouse.
     const paper = screen.getByTestId("diary-entry-paper");
+    // Clicking "Behind text" may have scrolled the sticker under the screen header: centre it before grabbing it.
+    await front.evaluate((el) => el.scrollIntoView({ block: "center" }));
     const p = await box(paper);
     const from = center(await box(front));
     await drag(page, from, { x: from.x - 50, y: from.y + 20 });
