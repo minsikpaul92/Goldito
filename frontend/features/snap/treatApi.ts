@@ -90,6 +90,19 @@ export async function listRecentChecks(petId: string, limit = 10): Promise<Safet
   return ((data ?? []) as CheckRow[]).map(fromRow);
 }
 
+/** The newest checks across several pets (the Snap tab's "Recent checks"). */
+export async function listRecentChecksForPets(petIds: string[], limit = 3): Promise<SafetyCheck[]> {
+  if (petIds.length === 0) return [];
+  const { data, error } = await getSupabase()
+    .from("safety_checks")
+    .select(CHECK_COLUMNS)
+    .in("pet_id", petIds)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error("Couldn't load recent checks.");
+  return ((data ?? []) as CheckRow[]).map(fromRow);
+}
+
 /** One saved check — opened from the owner's `safety_danger` notice. */
 export async function getCheck(checkId: string): Promise<SafetyCheck | null> {
   const { data, error } = await getSupabase().from("safety_checks").select(CHECK_COLUMNS).eq("id", checkId).maybeSingle();
