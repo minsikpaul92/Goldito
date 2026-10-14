@@ -64,7 +64,7 @@ An AI agent answers, plans, checks, and writes, so the sitter can just care.
 | **④ Care & Pet Transit** | Suggests the day's chips, writes the **daily note**, captions and sorts photos · live trip ✅ | ✅ care · ✅ transit |
 | **⑤ Completion** | Writes the pet's **Life Record** and remembers it for the next stay, even with a new sitter | ✅ |
 
-**More than sitting: reasons to stay in the app.** Between stays, Goldito keeps the pet's story: a photo **album**, a **diary** of every stay, a **Life Record** that follows the pet to any sitter, **favorite sitters**, two-way **reviews**, and live notifications ✅. Coming next: a **pet profile** built from a photo, your voice, and a few big-button questions 🚧, a **mood meter**, and an **8-bit pet room** 🔭.
+**More than sitting: reasons to stay in the app.** Between stays, Goldito keeps the pet's story: a photo **album**, a **diary** of every stay, a **Life Record** that follows the pet to any sitter, **favorite sitters**, two-way **reviews**, and live notifications ✅. Coming next: a **pet profile** built from a photo, your voice, and a few big-button questions 🚧, and an **8-bit pet room** 🔭. The **Snap** tab already has a treat-label check, a pet mood meter, and stickers for the diary ✅.
 
 ---
 
@@ -117,10 +117,21 @@ Tap a stage to expand it.
 - ✅ **Timeline album:** every photo gets an AI caption and is sorted into Meals · Walks · Naps by day.
 - ✅ **Uber-style transit:** whoever is driving taps **Start trip** (after a clear location prompt); the other side sees a live map and ETA, and on arrival the owner gets the sitter's place card (visitor parking, lobby notes) while the sitter gets the entry-info card. Both sides get **Open in Google Maps**: directions for the traveller, the place for the host. Anyone can also **start without sharing**: the other side then sees the meeting place instead of a map. On the web the traveller's screen has to stay on (browsers pause location in the background); the app after the hackathon shares in the background. A demo account can **simulate the drive**.
 - 🔭 **Photo check-in:** one photo at the handoff, and a vision model confirms the pet is there and secured in the car (crate or seatbelt). It is advice only, so the sitter can continue. The check runs on the server; it is not in the app yet, because owner and sitter meet in person.
-- 🚧 **Treat Safety Guard** *(stretch)*: scan a treat label; Nemotron Ultra and a curated toxic-ingredient table catch allergens and hidden sources (for example, chicken in "animal fat") before the treat is fed.
+- ✅ **Treat check** (Snap tab): snap a treat label; a rule table of the pet's allergens and species toxins, trusted vet sites through Tavily, and Nemotron Ultra catch hidden sources (for example, chicken in "animal fat") before the treat is fed. Danger opens a red screen that only "I understand" closes. See *Snap tab* below.
 
 > *"Max took the skin pill you left, tucked inside her treat, and finished every bit of her kibble! On our 20-minute morning walk she spotted a squirrel in the park and got so excited. It was adorable. Her potty was perfectly healthy, too. 🐶"*
 > From an AI daily note built from a few chips, two photos, and one short line from the sitter
+
+</details>
+
+<details>
+<summary><b>Snap tab: treat check, pet mood, stickers</b> (owner and sitter)</summary>
+
+Three small tools that each start from a photo, on the fifth tab for both roles.
+
+- ✅ **Treat check:** pick the pet, snap the label. MiniCPM-V reads it; the server checks the pet's allergens and species toxins, asks trusted vet and FDA pages through Tavily, and Nemotron Ultra double-checks once. The answer is **SAFE · WARNING · DANGER** with sources, never below what the rule table says, and never SAFE if the second check did not run. A sitter checks only the pets in their care right now. A sitter's DANGER also notifies the owner. The Snap tab lists the last three checks.
+- ✅ **Mood** *(for fun only)*: a photo or a short clip gets a box around each pet and a table of eight emotions in percent. The pet finder runs in the browser (MediaPipe); the vision model picks only visible tags, and a fixed rule table turns them into the percentages, so the same photo always gives the same numbers.
+- ✅ **Sticker:** the pet is cut out in the browser (a Web Worker, about 5 s) into a transparent PNG with a white outline. Owner and sitter each decorate a sent daily note on their own layer, over or behind the writing, and the diary page shows a date and the pet's name on top like a picture diary. Nine placeholder Goldito stickers come with the app.
 
 </details>
 
@@ -221,7 +232,8 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 | ④ Transit 🔭 | Handoff photo check: pet visible, crate or seatbelt in the car (server API ready, not in the app yet) | `openbmb/MiniCPM-V-4_5` ¹ | Vision model on Token Factory |
 | ④ Care | Photo descriptions → warm daily note from the 5-second check | `openbmb/MiniCPM-V-4_5` → `nvidia/nemotron-3-super-120b-a12b` | Few-shot tone from 3 years of (anonymized) real reports |
 | ④ Album | Caption + category (Meals · Walks · Naps · Play) | `openbmb/MiniCPM-V-4_5` | One call per photo (about 1 s), no sitter typing |
-| ④ Treat guard 🚧 *(stretch)* | Allergen & hidden-ingredient reasoning | `nvidia/Nemotron-3-Ultra-550b-a55b` | Safety-critical → strongest reasoning |
+| ④ Treat check ✅ | Label → allergen & hidden-ingredient reasoning over rules and trusted vet pages | `openbmb/MiniCPM-V-4_5` → `nvidia/Nemotron-3-Ultra-550b-a55b` | Safety-critical → strongest reasoning, and never below the rule table |
+| ④ Pet mood ✅ | Per-pet photo tags → eight emotion percentages (for fun) | `openbmb/MiniCPM-V-4_5` | The model only picks tags; a server rule table makes the percentages |
 | ⑤ Completion | Stay → Pet Life Record (eating, potty, meds, behavior, cautions) | `nvidia/nemotron-3-super-120b-a12b` | Long-context summarizing that only uses recorded facts |
 | New pet 🚧 | Spoken description → profile facts, each with the sentence it came from | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Server drops any value that has no matching quote |
 
@@ -269,12 +281,12 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
           ├── Nebius Token Factory
           │     ├── Nemotron Nano   → inquiry auto-replies, profile facts from speech
           │     ├── Nemotron Super  → checklists, daily notes, Life Records
-          │     ├── Nemotron Ultra  → treat safety reasoning (stretch)
-          │     ├── MiniCPM-V       → captions, album sorting, daily-note photo chips
+          │     ├── Nemotron Ultra  → treat check reasoning
+          │     ├── MiniCPM-V       → captions, album sorting, daily-note photo chips, treat labels, mood tags
           │     └── Qwen3 Embedding → RAG retrieval
           ├── Google Calendar → Google Meet links + invites (video Meet & Greet)
           ├── OpenStreetMap → trip map (view only)
-          ├── Tavily       → ingredient / recall / breed web search (stretch)
+          ├── Tavily       → trusted vet / FDA pages for the treat check
           └── Groq Whisper → speech-to-text for the pet-profile voice step (planned)
 ```
 
@@ -448,8 +460,7 @@ Open `http://localhost:8081` and use **Try demo**. Tests: `pytest -q` in `backen
 - **Drop-in visits:** short house visits with their own capacity rules.
 - **Settings & patch notes:** in-app **What's New** from the [CHANGELOG](docs/CHANGELOG.md).
 - **8-bit pet status room:** Tamagotchi-style Home dashboard: fed, potty, mood, next task.
-- **Decorated daily notes:** pet cut-out stickers and AI-picked themes turn each note into a keepsake card.
-- **Mood from video:** a short clip becomes a one-line mood note, based only on what the pet is visibly doing.
+- **Keepsake cards:** save a decorated diary page as one image, and AI-picked themes for each note.
 - **Pawstagram** and a **pet-friendly map**: a public feed for pet lovers, and cafés, stores, and parks that welcome pets.
 - **Sitter desktop:** sitters plan schedules and send daily notes faster from a computer; owners stay on their phone.
 
