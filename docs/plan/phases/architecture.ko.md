@@ -147,6 +147,7 @@ Goldito/
 │  │  │  ├─ ai_handoff_check.py # POST /api/ai/handoff-check (06B)
 │  │  │  ├─ ai_inquiry.py     # POST /api/ai/inquiry-reply (07B)
 │  │  │  ├─ ai_life_record.py # POST /api/ai/life-record (07C)
+│  │  │  ├─ ai_pet_mood.py    # POST /api/ai/pet-mood (12.2 Mood — 태그 → 규칙 %)
 │  │  │  └─ ai_safety_check.py # POST /api/ai/safety-check (12.1 Treat check — 08 설계)
 │  │  ├─ schemas/             # pydantic request/response 모델 (라우터별 파일)
 │  │  └─ ai/prompts/
@@ -314,6 +315,7 @@ Goldito/
 | POST | `/api/ai/daily-report` | on-duty sitter | `{pet_id, date:"YYYY-MM-DD", inputs:{meal?, water?, potty?, walk_minutes?, mood?}, chips:[시터가 고른 칩], note?:(≤ 200자), media_ids?:[≤2]}` | `{report_id, body, status:"draft", model, latency_ms}` — 게시는 시터 승인(`send_daily_report`) 뒤 | 07 |
 | POST | `/api/ai/life-record` | booking party (찾기 완료 후) | `{booking_id}` | `{records:[{pet_id, record_id, summary}], model, latency_ms}` + RAG 인덱싱 | 07C |
 | POST | `/api/ai/safety-check` | **pet owner** or on-duty sitter (D61) | `{pet_id, media_id}` (media = own `safety_label` upload of that pet) | `{safety_check_id, safety_status, product_name, detected_ingredients[], matched_allergens[], hidden_sources[{ingredient, may_contain, reason}], toxic_ingredients[], unknown_ingredients[], sources[{title, url, domain}], sources_unavailable, double_checked, warning_message, model, latency_ms}` — 422 unreadable label · 503 vision down | 12.1 |
+| POST | `/api/ai/pet-mood` | any signed-in user; with `pet_id` = its owner or on-duty sitter (D61) | `{pet_id?, frames:[{index, crops:[{box:{x,y,w,h} (0–1), image: data-URL ≤ 300 KB}]}]}` — ≤ 4 frames, ≤ 8 crops; the n-th crop of every frame is the same pet | `{pets:[{frame, box, emotions:{happy, relaxed, excited, curious, sleepy, anxious, angry, sad} (whole %, sum 100), top, summary, frames_used}], disclaimer, model, latency_ms}` — nothing saved; 422 no pet found / bad crop · 503 vision down | 12.2 |
 | POST | `/api/ai/pet-theme` | owner of pet | `{pet_id, media_id}` | `{theme, coat_colors[], confidence, model, latency_ms}` (실패·저신뢰 시 `theme:"default"`) | 11.10 (P1) |
 | POST | `/api/ai/report-decor` | on-duty sitter | `{report_id}` | `{theme, preset_stickers[], model, latency_ms}` (실패 시 `theme:"calm"`, `[]`) | 11.8 (P1) |
 

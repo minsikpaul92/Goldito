@@ -119,7 +119,7 @@ Snap 탭
 | **12.1a** ✅ (12.1b 포함) | `013_safety.sql` + `POST /api/ai/safety-check`(vision → 규칙 → **Tavily 매번 · 신뢰 도메인만** → Ultra 한 번) + 업로드 권한(견주 `safety_label`) + pytest · `rls_smoke` 013 블록 — 실제 모델 · Tavily 호출 확인은 남음(로컬 키 없음, 아래 § 다음에 이어서) | 10/13 |
 | **12.1c** ✅ | Treat check 화면 + `AlertModal` + 샘플 라벨 4장(만든 그림) + e2e — 실제 판정 확인은 키 · `013` 뒤 | 10/14 |
 | **12.S2** ✅ | 스파이크(반나절): 폰 프레임 안에서 MediaPipe 인식 · 분할 속도, 모델 파일 라이선스, 개 분류기 쓸지 결정 → 결과는 § 다음에 이어서 › 12.S2 "스파이크 결과" (실제 폰 측정은 👤; Magic Touch 라이선스 Apache-2.0 확인 10/14) | 10/14 |
-| **12.2a** | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest | 10/17 |
+| **12.2a** ✅ | `POST /api/ai/pet-mood` + `mood_rules.py` + pytest (`test_mood_rules` · `test_ai_pet_mood`) — 실제 모델 호출 확인은 12.2b 화면과 함께 | 10/14 |
 | **12.2b** | Mood 화면(박스 + % 표 + 영상 프레임) + 샘플 + e2e | 10/18 |
 | **12.3a** | `013b` + 스티커 만들기 화면 + 업로드 + e2e | 10/19–20 |
 | **12.3b** | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) | 10/21 |
