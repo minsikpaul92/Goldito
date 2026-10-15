@@ -155,6 +155,14 @@ def search_queries(
     return queries
 
 
+def partial_message(pet_name: str) -> str:
+    """What the result says when only part of the ingredient list could be read."""
+    return (
+        f"We could only read part of the label, so we can't call this safe for {pet_name}. "
+        "Retake a photo of the whole ingredient list."
+    )
+
+
 def fallback_message(pet_name: str, status: Status, findings: RuleFindings) -> str:
     """What the result says when the reasoning model could not answer (rules only)."""
     if findings.matched_allergens:
