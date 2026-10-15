@@ -1628,7 +1628,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -1641,6 +1641,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       rows = [...rows].sort((a, b) => String(a.sent_at).localeCompare(String(b.sent_at)));
       if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
+    // Only the Snap tab's "Recent checks" asks for a short list so far.
+    if (path === "safety_checks" && params.get("limit")) rows = rows.slice(0, Number(params.get("limit")));
     const wantsCount = (headers.prefer ?? "").includes("count=");
     return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
   }

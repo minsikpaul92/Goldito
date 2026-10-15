@@ -124,7 +124,7 @@ Snap 탭
 | **12.3a** ✅ | `013b` + 스티커 만들기 화면 + 업로드 + e2e — `features/snap/{StickerScreen.tsx, cutout.ts, stickerApi.ts}`, 오리기는 classic Web Worker(module 워커는 MediaPipe WASM 로더가 안 됨), 스티커 PNG는 JPEG 변환 없이 업로드, 스티커함(견주 · 시터 같이 봄, 만든 사람만 삭제). `013b` 호스팅 DB 적용은 👤 | 10/14 |
 | **12.3b** ✅ | 다이어리 꾸미기(견주 diary 상세 · 시터 ReportComposer) + e2e(마우스 드래그) — `features/snap/{DecoratedReport.tsx, StickerCanvas.web.tsx, decorApi.ts}`: 두 화면이 같은 "종이"(알림장 글)를 그리고 좌표는 종이 기준 0–1, 드래그는 DOM 포인터 + `data-gesture-owner`, 항목에 `public_id` | 10/14 |
 | **12.4** ✅ | **그림일기 · 스티커 앞/뒤 · 다운로드 · 기본 스티커** (2026-10-14 민식 요청) — 보낸 알림장을 그림일기 한 장으로(날짜 · 펫 머리말, 그날 첫 사진이 든 그림 칸, 줄 공책 위 손글씨 글꼴 Gaegu), 스티커마다 **글 위 / 글 아래**(`layer`), 스티커 **다운로드**(만든 직후 PNG · 스티커함의 원본), **Goldito 기본 스티커 9장**(코드로 그린 임시본 — 묵 디자인으로 같은 이름 교체) | 10/14 |
-| **12.5** | 마무리 · Snap 탭 "Recent checks" · test-guide · README 메모 · 데모 샘플 정리 · PR #90 Ready for review | 10/15–16 |
+| **12.5** | 마무리 · Snap 탭 "Recent checks" · test-guide · README 메모 ✅(별도 PR) · 데모 샘플 정리 → TODO "Phase 12 by hand" | 10/15–16 |
 
 **일정이 밀리면 자르는 순서:** ① 영상 기분(사진만) → ② 시터 쪽 꾸미기(견주만) → ③ 개 분류기 혼합(태그 규칙만) → ④ Tavily 재판단(출처 표시만). **Treat check DANGER 장면과 사진 기분 · 스티커 1장은 반드시 남긴다.**
 

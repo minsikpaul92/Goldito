@@ -278,7 +278,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
   );
 }
 
-function StatusBadge({ status }: { status: SafetyCheck["safety_status"] }) {
+export function StatusBadge({ status }: { status: SafetyCheck["safety_status"] }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const color = status === "DANGER" ? theme.color.error : status === "WARNING" ? theme.color.warning : theme.color.success;
