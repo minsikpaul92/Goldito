@@ -200,6 +200,26 @@ export async function saveOwnerHomeAccess(fields: {
   if (error) throw new Error("Couldn't save your entry info. Try again.");
 }
 
+/** Stays that end at the owner's door: house sitting, or a drop-off / pick-up at the owner's home (ENTRY-1). */
+export function needsOwnerHomeAccess(b: Pick<BookingSummary, "serviceType" | "dropOff" | "pickUp">): boolean {
+  return (
+    b.serviceType === "house_sitting" ||
+    b.dropOff?.locationType === "owner_home" ||
+    b.pickUp?.locationType === "owner_home"
+  );
+}
+
+/** Whether the owner has saved at least one entry field (the form is optional, so a row can be all empty). */
+export async function ownerHasHomeAccess(ownerId: string): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("owner_home_access")
+    .select("entry_steps, lockbox_code, buzzer, fob_notes, sitter_parking")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (error) throw new Error("Couldn't check your entry info.");
+  return !!data && Object.values(data).some((v) => typeof v === "string" && v.trim() !== "");
+}
+
 // ---------------------------------------------------------------------------
 // Book care (3B.3)
 // ---------------------------------------------------------------------------

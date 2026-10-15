@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
 import { DEMO_QUOTE, MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
@@ -223,3 +224,65 @@ function seedReopened(db: MockDb) {
     });
   }
 }
+
+// ENTRY-1: a stay that ends at the owner's door must not be paid with an empty entry form.
+test.describe("entry info before paying", () => {
+  async function openCheckout(page: Page, seed: (db: MockDb) => void) {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    seed(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    return app(page);
+  }
+
+  test("house sitting with no entry info: a card says so, and saving the form removes it", async ({ page }) => {
+    const screen = await openCheckout(page, (db) => {
+      db.bookings[0].service_type = "house_sitting";
+    });
+    await expect(screen.getByTestId("checkout-entry-missing")).toContainText("nothing to open it");
+    await screen.getByTestId("checkout-entry-add").click();
+    await expect(page).toHaveURL(/\/owner\/home-access$/);
+    await screen.getByTestId("home-access-lockbox").fill("4821");
+    await screen.getByTestId("home-access-save").click();
+    await expect(screen.getByTestId("checkout-title")).toBeVisible();
+    await expect(screen.getByTestId("checkout-entry-missing")).toHaveCount(0);
+  });
+
+  test("a drop-off at the owner's home asks too", async ({ page }) => {
+    const screen = await openCheckout(page, (db) => {
+      db.booking_handoffs.find((h) => h.kind === "drop_off")!.location_type = "owner_home";
+    });
+    await expect(screen.getByTestId("checkout-entry-missing")).toBeVisible();
+  });
+
+  test("an owner who already saved entry info is not asked", async ({ page }) => {
+    const screen = await openCheckout(page, (db) => {
+      db.bookings[0].service_type = "house_sitting";
+      db.owner_home_access.push({ owner_id: OWNER.id, entry_steps: null, lockbox_code: "4821", buzzer: null, fob_notes: null, sitter_parking: null });
+    });
+    await expect(screen.getByTestId("checkout-title")).toBeVisible();
+    await expect(screen.getByTestId("checkout-entry-missing")).toHaveCount(0);
+  });
+
+  test("boarding at the sitter's home never asks", async ({ page }) => {
+    const screen = await openCheckout(page, () => undefined);
+    await expect(screen.getByTestId("checkout-title")).toBeVisible();
+    await expect(screen.getByTestId("checkout-entry-missing")).toHaveCount(0);
+  });
+
+  test("the sitter's card says the owner has not added entry info yet, instead of an empty Show code", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.bookings[0].service_type = "house_sitting";
+    db.bookings[0].paid_at = "2026-10-02T18:05:00Z";
+    db.booking_handoffs.find((h) => h.kind === "drop_off")!.scheduled_at = new Date(Date.now() + 3_600_000).toISOString();
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("entry-info-empty")).toContainText("Robert hasn't added entry info yet");
+    await expect(screen.getByTestId("entry-show-code")).toHaveCount(0);
+  });
+});

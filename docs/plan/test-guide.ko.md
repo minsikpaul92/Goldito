@@ -89,7 +89,7 @@
 | 도착 / 인계 체크 (Received · Returned) | ✅ 🤖 | 03B.6 |
 | 취소 · 새 시터 찾기 | ✅ 🤖 | 03B.7 |
 | 시터 Home 대시보드 | ✅ 🤖 | 03B.8 |
-| 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 | ✅ 🤖 | 03C |
+| 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
 
 ### Stage 4 — 돌봄 · 알림장
 
@@ -304,6 +304,7 @@
 | BOOK-11 | **홀드와 한 번에 한 오너.** Chloe(기본 설정)에게 오너 A가 첫 동의를 받은 날짜에 오너 B가 요청 · 검색 · 문의 | B의 요청은 `sitter_unavailable`(날짜가 상세에), 시터 검색에 안 나옴, 문의 AI의 "can host"도 불가. 시터가 일정 막기로 덮으려 해도 거부. 시터 프로필에서 **Take pets from more than one owner at a time**을 켜면 정원(max pets) 안에서 허용. 오너에게는 시터 프로필 · 문의 시트 · 검색 결과에 "One owner at a time" / "Hosts several owners' pets" 배지 | 🤖 `profile` · SQL · pytest `test_inquiry` | ➖ |
 | BOOK-12 | 만난 뒤 **오너가 Not this sitter**(사유 칩 + 짧은 메모) / 취소 · 거절 · 타임아웃 | 오너 버튼 이름이 첫 동의 뒤에는 **Not this sitter**(그 전에는 Cancel booking), 사유가 취소 이유로 저장되고 시터 화면에 "Robert passed: …" 표시. 취소되면 홀드가 풀려 다음 오너가 요청 가능 | 🤖 `meet-greet` · SQL | ➖ |
 | BOOK-13 | **2일 · 3일 규칙.** 첫 동의 2일 뒤에도 만남 시간이 없음 → 알림 → 3일 더 무응답 | 양쪽에 "Still no time to meet …"(시간 잡기 · 건너뛰기 · 거절), 카드에 같은 문구. 3일 뒤 자동 취소(`meet_greet_timeout`), 홀드 해제, 양쪽 알림. 시간이 **agreed**가 되면 시계가 멈춤 | SQL `rls_smoke` (스윕) · pytest `test_sweep` · 실제 15분 cron은 👤 | ➖ |
+| BOOK-14 | **결제 전 입구 정보 (ENTRY-1).** 견주가 하우스 시팅 예약, 또는 드롭오프 · 픽업이 **견주 집**인 예약의 체크아웃을 엶 (입구 정보 form이 비어 있음) → **Add entry info** → 자물쇠 코드 하나 저장 → 뒤로 | 견적 아래에 🔑 **"Add entry info"** 카드(시터가 문 앞에서 열 방법이 없다는 문장 + 버튼). 버튼이 `/owner/home-access`를 열고, 저장해서 돌아오면 카드가 사라짐. 시터 집 보딩, 또는 이미 입구 정보가 저장된 견주는 카드가 안 나옴. Pay는 막지 않음(경고만). **시터 쪽:** 입구 정보가 전부 빈 채로 열 시간이 오면 Show code 대신 **"{견주} hasn't added entry info yet — message them."** | 🤖 `checkout.spec.ts`(5개) | 사람 확인 대기 |
 
 ### 3.9 리뷰 버그 수정 (BF) — 2026-10-06 코드 리뷰에서 나온 버그
 
@@ -570,7 +571,7 @@
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
-- **입구 정보 없이도 결제된다 (ENTRY-1, P0 — 고칠 예정):** 하우스 시팅 · 견주 집 인수인계 예약에서 견주가 입구 정보를 저장하지 않으면, 시간이 되어 시터가 **Show code**를 눌러도 빈 카드다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
+- **입구 정보는 경고일 뿐 결제를 막지 않는다 (ENTRY-1):** 하우스 시팅 · 견주 집 인수인계 체크아웃에서 입구 정보 form이 비어 있으면 카드로 알리고 링크를 주지만, 견주가 무시하고 Pay 할 수 있다(가족이 직접 열어 주는 경우 등). 그 경우 시터는 Show code 대신 "{견주} hasn't added entry info yet — message them."를 본다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
 - **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭의 "Recent checks"는 **최근 3개**만 보인다(펫이 여럿이면 이름이 붙고, 전체 10개는 Treat check 화면 안에서).
 - **Mood 퍼센트는 재미용 규칙 계산이다** — 비전 모델은 귀 · 눈 · 입 · 꼬리 · 자세 · 긴장 · 행동 태그만 고르고, `backend/app/ai/mood_rules.py` 표가 %를 만든다. 그래서 같은 사진 → 같은 %, 하지만 태그를 잘못 읽으면 %도 같이 틀린다. 장난감은 입 모양 선택지로는 잘 못 잡아서 **`toy` 태그를 따로 묻고**(우리 사진 10장 중 터그 사진만 `in_mouth`, 2026-10-14), 입에 장난감이 있으면 "놀이"로 계산해 **excited**가 1등이 된다. 감정 전용으로 검증된 모델이 아니다(D61, "For fun only").
 - **Mood는 웹에서만**, 펫 찾기(MediaPipe `tasks-vision@1.0.1`)는 실행할 때 jsdelivr · Google 저장소에서 받아 온다(WASM 11 MB + 모델 4.5 MB, 첫 사용에 몇 초). 네트워크가 막히면 "Couldn't get the pet finder ready…". 영상 프레임은 브라우저가 그 코덱을 열 수 있어야 한다(데스크톱 Chrome · Safari의 mp4 OK). 결과는 저장하지 않는다.

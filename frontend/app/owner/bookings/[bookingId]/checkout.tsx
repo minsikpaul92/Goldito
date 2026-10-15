@@ -1,8 +1,9 @@
-import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ConsentCard } from "../../../../components/ConsentCard";
+import { Card } from "../../../../components/ui/Card";
 import { QuoteCard } from "../../../../components/QuoteCard";
 import { Button } from "../../../../components/ui/Button";
 import { EmptyState } from "../../../../components/ui/EmptyState";
@@ -23,6 +24,8 @@ import {
   BookingError,
   BookingSummary,
   getBooking,
+  needsOwnerHomeAccess,
+  ownerHasHomeAccess,
   payBookingDemo,
   quoteBooking,
   type PriceQuote,
@@ -37,10 +40,13 @@ type Ready = {
   quote: PriceQuote;
   required: ConsentKind[];
   signed: BookingConsent[];
+  /** The stay ends at the owner's door but no entry field is saved yet (ENTRY-1). */
+  entryMissing: boolean;
 };
 
 /**
  * Owner checkout (03C): quote → consents → name → Pay (demo). No Stripe.
+ * On a stay that ends at the owner's door, an "Add entry info" card sits above Pay while the entry form is empty (ENTRY-1).
  */
 export default function CheckoutScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -75,7 +81,7 @@ export default function CheckoutScreen() {
         setLoadError("Agree on drop-off and pick-up times first.");
         return;
       }
-      const [quote, required, signed, profile] = await Promise.all([
+      const [quote, required, signed, profile, hasEntry] = await Promise.all([
         quoteBooking({
           sitterId: booking.sitterId,
           serviceType: booking.serviceType,
@@ -86,19 +92,23 @@ export default function CheckoutScreen() {
         fetchRequiredConsents(booking.id),
         listBookingConsents(booking.id),
         loadRoleProfile(session.profile.id, "owner"),
+        needsOwnerHomeAccess(booking) ? ownerHasHomeAccess(session.profile.id) : Promise.resolve(true),
       ]);
       setVetClinic(profile.role === "owner" ? profile.fields.vet_clinic_name : null);
       setSignerName(session.profile.displayName);
-      setReady({ booking, quote, required, signed });
+      setReady({ booking, quote, required, signed, entryMissing: !hasEntry });
       setLoadError(null);
     } catch (err) {
       setLoadError((err as Error).message);
     }
   }, [bookingId, session.profile]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Also when the owner comes back from the entry form.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load]),
+  );
 
   const signedKinds = useMemo(
     () => new Set((ready?.signed ?? []).map((s) => s.kind)),
@@ -151,7 +161,7 @@ export default function CheckoutScreen() {
   }
   if (!ready) return <LoadingView />;
 
-  const { booking, quote, required, signed } = ready;
+  const { booking, quote, required, signed, entryMissing } = ready;
   const totalLabel = `Pay $${quote.total.toFixed(2)} (demo)`;
 
   return (
@@ -161,6 +171,21 @@ export default function CheckoutScreen() {
           {`Finish booking with ${booking.sitterName}`}
         </Text>
         <QuoteCard quote={quote} testID="checkout-quote" />
+
+        {entryMissing ? (
+          <Card style={styles.entryCard} testID="checkout-entry-missing">
+            <Text style={styles.entryTitle}>🔑 Add entry info</Text>
+            <Text style={styles.entryBody}>
+              {`${booking.sitterName} will stand at your door with nothing to open it. Add the lockbox code, buzzer or steps now — they only see it from 2 hours before arrival.`}
+            </Text>
+            <Button
+              label="Add entry info"
+              variant="secondary"
+              onPress={() => router.push("/owner/home-access")}
+              testID="checkout-entry-add"
+            />
+          </Card>
+        ) : null}
 
         {required.map((kind) => {
           const existing = signed.find((s) => s.kind === kind);
@@ -221,4 +246,7 @@ const makeStyles = (theme: Theme) =>
     },
     demoHint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
+    entryCard: { gap: theme.spacing.sm, borderColor: theme.color.warning, borderWidth: 1 },
+    entryTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    entryBody: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
   });

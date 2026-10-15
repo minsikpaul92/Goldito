@@ -22,6 +22,8 @@ type Props = {
    * until they sign the new consent, so say so instead of hiding the card.
    */
   waitingForSignature?: string | null;
+  /** Named in the "hasn't added entry info" line when the owner left every field empty (ENTRY-1). */
+  ownerName?: string;
 };
 
 const HIDE_MS = 10_000;
@@ -29,7 +31,7 @@ const HIDE_MS = 10_000;
 /**
  * Sitter entry-info card (03C): locked until T−2h, then Show code (auto-hides after 10 s).
  */
-export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props) {
+export function EntryInfoCard({ bookingId, visible, waitingForSignature, ownerName }: Props) {
   const styles = useThemedStyles(makeStyles);
   // `code` is the RPC error code (not_paid, forbidden, …); `error` is the message to show.
   const [state, setState] = useState<
@@ -104,6 +106,17 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature }: Props
   }
 
   const access = state as HomeAccess;
+  const empty = ![access.entrySteps, access.lockboxCode, access.buzzer, access.fobNotes, access.sitterParking].some(
+    (v) => v?.trim(),
+  );
+  if (empty) {
+    return (
+      <Card style={styles.card} testID="entry-info-empty">
+        <Text style={styles.title}>🔑 Entry info</Text>
+        <Text style={styles.body}>{`${ownerName ?? "The owner"} hasn't added entry info yet — message them.`}</Text>
+      </Card>
+    );
+  }
   return (
     <Card style={styles.card} testID="entry-info-open">
       <Text style={styles.title}>🔑 Entry info</Text>
