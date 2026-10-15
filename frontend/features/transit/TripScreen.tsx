@@ -202,7 +202,7 @@ export function TripScreen({ role }: { role: Role }) {
       ) : null}
 
       {arrived && mine && role === "sitter" && handoff?.locationType === "owner_home" ? (
-        <EntryInfoCard key={`${live.id}-${live.status}`} bookingId={b.id} visible />
+        <EntryInfoCard key={`${live.id}-${live.status}`} bookingId={b.id} visible ownerName={b.ownerName} />
       ) : null}
       {arrived && mine && role === "owner" && handoff?.locationType === "sitter_home" ? (
         <PlaceCard name={b.sitterName} place={places[live.handoff_kind]} />

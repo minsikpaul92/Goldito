@@ -44,6 +44,7 @@ import {
   requestExpired,
   respondBooking,
   respondHandoff,
+  needsOwnerHomeAccess,
 } from "../../../../lib/bookings";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
@@ -255,12 +256,8 @@ export default function SitterBookingDetail() {
 
         <EntryInfoCard
           bookingId={booking.id}
-          visible={
-            booking.status === "confirmed" &&
-            (booking.serviceType === "house_sitting" ||
-              booking.dropOff?.locationType === "owner_home" ||
-              booking.pickUp?.locationType === "owner_home")
-          }
+          visible={booking.status === "confirmed" && needsOwnerHomeAccess(booking)}
+          ownerName={owner}
           waitingForSignature={checkoutReopened ? owner : null}
         />
 
