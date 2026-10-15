@@ -13,6 +13,7 @@ import { LoadingView } from "../../../components/ui/LoadingView";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
+import { useInCare } from "../../../features/care/useInCare";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { UploadError, uploadMedia } from "../../../lib/cloudinary";
 import {
@@ -24,6 +25,7 @@ import {
   listFeedPosts,
 } from "../../../lib/feed";
 import { pickMedia } from "../../../lib/media";
+import { PhotoRequest, getOpenPhotoRequest, requestPhoto } from "../../../lib/photoRequests";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications } from "../../../providers/NotificationsProvider";
 import { useSession } from "../../../providers/SessionProvider";
@@ -63,6 +65,10 @@ export default function OwnerFeed() {
   const [visibleToSitter, setVisibleToSitter] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // 11.1: ask the sitter on duty for a photo; the next shared photo answers it.
+  const inCare = useInCare();
+  const [openRequest, setOpenRequest] = useState<PhotoRequest | null>(null);
+  const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
     if (pets.length === 0) {
@@ -108,6 +114,35 @@ export default function OwnerFeed() {
     if (!petId || feedRevision === 0) return;
     void loadPage(0, false, true);
   }, [feedRevision, petId, loadPage]);
+
+  const caring = petId != null && inCare[petId] != null;
+  useEffect(() => {
+    if (!petId || !caring) {
+      setOpenRequest(null);
+      return;
+    }
+    let live = true;
+    // A fulfilled ask comes with a new photo, so the feed revision is also when to look again.
+    getOpenPhotoRequest(petId)
+      .then((row) => live && setOpenRequest(row))
+      .catch(() => live && setOpenRequest(null)); // The button stays usable; asking again returns the open ask.
+    return () => {
+      live = false;
+    };
+  }, [petId, caring, feedRevision]);
+
+  const askForPhoto = async () => {
+    if (!petId || requesting) return;
+    setRequesting(true);
+    try {
+      setOpenRequest(await requestPhoto(petId));
+      toast.show(`Asked ${inCare[petId]?.sitterName ?? "your sitter"} for a photo 📷`);
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't send the request. Try again.");
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   const loadMore = useCallback(async () => {
     if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;
@@ -227,6 +262,17 @@ export default function OwnerFeed() {
                   value={petId}
                   onChange={setPetId}
                   testID="feed-pet"
+                />
+              </View>
+            ) : null}
+            {caring ? (
+              <View style={styles.petSwitch}>
+                <Button
+                  label={openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo"}
+                  onPress={() => void askForPhoto()}
+                  disabled={openRequest != null || requesting}
+                  variant="secondary"
+                  testID="feed-request-photo"
                 />
               </View>
             ) : null}

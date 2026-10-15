@@ -4578,4 +4578,104 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014 (Phase 11.1 Photo request): the owner asks the sitter on duty, the sitter's next shared photo answers it
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  toffee uuid;
+  bean uuid;
+  v_media_a uuid;
+  v_media_b uuid;
+  v_media_c uuid;
+  v_req public.photo_requests;
+  v_again public.photo_requests;
+  v_post uuid;
+  v_private uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Toffee') returning id into toffee;
+  insert into public.pets (owner_id, species, name) values (robert, 'cat', 'Bean') returning id into bean;
+  perform _t_booking(robert, chloe, array[toffee], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (toffee, chloe, 'goldito/toffee/feed/a', 'image', 'feed') returning id into v_media_a;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (toffee, chloe, 'goldito/toffee/feed/b', 'image', 'feed') returning id into v_media_b;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (toffee, chloe, 'goldito/toffee/feed/c', 'image', 'feed') returning id into v_media_c;
+
+  -- Asking: the owner of a pet in care, once per stay; the sitter hears about it
+  perform _t_as(robert);
+  v_req := public.request_photo(toffee);
+  perform _t_ok(v_req.status = 'open' and v_req.sitter_id = chloe, '014: the owner asks the sitter on duty for a photo');
+  v_again := public.request_photo(toffee);
+  perform _t_ok(v_again.id = v_req.id, '014: asking again returns the open request');
+  begin
+    perform public.request_photo(bean);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_in_care', '014: no request for a pet that is not in care');
+  begin
+    insert into public.photo_requests (pet_id, booking_id, owner_id, sitter_id)
+    values (toffee, v_req.booking_id, robert, chloe);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '014: requests are written only through request_photo');
+
+  perform _t_as(chloe);
+  select count(*) into v_n from public.notifications where user_id = chloe and type = 'photo_request' and ref_id = v_req.id;
+  perform _t_ok(v_n = 1, '014: the sitter gets one photo_request notice');
+  perform _t_ok(exists (select 1 from public.photo_requests where id = v_req.id and status = 'open'),
+    '014: the sitter sees the open request');
+  begin
+    update public.photo_requests set status = 'fulfilled', fulfilled_at = now() where id = v_req.id;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '014: the sitter cannot close it by hand');
+
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.photo_requests) = 0, '014: a third party sees no requests');
+  begin
+    perform public.request_photo(toffee);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_allowed', '014: a third party cannot ask');
+
+  -- Answering: a private post does not count, the next shared one does — with one notice, not two
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, media_id, visibility)
+  values (toffee, chloe, v_media_a, 'private') returning id into v_private;
+  perform _t_ok((select status from public.photo_requests where id = v_req.id) = 'open', '014: a private post leaves it open');
+  insert into public.feed_posts (pet_id, sitter_id, media_id) values (toffee, chloe, v_media_b) returning id into v_post;
+
+  perform _t_as(robert);
+  select * into v_again from public.photo_requests where id = v_req.id;
+  perform _t_ok(v_again.status = 'fulfilled' and v_again.fulfilled_post_id = v_post, '014: the next shared photo fulfills it');
+  perform _t_ok((select count(*) from public.notifications
+      where user_id = robert and type = 'photo_request_fulfilled' and ref_id = v_post) = 1,
+    '014: the owner hears the asked-for photo is here');
+  perform _t_ok(not exists (select 1 from public.notifications where user_id = robert and type = 'feed_post' and ref_id = v_post),
+    '014: …and no second feed_post notice for the same photo');
+
+  -- After an answer the owner may ask again; later photos with nothing open notify as usual
+  v_again := public.request_photo(toffee);
+  perform _t_ok(v_again.id <> v_req.id and v_again.status = 'open', '014: the owner can ask again after an answer');
+  perform _t_as(chloe);
+  insert into public.feed_posts (pet_id, sitter_id, media_id) values (toffee, chloe, v_media_c) returning id into v_post;
+  perform _t_as(robert);
+  perform _t_ok((select status from public.photo_requests where id = v_again.id) = 'fulfilled', '014: the second ask is answered too');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
