@@ -568,7 +568,16 @@
 | SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
 | SNAP-23 | 견주(Max · 검사 4번) → Snap 탭 → 카드 3개 아래 | **Recent checks**에 가장 최근 3개(상태 칩 · 제품 이름 · 날짜, 새것이 위). 한 줄을 클릭하면 `/{역할}/snap/treat?check=…`로 그 검사가 열림(SNAP-9와 같은 화면). 검사가 하나도 없으면 이 목록 자체가 안 보임. 시터는 지금 돌보는 펫들의 검사만 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
 
-### 3.21 사진 요청 (PHOTO) — Phase 11.1 · *사전: 시터가 돌보는 중(확정 예약, 지금이 맡긴 시각 30분 전 ~ 데려가는 시각)*
+### 3.21 Snap 리뷰 수정 (SR) — [review-2026-10-15.ko.md](review-2026-10-15.ko.md) *(P0 SR-1 – SR-4만, ID는 리뷰 문서 항목과 같음 · Later SR-5 – SR-21은 고칠 때 여기에 추가)*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| SR-1 | (API) 성분표 끝이 잘린 사진 · 모델이 `complete: false` / 쉼표 없이 한 줄로 온 129자 목록 끝에 `xylitol` / 61번째 성분이 `xylitol` | 무해한 앞부분만 읽혀도 **SAFE가 아님** — 최소 WARNING + "We could only read part of the label — retake a photo of the whole ingredient list." 계열 문장 + **Retake photo**. 한 줄 목록은 다시 나눠져 DANGER | 수정 대기 (pytest · `treat-check.spec.ts` 예정) | ⬜ 수정 대기 |
+| SR-2 | (API · 규칙) 알러지 `eggs` + "dried egg product" / `poultry` + "chicken breast" / milk + "sodium caseinate" / fish + "fishmeal" · "catfish" / dairy + "buttermilk powder" | 전부 규칙만으로 **DANGER**(모델이 SAFE라 해도) | 수정 대기 (`test_safety_rules` 예정) | ⬜ 수정 대기 |
+| SR-3 | (API · 규칙) dairy + "peanut butter" / dairy + "butter" / chicken + "beef liver" / chicken + "liver" / chicken + "chicken liver" | 규칙 판정이 차례로 SAFE · DANGER · SAFE · WARNING · DANGER. 시터의 "peanut butter" 검사로 견주에게 "Blocked a risky treat" 알림이 가지 않음 | 수정 대기 (`test_safety_rules` 예정) | ⬜ 수정 대기 |
+| SR-4 | 견주 → Snap → Treat check → 샘플로 검사 → **뒤로** | Snap 탭 **Recent checks** 맨 위에 방금 한 검사(새로고침 없이) | 수정 대기 (`snap.spec.ts` 예정) | ⬜ 수정 대기 |
+
+### 3.22 사진 요청 (PHOTO) — Phase 11.1 · *사전: 시터가 돌보는 중(확정 예약, 지금이 맡긴 시각 30분 전 ~ 데려가는 시각)*
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -578,6 +587,8 @@
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **Snap 리뷰에서 나온 알려진 문제 (2026-10-15, [review-2026-10-15.ko.md](review-2026-10-15.ko.md)) — 이미 기록됨, 따로 이슈로 올리지 않아도 됨:** Treat check가 성분표 일부만 읽혀도 SAFE를 낼 수 있음(SR-1) · 알러지를 `eggs` · `poultry`로 적었거나 라벨이 `caseinate` · `fishmeal` · `buttermilk`면 놓칠 수 있음(SR-2) · 유제품 알러지에 `peanut butter`가 DANGER, 닭 알러지에 `beef liver`가 WARNING(SR-3) · Treat check 뒤 Snap 탭 Recent checks가 새로고침 전까지 그대로(SR-4) — 여기까지 **P0, 고칠 예정**. Later: 스티커를 불러오기 전에(또는 실패 뒤) ✨ Decorate → Save 하면 저장된 스티커가 지워질 수 있음(SR-5) · Mood 영상에서 펫 박스가 프레임마다 다르게 잡히면 펫끼리 섞일 수 있음(SR-6) · 새 견주가 Snap 도구에서 Add pet 뒤 돌아오면 "Add a pet first"가 그대로(SR-8) · 시터 Diary는 견주가 새로 붙인 스티커를 새로고침 전까지 안 보여 줌(SR-16).
 
 - **입구 정보는 경고일 뿐 결제를 막지 않는다 (ENTRY-1):** 하우스 시팅 · 견주 집 인수인계 체크아웃에서 입구 정보 form이 비어 있으면 카드로 알리고 링크를 주지만, 견주가 무시하고 Pay 할 수 있다(가족이 직접 열어 주는 경우 등). 그 경우 시터는 Show code 대신 "{견주} hasn't added entry info yet — message them."를 본다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
 - **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭의 "Recent checks"는 **최근 3개**만 보인다(펫이 여럿이면 이름이 붙고, 전체 10개는 Treat check 화면 안에서).
