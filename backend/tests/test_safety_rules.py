@@ -58,6 +58,26 @@ def test_an_allergy_typed_freely_still_matches_label_words(allergy, ingredient):
     assert found.status == "DANGER" and found.matched_allergens == [allergy]
 
 
+@pytest.mark.parametrize(
+    ("allergy", "ingredient", "status"),
+    [
+        ("dairy", "peanut butter", "SAFE"),
+        ("dairy", "butter", "DANGER"),
+        ("milk", "coconut milk", "SAFE"),
+        ("milk", "goat milk", "DANGER"),
+        ("chicken", "beef liver", "SAFE"),
+        ("chicken", "liver", "WARNING"),
+        ("chicken", "chicken liver", "DANGER"),
+        ("chicken", "natural chicken flavor", "DANGER"),
+        ("beef", "natural chicken flavor", "SAFE"),
+        ("chicken", "animal fat", "WARNING"),
+    ],
+)
+def test_look_alikes_and_named_animals_do_not_raise_false_alarms(allergy, ingredient, status):
+    # SR-3: "peanut butter" is not dairy, and "beef liver" hides no chicken.
+    assert safety.check_rules([ingredient], [allergy], "dog").status == status
+
+
 def test_allergen_keys_normalize_what_a_person_typed():
     assert safety.allergen_keys("Eggs ") == ["egg"]
     assert safety.allergen_keys("poultry") == ["chicken", "turkey"]

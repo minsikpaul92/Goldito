@@ -270,7 +270,7 @@ One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), 
 
 상세(현상 → 원인 → 수정 → 테스트)는 [review-2026-10-15.ko.md](../review-2026-10-15.ko.md), 순서 · 담당은 [TODO.md](../TODO.md).
 
-- **P0:** SR-1 부분 라벨이 SAFE · SR-3 잘못된 DANGER(`peanut butter` = 유제품) · 엉뚱한 WARNING(`beef liver`) · SR-4 Snap 탭 Recent checks 새로고침.
+- **P0:** SR-1 부분 라벨이 SAFE · SR-4 Snap 탭 Recent checks 새로고침.
 - **Later:** SR-5 – SR-21 (꾸미기 저장이 기존 스티커를 지움 · Mood 클립 펫 짝짓기 · 시터 꾸미기 기간 · Add pet 뒤 새로고침 · 그 밖의 낮음).
 
 ---

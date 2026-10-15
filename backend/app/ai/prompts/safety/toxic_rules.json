@@ -50,5 +50,16 @@
     "soy": ["soy", "soya", "soybean", "soybeans", "tofu"],
     "corn": ["corn", "maize", "cornmeal", "corn starch"],
     "peanut": ["peanut", "peanuts", "peanut butter"]
-  }
+  },
+  "allergen_not": {
+    "dairy": ["peanut butter", "cocoa butter", "shea butter", "almond butter", "nut butter", "sunflower butter",
+              "apple butter", "pumpkin butter", "coconut milk", "almond milk", "oat milk", "soy milk", "rice milk",
+              "milk thistle", "cream of tartar"],
+    "milk": ["peanut butter", "cocoa butter", "shea butter", "almond butter", "nut butter", "sunflower butter",
+             "apple butter", "pumpkin butter", "coconut milk", "almond milk", "oat milk", "soy milk", "rice milk",
+             "milk thistle", "cream of tartar"]
+  },
+  "animal_words": ["chicken", "poultry", "turkey", "duck", "goose", "beef", "bovine", "veal", "pork", "swine",
+                   "lamb", "mutton", "goat", "venison", "deer", "rabbit", "bison", "kangaroo", "fish", "salmon",
+                   "tuna", "cod", "whitefish", "herring", "pollock", "trout", "menhaden", "anchovy", "sardine"]
 }

@@ -62,6 +62,16 @@ def allergen_words(allergen: str) -> list[str]:
     return sorted(words)
 
 
+def allergen_exclusions(allergen: str) -> list[str]:
+    """Label words that look like the allergen but are not: 'peanut butter' is not dairy."""
+    table = _rules()["allergen_not"]
+    return sorted({w for key in allergen_keys(allergen) for w in table.get(key, [])})
+
+
+def _has_allergen(ingredient: str, allergen: str) -> bool:
+    return _mentions_any(ingredient, allergen_words(allergen), allergen_exclusions(allergen))
+
+
 @dataclass
 class RuleFindings:
     status: Status = "SAFE"
@@ -78,8 +88,7 @@ def check_rules(ingredients: list[str], allergens: list[str], species: str) -> R
     pet_allergens = [a.strip().lower() for a in allergens if a.strip()]
 
     for allergen in pet_allergens:
-        words = allergen_words(allergen)
-        if any(_mentions_any(ingredient, words) for ingredient in ingredients):
+        if any(_has_allergen(ingredient, allergen) for ingredient in ingredients):
             found.matched_allergens.append(allergen)
 
     for rule in rules["toxic"]:
@@ -93,11 +102,14 @@ def check_rules(ingredients: list[str], allergens: list[str], species: str) -> R
                 if source not in found.sources:
                     found.sources.append(source)
 
-    named = {i for i in ingredients for a in pet_allergens if _mentions_any(i, allergen_words(a))}
+    named = {i for i in ingredients for a in pet_allergens if _has_allergen(i, a)}
     for hidden in rules["hidden_sources"]:
         for ingredient in ingredients:
             # "chicken liver" already names the animal: it is a match above, not a hidden source.
             if ingredient in named or not _mentions(ingredient, hidden["term"]):
+                continue
+            # "beef liver" names its animal, so nothing is hidden; if that animal is an allergy it matched above.
+            if _mentions_any(ingredient, rules["animal_words"]):
                 continue
             # Only an allergen this pet has makes it a warning; name the first one the term may hide.
             hit = next((a for a in pet_allergens if set(allergen_keys(a)) & set(hidden["may_contain"])), None)
