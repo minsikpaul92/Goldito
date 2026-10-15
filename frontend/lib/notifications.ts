@@ -7,6 +7,7 @@ import type { NotificationRow } from "../types/db";
 /** Types that should refresh Owner Diary Live when a notice arrives (Phase 06–07). */
 export const DIARY_NOTIFICATION_TYPES = new Set([
   "feed_post",
+  "photo_request_fulfilled",
   "task_done",
   "care_checkin",
   "report_sent",

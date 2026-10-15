@@ -118,10 +118,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
             if (row.title) toast.show(row.title);
             if (DIARY_NOTIFICATION_TYPES.has(row.type)) setDiaryRevision((r) => r + 1);
             // 11.1: the answer to a photo request is sent instead of `feed_post` — the new photo is in it.
-            if (row.type === "photo_request_fulfilled") {
-              setFeedRevision((r) => r + 1);
-              setDiaryRevision((r) => r + 1);
-            }
+            if (row.type === "photo_request_fulfilled") setFeedRevision((r) => r + 1);
           }
         },
       )

@@ -127,7 +127,7 @@
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
-| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | 🟡 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 미적용) · S2 견주 Feed 버튼 · S3 시터 Home 배너 🤖 `photo-request.spec.ts` · 두 브라우저 실제 확인(DoD)은 사람 | 11 / 11.1 |
+| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | 🟡 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 미적용) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 실제 확인(DoD)은 사람 | 11 / 11.1 |
 
 ### Stage 5 — Completion · 기타
 
@@ -585,6 +585,7 @@
 | PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 | PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo 📷", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | 사람 확인 대기 |
 | PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** 로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | 사람 확인 대기 |
+| PHOTO-5 | 견주 → Home (요청이 답을 받은 뒤) | `photo_request_fulfilled` 알림이 `feed_post`처럼 Home 라이브 카드(📷)·Diary Live 새로고침·벨 상세(사진이 있으면 **See in Feed**)로 보이고, 누르면 그 펫의 Feed | 🤖 `photo-request.spec.ts` | 사람 확인 대기 |
 
 ---
 

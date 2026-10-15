@@ -69,4 +69,20 @@ test.describe("photo request", () => {
     await expect(screen.getByTestId("sitter-home")).toBeVisible();
     await expect(screen.getByTestId("home-photo-request")).toHaveCount(0);
   });
+
+  test("the owner's answer notice is a live update on Home and opens the pet's feed, like a feed_post", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
+    db.notifications.push({
+      id: "n-answer", user_id: OWNER.id, type: "photo_request_fulfilled", title: "Here's the photo of Max you asked for 📷",
+      body: null, pet_id: MAX, booking_id: "b1", ref_id: null, read_at: null, created_at: new Date().toISOString(),
+    });
+    await signIn(page, OWNER);
+    const screen = app(page);
+    const card = screen.getByTestId("live-n-answer");
+    await expect(card).toContainText("Here's the photo of Max you asked for");
+    // No photo on the notice in this mock, so it goes straight to the feed (with one, the detail sheet says See in Feed).
+    await card.click();
+    await expect(page).toHaveURL(new RegExp(`/owner/feed\\?pet=${MAX}$`));
+  });
 });
