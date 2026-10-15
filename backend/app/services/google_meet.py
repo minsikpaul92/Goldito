@@ -3,8 +3,13 @@
 The Goldito Google account is the organizer: a refresh token from its one-time consent
 (scope calendar.events, OAuth app published *In production*) buys short-lived access
 tokens. One event per booking; rescheduling patches it (same link), cancelling deletes it.
+Right after the event is created the Meet room is opened to anyone with the link (Meet REST API,
+scope meetings.space.settings): the guests are not the host, and a room that asks the host to
+admit them would leave them waiting forever. Without that scope the link still works, it just
+asks to join.
 """
 
+import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -16,6 +21,7 @@ from app.config import Settings
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 CALENDAR_URL = "https://www.googleapis.com/calendar/v3/calendars"
+MEET_SPACES_URL = "https://meet.googleapis.com/v2/spaces"
 EVENT_MINUTES = 30
 # Meet links are usually ready at once; when the conference is still "pending", look again.
 PENDING_RETRIES = 3
@@ -23,6 +29,9 @@ PENDING_WAIT_S = 1.0
 # Calendar's per-calendar write limit: exponential backoff, 1 s → 2 s → 4 s.
 RATE_LIMIT_RETRIES = 3
 RATE_LIMIT_WAIT_S = 1.0
+
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleMeetError(Exception):
@@ -154,6 +163,25 @@ class GoogleCalendarMeetClient:
             event = self._call("GET", f"/{event['id']}", params={"conferenceDataVersion": 1})
         return MeetEvent(event_id=event["id"], link=_meet_link(event))
 
+    def _open_access(self, link: str | None) -> None:
+        """Let anyone with the link in without the host admitting them. Best effort: a failure
+        (scope not granted yet, Meet API off) is logged and the link is still returned."""
+        meeting_code = (link or "").rstrip("/").rsplit("/", 1)[-1]
+        if not meeting_code:
+            return
+        try:
+            response = self._http.patch(
+                f"{MEET_SPACES_URL}/{meeting_code}",
+                params={"updateMask": "config.accessType"},
+                json={"config": {"accessType": "OPEN"}},
+                headers={"Authorization": f"Bearer {self._access_token()}"},
+            )
+        except (httpx.HTTPError, GoogleMeetError) as exc:
+            logger.warning("Meet open access skipped: %s", exc)
+            return
+        if response.status_code >= 300:
+            logger.warning("Meet open access failed (%s%s)", response.status_code, _reason(response))
+
     def _send_updates(self, attendees: list[str] | None = None) -> str:
         if attendees is not None and not attendees:
             return "none"
@@ -179,7 +207,9 @@ class GoogleCalendarMeetClient:
                 },
             },
         )
-        return self._settle(event)
+        created = self._settle(event)
+        self._open_access(created.link)
+        return created
 
     def reschedule(self, event_id: str, *, start: datetime, timezone: str) -> MeetEvent:
         event = self._call(

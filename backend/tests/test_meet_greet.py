@@ -324,7 +324,7 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     )
 
     assert event == MeetEvent(event_id="evt-9", link=MEET)
-    token, create, poll = seen
+    token, create, poll, open_access = seen
     assert b"grant_type=refresh_token" in token.content
     assert create.headers["Authorization"] == "Bearer at-1"
     assert create.url.params["conferenceDataVersion"] == "1"
@@ -337,6 +337,26 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     assert body["attendees"] == [{"email": "robert@example.com"}]
     assert body["start"]["timeZone"] == "America/Toronto"
     assert poll.method == "GET" and poll.url.path.endswith("/events/evt-9")
+    # The room is then opened so the guests (not the host) walk in without being admitted.
+    assert open_access.method == "PATCH" and open_access.url.host == "meet.googleapis.com"
+    assert open_access.url.path == "/v2/spaces/abc-defg-hij"
+    assert open_access.url.params["updateMask"] == "config.accessType"
+    assert json.loads(open_access.content) == {"config": {"accessType": "OPEN"}}
+    assert open_access.headers["Authorization"] == "Bearer at-1"
+
+
+def test_client_still_returns_the_link_when_opening_the_room_is_refused() -> None:
+    # Before the meetings.space.settings scope is granted Google answers 403 - the link must survive.
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "oauth2.googleapis.com":
+            return httpx.Response(200, json={"access_token": "at-1", "expires_in": 3600})
+        if request.url.host == "meet.googleapis.com":
+            return httpx.Response(403, json={"error": {"message": "insufficient scope", "errors": [{"reason": "forbidden"}]}})
+        return httpx.Response(200, json={"id": "evt-9", "hangoutLink": MEET})
+
+    client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
+    event = client.create(request_id="r", summary="s", start=AT, attendees=[], timezone="America/Toronto")
+    assert event == MeetEvent(event_id="evt-9", link=MEET)
 
 
 def test_client_reschedule_delete_and_errors() -> None:
