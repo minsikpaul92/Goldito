@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActiveTripCard } from "../../../components/ActiveTripCard";
@@ -14,14 +14,15 @@ import { SitterInquiryCard, listSitterInquiries } from "../../../features/inquir
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { appToday, formatInstant, formatTime, isoToZoned } from "../../../features/schedule/dates";
 import { BookingSummary, HandoffKind, listSitterBookings } from "../../../lib/bookings";
+import { PhotoRequest, listOpenPhotoRequestsForSitter } from "../../../lib/photoRequests";
 import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { useOnBookingChange } from "../../../providers/NotificationsProvider";
+import { useNotifications, useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
 type State =
   | { status: "loading" }
-  | { status: "ready"; bookings: BookingSummary[]; inquiries: SitterInquiryCard[] }
+  | { status: "ready"; bookings: BookingSummary[]; inquiries: SitterInquiryCard[]; photoRequests: PhotoRequest[] }
   | { status: "error"; message: string };
 
 type Due = { booking: BookingSummary; kind: HandoffKind; at: string };
@@ -42,17 +43,23 @@ export default function SitterHome() {
   const load = useCallback(async () => {
     if (!sitterId) return;
     try {
-      const [bookings, inquiries] = await Promise.all([
+      const [bookings, inquiries, photoRequests] = await Promise.all([
         listSitterBookings(sitterId),
         listSitterInquiries().catch(() => [] as SitterInquiryCard[]),
+        listOpenPhotoRequestsForSitter(sitterId).catch(() => [] as PhotoRequest[]),
       ]);
-      setState({ status: "ready", bookings, inquiries });
+      setState({ status: "ready", bookings, inquiries, photoRequests });
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
   }, [sitterId]);
 
   useOnBookingChange(() => void load());
+  // 11.1: a new `photo_request` notice shows its banner without leaving Home.
+  const { inboxRevision } = useNotifications();
+  useEffect(() => {
+    if (inboxRevision > 0) void load();
+  }, [inboxRevision, load]);
 
   useFocusEffect(
     useCallback(() => {
@@ -113,6 +120,21 @@ export default function SitterHome() {
   return (
     <Screen contentStyle={styles.content} testID="sitter-home">
       <ActiveTripCard role="sitter" />
+      {state.photoRequests.map((r) => {
+        const pet = caringPets.find((p) => p.id === r.pet_id);
+        if (!pet) return null;
+        return (
+          <Pressable
+            key={r.id}
+            accessibilityRole="button"
+            onPress={() => router.push(`/sitter/feed/${pet.id}`)}
+            style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
+            testID="home-photo-request"
+          >
+            <Text style={styles.requestsText}>{`📷 ${pet.ownerName} asked for a photo of ${pet.name} — tap to share`}</Text>
+          </Pressable>
+        );
+      })}
       {requests > 0 ? (
         <Pressable
           accessibilityRole="button"

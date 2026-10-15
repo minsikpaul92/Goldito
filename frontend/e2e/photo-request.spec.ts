@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { caring } from "./careFixtures";
+import { caring, mockUpload } from "./careFixtures";
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
@@ -39,5 +39,34 @@ test.describe("photo request", () => {
     db.photo_requests[0].status = "fulfilled";
     await page.goto(`/owner/feed?pet=${MAX}`);
     await expect(screen.getByTestId("feed-request-photo")).toContainText("Request photo");
+  });
+
+  test("the sitter's Home banner opens the pet's feed, and the next shared photo answers the ask", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
+    await mockUpload(page, db, MAX);
+    await page.route("**/api/ai/caption", (route) => route.fulfill({ status: 502, body: "{}" }));
+    db.photo_requests.push({
+      id: "pr1", pet_id: MAX, booking_id: "b1", owner_id: OWNER.id, sitter_id: SITTER.id, status: "open",
+      fulfilled_post_id: null, fulfilled_at: null, created_at: new Date().toISOString(),
+    });
+    await signIn(page, SITTER);
+    const screen = app(page);
+
+    const banner = screen.getByTestId("home-photo-request");
+    await expect(banner).toContainText("asked for a photo of Max");
+    await banner.click();
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${MAX}$`));
+    await screen.getByTestId("feed-add-photo").click();
+    await screen.getByTestId("sample-walk").click();
+    await expect(screen.getByTestId("toast")).toContainText("Shared with Robert");
+
+    expect(db.photo_requests[0]).toMatchObject({ status: "fulfilled", fulfilled_post_id: db.feed_posts[0].id });
+    const owner = db.notifications.filter((n) => n.user_id === OWNER.id);
+    expect(owner.map((n) => n.type)).toEqual(["photo_request_fulfilled"]);
+
+    await page.goto("/sitter");
+    await expect(screen.getByTestId("sitter-home")).toBeVisible();
+    await expect(screen.getByTestId("home-photo-request")).toHaveCount(0);
   });
 });

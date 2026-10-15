@@ -194,6 +194,8 @@ export function hrefForNotification(
       if (role !== "owner") return null;
       return notice.refId ? `/owner/snap/treat?check=${notice.refId}` : "/owner/snap/treat";
     case "photo_request":
+      // 11.1: the sitter answers with the next shared photo — open that pet's feed (+ Photo).
+      return role === "sitter" && notice.petId ? `/sitter/feed/${notice.petId}` : null;
     case "task_due":
       return null;
     default:

@@ -1767,6 +1767,26 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       }
     }
     table.push(...inserted);
+    // 014 fulfill_photo_request: a shared sitter post answers that pet's open ask and tells the owner.
+    if (path === "feed_posts") {
+      for (const post of inserted.filter((p) => p.sitter_id && p.visibility === "shared")) {
+        for (const r of db.photo_requests.filter((x) => x.pet_id === post.pet_id && x.sitter_id === post.sitter_id && x.status === "open")) {
+          Object.assign(r, { status: "fulfilled", fulfilled_post_id: post.id, fulfilled_at: new Date(nowMs()).toISOString() });
+          db.notifications.push({
+            id: crypto.randomUUID(),
+            user_id: r.owner_id,
+            type: "photo_request_fulfilled",
+            title: `Here's the photo of ${db.pets.find((p) => p.id === post.pet_id)?.name} you asked for 📷`,
+            body: null,
+            pet_id: post.pet_id,
+            booking_id: r.booking_id,
+            ref_id: post.id,
+            read_at: null,
+            created_at: new Date(nowMs()).toISOString(),
+          });
+        }
+      }
+    }
     if (!wantsRows) return route.fulfill({ status: 201 });
     return respond(route, inserted, wantsObject, 201);
   }

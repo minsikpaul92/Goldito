@@ -21,6 +21,18 @@ export async function getOpenPhotoRequest(petId: string): Promise<PhotoRequest |
   return (data as PhotoRequest | null) ?? null;
 }
 
+/** The asks waiting for this sitter (RLS: only while the stay lasts). */
+export async function listOpenPhotoRequestsForSitter(sitterId: string): Promise<PhotoRequest[]> {
+  const { data, error } = await getSupabase()
+    .from("photo_requests")
+    .select("id, pet_id, status, created_at")
+    .eq("sitter_id", sitterId)
+    .eq("status", "open")
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as PhotoRequest[];
+}
+
 /** Asks the sitter on duty; asking again returns the ask that is already open. */
 export async function requestPhoto(petId: string): Promise<PhotoRequest> {
   const { data, error } = await getSupabase().rpc("request_photo", { p_pet: petId });
