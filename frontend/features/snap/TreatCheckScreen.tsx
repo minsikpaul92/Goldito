@@ -228,7 +228,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
       ) : null}
 
       <Button
-        label={!pet ? "Pick a pet first" : unreadable ? "Retake photo" : result ? "Check another treat" : "Snap a label"}
+        label={!pet ? "Pick a pet first" : unreadable || result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label"}
         onPress={() => void snapLabel()}
         disabled={!pet || !!step}
         testID="treat-snap"
@@ -347,6 +347,12 @@ function ResultCard({
             </Text>
           ))}
         </View>
+      ) : null}
+
+      {result.partial_label ? (
+        <Text style={styles.note} testID="treat-partial">
+          We could only read part of the label. Retake a photo of the whole ingredient list.
+        </Text>
       ) : null}
 
       {!result.double_checked ? (

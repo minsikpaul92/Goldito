@@ -50,8 +50,7 @@ test.describe("snap tab", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     const MAX = "00000000-0000-4000-8000-0000000000aa";
     db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, notes: null });
-    const days = ["01", "02", "03", "04"];
-    days.forEach((d, i) =>
+    const addCheck = (d: string, i: number) =>
       db.safety_checks.push({
         id: `00000000-0000-4000-8000-00000000c00${i}`,
         pet_id: MAX,
@@ -61,8 +60,8 @@ test.describe("snap tab", () => {
         result_json: { safety_status: "SAFE", product_name: `Treat ${d}`, warning_message: "" },
         acknowledged_at: null,
         created_at: `2026-10-${d}T10:00:00Z`,
-      }),
-    );
+      });
+    ["01", "02", "03", "04"].forEach(addCheck);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
@@ -75,6 +74,11 @@ test.describe("snap tab", () => {
     await rows.first().click();
     await expect(page).toHaveURL(/\/owner\/snap\/treat\?check=/);
     await expect(screen.getByTestId("treat-result-safe")).toBeVisible();
+
+    // SR-4: a check saved while the Treat check screen was open shows on Back, without a reload.
+    addCheck("05", 4);
+    await page.goBack();
+    await expect(rows.first()).toContainText("Treat 05");
   });
 
   test("no checks yet: the Snap tab shows no Recent checks", async ({ page }) => {

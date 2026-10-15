@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../../components/ui/Screen";
@@ -39,15 +39,18 @@ function RecentChecks({ role, pets }: { role: Role; pets: PetOption[] }) {
   const [checks, setChecks] = useState<SafetyCheck[]>([]);
   const key = pets.map((p) => p.id).join(",");
 
-  useEffect(() => {
-    let live = true;
-    listRecentChecksForPets(key ? key.split(",") : [])
-      .then((list) => live && setChecks(list))
-      .catch(() => live && setChecks([])); // A bonus list: the tools above work without it.
-    return () => {
-      live = false;
-    };
-  }, [key]);
+  // Every time the Snap tab is shown again (after a check on the Treat check screen), not only when the pets change.
+  useFocusEffect(
+    useCallback(() => {
+      let live = true;
+      listRecentChecksForPets(key ? key.split(",") : [])
+        .then((list) => live && setChecks(list))
+        .catch(() => live && setChecks([])); // A bonus list: the tools above work without it.
+      return () => {
+        live = false;
+      };
+    }, [key]),
+  );
 
   if (checks.length === 0) return null;
   return (

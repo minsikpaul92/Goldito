@@ -213,3 +213,35 @@ def test_the_model_output_is_tidied(client, setup):
     body = post(client).json()
     assert body["detected_ingredients"] == ["chicken breast", "rice"]
     assert body["safety_status"] == "DANGER"
+
+
+def test_a_partly_read_label_is_never_safe(client, setup):
+    # SR-1: the end of the list (where garlic or xylitol often sit) is cut off in the photo.
+    ctx = setup({**label("oat flour"), "complete": False}, judged("SAFE"), db=make_db(allergens=()))
+    body = post(client).json()
+    assert body["safety_status"] == "WARNING" and body["partial_label"] is True
+    assert "only read part" in body["warning_message"]
+    assert '"label_complete": false' in ctx.models.calls[1]["messages"][1]["content"]
+    assert ctx.db.tables["safety_checks"][0]["result_json"]["label_complete"] is False
+
+
+def test_a_list_sent_as_one_string_is_split_again(client, setup):
+    one_line = "peanut butter, oat flour, rice flour, vegetable glycerin, sweet potato, pumpkin, apple, cinnamon, dried cranberry, citric acid, xylitol"
+    assert len(one_line) > 120
+    setup(label(one_line), judged("SAFE"), db=make_db(allergens=()))
+    body = post(client).json()
+    assert "xylitol" in body["detected_ingredients"] and body["safety_status"] == "DANGER"
+    assert body["partial_label"] is False
+
+
+def test_more_than_sixty_ingredients_is_partial(client, setup):
+    setup(label(*[f"herb {i}" for i in range(60)], "xylitol"), judged("SAFE"), db=make_db(allergens=()))
+    body = post(client).json()
+    assert len(body["detected_ingredients"]) == 60 and body["partial_label"] is True
+    assert body["safety_status"] == "WARNING"
+
+
+def test_a_complete_label_stays_safe(client, setup):
+    setup({**label("sweet potato"), "complete": True}, judged("SAFE"), db=make_db(allergens=()))
+    body = post(client).json()
+    assert body["safety_status"] == "SAFE" and body["partial_label"] is False

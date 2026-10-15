@@ -28,6 +28,7 @@ function result(status: "SAFE" | "WARNING" | "DANGER", extra: object = {}) {
     sources: [ASPCA],
     sources_unavailable: false,
     double_checked: true,
+    partial_label: false,
     warning_message: "",
     model: "m",
     latency_ms: 900,
@@ -154,13 +155,14 @@ test.describe("treat check", () => {
     await expect(app(page).getByTestId("treat-no-pets")).toContainText("No pet in your care right now");
   });
 
-  test("SAFE is green, and missing sources or a rules-only result say so", async ({ page }) => {
+  test("SAFE is green, and missing sources, a rules-only result or a partly read label say so", async ({ page }) => {
     const { asked } = await open(
       page,
       OWNER,
       [
         { status: 200, body: result("SAFE", { product_name: "Garden Chews", sources: [], sources_unavailable: true }) },
         { status: 200, body: result("WARNING", { double_checked: false, sources: [], sources_unavailable: true }) },
+        { status: 200, body: result("WARNING", { partial_label: true }) },
       ],
       ownerPets,
     );
@@ -173,7 +175,12 @@ test.describe("treat check", () => {
     await snapSample(page, "sweet_potato_chew");
     await expect(screen.getByTestId("treat-result-warning")).toContainText("Check with your vet first");
     await expect(screen.getByTestId("treat-not-double-checked")).toBeVisible();
-    expect(asked).toHaveLength(2);
+
+    // SR-1: a list cut off in the photo is never SAFE and asks for a retake.
+    await snapSample(page, "sweet_potato_chew");
+    await expect(screen.getByTestId("treat-partial")).toContainText("only read part of the label");
+    await expect(screen.getByTestId("treat-snap")).toContainText("Retake photo");
+    expect(asked).toHaveLength(3);
   });
 
   test("an unreadable label asks for a closer photo; a server error offers Try again without a new upload", async ({ page }) => {
