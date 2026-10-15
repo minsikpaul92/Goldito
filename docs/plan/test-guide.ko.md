@@ -128,6 +128,7 @@
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 | **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
+| **Settings · What's New** (Profile → Settings: 계정 · 알림 안내 · What's New = `docs/CHANGELOG.md` · 앱 버전) | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 | 11 / 11.11 |
 
 ### Stage 5 — Completion · 기타
 
@@ -597,6 +598,14 @@
 | SPLIT-3 | 폰 하나 화면 아래 **Show both phones** → split 화면 아래 **Show one phone** | 두 폰 ↔ 폰 하나로 바뀜 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
 | SPLIT-4 | 폭 800 창 또는 휴대폰에서 `/?view=split` → (컴퓨터) 다시 넓히기 | 폰 하나(휴대폰은 앱만), Show both phones 링크 없음. 다시 넓히면 두 폰으로 돌아오고 주소창도 `/?view=split` (2026-10-15 수정: 전에는 폰 하나로 남음) | 🤖 `split.spec.ts` (폭 800 · 800 → 1440) | ✅ 2026-10-15 Minsik (Chrome, 줄였다가 다시 넓히기 포함) |
 | SPLIT-5 | (DoD) 1440 × 900 → `/?view=split` → 시터 폰에서 사진 공유 또는 Complete with photo | 견주 폰에 토스트 ≤ 3초, 새로고침 없이. 1366 × 768 노트북에서도 두 폰이 잘리지 않음 | 👤 (e2e mock에는 실시간 없음) | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+
+### 3.24 Settings · What's New (SET) — Phase 11.11
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| SET-1 | 견주 / 시터 → 헤더 Profile → 맨 아래 **Settings · What's New** | Settings 화면: Account(이름 · 이메일 · Pet owner/sitter · Edit profile), Notifications("앱이 열려 있을 때 벨 · 화면 메시지로 옴, 폰 알림 · 조용한 시간은 아직 없음"), What's New(최신 릴리스 0.2.0 · 2026-10-15의 Added · Fixed · Changed), 맨 아래 "Goldito 0.2.0" · Privacy | 🤖 `settings.spec.ts` (두 역할) | 사람 확인 대기 |
+| SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목 | 앱 What's New에 보이지 않음(출시된 것만) | 🤖 `settings.spec.ts` · `node --test scripts/` | 사람 확인 대기 |
+| SET-3 | (개발) CHANGELOG.md만 고치고 `node scripts/changelog.mjs`를 안 돌린 PR | CI frontend 잡의 "What's New matches docs/CHANGELOG.md" 단계가 실패 | CI | ➖ |
 
 ---
 

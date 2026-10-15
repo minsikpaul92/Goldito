@@ -28,6 +28,7 @@ export default function RootLayout() {
                     {/* Role areas draw their own headers; only shared screens use this stack header. */}
                     <Stack screenOptions={{ headerShown: false, headerShadowVisible: false }}>
                       <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
+                      <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />
                       <Stack.Screen name="privacy" options={{ headerShown: true, title: "Privacy" }} />
                       <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
                       <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />

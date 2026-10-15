@@ -27,6 +27,7 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+              - 'docs/CHANGELOG.md'
             supabase:
               - 'supabase/**'
 
@@ -90,6 +91,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: What's New matches docs/CHANGELOG.md
+        run: node scripts/changelog.mjs --check && node --test scripts/
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Expo web export
