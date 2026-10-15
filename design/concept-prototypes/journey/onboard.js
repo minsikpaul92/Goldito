@@ -32,7 +32,7 @@ const Onboard = (() => {
     {k: "house_sitting", t: "House sitting", s: "You stay at the owner's home", unit: "night"},
     {k: "dropin", t: "Drop-in visits", s: "30-minute visits", unit: "visit"},
   ];
-  const SITTER = "Lucy";
+  const SITTER = "Chloe";
   const STAY_NIGHTS = [9, 10, 11]; // Oct 9–12, Thanksgiving on Oct 12 (demo stay)
 
   let A = null, O = null, el = null, origDots = "", variantStep = 1;
@@ -48,8 +48,8 @@ const Onboard = (() => {
   function fresh() {
     return {
       active: true, flow: "owner", i: 0, dir: 1, role: null, busy: "", flash: "", skipPost: false, os: false,
-      owner: {name: "Chloe Park", email: "chloe@pawnote.test"},
-      sitter: {name: "Lucy Kim", email: "lucy@pawnote.test"},
+      owner: {name: "Robert Park", email: "demo-owner@goldito.test"},
+      sitter: {name: "Chloe Kim", email: "demo-sitter@goldito.test"},
       health: {age: "Adult", allergies: new Set(["Chicken"]), meds: true, medText: "Skin pill at 2 PM, hidden in a treat",
         watch: new Set(["Pulls on leash"]), good: new Set(["Friendly with dogs"]), vet: "",
         // Options per list; owners can add their own (custom ones carry a remove button).
@@ -139,7 +139,7 @@ const Onboard = (() => {
         ${field("Email", "obLoginEmail", O.owner.email, 'type="email" autocomplete="email"')}
         <label class="jr-stack"><span class="jr-label">Password</span><input class="input" type="password" value="demo-only-pass" autocomplete="current-password"></label>
         <button type="button" class="jr-link" style="margin:0" data-ob="forgot">Forgot password?</button>`,
-        `${primary(O.busy === "login-go" ? "Logging in…" : "Log in", "login-go", !!O.busy)}<p class="ob-hint">Demo account · Chloe with Max</p>`);
+        `${primary(O.busy === "login-go" ? "Logging in…" : "Log in", "login-go", !!O.busy)}<p class="ob-hint">Demo account · Robert with Max</p>`);
     },
     health() {
       const h = O.health, n = esc(pet());
@@ -441,7 +441,7 @@ const Onboard = (() => {
   function reset() {
     clearTimeout(busyTimer);
     O = fresh(); enterApp = null; afterEnter = null; quiet = false;
-    Journey.configure({owner: "Chloe", allergy: "chicken", rates: {boarding: 55, house_sitting: 70, extraPetPct: 50, holidayPct: 25}});
+    Journey.configure({owner: "Robert", allergy: "chicken", rates: {boarding: 55, house_sitting: 70, extraPetPct: 50, holidayPct: 25}});
     render(true);
   }
   // Testing: open the app directly, optionally at a stay stage.

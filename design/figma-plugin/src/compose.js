@@ -57,9 +57,9 @@ const row = (name, kids, gap = "sm") => box(name, { dir: "H", gap, wrap: true },
 const split = (name, kids, gap = "xs") => { const r = box(name, { dir: "H", gap }, kids); for (const k of kids) { k.layoutGrow = 1; } return r; };
 
 const UPCOMING = [
-  ["up-inquiry", "Inquiry · AI reply (07B)", { kind: "Detail", title: "Ask Lucy", active: "Bookings" }, null, async (b) => {
-    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Is Lucy free Oct 9–12 for Max and Mochi? Can Max take her pill in a treat?" }));
-    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Chloe! Lucy is free Oct 9–12 for Max and Mochi. Max can take her pill in a treat. Total with the Thanksgiving rate is below." }));
+  ["up-inquiry", "Inquiry · AI reply (07B)", { kind: "Detail", title: "Ask Chloe", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Is Chloe free Oct 9–12 for Max and Mochi? Can Max take her pill in a treat?" }));
+    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Robert! Chloe is free Oct 9–12 for Max and Mochi. Max can take her pill in a treat. Total with the Thanksgiving rate is below." }));
     add(b, inst("Quote Card"));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Request booking" })],
   ["up-care-request", "Care request → checklist (06)", { kind: "Detail", title: "Care request", active: "Bookings" }, null, async (b) => {
@@ -73,7 +73,7 @@ const UPCOMING = [
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Save checklist" })],
   ["up-meet-greet", "Meet & Greet (3B.9)", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
     add(b, inst("Booking Card", { Status: "Requested" }));
-    add(b, await txt("First stay with Lucy — meet before the booking?", "Body Strong", "text", { fill: true }));
+    add(b, await txt("First stay with Chloe — meet before the booking?", "Body Strong", "text", { fill: true }));
     add(b, split("Mode", [inst("Segment", { State: "Selected" }, { Label: "🤝 In person" }), inst("Segment", { State: "Default" }, { Label: "📹 Video" })]));
     add(b, inst("Card", {}, { Title: "Sat Oct 3 · 11:00 AM · 20 min", Body: "Trinity Bellwoods dog park (your saved spot)" }));
     add(b, await txt("Go over together", "Small Strong"));
@@ -84,9 +84,9 @@ const UPCOMING = [
     add(b, inst("Quote Card"));
     add(b, await txt("Consents (3/5)", "Small Strong"));
     add(b, inst("Consent Card", { Checked: "Yes" }));
-    add(b, inst("Consent Card", { Checked: "Yes" }, { Title: "Lockbox and buzzer use", Summary: "Lucy may use your lockbox code only during the booked visits." }));
+    add(b, inst("Consent Card", { Checked: "Yes" }, { Title: "Lockbox and buzzer use", Summary: "Chloe may use your lockbox code only during the booked visits." }));
     add(b, inst("Consent Card", { Checked: "No" }, { Title: "Handoff rules", Summary: "Drop-off and pick-up happen at the agreed time and place." }));
-    add(b, inst("Text Field", { State: "Default" }, { Label: "Type your full name to sign", Value: "e.g. Chloe Park", Helper: "Signs all 5 consents." }));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "Type your full name to sign", Value: "e.g. Robert Park", Helper: "Signs all 5 consents." }));
   }, () => inst("Button", { Style: "Primary", State: "Disabled" }, { Label: "Pay $268.13 (demo)" })],
   ["up-entry", "Paid · entry info (03C)", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
     add(b, inst("Booking Card", { Status: "Confirmed" }));
@@ -102,24 +102,24 @@ const UPCOMING = [
     add(b, inst("Photo Check"));
     add(b, inst("Toast", {}, { Message: "Care has started · photo verified" }));
   }, null],
-  ["up-check", "5-second check (7.7)", { kind: "Detail", title: "5-second check", active: "Diary" }, "L", async (b) => {
+  ["up-check", "5-second check (7.7)", { kind: "Detail", title: "5-second check", active: "Diary" }, "C", async (b) => {
     add(b, await txt("Photos (2/2)", "Small Strong"));
     add(b, row("Photos", [inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Selected" }), inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Default" })], "xs"));
     add(b, await txt("✦ Suggested from today · tap to turn off", "Small Strong"));
     add(b, row("Chips", [["🍽️ Breakfast", "On"], ["💊 Pill in a treat", "On"], ["🦮 Walk 20 min", "On"], ["💩 Potty normal", "On"], ["🐿️ Squirrel", "Off"], ["😴 Long nap", "On"]].map(([l, st]) => inst("Suggestion Chip", { State: st }, { Label: l })), "xs"));
     add(b, inst("Text Field", { State: "Default" }, { Label: "Short note (optional)", Value: "e.g. Loved the squirrels today", Helper: "0/200" }));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Generate daily note" })],
-  ["up-check-review", "Daily note · review (7.3)", { kind: "Detail", title: "5-second check", active: "Diary" }, "L", async (b) => {
+  ["up-check-review", "Daily note · review (7.3)", { kind: "Detail", title: "5-second check", active: "Diary" }, "C", async (b) => {
     add(b, inst("Daily Note"));
     add(b, row("Photos", [inst("Photo Tile", { State: "Default" }), inst("Photo Tile", { State: "Default" })], "xs"));
     add(b, inst("Text Button", { Tone: "Default", State: "Enabled" }, { Label: "Change chips or note" }));
-  }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Send to Chloe" })],
+  }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Send to Robert" })],
   ["up-danger", "Treat Guard · DANGER (08)", { full: "Alert Modal · DANGER" }, null, async () => {}, null],
   ["up-review", "Home safe · review (07C)", { kind: "Detail", title: "Home safe", active: "Bookings" }, null, async (b) => {
     add(b, inst("Photo Check"));
-    add(b, await txt("How was Lucy?", "Body Strong"));
+    add(b, await txt("How was Chloe?", "Body Strong"));
     add(b, row("Stars", [1, 2, 3, 4, 5].map(() => inst("Star", { State: "On" })), 0));
-    add(b, row("Thanks", ["Thank you, Lucy!", "Max loved it", "Great photos"].map((l, i) => inst("Filter Chip", { State: i ? "Default" : "Active" }, { Label: l })), "xs"));
+    add(b, row("Thanks", ["Thank you, Chloe!", "Max loved it", "Great photos"].map((l, i) => inst("Filter Chip", { State: i ? "Default" : "Active" }, { Label: l })), "xs"));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Send review" })],
   ["up-record", "Life Record (07C)", { kind: "Detail", title: "Life Record", active: "Bookings" }, null, async (b) => {
     add(b, inst("Life Record Card"));
@@ -130,7 +130,7 @@ const UPCOMING = [
 const P = (l) => () => inst("Button", { Style: "Primary", State: "Default" }, { Label: l });
 const chips = (name, list, active = []) => row(name, list.map((l) => inst("Filter Chip", { State: active.includes(l) ? "Active" : "Default" }, { Label: l })), "xs");
 // Placeholder and helper per field (the component's defaults are for "Pet's name").
-const FIELD = { "Full name": ["e.g. Chloe Park", "Shown to your sitter."], Email: ["e.g. chloe@example.com", "We'll send booking updates here."], Password: ["At least 8 characters", "Use 8 or more characters."], "Pet's name": ["e.g. Max", "Shown on every booking."], Breed: ["e.g. Maltese", "Helps the sitter with care tips."] };
+const FIELD = { "Full name": ["e.g. Robert Park", "Shown to your sitter."], Email: ["e.g. robert@example.com", "We'll send booking updates here."], Password: ["At least 8 characters", "Use 8 or more characters."], "Pet's name": ["e.g. Max", "Shown on every booking."], Breed: ["e.g. Maltese", "Helps the sitter with care tips."] };
 const field = (label) => inst("Text Field", { State: "Default" }, { Label: label, Value: (FIELD[label] || [])[0], Helper: (FIELD[label] || [])[1] });
 const ONBOARDING = [
   ["ob-welcome", "Welcome", { title: "Goldito" }, null, async (b) => {
@@ -174,16 +174,16 @@ const ONBOARDING = [
     add(b, await txt("✓ Text stays easy to read in every color.", "Small", "text-muted", { fill: true }));
   }, P("Use Goldito green")],
   ["ob-health", "Health & care", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("What should Lucy know about Max?", "Title", "text", { fill: true }));
+    add(b, await txt("What should Chloe know about Max?", "Title", "text", { fill: true }));
     const tags = (name, list, active, custom) => row(name, [...list.map((l) => inst("Filter Chip", { State: active.includes(l) ? "Active" : "Default" }, { Label: l })),
       ...(custom || []).map((l) => inst("Filter Chip", { State: "Custom" }, { Label: l })), inst("Add Chip")], "xs");
     add(b, await txt("Food allergies", "Small Strong"));
     add(b, tags("Allergies", ["None", "Chicken", "Beef", "Grain", "Dairy"], ["Chicken"], ["Peanut butter"]));
-    add(b, await txt("Watch out for · Lucy sees these as a heads-up", "Small Strong"));
+    add(b, await txt("Watch out for · Chloe sees these as a heads-up", "Small Strong"));
     add(b, tags("Watch out for", ["Pulls on leash", "Shy with strangers", "Scared of storms"], ["Pulls on leash"]));
     add(b, await txt("Good to know", "Small Strong"));
     add(b, tags("Good to know", ["Friendly with dogs", "Good with cats"], ["Friendly with dogs"], ["Loves car rides"]));
-    add(b, box("What Lucy will see", { gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
+    add(b, box("What Chloe will see", { gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
       await txt("HEADS-UP", "Caption", "text-muted"),
       row("Heads-up", [inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to chicken" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Allergic to peanut butter" }), inst("Tag", { Tone: "Warning" }, { Label: "⚠️ Pulls on leash" })], "xs"),
       await txt("GOOD TO KNOW", "Caption", "text-muted"),
@@ -226,10 +226,10 @@ const ONBOARDING = [
       add(b, row("Week", week.map((d) => inst("Calendar Day", { State: d === 12 ? "Holiday" : [9, 10, 11, 16, 17].includes(d) ? "Open" : "Closed" }, { Day: String(d) })), 4));
   }, P("Publish my profile")],
   ["sit-live", "Live profile", { kind: "Onboarding" }, null, async (b) => {
-    add(b, await txt("You're ready to be booked, Lucy", "Title", "text", { fill: true }));
+    add(b, await txt("You're ready to be booked, Chloe", "Title", "text", { fill: true }));
     add(b, inst("Profile Card"));
     add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Are you free Oct 9–12 for Max and Mochi?" }));
-    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Chloe! Lucy is free Oct 9–12 for Max and Mochi. Max can take her pill in a treat. Total with the Thanksgiving rate is below." }));
+    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Robert! Chloe is free Oct 9–12 for Max and Mochi. Max can take her pill in a treat. Total with the Thanksgiving rate is below." }));
   }, P("Try it as an owner")],
   ["ob-login", "Log in", { kind: "Onboarding" }, null, async (b) => {
     add(b, await txt("Welcome back", "Title"));
@@ -242,15 +242,15 @@ const ONBOARDING = [
 // e1-…e3- = stages ①–③, e4- = stage ④, e5-/ex- = stage ⑤ and any screen.
 const banner = (tone, title, body, action) => inst("Banner", { Tone: tone }, { Title: title, Body: body, Action: action });
 const EDGE = [
-  ["e1-unavailable", "① Dates are full", { kind: "Detail", title: "Ask Lucy", active: "Bookings" }, null, async (b) => {
-    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Is Lucy free Oct 9–12 for Max and Mochi?" }));
-    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Chloe! Lucy is full Oct 9–12. She's open Oct 13–16 or Oct 20–23 — want one of those?" }));
+  ["e1-unavailable", "① Dates are full", { kind: "Detail", title: "Ask Chloe", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Is Chloe free Oct 9–12 for Max and Mochi?" }));
+    add(b, inst("Message Bubble", { From: "Sitter" }, { Message: "Hi Robert! Chloe is full Oct 9–12. She's open Oct 13–16 or Oct 20–23 — want one of those?" }));
     add(b, chips("Other dates", ["Oct 13–16", "Oct 20–23"], ["Oct 13–16"]));
-    add(b, await txt("Dates and prices come from Lucy's calendar, never from the assistant.", "Small", "text-muted", { fill: true }));
+    add(b, await txt("Dates and prices come from Chloe's calendar, never from the assistant.", "Small", "text-muted", { fill: true }));
   }, P("Ask about Oct 13–16")],
-  ["e1-human", "① The assistant hands over", { kind: "Detail", title: "Ask Lucy", active: "Bookings" }, null, async (b) => {
-    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Max had a seizure in August. Is Lucy OK giving her meds if it happens again?" }));
-    add(b, banner("Info", "Lucy will answer this one herself", "Health questions always go to Lucy, not the assistant. Usually within 2 hours — you'll get a notification.", "Got it"));
+  ["e1-human", "① The assistant hands over", { kind: "Detail", title: "Ask Chloe", active: "Bookings" }, null, async (b) => {
+    add(b, inst("Message Bubble", { From: "Owner" }, { Message: "Max had a seizure in August. Is Chloe OK giving her meds if it happens again?" }));
+    add(b, banner("Info", "Chloe will answer this one herself", "Health questions always go to Chloe, not the assistant. Usually within 2 hours — you'll get a notification.", "Got it"));
   }, null],
   ["e2-dose", "② Checklist needs a fix", { kind: "Detail", title: "Care request", active: "Bookings" }, null, async (b) => {
     add(b, inst("Checklist Row", {}, { Time: "8 AM", Task: "1 cup of kibble" }));
@@ -261,57 +261,57 @@ const EDGE = [
     add(b, await txt("Fix 2 items to save.", "Small", "text-muted"));
   }, () => inst("Button", { Style: "Primary", State: "Disabled" }, { Label: "Save checklist" })],
   ["e3-declined", "③ Sitter can't take it", { kind: "Detail", title: "Booking", active: "Bookings" }, null, async (b) => {
-    add(b, banner("Info", "Lucy can't take Oct 9–12", "You weren't charged. Paul is open those dates and takes dogs and cats.", "See Lucy's open dates"));
+    add(b, banner("Info", "Chloe can't take Oct 9–12", "You weren't charged. Paul is open those dates and takes dogs and cats.", "See Chloe's open dates"));
     add(b, inst("Profile Card", {}, { Name: "Paul Lee", Meta: "Sitter · House · up to 3 pets" }));
   }, P("Ask Paul")],
   ["e3-payment", "③ Payment failed", { kind: "Detail", title: "Checkout", active: "Bookings" }, null, async (b) => {
     add(b, banner("Error", "Payment didn't go through", "You weren't charged. Your 5 consents and signature are kept — just try again.", "Use another card"));
     add(b, inst("Quote Card"));
   }, () => inst("Button", { Style: "Primary", State: "Default" }, { Label: "Try again · $268.13" })],
-  ["e3-entry-missing", "③ Entry info not added (sitter)", { kind: "Detail", title: "Booking", active: "Bookings" }, "L", async (b) => {
+  ["e3-entry-missing", "③ Entry info not added (sitter)", { kind: "Detail", title: "Booking", active: "Bookings" }, "C", async (b) => {
     add(b, inst("Booking Card", { Status: "Confirmed" }));
-    add(b, banner("Warning", "Chloe hasn't added entry info yet", "We reminded her. It unlocks for you 2 hours before pick-up once it's added.", "Message Chloe"));
+    add(b, banner("Warning", "Robert hasn't added entry info yet", "We reminded her. It unlocks for you 2 hours before pick-up once it's added.", "Message Robert"));
     add(b, inst("Entry Info Card", { State: "Locked" }));
   }, null],
   ["e4-late", "④ Sitter running late (owner)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, null, async (b) => {
-    add(b, banner("Warning", "Lucy is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Lucy"));
+    add(b, banner("Warning", "Chloe is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Chloe"));
     add(b, inst("Trip Map", {}, { ETA: "16 min" }));
   }, null],
-  ["e4-location-off", "④ Location is off (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "L", async (b) => {
-    add(b, banner("Offline", "Location is off", "Chloe sees these updates instead of the map. Turn location on in Settings any time.", "Open Settings"));
+  ["e4-location-off", "④ Location is off (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "C", async (b) => {
+    add(b, banner("Offline", "Location is off", "Robert sees these updates instead of the map. Turn location on in Settings any time.", "Open Settings"));
     add(b, split("Status", [inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Leaving now" }), inst("Button", { Style: "Secondary", State: "Default" }, { Label: "10 min away" })], "sm"));
   }, P("I'm here")],
-  ["e4-retake", "④ Photo check unsure (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "L", async (b) => {
+  ["e4-retake", "④ Photo check unsure (sitter)", { kind: "Detail", title: "Pick-up", active: "Bookings" }, "C", async (b) => {
     add(b, inst("Photo Check", { Result: "Retake" }));
-    add(b, await txt("Retake with the crate in view, or confirm it yourself. Chloe will see \"Checked by Lucy\" instead of \"Photo verified\".", "Small", "text-muted", { fill: true }));
+    add(b, await txt("Retake with the crate in view, or confirm it yourself. Robert will see \"Checked by Chloe\" instead of \"Photo verified\".", "Small", "text-muted", { fill: true }));
     add(b, inst("Text Button", { Tone: "Default", State: "Enabled" }, { Label: "Confirm by eye" }));
   }, P("Retake photo")],
-  ["e4-offline", "④ Offline check-ins (sitter)", { title: "Home", active: "Home" }, "L", async (b) => {
+  ["e4-offline", "④ Offline check-ins (sitter)", { title: "Home", active: "Home" }, "C", async (b) => {
     add(b, banner("Offline", "You're offline", "2 check-ins are saved on this phone and send on their own when you're back.", "Retry now"));
     add(b, inst("Task Row", { State: "Done" }, { Title: "Breakfast · 1 cup", Time: "8:00 AM" }));
     add(b, inst("Tag", { Tone: "Neutral" }, { Label: "⏳ Waiting to send" }));
     add(b, inst("Task Row", { State: "Next" }, { Title: "Skin pill in a treat", Time: "2:00 PM" }));
   }, null],
-  ["e4-overdue", "④ Medication is late (sitter)", { title: "Home", active: "Home" }, "L", async (b) => {
-    add(b, banner("Warning", "Max's pill is 40 min late", "Give it now and tap Complete. Chloe sees the real time it was given.", "Call Chloe"));
+  ["e4-overdue", "④ Medication is late (sitter)", { title: "Home", active: "Home" }, "C", async (b) => {
+    add(b, banner("Warning", "Max's pill is 40 min late", "Give it now and tap Complete. Robert sees the real time it was given.", "Call Robert"));
     add(b, inst("Task Row", { State: "Next" }, { Title: "Skin pill in a treat", Time: "2:00 PM · 40 min late" }));
   }, null],
   ["e4-empty", "④ No photos yet today (owner)", { title: "Feed", active: "Feed" }, null, async (b) => {
     add(b, row("Pets", [inst("Filter Chip", { State: "Active" }, { Label: "🐶 Max" }), inst("Filter Chip", { State: "Active" }, { Label: "🐱 Mochi" })], "xs"));
-    add(b, inst("Empty State", {}, { Title: "No photos yet today", Message: "Lucy usually posts after the morning walk (about 9 AM). You'll get a notification.", Action: "See today's plan" }));
+    add(b, inst("Empty State", {}, { Title: "No photos yet today", Message: "Chloe usually posts after the morning walk (about 9 AM). You'll get a notification.", Action: "See today's plan" }));
   }, null],
-  ["e4-unreadable", "④ Treat label unreadable (sitter)", { kind: "Detail", title: "Treat Guard", active: "Home" }, "L", async (b) => {
+  ["e4-unreadable", "④ Treat label unreadable (sitter)", { kind: "Detail", title: "Treat Guard", active: "Home" }, "C", async (b) => {
     add(b, row("Photo", [inst("Photo Tile", { State: "Default" })], "xs"));
-    add(b, banner("Warning", "Couldn't read this label", "Don't feed it yet. We asked Chloe — her answer shows here. Unsure always means no.", "Ask Chloe again"));
+    add(b, banner("Warning", "Couldn't read this label", "Don't feed it yet. We asked Robert — her answer shows here. Unsure always means no.", "Ask Robert again"));
   }, P("Retake photo")],
   ["e5-low-review", "⑤ Low rating", { kind: "Detail", title: "Home safe", active: "Bookings" }, null, async (b) => {
-    add(b, await txt("How was Lucy?", "Body Strong"));
+    add(b, await txt("How was Chloe?", "Body Strong"));
     add(b, row("Stars", [1, 2, 3, 4, 5].map((n) => inst("Star", { State: n <= 2 ? "On" : "Off" })), 0));
-    add(b, inst("Text Field", { State: "Default" }, { Label: "What could have gone better? (optional)", Value: "e.g. More photos in the afternoon", Helper: "Only Lucy sees this." }));
+    add(b, inst("Text Field", { State: "Default" }, { Label: "What could have gone better? (optional)", Value: "e.g. More photos in the afternoon", Helper: "Only Chloe sees this." }));
   }, P("Send review")],
   ["e5-new-fact", "⑤ New fact needs your OK", { kind: "Detail", title: "Life Record", active: "Bookings" }, null, async (b) => {
     add(b, inst("Life Record Card"));
-    add(b, banner("Info", "New from this stay: scared of the vacuum", "From Lucy · Oct 11. It goes into Max's profile only if you say so.", "Not accurate"));
+    add(b, banner("Info", "New from this stay: scared of the vacuum", "From Chloe · Oct 11. It goes into Max's profile only if you say so.", "Not accurate"));
   }, P("Add to Max's profile")],
   ["ex-loading", "Any · Loading", { title: "Home", active: "Home" }, null, async (b) => {
     add(b, inst("Skeleton", { Kind: "Block" }));
@@ -353,9 +353,9 @@ const COMPOSED = [
     add(b, row("Pets", [inst("Filter Chip", { State: "Active" }, { Label: "🐶 Max" }), inst("Filter Chip", { State: "Default" }, { Label: "🐱 Mochi" })], "xs"));
     add(b, inst("Mood Result Card"));
   }, () => inst("Button", { Style: "Secondary", State: "Default" }, { Label: "Check a photo or clip" })],
-  ["sitter-home", "Sitter · Home", { title: "Home", active: "Home" }, "L", async (b) => {
+  ["sitter-home", "Sitter · Home", { title: "Home", active: "Home" }, "C", async (b) => {
     add(b, inst("Next Task Card"));
-    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ No knocking · text Chloe instead" }));
+    add(b, inst("Tag", { Tone: "Warning" }, { Label: "⚠️ No knocking · text Robert instead" }));
     add(b, box("Check-in head", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [await txt("Quick check-in · Max", "Small Strong"), await txt("One tap logs it", "Caption", "text-muted")]));
     add(b, split("Check-in", [["🍽️", "Ate"], ["🌿", "Potty"], ["🦮", "Walk"], ["🙂", "Mood"]].map(([i, l]) => inst("Check-in Tile", { State: "Default" }, { Icon: i, Label: l })), "xs"));
     add(b, inst("Progress Bar", {}, { Label: "2 of 5 tasks · 6 check-ins" }));

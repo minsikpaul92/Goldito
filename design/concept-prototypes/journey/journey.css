@@ -32,7 +32,8 @@
 .jr-stage-head{display:flex;align-items:center;gap:.75rem;padding:.875rem 1rem;width:100%;background:none;border:none;
   font:inherit;color:inherit;text-align:left}
 .jr-stage.is-current .jr-stage-head{padding-bottom:.25rem}
-.jr-stage.is-future{opacity:.6}
+.jr-stage.is-future{background:transparent;box-shadow:none}
+.jr-stage.is-future .jr-stage-title b{color:var(--text-muted);font-weight:700}
 .jr-num{width:1.75rem;height:1.75rem;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;font-weight:800;font-size:.8125rem;
   background:var(--tint-border);color:var(--text-muted)}
 .jr-stage.is-current .jr-num{background:var(--primary);color:var(--primary-foreground)}
@@ -46,7 +47,7 @@
 /* Demo controls: always visibly different from real actions. */
 .jr-demo{border-style:dashed !important;border-width:2px !important;border-color:var(--tint-border) !important;
   background:transparent !important;box-shadow:none !important;color:var(--text) !important}
-.jr-demo::before{content:"DEMO · AS LUCY";font-size:.625rem;font-weight:800;letter-spacing:.06em;color:var(--text-muted);
+.jr-demo::before{content:"DEMO";font-size:.625rem;font-weight:800;letter-spacing:.06em;color:var(--text-muted);
   margin-right:.375rem}
 .jr-demo.jr-demo-owner::before{content:"DEMO"}
 .jr-demo-tag{display:inline-block;font-size:.625rem;font-weight:800;letter-spacing:.06em;color:var(--text-muted);
@@ -219,3 +220,34 @@
 .jr-day.hol::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor}
 .jr-day.pad{pointer-events:none}
 .jr-datefield>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* The other person's screen, inline (README: what Chloe sees and taps) */
+.jr-theirs{display:flex;flex-direction:column;gap:.625rem;padding:.875rem;border:1.5px dashed var(--tint-border);border-radius:var(--jr-radius);background:var(--surface,transparent)}
+.jr-theirs-tag{align-self:flex-start;font-size:.625rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.jr-h4{font-size:.9375rem;font-weight:800;margin:0}
+.jr-facts{margin:0;padding-left:1.125rem;display:flex;flex-direction:column;gap:.25rem;font-size:.8125rem;color:var(--text-muted);line-height:1.4}
+.jr-row2{display:flex;gap:.5rem;flex-wrap:wrap}
+.jr-row2 .btn{width:auto;flex:1 1 auto;pointer-events:none}
+.jr-theirs .btn{pointer-events:none}
+.jr-how summary{cursor:pointer;font-weight:700;font-size:.8125rem;color:var(--primary-text,var(--primary));padding:.375rem 0;min-height:32px}
+.jr-how[open] summary{margin-bottom:.5rem}
+.jr-try,.jr-stack>.jr-link,.jr-stage-body>.jr-link{margin-left:0}
+.jr-meet{gap:.25rem}
+.jr-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;text-align:center}
+.jr-summary div{display:flex;flex-direction:column;padding:.5rem .25rem;border-radius:.75rem;background:var(--jr-card-bg);border:var(--jr-card-border)}
+.jr-summary b{font-size:1.125rem;font-variant-numeric:tabular-nums}
+.jr-summary span{font-size:.6875rem;color:var(--text-muted);font-weight:600}
+.jr-short{min-height:4.5rem}
+.jr-entry2{flex-direction:row;gap:1.5rem}
+.jr-row2-live .btn{pointer-events:auto;width:auto;flex:1 1 0}
+.jr-profile{gap:.5rem}
+.jr-addline{display:flex;gap:.5rem}
+.jr-addline .input{flex:1;min-width:0}
+.jr-addline .btn{width:auto;flex:0 0 auto}
+.jr-mine{display:inline-flex;align-items:center;gap:.25rem}
+.jr-mine button{border:0;background:none;color:inherit;font:inherit;font-size:1rem;line-height:1;cursor:pointer;padding:0 .125rem;min-width:24px;min-height:24px}
+.jr-day.one:not(.full){box-shadow:inset 0 -3px 0 var(--warning,#B54708)}
+
+/* Sitter profile: two full-width buttons, one line each (primary first) */
+.jr-stackbtns{display:flex;flex-direction:column;gap:.5rem}
+.jr-stackbtns .btn{width:100%;white-space:nowrap}

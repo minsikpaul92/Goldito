@@ -116,6 +116,23 @@ section.pair{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax
 .skinbar button[aria-pressed="true"]{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-primary-text)}
 .skinbar a{color:inherit;margin-left:6px}
 footer{color:var(--page-muted);font-size:13px;line-height:1.6}
+
+/* Snap · Settings · What's New (Oct 15) */
+.tool{display:grid;grid-template-columns:44px 1fr 18px;gap:12px;align-items:center}
+.ticon{width:44px;height:44px;border-radius:12px;background:var(--accent);color:var(--primary);display:grid;place-items:center}
+.ticon svg{width:24px;height:24px}
+.chev{width:18px;height:18px;color:var(--text-muted);flex:0 0 auto}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--border);min-height:48px}
+.lrow:first-child{border-top:0}
+.pill.bad{background:var(--error-surface,#FEF3F2);color:var(--error,#B42318)}
+.pill.ok{background:var(--success-surface,#ECFDF3);color:var(--success,#067647)}
+.pill.new{background:#F4C35A;color:#3D2A00;font-weight:700}
+.sw{width:40px;height:24px;border-radius:12px;background:var(--primary);position:relative;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+.sw.off{background:var(--border-strong)}.sw.off::after{right:auto;left:3px}
+.rn{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.45}
+.noshot{display:flex;flex-direction:column;gap:6px;justify-content:center;align-items:center;text-align:center;padding:24px;border:2px dashed var(--border-strong);border-radius:24px;color:var(--text-muted);min-height:280px;font-size:14px}
+.noshot b{color:var(--text);font-size:16px}
 </style>
 <script src="../nav.js" defer></script>
 </head>
@@ -123,7 +140,7 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
 <div class="wrap">
 <header>
   <h1>Goldito: live app vs. the draft</h1>
-  <p>Draft for Minsik. Same tabs and the same data as the live app (D47: Home · Bookings · Feed · Diary · Mood; demo Chloe, Lucy, Max, Mochi). The right-hand phone uses only our tokens and components, so every change maps to something already in <code>frontend/components/ui</code>, PR #41 or the Figma library.</p>
+  <p>Draft for Minsik. Same tabs and the same data as the live app (D47: Home · Bookings · Feed · Diary · Mood; demo Robert, Chloe, Max, Mochi). The right-hand phone uses only our tokens and components, so every change maps to something already in <code>frontend/components/ui</code>, PR #41 or the Figma library.</p>
   <div class="legend"><span><b>Left</b> live on Vercel (Oct 5)</span><span><b>Middle</b> draft, built with the design system</span><span><b>Right</b> what changed and why</span></div>
   <div class="skinbar" role="group" aria-label="Look"><span>Look:</span><button data-s="">Design system</button><button data-s="c">Balanced</button><button data-s="b">Playful</button><a href="../prototype.html#owner-home/d">Expressive (own layouts) ↗</a><a href="../prototype.html#owner-home/all">Side by side ↗</a></div>
 </header>
@@ -149,9 +166,9 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
   <span class="tab" data-t="bookings"><span class="p"><svg><use href="#cal"/></svg></span>Bookings</span>
   <span class="tab" data-t="feed"><span class="p"><svg><use href="#img"/></svg></span>Feed</span>
   <span class="tab" data-t="diary"><span class="p"><svg><use href="#book"/></svg></span>Diary</span>
-  <span class="tab" data-t="mood"><span class="p"><svg><use href="#smile"/></svg></span>Mood</span>
+  <span class="tab" data-t="snap"><span class="p"><svg><use href="#cam"/></svg></span>Snap</span>
 </nav></template>
-<template id="bar"><div class="bar"><h4></h4><div class="icons"><span class="ib"><svg><use href="#bell"/></svg><span class="dot"></span></span><span class="ib"><span class="ava">C</span></span></div></div></template>
+<template id="bar"><div class="bar"><h4></h4><div class="icons"><span class="ib"><svg><use href="#bell"/></svg><span class="dot"></span></span><span class="ib"><span class="ava">R</span></span></div></div></template>
 
 <!-- ===================== OWNER HOME ===================== -->
 <section class="pair">
@@ -162,8 +179,8 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
         <div class="card" style="overflow:hidden">
           <div class="photo" style="height:150px;border-radius:0;background-image:url(img/pet0.jpg);background-position:50% 35%"></div>
           <div class="pad stack">
-            <div class="between"><span class="pill live">With Lucy now</span><span class="small muted">Day 2 of 3</span></div>
-            <div class="h">Max & Mochi are with Lucy</div>
+            <div class="between"><span class="pill live">With Chloe now</span><span class="small muted">Day 2 of 3</span></div>
+            <div class="h">Max & Mochi are with Chloe</div>
             <div class="small muted">Picked up Fri 7:30 AM · photo verified · home Mon 5:00 PM</div>
             <div class="between small"><span class="b">Today's care</span><span class="muted">3 of 5 done</span></div>
             <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div>
@@ -185,7 +202,7 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
   </div>
   <div class="col notes"><h3>Answer “is my pet OK?” first</h3><div class="tabname">Owner · Home</div>
     <ul>
-      <li><b>One stay card replaces two “In care” cards.</b> Photo, “With Lucy now”, day 2 of 3, and today's care progress: the README's “learn without asking” at a glance.</li>
+      <li><b>One stay card replaces two “In care” cards.</b> Photo, “With Chloe now”, day 2 of 3, and today's care progress: the README's “learn without asking” at a glance.</li>
       <li><b>Latest update right on Home</b> (photo + AI caption), so the owner doesn't have to open Diary to feel reassured.</li>
       <li><b>The one primary action matches the moment:</b> “See today's updates” during a stay. “Add pet” becomes a text link (DESIGN.md §7.1).</li>
       <li><b>Log out leaves the header</b> (D47: settings live in Profile). Bell + avatar only.</li>
@@ -203,7 +220,7 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
       <div class="scroll">
         <div class="seg"><span class="on">Upcoming</span><span>Requests</span><span>Past</span></div>
         <div class="card pad stack">
-          <div class="between"><div class="row"><span class="avatar emoji" style="width:36px;height:36px;font-size:15px;background:var(--primary);color:#fff;font-weight:700">L</span><div><div class="b">Lucy · Boarding</div><div class="tiny muted">Max, Mochi · Oct 9–12</div></div></div><span class="pill live">In care</span></div>
+          <div class="between"><div class="row"><span class="avatar emoji" style="width:36px;height:36px;font-size:15px;background:var(--primary);color:#fff;font-weight:700">C</span><div><div class="b">Chloe · Boarding</div><div class="tiny muted">Max, Mochi · Oct 9–12</div></div></div><span class="pill live">In care</span></div>
           <div class="steps"><i class="d">✓</i><b class="d"></b><i class="d">✓</i><b class="d"></b><i class="d">✓</i><b class="d"></b><i class="c">4</i><b></b><i>5</i></div>
           <div class="tiny muted">Inquiry · Meet & Greet · Booking · <b style="color:var(--primary)">Care</b> · Home</div>
           <div class="divider"></div>
@@ -215,8 +232,8 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
         </div>
         <div class="between"><span class="h" style="font-size:15px">Your sitters</span><span class="link">See all</span></div>
         <div class="card pad row" style="gap:12px">
-          <span class="avatar emoji" style="background:var(--primary);color:#fff;font-weight:700;font-size:16px">L</span>
-          <div style="flex:1"><div class="b">Lucy Kim <span class="small" style="color:var(--warning)">★ 5.0</span></div><div class="tiny muted">North York · 1 stay with you · replies in ~30 s</div></div>
+          <span class="avatar emoji" style="background:var(--primary);color:#fff;font-weight:700;font-size:16px">C</span>
+          <div style="flex:1"><div class="b">Chloe Kim <span class="small" style="color:var(--warning)">★ 5.0</span></div><div class="tiny muted">North York · 1 stay with you · replies in ~30 s</div></div>
           <span class="tag">Boarding</span><svg class="go"><use href="#i-chev"/></svg>
         </div>
       </div>
@@ -254,7 +271,7 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
           <div class="pad stack" style="gap:6px">
             <span class="eyebrow" style="font-size:10px">✦ AI caption · 🦮 Walks</span>
             <span class="small">Max spotted a squirrel on the morning walk and wagged the whole way home.</span>
-            <div class="between"><span class="tiny muted">Lucy · 9:02 AM · 🔒 Visible to Chloe</span><span class="small b muted">♡ Love it</span></div>
+            <div class="between"><span class="tiny muted">Chloe · 9:02 AM · 🔒 Visible to Robert</span><span class="small b muted">♡ Love it</span></div>
           </div>
         </div>
         <div class="between"><span class="b">Yesterday · Fri Oct 9</span><span class="tiny muted">4 photos</span></div>
@@ -267,7 +284,7 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
       <li><b>Category chips (Meals · Walks · Naps · Play)</b>: the README's “timeline album”, missing on live. Pet toggles stay as soft chips.</li>
       <li><b>Grouped by day</b> with a count, plus a small category + time badge on each tile.</li>
       <li><b>Tapping opens the caption card</b>: AI caption, who and when, Love it. Captions are the AI story judges need to see.</li>
-      <li>“Only you” becomes an explicit <b>“🔒 Visible to Chloe”</b> line on the post, not a floating pill.</li>
+      <li>“Only you” becomes an explicit <b>“🔒 Visible to Robert”</b> line on the post, not a floating pill.</li>
       <li><b>Demo photos must be Max</b> (Maltese). Live shows other breeds.</li>
     </ul>
     <div class="comp">Components: <code>Filter Chip</code> <code>Feed Card</code> <code>Photo Tile</code> <code>Button</code></div>
@@ -280,12 +297,12 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
   <div class="col"><h2>Draft · Diary</h2>
     <div class="phone" data-title="Diary" data-tab="diary">
       <div class="scroll" style="gap:12px">
-        <div class="between"><span class="pill live">On air · Lucy</span><span class="link">Filter</span></div>
+        <div class="between"><span class="pill live">On air · Chloe</span><span class="link">Filter</span></div>
         <div class="card pad stack">
           <div class="between"><span class="b">Daily note · Fri Oct 9</span><span class="tiny muted">6:04 PM</span></div>
           <div class="bubble">Max finished every bit of her breakfast, took her skin pill tucked in a treat, and we did a 20-minute walk. She spotted a squirrel and got so excited 🐿️ Potty was perfectly healthy, too.</div>
           <div class="tags"><span class="tag">🍽️ Breakfast</span><span class="tag">💊 Pill</span><span class="tag">🦮 20 min</span></div>
-          <div class="tiny muted">✦ Written by AI from Lucy's 5-second check · approved by Lucy</div>
+          <div class="tiny muted">✦ Written by AI from Chloe's 5-second check · approved by Chloe</div>
         </div>
         <span class="b">Today</span>
         <div class="tl">
@@ -298,8 +315,8 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
   </div>
   <div class="col notes"><h3>The diary is the product; don't show it empty</h3><div class="tabname">Owner · Diary</div>
     <ul>
-      <li><b>“On air · Lucy”</b> signals a live stay (D47 “Live/On air”).</li>
-      <li><b>The AI daily note leads</b>, with the chips it was written from and “approved by Lucy”. Shows Nemotron and the no-typing sitter loop in one card (7.2 / 7.7, current focus).</li>
+      <li><b>“On air · Chloe”</b> signals a live stay (D47 “Live/On air”).</li>
+      <li><b>The AI daily note leads</b>, with the chips it was written from and “approved by Chloe”. Shows Nemotron and the no-typing sitter loop in one card (7.2 / 7.7, current focus).</li>
       <li><b>Today's timeline</b> below: time rail, check-ins, photos. Same data as History, organised by time.</li>
       <li><b>Seed the demo</b> with one sent note and a few check-ins so judges never land on “No diary yet” while Max is in care.</li>
     </ul>
@@ -309,33 +326,28 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
 
 <!-- ===================== MOOD ===================== -->
 <section class="pair">
-  <div class="col"><h2>Live · Mood</h2><img class="shot" src="live/owner-mood.png" alt="Live owner Mood"></div>
-  <div class="col"><h2>Draft · Mood</h2>
-    <div class="phone" data-title="Mood" data-tab="mood">
+  <div class="col"><h2>Live · Snap</h2><div class="shot noshot"><b>Shipped Oct 15</b>Snap replaced Mood as the fifth tab (#90, #91). Not captured yet.</div></div>
+  <div class="col"><h2>Draft · Snap</h2>
+    <div class="phone" data-title="Snap" data-tab="snap">
       <div class="scroll">
         <div class="chips"><span class="chip on">🐶 Max</span><span class="chip">🐱 Mochi</span></div>
-        <div class="card" style="overflow:hidden">
-          <div class="photo" style="height:200px;border-radius:0;background-image:url(img/pet0.jpg)"></div>
-          <div class="pad stack">
-            <span class="eyebrow">Just for fun</span>
-            <div class="h">Max seems playful today 😄</div>
-            <div class="small muted">From Lucy's 9:02 AM walk clip. Not a health check.</div>
-            <div class="meter" aria-label="Mood: playful"><span class="on">😄 Playful</span><span>😌 Calm</span><span>😴 Sleepy</span></div>
-          </div>
-        </div>
-        <div class="card pad small muted" style="text-align:center">This week: playful 4 days · calm 2 days</div>
+        <div class="card pad tool"><span class="ticon"><svg><use href="#i-bowl"/></svg></span><div><div class="h">Treat check</div><div class="small muted">Snap the label. We check Max's allergies and pet toxins, with sources.</div></div><svg class="chev"><use href="#i-chev"/></svg></div>
+        <div class="card pad tool"><span class="ticon"><svg><use href="#smile"/></svg></span><div><div class="h">Mood</div><div class="small muted">How does Max seem in a photo or a 5-second clip? Just for fun.</div></div><svg class="chev"><use href="#i-chev"/></svg></div>
+        <div class="card pad tool"><span class="ticon"><svg><use href="#cam"/></svg></span><div><div class="h">Sticker</div><div class="small muted">Cut Max out of a photo and decorate a diary page.</div></div><svg class="chev"><use href="#i-chev"/></svg></div>
+        <div class="between"><span class="h" style="font-size:14px">Recent checks</span><span class="small" style="color:var(--primary);font-weight:600">See all</span></div>
+        <div class="card"><div class="lrow"><div><div class="b">Chewy Chompers</div><div class="tiny muted">Chicken · Max is allergic · 3:10 PM</div></div><span class="pill bad">Danger</span></div>
+          <div class="lrow"><div><div class="b">Sweet potato chew</div><div class="tiny muted">Nothing on Max's list · Yesterday</div></div><span class="pill ok">Safe</span></div></div>
       </div>
-      <div class="pinned"><div class="btn sec"><svg style="width:18px;height:18px"><use href="#cam"/></svg> Check a photo or clip</div></div>
     </div>
   </div>
-  <div class="col notes"><h3>Give the 5th tab something to show</h3><div class="tabname">Owner · Mood (P1 · 11.9)</div>
+  <div class="col notes"><h3>One tab, three photo tools</h3><div class="tabname">Owner · Snap (Phase 12 · D61)</div>
     <ul>
-      <li>An empty centered message makes a main tab look unfinished. A <b>seeded example result</b> shows the idea even before 11.9 ships.</li>
-      <li>Keep <b>“Just for fun · not a health check”</b> visible (safety).</li>
-      <li>Secondary button only: Mood is never the screen's main job.</li>
-      <li>Alternative if 11.9 slips: hide the tab for the demo rather than ship an empty one. Decide together.</li>
+      <li>Snap replaced Mood as the fifth tab on Oct 15, for owners and sitters. <b>Treat check comes first</b>: it's the safety tool and the README's DANGER moment.</li>
+      <li>Each tool says what it does in one line, so the tab reads as choices, not a grid of icons.</li>
+      <li><b>Recent checks</b> keep the verdict visible as a tag on its own surface (D3): Danger on red, Safe on green, always with the reason.</li>
+      <li>Mood keeps “Just for fun” in its line.</li>
     </ul>
-    <div class="comp">Components: <code>Filter Chip</code> <code>Card</code> <code>Button</code> (secondary)</div>
+    <div class="comp">Components: <code>Filter Chip</code> <code>Card</code> <code>Tag</code></div>
   </div>
 </section>
 
@@ -343,15 +355,15 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
 <section class="pair">
   <div class="col"><h2>Live · Sitter Home</h2><img class="shot" src="live/sitter-home.png" alt="Live sitter Home"></div>
   <div class="col"><h2>Draft · Sitter Home</h2>
-    <div class="phone" data-title="Home" data-tab="home" data-ava="L">
+    <div class="phone" data-title="Home" data-tab="home" data-ava="C">
       <div class="scroll" style="gap:12px">
-        <div class="between"><span class="pill live">Now caring · Max & Mochi</span><span class="tiny muted">Chloe's pets · until Mon</span></div>
+        <div class="between"><span class="pill live">Now caring · Max & Mochi</span><span class="tiny muted">Robert's pets · until Mon</span></div>
         <div class="card pad stack task">
           <span class="eyebrow">Next · 2:00 PM</span>
-          <div class="row" style="gap:10px"><span class="avatar" style="width:40px;height:40px;background-image:url(img/pet0.jpg)"></span><div><div class="h" style="font-size:15px">Max · skin pill in a treat</div><div class="tiny muted">From Chloe's care request</div></div></div>
+          <div class="row" style="gap:10px"><span class="avatar" style="width:40px;height:40px;background-image:url(img/pet0.jpg)"></span><div><div class="h" style="font-size:15px">Max · skin pill in a treat</div><div class="tiny muted">From Robert's care request</div></div></div>
           <div class="btn"><svg><use href="#cam"/></svg>Complete with photo</div>
         </div>
-        <div class="card pad row" style="padding:12px;background:var(--warning-surface);border-color:var(--warning)"><span>⚠️</span><span class="small"><b>No knocking</b> · text Chloe instead</span></div>
+        <div class="card pad row" style="padding:12px;background:var(--warning-surface);border-color:var(--warning)"><span>⚠️</span><span class="small"><b>No knocking</b> · text Robert instead</span></div>
         <div class="between"><span class="b small">Quick check-in · Max</span><span class="tiny muted">One tap logs it</span></div>
         <div class="checks4" role="group" aria-label="Log for Max"><span class="ck"><svg><use href="#i-bowl"/></svg>Ate</span><span class="ck"><svg><use href="#i-leaf"/></svg>Potty</span><span class="ck"><svg><use href="#i-walk"/></svg>Walk</span><span class="ck"><svg><use href="#smile"/></svg>Mood</span></div>
         <div class="card pad stack" style="gap:6px">
@@ -359,8 +371,8 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
           <div class="prog"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
         </div>
         <div class="acts">
-          <div class="act"><span class="ic"><svg><use href="#i-note"/></svg></span><div><div class="b">5-second check</div><div class="tiny muted">Today's note for Chloe · tap chips, done</div></div><svg class="go"><use href="#i-chev"/></svg></div>
-          <div class="act"><span class="ic"><svg><use href="#i-search"/></svg></span><div><div class="b">Scan a treat</div><div class="tiny muted">Checks the label for Max's allergies</div></div><svg class="go"><use href="#i-chev"/></svg></div>
+          <div class="act"><span class="ic"><svg><use href="#i-note"/></svg></span><div><div class="b">5-second check</div><div class="tiny muted">Today's note for Robert · tap chips, done</div></div><svg class="go"><use href="#i-chev"/></svg></div>
+          <div class="act"><span class="ic"><svg><use href="#i-search"/></svg></span><div><div class="b">Treat check</div><div class="tiny muted">In Snap · checks the label for Max's allergies</div></div><svg class="go"><use href="#i-chev"/></svg></div>
         </div>
       </div>
     </div>
@@ -378,7 +390,57 @@ footer{color:var(--page-muted);font-size:13px;line-height:1.6}
   </div>
 </section>
 
-<footer>Draft by Mook · built from <code>frontend/theme/tokens.ts</code>, PR #41 primitives and the Figma library “Goldito Design System”. Live screenshots from pawnote-frontend.vercel.app on Oct 5 (demo accounts). Mock data only.</footer>
+<!-- ===================== SETTINGS (11.11, being built) ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · Settings</h2><div class="shot noshot"><b>Being built now</b>11.11 is Minsik's current task (Oct 15). Profile → Settings.</div></div>
+  <div class="col"><h2>Draft · Settings</h2>
+    <div class="phone" data-title="Settings" data-tab="none">
+      <div class="scroll">
+        <div class="card pad row" style="gap:12px"><span class="avatar emoji" style="width:44px;height:44px;font-size:17px;background:var(--primary);color:#fff;font-weight:700">R</span><div><div class="h">Robert Park</div><div class="tiny muted">demo-owner@goldito.test · Owner</div></div></div>
+        <div class="card"><div class="lrow"><div><div class="b">What's New</div><div class="tiny muted">Snap, live trips, photo requests</div></div><span class="row" style="gap:6px"><span class="pill new">3 new</span><svg class="chev"><use href="#i-chev"/></svg></span></div></div>
+        <span class="eyebrow">Account</span>
+        <div class="card"><div class="lrow"><div><div class="b">Name</div><div class="tiny muted">Robert Park</div></div><svg class="chev"><use href="#i-chev"/></svg></div><div class="lrow"><div><div class="b">Email</div><div class="tiny muted">demo-owner@goldito.test</div></div><svg class="chev"><use href="#i-chev"/></svg></div><div class="lrow"><div><div class="b">Pets</div><div class="tiny muted">Max · Mochi</div></div><svg class="chev"><use href="#i-chev"/></svg></div></div>
+        <span class="eyebrow">Notifications</span>
+        <div class="card"><div class="lrow"><div><div class="b">Trip updates</div><div class="tiny muted">On the way, arrived</div></div><span class="sw"></span></div><div class="lrow"><div class="b">Daily notes and photos</div><span class="sw"></span></div><div class="lrow"><div class="b">Tips and news</div><span class="sw off"></span></div></div>
+        <div class="card"><div class="lrow"><div class="b">Privacy</div><svg class="chev"><use href="#i-chev"/></svg></div><div class="lrow"><div class="b">Help</div><svg class="chev"><use href="#i-chev"/></svg></div></div>
+        <div class="btn sec" style="color:var(--error,#B42318)">Sign out</div>
+        <div class="tiny muted" style="text-align:center">Goldito 0.12 · updated Oct 15</div>
+      </div>
+    </div>
+  </div>
+  <div class="col notes"><h3>Settings: short, with What's New on top</h3><div class="tabname">Profile → Settings (11.11 · being built)</div>
+    <ul>
+      <li><b>What's New first</b>, with a gold “3 new” count until it's opened. It's the part judges will open.</li>
+      <li>Account and Notifications follow the spec. Notifications is a stub, so each switch says exactly what it controls.</li>
+      <li>Sign out lives here (D47) as a quiet secondary button with red text, not a filled danger button: red is for real problems.</li>
+      <li>Version and date at the bottom, matching the release rule (every deploy updates What's New).</li>
+    </ul>
+    <div class="comp">Components: <code>Card</code> <code>Switch Row</code> <code>Tag</code> <code>Button</code> (secondary)</div>
+  </div>
+</section>
+<!-- ===================== WHAT'S NEW (11.11, being built) ===================== -->
+<section class="pair">
+  <div class="col"><h2>Live · What's New</h2><div class="shot noshot"><b>Being built now</b>It will read docs/CHANGELOG.md, which is written for developers today (“Pawddy”, “Monorepo: Expo web”).</div></div>
+  <div class="col"><h2>Draft · What's New</h2>
+    <div class="phone" data-title="What's New" data-tab="none">
+      <div class="scroll">
+        <div class="card pad stack"><span class="eyebrow">Oct 15 · New</span><div class="h">Snap: three photo tools in one tab</div><ul class="rn"><li><b>Treat check:</b> snap a treat's label to see if it's safe for your pet, with the sources.</li><li><b>Mood:</b> see how your pet seems in a photo or a short clip. Just for fun.</li><li><b>Stickers:</b> cut your pet out of a photo and decorate a diary page.</li></ul></div>
+        <div class="card pad stack"><span class="eyebrow" style="color:var(--text-muted)">Oct 15</span><ul class="rn"><li><b>Ask for a photo.</b> Tap Request photo in Feed; your sitter's next photo answers it.</li><li>Checkout asks for your entry info when the sitter comes to your door.</li></ul></div>
+        <div class="card pad stack"><span class="eyebrow" style="color:var(--text-muted)">Oct 12</span><ul class="rn"><li><b>Live trips.</b> Tap Start trip on drop-off and pick-up days. The other person sees the map and when you'll arrive.</li><li>Rather not share your location? The meeting place opens in Google Maps.</li></ul></div>
+        <div class="card pad stack"><span class="eyebrow" style="color:var(--text-muted)">Oct 10</span><ul class="rn"><li><b>Ask before booking</b> now sits next to Book on every sitter's profile.</li><li>Sitters pick the pet first when writing a daily note, and can add their own lines.</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="col notes"><h3>Release notes people can read</h3><div class="tabname">Settings → What's New (11.11)</div>
+    <ul>
+      <li>The spec shows <code>docs/CHANGELOG.md</code>. Its entries are for developers, and a judge opening What's New would see “Pawddy” and “Supabase schema”. <b>Proposal:</b> a short user-facing section per release, newest first; the copy is drafted in <code>design/handoff/2026-10-15-whats-new.md</code>.</li>
+      <li>One headline when a release has a big feature, then two or three plain lines that say what you can do now.</li>
+      <li>Dates are the labels people scan; the version number stays in Settings.</li>
+    </ul>
+    <div class="comp">Components: <code>Card</code> <code>Tag</code></div>
+  </div>
+</section>
+<footer>Draft by Mook · built from <code>frontend/theme/tokens.ts</code>, PR #41 primitives and the Figma library “Goldito Design System”. Live screenshots from the hosted app on Oct 5 (demo accounts); Snap, Settings and What's New are newer than the captures. Mock data only.</footer>
 </div>
 <script>
   // Shared chrome: header (no Log out) + tab bar with the active tab.

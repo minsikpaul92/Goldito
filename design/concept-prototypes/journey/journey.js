@@ -3,28 +3,28 @@
    ① Inquiry → ② Meet & Greet → ③ Booking → ④ Care & Pet Transit → ⑤ Completion
    Each concept calls Journey.init(adapter) once; the adapter supplies its own
    tab switching, toast, celebration and pet data, so the same features render
-   in each concept's own style. Anything Lucy (the sitter) would do is a clearly
-   marked "Demo · as Lucy" control. Demo only: no real AI, payment or GPS.
+   in each concept's own style. Anything Chloe (the sitter) would do is a clearly
+   marked "Demo · as Chloe" control. Demo only: no real AI, payment or GPS.
    ========================================================================== */
 const Journey = (() => {
-  const SITTER = "Lucy";
-  let OWNER = "Chloe";
+  const SITTER = "Chloe";
+  let OWNER = "Robert";
   let ALLERGY = "chicken"; // from onboarding; null = no known allergies
   const STAGES = [
     {key: "inquiry", title: "Inquiry", when: "Mon 10:40 PM"},
     {key: "meet", title: "Meet & Greet", when: "Tue"},
     {key: "booking", title: "Booking", when: "Wed"},
-    {key: "care", title: "Pick-up & care", when: "Fri 7:30 AM"},
-    {key: "done", title: "Home & review", when: "Mon 5:00 PM"},
+    {key: "care", title: "Care & Pet Transit", when: "Fri 7:30 AM"},
+    {key: "done", title: "Completion", when: "Mon 5:00 PM"},
   ];
-  // Lucy's rates (03C formula): nights × rate, extra pet %, holiday % on holiday days in the stay.
+  // Chloe's rates (03C formula): nights × rate, extra pet %, holiday % on holiday days in the stay.
   const RATES = {boarding: 55, house_sitting: 70, extraPetPct: 50, holidayPct: 25};
   const STAY = {from: "Oct 9", to: "Oct 12", nights: 3, holiday: "Thanksgiving (Oct 12)", holidayDays: 1};
-  // Date picker: October 2026, today is Oct 7. Lucy is full Oct 20–23; Oct 12 is Thanksgiving (holiday rate).
-  const CAL = {firstDow: 4, days: 31, today: 7, full: [20, 21, 22, 23], holiday: 12};
+  // Date picker: October 2026, today is Oct 7. Chloe is full Oct 20–23; Oct 12 is Thanksgiving (holiday rate).
+  const CAL = {firstDow: 4, days: 31, today: 7, full: [20, 21, 22, 23], onePet: [16, 17], holiday: 12}; // onePet: room for one pet only (app: INQ-22)
   function setStay(from, to) {
     Object.assign(STAY, {from: `Oct ${from}`, to: `Oct ${to}`, nights: to - from,
-      holidayDays: from <= CAL.holiday && CAL.holiday < to ? 1 : 0});
+      holidayDays: from <= CAL.holiday && CAL.holiday <= to ? 1 : 0}); // the live app (03C) counts the checkout day: Oct 9–12 = $268.13
   }
   const CONSENTS = [
     {k: "vet", t: "24-hour emergency vet", s: `${SITTER} may take your pet to the nearest 24-hour vet if needed. You'll be called first; costs up to $500 are pre-approved.`},
@@ -50,13 +50,13 @@ const Journey = (() => {
   function fresh(returning) {
     return {
       stage: 0, unlocked: false, complete: false, returning: !!returning,
-      inq: {service: "boarding", first: true, second: false, cal: false, from: 9, to: 12, pick: null, question: `Can ${pet()} take her pill in a treat?`, status: "form"},
+      inq: {service: "boarding", first: true, second: true, full: false, cal: false, from: 9, to: 12, pick: null, question: `Can ${pet()} take her pill in a treat?`, status: "profile"},
       meet: {request: DEFAULT_REQUEST(), status: "write", checklist: [], heads: [], mode: "video", slot: 0, mg: "none",
         dropoff: "sitter", pickup: "owner"},
       book: {status: "waiting", consents: new Set(), open: new Set(), name: "", entry: "locked", codeShown: false},
-      trip: {phase: "idle", eta: 12, progress: 0, zoom: 1},
-      check: {status: "idle", photos: new Set([0, 2]), off: new Set(), note: ""},
-      home: {phase: "idle", eta: 15, progress: 0, zoom: 1, stars: 0, thanks: "", review: false, record: "none"},
+      trip: {phase: "idle", eta: 12, progress: 0, zoom: 1, permit: false},
+      check: {status: "idle", photos: new Set([0, 2]), off: new Set(), note: "", mine: [], pet: 0},
+      home: {phase: "idle", eta: 15, progress: 0, zoom: 1, stars: 0, thanks: "", comment: "", review: false, record: "none"},
       notes: [],
     };
   }
@@ -107,11 +107,11 @@ const Journey = (() => {
   function stageSummary(i) {
     const q = quote();
     return [
-      `${J.inq.service === "boarding" ? "Boarding" : "House sitting"} · ${STAY.from}–${STAY.to} · ${money(q.total)}`,
-      `Checklist saved · ${J.meet.mode === "video" ? "Video" : "In-person"} Meet & Greet`,
+      `${J.inq.service === "boarding" ? "Boarding" : "House sitting"} · ${range()} · ${money(q.total)}`,
+      `Checklist saved · ${J.returning || J.meet.mg === "skipped" ? "Meet & Greet skipped" : `${J.meet.mode === "video" ? "Video" : "In-person"} Meet & Greet`}`,
       `Paid ${money(q.total)} · 5 consents signed`,
       `Picked up · photo verified`,
-      `${pet()} is home safe · ${J.home.stars}★`,
+      `${petsLabel()} ${J.inq.first && J.inq.second ? "are" : "is"} home safe · ${J.home.stars}★`,
     ][i];
   }
 
@@ -121,9 +121,9 @@ const Journey = (() => {
     const done = J.complete;
     A.stayMount.innerHTML = `<div class="jr jr-stay">
       <div class="jr-head">
-        <span class="jr-eyebrow">${J.returning ? "Next stay · " : ""}Thanksgiving · ${STAY.from}–${STAY.to}</span>
+        <span class="jr-eyebrow">${J.returning ? "Next stay · " : ""}Thanksgiving · ${range()}</span>
         <h1 class="jr-title">${esc(n)}'s stay with ${SITTER}</h1>
-        <p class="jr-sub">${done ? "Stay complete. Everything Lucy learned is saved for next time." : "Five steps from the first question to the ride home."}</p>
+        <p class="jr-sub">${done ? `Stay complete. Everything ${SITTER} learned is saved for next time.` : J.stage === 0 ? "Five steps from the first question to the ride home." : `Step ${J.stage + 1} of 5 · ${STAGES[J.stage].title}`}</p>
       </div>
       ${STAGES.map((s, i) => {
         const cls = i < J.stage || (J.complete && i === 4) ? "is-done" : i === J.stage ? "is-current" : "is-future";
@@ -138,6 +138,12 @@ const Journey = (() => {
     if (["driving", "arrived"].includes(J.trip.phase) || ["driving", "arrived"].includes(J.home.phase)) placeCar();
   }
 
+  // The other person's screen, shown inline so the owner sees what Chloe sees (README: "the sitter taps Send").
+  function theirs(inner, who = SITTER) {
+    return `<div class="jr-theirs"><span class="jr-theirs-tag">${who}'s phone · demo</span>${inner}</div>`;
+  }
+  const range = () => `${STAY.from}–${STAY.to.split(" ")[0] === STAY.from.split(" ")[0] ? STAY.to.split(" ")[1] : STAY.to}`; // "Oct 9–12"
+  const petsLabel = () => [J.inq.first && pet(), J.inq.second && second().name].filter(Boolean).join(" and ");
   function demo(label, action, extra = "") {
     return `<button type="button" class="btn btn-secondary jr-demo ${extra}" data-jr="${action}">${label}</button>`;
   }
@@ -156,17 +162,18 @@ const Journey = (() => {
     const s = J.inq, cells = [];
     for (let i = 0; i < CAL.firstDow; i++) cells.push(`<span class="jr-day pad" aria-hidden="true"></span>`);
     for (let d = 1; d <= CAL.days; d++) {
-      const past = d < CAL.today, full = CAL.full.includes(d);
+      const one = CAL.onePet.includes(d), both = s.first && s.second;
+      const past = d < CAL.today, full = CAL.full.includes(d) || (one && both);
       const start = s.pick == null ? d === s.from : d === s.pick, end = s.pick == null && d === s.to;
       const mid = s.pick == null && d > s.from && d < s.to;
-      const cls = ["jr-day", past && "past", full && "full", (start || end) && "on", mid && "mid", d === CAL.holiday && "hol"].filter(Boolean).join(" ");
-      cells.push(`<button type="button" class="${cls}" data-jr="day" data-v="${d}" ${past || full ? "disabled" : ""} aria-pressed="${start || end || mid}" aria-label="Oct ${d}${full ? ", Lucy is full" : ""}${d === CAL.holiday ? ", Thanksgiving" : ""}">${d}</button>`);
+      const cls = ["jr-day", past && "past", full && "full", (start || end) && "on", mid && "mid", d === CAL.holiday && "hol", one && "one"].filter(Boolean).join(" ");
+      cells.push(`<button type="button" class="${cls}" data-jr="day" data-v="${d}" ${past || full ? "disabled" : ""} aria-pressed="${start || end || mid}" aria-label="Oct ${d}${full ? ", Chloe is full" : one ? ", room for one pet" : ""}${d === CAL.holiday ? ", Thanksgiving" : ""}">${d}</button>`);
     }
     return `<div class="jr-cal" role="group" aria-label="October 2026">
       <div class="jr-cal-head"><b>October 2026</b><span class="jr-hint">${s.pick == null ? "Tap the first day" : "Now tap the last day"}</span></div>
       <div class="jr-cal-dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
       <div class="jr-cal-grid">${cells.join("")}</div>
-      <p class="jr-hint">● Thanksgiving (holiday rate) · struck through = Lucy is full</p></div>`;
+      <p class="jr-hint">● Thanksgiving (holiday rate) · struck through = ${SITTER} is full${s.first && s.second ? ` · Oct ${CAL.onePet[0]}–${CAL.onePet[CAL.onePet.length - 1]}: room for one pet only` : ""}</p></div>`;
   }
 
   // ① Inquiry
@@ -177,7 +184,8 @@ const Journey = (() => {
         <p class="jr-p">${s.service === "boarding" ? `${n} stays at ${SITTER}'s home.` : `${SITTER} looks after ${n} at your home.`}</p></div>
       <div class="jr-stack"><span class="jr-label">Dates</span>
         <button type="button" class="jr-datefield" data-jr="cal" aria-expanded="${s.cal}"><span>📅 ${STAY.from}–${STAY.to.replace("Oct ", "")} · ${STAY.nights} night${STAY.nights === 1 ? "" : "s"}</span><span class="jr-link">${s.cal ? "Done" : "Change"}</span></button>
-        ${s.cal ? calendar() : ""}</div>
+        ${s.cal ? calendar() : ""}
+        ${s.full ? "" : `<button type="button" class="jr-link jr-try" data-jr="try-full">Try it: ask for dates ${SITTER} is full</button>`}</div>
       <div class="jr-stack"><span class="jr-label">Pets <span class="jr-hint">· pick one or both</span></span><div class="jr-chips">
         ${chip(`${isDog() ? "🐶" : "🐱"} ${esc(n)}`, "first", s.first, "1")}
         ${chip(`${second().emoji} ${second().name}`, "second", s.second, "1")}</div>
@@ -185,13 +193,25 @@ const Journey = (() => {
         <p class="jr-p">Their profiles (breed, age, allergies) go with your question${J.returning ? ", plus the Life Record from the last stay" : ""}.</p></div>
       <label class="jr-stack"><span class="jr-label">Your question (optional)</span>
         <input class="input" id="jrQuestion" value="${esc(s.question)}" placeholder="e.g. Can she take her pill in a treat?"></label>`;
-    if (s.status === "form") return `${ask}${primary(`Ask ${SITTER}`, "ask")}`;
+    if (s.status === "profile") return `<div class="jr-card jr-profile"><b class="jr-h4">${SITTER} · Boarding & house sitting</b>
+        <p class="jr-p">★ 4.9 · replies in minutes · 2 km away · 3 years with dogs and cats</p>
+        <div class="jr-stackbtns">${primary("Book", "book-direct")}${secondaryBtn("Ask before booking", "open-ask")}</div></div>
+      <p class="jr-p">Not sure yet? Ask first: dates, price and your pets' needs. Booking can come later.</p>`;
+    if (s.status === "form") return `${ask}${primary("Send", "ask")}`;
+    if (s.full && s.status === "replied") return `<div class="jr-thread">
+        <div class="jr-bubble me">${esc(s.question || `Are you free Oct 20–23?`)}</div>
+        <div class="jr-bubble ai" data-testid="jr-ai-reply"><div class="jr-ai-label">${SITTER} · just now</div>
+          Hi ${OWNER}! I'm so sorry, I'm fully booked Oct 20–23. I'm free Oct 9–12 if that works, or Goldito can show you sitters near you who are free.
+          <div class="jr-src"><span>From ${SITTER}'s calendar</span></div></div></div>
+      ${primary("Find other sitters", "find-sitters")}
+      ${secondaryBtn(`Ask ${SITTER} about Oct 9–12`, "back-dates")}
+      ${how()}`;
     const thread = `<div class="jr-thread">
-      <div class="jr-bubble me">${esc(s.question || `Is ${SITTER} free ${STAY.from}–${STAY.to}?`)}</div>
+      <div class="jr-bubble me">${esc(s.question || `Is ${SITTER} free ${range()}?`)}</div>
       ${s.status === "sending"
         ? `<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>${SITTER} is typing…</div>`
         : `<div class="jr-bubble ai" data-testid="jr-ai-reply"><div class="jr-ai-label">${SITTER} · just now</div>
-            Hi ${OWNER}! ${SITTER} is free ${STAY.from}–${STAY.to} for ${[J.inq.first && esc(n), J.inq.second && second().name].filter(Boolean).join(" and ")}.
+            Hi ${OWNER}! ${SITTER} is free ${range()} for ${[J.inq.first && esc(n), J.inq.second && second().name].filter(Boolean).join(" and ")}.
             ${J.inq.first ? `${esc(n)} can take the pill in a treat — ${SITTER} does that for other pets every day.` : ""}
             ${J.returning ? `${SITTER} already has ${esc(n)}'s Life Record from the last stay. ` : ""}Here's the total${STAY.holidayDays ? `, including the ${STAY.holiday.split(" ")[0]} rate` : ""}:
             <div style="margin-top:.625rem">${quoteHTML()}</div>
@@ -200,7 +220,17 @@ const Journey = (() => {
     </div>`;
     if (s.status === "sending") return thread;
     return `${thread}<p class="jr-p">Prices come from ${SITTER}'s rates, never from the AI — checkout shows the same numbers.</p>
-      ${primary("Request booking", "request")}`;
+      ${primary("Request booking", "request")}${how()}`;
+  }
+  // What happened on Chloe's side (README ①: drafted in her style, sent with one tap or auto-send).
+  function how() {
+    const full = J.inq.full;
+    return `<details class="jr-how"><summary>How ${SITTER}'s reply was made</summary>${theirs(`
+      <div class="jr-spread"><b class="jr-h4">Questions · ${OWNER}</b><span class="jr-demo-tag">Auto-send on</span></div>
+      <div class="jr-bubble ai" style="max-width:100%"><div class="jr-ai-label">✦ Draft in ${SITTER}'s writing style</div>${full ? "Fully booked Oct 20–23 — offered Oct 9–12 and other sitters." : `Free ${range()} for ${esc(petsLabel())} · ${money(quote().total)} CAD`}</div>
+      <ul class="jr-facts"><li>Dates from ${SITTER}'s calendar</li>${full ? "" : "<li>Total from the server's quote; every amount in the draft is checked against it</li>"}<li>House policy and ${esc(pet())}'s profile${J.returning ? " + Life Record" : ""} (RAG)</li><li>Auto-send replied at a human pace (~30 s) after ${SITTER} accepted the responsibility prompt</li></ul>
+      <div class="jr-row2"><span class="btn btn-secondary btn-sm" aria-hidden="true">Edit</span><span class="btn btn-secondary btn-sm" aria-hidden="true">Regenerate</span><span class="btn btn-primary btn-sm" aria-hidden="true">Send</span></div>
+      <p class="jr-p">With auto-send off, ${SITTER} taps <b>Send</b> instead. Nemotron 3 Nano drafts it in about 3 s.</p>`)}</details>`;
   }
 
   // ② Meet & Greet
@@ -220,21 +250,30 @@ const Journey = (() => {
     </div>
     <div class="jr-divider"></div>
     <div class="jr-stack"><span class="jr-label">Meet & Greet</span>
+      ${J.returning ? `<p class="jr-ok">✓ You've stayed with ${SITTER} before — no Meet & Greet needed</p>`
+      : s.mg === "skipped" ? `<p class="jr-ok">✓ ${SITTER} agreed to skip the Meet & Greet</p>`
+      : s.mg === "skip-asked" ? `<p class="jr-p">You asked to skip. If ${SITTER} says no, the booking is cancelled and you can find another sitter.</p>${demo(`${SITTER} agrees to skip`, "skip-ok")}`
+      : `<p class="jr-p">First stay together, so you meet first.</p>
       <div class="jr-chips">${chip("📹 Video", "mode", s.mode === "video", "video")}${chip("🤝 In person", "mode", s.mode === "in_person", "in_person")}</div>
+      ${s.mode === "in_person" ? `<div class="jr-chips">${[`${SITTER}'s spot · High Park dog area`, "Your spot · Café Paws"].map((t, i) => chip(t, "spot", (s.spot || 0) === i, i)).join("")}</div>` : ""}
       <div class="jr-chips">${["Tue 7:00 PM", "Wed 6:30 PM"].map((t, i) => chip(t, "slot", s.slot === i, i)).join("")}</div>
-      ${s.mg === "none" ? secondaryBtn("Propose this time", "propose")
+      ${s.mg === "none" ? `${secondaryBtn("Propose this time", "propose")}<button type="button" class="jr-link" data-jr="skip-ask">Ask to skip</button>`
         : s.mg === "proposed" ? `<p class="jr-p">Waiting for ${SITTER} to confirm.</p>${demo(`${SITTER} confirms`, "mg-accept")}`
-        : `<p class="jr-ok">✓ ${s.mode === "video" ? "Video" : "In person"} · ${["Tue 7:00 PM", "Wed 6:30 PM"][s.slot]} — confirmed</p>`}
+        : `<p class="jr-ok">✓ ${s.mode === "video" ? "Video" : "In person"} · ${["Tue 7:00 PM", "Wed 6:30 PM"][s.slot]} — confirmed</p>
+          ${s.mode === "video" ? `<div class="jr-card jr-meet"><b class="jr-h4">Google Meet</b><span class="jr-p">meet.google.com/kfd-xqzt-pwm (demo link)</span><span class="jr-p">Invite sent to both calendars</span></div>`
+            : `<p class="jr-p">${["High Park dog area", "Café Paws"][s.spot || 0]} · added to both calendars</p>`}`}`}
     </div>
     <div class="jr-divider"></div>
     <div class="jr-stack"><span class="jr-label">Who drives?</span>
       <div class="jr-spread"><span class="jr-p">Drop-off</span><div class="jr-chips">${chip("You", "dropoff", s.dropoff === "owner", "owner")}${chip(SITTER, "dropoff", s.dropoff === "sitter", "sitter")}</div></div>
       <div class="jr-spread"><span class="jr-p">Pick-up home</span><div class="jr-chips">${chip("You", "pickup", s.pickup === "owner", "owner")}${chip(SITTER, "pickup", s.pickup === "sitter", "sitter")}</div></div>
     </div>
-    ${primary("Continue to booking", "meet-done", s.mg !== "agreed")}
-    ${s.mg !== "agreed" ? `<p class="jr-p" style="text-align:center">Confirm the Meet & Greet to continue.</p>` : ""}`;
+    ${primary("Continue to booking", "meet-done", !mgDone())}
+    ${!mgDone() ? `<p class="jr-p" style="text-align:center">Confirm the Meet & Greet to continue.</p>` : ""}`;
     return out;
   }
+
+  const mgDone = () => J.returning || ["agreed", "skipped"].includes(J.meet.mg);
 
   // ③ Booking
   function booking() {
@@ -252,7 +291,7 @@ const Journey = (() => {
             <button type="button" class="jr-link" data-jr="read" data-v="${c.k}">${s.open.has(c.k) ? "Show less" : "Read full text"}</button></div>`).join("")}
           <p class="jr-legal">Demo template — not legal advice.</p></div>
         <label class="jr-stack"><span class="jr-label">Type your full name to sign</span>
-          <input class="input" id="jrSign" value="${esc(s.name)}" placeholder="e.g. Chloe Park" autocomplete="name"></label>
+          <input class="input" id="jrSign" value="${esc(s.name)}" placeholder="e.g. Robert Park" autocomplete="name"></label>
         <button type="button" class="btn btn-primary" data-jr="pay" id="jrPay"${ready && s.status !== "paying" ? "" : " disabled"}>${s.status === "paying" ? `<span class="spinner" aria-hidden="true"></span>Paying…` : `Pay ${money(q.total)} (demo)`}</button>
         <p class="jr-p" style="text-align:center">Demo payment — no card needed.</p>`;
     }
@@ -290,12 +329,15 @@ const Journey = (() => {
     const who = sitterDrives ? `${SITTER} is driving to you` : `You're driving to ${SITTER}'s`;
     if (t.phase === "idle")
       return `<p class="jr-p">${sitterDrives ? `${SITTER} picks ${esc(n)} up at 7:30 AM. You'll watch the trip live.` : `You drop ${esc(n)} off at ${SITTER}'s at 7:30 AM.`}</p>
-        ${sitterDrives ? demo(`${SITTER} starts the drive`, "trip-start") : primary("Start the drive", "trip-start")}`;
+        ${sitterDrives ? demo(`${SITTER} starts the trip`, "trip-start") : primary("Start trip", "trip-start")}`;
+    if (t.phase === "permit") return permit(sitterDrives, "trip-allow");
     if (t.phase === "driving")
       return `${mapHTML(t, who)}${secondaryBtn("Simulate the drive", "trip-skip")}`;
     if (t.phase === "arrived")
       return `${mapHTML(t, who)}<div class="jr-card"><h3 class="jr-h3">${sitterDrives ? `${SITTER} is here` : `You're at ${SITTER}'s`}</h3>
-        <p class="jr-p">${sitterDrives ? `${SITTER} has your buzzer card. Hand ${esc(n)} over at the door.` : "Visitor parking P2, spot 14. Buzz 104."}</p></div>
+        <p class="jr-p">${sitterDrives ? `${SITTER} has your buzzer and lockbox card. Hand ${esc(petsLabel())} over at the door.` : "Visitor parking P2, spot 14. Buzz 104."}</p></div>
+        ${sitterDrives ? theirs(`<b class="jr-h4">🔓 Entry for ${OWNER}'s place</b><div class="jr-record jr-entry2"><div><b>Buzzer</b><p>104</p></div><div><b>Lockbox</b><p>•••• · tap to show</p></div></div>
+          <p class="jr-p">Open for ${SITTER} from Fri 5:30 AM until the stay ends. Never in a notification or the AI.</p>`) : ""}
         ${demo(`${SITTER} snaps the handoff photo`, "handoff")}`;
     if (t.phase === "checking")
       return `<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>Checking the handoff photo…</div>`;
@@ -310,27 +352,38 @@ const Journey = (() => {
       ${primary(`Bring ${esc(n)} home`, "care-done")}`;
   }
 
+  // Location permission before any live trip (README ④: "taps Allow on the location screen").
+  function permit(theirSide, action) {
+    const body = `<b class="jr-h4">Share your location for this trip?</b>
+      <ul class="jr-facts"><li>Only while the trip runs — it stops on arrival</li><li>Only with ${theirSide ? OWNER : SITTER}, the other person on this booking</li><li>No route history is stored</li></ul>
+      ${theirSide ? `<span class="btn btn-primary btn-sm" aria-hidden="true">Allow while driving</span>` : ""}`;
+    return theirSide ? `${theirs(body)}${demo(`${SITTER} taps Allow`, action)}` : `<div class="jr-card">${body}</div>${primary("Allow while driving", action)}`;
+  }
+
   // ⑤ Home & review
   function completion() {
     const h = J.home, n = pet(), ownerDrives = J.meet.pickup === "owner";
     if (h.phase === "idle")
       return `<p class="jr-p">${ownerDrives ? `You pick ${esc(n)} up at 5:00 PM. ${SITTER} sees your ETA.` : `${SITTER} brings ${esc(n)} home at 5:00 PM.`}</p>
-        ${ownerDrives ? primary("Start the drive", "home-start") : demo(`${SITTER} starts the drive`, "home-start")}`;
+        ${ownerDrives ? primary("Start trip", "home-start") : demo(`${SITTER} starts the trip`, "home-start")}`;
+    if (h.phase === "permit") return permit(!ownerDrives, "home-allow");
     if (h.phase === "driving")
       return `${mapHTML(h, ownerDrives ? `You're driving to ${SITTER}'s` : `${SITTER} is driving to you`)}${secondaryBtn("Simulate the drive", "home-skip")}`;
     if (h.phase === "arrived")
       return `${mapHTML(h, ownerDrives ? `You're at ${SITTER}'s` : `${SITTER} is here`)}<div class="jr-card"><h3 class="jr-h3">${ownerDrives ? `You're at ${SITTER}'s` : `${SITTER} is here`}</h3>
         <p class="jr-p">Visitor parking P2, spot 14.</p></div>${demo(`${SITTER} snaps the return photo`, "return")}`;
     let out = `<div class="jr-card"><div class="jr-photo"><img src="${A.photo()}" alt="${esc(n)} home safe">
-      <div class="jr-stack"><h3 class="jr-h3">${esc(n)} is home safe 🏠</h3><span class="jr-p">Return photo verified · ${STAGES[4].when}</span></div></div></div>`;
+      <div class="jr-stack"><h3 class="jr-h3">${esc(petsLabel())} ${J.inq.first && J.inq.second ? "are" : "is"} home safe 🏠</h3><span class="jr-p">Return photo verified · ${STAGES[4].when}</span></div></div></div>
+      <div class="jr-summary" aria-label="Stay summary"><div><b>${STAY.nights}</b><span>nights</span></div><div><b>${STAY.nights}</b><span>daily notes</span></div><div><b>14</b><span>photos</span></div><div><b>18</b><span>tasks done</span></div></div>`;
     if (!h.review)
       return out + `<div class="jr-stack"><span class="jr-label">How was ${SITTER}?</span>
         <div class="jr-stars" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map((i) => `<button type="button" class="${i <= h.stars ? "on" : ""}" data-jr="star" data-v="${i}" role="radio" aria-checked="${i === h.stars}" aria-label="${i} star${i > 1 ? "s" : ""}">★</button>`).join("")}</div>
-        <div class="jr-chips">${[`Thank you, ${SITTER}!`, `${n} loved it`, "Great photos"].map((t) => chip(t, "thanks", h.thanks === t, t)).join("")}</div></div>
+        <div class="jr-chips">${[`Thank you, ${SITTER}!`, `${n} loved it`, "Great photos"].map((t) => chip(t, "thanks", h.thanks === t, t)).join("")}</div>
+        <textarea class="input jr-textarea jr-short" id="jrComment" maxlength="500" placeholder="Anything else? (optional)" aria-label="Review comment">${esc(h.comment)}</textarea></div>
         ${primary("Send review", "review", h.stars === 0)}`;
     if (h.record !== "ready")
       return out + `<p class="jr-ok">✓ Review sent to ${SITTER}</p><div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>Writing ${esc(n)}'s Life Record…</div>`;
-    const src = `From ${SITTER} · ${STAY.from}–${STAY.to}`;
+    const src = `From ${SITTER} · ${range()}`;
     return out + `<p class="jr-ok">✓ Review sent to ${SITTER}</p>
       <div class="jr-card" data-testid="jr-record"><div class="jr-spread"><h3 class="jr-h3">${esc(n)}'s Life Record</h3><span class="jr-demo-tag">Only recorded facts</span></div>
         <div class="jr-record">
@@ -352,7 +405,7 @@ const Journey = (() => {
   ];
   const CROPS = ["50% 30%", "30% 60%", "70% 45%", "50% 80%"];
   function dailyNote() {
-    const c = J.check, on = (k) => !c.off.has(k), n = pet();
+    const c = J.check, on = (k) => !c.off.has(k), n = c.pet ? second().name : pet();
     const parts = [];
     if (on("meal")) parts.push(`${n} finished every bit of her breakfast`);
     if (on("meds")) parts.push("took her skin pill tucked in a treat");
@@ -360,8 +413,9 @@ const Journey = (() => {
     let text = parts.length ? `${parts.join(", ").replace(/, ([^,]*)$/, ", and $1")}!` : `${n} had a calm day with me.`;
     if (on("potty")) text += " Her potty was perfectly healthy, too.";
     if (on("nap")) text += " She's napping on her blanket now.";
-    if (c.note.trim()) text += ` ${c.note.trim()}`;
-    return text.charAt(0).toUpperCase() + text.slice(1);
+    const mine = c.mine.filter((m) => !c.off.has("m:" + m)).map((m) => m.replace(/[.!]?$/, ".")).join(" ");
+    text = text.charAt(0).toUpperCase() + text.slice(1);
+    return mine ? `${mine.charAt(0).toUpperCase() + mine.slice(1)} ${text}` : text; // the sitter's own lines go first (app: REPORT-4)
   }
   function checkHTML() {
     const c = J.check, n = pet();
@@ -373,18 +427,20 @@ const Journey = (() => {
       return `<div class="jr-card" data-testid="jr-check">${head}<div class="jr-typing"><span class="jr-dots"><i></i><i></i><i></i></span>Writing ${esc(n)}'s daily note in ${SITTER}'s voice…</div></div>`;
     if (c.status === "review")
       return `<div class="jr-card" data-testid="jr-check">${head}
-        <div class="jr-bubble ai" style="max-width:100%"><div class="jr-ai-label">✦ Draft · only from the chips and note</div>${esc(dailyNote())}</div>
+        <div class="jr-bubble ai" style="max-width:100%"><div class="jr-ai-label">✦ Draft · only from the chips and your lines</div>${esc(dailyNote())}</div>
         <div class="jr-shots jr-shots-sm">${[...c.photos].map((i) => `<img src="${A.photo()}" alt="" style="object-position:${CROPS[i]}">`).join("")}</div>
         ${primary(`Send to ${OWNER}`, "check-send")}
-        <button type="button" class="jr-link" style="margin:0;align-self:center" data-jr="check-back">Change chips or note</button></div>`;
+        <button type="button" class="jr-link" style="margin:0;align-self:center" data-jr="check-back">Change chips or lines</button></div>`;
     return `<div class="jr-card" data-testid="jr-check">${head}
+      ${J.inq.first && J.inq.second ? `<div class="jr-chips" role="group" aria-label="Pet">${[pet(), second().name].map((nm, i) => chip(`${esc(nm)} · ${i === c.pet ? "Draft" : "Not started"}`, "check-pet", c.pet === i, i)).join("")}</div>` : ""}
       <div class="jr-stack"><span class="jr-label">Photos (${c.photos.size}/2)</span>
         <div class="jr-shots">${CROPS.map((pos, i) => `<button type="button" class="jr-shot${c.photos.has(i) ? " on" : ""}" data-jr="check-photo" data-v="${i}" aria-pressed="${c.photos.has(i)}" aria-label="Photo ${i + 1}"><img src="${A.photo()}" alt="" style="object-position:${pos}"></button>`).join("")}</div></div>
       <div class="jr-stack"><span class="jr-label">✦ Suggested from today (6:00 PM) · tap to turn off</span>
         <div class="jr-chips jr-check-chips">${CHECK_CHIPS().map((x) => `<button type="button" class="chip${c.off.has(x.k) ? " jr-off" : " active"}" data-jr="check-chip" data-v="${x.k}" aria-pressed="${!c.off.has(x.k)}">${x.t}</button>`).join("")}</div></div>
-      <label class="jr-stack"><span class="jr-spread"><span class="jr-label">Short note (optional)</span><span class="jr-p" id="jrNoteCount">${c.note.length}/200</span></span>
-        <input class="input" id="jrNote" maxlength="200" value="${esc(c.note)}" placeholder="e.g. She loved the new squeaky toy"></label>
-      ${primary("Generate daily note", "check-generate", c.off.size === CHECK_CHIPS().length && !c.note.trim())}</div>`;
+      ${c.mine.length ? `<div class="jr-chips">${c.mine.map((m) => `<span class="chip${c.off.has("m:" + m) ? " jr-off" : " active"} jr-mine">${esc(m)}<button type="button" data-jr="mine-x" data-v="${esc(m)}" aria-label="Remove ${esc(m)}">×</button></span>`).join("")}</div>` : ""}
+      <div class="jr-stack"><span class="jr-label">Anything to add?</span>
+        <div class="jr-addline"><input class="input" id="jrNote" maxlength="80" value="${esc(c.note)}" placeholder="e.g. Learned a new trick">${secondaryBtn("Add", "mine-add")}</div></div>
+      ${primary("Write the report", "check-generate", c.off.size === CHECK_CHIPS().length && !c.mine.length)}</div>`;
   }
 
   // ---------- trip animation ----------
@@ -435,13 +491,13 @@ const Journey = (() => {
       if (!c) { c = document.createElement("div"); c.className = "jr-gate jr jr-home"; A.homeMount.prepend(c); }
       A.homeMount.classList.toggle("jr-locked", !J.unlocked);
       const i = Math.min(J.stage, 4);
-      c.innerHTML = J.complete ? `<div class="jr-card"><span class="jr-eyebrow">Stay complete</span><h2 class="jr-h3">${esc(n)} is home safe 🏠</h2>
+      c.innerHTML = J.complete ? `<div class="jr-card"><span class="jr-eyebrow">Stay complete</span><h2 class="jr-h3">${esc(petsLabel())} ${J.inq.first && J.inq.second ? "are" : "is"} home safe 🏠</h2>
           <p class="jr-p">Life Record saved for next time.</p>${secondaryBtn("Plan the next stay", "go-stay")}</div>`
         : J.unlocked ? `<button type="button" class="jr-card" data-jr="go-stay" style="text-align:left;cursor:pointer;font:inherit;color:inherit">
           <span class="jr-spread"><span class="jr-eyebrow">Stay · step ${i + 1} of 5</span><span class="jr-p">Open ›</span></span>
           <span class="jr-progress">${STAGES.map((_, k) => `<i class="${k <= i ? "on" : ""}"></i>`).join("")}</span></button>`
         : `<div class="jr-card"><span class="jr-eyebrow">${J.stage === 0 ? "Plan a stay" : `Stay · step ${i + 1} of 5`}</span>
-          <h2 class="jr-h3">${J.stage === 0 ? `Going away? Ask ${SITTER} about ${STAY.from}–${STAY.to}` : `${STAGES[i].title} with ${SITTER}`}</h2>
+          <h2 class="jr-h3">${J.stage === 0 ? `Going away? Ask ${SITTER} about ${range()}` : `Next: ${STAGES[i].title}`}</h2>
           <span class="jr-progress">${STAGES.map((_, k) => `<i class="${k < i ? "on" : ""}"></i>`).join("")}</span>
           ${primary(J.stage === 0 ? `Ask ${SITTER}` : "Continue", "go-stay")}</div>`;
     }
@@ -470,8 +526,9 @@ const Journey = (() => {
       case "day": {
         const d = Number(v);
         if (s.inq.pick == null || d <= s.inq.pick) { s.inq.pick = d; break; }
-        // A range can't run across days Lucy is full.
-        if (CAL.full.some((f) => f > s.inq.pick && f < d)) { s.inq.pick = d; break; }
+        // A range can't run across days Chloe is full.
+        const blocked = CAL.full.concat(s.inq.first && s.inq.second ? CAL.onePet : []);
+        if (blocked.some((f) => f > s.inq.pick && f < d)) { s.inq.pick = d; break; }
         s.inq.from = s.inq.pick; s.inq.to = d; s.inq.pick = null; s.inq.cal = false;
         setStay(s.inq.from, s.inq.to); break;
       }
@@ -480,6 +537,11 @@ const Journey = (() => {
         s.inq.status = "sending"; render();
         setTimeout(() => { s.inq.status = "replied"; render(); notify(`${SITTER}'s assistant replied with a quote`); }, reduce() ? 300 : 1600);
         return;
+      case "open-ask": s.inq.status = "form"; break;
+      case "book-direct": s.inq.status = "replied"; notify(`Booking request sent to ${SITTER}`); finishStage("stage"); return;
+      case "try-full": Object.assign(s.inq, {full: true, from: 20, to: 23, cal: false, question: "Are you free Oct 20–23?"}); setStay(20, 23); break;
+      case "back-dates": Object.assign(s.inq, {full: false, status: "form", from: 9, to: 12, question: `Can ${pet()} take her pill in a treat?`}); setStay(9, 12); break;
+      case "find-sitters": A.toast("Sitters near you", "Opens the sitter list in the app — not part of this demo."); return;
       case "request": notify(`Booking request sent to ${SITTER}`); finishStage("stage"); return;
       case "generate":
         s.meet.request = (document.getElementById("jrRequest") || {}).value || s.meet.request;
@@ -490,7 +552,10 @@ const Journey = (() => {
       case "mode": s.meet.mode = v; break;
       case "slot": s.meet.slot = Number(v); break;
       case "propose": s.meet.mg = "proposed"; break;
-      case "mg-accept": s.meet.mg = "agreed"; notify(`${SITTER} confirmed the Meet & Greet`); break;
+      case "spot": s.meet.spot = Number(v); break;
+      case "skip-ask": s.meet.mg = "skip-asked"; break;
+      case "skip-ok": s.meet.mg = "skipped"; notify(`${SITTER} agreed to skip the Meet & Greet`); break;
+      case "mg-accept": s.meet.mg = "agreed"; notify(`${SITTER} confirmed the Meet & Greet${s.meet.mode === "video" ? " · Google Meet invite sent" : ""}`); break;
       case "dropoff": s.meet.dropoff = v; break;
       case "pickup": s.meet.pickup = v; break;
       case "meet-done": finishStage("stage"); return;
@@ -509,7 +574,8 @@ const Journey = (() => {
         codeTimer = setTimeout(() => { s.book.codeShown = false; render(); }, 10000);
         break;
       case "booking-done": finishStage("stage"); return;
-      case "trip-start":
+      case "trip-start": s.trip.phase = "permit"; break;
+      case "trip-allow":
         notify(J.meet.dropoff === "sitter" ? `${SITTER} is on the way` : "Trip started", "Fri 7:18 AM");
         drive(s.trip, 12, () => notify(J.meet.dropoff === "sitter" ? `${SITTER} has arrived` : `You arrived at ${SITTER}'s`, "Fri 7:30 AM"));
         return;
@@ -533,6 +599,13 @@ const Journey = (() => {
         if (p.has(i)) p.delete(i); else if (p.size < 2) p.add(i); else A.toast("Up to 2 photos", "Turn one off to pick another.");
         break;
       }
+      case "check-pet": s.check.pet = Number(v); break;
+      case "mine-add": {
+        const v2 = (document.getElementById("jrNote") || {}).value || "";
+        if (v2.trim()) { s.check.mine.push(v2.trim()); s.check.note = ""; }
+        break;
+      }
+      case "mine-x": s.check.mine = s.check.mine.filter((m) => m !== v); s.check.off.delete("m:" + v); break;
       case "check-chip": s.check.off.has(v) ? s.check.off.delete(v) : s.check.off.add(v); break;
       case "check-generate":
         s.check.status = "generating"; render();
@@ -545,13 +618,14 @@ const Journey = (() => {
         A.celebrate("stage", A.stayMount.querySelector('[data-testid="jr-check"] .jr-ok'));
         return;
       case "care-done": finishStage("stage"); return;
-      case "home-start":
+      case "home-start": s.home.phase = "permit"; break;
+      case "home-allow":
         notify(J.meet.pickup === "owner" ? `${SITTER} can see your ETA` : `${SITTER} is bringing ${pet()} home`, "Mon 4:45 PM");
         drive(s.home, 15, () => {});
         return;
       case "home-skip": arrive(s.home, () => {}); return;
       case "return":
-        s.home.phase = "home"; notify(`${pet()} is home safe 🏠`, "Mon 5:02 PM");
+        s.home.phase = "home"; notify(`${petsLabel()} ${J.inq.first && J.inq.second ? "are" : "is"} home safe 🏠`, "Mon 5:02 PM");
         render(); A.celebrate("home", A.stayMount.querySelector(".jr-photo"));
         return;
       case "star": s.home.stars = Number(v); break;
@@ -612,13 +686,9 @@ const Journey = (() => {
     const t = e.target;
     if (t.id === "jrSign") { J.book.name = t.value; syncPay(); }
     if (t.id === "jrQuestion") J.inq.question = t.value;
+    if (t.id === "jrComment") J.home.comment = t.value;
     if (t.id === "jrRequest") J.meet.request = t.value;
-    if (t.id === "jrNote") {
-      J.check.note = t.value;
-      const c = document.getElementById("jrNoteCount"); if (c) c.textContent = `${t.value.length}/200`;
-      const g = A.stayMount.querySelector('[data-jr="check-generate"]');
-      if (g) g.disabled = J.check.off.size === CHECK_CHIPS().length && !t.value.trim();
-    }
+    if (t.id === "jrNote") J.check.note = t.value;
     if (t.dataset && t.dataset.jrEdit) J.meet.checklist[Number(t.dataset.i)][t.dataset.jrEdit] = t.value;
   }
   function onChange(e) {
@@ -670,7 +740,7 @@ const Journey = (() => {
     if (A.notesSheet && !document.getElementById("jrJump")) {
       const j = document.createElement("div");
       j.id = "jrJump"; j.className = "jr-jump jr";
-      j.innerHTML = `<span class="jr-label">Testing: jump to a stage</span><div class="jr-chips">${["① Inquiry", "② Meet & Greet", "③ Booking", "④ Pick-up day", "④ Care in progress", "⑤ Home & review"]
+      j.innerHTML = `<span class="jr-label">Testing: jump to a stage</span><div class="jr-chips">${["① Inquiry", "② Meet & Greet", "③ Booking", "④ Pick-up trip", "④ Care in progress", "⑤ Completion"]
         .map((t, i) => `<button type="button" class="chip" data-jump="${[0, 1, 2, 3, "care", 4][i]}">${t}</button>`).join("")}</div>`;
       j.addEventListener("click", (e) => {
         const c = e.target.closest("[data-jump]");
@@ -684,6 +754,7 @@ const Journey = (() => {
     A.phone.addEventListener("click", onClick);
     A.stayMount.addEventListener("input", onInput);
     A.stayMount.addEventListener("change", onChange);
+    A.stayMount.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "jrNote") { e.preventDefault(); handle("mine-add"); } });
     render();
   }
 

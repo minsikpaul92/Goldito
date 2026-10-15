@@ -64,6 +64,8 @@
     border:3px dashed var(--color-border-strong);border-radius:28px;color:var(--color-text-muted);font-size:1.125rem;background:var(--color-background)}
   .ph b{color:var(--color-text);font-size:1.5rem}
   .ph svg{width:56px;height:56px}
+  .ph.ph-mini{position:static;transform:none !important;width:13rem;height:auto;padding:1.5rem 1rem;gap:.5rem;border-radius:20px;font-size:.8125rem}
+  .ph.ph-mini b{font-size:1rem}.ph.ph-mini svg{width:32px;height:32px}.ph.ph-mini span:last-child{font-size:.8125rem !important}
   .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--color-text-muted)}
   /* Notes */
   .notes{border-left:1px solid var(--color-border);overflow:auto;padding:1rem 1.125rem 1.5rem;background:var(--color-surface);display:flex;flex-direction:column;gap:1rem}
@@ -96,17 +98,20 @@
     <div class="bar">
       <h1 id="title">Owner · Home</h1>
       <div class="seg" id="looks" role="group" aria-label="Our look"></div>
-      <button type="button" class="btn2" id="restart"><span class="en">↻ Restart</span><span class="ko">↻ 처음부터</span></button>
-      <a class="btn2" id="full" target="_blank" rel="noopener">Open full page ↗</a>
+      <button type="button" class="btn2" id="restart" data-tip="Reload the Draft from the start of this screen" data-tip-ko="이 화면 처음부터 초안을 다시 불러와요"><span class="en">↻ Restart</span><span class="ko">↻ 처음부터</span></button>
+      <a class="btn2" id="full" target="_blank" rel="noopener" data-tip="Open this look on its own page, full size" data-tip-ko="이 룩을 단독 페이지에서 크게 열어요">Open full page ↗</a>
     </div>
     <div class="phones" id="phones" tabindex="0" role="region" aria-label="Today's app and the draft"></div>
   </main>
   <aside class="notes" id="notes" aria-label="Design notes"></aside>
 </div>
-<script src="screens.js?v=1"></script>
+<script src="screens.js?v=4"></script>
 <script>
 (() => {
-  const S = window.GOLDITO_SCREENS, LOOKS = window.GOLDITO_LOOKS, GROUPS = window.GOLDITO_GROUPS, FIG = window.GOLDITO_FIGMA;
+  const ALL_LOOKS = window.GOLDITO_LOOKS, PRIMARY = window.GOLDITO_PRIMARY_LOOK || "c";
+  // Only the primary look while the others are paused (screens.js: GOLDITO_SHOW_ALL_LOOKS).
+  const LOOKS = window.GOLDITO_SHOW_ALL_LOOKS ? ALL_LOOKS : ALL_LOOKS.filter((l) => l.k === PRIMARY);
+  const S = window.GOLDITO_SCREENS, GROUPS = window.GOLDITO_GROUPS, FIG = window.GOLDITO_FIGMA, REPO = window.GOLDITO_REPO;
   const $ = (q) => document.querySelector(q);
   const W = 402, H = 874;          // phone screen (design frame); journey pages render a 418×860 phone
   // EN / 한국어 (toggle in the site bar). Screen names, notes and labels come from screens.js in both languages.
@@ -119,21 +124,24 @@
     built: () => t("In the app · not captured yet", "앱에 있음 · 아직 캡처 안 함"),
     none: () => t("Not built yet", "아직 구현 안 됨"),
   };
-  let cur = S[0], look = "c", run = Date.now();
+  let cur = S[0], look = PRIMARY, run = Date.now();
   const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
   // ---------- list ----------
   function lists() {
     $("#list").innerHTML = GROUPS.map(([g, en, k]) => `<div class="grp">${t(en, k)}</div>` +
-      S.filter((s) => s.group === g).map((s) => `<button type="button" class="item" data-id="${s.id}"><span>${nm(s)}</span><span class="dot ${s.live}" aria-hidden="true"></span><span class="sr">${STATUS[s.live](s)}</span></button>`).join("")).join("") +
+      S.filter((s) => s.group === g).map((s) => `<button type="button" class="item" data-id="${s.id}" data-tip="${STATUS[s.live](s).replace(/"/g, "&quot;")}"><span>${nm(s)}</span><span class="dot ${s.live}" aria-hidden="true"></span><span class="sr">${STATUS[s.live](s)}</span></button>`).join("")).join("") +
       `<div class="legend"><span><i class="dot live"></i>${t("Live in the app, captured", "앱에 있음, 캡처됨")}</span><span><i class="dot built"></i>${t("In the app, not captured yet", "앱에 있음, 아직 캡처 안 함")}</span><span><i class="dot none"></i>${t("Not built yet", "아직 구현 안 됨")}</span></div>`;
     $("#pickSel").innerHTML = GROUPS.map(([g, en, k]) => `<optgroup label="${t(en, k)}">${S.filter((s) => s.group === g).map((s) => `<option value="${s.id}">${nm(s)}</option>`).join("")}</optgroup>`).join("");
-    $("#looks").innerHTML = LOOKS.map((l, i) => `<button type="button" data-look="${l.k}">${lk(l)}<kbd>${i + 1}</kbd></button>`).join("") + `<button type="button" data-look="all">${t("All looks", "모든 룩")}<kbd>4</kbd></button>`;
+    $("#looks").innerHTML = LOOKS.map((l, i) => `<button type="button" data-look="${l.k}" data-tip="${{c: "Calm, closest to the code", b: "Ink outlines and a pixel room", d: "The logo's typeface, tag gold, color blocks"}[l.k]}" data-tip-ko="${{c: "차분하고 코드와 가장 가까움", b: "잉크 외곽선과 픽셀 룸", d: "로고 서체, 태그 골드, 컬러 블록"}[l.k]}">${lk(l)}<kbd>${i + 1}</kbd></button>`).join("") + (LOOKS.length < 2 ? "" : `<button type="button" data-look="all" data-tip="All three looks side by side" data-tip-ko="세 룩을 나란히">${t("All looks", "모든 룩")}<kbd>4</kbd></button>`);
+    $("#looks").hidden = LOOKS.length < 2;
   }
 
   // ---------- frames ----------
   // ?r= makes every visit load a fresh copy (no stale cache); the full-page link leaves it out.
-  const oursSrc = (l, fresh = true) => cur.ours.kind === "tab"
+  const oursSrc = (l, fresh = true) => cur.ours.kind === "steps"
+    ? `steps.html${fresh ? `?embed=1&r=${run}` : ""}#${cur.ours.flow}`
+    : cur.ours.kind === "tab"
     ? `redesign/app.html?skin=${l.k}${fresh ? `&r=${run}` : ""}#${cur.ours.id}`
     : `${l.journey}${fresh ? `?r=${run}` : ""}${cur.ours.hash ? "#" + cur.ours.hash : ""}`;
   const ICON = {
@@ -147,10 +155,10 @@
       : `<div class="ph">${ICON[s.live]}<b>${s.live === "built" ? t("In the app, not captured yet", "앱에 있지만 아직 캡처 안 함") : t("Not in the app yet", "아직 앱에 없어요")}</b><span>${s.task}</span>
          <span style="font-size:.9375rem">${s.live === "built" ? t("Capture it from the live demo to compare side by side.", "라이브 데모에서 캡처하면 나란히 비교할 수 있어요.") : t("The design on the right is what to build.", "오른쪽 디자인이 만들 화면이에요.")}</span></div>`;
     return `<div class="slot" data-kind="live"><div class="slot-head"><b>${t("Today's app", "지금 앱")}</b><span class="chip ${s.live}">${s.live === "live" ? t(`🔒 Screenshot · not clickable · ${s.captured}`, `🔒 스크린샷 · 클릭 안 됨 · ${s.captured}`) : STATUS[s.live](s)}</span></div>
-      <div class="box${s.live === "live" ? " still" : ""}" data-w="${W}" data-h="${H}" title="${s.live === "live" ? t("A screenshot of the live app — tap through the draft on the right", "라이브 앱 스크린샷이에요 — 오른쪽 초안을 눌러 보세요") : ""}">${inner}</div></div>`;
+      ${s.live === "live" ? `<div class="box still" data-w="${W}" data-h="${H}" title="${t("A screenshot of the live app — tap through the draft on the right", "라이브 앱 스크린샷이에요 — 오른쪽 초안을 눌러 보세요")}">${inner}</div>` : inner.replace('class="ph"', 'class="ph ph-mini"')}</div>`;
   }
   function oursSlot(l) {
-    const jw = cur.ours.kind === "tab" ? W : 418, jh = cur.ours.kind === "tab" ? H : 860;
+    const jw = cur.ours.kind === "journey" ? 418 : W, jh = cur.ours.kind === "journey" ? 860 : H;
     return `<div class="slot" data-kind="ours"><div class="slot-head"><b>${t("Draft", "초안")} · ${lk(l)}</b><span class="chip ours">${cur.ours.kind === "tab" ? t("Design-system screen · not clickable yet", "디자인 시스템 화면 · 아직 클릭 안 됨") : t("👆 Interactive · tap through it", "👆 인터랙티브 · 눌러 보세요")}</span></div>
       <div class="box" data-w="${jw}" data-h="${jh}"><span class="loading">${t("Loading…", "불러오는 중…")}</span><iframe title="Draft, ${l.label}: ${cur.name}" src="${oursSrc(l)}" style="width:${jw}px;height:${jh}px"></iframe></div></div>`;
   }
@@ -188,8 +196,11 @@
       <div><h3>${t("Components", "컴포넌트")}</h3><div class="comps">${s.components.map((c) => `<code>${c}</code>`).join("")}</div></div>
       <div class="open-links"><h3>${t("Open", "열기")}</h3>
         <a href="${FIG}${s.figma}" target="_blank" rel="noopener">${t("Figma section ↗", "Figma 섹션 ↗")}</a>
-        <p class="hint" style="margin:0">${s.figmaScreens.length ? `${t("In Figma", "Figma 화면")}: ${s.figmaScreens.join(" · ")}` : t("Not in Figma as its own screen: the in-care tabs are the Today's app screens.", "Figma에 별도 화면은 없어요: 돌봄 중 탭은 ‘지금 앱’ 화면이에요.")}</p>
-        ${isTab ? `<a href="redesign/index.html">${t("All tab notes", "탭별 노트 전체")}</a>` : ""}</div>
+        ${s.readme ? `<a href="${REPO.replace("/blob/main/", "")}#${s.readme}" target="_blank" rel="noopener">${t("README: what we promise ↗", "README: 약속한 기능 ↗")}</a>` : ""}
+        ${(s.docs || []).map(([l, path]) => `<a href="${REPO}${path}" target="_blank" rel="noopener">${l} ${t("doc", "문서")} ↗</a>`).join("")}
+        <a href="${REPO}docs/plan/test-guide.ko.md" target="_blank" rel="noopener">${t("What's built · test guide ↗", "구현 현황 · 테스트 가이드 ↗")}</a>
+        <p class="hint" style="margin:0">${s.figmaScreens.length ? `${t("In Figma", "Figma 화면")}: ${s.figmaScreens.join(" · ")}` : (s.ours.kind === "steps" ? t("Not in Figma yet: the step-by-step flows are a new exploration.", "아직 Figma에 없어요: 단계별 흐름은 새 탐색이에요.") : t("Not in Figma as its own screen: the in-care tabs are the Today's app screens.", "Figma에 별도 화면은 없어요: 돌봄 중 탭은 ‘지금 앱’ 화면이에요."))}</p>
+</div>
       <p class="hint">${t("Today's app is a screenshot of the live demo. The draft is the interactive part — as you tap through it, this list, the notes and the Figma link follow along.", "‘지금 앱’은 라이브 데모 스크린샷이에요. 초안은 직접 눌러 볼 수 있고, 누르는 대로 목록·노트·Figma 링크가 따라와요.")}</p>
       <p class="hint">${t("Keys", "단축키")}: <kbd>↑</kbd> <kbd>↓</kbd> ${t("screens", "화면")} · <kbd>1</kbd>–<kbd>4</kbd> ${t("looks", "룩")}</p>`;
   }
@@ -207,7 +218,9 @@
   function render() {
     chrome();
     $("#looks").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.look === look)));
-    const shown = look === "all" ? LOOKS : LOOKS.filter((l) => l.k === look);
+    $("#looks").hidden = cur.ours.kind === "steps" || LOOKS.length < 2;
+    // Step-by-step flows exist in one look (the design-system tokens), so they show once.
+    const shown = cur.ours.kind === "steps" ? [{k: "c", label: "Step by step", ko: "단계별"}] : look === "all" ? LOOKS : LOOKS.filter((l) => l.k === look);
     $("#phones").innerHTML = liveSlot() + shown.map(oursSlot).join("");
     const one = shown[0];
     $("#full").href = oursSrc(one, false);
@@ -240,13 +253,15 @@
     const i = S.indexOf(cur);
     if (e.key === "ArrowDown" || e.key === "]") { e.preventDefault(); if (i < S.length - 1) go(S[i + 1].id); }
     else if (e.key === "ArrowUp" || e.key === "[") { e.preventDefault(); if (i > 0) go(S[i - 1].id); }
-    else { const k = { 1: "c", 2: "b", 3: "d", 4: "all" }[e.key]; if (k) { look = k; render(); } }
+    else { const k = LOOKS.length < 2 ? null : { 1: "c", 2: "b", 3: "d", 4: "all" }[e.key]; if (k) { look = k; render(); } }
   });
   // #<screen>/<look> deep links (also when a link is pasted into the same tab).
   function fromHash() {
     const [hid, hl] = location.hash.slice(1).split("/");
     cur = S.find((x) => x.id === hid) || S[0];
-    look = ["c", "b", "d", "all"].includes(hl) ? hl : store.get("goldito-proto-look", "c");
+    // Old links (#…/c, #…/b, #…/all) land on the primary look while the others are paused.
+    const ok = LOOKS.map((l) => l.k).concat(LOOKS.length > 1 ? ["all"] : []);
+    look = ok.includes(hl) ? hl : ok.includes(store.get("goldito-proto-look", "")) ? store.get("goldito-proto-look", "") : PRIMARY;
     run = Date.now(); render();
   }
   addEventListener("hashchange", fromHash);

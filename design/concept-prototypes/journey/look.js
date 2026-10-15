@@ -26,8 +26,8 @@ const Look = (() => {
         <div class="lk-preview" style="--lk:${v.primary};--lk-fg:${v.fg};--lk-soft:${v.soft};--lk-soft-text:${v.softText}">
           <div class="lk-photo"><img src="${A.photo()}" alt="${name}"></div>
           <div class="lk-mock" aria-hidden="true">
-            <span class="lk-pill"><i></i>With Lucy now</span>
-            <b>${name} is with Lucy</b>
+            <span class="lk-pill"><i></i>With Chloe now</span>
+            <b>${name} is with Chloe</b>
             <span class="lk-bar"><i></i><i></i><i></i><i class="off"></i><i class="off"></i></span>
             <span class="lk-btn">See today's updates</span>
           </div>

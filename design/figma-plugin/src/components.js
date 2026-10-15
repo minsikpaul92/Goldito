@@ -189,7 +189,7 @@ const LIBRARY = [
         [await txt("chicken", "Small", "text", { name: "Label" }), r === "Yes" ? await txt("✕", "Small", "text-muted") : null].filter(Boolean))]), [["Label", "Label"]]);
     if (!has("Card")) await single("Card", "Container: surface, radius/lg, spacing/md padding, 1 px border. Code: components/ui/Card.tsx", async () =>
       box("Card", { w: CW, gap: "xs", pad: "md", radius: "lg", fill: "surface", stroke: "border" },
-        [await txt("Lucy's place · Oct 9–12", "Body Strong", "text", { name: "Title", fill: true }), await txt("Max and Mochi · Boarding · Confirmed", "Small", "text-muted", { name: "Body", fill: true })]), [["Title", "Title"], ["Body", "Body"]]);
+        [await txt("Chloe's place · Oct 9–12", "Body Strong", "text", { name: "Title", fill: true }), await txt("Max and Mochi · Boarding · Confirmed", "Small", "text-muted", { name: "Body", fill: true })]), [["Title", "Title"], ["Body", "Body"]]);
     if (!has("Toast")) await single("Toast", "Success feedback after an action; above the tab bar and any pinned footer; hides after 3 s. Never the only signal for DANGER. Code: providers/ToastProvider.tsx", async () =>
       box("Toast", { dir: "H", w: CW, pad: "md", radius: "md", fill: "text", justify: "CENTER", align: "CENTER" }, [await txt("Max is added 🐶", "Body", "primary-text", { name: "Message" })]), [["Message", "Message"]]);
     if (!has("Text Field")) await variants("Text Field", "Label above, 44 min height. Focus = primary border; Error = error border + message (clears on edit). Placeholders start with 'e.g.'. Code: components/ui/TextField.tsx", ["Default", "Focused", "Error"].map((st) => [`State=${st}`, async () =>
@@ -204,11 +204,11 @@ const LIBRARY = [
 
   // ===== Live app redesign (D47 tabs)
   ["Live app · redesign", async () => {
-    await single("Stay Summary Card", "Owner Home hero during a stay: photo, 'With Lucy now', day of stay, handoffs and today's care progress. Answers 'is my pet OK?' first.", async () => {
+    await single("Stay Summary Card", "Owner Home hero during a stay: photo, 'With Chloe now', day of stay, handoffs and today's care progress. Answers 'is my pet OK?' first.", async () => {
       const c = box("Stay Summary", { w: CW, radius: "lg", fill: "surface", stroke: "border" }, [fill(rect("Photo", CW, 150, { image: true }))]);
       const body = fill(box("Body", { gap: "sm", pad: "md" }, [
-        fill(box("Top", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [box("Live", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "accent", align: "CENTER" }, [dot("live", 7, "success"), await txt("With Lucy now", "Small Strong", "primary", { name: "Status" })]), await txt("Day 2 of 3", "Small", "text-muted", { name: "Day" })])),
-        await txt("Max & Mochi are with Lucy", "Body Strong", "text", { name: "Title", fill: true }),
+        fill(box("Top", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [box("Live", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "accent", align: "CENTER" }, [dot("live", 7, "success"), await txt("With Chloe now", "Small Strong", "primary", { name: "Status" })]), await txt("Day 2 of 3", "Small", "text-muted", { name: "Day" })])),
+        await txt("Max & Mochi are with Chloe", "Body Strong", "text", { name: "Title", fill: true }),
         await txt("Picked up Fri 7:30 AM · photo verified · home Mon 5:00 PM", "Small", "text-muted", { name: "Handoffs", fill: true }),
         fill(box("Care", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("Today's care", "Small Strong"), await txt("3 of 5 done", "Small", "text-muted", { name: "Progress" })])),
         fill(box("Bar", { dir: "H", gap: 4 }, [1, 1, 1, 0, 0].map((on, i) => grow(rect(`seg${i}`, 60, 6, { fill: on ? "primary" : "track", radius: 3 }))))),
@@ -234,7 +234,7 @@ const LIBRARY = [
       for (let n = 1; n <= 5; n++) { add(steps, await step(n < cur ? "done" : n === cur ? "now" : "todo", n)); if (n < 5) add(steps, grow(rect("line", 10, 2, { fill: n < cur ? "success" : "border" }))); }
       return box("Booking Card", { w: CW, gap: "sm", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
         fill(box("Head", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER" }, [
-          box("Who", {}, [await txt("Lucy · Boarding", "Body Strong", "text", { name: "Title" }), await txt("Max, Mochi · Oct 9–12", "Caption", "text-muted", { name: "Meta" })]),
+          box("Who", {}, [await txt("Chloe · Boarding", "Body Strong", "text", { name: "Title" }), await txt("Max, Mochi · Oct 9–12", "Caption", "text-muted", { name: "Meta" })]),
           tag(st === "Requested" ? "Neutral" : "Brand", st)])),
         steps,
         fill(rect("Divider", CW - 32, 1, { fill: "border" })),
@@ -274,14 +274,14 @@ const LIBRARY = [
       box("Next Task", { w: CW, gap: "sm", pad: "md", radius: "lg", fill: "surface", stroke: "primary", sw: 2 }, [
         await txt("NEXT · 2:00 PM", "Caption", "primary", { name: "When" }),
         fill(box("Row", { dir: "H", gap: "sm", align: "CENTER" }, [rect("Photo", 40, 40, { image: true, radius: 20 }),
-          grow(box("Copy", {}, [await txt("Max · skin pill in a treat", "Body Strong", "text", { name: "Task", fill: true }), await txt("From Chloe's care request", "Caption", "text-muted", { name: "Source", fill: true })]))])),
+          grow(box("Copy", {}, [await txt("Max · skin pill in a treat", "Body Strong", "text", { name: "Task", fill: true }), await txt("From Robert's care request", "Caption", "text-muted", { name: "Source", fill: true })]))])),
         fill(box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "primary", justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [await txt("Complete with photo", "Body Strong", "primary-text")]))]),
       [["When", "When"], ["Task", "Task"], ["Source", "Source"]]);
 
     await single("Mood Result Card", "Mood tab (11.9): photo or clip + a 'for fun' read of the pet's mood. Always says it isn't a health check.", async () =>
       box("Mood Result", { w: CW, radius: "lg", fill: "surface", stroke: "border" }, [fill(rect("Photo", CW, 180, { image: true })),
         fill(box("Body", { gap: "xs", pad: "md" }, [await txt("JUST FOR FUN", "Caption", "primary"), await txt("Max seems playful today 😄", "Body Strong", "text", { name: "Result" }),
-          await txt("From Lucy's 9:02 AM walk clip. Not a health check.", "Small", "text-muted", { name: "Source", fill: true })]))]),
+          await txt("From Chloe's 9:02 AM walk clip. Not a health check.", "Small", "text-muted", { name: "Source", fill: true })]))]),
       [["Result", "Result"], ["Source", "Source"]]);
   }],
 
@@ -308,7 +308,7 @@ const LIBRARY = [
       return box("Top Bar", { dir: "H", w: 402, h: 56, pad: [0, "md", 0, "md"], align: "CENTER", justify: "SPACE_BETWEEN", fill: "background" }, [
         await txt("Home", "Title", "text", { name: "Title", size: 20 }),
         box("Actions", { dir: "H", gap: "xs", align: "CENTER" }, [bell,
-          box("Avatar", { dir: "H", w: 30, h: 30, radius: 15, fill: "accent", align: "CENTER", justify: "CENTER" }, [await txt("C", "Small Strong", "primary", { name: "Initial" })])])]);
+          box("Avatar", { dir: "H", w: 30, h: 30, radius: 15, fill: "accent", align: "CENTER", justify: "CENTER" }, [await txt("R", "Small Strong", "primary", { name: "Initial" })])])]);
     }]), [["Title", "Title"]]);
 
     await variants("Tab Bar Item", "One tab: icon + label. Active = filled pill + primary label.", ["Default", "Active"].map((s) => [`State=${s}`, async () =>
@@ -339,7 +339,7 @@ const LIBRARY = [
     await single("Empty State", "Before something exists: emoji + what appears here + who adds it + one action (DESIGN.md §7.5). Also the gate on Feed / Care / Reports before pick-up.", async () =>
       box("Empty State", { w: CW, gap: "sm", align: "CENTER", pad: ["xl", "md", "xl", "md"] }, [
         await txt("🗓️", "Title", "text", { name: "Emoji", size: 40 }),
-        await txt("Feed starts when Max is with Lucy", "Body Strong", "text", { name: "Title", fill: true, align: "CENTER" }),
+        await txt("Feed starts when Max is with Chloe", "Body Strong", "text", { name: "Title", fill: true, align: "CENTER" }),
         await txt("Everything shows up here on its own after pick-up.", "Small", "text-muted", { name: "Message", fill: true, align: "CENTER" }),
         box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", stroke: "border", fill: "surface", minH: "size/touch-target", align: "CENTER" }, [await txt("Open the stay", "Body Strong", "primary", { name: "Action" })]),
       ]), [["Title", "Title"], ["Message", "Message"], ["Action", "Action"]]);
@@ -412,7 +412,7 @@ const LIBRARY = [
     await single("Action Row", "Opens a tool or another screen (5-second check, Scan a treat, settings rows). Icon tile + title + one line + chevron; borderStrong outline so it reads as tappable, never as a plain card (DESIGN.md §6.2).", async () =>
       box("Action Row", { dir: "H", w: CW, gap: "sm", pad: ["sm", "sm", "sm", "sm"], radius: "lg", fill: "surface", stroke: "border-strong", align: "CENTER", minH: 60 }, [
         box("Icon", { dir: "H", w: 40, h: 40, radius: "md", fill: "accent", align: "CENTER", justify: "CENTER" }, [await txt("📝", "Body", "text", { name: "Icon" })]),
-        grow(box("Copy", { gap: 2 }, [await txt("5-second check", "Body Strong", "text", { name: "Title", fill: true }), await txt("Today's note for Chloe · tap chips, done", "Small", "text-muted", { name: "Subtitle", fill: true })])),
+        grow(box("Copy", { gap: 2 }, [await txt("5-second check", "Body Strong", "text", { name: "Title", fill: true }), await txt("Today's note for Robert · tap chips, done", "Small", "text-muted", { name: "Subtitle", fill: true })])),
         await txt("›", "Title", "text-muted", { name: "Chevron" }),
       ]), [["Icon", "Icon"], ["Title", "Title"], ["Subtitle", "Subtitle"]]);
 
@@ -439,22 +439,22 @@ const LIBRARY = [
       ])]), [["Title", "Title"], ["Subtitle", "Subtitle"]]);
 
     const sourceTag = await single("Source Tag", "Where an AI line came from (calendar, house policy, Life Record). Used in AI replies, Daily Note and Life Record. Never a button.", async () =>
-      box("Source Tag", { dir: "H", pad: [2, "sm", 2, "sm"], radius: 999, stroke: "border" }, [await txt("From Lucy's calendar", "Caption", "text-muted", { name: "Label" })]), [["Label", "Label"]]);
+      box("Source Tag", { dir: "H", pad: [2, "sm", 2, "sm"], radius: 999, stroke: "border" }, [await txt("From Chloe's calendar", "Caption", "text-muted", { name: "Label" })]), [["Label", "Label"]]);
     const tagOf = (label) => { const i = sourceTag.createInstance(); const k = Object.keys(i.componentProperties).find((p) => p.startsWith("Label")); if (k) i.setProperties({ [k]: label }); return i; };
 
     await variants("Message Bubble", "Inquiry thread (07B). Owners see the sitter's reply as the sitter's own message: name and time, no AI label (D36), with source tags. The AI-draft warning appears only in the sitter's draft view.", ["Owner", "Sitter"].map((s) => [`From=${s}`, async () => {
       // Full content width; the bubble is 80 % of it, right (owner) or left (sitter).
       const BW = Math.round(CW * 0.8);
-      if (s === "Owner") return box("Message", { dir: "H", w: CW, justify: "MAX" }, [box("Bubble", { w: BW, pad: ["sm", "md", "sm", "md"], radius: 16, fill: "primary" }, [await txt("Is Lucy free Oct 9–12 for Max?", "Body", "primary-text", { name: "Message", fill: true })])]);
+      if (s === "Owner") return box("Message", { dir: "H", w: CW, justify: "MAX" }, [box("Bubble", { w: BW, pad: ["sm", "md", "sm", "md"], radius: 16, fill: "primary" }, [await txt("Is Chloe free Oct 9–12 for Max?", "Body", "primary-text", { name: "Message", fill: true })])]);
       return box("Message", { dir: "H", w: CW, justify: "MIN" }, [box("Bubble", { w: BW, gap: "sm", pad: ["sm", "md", "sm", "md"], radius: 16, fill: "background", stroke: "border" }, [
-        await txt("Lucy · 9:14 AM", "Caption", "text-muted", { name: "Label", fill: true }),
-        await txt("Hi Chloe! Lucy is free Oct 9–12 for Max and Mochi.", "Body", "text", { name: "Message", fill: true }),
-        fill(box("Sources", { dir: "H", gap: "xs", wrap: true }, [tagOf("From Lucy's calendar"), tagOf("From Lucy's house policy")])),
+        await txt("Chloe · 9:14 AM", "Caption", "text-muted", { name: "Label", fill: true }),
+        await txt("Hi Robert! Chloe is free Oct 9–12 for Max and Mochi.", "Body", "text", { name: "Message", fill: true }),
+        fill(box("Sources", { dir: "H", gap: "xs", wrap: true }, [tagOf("From Chloe's calendar"), tagOf("From Chloe's house policy")])),
       ])]);
     }]), [["Message", "Message"]]);
 
-    await single("Typing Indicator", "While the AI drafts: “Lucy is typing…” (auto-send, D37).", async () =>
-      box("Typing", { dir: "H", gap: "sm", align: "CENTER" }, [box("Dots", { dir: "H", gap: 3 }, [dot("d", 6, "text-muted"), dot("d", 6, "text-muted"), dot("d", 6, "text-muted")]), await txt("Lucy is typing…", "Small", "text-muted", { name: "Label" })]),
+    await single("Typing Indicator", "While the AI drafts: “Chloe is typing…” (auto-send, D37).", async () =>
+      box("Typing", { dir: "H", gap: "sm", align: "CENTER" }, [box("Dots", { dir: "H", gap: 3 }, [dot("d", 6, "text-muted"), dot("d", 6, "text-muted"), dot("d", 6, "text-muted")]), await txt("Chloe is typing…", "Small", "text-muted", { name: "Label" })]),
       [["Label", "Label"]]);
 
     await single("Quote Card", "Price breakdown (03C): nights × rate, extra pet, holiday, Total. Same in the thread and at checkout. Prices come from the server, never the AI.", async () => {
@@ -478,15 +478,15 @@ const LIBRARY = [
         fill(box("Row", { dir: "H", gap: "sm", align: "CENTER" }, [
           box("Box", { dir: "H", w: 20, h: 20, radius: 4, fill: s === "Yes" ? "primary" : "surface", stroke: s === "Yes" ? "primary" : "text-muted", sw: 1.5, align: "CENTER", justify: "CENTER" }, s === "Yes" ? [await txt("✓", "Caption", "primary-text")] : []),
           grow(await txt("24-hour emergency vet", "Body Strong", "text", { name: "Title" }))])),
-        await txt("Lucy may take your pet to the nearest 24-hour vet if needed.", "Small", "text-muted", { name: "Summary", fill: true }),
+        await txt("Chloe may take your pet to the nearest 24-hour vet if needed.", "Small", "text-muted", { name: "Summary", fill: true }),
         await txt("Read full text", "Small Strong", "primary", { name: "Link" }),
       ])]), [["Title", "Title"], ["Summary", "Summary"]]);
 
     await variants("Entry Info Card", "Owner's entry info for the sitter (03C). Unlocks 2 h before pick-up; the code hides again after 10 s; never in a notification.", ["Locked", "Unlocked", "Code shown"].map((s) => [`State=${s}`, async () =>
       box("Entry Info", { w: CW, dir: "H", gap: "sm", pad: "md", radius: "lg", stroke: "border", fill: "surface" }, [
         await txt(s === "Locked" ? "🔒" : "🔓", "Title"),
-        grow(box("Copy", { gap: "xs" }, [await txt("Entry info for Lucy", "Body Strong", "text", { name: "Title", fill: true }),
-          await txt(s === "Locked" ? "Unlocks Fri 5:30 AM — 2 hours before pick-up." : "Open for Lucy until the stay ends.", "Small", "text-muted", { name: "Body", fill: true }),
+        grow(box("Copy", { gap: "xs" }, [await txt("Entry info for Chloe", "Body Strong", "text", { name: "Title", fill: true }),
+          await txt(s === "Locked" ? "Unlocks Fri 5:30 AM — 2 hours before pick-up." : "Open for Chloe until the stay ends.", "Small", "text-muted", { name: "Body", fill: true }),
           s === "Code shown" ? await txt("4 8 2 1", "Title", "text", { name: "Code" }) : s === "Unlocked" ? box("Show", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", stroke: "border", minH: "size/touch-target", align: "CENTER" }, [await txt("Show code", "Body Strong", "primary")]) : null])),
       ])]));
 
@@ -496,7 +496,7 @@ const LIBRARY = [
     await single("Profile Card", "What owners see of a sitter: name, area, services with rates, house rules.", async () =>
       box("Profile Card", { w: CW, gap: "sm", pad: "md", radius: "lg", stroke: "border", fill: "surface" }, [
         fill(box("Head", { dir: "H", gap: "sm", align: "CENTER" }, [box("Avatar", { dir: "H", w: 44, h: 44, radius: 22, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("L", "Body Strong", "primary-text", { name: "Initial" })]),
-          grow(box("Copy", {}, [await txt("Lucy Kim", "Body Strong", "text", { name: "Name", fill: true }), await txt("New sitter · Condo · up to 2 pets", "Small", "text-muted", { name: "Meta", fill: true })]))])),
+          grow(box("Copy", {}, [await txt("Chloe Kim", "Body Strong", "text", { name: "Name", fill: true }), await txt("New sitter · Condo · up to 2 pets", "Small", "text-muted", { name: "Meta", fill: true })]))])),
         fill(box("Rate", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("Boarding", "Small"), await txt("$55 / night", "Small Strong")])),
         fill(box("Rate", { dir: "H", justify: "SPACE_BETWEEN" }, [await txt("House sitting", "Small"), await txt("$70 / night", "Small Strong")])),
         fill(box("Open", { dir: "H", justify: "SPACE_BETWEEN", align: "CENTER", minH: "size/touch-target" }, [await txt("View profile", "Small Strong", "primary"), await txt("›", "Title", "primary")])),
@@ -524,7 +524,7 @@ const LIBRARY = [
       return card;
     }, [["ETA", "ETA"]]);
 
-    await variants("Photo Check", "Handoff photo check (MiniCPM-V): pet visible, crate secured. Passed completes the handoff. Retake = the model couldn't see something: retake, or the sitter confirms by eye and the owner sees 'Checked by Lucy' instead of 'Photo verified'. A check never blocks a handoff (vision can be wrong).", ["Passed", "Retake"].map((r) => [`Result=${r}`, async () =>
+    await variants("Photo Check", "Handoff photo check (MiniCPM-V): pet visible, crate secured. Passed completes the handoff. Retake = the model couldn't see something: retake, or the sitter confirms by eye and the owner sees 'Checked by Chloe' instead of 'Photo verified'. A check never blocks a handoff (vision can be wrong).", ["Passed", "Retake"].map((r) => [`Result=${r}`, async () =>
       box("Photo Check", { dir: "H", w: CW, gap: "md", pad: "md", radius: "lg", fill: "surface", stroke: r === "Passed" ? "border" : "warning", align: "CENTER" }, [
         rect("Photo", 88, 88, { image: true, radius: 12 }),
         grow(box("Checks", { gap: "xs" }, [await txt("✓ Max is in the photo", "Small Strong", "success", { name: "Check 1", fill: true }),
@@ -537,7 +537,7 @@ const LIBRARY = [
         fill(box("Row", { dir: "H", gap: "sm", align: "CENTER" }, [box("Icon", { dir: "H", w: 40, h: 40, radius: "md", fill: s === "Done" ? "success-surface" : "accent", align: "CENTER", justify: "CENTER" }, [await txt("💊", "Body")]),
           grow(box("Copy", {}, [await txt("2:00 PM", "Caption", s === "Next" ? "primary" : "text-muted", { name: "Time", fill: true }), await txt("Skin pill in a treat", "Body Strong", "text", { name: "Title", fill: true })]))])),
         s === "Next" ? fill(box("Action", { dir: "H", pad: ["sm", "md", "sm", "md"], radius: "md", fill: "primary", justify: "CENTER", minH: "size/touch-target", align: "CENTER" }, [await txt("Complete with photo", "Body Strong", "primary-text")])) : null,
-        s === "Done" ? await txt("✓ Done 2:04 PM · sent to Chloe", "Small Strong", "success", { name: "Status" }) : null,
+        s === "Done" ? await txt("✓ Done 2:04 PM · sent to Robert", "Small Strong", "success", { name: "Status" }) : null,
       ].filter(Boolean))]), [["Title", "Title"], ["Time", "Time"]]);
 
     await single("Progress Bar", "Care progress (2 of 5 done).", async () => {
@@ -549,7 +549,7 @@ const LIBRARY = [
     await single("Feed Card", "A photo from the sitter with AI caption (Nemotron/MiniCPM-V), time, mood and Love it.", async () =>
       box("Feed Card", { w: CW, radius: "lg", fill: "surface", stroke: "border" }, [
         fill(box("Head", { dir: "H", gap: "sm", pad: ["sm", "md", "sm", "md"], align: "CENTER" }, [box("Avatar", { dir: "H", w: 32, h: 32, radius: 16, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("L", "Small Strong", "primary-text")]),
-          box("Who", {}, [await txt("Lucy", "Small Strong"), await txt("Sitter · 9:02 AM", "Caption", "text-muted", { name: "Meta" })])])),
+          box("Who", {}, [await txt("Chloe", "Small Strong"), await txt("Sitter · 9:02 AM", "Caption", "text-muted", { name: "Meta" })])])),
         fill(rect("Photo", CW, Math.round(CW * 0.8), { image: true })),
         fill(box("Body", { gap: "xs", pad: "md" }, [await txt("✦ AI caption", "Caption", "primary", { upper: true }), await txt("Max finished every bit of breakfast and asked for more.", "Body", "text", { name: "Caption", fill: true }),
           box("Foot", { dir: "H", gap: "sm" }, [tag("Neutral", "😊 Happy"), await txt("♡ Love it", "Small Strong", "text-muted")])])),
@@ -574,7 +574,7 @@ const LIBRARY = [
       const row = async (k, v, s) => fill(box(k, { gap: 2 }, [await txt(k, "Caption", "text-muted", { upper: true }), await txt(v, "Body", "text", { fill: true }), await txt(s, "Caption", "text-muted", { fill: true })]));
       return box("Life Record", { w: CW, gap: "sm", pad: "md", radius: "lg", fill: "surface", stroke: "border" }, [
         await txt("Max's Life Record", "Body Strong", "text", { name: "Title" }),
-        await row("Eats", "Finishes 1 cup of kibble at 8 AM.", "From Lucy · Oct 9–12"),
+        await row("Eats", "Finishes 1 cup of kibble at 8 AM.", "From Chloe · Oct 9–12"),
         await row("Heads-up", "Allergic to chicken — check labels for “animal fat”.", "From your profile · Treat Guard")]);
     }, [["Title", "Title"]]);
   }],
@@ -591,8 +591,8 @@ const LIBRARY = [
 
     // Banner: inline notice for edge states (offline, late, failed, handed to a person). Not for DANGER (§7.4).
     const BANNER = {
-      Info: ["accent", "primary", "border", "💬", "Lucy will answer this one herself", "Health questions always go to Lucy, not the assistant. Usually within 2 hours.", "Got it"],
-      Warning: ["warning-surface", "warning", "warning", "⏱️", "Lucy is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Lucy"],
+      Info: ["accent", "primary", "border", "💬", "Chloe will answer this one herself", "Health questions always go to Chloe, not the assistant. Usually within 2 hours.", "Got it"],
+      Warning: ["warning-surface", "warning", "warning", "⏱️", "Chloe is running 10 min late", "New ETA 7:40 AM — updated on its own. Nothing to do.", "Message Chloe"],
       Error: ["error-surface", "error", "error", "⚠️", "Payment didn't go through", "You weren't charged. Your consents and signature are kept.", "Try again"],
       Offline: ["surface", "text", "border-strong", "📶", "You're offline", "2 check-ins are saved on this phone and send on their own.", "Retry now"],
     };
@@ -606,7 +606,7 @@ const LIBRARY = [
 
     await variants("Notification Row", "One update in the 🔔 sheet. Unread = dot after the title.", ["Read", "Unread"].map((s) => [`State=${s}`, async () =>
       box("Notification", { dir: "H", w: CW, gap: "sm", pad: ["sm", 0, "sm", 0] }, [await txt("🐾", "Body"),
-        grow(box("Copy", {}, [box("Title", { dir: "H", gap: "xs", align: "CENTER" }, [await txt("Lucy accepted your booking 🎉", "Small Strong", "text", { name: "Title" }), s === "Unread" ? dot("Unread", 7, "primary") : null].filter(Boolean)),
+        grow(box("Copy", {}, [box("Title", { dir: "H", gap: "xs", align: "CENTER" }, [await txt("Chloe accepted your booking 🎉", "Small Strong", "text", { name: "Title" }), s === "Unread" ? dot("Unread", 7, "primary") : null].filter(Boolean)),
           await txt("Wed", "Caption", "text-muted", { name: "Time" })]))])]), [["Title", "Title"], ["Time", "Time"]]);
 
     await single("Permission Prompt", "Simulated system prompt after the notification primer. System look, not the app skin.", async () =>
@@ -620,15 +620,15 @@ const LIBRARY = [
     await single("Push Preview", "Lock-screen notification preview used in the notifications step.", async () =>
       box("Push", { dir: "H", w: CW, gap: "sm", pad: "sm", radius: 16, fill: "surface", stroke: "border" }, [
         box("App", { dir: "H", w: 36, h: 36, radius: 9, fill: "primary", align: "CENTER", justify: "CENTER" }, [await txt("🐾", "Body")]),
-        grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Lucy posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
+        grow(box("Copy", {}, [await txt("GOLDITO · now", "Caption", "text-muted"), await txt("Chloe posted 2 photos of Max 📸", "Small Strong", "text", { name: "Title" }), await txt("Breakfast done. Finished the whole bowl.", "Small", "text-muted", { name: "Body" })]))]),
       [["Title", "Title"], ["Body", "Body"]]);
 
     await single("Look Preview", "Look step: the pet's photo in a ring of the chosen color, next to a mini stay card in that color. Shows the result, not the math (every preset keeps text ≥ 4.5:1).", async () =>
       box("Look Preview", { dir: "H", w: CW, gap: "md", pad: "md", radius: "lg", fill: "accent", align: "CENTER" }, [
         box("Ring", { dir: "H", w: 84, h: 84, radius: 42, fill: "primary", pad: 4 }, [rect("Photo", 76, 76, { image: true, radius: 38 })]),
         grow(box("Mock", { gap: "xs" }, [
-          box("Pill", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "surface", align: "CENTER" }, [dot("live", 7, "primary"), await txt("With Lucy now", "Caption", "primary")]),
-          await txt("Max is with Lucy", "Body Strong", "primary", { name: "Title", fill: true }),
+          box("Pill", { dir: "H", gap: 6, pad: [3, 10, 3, 10], radius: 999, fill: "surface", align: "CENTER" }, [dot("live", 7, "primary"), await txt("With Chloe now", "Caption", "primary")]),
+          await txt("Max is with Chloe", "Body Strong", "primary", { name: "Title", fill: true }),
           fill(box("Bar", { dir: "H", gap: 3 }, [1, 1, 1, 0, 0].map((on, k) => grow(rect(`seg${k}`, 30, 6, { fill: on ? "primary" : "surface", radius: 3 }))))),
           box("Button", { dir: "H", pad: [6, 14, 6, 14], radius: 999, fill: "primary" }, [await txt("See today's updates", "Small Strong", "primary-text")]),
         ])),
@@ -647,7 +647,7 @@ const LIBRARY = [
 
     await single("Demo Control", "PROTOTYPE ONLY: anything the sitter would do, shown to the owner as a dashed control. Not part of the shipped app.", async () =>
       box("Demo Control", { dir: "H", w: CW, gap: "sm", pad: ["sm", "md", "sm", "md"], radius: "md", stroke: "border", sw: 2, dashed: true, justify: "CENTER", align: "CENTER", minH: "size/touch-target" }, [
-        await txt("DEMO · AS LUCY", "Caption", "text-muted"), await txt("Lucy accepts", "Body Strong", "text", { name: "Label" })]), [["Label", "Label"]]);
+        await txt("DEMO · AS CHLOE", "Caption", "text-muted"), await txt("Chloe accepts", "Body Strong", "text", { name: "Label" })]), [["Label", "Label"]]);
   }],
 ];
 
