@@ -215,6 +215,7 @@ export type MockDb = {
   sitter_rates: Row[];
   /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
   safety_checks: Row[];
+  photo_requests: Row[];
   /** Stickers of a pet (12.3, 013b): rows point at a `media` row; read newest first with the media embedded. */
   pet_stickers: Row[];
   /** Sticker layers on a report (12.3b, 013b): one row per report and person; an upsert replaces it. */
@@ -274,6 +275,7 @@ function createMockDb(): MockDb {
     pet_life_records: [],
     sitter_rates: [],
     safety_checks: [],
+    photo_requests: [],
     pet_stickers: [],
     report_decor: [],
     quote_error: null,
@@ -1063,6 +1065,43 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, id);
   }
 
+  if (path === "rpc/request_photo") {
+    // 014: the owner of a pet in a confirmed stay asks its sitter; asking again returns the open ask.
+    const { p_pet } = request.postDataJSON();
+    const pet = db.pets.find((p) => p.id === p_pet);
+    if (!pet || pet.owner_id !== me) return json(route, 400, { code: "P0001", message: "not_allowed" });
+    const booking = db.bookings.find(
+      (b) => b.status === "confirmed" && db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === p_pet),
+    );
+    if (!booking || !hasOpenStay(db, p_pet)) return json(route, 400, { code: "P0001", message: "not_in_care" });
+    const open = db.photo_requests.find((r) => r.booking_id === booking.id && r.pet_id === p_pet && r.status === "open");
+    if (open) return json(route, 200, open);
+    const row = {
+      id: crypto.randomUUID(),
+      pet_id: p_pet,
+      booking_id: booking.id,
+      owner_id: me,
+      sitter_id: booking.sitter_id,
+      status: "open",
+      fulfilled_post_id: null,
+      fulfilled_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+    };
+    db.photo_requests.push(row);
+    db.notifications.push({
+      id: crypto.randomUUID(),
+      user_id: booking.sitter_id,
+      type: "photo_request",
+      title: `${users.find((u) => u.id === me)?.displayName} asked for a photo of ${pet.name} 📷`,
+      body: null,
+      pet_id: p_pet,
+      booking_id: booking.id,
+      ref_id: row.id,
+      read_at: null,
+      created_at: row.created_at,
+    });
+    return json(route, 200, row);
+  }
   if (path === "rpc/send_care_change_request") {
     const { p_pet, p_tasks, p_cautions } = request.postDataJSON();
     const pet = db.pets.find((p) => p.id === p_pet);
@@ -1505,6 +1544,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
               (b.status === "requested" || b.status === "confirmed") &&
               db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === row.pet_id),
           )) &&
+        // RLS (014): the owner who asked and the asked sitter.
+        (path !== "photo_requests" || row.owner_id === me || row.sitter_id === me) &&
         (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
@@ -1726,6 +1767,26 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       }
     }
     table.push(...inserted);
+    // 014 fulfill_photo_request: a shared sitter post answers that pet's open ask and tells the owner.
+    if (path === "feed_posts") {
+      for (const post of inserted.filter((p) => p.sitter_id && p.visibility === "shared")) {
+        for (const r of db.photo_requests.filter((x) => x.pet_id === post.pet_id && x.sitter_id === post.sitter_id && x.status === "open")) {
+          Object.assign(r, { status: "fulfilled", fulfilled_post_id: post.id, fulfilled_at: new Date(nowMs()).toISOString() });
+          db.notifications.push({
+            id: crypto.randomUUID(),
+            user_id: r.owner_id,
+            type: "photo_request_fulfilled",
+            title: `Here's the photo of ${db.pets.find((p) => p.id === post.pet_id)?.name} you asked for 📷`,
+            body: null,
+            pet_id: post.pet_id,
+            booking_id: r.booking_id,
+            ref_id: post.id,
+            read_at: null,
+            created_at: new Date(nowMs()).toISOString(),
+          });
+        }
+      }
+    }
     if (!wantsRows) return route.fulfill({ status: 201 });
     return respond(route, inserted, wantsObject, 201);
   }

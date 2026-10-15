@@ -7,6 +7,7 @@ import type { NotificationRow } from "../types/db";
 /** Types that should refresh Owner Diary Live when a notice arrives (Phase 06–07). */
 export const DIARY_NOTIFICATION_TYPES = new Set([
   "feed_post",
+  "photo_request_fulfilled",
   "task_done",
   "care_checkin",
   "report_sent",
@@ -130,6 +131,7 @@ export function hrefForNotification(
 
   switch (notice.type) {
     case "feed_post":
+    case "photo_request_fulfilled":
       if (role === "owner") return notice.petId ? `/owner/feed?pet=${notice.petId}` : "/owner/feed";
       return notice.petId ? `/sitter/feed/${notice.petId}` : "/sitter/feed";
     case "task_done":
@@ -193,6 +195,8 @@ export function hrefForNotification(
       if (role !== "owner") return null;
       return notice.refId ? `/owner/snap/treat?check=${notice.refId}` : "/owner/snap/treat";
     case "photo_request":
+      // 11.1: the sitter answers with the next shared photo — open that pet's feed (+ Photo).
+      return role === "sitter" && notice.petId ? `/sitter/feed/${notice.petId}` : null;
     case "task_due":
       return null;
     default:
