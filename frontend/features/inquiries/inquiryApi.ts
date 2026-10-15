@@ -274,6 +274,13 @@ export type ReplyOutcome = "accept" | "decline" | "suggest";
  * Sitter: send the text they approved (the draft as is, or their edit). `draftId` keeps the quote and sources.
  * `outcome` says what the reply is: a decline or a suggestion can't host and carries no quote (011k).
  */
+/** The owner wrote again (or changed the dates) after this draft was written (012f, CR-7): reload, a new draft is coming. */
+export class StaleDraftError extends Error {
+  constructor() {
+    super("The owner wrote again after this draft, so it no longer answers them. A new draft is on its way — check the thread.");
+  }
+}
+
 export async function sendInquiryReply(
   inquiryId: string,
   body: string,
@@ -290,6 +297,7 @@ export async function sendInquiryReply(
   if (error.message.includes("body_required")) throw new Error("Write something before sending.");
   if (error.message.includes("body_too_long")) throw new Error("Keep the reply under 2000 characters.");
   if (error.message.includes("inquiry_closed")) throw new Error("The owner closed this question.");
+  if (error.message.includes("draft_stale")) throw new StaleDraftError();
   fail("send the reply");
 }
 
@@ -318,12 +326,20 @@ export async function changeInquiryDates(input: {
  * The booking engine's own answer for a stay at this sitter (null = it fits). The sitter checks the dates they
  * are about to suggest, so a suggestion is never one the owner can't book.
  */
-export async function stayShortfall(sitterId: string, dropOffAt: string, pickUpAt: string, petCount: number): Promise<string | null> {
+export async function stayShortfall(
+  sitterId: string,
+  dropOffAt: string,
+  pickUpAt: string,
+  petCount: number,
+  /** The owner the stay is for, when the sitter asks (012d, CR-3); omitted = the caller is the owner. */
+  ownerId?: string,
+): Promise<string | null> {
   const { data, error } = await getSupabase().rpc("stay_capacity_check", {
     p_sitter: sitterId,
     p_drop_off_at: dropOffAt,
     p_pick_up_at: pickUpAt,
     p_pet_count: petCount,
+    ...(ownerId ? { p_owner: ownerId } : {}),
   });
   if (error) return null; // can't check: don't block the sitter
   return (data as string | null) ?? null;

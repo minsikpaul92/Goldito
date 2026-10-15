@@ -7,12 +7,16 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { ReportPhoto, SentReport, getSentReport, listReportPhotos } from "../../../features/diary/reportApi";
+import { DecoratedReport } from "../../../features/snap/DecoratedReport";
 import { formatDay } from "../../../features/schedule/dates";
 import { thumbUrl, videoPosterUrl } from "../../../lib/cloudinary";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
-/** One daily report, read-only (phase-07 7.3): date, the sitter's text, that day's photos, and the tasks. */
+/**
+ * One daily report (phase-07 7.3): date, the sitter's text, that day's photos, and the tasks. The text is read-only;
+ * the owner may decorate it with their own sticker layer (12.3b).
+ */
 export default function OwnerDiaryEntry() {
   const styles = useThemedStyles(makeStyles);
   const { entryId } = useLocalSearchParams<{ entryId: string }>();
@@ -57,7 +61,14 @@ export default function OwnerDiaryEntry() {
       <Stack.Screen options={{ title: `${report.petName} · ${formatDay(report.day)}` }} />
       <Card style={styles.card}>
         <Text style={styles.meta}>{`From ${report.sitterName}`}</Text>
-        <Text style={styles.body} testID="diary-entry-body">{report.body}</Text>
+        <DecoratedReport
+          reportId={report.id}
+          petId={report.petId}
+          petName={report.petName}
+          day={report.day}
+          body={report.body}
+          testID="diary-entry"
+        />
       </Card>
       {photos.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} testID="diary-entry-photos">

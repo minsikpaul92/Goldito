@@ -2,7 +2,7 @@
 
 > **목적:** 해커톤 **실 URL 데모**에서 심사위원이 가입·설정 없이 **Owner / Sitter 역할**과 **“A Stay with Goldito”**(5단계 — [full-process.ko.md](full-process.ko.md)) 가치를 이해하고 바로 체험하게 한다.
 >
-> **관련:** [루트 README — How Goldito Works · A Stay with Goldito](../../README.md) · [전체 서비스 흐름](full-process.ko.md) · [Phase 03](phases/phase-03.md) (Auth) · [Phase 10](phases/phase-10.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.ko.md#1-결정-로그-확정) (UI·카피 **영어**)
+> **관련:** [루트 README — How Goldito Works · A Stay with Goldito](../../README.md) · [전체 서비스 흐름](full-process.ko.md) · [Phase 03](phases/phase-03-auth.md) (Auth) · [Phase 10](phases/phase-10-deploy.md) (시드·배포) · [Devpost 제출](../hackathon/devpost-submission.ko.md) · [architecture D1](phases/architecture.ko.md#1-결정-로그-확정) (UI·카피 **영어**)
 
 ---
 
@@ -98,7 +98,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 
 | 항목 | 내용 |
 | :--- | :--- |
-| 시드 | [phase-10.md](phases/phase-10.md) `seed_demo.py`: owner, sitter, Max, chicken, med/walk, 샘플 피드 |
+| 시드 | [phase-10-deploy.md](phases/phase-10-deploy.md) `seed_demo.py`: owner, sitter, Max, chicken, med/walk, 샘플 피드 |
 | 공개 문서 | 루트 README **Test accounts** + Devpost 설명란 (이메일·비번·“click Try demo on login”) |
 | `--relative` | 영상 촬영용 med/walk 시간 — 온보딩 UX와 무관, README에만 명시 |
 
@@ -174,7 +174,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 - Owner 가입 후 forced pet setup wizard (시드 데모가 우선)
 - 한국어 UI (D1: EN only)
 
-**Deferred / P1 polish:** OB.4 `intro_seen`, Welcome 일러스트, Intro에 “Request photo” 한 줄 등 — [Phase 11](phases/phase-11.md) 또는 시간 남을 때. **다음 앱 큐는 Phase 04** ([TODO.md](TODO.md), [phase-04.md](phases/phase-04.md)).
+**Deferred / P1 polish:** OB.4 `intro_seen`, Welcome 일러스트, Intro에 “Request photo” 한 줄 등 — [Phase 11](phases/phase-11-p1.md) 또는 시간 남을 때. **다음 앱 큐는 Phase 04** ([TODO.md](TODO.md), [phase-04-upload.md](phases/phase-04-upload.md)).
 
 ---
 

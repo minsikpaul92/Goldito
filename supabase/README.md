@@ -2,7 +2,7 @@
 
 SQL migrations for the Goldito demo. Apply in order via the Supabase SQL Editor (or CLI if you use it locally).
 
-**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02.md](../docs/plan/phases/phase-02.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
+**Blueprint:** [docs/plan/phases/architecture.ko.md](../docs/plan/phases/architecture.ko.md) · **Schema source of truth:** [phase-02-db.md](../docs/plan/phases/phase-02-db.md) (columns, RLS, RPC behaviour — change it first, then the SQL)
 
 ## Migration order
 
@@ -37,10 +37,23 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `011b_life_record_columns.sql` | 07C | `pet_life_records.stay_from` / `stay_to`; clients read named columns only — the raw `source_snapshot` (check-ins, notes, the owner's questions) stays backend-only |
 | `011l_booking_steps.sql` | 03B (BS-1 · BS-2) | Booking steps (D60): the sitter's first yes (`express_interest`) holds the dates, `sitter_profiles.accepts_multiple_owners` (one owner at a time by default), computed `booking_stage`, `sweep_stale_bookings()` (service role; nudge after 2 days, cancel 3 days later). Apply together with the app |
 | `012_transit.sql` | 06B (last in P0, D41) | `home_lat` / `home_lng` on both profiles (own row; not in the public sitter list), `trips` (last position only, readable by the two parties, written by `start_trip` · `update_trip_position` · `end_trip`, in the Realtime publication; `sharing = false` = started without a live position), `complete_handoff` also closes the running trip, 150 m arrival notices `trip_started` · `trip_arrived`, `handoff_checks` (the vision model's read of a handoff photo; the backend writes, the two parties read, the sitter adds a reason). Later steps of 06B change `complete_handoff` in this same file until it is applied |
-| `013_safety.sql` | 08 (stretch, after 06B) | Safety checks + DANGER owner notify |
+| `012b_trip_ends_with_booking.sql` | review fix (CR-1) | A booking that leaves `confirmed` cancels its live trips and erases the position |
+| `012c_handoff_pair_change.sql` | review fix (CR-2) | After confirm, a drop-off / pick-up change that only fits with the same person's open proposal for the other handoff is checked against it, and `respond_handoff` accepts / declines the pair at once |
+| `012d_capacity_check_for_owner.sql` | review fix (CR-3) | `stay_capacity_check(…, p_owner)`: the one-owner-at-a-time rule is checked for the named owner (the sitter's token runs it too) |
+| `012e_inquiries_reopen.sql` | review fix (CR-4) | `inquiries.closed_by_booking`; a declined / cancelled request reopens the inquiries it closed (011z) unless another live booking still covers them |
+| `012f_reply_from_fresh_draft.sql` | review fix (CR-7) | `send_inquiry_reply` refuses (`draft_stale`) an AI draft older than the owner's latest message — a follow-up or `change_inquiry_dates` — so no old quote goes out |
+| `013_safety.sql` | 12.1 (Treat check — the 08 design, D61) | The owner may also acknowledge (`acknowledged_at`) their pet's checks; trigger `notify_safety_danger`: a DANGER checked by someone other than the owner sends the owner one `safety_danger` notice |
 | `014_p1.sql` | 11 | Photo request, notices (P1) |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
+
+### Naming
+
+CI and a fresh local DB apply the files in **name order**; the hosted DB has them in the order they were **run**. The two only agree when every new file sorts after every file already applied — otherwise a function redefined in two files ends up different in CI and on the hosted DB.
+
+- Take the **next free name after the highest file on `main` and in open PRs** (after `012e` comes `012f`; a letter keeps the phase number, a new phase takes the next number). No per-person letter ranges (they broke this rule: 2026-10-13, CR-6).
+- Before applying a file to the hosted DB, check it still sorts after everything already applied there. If not, rename it first — a file that was never applied can be renamed freely.
+- `013` stays reserved for Phase 08. Never edit an applied file; fix it in a new one.
 
 ## ERD
 

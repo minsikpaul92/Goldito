@@ -200,6 +200,26 @@ export async function saveOwnerHomeAccess(fields: {
   if (error) throw new Error("Couldn't save your entry info. Try again.");
 }
 
+/** Stays that end at the owner's door: house sitting, or a drop-off / pick-up at the owner's home (ENTRY-1). */
+export function needsOwnerHomeAccess(b: Pick<BookingSummary, "serviceType" | "dropOff" | "pickUp">): boolean {
+  return (
+    b.serviceType === "house_sitting" ||
+    b.dropOff?.locationType === "owner_home" ||
+    b.pickUp?.locationType === "owner_home"
+  );
+}
+
+/** Whether the owner has saved at least one entry field (the form is optional, so a row can be all empty). */
+export async function ownerHasHomeAccess(ownerId: string): Promise<boolean> {
+  const { data, error } = await getSupabase()
+    .from("owner_home_access")
+    .select("entry_steps, lockbox_code, buzzer, fob_notes, sitter_parking")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (error) throw new Error("Couldn't check your entry info.");
+  return !!data && Object.values(data).some((v) => typeof v === "string" && v.trim() !== "");
+}
+
 // ---------------------------------------------------------------------------
 // Book care (3B.3)
 // ---------------------------------------------------------------------------
@@ -471,6 +491,21 @@ export function awaitingFirstYes(b: BookingSummary): boolean {
   return b.status === "requested" && b.meetGreetStatus === "required" && !b.sitterInterestAt;
 }
 
+/**
+ * After confirm, an offer that only fits together with the same person's offer for the other handoff (CR-2, 012c):
+ * the whole stay moved past its old window. The server answers both at once — Accept or Decline takes the pair.
+ */
+export function pairedProposal(b: BookingSummary, kind: HandoffKind): ProposalStep | null {
+  if (b.status !== "confirmed") return null;
+  const offer = b.pending[kind];
+  const partner = b.pending[kind === "drop_off" ? "pick_up" : "drop_off"];
+  if (!offer || !partner || partner.proposedBy !== offer.proposedBy) return null;
+  const agreedOther = kind === "drop_off" ? b.pickUp : b.dropOff;
+  if (!agreedOther) return null;
+  const [from, to] = kind === "drop_off" ? [offer.at, agreedOther.at] : [agreedOther.at, offer.at];
+  return Date.parse(to) <= Date.parse(from) ? partner : null;
+}
+
 /** Same rule as current_handoff (003): confirmed → agreed; requested → pending proposal, else agreed. */
 function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: BookingStatus): Handoff | null {
   const ofKind = rows.filter((h) => h.kind === kind);
@@ -540,6 +575,33 @@ function toStep(h: HandoffRow): ProposalStep {
   };
 }
 
+/**
+ * The stage by the same rule as the database's booking_stage / booking_next_actor (011l). The database's answer wins
+ * (withStages); this is what shows when that call fails, so a paid, finished or cancelled booking never reads as a
+ * new request (CR-8).
+ */
+export function localStage(b: Omit<BookingSummary, "stage" | "nextActor">): Pick<BookingSummary, "stage" | "nextActor"> {
+  let stage: BookingStage;
+  if (b.status === "declined" || b.status === "cancelled") stage = b.status;
+  else if (b.status === "requested") {
+    if (b.meetGreetStatus === "not_needed" || !b.sitterInterestAt) stage = "requested";
+    else stage = b.meetGreetStatus === "done" || b.meetGreetStatus === "skipped" ? "confirm" : "meet_greet";
+  } else if (b.pickUp?.completedAt) stage = "completed";
+  else if (b.dropOff?.completedAt) stage = "in_care";
+  else stage = b.paidAt ? "paid" : "awaiting_payment";
+
+  const otherThan = (by: string | null): NextActor => (by === b.ownerId ? "sitter" : "owner");
+  let nextActor: NextActor = "none";
+  if (stage === "requested" || stage === "confirm") nextActor = "sitter";
+  else if (stage === "awaiting_payment") nextActor = "owner";
+  else if (stage === "meet_greet") {
+    if (b.meetGreetStatus === "proposed") nextActor = otherThan(b.meetGreet.proposedBy);
+    else if (b.meetGreetStatus === "skip_requested") nextActor = otherThan(b.meetGreet.skipRequestedBy);
+    else nextActor = "both";
+  }
+  return { stage, nextActor };
+}
+
 function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary {
   const handoffs = [...(b.booking_handoffs ?? [])].sort((x, y) => x.created_at.localeCompare(y.created_at));
   const steps = (kind: HandoffKind) => handoffs.filter((h) => h.kind === kind).map(toStep);
@@ -547,7 +609,7 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     b.status === "requested" || b.status === "confirmed"
       ? (steps(kind).find((s) => s.status === "proposed") ?? null)
       : null;
-  return {
+  const summary: Omit<BookingSummary, "stage" | "nextActor"> = {
     id: b.id,
     status: b.status,
     ownerId: b.owner_id,
@@ -569,8 +631,6 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     sitterNote: b.sitter_note ?? null,
     sitterInterestAt: b.sitter_interest_at ?? null,
     meetGreetDueAt: b.meet_greet_due_at ?? null,
-    stage: "requested",
-    nextActor: "none",
     paidAt: b.paid_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
@@ -582,9 +642,10 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     pending: { drop_off: open("drop_off"), pick_up: open("pick_up") },
     createdAt: b.created_at,
   };
+  return { ...summary, ...localStage(summary) };
 }
 
-/** The database computes the stage (011l booking_stage); one call for the whole list. A failure leaves the defaults. */
+/** The database computes the stage (011l booking_stage); one call for the whole list. A failure keeps localStage. */
 async function withStages(list: BookingSummary[]): Promise<BookingSummary[]> {
   if (list.length === 0) return list;
   const { data, error } = await getSupabase().rpc("get_booking_stages", { p_ids: list.map((b) => b.id) });

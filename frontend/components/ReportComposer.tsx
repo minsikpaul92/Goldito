@@ -28,6 +28,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
+import { DecoratedReport } from "../features/snap/DecoratedReport";
 import { ChipSuggestions } from "./ChipSuggestions";
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
@@ -73,6 +74,8 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<"chips" | "generate" | "send" | null>(null);
   const [sent, setSent] = useState(false);
+  /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
+  const [sentId, setSentId] = useState<string | null>(null);
 
   const refreshChips = useCallback(
     async (mediaIds: string[]) => {
@@ -99,6 +102,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         if (!isLive()) return;
         if (existing?.status === "sent") {
           setSent(true);
+          setSentId(existing.id);
           setBody(existing.body);
         } else if (existing) {
           setDraft(existing);
@@ -139,6 +143,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         day.current = appToday();
         setDraft(null);
         setSent(false);
+        setSentId(null);
         setBody("");
         setOff(new Set());
         setCustom([]);
@@ -275,6 +280,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     try {
       await sendReport(draft.id, body.trim());
       setSent(true);
+      setSentId(draft.id);
       setDraft(null);
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
     } catch (e) {
@@ -296,6 +302,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   /** Another report the same day (FB-22): fresh chips from what happened since the last one went out. */
   const writeAnother = () => {
     setSent(false);
+    setSentId(null);
     setBody("");
     setOff(new Set());
     setCustom([]);
@@ -311,7 +318,18 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{pet.name}</Text>
         <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
-        <Text style={styles.body}>{body}</Text>
+        {sentId ? (
+          <DecoratedReport
+            reportId={sentId}
+            petId={pet.id}
+            petName={pet.name}
+            day={day.current}
+            body={body}
+            testID={`report-sent-paper-${pet.id}`}
+          />
+        ) : (
+          <Text style={styles.body}>{body}</Text>
+        )}
         <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
         <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>

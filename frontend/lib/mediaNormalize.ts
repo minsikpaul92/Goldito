@@ -1,5 +1,5 @@
 /**
- * Media normalize policy (phase-04.md): shrink every file on the client before it is signed
+ * Media normalize policy (phase-04-upload.md): shrink every file on the client before it is signed
  * and uploaded. Cloudinary Free has 25 credits/mo, a 10 MB image cap and a 100 MB video cap.
  *
  * Photos: ALWAYS resize to a ~2000 px long edge (JPEG ~0.8), then keep shrinking until the

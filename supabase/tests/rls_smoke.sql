@@ -9,7 +9,7 @@
 -- Cast (all fictional): owners Robert (dog Max, cat Mochi) and Joy (dogs Coco, Toto);
 -- sitters Chloe (08–12 / 12–18 / 18–08, 3 pets), Paul (09–13 / 13–17, 2 pets),
 -- Allen (08–12 / 12–18 / 18–08, 3 pets), Nora (no schedule).
--- Scenario letters match docs/plan/phases/phase-02.md "예시 시나리오".
+-- Scenario letters match docs/plan/phases/phase-02-db.md "예시 시나리오".
 -- H (last-spot race) runs sequentially here; the advisory lock serializes real concurrent calls.
 
 begin;
@@ -4116,5 +4116,466 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 012b (CR-1): cancelling the booking ends its live trip and erases the position
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  rex uuid;
+  v_b uuid;
+  v_trip public.trips;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Rex') returning id into rex;
+  v_b := _t_booking(robert, chloe, array[rex], now() + interval '500 days', now() + interval '502 days', 'confirmed');
+  update public.bookings set paid_at = now() where id = v_b;
+  update public.booking_handoffs set scheduled_at = now() + interval '1 hour' where booking_id = v_b and kind = 'drop_off';
+
+  perform _t_as(robert);
+  v_trip := start_trip(v_b, 'drop_off', false, 43.6732, -79.3832);
+  perform _t_ok(v_trip.status = 'en_route' and v_trip.last_lat is not null, 'CR-1: the owner is on the way before the drop-off');
+  perform cancel_booking(v_b, 'schedule_changed');
+
+  perform _t_as(null);
+  select * into v_trip from public.trips where id = v_trip.id;
+  perform _t_ok(v_trip.status = 'cancelled' and v_trip.ended_at is not null and v_trip.last_lat is null
+      and v_trip.last_lng is null and v_trip.last_at is null and v_trip.eta_at is null and v_trip.distance_m is null,
+    'CR-1: cancelling the booking cancels the live trip and erases its position');
+  perform _t_as(robert);
+  begin
+    perform update_trip_position(v_trip.id, 43.6602, -79.3832);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'trip_not_active', 'CR-1: …so the traveller''s next position is refused');
+  perform _t_as(chloe);
+  perform _t_ok(not exists (select 1 from public.trips where booking_id = v_b and status in ('en_route', 'arrived')),
+    'CR-1: …and the other person has no live trip left to follow');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 012c (CR-2): after confirm, the drop-off and the pick-up can move together past the old window
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 600;
+  bolt uuid;
+  v_b uuid;
+  v_drop uuid;
+  v_pick uuid;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 10, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 10, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 10, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Bolt') returning id into bolt;
+  v_b := _t_booking(robert, chloe, array[bolt], local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 'confirmed');
+
+  -- Alone, a drop-off after the agreed pick-up still does not fit.
+  perform _t_as(robert);
+  begin
+    perform propose_handoff(v_b, 'drop_off', local_ts(d + 3, '09:00'));
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'invalid_window', 'CR-2: a drop-off after the agreed pick-up does not fit on its own');
+
+  -- With my own new pick-up first, it does.
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 5, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 3, '09:00'));
+  perform _t_ok(v_drop is not null, 'CR-2: …but it fits together with my open pick-up proposal');
+
+  -- The sitter's Accept on the drop-off takes both, and the stay moves.
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_pick) = 'agreed',
+    'CR-2: accepting the paired drop-off agrees the pick-up too');
+  perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v_b and status = 'agreed') = 2,
+    'CR-2: …and the old agreed times are superseded');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 3, '09:00'), local_ts(d + 5, '17:00'), '[)'),
+    'CR-2: …and the stay is rebuilt for the new window');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'handoff_agreed'
+      and ref_id = v_drop and title like 'Chloe agreed to the new drop-off and pick-up%'),
+    'CR-2: …and the owner is told once, for both');
+
+  -- Declining one of a pair declines the other; the agreed stay is kept.
+  perform _t_as(robert);
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 8, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 6, '09:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, false);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'rejected'
+      and (select status from public.booking_handoffs where id = v_pick) = 'rejected',
+    'CR-2: declining the paired drop-off declines the pick-up too');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 3, '09:00'), local_ts(d + 5, '17:00'), '[)'),
+    'CR-2: …and the agreed stay stays');
+
+  -- A change that fits on its own is still answered on its own.
+  perform _t_as(robert);
+  v_pick := propose_handoff(v_b, 'pick_up', local_ts(d + 6, '17:00'));
+  v_drop := propose_handoff(v_b, 'drop_off', local_ts(d + 4, '09:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_pick) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_drop) = 'proposed',
+    'CR-2: an offer that fits alone is agreed alone; the other one still waits');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 012d (CR-3): the can-host check is for a named owner, also when the sitter asks
+-- (Allen takes one owner at a time; Robert already has those dates booked with him)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  d constant date := app_today() + 700;
+  pip uuid;
+  v_err text;
+begin
+  perform _t_as(allen);
+  -- The 011l block above switched Allen to several owners; this check is about one owner at a time.
+  update public.sitter_profiles set accepts_multiple_owners = false where id = allen;
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (allen, 'open', d - 1, d + 3, 'morning', '08:00', '12:00', 3),
+         (allen, 'open', d - 1, d + 3, 'afternoon', '12:00', '18:00', 3),
+         (allen, 'open', d - 1, d + 3, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, allen, array[pip], local_ts(d, '09:00'), local_ts(d, '11:00'), 'confirmed');
+
+  perform _t_as(robert);
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1) is null,
+    'CR-3: the owner asking about dates they already have with the sitter → it fits');
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
+    'CR-3: …the same when the owner names themselves');
+  perform _t_as(allen);
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1) is not null,
+    'CR-3: without p_owner the sitter''s own call still counts the owner as "another owner" (the old bug, kept for old callers)');
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert) is null,
+    'CR-3: the sitter asking for that owner gets the same answer (Regenerate, quick replies, Suggest)');
+  perform _t_ok(stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, joy) is not null,
+    'CR-3: …while for another owner the slot is taken');
+  perform _t_as(joy);
+  begin
+    perform stay_capacity_check(allen, local_ts(d, '09:00'), local_ts(d, '11:00'), 1, robert);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'forbidden', 'CR-3: a third person cannot ask on another owner''s behalf');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 012e (CR-4): inquiries a request closed open again when that request is declined or cancelled
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  d timestamptz := now() + interval '800 days';
+  juno uuid;
+  kiwi uuid;
+  v_q uuid;
+  v_a uuid;
+  v_b uuid;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Juno') returning id into juno;
+  insert into public.pets (owner_id, species, name) values (robert, 'cat', 'Kiwi') returning id into kiwi;
+  perform _t_as(robert);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (robert, paul, d, d + interval '2 days', array[juno, kiwi]) returning id into v_q;
+
+  -- One request closes Paul's inquiry; declining it opens it again.
+  perform _t_as(null);
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'requested');
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_a from public.inquiries where id = v_q),
+    'CR-4: the request closes the other sitter''s inquiry and remembers which booking did');
+  update public.bookings set status = 'declined', responded_at = now() where id = v_a;
+  perform _t_ok((select status = 'open' and closed_by_booking is null from public.inquiries where id = v_q),
+    'CR-4: the request is declined → the inquiry is open again');
+  perform _t_as(paul);
+  perform _t_ok(public.has_open_inquiry_about(juno), 'CR-4: …and Paul can answer it again');
+
+  -- Two live requests cover the inquiry: it stays closed until the last one ends.
+  perform _t_as(null);
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'requested');
+  v_b := _t_booking(robert, allen, array[kiwi], d, d + interval '2 days', 'requested');
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_a from public.inquiries where id = v_q),
+    'CR-4: closed by the first request');
+  update public.bookings set status = 'cancelled' where id = v_a;
+  perform _t_ok((select status = 'closed' and closed_by_booking = v_b from public.inquiries where id = v_q),
+    'CR-4: another live request still covers the dates → stays closed, now held by that one');
+  update public.bookings set status = 'cancelled' where id = v_b;
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'open',
+    'CR-4: the last one cancelled → open again');
+
+  -- A confirmed booking keeps it closed; an inquiry closed by hand never reopens.
+  v_a := _t_booking(robert, chloe, array[juno], d, d + interval '2 days', 'confirmed');
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'closed', 'CR-4: a confirmed booking closes it too');
+  update public.inquiries set closed_by_booking = null where id = v_q;
+  update public.bookings set status = 'cancelled' where id = v_a;
+  perform _t_ok((select status from public.inquiries where id = v_q) = 'closed',
+    'CR-4: an inquiry not closed by that booking stays closed');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 012f (CR-7): a reply is never sent from a draft older than the owner's latest message
+-- (Kai / Lou / Kip come from the 011j block above)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  kai constant uuid := '00000000-0000-4000-8000-0000000000aa';
+  lou constant uuid := '00000000-0000-4000-8000-0000000000ba';
+  kip constant uuid := '00000000-0000-4000-8000-0000000000ca';
+  v_inq uuid;
+  v_draft uuid;
+  v_err text;
+  v_msg public.inquiry_messages;
+begin
+  perform _t_as(kai);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (kai, lou, now() + interval '50 days', now() + interval '52 days', array[kip]) returning id into v_inq;
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, created_at)
+  values (v_inq, 'owner', kai, 'Can you host Kip?', now() - interval '10 minutes');
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, status, grounding, created_at)
+  values (v_inq, 'ai', null, 'Yes! $100', true, 'draft',
+    '{"quote":{"total":100},"availability":{"can_host":true}}', now() - interval '5 minutes') returning id into v_draft;
+  -- The owner moves the dates after the draft was written (change_inquiry_dates leaves this message).
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, created_at)
+  values (v_inq, 'owner', kai, 'Changed dates: Dec 1 – Dec 3', now() - interval '1 minute');
+
+  perform _t_as(lou);
+  begin
+    perform send_inquiry_reply(v_inq, 'Yes! $100', v_draft);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'draft_stale', 'CR-7: a draft older than the owner''s latest message is refused (no old quote goes out)');
+  begin
+    perform send_inquiry_reply(v_inq, 'Yes, happy to!', v_draft, 'accept');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'draft_stale', 'CR-7: …also as an Accept');
+  perform _t_ok((select count(*) from public.inquiry_messages where inquiry_id = v_inq and author = 'sitter') = 0,
+    'CR-7: …and nothing was sent');
+  v_msg := send_inquiry_reply(v_inq, 'Let me check those dates and come back to you.', null);
+  perform _t_ok(v_msg.author = 'sitter' and v_msg.grounding is null, 'CR-7: a reply written by the sitter still goes out');
+
+  -- A draft written after the latest owner message is fine.
+  perform _t_as(null);
+  insert into public.inquiry_messages (inquiry_id, author, sender_id, body, drafted_by_ai, status, grounding, created_at)
+  values (v_inq, 'ai', null, 'Yes for Dec 1 – 3! $120', true, 'draft',
+    '{"quote":{"total":120},"availability":{"can_host":true}}', now()) returning id into v_draft;
+  perform _t_as(lou);
+  v_msg := send_inquiry_reply(v_inq, 'Yes for Dec 1 – 3! $120', v_draft);
+  perform _t_ok((v_msg.grounding #>> '{quote,total}') = '120', 'CR-7: the new draft for the latest message is sent with its quote');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 013 (Phase 12.1 Treat check, D61): owner + sitter read and acknowledge, a sitter's DANGER tells the owner
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  biscuit uuid;
+  v_media uuid;
+  v_by_sitter uuid;
+  v_by_owner uuid;
+  v_warning uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Biscuit') returning id into biscuit;
+  perform _t_booking(robert, chloe, array[biscuit], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (biscuit, chloe, 'goldito/biscuit/safety_label/a', 'image', 'safety_label') returning id into v_media;
+
+  -- The backend writes the checks (service role).
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'DANGER', '{"warning_message":"Biscuit is allergic to chicken. Don''t feed it."}')
+  returning id into v_by_sitter;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, robert, v_media, 'DANGER', '{"warning_message":"x"}') returning id into v_by_owner;
+  insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+  values (biscuit, chloe, v_media, 'WARNING', '{"warning_message":"y"}') returning id into v_warning;
+
+  select count(*) into v_n from public.notifications where user_id = robert and type = 'safety_danger' and pet_id = biscuit;
+  perform _t_ok(v_n = 1, '013: only the sitter''s DANGER notifies the owner (not the owner''s own, not a WARNING)');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'safety_danger'
+      and ref_id = v_by_sitter and title = 'Blocked a risky treat for Biscuit ⚠️'
+      and body = 'Biscuit is allergic to chicken. Don''t feed it.'),
+    '013: the notice names the pet and carries the warning');
+
+  -- Who reads them
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: the owner reads every check of their pet');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.safety_checks where pet_id = biscuit) = 3, '013: …and so does the sitter');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.safety_checks) = 0, '013: a third party reads none');
+
+  -- Acknowledge: the owner now too; nothing else is writable by a client
+  perform _t_as(robert);
+  update public.safety_checks set acknowledged_at = now() where id = v_by_sitter;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is not null from public.safety_checks where id = v_by_sitter),
+    '013: the owner records "I understand — don''t feed"');
+  perform _t_as(joy);
+  update public.safety_checks set acknowledged_at = now() where id = v_warning;
+  perform _t_as(null);
+  perform _t_ok((select acknowledged_at is null from public.safety_checks where id = v_warning), '013: a third party cannot');
+  perform _t_as(robert);
+  begin
+    update public.safety_checks set safety_status = 'SAFE' where id = v_by_owner;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: the verdict cannot be changed by a client');
+  begin
+    insert into public.safety_checks (pet_id, checked_by, media_id, safety_status, result_json)
+    values (biscuit, robert, v_media, 'SAFE', '{}');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013: a check is never written by a client (only by the backend)');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 013b (Phase 12.3 Sticker, D61): stickers of a pet, and each person's own sticker layer on a sent report
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  v_sticker_media uuid;
+  v_spare_media uuid;
+  v_feed_media uuid;
+  v_sticker uuid;
+  v_report uuid;
+  v_draft uuid;
+  v_err text;
+  v_n int;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  -- The backend registers uploads (service role); 'sticker' is now a purpose.
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/a', 'image', 'sticker') returning id into v_sticker_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/sticker/b', 'image', 'sticker') returning id into v_spare_media;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (pip, chloe, 'goldito/pip/feed/c', 'image', 'feed') returning id into v_feed_media;
+  perform _t_ok(v_sticker_media is not null, '013b: media takes the sticker purpose');
+
+  -- Saving a sticker: only from your own sticker upload of that pet
+  perform _t_as(chloe);
+  insert into public.pet_stickers (pet_id, media_id) values (pip, v_sticker_media) returning id into v_sticker;
+  perform _t_ok(v_sticker is not null, '013b: the sitter on duty saves a sticker from her own sticker upload');
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_feed_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: a feed photo cannot be saved as a sticker');
+  perform _t_as(robert);
+  begin
+    insert into public.pet_stickers (pet_id, media_id) values (pip, v_spare_media);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot save someone else''s upload as their sticker');
+
+  -- Who sees them, who removes them
+  perform _t_ok((select count(*) from public.pet_stickers where pet_id = pip) = 1, '013b: the owner sees the stickers of their pet');
+  delete from public.pet_stickers where id = v_sticker;
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.pet_stickers where id = v_sticker), '013b: only the maker deletes a sticker');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_stickers) = 0, '013b: a third party sees no stickers');
+
+  -- Decorating a report: own layer only, both layers visible, sent reports only for the owner
+  perform _t_as(null);
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+  values (pip, chloe, current_date, 'Pip had a lovely day.', 'sent', now()) returning id into v_report;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body)
+  values (pip, chloe, current_date - 1, 'Draft') returning id into v_draft;
+
+  perform _t_as(robert);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.2, 'y', 0.3, 'scale', 1, 'rotate', 0, 'z', 1)));
+  perform _t_as(chloe);
+  insert into public.report_decor (report_id, items)
+  values (v_report, jsonb_build_array(jsonb_build_object('sticker_id', v_sticker, 'x', 0.8, 'y', 0.6, 'scale', 1.5, 'rotate', 15, 'z', 1)));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.report_decor where report_id = v_report) = 2, '013b: the owner sees both layers on the report');
+  update public.report_decor set items = '[]'::jsonb where report_id = v_report and user_id = chloe;
+  perform _t_as(chloe);
+  perform _t_ok((select jsonb_array_length(items) from public.report_decor where report_id = v_report and user_id = chloe) = 1,
+    '013b: nobody changes the other person''s layer');
+  perform _t_as(robert);
+  begin
+    insert into public.report_decor (report_id, items) values (v_draft, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: the owner cannot decorate a draft');
+  begin
+    update public.report_decor set items = (select jsonb_agg(jsonb_build_object('x', g)) from generate_series(1, 21) g)
+    where report_id = v_report and user_id = robert;
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '013b: at most 20 stickers in one layer');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.report_decor) = 0, '013b: a third party sees no layer');
+  begin
+    insert into public.report_decor (report_id, items) values (v_report, '[]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '42501', '013b: …and cannot add one');
+  perform _t_as(null);
+end;
+$$;
 
 rollback;

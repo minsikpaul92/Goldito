@@ -125,7 +125,7 @@ export function PetForm({ initial, editing, submitLabel, onSubmit }: Props) {
 
       <View style={styles.field}>
         <Text style={styles.label}>Allergies</Text>
-        <Text style={styles.hint}>The treat scanner checks labels against these.</Text>
+        <Text style={styles.hint}>Snap → Treat check checks labels against these.</Text>
         {values.allergens.length > 0 ? (
           <View style={styles.chips}>
             {values.allergens.map((allergen) => (

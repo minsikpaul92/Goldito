@@ -52,7 +52,7 @@
 | 이름 | 역할 | 할 일 |
 | :--- | :--- | :--- |
 | **민식** | 풀스택 리드 | Expo 앱, FastAPI, Supabase 스키마/인증/실시간, Cloudinary 업로드, 알림·스케줄러, 배포, **Devpost 대표 제출자** |
-| **슬기** | 품질 · 데이터 · QA (2026-10-09부터 [Phase Q](phases/phase-q.md)) | 시터 3년 경험으로 **손 테스트 · 흐름 · 문구 검수**, **데이터 익명화**, 문의 답장 · 알림장 **말투 데이터** · **프롬프트 엔지니어링 + RAG 우선 답변**, AI 품질 리뷰 항목(R3 Medium) · 측정 |
+| **슬기** | 품질 · 데이터 · QA (2026-10-09부터 [Phase Q](phases/phase-q-quality.md)) | 시터 3년 경험으로 **손 테스트 · 흐름 · 문구 검수**, **데이터 익명화**, 문의 답장 · 알림장 **말투 데이터** · **프롬프트 엔지니어링 + RAG 우선 답변**, AI 품질 리뷰 항목(R3 Medium) · 측정 |
 | **묵** | 프로덕트 & UX/UI | 피그마 디자인 시스템(Auto Layout, 토큰), 견주·펫시터 화면 흐름, 피드/앨범, 경고 모달, 공지 팝업, 데모 영상 비주얼 |
 
 - **묵 님께:** 컴포넌트를 Auto Layout과 토큰 기반으로 잡아주시면 Figma MCP 코드 변환 품질이 올라갑니다. **디자인은 심사 기준의 1/4**이에요. 키즈노트 수준의 완성도를 목표로 해주세요.
@@ -73,7 +73,7 @@
 
 > **2026-10-09 다시 짠 일정 (위 표보다 우선):** 실제로는 03B~07C · 09가 10/9까지 끝났고(#55~#60), AI 백엔드는 10/4부터 민식이 맡았습니다. 남은 3주는 [work-split-2026-10-09.ko.md](work-split-2026-10-09.ko.md) §5를 따릅니다.
 >
-> | 기간 | 민식 (급함) | 슬기 ([Phase Q](phases/phase-q.md)) |
+> | 기간 | 민식 (급함) | 슬기 ([Phase Q](phases/phase-q-quality.md)) |
 > | :--- | :--- | :--- |
 > | 10/9 – 10/11 | U0 백엔드 배포 ✅ (Render) → CW-1 → R1b 문의 AI 안전(RV-1~5) | Q.0 · Q.1 Vercel에서 전체 손 테스트 · 피드백 |
 > | 10/12 – 10/17 | 06B Pet Transit | Q.2 문구 · 프리셋 → Q.3 익명화 → Q.4 말투 데이터 → Q.4b 프롬프트 · RAG 우선 |
@@ -183,7 +183,7 @@
 
 ## 9. 데이터 모델 (요약)
 
-> **정본은 [phases/phase-02.md](phases/phase-02.md)** (P0 17개 테이블 · RLS · RPC), 시나리오 테이블은 각 phase migration (03B–07C), P1은 [phase-11.md](phases/phase-11.md). 아래는 한눈에 보기용 목록이며 컬럼·제약은 적지 않습니다 — 스키마를 바꿀 때는 phase-02를 먼저 고칩니다.
+> **정본은 [phases/phase-02-db.md](phases/phase-02-db.md)** (P0 17개 테이블 · RLS · RPC), 시나리오 테이블은 각 phase migration (03B–07C), P1은 [phase-11-p1.md](phases/phase-11-p1.md). 아래는 한눈에 보기용 목록이며 컬럼·제약은 적지 않습니다 — 스키마를 바꿀 때는 phase-02를 먼저 고칩니다.
 
 | 영역 | 테이블 |
 | :--- | :--- |
@@ -217,7 +217,7 @@
 - **영상:** 최대 **30초** (더 짧아도 OK). 그보다 길면 **트림 UI**로 ≤30초 구간 선택 → 클라 압축(≈720p) 후 업로드. Free 영상 한도 **100 MB**
 - **썸네일:** 피드 그리드용 `c_fill,w_400,h_400`, 영상 썸네일은 `so_0` + `.jpg`
 - **보안:** 강아지별 폴더 분리, API secret은 클라이언트에 노출 금지
-- **상세:** [phases/phase-04.md](phases/phase-04.md) § Media normalize policy
+- **상세:** [phases/phase-04-upload.md](phases/phase-04-upload.md) § Media normalize policy
 
 ---
 

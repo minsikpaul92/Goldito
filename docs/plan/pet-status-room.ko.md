@@ -1,6 +1,6 @@
 # Pet status room (8-bit Tamagotchi-style dashboard)
 
-> **Status:** P1 product spec (Phase **11.12**). Depends on Plan B care data ([sitter-care-loop.ko.md](sitter-care-loop.ko.md) — Phase 06 check-ins + tasks) and optional pet theme ([11.10](phases/phase-11.md)).
+> **Status:** P1 product spec (Phase **11.12**). Depends on Plan B care data ([sitter-care-loop.ko.md](sitter-care-loop.ko.md) — Phase 06 check-ins + tasks) and optional pet theme ([11.10](phases/phase-11-p1.md)).
 
 Owner **Home** (or Care top) shows one screen like a **Tamagotchi / Digimon v-pet**: at a glance — **fed?, potty?, mood?, next task?** — with an **8-bit pixel pet** that reflects **species + breed** (and later `pets.theme` from 11.10).
 
@@ -65,5 +65,5 @@ Rules live in one module (`lib/petStatus.ts`) — tunable without schema churn.
 
 ## 6. Related
 
-- Settings & patch notes: [phase-11 §11.11](phases/phase-11.md)
+- Settings & patch notes: [phase-11 §11.11](phases/phase-11-p1.md)
 - Post-hackathon: more breeds, room furniture (sticker BM), sitter co-op mini events — roadmap only.

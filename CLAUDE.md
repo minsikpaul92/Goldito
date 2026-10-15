@@ -4,7 +4,7 @@
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q-quality.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
@@ -68,12 +68,12 @@ Owner                                  Sitter
   Trip (live map + ETA)                  Trip (Start trip, photo check)
   Feed (album, multi-pet toggle)         Feed (+ Photo → album)
   Diary (Live + history; photo→Feed)     Diary (stay log + evening chips)
-  Mood (fun mood from clip)              Mood (same tool)
+  Snap (treat check · mood · sticker)    Snap (same tools)
   Profile → Settings                     Profile → Settings · Earnings (later)
-  Notifications (bell)                   Treat scanner from Home (08)
+  Notifications (bell)
 ```
 
-Tab bar (D47 · D47b): both roles `Home · Bookings · Feed · Diary · Mood`.
+Tab bar (D47 · D47b · D61): both roles `Home · Bookings · Feed · Diary · Snap`.
 ### UX principles
 
 1. **Mobile-first, single column** — max comfort on phone-width web demo. Design frame **402 × 874**; on desktop browsers the app runs inside a phone frame and **every action must work with a mouse** (click = tap, drag/wheel = swipe) — `DESIGN.md` §2.1 · §7.7, architecture D25.
@@ -167,8 +167,8 @@ English only for commit messages and GitHub PR content.
 
 ### Phase order
 
-`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → (08 safety, stretch) → 10 deploy → 11 P1` — 06B is the last P0 phase, right after 07C; 08 runs only if time remains (D41). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration letters `011m`–`011z`).
+`00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → 12 Snap (treat check = the 08 design, mood, stickers; D61) → 10 deploy → 11 P1` — 06B is the last scenario phase, right after 07C; 12 runs 10/14–10/22, before the rest of 10 and the 11.15 onboarding (D61). Dates in `docs/plan/phases/README.ko.md`.  
+After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration names: next free name, `supabase/README.md` § Naming).
 
 ### Coding discipline
 
@@ -228,7 +228,7 @@ Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1
 | ③ Booking — schedule, request, consents, demo payment, timed unlock | 02, 03B, 03C (P1 polish: 11) |
 | ④ Care & Pet Transit — live trip, photo check, 5-second check, daily report, feed & album | 04, 05, 06, 06B, 07, 09 |
 | ⑤ Completion — home-safe report, review, Pet Life Record → RAG | 07C |
-| Treat safety guard (stretch, after 07C) | 08 |
+| Snap tab — treat check (the 08 design + Tavily), pet mood, stickers + diary decorating (D61) | 12 |
 | Deploy & submit README | 10 |
 
 The scenario core (03B → 07C) comes first, then Pet Transit (06B) as the last P0 phase (D41); the treat safety guard (08, + Tavily 8.7) is a P0 stretch only if time remains after 06B (D27). P1 (photo request, notices, recurring schedule; Tavily only if 8.7 slipped) and P2 (SFT showcase 11.7, D43) — only after P0 queue is clear unless user reprioritizes. The old P2 Q&A is now the Stage 1 inquiry AI (07B).
@@ -248,7 +248,8 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/report-chips` | Stage 4 — chip suggestions from the day's check-ins, tasks, and photos; the sitter keeps or turns off each (D38) |
 | `POST /api/ai/daily-report` | Stage 4 — report draft from the chips the sitter kept, an optional short note, and photos; posted only after the sitter approves |
 | `POST /api/ai/life-record` | Stage 5 — stay → Pet Life Record + RAG indexing |
-| `POST /api/ai/safety-check` | Stretch — label photo → JSON safety (+ Tavily sources, 8.7) |
+| `POST /api/ai/safety-check` | Snap → Treat check (12.1) — label photo → JSON safety (+ Tavily sources on trusted sites) |
+| `POST /api/ai/pet-mood` | Snap → Mood (12.2) — pet crops from the browser → body-language tags (vision) → server-computed emotion % (sum 100) + one "seems" line; for fun only, nothing saved |
 | `POST /api/ai/pet-photo` | P1 (11.15) — pet photo → breed guesses (≤ 3, owner confirms) + coat color |
 | `POST /api/ai/pet-voice` | 11.15 — audio (or text) → speech-to-text (Groq Whisper free plan; Token Factory has none) → profile facts from Nemotron, each with a quote from the transcript; safety answers are never pre-selected |
 
@@ -266,4 +267,4 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 ---
 
-*Last aligned with repo docs: phases 00–11 (incl. 03C · 06B · 07B · 07C), full-process.ko.md, P0 playbook, **D47 / D47b** both roles Home · Bookings · Feed · Diary · Mood. If you change process, update this file and `docs/plan/TODO.md` together.*
+*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61** both roles Home · Bookings · Feed · Diary · Snap. If you change process, update this file and `docs/plan/TODO.md` together.*

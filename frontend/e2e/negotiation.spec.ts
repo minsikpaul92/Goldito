@@ -309,5 +309,31 @@ test.describe("negotiation", () => {
     expect(db.booking_handoffs.find((h) => h.id === "h-2")?.status).toBe("agreed");
     expect(db.booking_handoffs.find((h) => h.id === "h-1")?.status).toBe("superseded");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("Oct 8, 6:00 PM · Robert's place");
+    await expect(screen.getByTestId("proposal-pick_up-paired")).toHaveCount(0);
+  });
+
+  test("if the database can't say the stage, a paid booking still shows Stay, not Request (CR-8)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", CONFIRMED);
+    db.stagesFail = true;
+    const screen = await openDetail(page, OWNER);
+    await expect(screen.getByTestId("stage-bar")).toHaveAttribute("aria-label", "Step 4 of 4");
+    await expect(screen.getByTestId("stage-caption")).toHaveCount(0); // paid: nobody's turn
+  });
+
+  test("a whole stay moved past its old window shows both offers as one answer (CR-2)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "confirmed", [
+      ...CONFIRMED,
+      // Oct 5 – Oct 8 → Oct 10 – Oct 14: the new drop-off is after the agreed pick-up, so it only fits with the new pick-up.
+      { kind: "pick_up", at: "2030-10-14T21:00:00.000Z", by: OWNER, status: "proposed", minute: 9 },
+      { kind: "drop_off", at: "2030-10-10T12:30:00.000Z", by: OWNER, status: "proposed", minute: 10 },
+    ]);
+    const sitter = await openDetail(page, SITTER);
+    await expect(sitter.getByTestId("proposal-drop_off-paired")).toContainText(
+      "Comes with the new pick-up (Oct 14, 5:00 PM) — Accept or Decline answers both.",
+    );
+    // The pick-up fits on its own (Oct 5 – Oct 14), so it can be answered alone.
+    await expect(sitter.getByTestId("proposal-pick_up-paired")).toHaveCount(0);
   });
 });

@@ -112,7 +112,7 @@ cd backend
 ## 5. 결과 적는 법
 
 - 시나리오 표의 **상태** 칸을 `✅ 10/09 이름` 또는 `❌ 10/09 이름 — 한 줄 이유`로 고칩니다 (`test-guide.ko.md`). 사람이 안 해 본 줄은 ➖ 그대로. **Vercel(main)에서 한 것만** 기록합니다.
-- 버그 · 요청은 GitHub 이슈 양식 **QA feedback**으로 올립니다(폰에서도 가능, 번호 = 이슈 번호). 심각도에서 `Blocks the demo path` · `The app says something untrue`를 고르면 민식이 바로 봅니다 — [phases/phase-q.md](phases/phase-q.md) Q.1.
+- 버그 · 요청은 GitHub 이슈 양식 **QA feedback**으로 올립니다(폰에서도 가능, 번호 = 이슈 번호). 심각도에서 `Blocks the demo path` · `The app says something untrue`를 고르면 민식이 바로 봅니다 — [phases/phase-q-quality.md](phases/phase-q-quality.md) Q.1.
 - 막히면 **어느 단계에서 어떤 화면 문구가 떴는지**만 알려 주면 됩니다 (스크린샷이면 더 좋음).
 
 ## 6. 자동 테스트 (참고 — 코드는 이미 통과)

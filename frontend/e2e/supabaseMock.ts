@@ -145,6 +145,10 @@ type Row = Record<string, unknown>;
 export type MockDb = {
   /** rpc/stay_capacity_check answer: null = the stay fits. */
   stayShortfall?: string | null;
+  /** rpc/get_booking_stages fails (CR-8: the app falls back to its own reading of the booking). */
+  stagesFail?: boolean;
+  /** rpc/stay_capacity_check calls with their parameters. */
+  stayChecks: Row[];
   pets: Row[];
   pet_allergies: Row[];
   owner_profiles: Row[];
@@ -209,6 +213,12 @@ export type MockDb = {
   pet_life_records: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
+  /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
+  safety_checks: Row[];
+  /** Stickers of a pet (12.3, 013b): rows point at a `media` row; read newest first with the media embedded. */
+  pet_stickers: Row[];
+  /** Sticker layers on a report (12.3b, 013b): one row per report and person; an upsert replaces it. */
+  report_decor: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
 };
@@ -243,6 +253,7 @@ function createMockDb(): MockDb {
     care_change_requests: [],
     responses: [],
     proposals: [],
+    stayChecks: [],
     meetGreetCalls: [],
     completions: [],
     trips: [],
@@ -262,6 +273,9 @@ function createMockDb(): MockDb {
     owner_favorite_sitters: [],
     pet_life_records: [],
     sitter_rates: [],
+    safety_checks: [],
+    pet_stickers: [],
+    report_decor: [],
     quote_error: null,
   };
 }
@@ -822,6 +836,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/get_booking_stages") {
     // booking_stage / booking_next_actor (011l), for the caller's own bookings.
+    if (db.stagesFail) return json(route, 500, { code: "XX000", message: "boom" });
     const { p_ids } = request.postDataJSON();
     const rows = db.bookings
       .filter((b) => p_ids.includes(b.id) && [b.owner_id, b.sitter_id].includes(me))
@@ -1243,13 +1258,17 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
     const body = String(p_body ?? "").trim();
     if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
+    const draft = p_draft ? db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai") : null;
+    if (p_draft && !draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    // 012f (CR-7): a draft older than the owner's latest message is refused.
+    if (draft && db.inquiry_messages.some((m) => m.inquiry_id === p_inquiry && m.author === "owner" && String(m.created_at) > String(draft.created_at))) {
+      return json(route, 400, { code: "P0001", message: "draft_stale" });
+    }
     let grounding: Row | null = null;
     if (p_outcome === "decline" || p_outcome === "suggest") {
       // 011k: a decline / suggestion can't host and carries no quote.
       grounding = { availability: { can_host: false } };
-    } else if (p_draft) {
-      const draft = db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai");
-      if (!draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
+    } else if (draft) {
       const g = (draft.grounding ?? {}) as Row;
       grounding = { quote: g.quote ?? null, sources: g.sources ?? [], availability: { can_host: (g.availability as Row | undefined)?.can_host ?? true } };
     }
@@ -1296,6 +1315,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
 
   if (path === "rpc/stay_capacity_check") {
     // 011c: null = fits; a spec sets `db.stayShortfall` to see the refusal.
+    db.stayChecks.push(request.postDataJSON());
     return json(route, 200, db.stayShortfall ?? null);
   }
 
@@ -1511,6 +1531,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         owner: { display_name: users.find((u) => u.id === pet.owner_id)?.displayName ?? null },
       }));
     }
+    if (path === "pet_stickers" && select.includes("media")) {
+      rows = rows.map((sticker) => {
+        const media = db.media.find((m) => m.id === sticker.media_id);
+        return { ...sticker, media: media ? { cloudinary_public_id: media.cloudinary_public_id } : null };
+      });
+    }
     if (path === "feed_posts" && select.includes("media")) {
       rows = rows.map((post) => {
         const media = db.media.find((m) => m.id === post.media_id) ?? null;
@@ -1602,7 +1628,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -1615,6 +1641,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       rows = [...rows].sort((a, b) => String(a.sent_at).localeCompare(String(b.sent_at)));
       if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
+    // Only the Snap tab's "Recent checks" asks for a short list so far.
+    if (path === "safety_checks" && params.get("limit")) rows = rows.slice(0, Number(params.get("limit")));
     const wantsCount = (headers.prefer ?? "").includes("count=");
     return respond(route, rows, wantsObject, 200, wantsCount ? rows.length : undefined);
   }
@@ -1687,6 +1715,14 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           (a) => a.pet_id === row.pet_id && String(a.allergen).toLowerCase() === String(row.allergen).toLowerCase(),
         );
         if (dupe) return json(route, 409, { code: "23505", message: "duplicate key value" });
+      }
+    }
+    if (path === "report_decor") {
+      // upsert on (report_id, user_id): my layer replaces my earlier one; RLS (013b) — only my own row.
+      for (const row of inserted) {
+        if (row.user_id !== me) return json(route, 403, { code: "42501", message: "new row violates row-level security policy" });
+        const keep = db.report_decor.filter((r) => !(r.report_id === row.report_id && r.user_id === row.user_id));
+        db.report_decor.splice(0, db.report_decor.length, ...keep);
       }
     }
     table.push(...inserted);
