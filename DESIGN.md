@@ -44,7 +44,7 @@ Judges open the demo URL on a computer. They must get the same experience as on 
 | Native app, phone or tablet browser (touch is the primary input) | The app, full screen |
 | Computer browser (mouse / trackpad), **any window width** | A phone frame (402 × 874 screen) centered on a soft backdrop, plus a side panel: one-line pitch, **Try demo**, "Open on your phone" QR, hint "Click = tap · Drag or scroll = swipe" (Phase 10.9) |
 | `?frame=0` / `?frame=1` | Force the frame off (video recording, debugging) / on |
-| `?view=split` (Phase 10.10, stretch) | Owner and Sitter phones side by side |
+| `?view=split` on a computer window ≥ 900 px (Phase 10.10) | Owner and Sitter phones side by side, each signed in to its own demo account (judges' link and video). Narrower windows and touch devices get the normal view. **Show both phones** under the single phone / **Show one phone** switch between them |
 
 - The frame holds the **same app in a same-origin iframe**. Inside it, everything behaves like a real 402 px phone: modals, sheets, `useWindowDimensions`, media queries.
 - The frame is a generic CSS phone (rounded body, status bar with the time, home indicator). No real device images or brand marks.
