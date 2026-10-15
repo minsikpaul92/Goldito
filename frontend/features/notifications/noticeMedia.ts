@@ -6,15 +6,15 @@ import type { MediaResourceType } from "../../types/db";
 import type { DiaryMedia } from "../diary/diaryApi";
 
 /** Notices about what the sitter did; these are the ones that can carry a photo (and a memo). */
-export const DETAIL_TYPES = new Set(["task_done", "care_checkin", "feed_post", "care_request_declined", "care_request_countered"]);
+export const DETAIL_TYPES = new Set(["task_done", "care_checkin", "feed_post", "photo_request_fulfilled", "care_request_declined", "care_request_countered"]);
 
 export function detailNextLabel(type: string, role: "owner" | "sitter"): string {
-  if (type === "feed_post") return "See in Feed";
+  if (type === "feed_post" || type === "photo_request_fulfilled") return "See in Feed";
   if (type.startsWith("care_request")) return "Open the request";
   return role === "owner" ? "See in History" : "Continue";
 }
 
-const TABLE: Record<string, string> = { task_done: "task_logs", care_checkin: "care_checkins", feed_post: "feed_posts" };
+const TABLE: Record<string, string> = { task_done: "task_logs", care_checkin: "care_checkins", feed_post: "feed_posts", photo_request_fulfilled: "feed_posts" };
 
 type Row = {
   id: string;

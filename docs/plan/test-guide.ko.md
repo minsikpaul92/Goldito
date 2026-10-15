@@ -127,6 +127,8 @@
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
+| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
+| **Settings · What's New** (Profile → Settings: 계정 · 알림 안내 · What's New = `docs/CHANGELOG.md` · 앱 버전) | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 | 11 / 11.11 |
 
 ### Stage 5 — Completion · 기타
 
@@ -141,6 +143,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
+| 데스크톱 Split view — 견주 · 시터 폰 나란히 (`?view=split`, 폭 ≥ 900) | ✅ 🤖 `split.spec.ts` · 사람 ✅ SPLIT-1 – 5 (2026-10-15 Minsik) | 10 / 10.10 |
 
 ---
 
@@ -571,16 +574,45 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SR-1 | (API) 성분표 끝이 잘린 사진 · 모델이 `complete: false` / 쉼표 없이 한 줄로 온 129자 목록 끝에 `xylitol` / 61번째 성분이 `xylitol` | 무해한 앞부분만 읽혀도 **SAFE가 아님** — 최소 WARNING + "We could only read part of the label — retake a photo of the whole ingredient list." 계열 문장 + **Retake photo**. 한 줄 목록은 다시 나눠져 DANGER | 수정 대기 (pytest · `treat-check.spec.ts` 예정) | ⬜ 수정 대기 |
-| SR-2 | (API · 규칙) 알러지 `eggs` + "dried egg product" / `poultry` + "chicken breast" / milk + "sodium caseinate" / fish + "fishmeal" · "catfish" / dairy + "buttermilk powder" | 전부 규칙만으로 **DANGER**(모델이 SAFE라 해도) | 수정 대기 (`test_safety_rules` 예정) | ⬜ 수정 대기 |
-| SR-3 | (API · 규칙) dairy + "peanut butter" / dairy + "butter" / chicken + "beef liver" / chicken + "liver" / chicken + "chicken liver" | 규칙 판정이 차례로 SAFE · DANGER · SAFE · WARNING · DANGER. 시터의 "peanut butter" 검사로 견주에게 "Blocked a risky treat" 알림이 가지 않음 | 수정 대기 (`test_safety_rules` 예정) | ⬜ 수정 대기 |
-| SR-4 | 견주 → Snap → Treat check → 샘플로 검사 → **뒤로** | Snap 탭 **Recent checks** 맨 위에 방금 한 검사(새로고침 없이) | 수정 대기 (`snap.spec.ts` 예정) | ⬜ 수정 대기 |
+| SR-1 | (API) 성분표 끝이 잘린 사진 · 모델이 `complete: false` / 쉼표 없이 한 줄로 온 129자 목록 끝에 `xylitol` / 61번째 성분이 `xylitol` | 무해한 앞부분만 읽혀도 **SAFE가 아님** — 최소 WARNING + "We could only read part of the label — retake a photo of the whole ingredient list." 계열 문장 + **Retake photo**. 한 줄 목록은 다시 나눠져 DANGER | 🤖 `test_ai_safety_check.py` (`test_a_partly_read_label_is_never_safe` · `test_a_list_sent_as_one_string_is_split_again` · `test_more_than_sixty_ingredients_is_partial` · `test_a_complete_label_stays_safe`) · `treat-check.spec.ts` (`treat-partial`). 👤 실제 모델이 `complete`를 주는지: 샘플 라벨 4장 + 끝을 가린 사진 1장 → [model-ids.md](phases/notes/model-ids.md)에 기록 | 수정됨, 사람 확인 대기 |
+| SR-2 | (API · 규칙) 알러지 `eggs` + "dried egg product" / `poultry` + "chicken breast" / milk + "sodium caseinate" / fish + "fishmeal" · "catfish" / dairy + "buttermilk powder" | 전부 규칙만으로 **DANGER**(모델이 SAFE라 해도) | 🤖 `test_safety_rules.py::test_an_allergy_typed_freely_still_matches_label_words` · `test_allergen_keys_normalize_what_a_person_typed` | 수정됨, 사람 확인 대기 |
+| SR-3 | (API · 규칙) dairy + "peanut butter" / dairy + "butter" / chicken + "beef liver" / chicken + "liver" / chicken + "chicken liver" | 규칙 판정이 차례로 SAFE · DANGER · SAFE · WARNING · DANGER. 시터의 "peanut butter" 검사로 견주에게 "Blocked a risky treat" 알림이 가지 않음 | 🤖 `test_safety_rules.py::test_look_alikes_and_named_animals_do_not_raise_false_alarms` | 수정됨, 사람 확인 대기 |
+| SR-4 | 견주 → Snap → Treat check → 샘플로 검사 → **뒤로** | Snap 탭 **Recent checks** 맨 위에 방금 한 검사(새로고침 없이) | 🤖 `snap.spec.ts` (`the newest three treat checks are listed…` — a check added while Treat check is open shows on Back) | 수정됨, 사람 확인 대기 |
+
+### 3.22 사진 요청 (PHOTO) — Phase 11.1 · *사전: 시터가 돌보는 중(확정 예약, 지금이 맡긴 시각 30분 전 ~ 데려가는 시각)*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
+| PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
+| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo 📷", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+| PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** 로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+| PHOTO-5 | 견주 → Home (요청이 답을 받은 뒤) | `photo_request_fulfilled` 알림이 `feed_post`처럼 Home 라이브 카드(📷)·Diary Live 새로고침·벨 상세(사진이 있으면 **See in Feed**)로 보이고, 누르면 그 펫의 Feed | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+
+### 3.23 Split view (SPLIT) — Phase 10 · 10.10 · *방식 A: 기본은 폰 하나, `?view=split`일 때만 두 폰*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| SPLIT-1 | 컴퓨터(1440 × 900) → `/?view=split` | 폰 두 개 나란히, 위에 "Owner · Robert" / "Sitter · Chloe". 각 폰이 데모 계정으로 자동 로그인(견주 Home · 시터 Home, 동시에). 주소창은 `/?view=split` 그대로 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+| SPLIT-2 | 시터 폰에서 **Log out** → 견주 폰 새로고침 | 시터 폰만 Welcome, 견주 폰은 로그인 유지 (폰마다 저장 키 `goldito-auth-pane-owner` · `goldito-auth-pane-sitter`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+| SPLIT-3 | 폰 하나 화면 아래 **Show both phones** → split 화면 아래 **Show one phone** | 두 폰 ↔ 폰 하나로 바뀜 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+| SPLIT-4 | 폭 800 창 또는 휴대폰에서 `/?view=split` → (컴퓨터) 다시 넓히기 | 폰 하나(휴대폰은 앱만), Show both phones 링크 없음. 다시 넓히면 두 폰으로 돌아오고 주소창도 `/?view=split` (2026-10-15 수정: 전에는 폰 하나로 남음) | 🤖 `split.spec.ts` (폭 800 · 800 → 1440) | ✅ 2026-10-15 Minsik (Chrome, 줄였다가 다시 넓히기 포함) |
+| SPLIT-5 | (DoD) 1440 × 900 → `/?view=split` → 시터 폰에서 사진 공유 또는 Complete with photo | 견주 폰에 토스트 ≤ 3초, 새로고침 없이. 1366 × 768 노트북에서도 두 폰이 잘리지 않음 | 👤 (e2e mock에는 실시간 없음) | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+
+### 3.24 Settings · What's New (SET) — Phase 11.11
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| SET-1 | 견주 / 시터 → 헤더 Profile → 맨 아래 **Settings · What's New** | Settings 화면: Account(이름 · 이메일 · Pet owner/sitter · Edit profile), Notifications("앱이 열려 있을 때 벨 · 화면 메시지로 옴, 폰 알림 · 조용한 시간은 아직 없음"), What's New(최신 릴리스 0.2.0 · 2026-10-15의 Added · Fixed · Changed), 맨 아래 "Goldito 0.2.0" · Privacy | 🤖 `settings.spec.ts` (두 역할) | 사람 확인 대기 |
+| SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목 | 앱 What's New에 보이지 않음(출시된 것만) | 🤖 `settings.spec.ts` · `node --test scripts/` | 사람 확인 대기 |
+| SET-3 | (개발) CHANGELOG.md만 고치고 `node scripts/changelog.mjs`를 안 돌린 PR | CI frontend 잡의 "What's New matches docs/CHANGELOG.md" 단계가 실패 | CI | ➖ |
 
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
-- **Snap 리뷰에서 나온 알려진 문제 (2026-10-15, [review-2026-10-15.ko.md](review-2026-10-15.ko.md)) — 이미 기록됨, 따로 이슈로 올리지 않아도 됨:** Treat check가 성분표 일부만 읽혀도 SAFE를 낼 수 있음(SR-1) · 알러지를 `eggs` · `poultry`로 적었거나 라벨이 `caseinate` · `fishmeal` · `buttermilk`면 놓칠 수 있음(SR-2) · 유제품 알러지에 `peanut butter`가 DANGER, 닭 알러지에 `beef liver`가 WARNING(SR-3) · Treat check 뒤 Snap 탭 Recent checks가 새로고침 전까지 그대로(SR-4) — 여기까지 **P0, 고칠 예정**. Later: 스티커를 불러오기 전에(또는 실패 뒤) ✨ Decorate → Save 하면 저장된 스티커가 지워질 수 있음(SR-5) · Mood 영상에서 펫 박스가 프레임마다 다르게 잡히면 펫끼리 섞일 수 있음(SR-6) · 새 견주가 Snap 도구에서 Add pet 뒤 돌아오면 "Add a pet first"가 그대로(SR-8) · 시터 Diary는 견주가 새로 붙인 스티커를 새로고침 전까지 안 보여 줌(SR-16).
+- **사진 요청 버튼은 앱의 "돌봄 중" 기준(맡긴 시각 ~ 데려가는 시각, `isCaring`)으로만 보인다 (11.1):** 서버(`request_photo`)는 맡기기 30분 전부터 받지만, 그 30분 동안 Feed에는 버튼이 아직 없다.
+- **Snap 리뷰에서 나온 알려진 문제 (2026-10-15, [review-2026-10-15.ko.md](review-2026-10-15.ko.md)) — 이미 기록됨, 따로 이슈로 올리지 않아도 됨 (P0 SR-1 – SR-4는 고침, 아래는 Later):** 스티커를 불러오기 전에(또는 실패 뒤) ✨ Decorate → Save 하면 저장된 스티커가 지워질 수 있음(SR-5) · Mood 영상에서 펫 박스가 프레임마다 다르게 잡히면 펫끼리 섞일 수 있음(SR-6) · 새 견주가 Snap 도구에서 Add pet 뒤 돌아오면 "Add a pet first"가 그대로(SR-8) · 시터 Diary는 견주가 새로 붙인 스티커를 새로고침 전까지 안 보여 줌(SR-16).
 
 - **입구 정보는 경고일 뿐 결제를 막지 않는다 (ENTRY-1):** 하우스 시팅 · 견주 집 인수인계 체크아웃에서 입구 정보 form이 비어 있으면 카드로 알리고 링크를 주지만, 견주가 무시하고 Pay 할 수 있다(가족이 직접 열어 주는 경우 등). 그 경우 시터는 Show code 대신 "{견주} hasn't added entry info yet — message them."를 본다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
 - **Treat check 샘플 라벨은 만든 그림이다** (`frontend/assets/demo/labels/` = `backend/tests/fixtures/labels/`, 상표 없는 가짜 제품명 · 실제 성분표 형식). 실제 촬영 라벨은 사람이 바꿔 넣을 수 있다(같은 파일 이름). 진행 표시 "Checking for {이름}…"는 서버 단계가 아니라 **시간**(8초)으로 바뀐다. Snap 탭의 "Recent checks"는 **최근 3개**만 보인다(펫이 여럿이면 이름이 붙고, 전체 10개는 Treat check 화면 안에서).

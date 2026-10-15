@@ -10,11 +10,13 @@ export const SUPABASE_NOT_CONFIGURED =
   "Supabase is not set up. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to frontend/.env and restart Expo.";
 
 /**
- * Where the session is stored. One fixed key for now; the split view (Phase 10.10)
- * gives each phone pane its own key so two demo accounts can be signed in at once.
+ * Where the session is stored. The split view (Phase 10.10) names each phone's iframe `pane-owner` /
+ * `pane-sitter`, and each gets its own key so two demo accounts are signed in at once; everywhere else
+ * it is the one fixed key.
  */
 export function getAuthStorageKey(): string {
-  return "goldito-auth";
+  const name = typeof window !== "undefined" && typeof window.name === "string" ? window.name : "";
+  return name.startsWith("pane-") ? `goldito-auth-${name}` : "goldito-auth";
 }
 
 let client: SupabaseClient | null = null;

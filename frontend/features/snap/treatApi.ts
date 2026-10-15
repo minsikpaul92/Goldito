@@ -21,6 +21,8 @@ export type SafetyResult = {
   sources_unavailable: boolean;
   /** The reasoning model did not answer: rules only, and never SAFE. */
   double_checked: boolean;
+  /** Part of the ingredient list is missing (cut off in the photo): never SAFE. */
+  partial_label: boolean;
   warning_message: string;
 };
 
@@ -60,6 +62,7 @@ function fromRow(row: CheckRow): SafetyCheck {
     sources: r.sources ?? [],
     sources_unavailable: r.sources_unavailable ?? false,
     double_checked: r.double_checked ?? true,
+    partial_label: r.partial_label ?? false,
     warning_message: r.warning_message ?? "",
     acknowledgedAt: row.acknowledged_at,
     createdAt: row.created_at,

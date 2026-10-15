@@ -8,12 +8,13 @@ A DANGER found by the sitter tells the owner (013 trigger).
 
 import json
 import logging
+import re
 import time
 from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.ai import safety
 from app.ai.prompts import load_prompt
@@ -28,7 +29,9 @@ log = logging.getLogger("goldito.ai")
 VISION_TIMEOUT_S = 30.0
 REASONING_TIMEOUT_S = 60.0
 MAX_INGREDIENTS = 60
+MAX_ITEM_CHARS = 120
 MAX_SOURCES = 5
+_SPLIT = re.compile(r"[;,]")
 
 Status = Literal["SAFE", "WARNING", "DANGER"]
 
@@ -38,28 +41,49 @@ class SafetyCheckRequest(BaseModel):
     media_id: UUID
 
 
-def _clean_list(value, limit: int = MAX_INGREDIENTS) -> list[str]:
+def _clean_items(value, limit: int = MAX_INGREDIENTS) -> tuple[list[str], bool]:
+    """Tidied, de-duplicated items, and whether anything had to be dropped (too many, or too long even re-split)."""
     if not isinstance(value, list):
-        return []
-    out = []
+        return [], False
+    out: list[str] = []
+    cut = False
     for item in value:
         text = " ".join(nebius.strip_think(str(item)).split()).strip(" .;:").lower()
-        if text and text not in out:
-            out.append(text[:120])
-    return out[:limit]
+        # A whole list sent as one string: split it again instead of cutting it at 120 characters.
+        parts = [text] if len(text) <= MAX_ITEM_CHARS else [p.strip(" .;:") for p in _SPLIT.split(text)]
+        for part in parts:
+            if not part:
+                continue
+            if len(part) > MAX_ITEM_CHARS:
+                cut = True
+                part = part[:MAX_ITEM_CHARS]
+            if part not in out:
+                out.append(part)
+    return out[:limit], cut or len(out) > limit
+
+
+def _clean_list(value, limit: int = MAX_INGREDIENTS) -> list[str]:
+    return _clean_items(value, limit)[0]
 
 
 class LabelReading(BaseModel):
     """What the vision model copied from the label."""
 
     readable: bool = False
+    # None: the model did not say (older prompt) — not treated as partial, but logged.
+    complete: bool | None = None
     product_name: str | None = None
     ingredients: list[str] = Field(default_factory=list)
+    # Set by the server, never by the model: the list had to be cut.
+    truncated: bool = False
 
-    @field_validator("ingredients", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def _ingredients(cls, value):
-        return _clean_list(value)
+    def _tidy(cls, data):
+        if isinstance(data, dict):
+            items, cut = _clean_items(data.get("ingredients"))
+            data = {**data, "ingredients": items, "truncated": cut}
+        return data
 
     @field_validator("product_name", mode="before")
     @classmethod
@@ -125,6 +149,8 @@ class SafetyCheckResponse(BaseModel):
     sources_unavailable: bool
     # The reasoning model did not answer: rules only, and never SAFE.
     double_checked: bool
+    # Part of the ingredient list is missing (cut off in the photo, or too long): never SAFE.
+    partial_label: bool
     warning_message: str
     model: str
     latency_ms: int
@@ -208,8 +234,12 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
             detail="Couldn't read the label. Try a closer, well-lit photo of the ingredient list.",
         )
 
+    partial = label.complete is False or label.truncated
+    if label.complete is None:
+        log.info("safety-check: vision did not say whether the list is complete")
+
     # 2. The rule table, then 3. the trusted sites.
-    rules = safety.check_rules(label.ingredients, allergens, pet["species"])
+    rules =safety.check_rules(label.ingredients, allergens, pet["species"])
     queries = safety.search_queries(label.ingredients, allergens, pet["species"], label.product_name, rules)
     hits, searched = tavily.search_many(queries)
 
@@ -219,6 +249,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
         "allergies": allergens,
         "product_name": label.product_name,
         "ingredients": label.ingredients,
+        "label_complete": not partial,
         "rule_findings": {
             "status": rules.status,
             "matched_allergens": rules.matched_allergens,
@@ -256,8 +287,11 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
     else:
         final = safety.worst(rules.status, "WARNING")
         message = safety.fallback_message(pet["name"], final, rules)
+    if partial and final == "SAFE":
+        # Only the missing part keeps it from SAFE: say that, not a rule sentence.
+        final, message = "WARNING", safety.partial_message(pet["name"])
 
-    hidden = [HiddenSource(**h) for h in rules.hidden_sources]
+    hidden =[HiddenSource(**h) for h in rules.hidden_sources]
     for item in judgement.hidden_sources if judgement else []:
         if all(h.ingredient != item.ingredient for h in hidden):
             hidden.append(item)
@@ -278,6 +312,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
         sources=sources[:MAX_SOURCES],
         sources_unavailable=not searched,
         double_checked=judgement is not None,
+        partial_label=partial,
         warning_message=message,
         model=model_name,
         latency_ms=int((time.monotonic() - started) * 1000),
@@ -295,6 +330,7 @@ def safety_check(body: SafetyCheckRequest, user: CurrentUser = Depends(get_curre
                     **result.model_dump(exclude={"safety_check_id"}),
                     "rule_status": rules.status,
                     "model_status": judgement.safety_status if judgement else None,
+                    "label_complete": label.complete,
                     "queries": [q.text for q in queries],
                 },
                 "model_vision": vision.model,

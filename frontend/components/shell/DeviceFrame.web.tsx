@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { tokens } from "../../theme/tokens";
 
@@ -14,7 +14,16 @@ const BODY_WIDTH = tokens.layout.frameWidth + BEZEL * 2;
 type Props = {
   /** The app screen (an iframe) shown between the status bar and home indicator. */
   children: ReactNode;
+  /** Phones side by side on the page (split view 10.10): each one scales to its share of the width. */
+  columns?: number;
+  /** A line above the phone, e.g. "Owner · Robert" in split view. */
+  label?: string;
+  /** A link below the phone (outside the app): Show both phones / Show one phone. */
+  footer?: ReactNode;
 };
+
+const LABEL_HEIGHT = 28;
+const FOOTER_HEIGHT = 40;
 
 /**
  * Generic CSS phone (no device images or brand marks).
@@ -22,17 +31,19 @@ type Props = {
  * screen height; windows narrower than the phone scale the whole phone down
  * (safe because the app lives in an iframe with its own coordinates).
  */
-export function DeviceFrame({ children }: Props) {
+export function DeviceFrame({ children, columns = 1, label, footer }: Props) {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const scale = Math.max(MIN_SCALE, Math.min(1, (windowWidth - PAGE_MARGIN * 2) / BODY_WIDTH));
+  const scale = Math.max(MIN_SCALE, Math.min(1, (windowWidth / columns - PAGE_MARGIN * 2) / BODY_WIDTH));
+  const extras = (label ? LABEL_HEIGHT : 0) + (footer ? FOOTER_HEIGHT : 0);
   const screenHeight = Math.min(
     tokens.layout.frameHeight,
-    Math.max(MIN_SCREEN_HEIGHT, (windowHeight - PAGE_MARGIN * 2) / scale - BEZEL * 2),
+    Math.max(MIN_SCREEN_HEIGHT, (windowHeight - PAGE_MARGIN * 2 - extras) / scale - BEZEL * 2),
   );
   const bodyHeight = screenHeight + BEZEL * 2;
 
   return (
     <ScrollView style={styles.page} contentContainerStyle={styles.pageContent}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={{ width: BODY_WIDTH * scale, height: bodyHeight * scale }}>
         <View style={[styles.body, { height: bodyHeight, transform: [{ scale }] }]}>
           <View style={styles.screen}>
@@ -44,7 +55,17 @@ export function DeviceFrame({ children }: Props) {
           </View>
         </View>
       </View>
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </ScrollView>
+  );
+}
+
+/** A plain link for the page around the phones (no app providers out here, so no TextButton). */
+export function FrameLink({ label, href, testID }: { label: string; href: string; testID: string }) {
+  return (
+    <Pressable accessibilityRole="link" onPress={() => window.location.assign(href)} testID={testID}>
+      <Text style={styles.link}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -96,6 +117,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: PAGE_MARGIN,
+  },
+  label: {
+    height: LABEL_HEIGHT,
+    fontSize: tokens.fontSize.body,
+    fontWeight: "600",
+    color: tokens.color.text,
+  },
+  footer: {
+    height: FOOTER_HEIGHT,
+    justifyContent: "center",
+  },
+  link: {
+    fontSize: tokens.fontSize.body,
+    fontWeight: "600",
+    color: tokens.color.primary,
   },
   body: {
     width: BODY_WIDTH,

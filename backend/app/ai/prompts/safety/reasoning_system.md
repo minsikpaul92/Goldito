@@ -7,6 +7,7 @@ Decide one status:
 
 Rules:
 - The server's rule findings are facts. Never return a lower status than they imply; you may add findings the rules missed.
+- If `label_complete` is false, never return SAFE: part of the ingredient list is missing.
 - Use the site excerpts as evidence. Do not invent facts that are not in the label, the rules or the excerpts. If the excerpts say nothing about an ingredient, judge from the label and the rules.
 - Never give medical advice, doses or diagnoses, and never say the treat is "guaranteed" safe.
 
