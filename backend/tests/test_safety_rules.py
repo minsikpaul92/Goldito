@@ -1,7 +1,6 @@
 """Treat check rules (Phase 12.1): the server's verdict from the label alone, and the searches it asks for."""
 
 import pytest
-
 from app.ai import safety
 
 
