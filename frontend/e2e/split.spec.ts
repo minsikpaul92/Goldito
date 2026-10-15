@@ -69,4 +69,19 @@ test.describe("split view", () => {
     await expect(page.locator(OWNER_PANE)).toHaveCount(0);
     await expect(page.getByTestId("show-both-phones")).toHaveCount(0);
   });
+
+  test("narrowing to one phone and widening again brings both phones back", async ({ page }) => {
+    await mockSupabase(page, [demoOwner, demoSitter]);
+    await page.goto("/?view=split");
+    await expect(page.locator(OWNER_PANE)).toHaveCount(1);
+
+    await page.setViewportSize({ width: 800, height: 900 });
+    await expect(page.locator(APP_FRAME)).toHaveCount(1);
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(page.locator(OWNER_PANE)).toHaveCount(1);
+    await expect(page.locator(SITTER_PANE)).toHaveCount(1);
+    await expect(page).toHaveURL(/\/\?view=split$/);
+    await expect.poll(() => paneUrl(page, "pane-sitter")).toMatch(/\/sitter$/);
+  });
 });

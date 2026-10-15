@@ -61,16 +61,24 @@ export function AppShell({ children }: Props) {
   const [embedded] = useState(isEmbedded);
   const touchPrimary = useTouchPrimary();
   const { width: windowWidth } = useWindowDimensions();
+  // Read once: while the window is too narrow the one-phone frame mirrors its own URL into the address bar,
+  // and widening again must still bring both phones back.
+  const [splitRequested] = useState(() => canUseDOM && readSplitRequest(window.location.search));
   const presentation = resolvePresentation({
     embedded,
     touchPrimary,
     override: canUseDOM ? readFrameOverride(window.location.search) : null,
-    split: canUseDOM && readSplitRequest(window.location.search),
+    split: splitRequested,
     windowWidth,
   });
 
   // Inside the frame, the mouse acts like a finger (task 1.7).
   useEffect(() => (embedded ? installTouchEmulation() : undefined), [embedded]);
+
+  // Back in split view, the address bar shows the split link again (a reload keeps both phones).
+  useEffect(() => {
+    if (presentation === "split") window.history.replaceState(window.history.state, "", "/?view=split");
+  }, [presentation]);
 
   if (presentation === "split") {
     return (
