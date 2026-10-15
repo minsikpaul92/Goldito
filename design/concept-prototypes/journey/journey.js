@@ -239,7 +239,7 @@ const Journey = (() => {
     let out = `<div class="jr-stack"><span class="jr-label">Care & medication request</span>
       <p class="jr-p">Write it like a note. Goldito turns it into ${SITTER}'s checklist; you review it first.</p>`;
     if (s.status === "write" || s.status === "generating") {
-      out += `<textarea class="input jr-textarea" id="jrRequest" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
+      out += `<textarea class="input jr-textarea" id="jrRequest" rows="${s.request.split("\n").length + 1}" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
         <button type="button" class="btn btn-primary" data-jr="generate"${s.status === "generating" ? " disabled" : ""}>${s.status === "generating" ? `<span class="spinner" aria-hidden="true"></span>Making the checklist…` : "Turn into checklist"}</button>`;
       return out;
     }

@@ -717,7 +717,7 @@ h2{font-size:1.625rem;line-height:1.1}
 .jr-stage-title{flex:1;min-width:0}
 .jr-stage-title b{display:block;font-family:var(--jr-font-head);font-weight:var(--jr-head-weight);font-size:1rem}
 .jr-stage-title span{display:block;font-size:.8125rem;color:var(--text-muted);font-weight:500}
-.jr-stage-body{padding:.5rem 1rem 1rem;display:flex;flex-direction:column;gap:.875rem}
+.jr-stage-body{padding:.75rem 1rem 1rem;display:flex;flex-direction:column;gap:.875rem}
 .jr-divider{height:1px;background:var(--tint-border);margin:.125rem 0}
 
 /* Demo controls: always visibly different from real actions. */
@@ -762,7 +762,10 @@ h2{font-size:1.625rem;line-height:1.1}
 :root[data-theme="dark"]{--jr-warn-bg:#2B1D0E;--jr-warn-fg:#F5A75B}
 .jr-heads span{font-size:.8125rem;font-weight:700;background:var(--jr-warn-bg);color:var(--jr-warn-fg);border-radius:.5rem;padding:.25rem .5rem}
 .jr-heads span.good{background:var(--jr-good-bg);color:var(--jr-good-fg)}
-.jr-textarea{min-height:6.5rem;resize:vertical;line-height:1.45}
+.jr-textarea{min-height:6.5rem;max-height:16rem;field-sizing:content;resize:vertical;line-height:1.45}
+/* A label and its hint read as one unit; the field sits a step further down. */
+.jr-label+.jr-p{margin-top:-.25rem}
+.jr-stack>.jr-p+.jr-textarea{margin-top:.25rem}
 
 /* Consents */
 .jr-consent{border:1px solid var(--tint-border);border-radius:.875rem;padding:.75rem .875rem;display:flex;flex-direction:column;gap:.375rem}
@@ -1352,7 +1355,7 @@ const Journey = (() => {
     let out = `<div class="jr-stack"><span class="jr-label">Care & medication request</span>
       <p class="jr-p">Write it like a note. Goldito turns it into ${SITTER}'s checklist; you review it first.</p>`;
     if (s.status === "write" || s.status === "generating") {
-      out += `<textarea class="input jr-textarea" id="jrRequest" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
+      out += `<textarea class="input jr-textarea" id="jrRequest" rows="${s.request.split("\n").length + 1}" aria-label="Care and medication request">${esc(s.request)}</textarea></div>
         <button type="button" class="btn btn-primary" data-jr="generate"${s.status === "generating" ? " disabled" : ""}>${s.status === "generating" ? `<span class="spinner" aria-hidden="true"></span>Making the checklist…` : "Turn into checklist"}</button>`;
       return out;
     }
