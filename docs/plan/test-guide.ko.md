@@ -128,6 +128,7 @@
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 | **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
+| **Settings · What's New** (Profile → Settings: 계정 · 알림 안내 · What's New = `docs/CHANGELOG.md` · 앱 버전) | 🟡 화면 ✅ · e2e는 다음 단계 | 11 / 11.11 |
 
 ### Stage 5 — Completion · 기타
 

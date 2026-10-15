@@ -106,7 +106,7 @@ function cleanSpots(spots: string[]): string[] {
   return out.slice(0, MAX_SPOTS);
 }
 
-/** Role profile (phase-03 3.8). Settings + What's New are a separate screen in P1 (11.11). */
+/** Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11). */
 export default function ProfileScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
@@ -454,6 +454,7 @@ export default function ProfileScreen() {
       ) : null}
       <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
       {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
+      <TextButton label="Settings · What's New" onPress={() => router.push("/settings")} testID="profile-settings" />
       <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="profile-privacy" />
     </Screen>
   );
