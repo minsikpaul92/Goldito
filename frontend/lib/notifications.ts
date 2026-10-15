@@ -130,6 +130,7 @@ export function hrefForNotification(
 
   switch (notice.type) {
     case "feed_post":
+    case "photo_request_fulfilled":
       if (role === "owner") return notice.petId ? `/owner/feed?pet=${notice.petId}` : "/owner/feed";
       return notice.petId ? `/sitter/feed/${notice.petId}` : "/sitter/feed";
     case "task_done":

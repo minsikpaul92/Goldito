@@ -127,7 +127,7 @@
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
-| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | 🟡 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 미적용) · 화면은 다음 단계 | 11 / 11.1 |
+| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | 🟡 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 미적용) · S2 견주 Feed 버튼 🤖 `photo-request.spec.ts` · 시터 배너는 다음 단계 | 11 / 11.1 |
 
 ### Stage 5 — Completion · 기타
 
@@ -583,11 +583,13 @@
 | :--- | :--- | :--- | :--- | :--- |
 | PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 | PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
+| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo 📷", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | 사람 확인 대기 |
 
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
+- **사진 요청 버튼은 앱의 "돌봄 중" 기준(맡긴 시각 ~ 데려가는 시각, `isCaring`)으로만 보인다 (11.1):** 서버(`request_photo`)는 맡기기 30분 전부터 받지만, 그 30분 동안 Feed에는 버튼이 아직 없다.
 - **Snap 리뷰에서 나온 알려진 문제 (2026-10-15, [review-2026-10-15.ko.md](review-2026-10-15.ko.md)) — 이미 기록됨, 따로 이슈로 올리지 않아도 됨:** Treat check가 성분표 일부만 읽혀도 SAFE를 낼 수 있음(SR-1) · 알러지를 `eggs` · `poultry`로 적었거나 라벨이 `caseinate` · `fishmeal` · `buttermilk`면 놓칠 수 있음(SR-2) · 유제품 알러지에 `peanut butter`가 DANGER, 닭 알러지에 `beef liver`가 WARNING(SR-3) · Treat check 뒤 Snap 탭 Recent checks가 새로고침 전까지 그대로(SR-4) — 여기까지 **P0, 고칠 예정**. Later: 스티커를 불러오기 전에(또는 실패 뒤) ✨ Decorate → Save 하면 저장된 스티커가 지워질 수 있음(SR-5) · Mood 영상에서 펫 박스가 프레임마다 다르게 잡히면 펫끼리 섞일 수 있음(SR-6) · 새 견주가 Snap 도구에서 Add pet 뒤 돌아오면 "Add a pet first"가 그대로(SR-8) · 시터 Diary는 견주가 새로 붙인 스티커를 새로고침 전까지 안 보여 줌(SR-16).
 
 - **입구 정보는 경고일 뿐 결제를 막지 않는다 (ENTRY-1):** 하우스 시팅 · 견주 집 인수인계 체크아웃에서 입구 정보 form이 비어 있으면 카드로 알리고 링크를 주지만, 견주가 무시하고 Pay 할 수 있다(가족이 직접 열어 주는 경우 등). 그 경우 시터는 Show code 대신 "{견주} hasn't added entry info yet — message them."를 본다. 데모 시드에 입구 정보를 넣는 것은 Phase 10 시드 계획에 있다(지금 시드에는 없음).
