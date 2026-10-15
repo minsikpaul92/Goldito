@@ -1,5 +1,7 @@
 """Treat check rules (Phase 12.1): the server's verdict from the label alone, and the searches it asks for."""
 
+import pytest
+
 from app.ai import safety
 
 
@@ -38,6 +40,34 @@ def test_a_possible_hidden_source_of_this_pets_allergen_is_a_warning():
     # An ingredient that names the animal is a match, not a hidden source.
     named = safety.check_rules(["chicken liver"], ["chicken"], "dog")
     assert named.status == "DANGER" and named.hidden_sources == []
+
+
+@pytest.mark.parametrize(
+    ("allergy", "ingredient"),
+    [
+        ("eggs", "dried egg product"),
+        ("poultry", "chicken breast"),
+        ("milk", "sodium caseinate"),
+        ("fish", "fishmeal"),
+        ("fish", "catfish"),
+        ("dairy", "buttermilk powder"),
+    ],
+)
+def test_an_allergy_typed_freely_still_matches_label_words(allergy, ingredient):
+    # SR-2: free-typed allergy names and label spellings the whole-word match used to miss.
+    found = safety.check_rules([ingredient], [allergy], "dog")
+    assert found.status == "DANGER" and found.matched_allergens == [allergy]
+
+
+def test_allergen_keys_normalize_what_a_person_typed():
+    assert safety.allergen_keys("Eggs ") == ["egg"]
+    assert safety.allergen_keys("poultry") == ["chicken", "turkey"]
+    assert safety.allergen_keys("Cow's milk") == ["milk"]
+    assert safety.allergen_keys("kiwi") == ["kiwi"]
+    # A typed group name still finds hidden sources of its members.
+    assert safety.check_rules(["animal fat"], ["poultry"], "dog").status == "WARNING"
+    assert safety.check_rules(["chicken meal"], ["chicken"], "dog").status == "DANGER"
+    assert safety.check_rules(["sweet potato"], ["chicken"], "dog").status == "SAFE"
 
 
 def test_worst_keeps_the_most_serious():

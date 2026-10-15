@@ -5,6 +5,7 @@ to the species is DANGER, an ingredient that may hide an allergen is WARNING. Th
 status is never lower than the rules' (`worst`). Matching is whole-word and case-insensitive.
 """
 
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Literal
@@ -15,6 +16,7 @@ Status = Literal["SAFE", "WARNING", "DANGER"]
 SEVERITY: dict[str, int] = {"SAFE": 0, "WARNING": 1, "DANGER": 2}
 
 MAX_QUERIES = 4
+log = logging.getLogger("goldito.ai")
 
 
 def worst(*statuses: str) -> Status:
@@ -36,10 +38,28 @@ def _mentions_any(text: str, words: list[str], exclude: list[str] | None = None)
     return any(_mentions(text, w) for w in words)
 
 
+def allergen_keys(allergen: str) -> list[str]:
+    """The rule-table keys for what a person typed: 'Eggs ' → ['egg'], 'poultry' → ['chicken', 'turkey']."""
+    key = " ".join(allergen.strip().lower().split())
+    rules = _rules()
+    if key in rules["allergen_keys"]:
+        return rules["allergen_keys"][key]
+    aliases = rules["allergen_aliases"]
+    if key not in aliases and key.endswith("s") and key[:-1] in aliases:
+        return [key[:-1]]
+    if key not in aliases:
+        log.info("safety: allergy not in the rule table (%s)", key[:40])
+    return [key]
+
+
 def allergen_words(allergen: str) -> list[str]:
-    """The allergen plus the ingredient names that are clearly made from it (chicken → poultry, chicken fat…)."""
-    key = allergen.strip().lower()
-    return sorted({key, *_rules()["allergen_aliases"].get(key, [])})
+    """What a registered allergy matches on a label: the words typed, its keys, and their aliases."""
+    aliases = _rules()["allergen_aliases"]
+    words = {" ".join(allergen.strip().lower().split())}
+    for key in allergen_keys(allergen):
+        words.add(key)
+        words.update(aliases.get(key, []))
+    return sorted(words)
 
 
 @dataclass
@@ -80,7 +100,7 @@ def check_rules(ingredients: list[str], allergens: list[str], species: str) -> R
             if ingredient in named or not _mentions(ingredient, hidden["term"]):
                 continue
             # Only an allergen this pet has makes it a warning; name the first one the term may hide.
-            hit = next((a for a in pet_allergens if a in hidden["may_contain"]), None)
+            hit = next((a for a in pet_allergens if set(allergen_keys(a)) & set(hidden["may_contain"])), None)
             if hit and not any(h["ingredient"] == ingredient for h in found.hidden_sources):
                 found.hidden_sources.append({"ingredient": ingredient, "may_contain": hit, "reason": hidden["reason"]})
 
