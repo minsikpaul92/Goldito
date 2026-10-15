@@ -127,6 +127,7 @@
 | Pet Transit **Received · Returned가 trip을 닫음** (`complete_handoff`가 열린 trip의 위치를 지움, 시그니처 불변) | ✅ SQL `rls_smoke` L · 🤖 `transit.spec.ts` | 06B / 6B.6 |
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
+| **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | 🟡 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 미적용) · 화면은 다음 단계 | 11 / 11.1 |
 
 ### Stage 5 — Completion · 기타
 
@@ -566,6 +567,13 @@
 | SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 지정(다시 **⬆ Over text**) — 꾸미는 동안은 반투명으로 위에 떠서 마우스로 끌 수 있고, **Save** 뒤에는 글씨가 스티커 위에 보임. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
 | SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
 | SNAP-23 | 견주(Max · 검사 4번) → Snap 탭 → 카드 3개 아래 | **Recent checks**에 가장 최근 3개(상태 칩 · 제품 이름 · 날짜, 새것이 위). 한 줄을 클릭하면 `/{역할}/snap/treat?check=…`로 그 검사가 열림(SNAP-9와 같은 화면). 검사가 하나도 없으면 이 목록 자체가 안 보임. 시터는 지금 돌보는 펫들의 검사만 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
+
+### 3.21 사진 요청 (PHOTO) — Phase 11.1 · *사전: 시터가 돌보는 중(확정 예약, 지금이 맡긴 시각 30분 전 ~ 데려가는 시각)*
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
+| PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 
 ---
 

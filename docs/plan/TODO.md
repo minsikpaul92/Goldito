@@ -72,7 +72,7 @@
 - **Handoff photo check in the app (P1, only if wanted)** — the API (`POST /api/ai/handoff-check`) and `handoff_checks` are built and tested; dropped from 06B on 2026-10-11 because owner and sitter meet in person. Needs the Take a photo step, the result copy, and real sample photos (`measure_handoff.py` for crate / seatbelt accuracy)
 - **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings
 - **Data (Seulgi, Q.3)** Anonymize the 3-year message history (English) → `{PRICE}` / `{DATE}` placeholders → train / validation / hold-out JSONL; `data/raw/` never committed; decide zero-retention + third-party notice (D35, [phase-11-p1.md](phases/phase-11-p1.md) 11.7)
-- **11.x P1** after P0 is live, in order: 11.11 Settings + in-app patch notes (CHANGELOG) → 11.1 photo request → 11.10 pet skin → 11.12 8bit Pet status room → 11.8 stickers + report card → 11.9 video mood → 11.13 tone learning loop → 11.14 service-type change → 11.2 notices (11.3 Tavily only if 8.7 slipped) → P2 11.7 SFT
+- **11.x P1** after P0 is live, in order: 11.1 photo request → 11.11 Settings + in-app patch notes (CHANGELOG) → 11.10 pet skin → 11.12 8bit Pet status room → 11.8 stickers + report card → 11.9 video mood → 11.13 tone learning loop → 11.14 service-type change → 11.2 notices (11.3 Tavily only if 8.7 slipped) → P2 11.7 SFT
 - **Take photo with the computer's webcam** (feedback 10-05 E3, optional) — today Take photo shows only on touch devices; desktop has the sample tray (D25). Useful only for recording the demo video
 - **OB.4 (deferred)** `intro_seen` skip — optional, keep Welcome every logout for judges
 
@@ -121,5 +121,6 @@
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
 - [ ] Apply new migrations as they are created and add a line here when a commit creates one (`013` · `013b` are applied, smoke all PASS 2026-10-14).
+- [ ] **`014_photo_requests.sql`** (11.1 photo request, PR on `feat/phase-11-p1`) — not applied; apply when Minsik asks, at the merge of its PR.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).

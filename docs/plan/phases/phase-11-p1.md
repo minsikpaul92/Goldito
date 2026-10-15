@@ -1,7 +1,7 @@
 # Phase 11 — P1: 사진 요청 · 펫 스킨 · 8bit 상태방 · 스티커 · 영상 기분 · Settings · 공지 (+ P2 SFT)
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md). **P0 시나리오 코어(5단계 — [full-process.ko.md](../full-process.ko.md))가 배포 URL에서 동작한 후에만** 시작 (예외: 사용자가 우선순위 변경). 구 11.4 P2 Q&A는 **Stage 1 문의 AI [07B](phase-07b-inquiry.md)로 흡수** (D27).
-> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **권장 순서: (11.15는 P0 큐의 맨 마지막으로 당겨 옴) 11.11 (Settings·패치노트) → 11.1 → 11.10 → 11.12 → 11.8 → 11.9 → 11.13 → 11.14 → 11.2** (TODO와 같음) — 11.11은 작고 CHANGELOG 습관용; 11.12는 Phase 06 check-in 데이터 필요. Tavily(11.3)는 08.7에서 끝났으면 생략. P2 11.7(SFT)은 보여주기용 (D43).
+> 목표 기간: **P0 배포(Phase 10) 후 남는 시간.** **권장 순서: (11.15는 P0 큐의 맨 마지막으로 당겨 옴) 11.1 → 11.11 (Settings·패치노트, 2026-10-14 결정으로 11.1 다음) → 11.10 → 11.12 → 11.8 → 11.9 → 11.13 → 11.14 → 11.2** (TODO와 같음) — 11.11은 작고 CHANGELOG 습관용; 11.12는 Phase 06 check-in 데이터 필요. Tavily(11.3)는 08.7에서 끝났으면 생략. P2 11.7(SFT)은 보여주기용 (D43).
 
 ## Goal
 
@@ -22,9 +22,9 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ## 작업 상세
 
-| ID | 기능 | DB (`014_p1.sql`) | 동작 | UI |
+| ID | 기능 | DB (`014*.sql`) | 동작 | UI |
 | :--- | :--- | :--- | :--- | :--- |
-| 11.1 | 사진 요청 | `photo_requests(id, pet_id, owner_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select `is_sitter_of(pet_id)` (확정 예약 기간) | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter **Home** 상단 노란 배너 → 탭 → pet 피드 + Photo |
+| 11.1 | 사진 요청 — **`014_photo_requests.sql`** (S1 ✅): 요청은 예약(돌봄 기간)에 묶이고 쓰기는 RPC `request_photo(pet)`만(`not_in_care` · `not_allowed`, 열린 요청이 있으면 그것을 돌려줌), 다음 공유 사진이 완료하면 견주 알림은 `photo_request_fulfilled` 하나만 (`feed_post` 대신) | `photo_requests(id, pet_id, booking_id, owner_id, sitter_id, status 'open'\|'fulfilled', fulfilled_post_id, created_at)` · RLS: owner insert/select own, sitter select `is_sitter_of(pet_id)` (확정 예약 기간) | owner insert → 트리거 sitter `photo_request` 알림. `feed_posts` insert 트리거 확장: 해당 pet의 open 요청을 fulfilled + owner 알림 "Here's the photo you asked for 📷" | Owner Feed 상단 **Request photo** (open 요청 있으면 "Requested · waiting" 비활성). Sitter **Home** 상단 노란 배너 → 탭 → pet 피드 + Photo |
 | 11.2 | 공지 | `notices(id, sitter_id, title, body, starts_at, ends_at)`, `notice_reads(notice_id, user_id)` (근무일은 P0 `sitter_availability`로 이동) | owner는 확정 예약이 있는 시터의 공지 select. 앱 실행 시 active & unread 공지 → 모달 → `notice_reads` insert | Sitter: 공지 작성 화면(텍스트 허용 — 드문 작업). Owner: 팝업 |
 | 11.5 ✅ | 즐겨찾기 시터 — **2026-10-09 앞당겨 완료** (`011h`, FB-28) · 아래는 원래 설계 | `owner_favorite_sitters(owner_id, sitter_id)` — 예약 전이라도 단골로 고정 | - | 시터 카드 ☆ / "Your sitters" 상단 |
 | 11.6 | 반복 근무 패턴 | `sitter_availability`에 `weekdays int[]` 추가 (예: 토·일만 open) — 스케줄·검색 계산에 반영 | - | 캘린더 "Every weekend" 토글 |
@@ -56,7 +56,7 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ## 산출물
 
-- `supabase/migrations/014_p1.sql`
+- `supabase/migrations/014_photo_requests.sql` (11.1) — 다른 11.x DB는 다음 빈 이름(`014b` …)
 - `backend/app/routers/ai_pet_theme.py`, `backend/app/ai/prompts/pet_theme/system.md` (11.10)
 - `backend/app/services/tavily.py`, `backend/app/routers/ai_report_decor.py`
 - `backend/app/ai/prompts/report_decor/system.md`, `prompts/caption/video_observe.md`
