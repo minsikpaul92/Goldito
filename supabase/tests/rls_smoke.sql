@@ -4748,4 +4748,131 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014c (Sitter search): dates, times, a place and a radius; whole-stay fits only; no coordinates leave the DB
+-- ---------------------------------------------------------------------------
+
+-- Four sitters north of Robert's home (1 km ≈ 0.008993° of latitude): Sana 3 km, Theo 6.4 km, Uma 9 km, and Vic
+-- 1 km away but only open from 10:00. Dates far ahead so no other block's schedule or booking touches them.
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-0000000000d1', 'sana@example.test', '{"role":"sitter","display_name":"Sana"}'),
+  ('00000000-0000-4000-8000-0000000000d2', 'theo@example.test', '{"role":"sitter","display_name":"Theo"}'),
+  ('00000000-0000-4000-8000-0000000000d3', 'uma@example.test', '{"role":"sitter","display_name":"Uma"}'),
+  ('00000000-0000-4000-8000-0000000000d4', 'vic@example.test', '{"role":"sitter","display_name":"Vic"}');
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  sana constant uuid := '00000000-0000-4000-8000-0000000000d1';
+  theo constant uuid := '00000000-0000-4000-8000-0000000000d2';
+  uma constant uuid := '00000000-0000-4000-8000-0000000000d3';
+  vic constant uuid := '00000000-0000-4000-8000-0000000000d4';
+  d constant date := app_today() + 200;
+  drop_at timestamptz := local_ts(d, '09:30');
+  pick_at timestamptz := local_ts(d, '16:00');
+  r record;
+  v_ids uuid[];
+  v_err text;
+begin
+  perform _t_as(null);
+  update public.owner_profiles set home_lat = 43.6644, home_lng = -79.3573 where id = robert;
+  update public.owner_profiles set home_lat = null, home_lng = null where id = joy;
+  update public.sitter_profiles set home_lat = 43.6644 + 3 * 0.008993, home_lng = -79.3573 where id = sana;
+  update public.sitter_profiles set home_lat = 43.6644 + 6.4 * 0.008993, home_lng = -79.3573 where id = theo;
+  update public.sitter_profiles set home_lat = 43.6644 + 9 * 0.008993, home_lng = -79.3573 where id = uma;
+  update public.sitter_profiles set home_lat = 43.6644 + 1 * 0.008993, home_lng = -79.3573 where id = vic;
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  select x, 'open', d, d, s.slot, s.a, s.b, 2
+  from unnest(array[sana, theo, uma]) x
+  cross join (values ('morning'::care_slot, '08:00'::time, '12:00'::time),
+                     ('afternoon'::care_slot, '12:00'::time, '18:00'::time)) s (slot, a, b);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (vic, 'open', d, d, 'morning', '10:00', '12:00', 2),
+         (vic, 'open', d, d, 'afternoon', '12:00', '18:00', 2);
+  insert into public.sitter_rates (sitter_id, boarding_nightly) values (sana, 48);
+
+  -- Robert searches from his saved home, 5 km
+  perform _t_as(robert);
+  select array_agg(x.sitter_id order by x.distance_km) into v_ids
+  from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id in (sana, theo, uma, vic);
+  perform _t_ok(v_ids = array[sana, theo],
+    '014c: 5 km from home finds Sana (3 km) and Theo (6.4 km, inside the +2 km margin), nearest first');
+  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = sana;
+  perform _t_ok(r.distance_km = 3 and r.boarding_nightly = 48 and r.display_name = 'Sana',
+    '014c: a result carries a rounded distance and the server price');
+  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = theo;
+  perform _t_ok(r.distance_km = 6, '014c: the distance is rounded to whole km');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 4) x where x.sitter_id = theo),
+    '014c: …and 4 km (+2 = 6) leaves Theo out');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 7) x where x.sitter_id = uma),
+    '014c: 7 km (+2 = 9) reaches Uma');
+
+  -- Out of hours = not shown at all, at any radius; the same sitter shows once the drop-off is inside her hours
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 100) x where x.sitter_id = vic),
+    '014c: a sitter whose hours do not cover the drop-off is left out');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(local_ts(d, '10:30'), pick_at, 1, 5) x where x.sitter_id = vic),
+    '014c: …and shows when the times fit');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, local_ts(d, '19:00'), 1, 100) x
+      where x.sitter_id in (sana, theo, uma)),
+    '014c: a pick-up after the sitters'' hours leaves them out');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(local_ts(d + 1, '09:30'), local_ts(d + 1, '16:00'), 1, 100) x
+      where x.sitter_id in (sana, theo, uma, vic)),
+    '014c: a day the sitters did not open leaves them out');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 3, 100) x where x.sitter_id = sana),
+    '014c: more pets than the sitter has room for leaves her out');
+
+  -- The current location instead of home
+  select array_agg(x.sitter_id) into v_ids
+  from search_sitters_nearby(drop_at, pick_at, 1, 1, 43.6644 + 9 * 0.008993, -79.3573) x
+  where x.sitter_id in (sana, theo, uma, vic);
+  perform _t_ok(v_ids = array[uma], '014c: a point sent by the app is searched instead of the saved home');
+
+  -- No coordinates come back
+  perform _t_ok(pg_get_function_result(
+      'public.search_sitters_nearby(timestamptz, timestamptz, int, int, double precision, double precision)'::regprocedure
+    ) !~* '(lat|lng|lon)', '014c: the result has no coordinate columns');
+
+  -- Refusals
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 0); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_radius', '014c: a radius under 1 km is refused');
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 101); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_radius', '014c: a radius over 100 km is refused');
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 5, 43.7, null); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_point', '014c: half a point is refused');
+  begin perform search_sitters_nearby(pick_at, drop_at, 1, 5); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '014c: a pick-up before the drop-off is refused');
+
+  perform _t_as(joy);
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 5); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'no_home_point', '014c: an owner with no saved home is asked for a place');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5, 43.6644, -79.3573) x
+      where x.sitter_id = sana),
+    '014c: …and can search from the current location');
+
+  perform _t_as(chloe);
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 5, 43.6644, -79.3573); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014c: a sitter cannot call the owner search');
+
+  perform _t_as(null, 'anon');
+  begin perform search_sitters_nearby(drop_at, pick_at, 1, 5, 43.6644, -79.3573); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014c: anon cannot call the owner search');
+
+  -- Sitter coordinates stay unreadable to owners
+  perform _t_as(robert);
+  begin perform home_lat from public.sitter_profiles where id = sana; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014c: an owner still cannot read a sitter''s home point');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
