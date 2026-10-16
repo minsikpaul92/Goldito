@@ -70,7 +70,8 @@ export default function OwnerBookings() {
     }, [load]),
   );
 
-  const bookCare = () => router.push("/owner/bookings/new");
+  // A new booking starts with the sitter search (SS-2): dates, times, place, radius.
+  const bookCare = () => router.push("/owner/bookings/search");
 
   if (state.status === "loading") return <LoadingView />;
 

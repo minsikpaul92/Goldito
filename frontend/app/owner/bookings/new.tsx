@@ -70,7 +70,16 @@ export default function BookCare() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
-  const params = useLocalSearchParams<{ sitter?: string; rebook?: string; inquiry?: string; other?: string }>();
+  const params = useLocalSearchParams<{
+    sitter?: string;
+    rebook?: string;
+    inquiry?: string;
+    other?: string;
+    /** From the sitter search (SS-2): the searched stay, ISO times and pet ids. */
+    drop?: string;
+    pick?: string;
+    pets?: string;
+  }>();
   const { status: petStatus, pets } = useMyPets();
   const today = useMemo(() => appToday(), []);
 
@@ -99,8 +108,22 @@ export default function BookCare() {
 
   // One pet → picked for you (unless a rebook already filled the pets in).
   useEffect(() => {
-    if (pets.length === 1 && !params.rebook && !params.inquiry) setPetIds([pets[0].id]);
-  }, [pets, params.rebook, params.inquiry]);
+    if (pets.length === 1 && !params.rebook && !params.inquiry && !params.pets) setPetIds([pets[0].id]);
+  }, [pets, params.rebook, params.inquiry, params.pets]);
+
+  // From the sitter search: the same stay and pets the owner searched with.
+  useEffect(() => {
+    if (params.drop && params.pick && !Number.isNaN(Date.parse(params.drop)) && !Number.isNaN(Date.parse(params.pick))) {
+      setDropOff((d) => ({ ...d, ...isoToZoned(params.drop as string) }));
+      setPickUp((p) => ({ ...p, ...isoToZoned(params.pick as string) }));
+    }
+  }, [params.drop, params.pick]);
+  useEffect(() => {
+    if (!params.pets) return;
+    const wanted = params.pets.split(",");
+    const mine = pets.filter((p) => wanted.includes(p.id)).map((p) => p.id);
+    if (mine.length > 0) setPetIds(mine);
+  }, [params.pets, pets]);
 
   // Find a new sitter (3B.7): same pets, times and places as the cancelled booking.
   useEffect(() => {
