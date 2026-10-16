@@ -53,3 +53,27 @@ PowerShell: `$env:EXPO_PUBLIC_DEV_ROUTES="1"; $env:EXPO_PUBLIC_SUPABASE_URL="htt
 **Gotchas:** build the mock-backed export with the CI values from `.github/workflows/ci.yml` and `npx expo export -c -p web` (`-c` clears the cache so a real `.env` does not leak into the build). Commit only after the whole suite passes **three runs in a row**. Never write a test that depends on the time of day — use a fake clock (`page.clock`) or set the DB state. Do not run Prettier over existing files (it rewrites unrelated lines).
 
 Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 (phone frame + mouse), a touch phone (no frame, layout at 360 / 402 / 440), and `auth` (sign in / sign up / role routing / log out in the frame). CI runs the same suite on every frontend PR. Note: Playwright's Firefox needs the Visual C++ runtime on Windows — run `--project=chromium-*` / `webkit-*` / `phone` / `auth` locally if it is missing.
+
+## Figma ↔ code
+
+Library file: [Goldito Design System](https://www.figma.com/design/GvZcpNdR077U4VDiPTQ9T0) — built from this code, names match 1:1.
+
+| Figma | Code |
+| --- | --- |
+| Variable `color/<name>` (collection **Color**) | `theme.color.<name>` — `theme/tokens.ts` |
+| A **Mode** of the Color collection (`Default`, later one per pet skin) | a preset in `theme/themes.ts`; only `SkinColors` (`primary`, `primaryText`, `background`, `accent`, `surface`, `border`) may differ per mode |
+| `spacing/*`, `radius/*`, `fontSize/*`, `fontWeight/*`, `lineHeight/*`, `icon/*` (collection **Size**) | `theme.spacing.*`, `theme.radius.*`, … |
+| `opacity/*` (percent in Figma) | `theme.opacity.*` (0–1 in code) |
+| Text styles `Title`, `Body`, `Body Semibold`, `Small`, `Small Semibold`, `Caption Bold` | `fontSize.*` + `fontWeight.*` + `lineHeight.*` |
+| `Button` (Variant × State) | `components/ui/Button.tsx` (`variant`, `disabled`) |
+| `TextButton` (Tone × State) | `components/ui/TextButton.tsx` (`danger`, `disabled`) |
+| `Chip` (Removable) | `components/ui/Chip.tsx` (`onRemove`) |
+| `Card` | `components/ui/Card.tsx` |
+| `TextField` (State) | `components/ui/TextField.tsx` (`error`; focus is runtime) |
+| `CheckRow` (Type × Checked) | `components/ui/CheckRow.tsx` (`radio`, `checked`, `hint`) |
+| `Segment` / `SegmentedControl` | `components/ui/SegmentedControl.tsx` (`count` → badge) |
+| `EmptyState` (Action) | `components/ui/EmptyState.tsx` (`action`) |
+
+Not in Figma yet: sheets and pickers (`Sheet`, `DayPickerSheet`, `TimePickerSheet`), `AlertModal`, `Stepper`, `BackLink`, `SwipeToDelete`. Font is Inter in Figma as a placeholder; the app uses the system font.
+
+**Sync order when the design changes:** Figma Variables → `tokens.ts` / `themes.ts` (read them with the Figma MCP `get_variable_defs`) → `components/ui/` → screens. Never copy a hex value from a frame into a screen.
