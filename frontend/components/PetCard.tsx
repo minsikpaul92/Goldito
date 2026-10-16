@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Chip } from "./ui/Chip";
+import { Tag } from "./ui/Tag";
 import type { InCare } from "../features/care/useInCare";
 import { SPECIES_EMOJI, describePet } from "../features/pets/petFormat";
 import { formatInstant } from "../features/schedule/dates";
@@ -49,7 +49,7 @@ export function PetCard({ pet, onPress, inCare }: Props) {
           <View style={styles.allergies}>
             <Text style={styles.allergyLabel}>Allergies</Text>
             {pet.pet_allergies.map((allergy) => (
-              <Chip key={allergy.id} label={allergy.allergen} />
+              <Tag key={allergy.id} tone="warning" label={allergy.allergen} />
             ))}
           </View>
         ) : null}

@@ -12,6 +12,7 @@ import { TripEntry } from "../../../../components/TripEntry";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { Chip } from "../../../../components/ui/Chip";
+import { Tag } from "../../../../components/ui/Tag";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
@@ -341,7 +342,7 @@ export default function SitterBookingDetail() {
               <View style={styles.chips}>
                 <Text style={styles.warning}>Allergies</Text>
                 {pet.allergies.map((a) => (
-                  <Chip key={a} label={a} />
+                  <Tag key={a} tone="warning" label={a} />
                 ))}
               </View>
             ) : (
