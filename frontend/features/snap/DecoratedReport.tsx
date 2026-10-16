@@ -82,6 +82,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
+  const [focused, setFocused] = useState(false);
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const session = useSession();
@@ -231,7 +232,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
 
   return (
     <View style={styles.wrap}>
-      <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing]} testID={id("paper")}>
+      <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]} testID={id("paper")}>
         <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
             <View key={i} style={[styles.rule, { top: (i + 1) * LINE - 1 }]} />
@@ -271,6 +272,9 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
               multiline
               accessibilityLabel={`${petName}'s diary page`}
               onContentSizeChange={(e) => setWrittenHeight(e.nativeEvent.contentSize.height)}
+              // The paper shows where the cursor is (a primary border), not a box around the words.
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               style={[styles.body, styles.input, { height: Math.max(MIN_LINES * LINE, Math.ceil(writtenHeight / LINE) * LINE) }]}
               testID={writing.testID}
             />
@@ -412,6 +416,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     paperEditing: { borderColor: theme.color.primary, borderStyle: "dashed" },
+    paperWriting: { borderColor: theme.color.primary },
     header: { zIndex: 2, flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.sm },
     headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: "700", color: theme.color.text },
     picture: {
@@ -430,7 +435,8 @@ const makeStyles = (theme: Theme) =>
     rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: theme.color.border },
     textArea: { zIndex: 2 },
     // Writing on the page: no box of its own, the ruled lines show through.
-    input: { padding: 0, borderWidth: 0, backgroundColor: "transparent", textAlignVertical: "top", outlineWidth: 0 },
+    // No focus box on the web (the paper border shows focus instead).
+    input: { padding: 0, borderWidth: 0, backgroundColor: "transparent", textAlignVertical: "top", ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null) },
     body: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 4, lineHeight: LINE, color: theme.color.text },
     tools: { gap: theme.spacing.sm },
     group: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },

@@ -152,8 +152,8 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
   });
   // Next: the current page lifts off to the left (0° → −180°), showing the next one under it.
   const away = progress.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "-180deg"] });
-  // Previous: the previous page comes back over the current one (−180° → 0°).
-  const back = progress.interpolate({ inputRange: [0, 1], outputRange: ["-180deg", "0deg"] });
+  // Previous: the previous page comes back over the current one, from edge-on (−90° → 0°) so it shows at once.
+  const back = progress.interpolate({ inputRange: [0, 1], outputRange: ["-90deg", "0deg"] });
   const shade = progress.interpolate({ inputRange: [0, 1], outputRange: [0.18, 0] });
 
   // The page before and after stay mounted (hidden) so a turn shows them at once, photos and stickers loaded.
