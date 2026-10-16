@@ -4823,9 +4823,9 @@ begin
   perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 3, 100) x where x.sitter_id = sana),
     '014c: more pets than the sitter has room for leaves her out');
 
-  -- The current location instead of home
+  -- The current location instead of home: 11 km north, Uma is 2 km away and Theo 4.6 km (past 1 + 2 km)
   select array_agg(x.sitter_id) into v_ids
-  from search_sitters_nearby(drop_at, pick_at, 1, 1, 43.6644 + 9 * 0.008993, -79.3573) x
+  from search_sitters_nearby(drop_at, pick_at, 1, 1, 43.6644 + 11 * 0.008993, -79.3573) x
   where x.sitter_id in (sana, theo, uma, vic);
   perform _t_ok(v_ids = array[uma], '014c: a point sent by the app is searched instead of the saved home');
 
