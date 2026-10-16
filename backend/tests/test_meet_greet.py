@@ -312,6 +312,8 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
                 200,
                 json={"id": "evt-9", "conferenceData": {"createRequest": {"status": {"statusCode": "pending"}}}},
             )
+        if request.url.host == "meet.googleapis.com" and request.method == "GET":
+            return httpx.Response(200, json={"name": "spaces/SPACEID123"})
         return httpx.Response(200, json={"id": "evt-9", "hangoutLink": MEET})
 
     client = GoogleCalendarMeetClient(google_settings(), http=httpx.Client(transport=httpx.MockTransport(handler)))
@@ -324,7 +326,7 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     )
 
     assert event == MeetEvent(event_id="evt-9", link=MEET)
-    token, create, poll, open_access = seen
+    token, create, poll, lookup, open_access = seen
     assert b"grant_type=refresh_token" in token.content
     assert create.headers["Authorization"] == "Bearer at-1"
     assert create.url.params["conferenceDataVersion"] == "1"
@@ -338,8 +340,10 @@ def test_client_refreshes_the_token_and_requests_a_meet_conference(monkeypatch: 
     assert body["start"]["timeZone"] == "America/Toronto"
     assert poll.method == "GET" and poll.url.path.endswith("/events/evt-9")
     # The room is then opened so the guests (not the host) walk in without being admitted.
+    # Meet edits a room by its space id, so the meeting code in the link is looked up first.
+    assert lookup.method == "GET" and lookup.url.path == "/v2/spaces/abc-defg-hij"
     assert open_access.method == "PATCH" and open_access.url.host == "meet.googleapis.com"
-    assert open_access.url.path == "/v2/spaces/abc-defg-hij"
+    assert open_access.url.path == "/v2/spaces/SPACEID123"
     assert open_access.url.params["updateMask"] == "config.accessType"
     assert json.loads(open_access.content) == {"config": {"accessType": "OPEN"}}
     assert open_access.headers["Authorization"] == "Bearer at-1"

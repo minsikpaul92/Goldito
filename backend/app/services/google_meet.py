@@ -165,18 +165,24 @@ class GoogleCalendarMeetClient:
 
     def _open_access(self, link: str | None) -> None:
         """Let anyone with the link in without the host admitting them. Best effort: a failure
-        (scope not granted yet, Meet API off) is logged and the link is still returned."""
+        (scope not granted yet, Meet API off) is logged and the link is still returned.
+        Meet only edits a room by its space id, so the meeting code in the link is looked up first."""
         meeting_code = (link or "").rstrip("/").rsplit("/", 1)[-1]
         if not meeting_code:
             return
         try:
+            headers = {"Authorization": f"Bearer {self._access_token()}"}
+            space = self._http.get(f"{MEET_SPACES_URL}/{meeting_code}", headers=headers)
+            if space.status_code >= 300:
+                logger.warning("Meet space lookup failed (%s%s)", space.status_code, _reason(space))
+                return
             response = self._http.patch(
-                f"{MEET_SPACES_URL}/{meeting_code}",
+                f"https://meet.googleapis.com/v2/{space.json()['name']}",
                 params={"updateMask": "config.accessType"},
                 json={"config": {"accessType": "OPEN"}},
-                headers={"Authorization": f"Bearer {self._access_token()}"},
+                headers=headers,
             )
-        except (httpx.HTTPError, GoogleMeetError) as exc:
+        except (httpx.HTTPError, GoogleMeetError, KeyError, ValueError) as exc:
             logger.warning("Meet open access skipped: %s", exc)
             return
         if response.status_code >= 300:
