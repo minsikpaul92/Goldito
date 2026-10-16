@@ -403,7 +403,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `PaidConfirmation` (`components/`) | Owner booking detail after checkout (FB-12): an `accent` card with `primary` border — **Booked and paid: $X CAD**, the drop-off time, "Nothing else to do. We'll tell you when {sitter} receives {pets}.", **Tap to dismiss**. It stays until tapped (remembered per booking on this device); the header chip row keeps a small `Paid` chip |
 | `ProposalCard` (`components/`) | One open handoff offer (3B.5), `warning` border: the other side's "Chloe suggested a new drop-off · Oct 5, 10:00 AM · Chloe's place" with **Accept** (filled) + Suggest another time + Decline (`danger` link), or my own "Change pending — until Chloe agrees, it stays at …"; history line "You: 9:30 AM → Chloe: 10:00 AM" |
 | `HandoffChangeSheet` (`components/`) | Sheet for a new handoff time (Drop-off / Pick-up switch, day ± 1, time ± 15 min); after confirm also the place (radio rows) — **Change time or place** |
-| `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below. Past days disabled; range = two clicks |
+| `SlotCalendar` (`components/`) | Sitter schedule month grid (3B.1): Sunday-first weeks, three slot letters M · A · N per day — open = `accent` fill, full = `primary` fill, blocked = outlined + struck-through, closed = faint outline; legend below in two lines: what the letters mean (**M** Morning · **A** Afternoon · **N** Overnight, from `SLOTS`) and the four states. Past days disabled; range = two clicks |
 
 ### In Figma (design file, *Components* page)
 
@@ -433,7 +433,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Chloe · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout. After 10 s add "Still loading…" + **Retry** |
-| `Tag` | Status label (Figma: Tone = Danger · Warning · Success · Brand · Neutral). Text on the tone's surface (D3). Not tappable |
+| `Tag` (built: `components/ui/Tag.tsx`) | Status label (Figma: Tone = Danger · Warning · Success · Brand · Neutral; code `tone="danger" …`). Text on the tone's surface (D3). Not tappable — for facts, allergies and statuses. Anything pressable or removable is a `Chip` |
 | `Banner` | Inline notice at the top of the content for an edge state (§10). Tone = Info · Warning · Error · Offline. Icon + title (tone color) + one line saying what happens next + optional action link. Never for DANGER (§7.4) |
 | `MediaPicker` (built: `components/MediaPicker.tsx`) | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: **Take photo** + **Choose from library**. Desktop frame and demo accounts: sample tray + **Choose from library** (opens the system file/gallery picker — same label on web demo and phones; never "Upload from computer") |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
