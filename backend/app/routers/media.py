@@ -14,7 +14,7 @@ from app.services import cloudinary as cloudinary_service
 
 router = APIRouter(prefix="/api/media", tags=["media"])
 
-Purpose = Literal["feed", "task_proof", "report", "handoff", "safety_label", "sticker"]
+Purpose = Literal["feed", "task_proof", "report", "handoff", "safety_label", "sticker", "diary_page"]
 ResourceType = Literal["image", "video"]
 
 
@@ -71,14 +71,18 @@ def _authorize_media(
     booking_id: UUID | None,
 ) -> None:
     if user.role == "owner":
-        # Owners add their own feed photos (5.8), treat labels for Snap → Treat check (12.1, D61) and stickers cut out
-        # of their pet's photos (12.3); every other purpose belongs to the sitter.
-        if purpose not in ("feed", "safety_label", "sticker"):
+        # Owners add their own feed photos (5.8), treat labels for Snap → Treat check (12.1, D61), stickers cut out
+        # of their pet's photos (12.3) and the image of a diary page they share (Diary book); every other purpose
+        # belongs to the sitter.
+        if purpose not in ("feed", "safety_label", "sticker", "diary_page"):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Owners can only upload feed photos, treat labels and stickers.",
+                detail="Owners can only upload feed photos, treat labels, stickers and diary pages.",
             )
         authz.assert_owner_of(user, pet_id)
+    elif purpose == "diary_page":
+        # A sitter shares a page they wrote — also after the stay, so not "on duty" but "sent a report about the pet".
+        authz.assert_wrote_report_for(user, pet_id)
     elif purpose == "handoff":
         if booking_id is None:
             raise HTTPException(

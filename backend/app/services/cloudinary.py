@@ -11,7 +11,7 @@ import httpx
 
 from app.config import get_settings
 
-PURPOSES = ("feed", "task_proof", "report", "handoff", "safety_label", "sticker")
+PURPOSES = ("feed", "task_proof", "report", "handoff", "safety_label", "sticker", "diary_page")
 RESOURCE_TYPES = ("image", "video")
 
 # Incoming transformations (Media normalize policy, phase-04). Applied to the stored original

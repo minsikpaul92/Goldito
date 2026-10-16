@@ -93,6 +93,16 @@ export async function getTodayReport(petId: string, sitterId: string): Promise<R
   return pick ? { id: pick.id, body: pick.body, status: pick.status } : null;
 }
 
+/** Today's draft written by the sitter's own hand (014b) — the same one draft the AI writes; returns its id. */
+export async function saveDraftByHand(petId: string, body: string): Promise<string> {
+  const { data, error } = await getSupabase().rpc("save_report_draft", { p_pet: petId, p_body: body });
+  if (!error) return data as string;
+  if (error.message.includes("not_on_duty")) throw new Error("You can write this page only while you're caring for this pet.");
+  if (error.message.includes("body_required")) throw new Error("Write something before sending.");
+  if (error.message.includes("body_too_long")) throw new Error(`Keep it under ${REPORT_BODY_MAX} characters.`);
+  throw new Error("Couldn't save the page. Check your connection and try again.");
+}
+
 /** The sitter's approval: the text they send is the final text (009). */
 export async function sendReport(reportId: string, body: string): Promise<void> {
   const { error } = await getSupabase().rpc("send_daily_report", { p_report: reportId, p_body: body });
@@ -152,6 +162,22 @@ export async function listSentReports(): Promise<SentReport[]> {
     // Several reports a day (011f): the later one first.
     .order("sent_at", { ascending: false })
     .limit(60);
+  if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
+  return ((data ?? []) as unknown as ReportRow[]).map(toSent);
+}
+
+/**
+ * Every sent page I can read, oldest first — the diary book (owner: their pets' pages; sitter: the pages they wrote).
+ * RLS decides which: owners see `sent` reports of their pets, a sitter their own rows (drafts filtered out here).
+ */
+export async function listBookPages(): Promise<SentReport[]> {
+  const { data, error } = await getSupabase()
+    .from("daily_reports")
+    .select(COLUMNS)
+    .eq("status", "sent")
+    .order("report_date", { ascending: true })
+    .order("sent_at", { ascending: true })
+    .limit(500);
   if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
   return ((data ?? []) as unknown as ReportRow[]).map(toSent);
 }

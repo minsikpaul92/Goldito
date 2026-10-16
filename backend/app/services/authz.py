@@ -100,6 +100,30 @@ def assert_owner_of(user: CurrentUser, pet_id: UUID) -> None:
         )
 
 
+def assert_wrote_report_for(user: CurrentUser, pet_id: UUID) -> None:
+    """Sitter who has sent at least one daily report about this pet (sharing a diary page, any time later)."""
+    if user.role != "sitter":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action is for sitters.",
+        )
+    result = (
+        get_service_client()
+        .table("daily_reports")
+        .select("id")
+        .eq("pet_id", str(pet_id))
+        .eq("sitter_id", user.id)
+        .eq("status", "sent")
+        .limit(1)
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have no diary pages for this pet.",
+        )
+
+
 def _parse_ts(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
