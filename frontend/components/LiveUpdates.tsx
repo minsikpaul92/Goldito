@@ -266,7 +266,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.xs },
     head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     card: {
       flexDirection: "row",
@@ -280,7 +280,7 @@ const makeStyles = (theme: Theme) =>
     },
     unread: { backgroundColor: theme.color.accent },
     pinned: { borderWidth: 2, borderColor: theme.color.warning },
-    pinHint: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
+    pinHint: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.warning },
     pressed: { opacity: 0.85 },
     clearRow: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.sm, marginBottom: -theme.spacing.xs },
     cardWrap: { position: "relative" },
@@ -299,11 +299,11 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    xText: { fontSize: 12, fontWeight: "700", color: theme.color.textMuted },
+    xText: { fontSize: 12, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     emoji: { fontSize: 22 },
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, color: theme.color.text },
-    titleUnread: { fontWeight: "700" },
+    titleUnread: { fontWeight: theme.fontWeight.bold },
     memo: { fontSize: theme.fontSize.body, color: theme.color.text },
     time: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

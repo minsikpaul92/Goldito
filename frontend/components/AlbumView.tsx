@@ -65,11 +65,11 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.lg },
     day: { gap: theme.spacing.sm },
-    dayTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    dayTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     group: { gap: theme.spacing.xs },
-    groupTitle: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    groupTitle: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     grid: { flexDirection: "row", flexWrap: "wrap", gap: 4 },
     cell: { width: "32.4%", aspectRatio: 1, borderRadius: theme.radius.sm, overflow: "hidden", backgroundColor: theme.color.border },
     thumb: { width: "100%", height: "100%" },
-    play: { position: "absolute", right: 6, bottom: 4, color: "#fff", fontSize: 14 },
+    play: { position: "absolute", right: 6, bottom: 4, color: theme.color.onMedia, fontSize: 14 },
   });

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { careTypeMeta, statusLabel, todayStatus } from "../features/care/careFormat";
+import { careTypeMeta, statusLabel, statusTone, todayStatus } from "../features/care/careFormat";
 import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, TaskPet, useTodayTasks } from "../features/care/useTodayTasks";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
@@ -10,6 +10,7 @@ import { Theme } from "../theme/themes";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
+import { Tag } from "./ui/Tag";
 
 /**
  * Sitter's tasks for today (phase-06 6.3): what is left, one **Done** per task. Done opens a small
@@ -84,9 +85,7 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
                 </Text>
                 {item.task.notes ? <Text style={styles.muted}>{item.task.notes}</Text> : null}
                 {label ? (
-                  <Text style={styles.badge} testID={`task-status-${item.log.id}`}>
-                    {label}
-                  </Text>
+                  <Tag label={label} tone={statusTone(todayStatus(item.log))} testID={`task-status-${item.log.id}`} />
                 ) : null}
               </View>
             </View>
@@ -123,17 +122,16 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { gap: theme.spacing.sm },
     headRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     gap: { gap: theme.spacing.xs },
-    next: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.primary },
-    allDone: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    next: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
+    allDone: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
-    toggle: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary, paddingVertical: 4 },
+    toggle: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary, paddingVertical: 4 },
     card: { gap: theme.spacing.sm },
     row: { flexDirection: "row", gap: theme.spacing.sm },
     emoji: { fontSize: 24 },
     body: { flex: 1, gap: 2 },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    badge: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

@@ -76,8 +76,8 @@ const makeStyles = (theme: Theme) =>
       padding: theme.spacing.lg,
     },
     icon: { fontSize: theme.icon.hero * 1.5 },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.surface, textAlign: "center" },
-    message: { fontSize: theme.fontSize.body, color: theme.color.surface, textAlign: "center", lineHeight: 24 },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.surface, textAlign: "center" },
+    message: { fontSize: theme.fontSize.body, color: theme.color.surface, textAlign: "center", lineHeight: theme.lineHeight.body },
     chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     chip: {
       paddingVertical: theme.spacing.xs,
@@ -85,7 +85,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.lg,
       backgroundColor: theme.color.surface,
     },
-    chipLabel: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.error },
+    chipLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.error },
     footer: { padding: theme.spacing.lg },
     button: {
       alignItems: "center",
@@ -95,5 +95,5 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     pressed: { opacity: 0.8 },
-    buttonLabel: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.error },
+    buttonLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.error },
   });

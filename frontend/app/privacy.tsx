@@ -102,9 +102,9 @@ export default function Privacy() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     updated: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     section: { gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     paragraph: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
   });

@@ -162,8 +162,8 @@ export function FinishedStay({ booking }: { booking: BookingSummary }) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     safe: { gap: theme.spacing.xs },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     review: { gap: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
   });

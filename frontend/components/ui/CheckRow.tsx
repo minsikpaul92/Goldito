@@ -57,11 +57,11 @@ const makeStyles = (theme: Theme) =>
       flex: 1,
     },
     disabled: {
-      opacity: 0.5,
+      opacity: theme.opacity.disabled,
     },
     label: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     hint: {

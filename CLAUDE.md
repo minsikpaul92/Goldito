@@ -48,7 +48,7 @@ Every feature must pass:
 - Plan & data model: `docs/plan/README.ko.md`
 - **Active task queue:** `docs/plan/TODO.md` ← update every session
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
-- **Design guide (tokens, components, UI patterns):** `DESIGN.md` — interim until Muk's Figma
+- **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: `docs/design/screen-map.md` (generated)
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
 - AI prompt snippets: `docs/plan/P0-ai-prompt-playbook.ko.md`
 - Hackathon rules: `docs/hackathon/README.md`

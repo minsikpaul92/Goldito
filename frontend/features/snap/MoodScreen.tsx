@@ -283,7 +283,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     section: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     busy: {
       flexDirection: "row",
       alignItems: "center",
@@ -310,7 +310,7 @@ const makeStyles = (theme: Theme) =>
       left: -2,
       paddingHorizontal: theme.spacing.xs,
       fontSize: theme.fontSize.caption,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
       backgroundColor: theme.color.surface,
     },
@@ -326,7 +326,7 @@ const makeStyles = (theme: Theme) =>
     },
     tabSelected: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
     tabLabel: { fontSize: theme.fontSize.small, color: theme.color.text },
-    summary: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    summary: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     note: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     table: {
       gap: theme.spacing.xs,
@@ -339,7 +339,7 @@ const makeStyles = (theme: Theme) =>
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     rowLabel: { width: 104, fontSize: theme.fontSize.small, color: theme.color.text },
     rowValue: { width: 40, textAlign: "right", fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    rowTop: { fontWeight: "700", color: theme.color.text },
+    rowTop: { fontWeight: theme.fontWeight.bold, color: theme.color.text },
     bar: { flex: 1, height: 8, borderRadius: 4, backgroundColor: theme.color.background, overflow: "hidden" },
     fill: { height: 8, borderRadius: 4, backgroundColor: theme.color.border },
     fillTop: { backgroundColor: theme.color.primary },

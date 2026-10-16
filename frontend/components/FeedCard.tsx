@@ -121,6 +121,7 @@ export function FeedCard({ post, onOpen }: Props) {
             accessibilityLabel={`${post.caption ?? "Photo"} from ${post.authorName}, ${formatFeedTime(post.createdAt)}`}
             onPress={onOpen}
             style={StyleSheet.absoluteFill}
+            testID={`feed-open-${post.id}`}
           >
             {poster ? (
               <Image
@@ -221,6 +222,6 @@ const makeStyles = (theme: Theme) =>
     cornerIcon: {
       color: theme.color.primaryText,
       fontSize: 13,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
     },
   });

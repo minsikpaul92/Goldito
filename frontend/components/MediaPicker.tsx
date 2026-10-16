@@ -166,7 +166,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     heading: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
       marginBottom: theme.spacing.sm,
     },
@@ -204,7 +204,7 @@ const makeStyles = (theme: Theme) =>
     },
     videoBadge: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primaryText,
     },
     tileLabel: {

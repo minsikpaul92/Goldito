@@ -55,6 +55,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.accent,
     },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.primary },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { NotificationBell } from "./NotificationBell";
+import { Tag } from "./ui/Tag";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -19,7 +20,7 @@ export function HeaderActions() {
   return (
     <View style={styles.row}>
       {__DEV__ && profile ? (
-        <Text style={styles.roleLabel}>{profile.role === "owner" ? "Owner" : "Sitter"}</Text>
+        <Tag label={profile.role === "owner" ? "Owner" : "Sitter"} tone="brand" style={{ alignSelf: "center" }} />
       ) : null}
       <NotificationBell />
       {profile?.role === "sitter" ? (
@@ -62,15 +63,6 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.sm,
       paddingRight: theme.spacing.md,
     },
-    roleLabel: {
-      paddingVertical: 2,
-      paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.sm,
-      backgroundColor: theme.color.accent,
-      fontSize: theme.fontSize.small,
-      fontWeight: "600",
-      color: theme.color.text,
-    },
     iconButton: {
       minWidth: 44,
       minHeight: 44,
@@ -84,7 +76,7 @@ const makeStyles = (theme: Theme) =>
     },
     logoutText: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
   });

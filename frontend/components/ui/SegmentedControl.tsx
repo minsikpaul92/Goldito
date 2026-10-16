@@ -87,13 +87,13 @@ const makeStyles = (theme: Theme) =>
     segment: {
       flex: 1,
       minWidth: 0,
-      minHeight: 44,
+      minHeight: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: theme.spacing.xs,
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.color.border,
+      borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
     },
     // Natural width: never squeezed to fit, the row scrolls instead.
@@ -109,7 +109,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     dimmed: {
-      opacity: 0.5,
+      opacity: theme.opacity.disabled,
     },
     label: {
       flexShrink: 1,
@@ -123,7 +123,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
     },
     selectedLabel: {
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     badge: {
       // On the corner, like a notification count: it never takes the label's width.
@@ -142,7 +142,7 @@ const makeStyles = (theme: Theme) =>
     },
     badgeText: {
       fontSize: theme.fontSize.caption,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
     },
   });

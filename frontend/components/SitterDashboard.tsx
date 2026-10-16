@@ -18,6 +18,7 @@ import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
+import { Tag } from "./ui/Tag";
 import { TextButton } from "./ui/TextButton";
 
 /** Open tasks listed on Home; the rest are one tap away in All tasks. */
@@ -154,7 +155,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
                         {`💤 Snoozed until ${new Date(snoozed).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
                       </Text>
                     ) : tag ? (
-                      <Text style={styles.tag}>{tag}</Text>
+                      <Tag label={tag} tone={status.kind === "missed" ? "warning" : "brand"} />
                     ) : null}
                   </View>
                   <Button
@@ -241,15 +242,14 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    statValue: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    statValue: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     statLabel: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     next: { gap: theme.spacing.xs },
-    nextLabel: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    nextLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     taskRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     taskText: { flex: 1, gap: 1 },
     rowDone: { minWidth: 76, minHeight: 40 },
-    tag: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
-    nextTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    nextTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
     caring: { gap: theme.spacing.xs },
@@ -264,7 +264,7 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.color.primary,
     },
-    petChipText: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.primary },
+    petChipText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     headsUp: {
       minHeight: 44,
       flexDirection: "row",
@@ -277,8 +277,8 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     requestLine: { borderColor: theme.color.primary },
-    headsUpText: { flex: 1, fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
-    headsUpMore: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    headsUpText: { flex: 1, fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    headsUpMore: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     headsUpGroup: { gap: 2, marginBottom: theme.spacing.sm },
     headsUpLine: { fontSize: theme.fontSize.body, color: theme.color.text },
     shortcuts: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
@@ -293,6 +293,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.primary,
       backgroundColor: theme.color.accent,
     },
-    shortcutText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.primary },
+    shortcutText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     pressed: { opacity: 0.7 },
   });

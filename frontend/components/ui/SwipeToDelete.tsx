@@ -87,5 +87,5 @@ const makeStyles = (theme: Theme) =>
       paddingRight: theme.spacing.lg,
       backgroundColor: theme.color.error,
     },
-    behindText: { color: theme.color.primaryText, fontSize: theme.fontSize.body, fontWeight: "700" },
+    behindText: { color: theme.color.primaryText, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold },
   });

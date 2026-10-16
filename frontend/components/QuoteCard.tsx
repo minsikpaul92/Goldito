@@ -76,7 +76,7 @@ export function QuoteCard({ quote, compact, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
     totalRow: {
       marginTop: theme.spacing.xs,
@@ -85,6 +85,6 @@ const makeStyles = (theme: Theme) =>
       borderTopColor: theme.color.border,
     },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, flexShrink: 1 },
-    total: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    total: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

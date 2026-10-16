@@ -1,12 +1,162 @@
 # Goldito — Design Guide
 
-> **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
-> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` / `themes.ts` first, then this file.
+> **Figma is the source of truth.** Muk's [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) file (Variables, text styles, 65 components, screens) and the [brand site](https://mooque-dev.github.io/goldito-design/brand.html) decide how Goldito looks and behaves. This file is the **bridge**: [§0](#0-figma--code-read-first) says where every Figma piece lives in the code; §1–§9 are the rules the code follows. When Figma and this file disagree, Figma wins — then update this file.
 >
-> Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
-> Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
+> Source of truth order: **Figma** → **`frontend/theme/tokens.ts` / `themes.ts`** → **this file**. Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
 
-This file is written for both people and AI coding agents. Before building any screen, read it and follow the rules in [For AI agents](#for-ai-agents).
+This file is written for both people and AI coding agents (including the designer's agent working with the Figma MCP). Read §0 first, then follow [For AI agents](#for-ai-agents).
+
+---
+
+## 0. Figma ↔ code (read first)
+
+### 0.1 The four places
+
+| What | Where | Who changes it |
+| :--- | :--- | :--- |
+| Look (colors, sizes, type, components, screens) | Figma [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) — pages **Components** and **Screens** | Muk |
+| Design values in code | [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (Figma Color mode `Default` + Size + Motion) · [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (one preset per other Color mode) | whoever syncs Figma → code |
+| Base components | [`frontend/components/ui/`](frontend/components/ui/) — one file per Figma base component (§0.4) | same |
+| Every screen and every button | [`docs/design/screen-map.md`](docs/design/screen-map.md) — **generated**: route → file → each action's label, ID and line (§0.6) | regenerated, never hand-edited |
+
+Code reads design values only through `useTheme()` (≈ 2,000 style references). Changing a value in `tokens.ts` changes every screen; no screen needs a separate edit for a color, size or type change.
+
+### 0.2 Variables → tokens
+
+Every Figma variable carries its code name as **code syntax** (Figma uses kebab-case, code camelCase): `color/text-muted` → `theme.color.textMuted`. Keep the code syntax filled on every new variable — it is the link.
+
+| Figma collection | Code | Note |
+| :--- | :--- | :--- |
+| **Color**, mode `Default` | `tokens.color.*` | The base theme |
+| **Color**, any other mode (`Balanced`, later one per pet coat skin) | a preset in `themes.ts` (`balanced`, …) | A mode may change only the `SkinColors` keys (§3.1); status colors are the same in every mode |
+| **Size**: `spacing/*`, `radius/*`, `icon/*`, `font-size/*`, `size/touch-target`, `layout/*` | `tokens.spacing`, `radius`, `icon`, `fontSize`, `layout.touchTarget`, `layout.*` | |
+| **Motion**: `duration/*`, `press/scale`, `press/opacity` | `tokens.motion.fast/base/slow`, `pressScale`, `pressOpacity` | |
+| Text styles `Title`, `Body`, `Body Strong`, `Small`, `Small Strong`, `Caption` | `fontSize.*` + `fontWeight.*` + `lineHeight.*` (§4) | Font family: system font in the app (D6); Inter in Figma is a stand-in |
+
+**Code-only tokens — add them to Figma as variables** so both sides have them: `color/media`, `color/on-media`, `color/gold`, `color/gold-on-light`, `color/cream`, `font-weight/*` (400 · 500 · 600 · 700), `line-height/*` (14 · 20 · 22 · 30), `opacity/pressed` (0.7), `opacity/disabled` (0.5).
+
+### 0.3 Sync steps (Figma → code)
+
+1. Change the Variables / components in Figma first.
+2. Read them with the Figma MCP: `get_variable_defs` on a node (or a read-only `use_figma` over `figma.variables`) for values; `get_design_context` on a component for its layout.
+3. Update `tokens.ts` / `themes.ts` (values only — keep the keys; a new key gets added to both Figma and code in the same change).
+4. Update the matching file in `components/ui/` (§0.4) — never restyle a screen to fake a component change.
+5. Screens last, one at a time, against the Figma frame (§0.5).
+6. `cd frontend && npx tsc --noEmit && node scripts/screen-map.mjs` — commit the regenerated map with the change.
+7. Check on the running app (`npx expo start --web`, sign in with **Demo owner** / **Demo sitter**; `/?view=split` shows both phones).
+
+### 0.4 Components (Figma → code)
+
+✅ one file to edit · 🟡 split over several files or partly different · ❌ not in code yet
+
+| Figma component | Code | |
+| :--- | :--- | :--- |
+| Button (Style × State) | `components/ui/Button.tsx` — `variant` primary · secondary · danger, `disabled` (Figma `Loading` not in code yet) | ✅ |
+| Text Button (Tone × State) | `components/ui/TextButton.tsx` — `danger`, `disabled` | ✅ |
+| Chip (Removable) | `components/ui/Chip.tsx` — `onRemove` | ✅ |
+| Tag (Tone) | `components/ui/Tag.tsx` — `tone` brand · success · warning · danger · neutral | ✅ |
+| Avatar (Kind) | `components/ui/Avatar.tsx` — `kind` initial · photo · emoji, `size` | ✅ |
+| Banner (Tone) | `components/ui/Banner.tsx` — `tone` info · warning · error · offline, `icon`, `title`, `body`, `action` | ✅ |
+| Card | `components/ui/Card.tsx` | ✅ |
+| Text Field (State) | `components/ui/TextField.tsx` — `error` (Figma `Helper` line not in code yet) | ✅ |
+| Segment | `components/ui/SegmentedControl.tsx` — `count` → corner badge | ✅ |
+| Checkbox Row | `components/ui/CheckRow.tsx` — `radio`, `hint` | ✅ |
+| Stepper | `components/ui/Stepper.tsx` | ✅ |
+| Empty State | `components/ui/EmptyState.tsx` — `action` | ✅ |
+| Bottom Sheet | `components/ui/Sheet.tsx` | ✅ |
+| Alert Modal · DANGER | `components/ui/AlertModal.tsx` | ✅ |
+| Toast | `providers/ToastProvider.tsx` (`useToast()`) | ✅ |
+| Logo (brand site) | `components/BrandLogo.tsx` + `assets/brand/` · favicon in `app.json` | ✅ |
+| Booking Card / Stage Card | `components/BookingCard.tsx`, `components/BookingStageBar.tsx` | ✅ |
+| Stay Summary Card | `components/StaySummaryCard.tsx` | ✅ |
+| Latest Update Row | `components/LiveUpdates.tsx` | ✅ |
+| Pet Mini Card | `components/PetCard.tsx` | ✅ |
+| Feed Card | `components/FeedCard.tsx` | ✅ |
+| Grid Photo / Day Header | `components/AlbumView.tsx` | ✅ |
+| Timeline Row | `components/DiaryTimeline.tsx` | ✅ |
+| Check-in Tile | `components/QuickCheckIn.tsx` | ✅ |
+| Suggestion Chip | `components/ChipSuggestions.tsx` | ✅ |
+| Checklist Row | `components/ChecklistCard.tsx` | ✅ |
+| Message Bubble | `components/MessageBubble.tsx` | ✅ |
+| Quote Card | `components/QuoteCard.tsx` | ✅ |
+| Consent Card | `components/ConsentCard.tsx` | ✅ |
+| Entry Info Card | `components/EntryInfoCard.tsx` | ✅ |
+| Star | `components/StarRating.tsx` | ✅ |
+| Life Record Card | `components/LifeRecordCard.tsx` | ✅ |
+| Trip Map | `components/TripMap.tsx` / `TripMap.web.tsx` | ✅ |
+| Calendar Day | `components/SlotCalendar.tsx`, `components/ui/DayPickerSheet.tsx` | 🟡 |
+| Tab Bar / Tab Bar Item | `components/RoleTabs.tsx` — Figma's last tab says **Mood**, the app's is **Snap** (D61) | 🟡 |
+| Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx` | 🟡 |
+| Profile Card | `components/SitterCard.tsx` + `app/owner/sitters/[sitterId].tsx` | 🟡 |
+| Choice Card | `components/RoleCard.tsx`; other big radio choices are local | 🟡 |
+| Next Task Card / Task Row | `components/SitterDashboard.tsx`, `components/TodayTasks.tsx`, `components/CareTasksSection.tsx` | 🟡 |
+| Report Summary / Daily Note | `components/ReportComposer.tsx` + diary screens | 🟡 |
+| Photo Check | `features/transit/TripScreen.tsx` (local) | 🟡 |
+| Mood Result Card | `features/snap/MoodScreen.tsx` (local) | 🟡 |
+| Action Row | `features/snap/SnapToolCard.tsx`; settings rows are local | 🟡 |
+| Photo Tile | `components/MediaPicker.tsx`, `components/MediaPlaceholder.tsx` | 🟡 |
+| Notification Row | `features/notifications/NotificationsCenter.tsx` (local) | 🟡 |
+| Switch / Switch Row | not in code (closest: `components/ShareToggle.tsx`) | ❌ |
+| Filter Chip, Skeleton, Progress Bar, Source Tag, Typing Indicator, Step Dot, Feature Row | not in code, or drawn locally | ❌ |
+| Permission Prompt, Push Preview, Theme Preview, Demo Control | prototype / onboarding drafts — not built | — |
+
+When a 🟡 or ❌ component is built, give it **one** file in `components/ui/` (base) or `components/` (screen-level) with the **Figma name and the Figma property names** (`Tone`, `Kind`, `State` → lower-case props), and point every use at it. One Figma component = one code file.
+
+### 0.5 Screens (Figma Screens page → routes)
+
+Routes follow `expo-router` files (`frontend/app/`): `app/owner/(tabs)/bookings.tsx` is `/owner/bookings`. The full list with every button is in [`docs/design/screen-map.md`](docs/design/screen-map.md).
+
+| Figma frame (Screens page) | Route(s) |
+| :--- | :--- |
+| Owner · Home | `/owner` |
+| Owner · Bookings | `/owner/bookings` |
+| Owner · Feed | `/owner/feed` |
+| Owner · Diary | `/owner/diary` |
+| Owner · Mood (= **Snap** tab, D61) | `/owner/snap`, `/owner/snap/mood` |
+| Sitter · Home | `/sitter` |
+| Inquiry · AI reply (07B) | `/owner/inquiries/[inquiryId]`, `/sitter/inquiries/[inquiryId]` |
+| Care request → checklist (06) | `/owner/pets/[petId]/care-request`, `/sitter/care-request/[requestId]` |
+| Meet & Greet (3B.9) | booking detail `/owner/bookings/[bookingId]`, `/sitter/bookings/[bookingId]` (`MeetGreetCard`, `MeetGreetSheet`) |
+| Checkout · consents (03C) | `/owner/bookings/[bookingId]/checkout` |
+| Paid · entry info (03C) | booking detail (`PaidConfirmation`, `EntryInfoCard`) + `/owner/home-access` |
+| Live trip (06B) · Handoff photo check (06B) | `/owner/bookings/[bookingId]/trip`, `/sitter/bookings/[bookingId]/trip` (`features/transit/TripScreen.tsx`) |
+| 5-second check (7.7) · Daily note · review (7.3) | `/sitter/diary` (`ReportComposer`) |
+| Treat Guard · DANGER (08) | `/owner/snap/treat`, `/sitter/snap/treat` |
+| Home safe · review (07C) | `/owner/bookings/[bookingId]/review` |
+| Life Record (07C) | `/owner/pets/[petId]/record` |
+| Edge states ①–⑤ | the screen of that stage, shown with `Banner` (or `AlertModal` for DANGER); the edge state's name goes in the Banner's `testID` |
+| Onboarding · Welcome / Role / Log in | `/welcome`, `/welcome/owner`, `/welcome/sitter`, `/login` |
+| Onboarding · Create account / Add your pet | `/signup`, `/owner/pets/new` |
+| Onboarding · Your look, Health & care, Notifications, Permission prompt | not built (OB.4 on hold; 11.15 pet onboarding) |
+| Sitter setup · Services & rates, House rules, Availability, Live profile | `/profile`, `/sitter/schedule` |
+
+**Name new Figma frames `<Role> · <Screen>` and put the route in the frame description** (e.g. `/owner/bookings`), so a frame and its file find each other in one step.
+
+### 0.6 UX changes: move, merge, remove
+
+UX can change, not only the look: a button moves to another screen, two actions merge, a section disappears. The code is set up so this is safe to plan and quick to find:
+
+- **Every action has a stable ID** (`testID`), e.g. `book-care`, `cancel-confirm`, `demo-owner` — 321 of 321 today. The ID names *what the action does*, not where it sits, so it stays the same when the button moves.
+- **[`docs/design/screen-map.md`](docs/design/screen-map.md)** lists, per screen, the components it shows and every action with its label, ID and line. Search it for a label from a Figma frame ("Book care") or an ID to land on the file and line.
+- The e2e tests (`frontend/e2e/`) find actions by these IDs, so `grep -rn "<id>" frontend/e2e` shows which tests depend on an action before you move or remove it.
+- **Screens are thin**: data and logic live in hooks and API files (`features/<domain>/use*.ts`, `*Api.ts`); the route file mostly arranges components. Moving a button = moving its JSX and calling the same hook in the new place.
+
+| UX change | How |
+| :--- | :--- |
+| Move an action to another screen | Move the JSX (keep its `testID`), call the same hook / API in the new screen, update the e2e test's navigation |
+| Merge two actions | Keep one `testID` (the surviving action's), delete the other, update its tests |
+| Remove an action or section | Delete the JSX; `grep` its `testID` in `frontend/e2e` and delete or update those tests; delete the hook only if nothing else uses it |
+| Rename a label only | Change the `label`; the `testID` stays |
+| New action | Add a `testID` named for what it does (`<thing>-<verb>`, kebab-case) |
+
+After any of these: `node scripts/screen-map.mjs` (CI fails if the map is stale).
+
+### 0.7 Not decided yet
+
+- **Mood vs Snap** — Figma's Tab Bar says Mood; the app (D61) is **Snap** (treat check · mood · stickers).
+- **Skins and text** — `Balanced` also tints `text` / `text-muted`; the code allows that only for dark, readable values (§3.1).
+- **18 px subtitle** — §4 proposes it; D6 says four sizes. One of them changes.
+- **Logo** — the gold tag (v2.1) is in the app; the brand site still lists Notebook and Pixel as directions.
 
 ---
 
@@ -77,20 +227,27 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 | Token | Value | Skin? | Use |
 | :--- | :--- | :--- | :--- |
 | `background` | `#F7F7F5` | ✅ | App background behind cards |
-| `surface` | `#FFFFFF` | | Cards, sheets, modals |
-| `text` | `#1A1A1A` | 🔒 fixed | Primary text |
-| `textMuted` | `#5C5C5C` | | Secondary text, timestamps, helper copy |
+| `surface` | `#FFFFFF` | ✅ | Cards, sheets, modals, inputs |
+| `text` | `#1A1A1A` | ✅ dark only | Primary text |
+| `textMuted` | `#5C5C5C` | ✅ dark only | Secondary text, timestamps, helper copy |
 | `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
 | `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
 | `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
-| `border` | `#E5E5E0` | | Card borders, dividers, input outlines |
+| `border` | `#E5E5E0` | ✅ | Card borders, dividers, input outlines |
+| `borderStrong` | `#86867F` | ✅ | Outlines that must stay visible (radio rings, inputs on tinted backgrounds) |
+| `track` | `#E5E5E0` | ✅ | Empty part of a progress bar or switch |
 | `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
+| `media` | `#000000` | | Letterbox behind photos and videos in viewers |
+| `onMedia` | `#FFFFFF` | | Text and icons on a photo, a video, or a solid status color |
+| `gold` | `#F4C35A` | 🔒 brand | Logo tag, celebration moments — never text on a light background |
+| `goldOnLight` | `#C9962E` | 🔒 brand | Small gold accents on light backgrounds (the logo heart) |
+| `cream` | `#FBF6EA` | 🔒 brand | Warm expressive ground for brand moments |
 | `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
 | `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
 | `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
-| `warningSurface` **(proposed)** | `#FFFAEB` | Background of warning banners |
-| `errorSurface` **(proposed)** | `#FEF3F2` | Background of DANGER modal body / error banners |
-| `successSurface` **(proposed)** | `#ECFDF3` | Background of SAFE result / success toast |
+| `warningSurface` | `#FFFAEB` | 🔒 fixed | Background of warning banners |
+| `errorSurface` | `#FEF3F2` | 🔒 fixed | Background of DANGER modal body / error banners |
+| `successSurface` | `#ECFDF3` | 🔒 fixed | Background of SAFE result / success toast |
 
 Rules:
 - `error` red is reserved for real problems (failed actions, DANGER). Do not use red for decoration or "cancel" buttons.
@@ -98,13 +255,13 @@ Rules:
 
 ### 3.1 Themes (pet skins)
 
-A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
+A theme preset in `themes.ts` (= one mode of the Figma Color collection) may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`, `surface`, `border`, `borderStrong`, `track`, `text`, `textMuted`); `text` / `textMuted` may only shift within dark, readable values. The 🔒 colors (`error`, `success`, `warning` and their surfaces) never change, so a DANGER warning can't blend into a skin. Today there are `default` and `balanced` (warmer neutrals, Figma mode `Balanced`); the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
 ---
 
 ## 4. Typography
 
-System font for now (Figma will pick one family).
+The phone's own system font (D6, brand site); Inter in Figma stands in for it.
 
 **One exception — the picture-diary page (12.4):** a sent daily report is drawn as a 그림일기 page (date + pet on top, the day's photo in a picture box, the words on ruled lines) in **Gaegu** (Google Fonts, SIL OFL), loaded on web only from `fonts.googleapis.com`; native keeps the system font. Body `fontSize.body + 4` on a 30 px rule. Nowhere else.
 
@@ -116,7 +273,8 @@ System font for now (Figma will pick one family).
 | `fontSize.small` | 14 | 400 | Timestamps, helper text, chips |
 | `fontSize.caption` **(proposed)** | 11 | 600 | Slot letters (M · A · N) inside `SlotCalendar` day cells only |
 
-- Line height ≈ 1.4 × size.
+- Weights: `fontWeight.regular` (400), `medium` (500, Caption), `semibold` (600, Strong styles), `bold` (700, Title) — never a raw `"600"` / `"700"` in code.
+- Line height per Figma text style: `lineHeight.title` (30), `body` (22), `small` (20), `caption` (14).
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO").
 
 ---
@@ -138,7 +296,9 @@ System font for now (Figma will pick one family).
 | `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
 
 - Cards use a 1 px `border`, no heavy shadows.
-- Minimum touch target: **44 × 44**.
+- Minimum touch target: **44 × 44** (`layout.touchTarget`); content column at most `layout.contentMaxWidth` (480).
+- Press / disabled feedback: `opacity.pressed` (0.7) and `opacity.disabled` (0.5).
+- Motion: `motion.fast` (120 ms), `motion.base` (240), `motion.slow` (420); pressed buttons may use `motion.pressScale` (0.97) / `motion.pressOpacity` (0.85) as in Figma.
 
 ---
 
@@ -152,14 +312,17 @@ System font for now (Figma will pick one family).
 | `BackLink` | Standard back control: `chevron-back` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Muk’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
-| `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
+| `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
-| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below. An optional **hint** goes on the label line, right after the label: `small`, `textMuted` at reduced opacity, regular weight (e.g. **Meals** `what to give or do (empty = the hint)`). Never join label and hint into one string with a dash |
-| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
+| `TextField` | Label above, `surface` input with 1 px `borderStrong`, `radius.md`, 44 min height, 8 / 16 padding; focus = `primary` border, error = `error` border + message below. An optional **hint** goes on the label line, right after the label: `small`, `textMuted` at reduced opacity, regular weight (e.g. **Meals** `what to give or do (empty = the hint)`). Never join label and hint into one string with a dash |
+| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action as a **secondary** button at its natural width (Figma Empty State) |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 | `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
-| `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
+| `Tag` | Status label (Figma Tag): `small` semibold text on its tone's light surface, never a faded color (D3). `brand` (accent / primary) · `success` · `warning` · `danger` · `neutral` (surface + border). Information only, never tappable. Late or missed = `warning`; `danger` only for DANGER and failed payments. Used for booking status, task status, report sent, treat result, the header role (**Owner** / **Sitter**) |
+| `Avatar` | Round (Figma Avatar): `initial` (`primary` + `primaryText` letter, people), `photo` (pet photo), `emoji` (species / tool emoji on `accent`). Default 40; cards use 56 |
+| `Banner` | Inline notice for an edge state (Figma Banner): icon + title in the tone color + one line on what happens next + optional action. `info` (accent) · `warning` · `error` · `offline`. **Never for DANGER** — that is `AlertModal` (§7.4) |
+| `SegmentedControl` | 2–4 options as 44-tall segments (radio); unselected = `borderStrong` border; selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
 | `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
@@ -179,11 +342,11 @@ System font for now (Figma will pick one family).
 | Component | Notes |
 | :--- | :--- |
 | `DateField` / `TimeField` **(proposed)** | The one way to enter a day or a time — [§7.10](#710-dates-and-times). `[−] value [+]`; tapping the value opens the calendar (`DayPickerSheet`) or the clock (`TimePickerSheet`) |
-| `RoleBadge` **(proposed)** | The green pill that says **Owner** / **Sitter** in the header, as its own component. Shown next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards): the other person gets the badge of *their* role. Same colors, shape and type as the header pill — never plain text like "(sitter)" |
-| `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
+| Role label next to a name | The header's **Owner** / **Sitter** is a `brand` `Tag`. Show the same Tag next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards) — never plain text like "(sitter)" |
+| `Button` variants | Built: `primary`, `secondary`, `danger` (`error` fill, only for destructive confirms). Proposed: `large` (full-width, 56 tall — the one primary action on sitter screens), Figma `Loading` state |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
 | `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera-outline`). Settings (and sitter Earnings later) = header Profile |
-| `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |
+| Pet photo avatars | `Avatar kind="photo"` once pets have photos (11.10); `kind="emoji"` (🐶 / 🐱) until then |
 | `TaskRow` | Checkmark circle + title + time; pending first; tap → "Complete with photo" |
 | `FeedCard` | Photo/video (`radius.lg`), caption, time, optional mood chip |
 | `ReportCard` | Daily report. P1: theme background + stickers (Phase 11.8) |
@@ -313,6 +476,7 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 
 ## 8. Imagery & icons
 
+- **Logo:** Muk's gold tag (brand page v2.1, `frontend/assets/brand/`). In the app use `<BrandLogo />` (`components/BrandLogo.tsx`): the light lockup `goldito-lockup-light.svg` on web, app icon + name on native. Never re-type the name as text with an emoji. Favicon: `goldito-favicon-48.png` (`app.json`).
 - Real pet photos are the hero; keep chrome minimal around them.
 - Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
 - Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.
@@ -339,18 +503,20 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 6. If a screen has a Figma frame, the Figma frame wins over this file.
 7. The UI must work inside the desktop phone frame with a mouse (§2.1, §7.7): no gesture-only actions, no pull-to-refresh-only updates, no native-only libraries (date/time pickers, swipeable rows).
 8. Branch layout only with `useLayoutMode()` — no `Platform.OS` or width numbers in screens. Pick photos only through `pickMedia()`.
+9. **Working from Figma:** read §0 first. Status labels use `Tag`, edge-state notices `Banner`, round pictures `Avatar` — never a local look-alike. One Figma component = one code file, named like Figma.
+10. **Every action has a `testID`** named for what it does (`book-care`, `cancel-confirm`). Keep it when a button moves or its label changes; when you remove one, `grep` it in `frontend/e2e` and fix those tests. After changing a screen run `node scripts/screen-map.mjs` in `frontend/` and commit `docs/design/screen-map.md` (CI checks it).
 
 ---
 
 ## Open items for the designer (Figma)
 
-Everything above is a placeholder until these are decided.
+Done in Figma and synced: palette incl. `warning` and the `*Surface` tints, the `Balanced` mode, base components (Button, Text Button, Chip, Tag, Avatar, Banner, Text Field, Segment, Checkbox Row, Empty State), the gold tag logo. Still open:
 
-- [ ] Font family and final type scale (incl. `subtitle`)
-- [ ] Final palette, including `warning` and the `*Surface` tints
+- [ ] Code-only tokens as Figma variables (§0.2)
+- [ ] Final type scale (`subtitle` or not, §0.7); the app keeps the system font (D6)
 - [ ] Icon set
-- [ ] Logo and app icon
-- [ ] Button variants, Chip, Toast, AlertModal, EmptyState, TabBar, ProposalCard, ReportCard
+- [ ] App icon at 1024 px (only the 180 px touch icon and favicons are in `assets/brand/`)
+- [ ] 🟡 / ❌ components in §0.4 (Tab Bar Snap label, Switch, Skeleton, Filter Chip, …), ProposalCard, ReportCard
 - [ ] Report themes (4) + preset sticker set (Phase 11.8)
 - [ ] Welcome / Login screens ([#13](https://github.com/minsikpaul92/Pawddy/issues/13))
 - [ ] Figma frames at **402 × 874**; spot-check at 360 and 440

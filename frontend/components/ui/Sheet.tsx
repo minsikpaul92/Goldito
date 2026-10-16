@@ -78,7 +78,7 @@ const makeStyles = (theme: Theme) =>
     title: {
       flex: 1,
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     body: {

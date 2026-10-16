@@ -86,6 +86,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.error,
       backgroundColor: theme.color.surface,
     },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.error },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.error },
     message: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: theme.fontSize.body * 1.4 },
   });

@@ -357,7 +357,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     section: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     photo: { width: "100%", borderRadius: theme.radius.md, overflow: "hidden", backgroundColor: theme.color.border },
     dot: {
@@ -423,5 +423,5 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       backgroundColor: theme.color.surface,
     },
-    removeLabel: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    removeLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

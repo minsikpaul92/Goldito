@@ -160,7 +160,7 @@ const makeStyles = (theme: Theme) =>
     },
     petOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
     pressed: { opacity: 0.6 },
-    petName: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.textMuted },
+    petName: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     petNameOn: { color: theme.color.primary },
     status: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     hidden: { display: "none" },

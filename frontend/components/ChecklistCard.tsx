@@ -157,17 +157,17 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     table: { borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.color.border, overflow: "hidden", backgroundColor: theme.color.surface },
     tHead: { flexDirection: "row", gap: theme.spacing.sm, padding: theme.spacing.sm, backgroundColor: theme.color.accent },
-    th: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.textMuted },
+    th: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     colTime: { width: 84 },
     tRow: { flexDirection: "row", gap: theme.spacing.sm, padding: theme.spacing.sm },
     tRowLine: { borderTopWidth: 1, borderTopColor: theme.color.border },
     cell: { flex: 1, gap: theme.spacing.xs },
     head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    type: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    type: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     time: {
       minHeight: 48,
       alignItems: "center",
@@ -178,7 +178,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.primary,
       backgroundColor: theme.color.accent,
     },
-    timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    timeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     timeSub: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
     pressed: { opacity: 0.8 },
     skipped: {
@@ -187,7 +187,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.md,
       backgroundColor: theme.color.error,
     },
-    skippedTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: "#FFFFFF" },
+    skippedTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.onMedia },
     skippedRow: {
       minHeight: 44,
       flexDirection: "row",
@@ -197,8 +197,8 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.sm,
       backgroundColor: "rgba(255,255,255,0.16)",
     },
-    skippedText: { flex: 1, fontSize: theme.fontSize.body, color: "#FFFFFF" },
-    skippedX: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
-    skippedHint: { fontSize: theme.fontSize.small, color: "#FFFFFF", opacity: 0.85 },
+    skippedText: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.onMedia },
+    skippedX: { fontSize: 16, fontWeight: theme.fontWeight.bold, color: theme.color.onMedia },
+    skippedHint: { fontSize: theme.fontSize.small, color: theme.color.onMedia, opacity: 0.85 },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
   });

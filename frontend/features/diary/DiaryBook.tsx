@@ -258,7 +258,7 @@ const makeStyles = (theme: Theme) =>
     wrap: { gap: theme.spacing.sm },
     bar: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     where: { flex: 1, alignItems: "center" },
-    whereTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    whereTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     whereCount: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     nav: {
       width: 44,
@@ -272,7 +272,7 @@ const makeStyles = (theme: Theme) =>
     },
     navOff: { opacity: 0.35 },
     pressed: { opacity: 0.6 },
-    navLabel: { fontSize: 24, lineHeight: 26, fontWeight: "700", color: theme.color.text },
+    navLabel: { fontSize: 24, lineHeight: 26, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     stage: { position: "relative" },
     inFlow: { position: "relative", zIndex: 1 },
     stacked: { position: "absolute", top: 0, left: 0, right: 0 },

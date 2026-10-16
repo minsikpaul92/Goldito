@@ -42,7 +42,7 @@ export function StaySummaryCard({ summary, period, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     stats: { flexDirection: "row", gap: theme.spacing.xs },
     stat: {
@@ -54,7 +54,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    value: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    value: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     label: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     quote: { fontSize: theme.fontSize.body, fontStyle: "italic", color: theme.color.text },
   });

@@ -12,6 +12,7 @@ type Props = {
   action?: { label: string; onPress: () => void };
 };
 
+/** Figma: Goldito-Design → Components → Empty State. The action is a secondary button at its natural width. */
 export function EmptyState({ emoji, title, message, action }: Props) {
   const styles = useThemedStyles(makeStyles);
 
@@ -22,7 +23,7 @@ export function EmptyState({ emoji, title, message, action }: Props) {
       </Text>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
-      {action ? <Button label={action.label} onPress={action.onPress} style={styles.action} /> : null}
+      {action ? <Button label={action.label} onPress={action.onPress} variant="secondary" style={styles.action} /> : null}
     </View>
   );
 }
@@ -35,14 +36,14 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       gap: theme.spacing.sm,
       paddingVertical: theme.spacing.xl,
-      paddingHorizontal: theme.spacing.lg,
+      paddingHorizontal: theme.spacing.md,
     },
     emoji: {
       fontSize: theme.icon.hero,
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
       textAlign: "center",
     },
@@ -53,6 +54,6 @@ const makeStyles = (theme: Theme) =>
     },
     action: {
       marginTop: theme.spacing.sm,
-      alignSelf: "stretch",
+      alignSelf: "center",
     },
   });
