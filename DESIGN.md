@@ -120,8 +120,8 @@ System font for now (Figma will pick one family).
 | `fontSize.small` | 14 | 400 | Timestamps, helper text, chips |
 | `fontSize.caption` **(proposed)** | 11 | 600 | Slot letters (M · A · N) inside `SlotCalendar` day cells only |
 
-- Weights: `fontWeight.semibold` (600) and `fontWeight.bold` (700) — never a raw `"600"` / `"700"` in code.
-- Line height ≈ 1.4 × size; tokens `lineHeight.small` (20) and `lineHeight.body` (24) for multi-line text.
+- Weights: `fontWeight.regular` (400), `medium` (500, Caption), `semibold` (600, Strong styles), `bold` (700, Title) — never a raw `"600"` / `"700"` in code.
+- Line height per Figma text style: `lineHeight.title` (30), `body` (22), `small` (20), `caption` (14).
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO").
 
 ---
@@ -159,14 +159,14 @@ System font for now (Figma will pick one family).
 | `BackLink` | Standard back control: `chevron-back` + label **Back** (`primary`, 600, 44 min height). Use for login → Welcome, signup → previous, onboarding step-back / exit. Label stays **Back** — never “Back to Onboarding” or other destination names. See [§7.8](#78-back-navigation) |
 | `MediaPlaceholder` (`components/`) | Onboarding photo/video slot (~4:3, dashed `accent` frame). Centered in leftover tour height; title + brief for Muk’s asset brief. Replace with real media later — see [§7.9](#79-welcome--role-onboarding) |
 | `Card` | `surface`, `radius.lg`, 16 padding, 1 px `border` |
-| `Button` | Primary only for now: `primary` fill, `primaryText`, `radius.md`, 600 weight, pressed = 0.9 opacity, disabled = 0.5 opacity |
+| `Button` | `primary` (filled) and `secondary` (`surface` + `borderStrong` border, `primary` label); `radius.md`, 44 min height, 8 / 16 padding, semibold label. Pressed = `motion.pressOpacity` + `motion.pressScale`; disabled = `border` fill + `textMuted` label (Figma Button, Style × State) |
 | `TextButton` | Secondary action as a `primary`-colored text link (44 tall) — keeps one filled button per screen; `danger` = `error` color for destructive links (Cancel booking) |
-| `TextField` | Label above, `surface` input with 1 px `border`, `radius.md`, 44 min height; focus = `primary` border, error = `error` border + message below. An optional **hint** goes on the label line, right after the label: `small`, `textMuted` at reduced opacity, regular weight (e.g. **Meals** `what to give or do (empty = the hint)`). Never join label and hint into one string with a dash |
-| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action |
+| `TextField` | Label above, `surface` input with 1 px `borderStrong`, `radius.md`, 44 min height, 8 / 16 padding; focus = `primary` border, error = `error` border + message below. An optional **hint** goes on the label line, right after the label: `small`, `textMuted` at reduced opacity, regular weight (e.g. **Meals** `what to give or do (empty = the hint)`). Never join label and hint into one string with a dash |
+| `EmptyState` | `icon.hero` emoji + title + one line saying what appears here and who adds it + optional action as a **secondary** button at its natural width (Figma Empty State) |
 | `LoadingView` | Full-screen centered spinner (`primary`) while the session or a screen loads |
 | `RoleCard` (`components/`) | Big tappable role choice (radio): icon + title + one line; selected = `primary` border + `accent` fill. Sign up now, Welcome later (OB.2) |
 | `Chip` | `radius.sm`, `small` text, 1 px `border`; optional ✕ remove button (`Remove <label>`). Allergens now; task type, mood, slot later |
-| `SegmentedControl` | 2–4 options as 44-tall segments (radio); selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
+| `SegmentedControl` | 2–4 options as 44-tall segments (radio); unselected = `borderStrong` border; selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
 | `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
@@ -187,7 +187,7 @@ System font for now (Figma will pick one family).
 | :--- | :--- |
 | `DateField` / `TimeField` **(proposed)** | The one way to enter a day or a time — [§7.10](#710-dates-and-times). `[−] value [+]`; tapping the value opens the calendar (`DayPickerSheet`) or the clock (`TimePickerSheet`) |
 | `RoleBadge` **(proposed)** | The green pill that says **Owner** / **Sitter** in the header, as its own component. Shown next to a person's name wherever it would otherwise be unclear who they are (booking card and detail, inquiry thread, request cards): the other person gets the badge of *their* role. Same colors, shape and type as the header pill — never plain text like "(sitter)" |
-| `Button` variants | `secondary` (white + `border`), `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
+| `Button` variants | `secondary` (white + `borderStrong`) — built;, `danger` (`error` fill, only for destructive confirms), `large` (full-width, 56 tall — the one primary action on sitter screens) |
 | `AlertModal` | Safety results — see [§7.4](#74-danger-is-loud) |
 | `TabBar` | Per role; [architecture §3](docs/plan/phases/architecture.ko.md) **D47 / D47b · D61**: both **Home · Bookings · Feed · Diary · Snap** (Snap = treat check · mood · sticker, icon `camera-outline`). Settings (and sitter Earnings later) = header Profile |
 | `PetAvatar` | Round photo, species fallback icon (🐶 / 🐱) — `PetCard` draws the fallback today; photos come with pet avatars (11.10) |

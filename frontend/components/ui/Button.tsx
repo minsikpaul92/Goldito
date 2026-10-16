@@ -7,13 +7,14 @@ type Props = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
-  /** `secondary` = white + border, for a second button next to the one primary (DESIGN.md §6).
+  /** `secondary` = white + strong border, for a second button next to the one primary (DESIGN.md §6).
    * `danger` = `error` fill, white text — only for a destructive confirm that can't be undone. */
   variant?: "primary" | "secondary" | "danger";
   style?: ViewStyle;
   testID?: string;
 };
 
+/** Figma: Goldito-Design → Components → Button (Style × State). */
 export function Button({ label, onPress, disabled, variant = "primary", style, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
@@ -34,7 +35,7 @@ export function Button({ label, onPress, disabled, variant = "primary", style, t
         style,
       ]}
     >
-      <Text style={[styles.label, secondary && styles.secondaryLabel]}>{label}</Text>
+      <Text style={[styles.label, secondary && styles.secondaryLabel, disabled && styles.disabledLabel]}>{label}</Text>
     </Pressable>
   );
 }
@@ -42,8 +43,10 @@ export function Button({ label, onPress, disabled, variant = "primary", style, t
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     base: {
+      minHeight: theme.layout.touchTarget,
+      justifyContent: "center",
       backgroundColor: theme.color.primary,
-      paddingVertical: theme.spacing.sm + 4,
+      paddingVertical: theme.spacing.sm,
       paddingHorizontal: theme.spacing.md,
       borderRadius: theme.radius.md,
       borderWidth: 1,
@@ -56,20 +59,27 @@ const makeStyles = (theme: Theme) =>
     },
     secondary: {
       backgroundColor: theme.color.surface,
-      borderColor: theme.color.border,
+      borderColor: theme.color.borderStrong,
     },
     pressed: {
-      opacity: 0.9,
+      opacity: theme.motion.pressOpacity,
+      transform: [{ scale: theme.motion.pressScale }],
     },
+    // Disabled is a flat gray button, not a faded primary, so it never reads as tappable.
     disabled: {
-      opacity: theme.opacity.disabled,
+      backgroundColor: theme.color.border,
+      borderColor: theme.color.border,
     },
     label: {
       color: theme.color.primaryText,
       fontSize: theme.fontSize.body,
+      lineHeight: theme.lineHeight.body,
       fontWeight: theme.fontWeight.semibold,
     },
     secondaryLabel: {
       color: theme.color.primary,
+    },
+    disabledLabel: {
+      color: theme.color.textMuted,
     },
   });

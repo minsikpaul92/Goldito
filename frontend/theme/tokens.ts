@@ -55,13 +55,19 @@ export const tokens = {
     /** (proposed) Tiny labels inside dense grids, e.g. slot letters in SlotCalendar. */
     caption: 11,
   },
+  /** Figma text styles: Body = regular, Body/Small Strong = semibold, Title = bold, Caption = medium. */
   fontWeight: {
+    regular: "400",
+    medium: "500",
     semibold: "600",
     bold: "700",
   },
+  /** Line height per Figma text style (Title 30, Body 22, Small 20, Caption 14). */
   lineHeight: {
+    caption: 14,
     small: 20,
-    body: 24,
+    body: 22,
+    title: 30,
   },
   /** Press / disabled feedback on tappable elements. */
   opacity: {

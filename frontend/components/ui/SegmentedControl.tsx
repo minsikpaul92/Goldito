@@ -87,13 +87,13 @@ const makeStyles = (theme: Theme) =>
     segment: {
       flex: 1,
       minWidth: 0,
-      minHeight: 44,
+      minHeight: theme.layout.touchTarget,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: theme.spacing.xs,
       borderRadius: theme.radius.md,
       borderWidth: 1,
-      borderColor: theme.color.border,
+      borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
     },
     // Natural width: never squeezed to fit, the row scrolls instead.
