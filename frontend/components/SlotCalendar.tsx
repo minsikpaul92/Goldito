@@ -261,7 +261,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.textMuted,
     },
     legendLetter: {
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
   });
