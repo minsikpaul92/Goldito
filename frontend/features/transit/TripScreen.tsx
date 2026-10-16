@@ -259,8 +259,8 @@ const makeStyles = (theme: Theme) =>
     banner: { backgroundColor: theme.color.accent },
     bannerText: { fontSize: theme.fontSize.small, color: theme.color.text },
     head: { gap: theme.spacing.xs },
-    eta: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    eta: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

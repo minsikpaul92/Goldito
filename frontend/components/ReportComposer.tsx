@@ -470,11 +470,11 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    sentBadge: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    sentBadge: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     editGroup: { gap: theme.spacing.xs },
     editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },

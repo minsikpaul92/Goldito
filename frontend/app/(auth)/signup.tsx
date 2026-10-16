@@ -184,7 +184,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     subtitle: {

@@ -441,7 +441,7 @@ const makeStyles = (theme: Theme) =>
     },
     fabLabel: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
     },
     deleteBody: {

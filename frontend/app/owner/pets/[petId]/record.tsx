@@ -79,5 +79,5 @@ export default function PetLifeRecord() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });

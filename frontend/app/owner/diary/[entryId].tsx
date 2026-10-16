@@ -100,7 +100,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     task: { paddingVertical: 2 },
     strip: { gap: theme.spacing.sm },

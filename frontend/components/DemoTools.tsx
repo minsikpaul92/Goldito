@@ -79,7 +79,7 @@ const makeStyles = (theme: Theme) =>
       borderTopWidth: 1,
       borderTopColor: theme.color.border,
     },
-    title: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },

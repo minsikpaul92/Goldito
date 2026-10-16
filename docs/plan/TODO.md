@@ -100,7 +100,7 @@ Each item is a GitHub issue assigned to Muk — status and detail live there ([l
 
 - **P0:** base frames 402 × 874 + desktop backdrop / side panel [#111](https://github.com/minsikpaul92/Goldito/issues/111) · scenario screens [#112](https://github.com/minsikpaul92/Goldito/issues/112) · sample photo set 4.7 [#113](https://github.com/minsikpaul92/Goldito/issues/113) · Goldito sticker set [#114](https://github.com/minsikpaul92/Goldito/issues/114) · 11.15 large-text onboarding + "at a glance" card [#115](https://github.com/minsikpaul92/Goldito/issues/115) · demo video edit [#116](https://github.com/minsikpaul92/Goldito/issues/116) · design PRs [#41](https://github.com/minsikpaul92/Goldito/pull/41) · [#54](https://github.com/minsikpaul92/Goldito/pull/54) [#117](https://github.com/minsikpaul92/Goldito/issues/117) (Muk handles them, agreed 2026-10-10 — do not touch)
 - **P1:** report card themes + preset stickers 11.8 [#118](https://github.com/minsikpaul92/Goldito/issues/118) · coat-color skins 11.10 + 8bit sprites 11.12 [#119](https://github.com/minsikpaul92/Goldito/issues/119) · sitter calendar UX CAL-1 – CAL-4 [#120](https://github.com/minsikpaul92/Goldito/issues/120)
-- Optional (no issue): Figma ↔ code workflow note in `frontend/README`
+- **FIG-1 Figma library from code** (Minsik, branch `feat/design-tokens-figma`): token gaps filled in `tokens.ts` (font weight, line height, opacity, `media` / `onMedia`; skins may also change `surface` / `border`) → next: build the Figma library from `tokens.ts` / `themes.ts` (Variables, skins as Modes) and `components/ui/` (components + variants) with the Figma MCP, so Muk edits on top of it and names stay 1:1 with code → Figma ↔ code workflow + mapping note in `frontend/README`
 
 ---
 

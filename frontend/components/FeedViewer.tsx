@@ -262,11 +262,11 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: "#000",
+      backgroundColor: theme.color.media,
     },
     page: {
       flex: 1,
-      backgroundColor: "#000",
+      backgroundColor: theme.color.media,
       justifyContent: "center",
     },
     arrow: {
@@ -304,7 +304,7 @@ const makeStyles = (theme: Theme) =>
     },
     caption: {
       fontSize: theme.fontSize.body,
-      color: "#fff",
+      color: theme.color.onMedia,
     },
     meta: {
       fontSize: theme.fontSize.small,
@@ -322,9 +322,9 @@ const makeStyles = (theme: Theme) =>
       zIndex: 4,
     },
     closeLabel: {
-      color: "#fff",
+      color: theme.color.onMedia,
       fontSize: 18,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     deleteBtn: {
       position: "absolute",
@@ -342,7 +342,7 @@ const makeStyles = (theme: Theme) =>
     deleteLabel: {
       color: theme.color.error,
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
     },
     centerPlay: {
       position: "absolute",
@@ -354,7 +354,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     centerPlayIcon: {
-      color: "#fff",
+      color: theme.color.onMedia,
       fontSize: 22,
       marginLeft: 4,
     },

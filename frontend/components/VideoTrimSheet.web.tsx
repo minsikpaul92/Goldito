@@ -332,7 +332,7 @@ const makeStyles = (theme: Theme) =>
     summary: {
       fontSize: theme.fontSize.small,
       color: theme.color.text,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       textAlign: "center",
     },
   });

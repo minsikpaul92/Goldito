@@ -187,9 +187,9 @@ export function QuickCheckIn({ pet }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     group: { gap: theme.spacing.xs },
-    groupLabel: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    groupLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     pills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     pill: {
       minHeight: 44,
@@ -206,6 +206,6 @@ const makeStyles = (theme: Theme) =>
     pillTextSent: { color: theme.color.primaryText },
     sentBox: { gap: 2, paddingTop: theme.spacing.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.color.border },
     sentLine: { fontSize: theme.fontSize.small, color: theme.color.text },
-    pillText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
+    pillText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     extras: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs, alignItems: "center" },
   });

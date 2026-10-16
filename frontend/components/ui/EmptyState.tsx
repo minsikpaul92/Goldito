@@ -42,7 +42,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
       textAlign: "center",
     },

@@ -210,7 +210,7 @@ const makeStyles = (theme: Theme) =>
     },
     heading: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     card: {
@@ -218,7 +218,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     body: {
@@ -238,7 +238,7 @@ const makeStyles = (theme: Theme) =>
     },
     requestsText: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
     pressed: {

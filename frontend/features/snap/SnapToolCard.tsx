@@ -60,6 +60,6 @@ const makeStyles = (theme: Theme) =>
     },
     avatarEmoji: { fontSize: theme.icon.md },
     body: { flex: 1, gap: theme.spacing.xs },
-    title: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     blurb: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

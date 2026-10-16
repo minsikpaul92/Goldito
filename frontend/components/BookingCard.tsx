@@ -179,7 +179,7 @@ const makeStyles = (theme: Theme) =>
     },
     who: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     badges: {
@@ -219,7 +219,7 @@ const makeStyles = (theme: Theme) =>
     },
     badgeText: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     badgeText_info: {
       color: theme.color.primary,

@@ -10,6 +10,9 @@ export type SkinColors = {
   primaryText: string;
   background: string;
   accent: string;
+  /** Cards, sheets, inputs. */
+  surface: string;
+  border: string;
 };
 
 /** Theme presets. Coat-color skins (6–8, from the designer) are added here in 11.10. */
@@ -19,6 +22,8 @@ export const themes = {
     primaryText: tokens.color.primaryText,
     background: tokens.color.background,
     accent: tokens.color.accent,
+    surface: tokens.color.surface,
+    border: tokens.color.border,
   },
 } satisfies Record<string, SkinColors>;
 

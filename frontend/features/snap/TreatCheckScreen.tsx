@@ -416,7 +416,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     section: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     busy: {
       flexDirection: "row",
       alignItems: "center",
@@ -436,10 +436,10 @@ const makeStyles = (theme: Theme) =>
       borderWidth: 2,
       backgroundColor: theme.color.surface,
     },
-    headline: { fontSize: theme.fontSize.title, fontWeight: "700" },
+    headline: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold },
     product: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
-    strong: { fontWeight: "700" },
+    strong: { fontWeight: theme.fontWeight.bold },
     note: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     flag: {
@@ -448,7 +448,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.lg,
       borderWidth: 1,
     },
-    flagLabel: { fontSize: theme.fontSize.small, fontWeight: "600" },
+    flagLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold },
     source: {
       maxWidth: "100%",
       paddingVertical: theme.spacing.xs,
@@ -458,7 +458,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.background,
     },
-    sourceTitle: { fontSize: theme.fontSize.small, color: theme.color.primary, fontWeight: "600" },
+    sourceTitle: { fontSize: theme.fontSize.small, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     sourceDomain: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
     toggle: { alignSelf: "flex-start" },
     badge: {
@@ -467,7 +467,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.sm,
       borderWidth: 1,
     },
-    badgeLabel: { fontSize: theme.fontSize.caption, fontWeight: "700" },
+    badgeLabel: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.bold },
     recentRow: {
       flexDirection: "row",
       alignItems: "center",

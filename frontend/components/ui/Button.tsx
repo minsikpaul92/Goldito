@@ -62,12 +62,12 @@ const makeStyles = (theme: Theme) =>
       opacity: 0.9,
     },
     disabled: {
-      opacity: 0.5,
+      opacity: theme.opacity.disabled,
     },
     label: {
       color: theme.color.primaryText,
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     secondaryLabel: {
       color: theme.color.primary,

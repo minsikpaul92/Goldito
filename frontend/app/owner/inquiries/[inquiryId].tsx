@@ -230,7 +230,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     trip: { gap: theme.spacing.xs },
-    tripTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    tripTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     sources: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     compose: { gap: theme.spacing.sm },

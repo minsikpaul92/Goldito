@@ -83,12 +83,12 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.md },
     brand: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primary,
     },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     lead: {
@@ -111,7 +111,7 @@ const makeStyles = (theme: Theme) =>
     roleText: { flex: 1, gap: theme.spacing.xs },
     roleTitle: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     roleBody: {
@@ -122,7 +122,7 @@ const makeStyles = (theme: Theme) =>
     ctaHint: {
       marginTop: theme.spacing.xs,
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
     footer: {

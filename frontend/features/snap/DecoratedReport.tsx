@@ -330,7 +330,7 @@ const makeStyles = (theme: Theme) =>
     },
     paperEditing: { borderColor: theme.color.primary, borderStyle: "dashed" },
     header: { zIndex: 2, flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.sm },
-    headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: "700", color: theme.color.text },
+    headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     picture: {
       zIndex: 0,
       height: PICTURE_HEIGHT,
@@ -348,7 +348,7 @@ const makeStyles = (theme: Theme) =>
     textArea: { zIndex: 2 },
     body: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 4, lineHeight: LINE, color: theme.color.text },
     tools: { gap: theme.spacing.sm },
-    group: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    group: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.sm },
     strip: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
@@ -372,6 +372,6 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    toolLabel: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    toolLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     decorate: { alignSelf: "flex-start" },
   });

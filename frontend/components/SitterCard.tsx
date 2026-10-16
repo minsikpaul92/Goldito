@@ -71,7 +71,7 @@ const makeStyles = (theme: Theme) =>
     },
     initial: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primary,
     },
     body: {
@@ -80,7 +80,7 @@ const makeStyles = (theme: Theme) =>
     },
     name: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     meta: {

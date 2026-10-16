@@ -221,6 +221,6 @@ const makeStyles = (theme: Theme) =>
     cornerIcon: {
       color: theme.color.primaryText,
       fontSize: 13,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
     },
   });

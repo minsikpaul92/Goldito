@@ -106,7 +106,7 @@ export function DiaryTimeline({ entries }: { entries: DiaryEntry[] }) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     day: { gap: theme.spacing.xs },
-    dayTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    dayTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     row: {
       flexDirection: "row",
       alignItems: "center",
@@ -121,7 +121,7 @@ const makeStyles = (theme: Theme) =>
     pressed: { opacity: 0.8 },
     emoji: { fontSize: 24 },
     body: { flex: 1, gap: 2 },
-    label: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     memo: { fontSize: theme.fontSize.body, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     thumb: { width: 56, height: 56, borderRadius: theme.radius.sm, backgroundColor: theme.color.border },

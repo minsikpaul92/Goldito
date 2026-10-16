@@ -1,4 +1,7 @@
-/** Interim design tokens (8px grid). Replace with Figma variables when ready. */
+/**
+ * Interim design tokens (8px grid). Replace with Figma variables when ready.
+ * Each `group.key` here is the Figma variable `group/key` (e.g. `color.primary` ↔ `color/primary`).
+ */
 export const tokens = {
   color: {
     background: "#F7F7F5",
@@ -19,6 +22,10 @@ export const tokens = {
     frameBackdrop: "#E8E8E3",
     frameBezel: "#1A1A1A",
     frameShadow: "rgba(26, 26, 26, 0.18)",
+    /** Letterbox behind photos and videos in viewers. */
+    media: "#000000",
+    /** Text and icons drawn on a photo, a video, or a solid status color. */
+    onMedia: "#FFFFFF",
   },
   spacing: {
     xs: 4,
@@ -38,6 +45,19 @@ export const tokens = {
     small: 14,
     /** (proposed) Tiny labels inside dense grids, e.g. slot letters in SlotCalendar. */
     caption: 11,
+  },
+  fontWeight: {
+    semibold: "600",
+    bold: "700",
+  },
+  lineHeight: {
+    small: 20,
+    body: 24,
+  },
+  /** Press / disabled feedback on tappable elements. */
+  opacity: {
+    pressed: 0.7,
+    disabled: 0.5,
   },
   /** Icon / emoji sizes: header + inline (sm), cards (md), empty states (hero). */
   icon: {

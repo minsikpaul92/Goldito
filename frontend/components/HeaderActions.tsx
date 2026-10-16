@@ -68,7 +68,7 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.sm,
       backgroundColor: theme.color.accent,
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     iconButton: {
@@ -84,7 +84,7 @@ const makeStyles = (theme: Theme) =>
     },
     logoutText: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
   });

@@ -471,12 +471,12 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     label: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     body: {
@@ -489,7 +489,7 @@ const makeStyles = (theme: Theme) =>
     },
     warning: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.warning,
     },
     error: {

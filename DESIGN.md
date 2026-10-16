@@ -77,14 +77,16 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 | Token | Value | Skin? | Use |
 | :--- | :--- | :--- | :--- |
 | `background` | `#F7F7F5` | ✅ | App background behind cards |
-| `surface` | `#FFFFFF` | | Cards, sheets, modals |
+| `surface` | `#FFFFFF` | ✅ | Cards, sheets, modals, inputs |
 | `text` | `#1A1A1A` | 🔒 fixed | Primary text |
 | `textMuted` | `#5C5C5C` | | Secondary text, timestamps, helper copy |
 | `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
 | `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
 | `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
-| `border` | `#E5E5E0` | | Card borders, dividers, input outlines |
+| `border` | `#E5E5E0` | ✅ | Card borders, dividers, input outlines |
 | `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
+| `media` | `#000000` | | Letterbox behind photos and videos in viewers |
+| `onMedia` | `#FFFFFF` | | Text and icons on a photo, a video, or a solid status color |
 | `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
 | `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
 | `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
@@ -98,7 +100,7 @@ Rules:
 
 ### 3.1 Themes (pet skins)
 
-A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
+A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`, `surface`, `border`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
 ---
 
@@ -116,7 +118,8 @@ System font for now (Figma will pick one family).
 | `fontSize.small` | 14 | 400 | Timestamps, helper text, chips |
 | `fontSize.caption` **(proposed)** | 11 | 600 | Slot letters (M · A · N) inside `SlotCalendar` day cells only |
 
-- Line height ≈ 1.4 × size.
+- Weights: `fontWeight.semibold` (600) and `fontWeight.bold` (700) — never a raw `"600"` / `"700"` in code.
+- Line height ≈ 1.4 × size; tokens `lineHeight.small` (20) and `lineHeight.body` (24) for multi-line text.
 - Sentence case for buttons and titles ("Complete with photo", not "COMPLETE WITH PHOTO").
 
 ---
@@ -139,6 +142,7 @@ System font for now (Figma will pick one family).
 
 - Cards use a 1 px `border`, no heavy shadows.
 - Minimum touch target: **44 × 44**.
+- Press / disabled feedback: `opacity.pressed` (0.7) and `opacity.disabled` (0.5).
 
 ---
 

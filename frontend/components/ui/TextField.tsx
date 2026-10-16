@@ -44,7 +44,7 @@ const makeStyles = (theme: Theme) =>
     },
     label: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
     },
     input: {

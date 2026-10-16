@@ -77,5 +77,5 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    preview: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    preview: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

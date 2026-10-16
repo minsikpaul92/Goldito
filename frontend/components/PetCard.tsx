@@ -91,7 +91,7 @@ const makeStyles = (theme: Theme) =>
     },
     name: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     // In care: tinted card, stronger border, and an "In care" tag sitting on the top-left border.
@@ -104,8 +104,8 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.sm,
       backgroundColor: theme.color.primary,
     },
-    inCareLabelText: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primaryText },
-    inCareText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
+    inCareLabelText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primaryText },
+    inCareText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     facts: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
@@ -119,7 +119,7 @@ const makeStyles = (theme: Theme) =>
     },
     allergyLabel: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
   });
