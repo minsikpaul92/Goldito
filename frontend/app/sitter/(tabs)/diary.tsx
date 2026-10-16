@@ -1,5 +1,5 @@
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -29,7 +29,12 @@ export default function SitterDiary() {
   const [selected, setSelected] = useState<string | null>(null);
   const [statuses, setStatuses] = useState<Record<string, ReportStatus>>({});
   const caring = state.status === "ready" ? state.pets : [];
+  // A Feed diary cell opens the book on its page (`?page=`).
+  const { page: pageParam } = useLocalSearchParams<{ page?: string }>();
   const [view, setView] = useState<View_ | null>(null);
+  useEffect(() => {
+    if (pageParam) setView("book");
+  }, [pageParam]);
   // With nobody in care there is nothing to write today: open the book.
   const shownView: View_ = view ?? (state.status === "ready" && caring.length === 0 ? "book" : "today");
   const [pages, setPages] = useState<SentReport[] | null>(null);
@@ -131,7 +136,7 @@ export default function SitterDiary() {
         ) : !pages || pages.length === 0 ? (
           <EmptyState emoji="📔" title="No pages yet" message="Every page you send collects here, one pet at a time or all together." />
         ) : (
-          <DiaryBook pages={pages} testID="sitter-book" />
+          <DiaryBook key={pageParam ?? "book"} pages={pages} initialId={pageParam} testID="sitter-book" />
         )
       ) : null}
     </Screen>

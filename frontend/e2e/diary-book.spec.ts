@@ -105,6 +105,48 @@ test.describe("diary book", () => {
     await expect(screen.getByText("Page 1 of 3")).toBeVisible();
   });
 
+  test("Feed: sent pages sit among the photos by time, the day's first photo as the thumbnail; a tap opens the book", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    // Two shared photos on Oct 5 (the earlier one is the thumbnail), none on Oct 7.
+    for (const [n, at] of [[1, "2026-10-05T15:00:00Z"], [2, "2026-10-05T18:00:00Z"]] as const) {
+      db.media.push({ id: `m-${n}`, pet_id: MAX.id, cloudinary_public_id: `goldito/${MAX.id}/feed/p${n}`, resource_type: "image", purpose: "feed", width: 800, height: 800, duration_s: null });
+      db.feed_posts.push({ id: `post-${n}`, pet_id: MAX.id, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: `m-${n}`, caption: `Photo ${n}`, caption_source: "fallback", task_log_id: null, created_at: at });
+    }
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto("/owner/feed");
+    const screen = app(page);
+    await screen.getByTestId("feed-diary-p1").waitFor();
+    // Newest first: Oct 7's page, Oct 5's page (sent 22:00), then the photos of Oct 5.
+    const order = await screen.locator('[data-testid^="feed-diary-p"], [data-testid^="feed-card-post-"]').evaluateAll((els) =>
+      els.map((el) => el.getAttribute("data-testid")).filter((id) => id && !id.includes("thumb")),
+    );
+    expect(order).toEqual(["feed-diary-p3", "feed-diary-p1", "feed-card-post-2", "feed-card-post-1"]);
+    await expect(screen.getByTestId("feed-diary-thumb-p1")).toHaveAttribute("data-public-id", `goldito/${MAX.id}/feed/p1`);
+    await expect(screen.getByTestId("feed-diary-thumb-p3")).toHaveCount(0); // no photo that day: a 📔 cell
+    await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
+
+    await screen.getByTestId("feed-diary-p1").click();
+    await expect(page).toHaveURL(/\/owner\/diary\/p1$/);
+    await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
+  });
+
+  test("the sitter's Feed has their pages too; a tap opens their Diary book on that page", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await page.route("**/api/ai/report-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
+    );
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await page.goto(`/sitter/feed/${MAX.id}`);
+    const screen = app(page);
+    await screen.getByTestId("feed-diary-p1").click();
+    await expect(page).toHaveURL(/\/sitter\/diary\?page=p1$/);
+    await expect(screen.getByTestId("sitter-book-where")).toContainText("Max · Oct 5");
+  });
+
   test("the sitter's Diary book holds the pages they sent, per pet they cared for", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
