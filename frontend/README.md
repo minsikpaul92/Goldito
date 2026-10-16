@@ -56,7 +56,7 @@ Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 
 
 ## Figma ↔ code
 
-Source of truth: Muk's [Pawddy-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) — page **Components** (library) and **Screens**. Every Figma variable carries its code name as code syntax (e.g. `color/text-muted` → `theme.color.textMuted`).
+Source of truth: Muk's [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) — page **Components** (library) and **Screens**. Every Figma variable carries its code name as code syntax (e.g. `color/text-muted` → `theme.color.textMuted`).
 
 | Figma | Code |
 | --- | --- |

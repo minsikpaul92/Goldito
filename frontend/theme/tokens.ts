@@ -1,5 +1,5 @@
 /**
- * Design tokens (8px grid), synced from the Figma Variables in Muk's Pawddy-Design file
+ * Design tokens (8px grid), synced from the Figma Variables in Muk's Goldito-Design file
  * (`Default` mode). Each Figma variable's code syntax names its key here
  * (e.g. `color/text-muted` ↔ `color.textMuted`). Change values in Figma first, then here.
  */

@@ -1,7 +1,7 @@
 # Goldito — Design Guide
 
 > **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
-> **Figma is the source of truth:** Muk's [Pawddy-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) file — Variables (Color with one mode per skin, Size, Motion), text styles, and components. Its values are synced into [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base, the `Default` mode) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (one preset per Color mode); code reads them through `useTheme()`. Change Figma first, then `tokens.ts` / `themes.ts`, then this file.
+> **Figma is the source of truth:** Muk's [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) file — Variables (Color with one mode per skin, Size, Motion), text styles, and components. Its values are synced into [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base, the `Default` mode) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (one preset per Color mode); code reads them through `useTheme()`. Change Figma first, then `tokens.ts` / `themes.ts`, then this file.
 >
 > Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
 > Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
