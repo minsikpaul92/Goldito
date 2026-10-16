@@ -1,6 +1,7 @@
 /**
- * Interim design tokens (8px grid). Replace with Figma variables when ready.
- * Each `group.key` here is the Figma variable `group/key` (e.g. `color.primary` ↔ `color/primary`).
+ * Design tokens (8px grid), synced from the Figma Variables in Muk's Pawddy-Design file
+ * (`Default` mode). Each Figma variable's code syntax names its key here
+ * (e.g. `color/text-muted` ↔ `color.textMuted`). Change values in Figma first, then here.
  */
 export const tokens = {
   color: {
@@ -13,9 +14,17 @@ export const tokens = {
     /** Soft tint for highlights (selected chip background, badges). Text on it uses `text`. */
     accent: "#D8F3DC",
     border: "#E5E5E0",
+    /** Outlines that must stay visible (unselected radio rings, inputs on tinted backgrounds). */
+    borderStrong: "#86867F",
+    /** Empty part of a progress bar or switch. */
+    track: "#E5E5E0",
     error: "#B42318",
     success: "#067647",
     warning: "#B54708",
+    /** Light backgrounds of status banners and tags; text on them uses the matching status color. */
+    errorSurface: "#FEF3F2",
+    warningSurface: "#FFFAEB",
+    successSurface: "#ECFDF3",
     /** Dimmed backdrop behind modals and sheets. */
     overlay: "rgba(26, 26, 26, 0.4)",
     // Desktop phone frame only (DESIGN.md §2.1)
@@ -71,6 +80,18 @@ export const tokens = {
     frameHeight: 874,
     /** Bottom tab bar. The library default (49) squeezes the label on web. */
     tabBarHeight: 60,
+    /** Minimum tap target, both sides. */
+    touchTarget: 44,
+    /** Widest a content column grows. */
+    contentMaxWidth: 480,
+  },
+  /** Animation timing (ms) and press feedback. */
+  motion: {
+    fast: 120,
+    base: 240,
+    slow: 420,
+    pressScale: 0.97,
+    pressOpacity: 0.85,
   },
   breakpoint: {
     /** Reserved for the post-hackathon sitter desktop layout. */

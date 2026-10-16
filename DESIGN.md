@@ -1,7 +1,7 @@
 # Goldito — Design Guide
 
 > **Status: interim draft — everything here is temporary.** Colors, type, spacing, components, and patterns are placeholders so development can start. The designer will finalize them (frontend built with AI assistance, details refined in Figma) and replace this file.
-> Until then, values come from [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (skin presets); code reads them through `useTheme()`. When Figma is ready, Figma Variables become the source of truth: update `tokens.ts` / `themes.ts` first, then this file.
+> **Figma is the source of truth:** Muk's [Pawddy-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design) file — Variables (Color with one mode per skin, Size, Motion), text styles, and components. Its values are synced into [`frontend/theme/tokens.ts`](frontend/theme/tokens.ts) (base, the `Default` mode) and [`frontend/theme/themes.ts`](frontend/theme/themes.ts) (one preset per Color mode); code reads them through `useTheme()`. Change Figma first, then `tokens.ts` / `themes.ts`, then this file.
 >
 > Source of truth order: **Figma** (when available) → **`tokens.ts`** → **this file**.
 > Items marked **(proposed)** are not in `tokens.ts` yet — add them there before using them in code.
@@ -78,21 +78,23 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 | :--- | :--- | :--- | :--- |
 | `background` | `#F7F7F5` | ✅ | App background behind cards |
 | `surface` | `#FFFFFF` | ✅ | Cards, sheets, modals, inputs |
-| `text` | `#1A1A1A` | 🔒 fixed | Primary text |
-| `textMuted` | `#5C5C5C` | | Secondary text, timestamps, helper copy |
+| `text` | `#1A1A1A` | ✅ dark only | Primary text |
+| `textMuted` | `#5C5C5C` | ✅ dark only | Secondary text, timestamps, helper copy |
 | `primary` | `#2D6A4F` | ✅ | Primary buttons, active tab, links, checkmarks |
 | `primaryText` | `#FFFFFF` | ✅ | Text/icons on `primary` |
 | `accent` | `#D8F3DC` | ✅ | Soft highlight behind selected chips and badges (text on it uses `text`) |
 | `border` | `#E5E5E0` | ✅ | Card borders, dividers, input outlines |
+| `borderStrong` | `#86867F` | ✅ | Outlines that must stay visible (radio rings, inputs on tinted backgrounds) |
+| `track` | `#E5E5E0` | ✅ | Empty part of a progress bar or switch |
 | `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
 | `media` | `#000000` | | Letterbox behind photos and videos in viewers |
 | `onMedia` | `#FFFFFF` | | Text and icons on a photo, a video, or a solid status color |
 | `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
 | `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
 | `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
-| `warningSurface` **(proposed)** | `#FFFAEB` | Background of warning banners |
-| `errorSurface` **(proposed)** | `#FEF3F2` | Background of DANGER modal body / error banners |
-| `successSurface` **(proposed)** | `#ECFDF3` | Background of SAFE result / success toast |
+| `warningSurface` | `#FFFAEB` | 🔒 fixed | Background of warning banners |
+| `errorSurface` | `#FEF3F2` | 🔒 fixed | Background of DANGER modal body / error banners |
+| `successSurface` | `#ECFDF3` | 🔒 fixed | Background of SAFE result / success toast |
 
 Rules:
 - `error` red is reserved for real problems (failed actions, DANGER). Do not use red for decoration or "cancel" buttons.
@@ -100,7 +102,7 @@ Rules:
 
 ### 3.1 Themes (pet skins)
 
-A theme preset in `themes.ts` may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`, `surface`, `border`). The 🔒 colors (`text`, `error`, `success`, `warning`) never change, so a DANGER warning can't blend into a skin. Today there is only `default`; the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
+A theme preset in `themes.ts` (= one mode of the Figma Color collection) may change **only** the ✅ colors (`primary`, `primaryText`, `background`, `accent`, `surface`, `border`, `borderStrong`, `track`, `text`, `textMuted`); `text` / `textMuted` may only shift within dark, readable values. The 🔒 colors (`error`, `success`, `warning` and their surfaces) never change, so a DANGER warning can't blend into a skin. Today there are `default` and `balanced` (warmer neutrals, Figma mode `Balanced`); the coat-color presets (6–8, from the designer) and choosing them per pet arrive in Phase 11.10.
 
 ---
 
@@ -141,8 +143,9 @@ System font for now (Figma will pick one family).
 | `icon.hero` | 40 | Emoji / illustration at the top of an empty state |
 
 - Cards use a 1 px `border`, no heavy shadows.
-- Minimum touch target: **44 × 44**.
+- Minimum touch target: **44 × 44** (`layout.touchTarget`); content column at most `layout.contentMaxWidth` (480).
 - Press / disabled feedback: `opacity.pressed` (0.7) and `opacity.disabled` (0.5).
+- Motion: `motion.fast` (120 ms), `motion.base` (240), `motion.slow` (420); pressed buttons may use `motion.pressScale` (0.97) / `motion.pressOpacity` (0.85) as in Figma.
 
 ---
 
