@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { BrandLogo } from "../../components/BrandLogo";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -66,7 +67,7 @@ export default function LoginScreen() {
 
       <View style={styles.body}>
         <View style={styles.header}>
-          <Text style={styles.brand}>🐾 Goldito</Text>
+          <BrandLogo height={32} />
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Sign in to see today's care updates.</Text>
         </View>
@@ -154,11 +155,6 @@ const makeStyles = (theme: Theme) =>
     },
     header: {
       gap: theme.spacing.xs,
-    },
-    brand: {
-      fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.bold,
-      color: theme.color.primary,
     },
     title: {
       fontSize: theme.fontSize.title,

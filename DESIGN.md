@@ -89,6 +89,9 @@ Use the token name in code (`theme.color.primary` from `useTheme()`), never a he
 | `overlay` | 40 % `text` | | Dimmed backdrop behind modals and sheets |
 | `media` | `#000000` | | Letterbox behind photos and videos in viewers |
 | `onMedia` | `#FFFFFF` | | Text and icons on a photo, a video, or a solid status color |
+| `gold` | `#F4C35A` | 🔒 brand | Logo tag, celebration moments — never text on a light background |
+| `goldOnLight` | `#C9962E` | 🔒 brand | Small gold accents on light backgrounds (the logo heart) |
+| `cream` | `#FBF6EA` | 🔒 brand | Warm expressive ground for brand moments |
 | `success` | `#067647` | 🔒 fixed | Done states, SAFE result |
 | `error` | `#B42318` | 🔒 fixed | Form/API errors, **DANGER** safety result |
 | `warning` | `#B54708` | 🔒 fixed | WARNING safety result, "needs your OK" handoff badge |
@@ -320,6 +323,7 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 
 ## 8. Imagery & icons
 
+- **Logo:** Muk's gold tag (brand page v2.1, `frontend/assets/brand/`). In the app use `<BrandLogo />` (`components/BrandLogo.tsx`): the light lockup `goldito-lockup-light.svg` on web, app icon + name on native. Never re-type the name as text with an emoji. Favicon: `goldito-favicon-48.png` (`app.json`).
 - Real pet photos are the hero; keep chrome minimal around them.
 - Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
 - Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.

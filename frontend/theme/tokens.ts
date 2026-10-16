@@ -35,6 +35,13 @@ export const tokens = {
     media: "#000000",
     /** Text and icons drawn on a photo, a video, or a solid status color. */
     onMedia: "#FFFFFF",
+    // Brand (Muk's brand page): from the gold tag logo. Never skinned.
+    /** Tag gold — the logo tag and celebration moments; never text on a light background. */
+    gold: "#F4C35A",
+    /** Gold that reads on light backgrounds (the logo heart, small gold accents). */
+    goldOnLight: "#C9962E",
+    /** Warm expressive ground for brand moments (welcome, celebration). */
+    cream: "#FBF6EA",
   },
   spacing: {
     xs: 4,
