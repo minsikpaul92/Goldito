@@ -166,6 +166,22 @@ export async function listSentReports(): Promise<SentReport[]> {
   return ((data ?? []) as unknown as ReportRow[]).map(toSent);
 }
 
+/**
+ * Every sent page I can read, oldest first — the diary book (owner: their pets' pages; sitter: the pages they wrote).
+ * RLS decides which: owners see `sent` reports of their pets, a sitter their own rows (drafts filtered out here).
+ */
+export async function listBookPages(): Promise<SentReport[]> {
+  const { data, error } = await getSupabase()
+    .from("daily_reports")
+    .select(COLUMNS)
+    .eq("status", "sent")
+    .order("report_date", { ascending: true })
+    .order("sent_at", { ascending: true })
+    .limit(500);
+  if (error) throw new Error("Couldn't load the diary. Check your connection and try again.");
+  return ((data ?? []) as unknown as ReportRow[]).map(toSent);
+}
+
 export async function getSentReport(reportId: string): Promise<SentReport | null> {
   const { data, error } = await getSupabase().from("daily_reports").select(COLUMNS).eq("id", reportId).eq("status", "sent").maybeSingle();
   if (error) throw new Error("Couldn't load this entry.");

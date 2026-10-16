@@ -279,7 +279,7 @@ test.describe("daily report", () => {
     expect([...(reportRequests[0].off as string[])].sort()).toEqual(["feed-f-park", "note-c-note"]);
   });
 
-  test("the owner's Diary lists only sent reports and opens one read-only", async ({ page }) => {
+  test("the owner's Diary book shows only sent reports, read-only, with the day's tasks", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [MAX]);
     db.daily_reports.push(
@@ -290,11 +290,9 @@ test.describe("daily report", () => {
     await app(page).getByRole("heading", { name: "Home" }).waitFor();
     await page.goto("/owner/diary");
     const screen = app(page);
-    await expect(screen.getByTestId("diary-report-sent1")).toContainText("A calm day.");
-    await expect(screen.getByTestId("diary-report-sent1")).toContainText("Max · Chloe");
+    await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
+    await expect(screen.getByText("From Chloe")).toBeVisible();
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
-
-    await screen.getByTestId("diary-report-sent1").click();
     await expect(screen.getByTestId("diary-entry-body")).toContainText("Then we walked.");
     await expect(screen.getByText("✓ Walk")).toBeVisible();
     await expect(screen.getByText("Pill · missed")).toBeVisible();

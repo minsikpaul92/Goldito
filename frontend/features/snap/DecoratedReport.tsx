@@ -63,6 +63,8 @@ type Props = {
   day: string;
   body: string;
   writing?: DiaryWriting;
+  /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
+  onEditingChange?: (editing: boolean) => void;
   testID?: string;
 };
 
@@ -76,7 +78,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -91,6 +93,9 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
   const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
   const [draft, setDraft] = useState<DecorItem[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [box, setBox] = useState<PetSticker[] | null>(null);

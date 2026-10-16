@@ -186,7 +186,11 @@ test.describe("diary decorating", () => {
     const paper = screen.getByTestId("diary-entry-paper");
     await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
     // Layout size (the phone frame may be scaled on screen; the image is drawn at the page's own size).
-    const p = await paper.evaluate((el) => ({ width: (el as HTMLElement).offsetWidth, height: (el as HTMLElement).offsetHeight }));
+    // After the handwriting font is in: it can change the header's height by a pixel.
+    const p = await paper.evaluate(async (el) => {
+      await document.fonts.ready;
+      return { width: (el as HTMLElement).offsetWidth, height: (el as HTMLElement).offsetHeight };
+    });
 
     const download = page.waitForEvent("download");
     await screen.getByTestId("decor-save-image").click();
