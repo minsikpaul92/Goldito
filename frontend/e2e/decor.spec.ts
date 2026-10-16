@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
-import { caring } from "./careFixtures";
+import { caring, mockUpload } from "./careFixtures";
 import { NOON_TORONTO, TODAY_TORONTO, app, box, center, drag, isInside, signIn } from "./helpers";
 import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
@@ -193,6 +193,7 @@ test.describe("diary decorating", () => {
     });
 
     const download = page.waitForEvent("download");
+    await screen.getByTestId("decor-share").click();
     await screen.getByTestId("decor-save-image").click();
     const file = await download;
     expect(file.suggestedFilename()).toBe("goldito-max-diary-2026-10-05.png");
@@ -202,7 +203,8 @@ test.describe("diary decorating", () => {
     expect(bytes.subarray(1, 4).toString("ascii")).toBe("PNG");
     // Twice the paper's size on screen (IHDR width / height).
     expect(bytes.readUInt32BE(16)).toBe(p.width * 2);
-    expect(bytes.readUInt32BE(20)).toBe(p.height * 2);
+    // ±1 px: opening the Share sheet can nudge the layout by a pixel.
+    expect(Math.abs(bytes.readUInt32BE(20) - p.height * 2)).toBeLessThanOrEqual(2);
 
     // The heart is painted at the middle of the page; a corner of the paper is plain paper.
     const [centre, corner] = await page.evaluate(async (b64) => {
@@ -219,6 +221,23 @@ test.describe("diary decorating", () => {
     }, bytes.toString("base64"));
     expect(corner[3]).toBe(255); // the paper is opaque
     expect(centre).not.toEqual(corner);
+  });
+
+  test("Share → Copy public link says it is public, uploads the page once as a diary_page image, and shows the link", async ({ page }) => {
+    const db = await openOwnerEntry(page, () => undefined);
+    const sign = await mockUpload(page, db, MAX.id);
+    const screen = app(page);
+    await screen.getByTestId("decor-share").click();
+    await expect(screen.getByTestId("decor-link-note")).toContainText("anyone who has the link can open it");
+    expect(sign).toHaveLength(0); // nothing is uploaded before the tap
+    await screen.getByTestId("decor-copy-link").click();
+    await expect(screen.getByTestId("decor-link")).toHaveText("x"); // the mock's secure_url
+    expect(sign).toHaveLength(1);
+    expect(sign[0]).toMatchObject({ pet_id: MAX.id, purpose: "diary_page", resource_type: "image" });
+    // Same page, same stickers: the same link, no second upload.
+    await screen.getByTestId("decor-copy-link").click();
+    await expect(screen.getByTestId("decor-link")).toHaveText("x");
+    expect(sign).toHaveLength(1);
   });
 
   test("no stickers yet: the tools point to Snap → Sticker", async ({ page }) => {

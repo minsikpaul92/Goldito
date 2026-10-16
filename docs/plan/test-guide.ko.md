@@ -571,7 +571,7 @@
 | SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 지정(다시 **⬆ Over text**) — 꾸미는 동안은 반투명으로 위에 떠서 마우스로 끌 수 있고, **Save** 뒤에는 글씨가 스티커 위에 보임. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
 | SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
 | SNAP-23 | 견주(Max · 검사 4번) → Snap 탭 → 카드 3개 아래 | **Recent checks**에 가장 최근 3개(상태 칩 · 제품 이름 · 날짜, 새것이 위). 한 줄을 클릭하면 `/{역할}/snap/treat?check=…`로 그 검사가 열림(SNAP-9와 같은 화면). 검사가 하나도 없으면 이 목록 자체가 안 보임. 시터는 지금 돌보는 펫들의 검사만 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
-| SNAP-24 | 견주 → Diary → 꾸민 알림장 / 시터 → Diary → 오늘 보낸 알림장 → **⬇ Save image** (11.8) | 브라우저가 `goldito-max-diary-2026-10-05.png`를 저장하고 "Saved Max's diary page 📔". 그림은 화면의 종이 그대로: 머리말 · 그림 칸(그날 첫 사진) · 줄 · 손글씨 글 · **두 사람의 스티커**(글 아래 · 위 층, 크기 · 회전 포함), 화면의 2배 해상도. 꾸미는 중에는 버튼이 없음(먼저 Save stickers). 사진 하나를 못 불러오면 그것만 빼고 저장 + "Saved — one picture couldn't be added" | 🤖 `decor.spec.ts`(파일 이름 · PNG 크기 · 가운데 스티커 픽셀) · 실제 사진 · 손글씨 글꼴 · Safari · 폰 저장은 👤 | 사람 확인 대기 |
+| SNAP-24 | 견주 → Diary → 꾸민 알림장 / 시터 → Diary → 오늘 보낸 알림장 → **↗ Share → ⬇ Download image** (11.8, DB.5부터 Share 시트 안) | 브라우저가 `goldito-max-diary-2026-10-05.png`를 저장하고 "Saved Max's diary page 📔". 그림은 화면의 종이 그대로: 머리말 · 그림 칸(그날 첫 사진) · 줄 · 손글씨 글 · **두 사람의 스티커**(글 아래 · 위 층, 크기 · 회전 포함), 화면의 2배 해상도. 꾸미는 중에는 버튼이 없음(먼저 Save stickers). 사진 하나를 못 불러오면 그것만 빼고 저장 + "Saved — one picture couldn't be added" | 🤖 `decor.spec.ts`(파일 이름 · PNG 크기 · 가운데 스티커 픽셀) · 실제 사진 · 손글씨 글꼴 · Safari · 폰 저장은 👤 | 사람 확인 대기 |
 
 ### 3.21 Snap 리뷰 수정 (SR) — [review-2026-10-15.ko.md](review-2026-10-15.ko.md) *(P0 SR-1 – SR-4만, ID는 리뷰 문서 항목과 같음 · Later SR-5 – SR-21은 고칠 때 여기에 추가)*
 
@@ -624,6 +624,7 @@
 | DBK-6 | 시터 → **Diary** → **Diary book** | 지금까지 보낸 쪽 전부(돌봤던 펫별 이름 버튼 + All), 최신 장부터, 초안 없음. 지금 돌보는 펫이 없으면 Diary를 열면 바로 책 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-7 | (DB.4) 견주 → **Feed** (알림장을 보낸 날의 펫) | 사진 사이에 **📔 다이어리 칸**이 보낸 시각 순서대로(최신이 위): 그날 **첫 공유 사진**이 썸네일, 사진이 없던 날은 📔, 아래 "Diary · Oct 5". 초안은 안 보임. 칸을 누르면 다이어리 책이 그 장으로 열림. 사진을 더 불러오기 전(Load more)에는 화면에 있는 가장 오래된 사진보다 오래된 장은 기다렸다가 같이 나옴 | 🤖 `diary-book.spec.ts`(순서 · 썸네일 `data-public-id` · 열기) · 실제 썸네일 이미지는 👤 | 사람 확인 대기 |
 | DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
@@ -637,6 +638,7 @@
 - **Sticker 오리기는 한 번에 약 5초**(Magic Touch, CPU — GPU는 빈 마스크라 안 씀). classic Web Worker에서 돌아 화면은 멈추지 않는다(워커가 안 되는 브라우저는 메인 스레드로 — 그동안 화면이 잠깐 멈춤). 모델 파일 30 MB는 Google 저장소에서 받고 캐시가 1시간이다. 목줄 · 하네스는 펫과 같이 잘릴 수 있고, 사진 가장자리에 걸친 펫은 그 가장자리에서 잘린다. 스티커를 지워도 이미 꾸민 다이어리에는 남는다(꾸미기 항목이 이미지 `public_id`를 같이 가짐, Cloudinary 파일은 지우지 않음).
 - **다이어리 꾸미기는 알림장 글이 있는 "종이" 기준 좌표(0–1)** — 견주와 시터가 같은 종이(같은 글 · 같은 크기)를 보므로 같은 자리지만, 화면 폭이 크게 다르면(폰 프레임 밖 넓은 창) 글 줄바꿈이 달라 글과 스티커의 상대 위치가 조금 달라질 수 있다. 한 사람 층에 스티커 20개까지. 꾸미기는 웹에서만(앱 빌드는 스티커를 그리지 않음).
 - **Save image(11.8)는 브라우저가 지금 그린 종이를 캔버스에 다시 그린다** — 글은 화면의 줄바꿈 · 글꼴 그대로, 스티커는 저장된 자리 · 크기 · 각도로. 사진 · 스티커는 CORS로 다시 불러오므로(Cloudinary는 허용) 못 불러온 것은 빠지고 토스트가 몇 개 빠졌는지 알려 준다. 꾸미는 중(저장 전) 상태는 저장되지 않는다 — 먼저 **Save stickers**. 웹에서만, 파일은 화면 종이의 2배 크기 PNG.
+- **다이어리 공개 링크(DB.5)는 정말 공개다** — Cloudinary 이미지 주소라 링크를 가진 누구나 열 수 있고, 앱에서 지울 수 없다(링크 삭제는 해커톤 후). 그래서 시트가 올리기 전에 알려 준다. 폰 공유 시트(Share image)는 브라우저가 파일 공유를 지원할 때만 보인다(데스크톱 Chrome · Firefox는 보통 안 보임 → Download / 링크).
 - **그림일기 손글씨 글꼴(Gaegu)은 Google Fonts에서 받는다**(웹만) — 막히면 시스템 글꼴로 보이고, 글꼴이 늦게 오면 처음 잠깐 다른 글꼴. **Goldito 기본 스티커 9장은 코드로 그린 임시본**이다(`frontend/assets/stickers/`, 같은 이름으로 디자인 파일 교체). 그림 칸 사진은 그날 첫 공유 사진이라 견주가 못 보는 비공개 사진이 있으면 두 화면의 그림이 다를 수 있다(칸 크기는 같아 스티커 자리는 같음).
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).

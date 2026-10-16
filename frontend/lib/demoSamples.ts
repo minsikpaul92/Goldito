@@ -58,6 +58,8 @@ const SAMPLES: Record<PickPurpose, DemoSample[]> = {
   safety_label: LABELS,
   mood: MOOD,
   sticker: MOOD.filter((sample) => sample.kind !== "video"),
+  // A diary page image is drawn by the app (Share → public link), never picked.
+  diary_page: [],
 };
 
 export function samplesFor(purpose: PickPurpose, mediaTypes?: MediaKind[]): DemoSample[] {

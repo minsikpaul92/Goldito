@@ -14,7 +14,7 @@ import { listReportPhotos } from "../diary/reportApi";
 import { formatDay } from "../schedule/dates";
 import { DecorItem, DecorLayer, MAX_ITEMS, listDecor, saveDecor } from "./decorApi";
 import { renderDiaryPage } from "./diaryImage";
-import { diaryFilename, downloadBlob } from "./download";
+import { SharePageSheet } from "./SharePageSheet";
 import { PRESET_STICKERS, isPreset, presetRef, presetUri } from "./presetStickers";
 import { StickerCanvas } from "./StickerCanvas";
 import { PetSticker, listStickers } from "./stickerApi";
@@ -73,8 +73,8 @@ type Props = {
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
  * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
- * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "⬇ Save image" saves the page as
- * shown, both layers included, as a PNG to share (11.8). Web only for now.
+ * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "↗ Share" sends the page as
+ * shown, both layers included (11.8 · DB.5): the image, a download, or a public link. Web only for now.
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
@@ -100,7 +100,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   const [selected, setSelected] = useState<number | null>(null);
   const [box, setBox] = useState<PetSticker[] | null>(null);
   const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const paperRef = useRef<View>(null);
   const pictureRef = useRef<View>(null);
   const linesRef = useRef<View>(null);
@@ -199,32 +199,24 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     }
   };
 
-  const saveImage = async () => {
+  /** The page as it is on screen, drawn to a PNG (11.8) — for Share → image, download or public link (DB.5). */
+  const renderPage = async () => {
     const dom = (ref: { current: View | null }) => ref.current as unknown as HTMLElement | null;
     const [paper, pic, rules, header, text] = [dom(paperRef), dom(pictureRef), dom(linesRef), dom(headerRef), dom(textRef)];
-    if (exporting || !paper || !pic || !rules || !header || !text) return;
-    setExporting(true);
-    try {
-      // The same stacking as the screen: the other person's stickers, then mine above them, each side on its own.
-      const stickers = canvasLayers.flatMap((layer) =>
-        layer.items.map((item) => ({
-          url: stickerUrl(item.public_id),
-          x: item.x,
-          y: item.y,
-          scale: item.scale,
-          rotate: item.rotate,
-          z: item.z + (layer.mine ? 1000 : 0),
-          layer: item.layer ?? "front",
-        })),
-      );
-      const { blob, missing } = await renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
-      downloadBlob(blob, diaryFilename(petName, day));
-      toast.show(missing > 0 ? `Saved — ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : `Saved ${petName}'s diary page 📔`);
-    } catch (error) {
-      errorDialog.show({ title: "Image not saved", message: (error as Error).message, onRetry: () => void saveImage() });
-    } finally {
-      setExporting(false);
-    }
+    if (!paper || !pic || !rules || !header || !text) throw new Error("The page isn't on screen yet.");
+    // The same stacking as the screen: the other person's stickers, then mine above them, each side on its own.
+    const stickers = canvasLayers.flatMap((layer) =>
+      layer.items.map((item) => ({
+        url: stickerUrl(item.public_id),
+        x: item.x,
+        y: item.y,
+        scale: item.scale,
+        rotate: item.rotate,
+        z: item.z + (layer.mine ? 1000 : 0),
+        layer: item.layer ?? "front",
+      })),
+    );
+    return renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
   };
 
   const onTextLayout = (event: LayoutChangeEvent) => {
@@ -381,14 +373,20 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       ) : (
         <View style={styles.row}>
           <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
-          <TextButton
-            label={exporting ? "Saving image…" : "⬇ Save image"}
-            onPress={() => void saveImage()}
-            disabled={exporting}
-            testID="decor-save-image"
-          />
+          <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" />
         </View>
       )}
+      {reportId && !writing && Platform.OS === "web" ? (
+        <SharePageSheet
+          visible={sharing}
+          onClose={() => setSharing(false)}
+          petId={petId}
+          petName={petName}
+          day={day}
+          render={renderPage}
+          version={JSON.stringify(layers)}
+        />
+      ) : null}
     </View>
   );
 }
