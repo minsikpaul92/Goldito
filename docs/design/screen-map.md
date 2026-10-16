@@ -124,44 +124,35 @@ Shows: `HandoffDraft` · `HandoffPicker`
 
 ### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
 
-Owner Diary tab (D47): the daily reports the sitter sent — newest first, one card each with the first sentence. Live updates are on Home, and everything they did is in History.
+Owner Diary tab (D47 · Diary book): the pages the sitters sent, as a book — all pets or one, oldest → newest, opening on the newest. Live updates are on Home, and everything they did is in History.
 
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load the diary | — | 41 |
-| EmptyState | No diary yet | — | 48 |
-| Pressable | — | ``diary-report-${r.id}`` | 60 |
+Shows: `OwnerDiaryBook`
 
 ### `/owner/diary/[entryId]` — [app/owner/diary/[entryId].tsx](../../frontend/app/owner/diary/[entryId].tsx)
 
-One daily report (phase-07 7.3): date, the sitter's text, that day's photos, and the tasks. The text is read-only; the owner may decorate it with their own sticker layer (12.3b).
+One daily report (phase-07 7.3) — a notice or a Feed card opens the diary book on this page (Diary book DB.3); turning the page goes to the days before and after. The text is read-only; the owner may decorate it (12.3b).
 
-Shows: `DecoratedReport`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load this entry | — | 47 |
-| EmptyState | Entry not found | — | 55 |
+Shows: `OwnerDiaryBook`
 
 ### `/owner/feed` — [app/owner/(tabs)/feed.tsx](../../frontend/app/owner/(tabs)/feed.tsx)
 
 Owner Feed tab (phase-05): Instagram 3-col album. ▶ = play in cell; tap photo = full-screen viewer (swipe / arrows). Owner can add their own photos (private by default, optional "Visible to sitter") and delete the posts they made (5.8).
 
-Shows: `AlbumView` · `FeedCard` · `FeedViewer` · `ShareToggle`
+Shows: `AlbumView` · `DiaryFeedCell` · `FeedCard` · `FeedViewer` · `ShareToggle`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 218 |
-| EmptyState | No pets yet | — | 231 |
-| SegmentedControl | — | `feed-pet` | 260 |
-| Button | openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo" | `feed-request-photo` | 270 |
-| SegmentedControl | — | `feed-mode` | 281 |
-| EmptyState | Couldn't load the feed | — | 297 |
-| EmptyState | No posts yet | — | 304 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 313 |
-| Pressable | Add photo | `feed-add-photo` | 337 |
-| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 363 |
-| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 371 |
+| EmptyState | Couldn't load your pets | — | 235 |
+| EmptyState | No pets yet | — | 248 |
+| SegmentedControl | — | `feed-pet` | 278 |
+| Button | openRequest ? "Requested · waiting for a photo" : requesting ? "…" : "📷 Request photo" | `feed-request-photo` | 288 |
+| SegmentedControl | — | `feed-mode` | 299 |
+| EmptyState | Couldn't load the feed | — | 315 |
+| EmptyState | No posts yet | — | 322 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 331 |
+| Pressable | Add photo | `feed-add-photo` | 359 |
+| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 385 |
+| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 393 |
 
 ### `/owner/history` — [app/owner/history.tsx](../../frontend/app/owner/history.tsx)
 
@@ -420,15 +411,18 @@ Shows: `QuickCheckIn`
 
 ### `/sitter/diary` — [app/sitter/(tabs)/diary.tsx](../../frontend/app/sitter/(tabs)/diary.tsx)
 
-Sitter Diary (D47b): the evening note — chips from the day, short lines of the sitter's own, a preview the sitter edits and approves (phase-07 7.3). With more than one pet in care the sitter picks the pet first and writes for that pet only (FB-19); each pet's chips and lines stay while switching.
+Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the day's chips, checked and sent (phase-07 7.3; with more than one pet the sitter picks the pet first, FB-19, and each composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared for or one, oldest → newest.
 
-Shows: `ReportComposer` · `ReportStatus`
+Shows: `ReportComposer` · `ReportStatus` · `DiaryBook`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 33 |
-| EmptyState | Diary | — | 45 |
-| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 62 |
+| EmptyState | Couldn't load your pets | — | 72 |
+| SegmentedControl | — | `sitter-diary-view` | 84 |
+| EmptyState | Diary | — | 99 |
+| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 107 |
+| EmptyState | Couldn't load the diary | — | 135 |
+| EmptyState | No pages yet | — | 137 |
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
@@ -444,18 +438,18 @@ Sitter Feed tab (D47b / phase-05): pets in care → `/sitter/feed/[petId]` (+ Ph
 
 Sitter pet feed (phase-05): 3-col album + **+ Photo** FAB → pickMedia → uploadMedia → createFeedPost. No caption field (D38). Toast: "Shared with {owner} 🐾". Author can Delete from viewer (5.7).
 
-Shows: `FeedCard` · `FeedViewer` · `ShareToggle`
+Shows: `DiaryFeedCell` · `FeedCard` · `FeedViewer` · `ShareToggle`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Pet not found | — | 203 |
-| EmptyState | Couldn't open this pet | — | 211 |
-| EmptyState | Couldn't load posts | — | 238 |
-| EmptyState | No posts yet | — | 269 |
-| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 278 |
-| Pressable | Add photo | `feed-add-photo` | 302 |
-| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 328 |
-| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 336 |
+| EmptyState | Pet not found | — | 216 |
+| EmptyState | Couldn't open this pet | — | 224 |
+| EmptyState | Couldn't load posts | — | 252 |
+| EmptyState | No posts yet | — | 283 |
+| TextButton | loadingMore ? "Loading…" : "Load more" | `feed-load-more` | 292 |
+| Pressable | Add photo | `feed-add-photo` | 320 |
+| Sheet | deleting ? "…" : "🗑️" | `feed-delete-sheet` | 346 |
+| Button | deleting ? "…" : "🗑️" | `feed-delete-confirm` | 354 |
 
 ### `/sitter/history` — [app/sitter/history.tsx](../../frontend/app/sitter/history.tsx)
 
@@ -652,6 +646,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | TextButton | Reset demo… | `demo-reset-open` | 60 |
 | Sheet | Reset the demo? | `demo-reset-sheet` | 61 |
 | Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 68 |
+
+### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${cell.petName}'s diary, ${formatDay(cell.day)}: ${cell.preview}`` | ``feed-diary-${cell.reportId}`` | 18 |
 
 ### DiaryTimeline — [components/DiaryTimeline.tsx](../../frontend/components/DiaryTimeline.tsx)
 
@@ -905,18 +905,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 321 |
-| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 334 |
-| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 358 |
-| TextButton | Back to chips | ``report-back-${pet.id}`` | 364 |
-| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 394 |
-| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 396 |
-| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 408 |
-| Button | Done | ``report-edit-done-${pet.id}`` | 428 |
-| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 435 |
-| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 439 |
-| Button | Add | ``report-custom-add-${pet.id}`` | 459 |
-| Button | busy === "generate" ? "Writing…" : "Write the report" | ``report-generate-${pet.id}`` | 461 |
+| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 324 |
+| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 337 |
+| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 373 |
+| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 403 |
+| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 405 |
+| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 417 |
+| Button | Done | ``report-edit-done-${pet.id}`` | 437 |
+| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 444 |
+| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 448 |
+| Button | Add | ``report-custom-add-${pet.id}`` | 468 |
+| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 470 |
 
 ### RoleCard — [components/RoleCard.tsx](../../frontend/components/RoleCard.tsx)
 
@@ -1033,6 +1032,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
 
+### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| SegmentedControl | — | ``${testID}-pet`` | 173 |
+| Pressable | `hint` | `testID` | 242 |
+
+### OwnerDiaryBook — [features/diary/OwnerDiaryBook.tsx](../../frontend/features/diary/OwnerDiaryBook.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load the diary | — | 41 |
+| EmptyState | No diary yet | — | 48 |
+
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1049,14 +1062,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 272 |
-| TextButton | Make a sticker | `decor-make` | 292 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 297 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 331 |
-| TextButton | Cancel | `decor-cancel` | 332 |
-| TextButton | ✨ Decorate | `decor-start` | 343 |
-| TextButton | exporting ? "Saving image…" : "⬇ Save image" | `decor-save-image` | 344 |
-| Pressable | `hint` | `testID` | 359 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 308 |
+| TextButton | Make a sticker | `decor-make` | 328 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 333 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 367 |
+| TextButton | Cancel | `decor-cancel` | 368 |
+| TextButton | ✨ Decorate | `decor-start` | 379 |
+| TextButton | ↗ Share | `decor-share` | 380 |
+| Pressable | `hint` | `testID` | 401 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1066,6 +1079,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | shown \|\| noPet ? "Try another photo" : "Pick a photo or clip" | `mood-pick` | 175 |
 | Pressable | ``${tag(index)}: ${p.top}`` | ``mood-box-${index}`` | 214 |
 | Pressable | — | ``mood-pet-${index}`` | 237 |
+
+### SharePageSheet — [features/snap/SharePageSheet.tsx](../../frontend/features/snap/SharePageSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | ``Share ${petName}'s page`` | `decor-share-sheet` | 109 |
+| Button | busy === "share" ? "Getting it ready…" : "↗ Share image" | `decor-share-image` | 112 |
+| Button | busy === "download" ? "Saving image…" : "⬇ Download image" | `decor-save-image` | 114 |
+| Button | busy === "link" ? "Making a link…" : "🔗 Copy public link" | `decor-copy-link` | 124 |
 
 ### SnapPets — [features/snap/SnapPets.tsx](../../frontend/features/snap/SnapPets.tsx)
 
@@ -1131,4 +1153,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-322 actions · 322 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+327 actions · 327 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
