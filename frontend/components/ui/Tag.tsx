@@ -13,7 +13,7 @@ type Props = {
 };
 
 /**
- * Read-only status label: text on its tone's light surface, no outline, not tappable.
+ * Read-only status label: a flat fill in every tone (never an outline), not tappable.
  * For anything the user can press or remove, use `Chip` (outlined) instead.
  */
 export function Tag({ label, tone = "neutral", testID }: Props) {
@@ -38,8 +38,8 @@ const makeStyles = (theme: Theme) =>
     tag_warning: { backgroundColor: theme.color.warningSurface },
     tag_success: { backgroundColor: theme.color.successSurface },
     tag_brand: { backgroundColor: theme.color.accent },
-    // Neutral sits on white cards, so it keeps a hairline to stay visible (as in Figma).
-    tag_neutral: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
+    // `track`, not `surface`, so it stays visible on white cards; textMuted on it is 5.3:1.
+    tag_neutral: { backgroundColor: theme.color.track },
     label: {
       fontSize: theme.fontSize.small,
       fontWeight: "600",
