@@ -267,7 +267,7 @@ Goldito/
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, 07B 문의 답변 |
 | `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33 — `dimensions` 파라미터 동작 확인 2026-10-01) | 07B RAG, 07C Life Record |
 | `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
-| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | Goldito Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events`, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | Goldito Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events` + `https://www.googleapis.com/auth/meetings.space.settings` — 후자는 방을 링크 누구나 입장으로 여는 Meet REST 호출용, 없어도 링크는 만들어지지만 입장 요청이 필요, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
 | `GOOGLE_CALENDAR_ID` / `MEET_INVITE_ATTENDEES` | `primary` / `true` (`false`면 링크만 만들고 초대 메일 없음 — 데모 `.test` 계정은 항상 생략) | 3B.11 |
 | `DEMO_PASSWORD` | 데모 계정 전용 비밀번호 — `scripts/seed_demo.py`가 사용, frontend `EXPO_PUBLIC_DEMO_PASSWORD`와 같은 값 (심사위원에게 공개되는 값, 실제 비밀번호 재사용 금지) | 10.1 (계정 부분은 2026-10-01 먼저) |
 | `GROQ_API_KEY` | (secret) Groq Whisper `whisper-large-v3-turbo` 무료 플랜 — 음성 → 글(STT). **backend만** | 11.15 음성, [pet-profile-onboarding §6.2](../pet-profile-onboarding.ko.md) |
