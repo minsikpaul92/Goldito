@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
@@ -13,6 +13,8 @@ import { Theme } from "../../theme/themes";
 import { listReportPhotos } from "../diary/reportApi";
 import { formatDay } from "../schedule/dates";
 import { DecorItem, DecorLayer, MAX_ITEMS, listDecor, saveDecor } from "./decorApi";
+import { renderDiaryPage } from "./diaryImage";
+import { diaryFilename, downloadBlob } from "./download";
 import { PRESET_STICKERS, isPreset, presetRef, presetUri } from "./presetStickers";
 import { StickerCanvas } from "./StickerCanvas";
 import { PetSticker, listStickers } from "./stickerApi";
@@ -57,7 +59,8 @@ type Props = { reportId: string; petId: string; petName: string; day: string; bo
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
  * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
- * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). Web only for now.
+ * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "⬇ Save image" saves the page as
+ * shown, both layers included, as a PNG to share (11.8). Web only for now.
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
@@ -78,6 +81,12 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
   const [selected, setSelected] = useState<number | null>(null);
   const [box, setBox] = useState<PetSticker[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const paperRef = useRef<View>(null);
+  const pictureRef = useRef<View>(null);
+  const linesRef = useRef<View>(null);
+  const headerRef = useRef<View>(null);
+  const textRef = useRef<View>(null);
 
   const load = useCallback(async () => {
     try {
@@ -167,6 +176,34 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
     }
   };
 
+  const saveImage = async () => {
+    const dom = (ref: { current: View | null }) => ref.current as unknown as HTMLElement | null;
+    const [paper, pic, rules, header, text] = [dom(paperRef), dom(pictureRef), dom(linesRef), dom(headerRef), dom(textRef)];
+    if (exporting || !paper || !pic || !rules || !header || !text) return;
+    setExporting(true);
+    try {
+      // The same stacking as the screen: the other person's stickers, then mine above them, each side on its own.
+      const stickers = canvasLayers.flatMap((layer) =>
+        layer.items.map((item) => ({
+          url: stickerUrl(item.public_id),
+          x: item.x,
+          y: item.y,
+          scale: item.scale,
+          rotate: item.rotate,
+          z: item.z + (layer.mine ? 1000 : 0),
+          layer: item.layer ?? "front",
+        })),
+      );
+      const { blob, missing } = await renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
+      downloadBlob(blob, diaryFilename(petName, day));
+      toast.show(missing > 0 ? `Saved — ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : `Saved ${petName}'s diary page 📔`);
+    } catch (error) {
+      errorDialog.show({ title: "Image not saved", message: (error as Error).message, onRetry: () => void saveImage() });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const onTextLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     setLines({ top: y, height });
@@ -179,8 +216,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.paper, editing && styles.paperEditing]} testID={id("paper")}>
-        <View pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
+      <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing]} testID={id("paper")}>
+        <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
             <View key={i} style={[styles.rule, { top: (i + 1) * LINE - 1 }]} />
           ))}
@@ -195,18 +232,18 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
           urlFor={stickerUrl}
         />
-        <View pointerEvents={passThrough} style={styles.header} testID={id("header")}>
+        <View ref={headerRef} pointerEvents={passThrough} style={styles.header} testID={id("header")}>
           <Text style={styles.headerText}>{`📅 ${longDay(day)}`}</Text>
           <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
         </View>
-        <View pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
+        <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
           {picture ? (
             <Image source={{ uri: picture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             <Text style={styles.pictureEmpty}>🖍️</Text>
           )}
         </View>
-        <View pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
+        <View ref={textRef} pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
           <Text style={styles.body} testID={id("body")}>
             {body}
           </Text>
@@ -302,7 +339,15 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
           />
         </View>
       ) : (
-        <TextButton label="✨ Decorate" onPress={() => void start()} style={styles.decorate} testID="decor-start" />
+        <View style={styles.row}>
+          <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
+          <TextButton
+            label={exporting ? "Saving image…" : "⬇ Save image"}
+            onPress={() => void saveImage()}
+            disabled={exporting}
+            testID="decor-save-image"
+          />
+        </View>
       )}
     </View>
   );
@@ -373,5 +418,4 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     toolLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    decorate: { alignSelf: "flex-start" },
   });

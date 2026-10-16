@@ -1049,13 +1049,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 235 |
-| TextButton | Make a sticker | `decor-make` | 255 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 260 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 294 |
-| TextButton | Cancel | `decor-cancel` | 295 |
-| TextButton | ✨ Decorate | `decor-start` | 305 |
-| Pressable | `hint` | `testID` | 314 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 272 |
+| TextButton | Make a sticker | `decor-make` | 292 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 297 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 331 |
+| TextButton | Cancel | `decor-cancel` | 332 |
+| TextButton | ✨ Decorate | `decor-start` | 343 |
+| TextButton | exporting ? "Saving image…" : "⬇ Save image" | `decor-save-image` | 344 |
+| Pressable | `hint` | `testID` | 359 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1130,4 +1131,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-321 actions · 321 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+322 actions · 322 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

@@ -23,14 +23,14 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q-quality.md](phases/phase-q-quality.md) §0 · §1 |
-| **Minsik** | **11.8 Save image** | P1 window (10/17–10/23), the "if time remains" items in order: 11.8 **Save image** of the decorated diary page → 11.9 mood chip on feed videos → 11.13 tone loop (needs Seulgi's Q.4 data). 10.10 Split view (PR #97), 11.1 Photo request (PR #94) and 11.11 Settings + What's New are done. Then 11.15 from 10/24 → the rest of Phase 10. | [phases/phase-11-p1.md](phases/phase-11-p1.md) |
+| **Minsik** | **11.8 Save image** | ⬇ Save image of the decorated diary page — built on `feat/phase-11-save-image` (one PR for the rest of the P1 window); left: CI green, then one hand check (test-guide SNAP-24: a real photo, the handwriting font, Safari). Next in this PR: 11.9 mood chip on feed videos → 11.13 tone loop (needs Seulgi's Q.4 data). Then 11.15 from 10/24 → the rest of Phase 10. | [phases/phase-11-p1.md](phases/phase-11-p1.md) |
 
 ---
 
 ## P0 demo path (in order — this is what must work for the video)
 
 **Minsik**
-1. **P1 window (10/17–10/23, decided 2026-10-14)** — 11.1 photo request and 11.11 Settings + What's New done. Only if time remains: 11.8 **Save image** of the decorated diary page · 11.9 mood chip on feed videos (reuses `/api/ai/pet-mood`) · 11.13 tone loop (needs Seulgi's Q.4 data). Not now: 11.2 · 11.6 · 11.14; 11.10 · 11.12 wait for Muk's palettes / pixel art. [phase-11-p1.md](phases/phase-11-p1.md)
+1. **P1 window (10/17–10/23, decided 2026-10-14)** — in order: 11.8 **Save image** (built, hand check left) · 11.9 mood chip on feed videos (reuses `/api/ai/pet-mood`) · 11.13 tone loop (needs Seulgi's Q.4 data). Not now: 11.2 · 11.6 · 11.14; 11.10 · 11.12 wait for Muk's palettes / pixel art; the 11.8 AI auto-decor (theme + Shuffle) is on hold since 12.3 made decorating hand-made. [phase-11-p1.md](phases/phase-11-p1.md)
 2. **11.15 Pet profile onboarding + "Max at a glance" — implement last** (decided 2026-10-10). Spec: [pet-profile-onboarding.ko.md](pet-profile-onboarding.ko.md). Shown only to **owners right after sign-up** (first pet; also Add pet) — not to sitters, not to Try demo accounts (the seed fills Max · Mochi). One question per screen, large text, 12 + 6 four-choice questions (3–5 min), photo → breed / coat suggestions, voice → speech-to-text (**Groq Whisper, free plan** — Token Factory has no STT; check Safari / Chrome recordings and Groq's terms when building) → facts, 5-axis card + safety chips for the sitter, breed needs via Tavily + a curated JSON. **Approximate schedule:** after 10's core (≈ 10/20–24): S1 (no AI) 10/24–25 · S2 photo 10/25 · S3 voice 10/25–26 · S4 Tavily 10/26–27. **Because it is last it is cut first:** S4 → S3 → S2 (keep S1). Owners: Minsik build · Seulgi question wording + breed list + the 55+ timing test · Muk large-text spec in Figma
 3. **10 Demo & deploy — last (moved to the end 2026-10-14)** — seed (rates, entry info, home points ✅ (06B), past Life Record, tone data + auto mode, meeting spots, a pending draft, a second sitter "Paul"; `--fresh-inquiry`), **fixed demo accounts** instead of Demo tools (below), README **Goldito Agent** section + the judges' link `…/?view=split` (10.10 split view, done 2026-10-15) in README · Devpost · (D46) + Getting Started + demo accounts, **OB.5** judge checklist, **10.9** desktop side panel (Try demo, QR, hint), mouse-only judge path e2e. [phase-10-deploy.md](phases/phase-10-deploy.md)
 
@@ -73,9 +73,9 @@
 - **Auto-send delay formula (Seulgi, Q.4)** replace the placeholder `human_delay` (`backend/app/ai/inquiry.py`: 10 s + 0.06 s/char, clamped 15–40 s) with her formula and message split ([phase-07b-inquiry.md](phases/phase-07b-inquiry.md) 7B.10)
 - **Native app (after the hackathon)** — keeps sharing in the background while the traveller is in Google Maps (`expo-location` + task manager, an EAS dev build, "always" permission and the store explanation), push notifications for "on the way / arrived", a native map (Apple Maps / Google's default SDK map, no per-load fee), and trip clean-up (TRIP-1). The web build only shares while the traveller's screen is on; the Trip screen already says "Last location N min ago" when it pauses
 - **Handoff photo check in the app (P1, only if wanted)** — the API (`POST /api/ai/handoff-check`) and `handoff_checks` are built and tested; dropped from 06B on 2026-10-11 because owner and sitter meet in person. Needs the Take a photo step, the result copy, and real sample photos (`measure_handoff.py` for crate / seatbelt accuracy)
-- **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Mood stubs · Care in pet detail · Profile Settings · sitter Home dashboard polish · Bookings Past · Profile Earnings
+- **IA follow-ups (D47 / D47b)** Feed multi-pet toggle · Diary Live + filters · Diary photo → Feed · Care in pet detail · sitter Home dashboard polish · Bookings Past · Profile Earnings
 - **Data (Seulgi, Q.3)** Anonymize the 3-year message history (English) → `{PRICE}` / `{DATE}` placeholders → train / validation / hold-out JSONL; `data/raw/` never committed; decide zero-retention + third-party notice (D35, [phase-11-p1.md](phases/phase-11-p1.md) 11.7)
-- **11.x P1** after P0 is live, in order: 11.11 Settings + in-app patch notes (CHANGELOG) → 11.10 pet skin → 11.12 8bit Pet status room → 11.8 stickers + report card → 11.9 video mood → 11.13 tone learning loop → 11.14 service-type change → 11.2 notices (11.3 Tavily only if 8.7 slipped) → P2 11.7 SFT
+- **11.x P1 after the P1 window** (not planned before submit): 11.10 pet skin · 11.12 8bit Pet status room (both wait for Muk's art) → 11.14 service-type change → 11.2 notices → 11.6 recurring schedule → P2 11.7 SFT. 11.3 is skipped (Tavily shipped in 12.1)
 - **Take photo with the computer's webcam** (feedback 10-05 E3, optional) — today Take photo shows only on touch devices; desktop has the sample tray (D25). Useful only for recording the demo video
 - **OB.4 (deferred)** `intro_seen` skip — optional, keep Welcome every logout for judges
 
@@ -114,7 +114,7 @@ Each item is a GitHub issue assigned to Muk — status and detail live there ([l
 | 08 Safety | moved into Phase 12.1 Treat check (D61) |
 | 10 Demo & deploy | frontend on Vercel, backend on Render (U0 done); seed / fixed demo accounts / README / video open — **last**, after 11.15 (decided 2026-10-14) |
 | 12 Snap (treat check · mood · sticker) | done, merged ([#90](https://github.com/minsikpaul92/Goldito/pull/90), 12.5 polish in its own PR) — hand checks open, see Later ([phase-12-snap.md](phases/phase-12-snap.md)) |
-| 11 P1 | not started — 11.1 and 11.11 picked for 10/17 – 10/23 (2026-10-14); 11.8 sticker-making and 11.9 mood tool pulled into 12 |
+| 11 P1 | in progress — 11.1 ([#94](https://github.com/minsikpaul92/Goldito/pull/94)) · 11.11 ([#98](https://github.com/minsikpaul92/Goldito/pull/98)) · 11.5 merged; 11.8 Save image on `feat/phase-11-save-image`; 11.9 · 11.13 next; sticker-making / decorating and the mood tool shipped in 12 |
 | Onboarding UX | OB.1 – OB.3 done; OB.4 deferred; OB.5 with Phase 10 |
 | Q Quality track | Seulgi, from 2026-10-09 — [phases/phase-q-quality.md](phases/phase-q-quality.md) |
 
