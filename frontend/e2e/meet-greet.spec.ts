@@ -124,6 +124,10 @@ test.describe("meet & greet", () => {
     db.bookings[0].meet_greet_link = "https://meet.google.com/abc-defg-hij";
     await page.reload();
     await expect(screen.getByTestId("meet-join")).toBeVisible();
+    // A real link, not a script call: Safari blocks the second kind but never a plain link click.
+    await expect(screen.getByTestId("meet-join")).toHaveAttribute("href", "https://meet.google.com/abc-defg-hij");
+    await expect(screen.getByTestId("meet-join")).toHaveAttribute("target", "_blank");
+    await expect(screen.getByTestId("meet-join")).toHaveAttribute("rel", /noopener/);
     await expect(screen.getByTestId("meet-calendar")).toBeVisible();
   });
 
