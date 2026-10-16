@@ -50,7 +50,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.primary,
       backgroundColor: theme.color.accent,
     },
-    title: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     pressed: { opacity: 0.8 },

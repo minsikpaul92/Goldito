@@ -1,108 +1,17 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { Card } from "../../../components/ui/Card";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { ReportPhoto, SentReport, getSentReport, listReportPhotos } from "../../../features/diary/reportApi";
-import { DecoratedReport } from "../../../features/snap/DecoratedReport";
-import { formatDay } from "../../../features/schedule/dates";
-import { thumbUrl, videoPosterUrl } from "../../../lib/cloudinary";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { Theme } from "../../../theme/themes";
+import { OwnerDiaryBook } from "../../../features/diary/OwnerDiaryBook";
 
 /**
- * One daily report (phase-07 7.3): date, the sitter's text, that day's photos, and the tasks. The text is read-only;
- * the owner may decorate it with their own sticker layer (12.3b).
+ * One daily report (phase-07 7.3) — a notice or a Feed card opens the diary book on this page (Diary book DB.3);
+ * turning the page goes to the days before and after. The text is read-only; the owner may decorate it (12.3b).
  */
 export default function OwnerDiaryEntry() {
-  const styles = useThemedStyles(makeStyles);
   const { entryId } = useLocalSearchParams<{ entryId: string }>();
-  const [report, setReport] = useState<SentReport | null | undefined>(undefined);
-  const [photos, setPhotos] = useState<ReportPhoto[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const found = await getSentReport(entryId);
-        if (cancelled) return;
-        setReport(found);
-        if (found) setPhotos(await listReportPhotos(found.petId, found.day));
-      } catch (e) {
-        if (!cancelled) setError((e as Error).message);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [entryId]);
-
-  if (error) {
-    return (
-      <Screen>
-        <EmptyState emoji="📔" title="Couldn't load this entry" message={error} />
-      </Screen>
-    );
-  }
-  if (report === undefined) return <LoadingView />;
-  if (!report) {
-    return (
-      <Screen>
-        <EmptyState emoji="📔" title="Entry not found" message="This diary entry isn't available." />
-      </Screen>
-    );
-  }
   return (
-    <Screen testID="owner-diary-entry" contentStyle={{ gap: 12 }}>
-      <Stack.Screen options={{ title: `${report.petName} · ${formatDay(report.day)}` }} />
-      <Card style={styles.card}>
-        <Text style={styles.meta}>{`From ${report.sitterName}`}</Text>
-        <DecoratedReport
-          reportId={report.id}
-          petId={report.petId}
-          petName={report.petName}
-          day={report.day}
-          body={report.body}
-          testID="diary-entry"
-        />
-      </Card>
-      {photos.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} testID="diary-entry-photos">
-          {photos.map((p) => (
-            <Image
-              key={p.id}
-              source={{ uri: p.resourceType === "video" ? videoPosterUrl(p.publicId, 400) : thumbUrl(p.publicId, 400) }}
-              style={styles.photo}
-              accessibilityIgnoresInvertColors
-            />
-          ))}
-        </ScrollView>
-      ) : null}
-      {report.tasks.length > 0 ? (
-        <Card style={styles.card}>
-          <Text style={styles.heading}>Today's tasks</Text>
-          {report.tasks.map((t, i) => (
-            <View key={`${i}-${t.title}`} style={styles.task}>
-              <Text style={styles.body}>{`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}</Text>
-            </View>
-          ))}
-        </Card>
-      ) : null}
-    </Screen>
+    <>
+      <Stack.Screen options={{ title: "Diary" }} />
+      <OwnerDiaryBook initialId={entryId} />
+    </>
   );
 }
-
-const makeStyles = (theme: Theme) =>
-  StyleSheet.create({
-    card: { gap: theme.spacing.xs },
-    meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    task: { paddingVertical: 2 },
-    strip: { gap: theme.spacing.sm },
-    photo: { width: 140, height: 140, borderRadius: theme.radius.md, backgroundColor: theme.color.border },
-  });

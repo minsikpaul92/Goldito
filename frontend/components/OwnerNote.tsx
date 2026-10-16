@@ -162,7 +162,7 @@ export function PastOwnerNotes({ ownerId, ownerName, bookingId }: { ownerId: str
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },

@@ -5,7 +5,7 @@ import { UploadError, type UploadStep } from "./uploadError";
 export { UploadError, VideoTooLongError, type UploadStep } from "./uploadError";
 export type { VideoTrim } from "./mediaNormalize";
 
-export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label" | "sticker";
+export type MediaPurpose = "feed" | "task_proof" | "report" | "handoff" | "safety_label" | "sticker" | "diary_page";
 export type ResourceType = "image" | "video";
 
 export type UploadMediaInput = {

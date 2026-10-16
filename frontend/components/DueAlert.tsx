@@ -98,9 +98,9 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     overdue: { borderColor: theme.color.warning },
-    label: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     foot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" },
-    more: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary, paddingVertical: 4 },
+    more: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary, paddingVertical: 4 },
   });

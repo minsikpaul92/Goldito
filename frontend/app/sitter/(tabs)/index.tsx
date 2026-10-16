@@ -167,7 +167,7 @@ export default function SitterHome() {
           {due.slice(0, 2).map(({ booking: b, kind, at }) => {
             const h = kind === "drop_off" ? b.dropOff : b.pickUp;
             return (
-              <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)}>
+              <Pressable key={`${b.id}-${kind}`} accessibilityRole="button" onPress={() => open(b)} testID={`handoff-row-${b.id}-${kind}`}>
                 <Card style={styles.card}>
                   <Text style={styles.title}>
                     {`${formatTime(isoToZoned(at).time)} · ${kind === "drop_off" ? "Drop-off" : "Pick-up"}`}
@@ -187,7 +187,7 @@ export default function SitterHome() {
             Upcoming
           </Text>
           {upcoming.slice(0, 2).map((b) => (
-            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)}>
+            <Pressable key={b.id} accessibilityRole="button" onPress={() => open(b)} testID={`request-row-${b.id}`}>
               <Card style={styles.card}>
                 <Text style={styles.title}>{`${b.ownerName} · ${b.dropOff ? formatInstant(b.dropOff.at) : ""}`}</Text>
                 <Text style={styles.body}>{pets(b)}</Text>
@@ -210,7 +210,7 @@ const makeStyles = (theme: Theme) =>
     },
     heading: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     card: {
@@ -218,7 +218,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     body: {
@@ -238,7 +238,7 @@ const makeStyles = (theme: Theme) =>
     },
     requestsText: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
     pressed: {

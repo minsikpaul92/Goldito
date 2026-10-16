@@ -179,7 +179,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     muted: {
@@ -189,12 +189,12 @@ const makeStyles = (theme: Theme) =>
     link: {
       fontSize: theme.fontSize.body,
       color: theme.color.primary,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     section: {
       marginTop: theme.spacing.md,
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
       textTransform: "uppercase",
     },
@@ -233,7 +233,7 @@ const makeStyles = (theme: Theme) =>
     },
     pageText: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primaryText,
     },
     actions: {

@@ -43,7 +43,8 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `012e_inquiries_reopen.sql` | review fix (CR-4) | `inquiries.closed_by_booking`; a declined / cancelled request reopens the inquiries it closed (011z) unless another live booking still covers them |
 | `012f_reply_from_fresh_draft.sql` | review fix (CR-7) | `send_inquiry_reply` refuses (`draft_stale`) an AI draft older than the owner's latest message — a follow-up or `change_inquiry_dates` — so no old quote goes out |
 | `013_safety.sql` | 12.1 (Treat check — the 08 design, D61) | The owner may also acknowledge (`acknowledged_at`) their pet's checks; trigger `notify_safety_danger`: a DANGER checked by someone other than the owner sends the owner one `safety_danger` notice |
-| `014_p1.sql` | 11 | Photo request, notices (P1) |
+| `014_photo_requests.sql` | 11.1 | Photo request: `photo_requests`, `request_photo`, the next shared photo answers it (one notice) |
+| `014b_diary_book.sql` | Diary book | `save_report_draft` (the sitter on duty writes today's page by hand; same one draft as the AI route, sent by `send_daily_report`) · media purpose `diary_page` (a shared page image — Cloudinary links are public) |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

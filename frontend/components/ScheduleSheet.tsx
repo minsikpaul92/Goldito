@@ -288,7 +288,7 @@ const makeStyles = (theme: Theme) =>
     },
     conflictText: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.warning,
     },
     conflictRow: {

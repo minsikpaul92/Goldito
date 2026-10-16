@@ -180,7 +180,7 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.md,
     },
     inquiry: { gap: theme.spacing.xs },
-    inquiryTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    inquiryTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    ready: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    ready: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
   });

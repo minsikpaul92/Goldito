@@ -8,7 +8,7 @@
     "userInterfaceStyle": "light",
     "scheme": "goldito",
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/brand/goldito-favicon-48.png",
       "bundler": "metro"
     },
     "plugins": ["expo-router"],

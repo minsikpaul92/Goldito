@@ -73,6 +73,6 @@ const makeStyles = (theme: Theme) =>
     barDone: { backgroundColor: theme.color.primary },
     barNow: { backgroundColor: theme.color.accent, borderWidth: 1, borderColor: theme.color.primary },
     label: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    labelNow: { color: theme.color.primary, fontWeight: "700" },
+    labelNow: { color: theme.color.primary, fontWeight: theme.fontWeight.bold },
     caption: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

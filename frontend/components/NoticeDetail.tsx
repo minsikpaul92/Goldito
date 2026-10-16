@@ -75,7 +75,7 @@ const makeStyles = (theme: Theme) =>
     thumb: { width: 48, height: 48, borderRadius: theme.radius.sm, backgroundColor: theme.color.accent },
     body: { gap: theme.spacing.sm },
     photo: { width: "100%", height: 300, borderRadius: theme.radius.md, backgroundColor: theme.color.accent },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     memo: { fontSize: theme.fontSize.body, color: theme.color.text },
     time: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

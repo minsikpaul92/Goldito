@@ -61,7 +61,7 @@ function headerOptions(theme: Theme) {
     headerTitleStyle: {
       color: theme.color.text,
       fontSize: theme.fontSize.body,
-      fontWeight: "600" as const,
+      fontWeight: theme.fontWeight.semibold,
     },
   };
 }

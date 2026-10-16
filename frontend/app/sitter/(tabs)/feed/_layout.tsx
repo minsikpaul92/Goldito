@@ -15,7 +15,7 @@ export default function SitterFeedStackLayout() {
         headerTitleStyle: {
           color: theme.color.text,
           fontSize: theme.fontSize.body,
-          fontWeight: "600",
+          fontWeight: theme.fontWeight.semibold,
         },
         contentStyle: { backgroundColor: theme.color.background },
         headerRight: () => <HeaderActions />,

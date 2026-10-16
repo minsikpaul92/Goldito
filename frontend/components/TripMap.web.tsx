@@ -136,7 +136,7 @@ const makeStyles = (theme: Theme) =>
     },
     buttonText: {
       fontSize: 22,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
   });

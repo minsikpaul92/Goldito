@@ -1,9 +1,10 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AlbumView } from "../../../components/AlbumView";
+import { DiaryFeedCell } from "../../../components/DiaryFeedCell";
 import { FeedCard } from "../../../components/FeedCard";
 import { FeedViewer } from "../../../components/FeedViewer";
 import { ShareToggle } from "../../../components/ShareToggle";
@@ -14,6 +15,7 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { Sheet } from "../../../components/ui/Sheet";
 import { TextButton } from "../../../components/ui/TextButton";
 import { useInCare } from "../../../features/care/useInCare";
+import { DiaryCell, isDiaryCell, listDiaryCells, withDiaryCells } from "../../../features/diary/diaryFeed";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { UploadError, uploadMedia } from "../../../lib/cloudinary";
 import {
@@ -46,7 +48,7 @@ type FeedState =
  */
 export default function OwnerFeed() {
   const styles = useThemedStyles(makeStyles);
-  const { feedRevision } = useNotifications();
+  const { feedRevision, diaryRevision } = useNotifications();
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const session = useSession();
@@ -64,6 +66,8 @@ export default function OwnerFeed() {
   // Owner posts are private unless this chip is on (5.8).
   const [visibleToSitter, setVisibleToSitter] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // Diary book DB.4: the sent diary pages of this pet sit among the photos, by when they were sent.
+  const [diaryCells, setDiaryCells] = useState<DiaryCell[]>([]);
   const [deleting, setDeleting] = useState(false);
   // 11.1: ask the sitter on duty for a photo; the next shared photo answers it.
   const inCare = useInCare();
@@ -114,6 +118,19 @@ export default function OwnerFeed() {
     if (!petId || feedRevision === 0) return;
     void loadPage(0, false, true);
   }, [feedRevision, petId, loadPage]);
+
+  // A page just sent (diaryRevision) or a new photo that may become its thumbnail (feedRevision): look again.
+  useEffect(() => {
+    if (!petId) {
+      setDiaryCells([]);
+      return;
+    }
+    let live = true;
+    listDiaryCells(petId).then((cells) => live && setDiaryCells(cells));
+    return () => {
+      live = false;
+    };
+  }, [petId, feedRevision, diaryRevision]);
 
   const caring = petId != null && inCare[petId] != null;
   useEffect(() => {
@@ -240,17 +257,18 @@ export default function OwnerFeed() {
   if (feed.status === "loading") return <LoadingView />;
 
   const posts = feed.status === "ready" || feed.status === "error" ? feed.posts : [];
+  const timeline = withDiaryCells(posts, diaryCells, feed.status === "ready" ? feed.hasMore : false);
   const hasMore = feed.status === "ready" ? feed.hasMore : false;
   const petOptions = pets.slice(0, 4).map((p) => ({ value: p.id, label: p.name }));
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <FlatList
-        data={mode === "album" ? [] : posts}
+        data={mode === "album" ? [] : timeline}
         keyExtractor={(item) => item.id}
         numColumns={3}
-        columnWrapperStyle={posts.length > 0 && mode === "timeline" ? styles.row : undefined}
-        contentContainerStyle={[styles.list, posts.length === 0 && styles.listEmpty]}
+        columnWrapperStyle={timeline.length > 0 && mode === "timeline" ? styles.row : undefined}
+        contentContainerStyle={[styles.list, timeline.length === 0 && styles.listEmpty]}
         onEndReached={() => void loadMore()}
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
@@ -320,7 +338,11 @@ export default function OwnerFeed() {
         }
         renderItem={({ item }) => (
           <View style={styles.cell}>
-            <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+            {isDiaryCell(item) ? (
+              <DiaryFeedCell cell={item} onOpen={() => router.push(`/owner/diary/${item.reportId}`)} />
+            ) : (
+              <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+            )}
           </View>
         )}
         testID="owner-feed-list"
@@ -441,7 +463,7 @@ const makeStyles = (theme: Theme) =>
     },
     fabLabel: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
     },
     deleteBody: {

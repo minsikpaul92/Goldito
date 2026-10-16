@@ -83,11 +83,11 @@ export default function SettingsScreen() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    release: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    release: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     section: { gap: theme.spacing.xs, marginTop: theme.spacing.sm },
-    sectionHeading: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.textMuted },
+    sectionHeading: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     item: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
   });

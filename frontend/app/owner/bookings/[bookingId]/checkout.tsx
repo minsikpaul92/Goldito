@@ -235,7 +235,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,
@@ -247,6 +247,6 @@ const makeStyles = (theme: Theme) =>
     demoHint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
     entryCard: { gap: theme.spacing.sm, borderColor: theme.color.warning, borderWidth: 1 },
-    entryTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    entryTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     entryBody: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
   });

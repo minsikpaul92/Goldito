@@ -53,7 +53,7 @@ const makeStyles = (theme: Theme) =>
     pressed: { opacity: 0.85 },
     label: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
     },
     labelOn: { color: theme.color.text },

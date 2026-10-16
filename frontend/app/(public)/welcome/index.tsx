@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { BrandLogo } from "../../../components/BrandLogo";
 import { Screen } from "../../../components/ui/Screen";
 import { TextButton } from "../../../components/ui/TextButton";
 import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
@@ -18,9 +19,7 @@ export default function WelcomeLanding() {
   return (
     <View style={styles.root} testID="welcome">
       <Screen contentStyle={styles.content}>
-        <Text style={styles.brand} testID="welcome-brand">
-          🐾 Goldito
-        </Text>
+        <BrandLogo height={32} testID="welcome-brand" />
         <Text accessibilityRole="header" style={styles.title}>
           Care updates without the back-and-forth
         </Text>
@@ -81,14 +80,9 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.md },
-    brand: {
-      fontSize: theme.fontSize.body,
-      fontWeight: "700",
-      color: theme.color.primary,
-    },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     lead: {
@@ -111,7 +105,7 @@ const makeStyles = (theme: Theme) =>
     roleText: { flex: 1, gap: theme.spacing.xs },
     roleTitle: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     roleBody: {
@@ -122,7 +116,7 @@ const makeStyles = (theme: Theme) =>
     ctaHint: {
       marginTop: theme.spacing.xs,
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
     footer: {

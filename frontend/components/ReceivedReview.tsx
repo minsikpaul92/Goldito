@@ -47,7 +47,7 @@ export function ReceivedReview({ bookingId, ownerName }: { bookingId: string; ow
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

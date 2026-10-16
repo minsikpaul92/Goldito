@@ -152,7 +152,7 @@ const makeStyles = (theme: Theme) =>
     },
     month: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     week: {
@@ -189,7 +189,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.text,
     },
     today: {
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primary,
       textDecorationLine: "underline",
     },
@@ -223,7 +223,7 @@ const makeStyles = (theme: Theme) =>
     },
     letter: {
       fontSize: theme.fontSize.caption,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     letter_open: {
       color: theme.color.primary,

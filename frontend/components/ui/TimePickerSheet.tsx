@@ -177,8 +177,8 @@ const makeStyles = (theme: Theme) =>
     },
     wheels: { flexDirection: "row", alignItems: "center", height: ITEM * VISIBLE },
     wheel: { height: ITEM * VISIBLE },
-    colon: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    colon: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     item: { height: ITEM, alignItems: "center", justifyContent: "center" },
     itemText: { fontSize: theme.fontSize.title, color: theme.color.text },
-    itemOn: { fontWeight: "700" },
+    itemOn: { fontWeight: theme.fontWeight.bold },
   });

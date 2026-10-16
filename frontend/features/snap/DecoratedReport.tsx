@@ -1,18 +1,20 @@
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { TextButton } from "../../components/ui/TextButton";
 import { deliveryUrl, thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { listReportPhotos } from "../diary/reportApi";
 import { formatDay } from "../schedule/dates";
 import { DecorItem, DecorLayer, MAX_ITEMS, listDecor, saveDecor } from "./decorApi";
+import { renderDiaryPage } from "./diaryImage";
+import { SharePageSheet } from "./SharePageSheet";
 import { PRESET_STICKERS, isPreset, presetRef, presetUri } from "./presetStickers";
 import { StickerCanvas } from "./StickerCanvas";
 import { PetSticker, listStickers } from "./stickerApi";
@@ -50,19 +52,37 @@ function longDay(day: string): string {
   return `${weekday}, ${formatDay(day)}`;
 }
 
-type Props = { reportId: string; petId: string; petName: string; day: string; body: string; testID?: string };
+/** The page as the sitter writes it, before it is sent: no stickers yet, the words are a text field. */
+export type DiaryWriting = { onChangeText: (text: string) => void; placeholder: string; maxLength: number; disabled?: boolean; testID?: string };
+
+type Props = {
+  /** A sent report (its sticker layers, Decorate, Share); null while the page is still being written. */
+  reportId: string | null;
+  petId: string;
+  petName: string;
+  day: string;
+  body: string;
+  writing?: DiaryWriting;
+  /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
+  onEditingChange?: (editing: boolean) => void;
+  testID?: string;
+};
 
 /**
  * A sent daily report as a picture-diary page both people decorate (Phase 12.3b · 12.4, D61): the date and the pet on
  * top, the day's photo in the picture box, the sitter's words on ruled lines in a handwriting font. The owner (diary
  * entry) and the sitter (their sent report) see the same page — same text, same size — so a sticker sits in the same
  * spot for both. Each person's stickers are their own layer: "✨ Decorate" edits mine (Goldito stickers or the pet's
- * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). Web only for now.
+ * own, drag to move, size, turn, over or behind the writing, remove — all by mouse). "↗ Share" sends the page as
+ * shown, both layers included (11.8 · DB.5): the image, a download, or a public link. Web only for now.
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
+  const [writtenHeight, setWrittenHeight] = useState(0);
+  const [focused, setFocused] = useState(false);
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const session = useSession();
@@ -74,12 +94,25 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
   const [picture, setPicture] = useState<string | null>(null);
   const [lines, setLines] = useState({ top: 0, height: MIN_LINES * LINE });
   const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
   const [draft, setDraft] = useState<DecorItem[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [box, setBox] = useState<PetSticker[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const paperRef = useRef<View>(null);
+  const pictureRef = useRef<View>(null);
+  const linesRef = useRef<View>(null);
+  const headerRef = useRef<View>(null);
+  const textRef = useRef<View>(null);
 
   const load = useCallback(async () => {
+    if (!reportId) {
+      setLayers([]);
+      return;
+    }
     try {
       setLayers(await listDecor(reportId));
     } catch {
@@ -152,7 +185,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
   };
 
   const save = async () => {
-    if (!me || saving) return;
+    if (!me || !reportId || saving) return;
     setSaving(true);
     try {
       await saveDecor(reportId, me, draft);
@@ -167,6 +200,26 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
     }
   };
 
+  /** The page as it is on screen, drawn to a PNG (11.8) — for Share → image, download or public link (DB.5). */
+  const renderPage = async () => {
+    const dom = (ref: { current: View | null }) => ref.current as unknown as HTMLElement | null;
+    const [paper, pic, rules, header, text] = [dom(paperRef), dom(pictureRef), dom(linesRef), dom(headerRef), dom(textRef)];
+    if (!paper || !pic || !rules || !header || !text) throw new Error("The page isn't on screen yet.");
+    // The same stacking as the screen: the other person's stickers, then mine above them, each side on its own.
+    const stickers = canvasLayers.flatMap((layer) =>
+      layer.items.map((item) => ({
+        url: stickerUrl(item.public_id),
+        x: item.x,
+        y: item.y,
+        scale: item.scale,
+        rotate: item.rotate,
+        z: item.z + (layer.mine ? 1000 : 0),
+        layer: item.layer ?? "front",
+      })),
+    );
+    return renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
+  };
+
   const onTextLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     setLines({ top: y, height });
@@ -179,8 +232,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.paper, editing && styles.paperEditing]} testID={id("paper")}>
-        <View pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
+      <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]} testID={id("paper")}>
+        <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
             <View key={i} style={[styles.rule, { top: (i + 1) * LINE - 1 }]} />
           ))}
@@ -195,21 +248,41 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
           onMove={(index, x, y) => setDraft((items) => items.map((item, i) => (i === index ? { ...item, x, y } : item)))}
           urlFor={stickerUrl}
         />
-        <View pointerEvents={passThrough} style={styles.header} testID={id("header")}>
+        <View ref={headerRef} pointerEvents={passThrough} style={styles.header} testID={id("header")}>
           <Text style={styles.headerText}>{`📅 ${longDay(day)}`}</Text>
           <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
         </View>
-        <View pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
+        <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
           {picture ? (
             <Image source={{ uri: picture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             <Text style={styles.pictureEmpty}>🖍️</Text>
           )}
         </View>
-        <View pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
-          <Text style={styles.body} testID={id("body")}>
-            {body}
-          </Text>
+        <View ref={textRef} pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
+          {writing ? (
+            // The sitter writes straight onto the page (Diary book): the same font and lines as the sent page.
+            <TextInput
+              value={body}
+              onChangeText={writing.onChangeText}
+              placeholder={writing.placeholder}
+              placeholderTextColor={theme.color.textMuted}
+              maxLength={writing.maxLength}
+              editable={!writing.disabled}
+              multiline
+              accessibilityLabel={`${petName}'s diary page`}
+              onContentSizeChange={(e) => setWrittenHeight(e.nativeEvent.contentSize.height)}
+              // The paper shows where the cursor is (a primary border), not a box around the words.
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              style={[styles.body, styles.input, { height: Math.max(MIN_LINES * LINE, Math.ceil(writtenHeight / LINE) * LINE) }]}
+              testID={writing.testID}
+            />
+          ) : (
+            <Text style={styles.body} testID={id("body")}>
+              {body}
+            </Text>
+          )}
         </View>
         <StickerCanvas
           which="front"
@@ -223,7 +296,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
         />
       </View>
 
-      {Platform.OS !== "web" || !me ? null : editing ? (
+      {Platform.OS !== "web" || !me || !reportId || writing ? null : editing ? (
         <View style={styles.tools} testID="decor-tools">
           <Text style={styles.hint}>
             {current ? "Drag to move · size, turn, or tuck it behind the writing below." : "Add a sticker, then drag it anywhere on the page."}
@@ -302,8 +375,22 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
           />
         </View>
       ) : (
-        <TextButton label="✨ Decorate" onPress={() => void start()} style={styles.decorate} testID="decor-start" />
+        <View style={styles.row}>
+          <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
+          <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" />
+        </View>
       )}
+      {reportId && !writing && Platform.OS === "web" ? (
+        <SharePageSheet
+          visible={sharing}
+          onClose={() => setSharing(false)}
+          petId={petId}
+          petName={petName}
+          day={day}
+          render={renderPage}
+          version={JSON.stringify(layers)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -329,8 +416,9 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     paperEditing: { borderColor: theme.color.primary, borderStyle: "dashed" },
+    paperWriting: { borderColor: theme.color.primary },
     header: { zIndex: 2, flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.sm },
-    headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: "700", color: theme.color.text },
+    headerText: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 2, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     picture: {
       zIndex: 0,
       height: PICTURE_HEIGHT,
@@ -346,9 +434,12 @@ const makeStyles = (theme: Theme) =>
     lines: { position: "absolute", left: theme.spacing.md, right: theme.spacing.md, zIndex: 0 },
     rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: theme.color.border },
     textArea: { zIndex: 2 },
+    // Writing on the page: no box of its own, the ruled lines show through.
+    // No focus box on the web (the paper border shows focus instead).
+    input: { padding: 0, borderWidth: 0, backgroundColor: "transparent", textAlignVertical: "top", ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as object) : null) },
     body: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 4, lineHeight: LINE, color: theme.color.text },
     tools: { gap: theme.spacing.sm },
-    group: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    group: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.sm },
     strip: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
@@ -372,6 +463,5 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    toolLabel: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
-    decorate: { alignSelf: "flex-start" },
+    toolLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

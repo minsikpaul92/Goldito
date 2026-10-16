@@ -1,11 +1,12 @@
 import { ReactNode, useState } from "react";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { Viewer } from "./BookingCard";
 import { MeetGreetSheet } from "./MeetGreetSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { CheckRow } from "./ui/CheckRow";
+import { LinkButton } from "./ui/LinkButton";
 import { Sheet } from "./ui/Sheet";
 import { TextButton } from "./ui/TextButton";
 import { formatInstant } from "../features/schedule/dates";
@@ -189,12 +190,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
         <Text style={styles.body}>{summary}</Text>
         {mg.mode === "video" ? (
           mg.link ? (
-            <Button
-              label="Join Google Meet"
-              variant="secondary"
-              onPress={() => void Linking.openURL(mg.link as string)}
-              testID="meet-join"
-            />
+            <LinkButton label="Join Google Meet" href={mg.link} testID="meet-join" />
           ) : (
             <View style={styles.links}>
               <Text style={styles.muted}>No Google Meet link yet — the time and calendar file still work.</Text>
@@ -341,12 +337,12 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     label: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
     },
     body: {

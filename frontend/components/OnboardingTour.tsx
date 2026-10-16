@@ -119,7 +119,7 @@ const makeStyles = (theme: Theme) =>
     progress: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     main: {
       flex: 1,
@@ -133,13 +133,13 @@ const makeStyles = (theme: Theme) =>
     copy: { gap: theme.spacing.xs },
     roleTag: {
       fontSize: theme.fontSize.caption,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.textMuted,
       textTransform: "uppercase",
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
       lineHeight: 24,
     },

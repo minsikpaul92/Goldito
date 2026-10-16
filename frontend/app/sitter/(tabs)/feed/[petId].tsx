@@ -1,7 +1,8 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { DiaryFeedCell } from "../../../../components/DiaryFeedCell";
 import { FeedCard } from "../../../../components/FeedCard";
 import { FeedViewer } from "../../../../components/FeedViewer";
 import { Button } from "../../../../components/ui/Button";
@@ -19,6 +20,7 @@ import {
   deleteFeedPost,
   listFeedPosts,
 } from "../../../../lib/feed";
+import { DiaryCell, isDiaryCell, listDiaryCells, withDiaryCells } from "../../../../features/diary/diaryFeed";
 import { pickMedia } from "../../../../lib/media";
 import { getSupabase } from "../../../../lib/supabase";
 import { useNotifications } from "../../../../providers/NotificationsProvider";
@@ -46,7 +48,7 @@ export default function SitterPetFeed() {
   const errorDialog = useErrorDialog();
   const session = useSession();
   const currentUserId = session.status === "signedIn" ? session.profile.id : null;
-  const { feedRevision } = useNotifications();
+  const { feedRevision, diaryRevision } = useNotifications();
 
   const [pet, setPet] = useState<PetInfo | null>(null);
   const [petError, setPetError] = useState<string | null>(null);
@@ -56,6 +58,8 @@ export default function SitterPetFeed() {
   /** While a photo is on its way: what is happening to it, and its local thumbnail. */
   const [stage, setStage] = useState<{ step: "uploading" | "captioning"; uri: string | null } | null>(null);
   const [viewerPostId, setViewerPostId] = useState<string | null>(null);
+  // Diary book DB.4: the pages this sitter sent about the pet sit among the photos.
+  const [diaryCells, setDiaryCells] = useState<DiaryCell[]>([]);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   // "Share with owner" — on by default; off keeps the post sitter-only (5.8).
@@ -120,6 +124,15 @@ export default function SitterPetFeed() {
     if (!petId || feedRevision === 0) return;
     void loadPage(0, false, true);
   }, [feedRevision, petId, loadPage]);
+
+  useEffect(() => {
+    if (!petId) return;
+    let live = true;
+    listDiaryCells(petId).then((cells) => live && setDiaryCells(cells));
+    return () => {
+      live = false;
+    };
+  }, [petId, feedRevision, diaryRevision]);
 
   const loadMore = useCallback(async () => {
     if (feed.status !== "ready" || !feed.hasMore || loadingMore || !petId) return;
@@ -228,6 +241,7 @@ export default function SitterPetFeed() {
   }
 
   const posts = feed.status === "ready" || feed.status === "error" ? feed.posts : [];
+  const timeline = withDiaryCells(posts, diaryCells, feed.status === "ready" ? feed.hasMore : false);
   const hasMore = feed.status === "ready" ? feed.hasMore : false;
 
   return (
@@ -243,11 +257,11 @@ export default function SitterPetFeed() {
         />
       ) : (
         <FlatList
-          data={posts}
+          data={timeline}
           keyExtractor={(item) => item.id}
           numColumns={3}
-          columnWrapperStyle={posts.length > 0 ? styles.row : undefined}
-          contentContainerStyle={[styles.list, posts.length === 0 && !uploading && styles.listEmpty]}
+          columnWrapperStyle={timeline.length > 0 ? styles.row : undefined}
+          contentContainerStyle={[styles.list, timeline.length === 0 && !uploading && styles.listEmpty]}
           onEndReached={() => void loadMore()}
           onEndReachedThreshold={0.4}
           ListHeaderComponent={
@@ -285,7 +299,11 @@ export default function SitterPetFeed() {
           }
           renderItem={({ item }) => (
             <View style={styles.cell}>
-              <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+              {isDiaryCell(item) ? (
+                <DiaryFeedCell cell={item} onOpen={() => router.push(`/sitter/diary?page=${item.reportId}`)} />
+              ) : (
+                <FeedCard post={item} onOpen={() => setViewerPostId(item.id)} />
+              )}
             </View>
           )}
         />
@@ -421,7 +439,7 @@ const makeStyles = (theme: Theme) =>
     },
     fabLabel: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
     },
     deleteBody: {

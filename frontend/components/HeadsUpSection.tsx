@@ -111,7 +111,7 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },

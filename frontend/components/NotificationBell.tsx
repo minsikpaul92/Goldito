@@ -64,7 +64,7 @@ const makeStyles = (theme: Theme) =>
     },
     badgeText: {
       fontSize: 10,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primaryText,
       lineHeight: 12,
     },

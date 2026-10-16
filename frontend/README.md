@@ -53,3 +53,9 @@ PowerShell: `$env:EXPO_PUBLIC_DEV_ROUTES="1"; $env:EXPO_PUBLIC_SUPABASE_URL="htt
 **Gotchas:** build the mock-backed export with the CI values from `.github/workflows/ci.yml` and `npx expo export -c -p web` (`-c` clears the cache so a real `.env` does not leak into the build). Commit only after the whole suite passes **three runs in a row**. Never write a test that depends on the time of day — use a fake clock (`page.clock`) or set the DB state. Do not run Prettier over existing files (it rewrites unrelated lines).
 
 Projects: Chromium · Firefox · WebKit × 1366×768 · 1440×900 · 1920×1080 (phone frame + mouse), a touch phone (no frame, layout at 360 / 402 / 440), and `auth` (sign in / sign up / role routing / log out in the frame). CI runs the same suite on every frontend PR. Note: Playwright's Firefox needs the Visual C++ runtime on Windows — run `--project=chromium-*` / `webkit-*` / `phone` / `auth` locally if it is missing.
+
+## Figma ↔ code
+
+Muk's Figma [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) is the source of truth for the look. Where each Figma variable, component and screen lives in this code, the sync steps, and how to move / merge / remove buttons: **[DESIGN.md §0](../DESIGN.md#0-figma--code-read-first)**. Every screen and button with its ID and line: [docs/design/screen-map.md](../docs/design/screen-map.md) (regenerate with `node scripts/screen-map.mjs`; CI checks it).
+
+To see changes while you work: `npm ci`, `npx expo start --web`, sign in with **Demo owner** / **Demo sitter** (`frontend/.env` needs the Supabase URL + anon key); `http://localhost:8081/?view=split` shows both phones.

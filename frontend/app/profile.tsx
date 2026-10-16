@@ -467,7 +467,7 @@ const makeStyles = (theme: Theme) =>
     },
     role: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
       textTransform: "uppercase",
     },
@@ -479,7 +479,7 @@ const makeStyles = (theme: Theme) =>
     },
     groupTitle: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     muted: {

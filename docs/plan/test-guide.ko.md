@@ -72,7 +72,7 @@
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
 | 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 시터의 첫 동의 뒤에만 가능, BOOK-8 ~ 13) | ✅ 🤖 | 03B.9 · Booking steps |
-| Google Meet 링크 자동 생성 | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
+| Google Meet 링크 자동 생성 (방은 링크 누구나 입장으로 열림 — 새 범위로 token 재발급 후 사람 확인 필요) | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
 | AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
 
@@ -139,7 +139,7 @@
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
-| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) | 12 (08 설계 포함) |
+| **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) · 11.8 **Save image**(꾸민 그림일기 한 장 → PNG) 🟡(🤖 `decor.spec.ts` · 사람 확인 대기) | 12 (08 설계 포함) |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -299,7 +299,7 @@
 | BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Yes, let's meet(BOOK-9)를 눌러 홀드가 걸려 있어야 함 — 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
 | BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
-| BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서) | 서버만 확인 (**앱 e2e 미확인**, 3B.11) | ➖ |
+| BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서). 링크는 호스트(Goldito 계정) 승인 없이 **바로 입장**돼야 함 (다른 계정, 시크릿 창으로 확인). **Join Google Meet** 버튼은 Safari에서도 눌려 새 탭이 열려야 함 (진짜 `<a>` 링크) | 🤖 `test_meet_greet.py` (방 열기 호출 · 실패해도 링크 유지) · `meet-greet.spec.ts` (버튼이 `href` · `target=_blank` 링크) · Safari에서 실제 클릭과 입장은 **👤** | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음 | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
 | BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Yes, let's meet / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
 | BOOK-9 | 시터가 **Yes, let's meet** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
@@ -338,6 +338,8 @@
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
 | REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 | REPORT-13 | `in_care`로 리셋하자마자(3분 안) Feed에 사진 1장 + 체크인 1개 → Diary | 체크인이 바로 저장되고, 그 사진 캡션 · 체크인이 칩으로 나옴 — 일찍 Received한 뒤의 기록도 그날 알림장에 들어감 (CW-1) | pytest · SQL 011i (호스팅 DB에 `011i` 적용 뒤) | ➖ |
+| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft — only you can see it", **Send to {견주}**가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
+| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 
@@ -569,6 +571,7 @@
 | SNAP-21 | ✨ Decorate → **Goldito stickers**에서 하나(예: ❤️) → **⬇ Behind text** → 끌기 → Save | 새 스티커는 글 위, 누르면 **글 아래**로 지정(다시 **⬆ Over text**) — 꾸미는 동안은 반투명으로 위에 떠서 마우스로 끌 수 있고, **Save** 뒤에는 글씨가 스티커 위에 보임. 저장 뒤 새로고침해도 글 아래. 기본 스티커는 업로드 없이 바로(`preset:heart`) | 🤖 `decor.spec.ts` | 사람 확인 대기 |
 | SNAP-22 | Sticker 미리보기 **⬇ Download sticker** / 스티커함 타일 ⬇ | 브라우저가 `goldito-max-sticker.png`(투명 PNG)를 저장. 타일 ⬇는 Cloudinary 원본(`fl_attachment`) | 🤖 `sticker.spec.ts`(미리보기 다운로드) · 타일 다운로드 · 실제 폰 저장은 👤 | 사람 확인 대기 |
 | SNAP-23 | 견주(Max · 검사 4번) → Snap 탭 → 카드 3개 아래 | **Recent checks**에 가장 최근 3개(상태 칩 · 제품 이름 · 날짜, 새것이 위). 한 줄을 클릭하면 `/{역할}/snap/treat?check=…`로 그 검사가 열림(SNAP-9와 같은 화면). 검사가 하나도 없으면 이 목록 자체가 안 보임. 시터는 지금 돌보는 펫들의 검사만 | 🤖 `snap.spec.ts` | 사람 확인 대기 |
+| SNAP-24 | 견주 → Diary → 꾸민 알림장 / 시터 → Diary → 오늘 보낸 알림장 → **↗ Share → ⬇ Download image** (11.8, DB.5부터 Share 시트 안) | 브라우저가 `goldito-max-diary-2026-10-05.png`를 저장하고 "Saved Max's diary page 📔". 그림은 화면의 종이 그대로: 머리말 · 그림 칸(그날 첫 사진) · 줄 · 손글씨 글 · **두 사람의 스티커**(글 아래 · 위 층, 크기 · 회전 포함), 화면의 2배 해상도. 꾸미는 중에는 버튼이 없음(먼저 Save stickers). 사진 하나를 못 불러오면 그것만 빼고 저장 + "Saved — one picture couldn't be added" | 🤖 `decor.spec.ts`(파일 이름 · PNG 크기 · 가운데 스티커 픽셀) · 실제 사진 · 손글씨 글꼴 · Safari · 폰 저장은 👤 | 사람 확인 대기 |
 
 ### 3.21 Snap 리뷰 수정 (SR) — [review-2026-10-15.ko.md](review-2026-10-15.ko.md) *(P0 SR-1 – SR-4만, ID는 리뷰 문서 항목과 같음 · Later SR-5 – SR-21은 고칠 때 여기에 추가)*
 
@@ -607,7 +610,33 @@
 | SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목 | 앱 What's New에 보이지 않음(출시된 것만) | 🤖 `settings.spec.ts` · `node --test scripts/` | 사람 확인 대기 |
 | SET-3 | (개발) CHANGELOG.md만 고치고 `node scripts/changelog.mjs`를 안 돌린 PR | CI frontend 잡의 "What's New matches docs/CHANGELOG.md" 단계가 실패 | CI | ➖ |
 
+
+### 3.25 Figma 디자인 적용 (DS) — FIG-1 · 기준: Muk의 [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) Components 페이지
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| DS-1 | 로그인 화면 · 아무 폼 | 입력칸 테두리가 진한 회색(`borderStrong`), 안쪽 여백 8 / 16, 높이 44. 비활성 버튼(Sign in 빈 칸일 때)은 **회색 칸 + 흐린 글자**(반투명 초록이 아님) | 👤 | 사람 확인 대기 |
+| DS-2 | 아무 Primary / Secondary 버튼 누르기 | 누르는 동안 살짝 작아지고 흐려짐(0.97 · 0.85). Secondary는 흰 바탕 + 진한 테두리 + 초록 글자 | 👤 | 사람 확인 대기 |
+| DS-3 | 버튼이 있는 빈 화면(`EmptyState`에 action이 있는 곳) | 버튼이 꽉 찬 초록이 아니라 **흰 Secondary 버튼, 글자 길이만큼** 가운데 | 👤 | 사람 확인 대기 |
+| DS-4 | SegmentedControl(종 선택, Bookings 탭 등) | 선택 안 된 칸 테두리가 진한 회색, 선택된 칸은 초록 테두리 + 연두 바탕 | 👤 | 사람 확인 대기 |
+| DS-5 | 로그아웃 상태로 Welcome · 로그인 화면 | 맨 위에 **골드 태그 로고 + 초록 "goldito" 글자**(이모지 `🐾 Goldito` 아님). 태그 안 g는 초록, i 점은 금색 하트 | 👤 | 10/16 민식 화면 확인 대기 |
+| DS-6 | 배포된 사이트의 브라우저 탭 | 탭 아이콘이 초록 바탕 골드 태그 | 👤 | 배포 후 확인 |
+| DS-7 | 예약 카드 · 예약 상세 · 시터 Home 할 일 · 견주 케어 할 일 · 알림장 보냄 · 간식 체크 결과 | 상태 표시가 모두 **Tag** 하나로: 글자가 자기 톤의 연한 바탕 위(완료 = 초록, 지연·놓침 = 주황 — 빨강 아님, 대기 = 흰 바탕 + 테두리, 요청 등 = 연두). 시터 이니셜 원은 진한 초록 + 흰 글자, 펫·Snap 도구 원은 연두 + 이모지 | 👤 | 10/16 서버에서 예약 화면만 확인 · 나머지 확인 대기 |
 ---
+
+### 3.25 다이어리 책 (DBK) — Diary book DB.3 – DB.5 · *사전: 보낸 알림장 몇 장(펫 둘 이상이면 좋음)*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| DBK-1 | 견주 → **Diary** 탭 | 보낸 알림장이 **한 권의 책**: 맨 위 **All · Max · Mochi**(쪽이 있는 펫만), 그 아래 **‹ · "Max · Oct 7" · Page 3 of 3 · ›**, 가장 **최근 장이 펼쳐져** 있음. 초안은 안 보임. 쪽 아래 "From {시터}"와 그날 할 일(✓ / ⚠️ missed) | 🤖 `diary-book.spec.ts` · `report.spec.ts` | 사람 확인 대기 |
+| DBK-2 | **‹** / **›** 누르기 | 오래된 → 최신 순서로 한 장씩(여러 날 · 여러 펫이 날짜순으로 섞임), 첫 장에서 ‹ · 마지막 장에서 ›는 꺼짐. 넘길 때 종이가 왼쪽 모서리(책등)를 축으로 넘어가는 모션 | 🤖 `diary-book.spec.ts` · 모션은 👤 | 사람 확인 대기 |
+| DBK-3 | 펫 이름(**Max**) 누르기 → 다시 **All** | 그 펫의 쪽만, 그 펫의 최신 장부터. All로 돌아오면 전체의 최신 장 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-4 | 손가락(폰) / 마우스로 쪽을 **왼쪽으로 끌기**, **오른쪽으로 끌기**, 조금만 끌다 놓기 | 왼쪽 → 다음 날, 오른쪽 → 전날: 끄는 만큼 종이가 들리고 놓으면 넘어감(폭의 30% 넘게, 또는 빠르게 튕기기). 조금만 끌면 제자리로. 위아래로는 화면이 그대로 스크롤. ✨ Decorate 중에는 책이 안 넘어감(스티커 끌기와 안 섞임) | 🤖 `diary-book.spec.ts`(마우스 끌기) · 폰 손가락 · Safari는 👤 | 사람 확인 대기 |
+| DBK-5 | 알림 "…sent Max's daily report" 누르기(`/owner/diary/{id}`) | 책이 **그 장으로** 열림, 앞뒤로 넘길 수 있음 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-6 | 시터 → **Diary** → **Diary book** | 지금까지 보낸 쪽 전부(돌봤던 펫별 이름 버튼 + All), 최신 장부터, 초안 없음. 지금 돌보는 펫이 없으면 Diary를 열면 바로 책 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-7 | (DB.4) 견주 → **Feed** (알림장을 보낸 날의 펫) | 사진 사이에 **📔 다이어리 칸**이 보낸 시각 순서대로(최신이 위): 그날 **첫 공유 사진**이 썸네일, 사진이 없던 날은 📔, 아래 "Diary · Oct 5". 초안은 안 보임. 칸을 누르면 다이어리 책이 그 장으로 열림. 사진을 더 불러오기 전(Load more)에는 화면에 있는 가장 오래된 사진보다 오래된 장은 기다렸다가 같이 나옴 | 🤖 `diary-book.spec.ts`(순서 · 썸네일 `data-public-id` · 열기) · 실제 썸네일 이미지는 👤 | 사람 확인 대기 |
+| DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
@@ -620,6 +649,8 @@
 - **Mood는 웹에서만**, 펫 찾기(MediaPipe `tasks-vision@1.0.1`)는 실행할 때 jsdelivr · Google 저장소에서 받아 온다(WASM 11 MB + 모델 4.5 MB, 첫 사용에 몇 초). 네트워크가 막히면 "Couldn't get the pet finder ready…". 영상 프레임은 브라우저가 그 코덱을 열 수 있어야 한다(데스크톱 Chrome · Safari의 mp4 OK). 결과는 저장하지 않는다.
 - **Sticker 오리기는 한 번에 약 5초**(Magic Touch, CPU — GPU는 빈 마스크라 안 씀). classic Web Worker에서 돌아 화면은 멈추지 않는다(워커가 안 되는 브라우저는 메인 스레드로 — 그동안 화면이 잠깐 멈춤). 모델 파일 30 MB는 Google 저장소에서 받고 캐시가 1시간이다. 목줄 · 하네스는 펫과 같이 잘릴 수 있고, 사진 가장자리에 걸친 펫은 그 가장자리에서 잘린다. 스티커를 지워도 이미 꾸민 다이어리에는 남는다(꾸미기 항목이 이미지 `public_id`를 같이 가짐, Cloudinary 파일은 지우지 않음).
 - **다이어리 꾸미기는 알림장 글이 있는 "종이" 기준 좌표(0–1)** — 견주와 시터가 같은 종이(같은 글 · 같은 크기)를 보므로 같은 자리지만, 화면 폭이 크게 다르면(폰 프레임 밖 넓은 창) 글 줄바꿈이 달라 글과 스티커의 상대 위치가 조금 달라질 수 있다. 한 사람 층에 스티커 20개까지. 꾸미기는 웹에서만(앱 빌드는 스티커를 그리지 않음).
+- **Save image(11.8)는 브라우저가 지금 그린 종이를 캔버스에 다시 그린다** — 글은 화면의 줄바꿈 · 글꼴 그대로, 스티커는 저장된 자리 · 크기 · 각도로. 사진 · 스티커는 CORS로 다시 불러오므로(Cloudinary는 허용) 못 불러온 것은 빠지고 토스트가 몇 개 빠졌는지 알려 준다. 꾸미는 중(저장 전) 상태는 저장되지 않는다 — 먼저 **Save stickers**. 웹에서만, 파일은 화면 종이의 2배 크기 PNG.
+- **다이어리 공개 링크(DB.5)는 정말 공개다** — Cloudinary 이미지 주소라 링크를 가진 누구나 열 수 있고, 앱에서 지울 수 없다(링크 삭제는 해커톤 후). 그래서 시트가 올리기 전에 알려 준다. 폰 공유 시트(Share image)는 브라우저가 파일 공유를 지원할 때만 보인다(데스크톱 Chrome · Firefox는 보통 안 보임 → Download / 링크).
 - **그림일기 손글씨 글꼴(Gaegu)은 Google Fonts에서 받는다**(웹만) — 막히면 시스템 글꼴로 보이고, 글꼴이 늦게 오면 처음 잠깐 다른 글꼴. **Goldito 기본 스티커 9장은 코드로 그린 임시본**이다(`frontend/assets/stickers/`, 같은 이름으로 디자인 파일 교체). 그림 칸 사진은 그날 첫 공유 사진이라 견주가 못 보는 비공개 사진이 있으면 두 화면의 그림이 다를 수 있다(칸 크기는 같아 스티커 자리는 같음).
 
 - **오너 Diary 탭은 시터가 보낸 알림장만 보여 준다** — 실시간 소식(Live)은 Home, 전체 기록은 History. Diary 안의 Live 섹션은 아직 없다 (TODO의 IA follow-up).

@@ -1212,6 +1212,21 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, req);
   }
 
+  if (path === "rpc/save_report_draft") {
+    // 014b: today's one draft, written by hand (no on-duty window in the mock).
+    const { p_pet, p_body } = request.postDataJSON();
+    const text = String(p_body ?? "").trim();
+    if (!text) return json(route, 400, { code: "P0001", message: "body_required" });
+    const day = appToday(new Date(nowMs()));
+    let draft = db.daily_reports.find((r) => r.pet_id === p_pet && r.sitter_id === me && r.report_date === day && r.status === "draft");
+    if (draft) draft.body = text;
+    else {
+      draft = { id: `hand-${db.daily_reports.length + 1}`, pet_id: p_pet, sitter_id: me, report_date: day, body: text, status: "draft", source_snapshot: null, sent_at: null, created_at: new Date(nowMs()).toISOString() };
+      db.daily_reports.push(draft);
+    }
+    return json(route, 200, draft.id);
+  }
+
   if (path === "rpc/send_daily_report") {
     const { p_report, p_body } = request.postDataJSON();
     const report = db.daily_reports.find((r) => r.id === p_report);
