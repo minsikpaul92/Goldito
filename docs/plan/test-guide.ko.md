@@ -338,6 +338,8 @@
 | REPORT-11 | Diary를 연 채로 Home에서 체크인(메모 포함) → Diary로 돌아옴 | 그 메모가 칩으로 바로 보임(새로고침 불필요). 꺼 둔 칩은 꺼진 채 (FB-15 · M-12) | 🤖 `report` | ➖ |
 | REPORT-12 | 알림장 Send 뒤 **✏️ Write another report** → 줄 추가 → Write → Send | 새 칩은 **첫 알림장을 보낸 뒤의 기록**만. 두 번째 알림장이 따로 저장 · 전송되고 오너 Diary에 같은 날 두 장(나중 것이 위) (FB-22) | 🤖 `report` · pytest · SQL 011f | ➖ |
 | REPORT-13 | `in_care`로 리셋하자마자(3분 안) Feed에 사진 1장 + 체크인 1개 → Diary | 체크인이 바로 저장되고, 그 사진 캡션 · 체크인이 칩으로 나옴 — 일찍 Received한 뒤의 기록도 그날 알림장에 들어감 (CW-1) | pytest · SQL 011i (호스팅 DB에 `011i` 적용 뒤) | ➖ |
+| REPORT-14 | (Diary book DB.2) 시터 → Diary — 아무것도 안 했을 때 | **그림일기 표지가 바로** 보임(📅 날짜 · "Max's day 🐾" · 그림 칸 · 줄 공책), 줄 위에 손글씨로 직접 씀("Dear diary, today…"). 쓰기 시작하면 "Draft — only you can see it", **Send to {견주}**가 켜짐. 직접 쓴 글만 Send → AI 호출 없이 오늘 초안이 만들어져(`save_report_draft`, 014b) 바로 보내짐, 견주에게 알림 1개 | 🤖 `report.spec.ts` · SQL `rls_smoke` 014b · 호스팅 DB는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
+| REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
 

@@ -93,6 +93,16 @@ export async function getTodayReport(petId: string, sitterId: string): Promise<R
   return pick ? { id: pick.id, body: pick.body, status: pick.status } : null;
 }
 
+/** Today's draft written by the sitter's own hand (014b) — the same one draft the AI writes; returns its id. */
+export async function saveDraftByHand(petId: string, body: string): Promise<string> {
+  const { data, error } = await getSupabase().rpc("save_report_draft", { p_pet: petId, p_body: body });
+  if (!error) return data as string;
+  if (error.message.includes("not_on_duty")) throw new Error("You can write this page only while you're caring for this pet.");
+  if (error.message.includes("body_required")) throw new Error("Write something before sending.");
+  if (error.message.includes("body_too_long")) throw new Error(`Keep it under ${REPORT_BODY_MAX} characters.`);
+  throw new Error("Couldn't save the page. Check your connection and try again.");
+}
+
 /** The sitter's approval: the text they send is the final text (009). */
 export async function sendReport(reportId: string, body: string): Promise<void> {
   const { error } = await getSupabase().rpc("send_daily_report", { p_report: reportId, p_body: body });

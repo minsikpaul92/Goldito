@@ -1,13 +1,13 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { TextButton } from "../../components/ui/TextButton";
 import { deliveryUrl, thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { listReportPhotos } from "../diary/reportApi";
@@ -52,7 +52,19 @@ function longDay(day: string): string {
   return `${weekday}, ${formatDay(day)}`;
 }
 
-type Props = { reportId: string; petId: string; petName: string; day: string; body: string; testID?: string };
+/** The page as the sitter writes it, before it is sent: no stickers yet, the words are a text field. */
+export type DiaryWriting = { onChangeText: (text: string) => void; placeholder: string; maxLength: number; disabled?: boolean; testID?: string };
+
+type Props = {
+  /** A sent report (its sticker layers, Decorate, Share); null while the page is still being written. */
+  reportId: string | null;
+  petId: string;
+  petName: string;
+  day: string;
+  body: string;
+  writing?: DiaryWriting;
+  testID?: string;
+};
 
 /**
  * A sent daily report as a picture-diary page both people decorate (Phase 12.3b · 12.4, D61): the date and the pet on
@@ -64,8 +76,10 @@ type Props = { reportId: string; petId: string; petName: string; day: string; bo
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
+  const [writtenHeight, setWrittenHeight] = useState(0);
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const session = useSession();
@@ -89,6 +103,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
   const textRef = useRef<View>(null);
 
   const load = useCallback(async () => {
+    if (!reportId) {
+      setLayers([]);
+      return;
+    }
     try {
       setLayers(await listDecor(reportId));
     } catch {
@@ -161,7 +179,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
   };
 
   const save = async () => {
-    if (!me || saving) return;
+    if (!me || !reportId || saving) return;
     setSaving(true);
     try {
       await saveDecor(reportId, me, draft);
@@ -244,9 +262,26 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
           )}
         </View>
         <View ref={textRef} pointerEvents={passThrough} style={[styles.textArea, { minHeight: MIN_LINES * LINE }]} onLayout={onTextLayout}>
-          <Text style={styles.body} testID={id("body")}>
-            {body}
-          </Text>
+          {writing ? (
+            // The sitter writes straight onto the page (Diary book): the same font and lines as the sent page.
+            <TextInput
+              value={body}
+              onChangeText={writing.onChangeText}
+              placeholder={writing.placeholder}
+              placeholderTextColor={theme.color.textMuted}
+              maxLength={writing.maxLength}
+              editable={!writing.disabled}
+              multiline
+              accessibilityLabel={`${petName}'s diary page`}
+              onContentSizeChange={(e) => setWrittenHeight(e.nativeEvent.contentSize.height)}
+              style={[styles.body, styles.input, { height: Math.max(MIN_LINES * LINE, Math.ceil(writtenHeight / LINE) * LINE) }]}
+              testID={writing.testID}
+            />
+          ) : (
+            <Text style={styles.body} testID={id("body")}>
+              {body}
+            </Text>
+          )}
         </View>
         <StickerCanvas
           which="front"
@@ -260,7 +295,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, testID }:
         />
       </View>
 
-      {Platform.OS !== "web" || !me ? null : editing ? (
+      {Platform.OS !== "web" || !me || !reportId || writing ? null : editing ? (
         <View style={styles.tools} testID="decor-tools">
           <Text style={styles.hint}>
             {current ? "Drag to move · size, turn, or tuck it behind the writing below." : "Add a sticker, then drag it anywhere on the page."}
@@ -391,6 +426,8 @@ const makeStyles = (theme: Theme) =>
     lines: { position: "absolute", left: theme.spacing.md, right: theme.spacing.md, zIndex: 0 },
     rule: { position: "absolute", left: 0, right: 0, height: 1, backgroundColor: theme.color.border },
     textArea: { zIndex: 2 },
+    // Writing on the page: no box of its own, the ruled lines show through.
+    input: { padding: 0, borderWidth: 0, backgroundColor: "transparent", textAlignVertical: "top", outlineWidth: 0 },
     body: { fontFamily: DIARY_FONT, fontSize: theme.fontSize.body + 4, lineHeight: LINE, color: theme.color.text },
     tools: { gap: theme.spacing.sm },
     group: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },

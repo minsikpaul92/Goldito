@@ -11,6 +11,7 @@ import {
   ReportChip,
   ReportDraft,
   generateReport,
+  saveDraftByHand,
   overrideLabel,
   getTodayReport,
   sendReport,
@@ -42,10 +43,10 @@ type Photo = { mediaId: string; thumbUrl: string };
 const HIGHLIGHT_ORDER: Record<string, number> = { custom: 0, checkin: 1, vision: 2, feed: 3 };
 
 /**
- * The sitter's evening note for one pet (phase-07 7.3): chips from the day (and up to two photos) →
- * keep or turn off → optional short lines of their own (each becomes a chip, FB-18) → Generate → edit the
- * preview → Send. Nothing reaches the owner
- * before Send; the owner only ever sees the text the sitter sent (D36 · D38).
+ * The sitter's evening note for one pet (phase-07 7.3), as a diary page from the start (Diary book): write on the page
+ * by hand, or let Goldito write it from the day's chips (keep or turn off, up to two photos, short lines of their own —
+ * FB-18) and edit it there → Send. Nothing reaches the owner before Send; the owner only ever sees the text the sitter
+ * sent (D36 · D38).
  */
 /** Where this pet's report stands, for the Diary's pet picker. */
 export type ReportStatus = "sent" | "draft" | null;
@@ -275,12 +276,14 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   };
 
   const send = async () => {
-    if (!draft || busy) return;
+    if (busy || !body.trim()) return;
     setBusy("send");
     try {
-      await sendReport(draft.id, body.trim());
+      // A page written only by hand has no draft row yet: save it as today's draft first (014b), then send.
+      const id = draft?.id ?? (await saveDraftByHand(pet.id, body.trim()));
+      await sendReport(id, body.trim());
       setSent(true);
-      setSentId(draft.id);
+      setSentId(id);
       setDraft(null);
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
     } catch (e) {
@@ -336,38 +339,44 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     );
   }
 
-  if (draft) {
-    return (
-      <Card style={styles.card} testID={`report-${pet.id}`}>
-        <Text style={styles.title}>{`${pet.name} · preview`}</Text>
-        {draft.fallback ? (
-          <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
-            The writing helper is down — here's a plain list. Edit it if you like, then send.
-          </Text>
-        ) : null}
-        <Text style={styles.muted}>{`Edit it if you like. ${pet.ownerName} sees it only after you send.`}</Text>
-        <TextField
-          label="Daily report"
-          value={body}
-          onChangeText={setBody}
-          multiline
-          maxLength={REPORT_BODY_MAX}
-          testID={`report-body-${pet.id}`}
-        />
-        <Button
-          label={busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`}
-          disabled={busy != null || !body.trim()}
-          onPress={() => void send()}
-          testID={`report-send-${pet.id}`}
-        />
-        <TextButton label="Back to chips" onPress={() => setDraft(null)} testID={`report-back-${pet.id}`} />
-      </Card>
-    );
-  }
-
+  // Not sent yet: the page is there from the start (Diary book). The sitter writes on it by hand, or lets Goldito write
+  // it from the chips below — either way it stays a draft only they can see until they check it and tap Send.
   return (
     <Card style={styles.card} testID={`report-${pet.id}`}>
       <Text style={styles.title}>{pet.name}</Text>
+      <Text style={styles.muted} testID={`report-state-${pet.id}`}>
+        {draft || body.trim()
+          ? `Draft — only you can see it. Check it, then send it to ${pet.ownerName}.`
+          : `Write ${pet.name}'s day on the page, or let Goldito write it from today's chips below.`}
+      </Text>
+      {draft?.fallback ? (
+        <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
+          The writing helper is down — here's a plain list. Edit it if you like, then send.
+        </Text>
+      ) : null}
+      <DecoratedReport
+        reportId={null}
+        petId={pet.id}
+        petName={pet.name}
+        day={day.current}
+        body={body}
+        writing={{
+          onChangeText: setBody,
+          placeholder: "Dear diary, today…",
+          maxLength: REPORT_BODY_MAX,
+          disabled: busy != null,
+          testID: `report-body-${pet.id}`,
+        }}
+        testID={`report-page-${pet.id}`}
+      />
+      <Button
+        label={busy === "send" ? "Sending…" : `Send to ${pet.ownerName}`}
+        disabled={busy != null || !body.trim()}
+        onPress={() => void send()}
+        testID={`report-send-${pet.id}`}
+      />
+
+      <Text style={styles.section}>Let Goldito write it</Text>
       {summary ? (
         <Text style={styles.muted} testID={`report-summary-${pet.id}`}>
           {summaryLine(summary)}
@@ -458,11 +467,13 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         <Button label="Add" disabled={!customText.trim()} onPress={addCustom} testID={`report-custom-add-${pet.id}`} />
       </View>
       <Button
-        label={busy === "generate" ? "Writing…" : "Write the report"}
+        label={busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips"}
+        variant="secondary"
         disabled={busy != null}
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}
       />
+      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page — nothing is sent.</Text> : null}
     </Card>
   );
 }
@@ -474,6 +485,7 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
+    section: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text, marginTop: theme.spacing.sm },
     sentBadge: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
     editGroup: { gap: theme.spacing.xs },
     editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },

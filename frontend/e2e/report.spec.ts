@@ -125,7 +125,6 @@ test.describe("daily report", () => {
     });
 
     // One of the photo's two chips off: its description could say the same thing, so it stays home too.
-    await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
@@ -142,7 +141,6 @@ test.describe("daily report", () => {
     expect((reportRequests[0].chips as string[]).length).toBe(9);
     expect(reportRequests[0].chips).toEqual(["Met a golden retriever", ...notes.map((n) => n.label), "Zoomies at the park"]);
 
-    await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByTestId(`report-chip-${MAX.id}-note-c0`).click(); // back to 8: no hint
     await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveCount(0);
   });
@@ -335,7 +333,6 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
     expect(reportRequests[0]).toMatchObject({ chips: ["Learned a new trick", "Met a golden retriever", "Zoomies at the park"] }); // the sitter's own first
 
-    await screen.getByTestId(`report-back-${MAX.id}`).click();
     await screen.getByRole("button", { name: "Learned a new trick: on" }).click();
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await screen.getByTestId(`report-body-${MAX.id}`).waitFor();
@@ -349,6 +346,40 @@ test.describe("daily report", () => {
     const screen = app(page);
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue("Saved draft text");
     await expect(screen.getByTestId(`report-send-${MAX.id}`)).toBeEnabled();
+  });
+
+  test("the page is there from the start: write it by hand, nothing goes out until Send, then the owner is told", async ({ page }) => {
+    const { db, reportRequests } = await openSitterDiary(page);
+    const screen = app(page);
+    // The diary cover (date, pet, picture box) shows before anything is written or generated.
+    await expect(screen.getByTestId(`report-page-${MAX.id}-header`)).toContainText("Max's day");
+    await expect(screen.getByTestId(`report-page-${MAX.id}-picture`)).toBeVisible();
+    await expect(screen.getByTestId(`report-send-${MAX.id}`)).toBeDisabled();
+
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("We played fetch until Max flopped on the grass.");
+    await expect(screen.getByTestId(`report-state-${MAX.id}`)).toContainText("Draft — only you can see it");
+    expect(db.daily_reports).toHaveLength(0); // typing saves nothing for the owner
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    expect(reportRequests).toHaveLength(0); // no AI call for a hand-written page
+    expect(db.daily_reports).toHaveLength(1);
+    expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "We played fetch until Max flopped on the grass.", sitter_id: SITTER.id });
+    expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe(db.daily_reports[0].id);
+  });
+
+  test("generated text lands on the page as a draft; the sitter edits it there and only Send shares it", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("My own first line.");
+    await screen.getByTestId(`report-generate-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
+    expect(db.daily_reports[0].status).toBe("draft");
+    expect(db.notifications.some((n) => n.type === "report_sent")).toBe(false);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("Edited on the page.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
+    expect(db.daily_reports).toHaveLength(1); // the generated draft was the one sent
+    expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "Edited on the page." });
   });
 
   test("an owner with no reports sees the empty state", async ({ page }) => {
