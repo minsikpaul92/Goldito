@@ -1,0 +1,65 @@
+<!-- expressive:start — the Expressive look on top of the journey (same flows, brand green + tag gold, Fredoka = the logo's face; DESIGN.md §3.2) -->
+<style id="expressive">
+:root{--bg:#FBF6EA;--surface:#FFFFFF;--text:#1A1A1A;--text-muted:#4F5B53;--border:#E3EADF;
+  --primary:#2D6A4F;--primary-foreground:#FFFFFF;--primary-text:#2D6A4F;--primary-soft:#D8F3DC;
+  --tint-bg:#FFF9F0;--tint-surface:#FFFFFF;--tint-border:#E3EADF;
+  --x-ink:#1B4332;--x-mint:#D8F3DC;--x-peach:#FDE2CC;--x-butter:#FBEFC8;--x-blush:#FAD6CB;--x-gold:#F4C35A;--x-gold-ink:#8A5A00;
+  --radius-sm:.875rem;--radius-md:1.125rem;--radius-lg:1.625rem;--shadow-1:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121312;--surface:#1A1B1A;--text:#EDEDEA;--text-muted:#A3A39C;--border:#2C2D2B;
+  --primary:#7CCBA2;--primary-foreground:#0E1210;--primary-text:#7CCBA2;--primary-soft:#1E3128;--tint-bg:#121312;--tint-surface:#1A1B1A;--tint-border:#2C2D2B;
+  --x-ink:#D8F3DC;--x-mint:#1E3128;--x-peach:#3A2A1F;--x-butter:#36301A;--x-blush:#3A2421;--x-gold:#F4C35A;--x-gold-ink:#F4C35A}}
+:root[data-theme="dark"]{--bg:#121312;--surface:#1A1B1A;--text:#EDEDEA;--text-muted:#A3A39C;--border:#2C2D2B;
+  --primary:#7CCBA2;--primary-foreground:#0E1210;--primary-text:#7CCBA2;--primary-soft:#1E3128;--tint-bg:#121312;--tint-surface:#1A1B1A;--tint-border:#2C2D2B;
+  --x-ink:#D8F3DC;--x-mint:#1E3128;--x-peach:#3A2A1F;--x-butter:#36301A;--x-blush:#3A2421;--x-gold:#F4C35A;--x-gold-ink:#F4C35A}
+.jr,.jr-danger,.jr-overlay{--jr-font-head:"Fredoka","Arial Rounded MT Bold",ui-rounded,sans-serif;--jr-head-weight:600;--jr-radius:1.625rem;--jr-card-border:none;--jr-card-shadow:none}
+.jr-title{font-size:2.125rem;font-weight:700;letter-spacing:-.01em;color:var(--x-ink)}
+.jr-eyebrow{color:var(--x-gold-ink)}
+.jr-h3,.jr-stage-title b{letter-spacing:0;color:var(--x-ink)}
+/* Color-blocked stages: each stage keeps its own pastel, so the five steps read at a glance */
+.jr-stage{border:none;box-shadow:none}
+.jr-stage:nth-of-type(5n+1){background:var(--x-mint)}.jr-stage:nth-of-type(5n+2){background:var(--x-peach)}
+.jr-stage:nth-of-type(5n+3){background:var(--x-butter)}.jr-stage:nth-of-type(5n+4){background:var(--x-blush)}
+.jr-stage:nth-of-type(5n+5){background:var(--x-mint)}
+.jr-stage .jr-card{background:var(--surface)}
+.jr-stage-head{position:relative}
+.x-art{width:52px;height:52px;flex:0 0 auto;margin:-6px -4px -6px auto}
+/* Controls: ink pill when selected, white when not; buttons are bold pills */
+.chip{background:var(--surface);border-color:transparent;font-weight:700}
+.chip.active{background:var(--x-ink);color:var(--bg);border-color:var(--x-ink)}
+.btn{border-radius:999px;font-weight:800}
+.btn-secondary{background:var(--surface);border:2px solid var(--x-ink);color:var(--x-ink)}
+.jr-datefield{background:var(--surface);border:2px solid var(--x-ink)}
+.jr-day.on{background:var(--x-ink);color:var(--bg)}
+/* The logo: the gold tag (brand v2.1) and the lowercase wordmark in Fredoka */
+.brand{font-family:"Fredoka","Arial Rounded MT Bold",ui-rounded,sans-serif;font-weight:600;font-size:1.125rem;letter-spacing:0;color:var(--x-ink);text-transform:lowercase}
+.brand-mark{background:none !important;width:1.875rem !important;height:1.875rem !important}
+.brand-mark img{width:100%;height:100%;display:block}
+/* Gold marks the moments worth celebrating: done steps and the progress you've made */
+.jr-stage.is-done .jr-num{background:var(--x-gold);color:#3D2A00}
+.jr-progress i.on{background:var(--x-gold)}
+/* Tab bar: white sheet, mint pill + ink icon on the active tab */
+.tabbar{border-radius:1.625rem 1.625rem 0 0;box-shadow:0 -8px 24px rgba(27,67,50,.08)}
+.tab[aria-current="page"]{color:var(--x-ink)}
+</style>
+<script id="expressive-js">
+// Brand: swap the placeholder paw for the gold tag (design/brand/goldito-symbol-master.svg, inlined).
+(() => {
+  const TAG = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiIHJvbGU9ImltZyI+PHRpdGxlPkdvbGRpdG8gc3ltYm9sPC90aXRsZT48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MTIuMDAgNTEyLjAwKSBzY2FsZSg3LjI2NTYpIHRyYW5zbGF0ZSgtNDQuMjc0IC01My43NzMpIj48ZyB0cmFuc2Zvcm09InJvdGF0ZSg5IDUwIDIyLjQpIj48bWFzayBpZD0iZ3QyIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSItMjAiIHk9Ii0yMCIgd2lkdGg9IjE0MCIgaGVpZ2h0PSIxNDAiPjxyZWN0IHg9Ii0yMCIgeT0iLTIwIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNNDUuMjAwLDIyLjQwMCBhNC44MDAsNC44MDAgMCAxIDEgOS42MDAsMCBhNC44MDAsNC44MDAgMCAxIDEgLTkuNjAwLDAgWiIgZmlsbD0iYmxhY2siLz48cGF0aCBkPSJNNTAuMCA3Ny43NDg4UTQ4LjMxNDU2MzEwNjc5NjEyIDc3Ljc0ODggNDYuNTU2ODkzMjAzODgzNTA0IDc3LjI5MTMyNDI3MTg0NDY3UTQ0Ljc5OTIyMzMwMDk3MDg4IDc2LjgzMzg0ODU0MzY4OTMzIDQzLjMwNjQwNzc2Njk5MDMgNzYuMDYzMzYzMTA2Nzk2MTJRNDEuODEzNTkyMjMzMDA5NzE1IDc1LjI5Mjg3NzY2OTkwMjkyIDQwLjg5ODY0MDc3NjY5OTAzIDc0LjQwMjAwMzg4MzQ5NTE1UTM5Ljk4MzY4OTMyMDM4ODM1IDczLjUxMTEzMDA5NzA4NzM5IDM5Ljk4MzY4OTMyMDM4ODM1IDcyLjY0NDMzMzk4MDU4MjUzUTM5Ljk4MzY4OTMyMDM4ODM1IDcxLjY4MTIyNzE4NDQ2NjAyIDQwLjM0NDg1NDM2ODkzMjA0IDcwLjg2MjU4NjQwNzc2N1E0MC43MDYwMTk0MTc0NzU3MyA3MC4wNDM5NDU2MzEwNjc5NyA0MS40MjgzNDk1MTQ1NjMxMSA2OS4yNzM0NjAxOTQxNzQ3NlE0Mi4xOTg4MzQ5NTE0NTYzMSA2OC40NTQ4MTk0MTc0NzU3MyA0Mi43NzY2OTkwMjkxMjYyMiA2Ny45NzMyNjYwMTk0MTc0OFE0My4zNTQ1NjMxMDY3OTYxMiA2Ny40OTE3MTI2MjEzNTkyMyA0NC4xNzMyMDM4ODM0OTUxNSA2Ny40OTE3MTI2MjEzNTkyM1E0NC44OTU1MzM5ODA1ODI1MyA2Ny40OTE3MTI2MjEzNTkyMyA0NS40NDkzMjAzODgzNDk1MiA2Ny44Mjg4UTQ2LjAwMzEwNjc5NjExNjUwNSA2OC4xNjU4ODczNzg2NDA3OSA0Ni41ODA5NzA4NzM3ODY0MSA2OC41NzUyMDc3NjY5OTAzUTQ3LjE1ODgzNDk1MTQ1NjMxIDY4Ljk4NDUyODE1NTMzOTgyIDQ4LjAwMTU1MzM5ODA1ODI1NiA2OS4zMjE2MTU1MzM5ODA1OVE0OC44NDQyNzE4NDQ2NjAyIDY5LjY1ODcwMjkxMjYyMTM3IDUwLjE0NDQ2NjAxOTQxNzQ4IDY5LjY1ODcwMjkxMjYyMTM3UTUwLjg2Njc5NjExNjUwNDg2IDY5LjY1ODcwMjkxMjYyMTM3IDUxLjQ5MjgxNTUzMzk4MDU5IDY5LjM0NTY5MzIwMzg4MzVRNTIuMTE4ODM0OTUxNDU2MzE0IDY5LjAzMjY4MzQ5NTE0NTYzIDUyLjU3NjMxMDY3OTYxMTY1IDY4LjQ3ODg5NzA4NzM3ODY0UTUzLjAzMzc4NjQwNzc2Njk5NiA2Ny45MjUxMTA2Nzk2MTE2NiA1My4zMjI3MTg0NDY2MDE5NSA2Ny4xNzg3MDI5MTI2MjEzNlE1My42MTE2NTA0ODU0MzY5IDY2LjQzMjI5NTE0NTYzMTA3IDUzLjYxMTY1MDQ4NTQzNjkgNjUuNTY1NDk5MDI5MTI2MjJWNDUuNzI1NDk5MDI5MTI2MjFRNTMuODA0MjcxODQ0NjYwMiA0NC4yODA4Mzg4MzQ5NTE0NSA1NC44MTU1MzM5ODA1ODI1MyA0My42NTQ4MTk0MTc0NzU3M1E1NS44MjY3OTYxMTY1MDQ4NiA0My4wMjg4MDAwMDAwMDAwMDQgNTcuODk3NDc1NzI4MTU1MzQgNDMuMDI4ODAwMDAwMDAwMDA0UTYwLjAxNjMxMDY3OTYxMTY2IDQzLjAyODgwMDAwMDAwMDAwNCA2MC44ODMxMDY3OTYxMTY1MSA0My42NTQ4MTk0MTc0NzU3M1E2MS43NDk5MDI5MTI2MjEzNjYgNDQuMjgwODM4ODM0OTUxNDUgNjEuOTE4NDQ2NjAxOTQxNzUgNDUuMjY4MDIzMzAwOTcwODc0UTYyLjA4Njk5MDI5MTI2MjE0IDQ2LjI1NTIwNzc2Njk5MDI5NiA2Mi4wODY5OTAyOTEyNjIxNCA0Ny4zMTQ2MjUyNDI3MTg0NVY2NS44NTQ0MzEwNjc5NjExN1E2Mi4wODY5OTAyOTEyNjIxNCA2OC42OTU1OTYxMTY1MDQ4NiA2MS4wMDM0OTUxNDU2MzEwNyA3MC45MTA3NDE3NDc1NzI4MVE1OS45MiA3My4xMjU4ODczNzg2NDA3OCA1OC4xMzgyNTI0MjcxODQ0NyA3NC42NDI3ODA1ODI1MjQyOFE1Ni4zNTY1MDQ4NTQzNjg5MzYgNzYuMTU5NjczNzg2NDA3NzggNTQuMjM3NjY5OTAyOTEyNjMgNzYuOTU0MjM2ODkzMjAzOVE1Mi4xMTg4MzQ5NTE0NTYzMTQgNzcuNzQ4OCA1MC4wIDc3Ljc0ODhaTTQ4Ljc5NjExNjUwNDg1NDM3NSA2Ni44NjU2OTMyMDM4ODM1UTQ2LjY3NzI4MTU1MzM5ODA2IDY2Ljg2NTY5MzIwMzg4MzUgNDQuNzI2OTkwMjkxMjYyMTQgNjUuOTAyNTg2NDA3NzY2OTlRNDIuNzc2Njk5MDI5MTI2MjEgNjQuOTM5NDc5NjExNjUwNSA0MS4yMzU3MjgxNTUzMzk4MSA2My4yNTQwNDI3MTg0NDY2MVEzOS42OTQ3NTcyODE1NTM0IDYxLjU2ODYwNTgyNTI0MjczIDM4LjgwMzg4MzQ5NTE0NTYzNCA1OS40MjU2OTMyMDM4ODM1UTM3LjkxMzAwOTcwODczNzg3IDU3LjI4Mjc4MDU4MjUyNDI3NSAzNy45MTMwMDk3MDg3Mzc4NyA1NC45MjMxNjg5MzIwMzg4NFEzNy45MTMwMDk3MDg3Mzc4NyA1Mi42NTk4Njc5NjExNjUwNSAzOC44MDM4ODM0OTUxNDU2MzQgNTAuNTQxMDMzMDA5NzA4NzRRMzkuNjk0NzU3MjgxNTUzNCA0OC40MjIxOTgwNTgyNTI0MzQgNDEuMjU5ODA1ODI1MjQyNzIgNDYuNzYwODM4ODM0OTUxNDZRNDIuODI0ODU0MzY4OTMyMDQgNDUuMDk5NDc5NjExNjUwNDkgNDQuNzc1MTQ1NjMxMDY3OTYgNDQuMTEyMjk1MTQ1NjMxMDY2UTQ2LjcyNTQzNjg5MzIwMzg4NCA0My4xMjUxMTA2Nzk2MTE2NSA0OC43OTYxMTY1MDQ4NTQzNzUgNDMuMTI1MTEwNjc5NjExNjVRNTAuOTE0OTUxNDU2MzEwNjggNDMuMTI1MTEwNjc5NjExNjUgNTIuMjg3Mzc4NjQwNzc2NzEgNDMuOTkxOTA2Nzk2MTE2NTFRNTMuNjU5ODA1ODI1MjQyNzMgNDQuODU4NzAyOTEyNjIxMzYgNTQuNDU0MzY4OTMyMDM4ODQgNDYuNDQ3ODI5MTI2MjEzNTlRNTUuMjQ4OTMyMDM4ODM0OTUgNDguMDM2OTU1MzM5ODA1ODMgNTUuNTg2MDE5NDE3NDc1NzMgNTAuMjI4MDIzMzAwOTcwODc1UTU1LjkyMzEwNjc5NjExNjUxNCA1Mi40MTkwOTEyNjIxMzU5MiA1NS45MjMxMDY3OTYxMTY1MTQgNTUuMDY3NjM0OTUxNDU2MzFRNTUuOTIzMTA2Nzk2MTE2NTE0IDU4LjcyNzQ0MDc3NjY5OTAzNCA1NS4zMjExNjUwNDg1NDM3IDYxLjM3NTk4NDQ2NjAxOTQyUTU0LjcxOTIyMzMwMDk3MDg4IDY0LjAyNDUyODE1NTMzOTgxIDUzLjE3ODI1MjQyNzE4NDQ3NSA2NS40NDUxMTA2Nzk2MTE2NFE1MS42MzcyODE1NTMzOTgwNiA2Ni44NjU2OTMyMDM4ODM1IDQ4Ljc5NjExNjUwNDg1NDM3NSA2Ni44NjU2OTMyMDM4ODM1Wk00OS45NTE4NDQ2NjAxOTQxNzYgNTguMzkwMzUzMzk4MDU4MjZRNTAuODY2Nzk2MTE2NTA0ODYgNTguMzkwMzUzMzk4MDU4MjYgNTEuNjEzMjAzODgzNDk1MTQ2IDU3LjkwODgwMDAwMDAwMDAxUTUyLjM1OTYxMTY1MDQ4NTQ0IDU3LjQyNzI0NjYwMTk0MTc1NCA1Mi44MTcwODczNzg2NDA3OCA1Ni42NTY3NjExNjUwNDg1NVE1My4yNzQ1NjMxMDY3OTYxMiA1NS44ODYyNzU3MjgxNTUzNCA1My4yNzQ1NjMxMDY3OTYxMiA1NS4wMTk0Nzk2MTE2NTA0OVE1My4yNzQ1NjMxMDY3OTYxMiA1NC4wNTYzNzI4MTU1MzM5OCA1Mi44MTcwODczNzg2NDA3OCA1My4yODU4ODczNzg2NDA3OFE1Mi4zNTk2MTE2NTA0ODU0NCA1Mi41MTU0MDE5NDE3NDc1OCA1MS41ODkxMjYyMTM1OTIyNCA1Mi4wNTc5MjYyMTM1OTIyNFE1MC44MTg2NDA3NzY2OTkwMzQgNTEuNjAwNDUwNDg1NDM2ODk1IDQ5Ljg1NTUzMzk4MDU4MjUzIDUxLjYwMDQ1MDQ4NTQzNjg5NVE0OC45NDA1ODI1MjQyNzE4NDYgNTEuNjAwNDUwNDg1NDM2ODk1IDQ4LjE3MDA5NzA4NzM3ODY0IDUyLjA4MjAwMzg4MzQ5NTE1UTQ3LjM5OTYxMTY1MDQ4NTQ0IDUyLjU2MzU1NzI4MTU1MzQgNDYuOTQyMTM1OTIyMzMwMDk1IDUzLjMzNDA0MjcxODQ0NjYwNFE0Ni40ODQ2NjAxOTQxNzQ3NiA1NC4xMDQ1MjgxNTUzMzk4MSA0Ni40ODQ2NjAxOTQxNzQ3NiA1NS4wMTk0Nzk2MTE2NTA0OVE0Ni40ODQ2NjAxOTQxNzQ3NiA1NS44ODYyNzU3MjgxNTUzNCA0Ni45NjYyMTM1OTIyMzMwMSA1Ni42NTY3NjExNjUwNDg1NVE0Ny40NDc3NjY5OTAyOTEyNjQgNTcuNDI3MjQ2NjAxOTQxNzU0IDQ4LjI0MjMzMDA5NzA4NzM3NSA1Ny45MDg4MDAwMDAwMDAwMVE0OS4wMzY4OTMyMDM4ODM0OTQgNTguMzkwMzUzMzk4MDU4MjYgNDkuOTUxODQ0NjYwMTk0MTc2IDU4LjM5MDM1MzM5ODA1ODI2WiIgZmlsbD0iYmxhY2siLz48L21hc2s+PHBhdGggZmlsbD0iI0Y0QzM1QSIgbWFzaz0idXJsKCNndDIpIiBkPSJNMTkuMDAwLDU5LjAwMCBhMzEuMDAwLDMxLjAwMCAwIDEgMSA2Mi4wMDAsMCBhMzEuMDAwLDMxLjAwMCAwIDEgMSAtNjIuMDAwLDAgWiBNNDAuNjAwLDIyLjQwMCBhOS40MDAsOS40MDAgMCAxIDEgMTguODAwLDAgYTkuNDAwLDkuNDAwIDAgMSAxIC0xOC44MDAsMCBaIi8+PC9nPjwvZz48L3N2Zz4K";
+  const put = () => document.querySelectorAll(".brand-mark").forEach((m) => { if (!m.querySelector("img")) m.innerHTML = `<img src="${TAG}" alt="">`; });
+  put(); new MutationObserver(put).observe(document.body, {childList: true, subtree: true});
+})();
+// Illustrations sit in a fixed slot on each stage header (never over content). Placeholder set: redesign/art.svg.
+(() => {
+  const ART = ["art-dog", "art-walk", "art-home", "art-camera", "art-ball"];
+  fetch("redesign/art.svg").then((r) => r.text()).then((svg) => {
+    document.body.insertAdjacentHTML("afterbegin", svg);
+    const add = () => document.querySelectorAll(".jr-stage").forEach((st, i) => {
+      const head = st.querySelector(".jr-stage-head");
+      if (!head || head.querySelector(".x-art")) return;
+      head.insertAdjacentHTML("beforeend", `<svg class="x-art" aria-hidden="true"><use href="#${ART[i % ART.length]}"/></svg>`);
+    });
+    add(); new MutationObserver(add).observe(document.body, {childList: true, subtree: true});
+  }).catch(() => {});
+})();
+</script>
+<!-- expressive:end -->
