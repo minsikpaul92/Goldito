@@ -34,6 +34,7 @@ import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
 import { Card } from "./ui/Card";
 import { TextButton } from "./ui/TextButton";
+import { Tag } from "./ui/Tag";
 import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
@@ -317,7 +318,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{pet.name}</Text>
-        <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
+        <Tag label={`Sent to ${pet.ownerName} ✓`} tone="success" testID={`report-sent-${pet.id}`} />
         {sentId ? (
           <DecoratedReport
             reportId={sentId}
@@ -474,7 +475,6 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    sentBadge: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     editGroup: { gap: theme.spacing.xs },
     editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },

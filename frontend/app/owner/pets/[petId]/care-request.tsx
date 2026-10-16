@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { CareLineBuilder } from "../../../../components/CareLineBuilder";
 import { ChecklistCard } from "../../../../components/ChecklistCard";
+import { Banner } from "../../../../components/ui/Banner";
 import { Button } from "../../../../components/ui/Button";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
@@ -282,9 +283,7 @@ export default function CareRequestScreen() {
       </Text>
 
       {pending ? (
-        <View style={styles.notice} testID="request-pending">
-          <Text style={styles.noticeText}>{`Your last request is still waiting for ${stay?.sitterName ?? "your sitter"}. You can send another once it is answered.`}</Text>
-        </View>
+        <Banner testID="request-pending" icon="⏳" body={`Your last request is still waiting for ${stay?.sitterName ?? "your sitter"}. You can send another once it is answered.`} />
       ) : null}
 
       <CareLineBuilder species={pet.species} lines={lines} onLines={setLines} disabled={busy !== null} />
@@ -344,8 +343,6 @@ const makeStyles = (theme: Theme) =>
     intro: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: theme.fontSize.body * 1.4 },
     count: { fontSize: theme.fontSize.small, color: theme.color.textMuted, alignSelf: "flex-end" },
     review: { gap: theme.spacing.sm, marginTop: theme.spacing.md },
-    notice: { padding: theme.spacing.sm, borderRadius: theme.radius.md, backgroundColor: theme.color.accent, borderWidth: 1, borderColor: theme.color.warning },
-    noticeText: { fontSize: theme.fontSize.small, color: theme.color.text },
     saveState: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted, alignSelf: "flex-end" },
     saveStateOk: { color: theme.color.primary },
     undo: {

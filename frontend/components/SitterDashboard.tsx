@@ -18,6 +18,7 @@ import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
+import { Tag } from "./ui/Tag";
 import { TextButton } from "./ui/TextButton";
 
 /** Open tasks listed on Home; the rest are one tap away in All tasks. */
@@ -154,7 +155,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
                         {`💤 Snoozed until ${new Date(snoozed).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`}
                       </Text>
                     ) : tag ? (
-                      <Text style={styles.tag}>{tag}</Text>
+                      <Tag label={tag} tone={status.kind === "missed" ? "warning" : "brand"} />
                     ) : null}
                   </View>
                   <Button
@@ -248,7 +249,6 @@ const makeStyles = (theme: Theme) =>
     taskRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     taskText: { flex: 1, gap: 1 },
     rowDone: { minWidth: 76, minHeight: 40 },
-    tag: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.warning },
     nextTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },

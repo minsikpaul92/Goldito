@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { Tag } from "../../components/ui/Tag";
 import { TextButton } from "../../components/ui/TextButton";
 import { ApiError } from "../../lib/api";
 import { UploadError, uploadMedia } from "../../lib/cloudinary";
@@ -279,14 +280,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
 }
 
 export function StatusBadge({ status }: { status: SafetyCheck["safety_status"] }) {
-  const styles = useThemedStyles(makeStyles);
-  const theme = useTheme();
-  const color = status === "DANGER" ? theme.color.error : status === "WARNING" ? theme.color.warning : theme.color.success;
-  return (
-    <View style={[styles.badge, { borderColor: color }]}>
-      <Text style={[styles.badgeLabel, { color }]}>{status}</Text>
-    </View>
-  );
+  return <Tag label={status} tone={status === "DANGER" ? "danger" : status === "WARNING" ? "warning" : "success"} />;
 }
 
 function ResultCard({
@@ -461,13 +455,6 @@ const makeStyles = (theme: Theme) =>
     sourceTitle: { fontSize: theme.fontSize.small, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     sourceDomain: { fontSize: theme.fontSize.caption, color: theme.color.textMuted },
     toggle: { alignSelf: "flex-start" },
-    badge: {
-      paddingVertical: 2,
-      paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.sm,
-      borderWidth: 1,
-    },
-    badgeLabel: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.bold },
     recentRow: {
       flexDirection: "row",
       alignItems: "center",

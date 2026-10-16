@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Avatar } from "./ui/Avatar";
 import { Chip } from "./ui/Chip";
 import type { InCare } from "../features/care/useInCare";
 import { SPECIES_EMOJI, describePet } from "../features/pets/petFormat";
@@ -34,9 +35,7 @@ export function PetCard({ pet, onPress, inCare }: Props) {
           <Text style={styles.inCareLabelText}>In care</Text>
         </View>
       ) : null}
-      <View style={styles.avatar}>
-        <Text style={styles.avatarEmoji}>{SPECIES_EMOJI[pet.species]}</Text>
-      </View>
+      <Avatar kind="emoji" emoji={SPECIES_EMOJI[pet.species]} size={56} />
       <View style={styles.body}>
         <Text style={styles.name}>{pet.name}</Text>
         {inCare ? (
@@ -73,17 +72,6 @@ const makeStyles = (theme: Theme) =>
     },
     pressed: {
       opacity: 0.8,
-    },
-    avatar: {
-      width: theme.spacing.xl + theme.spacing.lg,
-      height: theme.spacing.xl + theme.spacing.lg,
-      borderRadius: (theme.spacing.xl + theme.spacing.lg) / 2,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.color.accent,
-    },
-    avatarEmoji: {
-      fontSize: theme.icon.md,
     },
     body: {
       flex: 1,

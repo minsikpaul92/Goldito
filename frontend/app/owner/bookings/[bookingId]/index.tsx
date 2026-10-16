@@ -15,6 +15,7 @@ import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { CheckRow } from "../../../../components/ui/CheckRow";
 import { Chip } from "../../../../components/ui/Chip";
+import { Tag } from "../../../../components/ui/Tag";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
@@ -213,10 +214,10 @@ export default function OwnerBookingDetail() {
           </Text>
           <View style={styles.chips}>
             {bookingBadges(booking, "owner").map((b) => (
-              <Chip key={b.label} label={b.label} />
+              <Tag key={b.label} label={b.label} tone={b.tone} />
             ))}
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
-            {booking.paidAt ? <Chip label="Paid" testID="paid-chip" /> : null}
+            {booking.paidAt ? <Tag label="Paid" tone="success" testID="paid-chip" /> : null}
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>

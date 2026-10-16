@@ -15,6 +15,7 @@ import {
   careTypeMeta,
   sortTasks,
   statusLabel,
+  statusTone,
   todayStatus,
   typesForSpecies,
 } from "../features/care/careFormat";
@@ -28,6 +29,7 @@ import type { CareTaskRow, CareTaskType, Pet, TaskLogRow } from "../types/db";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
+import { Tag } from "./ui/Tag";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -217,11 +219,9 @@ export function CareTasksSection({ pet, userId }: Props) {
                   {[formatTime(task.scheduled_time), "every day", task.dose].filter(Boolean).join(" · ")}
                 </Text>
                 {task.notes ? <Text style={styles.meta}>{task.notes}</Text> : null}
-                {!task.active ? <Text style={styles.badge}>Paused</Text> : null}
+                {!task.active ? <Tag label="Paused" /> : null}
                 {status ? (
-                  <Text style={styles.badge} testID={`care-status-${task.id}`}>
-                    {status}
-                  </Text>
+                  <Tag label={status} tone={statusTone(todayStatus(logByTask.get(task.id)))} testID={`care-status-${task.id}`} />
                 ) : null}
               </View>
               <Text style={styles.chevron} accessibilityElementsHidden>
@@ -489,7 +489,6 @@ const makeStyles = (theme: Theme) =>
     emoji: { fontSize: 24 },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    badge: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     actions: { flexDirection: "row", justifyContent: "flex-end" },
     pills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     pill: {

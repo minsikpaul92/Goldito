@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { EntryInfoCard } from "../../components/EntryInfoCard";
 import { OpenInMapsButton } from "../../components/OpenInMapsButton";
 import { TripMap } from "../../components/TripMap";
+import { Banner } from "../../components/ui/Banner";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -150,18 +151,17 @@ export function TripScreen({ role }: { role: Role }) {
   return (
     <Screen contentStyle={styles.content} testID="trip-screen">
       {mine && !arrived && shared ? (
-        <Card style={styles.banner} testID="trip-sharing-banner">
-          <Text style={styles.bannerText}>
-            {here
+        <Banner
+          testID="trip-sharing-banner"
+          body={
+            here
               ? `📡 Sharing your location with ${other} until you arrive`
-              : `This device isn't sharing right now — ${other} sees your last spot.`}
-          </Text>
-        </Card>
+              : `This device isn't sharing right now — ${other} sees your last spot.`
+          }
+        />
       ) : null}
       {mine && !shared ? (
-        <Card style={styles.banner} testID="trip-not-sharing-banner">
-          <Text style={styles.bannerText}>{`You're not sharing your location — ${other} sees the meeting place.`}</Text>
-        </Card>
+        <Banner testID="trip-not-sharing-banner" body={`You're not sharing your location — ${other} sees the meeting place.`} />
       ) : null}
 
       <View style={styles.head} testID="trip-status">
@@ -256,8 +256,6 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     card: { gap: theme.spacing.sm },
-    banner: { backgroundColor: theme.color.accent },
-    bannerText: { fontSize: theme.fontSize.small, color: theme.color.text },
     head: { gap: theme.spacing.xs },
     eta: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },

@@ -12,6 +12,7 @@ import { TripEntry } from "../../../../components/TripEntry";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { Chip } from "../../../../components/ui/Chip";
+import { Tag } from "../../../../components/ui/Tag";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
@@ -234,7 +235,7 @@ export default function SitterBookingDetail() {
           </Text>
           <View style={styles.chips}>
             {bookingBadges(booking, "sitter").map((b) => (
-              <Chip key={b.label} label={b.label} />
+              <Tag key={b.label} label={b.label} tone={b.tone} />
             ))}
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
           </View>

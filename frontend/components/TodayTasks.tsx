@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { careTypeMeta, statusLabel, todayStatus } from "../features/care/careFormat";
+import { careTypeMeta, statusLabel, statusTone, todayStatus } from "../features/care/careFormat";
 import { useDueReminder } from "../features/care/useDueReminder";
 import { TaskItem, TaskPet, useTodayTasks } from "../features/care/useTodayTasks";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
@@ -10,6 +10,7 @@ import { Theme } from "../theme/themes";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
+import { Tag } from "./ui/Tag";
 
 /**
  * Sitter's tasks for today (phase-06 6.3): what is left, one **Done** per task. Done opens a small
@@ -84,9 +85,7 @@ export function TodayTasks({ pets }: { pets: TaskPet[] }) {
                 </Text>
                 {item.task.notes ? <Text style={styles.muted}>{item.task.notes}</Text> : null}
                 {label ? (
-                  <Text style={styles.badge} testID={`task-status-${item.log.id}`}>
-                    {label}
-                  </Text>
+                  <Tag label={label} tone={statusTone(todayStatus(item.log))} testID={`task-status-${item.log.id}`} />
                 ) : null}
               </View>
             </View>
@@ -135,5 +134,4 @@ const makeStyles = (theme: Theme) =>
     emoji: { fontSize: 24 },
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    badge: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });

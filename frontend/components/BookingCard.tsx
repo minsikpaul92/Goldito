@@ -13,20 +13,20 @@ import {
   meetGreetBlocksAccept,
   requestExpired,
 } from "../lib/bookings";
+import { Tag, TagTone } from "./ui/Tag";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 export type Viewer = "owner" | "sitter";
 
-type Tone = "info" | "warning" | "success" | "muted";
-type Badge = { label: string; tone: Tone };
+type Badge = { label: string; tone: TagTone };
 
 /** Status badges per side (phase-03b screens table). Text always says it — never color alone. */
 export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
-  if (b.status === "declined") return [{ label: "Declined", tone: "muted" }];
-  if (requestExpired(b)) return [{ label: "Expired — the times have passed", tone: "muted" }];
+  if (b.status === "declined") return [{ label: "Declined", tone: "neutral" }];
+  if (requestExpired(b)) return [{ label: "Expired — the times have passed", tone: "neutral" }];
   if (b.status === "cancelled") {
-    return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "muted" }];
+    return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "neutral" }];
   }
   if (b.status === "confirmed") {
     // The booking row stays "confirmed" for life; what happened at the handoffs says where the stay is (FB-26).
@@ -37,37 +37,37 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
     if (open.some((p) => p.proposedBy !== me)) {
       badges.push({ label: `${viewer === "owner" ? b.sitterName : b.ownerName} suggested a change`, tone: "warning" });
     } else if (open.length > 0) {
-      badges.push({ label: "Change pending", tone: "muted" });
+      badges.push({ label: "Change pending", tone: "neutral" });
     }
     return badges;
   }
 
   // First-time pairs (D60): meet first → dates held while the Meet & Greet is arranged → the sitter confirms.
   const meetBadge = (): Badge | null => {
-    if (awaitingFirstYes(b)) return { label: "Meet first", tone: "info" };
-    if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet & Greet", tone: "info" };
+    if (awaitingFirstYes(b)) return { label: "Meet first", tone: "brand" };
+    if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet & Greet", tone: "brand" };
     if (datesOnHold(b)) {
       return viewer === "sitter"
         ? { label: "Met — ready to confirm", tone: "warning" }
-        : { label: `Waiting for ${b.sitterName} to confirm`, tone: "muted" };
+        : { label: `Waiting for ${b.sitterName} to confirm`, tone: "neutral" };
     }
     return null;
   };
   if (viewer === "owner") {
     const owner: Badge[] = [
-      b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "info" },
+      b.sitterSuggested ? { label: `Time suggested by ${b.sitterName}`, tone: "warning" } : { label: "Requested", tone: "brand" },
     ];
     const meet = meetBadge();
     if (meet) owner.push(meet);
     return owner;
   }
   const badges: Badge[] = [];
-  if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "muted" });
+  if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "neutral" });
   const custom = [b.dropOff, b.pickUp].some((h) => h && h.pending && !h.withinSitterHours);
   if (custom && !b.sitterSuggested) badges.push({ label: "Custom time — needs your OK", tone: "warning" });
   const meet = meetBadge();
   if (meet) badges.push(meet);
-  if (badges.length === 0) badges.push({ label: "New request", tone: "info" });
+  if (badges.length === 0) badges.push({ label: "New request", tone: "brand" });
   return badges;
 }
 
@@ -139,9 +139,7 @@ export function BookingCard({ booking, viewer, onPress }: Props) {
         <Text style={styles.who}>{who}</Text>
         <View style={styles.badges}>
           {badges.map((badge) => (
-            <View key={badge.label} style={[styles.badge, styles[`badge_${badge.tone}`]]}>
-              <Text style={[styles.badgeText, styles[`badgeText_${badge.tone}`]]}>{badge.label}</Text>
-            </View>
+            <Tag key={badge.label} label={badge.label} tone={badge.tone} />
           ))}
         </View>
         {pets ? <Text style={styles.pets}>{`${pets}  ·  ${SERVICE_LABEL[booking.serviceType]}`}</Text> : null}
@@ -193,44 +191,6 @@ const makeStyles = (theme: Theme) =>
     },
     line: {
       fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-    },
-    badge: {
-      paddingVertical: 2,
-      paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.sm,
-      borderWidth: 1,
-    },
-    badge_info: {
-      borderColor: theme.color.primary,
-      backgroundColor: theme.color.accent,
-    },
-    badge_warning: {
-      borderColor: theme.color.warning,
-      backgroundColor: theme.color.surface,
-    },
-    badge_success: {
-      borderColor: theme.color.success,
-      backgroundColor: theme.color.surface,
-    },
-    badge_muted: {
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.background,
-    },
-    badgeText: {
-      fontSize: theme.fontSize.small,
-      fontWeight: theme.fontWeight.semibold,
-    },
-    badgeText_info: {
-      color: theme.color.primary,
-    },
-    badgeText_warning: {
-      color: theme.color.warning,
-    },
-    badgeText_success: {
-      color: theme.color.success,
-    },
-    badgeText_muted: {
       color: theme.color.textMuted,
     },
   });

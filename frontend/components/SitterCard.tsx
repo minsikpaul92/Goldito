@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Avatar } from "./ui/Avatar";
 import { Chip } from "./ui/Chip";
 import { SERVICE_LABEL, SitterSummary, ownersSetting, sitterMeta } from "../features/sitters/sitterApi";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -27,9 +28,7 @@ export function SitterCard({ sitter, note, onPress }: Props) {
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       testID={`sitter-card-${sitter.displayName}`}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.initial}>{sitter.displayName.slice(0, 1).toUpperCase()}</Text>
-      </View>
+      <Avatar kind="initial" name={sitter.displayName} size={56} />
       <View style={styles.body}>
         <Text style={styles.name}>{sitter.displayName}</Text>
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
@@ -60,19 +59,6 @@ const makeStyles = (theme: Theme) =>
     },
     pressed: {
       opacity: 0.8,
-    },
-    avatar: {
-      width: theme.spacing.xl + theme.spacing.lg,
-      height: theme.spacing.xl + theme.spacing.lg,
-      borderRadius: (theme.spacing.xl + theme.spacing.lg) / 2,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.color.accent,
-    },
-    initial: {
-      fontSize: theme.fontSize.title,
-      fontWeight: theme.fontWeight.bold,
-      color: theme.color.primary,
     },
     body: {
       flex: 1,
