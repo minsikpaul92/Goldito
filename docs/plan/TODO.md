@@ -23,7 +23,7 @@
 | Who | ID | Task | Doc |
 | --- | --- | --- | --- |
 | **Seulgi** | **Q.0 → Q.1** | Open **https://goldito-petcare.vercel.app** (normal + private window), Try demo owner + sitter, one demo reset (Profile → Demo tools), then the full manual run with sitter-eye feedback as GitHub issues (QA feedback form) | [phases/phase-q-quality.md](phases/phase-q-quality.md) §0 · §1 |
-| **Minsik** | **11.8 Save image** | ⬇ Save image of the decorated diary page — built on `feat/phase-11-save-image` (one PR for the rest of the P1 window); left: CI green, then one hand check (test-guide SNAP-24: a real photo, the handwriting font, Safari). Next in this PR: 11.9 mood chip on feed videos → 11.13 tone loop (needs Seulgi's Q.4 data). Then 11.15 from 10/24 → the rest of Phase 10. | [phases/phase-11-p1.md](phases/phase-11-p1.md) |
+| **Minsik** | **DB.1 – DB.6 Diary book** | Before 11.9 (decided 2026-10-16), on `feat/diary-book`: the sitter's page shows at once and can be written by hand or generated, then checked and sent (DB.1 – DB.2) · every sent page collects in a diary book — all, or one pet; chronological, opens at the newest; page-turn by swipe or ‹ › (DB.3) · sent pages in Feed with the day's first photo (DB.4) · Share: share the image, download, or copy a public image link (DB.5) · e2e + docs (DB.6). Then 11.9 mood chip → 11.13 tone loop (needs Seulgi's Q.4 data) → 11.15 from 10/24 → the rest of Phase 10. 11.8 Save image is merged (#124); its hand check is SNAP-24. | [phases/phase-11-p1.md](phases/phase-11-p1.md) |
 
 ---
 
@@ -124,5 +124,6 @@ Each item is a GitHub issue assigned to Muk — status and detail live there ([l
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
 - [ ] Apply new migrations as they are created and add a line here when a commit creates one (`013` · `013b` are applied, smoke all PASS 2026-10-14).
+- [ ] **`014b_diary_book.sql`** (Diary book: `save_report_draft` + media purpose `diary_page`) — not applied; apply at the merge of its PR (`feat/diary-book`), then `rls_smoke.sql`. Until then the hand-written page and Share → public link fail on the hosted DB.
 - [ ] Two-account run of test-guide **INQ-1 … INQ-19** and **REPORT-10** (human, Seulgi Q.1 / Q.8).
 - Housekeeping: two git stashes exist (`wip privacy oauth docs` on `feat/onboarding-welcome`, `try-taste-skill: sitter home tweaks + PR59 cherry-pick`) — decide to apply or drop; leave them while undecided. The second sitter style ("Paul", plain, no emoji) is in `scripts/seed_tone.py` but has no account yet — the Phase 10 seed adds it. Advisors report "RLS enabled, no policy" on `knowledge_chunks` / `tone_samples` only: intended (service-role only).

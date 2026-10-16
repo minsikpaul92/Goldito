@@ -189,6 +189,47 @@ def test_owner_and_sitter_on_duty_sign_a_sticker(client: TestClient, monkeypatch
     assert off.status_code == 403
 
 
+def test_diary_page_owner_and_the_sitter_who_wrote_about_the_pet(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Diary book → Share → public link: the owner of the pet, or a sitter who sent a page about it (even after the stay).
+    from fastapi import HTTPException, status
+
+    def owner_of(user, pet_id):
+        if str(pet_id) != PET_ID:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="That is not your pet.")
+
+    wrote = {"yes": True}
+
+    def wrote_report(user, pet_id):
+        if not wrote["yes"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You have no diary pages for this pet.")
+
+    def never_on_duty(user, pet_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not on duty for this pet.")
+
+    monkeypatch.setattr(authz, "assert_owner_of", owner_of)
+    monkeypatch.setattr(authz, "assert_wrote_report_for", wrote_report)
+    monkeypatch.setattr(authz, "assert_on_duty_for", never_on_duty)
+    monkeypatch.setattr(
+        cloudinary_service,
+        "sign",
+        lambda **kw: SimpleNamespace(
+            cloud_name="c", api_key="k", timestamp=1, signature="s",
+            folder=f"goldito/{kw['pet_id']}/{kw['purpose']}", upload_url="u", transformation="t",
+        ),
+    )
+    body = {"pet_id": PET_ID, "resource_type": "image", "purpose": "diary_page"}
+    owner = client.post("/api/media/sign", headers={"Authorization": f"Bearer {owner_token()}"}, json=body)
+    assert owner.status_code == 200 and owner.json()["folder"] == f"goldito/{PET_ID}/diary_page"
+    other = client.post("/api/media/sign", headers={"Authorization": f"Bearer {owner_token()}"}, json={**body, "pet_id": str(uuid4())})
+    assert other.status_code == 403
+    # Not on duty any more, but wrote about the pet: allowed.
+    sitter = client.post("/api/media/sign", headers={"Authorization": f"Bearer {sitter_token()}"}, json=body)
+    assert sitter.status_code == 200
+    wrote["yes"] = False
+    stranger = client.post("/api/media/sign", headers={"Authorization": f"Bearer {sitter_token()}"}, json=body)
+    assert stranger.status_code == 403
+
+
 def test_sign_forbidden_when_not_on_duty(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     def deny(_user, _pet_id):
         from fastapi import HTTPException, status

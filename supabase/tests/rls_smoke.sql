@@ -4678,4 +4678,74 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014b (Diary book): a diary page written by hand, and the 'diary_page' media purpose
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  biscuit uuid;
+  v_id uuid;
+  v_again uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Biscuit') returning id into biscuit;
+  perform _t_booking(robert, chloe, array[biscuit], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+
+  -- The sitter on duty writes today's page by hand; saving again keeps the one draft
+  perform _t_as(chloe);
+  v_id := public.save_report_draft(biscuit, '  We played fetch.  ');
+  perform _t_ok((select body from public.daily_reports where id = v_id) = 'We played fetch.', '014b: the sitter saves a hand-written draft');
+  v_again := public.save_report_draft(biscuit, 'We played fetch, then napped.');
+  perform _t_ok(v_again = v_id and (select count(*) from public.daily_reports where pet_id = biscuit and status = 'draft') = 1,
+    '014b: saving again updates the same draft');
+
+  -- The owner does not see a draft; sending it is still send_daily_report
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = biscuit) = 0, '014b: the owner does not see the draft');
+  perform _t_as(chloe);
+  perform public.send_daily_report(v_id, 'We played fetch, then napped.');
+  perform _t_as(robert);
+  perform _t_ok((select status from public.daily_reports where id = v_id) = 'sent', '014b: the hand-written page is sent with send_daily_report');
+
+  -- After a send the next save starts a new draft
+  perform _t_as(chloe);
+  v_again := public.save_report_draft(biscuit, 'Evening walk.');
+  perform _t_ok(v_again <> v_id, '014b: after a send, the next page is a new draft');
+
+  -- Only the sitter on duty; no empty page
+  perform _t_as(paul);
+  begin
+    perform public.save_report_draft(biscuit, 'Not my pet.');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '014b: a sitter not on duty cannot write the page');
+  perform _t_as(robert);
+  begin
+    perform public.save_report_draft(biscuit, 'Owner text.');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'not_on_duty', '014b: the owner cannot write the sitter''s page');
+  perform _t_as(chloe);
+  begin
+    perform public.save_report_draft(biscuit, '   ');
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'body_required', '014b: an empty page is refused');
+
+  -- The shared image of a page is a media purpose of its own
+  perform _t_as(null);
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+  values (biscuit, robert, 'goldito/biscuit/diary_page/a', 'image', 'diary_page') returning id into v_id;
+  perform _t_ok(v_id is not null, '014b: media takes the diary_page purpose');
+end;
+$$;
+
 rollback;
