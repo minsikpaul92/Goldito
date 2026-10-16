@@ -249,7 +249,7 @@ Snap 탭
 - **층 순서(아래→위):** 종이 → 그림 칸 · 줄 → **글 아래 스티커**(`layer: "back"`) → 글 → **글 위 스티커**(기본). 꾸미는 동안에는 내 "글 아래" 스티커가 위 편집 층에 반투명으로 떠서 잡고 끌 수 있고, 저장하면 글 아래로 돌아간다(react-native-web에서 글이 클릭을 통과시키는 데 기대지 않음 — CI에서 확인). 도구 **⬇ Behind text / ⬆ Over text**. 항목에 `layer`가 없으면 "front"(12.3b에 저장한 것 그대로).
 - **기본 스티커** `features/snap/presetStickers.ts` + `frontend/assets/stickers/*.png` 9장(heart · star · sun · cloud · paw · bone · ball · zzz · best_day): 앱에 들어 있어 업로드 없음, 꾸미기 항목에는 `preset:<id>`. 지금 파일은 코드로 그린 임시본 → 묵이 같은 이름으로 바꾸면 끝.
 - **다운로드** `features/snap/download.ts`: Sticker 미리보기 **⬇ Download sticker**(브라우저에서 만든 PNG 그대로), 스티커함 타일 ⬇(Cloudinary `fl_attachment` 원본 PNG). 파일 이름 `goldito-{펫}-sticker.png`.
-- **남은 것(11.8 쪽):** 꾸민 그림일기 한 장을 이미지로 저장(**Save image**) — P1 창에서 시간이 남으면.
+- **이어서 11.8:** 꾸민 그림일기 한 장을 이미지로 저장(**⬇ Save image**, `features/snap/diaryImage.ts`) — [phase-11-p1.md](phase-11-p1.md) 11.8 · test-guide SNAP-24.
 
 ### 12.5 — 마무리 (10/15–16)
 

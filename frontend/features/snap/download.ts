@@ -1,4 +1,4 @@
-/** Saving a sticker to the viewer's computer or phone (Phase 12.4). Web only — the Snap tools are. */
+/** Saving a sticker (Phase 12.4) or a decorated diary page (11.8) to the viewer's computer or phone. Web only — the Snap tools are. */
 
 /** A file made in the browser (the sticker preview before it is saved). */
 export function downloadBlob(blob: Blob, filename: string): void {
@@ -23,8 +23,14 @@ function clickLink(href: string, filename: string): void {
   link.remove();
 }
 
+const slug = (petName: string) => petName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "pet";
+
 /** "goldito-max-sticker.png" */
 export function stickerFilename(petName: string): string {
-  const slug = petName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "pet";
-  return `goldito-${slug}-sticker.png`;
+  return `goldito-${slug(petName)}-sticker.png`;
+}
+
+/** "goldito-max-diary-2026-10-05.png" (Phase 11.8 Save image) */
+export function diaryFilename(petName: string, day: string): string {
+  return `goldito-${slug(petName)}-diary-${day}.png`;
 }

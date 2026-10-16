@@ -1,3 +1,5 @@
+import { promises as fs } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 import type { Locator, Page } from "@playwright/test";
 
@@ -169,6 +171,50 @@ test.describe("diary decorating", () => {
     await expect(back).toHaveCount(1);
     await expect(back).toHaveAttribute("data-layer", "back");
     await expect(front).toHaveCount(0);
+  });
+
+  test("Save image: the decorated page downloads as a PNG with the sticker painted where it sits (11.8)", async ({ page }) => {
+    await openOwnerEntry(page, (d) => {
+      d.report_decor.push({
+        report_id: "sent1",
+        user_id: OWNER.id,
+        items: [{ sticker_id: "preset:heart", public_id: "preset:heart", x: 0.5, y: 0.5, scale: 1.5, rotate: 0, z: 1 }],
+        updated_at: "2026-10-05T23:00:00Z",
+      });
+    });
+    const screen = app(page);
+    const paper = screen.getByTestId("diary-entry-paper");
+    await expect(screen.getByTestId("decor-mine")).toHaveCount(1);
+    // Layout size (the phone frame may be scaled on screen; the image is drawn at the page's own size).
+    const p = await paper.evaluate((el) => ({ width: (el as HTMLElement).offsetWidth, height: (el as HTMLElement).offsetHeight }));
+
+    const download = page.waitForEvent("download");
+    await screen.getByTestId("decor-save-image").click();
+    const file = await download;
+    expect(file.suggestedFilename()).toBe("goldito-max-diary-2026-10-05.png");
+    await expect(screen.getByTestId("toast")).toContainText("Saved Max's diary page");
+
+    const bytes = await fs.readFile(await file.path());
+    expect(bytes.subarray(1, 4).toString("ascii")).toBe("PNG");
+    // Twice the paper's size on screen (IHDR width / height).
+    expect(bytes.readUInt32BE(16)).toBe(p.width * 2);
+    expect(bytes.readUInt32BE(20)).toBe(p.height * 2);
+
+    // The heart is painted at the middle of the page; a corner of the paper is plain paper.
+    const [centre, corner] = await page.evaluate(async (b64) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement("canvas");
+      c.width = img.naturalWidth;
+      c.height = img.naturalHeight;
+      const ctx = c.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const at = (x: number, y: number) => Array.from(ctx.getImageData(x, y, 1, 1).data);
+      return [at(c.width / 2, c.height / 2), at(12, c.height - 12)];
+    }, bytes.toString("base64"));
+    expect(corner[3]).toBe(255); // the paper is opaque
+    expect(centre).not.toEqual(corner);
   });
 
   test("no stickers yet: the tools point to Snap → Sticker", async ({ page }) => {
