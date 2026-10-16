@@ -58,7 +58,7 @@ export default function OwnerHome() {
         ))}
       </Screen>
       <View style={styles.footer}>
-        <Button label="Add pet" onPress={addPet} />
+        <Button label="Add pet" onPress={addPet} testID="add-pet" />
       </View>
     </View>
   );

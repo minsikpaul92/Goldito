@@ -106,7 +106,7 @@ export default function LoginScreen() {
               {error}
             </Text>
           ) : null}
-          <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} />
+          <Button label={submitting ? "Signing in…" : "Sign in"} onPress={signIn} disabled={!canSubmit} testID="sign-in" />
         </View>
 
         <TextButton label="New here? Create an account" onPress={() => router.push("/signup")} testID="go-signup" />

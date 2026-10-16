@@ -209,6 +209,7 @@ function ViewerPage({ post, bottomInset }: { post: FeedTimelinePost; bottomInset
         disabled={!isVideo}
         onPress={() => isVideo && setPaused((p) => !p)}
         style={styles.mediaFrame}
+        testID="feed-viewer-media"
       >
         {isVideo && Platform.OS === "web"
           ? createElement("video", {
