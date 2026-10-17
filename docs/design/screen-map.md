@@ -517,8 +517,8 @@ Shows: `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 184 |
-| Button | Open or block | `schedule-edit` | 251 |
+| EmptyState | Couldn't load your schedule | — | 186 |
+| Button | Open or block | `schedule-edit` | 254 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -1005,9 +1005,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous month | `calendar-prev` | 65 |
-| Pressable | Next month | `calendar-next` | 78 |
-| Pressable | `label` | ``day-${day}`` | 106 |
+| Pressable | Previous month | `calendar-prev` | 164 |
+| Pressable | Next month | `calendar-next` | 177 |
+| Pressable | `label` | ``day-${day}`` | 206 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 
