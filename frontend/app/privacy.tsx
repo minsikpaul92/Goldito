@@ -1,10 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../components/ui/Screen";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Section = { title: string; body: string[] };
+
+const slug = (title: string) => title.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
 
 // What Goldito stores and who else receives it — kept next to the code that does it (backend/app/routers/geo.py,
 // meet_greet.py, ai/*). Update this page in the same change when a new service or kind of data is added.
@@ -73,9 +77,17 @@ const SECTIONS: Section[] = [
   },
 ];
 
-/** Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. */
+/**
+ * Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here.
+ * Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests.
+ * `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+ */
 export default function Privacy() {
   const styles = useThemedStyles(makeStyles);
+  const { open: openParam } = useLocalSearchParams<{ open?: string }>();
+  const [open, setOpen] = useState<string | undefined>(
+    SECTIONS.some((section) => slug(section.title) === openParam) ? openParam : slug(SECTIONS[0].title),
+  );
 
   return (
     <Screen contentStyle={styles.content} testID="privacy">
@@ -83,18 +95,33 @@ export default function Privacy() {
         Privacy
       </Text>
       <Text style={styles.updated}>Last updated {UPDATED}</Text>
-      {SECTIONS.map((section) => (
-        <View key={section.title} style={styles.section} testID={`privacy-${section.title.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
-          <Text accessibilityRole="header" style={styles.heading}>
-            {section.title}
-          </Text>
-          {section.body.map((paragraph) => (
-            <Text key={paragraph} style={styles.paragraph}>
-              {paragraph}
-            </Text>
-          ))}
-        </View>
-      ))}
+      {SECTIONS.map((section) => {
+        const id = slug(section.title);
+        const expanded = open === id;
+        return (
+          <View key={id} style={styles.section} testID={`privacy-${id}`}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded }}
+              onPress={() => setOpen(expanded ? undefined : id)}
+              style={styles.headingRow}
+              testID={`privacy-${id}-toggle`}
+            >
+              <Text accessibilityRole="header" style={styles.heading}>
+                {section.title}
+              </Text>
+              <Text style={styles.chevron}>{expanded ? "▾" : "▸"}</Text>
+            </Pressable>
+            <View style={expanded ? styles.body : styles.bodyClosed}>
+              {section.body.map((paragraph) => (
+                <Text key={paragraph} style={styles.paragraph}>
+                  {paragraph}
+                </Text>
+              ))}
+            </View>
+          </View>
+        );
+      })}
     </Screen>
   );
 }
@@ -104,7 +131,11 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
     title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     updated: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    section: { gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    section: { borderBottomWidth: 1, borderBottomColor: theme.color.border, paddingBottom: theme.spacing.sm },
+    headingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 },
+    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, flexShrink: 1 },
+    chevron: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
+    body: { gap: theme.spacing.sm, paddingBottom: theme.spacing.sm },
+    bodyClosed: { display: "none" },
     paragraph: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
   });

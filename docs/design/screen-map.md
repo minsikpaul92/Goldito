@@ -298,7 +298,11 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``privacy-${id}-toggle`` | 103 |
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
@@ -1172,4 +1176,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-337 actions · 337 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+338 actions · 338 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
