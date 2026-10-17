@@ -155,6 +155,7 @@ export type MockDb = {
   sitter_profiles: Row[];
   sitter_availability: Row[];
   sitter_closing_rules: Row[];
+  sitter_weekday_hours: Row[];
   bookings: Row[];
   /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
   booking_slots: Row[];
@@ -246,6 +247,7 @@ function createMockDb(): MockDb {
     sitter_profiles: [],
     sitter_availability: [],
     sitter_closing_rules: [],
+    sitter_weekday_hours: [],
     bookings: [],
     booking_slots: [],
     cancellations: [],
@@ -346,13 +348,14 @@ function usedSpots(db: MockDb, sitterId: string, day: string, slot: string): str
 }
 
 /**
- * get_sitter_schedule (003 · 014d): open by default with the profile's hours and spots; an open row overrides them,
+ * get_sitter_schedule (003 · 014d · 014e): open by default with the weekday's or the profile's hours and spots; an open row overrides them,
  * any blocked row closes the slot, a weekly closing rule closes it too — unless a stay is already booked there, which
  * then reads full (capacity = what is booked).
  */
 function sitterSchedule(db: MockDb, sitterId: string, from: string, to: string): Row[] {
   const rows = db.sitter_availability.filter((r) => r.sitter_id === sitterId);
   const rules = db.sitter_closing_rules.filter((r) => r.sitter_id === sitterId);
+  const weekdayHours = db.sitter_weekday_hours.filter((r) => r.sitter_id === sitterId);
   const profile = db.sitter_profiles.find((p) => p.id === sitterId);
   const defaultHours = (profile?.default_hours ?? {}) as Record<string, string[]>;
   const defaultSpots = Number(profile?.default_max_pets ?? 2);
@@ -372,7 +375,12 @@ function sitterSchedule(db: MockDb, sitterId: string, from: string, to: string):
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
       const used = usedSpots(db, sitterId, day, slot).length;
       const byRule = rules.some((r) => r.slot === slot && Number(r.weekday) === weekday);
-      const hours = open ? [String(open.starts_at), String(open.ends_at)] : (defaultHours[slot] ?? fallback[slot]);
+      const own = weekdayHours.find((r) => r.slot === slot && Number(r.weekday) === weekday);
+      const hours = open
+        ? [String(open.starts_at), String(open.ends_at)]
+        : own
+          ? [String(own.starts_at), String(own.ends_at)]
+          : (defaultHours[slot] ?? fallback[slot]);
       const capacity = byRule ? used : open ? Number(open.max_pets) : defaultSpots;
       const remaining = Math.max(capacity - used, 0);
       const shut = blocked || (byRule && used === 0);
@@ -703,6 +711,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const kept = db.sitter_closing_rules.filter((r) => r.sitter_id !== me);
     const added = (p_rules as Row[]).map((r) => ({ sitter_id: me, weekday: r.weekday, slot: r.slot }));
     db.sitter_closing_rules.splice(0, db.sitter_closing_rules.length, ...kept, ...added);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/save_weekday_hours") {
+    const { p_hours } = request.postDataJSON();
+    if (!Array.isArray(p_hours)) return fail("invalid_hours");
+    const kept = db.sitter_weekday_hours.filter((r) => r.sitter_id !== me);
+    const added = (p_hours as Row[]).map((r) => ({ sitter_id: me, weekday: r.weekday, slot: r.slot, starts_at: r.starts_at, ends_at: r.ends_at }));
+    db.sitter_weekday_hours.splice(0, db.sitter_weekday_hours.length, ...kept, ...added);
     return route.fulfill({ status: 204 });
   }
 

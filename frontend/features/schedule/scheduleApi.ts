@@ -56,6 +56,9 @@ export type SitterDefaults = {
 /** A weekly closing rule: every `weekday` (0 = Sunday) × `slot` is closed (014d). */
 export type ClosingRule = { weekday: number; slot: CareSlot };
 
+/** Hours a weekday keeps for one slot instead of the every-day hours (014e). */
+export type WeekdayHour = { weekday: number; slot: CareSlot; startsAt: string; endsAt: string };
+
 export type MonthSchedule = {
   /** `${day}:${slot}` → state */
   slots: Map<string, DaySlot>;
@@ -130,6 +133,29 @@ export async function saveClosingRules(rules: ClosingRule[]): Promise<void> {
 export async function saveDefaultHours(sitterId: string, hours: Record<CareSlot, [string, string]>): Promise<void> {
   const { error } = await getSupabase().from("sitter_profiles").update({ default_hours: hours }).eq("id", sitterId);
   if (error) fail("save your hours");
+}
+
+/** The sitter's per-weekday hours (RLS: own rows only). */
+export async function loadWeekdayHours(sitterId: string): Promise<WeekdayHour[]> {
+  const { data, error } = await getSupabase()
+    .from("sitter_weekday_hours")
+    .select("weekday, slot, starts_at, ends_at")
+    .eq("sitter_id", sitterId);
+  if (error) fail("load your weekday hours");
+  return ((data ?? []) as { weekday: number; slot: CareSlot; starts_at: string; ends_at: string }[]).map((r) => ({
+    weekday: r.weekday,
+    slot: r.slot,
+    startsAt: shortTime(r.starts_at),
+    endsAt: shortTime(r.ends_at),
+  }));
+}
+
+/** Replace the whole set; an empty list puts the every-day hours back on every weekday. */
+export async function saveWeekdayHours(hours: WeekdayHour[]): Promise<void> {
+  const { error } = await getSupabase().rpc("save_weekday_hours", {
+    p_hours: hours.map((h) => ({ weekday: h.weekday, slot: h.slot, starts_at: h.startsAt, ends_at: h.endsAt })),
+  });
+  if (error) fail("save your weekday hours");
 }
 
 function newestOpenRow(rows: AvailabilityRow[], day: string, slot: CareSlot): AvailabilityRow | undefined {

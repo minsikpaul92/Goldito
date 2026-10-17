@@ -210,6 +210,68 @@ test.describe("sitter schedule", () => {
     await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked/);
   });
 
+  test("a weekday can have its own hours, and Same as every day takes them back", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ ...SITTER_DEFAULTS });
+    await signIn(page, SITTER);
+    await page.goto("/sitter/schedule");
+    const screen = app(page);
+    await screen.getByTestId("calendar-next").click();
+
+    // A Monday in the middle of next month, and the Tuesday before it (so the second click starts a new selection).
+    const monday = [10, 11, 12, 13, 14, 15, 16].map(nextMonthDay).find((d) => new Date(`${d}T00:00:00Z`).getUTCDay() === 1)!;
+    const tuesday = nextMonthDay(Number(monday.slice(8)) - 6);
+
+    await screen.getByTestId("schedule-rules").click();
+    // Every day: morning 9:00 AM – 1:00 PM. Give Mondays a morning that starts half an hour later.
+    await screen.getByTestId("rules-hours-day-1").click();
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:00 AM");
+    await screen.getByTestId("rules-morning-start-plus").click();
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:30 AM");
+    await expect(screen.getByTestId("rules-hours-day-1")).toContainText("Mon •");
+    await screen.getByTestId("rules-hours-day-2").click(); // another weekday still shows the every-day hours
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:00 AM");
+    await screen.getByTestId("rules-hours-day-all").click();
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:00 AM");
+    await screen.getByTestId("rules-apply").click();
+    await expect(screen.getByTestId("toast")).toContainText("Rules applied");
+
+    expect(db.sitter_weekday_hours).toEqual([
+      expect.objectContaining({ sitter_id: SITTER.id, weekday: 1, slot: "morning", starts_at: "09:30", ends_at: "13:00" }),
+    ]);
+    expect(db.sitter_profiles[0].default_hours).toMatchObject({ morning: ["09:00", "13:00"] });
+
+    await screen.getByTestId(`day-${monday}`).click();
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/2 booked");
+    await screen.getByTestId(`day-${tuesday}`).click();
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:00 AM–1:00 PM · 0/2 booked");
+
+    // The sheet starts from what is saved; Same as every day removes the weekday's own hours.
+    await screen.getByTestId("schedule-rules").click();
+    await expect(screen.getByTestId("rules-hours-day-1")).toContainText("Mon •");
+    await screen.getByTestId("rules-hours-day-1").click();
+    await screen.getByTestId("rules-hours-reset").click();
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:00 AM");
+    await expect(screen.getByTestId("rules-hours-day-1")).not.toContainText("•");
+    await screen.getByTestId("rules-apply").click();
+    await expect(screen.getByTestId("rules-sheet")).toBeHidden();
+    expect(db.sitter_weekday_hours).toEqual([]);
+  });
+
+  test("a weekday's hours that end before they start cannot be applied", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ ...SITTER_DEFAULTS });
+    await signIn(page, SITTER);
+    await page.goto("/sitter/schedule");
+    const screen = app(page);
+    await screen.getByTestId("schedule-rules").click();
+    await screen.getByTestId("rules-hours-day-3").click();
+    for (let i = 0; i < 8; i++) await screen.getByTestId("rules-morning-end-minus").click();
+    await expect(screen.getByTestId("rules-problem")).toHaveText("Morning on Wednesdays needs different start and end times.");
+    await expect(screen.getByTestId("rules-apply")).toBeDisabled();
+    expect(db.sitter_weekday_hours).toEqual([]);
+  });
+
   test("slot hours that end before they start cannot be applied in the gear", async ({ page }) => {
     const { db } = await mockSupabase(page, [SITTER]);
     db.sitter_profiles.push({ ...SITTER_DEFAULTS });

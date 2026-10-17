@@ -4987,4 +4987,79 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Hours by weekday (014e)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 900;
+  v_dow int := extract(dow from d)::int;
+  v_err text;
+  v_start time;
+  v_end time;
+begin
+  perform _t_as(chloe);
+  perform save_weekday_hours(jsonb_build_array(
+    jsonb_build_object('weekday', v_dow, 'slot', 'morning', 'starts_at', '10:00', 'ends_at', '13:00')));
+
+  -- That weekday's morning has its own hours; the other days keep the default
+  perform _t_as(robert);
+  select starts_at, ends_at into v_start, v_end from get_sitter_schedule(chloe, d, d) where slot = 'morning';
+  perform _t_ok(v_start = '10:00' and v_end = '13:00', '014e: a weekday''s own hours show on that weekday');
+  select starts_at into v_start from get_sitter_schedule(chloe, d + 7, d + 7) where slot = 'morning';
+  perform _t_ok(v_start = '10:00', '014e: …every week');
+  select starts_at into v_start from get_sitter_schedule(chloe, d + 1, d + 1) where slot = 'morning';
+  perform _t_ok(v_start = '08:00', '014e: …and the other weekdays keep the default hours');
+  select starts_at into v_start from get_sitter_schedule(chloe, d, d) where slot = 'afternoon';
+  perform _t_ok(v_start = '12:00', '014e: …and the other slots of that weekday too');
+
+  perform _t_as(null);
+  perform _t_ok(not within_sitter_hours(chloe, local_ts(d, '08:30')), '014e: 08:30 is outside a morning that starts at 10:00');
+  perform _t_ok(within_sitter_hours(chloe, local_ts(d + 1, '08:30')), '014e: …but inside the default morning on another weekday');
+
+  -- A date opened by hand still wins over the weekday hours
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d, d, 'morning', '11:00', '12:00', 2);
+  perform _t_as(robert);
+  select starts_at into v_start from get_sitter_schedule(chloe, d, d) where slot = 'morning';
+  perform _t_ok(v_start = '11:00', '014e: an open row for the date beats the weekday hours');
+
+  -- Rules belong to the sitter and are checked
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 0,
+    '014e: an owner cannot read a sitter''s weekday hours');
+  begin perform save_weekday_hours('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014e: an owner cannot save weekday hours');
+  perform _t_as(null, 'anon');
+  begin perform save_weekday_hours('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014e: anon cannot save weekday hours');
+  perform _t_as(chloe);
+  begin perform save_weekday_hours('{"weekday": 1}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: weekday hours must be a list');
+  begin
+    perform save_weekday_hours('[{"weekday": 1, "slot": "morning", "starts_at": "13:00", "ends_at": "09:00"}]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: a morning that ends before it starts is refused');
+  begin
+    perform save_weekday_hours('[{"weekday": 9, "slot": "morning", "starts_at": "09:00", "ends_at": "12:00"}]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: a weekday is 0 – 6');
+  perform save_weekday_hours('[{"weekday": 5, "slot": "overnight", "starts_at": "20:00", "ends_at": "07:00"}]'::jsonb);
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 1,
+    '014e: an overnight may end the next morning, and a refused save changed nothing');
+  perform save_weekday_hours('[]'::jsonb);
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 0,
+    '014e: saving an empty list puts the default hours back');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

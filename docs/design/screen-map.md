@@ -517,9 +517,9 @@ Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalenda
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 238 |
-| Pressable | Closing rules | `schedule-rules` | 261 |
-| Button | Open or block | `schedule-edit` | 324 |
+| EmptyState | Couldn't load your schedule | — | 245 |
+| Pressable | Closing rules | `schedule-rules` | 268 |
+| Button | Open or block | `schedule-edit` | 331 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -659,12 +659,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 76 |
-| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 82 |
-| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 110 |
-| TextButton | Open everything | `rules-clear` | 126 |
-| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 140 |
-| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 150 |
+| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 117 |
+| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 123 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 151 |
+| TextButton | Open everything | `rules-clear` | 167 |
+| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 179 |
+| TextButton | Same as every day | `rules-hours-reset` | 201 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 217 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 227 |
 
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
@@ -1188,4 +1190,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-344 actions · 344 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+346 actions · 346 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

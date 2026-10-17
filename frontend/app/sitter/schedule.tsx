@@ -27,13 +27,16 @@ import {
   OverlappingBooking,
   SLOTS,
   SitterDefaults,
+  WeekdayHour,
   loadClosingRules,
   loadMonthSchedule,
   loadOverlappingBookings,
   loadSitterDefaults,
+  loadWeekdayHours,
   saveBlock,
   saveClosingRules,
   saveDefaultHours,
+  saveWeekdayHours,
   saveOpen,
   slotKey,
 } from "../../features/schedule/scheduleApi";
@@ -73,6 +76,7 @@ export default function SitterSchedule() {
   const pendingDraft = useRef<ScheduleDraft | null>(null);
 
   const [rules, setRules] = useState<ClosingRule[] | null>(null);
+  const [weekdayHours, setWeekdayHours] = useState<WeekdayHour[] | null>(null);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [rulesKey, setRulesKey] = useState(0);
   const [rulesSaving, setRulesSaving] = useState(false);
@@ -101,7 +105,9 @@ export default function SitterSchedule() {
   const loadRules = useCallback(async () => {
     if (!sitterId) return;
     try {
-      setRules(await loadClosingRules(sitterId));
+      const [loadedRules, loadedHours] = await Promise.all([loadClosingRules(sitterId), loadWeekdayHours(sitterId)]);
+      setRules(loadedRules);
+      setWeekdayHours(loadedHours);
     } catch (error) {
       setLoadError((error as Error).message);
     }
@@ -137,7 +143,7 @@ export default function SitterSchedule() {
     setRulesOpen(true);
   };
 
-  const applyRules = async (next: ClosingRule[], hours: SlotHours) => {
+  const applyRules = async (next: ClosingRule[], hours: SlotHours, own: WeekdayHour[]) => {
     if (!sitterId || !defaults) return;
     setRulesSaving(true);
     setRulesError(null);
@@ -146,6 +152,7 @@ export default function SitterSchedule() {
       if (SLOTS.some(({ slot }) => hours[slot][0] !== defaults.hours[slot][0] || hours[slot][1] !== defaults.hours[slot][1])) {
         await saveDefaultHours(sitterId, hours);
       }
+      await saveWeekdayHours(own);
       setRulesOpen(false);
       toast.show("Rules applied ✅");
       await Promise.all([loadRules(), loadDefaults(), load()]);
@@ -261,7 +268,7 @@ export default function SitterSchedule() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Closing rules"
-              disabled={!rules || !defaults}
+              disabled={!rules || !weekdayHours || !defaults}
               hitSlop={theme.spacing.sm}
               onPress={openRules}
               style={styles.gear}
@@ -329,15 +336,16 @@ export default function SitterSchedule() {
         />
       </View>
 
-      {rules && defaults ? (
+      {rules && weekdayHours && defaults ? (
         <ClosingRulesSheet
           key={rulesKey}
           visible={rulesOpen}
           rules={rules}
           hours={defaults.hours}
+          weekdayHours={weekdayHours}
           saving={rulesSaving}
           error={rulesError}
-          onApply={(next, hours) => void applyRules(next, hours)}
+          onApply={(next, hours, own) => void applyRules(next, hours, own)}
           onClose={() => !rulesSaving && setRulesOpen(false)}
         />
       ) : null}

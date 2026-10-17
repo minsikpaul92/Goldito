@@ -6,7 +6,7 @@ import { Sheet } from "./ui/Sheet";
 import { Stepper } from "./ui/Stepper";
 import { TextButton } from "./ui/TextButton";
 import { formatTime, shiftTime, timeToMinutes } from "../features/schedule/dates";
-import { CareSlot, ClosingRule, SLOTS } from "../features/schedule/scheduleApi";
+import { CareSlot, ClosingRule, SLOTS, WeekdayHour } from "../features/schedule/scheduleApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -18,13 +18,28 @@ export type SlotHours = Record<CareSlot, [string, string]>;
 
 const ruleKey = (weekday: number, slot: CareSlot) => `${weekday}:${slot}`;
 
-/** Problem with the hours as a sentence, or null when they can be saved. */
-export function hoursProblem(hours: SlotHours): string | null {
+/** Problem with one slot's hours as a sentence, or null when they are fine. */
+function slotProblem(slot: CareSlot, label: string, [start, end]: [string, string], where: string): string | null {
+  if (start === end) return `${label}${where} needs different start and end times.`;
+  // Overnight may end the next morning; the others end the same day.
+  if (slot !== "overnight" && timeToMinutes(end) <= timeToMinutes(start)) return `${label}${where} must end after it starts.`;
+  return null;
+}
+
+type DayOverrides = Partial<Record<number, Partial<Record<CareSlot, [string, string]>>>>;
+
+/** Problem with the every-day hours or any weekday's own hours, or null when they can be saved. */
+export function hoursProblem(hours: SlotHours, byDay: DayOverrides = {}): string | null {
   for (const { slot, label } of SLOTS) {
-    const [start, end] = hours[slot];
-    if (start === end) return `${label} needs different start and end times.`;
-    // Overnight may end the next morning; the others end the same day.
-    if (slot !== "overnight" && timeToMinutes(end) <= timeToMinutes(start)) return `${label} must end after it starts.`;
+    const problem = slotProblem(slot, label, hours[slot], "");
+    if (problem) return problem;
+  }
+  for (let weekday = 0; weekday < 7; weekday++) {
+    for (const { slot, label } of SLOTS) {
+      const own = byDay[weekday]?.[slot];
+      const problem = own && slotProblem(slot, label, own, ` on ${WEEKDAY_NAMES[weekday]}s`);
+      if (problem) return problem;
+    }
   }
   return null;
 }
@@ -33,9 +48,10 @@ type Props = {
   visible: boolean;
   rules: ClosingRule[];
   hours: SlotHours;
+  weekdayHours: WeekdayHour[];
   saving: boolean;
   error: string | null;
-  onApply: (rules: ClosingRule[], hours: SlotHours) => void;
+  onApply: (rules: ClosingRule[], hours: SlotHours, weekdayHours: WeekdayHour[]) => void;
   onClose: () => void;
 };
 
@@ -44,11 +60,22 @@ type Props = {
  * Nothing picked = open. The result is these rules plus the days closed by hand on the calendar (014d).
  * Remount with a `key` per opening so the draft starts from what is saved.
  */
-export function ClosingRulesSheet({ visible, rules, hours, saving, error, onApply, onClose }: Props) {
+export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving, error, onApply, onClose }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [closed, setClosed] = useState(() => new Set(rules.map((r) => ruleKey(r.weekday, r.slot))));
   const [draftHours, setDraftHours] = useState<SlotHours>(hours);
-  const problem = hoursProblem(draftHours);
+  // Hours a single weekday keeps for itself; `view` is which hours the steppers edit: every day, or one weekday.
+  const [byDay, setByDay] = useState<DayOverrides>(() => {
+    const own: DayOverrides = {};
+    for (const h of weekdayHours) own[h.weekday] = { ...own[h.weekday], [h.slot]: [h.startsAt, h.endsAt] };
+    return own;
+  });
+  const [view, setView] = useState<"all" | number>("all");
+  const problem = hoursProblem(draftHours, byDay);
+
+  const shown = (slot: CareSlot): [string, string] =>
+    view === "all" ? draftHours[slot] : (byDay[view]?.[slot] ?? draftHours[slot]);
+  const hasOwn = (weekday: number) => Object.keys(byDay[weekday] ?? {}).length > 0;
 
   const toggle = (weekday: number, slot: CareSlot) =>
     setClosed((current) => {
@@ -59,8 +86,12 @@ export function ClosingRulesSheet({ visible, rules, hours, saving, error, onAppl
       return next;
     });
 
-  const setHour = (slot: CareSlot, index: 0 | 1, value: string) =>
-    setDraftHours((h) => ({ ...h, [slot]: index === 0 ? [value, h[slot][1]] : [h[slot][0], value] }));
+  const setHour = (slot: CareSlot, index: 0 | 1, value: string) => {
+    const [start, end] = shown(slot);
+    const next: [string, string] = index === 0 ? [value, end] : [start, value];
+    if (view === "all") setDraftHours((h) => ({ ...h, [slot]: next }));
+    else setByDay((d) => ({ ...d, [view]: { ...d[view], [slot]: next } }));
+  };
 
   const apply = () => {
     const picked: ClosingRule[] = [];
@@ -69,7 +100,17 @@ export function ClosingRulesSheet({ visible, rules, hours, saving, error, onAppl
         if (closed.has(ruleKey(weekday, slot))) picked.push({ weekday, slot });
       }
     }
-    onApply(picked, draftHours);
+    // Only the hours that differ from the every-day hours are kept as a weekday's own.
+    const own: WeekdayHour[] = [];
+    for (let weekday = 0; weekday < 7; weekday++) {
+      for (const { slot } of SLOTS) {
+        const pair = byDay[weekday]?.[slot];
+        if (pair && (pair[0] !== draftHours[slot][0] || pair[1] !== draftHours[slot][1])) {
+          own.push({ weekday, slot, startsAt: pair[0], endsAt: pair[1] });
+        }
+      }
+    }
+    onApply(picked, draftHours, own);
   };
 
   return (
@@ -127,10 +168,46 @@ export function ClosingRulesSheet({ visible, rules, hours, saving, error, onAppl
 
       <Text style={styles.heading}>Hours</Text>
       <Text style={styles.hint}>
-        The hours of each slot on days you haven't set by hand. A day you opened by hand keeps its own hours.
+        The hours of each slot on days you haven't set by hand. Pick a weekday to give it its own hours; the others keep
+        the every-day hours. A day you opened by hand keeps its own hours.
       </Text>
+      <View style={styles.dayChips} testID="rules-hours-days">
+        {(["all", 0, 1, 2, 3, 4, 5, 6] as const).map((day) => {
+          const selected = view === day;
+          const label = day === "all" ? "Every day" : WEEKDAYS[day];
+          return (
+            <Pressable
+              key={String(day)}
+              accessibilityRole="button"
+              accessibilityLabel={day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s`}
+              aria-pressed={selected}
+              onPress={() => setView(day)}
+              style={[styles.dayChip, selected && styles.dayChipOn]}
+              testID={`rules-hours-day-${day}`}
+            >
+              <Text style={[styles.dayChipText, selected && styles.dayChipTextOn]}>
+                {day !== "all" && hasOwn(day) ? `${label} •` : label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {view !== "all" ? (
+        <View style={styles.dayNote}>
+          <Text style={styles.hint}>
+            {hasOwn(view) ? `${WEEKDAY_NAMES[view]}s have their own hours.` : `${WEEKDAY_NAMES[view]}s use the every-day hours.`}
+          </Text>
+          {hasOwn(view) ? (
+            <TextButton
+              label="Same as every day"
+              onPress={() => setByDay((d) => ({ ...d, [view]: undefined }))}
+              testID="rules-hours-reset"
+            />
+          ) : null}
+        </View>
+      ) : null}
       {SLOTS.map(({ slot, label }) => {
-        const [start, end] = draftHours[slot];
+        const [start, end] = shown(slot);
         return (
           <View key={slot} style={styles.slot}>
             <Text style={styles.slotLabel}>{label}</Text>
@@ -222,6 +299,38 @@ const makeStyles = (theme: Theme) =>
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
       paddingTop: theme.spacing.sm,
+    },
+    dayChips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
+    },
+    dayChip: {
+      minHeight: 36,
+      paddingHorizontal: theme.spacing.sm,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
+    },
+    dayChipOn: {
+      borderColor: theme.color.primary,
+      backgroundColor: theme.color.primary,
+    },
+    dayChipText: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.text,
+    },
+    dayChipTextOn: {
+      color: theme.color.primaryText,
+    },
+    dayNote: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: theme.spacing.sm,
     },
     slot: {
       gap: theme.spacing.xs,
