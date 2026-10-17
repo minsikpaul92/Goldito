@@ -308,5 +308,20 @@ test.describe("sitter requests", () => {
     const screen = app(page);
     await expect(screen.getByTestId("booking-ended")).toContainText("Chloe can't take this one.");
     await expect(screen.getByTestId("declined-reason")).toHaveText("“Fully booked those dates”");
+    // No empty card between the header card and the ended notice (#133).
+    await expect(screen.getByTestId("stage-bar")).toHaveCount(0);
+    await expect(screen.getByTestId("booking-ended").locator("xpath=preceding-sibling::*[1]")).not.toBeEmpty();
+  });
+
+  test("a cancelled booking shows the sitter no empty progress card either", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    Object.assign(db.bookings[0], { status: "cancelled", cancelled_by: OWNER.id, cancel_reason: "Plans changed" });
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("booking-ended")).toBeVisible();
+    await expect(screen.getByTestId("stage-bar")).toHaveCount(0);
+    await expect(screen.getByTestId("booking-ended").locator("xpath=preceding-sibling::*[1]")).not.toBeEmpty();
   });
 });

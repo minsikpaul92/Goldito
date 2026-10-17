@@ -34,6 +34,11 @@ export function stageCaption(b: BookingSummary, viewer: Viewer, now: number = Da
   return [wait, turn].filter(Boolean).join(" · ") || null;
 }
 
+/** Whether the bar draws anything — lets a screen skip the card around it for ended bookings. */
+export function hasStageBar(booking: BookingSummary): boolean {
+  return currentStep(booking.stage, booking.meetGreetStatus !== "not_needed") !== null;
+}
+
 /** Progress through the booking steps, from the stage the database computes (D60). */
 export function BookingStageBar({ booking, viewer }: { booking: BookingSummary; viewer: Viewer }) {
   const styles = useThemedStyles(makeStyles);

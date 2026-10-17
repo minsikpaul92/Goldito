@@ -65,15 +65,15 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 | EmptyState | Couldn't load this booking | — | 148 |
 | Tag | `b.label` | — | 217 |
 | Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 254 |
-| CheckRow | `item` | ``pack-${item}`` | 280 |
-| Button | Find a new sitter | `find-new-sitter` | 342 |
-| Button | Change time or place | `change-booking` | 349 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 357 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 367 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 373 |
-| Sheet | Decline and end the request | `end-request-sheet` | 436 |
-| Button | Decline and end the request | `end-request-confirm` | 442 |
+| Button | Finish booking | `open-checkout` | 256 |
+| CheckRow | `item` | ``pack-${item}`` | 282 |
+| Button | Find a new sitter | `find-new-sitter` | 344 |
+| Button | Change time or place | `change-booking` | 351 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
+| Sheet | Decline and end the request | `end-request-sheet` | 438 |
+| Button | Decline and end the request | `end-request-confirm` | 444 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -383,24 +383,24 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `HandoffChangeSheet` · `MeetGree
 | EmptyState | Booking not found | — | 148 |
 | EmptyState | Couldn't load this booking | — | 155 |
 | Tag | `b.label` | — | 238 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 303 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 308 |
-| TextButton | Change time or place | `change-booking` | 316 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 372 |
-| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 379 |
-| TextButton | Decline | `decline-booking` | 386 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 397 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 407 |
-| TextButton | Cancel booking | `cancel-booking` | 427 |
-| Sheet | Return | `return-sheet` | 432 |
-| Button | Return | `return-confirm` | 439 |
-| Button | Cancel | `return-cancel` | 452 |
-| TextButton | Send today's note first | `return-send-note` | 472 |
-| Sheet | Cancel booking | `cancel-sheet` | 484 |
-| Button | Cancel booking | `cancel-confirm` | 490 |
-| Sheet | Decline request | `decline-sheet` | 527 |
-| Button | Decline request | `decline-confirm` | 533 |
-| TextButton | Suggest another time instead | `decline-suggest` | 572 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 305 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 310 |
+| TextButton | Change time or place | `change-booking` | 318 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 374 |
+| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 381 |
+| TextButton | Decline | `decline-booking` | 388 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 399 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 409 |
+| TextButton | Cancel booking | `cancel-booking` | 429 |
+| Sheet | Return | `return-sheet` | 434 |
+| Button | Return | `return-confirm` | 441 |
+| Button | Cancel | `return-cancel` | 454 |
+| TextButton | Send today's note first | `return-send-note` | 474 |
+| Sheet | Cancel booking | `cancel-sheet` | 486 |
+| Button | Cancel booking | `cancel-confirm` | 492 |
+| Sheet | Decline request | `decline-sheet` | 529 |
+| Button | Decline request | `decline-confirm` | 535 |
+| TextButton | Suggest another time instead | `decline-suggest` | 574 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
