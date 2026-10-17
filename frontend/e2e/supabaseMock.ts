@@ -164,6 +164,12 @@ export type MockDb = {
   /** What rpc/search_sitters returns (rows in the 004 shape); calls land in `searches`. */
   search_results: Row[];
   searches: Row[];
+  /** Sitters rpc/search_sitters_nearby (014c) can return, in its shape: each row's `distance_km` is the exact
+   * distance; the handler keeps rows within p_radius_km and rounds it. Calls land in `nearbySearches`. */
+  nearby_sitters: Row[];
+  nearbySearches: Row[];
+  /** Forces rpc/search_sitters_nearby to fail with this code (e.g. "no_home_point"). */
+  nearby_error: string | null;
   /** request_booking calls with their parameters. */
   requests: Row[];
   care_tasks: Row[];
@@ -245,6 +251,9 @@ function createMockDb(): MockDb {
     booking_pets: [],
     search_results: [],
     searches: [],
+    nearby_sitters: [],
+    nearbySearches: [],
+    nearby_error: null,
     requests: [],
     care_tasks: [],
     task_logs: [],
@@ -690,6 +699,26 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
           last_booking_at: mine.map((b) => String(b.created_at ?? "")).sort().pop() ?? null,
         };
       }),
+    );
+  }
+
+  if (path === "rpc/search_sitters_nearby") {
+    const args = request.postDataJSON();
+    db.nearbySearches.push(args);
+    if (db.nearby_error) return json(route, 400, { message: db.nearby_error });
+    const radius = Number(args.p_radius_km);
+    if (!(radius >= 1 && radius <= 100)) return json(route, 400, { message: "invalid_radius" });
+    if (args.p_lat == null) {
+      const home = db.owner_profiles.find((p) => p.id === me);
+      if (home?.home_lat == null) return json(route, 400, { message: "no_home_point" });
+    }
+    return json(
+      route,
+      200,
+      db.nearby_sitters
+        .filter((row) => Number(row.distance_km) <= radius)
+        .sort((a, b) => Number(a.distance_km) - Number(b.distance_km))
+        .map((row) => ({ ...row, distance_km: Math.max(1, Math.round(Number(row.distance_km))) })),
     );
   }
 
