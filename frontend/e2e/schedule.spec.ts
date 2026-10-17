@@ -83,11 +83,11 @@ test.describe("sitter schedule", () => {
       ]),
     );
 
-    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight blocked/);
+    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Night blocked/);
     await screen.getByTestId(`day-${mid}`).click();
     await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
     // Opening only some slots closes the others on those days, even though a sitter is open by default (014d).
-    await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Blocked");
+    await expect(screen.getByTestId("summary-overnight")).toHaveText("Night: Blocked");
 
     // The day cell has no M · A · N letters: only the date, and only the closed overnight band is hatched (#134).
     await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
@@ -162,7 +162,7 @@ test.describe("sitter schedule", () => {
       });
 
     // Nothing set: every slot is open.
-    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Night open/);
 
     // Close that weekday's morning and overnight, and start the morning half an hour later.
     await screen.getByTestId("schedule-rules").click();
@@ -181,9 +181,9 @@ test.describe("sitter schedule", () => {
     expect(db.sitter_profiles[0].default_hours).toMatchObject({ morning: ["09:30", "13:00"] });
 
     // The rule applies to every such weekday, and only to those slots.
-    await expect(label(day)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Overnight closed/);
-    await expect(label(weekNext)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Overnight closed/);
-    await expect(label(nextMonthDay(11))).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Night closed/);
+    await expect(label(weekNext)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Night closed/);
+    await expect(label(nextMonthDay(11))).toHaveAttribute("aria-label", /Morning open, Afternoon open, Night open/);
     expect(await hatched(day, "morning")).toBe(true);
     expect(await hatched(day, "afternoon")).toBe(false);
     expect(await hatched(day, "overnight")).toBe(true);
@@ -193,7 +193,7 @@ test.describe("sitter schedule", () => {
     await screen.getByTestId("schedule-mode-block").click();
     await screen.getByTestId("schedule-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Schedule saved");
-    await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked, Afternoon blocked, Overnight blocked/);
+    await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked, Afternoon blocked, Night blocked/);
 
     // Tapping a rule-closed slot says why (a later day first, so the click starts a new selection).
     await label(day).click();
@@ -209,7 +209,7 @@ test.describe("sitter schedule", () => {
     await screen.getByTestId("rules-apply").click();
     await expect(screen.getByTestId("rules-sheet")).toBeHidden();
     expect(db.sitter_closing_rules).toEqual([]);
-    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Night open/);
     await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked/);
   });
 
@@ -394,7 +394,7 @@ test.describe("sitter schedule", () => {
     ]);
     await expect(screen.getByTestId(`day-${nextMonthDay(12)}`)).toHaveAttribute(
       "aria-label",
-      /Morning blocked, Afternoon open, Overnight blocked/,
+      /Morning blocked, Afternoon open, Night blocked/,
     );
     await expect(screen.getByTestId(`day-${nextMonthDay(13)}`)).toHaveAttribute("aria-label", /Afternoon blocked/);
   });

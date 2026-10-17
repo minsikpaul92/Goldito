@@ -6,7 +6,7 @@ export type CareSlot = "morning" | "afternoon" | "overnight";
 export const SLOTS: { slot: CareSlot; label: string }[] = [
   { slot: "morning", label: "Morning" },
   { slot: "afternoon", label: "Afternoon" },
-  { slot: "overnight", label: "Overnight" },
+  { slot: "overnight", label: "Night" },
 ];
 
 export type SlotState = "open" | "full" | "blocked" | "closed";

@@ -119,12 +119,12 @@ test.describe("your sitters", () => {
     // A blocked slot reads as closed to owners; a slot nobody touched is open by default (014d).
     await expect(screen.getByTestId(`day-${nextMonthDay(10)}`)).toHaveAttribute(
       "aria-label",
-      /Morning open, Afternoon closed, Overnight open/,
+      /Morning open, Afternoon closed, Night open/,
     );
     await screen.getByTestId(`day-${nextMonthDay(10)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Open · 8:00 AM–12:00 PM · 1 spot left");
     await expect(screen.getByTestId("sitter-day-afternoon")).toHaveText("Afternoon: Closed");
-    await expect(screen.getByTestId("sitter-day-overnight")).toHaveText("Overnight: Open · 6:00 PM–8:00 AM · 2 spots left");
+    await expect(screen.getByTestId("sitter-day-overnight")).toHaveText("Night: Open · 6:00 PM–8:00 AM · 2 spots left");
 
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Full · 8:00 AM–12:00 PM");
