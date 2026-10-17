@@ -33,6 +33,7 @@
 | 4 | [03](phase-03-auth.md) | 인증 · 역할 · Pet 프로필 | — | 로그인 → 역할별 탭, pet(종 · 알레르기) · 역할별 프로필 | ✅ 10/1 | - |
 | 5 | [03B](phase-03b-booking.md) | 스케줄 · 서비스 · 이동 방식 · 예약 · Meet & Greet | 2–3 | 시터 스케줄 → 검색 → Boarding / House sitting · Owner/Sitter drives → 협의 → 확정 → Received/Returned · 첫 만남 Meet & Greet | ✅ (Open items: BK-1 · MG · CAL · 3B.11 실기기) | 004 |
 | 6 | [03C](phase-03c-payment.md) | 견적 · 동의서 · 데모 결제 · 보안 해제 | 3 | `quote_booking` → 동의서 → Pay (demo) → 시터 집 정보 즉시 / 견주 집 출입 정보 2시간 전 | ✅ — **ENTRY-1 (P0) 남음** | 005 |
+| 6b | [03D](phase-03d-booking-chat.md) | 채팅 중심 부킹 | 12 | 검색 → 시터 상세 → 채팅 한 곳에서 견적 · Meet & Greet · 합의 · 결제 · 인계 · 케어 · 리뷰, AI 칩 | 시작 전 (P0, 2026-10-17) | 014d+ |
 | 7 | [04](phase-04-upload.md) | Cloudinary 업로드 | 4 | secret 없이 사진 · 영상 업로드 헬퍼 + 샘플 트레이 | ✅ | - |
 | 8 | [05](phase-05-feed.md) | 케어 피드 + 알림 | 4 | 업로드 → 견주 타임라인 · Realtime 알림 센터 | ✅ | 006 |
 | 9 | [06](phase-06-checks.md) | 케어 의뢰서 · 5초 체크 · Activity | 2 · 4 | 의뢰서 → AI 미션 체크리스트 · 탭 체크 → 즉시 알림 · 히스토리 | ✅ | 007 |
