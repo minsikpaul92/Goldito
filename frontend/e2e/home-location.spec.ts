@@ -59,6 +59,9 @@ test.describe("home map pin", () => {
     expect(await gps.reads()).toBe(0);
     await screen.getByTestId("profile-use-location").click();
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin set from your location");
+    // The change is easy to notice: a toast, a highlighted status and the button now offers to read again (#131).
+    await expect(screen.getByTestId("toast")).toContainText("Location found");
+    await expect(screen.getByTestId("profile-use-location")).toContainText("Read my location again");
     expect(await gps.reads()).toBe(1);
   });
 
