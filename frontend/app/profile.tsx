@@ -161,7 +161,7 @@ export default function ProfileScreen() {
   const pinLat = home?.lat;
   const pinLng = home?.lng;
   useEffect(() => {
-    if (pinLat == null || pinLng == null) {
+    if (!pinFromGps || pinLat == null || pinLng == null) {
       setHomePlace(undefined);
       return;
     }
@@ -173,7 +173,7 @@ export default function ProfileScreen() {
     return () => {
       current = false;
     };
-  }, [pinLat, pinLng]);
+  }, [pinFromGps, pinLat, pinLng]);
 
   if (session.status === "loading") return <LoadingView />;
   if (!profile) return <Redirect href="/welcome" />;
@@ -322,40 +322,39 @@ export default function ProfileScreen() {
           {field.key === "home_address" ? (
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>
-              <Text
-                style={[styles.muted, locating && styles.pinBusy, pinFromGps && !locating && styles.pinSet]}
-                testID="profile-home-pin-status"
-              >
-                {locating
-                  ? "📡 Reading your location… allow it in the browser if it asks."
-                  : pinFromGps
-                    ? "✅ Pin set from your location. Tap Save to keep it."
-                    : home
-                      ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
-                      : "No pin yet. Save your address to place one, or use your current location while you're home."}
-              </Text>
-              {home ? (
-                <Text style={styles.pinWhere} testID="profile-home-pin-where">
-                  {homePlace
-                    ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
-                    : homePlace === undefined
-                      ? "📍 Finding the neighbourhood…"
-                      : "📍 We couldn't name this spot — check it on the map"}
-                </Text>
+              {/* Nothing about the pin shows until the person reads their location: an old saved pin (a demo seed, an
+                  address from long ago) would only be a wrong place in the way. */}
+              {locating || pinFromGps ? (
+                <>
+                  <Text style={[styles.muted, locating ? styles.pinBusy : styles.pinSet]} testID="profile-home-pin-status">
+                    {locating
+                      ? "📡 Reading your location… allow it in the browser if it asks."
+                      : "✅ Pin set from your location. Tap Save to keep it."}
+                  </Text>
+                  {!locating && home ? (
+                    <>
+                      <Text style={styles.pinWhere} testID="profile-home-pin-where">
+                        {homePlace
+                          ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
+                          : homePlace === undefined
+                            ? "📍 Finding the neighbourhood…"
+                            : "📍 We couldn't name this spot — check it on the map"}
+                      </Text>
+                      <OpenInMapsButton
+                        place={{ text: null, point: home }}
+                        travelling={false}
+                        style="link"
+                        testID="profile-home-pin-map"
+                      />
+                      <Text style={styles.muted} testID="profile-home-pin-use">
+                        {loaded.role === "owner"
+                          ? "What it's for: the trip map and ETA when you or your sitter travel for a drop-off or pick-up, and finding sitters near you. It isn't shown to anyone as a point."
+                          : "What it's for: the trip map and ETA to owners' homes, and so owners can find sitters near them. Owners only see a rounded distance (like “3 km”), never your pin or address."}
+                      </Text>
+                    </>
+                  ) : null}
+                </>
               ) : null}
-              {home ? (
-                <OpenInMapsButton
-                  place={{ text: null, point: home }}
-                  travelling={false}
-                  style="link"
-                  testID="profile-home-pin-map"
-                />
-              ) : null}
-              <Text style={styles.muted} testID="profile-home-pin-use">
-                {loaded.role === "owner"
-                  ? "What it's for: the trip map and ETA when you or your sitter travel for a drop-off or pick-up, and finding sitters near you. It isn't shown to anyone as a point."
-                  : "What it's for: the trip map and ETA to owners' homes, and so owners can find sitters near them. Owners only see a rounded distance (like “3 km”), never your pin or address."}
-              </Text>
               {homeNote ? (
                 <Text style={styles.muted} testID="profile-home-pin-note">
                   {homeNote}

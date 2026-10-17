@@ -67,8 +67,12 @@ test.describe("home map pin", () => {
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
+    // Before the tap only the button is there: no status, no place, no map link (an old pin would be noise).
+    await expect(screen.getByTestId("profile-use-location")).toBeVisible();
+    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);
     await expect(screen.getByTestId("profile-home-pin-where")).toHaveCount(0);
+    await expect(screen.getByTestId("profile-home-pin-map")).toHaveCount(0);
+    await expect(screen.getByTestId("profile-home-pin-use")).toHaveCount(0);
     expect(await gps.reads()).toBe(0);
     await screen.getByTestId("profile-use-location").click();
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin set from your location");
@@ -115,7 +119,7 @@ test.describe("home map pin", () => {
 
     await screen.getByTestId("profile-use-location").click();
     await expect(screen.getByTestId("profile-home-pin-note")).toContainText("Location is off for Goldito");
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
+    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);
     expect(await gps.reads()).toBe(1);
   });
 
@@ -133,8 +137,10 @@ test.describe("home map pin", () => {
     expect(row?.home_address).toBe("100 Queen St W, Toronto");
     expect([row?.home_lat, row?.home_lng]).toEqual([43.6536, -79.384]);
 
+    // The saved pin is not shown on the Profile until the person reads their location again.
     await screen.getByTestId("open-profile").click();
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-use-location")).toBeVisible();
+    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);
   });
 
   test("an address that can't be placed clears the old pin and says so; the lookup being down reads the same", async ({ page }) => {
@@ -144,7 +150,7 @@ test.describe("home map pin", () => {
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0); // an old pin is not shown
     await screen.getByTestId("profile-home_address").fill("2 New St, Nowhere");
     await screen.getByTestId("profile-save").click();
     await expect(screen.getByTestId("toast")).toContainText("couldn't place that address");
@@ -169,7 +175,7 @@ test.describe("home map pin", () => {
     await openProfile(page, SITTER, "sitter");
     const screen = app(page);
 
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);
     await screen.getByTestId("profile-service_area").fill("North York");
     await screen.getByTestId("profile-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Profile saved");
@@ -181,11 +187,12 @@ test.describe("home map pin", () => {
     await stubGps(page);
     await mockReverse(page, null, 502);
     const { db } = await mockSupabase(page, [SITTER]);
-    db.sitter_profiles.push({ id: SITTER.id, home_lat: 43.6477, home_lng: -79.4194, services: ["boarding"] });
+    db.sitter_profiles.push({ id: SITTER.id, home_lat: 43.1, home_lng: -79.1, services: ["boarding"] });
     await openProfile(page, SITTER, "sitter");
     const screen = app(page);
 
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveCount(0);
+    await screen.getByTestId("profile-use-location").click();
     await expect(screen.getByTestId("profile-home-pin-where")).toContainText("couldn't name this spot");
     await expect(screen.getByTestId("profile-home-pin-use")).toContainText("Owners only see a rounded distance");
     await expect(screen.getByTestId("profile-home-pin-map")).toBeVisible();
