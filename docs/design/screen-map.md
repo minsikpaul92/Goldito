@@ -48,10 +48,10 @@ Shows: `BookingCard` · `SitterCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 80 |
-| EmptyState | No bookings yet | — | 94 |
-| Pressable | — | ``question-card-${inq.id}`` | 128 |
-| Button | Book care | `book-care` | 184 |
+| EmptyState | Couldn't load your bookings | — | 81 |
+| EmptyState | No bookings yet | — | 95 |
+| Pressable | — | ``question-card-${inq.id}`` | 129 |
+| Button | Book care | `book-care` | 185 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -114,13 +114,32 @@ Shows: `HandoffDraft` · `HandoffPicker`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Add a pet first | — | 249 |
-| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 263 |
-| TextButton | Profile | ``sitter-profile-${name}`` | 279 |
-| SegmentedControl | — | `service` | 300 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 321 |
-| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 392 |
-| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 426 |
+| EmptyState | Add a pet first | — | 272 |
+| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 286 |
+| TextButton | Profile | ``sitter-profile-${name}`` | 302 |
+| SegmentedControl | — | `service` | 323 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 344 |
+| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 415 |
+| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 449 |
+
+### `/owner/bookings/search` — [app/owner/bookings/search.tsx](../../frontend/app/owner/bookings/search.tsx)
+
+Find a sitter (SS-2) — the start of a new booking, like booking a hotel: who's staying, drop-off and pick-up, from home or from here, how far. Search lists only sitters free for the whole stay (search_sitters_nearby, 014c); after that the radius slider updates the list by itself. Book opens Book care with the same stay filled in.
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Stepper | ``${title} day`` | ``search-${kind}-day`` | 73 |
+| Stepper | ``${title} time`` | ``search-${kind}-time`` | 82 |
+| EmptyState | Add a pet first | — | 248 |
+| TextButton | Profile | ``search-profile-${s.displayName}`` | 285 |
+| Button | ``Book ${s.displayName}`` | ``search-book-${s.displayName}`` | 286 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 300 |
+| SegmentedControl | — | `search-place` | 337 |
+| TextButton | Open Profile | `search-open-profile` | 351 |
+| TextButton | Try again | `search-locate-again` | 368 |
+| TextButton | Try again | `search-retry` | 404 |
+| EmptyState | ``No sitter free within ${results.radiusKm} km`` | — | 410 |
+| Button | criteria && !changed ? "Search again" : "Search" | `search-submit` | 433 |
 
 ### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
 
@@ -1153,4 +1172,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-327 actions · 327 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+337 actions · 337 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

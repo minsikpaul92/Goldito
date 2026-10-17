@@ -90,8 +90,10 @@ test.describe("book care", () => {
     const screen = app(page);
 
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+    // Book care now starts with Find a sitter (SS-2, sitter-search.spec); this spec books from Book care itself.
     await screen.getByTestId("book-care").click();
-    await expect(page).toHaveURL(/\/owner\/bookings\/new$/);
+    await expect(page).toHaveURL(/\/owner\/bookings\/search$/);
+    await page.goto("/owner/bookings/new");
 
     await expect(screen.getByTestId("trip-problem")).toHaveText("Pick at least one pet.");
     await screen.getByTestId("pick-pet-Max").click();

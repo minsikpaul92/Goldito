@@ -134,6 +134,25 @@
 
 ---
 
+## Sitter search (SS — 2026-10-16 추가, 11.9 앞, 브랜치 `feat/sitter-search`)
+
+**Goal:** 오너가 호텔 예약처럼 조건으로 시터를 찾는다 — 예약의 시작점. 지금까지는 Book care 화면이 날짜 · 시간만으로 `search_sitters`를 불러 모든 시터를 (일부만 가능한 시터까지) 보여 줬다.
+
+1. 조건 1 **날짜** · 조건 2 **시간**(맡기기 · 데려가기), 조건 3 **장소** — 프로필에 저장된 집(`owner_profiles.home_lat/lng`, 012) 또는 브라우저 위치 허용 후 현재 위치.
+2. **반경 슬라이더 1–100 km.** Search를 누르면 결과, 그 뒤 슬라이더를 움직이면 Search 없이 바로(디바운스) 결과가 바뀐다. 슬라이더는 마우스 클릭 · 드래그 · 키보드로도 된다(DESIGN.md §7.7).
+3. **맞지 않는 시터는 아예 안 보인다(회색 표시도 없음):** 머무는 모든 슬롯에 자리가 있고 다른 오너의 홀드가 없으며(011l과 같은 규칙), 맡기기 · 데려가기 시각이 시터의 열린 시간 안이어야 한다.
+4. **반경은 정확히:** 직선거리가 반경 안인 시터만 보인다(5 km면 5 km 이내). 시터 좌표는 절대 내보내지 않고, 정수 km(최소 1)만 돌려준다.
+5. 필터는 서버의 `search_sitters_nearby` RPC(`014c`, security definer, 오너만). 가격(`sitter_rates`)도 서버에서.
+
+| ID | 단계 | DoD |
+| :--- | :--- | :--- |
+| **SS-1** | `014c_sitter_search.sql` + `rls_smoke.sql` 블록 | 시간 밖 시터 제외 · 반경 정확히(밖은 제외) · 오너 아닌 호출 거부(시터 `forbidden`, anon 권한 없음) · 결과에 좌표 컬럼 없음 · 저장된 집 없음 → `no_home_point` |
+| **SS-2** | 오너 검색 화면 `/owner/bookings/search` (Bookings → Find a sitter) | 날짜 · 시간 · 장소 · 1–100 km 슬라이더 · 라이브 결과 · 무엇을 바꾸면 되는지 말하는 빈 상태. 결과를 누르면 그 시터와 같은 날짜 · 시간으로 Book care가 채워짐 |
+| **SS-3** | e2e (`supabaseMock.ts`에 새 RPC) | 검색 → 결과, 슬라이더 드래그로 재검색, 현재 위치, 빈 상태, 결과 → Book care |
+| **SS-4** | test-guide · TODO | test-guide SEARCH-* 행, 호스팅 DB 적용 줄 |
+
+---
+
 ## 다음 Phase
 
 → [Phase 03C — 견적 · 동의서 · 데모 결제 · 보안 해제](phase-03c-payment.md) → [Phase 04 — Cloudinary](phase-04-upload.md) (업로드 서명은 `is_on_duty_for` 기준)
