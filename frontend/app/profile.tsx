@@ -263,6 +263,7 @@ export default function ProfileScreen() {
     try {
       setHome(await getCurrentPosition());
       setPinFromGps(true);
+      toast.show("Location found 📍 Tap Save to keep it");
     } catch (error) {
       setHomeNote(
         error instanceof LocationError && error.reason === "denied"
@@ -299,12 +300,17 @@ export default function ProfileScreen() {
           {field.key === "home_address" ? (
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>
-              <Text style={styles.muted} testID="profile-home-pin-status">
-                {pinFromGps
-                  ? "📍 Pin set from your location. Save to keep it."
-                  : home
-                  ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
-                  : "No pin yet. Save your address to place one, or use your current location while you're home."}
+              <Text
+                style={[styles.muted, locating && styles.pinBusy, pinFromGps && !locating && styles.pinSet]}
+                testID="profile-home-pin-status"
+              >
+                {locating
+                  ? "📡 Reading your location… allow it in the browser if it asks."
+                  : pinFromGps
+                    ? "✅ Pin set from your location. Tap Save to keep it."
+                    : home
+                      ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
+                      : "No pin yet. Save your address to place one, or use your current location while you're home."}
               </Text>
               {homeNote ? (
                 <Text style={styles.muted} testID="profile-home-pin-note">
@@ -312,7 +318,7 @@ export default function ProfileScreen() {
                 </Text>
               ) : null}
               <TextButton
-                label={locating ? "Locating…" : "Use my current location"}
+                label={locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location"}
                 onPress={() => void useCurrentLocation()}
                 disabled={locating}
                 testID="profile-use-location"
@@ -465,6 +471,17 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
+    },
+    pinBusy: {
+      color: theme.color.primary,
+      fontWeight: theme.fontWeight.semibold,
+    },
+    pinSet: {
+      color: theme.color.success,
+      fontWeight: theme.fontWeight.semibold,
+      backgroundColor: theme.color.successSurface,
+      borderRadius: theme.radius.sm,
+      padding: theme.spacing.sm,
     },
     muted: {
       fontSize: theme.fontSize.small,
