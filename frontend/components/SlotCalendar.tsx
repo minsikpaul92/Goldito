@@ -118,13 +118,6 @@ export function SlotCalendar({
       ))}
 
       <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no">
-        {SLOTS.map(({ slot, label, short }) => (
-          <Text key={slot} style={styles.legendText}>
-            <Text style={styles.legendLetter}>{short}</Text> {label}
-          </Text>
-        ))}
-      </View>
-      <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no">
         {(Object.keys(STATE_LABEL) as SlotState[]).map((state) => (
           <View key={state} style={styles.legendItem}>
             <View style={pillStyle(state)}>
@@ -259,9 +252,5 @@ const makeStyles = (theme: Theme) =>
     legendText: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
-    },
-    legendLetter: {
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.text,
     },
   });
