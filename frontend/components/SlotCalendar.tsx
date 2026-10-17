@@ -122,10 +122,10 @@ function useDragSelect(ref: React.RefObject<View | null>, today: string, onSelec
 const unavailable = (state: SlotState) => state !== "open";
 
 /**
- * Month grid, one column per weekday. Each day cell is split into three horizontal bands — morning, afternoon,
- * overnight, top to bottom — behind the date, and a band is hatched (diagonal stripes) when that slot can't be booked,
- * so the state is a pattern and not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in the detail list under the
- * calendar. Range selection is two clicks (start, end) — no drag (phase-03b, D25).
+ * Month grid, one column per weekday. Each day cell is split into three horizontal bands behind the date — from the
+ * bottom up: morning, afternoon, night — and a band is hatched (diagonal stripes) when that slot can't be booked, so
+ * the state is a pattern and not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in
+ * the detail list under the calendar. A range is two clicks (start, end) or a drag across days (phase-03b, D25).
  */
 export function SlotCalendar({
   month,
@@ -314,7 +314,8 @@ const makeStyles = (theme: Theme) =>
       left: 0,
       right: 0,
       bottom: 0,
-      flexDirection: "column",
+      // Bottom to top: morning, afternoon, night — the morning band is the lowest and the night the highest.
+      flexDirection: "column-reverse",
       overflow: "hidden",
       borderRadius: theme.radius.sm,
       backgroundColor: theme.color.surface,

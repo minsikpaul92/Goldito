@@ -45,6 +45,8 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `013_safety.sql` | 12.1 (Treat check — the 08 design, D61) | The owner may also acknowledge (`acknowledged_at`) their pet's checks; trigger `notify_safety_danger`: a DANGER checked by someone other than the owner sends the owner one `safety_danger` notice |
 | `014_photo_requests.sql` | 11.1 | Photo request: `photo_requests`, `request_photo`, the next shared photo answers it (one notice) |
 | `014b_diary_book.sql` | Diary book | `save_report_draft` (the sitter on duty writes today's page by hand; same one draft as the AI route, sent by `send_daily_report`) · media purpose `diary_page` (a shared page image — Cloudinary links are public) |
+| `014d_schedule_closing_rules.sql` | schedule | A sitter is **open by default** (no rows = every slot open with the profile's default hours and spots) and closes days by **weekly rules**: `sitter_closing_rules` (weekday × slot) + `save_closing_rules`; `sitter_capacity` / `within_sitter_hours` / `get_sitter_schedule` follow (`closed` = rule, `blocked` = by hand). A rule never cancels a confirmed stay (capacity = what is booked) |
+| `014e_weekday_hours.sql` | schedule | Hours by weekday: `sitter_weekday_hours` (weekday × slot with its own start / end) + `save_weekday_hours`. `sitter_slot_times` / `default_slot_range` pick the hours: a date's own open row → the weekday's hours → the profile's default hours → built-in. Only hours move; open / closed is still 014d's rules, blocks and capacity |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

@@ -74,7 +74,7 @@ type State =
   | { status: "missing" }
   | { status: "error"; message: string };
 
-const SLOT_LABEL: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", overnight: "Overnight" };
+const SLOT_LABEL: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", overnight: "Night" };
 
 /** "2026-10-05 morning, …" (sitter_unavailable detail) → "Oct 5 Morning". */
 function firstSlot(detail: string | null): string | null {
