@@ -88,7 +88,11 @@ test.describe("sitter schedule", () => {
     // The day cell has no M · A · N letters: only the date, and the overnight third (not opened) is hatched (#134).
     await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
     const hatched = async (slot: string) =>
-      screen.getByTestId(`third-${mid}-${slot}`).evaluate((el) => getComputedStyle(el).backgroundImage.includes("repeating-linear-gradient"));
+      // One hatch covers the cell; an open band is a plain layer over it, so a hatched band is one with no fill.
+      screen.getByTestId(`third-${mid}-${slot}`).evaluate((el) => {
+        const cellHatched = getComputedStyle(el.parentElement!).backgroundImage.includes("repeating-linear-gradient");
+        return cellHatched && getComputedStyle(el).backgroundColor === "rgba(0, 0, 0, 0)";
+      });
     expect(await hatched("morning")).toBe(false);
     expect(await hatched("afternoon")).toBe(false);
     expect(await hatched("overnight")).toBe(true);

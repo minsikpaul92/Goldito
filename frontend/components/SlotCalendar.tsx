@@ -32,9 +32,9 @@ type Props = {
 const unavailable = (state: SlotState) => state !== "open";
 
 /**
- * Month grid, one column per weekday. Each day is a strip of three thirds — morning, afternoon, overnight, left to
- * right — and a third is hatched (diagonal stripes) when that slot can't be booked, so the state is a pattern and
- * not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in the detail list under the
+ * Month grid, one column per weekday. Each day cell is split into three horizontal bands — morning, afternoon,
+ * overnight, top to bottom — behind the date, and a band is hatched (diagonal stripes) when that slot can't be booked,
+ * so the state is a pattern and not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in the detail list under the
  * calendar. Range selection is two clicks (start, end) — no drag (phase-03b, D25).
  */
 export function SlotCalendar({
@@ -50,14 +50,20 @@ export function SlotCalendar({
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
-  // Stripes are CSS on web; native needs react-native-svg (not installed), so a slot there is a flat muted fill.
-  const hatch: ViewStyle =
-    Platform.OS === "web"
-      ? ({
-          backgroundImage: `repeating-linear-gradient(135deg, ${theme.color.borderStrong} 0, ${theme.color.borderStrong} 1px, transparent 1px, transparent 4px)`,
-        } as unknown as ViewStyle)
-      : { backgroundColor: theme.color.border };
-  const thirdStyle = (state: SlotState, past: boolean) => [styles.third, unavailable(state) && !past && hatch];
+  // Stripes are CSS on web: one hatch over the whole cell, with a plain layer on the open slots, so the three bands
+  // share one pattern. Native needs react-native-svg (not installed), so an unavailable slot there is a flat muted fill.
+  const stripe = `color-mix(in srgb, ${theme.color.borderStrong} 45%, transparent)`;
+  const web = Platform.OS === "web";
+  const hatch: ViewStyle = web
+    ? ({
+        backgroundImage: `repeating-linear-gradient(135deg, ${stripe} 0, ${stripe} 1px, transparent 1px, transparent 4px)`,
+      } as unknown as ViewStyle)
+    : { backgroundColor: theme.color.border };
+  const cellStyle = (past: boolean) => [styles.thirds, web && !past && hatch];
+  const thirdStyle = (state: SlotState, past: boolean) => [
+    styles.third,
+    web ? !unavailable(state) && !past && styles.thirdOpen : unavailable(state) && !past && styles.thirdMuted,
+  ];
 
   return (
     <View style={styles.root}>
@@ -113,7 +119,7 @@ export function SlotCalendar({
                 style={[styles.cell, styles.day, selected && styles.selected, past && styles.past]}
                 testID={`day-${day}`}
               >
-                <View style={styles.thirds} pointerEvents="none">
+                <View style={cellStyle(past)} pointerEvents="none">
                   {SLOTS.map(({ slot }, k) => (
                     <View key={slot} style={thirdStyle(states[k], past)} testID={`third-${day}-${slot}`} />
                   ))}
@@ -206,7 +212,7 @@ const makeStyles = (theme: Theme) =>
       left: 0,
       right: 0,
       bottom: 0,
-      flexDirection: "row",
+      flexDirection: "column",
       overflow: "hidden",
       borderRadius: theme.radius.sm,
       borderWidth: 1,
@@ -215,8 +221,12 @@ const makeStyles = (theme: Theme) =>
     },
     third: {
       flex: 1,
-      borderRightWidth: StyleSheet.hairlineWidth,
-      borderRightColor: theme.color.border,
+    },
+    thirdOpen: {
+      backgroundColor: theme.color.surface,
+    },
+    thirdMuted: {
+      backgroundColor: theme.color.border,
     },
     swatch: {
       width: 24,
