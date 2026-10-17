@@ -313,16 +313,16 @@ Shows: `DemoTools` · `OpenInMapsButton`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 183 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 364 |
-| TextButton | Edit entry info | `profile-home-access` | 381 |
-| SegmentedControl | — | `profile-ai-mode` | 397 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 422 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 424 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 441 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 451 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 489 |
-| TextButton | Settings · What's New | `profile-settings` | 491 |
-| TextButton | Privacy | `profile-privacy` | 492 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 363 |
+| TextButton | Edit entry info | `profile-home-access` | 380 |
+| SegmentedControl | — | `profile-ai-mode` | 396 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 421 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 423 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 440 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 450 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 488 |
+| TextButton | Settings · What's New | `profile-settings` | 490 |
+| TextButton | Privacy | `profile-privacy` | 491 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
