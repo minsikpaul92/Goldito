@@ -1005,9 +1005,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous month | `calendar-prev` | 55 |
-| Pressable | Next month | `calendar-next` | 68 |
-| Pressable | `label` | ``day-${day}`` | 96 |
+| Pressable | Previous month | `calendar-prev` | 65 |
+| Pressable | Next month | `calendar-next` | 78 |
+| Pressable | `label` | ``day-${day}`` | 106 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 

@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { dayOfMonth, formatDay, formatMonth, monthGrid } from "../features/schedule/dates";
 import { DaySlot, SLOTS, SlotState, slotKey } from "../features/schedule/scheduleApi";
@@ -28,10 +28,14 @@ type Props = {
   canGoPrev: boolean;
 };
 
+/** A slot an owner can't book: blocked by the sitter, fully booked, or not opened. */
+const unavailable = (state: SlotState) => state !== "open";
+
 /**
- * Month grid, one column per weekday, three slot letters (M · A · N) per day. States differ
- * by fill and strike-through as well as color (DESIGN.md §9). Past days are disabled.
- * Range selection is two clicks (start, end) — no drag (phase-03b, D25).
+ * Month grid, one column per weekday. Each day is a strip of three thirds — morning, afternoon, overnight, left to
+ * right — and a third is hatched (diagonal stripes) when that slot can't be booked, so the state is a pattern and
+ * not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in the detail list under the
+ * calendar. Range selection is two clicks (start, end) — no drag (phase-03b, D25).
  */
 export function SlotCalendar({
   month,
@@ -46,8 +50,14 @@ export function SlotCalendar({
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
-  const pillStyle = (state: SlotState) => [styles.pill, styles[`pill_${state}`]];
-  const letterStyle = (state: SlotState) => [styles.letter, styles[`letter_${state}`]];
+  // Stripes are CSS on web; native needs react-native-svg (not installed), so a slot there is a flat muted fill.
+  const hatch: ViewStyle =
+    Platform.OS === "web"
+      ? ({
+          backgroundImage: `repeating-linear-gradient(135deg, ${theme.color.borderStrong} 0, ${theme.color.borderStrong} 1px, transparent 1px, transparent 4px)`,
+        } as unknown as ViewStyle)
+      : { backgroundColor: theme.color.border };
+  const thirdStyle = (state: SlotState, past: boolean) => [styles.third, unavailable(state) && !past && hatch];
 
   return (
     <View style={styles.root}>
@@ -104,11 +114,9 @@ export function SlotCalendar({
                 testID={`day-${day}`}
               >
                 <Text style={[styles.date, day === today && styles.today]}>{dayOfMonth(day)}</Text>
-                <View style={styles.pills}>
-                  {SLOTS.map(({ slot, short }, k) => (
-                    <View key={slot} style={pillStyle(states[k])}>
-                      <Text style={letterStyle(states[k])}>{short}</Text>
-                    </View>
+                <View style={styles.strip}>
+                  {SLOTS.map(({ slot }, k) => (
+                    <View key={slot} style={thirdStyle(states[k], past)} testID={`third-${day}-${slot}`} />
                   ))}
                 </View>
               </Pressable>
@@ -118,14 +126,14 @@ export function SlotCalendar({
       ))}
 
       <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no">
-        {(Object.keys(STATE_LABEL) as SlotState[]).map((state) => (
-          <View key={state} style={styles.legendItem}>
-            <View style={pillStyle(state)}>
-              <Text style={letterStyle(state)}>M</Text>
-            </View>
-            <Text style={styles.legendText}>{STATE_LABEL[state]}</Text>
-          </View>
-        ))}
+        <View style={styles.legendItem}>
+          <View style={styles.swatch} />
+          <Text style={styles.legendText}>Available</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.swatch, hatch]} />
+          <Text style={styles.legendText}>Not available</Text>
+        </View>
       </View>
     </View>
   );
@@ -193,50 +201,29 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.primary,
       textDecorationLine: "underline",
     },
-    pills: {
+    strip: {
       flexDirection: "row",
-      gap: 2,
-    },
-    pill: {
-      width: 14,
-      height: 16,
-      alignItems: "center",
-      justifyContent: "center",
+      width: 36,
+      height: 12,
+      overflow: "hidden",
       borderRadius: 4,
       borderWidth: 1,
-    },
-    pill_open: {
-      backgroundColor: theme.color.accent,
-      borderColor: theme.color.accent,
-    },
-    pill_full: {
-      backgroundColor: theme.color.primary,
-      borderColor: theme.color.primary,
-    },
-    pill_blocked: {
+      borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
-      borderColor: theme.color.textMuted,
     },
-    pill_closed: {
-      backgroundColor: "transparent",
-      borderColor: theme.color.border,
+    third: {
+      flex: 1,
+      borderRightWidth: StyleSheet.hairlineWidth,
+      borderRightColor: theme.color.border,
     },
-    letter: {
-      fontSize: theme.fontSize.caption,
-      fontWeight: theme.fontWeight.semibold,
-    },
-    letter_open: {
-      color: theme.color.primary,
-    },
-    letter_full: {
-      color: theme.color.primaryText,
-    },
-    letter_blocked: {
-      color: theme.color.textMuted,
-      textDecorationLine: "line-through",
-    },
-    letter_closed: {
-      color: theme.color.border,
+    swatch: {
+      width: 24,
+      height: 12,
+      overflow: "hidden",
+      borderRadius: 4,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
     },
     legend: {
       flexDirection: "row",

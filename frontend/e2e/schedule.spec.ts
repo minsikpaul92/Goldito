@@ -84,6 +84,15 @@ test.describe("sitter schedule", () => {
     await screen.getByTestId(`day-${mid}`).click();
     await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
     await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Closed");
+
+    // The day cell has no M · A · N letters: only the date, and the overnight third (not opened) is hatched (#134).
+    await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
+    const hatched = async (slot: string) =>
+      screen.getByTestId(`third-${mid}-${slot}`).evaluate((el) => getComputedStyle(el).backgroundImage.includes("repeating-linear-gradient"));
+    expect(await hatched("morning")).toBe(false);
+    expect(await hatched("afternoon")).toBe(false);
+    expect(await hatched("overnight")).toBe(true);
+    await expect(screen.getByText("Not available", { exact: true })).toBeVisible();
   });
 
   test("blocking a booked slot offers to cancel the booking, then saves", async ({ page }) => {

@@ -3,10 +3,10 @@ import { addDays, shortTime } from "./dates";
 
 export type CareSlot = "morning" | "afternoon" | "overnight";
 
-export const SLOTS: { slot: CareSlot; label: string; short: string }[] = [
-  { slot: "morning", label: "Morning", short: "M" },
-  { slot: "afternoon", label: "Afternoon", short: "A" },
-  { slot: "overnight", label: "Overnight", short: "N" },
+export const SLOTS: { slot: CareSlot; label: string }[] = [
+  { slot: "morning", label: "Morning" },
+  { slot: "afternoon", label: "Afternoon" },
+  { slot: "overnight", label: "Overnight" },
 ];
 
 export type SlotState = "open" | "full" | "blocked" | "closed";
