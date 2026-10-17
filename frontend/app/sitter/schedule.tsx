@@ -392,6 +392,7 @@ const makeStyles = (theme: Theme) =>
       height: 44,
       alignItems: "center",
       justifyContent: "center",
+      marginRight: theme.spacing.md,
     },
     footer: {
       padding: theme.spacing.md,
