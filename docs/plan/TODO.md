@@ -126,6 +126,7 @@ Each item is a GitHub issue assigned to Muk — status and detail live there ([l
 ## Hosted DB — still to do
 
 - [ ] **`011l` is applied (2026-10-11); still to do by hand:** `CRON_SECRET` on Render + the 15-minute cron-job.org call to `POST /api/sweep/bookings` ([env-setup.ko.md](env-setup.ko.md)) — without it the 2-day nudge and the 3-day auto-cancel never run.
+- [ ] **`014g_profile_photos.sql` is created (profile photos, #135 – #137) and not applied** — apply only when asked, at the merge of its PR.
 - [ ] Apply new migrations as they are created and add a line here when a commit creates one (`013` · `013b` are applied, smoke all PASS 2026-10-14; `014d` · `014e` applied 2026-10-17 — run `supabase/tests/rls_smoke.sql` on the hosted DB once, it rolls back).
 - [ ] **`rls_smoke.sql` on the hosted DB** — `014c_sitter_search.sql` (exact radius, no +2 km margin, `asin` clamp) was applied to the hosted DB on 2026-10-17 (checked: clamp present, margin gone, anon cannot execute). Still to run: paste `supabase/tests/rls_smoke.sql` into the SQL Editor (its 014c block expects the exact radius); it is too large to send through the API.
 - [ ] **Sitter search can be used to locate a sitter's home** (later, not before submit): an owner who sends many points and reads the rounded distances can narrow a sitter's home to about 1 km. Fix when it matters: coarser distance bands and a call limit on `search_sitters_nearby`.
