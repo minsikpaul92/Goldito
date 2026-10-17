@@ -12,7 +12,7 @@
 -- current location"). The sitter's coordinates never leave the database: only a distance rounded to whole km
 -- (at least 1) comes back. Owners only.
 
-create function public.search_sitters_nearby(
+create or replace function public.search_sitters_nearby(
   p_drop_off_at timestamptz,
   p_pick_up_at timestamptz,
   p_pet_count int,
