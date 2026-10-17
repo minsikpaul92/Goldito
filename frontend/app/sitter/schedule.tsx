@@ -183,6 +183,7 @@ export default function SitterSchedule() {
     if (!sitterId || !schedule || !selection) return;
     const { from, to } = selection;
     const chosen = SLOTS.filter(({ slot }) => draft.slots[slot].checked).map(({ slot }) => slot);
+    const unchecked = SLOTS.filter(({ slot }) => !draft.slots[slot].checked).map(({ slot }) => slot);
     setSaving(true);
     setSaveError(null);
     try {
@@ -194,6 +195,7 @@ export default function SitterSchedule() {
           to,
           chosen.map((slot) => ({ slot, startsAt: draft.slots[slot].startsAt, endsAt: draft.slots[slot].endsAt })),
           draft.maxPets,
+          unchecked, // opening only some slots closes the others on these days
         );
       } else {
         await saveBlock(sitterId, from, to, chosen);
@@ -305,7 +307,7 @@ export default function SitterSchedule() {
                 ? SLOTS.map(({ slot, label }) => {
                     const s = schedule.slots.get(slotKey(selection.from, slot));
                     const state = s?.state ?? "closed";
-                    const hours = s?.startsAt && s.endsAt && state !== "closed" ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
+                    const hours = s?.startsAt && s.endsAt && (state === "open" || state === "full") ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
                     const spots = (state === "open" || state === "full") && s?.capacity ? ` · ${s.booked}/${s.capacity} booked` : "";
                     const rule = state === "closed" ? " · weekly rule" : "";
                     return (
@@ -338,7 +340,7 @@ export default function SitterSchedule() {
 
       {rules && weekdayHours && defaults ? (
         <ClosingRulesSheet
-          key={rulesKey}
+          key={`rules-${rulesKey}`}
           visible={rulesOpen}
           rules={rules}
           hours={defaults.hours}
@@ -352,7 +354,7 @@ export default function SitterSchedule() {
 
       {selection && schedule && defaults ? (
         <ScheduleSheet
-          key={sheetKey}
+          key={`sheet-${sheetKey}`}
           visible={sheetOpen}
           from={selection.from}
           to={selection.to}

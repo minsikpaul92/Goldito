@@ -63,7 +63,10 @@ test.describe("sitter schedule", () => {
 
     await expect(screen.getByTestId("toast")).toContainText("Schedule saved");
     await expect(sheet).toBeHidden();
-    expect(db.sitter_availability).toHaveLength(2);
+    expect(db.sitter_availability).toHaveLength(3); // morning + afternoon open, overnight blocked
+    expect(db.sitter_availability.filter((r) => r.kind === "blocked")).toEqual([
+      expect.objectContaining({ slot: "overnight", start_date: from, end_date: to }),
+    ]);
     expect(db.sitter_availability).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -80,13 +83,13 @@ test.describe("sitter schedule", () => {
       ]),
     );
 
-    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight blocked/);
     await screen.getByTestId(`day-${mid}`).click();
     await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
-    // Unchecking a slot in Open leaves it as it was: untouched, so open by default with the profile's hours (014d).
-    await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Open · 6:00 PM–8:00 AM · 0/2 booked");
+    // Opening only some slots closes the others on those days, even though a sitter is open by default (014d).
+    await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Blocked");
 
-    // The day cell has no M · A · N letters: only the date, and nothing on it is hatched while every slot is open (#134).
+    // The day cell has no M · A · N letters: only the date, and only the closed overnight band is hatched (#134).
     await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
     const hatched = async (slot: string) =>
       // One hatch covers the cell; an open band is a plain layer over it, so a hatched band is one with no fill.
@@ -96,7 +99,7 @@ test.describe("sitter schedule", () => {
       });
     expect(await hatched("morning")).toBe(false);
     expect(await hatched("afternoon")).toBe(false);
-    expect(await hatched("overnight")).toBe(false);
+    expect(await hatched("overnight")).toBe(true);
     await expect(screen.getByText("Not available", { exact: true })).toBeVisible();
   });
 
@@ -374,22 +377,25 @@ test.describe("sitter schedule", () => {
 
     await screen.getByTestId(`day-${nextMonthDay(12)}`).click();
     await screen.getByTestId("schedule-edit").click();
-    // Morning and overnight are open already; only the blocked afternoon is opened again.
+    // Open only the afternoon on the 12th: it is opened again, and the morning and overnight (unchecked) are closed.
     await screen.getByTestId("schedule-morning").click();
     await screen.getByTestId("schedule-overnight").click();
     await screen.getByTestId("schedule-afternoon").click();
     await screen.getByTestId("schedule-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Schedule saved");
 
-    const blocks = db.sitter_availability
-      .filter((r) => r.kind === "blocked")
+    const afternoonBlocks = db.sitter_availability
+      .filter((r) => r.kind === "blocked" && r.slot === "afternoon")
       .map((r) => [r.start_date, r.end_date])
       .sort();
-    expect(blocks).toEqual([
+    expect(afternoonBlocks).toEqual([
       [nextMonthDay(10), nextMonthDay(11)],
       [nextMonthDay(13), nextMonthDay(14)],
     ]);
-    await expect(screen.getByTestId(`day-${nextMonthDay(12)}`)).toHaveAttribute("aria-label", /Afternoon open/);
+    await expect(screen.getByTestId(`day-${nextMonthDay(12)}`)).toHaveAttribute(
+      "aria-label",
+      /Morning blocked, Afternoon open, Overnight blocked/,
+    );
     await expect(screen.getByTestId(`day-${nextMonthDay(13)}`)).toHaveAttribute("aria-label", /Afternoon blocked/);
   });
 

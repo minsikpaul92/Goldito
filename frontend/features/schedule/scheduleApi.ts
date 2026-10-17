@@ -232,10 +232,10 @@ export async function loadSitterMonth(sitterId: string, from: string, to: string
 }
 
 /**
- * Open slots for [from, to]: a new open row per slot (the newest row sets hours and spots),
- * then lift any block on those days — a block that reaches outside the range is split so
- * the other days stay blocked. Open rows go first: if they fail the capacity guard,
- * nothing else has changed.
+ * Open slots for [from, to] (and close `closeSlots` there): a new open row per slot (the newest row sets hours and
+ * spots), then lift any block on those days — a block that reaches outside the range is split so
+ * the other days stay blocked. The closing goes first: a booking in the way is refused before anything
+ * else has changed.
  */
 export async function saveOpen(
   sitterId: string,
@@ -244,8 +244,16 @@ export async function saveOpen(
   to: string,
   slots: OpenSlotInput[],
   maxPets: number,
+  closeSlots: CareSlot[] = [],
 ): Promise<void> {
   const supabase = getSupabase();
+  // The slots left unchecked are closed on these days — a sitter who opens only the morning is open only in the
+  // morning. Closing goes first: a booking in the way is refused here, before anything else has changed.
+  const toClose = closeSlots.filter(
+    (slot) => !rows.some((r) => r.kind === "blocked" && r.slot === slot && r.start_date <= from && to <= r.end_date),
+  );
+  if (toClose.length > 0) await saveBlock(sitterId, from, to, toClose);
+
   const { error } = await supabase.from("sitter_availability").insert(
     slots.map((s) => ({
       sitter_id: sitterId,

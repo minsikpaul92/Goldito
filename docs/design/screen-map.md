@@ -517,9 +517,9 @@ Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalenda
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 245 |
-| Pressable | Closing rules | `schedule-rules` | 268 |
-| Button | Open or block | `schedule-edit` | 331 |
+| EmptyState | Couldn't load your schedule | — | 247 |
+| Pressable | Closing rules | `schedule-rules` | 270 |
+| Button | Open or block | `schedule-edit` | 333 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
