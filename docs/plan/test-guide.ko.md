@@ -90,6 +90,7 @@
 | 취소 · 새 시터 찾기 | ✅ 🤖 | 03B.7 |
 | 시터 Home 대시보드 | ✅ 🤖 | 03B.8 |
 | 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
+| **시터 검색 (SS)** — 날짜 · 시간 · 집 / 현재 위치 · 반경 1–100 km(정확히), 머무는 내내 가능한 시터만, 거리는 정수 km | 🟡 화면 · 슬라이더 · 현재 위치 · 빈 상태 · Book 채우기 ✅ 🤖 `sitter-search.spec.ts` · SQL(정확한 반경) smoke는 CI 대기 — 호스팅 DB에는 +2 km 여유가 있는 옛 `014c`가 들어 있어 머지 때 다시 적용 · 사람 확인 대기 | 03B SS |
 
 ### Stage 4 — 돌봄 · 알림장
 
@@ -638,7 +639,24 @@
 | DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 
+### 3.26 시터 검색 (SEARCH) — 03B SS · *사전: 호스팅 DB에 `014c`, 견주 프로필에 집 위치(데모 Robert는 시드에 있음), 시터의 일정 · 집 위치(데모 Chloe는 시드에 있음, 약 7 km)*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 | SQL `rls_smoke` | ➖ |
+| SEARCH-2 | 견주 → Bookings → **Book care** | **Find a sitter**가 열림(Who's staying · When · Near · 슬라이더). 펫이 하나면 미리 선택. **Search** → 머무는 내내 가능한 시터만 가까운 순으로 카드(이름 · "≈ 3 km away" · 가격 · 서비스). 반경 밖 · 시간 밖 시터는 아예 없음 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-3 | 슬라이더를 마우스로 끌기 · 트랙 클릭 · 키보드(→ +1, PageUp +10) | 값(km)이 따라가고 **Search를 다시 누르지 않아도** 쉬면 한 번만 다시 검색(끄는 동안 이전 결과는 흐리게). 슬라이더를 끌어도 화면은 스크롤되지 않음 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-4 | 검색 뒤 날짜 · 시간 · 펫 · 장소를 바꿈 | 자동 검색 없이 "tap Search to update the list" 안내, **Search** 누르면 갱신 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-5 | **Where I am now** 선택 / 브라우저에서 위치 차단 | 위치는 한 번만 묻고 그 좌표로 검색. 차단되면 어떻게 풀지 안내하고 Search는 기다림 | 🤖 `sitter-search`(위치 목업) · 실제 브라우저 권한은 👤 | 사람 확인 대기 |
+| SEARCH-6 | 집 위치가 없는 견주 | "Your home isn't on the map yet" + Profile 열기 / 현재 위치로 검색 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-7 | 반경 안에 시터가 없음 | "No sitter free within N km" + 무엇을 바꾸면 되는지 + **Widen to 25 / 50 / 100 km** 버튼, 누르면 바로 다시 검색 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-8 | 결과의 **Book {시터}** | Book care가 그 시터 · 같은 날짜와 시간 · 같은 펫으로 채워져 열림(**Request booking with {시터}**) | 🤖 `sitter-search` | 사람 확인 대기 |
+
+---
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **시터 검색 거리는 직선거리이고 정수 km로 반올림해 보여 준다 (SEARCH):** 반경은 정확히 적용된다(5 km면 5 km 안). 시터 좌표는 절대 내려가지 않지만, 오너가 좌표를 바꿔 가며 여러 번 검색하면 시터 집을 대략 1 km 안으로 좁힐 수 있다 — 해커톤 데모(익명 시드)에서는 그대로 두고, TODO Later에 거리 구간화 · 호출 제한을 적어 둠.
 
 - **사진 요청 버튼은 앱의 "돌봄 중" 기준(맡긴 시각 ~ 데려가는 시각, `isCaring`)으로만 보인다 (11.1):** 서버(`request_photo`)는 맡기기 30분 전부터 받지만, 그 30분 동안 Feed에는 버튼이 아직 없다.
 - **Snap 리뷰에서 나온 알려진 문제 (2026-10-15, [review-2026-10-15.ko.md](review-2026-10-15.ko.md)) — 이미 기록됨, 따로 이슈로 올리지 않아도 됨 (P0 SR-1 – SR-4는 고침, 아래는 Later):** 스티커를 불러오기 전에(또는 실패 뒤) ✨ Decorate → Save 하면 저장된 스티커가 지워질 수 있음(SR-5) · Mood 영상에서 펫 박스가 프레임마다 다르게 잡히면 펫끼리 섞일 수 있음(SR-6) · 새 견주가 Snap 도구에서 Add pet 뒤 돌아오면 "Add a pet first"가 그대로(SR-8) · 시터 Diary는 견주가 새로 붙인 스티커를 새로고침 전까지 안 보여 줌(SR-16).

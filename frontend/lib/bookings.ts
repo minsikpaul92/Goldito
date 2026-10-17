@@ -288,6 +288,79 @@ export async function searchSitters(dropOffAt: string, pickUpAt: string, petCoun
   }));
 }
 
+/** One row of search_sitters_nearby (014c): a sitter free for the whole stay near a place. No coordinates, ever. */
+export type NearbySitter = {
+  sitterId: string;
+  displayName: string;
+  bio: string | null;
+  serviceArea: string | null;
+  experienceYears: number | null;
+  services: ServiceType[];
+  isMySitter: boolean;
+  acceptsMultipleOwners: boolean;
+  /** Whole km, at least 1 — approximate on purpose. */
+  distanceKm: number;
+  boardingNightly: number | null;
+  houseSittingNightly: number | null;
+};
+
+export type NearbySearch = {
+  dropOffAt: string;
+  pickUpAt: string;
+  petCount: number;
+  radiusKm: number;
+  /** Omitted = the owner's saved home point (read on the server). */
+  point?: { lat: number; lng: number } | null;
+};
+
+const SEARCH_MESSAGES: Record<string, string> = {
+  no_home_point: "Your home isn't on the map yet. Add it in Profile, or use your current location.",
+  invalid_radius: "Pick a distance from 1 to 100 km.",
+  invalid_point: "Couldn't read your location. Try again.",
+  invalid_window: "Pick a drop-off in the future and a pick-up after it.",
+};
+
+/** Sitters who can take the whole stay within radiusKm (+2 km) of the place, nearest first (owners only). */
+export async function searchSittersNearby(search: NearbySearch): Promise<NearbySitter[]> {
+  const { data, error } = await getSupabase().rpc("search_sitters_nearby", {
+    p_drop_off_at: search.dropOffAt,
+    p_pick_up_at: search.pickUpAt,
+    p_pet_count: search.petCount,
+    p_radius_km: search.radiusKm,
+    p_lat: search.point?.lat ?? null,
+    p_lng: search.point?.lng ?? null,
+  });
+  if (error) {
+    throw new BookingError(error.message, SEARCH_MESSAGES[error.message] ?? "Couldn't search sitters. Try again.");
+  }
+  const price = (v: number | string | null | undefined) => (v == null ? null : Number(v));
+  return ((data ?? []) as {
+    sitter_id: string;
+    display_name: string;
+    bio: string | null;
+    service_area: string | null;
+    experience_years: number | null;
+    services: ServiceType[] | null;
+    is_my_sitter: boolean;
+    accepts_multiple_owners: boolean | null;
+    distance_km: number;
+    boarding_nightly: number | string | null;
+    house_sitting_nightly: number | string | null;
+  }[]).map((r) => ({
+    sitterId: r.sitter_id,
+    displayName: r.display_name,
+    bio: r.bio,
+    serviceArea: r.service_area,
+    experienceYears: r.experience_years,
+    services: r.services ?? ["boarding"],
+    isMySitter: r.is_my_sitter,
+    acceptsMultipleOwners: r.accepts_multiple_owners ?? false,
+    distanceKm: r.distance_km,
+    boardingNightly: price(r.boarding_nightly),
+    houseSittingNightly: price(r.house_sitting_nightly),
+  }));
+}
+
 export type BookingRequest = {
   sitterId: string;
   petIds: string[];
