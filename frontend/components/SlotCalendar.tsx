@@ -113,12 +113,12 @@ export function SlotCalendar({
                 style={[styles.cell, styles.day, selected && styles.selected, past && styles.past]}
                 testID={`day-${day}`}
               >
-                <Text style={[styles.date, day === today && styles.today]}>{dayOfMonth(day)}</Text>
-                <View style={styles.strip}>
+                <View style={styles.thirds} pointerEvents="none">
                   {SLOTS.map(({ slot }, k) => (
                     <View key={slot} style={thirdStyle(states[k], past)} testID={`third-${day}-${slot}`} />
                   ))}
                 </View>
+                <Text style={[styles.date, day === today && styles.today]}>{dayOfMonth(day)}</Text>
               </Pressable>
             );
           })}
@@ -180,7 +180,6 @@ const makeStyles = (theme: Theme) =>
     day: {
       alignItems: "center",
       justifyContent: "center",
-      gap: 2,
       borderRadius: theme.radius.sm,
       borderWidth: 2,
       borderColor: "transparent",
@@ -201,14 +200,17 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.primary,
       textDecorationLine: "underline",
     },
-    strip: {
+    thirds: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       flexDirection: "row",
-      width: 36,
-      height: 12,
       overflow: "hidden",
-      borderRadius: 4,
+      borderRadius: theme.radius.sm,
       borderWidth: 1,
-      borderColor: theme.color.borderStrong,
+      borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
     third: {
