@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Avatar } from "../../components/ui/Avatar";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -25,9 +26,7 @@ export function SnapToolCard({ emoji, title, blurb, onPress, testID }: Props) {
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       testID={testID}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarEmoji}>{emoji}</Text>
-      </View>
+      <Avatar kind="emoji" emoji={emoji} size={56} />
       <View style={styles.body}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.blurb}>{blurb}</Text>
@@ -50,16 +49,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     pressed: { opacity: 0.8 },
-    avatar: {
-      width: theme.spacing.xl + theme.spacing.lg,
-      height: theme.spacing.xl + theme.spacing.lg,
-      borderRadius: (theme.spacing.xl + theme.spacing.lg) / 2,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.color.accent,
-    },
-    avatarEmoji: { fontSize: theme.icon.md },
     body: { flex: 1, gap: theme.spacing.xs },
-    title: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     blurb: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

@@ -268,7 +268,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     body: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.body, fontWeight: "600", color: theme.color.text },
+    label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
     ask: { gap: theme.spacing.sm },

@@ -75,5 +75,5 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 2,
       backgroundColor: theme.color.overlay,
     },
-    captionText: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primaryText },
+    captionText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primaryText },
   });

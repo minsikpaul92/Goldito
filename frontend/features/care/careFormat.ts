@@ -51,6 +51,11 @@ export function sortTasks(tasks: CareTaskRow[]): CareTaskRow[] {
 }
 
 /** Badge text for a task's state today; null while it is only scheduled. */
+/** Tag tone for a task status: done = success, missed = warning (late is never red), pending = neutral. */
+export function statusTone(status: TodayStatus): "success" | "warning" | "neutral" {
+  return status.kind === "done" ? "success" : status.kind === "missed" ? "warning" : "neutral";
+}
+
 export function statusLabel(status: TodayStatus): string | null {
   switch (status.kind) {
     case "done":

@@ -93,6 +93,8 @@ jobs:
         run: npm ci
       - name: What's New matches docs/CHANGELOG.md
         run: node scripts/changelog.mjs --check && node --test scripts/
+      - name: Screen map matches the code (docs/design/screen-map.md)
+        run: node scripts/screen-map.mjs --check
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Expo web export

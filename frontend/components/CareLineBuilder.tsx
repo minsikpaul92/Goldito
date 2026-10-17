@@ -228,8 +228,8 @@ const makeStyles = (theme: Theme) =>
       borderBottomColor: theme.color.border,
     },
     lineText: { flex: 1, fontSize: theme.fontSize.body, color: theme.color.text },
-    x: { fontSize: 16, fontWeight: "700", color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    x: { fontSize: 16, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted, paddingHorizontal: theme.spacing.xs },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     chip: {
       minHeight: 44,
@@ -242,7 +242,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     chipOn: { backgroundColor: theme.color.primary },
-    chipText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
+    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     chipTextOn: { color: theme.color.primaryText },
     pressed: { opacity: 0.7 },
     editor: {
@@ -264,7 +264,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    timeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     chevron: { fontSize: 22, color: theme.color.textMuted },
     countBox: { gap: theme.spacing.xs },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },

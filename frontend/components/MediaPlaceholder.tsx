@@ -66,13 +66,13 @@ const makeStyles = (theme: Theme) =>
     },
     kind: {
       fontSize: theme.fontSize.caption,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.primary,
       textTransform: "uppercase",
     },
     title: {
       fontSize: theme.fontSize.body,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
       textAlign: "center",
     },

@@ -139,9 +139,9 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature, ownerNa
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
-    code: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    code: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     codes: { gap: theme.spacing.xs },
   });

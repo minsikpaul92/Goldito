@@ -256,14 +256,14 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     trip: { gap: theme.spacing.xs },
-    tripTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    tripTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     draft: { gap: theme.spacing.sm },
     warning: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, textAlign: "center" },
     noRoom: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    check: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.warning },
+    check: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.warning },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     row: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs, alignItems: "center" },
     sources: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
   });

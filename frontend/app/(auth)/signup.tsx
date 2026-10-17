@@ -166,10 +166,11 @@ export default function SignupScreen() {
           label={submitting ? "Creating account…" : "Create account"}
           onPress={() => void createAccount()}
           disabled={!canSubmit}
+          testID="create-account"
         />
       </View>
 
-      <TextButton label="Already have an account? Sign in" onPress={() => router.replace("/login")} />
+      <TextButton label="Already have an account? Sign in" onPress={() => router.replace("/login")} testID="go-login" />
     </Screen>
   );
 }
@@ -184,7 +185,7 @@ const makeStyles = (theme: Theme) =>
     },
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
     },
     subtitle: {

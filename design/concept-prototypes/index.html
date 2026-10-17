@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goldito Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  /* Overview: the one page to start from. Summary and countdown → the three looks → where each stage is in the app →
+     every README promise → what we've built. Decisions and the schedule live on Plan; logo, type and rules on Brand. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font:15px/1.55 var(--font-ui);padding-inline:1rem;padding-block:0 4rem;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:66rem;margin:0 auto;display:flex;flex-direction:column;gap:3.25rem;padding-top:2.25rem}
+  .wrap>*,section{min-width:0}
+  h1,h2,h3{margin:0;text-wrap:balance}
+  h1{font:700 clamp(2rem,4.6vw,2.75rem)/1.1 var(--font-display);letter-spacing:-.01em}
+  h2{font:600 1.5rem/1.2 var(--font-display)}
+  h3{font-size:.9375rem;font-weight:600}
+  p{margin:0}
+  a{color:var(--color-primary)}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  section{display:flex;flex-direction:column;gap:1rem;scroll-margin-top:5rem}
+  .head{display:flex;flex-direction:column;gap:.25rem;max-width:44rem}
+  .head p{color:var(--color-text-muted)}
+  /* hero */
+  .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1.5rem 2rem;align-items:end}
+  .hero .lede{font-size:1.0625rem;color:var(--color-text-muted);max-width:42rem;margin-top:.75rem}
+  .hero .lede b{color:var(--color-text)}
+  .actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}
+  .count{display:flex;gap:.625rem}
+  .cd{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:.75rem 1rem;min-width:7.25rem;display:flex;flex-direction:column;gap:.125rem}
+  .cd b{font:700 2rem/1 var(--font-display);font-variant-numeric:tabular-nums}
+  .cd span{font-size:.8125rem;color:var(--color-text-muted)}
+  .cd.hot{background:var(--color-primary);border-color:var(--color-primary)}
+  .cd.hot b,.cd.hot span{color:var(--color-primary-text)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.625rem}
+  .tile{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.875rem 1rem;display:flex;flex-direction:column;gap:.25rem}
+  .tile b{font:700 1.625rem/1 var(--font-display);font-variant-numeric:tabular-nums}
+  .tile span{font-size:.8125rem;color:var(--color-text-muted);line-height:1.35}
+  /* looks */
+  .looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:1rem}
+  .look{display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden}
+  .look:hover{border-color:var(--color-primary)}
+  .look .frame{display:block;height:15rem;overflow:hidden;background:var(--color-track);position:relative}
+  .look iframe{position:absolute;left:50%;top:0;width:402px;height:874px;border:0;transform:translateX(-50%) scale(.5);transform-origin:top center;pointer-events:none}
+  .look-body{display:flex;flex-direction:column;gap:.125rem;padding:.75rem 1rem .875rem;font-size:.875rem}
+  .look-body b{font:600 1.0625rem/1.2 var(--font-display)}
+  .look-body>span{color:var(--color-text-muted)}
+  /* stages */
+  .stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(11.5rem,1fr));gap:.75rem;margin:0;padding:0;list-style:none}
+  .stage{padding:1rem;display:flex;flex-direction:column;gap:.5rem}
+  .stage .num{font-size:.75rem;font-weight:700;color:var(--color-text-muted)}
+  .stage h3{font:600 1.0625rem/1.2 var(--font-display)}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;font-size:.8125rem}
+  .ds-tag.success{background:var(--color-success-surface);color:var(--color-success);border-color:transparent}
+  .ds-tag.warning{background:var(--color-warning-surface);color:var(--color-warning);border-color:transparent}
+  .ds-tag.none{background:var(--color-track);color:var(--color-text-muted);border-color:transparent}
+  .stage .go{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:auto;padding-top:.25rem;font-size:.8125rem;font-weight:600}
+  .stage .go a{min-height:32px;display:inline-flex;align-items:center}
+  /* feature map */
+  .map-wrap{overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface)}
+  .map{width:100%;border-collapse:collapse;font-size:.875rem;min-width:36rem}
+  .map th{text-align:left;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);padding:.625rem .875rem;border-bottom:1px solid var(--color-border)}
+  .map td{padding:.5rem .875rem;border-top:1px solid var(--color-border);vertical-align:middle}
+  .map tr.grp td{background:var(--color-track);font-weight:700;font-size:.8125rem;border-top:0}
+  .map td:nth-child(2){white-space:nowrap}
+  .map td:last-child{width:1%}
+  .map .links{display:flex;gap:.75rem;flex-wrap:nowrap;white-space:nowrap;font-weight:600;font-size:.8125rem}
+  .map .links a{min-height:32px;display:inline-flex;align-items:center}
+  .map .ph{font-size:.75rem;color:var(--color-text-muted);margin-left:.375rem}
+  .map .nodraft{font-weight:600;font-size:.75rem;color:var(--color-warning);background:var(--color-warning-surface);border-radius:6px;padding:.125rem .5rem;display:inline-flex;align-items:center}
+  .map-note{font-size:.8125rem;color:var(--color-text-muted)}
+  .map-note code{font-size:.75rem}
+  /* built */
+  .gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+  .shot{margin:0;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit}
+  .shot:hover{border-color:var(--color-primary)}
+  .shot img{width:100%;height:auto;display:block;aspect-ratio:3/2;object-fit:cover;object-position:top;background:var(--color-track)}
+  .shot>span{padding:.75rem 1rem .875rem;display:flex;flex-direction:column;gap:.125rem;font-size:.8125rem;color:var(--color-text-muted)}
+  .shot>span b{font:600 1rem/1.25 var(--font-display);color:var(--color-text)}
+  .chapters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+  .ch{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.875rem 1rem;display:flex;flex-direction:column;gap:.375rem;min-width:0}
+  .ch .when{font-size:.75rem;font-weight:700;color:var(--color-primary)}
+  .ch h3{font:600 1rem/1.2 var(--font-display)}
+  .ch ul{margin:0;padding-left:1rem;font-size:.8125rem;color:var(--color-text-muted);display:flex;flex-direction:column;gap:.25rem}
+  /* get started */
+  .steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;align-items:start}
+  .s3{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:1rem 1.125rem;display:flex;flex-direction:column;gap:.375rem;text-decoration:none;color:inherit;font-size:.875rem;min-width:0}
+  a.s3:hover,.s3 summary:hover{border-color:var(--color-primary)}
+  .s3 .n{width:26px;height:26px;border-radius:8px;background:var(--color-primary);color:var(--color-primary-text);display:grid;place-items:center;font:700 .875rem/1 var(--font-display)}
+  .s3 b{font:600 1.0625rem/1.25 var(--font-display)}
+  .s3>span:last-child,.s3 summary>span:last-child{color:var(--color-text-muted)}
+  .s3 code{font-size:.8125rem}
+  .run{grid-column:1/-1}
+  .run summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:.375rem}
+  .run summary::-webkit-details-marker{display:none}
+  .run summary b::after{content:" ▾";font-size:.8em;color:var(--color-text-muted)}
+  .run[open] summary b::after{content:" ▴"}
+  .cmds{margin:.5rem 0 0;padding-left:1.25rem;display:flex;flex-direction:column;gap:.5rem}
+  .cmd{display:inline;font:600 .8125rem/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--color-track);border-radius:6px;padding:.125rem .375rem;cursor:copy;word-break:break-word}
+  .cmd.copied{background:var(--color-success-surface);color:var(--color-success)}
+  .envwrap{overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-md);margin-top:.5rem}
+  .env{width:100%;border-collapse:collapse;font-size:.8125rem;min-width:36rem}
+  .env th{text-align:left;font-size:.6875rem;font-weight:700;letter-spacing:.04em;color:var(--color-text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--color-border)}
+  .env td{padding:.5rem .75rem;border-top:1px solid var(--color-border);vertical-align:top}
+  .env td:first-child{font-weight:700;white-space:nowrap}
+  .env .ok{color:var(--color-text)}
+  .env .key,.keyd{color:var(--color-error);font-weight:600}
+  .warn{margin-top:.5rem;font-size:.8125rem;background:var(--color-error-surface);border-radius:var(--radius-md);padding:.625rem .875rem}
+  footer{font-size:.8125rem;color:var(--color-text-muted);display:flex;gap:.5rem 1.25rem;flex-wrap:wrap;align-items:center;border-top:1px solid var(--color-border);padding-top:1rem}
+  footer a{min-height:32px;display:inline-flex;align-items:center}
+  @media (max-width:820px){.steps3{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.chapters{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery{grid-template-columns:1fr}}
+  @media (max-width:460px){.chapters{grid-template-columns:1fr}.count{width:100%}.cd{flex:1;min-width:0}.tiles{grid-template-columns:1fr 1fr}.tile:last-child:nth-child(odd){grid-column:1/-1}}
+</style>
+<script src="nav.js" defer></script>
+<script src="screens.js?v=4"></script>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <div>
+      <span class="eyebrow"><span class="en">Goldito design · updated Oct 15, 2026</span><span class="ko">Goldito 디자인 · 2026년 10월 15일 업데이트</span></span>
+      <h1><span class="en">Everything we've designed, in one place</span><span class="ko">우리가 디자인한 모든 것, 한곳에</span></h1>
+      <p class="lede"><span class="en">Goldito is a pet-sitting app for <b>dogs and cats</b>: one stay in five stages, from the first question to the ride home, with an AI that answers, plans and writes so the sitter can just care. This site holds the Draft (the design target, playable in three looks), the step-by-step flows for older owners, the brand, and the plan to the <b>Oct 30</b> submission.</span><span class="ko">Goldito는 <b>강아지와 고양이</b>를 위한 펫시팅 앱이에요. 첫 질문부터 집에 오는 길까지 한 번의 스테이를 다섯 단계로, AI가 답하고 계획하고 써 줘서 시터는 돌봄에만 집중해요. 이 사이트에는 초안(디자인 목표, 세 가지 룩으로 체험), 어르신을 위한 단계별 흐름, 브랜드, 그리고 <b>10/30</b> 제출까지의 계획이 있어요.</span></p>
+      <div class="actions">
+        <a class="ds-btn" href="prototype.html#stage-1/d"><span class="en">Play the Draft</span><span class="ko">초안 체험하기</span></a>
+        <a class="ds-btn secondary" href="steps.html"><span class="en">Step by step</span><span class="ko">단계별 흐름</span></a>
+        <a class="ds-btn secondary" href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=0-1" target="_blank" rel="noopener">Figma ↗</a>
+      </div>
+    </div>
+    <div class="count" aria-label="Countdown">
+      <div class="cd hot"><b id="dSubmit">15</b><span><span class="en">days to submit</span><span class="ko">제출까지</span><br>Oct 30 · 10 AM PT</span></div>
+      <div class="cd"><b id="dFreeze">13</b><span><span class="en">days to freeze</span><span class="ko">동결까지</span><br>Oct 28</span></div>
+    </div>
+  </header>
+
+  <div class="tiles" id="tiles" aria-label="At a glance"></div>
+
+  <section aria-labelledby="h-start" id="start">
+    <div class="head"><h2 id="h-start"><span class="en">Get started</span><span class="ko">시작하기</span></h2>
+      <p><span class="en">Three ways in, from quickest to most complete.</span><span class="ko">들어가는 세 가지 방법, 빠른 것부터.</span></p></div>
+    <div class="steps3">
+      <a class="s3" href="prototype.html#stage-1/d" data-tip="Opens the Prototype at ① Inquiry in the Expressive look" data-tip-ko="프로토타입의 ① 문의를 익스프레시브 룩으로 열어요"><span class="n">1</span><b><span class="en">Play the Draft</span><span class="ko">초안 체험</span></b><span><span class="en">The design target. Tap through a whole stay; Chloe's side shows in dashed panels.</span><span class="ko">디자인 목표. 스테이 전체를 눌러 보세요. Chloe 쪽 화면은 점선 패널로 보여요.</span></span></a>
+      <a class="s3" href="https://goldito-petcare.vercel.app" target="_blank" rel="noopener" data-tip="The team's live app on main, redeployed on every merge" data-tip-ko="main의 실제 앱, 머지할 때마다 다시 배포돼요"><span class="n">2</span><b><span class="en">Try the real app ↗</span><span class="ko">실제 앱 써 보기 ↗</span></b><span><span class="en">goldito-petcare.vercel.app → Sign in → <i>Demo owner</i> (Robert) or <i>Demo sitter</i> (Chloe). On a computer, add <code>?view=split</code> to see both phones side by side.</span><span class="ko">goldito-petcare.vercel.app → Sign in → <i>Demo owner</i>(Robert) 또는 <i>Demo sitter</i>(Chloe). 컴퓨터에서는 <code>?view=split</code>을 붙이면 두 폰이 나란히 보여요.</span></span></a>
+      <details class="s3 run"><summary><span class="n">3</span><b><span class="en">Run it on your computer</span><span class="ko">내 컴퓨터에서 실행</span></b><span><span class="en">For trying components in the real code. Needs two settings files from Minsik.</span><span class="ko">실제 코드에서 컴포넌트를 시험할 때. 민식 님의 설정 파일 두 개가 필요해요.</span></span></summary>
+        <ol class="cmds">
+          <li><span class="en">Clone <a href="https://github.com/minsikpaul92/Goldito" target="_blank" rel="noopener">minsikpaul92/Goldito</a>.</span><span class="ko"><a href="https://github.com/minsikpaul92/Goldito" target="_blank" rel="noopener">minsikpaul92/Goldito</a>를 클론하세요.</span></li>
+          <li><span class="en">Save Minsik's two files as <code>frontend/.env</code> and <code>backend/.env</code> (both are git-ignored).</span><span class="ko">민식 님의 파일 두 개를 <code>frontend/.env</code>와 <code>backend/.env</code>로 저장하세요 (둘 다 git에 안 올라가요).</span></li>
+          <li><span class="en">App:</span><span class="ko">앱:</span> <code class="cmd" data-tip="Click to copy" data-tip-ko="눌러서 복사">cd frontend && npm install && npx expo start --web</code> <span class="en">→ localhost:8081</span><span class="ko">→ localhost:8081</span></li>
+          <li><span class="en">Server (photo uploads and AI):</span><span class="ko">서버 (사진 업로드와 AI):</span> <code class="cmd" data-tip="Click to copy" data-tip-ko="눌러서 복사">cd backend && python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000</code></li>
+          <li><span class="en">Sign in with <i>Demo owner</i> or <i>Demo sitter</i>. Both demo accounts are shared with the team, and Demo tools' reset affects everyone.</span><span class="ko"><i>Demo owner</i> 또는 <i>Demo sitter</i>로 로그인. 데모 계정은 팀이 같이 쓰고, Demo tools의 초기화는 모두에게 적용돼요.</span></li>
+        </ol>
+        <div class="envwrap" tabindex="0" aria-label="What the settings files hold"><table class="env">
+          <thead><tr><th scope="col"><span class="en">Service</span><span class="ko">서비스</span></th><th scope="col"><span class="en">What it's for</span><span class="ko">용도</span></th><th scope="col">frontend/.env</th><th scope="col">backend/.env</th></tr></thead>
+          <tbody>
+            <tr><td>Supabase</td><td><span class="en">Database and sign-in</span><span class="ko">데이터베이스와 로그인</span></td><td><span class="ok">URL · <span data-tip="Public by design: the live app ships it" data-tip-ko="원래 공개용: 실제 앱에 들어 있어요">anon key</span></span></td><td><span class="key" data-tip="Full database access, skips every protection. Never share." data-tip-ko="데이터베이스 전체 접근, 모든 보호를 건너뜀. 절대 공유 금지.">service role · JWT secret</span></td></tr>
+            <tr><td>Cloudinary</td><td><span class="en">Photos and videos</span><span class="ko">사진과 영상</span></td><td><span class="ok"><span class="en">cloud name</span><span class="ko">클라우드 이름</span></span></td><td><span class="key">API key · secret</span></td></tr>
+            <tr><td>Nebius Token Factory</td><td><span class="en">The AI models (vision, safety, report, fast)</span><span class="ko">AI 모델 (비전, 안전, 알림장, 빠른 응답)</span></td><td>—</td><td><span class="key">API key</span> · <span class="ok"><span class="en">4 model names</span><span class="ko">모델 이름 4개</span></span></td></tr>
+            <tr><td>Tavily</td><td><span class="en">Vet and FDA sources for the treat check</span><span class="ko">간식 확인의 수의사 · FDA 출처</span></td><td>—</td><td><span class="key">API key</span></td></tr>
+            <tr><td>Google</td><td><span class="en">Video Meet &amp; Greet links and invites</span><span class="ko">영상 Meet &amp; Greet 링크와 초대</span></td><td>—</td><td><span class="key">OAuth client · secret · refresh token</span></td></tr>
+            <tr><td><span class="en">Demo</span><span class="ko">데모</span></td><td><span class="en">Try-demo buttons and the reset tool</span><span class="ko">데모 버튼과 초기화 도구</span></td><td><span class="ok"><span class="en">password · tools on</span><span class="ko">비밀번호 · 도구 켬</span></span></td><td><span class="ok"><span class="en">password · reset on</span><span class="ko">비밀번호 · 초기화 켬</span></span></td></tr>
+            <tr><td><span class="en">Plumbing</span><span class="ko">기본 설정</span></td><td><span class="en">Server address, time zone, allowed local ports</span><span class="ko">서버 주소, 시간대, 허용된 로컬 포트</span></td><td><span class="ok">API URL · <span class="en">time zone</span><span class="ko">시간대</span></span></td><td><span class="ok">CORS (8081, 19006) · <span class="en">time zone</span><span class="ko">시간대</span></span></td></tr>
+          </tbody></table></div>
+        <p class="warn"><span class="en"><b>Keep the files private.</b> <span class="keyd">Red</span> values are secrets: never paste them into chat, issues, Figma, this site or a commit. Delete downloaded copies once they're in place.</span><span class="ko"><b>파일은 비공개로.</b> <span class="keyd">빨간</span> 값은 비밀이에요: 채팅, 이슈, Figma, 이 사이트, 커밋에 절대 붙이지 마세요. 자리에 넣은 뒤 다운로드한 사본은 지우세요.</span></p>
+      </details>
+    </div>
+  </section>
+
+  <!-- One look while the others are paused (screens.js: GOLDITO_SHOW_ALL_LOOKS). The script below swaps the sections. -->
+  <section aria-labelledby="h-look1" id="look1" hidden>
+    <div class="head"><h2 id="h-look1"><span class="en">The look: Expressive</span><span class="ko">룩: 익스프레시브</span></h2>
+      <p><span class="en">The logo's typeface, tag gold, color blocks and illustrations. It's the look we're building (D1, Oct 15). Balanced and Playful are paused, not deleted.</span><span class="ko">로고 서체, 태그 골드, 컬러 블록과 일러스트. 우리가 만들어 갈 룩이에요(D1, 10/15). 밸런스드와 플레이풀은 지운 게 아니라 잠시 쉬는 중이에요.</span></p></div>
+    <div class="looks">
+      <a class="look" href="prototype.html#owner-home/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-home" title="Expressive Home" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Home</span><span class="ko">홈</span></b><span><span class="en">Today's care at a glance, with the gold progress bar.</span><span class="ko">오늘의 돌봄을 한눈에, 골드 진행 막대와 함께.</span></span></span></a>
+      <a class="look" href="prototype.html#owner-feed/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-feed" title="Expressive Feed" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Feed</span><span class="ko">피드</span></b><span><span class="en">Photos by day, Meals · Walks · Naps.</span><span class="ko">날짜별 사진, 식사 · 산책 · 낮잠.</span></span></span></a>
+      <a class="look" href="prototype.html#stage-1/d"><span class="frame"><iframe src="pawnote-concept-d-expressive.html" title="Expressive stay" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">The whole stay</span><span class="ko">스테이 전체</span></b><span><span class="en">① Inquiry to ⑤ Completion, playable.</span><span class="ko">① 문의부터 ⑤ 마무리까지 체험.</span></span></span></a>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-looks" id="looks">
+    <div class="head"><h2 id="h-looks"><span class="en">Three looks, one app</span><span class="ko">세 가지 룩, 하나의 앱</span></h2>
+      <p><span class="en">Same screens, same data. Pick one to open it next to today's app. Choosing one (decision D1) is on the Plan.</span><span class="ko">같은 화면, 같은 데이터. 골라서 지금 앱과 나란히 열어 보세요. 하나를 고르는 결정(D1)은 계획 탭에 있어요.</span></p></div>
+    <div class="looks">
+      <a class="look" href="prototype.html#owner-home/c"><span class="frame"><iframe src="redesign/app.html?skin=c#owner-home" title="Balanced" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Balanced</span><span class="ko">밸런스드</span></b><span><span class="en">Calm and closest to the code. White cards, soft neutrals.</span><span class="ko">차분하고 코드와 가장 가까워요. 흰 카드, 부드러운 뉴트럴.</span></span></span></a>
+      <a class="look" href="prototype.html#owner-home/b"><span class="frame"><iframe src="redesign/app.html?skin=b#owner-home" title="Playful" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Playful</span><span class="ko">플레이풀</span></b><span><span class="en">Ink outlines, sticker shadows, a pixel room for the sitter.</span><span class="ko">잉크 외곽선, 스티커 그림자, 시터용 픽셀 룸.</span></span></span></a>
+      <a class="look" href="prototype.html#owner-home/d"><span class="frame"><iframe src="redesign/app.html?skin=d#owner-home" title="Expressive" loading="lazy" tabindex="-1"></iframe></span>
+        <span class="look-body"><b><span class="en">Expressive</span><span class="ko">익스프레시브</span></b><span><span class="en">The logo's typeface, tag gold, color blocks and illustrations.</span><span class="ko">로고 서체, 태그 골드, 컬러 블록과 일러스트.</span></span></span></a>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-where" id="where">
+    <div class="head"><h2 id="h-where"><span class="en">Where each stage is</span><span class="ko">단계별 현황</span></h2>
+      <p><span class="en">In the app on main (Oct 15), and in the Draft.</span><span class="ko">main의 앱(10/15)과 초안 기준.</span></p></div>
+    <ul class="stages" id="stages"></ul>
+  </section>
+
+  <section aria-labelledby="h-map" id="map">
+    <div class="head"><h2 id="h-map"><span class="en">Every README promise</span><span class="ko">README의 모든 약속</span></h2>
+      <p><span class="en">Play it in the Draft, open its Figma section or README paragraph, and see whether the app has it yet.</span><span class="ko">초안에서 체험하고, Figma 섹션이나 README 문단을 열고, 앱에 이미 있는지 확인하세요.</span></p></div>
+    <div class="map-wrap"><table class="map" id="featureMap"><thead><tr>
+      <th scope="col"><span class="en">What the README promises</span><span class="ko">README의 약속</span></th>
+      <th scope="col"><span class="en">In the app</span><span class="ko">앱</span></th>
+      <th scope="col"><span class="en">Open</span><span class="ko">열기</span></th></tr></thead><tbody></tbody></table></div>
+    <p class="map-note"><span class="en">“Not in the Draft yet” rows are in the app (or planned) but the Draft hasn't caught up. App status comes from the team's test guide; the list lives in <code>screens.js</code>, so this table and the Prototype page never disagree.</span><span class="ko">“아직 초안에 없음” 줄은 앱에는 있지만(또는 계획) 초안이 아직 따라가지 못한 것이에요. 앱 상태는 팀 테스트 가이드 기준이고, 목록은 <code>screens.js</code> 한 곳에 있어서 이 표와 프로토타입 페이지가 어긋나지 않아요.</span></p>
+  </section>
+
+  <section aria-labelledby="h-built" id="built">
+    <div class="head"><h2 id="h-built"><span class="en">What we've built, Oct 1 – 15</span><span class="ko">우리가 만든 것, 10/1 – 15</span></h2>
+      <p><span class="en">Four stretches of work. Each picture opens the real thing.</span><span class="ko">네 묶음의 작업. 그림을 누르면 실제 화면이 열려요.</span></p></div>
+    <div class="gallery">
+      <a class="shot" href="prototype.html#stage-1/d"><img src="assets/overview/draft-three-looks.jpg" alt="The Draft's stay in Balanced, Playful and Expressive" loading="lazy" width="1200" height="805"><span><b><span class="en">The Draft: the whole stay in three looks</span><span class="ko">초안: 세 가지 룩으로 보는 스테이 전체</span></b><span class="en">① to ⑤ playable, with Chloe's side shown along the way</span><span class="ko">①부터 ⑤까지 체험, 중간중간 Chloe 쪽 화면도</span></span></a>
+      <a class="shot" href="steps.html"><img src="assets/overview/step-by-step.jpg" alt="The step-by-step page: a phone asking one question, and thumbnails of every screen" loading="lazy" width="1200" height="769"><span><b><span class="en">Step by step for older owners</span><span class="ko">어르신을 위한 단계별 흐름</span></b><span class="en">One question per screen, the team's large-text sizes</span><span class="ko">한 화면에 질문 하나, 팀의 큰 글씨 값</span></span></a>
+      <a class="shot" href="prototype.html#owner-snap/d"><img src="assets/overview/new-screens.jpg" alt="Snap, Settings and What's New screens" loading="lazy" width="1200" height="850"><span><b><span class="en">New this week: Snap, Settings, What's New</span><span class="ko">이번 주 새 화면: Snap, 설정, What's New</span></b><span class="en">Matching the app's new tab and Settings (shipped Oct 15)</span><span class="ko">앱의 새 탭과 설정에 맞춤 (10/15 출시)</span></span></a>
+      <a class="shot" href="prototype.html#owner-snap/d"><img src="assets/overview/prototype-page.jpg" alt="The Prototype page: screen list, today's app and the Draft, and notes with links" loading="lazy" width="1200" height="769"><span><b><span class="en">The Prototype page</span><span class="ko">프로토타입 페이지</span></b><span class="en">Today's app next to the Draft, with notes, Figma and README links</span><span class="ko">지금 앱과 초안을 나란히, 노트와 Figma · README 링크</span></span></a>
+    </div>
+    <div class="chapters">
+      <div class="ch"><span class="when">Oct 1 – 3</span><h3><span class="en">Concepts and a Figma plugin</span><span class="ko">콘셉트와 Figma 플러그인</span></h3><ul><li><span class="en">Pet-theme concept prototypes</span><span class="ko">펫 테마 콘셉트 프로토타입</span></li><li><span class="en">A plugin that builds the library and every screen</span><span class="ko">라이브러리와 모든 화면을 만드는 플러그인</span></li></ul></div>
+      <div class="ch"><span class="when">Oct 5 – 7</span><h3><span class="en">Design system v1</span><span class="ko">디자인 시스템 v1</span></h3><ul><li><span class="en">Tokens, AA contrast, 44 px targets</span><span class="ko">토큰, AA 대비, 44px 터치 영역</span></li><li><span class="en">65 Figma components, DESIGN.md, PR #54</span><span class="ko">Figma 컴포넌트 65개, DESIGN.md, PR #54</span></li></ul></div>
+      <div class="ch"><span class="when">Oct 9 – 13</span><h3><span class="en">The Draft follows the README</span><span class="ko">README를 따르는 초안</span></h3><ul><li><span class="en">Full stay, README promise map</span><span class="ko">스테이 전체, README 약속 지도</span></li><li><span class="en">Step-by-step flows for older owners</span><span class="ko">어르신을 위한 단계별 흐름</span></li></ul></div>
+      <div class="ch"><span class="when">Oct 13 – 15</span><h3><span class="en">Brand and the newest screens</span><span class="ko">브랜드와 최신 화면</span></h3><ul><li><span class="en">Logo directions, diary decoration</span><span class="ko">로고 방향, 다이어리 꾸미기</span></li><li><span class="en">Expressive polish, Snap, Settings</span><span class="ko">익스프레시브 다듬기, Snap, 설정</span></li></ul></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="plan.html"><span class="en">The plan to Oct 30 →</span><span class="ko">10/30까지의 계획 →</span></a>
+    <a href="brand.html"><span class="en">Logo, type and design rules →</span><span class="ko">로고, 서체, 디자인 규칙 →</span></a>
+    <span><span class="en">Prototype only: no real accounts, AI, payments or locations. Product copy is English (D1).</span><span class="ko">프로토타입이에요: 실제 계정, AI, 결제, 위치는 없어요. 제품 문구는 영어예요.</span></span>
+  </footer>
+</main>
+<script>
+// Everything below is drawn from screens.js (GOLDITO_SCREENS, GOLDITO_FEATURES), the one list behind the site.
+(() => {
+  const S = window.GOLDITO_SCREENS, F = window.GOLDITO_FEATURES, FIG = window.GOLDITO_FIGMA, GH = window.GOLDITO_REPO.replace("/blob/main/", "");
+  const both = (en, ko) => `<span class="en">${en}</span><span class="ko">${ko}</span>`;
+  // Countdown to the submission (Oct 30, 10:00 AM PT = 17:00 UTC) and the freeze (Oct 28).
+  if (!window.GOLDITO_SHOW_ALL_LOOKS) { document.getElementById("looks").hidden = true; document.getElementById("look1").hidden = false; }
+  const left = (iso) => Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 864e5));
+  document.getElementById("dSubmit").textContent = left("2026-10-30T17:00:00Z");
+  document.getElementById("dFreeze").textContent = left("2026-10-28T17:00:00Z");
+  // At a glance
+  const rows = F.flatMap((g) => g[1]), built = rows.filter((r) => r[3] === "built").length, inDraft = rows.filter((r) => r[5] !== "no").length;
+  const tiles = [[`${built} / ${rows.length}`, "README promises built in the app", "README 약속 중 앱에 구현", "From the team's test guide on main", "main의 팀 테스트 가이드 기준"],
+    [`${inDraft} / ${rows.length}`, "playable in the Draft", "초안에서 체험 가능", "The rest are marked “Not in the Draft yet” in the table below", "나머지는 아래 표에 “아직 초안에 없음”으로 표시돼요"],
+    [S.length, "screens in the Prototype", "프로토타입 화면 수", "Every screen in the Prototype list", "프로토타입 목록의 모든 화면"], ...(window.GOLDITO_SHOW_ALL_LOOKS ? [["3", "looks: Balanced, Playful, Expressive", "룩: 밸런스드, 플레이풀, 익스프레시브", "Picking one is decision D1 on the Plan", "하나를 고르는 것이 계획 탭의 결정 D1"]]
+      : [["1", "look: Expressive", "룩: 익스프레시브", "Decided Oct 15 (D1). Balanced and Playful are paused", "10/15 결정(D1). 밸런스드와 플레이풀은 잠시 쉬는 중"]]),
+    ["65", "Figma components from our plugin", "플러그인이 만든 Figma 컴포넌트", "Rebuilt with the screens on every plugin run", "플러그인을 돌릴 때마다 화면과 함께 다시 만들어요"]];
+  document.getElementById("tiles").innerHTML = tiles.map(([n, en, ko, ten, tko]) => `<div class="tile" tabindex="0" data-tip="${ten}" data-tip-ko="${tko}"><b>${n}</b><span>${both(en, ko)}</span></div>`).join("");
+  // Stage cards: app status and Draft coverage per stage, from the README map
+  const ST = [["①", "Inquiry", "문의", "stage-1"], ["②", "Meet & Greet", "Meet & Greet", "stage-2"], ["③", "Booking", "예약", "stage-3"], ["④", "Care & Pet Transit", "돌봄 · 이동", "stage-4"], ["⑤", "Completion", "마무리", "stage-5"]];
+  const TAG = {built: ["success", "Built", "구현됨"], part: ["warning", "Partly", "일부"], none: ["none", "Not yet", "아직"]};
+  document.getElementById("stages").innerHTML = ST.map(([n, en, ko, id], k) => {
+    const grp = F[k][1], b = grp.filter((r) => r[3] === "built").length, nd = grp.filter((r) => r[5] === "no").length, sc = S.find((x) => x.id === id) || {};
+    const [cls, ten, tko] = TAG[b === grp.length ? "built" : b ? "part" : "none"];
+    return `<li class="stage ds-card"><span class="num">${n}</span><h3>${both(en, ko)}</h3>
+      <div class="row">${both("App", "앱")}<span class="ds-tag ${cls}" tabindex="0" data-tip="README promises for this stage that the app has" data-tip-ko="이 단계의 README 약속 중 앱에 있는 것">${both(`${ten} · ${b}/${grp.length}`, `${tko} · ${b}/${grp.length}`)}</span></div>
+      <div class="row">${both("Draft", "초안")}<span class="ds-tag ${nd ? "warning" : "success"}" tabindex="0" data-tip="App features for this stage the Draft doesn't show yet" data-tip-ko="이 단계에서 앱에는 있지만 초안에 아직 없는 기능">${nd ? both(`${nd} to catch up`, `${nd}개 따라잡기`) : both("Up to date", "최신")}</span></div>
+      <div class="go"><a href="prototype.html#${id}/${window.GOLDITO_PRIMARY_LOOK || "c"}">${both("Play", "체험")}</a><a href="${FIG}${sc.figma}" target="_blank" rel="noopener">Figma ↗</a></div></li>`;
+  }).join("");
+  // Feature map
+  document.querySelector("#featureMap tbody").innerHTML = F.map(([stage, list]) =>
+    `<tr class="grp"><td colspan="3">${stage}</td></tr>` + list.map(([en, ko, id, st, ph, draft]) => {
+      const sc = S.find((x) => x.id === id) || {}, [cls, ten, tko] = TAG[st];
+      return `<tr><td>${both(en, ko)}</td><td><span class="ds-tag ${cls}">${both(ten, tko)}</span><span class="ph">${ph}</span></td>
+        <td><span class="links">${draft === "no" ? `<span class="nodraft" tabindex="0" data-tip="Built (or planned) in the app; the Draft hasn't caught up" data-tip-ko="앱에는 있거나 계획됐지만 초안이 아직 못 따라감">${both("Not in the Draft yet", "아직 초안에 없음")}</span>` : `<a href="prototype.html#${id}/${window.GOLDITO_PRIMARY_LOOK || "c"}">${draft === "related" ? both("Related ▸", "관련 ▸") : both("Play ▸", "체험 ▸")}</a>`}<a href="${FIG}${sc.figma}" target="_blank" rel="noopener">Figma ↗</a>${sc.readme ? `<a href="${GH}#${sc.readme}" target="_blank" rel="noopener">README ↗</a>` : ""}</span></td></tr>`;
+    }).join("")).join("");
+  // Commands copy on click (falls back to selecting the text where the clipboard is blocked).
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest(".cmd"); if (!c) return;
+    const done = () => { c.classList.add("copied"); setTimeout(() => c.classList.remove("copied"), 1200); };
+    const select = () => { const r = document.createRange(); r.selectNodeContents(c); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+    if (navigator.clipboard) navigator.clipboard.writeText(c.textContent).then(done, select); else select();
+  });
+})();
+</script>
+</body>
+</html>

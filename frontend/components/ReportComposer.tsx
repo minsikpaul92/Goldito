@@ -35,6 +35,7 @@ import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
 import { Card } from "./ui/Card";
 import { TextButton } from "./ui/TextButton";
+import { Tag } from "./ui/Tag";
 import { TextField } from "./ui/TextField";
 
 type Photo = { mediaId: string; thumbUrl: string };
@@ -320,7 +321,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     return (
       <Card style={styles.card} testID={`report-${pet.id}`}>
         <Text style={styles.title}>{pet.name}</Text>
-        <Text style={styles.sentBadge} testID={`report-sent-${pet.id}`}>{`Sent to ${pet.ownerName} ✓`}</Text>
+        <Tag label={`Sent to ${pet.ownerName} ✓`} tone="success" testID={`report-sent-${pet.id}`} />
         {sentId ? (
           <DecoratedReport
             reportId={sentId}
@@ -481,12 +482,11 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
-    section: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text, marginTop: theme.spacing.sm },
-    sentBadge: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    section: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text, marginTop: theme.spacing.sm },
     editGroup: { gap: theme.spacing.xs },
     editPills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     addRow: { flexDirection: "row", alignItems: "flex-end", gap: theme.spacing.sm },

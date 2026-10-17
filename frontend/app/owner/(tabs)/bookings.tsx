@@ -202,7 +202,7 @@ const makeStyles = (theme: Theme) =>
     },
     heading: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     hint: {
@@ -210,8 +210,8 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.textMuted,
     },
     question: { gap: theme.spacing.xs },
-    questionTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
-    ready: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.primary },
+    questionTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    ready: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     footer: {
       padding: theme.spacing.md,
       maxWidth: 480,

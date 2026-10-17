@@ -67,10 +67,10 @@ export function ConsentCard({ template, checked, onCheckedChange, signedAt, disa
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     summary: { fontSize: theme.fontSize.small, color: theme.color.text, lineHeight: 20 },
     linkWrap: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
-    link: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
+    link: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     bodyBox: {
       gap: theme.spacing.sm,
       padding: theme.spacing.sm,
@@ -79,5 +79,5 @@ const makeStyles = (theme: Theme) =>
     },
     body: { fontSize: theme.fontSize.small, color: theme.color.text, lineHeight: 20 },
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
-    signed: { fontSize: theme.fontSize.small, color: theme.color.success, fontWeight: "600" },
+    signed: { fontSize: theme.fontSize.small, color: theme.color.success, fontWeight: theme.fontWeight.semibold },
   });

@@ -143,5 +143,5 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
     },
     pressed: { opacity: 0.6 },
-    pillText: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.primary },
+    pillText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
   });

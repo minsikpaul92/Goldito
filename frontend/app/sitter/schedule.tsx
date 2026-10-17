@@ -290,7 +290,7 @@ const makeStyles = (theme: Theme) =>
     },
     summaryTitle: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
     },
     line: {

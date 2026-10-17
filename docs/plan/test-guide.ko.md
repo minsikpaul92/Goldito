@@ -611,6 +611,18 @@
 | SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목 | 앱 What's New에 보이지 않음(출시된 것만) | 🤖 `settings.spec.ts` · `node --test scripts/` | 사람 확인 대기 |
 | SET-3 | (개발) CHANGELOG.md만 고치고 `node scripts/changelog.mjs`를 안 돌린 PR | CI frontend 잡의 "What's New matches docs/CHANGELOG.md" 단계가 실패 | CI | ➖ |
 
+
+### 3.25 Figma 디자인 적용 (DS) — FIG-1 · 기준: Muk의 [Goldito-Design](https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Goldito-Design) Components 페이지
+
+| ID | 단계 | 기대 결과 | 자동 | 상태 |
+| :--- | :--- | :--- | :--- | :--- |
+| DS-1 | 로그인 화면 · 아무 폼 | 입력칸 테두리가 진한 회색(`borderStrong`), 안쪽 여백 8 / 16, 높이 44. 비활성 버튼(Sign in 빈 칸일 때)은 **회색 칸 + 흐린 글자**(반투명 초록이 아님) | 👤 | 사람 확인 대기 |
+| DS-2 | 아무 Primary / Secondary 버튼 누르기 | 누르는 동안 살짝 작아지고 흐려짐(0.97 · 0.85). Secondary는 흰 바탕 + 진한 테두리 + 초록 글자 | 👤 | 사람 확인 대기 |
+| DS-3 | 버튼이 있는 빈 화면(`EmptyState`에 action이 있는 곳) | 버튼이 꽉 찬 초록이 아니라 **흰 Secondary 버튼, 글자 길이만큼** 가운데 | 👤 | 사람 확인 대기 |
+| DS-4 | SegmentedControl(종 선택, Bookings 탭 등) | 선택 안 된 칸 테두리가 진한 회색, 선택된 칸은 초록 테두리 + 연두 바탕 | 👤 | 사람 확인 대기 |
+| DS-5 | 로그아웃 상태로 Welcome · 로그인 화면 | 맨 위에 **골드 태그 로고 + 초록 "goldito" 글자**(이모지 `🐾 Goldito` 아님). 태그 안 g는 초록, i 점은 금색 하트 | 👤 | 10/16 민식 화면 확인 대기 |
+| DS-6 | 배포된 사이트의 브라우저 탭 | 탭 아이콘이 초록 바탕 골드 태그 | 👤 | 배포 후 확인 |
+| DS-7 | 예약 카드 · 예약 상세 · 시터 Home 할 일 · 견주 케어 할 일 · 알림장 보냄 · 간식 체크 결과 | 상태 표시가 모두 **Tag** 하나로: 글자가 자기 톤의 연한 바탕 위(완료 = 초록, 지연·놓침 = 주황 — 빨강 아님, 대기 = 흰 바탕 + 테두리, 요청 등 = 연두). 시터 이니셜 원은 진한 초록 + 흰 글자, 펫·Snap 도구 원은 연두 + 이모지 | 👤 | 10/16 서버에서 예약 화면만 확인 · 나머지 확인 대기 |
 ---
 
 ### 3.25 다이어리 책 (DBK) — Diary book DB.3 – DB.5 · *사전: 보낸 알림장 몇 장(펫 둘 이상이면 좋음)*

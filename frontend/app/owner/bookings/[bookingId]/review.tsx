@@ -170,7 +170,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
     card: { gap: theme.spacing.md },
-    title: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

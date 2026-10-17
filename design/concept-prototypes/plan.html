@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goldito Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  /* Plan: what needs deciding first, then where each area stands, the schedule to Oct 30 (to scale, three lanes),
+     who does what, and a dated log of design changes. Replaces the separate status and runway pages. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font:15px/1.55 var(--font-ui);padding-inline:1rem;padding-block:0 4rem;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:70rem;margin:0 auto;display:flex;flex-direction:column;gap:3.25rem;padding-top:2.25rem}
+  .wrap>*,section{min-width:0}
+  h1,h2,h3{margin:0;text-wrap:balance}
+  h1{font:700 clamp(2rem,4.6vw,2.75rem)/1.1 var(--font-display);letter-spacing:-.01em}
+  h2{font:600 1.5rem/1.2 var(--font-display)}
+  h3{font:600 1.0625rem/1.25 var(--font-display)}
+  p{margin:0}
+  a{color:var(--color-primary)}
+  code{font:600 .8125rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--color-track);border-radius:6px;padding:.0625rem .375rem}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  section{display:flex;flex-direction:column;gap:1rem;scroll-margin-top:5rem}
+  .head{display:flex;flex-direction:column;gap:.25rem;max-width:46rem}
+  .head p{color:var(--color-text-muted)}
+  .lede{font-size:1.0625rem;color:var(--color-text-muted);max-width:44rem;margin-top:.75rem}
+  .lede b{color:var(--color-text)}
+  .pill{display:inline-flex;align-items:center;font-size:.75rem;font-weight:700;border-radius:999px;padding:.125rem .625rem;white-space:nowrap}
+  .pill.ok{background:var(--color-success-surface);color:var(--color-success)}
+  .pill.warn{background:var(--color-warning-surface);color:var(--color-warning)}
+  .pill.bad{background:var(--color-error-surface);color:var(--color-error)}
+  .pill.mute{background:var(--color-track);color:var(--color-text-muted)}
+  /* decisions */
+  .dec{display:grid;grid-template-columns:repeat(auto-fill,minmax(15.5rem,1fr));gap:.75rem}
+  .d{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.875rem 1rem;display:flex;flex-direction:column;gap:.25rem}
+  .d em{font-style:normal;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-warning)}
+  .d b{font-size:.9375rem}
+  .d span{font-size:.8125rem;color:var(--color-text-muted)}
+  /* state table */
+  .tw{overflow-x:auto;border:1px solid var(--color-border);border-radius:var(--radius-lg);background:var(--color-surface)}
+  table.state{width:100%;border-collapse:collapse;font-size:.875rem;min-width:38rem}
+  .state th{text-align:left;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);padding:.625rem .875rem;border-bottom:1px solid var(--color-border)}
+  .state td{padding:.625rem .875rem;border-top:1px solid var(--color-border);vertical-align:top}
+  .state tr:first-child td{border-top:0}
+  .state td:first-child{font-weight:700;width:12rem}
+  .state td:last-child{width:1%;white-space:nowrap}
+  /* schedule */
+  .sched:focus-visible,.tw:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+  .sched{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:.5rem 0 .875rem;overflow-x:auto}
+  .grid{display:grid;grid-template-columns:15rem repeat(16,minmax(32px,1fr));min-width:880px}
+  .grid>*{min-width:0}
+  .dh{font-size:.6875rem;font-weight:600;color:var(--color-text-muted);text-align:center;padding:.625rem 0 .5rem;border-bottom:1px solid var(--color-border);font-variant-numeric:tabular-nums}
+  .dh small{display:block;font-weight:500}
+  .dh.today{color:var(--color-primary)}.dh.freeze{color:var(--color-warning)}.dh.submit{color:var(--color-error)}
+  .corner{border-bottom:1px solid var(--color-border);padding:.625rem 1rem .5rem;font-size:.6875rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  .lane{grid-column:1/-1;display:flex;align-items:center;gap:.5rem;padding:.875rem 1rem .375rem;font:600 1rem/1 var(--font-display)}
+  .lane i{width:12px;height:12px;border-radius:4px;display:inline-block}
+  .lane small{font:500 .75rem/1 var(--font-ui);color:var(--color-text-muted)}
+  .task{padding:.375rem 1rem;font-size:.8125rem;line-height:1.3;display:flex;align-items:center;gap:.375rem;min-height:38px;border-top:1px dashed var(--color-border)}
+  .task.done{color:var(--color-text-muted)}
+  .task .tick{color:var(--color-success);font-weight:800}
+  .cellrow{grid-column:2/-1;display:grid;grid-template-columns:repeat(16,minmax(32px,1fr));align-items:center;border-top:1px dashed var(--color-border)}
+  .cellrow .bg{grid-row:1;height:100%;min-height:38px}
+  .cellrow .bg.today{background:color-mix(in srgb,var(--color-primary) 9%,transparent)}
+  .cellrow .bg.freeze{background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--color-warning) 16%,transparent) 6px 8px)}
+  .cellrow .bg.weekend{background:color-mix(in srgb,var(--color-track) 45%,transparent)}
+  .b{grid-row:1;height:22px;border-radius:7px;margin:0 2px;display:flex;align-items:center;padding:0 .5rem;font-size:.6875rem;font-weight:700;white-space:nowrap;overflow:hidden;z-index:1;font-variant-numeric:tabular-nums}
+  .b.team{background:var(--color-track);color:var(--color-text);border:1px solid var(--color-border-strong)}
+  .b.you{background:#F4C35A;color:#3D2A00}
+  .b.me{background:var(--color-primary);color:var(--color-primary-text)}
+  .b.me.done{background:var(--color-success-surface);color:var(--color-success);border:1px solid var(--color-success)}
+  .b.ms{height:15px;width:15px;padding:0;border-radius:3px;transform:rotate(45deg);justify-self:center;margin:0;background:var(--color-text)}
+  .b.ms.red{background:var(--color-error)}
+  .slegend{display:flex;flex-wrap:wrap;gap:.5rem 1.125rem;font-size:.8125rem;color:var(--color-text-muted);padding:.75rem 1rem 0}
+  .slegend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:.375rem;vertical-align:-1px}
+  /* who does what */
+  .two{display:grid;grid-template-columns:1fr 1.4fr;gap:1rem}
+  .you{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:1.125rem;display:flex;flex-direction:column;gap:.75rem}
+  .you ol{margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:.625rem;font-size:.875rem}
+  .you li b{font-weight:700}
+  .help{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.75rem}
+  .card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.875rem 1rem;display:flex;flex-direction:column;gap:.375rem}
+  .card .top{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+  .card p{font-size:.8125rem;color:var(--color-text-muted)}
+  .card .need{font-size:.75rem;color:var(--color-text);border-top:1px solid var(--color-border);padding-top:.375rem}
+  /* log */
+  .log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+  .log>li{display:grid;grid-template-columns:5.5rem 1fr;gap:1rem;padding:.75rem 0;border-top:1px solid var(--color-border);font-size:.875rem}
+  .log>li:first-child{border-top:0}
+  .log time{font:600 .9375rem/1.4 var(--font-display);color:var(--color-primary)}
+  .log ul{margin:0;padding-left:1.125rem;display:flex;flex-direction:column;gap:.25rem}
+  footer{font-size:.8125rem;color:var(--color-text-muted);border-top:1px solid var(--color-border);padding-top:1rem;display:flex;flex-direction:column;gap:.375rem}
+  @media (max-width:860px){.two{grid-template-columns:1fr}}
+</style>
+<script src="nav.js" defer></script>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <span class="eyebrow"><span class="en">Plan · updated Oct 15, 2026</span><span class="ko">계획 · 2026년 10월 15일 업데이트</span></span>
+    <h1><span class="en">Fifteen days to the submission</span><span class="ko">제출까지 15일</span></h1>
+    <p class="lede"><span class="en">The app covers all five stages and Minsik is building the P1 extras. Design's job now is to <b>publish what's done</b>, finish the brand, and get the Draft and Figma in line with the app before the <b>Oct 28</b> freeze.</span><span class="ko">앱은 다섯 단계를 모두 갖췄고 민식 님이 P1을 만들고 있어요. 이제 디자인의 일은 <b>끝난 것을 공유하고</b>, 브랜드를 마무리하고, <b>10/28</b> 동결 전에 초안과 Figma를 앱에 맞추는 거예요.</span></p>
+  </header>
+
+  <section aria-labelledby="h-dec" id="decide">
+    <div class="head"><h2 id="h-dec"><span class="en">Decisions waiting on you</span><span class="ko">기다리는 결정</span></h2>
+      <p><span class="en">Each one unblocks work below.</span><span class="ko">하나씩 아래 작업을 풀어 줘요.</span></p></div>
+    <div class="dec">
+      <div class="d"><em><span class="en">Today</span><span class="ko">오늘</span></em><b><span class="en">Push?</span><span class="ko">푸시할까요?</span></b><span><span class="en">PR #54, the live site and this artifact, so the team sees the current Draft.</span><span class="ko">PR #54, 라이브 사이트, 이 아티팩트. 팀이 최신 초안을 보게 돼요.</span></span></div>
+      <div class="d"><em><span class="en">Today</span><span class="ko">오늘</span></em><b><span class="en">Which logo?</span><span class="ko">어떤 로고?</span></b><span><span class="en">Gold tag (ready), Notebook or Pixel. See Brand.</span><span class="ko">골드 태그(준비됨), 노트북, 픽셀. 브랜드 탭 참고.</span></span></div>
+      <div class="d"><em><span class="en">This week</span><span class="ko">이번 주</span></em><b><span class="en">PR #41: close or rebase?</span><span class="ko">PR #41: 닫기 또는 리베이스?</span></b><span><span class="en">I'd close it and redo it as small PRs.</span><span class="ko">닫고 작은 PR로 다시 하는 걸 추천해요.</span></span></div>
+      <div class="d"><em><span class="en">This week</span><span class="ko">이번 주</span></em><b><span class="en">Type scale</span><span class="ko">글자 크기 체계</span></b><span><span class="en">Main proposes an 18 px subtitle; our D6 says four sizes.</span><span class="ko">main은 18px 부제목을 제안, D6는 크기 넷.</span></span></div>
+      <div class="d"><em><span class="en">By Oct 20</span><span class="ko">10/20까지</span></em><b><span class="en">Large-text values</span><span class="ko">큰 글씨 값</span></b><span><span class="en">28 / 20 / 64 / 18 px and the five axis names for “at a glance”.</span><span class="ko">28 / 20 / 64 / 18px와 “at a glance”의 다섯 축 이름.</span></span></div>
+      <div class="d"><em><span class="en">Any time</span><span class="ko">언제든</span></em><b><span class="en">Step by step: mode or default?</span><span class="ko">단계별: 모드 또는 기본?</span></b><span><span class="en">A simple mode, or the long forms replaced for everyone.</span><span class="ko">간단 모드, 또는 모두에게 긴 폼 대신.</span></span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-state" id="state">
+    <div class="head"><h2 id="h-state"><span class="en">Where each area stands</span><span class="ko">영역별 현황</span></h2></div>
+    <div class="tw" tabindex="0" aria-label="Where each area stands, scrolls sideways"><table class="state">
+      <thead><tr><th scope="col"><span class="en">Area</span><span class="ko">영역</span></th><th scope="col"><span class="en">State</span><span class="ko">상태</span></th><th scope="col"><span class="en">Status</span><span class="ko">상황</span></th></tr></thead>
+      <tbody>
+        <tr><td><span class="en">App (main)</span><span class="ko">앱 (main)</span></td><td><span class="en">All five stages, Snap (treat check, mood, stickers) and the demo deploy are merged. Photo requests (#94), split view for judges (#97) and Settings with What's New (#98) shipped Oct 15. Pet onboarding (11.15) is last, Oct 24–27.</span><span class="ko">다섯 단계, Snap(간식 확인, 기분, 스티커), 데모 배포가 머지됐어요. 사진 요청(#94), 심사위원용 분할 화면(#97), 설정과 What's New(#98)가 10/15에 나왔어요. 펫 온보딩(11.15)은 마지막, 10/24–27.</span></td><td><span class="pill ok"><span class="en">On track</span><span class="ko">순조로움</span></span></td></tr>
+        <tr><td><span class="en">Draft</span><span class="ko">초안</span></td><td><span class="en">The full stay in Expressive (Balanced and Playful paused), the app's tabs including Snap, Settings and What's New, and four step-by-step flows. Six newer app features are not in it yet (see Overview).</span><span class="ko">세 룩의 스테이 전체, Snap을 포함한 앱의 탭, 설정과 What's New, 단계별 흐름 넷. 앱의 새 기능 여섯 개는 아직 없어요(개요 참고).</span></td><td><span class="pill warn"><span class="en">6 to catch up</span><span class="ko">6개 따라잡기</span></span></td></tr>
+        <tr><td><span class="en">This site</span><span class="ko">이 사이트</span></td><td><span class="en">One place for everything since Oct 15: Overview, Prototype, Step by step, Brand and Plan. Older review pages were folded in or removed.</span><span class="ko">10/15부터 모든 것이 한곳에: 개요, 프로토타입, 단계별, 브랜드, 계획. 예전 검토 페이지는 합치거나 지웠어요.</span></td><td><span class="pill ok"><span class="en">Current</span><span class="ko">최신</span></span></td></tr>
+        <tr><td><span class="en">Live site and PR #54</span><span class="ko">라이브 사이트와 PR #54</span></td><td><span class="en">GitHub still has the Oct 7 version; PR #54 shows a conflict that is already resolved on Mook's machine.</span><span class="ko">GitHub에는 아직 10/7 버전. PR #54의 충돌은 묵 님 컴퓨터에서 이미 해결됐어요.</span></td><td><span class="pill bad"><span class="en">Needs a push</span><span class="ko">푸시 필요</span></span></td></tr>
+        <tr><td>PR #41</td><td><span class="en">UI primitives, conflicting and far behind main.</span><span class="ko">UI 프리미티브, 충돌이 있고 main보다 많이 뒤처짐.</span></td><td><span class="pill bad"><span class="en">Stuck</span><span class="ko">멈춤</span></span></td></tr>
+        <tr><td>Figma</td><td><span class="en">The plugin has the new cast and stage names; the file shows them after the next run. No Snap, Settings or large-text screens yet.</span><span class="ko">플러그인에는 새 이름과 단계명이 있고, 파일은 다음 실행 후에 바뀌어요. Snap, 설정, 큰 글씨 화면은 아직.</span></td><td><span class="pill warn"><span class="en">Needs a run</span><span class="ko">실행 필요</span></span></td></tr>
+        <tr><td><span class="en">Brand</span><span class="ko">브랜드</span></td><td><span class="en">Logo v2.1 (gold tag) has a full icon set; Notebook and Pixel are newer directions. The app still ships Expo's placeholder icon.</span><span class="ko">로고 v2.1(골드 태그)은 아이콘 세트 완비, 노트북과 픽셀은 새 방향. 앱은 아직 Expo 기본 아이콘.</span></td><td><span class="pill warn"><span class="en">Pick one</span><span class="ko">하나 고르기</span></span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section aria-labelledby="h-sched" id="schedule">
+    <div class="head"><h2 id="h-sched"><span class="en">Oct 15 – 30, to scale</span><span class="ko">10/15 – 30, 실제 비율</span></h2>
+      <p><span class="en">Team dates come from the team's TODO; yours and mine are proposals that land each piece before the work that depends on it. Light-green bars with a tick are done.</span><span class="ko">팀 날짜는 팀 TODO에서, 묵 님과 제 날짜는 각 작업이 그것을 기다리는 작업보다 먼저 끝나도록 잡은 제안이에요. 체크 표시가 있는 연한 초록 막대는 끝난 것.</span></p></div>
+    <div class="sched" tabindex="0" aria-label="Schedule from Oct 15 to Oct 30, scrolls sideways"><div class="grid" id="sched"></div>
+      <div class="slegend"><span><i style="background:#F4C35A"></i><span class="en">You (Mook)</span><span class="ko">묵 님</span></span><span><i style="background:var(--color-primary)"></i><span class="en">Me (Claude)</span><span class="ko">Claude</span></span><span><i style="background:var(--color-track);border:1px solid var(--color-border-strong)"></i><span class="en">Team (TODO.md)</span><span class="ko">팀 (TODO.md)</span></span><span><i style="background:var(--color-error);width:10px"></i><span class="en">Deadline</span><span class="ko">마감</span></span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-who" id="who">
+    <div class="head"><h2 id="h-who"><span class="en">Who does what</span><span class="ko">누가 무엇을</span></h2></div>
+    <div class="two">
+      <div class="you"><h3><span class="en">Only you can</span><span class="ko">묵 님만 할 수 있는 것</span></h3>
+        <ol>
+          <li><span class="en"><b>Pick and finish the logo</b>, then the app icon, splash and favicon follow (the README and the app are waiting).</span><span class="ko"><b>로고를 골라 마무리</b>하면 앱 아이콘, 스플래시, 파비콘이 따라와요 (README와 앱이 기다리는 중).</span></li>
+          <li><span class="en"><b>Nine stickers</b>, 256 × 256 transparent PNGs with the same names: ball, best_day, bone, cloud, heart, paw, star, sun, zzz. Plus the Snap tab icon and the sticker outline style.</span><span class="ko"><b>스티커 아홉 개</b>, 같은 이름의 256 × 256 투명 PNG: ball, best_day, bone, cloud, heart, paw, star, sun, zzz. 그리고 Snap 탭 아이콘과 스티커 테두리 스타일.</span></li>
+          <li><span class="en"><b>Large-text values and the “at a glance” card</b> in Figma, before Minsik builds 11.15 on Oct 24.</span><span class="ko"><b>큰 글씨 값과 “at a glance” 카드</b>를 Figma에서, 민식 님이 10/24에 11.15를 만들기 전에.</span></li>
+          <li><span class="en"><b>Edit the demo video</b> (Oct 27–28) and accept the Devpost team invite.</span><span class="ko"><b>데모 영상 편집</b>(10/27–28)과 Devpost 팀 초대 수락.</span></li>
+        </ol></div>
+      <div class="help" id="help"></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-log" id="log">
+    <div class="head"><h2 id="h-log"><span class="en">Design log</span><span class="ko">디자인 기록</span></h2>
+      <p><span class="en">What changed in the design, newest first.</span><span class="ko">디자인에서 바뀐 것, 최신순.</span></p></div>
+    <ul class="log">
+      <li><time>Oct 15</time><ul><li><span class="en">Decided D1: Expressive is the look. Balanced and Playful are paused, not deleted (one switch in <code>screens.js</code> brings them back).</span><span class="ko">D1 결정: 익스프레시브로. 밸런스드와 플레이풀은 지운 게 아니라 잠시 쉬는 중이에요(<code>screens.js</code>의 스위치 하나로 되돌려요).</span></li><li><span class="en">One site for everything: Overview, Prototype, Step by step, Brand, Plan. Old review pages folded in; icons bundled so it works offline and as an artifact.</span><span class="ko">모든 것을 한 사이트로: 개요, 프로토타입, 단계별, 브랜드, 계획. 예전 검토 페이지를 합쳤고, 아이콘을 묶어 오프라인과 아티팩트에서 작동.</span></li><li><span class="en">Expressive uses the logo's face (Fredoka), tag gold and the gold tag logo, with real dark mode.</span><span class="ko">익스프레시브에 로고 서체(Fredoka), 태그 골드, 골드 태그 로고, 진짜 다크 모드.</span></li><li><span class="en">Snap replaces Mood in all looks; Settings and What's New designed for 11.11, with plain-word release notes.</span><span class="ko">모든 룩에서 Mood 대신 Snap, 11.11용 설정과 What's New, 쉬운 말의 업데이트 소식.</span></li></ul></li>
+      <li><time>Oct 13 – 14</time><ul><li><span class="en">Logo v2.1 (gold tag) with a full icon set; Notebook and Pixel directions; five diary-decoration takes.</span><span class="ko">로고 v2.1(골드 태그)과 아이콘 세트, 노트북과 픽셀 방향, 다이어리 꾸미기 다섯 안.</span></li><li><span class="en">Step-by-step booking, care request, Meet &amp; Greet and checkout, matching the team's large-text spec.</span><span class="ko">예약, 케어 의뢰서, Meet &amp; Greet, 결제의 단계별 흐름, 팀의 큰 글씨 스펙에 맞춤.</span></li></ul></li>
+      <li><time>Oct 9 – 10</time><ul><li><span class="en">The Draft follows the README: cast Robert / Chloe with Max and Mochi, README promise map, Ask before booking, one-pet days.</span><span class="ko">README를 따르는 초안: Robert / Chloe와 Max, Mochi, README 약속 지도, Ask before booking, 한 마리만 되는 날.</span></li><li><span class="en">One set of stage names and date format, AA contrast across the site.</span><span class="ko">단계 이름과 날짜 형식 통일, 사이트 전체 AA 대비.</span></li></ul></li>
+      <li><time>Oct 5 – 7</time><ul><li><span class="en">Design system v1, 65 Figma components, edge states, three looks, the Prototype viewer, published on GitHub Pages; icons instead of emoji.</span><span class="ko">디자인 시스템 v1, Figma 컴포넌트 65개, 엣지 상태, 세 룩, 프로토타입 뷰어, GitHub Pages 공개, 이모지 대신 아이콘.</span></li></ul></li>
+      <li><time>Oct 1 – 3</time><ul><li><span class="en">Pet-theme concept prototypes and the Figma plugin that builds the library and every screen.</span><span class="ko">펫 테마 콘셉트 프로토타입과 라이브러리와 모든 화면을 만드는 Figma 플러그인.</span></li></ul></li>
+    </ul>
+  </section>
+
+  <footer>
+    <span><span class="en">Sources: the team's README, TODO and phase docs on main (Oct 15), open PRs #41 · #54 · #94 · #96, and the design history.</span><span class="ko">출처: main의 README, TODO, 단계 문서(10/15), 열린 PR #41 · #54 · #94 · #96, 디자인 기록.</span></span>
+  </footer>
+</main>
+<script>
+(() => {
+  const both = (en, ko) => `<span class="en">${en}</span><span class="ko">${ko}</span>`;
+  // ---------- schedule: columns are Oct 15 … 30; [en, ko, from, to, kind, done] ----------
+  const DAYS = Array.from({length: 16}, (_, k) => 15 + k);
+  const DOW = (d) => ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"][(d - 15) % 7]; // Oct 15, 2026 is a Thursday
+  const LANES = [
+    ["Milestones", "마일스톤", "", "var(--color-text)", [
+      ["Today", "오늘", 15, 15, "ms"], ["Pet onboarding (11.15) starts", "펫 온보딩(11.15) 시작", 24, 24, "ms"],
+      ["Record the demo video", "데모 영상 녹화", 27, 27, "ms"], ["Internal freeze", "내부 동결", 28, 28, "ms"], ["Submit · 10 AM PT", "제출 · 오전 10시 PT", 30, 30, "ms red"]]],
+    ["You", "묵 님", "Mook", "#F4C35A", [
+      ["Decide: push, logo, PR #41", "결정: 푸시, 로고, PR #41", 15, 16, "you"], ["Final logo + app icon set", "최종 로고 + 앱 아이콘 세트", 15, 17, "you"],
+      ["9 stickers, Snap icon", "스티커 9개, Snap 아이콘", 17, 20, "you"], ["Large-text Figma + “at a glance”", "큰 글씨 Figma + “at a glance”", 18, 22, "you"],
+      ["Review the Draft, post ui-polish issues", "초안 검토, ui-polish 이슈 올리기", 21, 26, "you"], ["Edit the demo video", "데모 영상 편집", 27, 28, "you"], ["Devpost visuals, final look", "Devpost 이미지, 최종 확인", 29, 30, "you"]]],
+    ["Me", "Claude", "Claude", "var(--color-primary)", [
+      ["Expressive polish, Snap, Settings designs", "익스프레시브, Snap, 설정 디자인", 15, 15, "me", 1], ["One site for everything", "모든 것을 한 사이트로", 15, 15, "me", 1],
+      ["Push PR #54, live site (after your OK)", "PR #54, 라이브 사이트 푸시 (확인 후)", 16, 16, "me"], ["Draft: the six README gaps", "초안: README 차이 여섯 개", 16, 19, "me"],
+      ["Logo into the app (branch)", "로고를 앱에 (브랜치)", 17, 18, "me"], ["Sticker starter set", "스티커 초안 세트", 17, 19, "me"], ["Figma plugin round 3", "Figma 플러그인 3차", 18, 21, "me"],
+      ["Fresh “Today's app” captures", "‘지금 앱’ 새 캡처", 22, 23, "me"], ["Video storyboard + title cards", "영상 스토리보드 + 타이틀 카드", 22, 25, "me"], ["Final audit against the README", "README 기준 최종 점검", 28, 29, "me"]]],
+    ["Team", "팀", "TODO.md", "var(--color-border-strong)", [
+      ["Minsik: Settings + What's New (11.11) ✓", "민식: 설정 + What's New (11.11) ✓", 15, 15, "team"], ["Minsik: P1 extras (11.8 next)", "민식: P1 추가 작업 (다음 11.8)", 16, 23, "team"],
+      ["Minsik: pet onboarding (11.15)", "민식: 펫 온보딩 (11.15)", 24, 27, "team"], ["Seulgi: QA run, wording, tone (Phase Q)", "슬기: QA, 문구, 톤 (Phase Q)", 15, 27, "team"]]],
+  ];
+  const bg = DAYS.map((d) => `<span class="bg${d === 15 ? " today" : d === 28 ? " freeze" : [17, 18, 24, 25].includes(d) ? " weekend" : ""}" style="grid-column:${d - 14}"></span>`).join("");
+  let h = `<div class="corner">${both("Task", "작업")}</div>` + DAYS.map((d) => `<div class="dh${d === 15 ? " today" : d === 28 ? " freeze" : d === 30 ? " submit" : ""}"><small>${DOW(d)}</small>${d}</div>`).join("");
+  for (const [en, ko, sub, color, tasks] of LANES) {
+    h += `<div class="lane"><i style="background:${color}"></i>${both(en, ko)}${sub ? ` <small>${sub}</small>` : ""}</div>`;
+    for (const [ten, tko, from, to, kind, done] of tasks) {
+      const span = to - from + 1;
+      const bar = kind.startsWith("ms") ? `<span class="b ${kind}" style="grid-column:${from - 14}" title="${ten}"></span>`
+        : `<span class="b ${kind}${done ? " done" : ""}" style="grid-column:${from - 14} / span ${span}">${span > 1 ? `Oct ${from}–${to}` : `Oct ${from}`}</span>`;
+      h += `<div class="task${done ? " done" : ""}">${done ? '<span class="tick" aria-label="Done">✓</span>' : ""}${both(ten, tko)}</div><div class="cellrow">${bg}${bar}</div>`;
+    }
+  }
+  document.getElementById("sched").innerHTML = h;
+  // ---------- what I can take: [title, body, need, status] ----------
+  const ST = {done: ["ok", "Done", "완료"], next: ["warn", "Next", "다음"], wait: ["mute", "Waiting on you", "결정 대기"]};
+  const HELP = [
+    ["Expressive polish", "익스프레시브 다듬기", "Fredoka, tag gold, the tag logo, dark mode.", "Fredoka, 태그 골드, 태그 로고, 다크 모드.", "", "", "done"],
+    ["Settings and What's New", "설정과 What's New", "Screens for 11.11 and plain-word release notes, in a hand-off note for Minsik.", "11.11 화면과 쉬운 말의 업데이트 소식, 민식 님용 전달 노트.", "", "", "done"],
+    ["Publish", "공유하기", "PR #54, the live site and this artifact, plus a Korean line for the team.", "PR #54, 라이브 사이트, 이 아티팩트, 팀용 한국어 한 줄.", "Say “push”.", "“푸시”라고 말해 주세요.", "wait"],
+    ["Draft catch-up", "초안 따라잡기", "“Yes, let's meet”, “Not this sitter”, the meeting place, Returned, favorites, the private note.", "“Yes, let's meet”, “Not this sitter”, 만남 장소, Returned, 즐겨찾기, 비공개 메모.", "", "", "next"],
+    ["Logo into the app", "로고를 앱에", "Icon, splash, favicon, Android layers and the README logo, on a branch.", "아이콘, 스플래시, 파비콘, 안드로이드 레이어, README 로고를 브랜치에.", "The logo pick.", "로고 선택.", "wait"],
+    ["Sticker starter set", "스티커 초안", "Nine 256 px stickers in the chosen style, for you to finish.", "고른 스타일로 256px 스티커 아홉 개, 마무리는 묵 님이.", "The logo pick.", "로고 선택.", "wait"],
+    ["Figma plugin, round 3", "Figma 플러그인 3차", "Snap, Settings, What's New, large-text screens, sticker and icon templates.", "Snap, 설정, What's New, 큰 글씨 화면, 스티커와 아이콘 템플릿.", "Sign in the Figma connector to let me check the file.", "파일 확인을 위해 Figma 연결 로그인.", "next"],
+    ["Video storyboard", "영상 스토리보드", "A shot list on the README demo path and title cards, ready for your edit.", "README 데모 흐름의 촬영 목록과 타이틀 카드.", "", "", "next"],
+  ];
+  document.getElementById("help").innerHTML = HELP.map(([en, ko, ben, bko, nen, nko, st]) => { const [cls, sen, sko] = ST[st];
+    return `<div class="card"><div class="top"><h3>${both(en, ko)}</h3><span class="pill ${cls}">${both(sen, sko)}</span></div><p>${both(ben, bko)}</p>${nen ? `<div class="need">${both(`<b>Needs:</b> ${nen}`, `<b>필요:</b> ${nko}`)}</div>` : ""}</div>`; }).join("");
+})();
+</script>
+</body>
+</html>

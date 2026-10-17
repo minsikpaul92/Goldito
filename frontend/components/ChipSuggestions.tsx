@@ -69,8 +69,8 @@ const makeStyles = (theme: Theme) =>
     chipRemovable: { paddingRight: 0 },
     toggle: { minHeight: 44, paddingHorizontal: theme.spacing.md, alignItems: "center", justifyContent: "center" },
     remove: { minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center", marginLeft: -theme.spacing.sm },
-    removeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.textMuted },
+    removeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     pressed: { opacity: 0.6 },
-    text: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    text: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     textOn: { color: theme.color.primary },
   });

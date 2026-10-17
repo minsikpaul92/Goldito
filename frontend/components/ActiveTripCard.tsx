@@ -58,6 +58,6 @@ export function ActiveTripCard({ role }: { role: Role }) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.xs, backgroundColor: theme.color.accent },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

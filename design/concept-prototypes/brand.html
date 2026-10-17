@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goldito Brand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Gaegu:wght@400;700&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="ds.css">
+<style>
+  /* Brand & system: the logo directions and their files, color, type, and the design rules every screen follows.
+     Logo art comes from design/brand (copied into assets/brand at web sizes). */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--color-background);color:var(--color-text);font:15px/1.55 var(--font-ui);padding-inline:1rem;padding-block:0 4rem;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:66rem;margin:0 auto;display:flex;flex-direction:column;gap:3.25rem;padding-top:2.25rem}
+  .wrap>*,section{min-width:0}
+  h1,h2,h3{margin:0;text-wrap:balance}
+  h1{font:700 clamp(2rem,4.6vw,2.75rem)/1.1 var(--font-display);letter-spacing:-.01em}
+  h2{font:600 1.5rem/1.2 var(--font-display)}
+  h3{font:600 1.0625rem/1.25 var(--font-display)}
+  p{margin:0}
+  a{color:var(--color-primary)}
+  code{font:600 .8125rem/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--color-track);border-radius:6px;padding:.0625rem .375rem}
+  .eyebrow{font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)}
+  section{display:flex;flex-direction:column;gap:1rem;scroll-margin-top:5rem}
+  .head{display:flex;flex-direction:column;gap:.25rem;max-width:46rem}
+  .head p{color:var(--color-text-muted)}
+  .lede{font-size:1.0625rem;color:var(--color-text-muted);max-width:44rem;margin-top:.75rem}
+  .card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:1.125rem;display:flex;flex-direction:column;gap:.75rem;min-width:0}
+  .card p{font-size:.875rem;color:var(--color-text-muted)}
+  .pill{display:inline-flex;align-self:flex-start;align-items:center;font-size:.75rem;font-weight:700;border-radius:999px;padding:.125rem .625rem}
+  .pill.ok{background:var(--color-success-surface);color:var(--color-success)}
+  .pill.new{background:var(--color-warning-surface);color:var(--color-warning)}
+  /* logo directions */
+  .dirs{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:1rem;align-items:start}
+  .art{border-radius:var(--radius-md);overflow:hidden;background:#FBF6EA;display:grid;place-items:center;aspect-ratio:3/2;border:1px solid var(--color-border)}
+  .art img{width:100%;height:100%;object-fit:contain;display:block}
+  .art.green{background:#2D6A4F}
+  .icons{display:flex;align-items:flex-end;gap:.875rem;flex-wrap:wrap}
+  .icons figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.6875rem;color:var(--color-text-muted)}
+  .icons img{display:block;image-rendering:auto;border-radius:4px}
+  .icons img.px{image-rendering:pixelated}
+  /* deco */
+  .deco{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.75rem}
+  .deco figure{margin:0;display:flex;flex-direction:column;gap:.375rem;font-size:.8125rem;color:var(--color-text-muted)}
+  .deco img{width:100%;height:auto;border-radius:var(--radius-md);border:1px solid var(--color-border);display:block}
+  .deco b{color:var(--color-text);font-weight:600}
+  /* color */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));gap:.75rem}
+  .sw{border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface);display:flex;flex-direction:column}
+  .sw i{display:block;height:4.5rem}
+  .sw span{padding:.5rem .75rem .625rem;font-size:.8125rem;display:flex;flex-direction:column;gap:.125rem}
+  .sw span b{font-size:.875rem}
+  .sw code{background:none;padding:0;color:var(--color-text-muted);font-size:.75rem}
+  .subhead{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-top:.5rem}
+  /* type */
+  .types{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1rem}
+  .scale{display:flex;flex-direction:column;gap:.5rem;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .scale div{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;border-top:1px solid var(--color-border);padding-top:.5rem}
+  .scale div:first-child{border-top:0;padding-top:0}
+  .scale small{font:500 .75rem/1 var(--font-ui);color:var(--color-text-muted);white-space:nowrap}
+  .card .sample{font-family:var(--font-display);color:var(--color-text);font-size:2.25rem;line-height:1.05;font-weight:700}
+  .card .sample.gaegu{font-family:"Gaegu",cursive;font-weight:400;font-size:1.75rem;line-height:1.3;background:repeating-linear-gradient(transparent 0 29px,var(--color-border) 29px 30px);padding:.25rem .25rem 0}
+  .open{border-radius:var(--radius-md);background:var(--color-warning-surface);padding:.75rem 1rem;font-size:.875rem}
+  /* rules */
+  .settled{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:.75rem}
+  .settled li{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.875rem 1rem;display:flex;gap:.75rem;font-size:.875rem}
+  .settled b{font:700 .875rem/1.4 var(--font-display);color:var(--color-primary);flex:0 0 auto}
+  .rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:.75rem}
+  footer{font-size:.8125rem;color:var(--color-text-muted);display:flex;gap:.5rem 1.25rem;flex-wrap:wrap;border-top:1px solid var(--color-border);padding-top:1rem}
+  footer a{min-height:32px;display:inline-flex;align-items:center}
+  @media (max-width:900px){.dirs,.types{grid-template-columns:1fr}.deco{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+<script src="nav.js" defer></script>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <span class="eyebrow"><span class="en">Brand and design system</span><span class="ko">브랜드와 디자인 시스템</span></span>
+    <h1><span class="en">goldito: the little gold one</span><span class="ko">goldito: 작은 금빛 아이</span></h1>
+    <p class="lede"><span class="en">Gold + <i>-ito</i>, a pet name for a much-loved pet. The logo directions, the colors and type behind every screen, and the rules the design follows when things go wrong.</span><span class="ko">gold + <i>-ito</i>(작고 사랑스러운), 사랑받는 반려동물을 부르는 애칭이에요. 로고 방향, 모든 화면의 색과 서체, 그리고 문제가 생겼을 때 디자인이 따르는 규칙.</span></p>
+  </header>
+
+  <section aria-labelledby="h-logo" id="logo">
+    <div class="head"><h2 id="h-logo"><span class="en">The logo: three directions</span><span class="ko">로고: 세 가지 방향</span></h2>
+      <p><span class="en">Picking one unblocks the app icon, the README logo, the Devpost image and the sticker set. The decision is on the Plan.</span><span class="ko">하나를 고르면 앱 아이콘, README 로고, Devpost 이미지, 스티커 세트가 풀려요. 결정은 계획 탭에 있어요.</span></p></div>
+    <div class="dirs">
+      <div class="card"><span class="pill ok"><span class="en">Ready to ship · v2.1</span><span class="ko">출시 가능 · v2.1</span></span>
+        <div class="art green"><img src="assets/brand/goldito-devpost-logo.svg" alt="The gold tag logo: a round gold pet tag engraved with g, next to the lowercase goldito wordmark, on brand green"></div>
+        <h3><span class="en">The gold tag</span><span class="ko">골드 태그</span></h3>
+        <p><span class="en">A round gold tag swinging from its ring, engraved with a lowercase g; the i's dot is a gold heart. A tag says “someone loves this pet, and it has a home to go back to”, which is the Life Record and “home safe”. Dogs and cats both wear one.</span><span class="ko">고리에 매달려 살짝 흔들리는 둥근 금색 태그에 소문자 g, i의 점은 금색 하트. 태그는 “사랑받고, 돌아갈 집이 있다”는 표시예요. Life Record와 “home safe”와 이어지고, 강아지 고양이 모두 태그를 해요.</span></p>
+        <div class="icons" aria-label="Icon set">
+          <figure><img src="assets/brand/goldito-icon-master.svg" width="64" height="64" alt="App icon"><span><span class="en">App icon</span><span class="ko">앱 아이콘</span></span></figure>
+          <figure><img src="assets/brand/goldito-apple-touch-icon-180.png" width="48" height="48" alt="Home-screen icon"><span>180</span></figure>
+          <figure><img class="px" src="assets/brand/goldito-favicon-48.png" width="48" height="48" alt="Favicon 48"><span>48</span></figure>
+          <figure><img class="px" src="assets/brand/goldito-favicon-32.png" width="32" height="32" alt="Favicon 32"><span>32</span></figure>
+          <figure><img class="px" src="assets/brand/goldito-favicon-16.png" width="16" height="16" alt="Favicon 16, drawn by hand"><span>16</span></figure>
+        </div>
+      </div>
+      <div class="card"><span class="pill new"><span class="en">Direction · Oct 15</span><span class="ko">방향 · 10/15</span></span>
+        <div class="art"><img src="assets/brand/goldito-notebook-lockup.svg" alt="Notebook direction: handwritten goldito on lined paper with masking tape and a heart sticker"></div>
+        <h3><span class="en">Notebook</span><span class="ko">노트북</span></h3>
+        <p><span class="en">A handwritten wordmark, masking tape and a heart sticker: the daily note as a keepsake. Closest to the new picture-diary page.</span><span class="ko">손글씨 워드마크, 마스킹테이프, 하트 스티커: 알림장을 간직하고 싶은 기록으로. 새 그림일기 페이지와 가장 가까워요.</span></p>
+      </div>
+      <div class="card"><span class="pill new"><span class="en">Direction · Oct 15</span><span class="ko">방향 · 10/15</span></span>
+        <div class="art green"><img src="assets/brand/goldito-pixel-lockup.svg" alt="Pixel direction: a pixel golden pup next to the goldito wordmark"></div>
+        <h3><span class="en">Pixel</span><span class="ko">픽셀</span></h3>
+        <p><span class="en">A pixel golden pup with six expressions and small movements. Fits Playful and the planned 8-bit pet room (11.12).</span><span class="ko">표정 여섯 가지와 작은 움직임이 있는 픽셀 강아지. 플레이풀과 계획 중인 8비트 펫 룸(11.12)과 어울려요.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-deco" id="deco">
+    <div class="head"><h2 id="h-deco"><span class="en">Diary decoration</span><span class="ko">다이어리 꾸미기</span></h2>
+      <p><span class="en">Five takes for the picture-diary page that came with the Snap stickers (12.4): the same pup and handwritten name in different paper crafts.</span><span class="ko">Snap 스티커와 함께 생긴 그림일기 페이지(12.4)를 위한 다섯 가지 안: 같은 강아지와 손글씨 이름을 여러 종이 공예로.</span></p></div>
+    <div class="deco">
+      <figure><img src="assets/brand/deco-stickers.jpg" alt="Seal stickers take" loading="lazy" width="720" height="312"><figcaption><b><span class="en">Seal stickers</span><span class="ko">씰 스티커</span></b></figcaption></figure>
+      <figure><img src="assets/brand/deco-polaroid.jpg" alt="Polaroid take" loading="lazy" width="720" height="312"><figcaption><b><span class="en">Polaroid</span><span class="ko">폴라로이드</span></b></figcaption></figure>
+      <figure><img src="assets/brand/deco-fourcut.jpg" alt="Four-cut photo strip take" loading="lazy" width="720" height="312"><figcaption><b><span class="en">Four-cut</span><span class="ko">인생네컷</span></b></figcaption></figure>
+      <figure><img src="assets/brand/deco-tape.jpg" alt="Masking tape take" loading="lazy" width="720" height="312"><figcaption><b><span class="en">Masking tape</span><span class="ko">마스킹테이프</span></b></figcaption></figure>
+      <figure><img src="assets/brand/deco-letter.jpg" alt="Letter take" loading="lazy" width="720" height="312"><figcaption><b><span class="en">Letter</span><span class="ko">편지</span></b></figcaption></figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-color" id="color">
+    <div class="head"><h2 id="h-color"><span class="en">Color</span><span class="ko">색</span></h2>
+      <p><span class="en">Brand colors come from the logo; app colors are the tokens in <code>frontend/theme/tokens.ts</code> and the Figma variables. Every text pair meets WCAG AA.</span><span class="ko">브랜드 색은 로고에서, 앱 색은 <code>frontend/theme/tokens.ts</code>와 Figma 변수의 토큰이에요. 모든 글자 조합이 WCAG AA를 지켜요.</span></p></div>
+    <span class="subhead"><span class="en">Brand</span><span class="ko">브랜드</span></span>
+    <div class="swatches">
+      <div class="sw"><i style="background:#2D6A4F"></i><span><b><span class="en">Goldito green</span><span class="ko">골디토 그린</span></b><code>#2D6A4F</code><span class="en">App primary, logo ground</span><span class="ko">앱 primary, 로고 바탕</span></span></div>
+      <div class="sw"><i style="background:#F4C35A"></i><span><b><span class="en">Tag gold</span><span class="ko">태그 골드</span></b><code>#F4C35A</code><span class="en">The tag, celebration, never text on light</span><span class="ko">태그, 축하. 밝은 바탕의 글자엔 안 써요</span></span></div>
+      <div class="sw"><i style="background:#C9962E"></i><span><b><span class="en">Gold on light</span><span class="ko">밝은 바탕용 골드</span></b><code>#C9962E</code><span class="en">The heart on light backgrounds</span><span class="ko">밝은 바탕 위의 하트</span></span></div>
+      <div class="sw"><i style="background:#FBF6EA"></i><span><b><span class="en">Cream</span><span class="ko">크림</span></b><code>#FBF6EA</code><span class="en">Expressive ground, brand pages</span><span class="ko">익스프레시브 바탕, 브랜드 페이지</span></span></div>
+    </div>
+    <span class="subhead"><span class="en">App (light · dark)</span><span class="ko">앱 (라이트 · 다크)</span></span>
+    <div class="swatches" id="tokens"></div>
+  </section>
+
+  <section aria-labelledby="h-type" id="type">
+    <div class="head"><h2 id="h-type"><span class="en">Type</span><span class="ko">서체</span></h2>
+      <p><span class="en">Three faces, each with one job.</span><span class="ko">서체 셋, 각자 한 가지 역할.</span></p></div>
+    <div class="types">
+      <div class="card"><span class="eyebrow"><span class="en">In the app · D6</span><span class="ko">앱 · D6</span></span><h3><span class="en">The phone's own font, four sizes</span><span class="ko">폰 기본 서체, 크기 넷</span></h3>
+        <div class="scale">
+          <div><span style="font-size:24px;font-weight:700">Max's day</span><small>Title · 24 / 700</small></div>
+          <div><span style="font-size:16px">Breakfast done</span><small>Body · 16 / 400</small></div>
+          <div><span style="font-size:16px;font-weight:600">See today's updates</span><small>Body strong · 16 / 600</small></div>
+          <div><span style="font-size:14px">9:02 AM · from Chloe</span><small>Small · 14 / 400</small></div>
+          <div><span style="font-size:11px;font-weight:500">HOME</span><small>Caption · 11 / 500</small></div>
+        </div>
+        <p class="open"><span class="en"><b>Open:</b> main's DESIGN.md now proposes an 18 px subtitle; D6 says four sizes. One of them has to change.</span><span class="ko"><b>결정 필요:</b> main의 DESIGN.md가 18px 부제목을 제안해요. D6는 크기 넷이라, 둘 중 하나는 바뀌어야 해요.</span></p>
+      </div>
+      <div class="card"><span class="eyebrow"><span class="en">Brand</span><span class="ko">브랜드</span></span><h3>Fredoka</h3>
+        <p class="sample">goldito</p>
+        <p><span class="en">The logo's typeface (SIL OFL). Also the display face of the Expressive look and the headings on this site. Not used for app body text.</span><span class="ko">로고 서체(SIL OFL). 익스프레시브 룩의 디스플레이 서체이자 이 사이트의 제목 서체. 앱 본문에는 쓰지 않아요.</span></p></div>
+      <div class="card"><span class="eyebrow"><span class="en">Picture diary · 12.4</span><span class="ko">그림일기 · 12.4</span></span><h3>Gaegu</h3>
+        <p class="sample gaegu">Max finished every bit of breakfast!</p>
+        <p><span class="en">Handwriting for the sent daily note drawn as a picture-diary page, on web only. Nowhere else (main's DESIGN.md exception).</span><span class="ko">그림일기로 그린 알림장의 손글씨, 웹에서만. 다른 곳엔 쓰지 않아요 (main DESIGN.md의 예외).</span></p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rules" id="rules">
+    <div class="head"><h2 id="h-rules"><span class="en">Decided</span><span class="ko">정해진 것</span></h2>
+      <p><span class="en">The reasons are in DESIGN.md §0.</span><span class="ko">이유는 DESIGN.md §0에 있어요.</span></p></div>
+    <ul class="settled">
+      <li><b>D2</b><span><span class="en">Components first; Figma screens are built only from instances, named like the code.</span><span class="ko">컴포넌트 먼저. Figma 화면은 인스턴스로만 만들고, 이름은 코드와 같아요.</span></span></li>
+      <li><b>D3</b><span><span class="en">Status text sits on its own light surface, never a faded color.</span><span class="ko">상태 텍스트는 같은 톤의 밝은 바탕 위에. 흐린 색은 쓰지 않아요.</span></span></li>
+      <li><b>D4</b><span><span class="en">Anything tappable has a strong outline or fill; information never looks tappable.</span><span class="ko">누를 수 있는 건 진한 외곽선이나 채움, 정보는 절대 버튼처럼 보이지 않게.</span></span></li>
+      <li><b>D5</b><span><span class="en">When the AI is unsure: safety says no; everything else goes to a person.</span><span class="ko">AI가 확신이 없으면: 안전은 ‘안 됨’, 나머지는 사람에게.</span></span></li>
+      <li><b>D6</b><span><span class="en">System font, four sizes; one press feel, three motion speeds.</span><span class="ko">시스템 폰트, 크기 4개. 누름 느낌 하나, 모션 속도 3개.</span></span></li>
+    </ul>
+    <div class="head" style="margin-top:1rem"><h2><span class="en">When things go wrong</span><span class="ko">문제가 생겼을 때</span></h2>
+      <p><span class="en">Five rules behind the 16 edge-state screens (DESIGN.md §10).</span><span class="ko">엣지 케이스 화면 16개 뒤의 규칙 다섯 가지 (DESIGN.md §10).</span></p></div>
+    <div class="rules">
+      <div class="card"><h3><span class="en">Never lose a sitter's tap</span><span class="ko">시터의 탭은 절대 잃지 않기</span></h3><p><span class="en">Offline check-ins wait on the phone and send on their own.</span><span class="ko">오프라인 체크인은 폰에 저장했다가 알아서 보내요.</span></p></div>
+      <div class="card"><h3><span class="en">Tell the owner before they ask</span><span class="ko">묻기 전에 알려주기</span></h3><p><span class="en">Late, no photo yet, handed to a person: say what happened and what's next.</span><span class="ko">늦음, 아직 사진 없음, 사람에게 넘김: 무슨 일인지와 다음을 알려요.</span></p></div>
+      <div class="card"><h3><span class="en">Unsure about safety means no</span><span class="ko">안전이 불확실하면 ‘안 됨’</span></h3><p><span class="en">Unreadable label, missing dose, allergy conflict: block, and say how to fix it.</span><span class="ko">라벨 판독 불가, 용량 누락, 알레르기 충돌: 막고, 해결 방법을 알려요.</span></p></div>
+      <div class="card"><h3><span class="en">Nothing new without the owner's OK</span><span class="ko">보호자 확인 없이 새 정보 없음</span></h3><p><span class="en">Facts the AI learned enter the Life Record only after the owner confirms.</span><span class="ko">AI가 알게 된 사실은 보호자가 확인해야 Life Record에 들어가요.</span></p></div>
+      <div class="card"><h3><span class="en">Red only for real problems</span><span class="ko">빨강은 진짜 문제에만</span></h3><p><span class="en">Declined bookings and late pills are info or warning; red is for failed payments and DANGER.</span><span class="ko">예약 거절, 늦은 약은 안내나 경고. 빨강은 결제 실패와 DANGER에만.</span></p></div>
+    </div>
+  </section>
+
+  <footer>
+    <a href="https://www.figma.com/design/stZjrJJU6KOhLauxPjaV8l/Pawddy-Design?node-id=0-1" target="_blank" rel="noopener"><span class="en">Figma library (65 components) ↗</span><span class="ko">Figma 라이브러리 (컴포넌트 65개) ↗</span></a>
+    <a href="plan.html"><span class="en">Decisions waiting →</span><span class="ko">기다리는 결정 →</span></a>
+  </footer>
+</main>
+<script>
+// App tokens with their light and dark values, as in ds.css (= frontend/theme/tokens.ts + the proposed dark set).
+(() => {
+  const T = [["primary", "Primary", "Primary", "#7CCBA2"], ["accent", "Accent", "Accent", "#1E3128"], ["text", "Text", "글자", "#EDEDEA"], ["text-muted", "Text muted", "흐린 글자", "#A3A39C"],
+    ["success", "Success", "성공", "#5FD69A"], ["warning", "Warning", "경고", "#F5A75B"], ["error", "Error · DANGER", "오류 · DANGER", "#FF8A7E"], ["border-strong", "Outline", "외곽선", "#6E6E68"]];
+  const LIGHT = {primary: "#2D6A4F", accent: "#D8F3DC", text: "#1A1A1A", "text-muted": "#5C5C5C", success: "#067647", warning: "#B54708", error: "#B42318", "border-strong": "#86867F"};
+  document.getElementById("tokens").innerHTML = T.map(([k, en, ko, dark]) => `<div class="sw"><i style="background:linear-gradient(90deg,${LIGHT[k]} 50%,${dark} 50%)"></i><span><b><span class="en">${en}</span><span class="ko">${ko}</span></b><code>--color-${k}</code><code>${LIGHT[k]} · ${dark}</code></span></div>`).join("");
+})();
+</script>
+</body>
+</html>

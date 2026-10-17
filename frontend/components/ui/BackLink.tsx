@@ -38,10 +38,10 @@ const makeStyles = (theme: Theme) =>
       minHeight: 44,
       gap: theme.spacing.xs,
     },
-    pressed: { opacity: 0.7 },
+    pressed: { opacity: theme.opacity.pressed },
     label: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
   });

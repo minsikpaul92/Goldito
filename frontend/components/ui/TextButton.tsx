@@ -46,7 +46,7 @@ const makeStyles = (theme: Theme) =>
     },
     label: {
       fontSize: theme.fontSize.body,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.primary,
     },
     danger: {

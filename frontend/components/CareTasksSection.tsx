@@ -15,6 +15,7 @@ import {
   careTypeMeta,
   sortTasks,
   statusLabel,
+  statusTone,
   todayStatus,
   typesForSpecies,
 } from "../features/care/careFormat";
@@ -28,6 +29,7 @@ import type { CareTaskRow, CareTaskType, Pet, TaskLogRow } from "../types/db";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Sheet } from "./ui/Sheet";
+import { Tag } from "./ui/Tag";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -217,11 +219,9 @@ export function CareTasksSection({ pet, userId }: Props) {
                   {[formatTime(task.scheduled_time), "every day", task.dose].filter(Boolean).join(" · ")}
                 </Text>
                 {task.notes ? <Text style={styles.meta}>{task.notes}</Text> : null}
-                {!task.active ? <Text style={styles.badge}>Paused</Text> : null}
+                {!task.active ? <Tag label="Paused" /> : null}
                 {status ? (
-                  <Text style={styles.badge} testID={`care-status-${task.id}`}>
-                    {status}
-                  </Text>
+                  <Tag label={status} tone={statusTone(todayStatus(logByTask.get(task.id)))} testID={`care-status-${task.id}`} />
                 ) : null}
               </View>
               <Text style={styles.chevron} accessibilityElementsHidden>
@@ -466,11 +466,11 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.title, fontWeight: "700", color: theme.color.text },
+    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: theme.fontSize.body * 1.4 },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     counterBox: {
       gap: theme.spacing.xs,
       padding: theme.spacing.sm,
@@ -479,7 +479,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.warning,
       backgroundColor: theme.color.surface,
     },
-    counterTitle: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    counterTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     counterText: { fontSize: theme.fontSize.body, color: theme.color.text },
     errorBox: { gap: theme.spacing.xs },
     errorText: { fontSize: theme.fontSize.small, color: theme.color.error },
@@ -487,9 +487,8 @@ const makeStyles = (theme: Theme) =>
     row: { flexDirection: "row", gap: theme.spacing.sm },
     rowBody: { flex: 1, gap: 2 },
     emoji: { fontSize: 24 },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    badge: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.text },
     actions: { flexDirection: "row", justifyContent: "flex-end" },
     pills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     pill: {
@@ -515,8 +514,8 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
-    timeText: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    timeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     pillOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
-    pillText: { fontSize: theme.fontSize.small, color: theme.color.textMuted, fontWeight: "600" },
+    pillText: { fontSize: theme.fontSize.small, color: theme.color.textMuted, fontWeight: theme.fontWeight.semibold },
     pillTextOn: { color: theme.color.text },
   });

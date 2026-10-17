@@ -81,7 +81,7 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md },
     intro: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     section: { gap: theme.spacing.xs },
-    label: { fontSize: theme.fontSize.small, fontWeight: "600", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
     row: {
       flexDirection: "row",
       alignItems: "center",

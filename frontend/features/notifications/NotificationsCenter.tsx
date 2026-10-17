@@ -316,7 +316,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.text,
     },
     titleUnread: {
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
     },
     body: {
       fontSize: theme.fontSize.small,

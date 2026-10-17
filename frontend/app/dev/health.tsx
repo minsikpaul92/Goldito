@@ -64,7 +64,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     title: {
       fontSize: theme.fontSize.title,
-      fontWeight: "700",
+      fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
       marginBottom: theme.spacing.xs,
     },
@@ -78,7 +78,7 @@ const makeStyles = (theme: Theme) =>
     },
     label: {
       fontSize: theme.fontSize.small,
-      fontWeight: "600",
+      fontWeight: theme.fontWeight.semibold,
       color: theme.color.textMuted,
       textTransform: "uppercase",
     },

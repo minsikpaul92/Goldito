@@ -78,11 +78,11 @@ export function LifeRecordCard({ record, petName, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     card: { gap: theme.spacing.sm },
-    title: { fontSize: theme.fontSize.body, fontWeight: "700", color: theme.color.text },
+    title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     source: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     rows: { gap: theme.spacing.sm },
     row: { gap: 2 },
-    label: { fontSize: theme.fontSize.small, fontWeight: "700", color: theme.color.textMuted },
+    label: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });
