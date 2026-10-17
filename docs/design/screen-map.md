@@ -308,21 +308,21 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools`
+Shows: `DemoTools` · `OpenInMapsButton`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 162 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 320 |
-| TextButton | Edit entry info | `profile-home-access` | 337 |
-| SegmentedControl | — | `profile-ai-mode` | 353 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 378 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 380 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 397 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 407 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 445 |
-| TextButton | Settings · What's New | `profile-settings` | 447 |
-| TextButton | Privacy | `profile-privacy` | 448 |
+| EmptyState | Couldn't load your profile | — | 183 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 364 |
+| TextButton | Edit entry info | `profile-home-access` | 381 |
+| SegmentedControl | — | `profile-ai-mode` | 397 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 422 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 424 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 441 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 451 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 489 |
+| TextButton | Settings · What's New | `profile-settings` | 491 |
+| TextButton | Privacy | `profile-privacy` | 492 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 

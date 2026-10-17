@@ -1,4 +1,5 @@
-"""POST /api/geo/geocode (phase-06b 6B.2): address → point, via Nominatim, signed-in users only."""
+"""POST /api/geo/geocode (phase-06b 6B.2): address → point, via Nominatim, signed-in users only.
+POST /api/geo/reverse: point → a coarse "neighbourhood, city" label."""
 
 import httpx
 import pytest
@@ -102,3 +103,51 @@ def test_two_lookups_are_spaced_at_least_a_gap_apart(monkeypatch, gap):
     geo._search("first")
     geo._search("second")
     assert stamps[1] - stamps[0] >= gap - 0.02
+
+
+def post_reverse(client, token=None, lat=43.6477, lng=-79.4194):
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return client.post("/api/geo/reverse", headers=headers, json={"lat": lat, "lng": lng})
+
+
+def test_a_point_becomes_a_coarse_label(client, monkeypatch):
+    seen: list[tuple[float, float]] = []
+    monkeypatch.setattr(geo, "_reverse", lambda lat, lng: seen.append((lat, lng)) or HIT)
+    body = post_reverse(client, owner_token()).json()
+    assert body == {"found": True, "label": "Trinity Bellwoods, Toronto"}
+    assert "12" not in body["label"]  # no house number
+    assert seen == [(43.6477, -79.4194)]
+
+
+def test_a_point_nobody_can_name_is_found_false(client, monkeypatch):
+    monkeypatch.setattr(geo, "_reverse", lambda lat, lng: {"error": "Unable to geocode"})
+    assert post_reverse(client, owner_token()).json() == {"found": False, "label": None}
+
+
+def test_the_reverse_lookup_sends_a_rounded_point(monkeypatch):
+    calls: list[dict] = []
+
+    class Reply:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {}
+
+    monkeypatch.setattr(geo.httpx, "get", lambda url, **kw: calls.append({"url": url, **kw}) or Reply())
+    monkeypatch.setattr(geo, "MIN_GAP_S", 0)
+    geo._reverse(43.647712345, -79.419498765)
+    call = calls[0]
+    assert call["url"] == "https://nominatim.openstreetmap.org/reverse"
+    assert call["headers"]["User-Agent"].startswith("Goldito/")
+    assert call["params"]["lat"] == 43.648 and call["params"]["lon"] == -79.419  # about 100 m, not the exact spot
+
+
+def test_the_reverse_lookup_being_down_is_a_502_and_it_needs_sign_in(client, monkeypatch):
+    def down(lat, lng):
+        raise httpx.ConnectError("no route")
+
+    monkeypatch.setattr(geo, "_reverse", down)
+    assert post_reverse(client, owner_token()).status_code == 502
+    assert post_reverse(client).status_code == 401
+    assert post_reverse(client, owner_token(), lat=123).status_code == 422

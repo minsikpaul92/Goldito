@@ -41,6 +41,17 @@ async function mockGeocode(page: Page, answer: object, status = 200) {
   return asked;
 }
 
+/** The reverse lookup ("where is this pin?"). `label: null` = nobody can name the spot; a status ≥ 400 = the lookup is down. */
+async function mockReverse(page: Page, label: string | null, status = 200) {
+  const asked: unknown[] = [];
+  await page.route("**/api/geo/reverse", async (route) => {
+    asked.push(route.request().postDataJSON());
+    const body = status >= 400 ? { detail: "down" } : { found: label !== null, label };
+    return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+  });
+  return asked;
+}
+
 async function openProfile(page: Page, user: typeof OWNER | typeof SITTER, home: string) {
   await signIn(page, user);
   await expect(page).toHaveURL(new RegExp(`/${home}$`));
@@ -51,23 +62,30 @@ async function openProfile(page: Page, user: typeof OWNER | typeof SITTER, home:
 test.describe("home map pin", () => {
   test("nothing reads the location until the button is tapped; one tap reads it once", async ({ page }) => {
     const gps = await stubGps(page);
+    await mockReverse(page, "Trinity Bellwoods, Toronto");
     await mockSupabase(page, [OWNER]);
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveCount(0);
     expect(await gps.reads()).toBe(0);
     await screen.getByTestId("profile-use-location").click();
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin set from your location");
     // The change is easy to notice: a toast, a highlighted status and the button now offers to read again (#131).
     await expect(screen.getByTestId("toast")).toContainText("Location found");
     await expect(screen.getByTestId("profile-use-location")).toContainText("Read my location again");
+    // The person sees where the pin landed, can check it on a map, and is told what it is for (#131).
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto");
+    await expect(screen.getByTestId("profile-home-pin-map")).toBeVisible();
+    await expect(screen.getByTestId("profile-home-pin-use")).toContainText("finding sitters near you");
     expect(await gps.reads()).toBe(1);
   });
 
   test("One tap reads the location once and Save keeps it as the pin", async ({ page }) => {
     const gps = await stubGps(page);
     const asked = await mockGeocode(page, { found: false });
+    const reversed = await mockReverse(page, "Trinity Bellwoods, Toronto");
     const { db } = await mockSupabase(page, [OWNER]);
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
@@ -78,12 +96,15 @@ test.describe("home map pin", () => {
     await expect(screen.getByTestId("profile-home-pin-note")).toHaveCount(0);
     expect(await gps.reads()).toBe(1);
 
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto");
     await screen.getByTestId("profile-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
+    // The toast says where the pin was saved, not just that it was.
+    await expect(screen.getByTestId("toast")).toContainText("Pin saved near Trinity Bellwoods, Toronto");
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
     expect(row?.home_lat).toBe(43.6477);
     expect(row?.home_lng).toBe(-79.4194);
     expect(asked).toEqual([]); // a pin from the phone is not overwritten by a lookup of the typed address
+    expect(reversed).toEqual([{ lat: 43.6477, lng: -79.4194 }]);
   });
 
   test("a refused browser permission says so and leaves the pin as it was", async ({ page }) => {
@@ -155,5 +176,18 @@ test.describe("home map pin", () => {
     expect(asked).toEqual([]);
     const row = db.sitter_profiles.find((r) => r.id === SITTER.id);
     expect([row?.home_lat, row?.home_lng]).toEqual([43.6477, -79.4194]);
+  });
+  test("a pin the map can't name says so, and a sitter is told what the pin is for", async ({ page }) => {
+    await stubGps(page);
+    await mockReverse(page, null, 502);
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, home_lat: 43.6477, home_lng: -79.4194, services: ["boarding"] });
+    await openProfile(page, SITTER, "sitter");
+    const screen = app(page);
+
+    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-home-pin-where")).toContainText("couldn't name this spot");
+    await expect(screen.getByTestId("profile-home-pin-use")).toContainText("Owners only see a rounded distance");
+    await expect(screen.getByTestId("profile-home-pin-map")).toBeVisible();
   });
 });

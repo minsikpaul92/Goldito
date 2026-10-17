@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
+import { OpenInMapsButton } from "../components/OpenInMapsButton";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -23,7 +24,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { geocodeAddress } from "../lib/transit";
+import { geocodeAddress, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -127,6 +128,8 @@ export default function ProfileScreen() {
   const [pinFromGps, setPinFromGps] = useState(false);
   const [locating, setLocating] = useState(false);
   const [homeNote, setHomeNote] = useState<string | null>(null);
+  // "Trinity Bellwoods, Toronto" for the pin; `undefined` while it is being looked up, `null` when it has no name.
+  const [homeLabel, setHomeLabel] = useState<string | null | undefined>(undefined);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -153,6 +156,24 @@ export default function ProfileScreen() {
     // Load once per user; later name edits are local until saved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.role]);
+
+  // Name the place the pin is on, so the person can see where it landed (and spot a wrong one).
+  const pinLat = home?.lat;
+  const pinLng = home?.lng;
+  useEffect(() => {
+    if (pinLat == null || pinLng == null) {
+      setHomeLabel(undefined);
+      return;
+    }
+    let current = true;
+    setHomeLabel(undefined);
+    void reverseGeocode({ lat: pinLat, lng: pinLng }).then((label) => {
+      if (current) setHomeLabel(label);
+    });
+    return () => {
+      current = false;
+    };
+  }, [pinLat, pinLng]);
 
   if (session.status === "loading") return <LoadingView />;
   if (!profile) return <Redirect href="/welcome" />;
@@ -202,6 +223,7 @@ export default function ProfileScreen() {
         pinNote = "We couldn't place that address on the map — use your current location for the pin";
       }
     }
+    if (pinFromGps && pin && homeLabel) pinNote = `Pin saved near ${homeLabel}`;
     const next: RoleProfile =
       loaded.role === "owner"
         ? {
@@ -311,6 +333,28 @@ export default function ProfileScreen() {
                     : home
                       ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
                       : "No pin yet. Save your address to place one, or use your current location while you're home."}
+              </Text>
+              {home ? (
+                <Text style={styles.pinWhere} testID="profile-home-pin-where">
+                  {homeLabel
+                    ? `📍 Near ${homeLabel}`
+                    : homeLabel === undefined
+                      ? "📍 Finding the neighbourhood…"
+                      : "📍 We couldn't name this spot — check it on the map"}
+                </Text>
+              ) : null}
+              {home ? (
+                <OpenInMapsButton
+                  place={{ text: null, point: home }}
+                  travelling={false}
+                  style="link"
+                  testID="profile-home-pin-map"
+                />
+              ) : null}
+              <Text style={styles.muted} testID="profile-home-pin-use">
+                {loaded.role === "owner"
+                  ? "What it's for: the trip map and ETA when you or your sitter travel for a drop-off or pick-up, and finding sitters near you. It isn't shown to anyone as a point."
+                  : "What it's for: the trip map and ETA to owners' homes, and so owners can find sitters near them. Owners only see a rounded distance (like “3 km”), never your pin or address."}
               </Text>
               {homeNote ? (
                 <Text style={styles.muted} testID="profile-home-pin-note">
@@ -468,6 +512,11 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.sm,
     },
     groupTitle: {
+      fontSize: theme.fontSize.body,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.color.text,
+    },
+    pinWhere: {
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
