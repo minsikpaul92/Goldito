@@ -5062,4 +5062,108 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Sitter onboarding answers (014f)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_err text;
+begin
+  perform _t_as(null);
+  perform _t_ok((select onboarded_at is null from public.sitter_profiles where id = chloe),
+    '014f: a sitter who has not been through onboarding has no onboarded_at');
+
+  -- Finishing with every question skipped is allowed
+  perform _t_as(chloe);
+  perform save_sitter_answers('[]'::jsonb);
+  perform _t_ok((select onboarded_at is not null from public.sitter_profiles where id = chloe),
+    '014f: onboarding can be finished with every question skipped');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: …and nothing is stored');
+
+  -- Save: typed answers, a choice, a custom question, the intro
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'multiple_owners', 'choice', 'yes', 'answer', 'Two households at most'),
+    jsonb_build_object('key', 'max_pets', 'choice', '3'),
+    jsonb_build_object('key', 'walks_per_day', 'answer', 'Three, one long'),
+    jsonb_build_object('key', 'dog_sizes', 'choice', 'small,medium'),
+    jsonb_build_object('key', 'handoff', 'choice', 'owner_brings'),
+    jsonb_build_object('key', 'park_nearby', 'answer', '   '),
+    jsonb_build_object('key', 'custom_1', 'question', 'Do you have a fenced yard?', 'answer', 'Yes, small one')
+  ), 'Hi, I am Chloe.');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 6,
+    '014f: six answers are stored; a blank one counts as skipped');
+  perform _t_ok((select accepts_multiple_owners and default_max_pets = 3 and bio = 'Hi, I am Chloe.'
+                 from public.sitter_profiles where id = chloe),
+    '014f: multiple_owners, max_pets and the intro reach the columns the booking rules read');
+  perform _t_ok((select source = 'typed' and quote is null from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'walks_per_day'),
+    '014f: a typed answer has source typed and no quote');
+  perform _t_ok((select question_text = 'Do you have a fenced yard?' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'custom_1'),
+    '014f: a custom question keeps its own wording');
+
+  -- Replace-all: a second save drops what is not sent, and a voice answer keeps its quote
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'cats', 'choice', 'no', 'source', 'voice', 'quote', 'no cats please')
+  ), null, false);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: saving again replaces the whole list');
+  perform _t_ok((select source = 'voice' and quote = 'no cats please' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'cats'),
+    '014f: a voice answer keeps the sentence it was read from');
+  perform _t_ok((select bio = 'Hi, I am Chloe.' from public.sitter_profiles where id = chloe),
+    '014f: no intro sent leaves the bio as it was');
+
+  -- Checks
+  begin perform save_sitter_answers('[{"key": "max_pets", "choice": "11"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_choice', '014f: a choice outside the question''s options is refused');
+  begin perform save_sitter_answers('[{"key": "favourite_colour", "answer": "blue"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: an unknown question is refused');
+  begin perform save_sitter_answers('[{"key": "custom_2", "answer": "no question text"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: a custom answer needs its question');
+  begin perform save_sitter_answers('{"key": "cats"}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: answers must be a list');
+  begin perform save_sitter_answers('[{"key": "cats", "choice": "no", "source": "robot"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: the source is typed or voice');
+  begin perform save_sitter_answers('[]'::jsonb, repeat('x', 601)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_intro', '014f: an intro over 600 characters is refused');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: a refused save changed nothing');
+
+  -- Who reads and who writes
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: another sitter cannot read Chloe''s answers');
+  perform save_sitter_answers(jsonb_build_array(jsonb_build_object('key', 'cats', 'choice', 'yes')));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id in (chloe, paul)) = 2,
+    '014f: an owner reads every sitter''s answers');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014f: an owner cannot save sitter answers');
+  begin insert into public.sitter_profile_answers (sitter_id, question_key, answer) values (robert, 'cats', 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: there is no direct write to the table');
+  perform _t_as(null, 'anon');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot save sitter answers');
+  begin perform count(*) from public.sitter_profile_answers; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot read the answers');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

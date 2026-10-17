@@ -42,6 +42,28 @@
 
 함께 진행(같은 QA 피드백): 현재 위치 [#131](https://github.com/minsikpaul92/Goldito/issues/131) · Privacy 아코디언 [#132](https://github.com/minsikpaul92/Goldito/issues/132) · 취소 부킹 빈 카드 [#133](https://github.com/minsikpaul92/Goldito/issues/133) · 캘린더 빗금 [#134](https://github.com/minsikpaul92/Goldito/issues/134) · 프로필 사진 [#135](https://github.com/minsikpaul92/Goldito/issues/135) · [#136](https://github.com/minsikpaul92/Goldito/issues/136) · [#137](https://github.com/minsikpaul92/Goldito/issues/137) · 헤더 정리(Muk) [#147](https://github.com/minsikpaul92/Goldito/issues/147).
 
+## 3D.2 시터 온보딩 설계 ([#139](https://github.com/minsikpaul92/Goldito/issues/139), 2026-10-17 Minsik 결정)
+
+**지금 만든다 (타이핑 우선)**
+
+- **번호 매긴 질문 목록 + 질문마다 텍스트 박스.** 전부 건너뛸 수 있다. 정해진 선택지가 있는 질문(여러 오너 동시 · 한 번에 맡는 마릿수 · 고양이 · 강아지 크기 · 인계 방식 등)은 박스 옆에 칩이 있어 칩 한 번으로 `choice`가 정해지고 박스는 덧붙이는 말이다.
+- 마지막 단계는 **검토 → 고치기 → 완료**. 완료해야 저장되고 `onboarded_at`이 찍힌다. 기존 시터는 Profile에서 같은 화면으로 고친다.
+- **자기소개 한 단락**(= `sitter_profiles.bio`)과 **직접 추가하는 Q&A**(`custom_1` – `custom_5`, 질문 문구는 시터가 쓴다).
+- **언제 가능한지**: 요일별 가능 시간대(= 기존 `save_closing_rules` · `save_weekday_hours`)와 안 되는 날짜(= `sitter_availability` blocked)를 같은 온보딩 안에서 탭으로 등록해 Schedule에 바로 반영한다. 새 테이블은 만들지 않는다.
+- **사진**: 얼굴 사진 1장 + 펫과 함께 찍은 사진 여러 장. 사진 갤러리는 [#135](https://github.com/minsikpaul92/Goldito/issues/135)의 `profile_photos` · `ProfilePhotoGallery`를 쓰므로 #135의 시터 쪽 데이터 · 컴포넌트를 먼저 한다(온보딩 화면 단계에서 끼워 넣음).
+- DB: `014f_sitter_profile_answers.sql` — `sitter_profile_answers`(시터당 질문 키 하나, `answer` ≤ 300자, `choice`, `source` typed|voice, `quote`) + `save_sitter_answers(answers, intro, finish)`. 오너는 모든 시터의 답을 읽고 쓰기는 시터 본인의 RPC뿐이다. `multiple_owners` → `accepts_multiple_owners`, `max_pets` → `default_max_pets`로 복사된다(예약 규칙이 읽는 값). 인계 방식은 답에만 두고 #145가 기본값으로 읽는다.
+
+**음성 입력 — 문서만, 구현은 뒤로 (Groq 키는 [#158](https://github.com/minsikpaul92/Goldito/issues/158)에서 나중에 넣는다)**
+
+1. 마이크 버튼을 누르면 **텍스트 박스는 접히고 번호 목록만 크게 남는다.** 시터는 목록을 보면서 **"First… Second… Third…"처럼 번호를 말하며** 하나씩 답한다 — 파싱 정확도를 위해 화면이 "Say the number first" 힌트를 계속 보여 준다.
+2. 말하는 동안 **청크 단위(2~3초)로 전사해 화면에 바로 보여 준다.** 시터가 자기 목소리가 제대로 들리는지 그 자리에서 확인한다. (청크를 모아 보내는 `POST /api/ai/transcribe` — Groq `whisper-large-v3-turbo`, 녹음은 저장하지 않음. 11.15 펫 음성도 이 엔드포인트를 쓴다.)
+3. 끝내면 **전사문 전체를 보여 주고 "Record again" 또는 "Send"를 고른다.** Send 하면 `POST /api/ai/sitter-profile-parse`(MODEL_FAST, JSON)가 번호와 질문 키에 맞춰 칸을 채운다. 값마다 전사 속 근거 문장(`quote`)이 있어야 하고 없으면 버린다. 전사문은 데이터이며 지시가 아니다.
+4. 검토 화면에서 채워진 칸은 "✨ from your voice"와 근거 문장이 보이고, 못 들은 질문은 비어 있다. 시터가 고치고 완료한다.
+5. **가능한 날 / 안 되는 날도 음성으로 받는다.** "Weekdays yes, weekends no, not October 25" → 파서가 요일별 가능 시간대와 안 되는 날짜 목록을 만들고, 검토 화면의 같은 요일 · 날짜 위젯을 채운다. 시터가 확인한 뒤에만 `save_closing_rules` / blocked 행으로 Schedule에 등록된다(AI는 제안만).
+6. 확인할 것(구현 때): iPhone Safari(mp4) · Chrome(webm) 청크 업로드, 무료 플랜 한도(분당 20요청 — 청크가 2~3초면 한도에 닿으므로 6~8초 청크 또는 녹음 끝에 한 번), Groq 무료 플랜 약관의 데이터 취급.
+
+**단계(커밋 단위)**: ① `014f` 마이그레이션 + RPC + 스모크 ✅ → ② 시터 쪽 프로필 사진(#135의 시터 부분) → ③ 온보딩 화면(번호 + 텍스트 박스 + 칩, 검토 · 완료) → ④ 가능한 날 등록 위젯(온보딩 + Schedule 연결) → ⑤ Profile 편집 + 시드(데모 시터 둘) + e2e → ⑥ (보류) 음성.
+
 ## 방침
 
 - 트립 · 다이어리 · 리포트 · 리뷰 화면은 **다시 만들지 않는다.** 1차는 채팅 카드에서 기존 화면으로 연결.
