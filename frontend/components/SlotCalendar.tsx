@@ -149,6 +149,9 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: {
       gap: theme.spacing.xs,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.color.surface,
     },
     header: {
       flexDirection: "row",
@@ -215,8 +218,6 @@ const makeStyles = (theme: Theme) =>
       flexDirection: "column",
       overflow: "hidden",
       borderRadius: theme.radius.sm,
-      borderWidth: 1,
-      borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
     third: {
@@ -234,7 +235,7 @@ const makeStyles = (theme: Theme) =>
       overflow: "hidden",
       borderRadius: 4,
       borderWidth: 1,
-      borderColor: theme.color.borderStrong,
+      borderColor: theme.color.border,
       backgroundColor: theme.color.surface,
     },
     legend: {
