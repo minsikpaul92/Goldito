@@ -165,7 +165,7 @@ export type MockDb = {
   search_results: Row[];
   searches: Row[];
   /** Sitters rpc/search_sitters_nearby (014c) can return, in its shape: each row's `distance_km` is the exact
-   * distance; the handler keeps rows within p_radius_km + 2 and rounds it. Calls land in `nearbySearches`. */
+   * distance; the handler keeps rows within p_radius_km and rounds it. Calls land in `nearbySearches`. */
   nearby_sitters: Row[];
   nearbySearches: Row[];
   /** Forces rpc/search_sitters_nearby to fail with this code (e.g. "no_home_point"). */
@@ -716,7 +716,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       route,
       200,
       db.nearby_sitters
-        .filter((row) => Number(row.distance_km) <= radius + 2)
+        .filter((row) => Number(row.distance_km) <= radius)
         .sort((a, b) => Number(a.distance_km) - Number(b.distance_km))
         .map((row) => ({ ...row, distance_km: Math.max(1, Math.round(Number(row.distance_km))) })),
     );

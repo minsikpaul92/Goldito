@@ -4793,21 +4793,23 @@ begin
          (vic, 'open', d, d, 'afternoon', '12:00', '18:00', 2);
   insert into public.sitter_rates (sitter_id, boarding_nightly) values (sana, 48);
 
-  -- Robert searches from his saved home, 5 km
+  -- Robert searches from his saved home: only sitters inside the radius, nearest first
   perform _t_as(robert);
   select array_agg(x.sitter_id order by x.distance_km) into v_ids
-  from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id in (sana, theo, uma, vic);
+  from search_sitters_nearby(drop_at, pick_at, 1, 7) x where x.sitter_id in (sana, theo, uma, vic);
   perform _t_ok(v_ids = array[sana, theo],
-    '014c: 5 km from home finds Sana (3 km) and Theo (6.4 km, inside the +2 km margin), nearest first');
-  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = sana;
+    '014c: 7 km from home finds Sana (3 km) and Theo (6.4 km), nearest first; Uma (9 km) and Vic (out of hours) are not shown');
+  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 7) x where x.sitter_id = sana;
   perform _t_ok(r.distance_km = 3 and r.boarding_nightly = 48 and r.display_name = 'Sana',
     '014c: a result carries a rounded distance and the server price');
-  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = theo;
+  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 7) x where x.sitter_id = theo;
   perform _t_ok(r.distance_km = 6, '014c: the distance is rounded to whole km');
-  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 4) x where x.sitter_id = theo),
-    '014c: …and 4 km (+2 = 6) leaves Theo out');
-  perform _t_ok(exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 7) x where x.sitter_id = uma),
-    '014c: 7 km (+2 = 9) reaches Uma');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 6) x where x.sitter_id = theo),
+    '014c: the radius is exact — 6 km leaves Theo (6.4 km) out');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 8) x where x.sitter_id = uma),
+    '014c: …and 8 km leaves Uma (9 km) out');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 10) x where x.sitter_id = uma),
+    '014c: 10 km reaches Uma');
 
   -- Out of hours = not shown at all, at any radius; the same sitter shows once the drop-off is inside her hours
   perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 100) x where x.sitter_id = vic),
@@ -4823,9 +4825,9 @@ begin
   perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 3, 100) x where x.sitter_id = sana),
     '014c: more pets than the sitter has room for leaves her out');
 
-  -- The current location instead of home: 11 km north, Uma is 2 km away and Theo 4.6 km (past 1 + 2 km)
+  -- The current location instead of home: 11 km north, Uma is 2 km away and Theo 4.6 km (past 3 km)
   select array_agg(x.sitter_id) into v_ids
-  from search_sitters_nearby(drop_at, pick_at, 1, 1, 43.6644 + 11 * 0.008993, -79.3573) x
+  from search_sitters_nearby(drop_at, pick_at, 1, 3, 43.6644 + 11 * 0.008993, -79.3573) x
   where x.sitter_id in (sana, theo, uma, vic);
   perform _t_ok(v_ids = array[uma], '014c: a point sent by the app is searched instead of the saved home');
 

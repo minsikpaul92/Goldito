@@ -6,7 +6,7 @@ import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Find a sitter (03B SS-2): the start of a new booking — pets, drop-off / pick-up, home or current location and a
 // 1–100 km slider. Only sitters free for the whole stay come back (search_sitters_nearby, 014c — the filter itself
-// is tested in rls_smoke.sql); the mock keeps rows within radius + 2 km. Everything here is done with the mouse in
+// is tested in rls_smoke.sql); the mock keeps rows within the radius. Everything here is done with the mouse in
 // the desktop phone frame.
 
 const PAUL: MockUser = {
@@ -130,8 +130,8 @@ test.describe("find a sitter", () => {
     // A click near the left end of the track jumps there.
     await page.mouse.click(track.x + 4, track.y + track.height / 2);
     await expect(screen.getByTestId("radius-value")).toHaveText("1 km");
-    await expect(screen.getByTestId("search-result-Chloe")).toBeVisible(); // 3 km ≤ 1 + 2
-    await expect(screen.getByTestId("search-result-Paul")).toHaveCount(0);
+    await expect(screen.getByTestId("search-result-Chloe")).toHaveCount(0); // 3 km is past the line: the radius is exact
+    await expect(screen.getByText("No sitter free within 1 km")).toBeVisible();
     expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 1 });
 
     // Keyboard: → +1, Page Up +10.

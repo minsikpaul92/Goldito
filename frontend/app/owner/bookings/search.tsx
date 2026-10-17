@@ -385,7 +385,7 @@ export default function FindSitter() {
             valueText={`${radiusKm} km`}
             testID="radius-slider"
           />
-          <Text style={styles.hint}>Distances are approximate — sitters a little past the line may show.</Text>
+          <Text style={styles.hint}>Distances are in a straight line and rounded to whole km.</Text>
         </Card>
 
         {criteria ? (

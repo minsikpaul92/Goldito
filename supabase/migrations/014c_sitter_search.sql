@@ -5,8 +5,8 @@
 --   * every slot of the stay has room for the pets and is not held by another owner (the same rule as search_sitters
 --     and the inquiry AI's can-host check, 011l: capacity counts holds; one owner at a time);
 --   * the drop-off and the pick-up time both fall inside the sitter's opened hours (within_sitter_hours);
---   * the sitter's home point (012) is within the radius + 2 km — distance is approximate, so a sitter just past the
---     line still shows. A sitter with no home point cannot be placed and is left out.
+--   * the sitter's home point (012) is within the radius (straight-line distance, haversine). A sitter with no home
+--     point cannot be placed and is left out.
 -- Anyone else is left out entirely (no "partly free" rows): changing the dates, times or radius is how an owner
 -- finds more. The place is the owner's saved home point (lat / lng omitted) or a point the app sends ("Use my
 -- current location"). The sitter's coordinates never leave the database: only a distance rounded to whole km
@@ -55,17 +55,21 @@ begin
   end if;
 
   return query
-  with nearby as materialized (
+  with placed as materialized (
     select p.id, p.display_name, sp.bio, sp.service_area, sp.experience_years, sp.services,
       coalesce(sp.accepts_multiple_owners, false) as multi,
-      -- Haversine, km
-      6371 * 2 * asin(sqrt(
+      -- Haversine, km (least(1, ..) keeps float noise near the antipode from breaking asin)
+      6371 * 2 * asin(least(1, sqrt(
         power(sin(radians(sp.home_lat - v_lat) / 2), 2)
         + cos(radians(v_lat)) * cos(radians(sp.home_lat)) * power(sin(radians(sp.home_lng - v_lng) / 2), 2)
-      )) as km
+      ))) as km
     from public.profiles p
     join public.sitter_profiles sp on sp.id = p.id
     where p.role = 'sitter' and p.id <> auth.uid() and sp.home_lat is not null
+  ),
+  nearby as (
+    -- Distance first: availability below is only checked for sitters inside the radius.
+    select * from placed where km <= p_radius_km
   ),
   fits as (
     select n.*
@@ -79,8 +83,7 @@ begin
         count(*)::int as total
       from public.slots_for_window(n.id, p_drop_off_at, p_pick_up_at) f
     ) w
-    where n.km <= p_radius_km + 2
-      and w.total > 0 and w.covered = w.total
+    where w.total > 0 and w.covered = w.total
       and public.within_sitter_hours(n.id, p_drop_off_at)
       and public.within_sitter_hours(n.id, p_pick_up_at)
   )
