@@ -1,12 +1,12 @@
 import { Redirect, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SitterAnswersForm } from "../components/SitterAnswersForm";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { loadDraft, saveDraft } from "../features/onboarding/onboardingApi";
-import { EMPTY_DRAFT, OnboardingDraft } from "../features/onboarding/questions";
+import { OnboardingDraft, emptyDraft } from "../features/onboarding/questions";
 import { useSession } from "../providers/SessionProvider";
 import { useToast } from "../providers/ToastProvider";
 
@@ -21,13 +21,19 @@ export default function SitterOnboarding() {
   const [draft, setDraft] = useState<OnboardingDraft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // The every-day hours as saved, to write them back only when the sitter changed them.
+  const savedHours = useRef(emptyDraft().availability.hours);
   const userId = session.status === "signedIn" ? session.profile.id : null;
 
   useEffect(() => {
     if (!userId) return;
     let active = true;
     loadDraft(userId)
-      .then((d) => active && setDraft(d))
+      .then((d) => {
+        if (!active) return;
+        savedHours.current = d.availability.hours;
+        setDraft(d);
+      })
       .catch((e: Error) => active && setLoadError(e.message));
     return () => {
       active = false;
@@ -47,7 +53,7 @@ export default function SitterOnboarding() {
   const save = async (next: OnboardingDraft) => {
     setSaving(true);
     try {
-      await saveDraft(next);
+      await saveDraft(userId!, next, savedHours.current);
       toast.show("Saved");
       done();
     } catch (e) {
@@ -62,7 +68,7 @@ export default function SitterOnboarding() {
       <SitterAnswersForm
         draft={draft}
         onChange={setDraft}
-        onSkipAll={edit ? undefined : () => void save(EMPTY_DRAFT)}
+        onSkipAll={edit ? undefined : () => void save(emptyDraft())}
         onFinish={() => void save(draft)}
         saving={saving}
       />

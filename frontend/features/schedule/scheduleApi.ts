@@ -77,7 +77,7 @@ export class OverlapError extends Error {
 export type OverlappingBooking = { id: string; ownerName: string; startDate: string; endDate: string };
 
 const ROW_COLUMNS = "id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets, note, created_at";
-const FALLBACK_HOURS: Record<CareSlot, [string, string]> = {
+export const FALLBACK_HOURS: Record<CareSlot, [string, string]> = {
   morning: ["08:00", "12:00"],
   afternoon: ["12:00", "18:00"],
   overnight: ["18:00", "08:00"],

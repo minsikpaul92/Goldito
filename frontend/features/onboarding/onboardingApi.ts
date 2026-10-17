@@ -1,5 +1,15 @@
 import { getSupabase } from "../../lib/supabase";
-import { EMPTY_DRAFT, MAX_CUSTOM, OnboardingDraft, toPayload } from "./questions";
+import {
+  SLOTS,
+  loadClosingRules,
+  loadSitterDefaults,
+  loadWeekdayHours,
+  saveBlock,
+  saveClosingRules,
+  saveDefaultHours,
+  saveWeekdayHours,
+} from "../schedule/scheduleApi";
+import { MAX_CUSTOM, OnboardingDraft, emptyDraft, toPayload } from "./questions";
 
 type AnswerRow = {
   question_key: string;
@@ -25,17 +35,21 @@ export async function needsOnboarding(userId: string): Promise<boolean> {
 /** The sitter's saved answers and intro, as an editable draft. */
 export async function loadDraft(userId: string): Promise<OnboardingDraft> {
   const supabase = getSupabase();
-  const [answers, profile] = await Promise.all([
+  const [answers, profile, rules, weekdayHours, defaults] = await Promise.all([
     supabase
       .from("sitter_profile_answers")
       .select("question_key, question_text, answer, choice, position")
       .eq("sitter_id", userId)
       .order("position"),
     supabase.rpc("get_my_sitter_profile").maybeSingle(),
+    loadClosingRules(userId),
+    loadWeekdayHours(userId),
+    loadSitterDefaults(),
   ]);
   if (answers.error) fail("load your answers");
 
-  const draft: OnboardingDraft = { ...EMPTY_DRAFT, answers: {}, custom: [] };
+  const draft = emptyDraft();
+  draft.availability = { touched: false, rules, hours: defaults.hours, weekdayHours };
   for (const row of (answers.data ?? []) as AnswerRow[]) {
     if (row.question_key.startsWith("custom_")) {
       draft.custom.push({ question: row.question_text ?? "", answer: row.answer ?? "" });
@@ -48,12 +62,25 @@ export async function loadDraft(userId: string): Promise<OnboardingDraft> {
   return draft;
 }
 
-/** Replace the sitter's answers and intro, and mark onboarding done. */
-export async function saveDraft(draft: OnboardingDraft): Promise<void> {
+/**
+ * Replace the sitter's answers and intro and mark onboarding done, then write what they changed in When can you host?:
+ * the weekly rules and hours, and the days off. The schedule is only touched when they set something there.
+ */
+export async function saveDraft(userId: string, draft: OnboardingDraft, savedHours: OnboardingDraft["availability"]["hours"]): Promise<void> {
   const { error } = await getSupabase().rpc("save_sitter_answers", {
     p_answers: toPayload(draft),
     p_intro: draft.intro.trim(),
     p_finish: true,
   });
   if (error) fail("save your answers");
+
+  const { availability, daysOff } = draft;
+  if (availability.touched) {
+    await saveClosingRules(availability.rules);
+    if (SLOTS.some(({ slot }) => availability.hours[slot][0] !== savedHours[slot][0] || availability.hours[slot][1] !== savedHours[slot][1])) {
+      await saveDefaultHours(userId, availability.hours);
+    }
+    await saveWeekdayHours(availability.weekdayHours);
+  }
+  for (const day of daysOff) await saveBlock(userId, day, day, SLOTS.map((s) => s.slot));
 }

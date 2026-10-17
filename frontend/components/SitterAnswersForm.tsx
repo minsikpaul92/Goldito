@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ClosingRulesSheet } from "./ClosingRulesSheet";
 import { Button } from "./ui/Button";
+import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { ChoiceChips } from "./ui/ChoiceChips";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
@@ -17,6 +19,8 @@ import {
   choiceLabel,
   choiceList,
 } from "../features/onboarding/questions";
+import { appToday, formatDay } from "../features/schedule/dates";
+import { SLOTS } from "../features/schedule/scheduleApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -36,6 +40,9 @@ type Props = {
 export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving }: Props) {
   const styles = useThemedStyles(makeStyles);
   const [step, setStep] = useState<"answer" | "review">("answer");
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesKey, setRulesKey] = useState(0);
+  const [dayOpen, setDayOpen] = useState(false);
 
   const setAnswer = (key: string, patch: Partial<AnswerDraft>) =>
     onChange({
@@ -44,6 +51,8 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
     });
 
   if (step === "review") return <Review draft={draft} onBack={() => setStep("answer")} onFinish={onFinish} saving={saving} />;
+
+  const { availability } = draft;
 
   return (
     <View style={styles.form} testID="onboarding-form">
@@ -121,6 +130,64 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
         ) : null}
       </View>
 
+      <View style={styles.question} testID="onboarding-availability">
+        <Text style={styles.prompt}>When can you host?</Text>
+        <Text style={styles.muted}>
+          You are open every day until you close something. Close the days and times you never take, or change your hours.
+        </Text>
+        <Text style={styles.answer} testID="onboarding-availability-summary">
+          {availabilitySummary(availability)}
+        </Text>
+        <Button
+          label="Set weekly availability"
+          variant="secondary"
+          onPress={() => {
+            setRulesKey((k) => k + 1);
+            setRulesOpen(true);
+          }}
+          testID="onboarding-availability-open"
+        />
+        <Text style={styles.prompt}>Days you can't host</Text>
+        {draft.daysOff.map((day) => (
+          <View key={day} style={styles.dayOff}>
+            <Text style={styles.answer}>{formatDay(day)}</Text>
+            <TextButton
+              label="Remove"
+              onPress={() => onChange({ ...draft, daysOff: draft.daysOff.filter((d) => d !== day) })}
+              testID={`onboarding-dayoff-remove-${day}`}
+            />
+          </View>
+        ))}
+        <Button label="Add a day off" variant="secondary" onPress={() => setDayOpen(true)} testID="onboarding-dayoff-add" />
+      </View>
+
+      <ClosingRulesSheet
+        key={rulesKey}
+        visible={rulesOpen}
+        rules={availability.rules}
+        hours={availability.hours}
+        weekdayHours={availability.weekdayHours}
+        saving={false}
+        error={null}
+        onApply={(rules, hours, weekdayHours) => {
+          onChange({ ...draft, availability: { touched: true, rules, hours, weekdayHours } });
+          setRulesOpen(false);
+        }}
+        onClose={() => setRulesOpen(false)}
+      />
+      <DayPickerSheet
+        visible={dayOpen}
+        title="Add a day off"
+        value={appToday()}
+        minDay={appToday()}
+        onPick={(day) => {
+          if (!draft.daysOff.includes(day)) onChange({ ...draft, daysOff: [...draft.daysOff, day].sort() });
+          setDayOpen(false);
+        }}
+        onClose={() => setDayOpen(false)}
+        testID="onboarding-dayoff-picker"
+      />
+
       <View style={styles.question}>
         <TextField
           label="A few words about you (optional)"
@@ -175,13 +242,22 @@ function Review({
           <Text style={styles.answer}>{c.answer.trim()}</Text>
         </View>
       ))}
+      {draft.availability.touched || draft.daysOff.length > 0 ? (
+        <View style={styles.reviewRow} testID="onboarding-review-availability">
+          <Text style={styles.prompt}>When you can host</Text>
+          {draft.availability.touched ? <Text style={styles.answer}>{availabilitySummary(draft.availability)}</Text> : null}
+          {draft.daysOff.length > 0 ? (
+            <Text style={styles.answer}>Days off: {draft.daysOff.map((d) => formatDay(d)).join(", ")}</Text>
+          ) : null}
+        </View>
+      ) : null}
       {draft.intro.trim() ? (
         <View style={styles.reviewRow} testID="onboarding-review-intro">
           <Text style={styles.prompt}>About you</Text>
           <Text style={styles.answer}>{draft.intro.trim()}</Text>
         </View>
       ) : null}
-      {answered.length === 0 && customs.length === 0 && !draft.intro.trim() ? (
+      {answered.length === 0 && customs.length === 0 && !draft.intro.trim() && !draft.availability.touched && draft.daysOff.length === 0 ? (
         <Text style={styles.muted}>Nothing answered yet. You can finish now and add answers later.</Text>
       ) : skipped > 0 ? (
         <Text style={styles.muted} testID="onboarding-skipped">
@@ -195,6 +271,19 @@ function Review({
   );
 }
 
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "Open every day" or "Closed: Sat–Sun overnight; …" in the same words as the rules sheet. */
+function availabilitySummary(a: OnboardingDraft["availability"]): string {
+  if (a.rules.length === 0 && a.weekdayHours.length === 0) return "Open every day.";
+  const parts = SLOTS.map(({ slot, label }) => {
+    const days = a.rules.filter((r) => r.slot === slot).map((r) => WEEKDAY_SHORT[r.weekday]);
+    return days.length ? `${days.join(", ")} ${label.toLowerCase()}` : null;
+  }).filter(Boolean);
+  const closed = parts.length ? `Closed: ${parts.join("; ")}.` : "Open every day.";
+  return a.weekdayHours.length ? `${closed} Some weekdays have their own hours.` : closed;
+}
+
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     form: { gap: theme.spacing.md },
@@ -204,5 +293,6 @@ const makeStyles = (theme: Theme) =>
     prompt: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     custom: { gap: theme.spacing.sm },
     reviewRow: { gap: theme.spacing.xs },
+    dayOff: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     answer: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, color: theme.color.text },
   });

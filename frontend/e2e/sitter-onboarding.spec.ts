@@ -81,4 +81,54 @@ test.describe("sitter onboarding", () => {
     await screen.getByTestId("onboarding-finish").click();
     expect(db.sitter_profile_answers.find((r) => r.sitter_id === SITTER.id && r.question_key === "cats")?.choice).toBe("yes");
   });
+
+  test("When can you host?: weekly rules and a day off go to the schedule when the sitter finishes", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, onboarded_at: null });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter-onboarding$/);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("onboarding-availability-summary")).toHaveText("Open every day.");
+    await screen.getByTestId("onboarding-availability-open").click();
+    await screen.getByTestId("rule-overnight-0").click();
+    await screen.getByTestId("rule-overnight-6").click();
+    await screen.getByTestId("rules-apply").click();
+    await expect(screen.getByTestId("onboarding-availability-summary")).toHaveText("Closed: Sun, Sat night.");
+    // Nothing is written until Finish.
+    expect(db.sitter_closing_rules).toHaveLength(0);
+
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto" }).format(new Date());
+    await screen.getByTestId("onboarding-dayoff-add").click();
+    await screen.getByTestId(`onboarding-dayoff-picker-${today}`).click();
+    await expect(screen.getByTestId(`onboarding-dayoff-remove-${today}`)).toBeVisible();
+
+    await screen.getByTestId("onboarding-review").click();
+    await expect(screen.getByTestId("onboarding-review-availability")).toContainText("Closed: Sun, Sat night.");
+    await expect(screen.getByTestId("onboarding-review-availability")).toContainText("Days off:");
+    await screen.getByTestId("onboarding-finish").click();
+    await expect(page).toHaveURL(/\/sitter$/);
+
+    expect(db.sitter_closing_rules.map((r) => `${r.weekday}:${r.slot}`).sort()).toEqual(["0:overnight", "6:overnight"]);
+    const blocked = db.sitter_availability.filter((r) => r.sitter_id === SITTER.id && r.kind === "blocked");
+    expect(blocked.map((r) => r.slot).sort()).toEqual(["afternoon", "morning", "overnight"]);
+    expect(blocked.every((r) => r.start_date === today && r.end_date === today)).toBe(true);
+  });
+
+  test("an untouched availability section leaves the schedule alone", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, onboarded_at: null });
+    db.sitter_closing_rules.push({ sitter_id: SITTER.id, weekday: 3, slot: "morning" });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter-onboarding$/);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("onboarding-availability-summary")).toHaveText("Closed: Wed morning.");
+    await screen.getByTestId("onboarding-choice-cats-yes").click();
+    await screen.getByTestId("onboarding-review").click();
+    await screen.getByTestId("onboarding-finish").click();
+    await expect(page).toHaveURL(/\/sitter$/);
+    expect(db.sitter_closing_rules).toHaveLength(1);
+    expect(db.sitter_availability.filter((r) => r.sitter_id === SITTER.id)).toHaveLength(0);
+  });
 });

@@ -1,3 +1,6 @@
+import { FALLBACK_HOURS } from "../schedule/scheduleApi";
+import type { CareSlot, ClosingRule, WeekdayHour } from "../schedule/scheduleApi";
+
 /** The numbered questions of sitter onboarding (3D.2, #139). Keys match supabase/migrations/014f. */
 
 export type QuestionChoice = { value: string; label: string };
@@ -70,13 +73,33 @@ export type AnswerDraft = { answer: string; choice: string | null };
 
 export type CustomDraft = { question: string; answer: string };
 
+/** When the sitter hosts: the weekly closing rules and hours of the schedule (014d · 014e), set from the same sheet. */
+export type AvailabilityDraft = {
+  /** False until the sitter changes something here; untouched, nothing in the schedule is written. */
+  touched: boolean;
+  rules: ClosingRule[];
+  hours: Record<CareSlot, [string, string]>;
+  weekdayHours: WeekdayHour[];
+};
+
 export type OnboardingDraft = {
   answers: Record<string, AnswerDraft>;
   custom: CustomDraft[];
   intro: string;
+  availability: AvailabilityDraft;
+  /** Days off added here (YYYY-MM-DD), saved as closed days on the calendar. Days already closed stay in Schedule. */
+  daysOff: string[];
 };
 
-export const EMPTY_DRAFT: OnboardingDraft = { answers: {}, custom: [], intro: "" };
+export function emptyDraft(): OnboardingDraft {
+  return {
+    answers: {},
+    custom: [],
+    intro: "",
+    availability: { touched: false, rules: [], hours: { ...FALLBACK_HOURS }, weekdayHours: [] },
+    daysOff: [],
+  };
+}
 
 /** "small,large" -> ["small", "large"] */
 export function choiceList(choice: string | null | undefined): string[] {

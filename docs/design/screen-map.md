@@ -368,7 +368,7 @@ Shows: `SitterAnswersForm`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your answers | — | 39 |
+| EmptyState | Couldn't load your answers | — | 45 |
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
@@ -1011,12 +1011,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 107 |
-| Button | Add a question | `onboarding-custom-add` | 115 |
-| Button | Review | `onboarding-review` | 135 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 136 |
-| Button | Finish | `onboarding-finish` | 192 |
-| Button | Back to edit | `onboarding-back` | 193 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 116 |
+| Button | Add a question | `onboarding-custom-add` | 124 |
+| Button | Set weekly availability | `onboarding-availability-open` | 141 |
+| TextButton | Remove | ``onboarding-dayoff-remove-${day}`` | 154 |
+| Button | Add a day off | `onboarding-dayoff-add` | 161 |
+| Button | Review | `onboarding-review` | 202 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 203 |
+| Button | Finish | `onboarding-finish` | 268 |
+| Button | Back to edit | `onboarding-back` | 269 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1212,4 +1215,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-353 actions · 353 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+356 actions · 356 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
