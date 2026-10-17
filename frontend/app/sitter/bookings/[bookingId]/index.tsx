@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
-import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { BookingStageBar, hasStageBar } from "../../../../components/BookingStageBar";
 import { EntryInfoCard } from "../../../../components/EntryInfoCard";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
@@ -241,9 +241,11 @@ export default function SitterBookingDetail() {
           </View>
         </Card>
 
-        <Card style={styles.block}>
-          <BookingStageBar booking={booking} viewer="sitter" />
-        </Card>
+        {hasStageBar(booking) ? (
+          <Card style={styles.block}>
+            <BookingStageBar booking={booking} viewer="sitter" />
+          </Card>
+        ) : null}
 
         {endedLine ? (
           <Card style={styles.block} testID="booking-ended">

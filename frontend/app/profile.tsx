@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
-import { ShareLocationSheet } from "../components/ShareLocationSheet";
+import { OpenInMapsButton } from "../components/OpenInMapsButton";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -24,7 +24,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { geocodeAddress } from "../lib/transit";
+import { PinPlace, geocodeAddress, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -126,9 +126,10 @@ export default function ProfileScreen() {
   const [home, setHome] = useState<LatLng | null>(null);
   // The pin came from "Use my current location" this visit: an address typed later must not replace it.
   const [pinFromGps, setPinFromGps] = useState(false);
-  const [askingLocation, setAskingLocation] = useState(false);
   const [locating, setLocating] = useState(false);
   const [homeNote, setHomeNote] = useState<string | null>(null);
+  // "Trinity Bellwoods, Toronto" for the pin; `undefined` while it is being looked up, `null` when it has no name.
+  const [homePlace, setHomePlace] = useState<PinPlace | null | undefined>(undefined);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -155,6 +156,24 @@ export default function ProfileScreen() {
     // Load once per user; later name edits are local until saved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.role]);
+
+  // Name the place the pin is on, so the person can see where it landed (and spot a wrong one).
+  const pinLat = home?.lat;
+  const pinLng = home?.lng;
+  useEffect(() => {
+    if (!pinFromGps || pinLat == null || pinLng == null) {
+      setHomePlace(undefined);
+      return;
+    }
+    let current = true;
+    setHomePlace(undefined);
+    void reverseGeocode({ lat: pinLat, lng: pinLng }).then((place) => {
+      if (current) setHomePlace(place);
+    });
+    return () => {
+      current = false;
+    };
+  }, [pinFromGps, pinLat, pinLng]);
 
   if (session.status === "loading") return <LoadingView />;
   if (!profile) return <Redirect href="/welcome" />;
@@ -204,6 +223,7 @@ export default function ProfileScreen() {
         pinNote = "We couldn't place that address on the map — use your current location for the pin";
       }
     }
+    if (pinFromGps && pin && homePlace) pinNote = `Pin saved near ${homePlace.label}`;
     const next: RoleProfile =
       loaded.role === "owner"
         ? {
@@ -265,10 +285,8 @@ export default function ProfileScreen() {
     try {
       setHome(await getCurrentPosition());
       setPinFromGps(true);
-      setAskingLocation(false);
-      setHomeNote("Pin set from your location — Save to keep it.");
+      toast.show("Location found 📍 Tap Save to keep it");
     } catch (error) {
-      setAskingLocation(false);
       setHomeNote(
         error instanceof LocationError && error.reason === "denied"
           ? "Location is off for Goldito in this browser. Allow it in the browser's site settings, or save your address to place the pin from it."
@@ -304,40 +322,55 @@ export default function ProfileScreen() {
           {field.key === "home_address" ? (
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>
-              <Text style={styles.muted} testID="profile-home-pin-status">
-                {home
-                  ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
-                  : "No pin yet. Save your address to place one, or use your current location while you're home."}
-              </Text>
+              {/* Nothing about the pin shows until the person reads their location: an old saved pin (a demo seed, an
+                  address from long ago) would only be a wrong place in the way. */}
+              {locating || pinFromGps ? (
+                <>
+                  <Text style={[styles.muted, locating ? styles.pinBusy : styles.pinSet]} testID="profile-home-pin-status">
+                    {locating
+                      ? "📡 Reading your location… allow it in the browser if it asks."
+                      : "✅ Pin set from your location. Tap Save to keep it."}
+                  </Text>
+                  {!locating && home ? (
+                    <>
+                      <Text style={styles.pinWhere} testID="profile-home-pin-where">
+                        {homePlace
+                          ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
+                          : homePlace === undefined
+                            ? "📍 Finding the neighbourhood…"
+                            : "📍 We couldn't name this spot — check it on the map"}
+                      </Text>
+                      <OpenInMapsButton
+                        place={{ text: null, point: home }}
+                        travelling={false}
+                        style="link"
+                        testID="profile-home-pin-map"
+                      />
+                      <Text style={styles.muted} testID="profile-home-pin-use">
+                        {loaded.role === "owner"
+                          ? "What it's for: the trip map and ETA when you or your sitter travel for a drop-off or pick-up, and finding sitters near you. It isn't shown to anyone as a point."
+                          : "What it's for: the trip map and ETA to owners' homes, and so owners can find sitters near them. Owners only see a rounded distance (like “3 km”), never your pin or address."}
+                      </Text>
+                    </>
+                  ) : null}
+                </>
+              ) : null}
               {homeNote ? (
                 <Text style={styles.muted} testID="profile-home-pin-note">
                   {homeNote}
                 </Text>
               ) : null}
               <TextButton
-                label={locating ? "Locating…" : "Use my current location"}
-                onPress={() => setAskingLocation(true)}
+                label={locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location"}
+                onPress={() => void useCurrentLocation()}
                 disabled={locating}
                 testID="profile-use-location"
               />
+              <Text style={styles.muted}>Read once, only to mark your home. Nothing is tracked, and nobody sees the numbers.</Text>
             </View>
           ) : null}
         </View>
       ))}
-      <ShareLocationSheet
-        visible={askingLocation}
-        title="Use your current location as your home pin?"
-        lines={[
-          "Goldito reads your location once, right now.",
-          "It only marks your home on the map for trips — nothing is tracked, and nobody sees the numbers.",
-          "Do this while you're at home, so the pin is in the right place.",
-        ]}
-        allowLabel="Use my location"
-        onAllow={() => void useCurrentLocation()}
-        onDecline={() => setAskingLocation(false)}
-        busy={locating}
-        testID="home-location-sheet"
-      />
       {loaded.role === "owner" ? (
         <View style={styles.group} testID="profile-entry-info">
           <Text style={styles.groupTitle}>Entry info for sitters</Text>
@@ -481,6 +514,22 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       fontWeight: theme.fontWeight.semibold,
       color: theme.color.text,
+    },
+    pinWhere: {
+      fontSize: theme.fontSize.body,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.color.text,
+    },
+    pinBusy: {
+      color: theme.color.primary,
+      fontWeight: theme.fontWeight.semibold,
+    },
+    pinSet: {
+      color: theme.color.success,
+      fontWeight: theme.fontWeight.semibold,
+      backgroundColor: theme.color.successSurface,
+      borderRadius: theme.radius.sm,
+      padding: theme.spacing.sm,
     },
     muted: {
       fontSize: theme.fontSize.small,

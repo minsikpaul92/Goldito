@@ -104,6 +104,8 @@ export default function SitterSchedule() {
       !s || s.complete || day < s.from ? { from: day, to: day, complete: false } : { from: s.from, to: day, complete: true },
     );
 
+  const selectRange = (from: string, to: string) => setSelection({ from, to, complete: true });
+
   const openSheet = () => {
     setSaveError(null);
     setConflicts(null);
@@ -208,6 +210,7 @@ export default function SitterSchedule() {
           slots={schedule?.slots ?? new Map()}
           selection={selection}
           onSelectDay={selectDay}
+          onSelectRange={selectRange}
           onPrevMonth={() => changeMonth(-1)}
           onNextMonth={() => changeMonth(1)}
           canGoPrev={month > monthStart(today)}
@@ -241,7 +244,7 @@ export default function SitterSchedule() {
             </View>
           ) : (
             <Text style={styles.hint}>
-              Tap a day to open or block it. Tap a second day to pick a range. Owners only see your open slots.
+              Tap a day to open or block it. Tap a second day, or drag across days, to pick a range. Owners only see your open slots.
             </Text>
           )}
         </Card>

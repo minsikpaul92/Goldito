@@ -84,6 +84,58 @@ test.describe("sitter schedule", () => {
     await screen.getByTestId(`day-${mid}`).click();
     await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
     await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Closed");
+
+    // The day cell has no M · A · N letters: only the date, and the overnight third (not opened) is hatched (#134).
+    await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
+    const hatched = async (slot: string) =>
+      // One hatch covers the cell; an open band is a plain layer over it, so a hatched band is one with no fill.
+      screen.getByTestId(`third-${mid}-${slot}`).evaluate((el) => {
+        const cellHatched = getComputedStyle(el.parentElement!).backgroundImage.includes("repeating-linear-gradient");
+        return cellHatched && getComputedStyle(el).backgroundColor === "rgba(0, 0, 0, 0)";
+      });
+    expect(await hatched("morning")).toBe(false);
+    expect(await hatched("afternoon")).toBe(false);
+    expect(await hatched("overnight")).toBe(true);
+    await expect(screen.getByText("Not available", { exact: true })).toBeVisible();
+  });
+
+  test("a sitter picks a range by dragging across days, and clicking still works", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ ...SITTER_DEFAULTS });
+    await signIn(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId("open-schedule").click();
+    await screen.getByTestId("calendar-next").click();
+
+    const [a, b, c] = [nextMonthDay(10), nextMonthDay(12), nextMonthDay(20)];
+    const center = async (day: string) => {
+      const box = await screen.getByTestId(`day-${day}`).boundingBox();
+      return { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 };
+    };
+    // Mouse: press on the 10th, drag across the 11th to the 12th, release.
+    const from = await center(a);
+    const to = await center(b);
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 4 });
+    await page.mouse.move(to.x, to.y, { steps: 4 });
+    await page.mouse.up();
+    await expect(screen.getByTestId("schedule-summary")).toContainText("3 days");
+    await expect(screen.getByTestId(`day-${a}`)).toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId(`day-${b}`)).toHaveAttribute("aria-selected", "true");
+
+    // Dragging backwards works too, and the click that ends a drag does not restart the selection.
+    await page.mouse.move(to.x, to.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x, from.y, { steps: 6 });
+    await page.mouse.up();
+    await expect(screen.getByTestId("schedule-summary")).toContainText("3 days");
+
+    // A plain click is still one day, and two clicks still make a range.
+    await screen.getByTestId(`day-${a}`).click();
+    await expect(screen.getByTestId("schedule-summary")).not.toContainText("days");
+    await screen.getByTestId(`day-${c}`).click();
+    await expect(screen.getByTestId("schedule-summary")).toContainText("11 days");
   });
 
   test("blocking a booked slot offers to cancel the booking, then saves", async ({ page }) => {

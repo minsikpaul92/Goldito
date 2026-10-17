@@ -65,15 +65,15 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 | EmptyState | Couldn't load this booking | — | 148 |
 | Tag | `b.label` | — | 217 |
 | Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 254 |
-| CheckRow | `item` | ``pack-${item}`` | 280 |
-| Button | Find a new sitter | `find-new-sitter` | 342 |
-| Button | Change time or place | `change-booking` | 349 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 357 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 367 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 373 |
-| Sheet | Decline and end the request | `end-request-sheet` | 436 |
-| Button | Decline and end the request | `end-request-confirm` | 442 |
+| Button | Finish booking | `open-checkout` | 256 |
+| CheckRow | `item` | ``pack-${item}`` | 282 |
+| Button | Find a new sitter | `find-new-sitter` | 344 |
+| Button | Change time or place | `change-booking` | 351 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
+| Sheet | Decline and end the request | `end-request-sheet` | 438 |
+| Button | Decline and end the request | `end-request-confirm` | 444 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -298,27 +298,31 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``privacy-${id}-toggle`` | 103 |
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools` · `ShareLocationSheet`
+Shows: `DemoTools` · `OpenInMapsButton`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 164 |
-| TextButton | locating ? "Locating…" : "Use my current location" | `profile-use-location` | 317 |
-| TextButton | Edit entry info | `profile-home-access` | 347 |
-| SegmentedControl | — | `profile-ai-mode` | 363 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 388 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 390 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 407 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 417 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 455 |
-| TextButton | Settings · What's New | `profile-settings` | 457 |
-| TextButton | Privacy | `profile-privacy` | 458 |
+| EmptyState | Couldn't load your profile | — | 183 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 363 |
+| TextButton | Edit entry info | `profile-home-access` | 380 |
+| SegmentedControl | — | `profile-ai-mode` | 396 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 421 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 423 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 440 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 450 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 488 |
+| TextButton | Settings · What's New | `profile-settings` | 490 |
+| TextButton | Privacy | `profile-privacy` | 491 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -379,24 +383,24 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `HandoffChangeSheet` · `MeetGree
 | EmptyState | Booking not found | — | 148 |
 | EmptyState | Couldn't load this booking | — | 155 |
 | Tag | `b.label` | — | 238 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 303 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 308 |
-| TextButton | Change time or place | `change-booking` | 316 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 372 |
-| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 379 |
-| TextButton | Decline | `decline-booking` | 386 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 397 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 407 |
-| TextButton | Cancel booking | `cancel-booking` | 427 |
-| Sheet | Return | `return-sheet` | 432 |
-| Button | Return | `return-confirm` | 439 |
-| Button | Cancel | `return-cancel` | 452 |
-| TextButton | Send today's note first | `return-send-note` | 472 |
-| Sheet | Cancel booking | `cancel-sheet` | 484 |
-| Button | Cancel booking | `cancel-confirm` | 490 |
-| Sheet | Decline request | `decline-sheet` | 527 |
-| Button | Decline request | `decline-confirm` | 533 |
-| TextButton | Suggest another time instead | `decline-suggest` | 572 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 305 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 310 |
+| TextButton | Change time or place | `change-booking` | 318 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 374 |
+| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 381 |
+| TextButton | Decline | `decline-booking` | 388 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 399 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 409 |
+| TextButton | Cancel booking | `cancel-booking` | 429 |
+| Sheet | Return | `return-sheet` | 434 |
+| Button | Return | `return-confirm` | 441 |
+| Button | Cancel | `return-cancel` | 454 |
+| TextButton | Send today's note first | `return-send-note` | 474 |
+| Sheet | Cancel booking | `cancel-sheet` | 486 |
+| Button | Cancel booking | `cancel-confirm` | 492 |
+| Sheet | Decline request | `decline-sheet` | 529 |
+| Button | Decline request | `decline-confirm` | 535 |
+| TextButton | Suggest another time instead | `decline-suggest` | 574 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -513,8 +517,8 @@ Shows: `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 184 |
-| Button | Open or block | `schedule-edit` | 251 |
+| EmptyState | Couldn't load your schedule | — | 186 |
+| Button | Open or block | `schedule-edit` | 254 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -1001,9 +1005,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous month | `calendar-prev` | 55 |
-| Pressable | Next month | `calendar-next` | 68 |
-| Pressable | `label` | ``day-${day}`` | 96 |
+| Pressable | Previous month | `calendar-prev` | 164 |
+| Pressable | Next month | `calendar-next` | 177 |
+| Pressable | `label` | ``day-${day}`` | 206 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 
@@ -1172,4 +1176,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-337 actions · 337 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+338 actions · 338 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

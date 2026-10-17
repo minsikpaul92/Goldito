@@ -97,6 +97,24 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   return { found: false };
 }
 
+export type PinPlace = { label: string; postal: string | null };
+
+/**
+ * A point → "Trinity Bellwoods, Toronto" and the postal area ("M6J") (OpenStreetMap through our server), so the
+ * Profile can say where the pin is. Never throws: a lookup that is down just means no name.
+ */
+export async function reverseGeocode(point: LatLng): Promise<PinPlace | null> {
+  try {
+    const result = await apiPost<{ found: boolean; label: string | null; postal?: string | null }>(
+      "/api/geo/reverse",
+      point,
+    );
+    return result.found && result.label ? { label: result.label, postal: result.postal ?? null } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The trips of one booking, newest first (the two parties can read them — RLS). */
 export async function listTrips(bookingId: string): Promise<Trip[]> {
   const { data, error } = await getSupabase()
