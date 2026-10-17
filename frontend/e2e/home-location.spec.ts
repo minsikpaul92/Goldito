@@ -42,11 +42,11 @@ async function mockGeocode(page: Page, answer: object, status = 200) {
 }
 
 /** The reverse lookup ("where is this pin?"). `label: null` = nobody can name the spot; a status ≥ 400 = the lookup is down. */
-async function mockReverse(page: Page, label: string | null, status = 200) {
+async function mockReverse(page: Page, label: string | null, status = 200, postal: string | null = "M6J") {
   const asked: unknown[] = [];
   await page.route("**/api/geo/reverse", async (route) => {
     asked.push(route.request().postDataJSON());
-    const body = status >= 400 ? { detail: "down" } : { found: label !== null, label };
+    const body = status >= 400 ? { detail: "down" } : { found: label !== null, label, postal };
     return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   });
   return asked;
@@ -76,7 +76,7 @@ test.describe("home map pin", () => {
     await expect(screen.getByTestId("toast")).toContainText("Location found");
     await expect(screen.getByTestId("profile-use-location")).toContainText("Read my location again");
     // The person sees where the pin landed, can check it on a map, and is told what it is for (#131).
-    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto");
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto · M6J");
     await expect(screen.getByTestId("profile-home-pin-map")).toBeVisible();
     await expect(screen.getByTestId("profile-home-pin-use")).toContainText("finding sitters near you");
     expect(await gps.reads()).toBe(1);
@@ -96,7 +96,7 @@ test.describe("home map pin", () => {
     await expect(screen.getByTestId("profile-home-pin-note")).toHaveCount(0);
     expect(await gps.reads()).toBe(1);
 
-    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto");
+    await expect(screen.getByTestId("profile-home-pin-where")).toHaveText("📍 Near Trinity Bellwoods, Toronto · M6J");
     await screen.getByTestId("profile-save").click();
     // The toast says where the pin was saved, not just that it was.
     await expect(screen.getByTestId("toast")).toContainText("Pin saved near Trinity Bellwoods, Toronto");

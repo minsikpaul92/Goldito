@@ -24,7 +24,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { geocodeAddress, reverseGeocode } from "../lib/transit";
+import { PinPlace, geocodeAddress, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -129,7 +129,7 @@ export default function ProfileScreen() {
   const [locating, setLocating] = useState(false);
   const [homeNote, setHomeNote] = useState<string | null>(null);
   // "Trinity Bellwoods, Toronto" for the pin; `undefined` while it is being looked up, `null` when it has no name.
-  const [homeLabel, setHomeLabel] = useState<string | null | undefined>(undefined);
+  const [homePlace, setHomePlace] = useState<PinPlace | null | undefined>(undefined);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -162,13 +162,13 @@ export default function ProfileScreen() {
   const pinLng = home?.lng;
   useEffect(() => {
     if (pinLat == null || pinLng == null) {
-      setHomeLabel(undefined);
+      setHomePlace(undefined);
       return;
     }
     let current = true;
-    setHomeLabel(undefined);
-    void reverseGeocode({ lat: pinLat, lng: pinLng }).then((label) => {
-      if (current) setHomeLabel(label);
+    setHomePlace(undefined);
+    void reverseGeocode({ lat: pinLat, lng: pinLng }).then((place) => {
+      if (current) setHomePlace(place);
     });
     return () => {
       current = false;
@@ -223,7 +223,7 @@ export default function ProfileScreen() {
         pinNote = "We couldn't place that address on the map — use your current location for the pin";
       }
     }
-    if (pinFromGps && pin && homeLabel) pinNote = `Pin saved near ${homeLabel}`;
+    if (pinFromGps && pin && homePlace) pinNote = `Pin saved near ${homePlace.label}`;
     const next: RoleProfile =
       loaded.role === "owner"
         ? {
@@ -336,9 +336,9 @@ export default function ProfileScreen() {
               </Text>
               {home ? (
                 <Text style={styles.pinWhere} testID="profile-home-pin-where">
-                  {homeLabel
-                    ? `📍 Near ${homeLabel}`
-                    : homeLabel === undefined
+                  {homePlace
+                    ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
+                    : homePlace === undefined
                       ? "📍 Finding the neighbourhood…"
                       : "📍 We couldn't name this spot — check it on the map"}
                 </Text>
