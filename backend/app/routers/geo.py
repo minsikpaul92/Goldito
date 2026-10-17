@@ -74,7 +74,7 @@ def _reverse(lat: float, lng: float) -> dict:
     # does not need more, and the exact spot of a home stays here.
     return _get(
         NOMINATIM_REVERSE_URL,
-        {"lat": round(lat, 3), "lon": round(lng, 3), "format": "jsonv2", "zoom": 16, "addressdetails": 1},
+        {"lat": round(lat, 3), "lon": round(lng, 3), "format": "jsonv2", "zoom": 18, "addressdetails": 1},
     )
 
 
@@ -85,6 +85,14 @@ def place_label(hit: dict) -> str | None:
     city = parts.get("city") or parts.get("town") or parts.get("village") or parts.get("municipality")
     label = ", ".join(p for p in (area, city) if p)
     return label or None
+
+
+def postal_area(hit: dict) -> str | None:
+    """'M6J' from a Canadian postal code ('M6J 1G1'): the first three characters, which name the area. The point the
+    lookup got is rounded to about 100 m, so the full code could belong to the next building."""
+    code = ((hit.get("address") or {}).get("postcode") or "").replace(" ", "").upper()
+    area = code[:3]
+    return area if len(area) == 3 and area[0].isalpha() and area[1].isdigit() and area[2].isalpha() else None
 
 
 @router.post("/geocode", response_model=GeocodeResponse)
@@ -112,6 +120,8 @@ class ReverseRequest(BaseModel):
 class ReverseResponse(BaseModel):
     found: bool
     label: str | None = None
+    # The first three characters of the postal code, e.g. "M6J".
+    postal: str | None = None
 
 
 @router.post("/reverse", response_model=ReverseResponse)
@@ -121,5 +131,7 @@ def reverse(body: ReverseRequest, _user: CurrentUser = Depends(get_current_user)
     except (httpx.HTTPError, ValueError) as exc:
         log.info("reverse: lookup failed (%s)", exc.__class__.__name__)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The map lookup is unavailable right now.") from exc
-    label = place_label(hit) if isinstance(hit, dict) else None
-    return ReverseResponse(found=label is not None, label=label)
+    if not isinstance(hit, dict):
+        return ReverseResponse(found=False)
+    label = place_label(hit)
+    return ReverseResponse(found=label is not None, label=label, postal=postal_area(hit))
