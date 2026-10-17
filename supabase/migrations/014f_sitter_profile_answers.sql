@@ -18,6 +18,10 @@ alter table public.sitter_profiles
 
 grant select (onboarded_at) on public.sitter_profiles to authenticated;
 
+-- Everyone who is a sitter today is treated as done: only sitters who sign up from now on are sent through the questions
+-- (the app sends a sitter with a null onboarded_at to the onboarding screen).
+update public.sitter_profiles set onboarded_at = created_at;
+
 create table public.sitter_profile_answers (
   sitter_id uuid not null references public.profiles (id) on delete cascade,
   question_key text not null check (question_key ~ '^(multiple_owners|max_pets|walks_per_day|meals_per_day|home_all_day|activity|park_nearby|dog_sizes|cats|handoff|custom_[1-5])$'),

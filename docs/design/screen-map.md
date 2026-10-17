@@ -316,13 +316,14 @@ Shows: `DemoTools` · `OpenInMapsButton`
 | TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 363 |
 | TextButton | Edit entry info | `profile-home-access` | 380 |
 | SegmentedControl | — | `profile-ai-mode` | 396 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 421 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 423 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 440 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 450 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 488 |
-| TextButton | Settings · What's New | `profile-settings` | 490 |
-| TextButton | Privacy | `profile-privacy` | 491 |
+| Button | Edit your answers | `profile-answers-edit` | 425 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 433 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 435 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 452 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 462 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 500 |
+| TextButton | Settings · What's New | `profile-settings` | 502 |
+| TextButton | Privacy | `profile-privacy` | 503 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -358,6 +359,16 @@ Shows: `ActiveTripCard` · `SitterDashboard`
 | Pressable | — | `today-questions` | 150 |
 | Pressable | — | ``handoff-row-${b.id}-${kind}`` | 170 |
 | Pressable | — | ``request-row-${b.id}`` | 190 |
+
+### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
+
+Sitter onboarding (3D.2, #139). Shown once to a new sitter (the sitter area sends them here until they finish), and reachable later from Profile to edit the same answers (`?edit=1`).
+
+Shows: `SitterAnswersForm`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load your answers | — | 39 |
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
@@ -996,6 +1007,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | `label` | `testID` | 19 |
 
+### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 107 |
+| Button | Add a question | `onboarding-custom-add` | 115 |
+| Button | Review | `onboarding-review` | 135 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 136 |
+| Button | Finish | `onboarding-finish` | 192 |
+| Button | Back to edit | `onboarding-back` | 193 |
+
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1190,4 +1212,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-346 actions · 346 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+353 actions · 353 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
