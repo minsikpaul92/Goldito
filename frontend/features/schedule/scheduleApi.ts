@@ -53,6 +53,9 @@ export type SitterDefaults = {
   maxPets: number;
 };
 
+/** A weekly closing rule: every `weekday` (0 = Sunday) × `slot` is closed (014d). */
+export type ClosingRule = { weekday: number; slot: CareSlot };
+
 export type MonthSchedule = {
   /** `${day}:${slot}` → state */
   slots: Map<string, DaySlot>;
@@ -107,6 +110,28 @@ export async function loadSitterDefaults(): Promise<SitterDefaults> {
   return { hours, maxPets: row.default_max_pets ?? 2 };
 }
 
+/** The sitter's weekly closing rules (RLS: own rows only). */
+export async function loadClosingRules(sitterId: string): Promise<ClosingRule[]> {
+  const { data, error } = await getSupabase()
+    .from("sitter_closing_rules")
+    .select("weekday, slot")
+    .eq("sitter_id", sitterId);
+  if (error) fail("load your closing rules");
+  return (data ?? []) as ClosingRule[];
+}
+
+/** Replace the whole rule set; an empty list opens everything again. */
+export async function saveClosingRules(rules: ClosingRule[]): Promise<void> {
+  const { error } = await getSupabase().rpc("save_closing_rules", { p_rules: rules });
+  if (error) fail("save your closing rules");
+}
+
+/** The three slots' default hours (profile): used by every day the sitter has not set by hand. */
+export async function saveDefaultHours(sitterId: string, hours: Record<CareSlot, [string, string]>): Promise<void> {
+  const { error } = await getSupabase().from("sitter_profiles").update({ default_hours: hours }).eq("id", sitterId);
+  if (error) fail("save your hours");
+}
+
 function newestOpenRow(rows: AvailabilityRow[], day: string, slot: CareSlot): AvailabilityRow | undefined {
   return rows
     .filter((r) => r.kind === "open" && r.slot === slot && r.start_date <= day && day <= r.end_date)
@@ -115,11 +140,11 @@ function newestOpenRow(rows: AvailabilityRow[], day: string, slot: CareSlot): Av
 
 /**
  * The sitter's month: states and remaining spots from get_sitter_schedule (counts confirmed
- * bookings), capacity from their own availability rows (RLS: own rows only).
+ * bookings), capacity from their own availability rows (RLS: own rows only) or the profile default.
  */
 export async function loadMonthSchedule(sitterId: string, from: string, to: string): Promise<MonthSchedule> {
   const supabase = getSupabase();
-  const [schedule, availability] = await Promise.all([
+  const [schedule, availability, defaults] = await Promise.all([
     supabase.rpc("get_sitter_schedule", { p_sitter: sitterId, p_from: from, p_to: to }),
     supabase
       .from("sitter_availability")
@@ -127,6 +152,7 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
       .eq("sitter_id", sitterId)
       .lte("start_date", to)
       .gte("end_date", from),
+    loadSitterDefaults(),
   ]);
   if (schedule.error || availability.error) fail("load your schedule");
 
@@ -134,7 +160,8 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
   const slots = new Map<string, DaySlot>();
   for (const item of (schedule.data ?? []) as ScheduleRpcRow[]) {
     const open = newestOpenRow(rows, item.day, item.slot);
-    const capacity = open?.max_pets ?? null;
+    // A day nobody set by hand uses the profile's default spots (014d).
+    const capacity = open?.max_pets ?? defaults.maxPets;
     slots.set(slotKey(item.day, item.slot), {
       day: item.day,
       slot: item.slot,

@@ -80,12 +80,13 @@ test.describe("sitter schedule", () => {
       ]),
     );
 
-    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight closed/);
+    await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
     await screen.getByTestId(`day-${mid}`).click();
     await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
-    await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Closed");
+    // Unchecking a slot in Open leaves it as it was: untouched, so open by default with the profile's hours (014d).
+    await expect(screen.getByTestId("summary-overnight")).toHaveText("Overnight: Open · 6:00 PM–8:00 AM · 0/2 booked");
 
-    // The day cell has no M · A · N letters: only the date, and the overnight third (not opened) is hatched (#134).
+    // The day cell has no M · A · N letters: only the date, and nothing on it is hatched while every slot is open (#134).
     await expect(screen.getByTestId(`day-${mid}`)).toHaveText(String(Number(mid.slice(8))));
     const hatched = async (slot: string) =>
       // One hatch covers the cell; an open band is a plain layer over it, so a hatched band is one with no fill.
@@ -95,7 +96,7 @@ test.describe("sitter schedule", () => {
       });
     expect(await hatched("morning")).toBe(false);
     expect(await hatched("afternoon")).toBe(false);
-    expect(await hatched("overnight")).toBe(true);
+    expect(await hatched("overnight")).toBe(false);
     await expect(screen.getByText("Not available", { exact: true })).toBeVisible();
   });
 
@@ -138,6 +139,91 @@ test.describe("sitter schedule", () => {
     await expect(screen.getByTestId("schedule-summary")).toContainText("11 days");
   });
 
+  test("the gear closes weekdays by rule and sets the slot hours; nothing set means open", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ ...SITTER_DEFAULTS });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto("/sitter/schedule");
+    const screen = app(page);
+    await screen.getByTestId("calendar-next").click();
+
+    const day = nextMonthDay(10);
+    const weekNext = nextMonthDay(17);
+    const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+    const label = (d: string) => screen.getByTestId(`day-${d}`);
+    const hatched = (d: string, slot: string) =>
+      screen.getByTestId(`third-${d}-${slot}`).evaluate((el) => {
+        const cell = getComputedStyle(el.parentElement!).backgroundImage.includes("repeating-linear-gradient");
+        return cell && getComputedStyle(el).backgroundColor === "rgba(0, 0, 0, 0)";
+      });
+
+    // Nothing set: every slot is open.
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+
+    // Close that weekday's morning and overnight, and start the morning half an hour later.
+    await screen.getByTestId("schedule-rules").click();
+    await expect(screen.getByTestId("rules-sheet")).toBeVisible();
+    await screen.getByTestId(`rule-morning-${weekday}`).click();
+    await screen.getByTestId(`rule-overnight-${weekday}`).click();
+    await screen.getByTestId("rules-morning-start-plus").click();
+    await screen.getByTestId("rules-apply").click();
+    await expect(screen.getByTestId("toast")).toContainText("Rules applied");
+    await expect(screen.getByTestId("rules-sheet")).toBeHidden();
+
+    expect(db.sitter_closing_rules).toEqual([
+      expect.objectContaining({ sitter_id: SITTER.id, weekday, slot: "morning" }),
+      expect.objectContaining({ sitter_id: SITTER.id, weekday, slot: "overnight" }),
+    ]);
+    expect(db.sitter_profiles[0].default_hours).toMatchObject({ morning: ["09:30", "13:00"] });
+
+    // The rule applies to every such weekday, and only to those slots.
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Overnight closed/);
+    await expect(label(weekNext)).toHaveAttribute("aria-label", /Morning closed, Afternoon open, Overnight closed/);
+    await expect(label(nextMonthDay(11))).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    expect(await hatched(day, "morning")).toBe(true);
+    expect(await hatched(day, "afternoon")).toBe(false);
+    expect(await hatched(day, "overnight")).toBe(true);
+    // A day closed by hand stays closed next to the rules.
+    await screen.getByTestId(`day-${nextMonthDay(12)}`).click();
+    await screen.getByTestId("schedule-edit").click();
+    await screen.getByTestId("schedule-mode-block").click();
+    await screen.getByTestId("schedule-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Schedule saved");
+    await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked, Afternoon blocked, Overnight blocked/);
+
+    // Tapping a rule-closed slot says why (a later day first, so the click starts a new selection).
+    await label(day).click();
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Closed · weekly rule");
+    await expect(screen.getByTestId("summary-afternoon")).toContainText("Afternoon: Open");
+
+    // The sheet starts from what is saved; Open everything + Apply removes the rules (the hand-closed day stays).
+    await screen.getByTestId("schedule-rules").click();
+    await expect(screen.getByTestId(`rule-morning-${weekday}`)).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId(`rule-afternoon-${weekday}`)).toHaveAttribute("aria-checked", "false");
+    await expect(screen.getByTestId("rules-morning-start-value")).toHaveText("9:30 AM");
+    await screen.getByTestId("rules-clear").click();
+    await screen.getByTestId("rules-apply").click();
+    await expect(screen.getByTestId("rules-sheet")).toBeHidden();
+    expect(db.sitter_closing_rules).toEqual([]);
+    await expect(label(day)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Overnight open/);
+    await expect(label(nextMonthDay(12))).toHaveAttribute("aria-label", /Morning blocked/);
+  });
+
+  test("slot hours that end before they start cannot be applied in the gear", async ({ page }) => {
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ ...SITTER_DEFAULTS });
+    await signIn(page, SITTER);
+    await page.goto("/sitter/schedule");
+    const screen = app(page);
+    await screen.getByTestId("schedule-rules").click();
+    // Morning is 9:00 AM – 1:00 PM; bring the end back to the start.
+    for (let i = 0; i < 8; i++) await screen.getByTestId("rules-morning-end-minus").click();
+    await expect(screen.getByTestId("rules-problem")).toHaveText("Morning needs different start and end times.");
+    await expect(screen.getByTestId("rules-apply")).toBeDisabled();
+    expect(db.sitter_closing_rules).toEqual([]);
+  });
+
   test("blocking a booked slot offers to cancel the booking, then saves", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.sitter_profiles.push({ ...SITTER_DEFAULTS });
@@ -178,10 +264,12 @@ test.describe("sitter schedule", () => {
 
     await screen.getByTestId("schedule-edit").click();
     await screen.getByTestId("schedule-mode-block").click();
-    // Only the slot that is open on that day starts checked.
+    // Every slot is open by default, so all three start checked; keep only the morning.
     await expect(screen.getByTestId("schedule-morning")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("schedule-afternoon")).toHaveAttribute("aria-checked", "false");
-    await expect(screen.getByTestId("schedule-overnight")).toHaveAttribute("aria-checked", "false");
+    await expect(screen.getByTestId("schedule-afternoon")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("schedule-overnight")).toHaveAttribute("aria-checked", "true");
+    await screen.getByTestId("schedule-afternoon").click();
+    await screen.getByTestId("schedule-overnight").click();
     await screen.getByTestId("schedule-save").click();
 
     const conflicts = screen.getByTestId("schedule-conflicts");
@@ -224,8 +312,10 @@ test.describe("sitter schedule", () => {
 
     await screen.getByTestId(`day-${nextMonthDay(12)}`).click();
     await screen.getByTestId("schedule-edit").click();
+    // Morning and overnight are open already; only the blocked afternoon is opened again.
     await screen.getByTestId("schedule-morning").click();
     await screen.getByTestId("schedule-overnight").click();
+    await screen.getByTestId("schedule-afternoon").click();
     await screen.getByTestId("schedule-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Schedule saved");
 

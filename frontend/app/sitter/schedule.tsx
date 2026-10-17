@@ -1,6 +1,9 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Stack } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { ClosingRulesSheet, SlotHours } from "../../components/ClosingRulesSheet";
 import { ScheduleDraft, ScheduleSheet, initialDraft } from "../../components/ScheduleSheet";
 import { STATE_LABEL, SlotCalendar } from "../../components/SlotCalendar";
 import { Button } from "../../components/ui/Button";
@@ -18,21 +21,25 @@ import {
   monthStart,
 } from "../../features/schedule/dates";
 import {
+  ClosingRule,
   MonthSchedule,
   OverlapError,
   OverlappingBooking,
   SLOTS,
   SitterDefaults,
+  loadClosingRules,
   loadMonthSchedule,
   loadOverlappingBookings,
   loadSitterDefaults,
   saveBlock,
+  saveClosingRules,
+  saveDefaultHours,
   saveOpen,
   slotKey,
 } from "../../features/schedule/scheduleApi";
 import { cancelBooking } from "../../lib/bookings";
 import { useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 
@@ -45,6 +52,7 @@ type Selection = { from: string; to: string; complete: boolean };
  */
 export default function SitterSchedule() {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const toast = useToast();
   const { profile } = useSession();
   const sitterId = profile?.id;
@@ -63,6 +71,12 @@ export default function SitterSchedule() {
   const [conflicts, setConflicts] = useState<OverlappingBooking[] | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const pendingDraft = useRef<ScheduleDraft | null>(null);
+
+  const [rules, setRules] = useState<ClosingRule[] | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesKey, setRulesKey] = useState(0);
+  const [rulesSaving, setRulesSaving] = useState(false);
+  const [rulesError, setRulesError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!sitterId) return;
@@ -84,9 +98,22 @@ export default function SitterSchedule() {
     }
   }, [sitterId]);
 
+  const loadRules = useCallback(async () => {
+    if (!sitterId) return;
+    try {
+      setRules(await loadClosingRules(sitterId));
+    } catch (error) {
+      setLoadError((error as Error).message);
+    }
+  }, [sitterId]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void loadRules();
+  }, [loadRules]);
 
   useEffect(() => {
     void loadDefaults();
@@ -103,6 +130,31 @@ export default function SitterSchedule() {
     setSelection((s) =>
       !s || s.complete || day < s.from ? { from: day, to: day, complete: false } : { from: s.from, to: day, complete: true },
     );
+
+  const openRules = () => {
+    setRulesError(null);
+    setRulesKey((k) => k + 1);
+    setRulesOpen(true);
+  };
+
+  const applyRules = async (next: ClosingRule[], hours: SlotHours) => {
+    if (!sitterId || !defaults) return;
+    setRulesSaving(true);
+    setRulesError(null);
+    try {
+      await saveClosingRules(next);
+      if (SLOTS.some(({ slot }) => hours[slot][0] !== defaults.hours[slot][0] || hours[slot][1] !== defaults.hours[slot][1])) {
+        await saveDefaultHours(sitterId, hours);
+      }
+      setRulesOpen(false);
+      toast.show("Rules applied ✅");
+      await Promise.all([loadRules(), loadDefaults(), load()]);
+    } catch (error) {
+      setRulesError((error as Error).message);
+    } finally {
+      setRulesSaving(false);
+    }
+  };
 
   const selectRange = (from: string, to: string) => setSelection({ from, to, complete: true });
 
@@ -203,6 +255,23 @@ export default function SitterSchedule() {
 
   return (
     <View style={styles.root}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Closing rules"
+              disabled={!rules || !defaults}
+              hitSlop={theme.spacing.sm}
+              onPress={openRules}
+              style={styles.gear}
+              testID="schedule-rules"
+            >
+              <Ionicons name="settings-outline" size={theme.icon.md} color={theme.color.primary} />
+            </Pressable>
+          ),
+        }}
+      />
       <Screen contentStyle={styles.content}>
         <SlotCalendar
           month={month}
@@ -229,11 +298,12 @@ export default function SitterSchedule() {
                 ? SLOTS.map(({ slot, label }) => {
                     const s = schedule.slots.get(slotKey(selection.from, slot));
                     const state = s?.state ?? "closed";
-                    const hours = s?.startsAt && s.endsAt ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
+                    const hours = s?.startsAt && s.endsAt && state !== "closed" ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
                     const spots = (state === "open" || state === "full") && s?.capacity ? ` · ${s.booked}/${s.capacity} booked` : "";
+                    const rule = state === "closed" ? " · weekly rule" : "";
                     return (
                       <Text key={slot} style={styles.line} testID={`summary-${slot}`}>
-                        {`${label}: ${STATE_LABEL[state]}${hours}${spots}`}
+                        {`${label}: ${STATE_LABEL[state]}${rule}${hours}${spots}`}
                       </Text>
                     );
                   })
@@ -244,7 +314,7 @@ export default function SitterSchedule() {
             </View>
           ) : (
             <Text style={styles.hint}>
-              Tap a day to open or block it. Tap a second day, or drag across days, to pick a range. Owners only see your open slots.
+              Tap a day to open or block it. Tap a second day, or drag across days, to pick a range. You are open unless you close days or times — the ⚙️ sets weekly rules. Owners only find you on open slots.
             </Text>
           )}
         </Card>
@@ -258,6 +328,19 @@ export default function SitterSchedule() {
           testID="schedule-edit"
         />
       </View>
+
+      {rules && defaults ? (
+        <ClosingRulesSheet
+          key={rulesKey}
+          visible={rulesOpen}
+          rules={rules}
+          hours={defaults.hours}
+          saving={rulesSaving}
+          error={rulesError}
+          onApply={(next, hours) => void applyRules(next, hours)}
+          onClose={() => !rulesSaving && setRulesOpen(false)}
+        />
+      ) : null}
 
       {selection && schedule && defaults ? (
         <ScheduleSheet
@@ -303,6 +386,12 @@ const makeStyles = (theme: Theme) =>
     hint: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
+    },
+    gear: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
     },
     footer: {
       padding: theme.spacing.md,

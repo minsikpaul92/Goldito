@@ -141,7 +141,7 @@ export function ScheduleSheet({
               <View key={slot} style={styles.slot}>
                 <CheckRow
                   label={label}
-                  hint={s.checked ? `${formatTime(s.startsAt)} – ${formatTime(s.endsAt)}` : "Closed"}
+                  hint={s.checked ? `${formatTime(s.startsAt)} – ${formatTime(s.endsAt)}` : "Not changed"}
                   checked={s.checked}
                   onChange={(checked) => setSlot(slot, { checked })}
                   testID={`schedule-${slot}`}

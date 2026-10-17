@@ -513,12 +513,13 @@ Shows: `NotificationsCenter`
 
 Sitter schedule (phase-03b 3B.1): open days × slots with own hours and spots, or block them. Opening never notifies owners. A block or fewer spots over a confirmed booking is refused by the capacity guard → cancel those bookings here → the save runs again.
 
-Shows: `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
+Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 186 |
-| Button | Open or block | `schedule-edit` | 254 |
+| EmptyState | Couldn't load your schedule | — | 238 |
+| Pressable | Closing rules | `schedule-rules` | 261 |
+| Button | Open or block | `schedule-edit` | 324 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -653,6 +654,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${chip.label}: ${on ? "on" : "off"}`` | ``${testIDPrefix}-${chip.id}`` | 27 |
 | Pressable | ``Remove ${chip.label}`` | ``${testIDPrefix}-${chip.id}-remove`` | 38 |
+
+### ClosingRulesSheet — [components/ClosingRulesSheet.tsx](../../frontend/components/ClosingRulesSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 76 |
+| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 82 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 110 |
+| TextButton | Open everything | `rules-clear` | 126 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 140 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 150 |
 
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
@@ -1176,4 +1188,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-338 actions · 338 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+344 actions · 344 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
