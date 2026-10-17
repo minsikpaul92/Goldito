@@ -15,7 +15,8 @@ type Props = {
 
 /**
  * Figma: Goldito-Design → Components → Tag (Tone). A status label: the text sits on its tone's own
- * light surface, never a faded color (brand rule D3). Information only — a Tag is never tappable.
+ * light surface, never a faded color (brand rule D3). Information only — a Tag is never tappable,
+ * so no tone has a border (Chip = interactive, with a border; Tag = read-only, flat fill).
  * `danger` only for real problems (DANGER, failed payment); late or missed things are `warning`.
  */
 export function Tag({ label, tone = "neutral", style, testID }: Props) {
@@ -48,6 +49,7 @@ const makeStyles = (theme: Theme) =>
     warningLabel: { color: theme.color.warning },
     danger: { backgroundColor: theme.color.errorSurface },
     dangerLabel: { color: theme.color.error },
-    neutral: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
+    // Flat like every tone: a border would make it read as a tappable Chip (DESIGN.md §6).
+    neutral: { backgroundColor: theme.color.track },
     neutralLabel: { color: theme.color.textMuted },
   });
