@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
-import { ShareLocationSheet } from "../components/ShareLocationSheet";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -126,7 +125,6 @@ export default function ProfileScreen() {
   const [home, setHome] = useState<LatLng | null>(null);
   // The pin came from "Use my current location" this visit: an address typed later must not replace it.
   const [pinFromGps, setPinFromGps] = useState(false);
-  const [askingLocation, setAskingLocation] = useState(false);
   const [locating, setLocating] = useState(false);
   const [homeNote, setHomeNote] = useState<string | null>(null);
 
@@ -265,10 +263,7 @@ export default function ProfileScreen() {
     try {
       setHome(await getCurrentPosition());
       setPinFromGps(true);
-      setAskingLocation(false);
-      setHomeNote("Pin set from your location — Save to keep it.");
     } catch (error) {
-      setAskingLocation(false);
       setHomeNote(
         error instanceof LocationError && error.reason === "denied"
           ? "Location is off for Goldito in this browser. Allow it in the browser's site settings, or save your address to place the pin from it."
@@ -305,7 +300,9 @@ export default function ProfileScreen() {
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>
               <Text style={styles.muted} testID="profile-home-pin-status">
-                {home
+                {pinFromGps
+                  ? "📍 Pin set from your location. Save to keep it."
+                  : home
                   ? "📍 Pin saved. Live trips to or from your home can show a map and an ETA."
                   : "No pin yet. Save your address to place one, or use your current location while you're home."}
               </Text>
@@ -316,28 +313,15 @@ export default function ProfileScreen() {
               ) : null}
               <TextButton
                 label={locating ? "Locating…" : "Use my current location"}
-                onPress={() => setAskingLocation(true)}
+                onPress={() => void useCurrentLocation()}
                 disabled={locating}
                 testID="profile-use-location"
               />
+              <Text style={styles.muted}>Read once, only to mark your home. Nothing is tracked, and nobody sees the numbers.</Text>
             </View>
           ) : null}
         </View>
       ))}
-      <ShareLocationSheet
-        visible={askingLocation}
-        title="Use your current location as your home pin?"
-        lines={[
-          "Goldito reads your location once, right now.",
-          "It only marks your home on the map for trips — nothing is tracked, and nobody sees the numbers.",
-          "Do this while you're at home, so the pin is in the right place.",
-        ]}
-        allowLabel="Use my location"
-        onAllow={() => void useCurrentLocation()}
-        onDecline={() => setAskingLocation(false)}
-        busy={locating}
-        testID="home-location-sheet"
-      />
       {loaded.role === "owner" ? (
         <View style={styles.group} testID="profile-entry-info">
           <Text style={styles.groupTitle}>Entry info for sitters</Text>

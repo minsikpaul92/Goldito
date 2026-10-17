@@ -49,24 +49,20 @@ async function openProfile(page: Page, user: typeof OWNER | typeof SITTER, home:
 }
 
 test.describe("home map pin", () => {
-  test("nothing reads the location until Allow; Not now keeps it unread", async ({ page }) => {
+  test("nothing reads the location until the button is tapped; one tap reads it once", async ({ page }) => {
     const gps = await stubGps(page);
     await mockSupabase(page, [OWNER]);
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
+    expect(await gps.reads()).toBe(0);
     await screen.getByTestId("profile-use-location").click();
-    await expect(screen.getByTestId("home-location-sheet")).toContainText("reads your location once");
-    expect(await gps.reads()).toBe(0);
-
-    await screen.getByTestId("home-location-sheet-decline").click();
-    await expect(screen.getByTestId("home-location-sheet")).toHaveCount(0);
-    expect(await gps.reads()).toBe(0);
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
+    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin set from your location");
+    expect(await gps.reads()).toBe(1);
   });
 
-  test("Allow reads the location once and Save keeps it as the pin", async ({ page }) => {
+  test("One tap reads the location once and Save keeps it as the pin", async ({ page }) => {
     const gps = await stubGps(page);
     const asked = await mockGeocode(page, { found: false });
     const { db } = await mockSupabase(page, [OWNER]);
@@ -75,9 +71,8 @@ test.describe("home map pin", () => {
 
     await screen.getByTestId("profile-home_address").fill("5 Somewhere Ave, Toronto");
     await screen.getByTestId("profile-use-location").click();
-    await screen.getByTestId("home-location-sheet-allow").click();
-    await expect(screen.getByTestId("profile-home-pin-note")).toContainText("Pin set from your location");
-    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin saved");
+    await expect(screen.getByTestId("profile-home-pin-status")).toContainText("Pin set from your location");
+    await expect(screen.getByTestId("profile-home-pin-note")).toHaveCount(0);
     expect(await gps.reads()).toBe(1);
 
     await screen.getByTestId("profile-save").click();
@@ -95,7 +90,6 @@ test.describe("home map pin", () => {
     const screen = app(page);
 
     await screen.getByTestId("profile-use-location").click();
-    await screen.getByTestId("home-location-sheet-allow").click();
     await expect(screen.getByTestId("profile-home-pin-note")).toContainText("Location is off for Goldito");
     await expect(screen.getByTestId("profile-home-pin-status")).toContainText("No pin yet");
     expect(await gps.reads()).toBe(1);
