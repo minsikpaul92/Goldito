@@ -1,4 +1,4 @@
-import { FALLBACK_HOURS } from "../schedule/scheduleApi";
+import { FALLBACK_HOURS, SLOTS } from "../schedule/scheduleApi";
 import type { CareSlot, ClosingRule, WeekdayHour } from "../schedule/scheduleApi";
 
 /** The numbered questions of sitter onboarding (3D.2, #139). Keys match supabase/migrations/014f. */
@@ -19,7 +19,9 @@ const YES_NO: QuestionChoice[] = [
   { value: "no", label: "No" },
 ];
 
-const COUNT = (values: number[]): QuestionChoice[] => values.map((n) => ({ value: String(n), label: String(n) }));
+/** The last chip reads "4+" and saves the digit, so it means "at least" (close enough for an owner choosing a sitter). */
+const COUNT = (values: number[]): QuestionChoice[] =>
+  values.map((n, i) => ({ value: String(n), label: i === values.length - 1 ? `${n}+` : String(n) }));
 
 export const QUESTIONS: SitterQuestion[] = [
   { key: "multiple_owners", prompt: "Do you look after pets from more than one household at the same time?", choices: YES_NO },
@@ -87,8 +89,6 @@ export type OnboardingDraft = {
   custom: CustomDraft[];
   intro: string;
   availability: AvailabilityDraft;
-  /** Days off added here (YYYY-MM-DD), saved as closed days on the calendar. Days already closed stay in Schedule. */
-  daysOff: string[];
 };
 
 export function emptyDraft(): OnboardingDraft {
@@ -97,7 +97,6 @@ export function emptyDraft(): OnboardingDraft {
     custom: [],
     intro: "",
     availability: { touched: false, rules: [], hours: { ...FALLBACK_HOURS }, weekdayHours: [] },
-    daysOff: [],
   };
 }
 
@@ -137,4 +136,17 @@ export function toPayload(draft: OnboardingDraft): Record<string, string>[] {
     out.push({ key: `custom_${i + 1}`, question: c.question.trim(), answer: c.answer.trim() });
   });
   return out;
+}
+
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** "Open every day" or "Closed: Sat, Sun night." in the same words as the rules sheet. */
+export function availabilitySummary(a: OnboardingDraft["availability"]): string {
+  if (a.rules.length === 0 && a.weekdayHours.length === 0) return "Open every day.";
+  const parts = SLOTS.map(({ slot, label }) => {
+    const days = a.rules.filter((r) => r.slot === slot).map((r) => WEEKDAY_SHORT[r.weekday]);
+    return days.length ? `${days.join(", ")} ${label.toLowerCase()}` : null;
+  }).filter(Boolean);
+  const closed = parts.length ? `Closed: ${parts.join("; ")}.` : "Open every day.";
+  return a.weekdayHours.length ? `${closed} Some weekdays have their own hours.` : closed;
 }
