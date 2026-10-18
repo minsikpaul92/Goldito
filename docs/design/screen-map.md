@@ -302,7 +302,7 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``privacy-${id}-toggle`` | 104 |
+| Pressable | — | ``privacy-${id}-toggle`` | 132 |
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
