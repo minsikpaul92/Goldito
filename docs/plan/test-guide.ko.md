@@ -705,6 +705,16 @@
 | DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
 | DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen 계정을 시드한 뒤) |
 
+### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EXP-1 | 아무 화면이나 스위치 없이 열기 | 크림 배경, 잉크색 글씨, 화면 제목은 Fredoka. 버튼 · 칩 · 세그먼트는 알약 모양 | 🤖 `skin` | ➖ |
+| EXP-2 | 주소에 `?skin=default` 붙이고 새로고침 | 예전 룩(회색 배경, 시스템 글꼴, 네모난 버튼). 탭을 닫기 전까지 유지 | 🤖 `skin` | ➖ |
+| EXP-3 | 오너 · 시터 탭 바 | 흰 바, 위쪽 모서리 둥글게, 선택한 탭 아이콘 뒤에 민트 알약. 라벨이 잘리지 않음 | **👤** (모양) | ➖ |
+| EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
+| EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
