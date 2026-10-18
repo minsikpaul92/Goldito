@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
 import { BookingStageBar, hasStageBar } from "../../../../components/BookingStageBar";
 import { EntryInfoCard } from "../../../../components/EntryInfoCard";
+import { ProfileAvatar } from "../../../../components/ProfileAvatar";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
 import { MeetGreetCard } from "../../../../components/MeetGreetCard";
 import { ProposalCard, showsProposal } from "../../../../components/ProposalCard";
@@ -230,9 +231,12 @@ export default function SitterBookingDetail() {
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
         <Card style={styles.block}>
-          <Text accessibilityRole="header" style={styles.title} testID="booking-owner">
-            {owner}
-          </Text>
+          <View style={styles.ownerRow}>
+            <ProfileAvatar profileId={booking.ownerId} name={owner} testID="booking-owner-avatar" />
+            <Text accessibilityRole="header" style={styles.title} testID="booking-owner">
+              {owner}
+            </Text>
+          </View>
           <View style={styles.chips}>
             {bookingBadges(booking, "sitter").map((b) => (
               <Tag key={b.label} label={b.label} tone={b.tone} />
@@ -596,6 +600,7 @@ const makeStyles = (theme: Theme) =>
     block: {
       gap: theme.spacing.sm,
     },
+    ownerRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     title: {
       fontSize: theme.fontSize.title,
       fontWeight: theme.fontWeight.bold,

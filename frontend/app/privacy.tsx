@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { LayoutRectangle, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../components/ui/Screen";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -12,7 +12,7 @@ const slug = (title: string) => title.toLowerCase().replace(/[^a-z]+/g, "-").rep
 
 // What Goldito stores and who else receives it — kept next to the code that does it (backend/app/routers/geo.py,
 // meet_greet.py, ai/*). Update this page in the same change when a new service or kind of data is added.
-const UPDATED = "October 13, 2026";
+const UPDATED = "October 18, 2026";
 
 const SECTIONS: Section[] = [
   {
@@ -28,6 +28,7 @@ const SECTIONS: Section[] = [
       "Owners: pet profiles (name, species, breed, notes, allergies, care tasks), your home address, an emergency contact, your vet, bookings, and the entry information you choose to save for a sitter.",
       "Sitters: your profile (bio, service area, home notes, prices, house rules), your calendar, and your replies and daily reports.",
       "Both: bookings, messages in an inquiry, notifications, photos shared in the feed, daily reports, reviews, and the Life Record written after a stay.",
+      "Profile photos (up to 8 each). A sitter's are shown to owners. An owner's are shown only to a sitter you share a booking or inquiry with.",
       "The data lives in a Supabase database (hosted in Canada). Row-level security keeps each person to their own records and to the bookings they are part of.",
     ],
   },
@@ -88,9 +89,30 @@ export default function Privacy() {
   const [open, setOpen] = useState<string | undefined>(
     SECTIONS.some((section) => slug(section.title) === openParam) ? openParam : slug(SECTIONS[0].title),
   );
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionLayouts = useRef<Record<string, LayoutRectangle>>({});
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (!open) return;
+
+    // Small delay to let the layout recalculate after expanding/collapsing sections
+    const timer = setTimeout(() => {
+      const layout = sectionLayouts.current[open];
+      if (layout) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, layout.y - 16), animated: true });
+      }
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [open]);
 
   return (
-    <Screen contentStyle={styles.content} testID="privacy">
+    <Screen ref={scrollRef} contentStyle={styles.content} testID="privacy">
       <Text accessibilityRole="header" style={styles.title}>
         Privacy
       </Text>
@@ -99,7 +121,14 @@ export default function Privacy() {
         const id = slug(section.title);
         const expanded = open === id;
         return (
-          <View key={id} style={styles.section} testID={`privacy-${id}`}>
+          <View
+            key={id}
+            onLayout={(e) => {
+              sectionLayouts.current[id] = e.nativeEvent.layout;
+            }}
+            style={styles.section}
+            testID={`privacy-${id}`}
+          >
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ expanded }}

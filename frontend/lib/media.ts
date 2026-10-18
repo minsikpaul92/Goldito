@@ -18,8 +18,8 @@ import type { VideoTrim } from "./mediaNormalize";
 
 export type MediaKind = "image" | "video";
 
-/** What the pick is for: an upload purpose, or a Snap tool that only reads the photo in the browser (it picks the sample tray). */
-export type PickPurpose = MediaPurpose | "mood";
+/** What the pick is for: an upload purpose, a Snap tool that only reads the photo in the browser (it picks the sample tray), or a profile photo (cropped round, then uploaded on its own route). */
+export type PickPurpose = MediaPurpose | "mood" | "profile";
 
 export type PickMediaOptions = {
   purpose: PickPurpose;

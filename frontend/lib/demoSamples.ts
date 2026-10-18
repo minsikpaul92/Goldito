@@ -58,6 +58,8 @@ const SAMPLES: Record<PickPurpose, DemoSample[]> = {
   safety_label: LABELS,
   mood: MOOD,
   sticker: MOOD.filter((sample) => sample.kind !== "video"),
+  // A profile photo: the same made-up dog photos stand in for a face on the desktop frame and demo accounts.
+  profile: MOOD.filter((sample) => sample.kind !== "video"),
   // A diary page image is drawn by the app (Share → public link), never picked.
   diary_page: [],
 };
