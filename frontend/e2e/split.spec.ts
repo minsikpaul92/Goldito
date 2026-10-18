@@ -34,17 +34,19 @@ test.describe("split view", () => {
 
     await expect.poll(() => paneUrl(page, "pane-owner")).toMatch(/\/owner$/);
     await expect.poll(() => paneUrl(page, "pane-sitter")).toMatch(/\/sitter$/);
-    await expect(page.frameLocator(OWNER_PANE).getByTestId("log-out")).toBeVisible();
-    await expect(page.frameLocator(SITTER_PANE).getByTestId("log-out")).toBeVisible();
+    await expect(page.frameLocator(OWNER_PANE).getByTestId("open-menu")).toBeVisible();
+    await expect(page.frameLocator(SITTER_PANE).getByTestId("open-menu")).toBeVisible();
     // The phones don't take over the address bar.
     await expect(page).toHaveURL(/\/\?view=split$/);
 
     // Each phone keeps its own session: signing the sitter out leaves the owner signed in, even after a reload.
+    await page.frameLocator(SITTER_PANE).getByTestId("open-menu").click();
     await page.frameLocator(SITTER_PANE).getByTestId("log-out").click();
+    await page.frameLocator(SITTER_PANE).getByTestId("log-out-confirm").click();
     await expect.poll(() => paneUrl(page, "pane-sitter")).toMatch(/\/welcome$/);
     await page.frameLocator(OWNER_PANE).locator("body").evaluate(() => window.location.reload());
     await expect.poll(() => paneUrl(page, "pane-owner")).toMatch(/\/owner$/);
-    await expect(page.frameLocator(OWNER_PANE).getByTestId("log-out")).toBeVisible();
+    await expect(page.frameLocator(OWNER_PANE).getByTestId("open-menu")).toBeVisible();
   });
 
   test("Show both phones / Show one phone switch between the views", async ({ page }) => {

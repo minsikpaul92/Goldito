@@ -226,7 +226,7 @@ async function openSitterThread(page: import("@playwright/test").Page, extra: Re
     return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
   });
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
   await page.goto("/sitter/bookings");
   await app(page).getByTestId("sitter-bookings-tabs-inquiries").click();
   return { db, asked };
@@ -342,7 +342,7 @@ test.describe("sitter inquiry", () => {
     seedThread(db);
     db.inquiry_messages.splice(db.inquiry_messages.findIndex((m) => m.id === "draft1"), 1);
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/sitter/inquiries/${INQ}`);
     const screen = app(page);
     await expect(screen.getByTestId("inquiry-no-draft")).toContainText("Your draft is being written");
@@ -362,7 +362,7 @@ test.describe("sitter inquiry", () => {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chunks: 1 }) });
     });
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/profile");
     const screen = app(page);
     await screen.getByLabel("House rules & policies (optional)").fill("No dogs over 20 kg.");
@@ -417,7 +417,7 @@ test.describe("auto-send", () => {
       created_at: "2026-10-06T10:00:06Z", grounding: null,
     });
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/sitter/inquiries/${INQ}`);
     const screen = app(page);
     await expect(screen.getByTestId("inquiry-message-sitter")).toContainText("Sent automatically");
@@ -429,7 +429,7 @@ test.describe("auto-send", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null, services: ["boarding"], policies: null });
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/profile");
     const screen = app(page);
     await expect(screen.getByTestId("profile-ai-replies")).toContainText("You read each drafted reply");
@@ -569,7 +569,7 @@ test.describe("owner follow-up (FB-34)", () => {
       { id: "q2", inquiry_id: INQ, author: "owner", sender_id: OWNER.id, body: "What about the weekend after?", status: "sent", drafted_by_ai: false, visible_at: "2026-10-06T11:00:00Z", read_at: null, created_at: "2026-10-06T11:00:00Z", grounding: null },
     );
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/sitter/bookings");
     await app(page).getByTestId("sitter-bookings-tabs-inquiries").click();
     const screen = app(page);
@@ -624,7 +624,7 @@ test.describe("inquiry thread polish (FB-34)", () => {
     const mock = await mockSupabase(sitterPage, [OWNER, SITTER]);
     seedThread(mock.db);
     await signIn(sitterPage, SITTER);
-    await app(sitterPage).getByRole("heading", { name: "Home" }).waitFor();
+    await app(sitterPage).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await sitterPage.goto(`/sitter/inquiries/${INQ}`);
     await expect(app(sitterPage).getByTestId("inquiry-message-owner")).toHaveCount(1);
     mock.db.inquiry_messages.push({
@@ -673,7 +673,7 @@ test.describe("sitter lands on what is waiting (FB-34)", () => {
     // Once answered, the banner is gone.
     db.inquiry_messages.push({ ...SENT_REPLY, id: "answered", created_at: "2026-10-06T10:30:00Z" });
     await page.goto("/sitter");
-    await expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    await expect(screen.getByRole("heading", { name: /^(Home|Today)$/ })).toBeVisible();
     await expect(screen.getByTestId("today-questions")).toHaveCount(0);
   });
 });

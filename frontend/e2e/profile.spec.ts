@@ -12,6 +12,7 @@ test.describe("profile", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(page).toHaveURL(/\/profile$/);
     await expect(screen.getByTestId("profile-display_name")).toHaveValue(OWNER.displayName);
@@ -29,6 +30,7 @@ test.describe("profile", () => {
     expect(row?.emergency_contact_phone).toBe("416-555-0100");
     expect(row?.home_address).toBeNull();
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-display_name")).toHaveValue("Robert Park");
     await expect(screen.getByTestId("profile-emergency_contact_name")).toHaveValue("Min");
@@ -48,6 +50,7 @@ test.describe("profile", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-home_address")).toHaveValue("12 Maple St");
 
@@ -69,6 +72,7 @@ test.describe("profile", () => {
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
     // New sitters offer boarding by default (004).
@@ -94,6 +98,7 @@ test.describe("profile", () => {
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
     await expect(screen.getByTestId("profile-multi-owner")).toHaveAttribute("aria-checked", "false");
@@ -108,6 +113,7 @@ test.describe("profile", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-services")).toHaveCount(0);
     await screen.getByTestId("profile-spot-1").fill("Trinity Bellwoods — north gate");

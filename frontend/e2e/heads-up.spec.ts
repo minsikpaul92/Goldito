@@ -25,7 +25,7 @@ test.describe("owner manages Heads-ups", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     db.pets.push({ id: MAX.id, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     return db;
   }
 
@@ -69,7 +69,7 @@ test.describe("what the sitter sees", () => {
     caution(db, "c2", MAX, "Keep other dogs away on walks");
     caution(db, "c3x", MAX, "An old, switched-off rule", false);
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/sitter/bookings/b1");
     const screen = app(page);
 

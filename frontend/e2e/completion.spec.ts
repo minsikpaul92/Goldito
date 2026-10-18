@@ -49,7 +49,7 @@ async function open(page: Page, path = `/owner/bookings/${BOOKING}`, returned = 
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   seed(db, returned);
   await signIn(page, OWNER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
   await page.goto(path);
   return db;
 }
@@ -134,7 +134,7 @@ test.describe("finished stay", () => {
     seed(db);
     db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id, created_at: "2026-10-01T10:00:00Z" });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await screen.getByTestId("leave-review").click();
@@ -203,7 +203,7 @@ test.describe("life record", () => {
     seed(db);
     const calls = await mockRecordApi(page, db, { delayMs: 800 });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId("record-writing")).toContainText("Writing the Life Record");
@@ -223,7 +223,7 @@ test.describe("life record", () => {
     seed(db);
     const calls = await mockRecordApi(page, db, { failFirst: true });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId("record-failed")).toContainText("Couldn't write Max's Life Record");
@@ -241,7 +241,7 @@ test.describe("life record", () => {
     seed(db, true, 30_000);
     const calls = await mockRecordApi(page, db);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId("record-writing")).toContainText("Writing the Life Record");
@@ -256,7 +256,7 @@ test.describe("life record", () => {
     seed(db);
     const calls = await mockRecordApi(page, db, { delayMs: 3_000 });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId("record-writing")).toBeVisible();
@@ -273,7 +273,7 @@ test.describe("life record", () => {
     seed(db);
     const calls = await mockRecordApi(page, db, { failAfterWriting: true });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/bookings/${BOOKING}`);
     const screen = app(page);
     await expect(screen.getByTestId(`life-record-${MAX}`)).toBeVisible();
@@ -289,7 +289,7 @@ test.describe("life record", () => {
       { id: "new", pet_id: MAX, booking_id: BOOKING, sitter_id: SITTER.id, summary: RECORD, stay_from: "2026-10-09", stay_to: "2026-10-12", created_at: "2026-10-13T00:00:00Z" },
     );
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/pets/${MAX}`);
     await app(page).getByTestId("open-life-record").click();
     await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}/record$`));
@@ -304,7 +304,7 @@ test.describe("life record", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/pets/${MOCHI}/record`);
     await expect(app(page).getByText("No Life Record yet")).toBeVisible();
   });
@@ -320,7 +320,7 @@ test.describe("sitter rating", () => {
     review(2, 4, null);
     review(3, 5, "Daily photos made my week.");
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/sitters/${SITTER.id}`);
     const screen = app(page);
     await expect(screen.getByTestId("sitter-rating-line")).toHaveText("★ 4.7 · 3 reviews");
@@ -332,7 +332,7 @@ test.describe("sitter rating", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/owner/sitters/${SITTER.id}`);
     await expect(app(page).getByTestId("sitter-name")).toBeVisible();
     await expect(app(page).getByTestId("sitter-rating")).toHaveCount(0);

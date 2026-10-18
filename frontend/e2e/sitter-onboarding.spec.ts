@@ -69,6 +69,7 @@ test.describe("sitter onboarding", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await screen.getByTestId("profile-answers-edit").click();
     await expect(page).toHaveURL(/\/sitter-onboarding\?edit=1$/);

@@ -56,7 +56,7 @@ async function open(page: import("@playwright/test").Page, withData = true) {
     db.pets.push({ id: MAX, owner_id: OWNER.id, species: "dog", name: "Max", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:00:00Z" });
   }
   await signIn(page, OWNER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
   await page.goto("/owner/history");
   return db;
 }

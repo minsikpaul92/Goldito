@@ -30,7 +30,7 @@ async function openOwnerBook(page: Page) {
   const { db } = await mockSupabase(page, [OWNER, SITTER]);
   seed(db);
   await signIn(page, OWNER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
   await page.goto("/owner/diary");
   await app(page).getByTestId("diary-entry-paper").waitFor();
   return db;
@@ -98,7 +98,7 @@ test.describe("diary book", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/owner/diary/p1");
     const screen = app(page);
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
@@ -114,7 +114,7 @@ test.describe("diary book", () => {
       db.feed_posts.push({ id: `post-${n}`, pet_id: MAX.id, sitter_id: SITTER.id, posted_by: SITTER.id, visibility: "shared", media_id: `m-${n}`, caption: `Photo ${n}`, caption_source: "fallback", task_log_id: null, created_at: at });
     }
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/owner/feed");
     const screen = app(page);
     await screen.getByTestId("feed-diary-p1").waitFor();
@@ -139,7 +139,7 @@ test.describe("diary book", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
     );
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto(`/sitter/feed/${MAX.id}`);
     const screen = app(page);
     await screen.getByTestId("feed-diary-p1").click();
@@ -154,7 +154,7 @@ test.describe("diary book", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
     );
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
     await screen.getByTestId("sitter-diary-view-book").click();

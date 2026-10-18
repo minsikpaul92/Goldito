@@ -54,7 +54,7 @@ async function setup(page: Page, user: MockUser) {
   });
 
   await signIn(page, user);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
   return { db, deleted };
 }
 
@@ -140,7 +140,7 @@ test.describe("Notification center", () => {
       });
     }
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
 
     await expect(app(page).getByTestId("notification-badge").first()).toHaveText("2");
     await app(page).locator("[data-testid='notification-bell']:visible").click();
@@ -173,7 +173,7 @@ test.describe("Notification center", () => {
       created_at: new Date().toISOString(),
     });
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await app(page).locator("[data-testid='notification-bell']:visible").click();
     await app(page).getByTestId(`notification-${n(7)}`).click();
     await expect(page).toHaveURL(new RegExp(`/sitter/feed/${PET_ID}`));
@@ -198,7 +198,7 @@ test.describe("Notification center", () => {
       });
     }
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await app(page).locator("[data-testid='notification-bell']:visible").click();
     await app(page).getByTestId("notifications-center").waitFor();
     return db;
@@ -226,7 +226,7 @@ test.describe("Notification center", () => {
     expect(db.notifications.map((x) => x.id)).toEqual([n(1)]);
     // On Home the unread badge counts what is left.
     await page.goto("/owner");
-    await screen.getByRole("heading", { name: "Home" }).waitFor();
+    await screen.getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await expect(screen.locator("[data-testid='notification-badge']:visible").first()).toHaveText("1");
   });
 
@@ -275,7 +275,7 @@ test.describe("Notification center", () => {
   test("empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
     await app(page).locator("[data-testid='notification-bell']:visible").click();
     await expect(app(page).getByText("You're all caught up.")).toBeVisible();
   });

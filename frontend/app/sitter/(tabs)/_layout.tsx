@@ -6,7 +6,7 @@ import { RoleTabs, tabIcon } from "../../../components/RoleTabs";
 export default function SitterTabsLayout() {
   return (
     <RoleTabs>
-      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: tabIcon("home-outline") }} />
+      <Tabs.Screen name="index" options={{ title: "Home", headerTitle: "Today", tabBarIcon: tabIcon("home-outline") }} />
       <Tabs.Screen
         name="bookings"
         options={{ title: "Bookings", tabBarIcon: tabIcon("calendar-outline") }}
