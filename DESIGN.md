@@ -87,7 +87,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Trip Map | `components/TripMap.tsx` / `TripMap.web.tsx` | ✅ |
 | Calendar Day | `components/SlotCalendar.tsx`, `components/ui/DayPickerSheet.tsx` | 🟡 |
 | Tab Bar / Tab Bar Item | `components/RoleTabs.tsx` — Figma's last tab says **Mood**, the app's is **Snap** (D61) | 🟡 |
-| Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx` | 🟡 |
+| Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx`, `components/HeaderMenu.tsx` | ✅ |
 | Profile Card | `components/SitterCard.tsx` + `app/owner/sitters/[sitterId].tsx` | 🟡 |
 | Choice Card | `components/RoleCard.tsx`; other big radio choices are local | 🟡 |
 | Next Task Card / Task Row | `components/SitterDashboard.tsx`, `components/TodayTasks.tsx`, `components/CareTasksSection.tsx` | 🟡 |
@@ -204,7 +204,8 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - Screen padding: `spacing.md` (16). Gap between cards: `spacing.md`. Inside a card: `spacing.md`.
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
-- Dev builds show a small role label (**Owner** / **Sitter**) in the header.
+- The header shows the role label (**Owner** / **Sitter**) to everyone (#147).
+- **≡ menu** (`components/HeaderMenu.tsx`): a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Log out pinned at the bottom with a confirm. Settings has Log out with the same confirm.
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -471,7 +472,7 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | Task row | full width; icon 40 | 16 | `lg` | Time Caption, title Body Strong | Pending · Next (2 px `primary` border + the one filled action) · Done (time + ✓ in `success`) |
 | `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Above the tab bar and pinned footer |
 | `Sheet` | full width | 16, footer 24 | 16 top | Title Body Strong + **Close** | — |
-| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong | App (title + 🔔 + profile) · Detail (Back + title) · Onboarding (Back + step dots) |
+| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong (Expressive: 24 display face) | App: title (owner "Home", sitter "Today", else the tab name) + role `Tag` + 🔔 (24, count badge with a 2 px ring) + ≡ menu (#147) · Detail (Back + title) · Onboarding (Back + step dots) |
 | Tab bar | 60 tall (`layout.tabBarHeight`) | 0 × 8 | — | Caption | Active tab: `accent` pill behind the icon + `primary` label |
 | Icon button | 44 × 44 | — | full | — | Default · Badge (8 px `error` dot) |
 | Star · calendar day · stepper button | 44 × 44 | — | `md` (day, stepper) | — | Star Off uses `borderStrong`, On uses `warning` |

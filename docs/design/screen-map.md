@@ -331,8 +331,12 @@ Profile → Settings (Phase 11.11, D47): account, notifications, What's New and 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Edit profile | `settings-edit-profile` | 40 |
-| TextButton | Privacy | `settings-privacy` | 78 |
+| TextButton | Edit profile | `settings-edit-profile` | 44 |
+| TextButton | Privacy | `settings-privacy` | 82 |
+| Button | Log out | `settings-log-out` | 83 |
+| Sheet | Log out? | `settings-log-out-sheet` | 84 |
+| Button | Log out | `settings-log-out-confirm` | 86 |
+| Button | Cancel | **none** | 87 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -773,10 +777,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | — | 23 |
-| Pressable | Schedule | `open-schedule` | 27 |
-| Pressable | Profile | `open-profile` | 37 |
-| Pressable | — | `log-out` | 46 |
+| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 18 |
+
+### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | `label` | `testID` | 51 |
+| Pressable | Menu | `open-menu` | 66 |
+| Pressable | Close menu | `header-menu-close` | 87 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
+| Button | Log out | `log-out-confirm` | 116 |
+| Button | Cancel | `log-out-cancel` | 117 |
+| Pressable | — | `log-out` | 137 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1235,4 +1248,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-364 actions · 364 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+371 actions · 370 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

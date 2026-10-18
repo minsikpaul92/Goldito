@@ -715,6 +715,15 @@
 | EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
 | EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
 
+### 3.31 헤더 (HDR) · #147
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| HDR-1 | 오너 Home · 시터 Home | 제목은 오너 "Home", 시터 "Today". 오른쪽에 역할 칩(Owner / Sitter), 종(안 읽은 수), ≡. 글자로 된 "Log out" 없음 | 🤖 `auth` · `split` | ➖ |
+| HDR-2 | ≡ 누르기 | 오른쪽에서 화면 전체 너비로 미끄러져 들어옴. 나(→ Profile), Notifications(숫자), Schedule(시터만), What's new, Settings, 맨 아래 Log out. ✕나 항목을 누르면 미끄러져 나감 | 🤖 `profile` · `schedule` | ➖ |
+| HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
+| HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
