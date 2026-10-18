@@ -331,3 +331,25 @@ def test_a_sitter_reset_keeps_the_owners_own_data():
     assert len(db.tables["sitter_rates"]) == 1
     assert db.tables["profiles"][0]["display_name"] == "x"  # the owner's name was not touched
 
+
+def test_each_set_gets_its_own_pets():
+    """Paul's owner is given Biscuit and Luna, not Max and Mochi, so the sets are told apart on Home."""
+    from app.services.demo_accounts import set_for_key
+
+    db = world()
+    db.tables["pets"] = []
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, demo_set=set_for_key("paul"), scope="owner")
+
+    assert sorted(p["name"] for p in db.tables["pets"]) == ["Biscuit", "Luna"]
+    dog = next(p for p in db.tables["pets"] if p["name"] == "Biscuit")
+    assert dog["species"] == "dog"
+    assert [a["allergen"] for a in db.tables["pet_allergies"]] == ["chicken"]  # the Treat check demo still works
+
+
+def test_all_pet_names_in_the_demo_sets_differ():
+    from app.services.demo_accounts import DEMO_SETS
+
+    names = [pet[0] for demo_set in DEMO_SETS for pet in demo_set.pets]
+    assert len(names) == len(set(names))
+

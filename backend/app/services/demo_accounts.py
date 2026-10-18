@@ -19,12 +19,23 @@ class DemoUser:
     display_name: str
 
 
+# name, species, breed, years old, kg, allergens: what the demo story shows on the owner's Home. The dog has a chicken
+# allergy in every set, so the Treat check samples (chicken jerky) come out the same for everyone.
+Pet = tuple[str, str, str, int, float, list[str]]
+
+MAX_AND_MOCHI: tuple[Pet, ...] = (
+    ("Max", "dog", "Maltese", 4, 3.2, ["chicken"]),
+    ("Mochi", "cat", "Domestic Shorthair", 3, 4.1, []),
+)
+
+
 @dataclass(frozen=True)
 class DemoSet:
     key: str
     label: str
     owner: DemoUser
     sitter: DemoUser
+    pets: tuple[Pet, ...] = MAX_AND_MOCHI
 
 
 # Keep in sync with frontend/lib/demo.ts.
@@ -40,12 +51,20 @@ DEMO_SETS = (
         "Paul",
         DemoUser("demo-owner-paul@goldito.test", "owner", "Peter"),
         DemoUser("demo-sitter-paul@goldito.test", "sitter", "Paul"),
+        pets=(
+            ("Biscuit", "dog", "Beagle", 5, 10.4, ["chicken"]),
+            ("Luna", "cat", "Siamese", 2, 3.6, []),
+        ),
     ),
     DemoSet(
         "allen",
         "Allen",
         DemoUser("demo-owner-allen@goldito.test", "owner", "Alex"),
         DemoUser("demo-sitter-allen@goldito.test", "sitter", "Allen"),
+        pets=(
+            ("Cooper", "dog", "Corgi", 3, 11.2, ["chicken"]),
+            ("Olive", "cat", "British Shorthair", 4, 5.1, []),
+        ),
     ),
 )
 DEFAULT_SET = DEMO_SETS[0]

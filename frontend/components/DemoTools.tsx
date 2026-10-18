@@ -26,7 +26,7 @@ export function DemoTools() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mine = findDemoAccount(session.session?.user.email);
-  const states = demoStates(mine?.role ?? "owner", mine?.set.sitter.name ?? "The sitter");
+  const states = demoStates(mine?.role ?? "owner", mine?.set.sitter.name ?? "The sitter", mine?.set.pets ?? ["Max", "Mochi"]);
   const partner = mine ? (mine.role === "owner" ? mine.set.sitter.name : mine.set.owner.name) : "the other account";
   const chosen = states.find((s) => s.value === state)!;
 

@@ -3,7 +3,7 @@
 Five states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
-- `pets`       Max + Mochi, nothing else (before any booking)
+- `pets`       the set's two pets (Max + Mochi for the default set), nothing else (before any booking)
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
@@ -32,6 +32,7 @@ from app.config import get_settings
 from app.services import authz
 from app.services.demo_accounts import (
     DEFAULT_SET,
+    MAX_AND_MOCHI,
     DemoSet,
     ensure_home_point,
     ensure_sitter_rates,
@@ -47,11 +48,7 @@ OPEN_DAYS = 60
 STAY_CHUNKS = ["life_record", "inquiry", "care_request"]
 # Samples the sitter's approvals made; the seeded `history` samples stay (they are the voice).
 LEARNED_SAMPLES = ["approved", "edited", "regenerated"]
-PETS = (
-    # name, species, breed, years old, kg, allergens — what the demo story shows on Home
-    ("Max", "dog", "Maltese", 4, 3.2, ["chicken"]),
-    ("Mochi", "cat", "Domestic Shorthair", 3, 4.1, []),
-)
+PETS = MAX_AND_MOCHI
 
 
 @dataclass(frozen=True)
@@ -167,11 +164,11 @@ def owner_pet_ids(client: Client, owner_id: str) -> list[str]:
     return [row["id"] for row in rows]
 
 
-def ensure_pets(client: Client, owner_id: str, today: date) -> list[str]:
-    """Create Max / Mochi when missing (never duplicates one that is there). Returns what was added."""
+def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[str]:
+    """Create the set's two pets when missing (never duplicates one that is there). Returns what was added."""
     existing = {row["name"] for row in client.table("pets").select("id, name").eq("owner_id", owner_id).execute().data}
     added = []
-    for name, species, breed, years, kg, allergens in PETS:
+    for name, species, breed, years, kg, allergens in pets:
         if name in existing:
             continue
         birthdate = today.replace(year=today.year - years, day=min(today.day, 28))
@@ -389,7 +386,7 @@ def reset(
         building = state in ("confirmed", "ready", "in_care")
         # A stay needs pets and prices on both sides; this only adds what is missing, it never removes.
         if (owner_side and state != "empty") or building:
-            ensure_pets(client, owner_id, today)
+            ensure_pets(client, owner_id, today, demo_set.pets)
         if sitter_side or building:
             ensure_sitter_rates(client, sitter_id)
         if owner_side:

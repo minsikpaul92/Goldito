@@ -12,13 +12,13 @@ export type DemoState = "empty" | "pets" | "confirmed" | "ready" | "in_care";
  * The states to reset to. Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
  * The hints name the sitter of the caller's set. A sitter has no "Empty" (she has no pets to remove).
  */
-export function demoStates(role: "owner" | "sitter", sitterName: string): { value: DemoState; label: string; hint: string }[] {
+export function demoStates(role: "owner" | "sitter", sitterName: string, pets: [string, string]): { value: DemoState; label: string; hint: string }[] {
   const states: { value: DemoState; label: string; hint: string }[] = [
     { value: "empty", label: "Empty", hint: "No pets yet." },
-    { value: "pets", label: role === "owner" ? "Pets only" : "Clean", hint: role === "owner" ? "Max and Mochi, no booking." : "No bookings, schedule open." },
+    { value: "pets", label: role === "owner" ? "Pets only" : "Clean", hint: role === "owner" ? `${pets[0]} and ${pets[1]}, no booking.` : "No bookings, schedule open." },
     { value: "confirmed", label: "Booking accepted", hint: `${sitterName} accepted a stay. Next: Finish booking.` },
     { value: "ready", label: "Ready for drop-off", hint: `Paid, drop-off in an hour. ${sitterName} can tap Received.` },
-    { value: "in_care", label: "In care", hint: `Max and Mochi are with ${sitterName}.` },
+    { value: "in_care", label: "In care", hint: `${pets[0]} and ${pets[1]} are with ${sitterName}.` },
   ];
   return role === "owner" ? states : states.filter((s) => s.value !== "empty");
 }

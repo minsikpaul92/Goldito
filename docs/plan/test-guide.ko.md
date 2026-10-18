@@ -39,7 +39,7 @@
 | Paul | `demo-owner-paul@goldito.test` (Peter) | `demo-sitter-paul@goldito.test` (Paul) |
 | Allen | `demo-owner-allen@goldito.test` (Alex) | `demo-sitter-allen@goldito.test` (Allen) |
 
-> **이름:** 여섯 계정 이름이 모두 다르다(Robert · Chloe · Peter · Paul · Alex · Allen). 오너와 시터를 검색과 예약 목록에서 구분하기 위해서다.
+> **이름:** 여섯 계정 이름이 모두 다르고 펫 이름도 세트마다 다르다(Chloe 세트 Max · Mochi, Paul 세트 Biscuit · Luna, Allen 세트 Cooper · Olive). 강아지는 모든 세트에서 닭고기 알레르기가 있어 Treat check 샘플 결과는 같다.
 >
 > **초기화 범위:** 오너가 초기화하면 오너쪽(펫과 돌봄 계획, 오너의 알림)과 **그 세트 시터와의 예약 · 문의**가 지워지고 시터의 일정과 말투는 그대로. 시터가 초기화하면 시터쪽(일정, 시터의 알림)과 같은 예약 · 문의가 지워지고 오너의 펫과 돌봄 계획은 그대로. 다른 세트의 계정과 주고받은 예약은 어느 쪽 초기화에도 안 지워진다.
 >

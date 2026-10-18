@@ -2,12 +2,12 @@ import { Role } from "../providers/SessionProvider";
 
 type DemoAccount = { email: string; name: string };
 
-export type DemoSet = { key: string; label: string; owner: DemoAccount; sitter: DemoAccount };
+export type DemoSet = { key: string; label: string; owner: DemoAccount; sitter: DemoAccount; pets: [string, string] };
 
 /**
  * Seeded demo accounts (onboarding.ko.md OB.3). One owner and one sitter per teammate, so a reset only touches
  * the set of whoever asks for it. The first set is the default pair that judges use. Keep in sync with
- * backend/app/services/demo_accounts.py, backend/scripts/seed_demo.py, README and Devpost. The password is a
+ * backend/app/services/demo_accounts.py (the pets too), backend/scripts/seed_demo.py, README and Devpost. The password is a
  * public, demo-only value (architecture §4), never a real password or a service key.
  */
 export const DEMO_SETS: DemoSet[] = [
@@ -16,18 +16,21 @@ export const DEMO_SETS: DemoSet[] = [
     label: "Chloe",
     owner: { email: "demo-owner@goldito.test", name: "Robert" },
     sitter: { email: "demo-sitter@goldito.test", name: "Chloe" },
+    pets: ["Max", "Mochi"],
   },
   {
     key: "paul",
     label: "Paul",
     owner: { email: "demo-owner-paul@goldito.test", name: "Peter" },
     sitter: { email: "demo-sitter-paul@goldito.test", name: "Paul" },
+    pets: ["Biscuit", "Luna"],
   },
   {
     key: "allen",
     label: "Allen",
     owner: { email: "demo-owner-allen@goldito.test", name: "Alex" },
     sitter: { email: "demo-sitter-allen@goldito.test", name: "Allen" },
+    pets: ["Cooper", "Olive"],
   },
 ];
 
