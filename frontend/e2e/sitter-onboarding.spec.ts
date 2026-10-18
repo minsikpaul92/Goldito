@@ -16,13 +16,18 @@ test.describe("sitter onboarding", () => {
     await expect(screen.getByTestId("onboarding-q-multiple_owners")).toContainText("1. Do you look after pets");
     await screen.getByTestId("onboarding-choice-multiple_owners-yes").click();
     await screen.getByTestId("onboarding-choice-max_pets-3").click();
-    // A note stays hidden until "+ Note" is tapped.
+    // A note stays hidden until the "+" next to the chips is tapped, and the "-" folds it again.
     await expect(screen.getByTestId("onboarding-note-walks_per_day")).toHaveCount(0);
-    await screen.getByTestId("onboarding-note-add-walks_per_day").click();
+    await screen.getByTestId("onboarding-note-toggle-walks_per_day").click();
     await screen.getByTestId("onboarding-note-walks_per_day").fill("Three, one long");
+    await screen.getByTestId("onboarding-note-toggle-walks_per_day").click();
+    await expect(screen.getByTestId("onboarding-note-walks_per_day")).toHaveCount(0);
+    await screen.getByTestId("onboarding-note-toggle-walks_per_day").click();
+    await expect(screen.getByTestId("onboarding-note-walks_per_day")).toHaveValue("Three, one long");
     await screen.getByTestId("onboarding-choice-dog_sizes-small").click();
     await screen.getByTestId("onboarding-choice-dog_sizes-large").click();
     await screen.getByTestId("onboarding-choice-handoff-owner_brings").click();
+    await screen.getByTestId("onboarding-choice-handoff-sitter_picks_up").click();
     await screen.getByTestId("onboarding-custom-add").click();
     await screen.getByTestId("onboarding-custom-q-0").fill("Do you have a fenced yard?");
     await screen.getByTestId("onboarding-custom-a-0").fill("Yes, a small one");
@@ -31,6 +36,7 @@ test.describe("sitter onboarding", () => {
     await screen.getByTestId("onboarding-review").click();
     await expect(screen.getByTestId("onboarding-review-dog_sizes")).toContainText("Small, Large");
     await expect(screen.getByTestId("onboarding-review-walks_per_day")).toContainText("Three, one long");
+    await expect(screen.getByTestId("onboarding-review-handoff")).toContainText("I pick up, Owner brings");
     await expect(screen.getByTestId("onboarding-skipped")).toContainText("5 skipped");
     await expect(screen.getByTestId("onboarding-review-intro")).toContainText("Hi, I am Chloe.");
 
@@ -44,6 +50,7 @@ test.describe("sitter onboarding", () => {
     const rows = db.sitter_profile_answers.filter((r) => r.sitter_id === SITTER.id);
     expect(rows.map((r) => r.question_key)).toEqual(["multiple_owners", "max_pets", "walks_per_day", "dog_sizes", "handoff", "custom_1"]);
     expect(rows.find((r) => r.question_key === "dog_sizes")?.choice).toBe("small,large");
+    expect(rows.find((r) => r.question_key === "handoff")?.choice).toBe("sitter_picks_up,owner_brings");
     expect(rows.find((r) => r.question_key === "custom_1")?.question_text).toBe("Do you have a fenced yard?");
     const profile = db.sitter_profiles.find((p) => p.id === SITTER.id);
     expect(profile?.bio).toBe("Hi, I am Chloe.");

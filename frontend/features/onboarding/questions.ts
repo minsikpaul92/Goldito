@@ -59,6 +59,7 @@ export const QUESTIONS: SitterQuestion[] = [
   {
     key: "handoff",
     prompt: "At drop-off and pick-up, do you collect the pet or does the owner bring it?",
+    multi: true,
     choices: [
       { value: "sitter_picks_up", label: "I pick up" },
       { value: "owner_brings", label: "Owner brings" },

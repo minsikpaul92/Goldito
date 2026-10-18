@@ -1011,14 +1011,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | + Note | ``onboarding-note-add-${q.key}`` | 88 |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 122 |
-| Button | Add a question | `onboarding-custom-add` | 130 |
-| Button | Set weekly availability | `onboarding-availability-open` | 144 |
-| Button | Review | `onboarding-review` | 180 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 181 |
-| Button | Finish | `onboarding-finish` | 242 |
-| Button | Back to edit | `onboarding-back` | 243 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 129 |
+| Button | Add a question | `onboarding-custom-add` | 137 |
+| Button | Set weekly availability | `onboarding-availability-open` | 151 |
+| Button | Review | `onboarding-review` | 187 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 188 |
+| Button | Finish | `onboarding-finish` | 249 |
+| Button | Back to edit | `onboarding-back` | 250 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1214,4 +1213,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-355 actions · 355 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+354 actions · 354 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

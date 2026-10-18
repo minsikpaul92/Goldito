@@ -5,6 +5,7 @@ import { ClosingRulesSheet } from "./ClosingRulesSheet";
 import { Button } from "./ui/Button";
 import { ChoiceChips } from "./ui/ChoiceChips";
 import { TextButton } from "./ui/TextButton";
+import { NoteToggle } from "./ui/NoteToggle";
 import { TextField } from "./ui/TextField";
 import {
   AnswerDraft,
@@ -66,32 +67,38 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
             <Text style={styles.prompt}>
               {i + 1}. {q.prompt}
             </Text>
-            {q.choices ? (
-              <ChoiceChips
-                options={q.choices}
-                multi={q.multi}
-                value={choiceList(a?.choice)}
-                onChange={(v) => setAnswer(q.key, { choice: v.length ? v.join(",") : null })}
-                testID={`onboarding-choice-${q.key}`}
-              />
-            ) : null}
+            <ChoiceChips
+              options={q.choices ?? []}
+              multi={q.multi}
+              value={choiceList(a?.choice)}
+              onChange={(v) => setAnswer(q.key, { choice: v.length ? v.join(",") : null })}
+              trailing={
+                <NoteToggle
+                  open={openNotes.has(q.key)}
+                  filled={(a?.answer ?? "").trim() !== ""}
+                  onPress={() =>
+                    setOpenNotes((open) => {
+                      const next = new Set(open);
+                      if (!next.delete(q.key)) next.add(q.key);
+                      return next;
+                    })
+                  }
+                  testID={`onboarding-note-toggle-${q.key}`}
+                />
+              }
+              testID={`onboarding-choice-${q.key}`}
+            />
             {openNotes.has(q.key) ? (
               <TextField
-                label="Note"
+                label=""
+                accessibilityLabel="Note"
                 value={a?.answer ?? ""}
                 onChangeText={(text) => setAnswer(q.key, { answer: text })}
                 maxLength={MAX_ANSWER}
                 multiline
                 testID={`onboarding-note-${q.key}`}
               />
-            ) : (
-              <TextButton
-                label="+ Note"
-                onPress={() => setOpenNotes((open) => new Set(open).add(q.key))}
-                style={styles.noteButton}
-                testID={`onboarding-note-add-${q.key}`}
-              />
-            )}
+            ) : null}
           </View>
         );
       })}
@@ -254,6 +261,5 @@ const makeStyles = (theme: Theme) =>
     prompt: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     custom: { gap: theme.spacing.sm },
     reviewRow: { gap: theme.spacing.xs },
-    noteButton: { alignSelf: "flex-start" },
     answer: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, color: theme.color.text },
   });
