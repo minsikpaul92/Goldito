@@ -2,7 +2,8 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { DEMO_STATES, DemoState, resetDemo } from "../lib/demoReset";
+import { findDemoAccount } from "../lib/demo";
+import { DemoState, demoStates, resetDemo } from "../lib/demoReset";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -24,7 +25,10 @@ export function DemoTools() {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const chosen = DEMO_STATES.find((s) => s.value === state)!;
+  const mine = findDemoAccount(session.session?.user.email);
+  const states = demoStates(mine?.role ?? "owner", mine?.set.sitter.name ?? "The sitter", mine?.set.pets ?? ["Max", "Mochi"]);
+  const partner = mine ? (mine.role === "owner" ? mine.set.sitter.name : mine.set.owner.name) : "the other account";
+  const chosen = states.find((s) => s.value === state)!;
 
   const run = async () => {
     setBusy(true);
@@ -44,9 +48,8 @@ export function DemoTools() {
 
   return (
     <View style={styles.group} testID="demo-tools">
-      <Text style={styles.title}>Demo tools (testing only)</Text>
-      <Text style={styles.muted}>Start over from a known point. This clears what the two demo accounts did together: bookings, inquiries, notices and reports. Other accounts' data stays.</Text>
-      {DEMO_STATES.map((option) => (
+      <Text style={styles.title}>{`Demo tools${mine ? ` (${mine.name})` : ""}`}</Text>
+      {states.map((option) => (
         <CheckRow
           key={option.value}
           radio
@@ -59,7 +62,7 @@ export function DemoTools() {
       ))}
       <TextButton label="Reset demo…" onPress={() => setAsking(true)} danger testID="demo-reset-open" />
       <Sheet visible={asking} title="Reset the demo?" onClose={() => (busy ? undefined : setAsking(false))} testID="demo-reset-sheet">
-        <Text style={styles.body}>{`Both demo accounts go back to “${chosen.label}”. Their bookings, inquiries, notices and reports with each other are deleted. This can't be undone.`}</Text>
+        <Text style={styles.body}>{`${mine?.name ?? "This account"} goes back to “${chosen.label}”. Bookings, inquiries and notices with ${partner} are deleted. Other accounts stay.`}</Text>
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="demo-reset-error">
             {error}

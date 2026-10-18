@@ -2,7 +2,7 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, 
 
 import { ShareLocationSheet } from "../components/ShareLocationSheet";
 import { useShell } from "../components/shell/useShell";
-import { DEMO_ACCOUNTS } from "../lib/demo";
+import { findDemoAccount } from "../lib/demo";
 import {
   LatLng,
   LocationError,
@@ -59,7 +59,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const { embedded } = useShell();
   const { session } = useSession();
   const email = session?.user.email ?? "";
-  const canSimulate = embedded || Object.values(DEMO_ACCOUNTS).some((account) => account.email === email);
+  const canSimulate = embedded || findDemoAccount(email) !== null;
 
   const [pending, setPending] = useState<Pending | null>(null);
   const [busy, setBusy] = useState(false);
