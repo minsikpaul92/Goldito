@@ -936,8 +936,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 90 |
-| Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 96 |
+| Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 112 |
+| Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 118 |
+| Pressable | ``Move photo ${name}`` | ``crop-move-${name}`` | 169 |
 
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
@@ -1237,4 +1238,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-366 actions · 366 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+367 actions · 367 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

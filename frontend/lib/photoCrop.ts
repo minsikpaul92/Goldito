@@ -6,7 +6,7 @@
  */
 
 export const CROP_MIN_ZOOM = 1;
-export const CROP_MAX_ZOOM = 3;
+export const CROP_MAX_ZOOM = 4;
 /** The square that is uploaded; Cloudinary shows it round or small. */
 export const CROP_EXPORT_PX = 800;
 

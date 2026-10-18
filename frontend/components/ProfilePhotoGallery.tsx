@@ -130,7 +130,7 @@ export function ProfilePhotoGallery({ profileId }: Props) {
       {photos.length === 0 ? (
         <Pressable accessibilityRole="button" accessibilityLabel="Add a photo" onPress={() => void add()} style={styles.empty} testID="photos-placeholder">
           <View style={styles.silhouette}>
-            <Ionicons name="person" size={TILE * 0.55} color={theme.color.textMuted} />
+            <Ionicons name="person" size={TILE * 0.5} color={theme.color.textMuted} />
           </View>
           <Text style={styles.addText}>Add a photo</Text>
         </Pressable>
@@ -199,9 +199,10 @@ const makeStyles = (theme: Theme) =>
     cover: { borderWidth: 3, borderColor: theme.color.primary },
     coverLabel: { fontSize: theme.fontSize.caption, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     plus: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: theme.color.borderStrong, backgroundColor: theme.color.surface },
-    empty: { alignItems: "center", gap: theme.spacing.sm, paddingVertical: theme.spacing.sm },
-    silhouette: { width: TILE * 1.4, height: TILE * 1.4, borderRadius: TILE * 0.7, backgroundColor: theme.color.border, alignItems: "center", justifyContent: "center" },
-    addText: { fontSize: theme.fontSize.body, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
+    // The same size as a photo tile, so the row does not jump when the first photo arrives.
+    empty: { alignSelf: "flex-start", alignItems: "center", gap: theme.spacing.xs },
+    silhouette: { width: TILE, height: TILE, borderRadius: TILE / 2, backgroundColor: theme.color.border, alignItems: "center", justifyContent: "center" },
+    addText: { fontSize: theme.fontSize.small, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     actions: { gap: theme.spacing.sm },
     muted: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
   });

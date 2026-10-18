@@ -72,7 +72,7 @@ test.describe("profile photos", () => {
     expect(db.profile_photos).toHaveLength(1);
     expect(db.profile_photos[0].public_id).toContain(`goldito/profile/${SITTER.id}/`);
 
-    // Zoom and drag move the crop, and the cropped square is what gets uploaded.
+    // Zoom and drag move the crop in any direction, and the cropped square is what gets uploaded.
     await screen.getByTestId("photos-add").click();
     await screen.getByTestId("sample-mood_grass").click();
     await expect(screen.getByTestId("crop-image")).toBeVisible();
@@ -163,5 +163,57 @@ test.describe("profile photos", () => {
     expect(db.profile_photos).toHaveLength(1);
     expect(db.profile_photos[0]).toMatchObject({ profile_id: OWNER.id });
     await expect(screen.getByText("Cover", { exact: true })).toHaveCount(1);
+  });
+
+  test("the crop moves in every direction by drag and by the arrows, and the empty tile is as small as a photo", async ({ page }) => {
+    const db = await setup(page);
+    await signIn(page, SITTER);
+    const screen = app(page);
+    await screen.getByTestId("open-profile").click();
+
+    // The empty state is one photo-sized circle, not a big banner.
+    const empty = await screen.getByTestId("photos-placeholder").boundingBox();
+    expect(empty!.height).toBeLessThan(110);
+
+    await screen.getByTestId("photos-placeholder").click();
+    await screen.getByTestId("sample-mood_tug").click();
+    await expect(screen.getByTestId("crop-image")).toBeVisible();
+
+    // Zoom well in (Page Up on the slider is +10 %), so there is room to move both ways.
+    await screen.getByTestId("crop-zoom").focus();
+    for (let i = 0; i < 15; i++) await page.keyboard.press("PageUp");
+    const position = async () => {
+      const image = await screen.getByTestId("crop-image").boundingBox();
+      return { x: image!.x, y: image!.y };
+    };
+    const start = await position();
+
+    const frame = await screen.getByTestId("crop-frame").boundingBox();
+    const cx = frame!.x + frame!.width / 2;
+    const cy = frame!.y + frame!.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 30, cy + 25, { steps: 6 });
+    await page.mouse.up();
+    const dragged = await position();
+    expect(dragged.x).toBeGreaterThan(start.x);
+    expect(dragged.y).toBeGreaterThan(start.y);
+
+    // The four arrows move it by the same small step, in the direction they point.
+    await screen.getByTestId("crop-move-left").click();
+    const left = await position();
+    expect(left.x).toBeLessThan(dragged.x);
+    await screen.getByTestId("crop-move-up").click();
+    const up = await position();
+    expect(up.y).toBeLessThan(left.y);
+    await screen.getByTestId("crop-move-right").click();
+    await screen.getByTestId("crop-move-down").click();
+    const back = await position();
+    expect(back.x).toBeCloseTo(dragged.x, 0);
+    expect(back.y).toBeCloseTo(dragged.y, 0);
+
+    await screen.getByTestId("crop-confirm").click();
+    await expect(screen.getByTestId("crop-sheet")).toHaveCount(0);
+    expect(db.profile_photos).toHaveLength(1);
   });
 });

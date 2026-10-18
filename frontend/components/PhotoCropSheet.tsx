@@ -1,5 +1,6 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Image, PanResponder, Platform, StyleSheet, Text, View } from "react-native";
+import { Image, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "./ui/Button";
 import { Sheet } from "./ui/Sheet";
@@ -9,6 +10,8 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const FRAME = 260;
+/** One arrow tap or key press moves the photo this far (frame px). */
+const NUDGE = 20;
 
 type Props = {
   visible: boolean;
@@ -73,6 +76,25 @@ export function PhotoCropSheet({ visible, file, busy, error, onConfirm, onClose 
     [],
   );
 
+  const nudge = (dx: number, dy: number) => {
+    if (!loaded) return;
+    setView((v) => clampView(loaded.width, loaded.height, FRAME, { ...v, ox: v.ox + dx, oy: v.oy + dy }));
+  };
+
+  const onKeyDown = (e: { key: string; preventDefault?: () => void }) => {
+    const move = { ArrowLeft: [-NUDGE, 0], ArrowRight: [NUDGE, 0], ArrowUp: [0, -NUDGE], ArrowDown: [0, NUDGE] }[e.key];
+    if (move) {
+      e.preventDefault?.();
+      nudge(move[0], move[1]);
+    }
+  };
+
+  const onWheel = (e: { deltaY: number; preventDefault?: () => void }) => {
+    if (!loaded) return;
+    e.preventDefault?.();
+    setView((v) => clampView(loaded.width, loaded.height, FRAME, { ...v, zoom: v.zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08) }));
+  };
+
   const confirm = async () => {
     if (!file || !loaded) return;
     setProblem(null);
@@ -96,9 +118,16 @@ export function PhotoCropSheet({ visible, file, busy, error, onConfirm, onClose 
         <Button label={busy ? "Saving…" : "Use photo"} onPress={() => void confirm()} disabled={busy || !loaded} testID="crop-confirm" />
       }
     >
-      <Text style={styles.hint}>Drag the photo to move it. Use the slider to zoom. The round window is what others see.</Text>
+      <Text style={styles.hint}>
+        Drag the photo to move it in any direction, or use the arrows. Zoom with the slider or the mouse wheel. The round window is what others see.
+      </Text>
       <View style={styles.center}>
-        <View style={styles.frame} {...pan.panHandlers} testID="crop-frame">
+        <View
+          style={styles.frame}
+          {...pan.panHandlers}
+          {...(Platform.OS === "web" ? ({ focusable: true, onKeyDown, onWheel } as object) : null)}
+          testID="crop-frame"
+        >
           {loaded ? (
             <View pointerEvents="none" style={StyleSheet.absoluteFill}>
               <Image
@@ -127,6 +156,28 @@ export function PhotoCropSheet({ visible, file, busy, error, onConfirm, onClose 
         valueText={`${Math.round(view.zoom * 100)}%`}
         testID="crop-zoom"
       />
+      <View style={styles.arrows}>
+        <Text style={styles.arrowsLabel}>Move</Text>
+        {(
+          [
+            ["left", "chevron-back", -NUDGE, 0],
+            ["up", "chevron-up", 0, -NUDGE],
+            ["down", "chevron-down", 0, NUDGE],
+            ["right", "chevron-forward", NUDGE, 0],
+          ] as const
+        ).map(([name, icon, dx, dy]) => (
+          <Pressable
+            key={name}
+            accessibilityRole="button"
+            accessibilityLabel={`Move photo ${name}`}
+            onPress={() => nudge(dx, dy)}
+            style={styles.arrow}
+            testID={`crop-move-${name}`}
+          >
+            <Ionicons name={icon} size={22} color="#2D6A4F" />
+          </Pressable>
+        ))}
+      </View>
       {message ? (
         <Text style={styles.error} testID="crop-error">
           {message}
@@ -150,6 +201,18 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.primary,
       // Web: the drag belongs to the photo, not to page scrolling or text selection.
       ...(Platform.OS === "web" ? ({ userSelect: "none", touchAction: "none", cursor: "grab" } as object) : null),
+    },
+    arrows: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing.sm },
+    arrowsLabel: { fontSize: theme.fontSize.small, color: theme.color.textMuted, marginRight: theme.spacing.xs },
+    arrow: {
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.color.borderStrong,
+      backgroundColor: theme.color.surface,
+      alignItems: "center",
+      justifyContent: "center",
     },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
   });
