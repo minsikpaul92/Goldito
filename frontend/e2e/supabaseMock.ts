@@ -156,6 +156,9 @@ export type MockDb = {
   sitter_availability: Row[];
   sitter_closing_rules: Row[];
   sitter_weekday_hours: Row[];
+  sitter_profile_answers: Row[];
+  /** 014g: { id, profile_id, public_id }, in the person's order (first = cover). */
+  profile_photos: Row[];
   bookings: Row[];
   /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
   booking_slots: Row[];
@@ -248,6 +251,8 @@ function createMockDb(): MockDb {
     sitter_availability: [],
     sitter_closing_rules: [],
     sitter_weekday_hours: [],
+    sitter_profile_answers: [],
+    profile_photos: [],
     bookings: [],
     booking_slots: [],
     cancellations: [],
@@ -711,6 +716,38 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const kept = db.sitter_closing_rules.filter((r) => r.sitter_id !== me);
     const added = (p_rules as Row[]).map((r) => ({ sitter_id: me, weekday: r.weekday, slot: r.slot }));
     db.sitter_closing_rules.splice(0, db.sitter_closing_rules.length, ...kept, ...added);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/reorder_profile_photos") {
+    const { p_ids } = request.postDataJSON();
+    const mine = db.profile_photos.filter((r) => r.profile_id === me);
+    const same = Array.isArray(p_ids) && p_ids.length === mine.length && p_ids.every((id: string) => mine.some((r) => r.id === id));
+    if (!same) return fail("invalid_photos");
+    const others = db.profile_photos.filter((r) => r.profile_id !== me);
+    const ordered = (p_ids as string[]).map((id) => mine.find((r) => r.id === id)!);
+    db.profile_photos.splice(0, db.profile_photos.length, ...others, ...ordered);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/save_sitter_answers") {
+    const { p_answers, p_intro, p_finish } = request.postDataJSON();
+    if (!Array.isArray(p_answers)) return fail("invalid_answers");
+    const kept = db.sitter_profile_answers.filter((r) => r.sitter_id !== me);
+    const added = (p_answers as Row[]).map((r, position) => ({
+      sitter_id: me,
+      question_key: r.key,
+      question_text: r.question ?? null,
+      answer: r.answer ?? null,
+      choice: r.choice ?? null,
+      position,
+    }));
+    db.sitter_profile_answers.splice(0, db.sitter_profile_answers.length, ...kept, ...added);
+    const profile = db.sitter_profiles.find((p) => p.id === me);
+    if (profile) {
+      if (typeof p_intro === "string") profile.bio = p_intro.trim() || null;
+      if (p_finish) profile.onboarded_at = profile.onboarded_at ?? new Date(nowMs()).toISOString();
+    }
     return route.fulfill({ status: 204 });
   }
 

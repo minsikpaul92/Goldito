@@ -29,6 +29,7 @@ export default function RootLayout() {
                     <Stack screenOptions={{ headerShown: false, headerShadowVisible: false }}>
                       <Stack.Screen name="profile" options={{ headerShown: true, title: "Profile" }} />
                       <Stack.Screen name="settings" options={{ headerShown: true, title: "Settings" }} />
+                      <Stack.Screen name="sitter-onboarding" options={{ headerShown: true, title: "Your answers" }} />
                       <Stack.Screen name="privacy" options={{ headerShown: true, title: "Privacy" }} />
                       <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
                       <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />

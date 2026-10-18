@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { InquiryReplySheet, ReplyKind } from "../../../components/InquiryReplySheet";
 import { MessageBubble } from "../../../components/MessageBubble";
+import { ProfileAvatar } from "../../../components/ProfileAvatar";
 import { QuoteCard } from "../../../components/QuoteCard";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -147,6 +148,7 @@ export default function SitterInquiry() {
     <Screen testID="sitter-inquiry" contentStyle={styles.content}>
       <Stack.Screen options={{ title: inquiry.ownerName }} />
       <Card style={styles.trip}>
+        <ProfileAvatar profileId={inquiry.ownerId} name={inquiry.ownerName} testID="inquiry-owner-avatar" />
         <Text style={styles.tripTitle} testID="inquiry-trip">
           {tripSummary(inquiry.serviceType, inquiry.dropOffAt, inquiry.pickUpAt, inquiry.petNames)}
         </Text>

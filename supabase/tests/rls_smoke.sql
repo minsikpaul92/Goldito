@@ -5062,4 +5062,223 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- Sitter onboarding answers (014f)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_err text;
+begin
+  perform _t_as(null);
+  perform _t_ok((select onboarded_at is null from public.sitter_profiles where id = chloe),
+    '014f: a sitter who has not been through onboarding has no onboarded_at');
+
+  -- Finishing with every question skipped is allowed
+  perform _t_as(chloe);
+  perform save_sitter_answers('[]'::jsonb);
+  perform _t_ok((select onboarded_at is not null from public.sitter_profiles where id = chloe),
+    '014f: onboarding can be finished with every question skipped');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: …and nothing is stored');
+
+  -- Save: typed answers, a choice, a custom question, the intro
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'multiple_owners', 'choice', 'yes', 'answer', 'Two households at most'),
+    jsonb_build_object('key', 'max_pets', 'choice', '3'),
+    jsonb_build_object('key', 'walks_per_day', 'answer', 'Three, one long'),
+    jsonb_build_object('key', 'dog_sizes', 'choice', 'small,medium'),
+    jsonb_build_object('key', 'handoff', 'choice', 'owner_brings'),
+    jsonb_build_object('key', 'park_nearby', 'answer', '   '),
+    jsonb_build_object('key', 'custom_1', 'question', 'Do you have a fenced yard?', 'answer', 'Yes, small one')
+  ), 'Hi, I am Chloe.');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 6,
+    '014f: six answers are stored; a blank one counts as skipped');
+  perform _t_ok((select accepts_multiple_owners and default_max_pets = 3 and bio = 'Hi, I am Chloe.'
+                 from public.sitter_profiles where id = chloe),
+    '014f: multiple_owners, max_pets and the intro reach the columns the booking rules read');
+  perform _t_ok((select source = 'typed' and quote is null from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'walks_per_day'),
+    '014f: a typed answer has source typed and no quote');
+  perform _t_ok((select question_text = 'Do you have a fenced yard?' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'custom_1'),
+    '014f: a custom question keeps its own wording');
+
+  -- Replace-all: a second save drops what is not sent, and a voice answer keeps its quote
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'cats', 'choice', 'no', 'source', 'voice', 'quote', 'no cats please')
+  ), null, false);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: saving again replaces the whole list');
+  perform _t_ok((select source = 'voice' and quote = 'no cats please' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'cats'),
+    '014f: a voice answer keeps the sentence it was read from');
+  perform _t_ok((select bio = 'Hi, I am Chloe.' from public.sitter_profiles where id = chloe),
+    '014f: no intro sent leaves the bio as it was');
+
+  -- Checks
+  begin perform save_sitter_answers('[{"key": "max_pets", "choice": "11"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_choice', '014f: a choice outside the question''s options is refused');
+  begin perform save_sitter_answers('[{"key": "favourite_colour", "answer": "blue"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: an unknown question is refused');
+  begin perform save_sitter_answers('[{"key": "custom_2", "answer": "no question text"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: a custom answer needs its question');
+  begin perform save_sitter_answers('{"key": "cats"}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: answers must be a list');
+  begin perform save_sitter_answers('[{"key": "cats", "choice": "no", "source": "robot"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: the source is typed or voice');
+  begin perform save_sitter_answers('[]'::jsonb, repeat('x', 601)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_intro', '014f: an intro over 600 characters is refused');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: a refused save changed nothing');
+
+  -- Who reads and who writes
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: another sitter cannot read Chloe''s answers');
+  perform save_sitter_answers(jsonb_build_array(jsonb_build_object('key', 'cats', 'choice', 'yes')));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id in (chloe, paul)) = 2,
+    '014f: an owner reads every sitter''s answers');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014f: an owner cannot save sitter answers');
+  begin insert into public.sitter_profile_answers (sitter_id, question_key, answer) values (robert, 'cats', 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: there is no direct write to the table');
+  perform _t_as(null, 'anon');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot save sitter answers');
+  begin perform count(*) from public.sitter_profile_answers; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot read the answers');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Profile photos (014g)
+-- ---------------------------------------------------------------------------
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-0000000000e1', 'zed@example.test', '{"role":"sitter","display_name":"Zed"}');
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  zed constant uuid := '00000000-0000-4000-8000-0000000000e1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_ids uuid[];
+  v_first uuid;
+  v_out text;
+  v_err text;
+begin
+  perform _t_as(null);
+
+  -- Adding is the backend's job: positions run 0, 1, 2 and the 9th photo is refused
+  perform add_profile_photo(chloe, 'profiles/chloe-a');
+  perform add_profile_photo(chloe, 'profiles/chloe-b');
+  perform add_profile_photo(chloe, 'profiles/chloe-c');
+  perform _t_ok((select array_agg(position order by position) from public.profile_photos where profile_id = chloe) = array[0, 1, 2]::smallint[],
+    '014g: photos are added at the end, cover first');
+  for i in 4..8 loop perform add_profile_photo(paul, 'profiles/paul-' || i); end loop;
+  perform add_profile_photo(paul, 'profiles/paul-9'); perform add_profile_photo(paul, 'profiles/paul-10'); perform add_profile_photo(paul, 'profiles/paul-11');
+  begin perform add_profile_photo(paul, 'profiles/paul-12'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_many_photos', '014g: a person keeps at most 8 photos');
+
+  -- Who reads a sitter's photos: the sitter, every owner; not another sitter, not anon
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: a sitter reads their own photos');
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = paul) = 0, '014g: …and not another sitter''s');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: an owner reads a sitter''s photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: …any owner');
+  perform _t_as(null, 'anon');
+  begin perform count(*) from public.profile_photos; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: anon cannot read photos');
+
+  -- An owner's photos: only a sitter who shares a booking or an inquiry sees them
+  perform _t_as(null);
+  perform add_profile_photo(robert, 'profiles/robert-a');
+  perform add_profile_photo(robert, 'profiles/robert-b');
+  perform add_profile_photo(joy, 'profiles/joy-a');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 2, '014g: an owner reads their own photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 0, '014g: …and no other owner reads them');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 2,
+    '014g: a sitter with a booking with the owner reads their photos');
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id in (robert, joy)) = 0,
+    '014g: a sitter with no booking or inquiry reads no owner photos');
+  perform _t_as(null);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (joy, zed, now() + interval '900 days', now() + interval '901 days', array[coco]);
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = joy) = 1, '014g: an inquiry is enough to see the owner''s photos');
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 0, '014g: …only for that owner');
+
+  -- Reorder: exactly your own ids, first = cover
+  perform _t_as(chloe);
+  select array_agg(id order by position desc) into v_ids from public.profile_photos where profile_id = chloe;
+  perform reorder_profile_photos(v_ids);
+  perform _t_ok((select public_id from public.profile_photos where profile_id = chloe and position = 0) = 'profiles/chloe-c',
+    '014g: reordering moves the cover');
+  begin perform reorder_profile_photos(v_ids[1:2]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: a reorder that leaves a photo out is refused');
+  begin perform reorder_profile_photos(array[v_ids[1], v_ids[1], v_ids[2]]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: …or repeats one');
+  begin perform reorder_profile_photos(array[v_ids[1], v_ids[2], (select id from public.profile_photos where profile_id = paul limit 1)]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: …or names someone else''s photo');
+
+  -- Remove (the backend's call): that person's photo only, positions close up, the public id comes back
+  perform _t_as(null);
+  select id into v_first from public.profile_photos where profile_id = chloe and position = 0;
+  v_out := remove_profile_photo(chloe, v_first);
+  perform _t_ok(v_out = 'profiles/chloe-c', '014g: removing returns the Cloudinary public id');
+  perform _t_ok((select array_agg(position order by position) from public.profile_photos where profile_id = chloe) = array[0, 1]::smallint[],
+    '014g: …and the gap closes');
+  begin perform remove_profile_photo(chloe, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014g: a photo already gone is not found');
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = chloe limit 1)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014g: a photo is removed only for the person it belongs to');
+  perform _t_as(robert);
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = robert limit 1)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: removing goes through the backend, not a signed-in user');
+
+  -- No direct writes; the add function is the backend's
+  begin insert into public.profile_photos (profile_id, public_id) values (robert, 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: there is no direct insert');
+  begin perform add_profile_photo(robert, 'profiles/sneaky'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: add_profile_photo is not callable by a signed-in user');
+  perform _t_as(null, 'anon');
+  begin perform remove_profile_photo(robert, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: anon cannot remove photos');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
