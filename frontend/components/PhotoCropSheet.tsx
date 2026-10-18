@@ -117,9 +117,6 @@ export function PhotoCropSheet({ visible, file, busy, error, onConfirm, onClose 
         <Button label={busy ? "Saving…" : "Use photo"} onPress={() => void confirm()} disabled={busy || !loaded} testID="crop-confirm" />
       }
     >
-      <Text style={styles.hint}>
-        Drag the photo to move it in any direction. Zoom with the slider or the mouse wheel. The round window is what others see.
-      </Text>
       <View style={styles.center}>
         <View
           style={styles.frame}
@@ -166,7 +163,6 @@ export function PhotoCropSheet({ visible, file, busy, error, onConfirm, onClose 
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    hint: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
     center: { alignItems: "center", paddingVertical: theme.spacing.md },
     frame: {
       width: FRAME,
