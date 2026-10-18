@@ -71,6 +71,37 @@ const skinFonts: Partial<Record<ThemeName, typeof tokens.fontFamily>> = {
   expressive: { display: "Fredoka_600SemiBold" },
 };
 
+/** Shape and chrome a skin may change (Expressive: pills, cream bars). `default` keeps the earlier look. */
+export type SkinUi = {
+  radius: { button: number; card: number; block: number; chip: number; segment: number; tag: number; stepper: number };
+  /** Header bar and tab bar ground. */
+  chrome: string;
+  stepperBorder: string;
+  stepperPressed: string;
+};
+
+const r = tokens.radius;
+const skinUi: Record<ThemeName, SkinUi> = {
+  default: {
+    radius: { button: r.md, card: r.lg, block: r.lg, chip: r.sm, segment: r.md, tag: r.sm, stepper: r.md },
+    chrome: tokens.color.surface,
+    stepperBorder: tokens.color.border,
+    stepperPressed: tokens.color.accent,
+  },
+  balanced: {
+    radius: { button: r.md, card: r.lg, block: r.lg, chip: r.sm, segment: r.md, tag: r.sm, stepper: r.md },
+    chrome: themes.balanced.surface,
+    stepperBorder: themes.balanced.border,
+    stepperPressed: themes.balanced.accent,
+  },
+  expressive: {
+    radius: { button: r.pill, card: r.lg, block: r.xl, chip: r.pill, segment: r.pill, tag: r.pill, stepper: r.pill },
+    chrome: themes.expressive.background,
+    stepperBorder: tokens.color.gold,
+    stepperPressed: tokens.color.blockButter,
+  },
+};
+
 export function isThemeName(value: unknown): value is ThemeName {
   return typeof value === "string" && Object.hasOwn(themes, value);
 }
@@ -78,6 +109,7 @@ export function isThemeName(value: unknown): value is ThemeName {
 export type Theme = Omit<typeof tokens, "color"> & {
   name: ThemeName;
   color: Omit<typeof tokens.color, keyof SkinColors> & SkinColors;
+  ui: SkinUi;
 };
 
 export function buildTheme(name: ThemeName): Theme {
@@ -86,5 +118,6 @@ export function buildTheme(name: ThemeName): Theme {
     name,
     color: { ...tokens.color, ...themes[name] },
     fontFamily: { ...tokens.fontFamily, ...skinFonts[name] },
+    ui: skinUi[name],
   };
 }

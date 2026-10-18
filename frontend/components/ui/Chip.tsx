@@ -41,7 +41,7 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.xs,
       paddingVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.sm,
+      borderRadius: theme.ui.radius.chip,
       borderWidth: 1,
       borderColor: theme.color.border,
       backgroundColor: theme.color.surface,

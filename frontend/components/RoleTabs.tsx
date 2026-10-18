@@ -58,7 +58,7 @@ export function headerOptions(theme: Theme) {
   const display = theme.fontFamily.display;
   return {
     headerShadowVisible: false,
-    headerStyle: { backgroundColor: theme.color.surface },
+    headerStyle: { backgroundColor: theme.ui.chrome },
     headerTintColor: theme.color.primary,
     headerTitleStyle: {
       color: theme.color.text,
@@ -118,7 +118,7 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         tabBarButton: (props) => <TabButton {...(props as unknown as TabButtonProps)} />,
         tabBarStyle: {
           height: theme.layout.tabBarHeight,
-          backgroundColor: theme.color.surface,
+          backgroundColor: theme.ui.chrome,
           borderTopColor: theme.color.border,
         },
         sceneStyle: { backgroundColor: theme.color.background },
