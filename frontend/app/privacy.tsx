@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { LayoutRectangle, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../components/ui/Screen";
 import { useThemedStyles } from "../providers/ThemeProvider";
@@ -89,9 +89,30 @@ export default function Privacy() {
   const [open, setOpen] = useState<string | undefined>(
     SECTIONS.some((section) => slug(section.title) === openParam) ? openParam : slug(SECTIONS[0].title),
   );
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionLayouts = useRef<Record<string, LayoutRectangle>>({});
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (!open) return;
+
+    // Small delay to let the layout recalculate after expanding/collapsing sections
+    const timer = setTimeout(() => {
+      const layout = sectionLayouts.current[open];
+      if (layout) {
+        scrollRef.current?.scrollTo({ y: Math.max(0, layout.y - 16), animated: true });
+      }
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [open]);
 
   return (
-    <Screen contentStyle={styles.content} testID="privacy">
+    <Screen ref={scrollRef} contentStyle={styles.content} testID="privacy">
       <Text accessibilityRole="header" style={styles.title}>
         Privacy
       </Text>
@@ -100,7 +121,14 @@ export default function Privacy() {
         const id = slug(section.title);
         const expanded = open === id;
         return (
-          <View key={id} style={styles.section} testID={`privacy-${id}`}>
+          <View
+            key={id}
+            onLayout={(e) => {
+              sectionLayouts.current[id] = e.nativeEvent.layout;
+            }}
+            style={styles.section}
+            testID={`privacy-${id}`}
+          >
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ expanded }}

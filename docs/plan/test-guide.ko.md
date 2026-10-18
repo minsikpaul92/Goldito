@@ -31,6 +31,20 @@
 | `demo-owner@goldito.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
 | `demo-sitter@goldito.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
+**팀 QA용 세트(#163):** 사람마다 오너 1 + 시터 1 한 세트. 로그인 화면의 **Whose demo** 드롭다운에서 고르면 그 세트의 Demo owner / Demo sitter로 들어가고, Profile → Demo tools는 **로그인한 그 계정만** 초기화한다(오너는 오너쪽, 시터는 시터쪽, 다른 계정은 그대로). 데모 도구가 켜진 빌드에서만 보이고, 심사용 빌드는 기본 한 쌍(Chloe 세트)만 쓴다.
+
+| 세트 | 오너 | 시터 |
+| :--- | :--- | :--- |
+| Chloe (기본, 슬기 QA) | `demo-owner@goldito.test` (Robert) | `demo-sitter@goldito.test` (Chloe) |
+| Paul | `demo-owner-paul@goldito.test` (Peter) | `demo-sitter-paul@goldito.test` (Paul) |
+| Allen | `demo-owner-allen@goldito.test` (Alex) | `demo-sitter-allen@goldito.test` (Allen) |
+
+> **이름:** 여섯 계정 이름이 모두 다르고 펫 이름도 세트마다 다르다(Chloe 세트 Max · Mochi, Paul 세트 Biscuit · Luna, Allen 세트 Cooper · Olive). 강아지는 모든 세트에서 닭고기 알레르기가 있어 Treat check 샘플 결과는 같다.
+>
+> **초기화 범위:** 오너가 초기화하면 오너쪽(펫과 돌봄 계획, 오너의 알림)과 **그 세트 시터와의 예약 · 문의**가 지워지고 시터의 일정과 말투는 그대로. 시터가 초기화하면 시터쪽(일정, 시터의 알림)과 같은 예약 · 문의가 지워지고 오너의 펫과 돌봄 계획은 그대로. 다른 세트의 계정과 주고받은 예약은 어느 쪽 초기화에도 안 지워진다.
+>
+> **세트가 서로 만나는 곳:** 모든 데모 시터는 모든 오너의 검색에 보인다. 세트 사이의 예약(예: Paul 오너와 Chloe 시터)은 어느 세트의 초기화에도 지워지지 않는다. 새 세트(Paul · Allen)는 시드를 돌린 뒤 첫 초기화(Pets only)로 펫과 일정이 생긴다.
+
 > **데모 이메일:** 호스팅 DB 계정은 `@goldito.test`(이름 Robert / Chloe). 호스팅 DB에 옛 `seed_demo.py`(`@pawddy.test`)를 돌리지 말 것.
 
 ### 1.3 데모 데이터 (2026-10-04 기준 — 2026-10-08 현재 아래 참고)
@@ -91,7 +105,7 @@
 | 시터 Home 대시보드 | ✅ 🤖 | 03B.8 |
 | 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
 | **시터 검색 (SS)** — 날짜 · 시간 · 집 / 현재 위치 · 반경 1–100 km(정확히), 머무는 내내 가능한 시터만, 거리는 정수 km | 🟡 화면 · 슬라이더 · 현재 위치 · 빈 상태 · Book 채우기 ✅ 🤖 `sitter-search.spec.ts` · SQL(정확한 반경) smoke는 CI 대기 — 호스팅 DB에는 +2 km 여유가 있는 옛 `014c`가 들어 있어 머지 때 다시 적용 · 사람 확인 대기 | 03B SS |
-| **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간 · 쉬는 날)도 ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
+| **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
 | **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API ✅ · 시터 Profile의 갤러리(추가 · 라운드 크롭 · 대표로 · 앞뒤 이동 · 삭제 · 최대 8장 · 빈 실루엣) ✅ 🤖 SQL smoke + `test_profile_photos.py` + `profile-photos.spec.ts` · 오너 Profile의 같은 갤러리와 시터가 예약 · 문의 화면에서 보는 오너 대표 사진(#137) ✅ · 시터 상세 한 줄과 뷰어(#136) · Privacy 페이지의 Profile photos 문구 ✅ · 사람 확인 대기(`014g`는 호스팅 DB에 적용됨) | #135 – #137 |
 
 ### Stage 4 — 돌봄 · 알림장
@@ -138,6 +152,7 @@
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
 | Privacy 페이지 `/privacy` (로그아웃 상태 · Welcome · Profile에서 열림, Google Calendar · Meet 문단과 Limited Use 문구 — OAuth 동의 화면 Branding의 개인정보 링크) | 🤖 `privacy.spec.ts` · 사람 확인 대기 (PRIV) | 10.11 |
+| 브랜드 아이콘 (골드 코인 + 발바닥) — 브라우저 탭 · 즐겨찾기 `favicon.ico`, iOS 홈 화면 `apple-touch-icon`, 안드로이드 홈 화면 · PWA `manifest.json`(192 · 512 · maskable), 앱 아이콘 `assets/icon.png` 1024(불투명) · Android adaptive 전경 · 배경 · monochrome | 🟡 빌드 산출물 · `<head>` 태그 · manifest 확인(2026-10-18) · 폰 홈 화면 · 탭 표시는 사람 확인 대기 (BRAND) | 10 |
 | **귀가 알림** (Returned → "Max and Mochi are home safe 🏠" → 바로 뒤 리뷰 요청 알림) · **Stay summary** (기간 · 알림장 수 · 사진 수 · 완료 할 일 수 · 마지막 알림장 첫 문장) | ✅ 🤖 `completion.spec.ts` + SQL smoke N (실제 두 계정 👤) | 07C / 7C.1–7C.2 |
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
@@ -146,7 +161,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
-| 데스크톱 Split view — 견주 · 시터 폰 나란히 (`?view=split`, 폭 ≥ 900) | ✅ 🤖 `split.spec.ts` · 사람 ✅ SPLIT-1 – 5 (2026-10-15 Minsik) | 10 / 10.10 |
+| 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
 ---
 
@@ -551,6 +566,8 @@
 | PRIV-1 | 로그아웃 상태로 Welcome 하단 **Privacy** | `/privacy`가 열리고(섹션은 **한 번에 하나만 펼쳐지는 아코디언**, 처음엔 "What this is"가 열림, 닫힌 섹션도 DOM에는 있음; `/privacy?open=google-calendar-and-meet`로 Google 문단이 바로 열림) 무엇을 저장하는지 · AI(Nebius Token Factory, 진입 코드는 모델에 안 감) · 다른 서비스(OpenStreetMap Nominatim에 집 주소가 한 번, Cloudinary) 문단, **Google Calendar and Meet** 문단(Google 로그인 없음 · `calendar.events`만 · 이벤트에 들어가는 것 · Google API Services User Data Policy / Limited Use 준수 문구)이 있음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
 | PRIV-2 | 로그인 후 Profile 아래 **Privacy**, 그리고 주소창으로 `/privacy` 직접 열기 | 열리고, 새로고침해도 역할 홈으로 튕기지 않음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
 | PRIV-3 | 실제 문구가 앱 동작과 맞는지 읽기 (저장 항목 · 보내는 곳 · 보존 기간) | 새 서비스를 붙일 때마다 페이지도 같이 고침 | 수동 | 사람 확인 대기 |
+| BRAND-1 | 배포 URL을 브라우저 탭에서 열기 → 즐겨찾기에 추가 | 탭 · 즐겨찾기에 Vercel 기본 아이콘이 아니라 골드 코인 아이콘이 보임(캐시가 남으면 강력 새로고침) | 수동 | 사람 확인 대기 |
+| BRAND-2 | iPhone Safari → 공유 → **홈 화면에 추가** · Android Chrome → **홈 화면에 추가** | 홈 화면 아이콘이 골드 코인이고 이름이 Goldito, 안드로이드는 원형으로 잘려도 코인이 안 잘림 | 수동 | 사람 확인 대기 |
 
 ### 3.20 Snap 탭 (SNAP) — Phase 12 · D61
 
@@ -604,8 +621,8 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SPLIT-1 | 컴퓨터(1440 × 900) → `/?view=split` | 폰 두 개 나란히, 위에 "Owner · Robert" / "Sitter · Chloe". 각 폰이 데모 계정으로 자동 로그인(견주 Home · 시터 Home, 동시에). 주소창은 `/?view=split` 그대로 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
-| SPLIT-2 | 시터 폰에서 **Log out** → 견주 폰 새로고침 | 시터 폰만 Welcome, 견주 폰은 로그인 유지 (폰마다 저장 키 `goldito-auth-pane-owner` · `goldito-auth-pane-sitter`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+| SPLIT-1 | 컴퓨터(1440 × 900) → `/?view=split` | 폰 두 개 나란히, 위에 둘 다 "Not signed in". **자동 로그인 없음**: 각 폰은 로그인 화면에서 시작하고, 거기서 Demo owner / Demo sitter(또는 직접 로그인)로 들어가면 폰 위 이름이 "Robert · Owner" 같이 바뀜. 주소창은 `/?view=split` 그대로 | 🤖 `split.spec.ts` | 사람 확인 대기(2026-10-18 자동 로그인 제거) |
+| SPLIT-2 | 시터 폰에서 **Log out** → 견주 폰 새로고침 | 시터 폰만 Welcome, 견주 폰은 로그인 유지 (폰마다 저장 키 `goldito-auth-pane-left` · `goldito-auth-pane-right`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
 | SPLIT-3 | 폰 하나 화면 아래 **Show both phones** → split 화면 아래 **Show one phone** | 두 폰 ↔ 폰 하나로 바뀜 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
 | SPLIT-4 | 폭 800 창 또는 휴대폰에서 `/?view=split` → (컴퓨터) 다시 넓히기 | 폰 하나(휴대폰은 앱만), Show both phones 링크 없음. 다시 넓히면 두 폰으로 돌아오고 주소창도 `/?view=split` (2026-10-15 수정: 전에는 폰 하나로 남음) | 🤖 `split.spec.ts` (폭 800 · 800 → 1440) | ✅ 2026-10-15 Minsik (Chrome, 줄였다가 다시 넓히기 포함) |
 | SPLIT-5 | (DoD) 1440 × 900 → `/?view=split` → 시터 폰에서 사진 공유 또는 Complete with photo | 견주 폰에 토스트 ≤ 3초, 새로고침 없이. 1366 × 768 노트북에서도 두 폰이 잘리지 않음 | 👤 (e2e mock에는 실시간 없음) | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
@@ -664,10 +681,10 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | ONB-1 | (DB) `rls_smoke.sql`의 014f 블록 | 모든 질문을 건너뛰고 끝내도 `onboarded_at`이 찍히고 아무것도 저장되지 않음 · 빈 답은 건너뜀으로 처리 · 저장하면 목록 전체가 교체됨 · `multiple_owners` · `max_pets` · 자기소개가 `accepts_multiple_owners` · `default_max_pets` · `bio`로 복사됨 · 음성 답은 근거 문장을 가짐 · 선택지 밖 값 · 모르는 질문 · 질문 없는 직접 질문 · 목록이 아닌 입력 · 601자 소개는 거부되고 아무것도 바뀌지 않음 · 다른 시터는 못 읽고 오너는 모두 읽음 · 오너 `forbidden` · 직접 쓰기 / anon은 권한 없음 | SQL `rls_smoke` (로컬 Postgres 17 전체 파일 744 PASS, 2026-10-17) | 호스팅 DB에 `014f` 적용 후 |
-| ONB-2 | **새 시터**로 가입(또는 `onboarded_at`이 null인 시터)해 로그인 | 시터 홈 대신 **"A few questions about you"**가 열림. 번호 1–10 질문, 질문마다 칩(있는 것)과 **Note (optional)** 박스. 아무것도 안 쓰고 **Skip all for now** → 시터 홈으로 가고 다시 안 물음. 이미 있던 시터(`014f`가 완료로 표시)는 이 화면을 안 만남 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-3 | 칩 · 메모를 몇 개 채우고 **Review** | 채운 질문만 "번호. 질문 / 칩 · 메모"로 보이고 나머지는 "N skipped". 강아지 크기는 여러 개 고르면 "Small, Large". **Back to edit**으로 돌아가도 쓴 것이 남음. 칩을 한 번 더 누르면 해제(건너뜀) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-5 | 온보딩의 **When can you host?** → **Set weekly availability** → 요일 × 시간대 칸을 눌러 닫고 Apply. **Add a day off**로 날짜 하나 고르기. Review → Finish | 요약이 "Closed: Sun, Sat night."처럼 보이고, Review에도 같은 내용 + "Days off". **Finish 전에는 스케줄에 아무것도 쓰지 않음**. Finish 후 Schedule 달력에 규칙(빗금)과 쉬는 날(세 시간대 모두 닫힘)이 보임. 이 섹션을 안 건드리면 스케줄은 그대로(이미 규칙이 있으면 요약에 그대로 보임) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-4 | **Finish** | "Saved" 토스트 후 시터 홈. 같은 시터는 Profile → **Edit your answers**에서 같은 화면(Skip all 없음)을 열어 고치고 다시 저장할 수 있음. 직접 추가한 질문(최대 5개)과 자기소개도 저장됨 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-2 | **새 시터**로 가입(또는 `onboarded_at`이 null인 시터)해 로그인 | 시터 홈 대신 **"A few questions about you"**가 열림. 번호 1–10 질문, 질문마다 칩과 칩 오른쪽의 **+** 버튼(누르면 메모 칸이 열리고 **-** 로 다시 접음, 접어도 쓴 메모는 남음). 10번(인계)은 **I pick up**과 **Owner brings**를 둘 다 고를 수 있음. 개수 질문의 마지막 칩은 **4+** · **5+**(저장되는 값은 숫자, 이상의 뜻). 아무것도 안 쓰고 **Skip all for now** → 시터 홈으로 가고 다시 안 물음. 이미 있던 시터(`014f`가 완료로 표시)는 이 화면을 안 만남 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-3 | 칩을 몇 개 고르고 **+**로 메모를 하나 쓴 뒤 **Review** | 채운 질문만 "번호. 질문 / 칩 · 메모"로 보이고 나머지는 "N skipped". 강아지 크기는 여러 개 고르면 "Small, Large". **Back to edit**으로 돌아가도 쓴 것이 남음. 칩을 한 번 더 누르면 해제(건너뜀) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-5 | 온보딩의 **When can you host?** → **Set weekly availability** → 요일 × 시간대 칸을 눌러 닫고 Apply. Review → Finish | 요약이 "Closed: Sun, Sat night."처럼 보이고, Review에도 같은 내용. **Finish 전에는 스케줄에 아무것도 쓰지 않음**. Finish 후 Schedule 달력에 규칙(빗금)과 쉬는 날(세 시간대 모두 닫힘)이 보임. 이 섹션을 안 건드리면 스케줄은 그대로(이미 규칙이 있으면 요약에 그대로 보임) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-4 | **Finish** | "Saved" 토스트 후 시터 홈. 같은 시터는 Profile → **Your answers**에 답한 질문만 읽기용 목록으로 보이고(안 답한 질문은 안 보임), **Edit your answers**에서 같은 화면(Skip all 없음)을 열어 고치고 다시 저장할 수 있음. 직접 추가한 질문(최대 5개)과 자기소개도 저장됨 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
 
 ### 3.28 프로필 사진 (PFP) — #135 – #137 · *DB · 업로드 API · 시터 갤러리까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 
@@ -680,6 +697,23 @@
 | PFP-5 | 사진을 누른 뒤 **Make cover** · **Move earlier** · **Move later** · **Remove photo** | 대표로 만들면 맨 앞으로. 앞뒤 이동은 한 칸씩(대표는 앞으로 못 가고, 마지막은 뒤로 못 감). Remove는 한 번 더 확인(**Keep it**으로 취소 가능) 후 Cloudinary 파일과 목록에서 사라지고 빈자리가 메워짐. 8장이면 **+**가 없음. 끌어서 순서 바꾸기는 아직 없음(버튼으로만) | 🤖 `profile-photos` | 사람 확인 대기 |
 | PFP-6 | 오너 → Profile → **Your photos** | 시터와 같은 갤러리(추가 · 크롭 · 대표 · 이동 · 삭제). 안내 문구: "A sitter sees it only once you have a booking or a question with them." | 🤖 `profile-photos` | 사람 확인 대기 |
 | PFP-7 | 시터 → 그 오너와의 예약 요청 · 문의 화면 | 오너 이름 옆(문의는 위쪽)에 **대표 사진 원**이 보임. 사진이 없으면 이니셜. 예약도 문의도 없는 오너의 사진은 DB 규칙(`014g`) 때문에 시터에게 안 보임 → 이니셜 | 🤖 `sitter-bookings` (사진 있음 / 없음) · SQL `rls_smoke` (읽기 규칙) | 사람 확인 대기 |
+
+### 3.29 데모 계정 세트 (DSET): #163 · *사전: 데모 도구가 켜진 빌드(`EXPO_PUBLIC_DEMO_TOOLS=1`), 호스팅 DB는 Paul · Allen 계정을 시드한 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
+| DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen 계정을 시드한 뒤) |
+
+### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EXP-1 | 아무 화면이나 스위치 없이 열기 | 크림 배경, 잉크색 글씨, 화면 제목은 Fredoka. 버튼 · 칩 · 세그먼트는 알약 모양 | 🤖 `skin` | ➖ |
+| EXP-2 | 주소에 `?skin=default` 붙이고 새로고침 | 예전 룩(회색 배경, 시스템 글꼴, 네모난 버튼). 탭을 닫기 전까지 유지 | 🤖 `skin` | ➖ |
+| EXP-3 | 오너 · 시터 탭 바 | 흰 바, 위쪽 모서리 둥글게, 선택한 탭 아이콘 뒤에 민트 알약. 라벨이 잘리지 않음 | **👤** (모양) | ➖ |
+| EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
+| EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
 
 ---
 

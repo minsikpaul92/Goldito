@@ -22,11 +22,11 @@ Shows: `BrandLogo`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `login-back` | 66 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 109 |
-| TextButton | New here? Create an account | `go-signup` | 112 |
-| Button | Demo owner | `demo-owner` | 122 |
-| Button | Demo sitter | `demo-sitter` | 130 |
+| BackLink | — | `login-back` | 69 |
+| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 112 |
+| TextButton | New here? Create an account | `go-signup` | 115 |
+| Button | Demo owner | `demo-owner` | 134 |
+| Button | Demo sitter | `demo-sitter` | 142 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
@@ -61,19 +61,19 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 141 |
-| EmptyState | Couldn't load this booking | — | 148 |
-| Tag | `b.label` | — | 217 |
-| Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 256 |
-| CheckRow | `item` | ``pack-${item}`` | 282 |
-| Button | Find a new sitter | `find-new-sitter` | 344 |
-| Button | Change time or place | `change-booking` | 351 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
-| Sheet | Decline and end the request | `end-request-sheet` | 438 |
-| Button | Decline and end the request | `end-request-confirm` | 444 |
+| EmptyState | Booking not found | — | 142 |
+| EmptyState | Couldn't load this booking | — | 149 |
+| Tag | `b.label` | — | 218 |
+| Tag | Paid | `paid-chip` | 221 |
+| Button | Finish booking | `open-checkout` | 257 |
+| CheckRow | `item` | ``pack-${item}`` | 283 |
+| Button | Find a new sitter | `find-new-sitter` | 345 |
+| Button | Change time or place | `change-booking` | 352 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 360 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 370 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 376 |
+| Sheet | Decline and end the request | `end-request-sheet` | 439 |
+| Button | Decline and end the request | `end-request-confirm` | 445 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -302,28 +302,28 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``privacy-${id}-toggle`` | 104 |
+| Pressable | — | ``privacy-${id}-toggle`` | 132 |
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery`
+Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 184 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 373 |
-| TextButton | Edit entry info | `profile-home-access` | 390 |
-| SegmentedControl | — | `profile-ai-mode` | 406 |
-| Button | Edit your answers | `profile-answers-edit` | 435 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 443 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 445 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 462 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 472 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 510 |
-| TextButton | Settings · What's New | `profile-settings` | 512 |
-| TextButton | Privacy | `profile-privacy` | 513 |
+| EmptyState | Couldn't load your profile | — | 185 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 374 |
+| TextButton | Edit entry info | `profile-home-access` | 391 |
+| SegmentedControl | — | `profile-ai-mode` | 407 |
+| Button | Edit your answers | `profile-answers-edit` | 436 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 444 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 446 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 463 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 473 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 511 |
+| TextButton | Settings · What's New | `profile-settings` | 513 |
+| TextButton | Privacy | `profile-privacy` | 514 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -690,10 +690,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `option.label` | ``demo-state-${option.value}`` | 50 |
-| TextButton | Reset demo… | `demo-reset-open` | 60 |
-| Sheet | Reset the demo? | `demo-reset-sheet` | 61 |
-| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 68 |
+| CheckRow | `option.label` | ``demo-state-${option.value}`` | 53 |
+| TextButton | Reset demo… | `demo-reset-open` | 63 |
+| Sheet | Reset the demo? | `demo-reset-sheet` | 64 |
+| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 71 |
 
 ### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
 
@@ -835,25 +835,25 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 143 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 144 |
-| TextButton | Change | `meet-change` | 153 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 154 |
-| Button | Accept | `meet-accept` | 163 |
-| TextButton | Suggest another time | `meet-counter` | 176 |
-| TextButton | Decline | `meet-decline` | 177 |
-| LinkButton | Join Google Meet | `meet-join` | 193 |
-| TextButton | Get the Meet link | `meet-link-retry` | 197 |
-| CheckRow | `item` | ``meet-check-${item}`` | 211 |
-| Button | Done — we met | `meet-done` | 220 |
-| TextButton | Add to calendar | `meet-calendar` | 230 |
-| TextButton | Change | `meet-change` | 231 |
-| Button | Continue without meeting | `meet-skip-accept` | 247 |
-| TextButton | Decline — cancels the booking | `meet-skip-decline` | 253 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 285 |
-| Button | Ask to skip | `meet-skip-confirm` | 291 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 304 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 310 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 144 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 145 |
+| TextButton | Change | `meet-change` | 154 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 155 |
+| Button | Accept | `meet-accept` | 164 |
+| TextButton | Suggest another time | `meet-counter` | 177 |
+| TextButton | Decline | `meet-decline` | 178 |
+| LinkButton | Join Google Meet | `meet-join` | 194 |
+| TextButton | Get the Meet link | `meet-link-retry` | 198 |
+| CheckRow | `item` | ``meet-check-${item}`` | 212 |
+| Button | Done — we met | `meet-done` | 221 |
+| TextButton | Add to calendar | `meet-calendar` | 231 |
+| TextButton | Change | `meet-change` | 232 |
+| Button | Continue without meeting | `meet-skip-accept` | 248 |
+| TextButton | Decline — cancels the booking | `meet-skip-decline` | 254 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 286 |
+| Button | Ask to skip | `meet-skip-confirm` | 292 |
+| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 305 |
+| Button | Decline and cancel the booking | `meet-decline-confirm` | 311 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
@@ -997,7 +997,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 41 |
+| Pressable | aria["aria-label"] | `testID` | 63 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 
@@ -1033,15 +1033,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 116 |
-| Button | Add a question | `onboarding-custom-add` | 124 |
-| Button | Set weekly availability | `onboarding-availability-open` | 141 |
-| TextButton | Remove | ``onboarding-dayoff-remove-${day}`` | 154 |
-| Button | Add a day off | `onboarding-dayoff-add` | 161 |
-| Button | Review | `onboarding-review` | 202 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 203 |
-| Button | Finish | `onboarding-finish` | 268 |
-| Button | Back to edit | `onboarding-back` | 269 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 129 |
+| Button | Add a question | `onboarding-custom-add` | 137 |
+| Button | Set weekly availability | `onboarding-availability-open` | 151 |
+| Button | Review | `onboarding-review` | 187 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 188 |
+| Button | Finish | `onboarding-finish` | 249 |
+| Button | Back to edit | `onboarding-back` | 250 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1237,4 +1235,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-366 actions · 366 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+364 actions · 364 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

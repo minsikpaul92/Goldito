@@ -3,9 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ClosingRulesSheet } from "./ClosingRulesSheet";
 import { Button } from "./ui/Button";
-import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { ChoiceChips } from "./ui/ChoiceChips";
 import { TextButton } from "./ui/TextButton";
+import { NoteToggle } from "./ui/NoteToggle";
 import { TextField } from "./ui/TextField";
 import {
   AnswerDraft,
@@ -16,11 +16,10 @@ import {
   OnboardingDraft,
   QUESTIONS,
   answeredCount,
+  availabilitySummary,
   choiceLabel,
   choiceList,
 } from "../features/onboarding/questions";
-import { appToday, formatDay } from "../features/schedule/dates";
-import { SLOTS } from "../features/schedule/scheduleApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -42,7 +41,10 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
   const [step, setStep] = useState<"answer" | "review">("answer");
   const [rulesOpen, setRulesOpen] = useState(false);
   const [rulesKey, setRulesKey] = useState(0);
-  const [dayOpen, setDayOpen] = useState(false);
+  // A note stays hidden behind a "+" until it is opened, or when the question already has one.
+  const [openNotes, setOpenNotes] = useState<Set<string>>(
+    () => new Set(QUESTIONS.filter((q) => (draft.answers[q.key]?.answer ?? "").trim() !== "").map((q) => q.key)),
+  );
 
   const setAnswer = (key: string, patch: Partial<AnswerDraft>) =>
     onChange({
@@ -57,9 +59,6 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
   return (
     <View style={styles.form} testID="onboarding-form">
       <Text style={styles.title}>A few questions about you</Text>
-      <Text style={styles.muted}>
-        Owners read your answers when they look for a sitter. Answer what you like — every question can be skipped.
-      </Text>
 
       {QUESTIONS.map((q, i) => {
         const a = draft.answers[q.key];
@@ -68,30 +67,44 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
             <Text style={styles.prompt}>
               {i + 1}. {q.prompt}
             </Text>
-            {q.choices ? (
-              <ChoiceChips
-                options={q.choices}
-                multi={q.multi}
-                value={choiceList(a?.choice)}
-                onChange={(v) => setAnswer(q.key, { choice: v.length ? v.join(",") : null })}
-                testID={`onboarding-choice-${q.key}`}
+            <ChoiceChips
+              options={q.choices ?? []}
+              multi={q.multi}
+              value={choiceList(a?.choice)}
+              onChange={(v) => setAnswer(q.key, { choice: v.length ? v.join(",") : null })}
+              trailing={
+                <NoteToggle
+                  open={openNotes.has(q.key)}
+                  filled={(a?.answer ?? "").trim() !== ""}
+                  onPress={() =>
+                    setOpenNotes((open) => {
+                      const next = new Set(open);
+                      if (!next.delete(q.key)) next.add(q.key);
+                      return next;
+                    })
+                  }
+                  testID={`onboarding-note-toggle-${q.key}`}
+                />
+              }
+              testID={`onboarding-choice-${q.key}`}
+            />
+            {openNotes.has(q.key) ? (
+              <TextField
+                label=""
+                accessibilityLabel="Note"
+                value={a?.answer ?? ""}
+                onChangeText={(text) => setAnswer(q.key, { answer: text })}
+                maxLength={MAX_ANSWER}
+                multiline
+                testID={`onboarding-note-${q.key}`}
               />
             ) : null}
-            <TextField
-              label="Note (optional)"
-              value={a?.answer ?? ""}
-              onChangeText={(text) => setAnswer(q.key, { answer: text })}
-              maxLength={MAX_ANSWER}
-              multiline
-              testID={`onboarding-note-${q.key}`}
-            />
           </View>
         );
       })}
 
       <View style={styles.question} testID="onboarding-custom">
         <Text style={styles.prompt}>Your own questions</Text>
-        <Text style={styles.muted}>Add something owners should know that is not asked above.</Text>
         {draft.custom.map((c, i) => (
           <View key={i} style={styles.custom}>
             <TextField
@@ -132,9 +145,6 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
 
       <View style={styles.question} testID="onboarding-availability">
         <Text style={styles.prompt}>When can you host?</Text>
-        <Text style={styles.muted}>
-          You are open every day until you close something. Close the days and times you never take, or change your hours.
-        </Text>
         <Text style={styles.answer} testID="onboarding-availability-summary">
           {availabilitySummary(availability)}
         </Text>
@@ -147,18 +157,6 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
           }}
           testID="onboarding-availability-open"
         />
-        <Text style={styles.prompt}>Days you can't host</Text>
-        {draft.daysOff.map((day) => (
-          <View key={day} style={styles.dayOff}>
-            <Text style={styles.answer}>{formatDay(day)}</Text>
-            <TextButton
-              label="Remove"
-              onPress={() => onChange({ ...draft, daysOff: draft.daysOff.filter((d) => d !== day) })}
-              testID={`onboarding-dayoff-remove-${day}`}
-            />
-          </View>
-        ))}
-        <Button label="Add a day off" variant="secondary" onPress={() => setDayOpen(true)} testID="onboarding-dayoff-add" />
       </View>
 
       <ClosingRulesSheet
@@ -175,19 +173,6 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
         }}
         onClose={() => setRulesOpen(false)}
       />
-      <DayPickerSheet
-        visible={dayOpen}
-        title="Add a day off"
-        value={appToday()}
-        minDay={appToday()}
-        onPick={(day) => {
-          if (!draft.daysOff.includes(day)) onChange({ ...draft, daysOff: [...draft.daysOff, day].sort() });
-          setDayOpen(false);
-        }}
-        onClose={() => setDayOpen(false)}
-        testID="onboarding-dayoff-picker"
-      />
-
       <View style={styles.question}>
         <TextField
           label="A few words about you (optional)"
@@ -226,7 +211,6 @@ function Review({
   return (
     <View style={styles.form} testID="onboarding-review-step">
       <Text style={styles.title}>Check your answers</Text>
-      <Text style={styles.muted}>This is what owners will see. You can change it later in your profile.</Text>
 
       {answered.map(({ q, n, a }) => (
         <View key={q.key} style={styles.reviewRow} testID={`onboarding-review-${q.key}`}>
@@ -242,13 +226,10 @@ function Review({
           <Text style={styles.answer}>{c.answer.trim()}</Text>
         </View>
       ))}
-      {draft.availability.touched || draft.daysOff.length > 0 ? (
+      {draft.availability.touched ? (
         <View style={styles.reviewRow} testID="onboarding-review-availability">
           <Text style={styles.prompt}>When you can host</Text>
-          {draft.availability.touched ? <Text style={styles.answer}>{availabilitySummary(draft.availability)}</Text> : null}
-          {draft.daysOff.length > 0 ? (
-            <Text style={styles.answer}>Days off: {draft.daysOff.map((d) => formatDay(d)).join(", ")}</Text>
-          ) : null}
+          <Text style={styles.answer}>{availabilitySummary(draft.availability)}</Text>
         </View>
       ) : null}
       {draft.intro.trim() ? (
@@ -257,8 +238,8 @@ function Review({
           <Text style={styles.answer}>{draft.intro.trim()}</Text>
         </View>
       ) : null}
-      {answered.length === 0 && customs.length === 0 && !draft.intro.trim() && !draft.availability.touched && draft.daysOff.length === 0 ? (
-        <Text style={styles.muted}>Nothing answered yet. You can finish now and add answers later.</Text>
+      {answered.length === 0 && customs.length === 0 && !draft.intro.trim() && !draft.availability.touched ? (
+        <Text style={styles.muted}>Nothing answered yet.</Text>
       ) : skipped > 0 ? (
         <Text style={styles.muted} testID="onboarding-skipped">
           {skipped} skipped
@@ -271,19 +252,6 @@ function Review({
   );
 }
 
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-/** "Open every day" or "Closed: Sat–Sun overnight; …" in the same words as the rules sheet. */
-function availabilitySummary(a: OnboardingDraft["availability"]): string {
-  if (a.rules.length === 0 && a.weekdayHours.length === 0) return "Open every day.";
-  const parts = SLOTS.map(({ slot, label }) => {
-    const days = a.rules.filter((r) => r.slot === slot).map((r) => WEEKDAY_SHORT[r.weekday]);
-    return days.length ? `${days.join(", ")} ${label.toLowerCase()}` : null;
-  }).filter(Boolean);
-  const closed = parts.length ? `Closed: ${parts.join("; ")}.` : "Open every day.";
-  return a.weekdayHours.length ? `${closed} Some weekdays have their own hours.` : closed;
-}
-
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     form: { gap: theme.spacing.md },
@@ -293,6 +261,5 @@ const makeStyles = (theme: Theme) =>
     prompt: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     custom: { gap: theme.spacing.sm },
     reviewRow: { gap: theme.spacing.xs },
-    dayOff: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     answer: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, color: theme.color.text },
   });

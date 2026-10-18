@@ -4,7 +4,6 @@ import {
   loadClosingRules,
   loadSitterDefaults,
   loadWeekdayHours,
-  saveBlock,
   saveClosingRules,
   saveDefaultHours,
   saveWeekdayHours,
@@ -63,8 +62,8 @@ export async function loadDraft(userId: string): Promise<OnboardingDraft> {
 }
 
 /**
- * Replace the sitter's answers and intro and mark onboarding done, then write what they changed in When can you host?:
- * the weekly rules and hours, and the days off. The schedule is only touched when they set something there.
+ * Replace the sitter's answers and intro and mark onboarding done, then write what they changed in "When can you host?":
+ * the weekly rules and hours. The schedule is only touched when they set something there.
  */
 export async function saveDraft(userId: string, draft: OnboardingDraft, savedHours: OnboardingDraft["availability"]["hours"]): Promise<void> {
   const { error } = await getSupabase().rpc("save_sitter_answers", {
@@ -74,7 +73,7 @@ export async function saveDraft(userId: string, draft: OnboardingDraft, savedHou
   });
   if (error) fail("save your answers");
 
-  const { availability, daysOff } = draft;
+  const { availability } = draft;
   if (availability.touched) {
     await saveClosingRules(availability.rules);
     if (SLOTS.some(({ slot }) => availability.hours[slot][0] !== savedHours[slot][0] || availability.hours[slot][1] !== savedHours[slot][1])) {
@@ -82,5 +81,4 @@ export async function saveDraft(userId: string, draft: OnboardingDraft, savedHou
     }
     await saveWeekdayHours(availability.weekdayHours);
   }
-  for (const day of daysOff) await saveBlock(userId, day, day, SLOTS.map((s) => s.slot));
 }

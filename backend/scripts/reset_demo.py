@@ -4,6 +4,7 @@ A hosted-database write that cannot be undone, so it is a dry run unless you say
 
     cd backend
     .venv/bin/python -m scripts.reset_demo                       # dry run for the `pets` state
+    .venv/bin/python -m scripts.reset_demo --set paul --who owner   # one demo set, and only its owner (chloe is the default set)
     .venv/bin/python -m scripts.reset_demo --state confirmed     # dry run for another state
     .venv/bin/python -m scripts.reset_demo --apply               # asks you to type reset, then does it
 
@@ -25,6 +26,7 @@ from zoneinfo import ZoneInfo
 from app.config import get_settings
 from app.deps.supabase import get_service_client
 from app.services import demo_reset
+from app.services.demo_accounts import DEFAULT_SET, DEMO_SETS, set_for_key
 
 
 def confirmed(answer: str) -> bool:
@@ -34,6 +36,8 @@ def confirmed(answer: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--set", dest="set_key", choices=[s.key for s in DEMO_SETS], default=DEFAULT_SET.key, help="whose demo set to reset")
+    parser.add_argument("--who", choices=["owner", "sitter", "both"], default="both", help="which account of the set to reset")
     parser.add_argument("--state", choices=demo_reset.STATES, default="pets", help="the state to start from")
     parser.add_argument("--apply", action="store_true", help="really delete (default: dry run)")
     parser.add_argument("--yes", action="store_true", help="skip the typed confirmation (with --apply)")
@@ -42,7 +46,8 @@ def main() -> int:
     settings = get_settings()
     client = get_service_client()
     try:
-        owner_id, sitter_id = demo_reset.demo_ids(client)
+        demo_set = set_for_key(args.set_key)
+        owner_id, sitter_id = demo_reset.demo_ids(client, demo_set)
     except LookupError as exc:
         raise SystemExit(str(exc)) from exc
     today = datetime.now(ZoneInfo(settings.app_timezone)).date()
@@ -55,7 +60,7 @@ def main() -> int:
             print("Cancelled — nothing changed.")
             return 1
 
-    for label, rows in demo_reset.reset(client, owner_id, sitter_id, today, state=args.state, apply=args.apply):
+    for label, rows in demo_reset.reset(client, owner_id, sitter_id, today, state=args.state, apply=args.apply, demo_set=demo_set, scope=args.who):
         print(f"  {'deleted' if args.apply else 'would delete':<13} {rows:>4}  {label}")
     print("  (rows that cascade from bookings and inquiries go with them)")
 
