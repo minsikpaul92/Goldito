@@ -16,7 +16,7 @@ export function TextField({ label, error, onFocus, onBlur, ...inputProps }: Prop
 
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         accessibilityLabel={label}
         // A hint, not a value: lighter than typed text.

@@ -308,22 +308,22 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery`
+Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 184 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 373 |
-| TextButton | Edit entry info | `profile-home-access` | 390 |
-| SegmentedControl | — | `profile-ai-mode` | 406 |
-| Button | Edit your answers | `profile-answers-edit` | 435 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 443 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 445 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 462 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 472 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 510 |
-| TextButton | Settings · What's New | `profile-settings` | 512 |
-| TextButton | Privacy | `profile-privacy` | 513 |
+| EmptyState | Couldn't load your profile | — | 185 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 374 |
+| TextButton | Edit entry info | `profile-home-access` | 391 |
+| SegmentedControl | — | `profile-ai-mode` | 407 |
+| Button | Edit your answers | `profile-answers-edit` | 436 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 444 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 446 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 463 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 473 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 511 |
+| TextButton | Settings · What's New | `profile-settings` | 513 |
+| TextButton | Privacy | `profile-privacy` | 514 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -1033,15 +1033,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 116 |
-| Button | Add a question | `onboarding-custom-add` | 124 |
-| Button | Set weekly availability | `onboarding-availability-open` | 141 |
-| TextButton | Remove | ``onboarding-dayoff-remove-${day}`` | 154 |
-| Button | Add a day off | `onboarding-dayoff-add` | 161 |
-| Button | Review | `onboarding-review` | 202 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 203 |
-| Button | Finish | `onboarding-finish` | 268 |
-| Button | Back to edit | `onboarding-back` | 269 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 129 |
+| Button | Add a question | `onboarding-custom-add` | 137 |
+| Button | Set weekly availability | `onboarding-availability-open` | 151 |
+| Button | Review | `onboarding-review` | 187 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 188 |
+| Button | Finish | `onboarding-finish` | 249 |
+| Button | Back to edit | `onboarding-back` | 250 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1237,4 +1235,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-366 actions · 366 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+364 actions · 364 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
