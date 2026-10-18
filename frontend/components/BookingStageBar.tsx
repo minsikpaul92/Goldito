@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Viewer } from "./BookingCard";
 import { BookingStage, BookingSummary } from "../lib/bookings";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const FIRST_TIME = ["Request", "Meet & Greet", "Confirm", "Pay", "Stay"];
@@ -41,12 +41,42 @@ export function hasStageBar(booking: BookingSummary): boolean {
 
 /** Progress through the booking steps, from the stage the database computes (D60). */
 export function BookingStageBar({ booking, viewer }: { booking: BookingSummary; viewer: Viewer }) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const firstTime = booking.meetGreetStatus !== "not_needed";
   const steps = firstTime ? FIRST_TIME : REPEAT;
   const current = currentStep(booking.stage, firstTime);
   if (current === null) return null;
   const caption = stageCaption(booking, viewer);
+
+  if (theme.ui.blocks) {
+    return (
+      <View style={styles.wrap} testID="stage-bar" accessibilityLabel={`Step ${Math.min(current + 1, steps.length)} of ${steps.length}`}>
+        <View style={styles.row}>
+          {steps.map((label, i) => {
+            const done = i < current;
+            const now = i === current;
+            return (
+              <View key={label} style={styles.dotStep}>
+                {i > 0 ? <View style={[styles.link, (done || now) && styles.linkDone]} /> : null}
+                <View style={[styles.dot, done && styles.dotDone, now && styles.dotNow]}>
+                  <Text style={[styles.dotText, done && styles.dotTextDone, now && styles.dotTextNow]}>{done ? "✓" : i + 1}</Text>
+                </View>
+                <Text style={[styles.dotLabel, now && styles.dotLabelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
+                  {label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+        {caption ? (
+          <Text style={styles.caption} testID="stage-caption">
+            {caption}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap} testID="stage-bar" accessibilityLabel={`Step ${Math.min(current + 1, steps.length)} of ${steps.length}`}>
@@ -80,4 +110,20 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     labelNow: { color: theme.color.primary, fontWeight: theme.fontWeight.bold },
     caption: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    // Numbered dots (skins with color blocks).
+    dotStep: { flex: 1, alignItems: "center", gap: 5, paddingTop: 6 },
+    link: { position: "absolute", top: 20.5, left: "-50%", right: "50%", height: 3, borderRadius: 2, backgroundColor: theme.color.track },
+    linkDone: { backgroundColor: theme.color.gold },
+    dot: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.surface },
+    dotDone: { backgroundColor: theme.color.gold },
+    dotNow: { backgroundColor: theme.color.primary },
+    dotText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
+    dotTextDone: { color: theme.color.text },
+    dotTextNow: { color: theme.color.background },
+    dotLabel: {
+      fontSize: 12,
+      color: theme.color.textMuted,
+      ...(theme.fontFamily.display ? { fontFamily: theme.fontFamily.display } : { fontWeight: theme.fontWeight.semibold }),
+    },
+    dotLabelNow: { color: theme.color.text },
   });

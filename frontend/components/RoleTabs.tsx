@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Redirect, Stack, Tabs } from "expo-router";
 import { ComponentProps, ReactNode } from "react";
-import { ColorValue, Platform, Pressable, StyleProp, ViewStyle } from "react-native";
+import { ColorValue, Platform, Pressable, StyleProp, View, ViewStyle } from "react-native";
 
 import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
@@ -13,8 +13,27 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 
 /** Tab bar icon from the interim outline set (Figma picks the final set). */
 export function tabIcon(name: IconName) {
-  return ({ color, size }: { color: ColorValue; size: number }) => (
-    <Ionicons name={name} color={color} size={size} />
+  return ({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) => (
+    <TabIcon name={name} color={color} size={size} focused={focused} />
+  );
+}
+
+function TabIcon({ name, color, size, focused }: { name: IconName; color: ColorValue; size: number; focused: boolean }) {
+  const theme = useTheme();
+  if (theme.ui.tabs !== "pill") return <Ionicons name={name} color={color} size={size} />;
+  return (
+    <View
+      style={{
+        width: 54,
+        height: 30,
+        borderRadius: 15,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: focused ? theme.color.accent : "transparent",
+      }}
+    >
+      <Ionicons name={name} color={color} size={22} />
+    </View>
   );
 }
 
@@ -33,6 +52,7 @@ type TabButtonProps = {
 function TabButton({ children, style, onPress, onLongPress, testID, role, ...aria }: TabButtonProps) {
   const theme = useTheme();
   const selected = aria["aria-selected"] === true;
+  const pill = theme.ui.tabs === "pill";
   const pushedIn: ViewStyle = Platform.select<ViewStyle>({
     web: { boxShadow: "inset 0 3px 6px rgba(0,0,0,0.28), inset 0 1px 2px rgba(0,0,0,0.18)" } as ViewStyle,
     default: { borderWidth: 1, borderColor: theme.color.border },
@@ -46,7 +66,7 @@ function TabButton({ children, style, onPress, onLongPress, testID, role, ...ari
       onPress={onPress}
       onLongPress={onLongPress}
       testID={testID}
-      style={[style, { marginVertical: 5, marginHorizontal: 5, borderRadius: 8 }, selected && pushedIn]}
+      style={[style, !pill && { marginVertical: 5, marginHorizontal: 5, borderRadius: 8 }, selected && !pill && pushedIn]}
     >
       {children}
     </Pressable>
@@ -107,6 +127,7 @@ export function RoleStack({ role, children }: StackProps) {
  */
 export function RoleTabs({ children }: { children: ReactNode }) {
   const theme = useTheme();
+  const pill = theme.ui.tabs === "pill";
 
   return (
     <Tabs
@@ -116,11 +137,27 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         tabBarActiveTintColor: theme.color.primary,
         tabBarInactiveTintColor: theme.color.textMuted,
         tabBarButton: (props) => <TabButton {...(props as unknown as TabButtonProps)} />,
-        tabBarStyle: {
-          height: theme.layout.tabBarHeight,
-          backgroundColor: theme.ui.chrome,
-          borderTopColor: theme.color.border,
-        },
+        tabBarStyle: pill
+          ? {
+              height: 83,
+              paddingTop: 10,
+              paddingBottom: 22,
+              paddingHorizontal: 8,
+              backgroundColor: theme.color.surface,
+              borderTopColor: theme.color.border,
+              borderTopLeftRadius: 26,
+              borderTopRightRadius: 26,
+              ...Platform.select<ViewStyle>({
+                web: { boxShadow: "0 -8px 12px rgba(27,67,50,0.08)" } as ViewStyle,
+                default: { elevation: 8 },
+              }),
+            }
+          : {
+              height: theme.layout.tabBarHeight,
+              backgroundColor: theme.ui.chrome,
+              borderTopColor: theme.color.border,
+            },
+        ...(pill ? { tabBarLabelStyle: { fontSize: 11.5, lineHeight: 16, fontWeight: theme.fontWeight.bold, marginTop: 4 } } : null),
         sceneStyle: { backgroundColor: theme.color.background },
       }}
     >

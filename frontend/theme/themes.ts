@@ -78,6 +78,10 @@ export type SkinUi = {
   chrome: string;
   stepperBorder: string;
   stepperPressed: string;
+  /** `pushed` = the selected tab looks pressed in; `pill` = a rounded white bar, a mint pill behind the selected icon. */
+  tabs: "pushed" | "pill";
+  /** Booking screens use tinted color blocks and the numbered stage dots. */
+  blocks: boolean;
 };
 
 const r = tokens.radius;
@@ -87,18 +91,24 @@ const skinUi: Record<ThemeName, SkinUi> = {
     chrome: tokens.color.surface,
     stepperBorder: tokens.color.border,
     stepperPressed: tokens.color.accent,
+    tabs: "pushed",
+    blocks: false,
   },
   balanced: {
     radius: { button: r.md, card: r.lg, block: r.lg, chip: r.sm, segment: r.md, tag: r.sm, stepper: r.md },
     chrome: themes.balanced.surface,
     stepperBorder: themes.balanced.border,
     stepperPressed: themes.balanced.accent,
+    tabs: "pushed",
+    blocks: false,
   },
   expressive: {
     radius: { button: r.pill, card: r.lg, block: r.xl, chip: r.pill, segment: r.pill, tag: r.pill, stepper: r.pill },
     chrome: themes.expressive.background,
     stepperBorder: tokens.color.gold,
     stepperPressed: tokens.color.blockButter,
+    tabs: "pill",
+    blocks: true,
   },
 };
 
