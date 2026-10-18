@@ -5,9 +5,9 @@
 -- is visible. Photos live on Cloudinary; this table keeps the public id and the order.
 --
 -- Writes never go straight to the table:
---   * adding goes through the backend (service role) after it checked the upload: add_profile_photo;
---   * removing and reordering are the person's own RPCs: remove_profile_photo, reorder_profile_photos.
--- Removing a row does not delete the file on Cloudinary (the id is returned so the backend can).
+--   * adding and removing go through the backend (service role): add_profile_photo after it checked the upload,
+--     remove_profile_photo after it deleted the file on Cloudinary, so removing really removes the picture;
+--   * reordering is the person's own RPC: reorder_profile_photos.
 
 create table public.profile_photos (
   id uuid primary key default gen_random_uuid(),
@@ -109,31 +109,29 @@ $$;
 revoke execute on function public.reorder_profile_photos(uuid[]) from public, anon;
 grant execute on function public.reorder_profile_photos(uuid[]) to authenticated, service_role;
 
--- Remove one of the person's own photos and close the gap; returns the Cloudinary public id.
-create or replace function public.remove_profile_photo(p_id uuid)
+-- Backend only: remove one of the person's photos and close the gap; returns the Cloudinary public id. The backend
+-- deletes the file first, then calls this.
+create or replace function public.remove_profile_photo(p_profile uuid, p_id uuid)
 returns text
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  v_uid uuid := auth.uid();
   v_public_id text;
 begin
-  if v_uid is null then raise exception 'not_authenticated'; end if;
-
-  perform pg_advisory_xact_lock(hashtext(v_uid::text));
-  delete from public.profile_photos where id = p_id and profile_id = v_uid returning public_id into v_public_id;
+  perform pg_advisory_xact_lock(hashtext(p_profile::text));
+  delete from public.profile_photos where id = p_id and profile_id = p_profile returning public_id into v_public_id;
   if v_public_id is null then raise exception 'not_found'; end if;
 
   update public.profile_photos p
   set position = r.pos - 1
   from (select id, row_number() over (order by position, created_at, id) as pos
-        from public.profile_photos where profile_id = v_uid) r
+        from public.profile_photos where profile_id = p_profile) r
   where p.id = r.id;
   return v_public_id;
 end;
 $$;
 
-revoke execute on function public.remove_profile_photo(uuid) from public, anon;
-grant execute on function public.remove_profile_photo(uuid) to authenticated, service_role;
+revoke execute on function public.remove_profile_photo(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.remove_profile_photo(uuid, uuid) to service_role;

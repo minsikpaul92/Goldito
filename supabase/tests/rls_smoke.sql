@@ -5146,18 +5146,22 @@ begin
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'invalid_photos', '014g: …or names someone else''s photo');
 
-  -- Remove: own photo only, positions close up, the public id comes back
+  -- Remove (the backend's call): that person's photo only, positions close up, the public id comes back
+  perform _t_as(null);
   select id into v_first from public.profile_photos where profile_id = chloe and position = 0;
-  v_out := remove_profile_photo(v_first);
+  v_out := remove_profile_photo(chloe, v_first);
   perform _t_ok(v_out = 'profiles/chloe-c', '014g: removing returns the Cloudinary public id');
   perform _t_ok((select array_agg(position order by position) from public.profile_photos where profile_id = chloe) = array[0, 1]::smallint[],
     '014g: …and the gap closes');
-  begin perform remove_profile_photo(v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  begin perform remove_profile_photo(chloe, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'not_found', '014g: a photo already gone is not found');
-  perform _t_as(robert);
-  begin perform remove_profile_photo((select id from public.profile_photos where profile_id = chloe limit 1)); v_err := null;
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = chloe limit 1)); v_err := null;
   exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'not_found', '014g: nobody removes another person''s photo');
+  perform _t_ok(v_err = 'not_found', '014g: a photo is removed only for the person it belongs to');
+  perform _t_as(robert);
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = robert limit 1)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: removing goes through the backend, not a signed-in user');
 
   -- No direct writes; the add function is the backend's
   begin insert into public.profile_photos (profile_id, public_id) values (robert, 'x'); v_err := null;
@@ -5167,7 +5171,7 @@ begin
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014g: add_profile_photo is not callable by a signed-in user');
   perform _t_as(null, 'anon');
-  begin perform remove_profile_photo(v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  begin perform remove_profile_photo(robert, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014g: anon cannot remove photos');
   perform _t_as(null);
 end;
