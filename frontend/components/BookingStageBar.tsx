@@ -57,13 +57,13 @@ export function BookingStageBar({ booking, viewer }: { booking: BookingSummary; 
             const done = i < current;
             const now = i === current;
             return (
-              <View key={label} style={styles.dotStep}>
+              <View key={label} style={[styles.dotStep, { zIndex: steps.length - i }]}>
                 {i > 0 ? <View style={[styles.link, (done || now) && styles.linkDone]} /> : null}
                 <View style={[styles.dot, done && styles.dotDone, now && styles.dotNow]}>
                   <Text style={[styles.dotText, done && styles.dotTextDone, now && styles.dotTextNow]}>{done ? "✓" : i + 1}</Text>
                 </View>
                 <Text style={[styles.dotLabel, now && styles.dotLabelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
-                  {label}
+                  {label === "Meet & Greet" ? "Meet" : label}
                 </Text>
               </View>
             );
@@ -114,7 +114,7 @@ const makeStyles = (theme: Theme) =>
     dotStep: { flex: 1, alignItems: "center", gap: 5, paddingTop: 6 },
     link: { position: "absolute", top: 20.5, left: "-50%", right: "50%", height: 3, borderRadius: 2, backgroundColor: theme.color.track },
     linkDone: { backgroundColor: theme.color.gold },
-    dot: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.surface },
+    dot: { zIndex: 1, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.surface },
     dotDone: { backgroundColor: theme.color.gold },
     dotNow: { backgroundColor: theme.color.primary },
     dotText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },

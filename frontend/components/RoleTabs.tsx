@@ -3,6 +3,8 @@ import { Redirect, Stack, Tabs } from "expo-router";
 import { ComponentProps, ReactNode } from "react";
 import { ColorValue, Platform, Pressable, StyleProp, View, ViewStyle } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
 import { Role, homeFor, useSession } from "../providers/SessionProvider";
@@ -128,6 +130,7 @@ export function RoleStack({ role, children }: StackProps) {
 export function RoleTabs({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const pill = theme.ui.tabs === "pill";
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -139,9 +142,10 @@ export function RoleTabs({ children }: { children: ReactNode }) {
         tabBarButton: (props) => <TabButton {...(props as unknown as TabButtonProps)} />,
         tabBarStyle: pill
           ? {
-              height: 83,
+              // 10 top + 30 pill + 4 + 16 label + 10, then the safe area (22 on a frameless phone, as in Figma).
+              height: 70 + Math.max(insets.bottom, 12),
               paddingTop: 10,
-              paddingBottom: 22,
+              paddingBottom: Math.max(insets.bottom, 12),
               paddingHorizontal: 8,
               backgroundColor: theme.color.surface,
               borderTopColor: theme.color.border,
@@ -157,7 +161,13 @@ export function RoleTabs({ children }: { children: ReactNode }) {
               backgroundColor: theme.ui.chrome,
               borderTopColor: theme.color.border,
             },
-        ...(pill ? { tabBarLabelStyle: { fontSize: 11.5, lineHeight: 16, fontWeight: theme.fontWeight.bold, marginTop: 4 } } : null),
+        ...(pill
+          ? {
+              tabBarItemStyle: { paddingTop: 0, paddingBottom: 0 },
+              tabBarIconStyle: { width: 54, height: 30 },
+              tabBarLabelStyle: { fontSize: 11.5, lineHeight: 16, fontWeight: theme.fontWeight.bold, marginTop: 4 },
+            }
+          : null),
         sceneStyle: { backgroundColor: theme.color.background },
       }}
     >
