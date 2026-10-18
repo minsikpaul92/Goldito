@@ -1,9 +1,9 @@
 """Temporary demo reset (testing only): `POST /api/demo/reset`.
 
-Puts the two demo accounts back into one of a few known states from the Profile → Demo tools
+Puts the caller's own demo account (an owner or a sitter) back into one of a few known states from the Profile → Demo tools
 sheet, so a manual test can start from "before any booking" without a terminal. It deletes
 data, so it is off unless `DEMO_RESET_ENABLED=1` (answers 404 as if it did not exist) and only
-the two demo accounts may call it. Remove it before judging: unset the variable, then delete
+the demo accounts may call it, each resetting only itself. Remove it before judging: unset the variable, then delete
 this file, `app/services/demo_reset.py` and the Demo tools sheet (docs/plan/TODO.md, "Demo reset").
 """
 
@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
-from app.services import demo_reset
+from app.services import demo_accounts, demo_reset
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
@@ -37,12 +37,18 @@ def reset_demo(body: ResetRequest, user: CurrentUser = Depends(get_current_user)
     if not settings.demo_reset_enabled:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     client = get_service_client()
+    # The email only names the set; the account id below still decides who may reset it.
+    demo_set = demo_accounts.set_for_email(user.email)
+    if demo_set is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the demo accounts can reset the demo.")
     try:
-        owner_id, sitter_id = demo_reset.demo_ids(client)
+        owner_id, sitter_id = demo_reset.demo_ids(client, demo_set)
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     if user.id not in (owner_id, sitter_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the demo accounts can reset the demo.")
     today = datetime.now(ZoneInfo(settings.app_timezone)).date()
-    report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True)
+    # Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
+    scope = demo_accounts.role_for_email(user.email)
+    report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
     return ResetResponse(state=body.state, deleted={label: rows for label, rows in report if rows})

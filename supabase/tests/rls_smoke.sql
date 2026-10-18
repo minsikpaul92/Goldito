@@ -5123,6 +5123,12 @@ begin
   begin perform save_sitter_answers('[{"key": "max_pets", "choice": "11"}]'::jsonb); v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'invalid_choice', '014f: a choice outside the question''s options is refused');
+  perform save_sitter_answers('[{"key": "handoff", "choice": "sitter_picks_up,owner_brings"}]'::jsonb);
+  perform _t_ok((select choice from public.sitter_profile_answers where sitter_id = chloe and question_key = 'handoff') = 'sitter_picks_up,owner_brings',
+    '014h: the handoff answer can hold both options');
+  begin perform save_sitter_answers('[{"key": "handoff", "choice": "owner_brings,sitter_picks_up"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_choice', '014h: …in the one order the app sends, and no other spelling');
   begin perform save_sitter_answers('[{"key": "favourite_colour", "answer": "blue"}]'::jsonb); v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'invalid_answers', '014f: an unknown question is refused');

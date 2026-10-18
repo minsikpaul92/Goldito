@@ -1,5 +1,7 @@
-"""The two demo accounts: who they are, how to find them, and the sitter's services and prices.
+"""The demo accounts: who they are, how to find them, and the sitter's services and prices.
 
+The accounts come in sets, one owner and one sitter per teammate, so a reset only touches the set of whoever asks
+for it. The first set is the default pair (Robert and Chloe) that the judges and the seed always used.
 Shared by `scripts/seed_demo.py`, `scripts/reset_demo.py` and the demo reset service.
 """
 
@@ -17,10 +19,79 @@ class DemoUser:
     display_name: str
 
 
-DEMO_USERS = (
-    DemoUser("demo-owner@goldito.test", "owner", "Robert"),
-    DemoUser("demo-sitter@goldito.test", "sitter", "Chloe"),
+# name, species, breed, years old, kg, allergens: what the demo story shows on the owner's Home. The dog has a chicken
+# allergy in every set, so the Treat check samples (chicken jerky) come out the same for everyone.
+Pet = tuple[str, str, str, int, float, list[str]]
+
+MAX_AND_MOCHI: tuple[Pet, ...] = (
+    ("Max", "dog", "Maltese", 4, 3.2, ["chicken"]),
+    ("Mochi", "cat", "Domestic Shorthair", 3, 4.1, []),
 )
+
+
+@dataclass(frozen=True)
+class DemoSet:
+    key: str
+    label: str
+    owner: DemoUser
+    sitter: DemoUser
+    pets: tuple[Pet, ...] = MAX_AND_MOCHI
+
+
+# Keep in sync with frontend/lib/demo.ts.
+DEMO_SETS = (
+    DemoSet(
+        "chloe",
+        "Chloe",
+        DemoUser("demo-owner@goldito.test", "owner", "Robert"),
+        DemoUser("demo-sitter@goldito.test", "sitter", "Chloe"),
+    ),
+    DemoSet(
+        "paul",
+        "Paul",
+        DemoUser("demo-owner-paul@goldito.test", "owner", "Peter"),
+        DemoUser("demo-sitter-paul@goldito.test", "sitter", "Paul"),
+        pets=(
+            ("Biscuit", "dog", "Beagle", 5, 10.4, ["chicken"]),
+            ("Luna", "cat", "Siamese", 2, 3.6, []),
+        ),
+    ),
+    DemoSet(
+        "allen",
+        "Allen",
+        DemoUser("demo-owner-allen@goldito.test", "owner", "Alex"),
+        DemoUser("demo-sitter-allen@goldito.test", "sitter", "Allen"),
+        pets=(
+            ("Cooper", "dog", "Corgi", 3, 11.2, ["chicken"]),
+            ("Olive", "cat", "British Shorthair", 4, 5.1, []),
+        ),
+    ),
+)
+DEFAULT_SET = DEMO_SETS[0]
+# Every demo account, for the seed.
+DEMO_USERS = tuple(user for demo_set in DEMO_SETS for user in (demo_set.owner, demo_set.sitter))
+
+
+def set_for_email(email: str | None) -> DemoSet | None:
+    """The set an email belongs to, or None. The email only names the set; the caller's id still decides."""
+    lowered = (email or "").lower()
+    return next((s for s in DEMO_SETS if lowered in (s.owner.email, s.sitter.email)), None)
+
+
+def role_for_email(email: str | None) -> str | None:
+    """"owner" or "sitter" for a demo account's email, otherwise None."""
+    lowered = (email or "").lower()
+    demo_set = set_for_email(lowered)
+    if demo_set is None:
+        return None
+    return "owner" if lowered == demo_set.owner.email else "sitter"
+
+
+def set_for_key(key: str) -> DemoSet:
+    for demo_set in DEMO_SETS:
+        if demo_set.key == key:
+            return demo_set
+    raise KeyError(key)
 
 
 # Chloe's menu (phase-03c Goal): boarding $55 / house sitting $70 a night, daycare $35 a day,
