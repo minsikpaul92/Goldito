@@ -33,6 +33,20 @@ export async function loadProfilePhotos(profileId: string): Promise<ProfilePhoto
   return ((data ?? []) as PhotoRow[]).map((row) => ({ id: row.id, publicId: row.public_id }));
 }
 
+/** Someone's cover photo, or null when they have none or RLS does not let this person see it (014g). */
+export async function loadCoverPhoto(profileId: string): Promise<ProfilePhoto | null> {
+  const { data, error } = await getSupabase()
+    .from("profile_photos")
+    .select("id, public_id")
+    .eq("profile_id", profileId)
+    .order("position")
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as PhotoRow;
+  return { id: row.id, publicId: row.public_id };
+}
+
 /** The round thumbnail of a photo (Cloudinary, square fill; the circle is drawn by the view). */
 export function photoThumb(photo: ProfilePhoto, size = 160): string {
   return thumbUrl(photo.publicId, size);

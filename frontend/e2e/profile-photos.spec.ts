@@ -1,24 +1,29 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { app, signIn } from "./helpers";
-import { SITTER, mockSupabase, type MockDb } from "./supabaseMock";
+import { OWNER, SITTER, mockSupabase, type MockDb, type MockUser } from "./supabaseMock";
 
-// Profile photos for a sitter (#135): add with a round crop, make cover, move, remove.
+// Profile photos for a sitter and an owner (#135, #137): add with a round crop, make cover, move, remove.
 
 let counter = 0;
 
-async function setup(page: Page, options: { failComplete?: boolean } = {}): Promise<MockDb> {
-  const { db } = await mockSupabase(page, [SITTER]);
-  db.sitter_profiles.push({
-    id: SITTER.id, bio: null, home_address: null, services: ["boarding"], onboarded_at: "2026-10-01T00:00:00Z",
-  });
+async function setup(page: Page, options: { failComplete?: boolean; user?: MockUser } = {}): Promise<MockDb> {
+  const user = options.user ?? SITTER;
+  const { db } = await mockSupabase(page, [user]);
+  if (user.role === "sitter") {
+    db.sitter_profiles.push({
+      id: user.id, bio: null, home_address: null, services: ["boarding"], onboarded_at: "2026-10-01T00:00:00Z",
+    });
+  } else {
+    db.owner_profiles.push({ id: user.id, home_address: null });
+  }
   const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
 
   await page.route("**/api/profile-photos/sign", (route) =>
     route.fulfill(
       json({
         cloud_name: "goldito-test", api_key: "123", timestamp: 1_700_000_000, signature: "sig",
-        folder: `goldito/profile/${SITTER.id}`,
+        folder: `goldito/profile/${user.id}`,
         upload_url: "http://127.0.0.1:4173/cloudinary-mock/image/upload",
         transformation: "c_limit,w_2000/q_auto",
       }),
@@ -26,12 +31,12 @@ async function setup(page: Page, options: { failComplete?: boolean } = {}): Prom
   );
   await page.route("**/cloudinary-mock/**", (route) => {
     counter += 1;
-    return route.fulfill(json({ public_id: `goldito/profile/${SITTER.id}/photo-${counter}`, width: 800, height: 800 }));
+    return route.fulfill(json({ public_id: `goldito/profile/${user.id}/photo-${counter}`, width: 800, height: 800 }));
   });
   await page.route("**/api/profile-photos/complete", (route) => {
     if (options.failComplete) return route.fulfill(json({ detail: "You can keep up to 8 photos. Remove one first." }, 409));
     const { public_id } = route.request().postDataJSON();
-    const row = { id: `photo-${db.profile_photos.length + 1}-${counter}`, profile_id: SITTER.id, public_id };
+    const row = { id: `photo-${db.profile_photos.length + 1}-${counter}`, profile_id: user.id, public_id };
     db.profile_photos.push(row);
     return route.fulfill(json({ id: row.id, public_id, position: db.profile_photos.length - 1, url: "", thumb_url: "" }));
   });
@@ -144,5 +149,19 @@ test.describe("profile photos", () => {
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("photos-tile-p8")).toBeVisible();
     await expect(screen.getByTestId("photos-add")).toHaveCount(0);
+  });
+
+  test("an owner adds a cover photo on Profile with the same gallery", async ({ page }) => {
+    const db = await setup(page, { user: OWNER });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    await screen.getByTestId("open-profile").click();
+
+    await expect(screen.getByTestId("profile-photos-group")).toContainText("A sitter sees it only once you have a booking");
+    await addOne(page, "mood_tug");
+    expect(db.profile_photos).toHaveLength(1);
+    expect(db.profile_photos[0]).toMatchObject({ profile_id: OWNER.id });
+    await expect(screen.getByText("Cover", { exact: true })).toHaveCount(1);
   });
 });

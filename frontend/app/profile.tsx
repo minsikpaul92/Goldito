@@ -301,13 +301,15 @@ export default function ProfileScreen() {
   return (
     <Screen contentStyle={styles.content}>
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
-      {profile.role === "sitter" ? (
-        <View style={styles.group} testID="profile-photos-group">
-          <Text style={styles.groupTitle}>Your photos</Text>
-          <Text style={styles.muted}>A face and photos with pets. The first one is the cover owners see when they look for a sitter.</Text>
-          <ProfilePhotoGallery profileId={profile.id} />
-        </View>
-      ) : null}
+      <View style={styles.group} testID="profile-photos-group">
+        <Text style={styles.groupTitle}>Your photos</Text>
+        <Text style={styles.muted}>
+          {profile.role === "sitter"
+            ? "A face and photos with pets. The first one is the cover owners see when they look for a sitter."
+            : "So your sitter knows who is arriving. The first one is the cover. A sitter sees it only once you have a booking or a question with them."}
+        </Text>
+        <ProfilePhotoGallery profileId={profile.id} />
+      </View>
       <TextField
         label="Your name"
         value={displayName}

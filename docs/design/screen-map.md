@@ -313,17 +313,17 @@ Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 184 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 371 |
-| TextButton | Edit entry info | `profile-home-access` | 388 |
-| SegmentedControl | — | `profile-ai-mode` | 404 |
-| Button | Edit your answers | `profile-answers-edit` | 433 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 441 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 443 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 460 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 470 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 508 |
-| TextButton | Settings · What's New | `profile-settings` | 510 |
-| TextButton | Privacy | `profile-privacy` | 511 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 373 |
+| TextButton | Edit entry info | `profile-home-access` | 390 |
+| SegmentedControl | — | `profile-ai-mode` | 406 |
+| Button | Edit your answers | `profile-answers-edit` | 435 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 443 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 445 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 462 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 472 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 510 |
+| TextButton | Settings · What's New | `profile-settings` | 512 |
+| TextButton | Privacy | `profile-privacy` | 513 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -387,31 +387,31 @@ Shows: `BookingCard`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time / Decline. Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 148 |
-| EmptyState | Couldn't load this booking | — | 155 |
-| Tag | `b.label` | — | 238 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 305 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 310 |
-| TextButton | Change time or place | `change-booking` | 318 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 374 |
-| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 381 |
-| TextButton | Decline | `decline-booking` | 388 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 399 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 409 |
-| TextButton | Cancel booking | `cancel-booking` | 429 |
-| Sheet | Return | `return-sheet` | 434 |
-| Button | Return | `return-confirm` | 441 |
-| Button | Cancel | `return-cancel` | 454 |
-| TextButton | Send today's note first | `return-send-note` | 474 |
-| Sheet | Cancel booking | `cancel-sheet` | 486 |
-| Button | Cancel booking | `cancel-confirm` | 492 |
-| Sheet | Decline request | `decline-sheet` | 529 |
-| Button | Decline request | `decline-confirm` | 535 |
-| TextButton | Suggest another time instead | `decline-suggest` | 574 |
+| EmptyState | Booking not found | — | 149 |
+| EmptyState | Couldn't load this booking | — | 156 |
+| Tag | `b.label` | — | 242 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 309 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 314 |
+| TextButton | Change time or place | `change-booking` | 322 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 378 |
+| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 385 |
+| TextButton | Decline | `decline-booking` | 392 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 403 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 413 |
+| TextButton | Cancel booking | `cancel-booking` | 433 |
+| Sheet | Return | `return-sheet` | 438 |
+| Button | Return | `return-confirm` | 445 |
+| Button | Cancel | `return-cancel` | 458 |
+| TextButton | Send today's note first | `return-send-note` | 478 |
+| Sheet | Cancel booking | `cancel-sheet` | 490 |
+| Button | Cancel booking | `cancel-confirm` | 496 |
+| Sheet | Decline request | `decline-sheet` | 533 |
+| Button | Decline request | `decline-confirm` | 539 |
+| TextButton | Suggest another time instead | `decline-suggest` | 578 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -501,18 +501,18 @@ Shows: `DiaryTimeline`
 
 The sitter's side of one inquiry (phase-07B 7B.6): the owner's question, the draft in the sitter's own voice with the warning line, and one tap to **Send** it as is — or Edit / Add, Regenerate, or lean it with an intent chip. Nothing reaches the owner until Send (D36 · D38).
 
-Shows: `InquiryReplySheet` · `ReplyKind` · `MessageBubble` · `QuoteCard`
+Shows: `InquiryReplySheet` · `ReplyKind` · `MessageBubble` · `ProfileAvatar` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this question | — | 95 |
-| EmptyState | Question not found | — | 103 |
-| CheckRow | Include the price and a Request booking button | `inquiry-offer` | 197 |
-| Button | busy === "send" ? "Sending…" : "Send" | `inquiry-send` | 205 |
-| TextButton | editing ? "Use the draft text" : "Edit / Add" | `inquiry-edit-toggle` | 215 |
-| TextButton | busy === "regenerate" ? "Writing…" : "Regenerate" | `inquiry-regenerate` | 223 |
-| Button | `q.label` | ``inquiry-intent-${q.value}`` | 233 |
-| TextButton | Write it myself | `inquiry-write-myself` | 247 |
+| EmptyState | Couldn't load this question | — | 96 |
+| EmptyState | Question not found | — | 104 |
+| CheckRow | Include the price and a Request booking button | `inquiry-offer` | 199 |
+| Button | busy === "send" ? "Sending…" : "Send" | `inquiry-send` | 207 |
+| TextButton | editing ? "Use the draft text" : "Edit / Add" | `inquiry-edit-toggle` | 217 |
+| TextButton | busy === "regenerate" ? "Writing…" : "Regenerate" | `inquiry-regenerate` | 225 |
+| Button | `q.label` | ``inquiry-intent-${q.value}`` | 235 |
+| TextButton | Write it myself | `inquiry-write-myself` | 249 |
 
 ### `/sitter/notifications` — [app/sitter/notifications.tsx](../../frontend/app/sitter/notifications.tsx)
 
