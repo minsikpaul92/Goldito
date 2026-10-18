@@ -308,22 +308,22 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools` · `OpenInMapsButton`
+Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 183 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 363 |
-| TextButton | Edit entry info | `profile-home-access` | 380 |
-| SegmentedControl | — | `profile-ai-mode` | 396 |
-| Button | Edit your answers | `profile-answers-edit` | 425 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 433 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 435 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 452 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 462 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 500 |
-| TextButton | Settings · What's New | `profile-settings` | 502 |
-| TextButton | Privacy | `profile-privacy` | 503 |
+| EmptyState | Couldn't load your profile | — | 184 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 371 |
+| TextButton | Edit entry info | `profile-home-access` | 388 |
+| SegmentedControl | — | `profile-ai-mode` | 404 |
+| Button | Edit your answers | `profile-answers-edit` | 433 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 441 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 443 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 460 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 470 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 508 |
+| TextButton | Settings · What's New | `profile-settings` | 510 |
+| TextButton | Privacy | `profile-privacy` | 511 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -932,6 +932,28 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | ``record-fold-toggle-${petId}`` | 32 |
 
+### PhotoCropSheet — [components/PhotoCropSheet.tsx](../../frontend/components/PhotoCropSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 90 |
+| Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 96 |
+
+### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Add a photo | `photos-placeholder` | 131 |
+| Pressable | i === 0 ? "Cover photo" : `Photo ${i + 1}` | ``photos-tile-${photo.id}`` | 140 |
+| Pressable | Add a photo | `photos-add` | 153 |
+| Sheet | index === 0 ? "Cover photo" : "Photo" | `photo-actions` | 171 |
+| Button | working ? "Removing…" : "Remove photo" | `photo-remove-confirm` | 175 |
+| Button | Keep it | `photo-remove-cancel` | 176 |
+| Button | Make cover | `photo-make-cover` | 180 |
+| Button | Move earlier | `photo-move-earlier` | 181 |
+| Button | Move later | `photo-move-later` | 183 |
+| TextButton | Remove photo | `photo-remove` | 185 |
+
 ### ProposalCard — [components/ProposalCard.tsx](../../frontend/components/ProposalCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1215,4 +1237,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-356 actions · 356 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+366 actions · 366 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

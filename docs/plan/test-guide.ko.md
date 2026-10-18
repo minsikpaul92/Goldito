@@ -92,7 +92,7 @@
 | 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
 | **시터 검색 (SS)** — 날짜 · 시간 · 집 / 현재 위치 · 반경 1–100 km(정확히), 머무는 내내 가능한 시터만, 거리는 정수 km | 🟡 화면 · 슬라이더 · 현재 위치 · 빈 상태 · Book 채우기 ✅ 🤖 `sitter-search.spec.ts` · SQL(정확한 반경) smoke는 CI 대기 — 호스팅 DB에는 +2 km 여유가 있는 옛 `014c`가 들어 있어 머지 때 다시 적용 · 사람 확인 대기 | 03B SS |
 | **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간 · 쉬는 날)도 ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
-| **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API(서명 · 등록 · 삭제) ✅ 🤖 SQL smoke + `test_profile_photos.py` · 갤러리 · 크롭 · 뷰어 · Privacy 문구는 아직 | #135 – #137 |
+| **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API ✅ · 시터 Profile의 갤러리(추가 · 라운드 크롭 · 대표로 · 앞뒤 이동 · 삭제 · 최대 8장 · 빈 실루엣) ✅ 🤖 SQL smoke + `test_profile_photos.py` + `profile-photos.spec.ts` · 오너 Profile(#137) · 시터 상세 한 줄과 뷰어(#136) · Privacy 문구는 아직 · 사람 확인 대기(호스팅 DB에 `014g` 적용 후) | #135 – #137 |
 
 ### Stage 4 — 돌봄 · 알림장
 
@@ -669,12 +669,15 @@
 | ONB-5 | 온보딩의 **When can you host?** → **Set weekly availability** → 요일 × 시간대 칸을 눌러 닫고 Apply. **Add a day off**로 날짜 하나 고르기. Review → Finish | 요약이 "Closed: Sun, Sat night."처럼 보이고, Review에도 같은 내용 + "Days off". **Finish 전에는 스케줄에 아무것도 쓰지 않음**. Finish 후 Schedule 달력에 규칙(빗금)과 쉬는 날(세 시간대 모두 닫힘)이 보임. 이 섹션을 안 건드리면 스케줄은 그대로(이미 규칙이 있으면 요약에 그대로 보임) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
 | ONB-4 | **Finish** | "Saved" 토스트 후 시터 홈. 같은 시터는 Profile → **Edit your answers**에서 같은 화면(Skip all 없음)을 열어 고치고 다시 저장할 수 있음. 직접 추가한 질문(최대 5개)과 자기소개도 저장됨 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
 
-### 3.28 프로필 사진 (PFP) — #135 – #137 · *DB와 업로드 API까지 — 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
+### 3.28 프로필 사진 (PFP) — #135 – #137 · *DB · 업로드 API · 시터 갤러리까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | PFP-1 | (DB) `rls_smoke.sql`의 014g 블록 | 사진은 뒤에 붙고 첫 장이 대표 · 한 사람 최대 8장(9번째는 `too_many_photos`) · 시터 사진은 본인과 모든 오너가 읽고 다른 시터 · anon은 못 읽음 · 오너 사진은 본인과 **그 오너와 예약이나 문의가 있는 시터**만 읽음(다른 오너 · 관계없는 시터는 0장) · 순서 바꾸기는 내 사진 전부만(빠뜨리거나 중복하거나 남의 사진이면 `invalid_photos`) · 삭제는 백엔드만(그 사람의 사진이 아니면 `not_found`)이고 Cloudinary public id를 돌려주며 빈 자리는 메워짐 · 직접 insert · 로그인한 사용자의 `add_profile_photo` · `remove_profile_photo` · anon 삭제는 권한 없음 | SQL `rls_smoke` (로컬 Postgres 17 전체 파일 746 PASS, 2026-10-17) | 호스팅 DB에 `014g` 적용 후 |
 | PFP-2 | (API) `POST /api/profile-photos/sign` · `/complete` · `DELETE /api/profile-photos/{id}` | 시터 · 오너 누구나 **자기 폴더**(`goldito/profile/<내 id>`)에만 서명을 받음 · 등록은 서명한 폴더의 파일이고 Cloudinary에 실제로 있어야 하며 같은 업로드를 다시 등록해도 같은 사진 · 9번째는 409 "up to 8" · 삭제는 **내 사진만**(남의 것은 404)이고 파일을 먼저 지운 뒤 DB를 지움(파일 삭제가 실패하면 그대로 두고 502) | 🤖 `test_profile_photos.py` (백엔드 552 passed) | ➖ |
+| PFP-3 | 시터 → Profile → **Your photos**. 사진이 없을 때 | 빈 원 실루엣과 **Add a photo**. 누르면 사진 고르기(데스크톱 프레임 · 데모 계정은 샘플 트레이, 폰은 Take photo / Choose from library) → **Crop your photo** | 🤖 `profile-photos` | 사람 확인 대기 |
+| PFP-4 | Crop 시트에서 사진을 마우스(또는 손가락)로 끌고 슬라이더로 확대 → **Use photo** | 둥근 창 안에서 사진이 움직이고 창을 벗어나게 끌 수 없음(항상 창을 덮음). 확대는 100~300%. **Use photo** 후 잘린 정사각형(800 px)이 올라가 목록 끝에 붙고 첫 사진에는 **Cover** 표시. 잘못되면(예: 9번째) 이유가 시트 안에 보이고 시트는 그대로 | 🤖 `profile-photos` | 폰에서 터치로 끌기 · 확대 확인 대기 |
+| PFP-5 | 사진을 누른 뒤 **Make cover** · **Move earlier** · **Move later** · **Remove photo** | 대표로 만들면 맨 앞으로. 앞뒤 이동은 한 칸씩(대표는 앞으로 못 가고, 마지막은 뒤로 못 감). Remove는 한 번 더 확인(**Keep it**으로 취소 가능) 후 Cloudinary 파일과 목록에서 사라지고 빈자리가 메워짐. 8장이면 **+**가 없음. 끌어서 순서 바꾸기는 아직 없음(버튼으로만) | 🤖 `profile-photos` | 사람 확인 대기 |
 
 ---
 
