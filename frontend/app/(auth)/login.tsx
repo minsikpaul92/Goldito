@@ -8,9 +8,10 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Screen } from "../../components/ui/Screen";
 import { TextButton } from "../../components/ui/TextButton";
+import { Select } from "../../components/ui/Select";
 import { TextField } from "../../components/ui/TextField";
 import { describeAuthError } from "../../lib/authErrors";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD, isDemoEnabled, isDemoRole } from "../../lib/demo";
+import { DEMO_PASSWORD, DEMO_SETS, demoSetFor, isDemoEnabled, isDemoRole, isDemoToolsBuild } from "../../lib/demo";
 import { Role } from "../../providers/SessionProvider";
 import { SUPABASE_NOT_CONFIGURED, getSupabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -23,7 +24,9 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const params = useLocalSearchParams<{ demo?: string }>();
+  const params = useLocalSearchParams<{ demo?: string; set?: string }>();
+  // Whose demo accounts the two buttons sign in to. Only the team's build offers the choice.
+  const [setKey, setSetKey] = useState(() => demoSetFor(params.set).key);
   const demoTried = useRef(false);
 
   const canSubmit = isSupabaseConfigured && email.trim() !== "" && password !== "" && !submitting;
@@ -47,7 +50,7 @@ export default function LoginScreen() {
   // Try demo (OB.3): fill the seeded account so the judge sees what happens, then sign in.
   function tryDemo(role: Role) {
     if (!isDemoEnabled || !isSupabaseConfigured || submitting) return;
-    const { email: demoEmail } = DEMO_ACCOUNTS[role];
+    const { email: demoEmail } = demoSetFor(setKey)[role];
     setEmail(demoEmail);
     setPassword(DEMO_PASSWORD);
     void signInWith(demoEmail, DEMO_PASSWORD);
@@ -118,6 +121,15 @@ export default function LoginScreen() {
               <Text style={styles.dividerText}>or try a demo</Text>
               <View style={styles.line} />
             </View>
+            {isDemoToolsBuild ? (
+              <Select
+                label="Whose demo"
+                value={setKey}
+                options={DEMO_SETS.map((set) => ({ value: set.key, label: set.label }))}
+                onChange={setSetKey}
+                testID="demo-set"
+              />
+            ) : null}
             <View style={styles.demoButtons}>
               <Button
                 label="Demo owner"

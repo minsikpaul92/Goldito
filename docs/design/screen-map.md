@@ -22,11 +22,11 @@ Shows: `BrandLogo`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `login-back` | 66 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 109 |
-| TextButton | New here? Create an account | `go-signup` | 112 |
-| Button | Demo owner | `demo-owner` | 122 |
-| Button | Demo sitter | `demo-sitter` | 130 |
+| BackLink | — | `login-back` | 69 |
+| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 112 |
+| TextButton | New here? Create an account | `go-signup` | 115 |
+| Button | Demo owner | `demo-owner` | 134 |
+| Button | Demo sitter | `demo-sitter` | 142 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
@@ -690,10 +690,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `option.label` | ``demo-state-${option.value}`` | 50 |
-| TextButton | Reset demo… | `demo-reset-open` | 60 |
-| Sheet | Reset the demo? | `demo-reset-sheet` | 61 |
-| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 68 |
+| CheckRow | `option.label` | ``demo-state-${option.value}`` | 52 |
+| TextButton | Reset demo… | `demo-reset-open` | 62 |
+| Sheet | Reset the demo? | `demo-reset-sheet` | 63 |
+| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 70 |
 
 ### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
 

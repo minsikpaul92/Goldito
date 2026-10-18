@@ -1,4 +1,4 @@
-"""Put the two demo accounts into a known test state (review FB-10 + the temporary demo reset).
+"""Put one demo set (an owner and a sitter) into a known test state (review FB-10 + the temporary demo reset).
 
 Five states, each a point to start a manual test from:
 
@@ -31,7 +31,8 @@ from supabase import Client
 from app.config import get_settings
 from app.services import authz
 from app.services.demo_accounts import (
-    DEMO_USERS,
+    DEFAULT_SET,
+    DemoSet,
     ensure_home_point,
     ensure_sitter_rates,
     find_user_id,
@@ -127,10 +128,10 @@ def delete_rows(client: Client, step: Step) -> None:
     _query(client, step, "delete")
 
 
-def demo_ids(client: Client) -> tuple[str, str]:
-    owner, sitter = (find_user_id(client, demo.email) for demo in DEMO_USERS)
+def demo_ids(client: Client, demo_set: DemoSet = DEFAULT_SET) -> tuple[str, str]:
+    owner, sitter = (find_user_id(client, demo.email) for demo in (demo_set.owner, demo_set.sitter))
     if not owner or not sitter:
-        raise LookupError("A demo account is missing — run `python -m scripts.seed_demo` first.")
+        raise LookupError("A demo account is missing, run `python -m scripts.seed_demo` first.")
     return owner, sitter
 
 
@@ -213,11 +214,10 @@ def open_schedule(client: Client, sitter_id: str, today: date) -> int:
     return len(rows)
 
 
-def sync_display_names(client: Client, owner_id: str, sitter_id: str) -> None:
+def sync_display_names(client: Client, owner_id: str, sitter_id: str, demo_set: DemoSet = DEFAULT_SET) -> None:
     """profiles.display_name is only written by the signup trigger, so a renamed demo user keeps the old one (M-24)."""
-    ids = {"owner": owner_id, "sitter": sitter_id}
-    for demo in DEMO_USERS:
-        client.table("profiles").update({"display_name": demo.display_name}).eq("id", ids[demo.role]).execute()
+    for user_id, demo in ((owner_id, demo_set.owner), (sitter_id, demo_set.sitter)):
+        client.table("profiles").update({"display_name": demo.display_name}).eq("id", user_id).execute()
 
 
 def tone_history_count(client: Client, sitter_id: str) -> int:
@@ -296,15 +296,15 @@ def _sign_and_pay(owner_token: str, owner_id: str, owner_name: str, booking: str
     authz.rpc_json(owner_token, "pay_booking_demo", {"p_booking": booking}, timeout=20.0)
 
 
-# A booking creator takes (client, owner_id, sitter_id, today, state) and returns the booking id; tests pass a fake.
-Booker = Callable[[Client, str, str, date, State], str]
+# A booking creator takes (client, owner_id, sitter_id, today, state, demo_set) and returns the booking id; tests pass a fake.
+Booker = Callable[[Client, str, str, date, State, DemoSet], str]
 
 
-def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State) -> str:
+def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State, demo_set: DemoSet = DEFAULT_SET) -> str:
     """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
     agreement (after the sitter's first yes) and the sitter accepts ("Chloe accepted — Finish booking"). `ready` and `in_care` go on with
     the checkout (consents + demo payment); `in_care` also has the sitter tap Received."""
-    owner_demo, sitter_demo = (next(d for d in DEMO_USERS if d.role == role) for role in ("owner", "sitter"))
+    owner_demo, sitter_demo = demo_set.owner, demo_set.sitter
     owner_token, sitter_token = sign_in(owner_demo.email), sign_in(sitter_demo.email)
     tz = ZoneInfo(get_settings().app_timezone)
     drop_off, pick_up = stay_times(state, datetime.now(tz), today)
@@ -350,6 +350,7 @@ def reset(
     *,
     state: State = "pets",
     apply: bool,
+    demo_set: DemoSet = DEFAULT_SET,
     book: Booker = book_for_state,
 ) -> list[tuple[str, int]]:
     """Dry run counts each step; apply deletes, then builds the state. Returns (label, rows)."""
@@ -375,7 +376,7 @@ def reset(
         ensure_home_point(client, "sitter", sitter_id)
         if not keep_schedule:
             open_schedule(client, sitter_id, today)
-        sync_display_names(client, owner_id, sitter_id)
+        sync_display_names(client, owner_id, sitter_id, demo_set)
         if state in ("confirmed", "ready", "in_care"):
-            book(client, owner_id, sitter_id, today, state)
+            book(client, owner_id, sitter_id, today, state, demo_set)
     return report

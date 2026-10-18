@@ -31,6 +31,16 @@
 | `demo-owner@goldito.test` | Robert (오너) | 강아지 **Max**, 고양이 **Mochi** |
 | `demo-sitter@goldito.test` | Chloe (시터) | Robert의 확정 예약 1건 (아래) |
 
+**팀 QA용 세트(#163):** 사람마다 오너 1 + 시터 1 한 세트. 로그인 화면의 **Whose demo** 드롭다운에서 고르면 그 세트의 Demo owner / Demo sitter로 들어가고, Profile → Demo tools는 **그 세트만** 초기화한다(다른 세트는 그대로). 데모 도구가 켜진 빌드에서만 보이고, 심사용 빌드는 기본 한 쌍(Chloe 세트)만 쓴다.
+
+| 세트 | 오너 | 시터 |
+| :--- | :--- | :--- |
+| Chloe (기본, 슬기 QA) | `demo-owner@goldito.test` (Robert) | `demo-sitter@goldito.test` (Chloe) |
+| Paul | `demo-owner-paul@goldito.test` (Paul) | `demo-sitter-paul@goldito.test` (Paul) |
+| Allen | `demo-owner-allen@goldito.test` (Allen) | `demo-sitter-allen@goldito.test` (Allen) |
+
+> **세트가 서로 만나는 곳:** 모든 데모 시터는 모든 오너의 검색에 보인다. 세트 사이의 예약(예: Paul 오너와 Chloe 시터)은 어느 세트의 초기화에도 지워지지 않는다. 새 세트(Paul · Allen)는 시드를 돌린 뒤 첫 초기화(Pets only)로 펫과 일정이 생긴다.
+
 > **데모 이메일:** 호스팅 DB 계정은 `@goldito.test`(이름 Robert / Chloe). 호스팅 DB에 옛 `seed_demo.py`(`@pawddy.test`)를 돌리지 말 것.
 
 ### 1.3 데모 데이터 (2026-10-04 기준 — 2026-10-08 현재 아래 참고)
@@ -146,7 +156,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
-| 데스크톱 Split view — 견주 · 시터 폰 나란히 (`?view=split`, 폭 ≥ 900) | ✅ 🤖 `split.spec.ts` · 사람 ✅ SPLIT-1 – 5 (2026-10-15 Minsik) | 10 / 10.10 |
+| 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
 ---
 
@@ -604,8 +614,8 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SPLIT-1 | 컴퓨터(1440 × 900) → `/?view=split` | 폰 두 개 나란히, 위에 "Owner · Robert" / "Sitter · Chloe". 각 폰이 데모 계정으로 자동 로그인(견주 Home · 시터 Home, 동시에). 주소창은 `/?view=split` 그대로 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
-| SPLIT-2 | 시터 폰에서 **Log out** → 견주 폰 새로고침 | 시터 폰만 Welcome, 견주 폰은 로그인 유지 (폰마다 저장 키 `goldito-auth-pane-owner` · `goldito-auth-pane-sitter`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
+| SPLIT-1 | 컴퓨터(1440 × 900) → `/?view=split` | 폰 두 개 나란히, 위에 둘 다 "Not signed in". **자동 로그인 없음**: 각 폰은 로그인 화면에서 시작하고, 거기서 Demo owner / Demo sitter(또는 직접 로그인)로 들어가면 폰 위 이름이 "Robert · Owner" 같이 바뀜. 주소창은 `/?view=split` 그대로 | 🤖 `split.spec.ts` | 사람 확인 대기(2026-10-18 자동 로그인 제거) |
+| SPLIT-2 | 시터 폰에서 **Log out** → 견주 폰 새로고침 | 시터 폰만 Welcome, 견주 폰은 로그인 유지 (폰마다 저장 키 `goldito-auth-pane-left` · `goldito-auth-pane-right`) | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
 | SPLIT-3 | 폰 하나 화면 아래 **Show both phones** → split 화면 아래 **Show one phone** | 두 폰 ↔ 폰 하나로 바뀜 | 🤖 `split.spec.ts` | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
 | SPLIT-4 | 폭 800 창 또는 휴대폰에서 `/?view=split` → (컴퓨터) 다시 넓히기 | 폰 하나(휴대폰은 앱만), Show both phones 링크 없음. 다시 넓히면 두 폰으로 돌아오고 주소창도 `/?view=split` (2026-10-15 수정: 전에는 폰 하나로 남음) | 🤖 `split.spec.ts` (폭 800 · 800 → 1440) | ✅ 2026-10-15 Minsik (Chrome, 줄였다가 다시 넓히기 포함) |
 | SPLIT-5 | (DoD) 1440 × 900 → `/?view=split` → 시터 폰에서 사진 공유 또는 Complete with photo | 견주 폰에 토스트 ≤ 3초, 새로고침 없이. 1366 × 768 노트북에서도 두 폰이 잘리지 않음 | 👤 (e2e mock에는 실시간 없음) | ✅ 2026-10-15 Minsik (Chrome 전체 화면, 로컬 앱 + 호스팅 DB) |
@@ -680,6 +690,13 @@
 | PFP-5 | 사진을 누른 뒤 **Make cover** · **Move earlier** · **Move later** · **Remove photo** | 대표로 만들면 맨 앞으로. 앞뒤 이동은 한 칸씩(대표는 앞으로 못 가고, 마지막은 뒤로 못 감). Remove는 한 번 더 확인(**Keep it**으로 취소 가능) 후 Cloudinary 파일과 목록에서 사라지고 빈자리가 메워짐. 8장이면 **+**가 없음. 끌어서 순서 바꾸기는 아직 없음(버튼으로만) | 🤖 `profile-photos` | 사람 확인 대기 |
 | PFP-6 | 오너 → Profile → **Your photos** | 시터와 같은 갤러리(추가 · 크롭 · 대표 · 이동 · 삭제). 안내 문구: "A sitter sees it only once you have a booking or a question with them." | 🤖 `profile-photos` | 사람 확인 대기 |
 | PFP-7 | 시터 → 그 오너와의 예약 요청 · 문의 화면 | 오너 이름 옆(문의는 위쪽)에 **대표 사진 원**이 보임. 사진이 없으면 이니셜. 예약도 문의도 없는 오너의 사진은 DB 규칙(`014g`) 때문에 시터에게 안 보임 → 이니셜 | 🤖 `sitter-bookings` (사진 있음 / 없음) · SQL `rls_smoke` (읽기 규칙) | 사람 확인 대기 |
+
+### 3.29 데모 계정 세트 (DSET): #163 · *사전: 데모 도구가 켜진 빌드(`EXPO_PUBLIC_DEMO_TOOLS=1`), 호스팅 DB는 Paul · Allen 계정을 시드한 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo sitter** | 드롭다운에 Chloe · Paul · Allen. 고른 세트의 시터로 로그인되고 폰 위(또는 화면 위)에 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
+| DSET-2 | Paul 계정으로 Profile → **Demo tools (Paul)** → 상태 고르고 **Reset demo…** | 확인 시트에 "Paul set". 초기화 후 Chloe 세트(슬기님)의 펫 · 예약 · 일정은 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen 계정을 시드한 뒤) |
 
 ---
 

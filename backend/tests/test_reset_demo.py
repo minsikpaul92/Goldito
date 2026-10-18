@@ -186,7 +186,7 @@ def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not()
     db = world()
     calls = []
 
-    def book(client, owner_id, sitter_id, today, state):
+    def book(client, owner_id, sitter_id, today, state, demo_set):
         # By now the pets, prices and schedule must already exist for the booking RPCs to accept it.
         calls.append((owner_id, sitter_id, today, state, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
         return "b-new"
