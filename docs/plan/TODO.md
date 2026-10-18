@@ -53,6 +53,7 @@
 ## Later (only after the P0 path above is done — nothing here blocks the demo)
 
 > New feedback goes here unless it blocks the demo path or makes a false promise. Triage question: *does a judge hit it on the 5-stage path, or does the app say something untrue?*
+- **BRAND-1** Brand icons are in (`frontend/public/` for the web, `frontend/assets/` for the apps; masters in `frontend/assets/brand/`; Devpost logo `docs/hackathon/devpost-logo.png`). Still open: the **splash screen** is not configured in `app.json` (no `expo-splash-screen` plugin; `assets/splash-icon.png` is still the Expo default); **og-image** 1200×630 (link preview in chat apps) and the Play **feature graphic** 1024×500 are not made — ask Muk only when the store listing or a shared demo link needs them. Check the tab icon and the home-screen icon on a phone (test-guide BRAND-1 · BRAND-2).
 - **SAFARI-1** Other outside links still open through `Linking.openURL` (`OpenInMapsButton`, Treat check source links) and may be blocked by Safari the way the Meet button was (fixed with `ui/LinkButton`): check them in Safari and switch to `LinkButton` if they do nothing
 
 - **Phase 12 by hand:** one real-phone timing of the sticker cut-out; missing mood samples (two dogs in one photo, a cat, two 5 s clips); designed Goldito stickers from Muk to replace `frontend/assets/stickers/*.png` (same names); run test-guide **SNAP-1 … SNAP-23** once on the deployed app (the full routes were on the deployed backend only after the merge of #90).

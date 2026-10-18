@@ -138,6 +138,7 @@
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
 | Privacy 페이지 `/privacy` (로그아웃 상태 · Welcome · Profile에서 열림, Google Calendar · Meet 문단과 Limited Use 문구 — OAuth 동의 화면 Branding의 개인정보 링크) | 🤖 `privacy.spec.ts` · 사람 확인 대기 (PRIV) | 10.11 |
+| 브랜드 아이콘 (골드 코인 + 발바닥) — 브라우저 탭 · 즐겨찾기 `favicon.ico`, iOS 홈 화면 `apple-touch-icon`, 안드로이드 홈 화면 · PWA `manifest.json`(192 · 512 · maskable), 앱 아이콘 `assets/icon.png` 1024(불투명) · Android adaptive 전경 · 배경 · monochrome | 🟡 빌드 산출물 · `<head>` 태그 · manifest 확인(2026-10-18) · 폰 홈 화면 · 탭 표시는 사람 확인 대기 (BRAND) | 10 |
 | **귀가 알림** (Returned → "Max and Mochi are home safe 🏠" → 바로 뒤 리뷰 요청 알림) · **Stay summary** (기간 · 알림장 수 · 사진 수 · 완료 할 일 수 · 마지막 알림장 첫 문장) | ✅ 🤖 `completion.spec.ts` + SQL smoke N (실제 두 계정 👤) | 07C / 7C.1–7C.2 |
 | **리뷰** (★1–5 + 코멘트 ≤ 500 · 한 번만 · 귀가 뒤에만 · 시터 알림 · 시터 프로필 평균 ★ · 후기 수 · 최근 코멘트 3개) | ✅ 🤖 `completion.spec.ts` + SQL smoke N | 07C / 7C.1 · 7C.3 |
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
@@ -551,6 +552,8 @@
 | PRIV-1 | 로그아웃 상태로 Welcome 하단 **Privacy** | `/privacy`가 열리고(섹션은 **한 번에 하나만 펼쳐지는 아코디언**, 처음엔 "What this is"가 열림, 닫힌 섹션도 DOM에는 있음; `/privacy?open=google-calendar-and-meet`로 Google 문단이 바로 열림) 무엇을 저장하는지 · AI(Nebius Token Factory, 진입 코드는 모델에 안 감) · 다른 서비스(OpenStreetMap Nominatim에 집 주소가 한 번, Cloudinary) 문단, **Google Calendar and Meet** 문단(Google 로그인 없음 · `calendar.events`만 · 이벤트에 들어가는 것 · Google API Services User Data Policy / Limited Use 준수 문구)이 있음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
 | PRIV-2 | 로그인 후 Profile 아래 **Privacy**, 그리고 주소창으로 `/privacy` 직접 열기 | 열리고, 새로고침해도 역할 홈으로 튕기지 않음 | 🤖 `privacy.spec.ts` | 사람 확인 대기 |
 | PRIV-3 | 실제 문구가 앱 동작과 맞는지 읽기 (저장 항목 · 보내는 곳 · 보존 기간) | 새 서비스를 붙일 때마다 페이지도 같이 고침 | 수동 | 사람 확인 대기 |
+| BRAND-1 | 배포 URL을 브라우저 탭에서 열기 → 즐겨찾기에 추가 | 탭 · 즐겨찾기에 Vercel 기본 아이콘이 아니라 골드 코인 아이콘이 보임(캐시가 남으면 강력 새로고침) | 수동 | 사람 확인 대기 |
+| BRAND-2 | iPhone Safari → 공유 → **홈 화면에 추가** · Android Chrome → **홈 화면에 추가** | 홈 화면 아이콘이 골드 코인이고 이름이 Goldito, 안드로이드는 원형으로 잘려도 코인이 안 잘림 | 수동 | 사람 확인 대기 |
 
 ### 3.20 Snap 탭 (SNAP) — Phase 12 · D61
 
