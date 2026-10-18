@@ -47,9 +47,33 @@ export const themes = {
     text: "#1F1B16",
     textMuted: "#5E5850",
   },
+  /** Mook's Expressive draft: ink on cream, mint accent, warm tan lines. Behind a flag (`?skin=expressive`). */
+  expressive: {
+    primary: "#1B4332",
+    primaryText: "#FFFFFF",
+    background: "#FBF6EA",
+    accent: "#D8F3DC",
+    surface: "#FFFFFF",
+    border: "#E8DCC4",
+    // 4.5:1 on cream.
+    borderStrong: "#7F6F58",
+    track: "#E8DCC4",
+    text: "#1B4332",
+    // 5.9:1 on cream.
+    textMuted: "#6B5D4A",
+  },
 } satisfies Record<string, SkinColors>;
 
 export type ThemeName = keyof typeof themes;
+
+/** Font families a skin loads on top of the platform font (see `DisplayFont` in ThemeProvider). */
+const skinFonts: Partial<Record<ThemeName, typeof tokens.fontFamily>> = {
+  expressive: { display: "Fredoka_600SemiBold" },
+};
+
+export function isThemeName(value: unknown): value is ThemeName {
+  return typeof value === "string" && Object.hasOwn(themes, value);
+}
 
 export type Theme = Omit<typeof tokens, "color"> & {
   name: ThemeName;
@@ -61,5 +85,6 @@ export function buildTheme(name: ThemeName): Theme {
     ...tokens,
     name,
     color: { ...tokens.color, ...themes[name] },
+    fontFamily: { ...tokens.fontFamily, ...skinFonts[name] },
   };
 }

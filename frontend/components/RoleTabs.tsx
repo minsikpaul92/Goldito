@@ -53,7 +53,9 @@ function TabButton({ children, style, onPress, onLongPress, testID, role, ...ari
   );
 }
 
-function headerOptions(theme: Theme) {
+/** Header look shared by every role stack and tab. The screen title takes the skin's display face, if any. */
+export function headerOptions(theme: Theme) {
+  const display = theme.fontFamily.display;
   return {
     headerShadowVisible: false,
     headerStyle: { backgroundColor: theme.color.surface },
@@ -61,7 +63,8 @@ function headerOptions(theme: Theme) {
     headerTitleStyle: {
       color: theme.color.text,
       fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.semibold,
+      // The display file carries its own weight; a fontWeight on top would fake-bold it.
+      ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.semibold }),
     },
   };
 }
