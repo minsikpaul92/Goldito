@@ -5,13 +5,16 @@ import { Platform } from "react-native";
 
 import { Theme, ThemeName, buildTheme, isThemeName } from "../theme/themes";
 
-const ThemeContext = createContext<Theme>(buildTheme("default"));
+/** The app's look. `default` is the earlier look, kept for debugging (`?skin=default`). */
+const DEFAULT_SKIN: ThemeName = "expressive";
+
+const ThemeContext = createContext<Theme>(buildTheme(DEFAULT_SKIN));
 
 const SKIN_KEY = "goldito.skin";
 
 /**
- * Skin preview flag, off by default: `?skin=expressive` on web (kept for the tab session,
- * `?skin=default` clears it), else EXPO_PUBLIC_THEME, else `default`.
+ * Skin switch: `?skin=<name>` on web (kept for the tab session), else EXPO_PUBLIC_THEME,
+ * else DEFAULT_SKIN. `?skin=default` brings back the earlier look.
  */
 function flaggedSkin(): ThemeName {
   if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -28,14 +31,11 @@ function flaggedSkin(): ThemeName {
     }
   }
   const env = process.env.EXPO_PUBLIC_THEME;
-  return isThemeName(env) ? env : "default";
+  return isThemeName(env) ? env : DEFAULT_SKIN;
 }
 
-/** Loads the skin's display face. Titles show the platform font until it arrives. */
-function DisplayFont() {
-  useFonts({ Fredoka_600SemiBold });
-  return null;
-}
+/** Display faces a skin may name in `fontFamily.display`. */
+const DISPLAY_FONTS = { Fredoka_600SemiBold };
 
 type Props = {
   /** Active preset. Unset = the flag above; the selected pet's skin arrives in 11.10. */
@@ -46,13 +46,13 @@ type Props = {
 export function ThemeProvider({ name, children }: Props) {
   const [flagged] = useState(flaggedSkin);
   const active = name ?? flagged;
-  const theme = useMemo(() => buildTheme(active), [active]);
-  return (
-    <ThemeContext.Provider value={theme}>
-      {theme.fontFamily.display ? <DisplayFont /> : null}
-      {children}
-    </ThemeContext.Provider>
-  );
+  const [fontsLoaded] = useFonts(DISPLAY_FONTS);
+  const theme = useMemo(() => {
+    const built = buildTheme(active);
+    // Until the display face loads (or if it never does), titles use the platform font.
+    return fontsLoaded ? built : { ...built, fontFamily: { ...built.fontFamily, display: undefined } };
+  }, [active, fontsLoaded]);
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
 
 /** Design values for screens and `components/ui` — use this instead of importing `tokens`. */

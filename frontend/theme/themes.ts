@@ -47,7 +47,7 @@ export const themes = {
     text: "#1F1B16",
     textMuted: "#5E5850",
   },
-  /** Mook's Expressive draft: ink on cream, mint accent, warm tan lines. Behind a flag (`?skin=expressive`). */
+  /** The app's look (Mook's Expressive): ink on cream, mint accent, warm tan lines. `default` is the earlier look. */
   expressive: {
     primary: "#1B4332",
     primaryText: "#FFFFFF",
