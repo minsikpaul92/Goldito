@@ -165,7 +165,7 @@ test.describe("profile photos", () => {
     await expect(screen.getByText("Cover", { exact: true })).toHaveCount(1);
   });
 
-  test("the crop moves in every direction by drag and by the arrows, and the empty tile is as small as a photo", async ({ page }) => {
+  test("the crop moves in every direction by drag, and the empty tile is as small as a photo", async ({ page }) => {
     const db = await setup(page);
     await signIn(page, SITTER);
     const screen = app(page);
@@ -198,19 +198,6 @@ test.describe("profile photos", () => {
     const dragged = await position();
     expect(dragged.x).toBeGreaterThan(start.x);
     expect(dragged.y).toBeGreaterThan(start.y);
-
-    // The four arrows move it by the same small step, in the direction they point.
-    await screen.getByTestId("crop-move-left").click();
-    const left = await position();
-    expect(left.x).toBeLessThan(dragged.x);
-    await screen.getByTestId("crop-move-up").click();
-    const up = await position();
-    expect(up.y).toBeLessThan(left.y);
-    await screen.getByTestId("crop-move-right").click();
-    await screen.getByTestId("crop-move-down").click();
-    const back = await position();
-    expect(back.x).toBeCloseTo(dragged.x, 0);
-    expect(back.y).toBeCloseTo(dragged.y, 0);
 
     await screen.getByTestId("crop-confirm").click();
     await expect(screen.getByTestId("crop-sheet")).toHaveCount(0);
