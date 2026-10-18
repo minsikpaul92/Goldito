@@ -418,6 +418,18 @@ export default function ProfileScreen() {
           </Text>
         </View>
       ) : null}
+      {loaded.role === "sitter" ? (
+        <View style={styles.group} testID="profile-answers">
+          <Text style={styles.groupTitle}>Your answers</Text>
+          <Text style={styles.muted}>The questions owners read when they look for a sitter. Change them any time.</Text>
+          <Button
+            label="Edit your answers"
+            variant="secondary"
+            onPress={() => router.push("/sitter-onboarding?edit=1")}
+            testID="profile-answers-edit"
+          />
+        </View>
+      ) : null}
       <Sheet visible={consenting} title="Turn on auto-send?" onClose={() => setConsenting(false)} testID="ai-consent-sheet">
         <Text style={styles.muted}>Replies go out in your name. You're responsible for what's sent.</Text>
         <Button
