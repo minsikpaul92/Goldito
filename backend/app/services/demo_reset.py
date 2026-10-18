@@ -1,4 +1,4 @@
-"""Put one demo set (an owner and a sitter) into a known test state (review FB-10 + the temporary demo reset).
+"""Put one demo account (or a whole set) into a known test state (review FB-10 + the temporary demo reset).
 
 Five states, each a point to start a manual test from:
 
@@ -38,6 +38,7 @@ from app.services.demo_accounts import (
     find_user_id,
 )
 
+Scope = Literal["owner", "sitter", "both"]
 State = Literal["empty", "pets", "confirmed", "ready", "in_care"]
 STATES: tuple[State, ...] = ("empty", "pets", "confirmed", "ready", "in_care")
 
@@ -63,46 +64,56 @@ class Step:
     nulls: tuple[str, ...] = ()
 
 
+# What a stay leaves behind on the owner's pets (the sitter's posts and notes). Either side's reset removes these
+# together with the pair's bookings; the rest of the pet data is the owner's own.
+STAY_PET_TABLES = (
+    ("feed posts", "feed_posts"),
+    ("daily reports (pets)", "daily_reports"),
+    ("quick check-ins", "care_checkins"),
+    ("task logs", "task_logs"),
+    ("Life Records", "pet_life_records"),
+)
+OWNER_PET_TABLES = (
+    ("care tasks", "care_tasks"),
+    ("care requests", "care_requests"),
+    ("care change requests", "care_change_requests"),
+    ("pet cautions", "pet_cautions"),
+    ("media rows", "media"),
+)
+
+
 def plan(
     owner_id: str,
     sitter_id: str,
     pet_ids: list[str],
     state: State = "pets",
     *,
+    scope: Scope = "both",
     pair_message_ids: list[str] | None = None,
     keep_schedule: bool = False,
 ) -> list[Step]:
-    """What to delete, in order. Only the pair's own bookings and inquiries; their children cascade.
-    `pair_message_ids` are the messages of the pair's inquiries (the voice learned from them goes first,
-    before the inquiries take the link with them)."""
+    """What to delete, in order. `scope` says whose own data goes: the owner's (pets and their care data), the
+    sitter's (schedule), or both. Either way the pair's own bookings and inquiries go, with what a stay left on the
+    pets; their children cascade. `pair_message_ids` are the messages of the pair's inquiries (the voice learned from
+    them goes first, before the inquiries take the link with them)."""
+    owner_side = scope in ("owner", "both")
+    sitter_side = scope in ("sitter", "both")
     pair = {"owner_id": [owner_id], "sitter_id": [sitter_id]}
     steps = [
         Step("learned tone samples", "tone_samples", {"sitter_id": [sitter_id], "source": LEARNED_SAMPLES, "source_message_id": pair_message_ids or []}),
         Step("bookings", "bookings", pair),
         Step("inquiries", "inquiries", pair),
         # Notices about a booking went with it; one about another account's booking stays.
-        Step("notifications", "notifications", {"user_id": [owner_id, sitter_id]}, nulls=("booking_id",)),
+        Step("notifications", "notifications", {"user_id": ([owner_id] if owner_side else []) + ([sitter_id] if sitter_side else [])}, nulls=("booking_id",)),
     ]
-    for label, table in (
-        ("feed posts", "feed_posts"),
-        ("daily reports (pets)", "daily_reports"),
-        ("quick check-ins", "care_checkins"),
-        ("task logs", "task_logs"),
-        ("care tasks", "care_tasks"),
-        ("care requests", "care_requests"),
-        ("care change requests", "care_change_requests"),
-        ("pet cautions", "pet_cautions"),
-        ("Life Records", "pet_life_records"),
-        ("media rows", "media"),
-    ):
+    for label, table in STAY_PET_TABLES + (OWNER_PET_TABLES if owner_side else ()):
         steps.append(Step(label, table, {"pet_id": pet_ids}))
-    steps += [
-        Step("knowledge chunks (pets)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "pet_id": pet_ids}),
-        Step("knowledge chunks (owner)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "owner_id": [owner_id]}),
-    ]
-    if not keep_schedule:
+    steps.append(Step("knowledge chunks (pets)", "knowledge_chunks", {"source_type": STAY_CHUNKS if owner_side else ["life_record", "inquiry"], "pet_id": pet_ids}))
+    if owner_side:
+        steps.append(Step("knowledge chunks (owner)", "knowledge_chunks", {"source_type": STAY_CHUNKS, "owner_id": [owner_id]}))
+    if sitter_side and not keep_schedule:
         steps.append(Step("schedule rows", "sitter_availability", {"sitter_id": [sitter_id]}))
-    if state == "empty":
+    if owner_side and state == "empty":
         steps.append(Step("pets", "pets", {"owner_id": [owner_id]}))
     return steps
 
@@ -214,9 +225,11 @@ def open_schedule(client: Client, sitter_id: str, today: date) -> int:
     return len(rows)
 
 
-def sync_display_names(client: Client, owner_id: str, sitter_id: str, demo_set: DemoSet = DEFAULT_SET) -> None:
+def sync_display_names(client: Client, owner_id: str, sitter_id: str, demo_set: DemoSet = DEFAULT_SET, scope: Scope = "both") -> None:
     """profiles.display_name is only written by the signup trigger, so a renamed demo user keeps the old one (M-24)."""
-    for user_id, demo in ((owner_id, demo_set.owner), (sitter_id, demo_set.sitter)):
+    mine = [(owner_id, demo_set.owner)] if scope in ("owner", "both") else []
+    mine += [(sitter_id, demo_set.sitter)] if scope in ("sitter", "both") else []
+    for user_id, demo in mine:
         client.table("profiles").update({"display_name": demo.display_name}).eq("id", user_id).execute()
 
 
@@ -351,15 +364,19 @@ def reset(
     state: State = "pets",
     apply: bool,
     demo_set: DemoSet = DEFAULT_SET,
+    scope: Scope = "both",
     book: Booker = book_for_state,
 ) -> list[tuple[str, int]]:
-    """Dry run counts each step; apply deletes, then builds the state. Returns (label, rows)."""
+    """Dry run counts each step; apply deletes, then builds the state. Returns (label, rows). `scope` is whose
+    account is reset: the owner's, the sitter's, or both (the terminal script)."""
     if state not in STATES:
         raise ValueError(f"unknown state {state!r}")
     report = []
     keep_schedule = sitter_has_other_bookings(client, owner_id, sitter_id)
+    owner_side = scope in ("owner", "both")
+    sitter_side = scope in ("sitter", "both")
     steps = plan(
-        owner_id, sitter_id, owner_pet_ids(client, owner_id), state,
+        owner_id, sitter_id, owner_pet_ids(client, owner_id), state, scope=scope,
         pair_message_ids=pair_message_ids(client, owner_id, sitter_id), keep_schedule=keep_schedule,
     )
     for step in steps:
@@ -369,14 +386,19 @@ def reset(
     if keep_schedule:
         report.append(("schedule kept (the sitter has another owner's confirmed booking)", 0))
     if apply:
-        if state != "empty":
+        building = state in ("confirmed", "ready", "in_care")
+        # A stay needs pets and prices on both sides; this only adds what is missing, it never removes.
+        if (owner_side and state != "empty") or building:
             ensure_pets(client, owner_id, today)
-        ensure_sitter_rates(client, sitter_id)
-        ensure_home_point(client, "owner", owner_id)
-        ensure_home_point(client, "sitter", sitter_id)
-        if not keep_schedule:
-            open_schedule(client, sitter_id, today)
-        sync_display_names(client, owner_id, sitter_id, demo_set)
-        if state in ("confirmed", "ready", "in_care"):
+        if sitter_side or building:
+            ensure_sitter_rates(client, sitter_id)
+        if owner_side:
+            ensure_home_point(client, "owner", owner_id)
+        if sitter_side:
+            ensure_home_point(client, "sitter", sitter_id)
+            if not keep_schedule:
+                open_schedule(client, sitter_id, today)
+        sync_display_names(client, owner_id, sitter_id, demo_set, scope)
+        if building:
             book(client, owner_id, sitter_id, today, state, demo_set)
     return report

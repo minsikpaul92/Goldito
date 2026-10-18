@@ -297,3 +297,37 @@ def test_any_other_error_on_the_first_yes_stops_the_reset(monkeypatch):
 
     with pytest.raises(demo_reset.authz.RpcError):
         demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")
+
+
+def test_an_owner_reset_keeps_the_sitters_own_data():
+    """The owner side: pets and their care data go, the pair's bookings go, the sitter's schedule and voice stay."""
+    db = world()
+    db.tables["care_tasks"] = [{"id": "ct1", "pet_id": MAX}]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="empty", apply=True, scope="owner")
+
+    assert ids(db, "bookings") == {"b-other"}
+    assert ids(db, "care_tasks") == set()
+    assert ids(db, "pets") == {"other-pet"}
+    assert ids(db, "notifications") == {"n2", "n3"}  # the sitter's notice stays
+    assert ids(db, "sitter_availability") == {"a-old"}  # her schedule stays
+    assert db.tables["sitter_rates"] == []  # nothing was built on her side
+    assert db.tables["profiles"][1]["display_name"] == "y"  # and her name was not touched
+
+
+def test_a_sitter_reset_keeps_the_owners_own_data():
+    """The sitter side: her schedule is reopened and the pair's bookings go, the owner's pets and care plan stay."""
+    db = world()
+    db.tables["care_tasks"] = [{"id": "ct1", "pet_id": MAX}]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, scope="sitter")
+
+    assert ids(db, "bookings") == {"b-other"}
+    assert ids(db, "pets") == {MAX, "other-pet"}
+    assert ids(db, "care_tasks") == {"ct1"}  # the owner's care plan stays
+    assert ids(db, "daily_reports") == set()  # what the stay left on the pet goes with the booking
+    assert ids(db, "notifications") == {"n1", "n3"}  # the owner's notice stays
+    assert "a-old" not in ids(db, "sitter_availability")  # her schedule was reopened
+    assert len(db.tables["sitter_rates"]) == 1
+    assert db.tables["profiles"][0]["display_name"] == "x"  # the owner's name was not touched
+

@@ -77,7 +77,7 @@ def test_a_demo_account_resets_to_the_chosen_state(client: TestClient, monkeypat
     sign_in_as(DEMO_SITTER, "demo-sitter@goldito.test")
     seen = {}
 
-    def fake_reset(_client, owner_id, sitter_id, today, *, state, apply, demo_set):
+    def fake_reset(_client, owner_id, sitter_id, today, *, state, apply, demo_set, scope):
         seen.update(owner=owner_id, sitter=sitter_id, state=state, apply=apply)
         return [("bookings", 1), ("notifications", 0)]
 
@@ -114,12 +114,12 @@ def test_each_set_resets_only_its_own_pair(client: TestClient, monkeypatch: pyte
     monkeypatch.setattr(
         demo.demo_reset,
         "reset",
-        lambda _c, owner_id, sitter_id, today, *, state, apply, demo_set: seen.append((owner_id, sitter_id, demo_set.key)) or [],
+        lambda _c, owner_id, sitter_id, today, *, state, apply, demo_set, scope: seen.append((owner_id, sitter_id, demo_set.key, scope)) or [],
     )
     sign_in_as("po", "demo-owner-paul@goldito.test")
 
     assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
-    assert seen == [("po", "ps", "paul")]
+    assert seen == [("po", "ps", "paul", "owner")]  # an owner resets the owner side only
 
 
 def test_a_set_cannot_reset_another_sets_accounts(client: TestClient, monkeypatch: pytest.MonkeyPatch):
@@ -128,4 +128,17 @@ def test_a_set_cannot_reset_another_sets_accounts(client: TestClient, monkeypatc
     sign_in_as("o1", "demo-owner-paul@goldito.test")  # Paul's email on the default owner's id
 
     assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 403
+
+
+def test_a_sitter_account_resets_the_sitter_side_only(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    enable(monkeypatch)
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c, demo_set=None: ("po", "ps"))
+    scopes = []
+    monkeypatch.setattr(
+        demo.demo_reset, "reset", lambda _c, *a, scope, **k: scopes.append(scope) or []
+    )
+    sign_in_as("ps", "demo-sitter-paul@goldito.test")
+
+    assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
+    assert scopes == ["sitter"]
 

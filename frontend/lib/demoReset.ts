@@ -2,21 +2,25 @@ import { ApiError, apiPost } from "./api";
 import { findDemoAccount } from "./demo";
 
 /**
- * Temporary testing reset (backend `POST /api/demo/reset`): puts the caller's demo set (their owner and
- * sitter) back into a known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
+ * Temporary testing reset (backend `POST /api/demo/reset`): puts the caller's own demo account back into
+ * a known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
  * judging (docs/plan/TODO.md, "Demo reset").
  */
 export type DemoState = "empty" | "pets" | "confirmed" | "ready" | "in_care";
 
-/** The states to reset to; the hints name the sitter of the caller's set. */
-export function demoStates(sitterName: string): { value: DemoState; label: string; hint: string }[] {
-  return [
-    { value: "empty", label: "Empty", hint: "No pets yet. The sitter is ready." },
-    { value: "pets", label: "Pets only", hint: "Max and Mochi, no booking." },
+/**
+ * The states to reset to. Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
+ * The hints name the sitter of the caller's set. A sitter has no "Empty" (she has no pets to remove).
+ */
+export function demoStates(role: "owner" | "sitter", sitterName: string): { value: DemoState; label: string; hint: string }[] {
+  const states: { value: DemoState; label: string; hint: string }[] = [
+    { value: "empty", label: "Empty", hint: "No pets yet." },
+    { value: "pets", label: role === "owner" ? "Pets only" : "Clean", hint: role === "owner" ? "Max and Mochi, no booking." : "No bookings, schedule open." },
     { value: "confirmed", label: "Booking accepted", hint: `${sitterName} accepted a stay. Next: Finish booking.` },
     { value: "ready", label: "Ready for drop-off", hint: `Paid, drop-off in an hour. ${sitterName} can tap Received.` },
     { value: "in_care", label: "In care", hint: `Max and Mochi are with ${sitterName}.` },
   ];
+  return role === "owner" ? states : states.filter((s) => s.value !== "empty");
 }
 
 export const isDemoToolsEnabled = process.env.EXPO_PUBLIC_DEMO_TOOLS === "1";

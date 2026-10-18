@@ -26,7 +26,8 @@ export function DemoTools() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mine = findDemoAccount(session.session?.user.email);
-  const states = demoStates(mine?.set.sitter.name ?? "The sitter");
+  const states = demoStates(mine?.role ?? "owner", mine?.set.sitter.name ?? "The sitter");
+  const partner = mine ? (mine.role === "owner" ? mine.set.sitter.name : mine.set.owner.name) : "the other account";
   const chosen = states.find((s) => s.value === state)!;
 
   const run = async () => {
@@ -47,7 +48,7 @@ export function DemoTools() {
 
   return (
     <View style={styles.group} testID="demo-tools">
-      <Text style={styles.title}>{`Demo tools${mine ? ` (${mine.set.label})` : ""}`}</Text>
+      <Text style={styles.title}>{`Demo tools${mine ? ` (${mine.name})` : ""}`}</Text>
       {states.map((option) => (
         <CheckRow
           key={option.value}
@@ -61,7 +62,7 @@ export function DemoTools() {
       ))}
       <TextButton label="Reset demo…" onPress={() => setAsking(true)} danger testID="demo-reset-open" />
       <Sheet visible={asking} title="Reset the demo?" onClose={() => (busy ? undefined : setAsking(false))} testID="demo-reset-sheet">
-        <Text style={styles.body}>{`${mine?.set.label ?? "Your"} set goes back to “${chosen.label}”. Its bookings, inquiries, notices and reports are deleted. Other sets stay.`}</Text>
+        <Text style={styles.body}>{`${mine?.name ?? "This account"} goes back to “${chosen.label}”. Bookings, inquiries and notices with ${partner} are deleted. Other accounts stay.`}</Text>
         {error ? (
           <Text accessibilityRole="alert" style={styles.error} testID="demo-reset-error">
             {error}

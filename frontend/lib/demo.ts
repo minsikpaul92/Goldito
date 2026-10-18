@@ -20,13 +20,13 @@ export const DEMO_SETS: DemoSet[] = [
   {
     key: "paul",
     label: "Paul",
-    owner: { email: "demo-owner-paul@goldito.test", name: "Paul" },
+    owner: { email: "demo-owner-paul@goldito.test", name: "Peter" },
     sitter: { email: "demo-sitter-paul@goldito.test", name: "Paul" },
   },
   {
     key: "allen",
     label: "Allen",
-    owner: { email: "demo-owner-allen@goldito.test", name: "Allen" },
+    owner: { email: "demo-owner-allen@goldito.test", name: "Alex" },
     sitter: { email: "demo-sitter-allen@goldito.test", name: "Allen" },
   },
 ];

@@ -1,9 +1,9 @@
 """Temporary demo reset (testing only): `POST /api/demo/reset`.
 
-Puts the caller's demo set (their owner and sitter) back into one of a few known states from the Profile → Demo tools
+Puts the caller's own demo account (an owner or a sitter) back into one of a few known states from the Profile → Demo tools
 sheet, so a manual test can start from "before any booking" without a terminal. It deletes
 data, so it is off unless `DEMO_RESET_ENABLED=1` (answers 404 as if it did not exist) and only
-the demo accounts may call it, each resetting only its own set. Remove it before judging: unset the variable, then delete
+the demo accounts may call it, each resetting only itself. Remove it before judging: unset the variable, then delete
 this file, `app/services/demo_reset.py` and the Demo tools sheet (docs/plan/TODO.md, "Demo reset").
 """
 
@@ -48,5 +48,7 @@ def reset_demo(body: ResetRequest, user: CurrentUser = Depends(get_current_user)
     if user.id not in (owner_id, sitter_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the demo accounts can reset the demo.")
     today = datetime.now(ZoneInfo(settings.app_timezone)).date()
-    report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set)
+    # Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
+    scope = demo_accounts.role_for_email(user.email)
+    report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
     return ResetResponse(state=body.state, deleted={label: rows for label, rows in report if rows})

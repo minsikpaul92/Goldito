@@ -8,7 +8,7 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 const PASSWORD = "e2e-demo-password";
 const chloeSitter = { ...SITTER, email: "demo-sitter@goldito.test", password: PASSWORD };
-const paulOwner = { ...OWNER, id: "00000000-0000-4000-8000-0000000000a9", email: "demo-owner-paul@goldito.test", displayName: "Paul", password: PASSWORD };
+const paulOwner = { ...OWNER, id: "00000000-0000-4000-8000-0000000000a9", email: "demo-owner-paul@goldito.test", displayName: "Peter", password: PASSWORD };
 const paulSitter = { ...SITTER, id: "00000000-0000-4000-8000-0000000000b9", email: "demo-sitter-paul@goldito.test", displayName: "Paul", password: PASSWORD };
 
 test.describe("demo sets", () => {
@@ -37,7 +37,19 @@ test.describe("demo sets", () => {
     await expect(page.getByText("Chloe · Sitter")).toBeVisible();
   });
 
-  test("a set's account sees its own set in the demo tools", async ({ page }) => {
+  test("a sitter account resets on its own and has no Empty state", async ({ page }) => {
+    await mockSupabase(page, [paulSitter]);
+    await signIn(page, paulSitter);
+    await expect(page).toHaveURL(/\/sitter$/);
+    const screen = app(page);
+
+    await screen.getByTestId("open-profile").click();
+    await expect(screen.getByTestId("demo-tools")).toContainText("Demo tools (Paul)");
+    await expect(screen.getByTestId("demo-state-empty")).toHaveCount(0);
+    await expect(screen.getByTestId("demo-state-pets")).toContainText("Clean");
+  });
+
+  test("an account sees its own name in the demo tools", async ({ page }) => {
     await mockSupabase(page, [paulOwner]);
     await page.route("**/api/demo/reset", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ state: "pets", deleted: {} }) }),
@@ -47,8 +59,10 @@ test.describe("demo sets", () => {
     const screen = app(page);
 
     await screen.getByTestId("open-profile").click();
-    await expect(screen.getByTestId("demo-tools")).toContainText("Demo tools (Paul)");
+    await expect(screen.getByTestId("demo-tools")).toContainText("Demo tools (Peter)");
     await screen.getByTestId("demo-reset-open").click();
-    await expect(screen.getByTestId("demo-reset-sheet")).toContainText("Paul set");
+    // It names the account and its partner, and says other accounts stay.
+    await expect(screen.getByTestId("demo-reset-sheet")).toContainText("Peter goes back to");
+    await expect(screen.getByTestId("demo-reset-sheet")).toContainText("with Paul");
   });
 });

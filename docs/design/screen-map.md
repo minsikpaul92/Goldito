@@ -690,10 +690,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `option.label` | ``demo-state-${option.value}`` | 52 |
-| TextButton | Reset demo… | `demo-reset-open` | 62 |
-| Sheet | Reset the demo? | `demo-reset-sheet` | 63 |
-| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 70 |
+| CheckRow | `option.label` | ``demo-state-${option.value}`` | 53 |
+| TextButton | Reset demo… | `demo-reset-open` | 63 |
+| Sheet | Reset the demo? | `demo-reset-sheet` | 64 |
+| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 71 |
 
 ### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
 

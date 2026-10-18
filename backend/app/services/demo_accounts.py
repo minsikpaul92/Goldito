@@ -38,13 +38,13 @@ DEMO_SETS = (
     DemoSet(
         "paul",
         "Paul",
-        DemoUser("demo-owner-paul@goldito.test", "owner", "Paul"),
+        DemoUser("demo-owner-paul@goldito.test", "owner", "Peter"),
         DemoUser("demo-sitter-paul@goldito.test", "sitter", "Paul"),
     ),
     DemoSet(
         "allen",
         "Allen",
-        DemoUser("demo-owner-allen@goldito.test", "owner", "Allen"),
+        DemoUser("demo-owner-allen@goldito.test", "owner", "Alex"),
         DemoUser("demo-sitter-allen@goldito.test", "sitter", "Allen"),
     ),
 )
@@ -57,6 +57,15 @@ def set_for_email(email: str | None) -> DemoSet | None:
     """The set an email belongs to, or None. The email only names the set; the caller's id still decides."""
     lowered = (email or "").lower()
     return next((s for s in DEMO_SETS if lowered in (s.owner.email, s.sitter.email)), None)
+
+
+def role_for_email(email: str | None) -> str | None:
+    """"owner" or "sitter" for a demo account's email, otherwise None."""
+    lowered = (email or "").lower()
+    demo_set = set_for_email(lowered)
+    if demo_set is None:
+        return None
+    return "owner" if lowered == demo_set.owner.email else "sitter"
 
 
 def set_for_key(key: str) -> DemoSet:
