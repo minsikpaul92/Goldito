@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { DemoTools } from "../components/DemoTools";
 import { OpenInMapsButton } from "../components/OpenInMapsButton";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
+import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
 import { Button } from "../components/ui/Button";
 import { CheckRow } from "../components/ui/CheckRow";
 import { EmptyState } from "../components/ui/EmptyState";
@@ -431,7 +432,7 @@ export default function ProfileScreen() {
       {loaded.role === "sitter" ? (
         <View style={styles.group} testID="profile-answers">
           <Text style={styles.groupTitle}>Your answers</Text>
-          <Text style={styles.muted}>The questions owners read when they look for a sitter. Change them any time.</Text>
+          <SitterAnswersSummary sitterId={profile.id} />
           <Button
             label="Edit your answers"
             variant="secondary"

@@ -105,7 +105,7 @@
 | 시터 Home 대시보드 | ✅ 🤖 | 03B.8 |
 | 견적 · 동의서 · 데모 결제 · 시간 제한 출입 정보 (+ 결제 전 입구 정보 경고, ENTRY-1) | ✅ 🤖 | 03C |
 | **시터 검색 (SS)** — 날짜 · 시간 · 집 / 현재 위치 · 반경 1–100 km(정확히), 머무는 내내 가능한 시터만, 거리는 정수 km | 🟡 화면 · 슬라이더 · 현재 위치 · 빈 상태 · Book 채우기 ✅ 🤖 `sitter-search.spec.ts` · SQL(정확한 반경) smoke는 CI 대기 — 호스팅 DB에는 +2 km 여유가 있는 옛 `014c`가 들어 있어 머지 때 다시 적용 · 사람 확인 대기 | 03B SS |
-| **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간 · 쉬는 날)도 ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
+| **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
 | **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API ✅ · 시터 Profile의 갤러리(추가 · 라운드 크롭 · 대표로 · 앞뒤 이동 · 삭제 · 최대 8장 · 빈 실루엣) ✅ 🤖 SQL smoke + `test_profile_photos.py` + `profile-photos.spec.ts` · 오너 Profile의 같은 갤러리와 시터가 예약 · 문의 화면에서 보는 오너 대표 사진(#137) ✅ · 시터 상세 한 줄과 뷰어(#136) · Privacy 페이지의 Profile photos 문구 ✅ · 사람 확인 대기(`014g`는 호스팅 DB에 적용됨) | #135 – #137 |
 
 ### Stage 4 — 돌봄 · 알림장
@@ -678,10 +678,10 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | ONB-1 | (DB) `rls_smoke.sql`의 014f 블록 | 모든 질문을 건너뛰고 끝내도 `onboarded_at`이 찍히고 아무것도 저장되지 않음 · 빈 답은 건너뜀으로 처리 · 저장하면 목록 전체가 교체됨 · `multiple_owners` · `max_pets` · 자기소개가 `accepts_multiple_owners` · `default_max_pets` · `bio`로 복사됨 · 음성 답은 근거 문장을 가짐 · 선택지 밖 값 · 모르는 질문 · 질문 없는 직접 질문 · 목록이 아닌 입력 · 601자 소개는 거부되고 아무것도 바뀌지 않음 · 다른 시터는 못 읽고 오너는 모두 읽음 · 오너 `forbidden` · 직접 쓰기 / anon은 권한 없음 | SQL `rls_smoke` (로컬 Postgres 17 전체 파일 744 PASS, 2026-10-17) | 호스팅 DB에 `014f` 적용 후 |
-| ONB-2 | **새 시터**로 가입(또는 `onboarded_at`이 null인 시터)해 로그인 | 시터 홈 대신 **"A few questions about you"**가 열림. 번호 1–10 질문, 질문마다 칩(있는 것)과 **Note (optional)** 박스. 아무것도 안 쓰고 **Skip all for now** → 시터 홈으로 가고 다시 안 물음. 이미 있던 시터(`014f`가 완료로 표시)는 이 화면을 안 만남 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-3 | 칩 · 메모를 몇 개 채우고 **Review** | 채운 질문만 "번호. 질문 / 칩 · 메모"로 보이고 나머지는 "N skipped". 강아지 크기는 여러 개 고르면 "Small, Large". **Back to edit**으로 돌아가도 쓴 것이 남음. 칩을 한 번 더 누르면 해제(건너뜀) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-5 | 온보딩의 **When can you host?** → **Set weekly availability** → 요일 × 시간대 칸을 눌러 닫고 Apply. **Add a day off**로 날짜 하나 고르기. Review → Finish | 요약이 "Closed: Sun, Sat night."처럼 보이고, Review에도 같은 내용 + "Days off". **Finish 전에는 스케줄에 아무것도 쓰지 않음**. Finish 후 Schedule 달력에 규칙(빗금)과 쉬는 날(세 시간대 모두 닫힘)이 보임. 이 섹션을 안 건드리면 스케줄은 그대로(이미 규칙이 있으면 요약에 그대로 보임) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
-| ONB-4 | **Finish** | "Saved" 토스트 후 시터 홈. 같은 시터는 Profile → **Edit your answers**에서 같은 화면(Skip all 없음)을 열어 고치고 다시 저장할 수 있음. 직접 추가한 질문(최대 5개)과 자기소개도 저장됨 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-2 | **새 시터**로 가입(또는 `onboarded_at`이 null인 시터)해 로그인 | 시터 홈 대신 **"A few questions about you"**가 열림. 번호 1–10 질문, 질문마다 칩과 칩 오른쪽의 **+** 버튼(누르면 메모 칸이 열리고 **-** 로 다시 접음, 접어도 쓴 메모는 남음). 10번(인계)은 **I pick up**과 **Owner brings**를 둘 다 고를 수 있음. 개수 질문의 마지막 칩은 **4+** · **5+**(저장되는 값은 숫자, 이상의 뜻). 아무것도 안 쓰고 **Skip all for now** → 시터 홈으로 가고 다시 안 물음. 이미 있던 시터(`014f`가 완료로 표시)는 이 화면을 안 만남 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-3 | 칩을 몇 개 고르고 **+**로 메모를 하나 쓴 뒤 **Review** | 채운 질문만 "번호. 질문 / 칩 · 메모"로 보이고 나머지는 "N skipped". 강아지 크기는 여러 개 고르면 "Small, Large". **Back to edit**으로 돌아가도 쓴 것이 남음. 칩을 한 번 더 누르면 해제(건너뜀) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-5 | 온보딩의 **When can you host?** → **Set weekly availability** → 요일 × 시간대 칸을 눌러 닫고 Apply. Review → Finish | 요약이 "Closed: Sun, Sat night."처럼 보이고, Review에도 같은 내용. **Finish 전에는 스케줄에 아무것도 쓰지 않음**. Finish 후 Schedule 달력에 규칙(빗금)과 쉬는 날(세 시간대 모두 닫힘)이 보임. 이 섹션을 안 건드리면 스케줄은 그대로(이미 규칙이 있으면 요약에 그대로 보임) | 🤖 `sitter-onboarding` | 사람 확인 대기 |
+| ONB-4 | **Finish** | "Saved" 토스트 후 시터 홈. 같은 시터는 Profile → **Your answers**에 답한 질문만 읽기용 목록으로 보이고(안 답한 질문은 안 보임), **Edit your answers**에서 같은 화면(Skip all 없음)을 열어 고치고 다시 저장할 수 있음. 직접 추가한 질문(최대 5개)과 자기소개도 저장됨 | 🤖 `sitter-onboarding` | 사람 확인 대기 |
 
 ### 3.28 프로필 사진 (PFP) — #135 – #137 · *DB · 업로드 API · 시터 갤러리까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 import { ScrollView, StyleSheet, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -11,12 +11,13 @@ type Props = {
   testID?: string;
 };
 
-export function Screen({ children, contentStyle, testID }: Props) {
+export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, testID }, ref) {
   const styles = useThemedStyles(makeStyles);
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
+        ref={ref}
         contentContainerStyle={[styles.content, contentStyle]}
         keyboardShouldPersistTaps="handled"
         testID={testID}
@@ -25,7 +26,7 @@ export function Screen({ children, contentStyle, testID }: Props) {
       </ScrollView>
     </SafeAreaView>
   );
-}
+});
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
