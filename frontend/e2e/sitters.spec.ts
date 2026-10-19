@@ -151,7 +151,7 @@ test.describe("your sitters", () => {
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
 
     // No bookings, no sitters of their own: the sitters on Goldito instead of an empty page.
-    await expect(screen.getByTestId("sitters-on-goldito")).toContainText("Open a profile to ask before booking");
+    await expect(screen.getByTestId("sitters-on-goldito")).toContainText("Open a profile to ask");
     await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(2);
     await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("North York · 3 yrs experience");
     await expect(screen.getByTestId("book-care")).toBeVisible();

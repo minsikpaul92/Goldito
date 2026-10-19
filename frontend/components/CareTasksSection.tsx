@@ -121,7 +121,7 @@ export function CareTasksSection({ pet, userId }: Props) {
     setBusy(true);
     try {
       await answerCareCounter(request!.id, accept);
-      toast.show(accept ? "Accepted — added to the tasks ✅" : "Declined");
+      toast.show(accept ? "Accepted, added to the tasks ✅" : "Declined");
       await Promise.all([reloadStay(), load()]);
     } catch (error) {
       toast.show((error as Error).message);
@@ -140,7 +140,7 @@ export function CareTasksSection({ pet, userId }: Props) {
       </View>
       <Text style={styles.hint}>
         {stay
-          ? `What ${pet.name}'s sitter should do. A stay is on, so new tasks go through a care request — ${stay.sitterName} approves them.`
+          ? `What ${pet.name}'s sitter should do. A stay is on, so ${stay.sitterName} approves new tasks.`
           : `What ${pet.name}'s sitter should do each day.`}
       </Text>
       <Button
@@ -194,7 +194,7 @@ export function CareTasksSection({ pet, userId }: Props) {
       ) : null}
       {state.status === "ready" && tasks.length === 0 ? (
         <Text style={styles.muted} testID="care-empty">
-          No tasks yet — add a medication, meal or walk and your sitter will see it.
+          No tasks yet. Add a medication, meal or walk.
         </Text>
       ) : null}
 
@@ -259,7 +259,7 @@ export function CareTasksSection({ pet, userId }: Props) {
           if (editing) {
             const timeChanged = editing.scheduled_time.slice(0, 5) !== input.time;
             await updateCareTask(editing.id, input);
-            toast.show(timeChanged ? `Saved — now at ${formatTime(input.time)}` : `Saved ${input.title}`);
+            toast.show(timeChanged ? `Saved, now at ${formatTime(input.time)}` : `Saved ${input.title}`);
             setEditing(null);
           } else {
             await createCareTask(pet.id, userId, input);
@@ -381,7 +381,7 @@ function TaskSheet({
               {careTypeMeta(task.type).emoji} {careTypeMeta(task.type).label}
             </Text>
           </View>
-          <Text style={styles.hint}>The type can&apos;t change — delete this task and add a new one instead.</Text>
+          <Text style={styles.hint}>The type can&apos;t change. Delete this task and add a new one.</Text>
         </View>
       ) : (
       <View style={styles.pills} accessibilityRole="radiogroup">

@@ -83,11 +83,11 @@ export function formatDay(day: string): string {
   return `${MONTHS[Number(day.slice(5, 7)) - 1]} ${dayOfMonth(day)}`;
 }
 
-/** "Oct 5", "Oct 5–8", "Oct 30 – Nov 2" (same style as fmt_date_range in 003). */
+/** "Oct 5", "Oct 5 to 8", "Oct 30 to Nov 2" (no dashes in copy). */
 export function formatDayRange(from: string, to: string): string {
   if (from === to) return formatDay(from);
-  if (from.slice(0, 7) === to.slice(0, 7)) return `${formatDay(from)}–${dayOfMonth(to)}`;
-  return `${formatDay(from)} – ${formatDay(to)}`;
+  if (from.slice(0, 7) === to.slice(0, 7)) return `${formatDay(from)} to ${dayOfMonth(to)}`;
+  return `${formatDay(from)} to ${formatDay(to)}`;
 }
 
 /** "HH:MM" or Postgres "HH:MM:SS" → "8:00 AM" (DESIGN.md §7.6). */

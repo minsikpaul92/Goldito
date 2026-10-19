@@ -212,7 +212,7 @@ test.describe("find a sitter", () => {
 
     await screen.getByTestId("search-submit").click();
     await expect(screen.getByText("No sitter free within 10 km")).toBeVisible();
-    await expect(screen.getByText(/Try a wider radius, other dates or other times/)).toBeVisible();
+    await expect(screen.getByText(/Try a wider area/)).toBeVisible();
     await screen.getByRole("button", { name: "Widen to 25 km" }).click();
     await expect(screen.getByTestId("radius-value")).toHaveText("25 km");
     await expect(screen.getByText("No sitter free within 25 km")).toBeVisible();

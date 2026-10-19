@@ -7,7 +7,7 @@ import type { ServiceType } from "../features/sitters/sitterApi";
  */
 
 const MESSAGES: Record<string, string> = {
-  booking_in_progress: "The pets are already with you — change the pick-up time instead.",
+  booking_in_progress: "The pets are already with you. Change the pick-up time instead.",
   invalid_status: "This booking has already changed. Reopen it to see the latest.",
   not_allowed: "You can't change this booking.",
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
@@ -17,14 +17,14 @@ const MESSAGES: Record<string, string> = {
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
-  access_locked: "Entry info isn't available yet — or the stay has ended.",
+  access_locked: "Entry info isn't available yet, or the stay has ended.",
   forbidden: "You can't view this entry info.",
   not_paid: "Addresses unlock after checkout.",
-  proposal_expired: "That time has already passed — suggest another time.",
+  proposal_expired: "That time has passed. Suggest another time.",
   request_expired: "This request's pick-up time has passed, so it can't be accepted.",
   invalid_location: "House sitting happens at the owner's home.",
-  interest_required: "Say yes to meeting first — then the Meet & Greet can be planned.",
-  interest_not_needed: "You've met before, so there is no first yes — just Accept.",
+  interest_required: "Say yes to meeting first, then plan the Meet & Greet.",
+  interest_not_needed: "You've met before, so there is no first yes. Just Accept.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {

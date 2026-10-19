@@ -94,8 +94,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   return (
     <View style={styles.root} testID="sitter-dashboard">
       <View style={styles.stats}>
-        {stat("Tasks done", items.length > 0 ? `${done}/${items.length}` : "—", "stat-tasks")}
-        {stat("Check-ins", checkins == null ? "—" : String(checkins), "stat-checkins")}
+        {stat("Tasks done", items.length > 0 ? `${done}/${items.length}` : "0", "stat-tasks")}
+        {stat("Check-ins", checkins == null ? "-" : String(checkins), "stat-checkins")}
         {stat("Pets in care", String(pets.length), "stat-pets")}
       </View>
 
@@ -108,7 +108,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
           style={({ pressed }) => [styles.headsUp, styles.requestLine, pressed && styles.pressed]}
           testID="request-line"
         >
-          <Text style={styles.headsUpText} numberOfLines={1}>{`📝 Care request for ${requests[0].petName} — tap to answer`}</Text>
+          <Text style={styles.headsUpText} numberOfLines={1}>{`📝 Care request for ${requests[0].petName}`}</Text>
           <Text style={styles.headsUpMore}>{requests.length > 1 ? `+${requests.length - 1}` : "›"}</Text>
         </Pressable>
       ) : null}
@@ -168,7 +168,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
               );
             })}
             {open.length > TODAY_ROWS ? (
-              <TextButton label={`+ ${open.length - TODAY_ROWS} more — see all tasks`} onPress={() => router.push("/sitter/tasks")} testID="today-more" />
+              <TextButton label={`+ ${open.length - TODAY_ROWS} more`} onPress={() => router.push("/sitter/tasks")} testID="today-more" />
             ) : null}
           </>
         ) : state.status === "ready" ? (
@@ -213,7 +213,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
           .filter((p) => cautions.some((c) => c.petId === p.id))
           .map((p) => (
             <View key={p.id} style={styles.headsUpGroup}>
-              <Text style={styles.nextTitle}>{`${SPECIES_EMOJI[p.species]} ${p.name} — from ${p.ownerName}`}</Text>
+              <Text style={styles.nextTitle}>{`${SPECIES_EMOJI[p.species]} ${p.name} from ${p.ownerName}`}</Text>
               {cautions
                 .filter((c) => c.petId === p.id)
                 .map((c) => (

@@ -269,7 +269,7 @@ export default function SitterSchedule() {
           headerRight: () => (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Closing rules"
+              accessibilityLabel="Weekly rules"
               disabled={!rules || !weekdayHours || !defaults}
               hitSlop={theme.spacing.sm}
               onPress={openRules}
@@ -277,6 +277,7 @@ export default function SitterSchedule() {
               testID="schedule-rules"
             >
               <Ionicons name="settings-outline" size={theme.icon.md} color={theme.color.primary} />
+              <Text style={styles.gearLabel}>Weekly rules</Text>
             </Pressable>
           ),
         }}
@@ -307,7 +308,7 @@ export default function SitterSchedule() {
                 ? SLOTS.map(({ slot, label }) => {
                     const s = schedule.slots.get(slotKey(selection.from, slot));
                     const state = s?.state ?? "closed";
-                    const hours = s?.startsAt && s.endsAt && (state === "open" || state === "full") ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
+                    const hours = s?.startsAt && s.endsAt && (state === "open" || state === "full") ? ` · ${formatTime(s.startsAt)} to ${formatTime(s.endsAt)}` : "";
                     const spots = (state === "open" || state === "full") && s?.capacity ? ` · ${s.booked}/${s.capacity} booked` : "";
                     const rule = state === "closed" ? " · weekly rule" : "";
                     return (
@@ -323,7 +324,7 @@ export default function SitterSchedule() {
             </View>
           ) : (
             <Text style={styles.hint}>
-              Tap a day to open or block it. Tap a second day, or drag across days, to pick a range. You are open unless you close days or times — the ⚙️ sets weekly rules. Owners only find you on open slots.
+              Tap a day to open or block it. Drag for a range.
             </Text>
           )}
         </Card>
@@ -398,11 +399,16 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.textMuted,
     },
     gear: {
-      width: 44,
-      height: 44,
+      minHeight: 44,
+      flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
+      gap: theme.spacing.xs,
       marginRight: theme.spacing.md,
+    },
+    gearLabel: {
+      fontSize: theme.fontSize.small,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.color.primary,
     },
     footer: {
       padding: theme.spacing.md,

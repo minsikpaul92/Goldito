@@ -279,7 +279,7 @@ export default function FindSitter() {
         </Text>
         {about ? <Text style={styles.hint}>{about}</Text> : null}
         <Text style={styles.hint}>
-          {[s.services.map((x) => SERVICE_LABEL[x]).join(" · "), ownersSetting(s.acceptsMultipleOwners).badge].join(" — ")}
+          {[s.services.map((x) => SERVICE_LABEL[x]).join(" · "), ownersSetting(s.acceptsMultipleOwners).badge].join(" · ")}
         </Text>
         <View style={styles.resultActions}>
           <TextButton label="Profile" onPress={() => router.push(`/owner/sitters/${s.sitterId}`)} testID={`search-profile-${s.displayName}`} />
@@ -385,14 +385,13 @@ export default function FindSitter() {
             valueText={`${radiusKm} km`}
             testID="radius-slider"
           />
-          <Text style={styles.hint}>Distances are in a straight line and rounded to whole km.</Text>
         </Card>
 
         {criteria ? (
           <View style={styles.section} testID="search-results" accessibilityLiveRegion="polite">
             {changed ? (
               <Text style={styles.warning} testID="search-changed">
-                You changed the stay or place — tap Search to update the list.
+                You changed the stay or place. Tap Search to update.
               </Text>
             ) : null}
             {results.status === "error" ? (
@@ -410,9 +409,7 @@ export default function FindSitter() {
               <EmptyState
                 emoji="🔎"
                 title={`No sitter free within ${results.radiusKm} km`}
-                message={`No sitter within ${results.radiusKm} km is free for your whole stay (${stayLabel}) at those times. ${
-                  wider ? "Try a wider radius, other dates or other times." : "Try other dates or other times."
-                }`}
+                message={`For ${stayLabel}. ${wider ? "Try a wider area." : "Try other dates or times."}`}
                 action={wider ? { label: `Widen to ${wider} km`, onPress: () => setRadiusKm(wider) } : undefined}
               />
             ) : (

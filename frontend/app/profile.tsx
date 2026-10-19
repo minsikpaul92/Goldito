@@ -55,7 +55,7 @@ const SITTER_FIELDS: FieldSpec[] = [
   {
     key: "packing_list",
     label: "Packing list for owners",
-    placeholder: "One item per line — food, bed, meds…",
+    placeholder: "One item per line: food, bed, meds…",
     multiline: true,
   },
   {
@@ -222,7 +222,7 @@ export default function ProfileScreen() {
         pinNote = placed.label ? `Pin placed near ${placed.label}` : "Pin placed from your address";
       } else {
         pin = null;
-        pinNote = "We couldn't place that address on the map — use your current location for the pin";
+        pinNote = "We couldn't place that address. Use your current location for the pin";
       }
     }
     if (pinFromGps && pin && homePlace) pinNote = `Pin saved near ${homePlace.label}`;
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
         <Text style={styles.muted}>
           {profile.role === "sitter"
             ? "A face and photos with pets. The first one is the cover owners see when they look for a sitter."
-            : "So your sitter knows who is arriving. The first one is the cover. A sitter sees it only once you have a booking or a question with them."}
+            : "Your sitter sees this once you book."}
         </Text>
         <ProfilePhotoGallery profileId={profile.id} />
       </View>
@@ -349,7 +349,7 @@ export default function ProfileScreen() {
                           ? `📍 Near ${homePlace.label}${homePlace.postal ? ` · ${homePlace.postal}` : ""}`
                           : homePlace === undefined
                             ? "📍 Finding the neighbourhood…"
-                            : "📍 We couldn't name this spot — check it on the map"}
+                            : "📍 We couldn't name this spot. Check it on the map"}
                       </Text>
                       <OpenInMapsButton
                         place={{ text: null, point: home }}
@@ -386,7 +386,7 @@ export default function ProfileScreen() {
         <View style={styles.group} testID="profile-entry-info">
           <Text style={styles.groupTitle}>Entry info for sitters</Text>
           <Text style={styles.muted}>
-            Lockbox, buzzer, and steps — shown only from 2 hours before they arrive at your place.
+            Shown to your sitter 2 hours before they arrive.
           </Text>
           <TextButton
             label="Edit entry info"
@@ -472,7 +472,7 @@ export default function ProfileScreen() {
           {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
           <CheckRow
             label="Take pets from more than one owner at a time"
-            hint="Off: one owner's pets at a time — other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
+            hint="Off: one owner's pets at a time, so other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
             checked={multiOwner}
             onChange={setMultiOwner}
             testID="profile-multi-owner"
@@ -482,7 +482,7 @@ export default function ProfileScreen() {
       <View style={styles.group} testID="profile-spots">
         <Text style={styles.groupTitle}>Preferred meeting spots (optional)</Text>
         <Text style={styles.muted}>
-          Up to 3 public places for a first Meet & Greet — a park gate or a café, never a home address.
+          Public places only, like a park gate.
         </Text>
         {spots.map((spot, i) => (
           <TextField
@@ -490,7 +490,7 @@ export default function ProfileScreen() {
             label={`Spot ${i + 1}`}
             value={spot}
             onChangeText={(text) => setSpots((cur) => cur.map((s, k) => (k === i ? text : s)))}
-            placeholder={i === 0 ? "e.g. Christie Pits — east entrance" : undefined}
+            placeholder={i === 0 ? "e.g. Christie Pits, east entrance" : undefined}
             maxLength={60}
             testID={`profile-spot-${i + 1}`}
           />

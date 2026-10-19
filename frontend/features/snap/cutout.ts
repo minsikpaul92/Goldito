@@ -166,7 +166,7 @@ export async function makeSticker(frame: HTMLCanvasElement, mask: Mask): Promise
       if (y > y1) y1 = y;
     }
   }
-  if (x1 < 0) throw new Error("We couldn't cut out a pet there — tap your pet.");
+  if (x1 < 0) throw new Error("We couldn't cut out a pet there. Tap your pet.");
   sg.putImageData(pixels, 0, 0);
 
   const bw = x1 - x0 + 1;

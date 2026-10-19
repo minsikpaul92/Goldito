@@ -49,7 +49,7 @@ export function SharePageSheet({ visible, onClose, petId, petName, day, render, 
   const shown = link && uploaded.current?.version === version ? link : null;
 
   const told = (missing: number, done: string) =>
-    toast.show(missing > 0 ? `${done} — ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : done);
+    toast.show(missing > 0 ? `${done}, but ${missing === 1 ? "one picture" : `${missing} pictures`} couldn't be added` : done);
 
   const share = async () => {
     setBusy("share");
@@ -96,7 +96,7 @@ export function SharePageSheet({ visible, onClose, petId, petName, day, render, 
         await navigator.clipboard.writeText(url);
         toast.show("Link copied 🔗");
       } catch {
-        toast.show("Here's the link — copy it from the box");
+        toast.show("Copy the link from the box");
       }
     } catch (error) {
       errorDialog.show({ title: "No link yet", message: (error as Error).message, onRetry: () => void copyLink() });

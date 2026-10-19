@@ -102,7 +102,7 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
 
       {notSeen.length > 0 ? (
         <View style={styles.skipped} testID="checklist-skipped" accessibilityRole="alert">
-          <Text style={styles.skippedTitle}>Left out — not on the checklist</Text>
+          <Text style={styles.skippedTitle}>Left out of the checklist</Text>
           {notSeen.map((s) => (
             <Pressable
               key={s.id}
@@ -112,7 +112,7 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
               style={({ pressed }) => [styles.skippedRow, pressed && styles.pressed]}
               testID={`skipped-ack-${s.id}`}
             >
-              <Text style={styles.skippedText}>{`${s.title} — ${s.reason}`}</Text>
+              <Text style={styles.skippedText}>{`${s.title}: ${s.reason}`}</Text>
               <Text style={styles.skippedX}>✕</Text>
             </Pressable>
           ))}
@@ -133,7 +133,7 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
         label="Add a Heads-up"
         value={newCaution}
         maxLength={CAUTION_MAX}
-        placeholder="e.g. No knocking — text me instead"
+        placeholder="e.g. No knocking, text me instead"
         onChangeText={setNewCaution}
         onSubmitEditing={addCaution}
         testID="caution-input"

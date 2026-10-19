@@ -18,7 +18,7 @@ import { TextField } from "./ui/TextField";
 const COMMENT_MAX = 500;
 
 /** The line every private-note card carries: the owner never sees it and is never told (011g). */
-const privateLine = (owner: string) => `🔒 Only you can see this — ${owner} is never told.`;
+const privateLine = (owner: string) => `🔒 Only you can see this. ${owner} is never told.`;
 
 /**
  * The sitter rates the owner after a stay (FB-25): stars, one-tap phrases per star, own words — private to the sitter.
@@ -68,7 +68,7 @@ export function OwnerNoteCard({ bookingId, ownerName }: { bookingId: string; own
       await saveOwnerNote(bookingId, rating, comment);
       setNote({ bookingId, rating, comment: comment || null, createdAt: note?.createdAt ?? new Date().toISOString() });
       setEditing(false);
-      toast.show("Saved — only you can see it");
+      toast.show("Saved. Only you can see it");
     } catch (e) {
       setError((e as Error).message);
     } finally {
