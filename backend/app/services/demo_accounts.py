@@ -116,8 +116,21 @@ DEMO_SITTER_RATES = {
     "holiday_pct": 25,
 }
 
-# Where the two demo homes are on the map (Phase 06B, D32): made-up points at park level, not real addresses.
-# Chloe's place sits by Trinity Bellwoods Park, Robert's by Riverdale Park, about 7 km apart.
+# Where the demo homes are on the map (Phase 06B, D32): public landmark addresses in Toronto, never a real person's
+# home. Each account has its own, so the sitter search shows a spread of distances (about 0.6 to 14 km).
+# address, lat, lng
+DEMO_HOMES: dict[str, tuple[str, float, float]] = {
+    "demo-owner@goldito.test": ("100 Queen St W, Toronto, ON M5H 2N2", 43.6534, -79.3841),
+    "demo-owner-paul@goldito.test": ("127 Broadway Avenue, Toronto, ON M4P 0E3", 43.710201, -79.3923434),
+    "demo-owner-allen@goldito.test": ("1 Yonge St, Toronto, ON M5E 1W7", 43.6419, -79.3752),
+    "demo-owner-daniel@goldito.test": ("5100 Yonge St, Toronto, ON M2N 5V7", 43.7686, -79.4128),
+    "demo-sitter@goldito.test": ("299 Queen St W, Toronto, ON M5V 2Z5", 43.6502, -79.3896),
+    "demo-sitter-paul@goldito.test": ("55 Mill St, Toronto, ON M5A 3C4", 43.6503, -79.3596),
+    "demo-sitter-allen@goldito.test": ("2 Bloor St W, Toronto, ON M4W 3E2", 43.6709, -79.3866),
+    "demo-sitter-daniel@goldito.test": ("3401 Dufferin St, Toronto, ON M6A 2T9", 43.7253, -79.4524),
+}
+
+# A demo account that is not in DEMO_HOMES gets a point by role.
 DEMO_HOME_POINTS = {
     "sitter": (43.6477, -79.4194),
     "owner": (43.6644, -79.3573),
@@ -157,7 +170,13 @@ def check_sitter_rates(client: Client, sitter_id: str) -> str | None:
     return None if rows else "no sitter_rates row — checkout cannot quote (run without --check)"
 
 
-def ensure_home_point(client: Client, role: str, user_id: str) -> None:
-    """Give a demo account a home point so Start trip has a destination (06B)."""
-    lat, lng = DEMO_HOME_POINTS[role]
-    client.table(f"{role}_profiles").update({"home_lat": lat, "home_lng": lng}).eq("id", user_id).execute()
+def ensure_home_point(client: Client, role: str, user_id: str, email: str | None = None) -> None:
+    """Give a demo account its home address and point so the sitter search and Start trip work (06B)."""
+    home = DEMO_HOMES.get((email or "").lower())
+    if home:
+        address, lat, lng = home
+        fields = {"home_address": address, "home_lat": lat, "home_lng": lng}
+    else:
+        lat, lng = DEMO_HOME_POINTS[role]
+        fields = {"home_lat": lat, "home_lng": lng}
+    client.table(f"{role}_profiles").update(fields).eq("id", user_id).execute()

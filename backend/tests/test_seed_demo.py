@@ -49,3 +49,22 @@ def test_each_demo_account_gets_a_home_point_for_its_role():
 
     assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6644, -79.3573)
     assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6477, -79.4194)
+
+
+def test_a_named_demo_account_gets_its_own_address_and_point():
+    db = FakeDB(owner_profiles=[{"id": "o"}], sitter_profiles=[{"id": SITTER}])
+
+    seed_demo.ensure_home_point(db, "owner", "o", "demo-owner@goldito.test")
+    seed_demo.ensure_home_point(db, "sitter", SITTER, "demo-sitter-daniel@goldito.test")
+
+    owner, sitter = db.tables["owner_profiles"][0], db.tables["sitter_profiles"][0]
+    assert owner["home_address"] == "100 Queen St W, Toronto, ON M5H 2N2"
+    assert (owner["home_lat"], owner["home_lng"]) == (43.6534, -79.3841)
+    assert sitter["home_address"] == "3401 Dufferin St, Toronto, ON M6A 2T9"
+    assert (sitter["home_lat"], sitter["home_lng"]) == (43.7253, -79.4524)
+
+
+def test_every_demo_account_has_a_home_and_the_spread_is_wide():
+    from app.services.demo_accounts import DEMO_HOMES, DEMO_USERS
+
+    assert {u.email for u in DEMO_USERS} == set(DEMO_HOMES)
