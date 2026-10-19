@@ -20,6 +20,8 @@ This file is written for both people and AI coding agents (including the designe
 | Base components | [`frontend/components/ui/`](frontend/components/ui/) — one file per Figma base component (§0.4) | same |
 | Every screen and every button | [`docs/design/screen-map.md`](docs/design/screen-map.md) — **generated**: route → file → each action's label, ID and line (§0.6) | regenerated, never hand-edited |
 
+**The Figma file since Oct 19:** Expressive is the look. The **Screens** page holds the Expressive sections plus "In the app · Oct 19" (what PRs #177, #178 and #183 built); the older Balanced and Live screens are on the **Archive** page. The logo is the pixel coin (**Brand** › `Logo/Pixel coin/Gold/Symbol master`, code `frontend/assets/brand/goldito-symbol.svg`). Most components and screens are built by the Goldito plugin from the HTML prototypes, so a fix goes into the prototype or the plugin's capture rules (`design/figma-plugin/README.md`), never only into the Figma output. Those rules: a label alone in a button or pill fills it; one-line labels hug; stacked text blocks and form fields are auto-layout (one-line fields cut long text with "…"); icons in circles are centred; steppers stack first on top.
+
 Code reads design values only through `useTheme()` (≈ 2,000 style references). Changing a value in `tokens.ts` changes every screen; no screen needs a separate edit for a color, size or type change.
 
 ### 0.2 Variables → tokens
