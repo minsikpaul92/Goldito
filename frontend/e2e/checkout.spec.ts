@@ -129,6 +129,20 @@ test.describe("checkout", () => {
     await expect(app(page).getByText("hasn't set their prices yet", { exact: false })).toHaveCount(0);
   });
 
+  test("a sitter with prices but none for this service says that price is not set (#189)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.sitter_rates.push({ sitter_id: SITTER.id, daycare_daily: 35 });
+    db.quote_error = "rates_not_set"; // what quote_booking raises for an offered service with no price (014k)
+    db.quote_error_detail = "boarding";
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+
+    await expect(app(page).getByText("This sitter hasn't set a Boarding price yet.")).toBeVisible();
+    await expect(app(page).getByText("doesn't offer that service", { exact: false })).toHaveCount(0);
+  });
+
   test("checking every consent and Pay completes demo checkout", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedUnpaid(db);

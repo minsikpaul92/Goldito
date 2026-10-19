@@ -1155,6 +1155,7 @@ declare
   paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
   q jsonb;
   v_err text;
+  v_detail text;
   -- Goal example: boarding Oct 9 07:30 → Oct 12 17:00 Toronto, 2 pets, Thanksgiving Oct 12.
   v_drop timestamptz := ('2026-10-09 07:30:00'::timestamp at time zone app_timezone());
   v_pick timestamptz := ('2026-10-12 17:00:00'::timestamp at time zone app_timezone());
@@ -1234,7 +1235,43 @@ begin
   end;
   perform _t_ok(v_err = 'service_not_offered', '3C.1: rates must match offered services');
 
+  -- A rates row without this service's price is "rates_not_set", not "doesn't offer" (014k, #189 R60-6).
+  insert into public.sitter_rates (sitter_id, daycare_daily) values (paul, 30.00);
+  perform _t_as(robert);
+  begin
+    q := quote_booking(paul, 'boarding', v_drop, v_pick, 1);
+    v_err := null;
+  exception when others then
+    v_err := sqlerrm;
+    get stacked diagnostics v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'rates_not_set' and v_detail = 'boarding', '014k: offered boarding with no price → rates_not_set (boarding)');
+
+  begin
+    q := quote_booking(paul, 'house_sitting', v_hs_drop, v_hs_pick, 1);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_ok(v_err = 'service_not_offered', '014k: a service not in the profile is still service_not_offered');
+
+  perform _t_as(paul);
+  update public.sitter_rates set boarding_nightly = 50.00, daycare_daily = null where sitter_id = paul;
+  perform _t_as(robert);
+  begin
+    q := quote_booking(paul, 'daycare', v_day_drop, v_day_pick, 1);
+    v_err := null;
+  exception when others then
+    v_err := sqlerrm;
+    get stacked diagnostics v_detail = pg_exception_detail;
+  end;
+  perform _t_ok(v_err = 'rates_not_set' and v_detail = 'daycare', '014k: no daycare price → rates_not_set (daycare)');
+
+  q := quote_booking(paul, 'boarding', v_drop, v_pick, 1);
+  perform _t_ok((q->>'unit_price')::numeric = 50.00, '014k: a priced service still quotes');
+
+  -- Later blocks expect Paul without rates.
   perform _t_as(null);
+  delete from public.sitter_rates where sitter_id = paul;
 end;
 $$;
 

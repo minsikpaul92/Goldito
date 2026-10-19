@@ -782,6 +782,15 @@
 | QUOTE-2 | 1박 · 2박으로 다시 | "1 night × …", "2 nights × …", 단가 × 수 = 기본 금액 | 🤖 `checkout`(3박) | ➖ |
 | QUOTE-3 | 같은 날 문의의 AI 초안 | 합계만 말하고 "0 nights"라고 쓰지 않음(모델은 `days`만 받음) | pytest `test_inquiry` · `test_inquiry_agent` · **실제 모델 👤** | ➖ |
 
+### 3.35 서비스 가격이 빈 시터 (RATE) · #189 · *사전: 호스팅 DB에 `014k` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| RATE-1 | 요금표는 있는데 Boarding 가격만 비어 있는 시터에게 Boarding 체크아웃 | **"This sitter hasn't set a Boarding price yet."** "doesn't offer that service"는 안 나옴 | SQL `rls_smoke`(014k) · 🤖 `checkout` | ➖ |
+| RATE-2 | Daycare 가격만 빈 경우 | `rates_not_set`, detail `daycare` | SQL `rls_smoke`(014k) | ➖ |
+| RATE-3 | 요금표가 아예 없는 시터 | 예전 그대로 "This sitter hasn't set their prices yet…" | SQL `rls_smoke`(3C.1) · 🤖 `checkout` | ➖ |
+| RATE-4 | 프로필에 없는 서비스(예: House sitting을 안 하는 시터) | 예전 그대로 "This sitter doesn't offer that service." | SQL `rls_smoke`(014k) · 🤖 `checkout` | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
