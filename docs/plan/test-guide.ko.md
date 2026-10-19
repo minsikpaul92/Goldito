@@ -724,6 +724,15 @@
 | HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
 | HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
 
+### 3.32 시터 일정 보기 (CAL) · #120
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| CAL-1 | 오너 → Bookings → Chloe 프로필 | 월 달력 대신 **Next openings**: 오늘부터 빈 날 최대 5줄("Tue, Oct 20 · Morning, Afternoon", 다 비면 "All day"). 아래 **See full month** | 🤖 `sitters` | ➖ |
+| CAL-2 | 한 줄 누르기 | 그날 페이지: 제목 "Tue, Oct 20", 세 줄(Morning · 시간 · "2 spots left" / "Full" / "Not available"). ← 누르면 프로필로 | 🤖 `sitters` | ➖ |
+| CAL-3 | See full month → 날짜 누르기 | 달력 페이지(#150 빗금 그대로) → 그날 페이지. ← 누르면 보던 달 그대로 달력으로 | 🤖 `sitters` | ➖ |
+| CAL-4 | 그날 페이지에서 Book | Book care가 그날로 시작(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기, 둘 다 바꿀 수 있음) | **👤** | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
