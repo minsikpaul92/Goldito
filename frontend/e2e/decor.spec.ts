@@ -54,7 +54,7 @@ async function openOwnerEntry(page: Page, seed: (db: MockDb) => void) {
   db.daily_reports.push(sentReport("sent1", "2026-10-05"));
   seed(db);
   await signIn(page, OWNER);
-  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto("/owner/diary/sent1");
   await app(page).getByTestId("diary-entry-paper").waitFor();
   return db;
@@ -260,7 +260,7 @@ test.describe("diary decorating", () => {
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
     );
     await signIn(page, SITTER);
-    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/diary");
     const screen = app(page);
     const paper = screen.getByTestId(`report-sent-paper-${MAX.id}-paper`);

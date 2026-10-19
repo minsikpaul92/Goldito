@@ -19,7 +19,7 @@ async function setup(page: Page, petId = MAX, now?: Date) {
   );
   await signIn(page, OWNER);
   // Let sign-in finish before navigating, or the jump can cut the session short (flaky otherwise).
-  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto(`/owner/pets/${petId}`);
   await app(page).getByTestId("care-tasks").waitFor();
   return db;

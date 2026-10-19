@@ -15,7 +15,7 @@ const task = (id: string, type: string, title: string, time: string, extra: obje
 /** Sign in as the sitter and open the full task list (Home only shows the next task). */
 async function openTasks(page: import("@playwright/test").Page) {
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto("/sitter/tasks");
   await app(page).getByTestId("today-tasks").waitFor();
 }
@@ -183,7 +183,7 @@ test.describe("on a phone", () => {
     await page.getByTestId("login-email").fill(SITTER.email);
     await page.getByTestId("login-password").fill(SITTER.password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await page.getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+    await page.getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/tasks");
     const screen = page;
 

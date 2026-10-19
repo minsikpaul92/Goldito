@@ -13,7 +13,7 @@ const tid = (pet: { id: string }, kind: string, value: string) => `checkin-${pet
 
 async function openCheckin(page: import("@playwright/test").Page, petId: string) {
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto(`/sitter/checkin/${petId}`);
   await app(page).getByTestId(`checkin-${petId}`).waitFor();
 }

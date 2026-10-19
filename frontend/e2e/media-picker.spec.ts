@@ -101,7 +101,7 @@ async function setup(
 
   const user = options.user ?? SITTER;
   await signIn(page, user);
-  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto(user.role === "owner" ? "/owner/feed" : `/sitter/feed/${PET_ID}`);
   await app(page).getByTestId("feed-add-photo").waitFor();
   return calls;

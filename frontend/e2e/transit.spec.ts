@@ -204,7 +204,7 @@ test.describe("pet transit", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "sitter_home");
     await signIn(page, SITTER);
-    await expect(app(page).getByRole("heading", { name: /^(Home|Today)$/ })).toBeVisible();
+    await expect(app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first()).toBeVisible();
     let reads = 0;
     page.on("request", (r) => {
       if (r.url().includes("/rest/v1/trips")) reads += 1;
