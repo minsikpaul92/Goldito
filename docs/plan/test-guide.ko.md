@@ -772,6 +772,16 @@
 | COPY-3 | 시터 → Schedule | 안내 한 줄("Tap a day to open or block it. Drag for a range."), 오른쪽 위 ⚙ 옆에 **Weekly rules** 글자 | 🤖 `schedule` | ➖ |
 | COPY-4 | 오너 → Book care 검색, 반경 안에 시터 없음 | "For Oct 19 to 21. Try a wider area." 슬라이더 아래 직선거리 안내 줄은 없음 | 🤖 `sitter-search` | ➖ |
 
+### 3.34 당일 숙박 견적 (QUOTE) · #172
+
+`quote_booking`은 당일 숙박(맡기기 · 찾기가 같은 날)을 `nights: 0`, `days: 1`로 돌려주고 하루치 요금을 받는다. 카드는 이때 밤 대신 날로 보여 주고, AI 초안에는 `nights`를 넘기지 않는다.
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| QUOTE-1 | Boarding을 같은 날(예: Oct 21, 9:00 AM에서 5:00 PM)로 요청 → 견적 카드 | **"1 day × $55.00"**, 합계 $55.00. "0 nights"는 안 나옴 | 🤖 `checkout` | ➖ |
+| QUOTE-2 | 1박 · 2박으로 다시 | "1 night × …", "2 nights × …", 단가 × 수 = 기본 금액 | 🤖 `checkout`(3박) | ➖ |
+| QUOTE-3 | 같은 날 문의의 AI 초안 | 합계만 말하고 "0 nights"라고 쓰지 않음(모델은 `days`만 받음) | pytest `test_inquiry` · `test_inquiry_agent` · **실제 모델 👤** | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
