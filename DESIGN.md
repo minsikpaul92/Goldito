@@ -434,7 +434,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `StarRating` | Five tappable stars (07C), large hit areas, keyboard and mouse |
 | `LifeRecordCard` | Pet Life Record (07C): Eats · Meds · Potty · Behavior · Heads-up · Sitter tips, each line with its source ("From Chloe · Oct 9–12") |
 | `Skeleton` | Gray blocks while loading; matches the final layout. After 10 s add "Still loading…" + **Retry** |
-| `Tag` | Status label (Figma: Tone = Danger · Warning · Success · Brand · Neutral). Text on the tone's surface (D3). Not tappable |
+| `Tag` (built: `components/ui/Tag.tsx`) | Status label (Figma: Tone = Danger · Warning · Success · Brand · Neutral; code `tone="danger" …`). Text on the tone's surface (D3). Not tappable — for facts, allergies and statuses. Anything pressable or removable is a `Chip` |
 | `Banner` | Inline notice at the top of the content for an edge state (§10). Tone = Info · Warning · Error · Offline. Icon + title (tone color) + one line saying what happens next + optional action link. Never for DANGER (§7.4) |
 | `MediaPicker` (built: `components/MediaPicker.tsx`) | The only way to pick a photo (`pickMedia()`, Phase 04.7). Phone: **Take photo** + **Choose from library**. Desktop frame and demo accounts: sample tray + **Choose from library** (opens the system file/gallery picker — same label on web demo and phones; never "Upload from computer") |
 | `HorizontalList` | Chips, photo strips, date strips. The next item peeks in (~24 px) so the row reads as scrollable; works with drag and mouse wheel (§7.7) |
