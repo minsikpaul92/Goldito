@@ -257,20 +257,41 @@ Shows: `LifeRecordCard`
 
 Shows: `PetForm`
 
-### `/owner/sitters/[sitterId]` — [app/owner/sitters/[sitterId].tsx](../../frontend/app/owner/sitters/[sitterId].tsx)
+### `/owner/sitters/[sitterId]` — [app/owner/sitters/[sitterId]/index.tsx](../../frontend/app/owner/sitters/[sitterId]/index.tsx)
 
-A sitter as owners see them (phase-03b 3B.2): intro + month schedule from get_sitter_schedule (own hours, open / full / closed, spots left). Book this sitter → 3B.3.
+A sitter as owners see them (phase-03b 3B.2): intro + the next open days from get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
 
-Shows: `InquirySheet` · `SlotCalendar` · `StarRating`
+Shows: `SitterActions` · `NextOpenings` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 122 |
-| EmptyState | Couldn't load this sitter | — | 130 |
-| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 152 |
-| EmptyState | Couldn't load the schedule | — | 202 |
-| Button | Ask before booking | `ask-about-stay` | 229 |
-| Button | Book | `book-this-sitter` | 236 |
+| EmptyState | Sitter not found | — | 108 |
+| EmptyState | Couldn't load this sitter | — | 116 |
+| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 139 |
+| EmptyState | Couldn't load the schedule | — | 179 |
+| Button | See full month | `sitter-see-month` | 192 |
+
+### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
+
+#120 (D): the sitter's month on its own page. Tapping a day opens that day's page.
+
+Shows: `SitterActions` · `SlotCalendar`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Sitter not found | — | 47 |
+| EmptyState | Couldn't load the schedule | — | 72 |
+
+### `/owner/sitters/[sitterId]/day/[date]` — [app/owner/sitters/[sitterId]/day/[date].tsx](../../frontend/app/owner/sitters/[sitterId]/day/[date].tsx)
+
+#120 (D): one day of a sitter's schedule as big rows, with Ask and Book. Back returns where it came from.
+
+Shows: `SitterActions` · `SlotRows`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Sitter not found | — | 45 |
+| EmptyState | Couldn't load this day | — | 58 |
 
 ### `/owner/snap` — [app/owner/(tabs)/snap.tsx](../../frontend/app/owner/(tabs)/snap.tsx)
 
@@ -880,6 +901,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Stepper | Meet & Greet day | `meet-day` | 119 |
 | Stepper | Meet & Greet time | `meet-time` | 127 |
 
+### NextOpenings — [components/NextOpenings.tsx](../../frontend/components/NextOpenings.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${dayTitle(day)}, ${slotsText} open`` | ``sitter-opening-${day}`` | 35 |
+
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1042,6 +1069,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | `label` | `testID` | 19 |
 
+### SitterActions — [components/SitterActions.tsx](../../frontend/components/SitterActions.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Ask before booking | `ask-about-stay` | 33 |
+| Button | Book | `book-this-sitter` | 34 |
+
 ### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1080,6 +1114,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | Previous month | `calendar-prev` | 164 |
 | Pressable | Next month | `calendar-next` | 177 |
 | Pressable | `label` | ``day-${day}`` | 206 |
+
+### SlotRows — [components/SlotRows.tsx](../../frontend/components/SlotRows.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Tag | `tag.label` | — | 56 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 
@@ -1248,4 +1288,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-371 actions · 370 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+373 actions · 372 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
