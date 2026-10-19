@@ -115,19 +115,30 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-service-house_sitting")).toBeVisible();
     await expect(screen.getByText("12 Maple St")).toHaveCount(0);
 
+    // #120: the profile lists the next openings; the month and each day open as their own pages.
+    await expect(screen.getByTestId(/^sitter-opening-/).first()).toBeVisible();
+    await screen.getByTestId("sitter-see-month").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
     await screen.getByTestId("calendar-next").click();
-    // A blocked slot reads as closed to owners; a slot nobody touched is open by default (014d).
+    // A blocked slot reads as not available to owners; a slot nobody touched is open by default (014d).
     await expect(screen.getByTestId(`day-${nextMonthDay(10)}`)).toHaveAttribute(
       "aria-label",
       /Morning open, Afternoon closed, Night open/,
     );
     await screen.getByTestId(`day-${nextMonthDay(10)}`).click();
-    await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Open · 8:00 AM–12:00 PM · 1 spot left");
-    await expect(screen.getByTestId("sitter-day-afternoon")).toHaveText("Afternoon: Closed");
-    await expect(screen.getByTestId("sitter-day-overnight")).toHaveText("Night: Open · 6:00 PM–8:00 AM · 2 spots left");
+    await expect(page).toHaveURL(new RegExp(`/day/${nextMonthDay(10)}$`));
+    await expect(screen.getByTestId("sitter-day-morning")).toContainText("Morning");
+    await expect(screen.getByTestId("sitter-day-morning")).toContainText("8 AM to 12 PM");
+    await expect(screen.getByTestId("sitter-day-morning")).toContainText("1 spot left");
+    await expect(screen.getByTestId("sitter-day-afternoon")).toContainText("Not available");
+    await expect(screen.getByTestId("sitter-day-overnight")).toContainText("6 PM to 8 AM");
+    await expect(screen.getByTestId("sitter-day-overnight")).toContainText("2 spots left");
 
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
+    // Back keeps the month that was open.
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
-    await expect(screen.getByTestId("sitter-day-morning")).toHaveText("Morning: Full · 8:00 AM–12:00 PM");
+    await expect(screen.getByTestId("sitter-day-morning")).toContainText("Full");
     await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");
   });
 
