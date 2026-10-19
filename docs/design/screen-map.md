@@ -61,19 +61,19 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 141 |
-| EmptyState | Couldn't load this booking | — | 148 |
-| Tag | `b.label` | — | 217 |
-| Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 256 |
-| CheckRow | `item` | ``pack-${item}`` | 282 |
-| Button | Find a new sitter | `find-new-sitter` | 344 |
-| Button | Change time or place | `change-booking` | 351 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
-| Sheet | Decline and end the request | `end-request-sheet` | 438 |
-| Button | Decline and end the request | `end-request-confirm` | 444 |
+| EmptyState | Booking not found | — | 142 |
+| EmptyState | Couldn't load this booking | — | 149 |
+| Tag | `b.label` | — | 218 |
+| Tag | Paid | `paid-chip` | 221 |
+| Button | Finish booking | `open-checkout` | 257 |
+| CheckRow | `item` | ``pack-${item}`` | 283 |
+| Button | Find a new sitter | `find-new-sitter` | 345 |
+| Button | Change time or place | `change-booking` | 352 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 360 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 370 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 376 |
+| Sheet | Decline and end the request | `end-request-sheet` | 439 |
+| Button | Decline and end the request | `end-request-confirm` | 445 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -257,20 +257,41 @@ Shows: `LifeRecordCard`
 
 Shows: `PetForm`
 
-### `/owner/sitters/[sitterId]` — [app/owner/sitters/[sitterId].tsx](../../frontend/app/owner/sitters/[sitterId].tsx)
+### `/owner/sitters/[sitterId]` — [app/owner/sitters/[sitterId]/index.tsx](../../frontend/app/owner/sitters/[sitterId]/index.tsx)
 
-A sitter as owners see them (phase-03b 3B.2): intro + month schedule from get_sitter_schedule (own hours, open / full / closed, spots left). Book this sitter → 3B.3.
+A sitter as owners see them (phase-03b 3B.2): intro + the next open days from get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
 
-Shows: `InquirySheet` · `SlotCalendar` · `StarRating`
+Shows: `SitterActions` · `NextOpenings` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 122 |
-| EmptyState | Couldn't load this sitter | — | 130 |
-| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 152 |
-| EmptyState | Couldn't load the schedule | — | 202 |
-| Button | Ask before booking | `ask-about-stay` | 229 |
-| Button | Book | `book-this-sitter` | 236 |
+| EmptyState | Sitter not found | — | 108 |
+| EmptyState | Couldn't load this sitter | — | 116 |
+| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 139 |
+| EmptyState | Couldn't load the schedule | — | 179 |
+| Button | See full month | `sitter-see-month` | 192 |
+
+### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
+
+#120 (D): the sitter's month on its own page. Tapping a day opens that day's page.
+
+Shows: `SitterActions` · `SlotCalendar`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Sitter not found | — | 47 |
+| EmptyState | Couldn't load the schedule | — | 72 |
+
+### `/owner/sitters/[sitterId]/day/[date]` — [app/owner/sitters/[sitterId]/day/[date].tsx](../../frontend/app/owner/sitters/[sitterId]/day/[date].tsx)
+
+#120 (D): one day of a sitter's schedule as big rows, with Ask and Book. Back returns where it came from.
+
+Shows: `SitterActions` · `SlotRows`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Sitter not found | — | 45 |
+| EmptyState | Couldn't load this day | — | 58 |
 
 ### `/owner/snap` — [app/owner/(tabs)/snap.tsx](../../frontend/app/owner/(tabs)/snap.tsx)
 
@@ -331,8 +352,12 @@ Profile → Settings (Phase 11.11, D47): account, notifications, What's New and 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Edit profile | `settings-edit-profile` | 40 |
-| TextButton | Privacy | `settings-privacy` | 78 |
+| TextButton | Edit profile | `settings-edit-profile` | 44 |
+| TextButton | Privacy | `settings-privacy` | 82 |
+| Button | Log out | `settings-log-out` | 83 |
+| Sheet | Log out? | `settings-log-out-sheet` | 84 |
+| Button | Log out | `settings-log-out-confirm` | 86 |
+| Button | Cancel | **none** | 87 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -774,10 +799,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | — | 23 |
-| Pressable | Schedule | `open-schedule` | 27 |
-| Pressable | Profile | `open-profile` | 37 |
-| Pressable | — | `log-out` | 46 |
+| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 18 |
+
+### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | `label` | `testID` | 51 |
+| Pressable | Menu | `open-menu` | 66 |
+| Pressable | Close menu | `header-menu-close` | 87 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
+| Button | Log out | `log-out-confirm` | 116 |
+| Button | Cancel | `log-out-cancel` | 117 |
+| Pressable | — | `log-out` | 137 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -836,25 +870,25 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 143 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 144 |
-| TextButton | Change | `meet-change` | 153 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 154 |
-| Button | Accept | `meet-accept` | 163 |
-| TextButton | Suggest another time | `meet-counter` | 176 |
-| TextButton | Decline | `meet-decline` | 177 |
-| LinkButton | Join Google Meet | `meet-join` | 193 |
-| TextButton | Get the Meet link | `meet-link-retry` | 197 |
-| CheckRow | `item` | ``meet-check-${item}`` | 211 |
-| Button | Done — we met | `meet-done` | 220 |
-| TextButton | Add to calendar | `meet-calendar` | 230 |
-| TextButton | Change | `meet-change` | 231 |
-| Button | Continue without meeting | `meet-skip-accept` | 247 |
-| TextButton | Decline — cancels the booking | `meet-skip-decline` | 253 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 285 |
-| Button | Ask to skip | `meet-skip-confirm` | 291 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 304 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 310 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 144 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 145 |
+| TextButton | Change | `meet-change` | 154 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 155 |
+| Button | Accept | `meet-accept` | 164 |
+| TextButton | Suggest another time | `meet-counter` | 177 |
+| TextButton | Decline | `meet-decline` | 178 |
+| LinkButton | Join Google Meet | `meet-join` | 194 |
+| TextButton | Get the Meet link | `meet-link-retry` | 198 |
+| CheckRow | `item` | ``meet-check-${item}`` | 212 |
+| Button | Done — we met | `meet-done` | 221 |
+| TextButton | Add to calendar | `meet-calendar` | 231 |
+| TextButton | Change | `meet-change` | 232 |
+| Button | Continue without meeting | `meet-skip-accept` | 248 |
+| TextButton | Decline — cancels the booking | `meet-skip-decline` | 254 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 286 |
+| Button | Ask to skip | `meet-skip-confirm` | 292 |
+| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 305 |
+| Button | Decline and cancel the booking | `meet-decline-confirm` | 311 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
@@ -867,6 +901,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | CheckRow | 📍 Somewhere else | `meet-spot-other` | 97 |
 | Stepper | Meet & Greet day | `meet-day` | 119 |
 | Stepper | Meet & Greet time | `meet-time` | 127 |
+
+### NextOpenings — [components/NextOpenings.tsx](../../frontend/components/NextOpenings.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${dayTitle(day)}, ${slotsText} open`` | ``sitter-opening-${day}`` | 35 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -999,7 +1039,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 41 |
+| Pressable | aria["aria-label"] | `testID` | 63 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 
@@ -1030,6 +1070,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | `label` | `testID` | 19 |
+
+### SitterActions — [components/SitterActions.tsx](../../frontend/components/SitterActions.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Ask before booking | `ask-about-stay` | 33 |
+| Button | Book | `book-this-sitter` | 34 |
 
 ### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
 
@@ -1069,6 +1116,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | Previous month | `calendar-prev` | 164 |
 | Pressable | Next month | `calendar-next` | 177 |
 | Pressable | `label` | ``day-${day}`` | 206 |
+
+### SlotRows — [components/SlotRows.tsx](../../frontend/components/SlotRows.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Tag | `tag.label` | — | 56 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 
@@ -1237,4 +1290,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-364 actions · 364 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+373 actions · 372 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

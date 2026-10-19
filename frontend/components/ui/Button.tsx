@@ -48,7 +48,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.primary,
       paddingVertical: theme.spacing.sm,
       paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.md,
+      borderRadius: theme.ui.radius.button,
       borderWidth: 1,
       borderColor: theme.color.primary,
       alignItems: "center",

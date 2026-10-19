@@ -706,6 +706,63 @@
 | DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen · Daniel. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
 | DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen · Daniel 계정을 시드한 뒤) |
 
+### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EXP-1 | 아무 화면이나 스위치 없이 열기 | 크림 배경, 잉크색 글씨, 화면 제목은 Fredoka. 버튼 · 칩 · 세그먼트는 알약 모양 | 🤖 `skin` | ➖ |
+| EXP-2 | 주소에 `?skin=default` 붙이고 새로고침 | 예전 룩(회색 배경, 시스템 글꼴, 네모난 버튼). 탭을 닫기 전까지 유지 | 🤖 `skin` | ➖ |
+| EXP-3 | 오너 · 시터 탭 바 | 흰 바, 위쪽 모서리 둥글게, 선택한 탭 아이콘 뒤에 민트 알약. 라벨이 잘리지 않음 | **👤** (모양) | ➖ |
+| EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
+| EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
+
+### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EXP-1 | 아무 화면이나 스위치 없이 열기 | 크림 배경, 잉크색 글씨, 화면 제목은 Fredoka. 버튼 · 칩 · 세그먼트는 알약 모양 | 🤖 `skin` | ➖ |
+| EXP-2 | 주소에 `?skin=default` 붙이고 새로고침 | 예전 룩(회색 배경, 시스템 글꼴, 네모난 버튼). 탭을 닫기 전까지 유지 | 🤖 `skin` | ➖ |
+| EXP-3 | 오너 · 시터 탭 바 | 흰 바, 위쪽 모서리 둥글게, 선택한 탭 아이콘 뒤에 민트 알약. 라벨이 잘리지 않음 | **👤** (모양) | ➖ |
+| EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
+| EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
+
+### 3.31 헤더 (HDR) · #147
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| HDR-1 | 오너 Home · 시터 Home | 제목은 오너 "Home", 시터 "Today". 오른쪽에 역할 칩(Owner / Sitter), 종(안 읽은 수), ≡. 글자로 된 "Log out" 없음 | 🤖 `auth` · `split` | ➖ |
+| HDR-2 | ≡ 누르기 | 오른쪽에서 화면 전체 너비로 미끄러져 들어옴. 나(→ Profile), Notifications(숫자), Schedule(시터만), What's new, Settings, 맨 아래 Log out. ✕나 항목을 누르면 미끄러져 나감 | 🤖 `profile` · `schedule` | ➖ |
+| HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
+| HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
+
+### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EXP-1 | 아무 화면이나 스위치 없이 열기 | 크림 배경, 잉크색 글씨, 화면 제목은 Fredoka. 버튼 · 칩 · 세그먼트는 알약 모양 | 🤖 `skin` | ➖ |
+| EXP-2 | 주소에 `?skin=default` 붙이고 새로고침 | 예전 룩(회색 배경, 시스템 글꼴, 네모난 버튼). 탭을 닫기 전까지 유지 | 🤖 `skin` | ➖ |
+| EXP-3 | 오너 · 시터 탭 바 | 흰 바, 위쪽 모서리 둥글게, 선택한 탭 아이콘 뒤에 민트 알약. 라벨이 잘리지 않음 | **👤** (모양) | ➖ |
+| EXP-4 | 오너 → 진행 중인 예약 열기 | 시터 이름이 큰 Fredoka 제목, 단계는 번호 동그라미(끝난 단계 금색 ✓, 지금 단계 잉크색). Meet & Greet 카드는 복숭아색, Finish booking은 버터색, 짐 목록은 민트 | **👤** (모양) | ➖ |
+| EXP-5 | Welcome · 로그인 화면 | 금색 코인 로고 + "Goldito" | **👤** (모양) | ➖ |
+
+### 3.31 헤더 (HDR) · #147
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| HDR-1 | 오너 Home · 시터 Home | 제목은 오너 "Home", 시터 "Today". 오른쪽에 역할 칩(Owner / Sitter), 종(안 읽은 수), ≡. 글자로 된 "Log out" 없음 | 🤖 `auth` · `split` | ➖ |
+| HDR-2 | ≡ 누르기 | 오른쪽에서 화면 전체 너비로 미끄러져 들어옴. 나(→ Profile), Notifications(숫자), Schedule(시터만), What's new, Settings, 맨 아래 Log out. ✕나 항목을 누르면 미끄러져 나감 | 🤖 `profile` · `schedule` | ➖ |
+| HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
+| HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
+
+### 3.32 시터 일정 보기 (CAL) · #120
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| CAL-1 | 오너 → Bookings → Chloe 프로필 | 월 달력 대신 **Next openings**: 오늘부터 빈 날 최대 5줄("Tue, Oct 20 · Morning, Afternoon", 다 비면 "All day"). 아래 **See full month** | 🤖 `sitters` | ➖ |
+| CAL-2 | 한 줄 누르기 | 그날 페이지: 제목 "Tue, Oct 20", 세 줄(Morning · 시간 · "2 spots left" / "Full" / "Not available"). ← 누르면 프로필로 | 🤖 `sitters` | ➖ |
+| CAL-3 | See full month → 날짜 누르기 | 달력 페이지(#150 빗금 그대로) → 그날 페이지. ← 누르면 보던 달 그대로 달력으로 | 🤖 `sitters` | ➖ |
+| CAL-4 | 그날 페이지에서 Book | Book care가 그날로 시작(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기, 둘 다 바꿀 수 있음) | **👤** | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)

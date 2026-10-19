@@ -34,7 +34,7 @@ const makeStyles = (theme: Theme) =>
       alignSelf: "flex-start",
       paddingVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.sm,
-      borderRadius: theme.radius.sm,
+      borderRadius: theme.ui.radius.tag,
     },
     label: {
       fontSize: theme.fontSize.small,

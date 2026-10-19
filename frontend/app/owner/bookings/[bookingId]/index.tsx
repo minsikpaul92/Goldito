@@ -41,7 +41,7 @@ import {
   proposeHandoff,
   respondHandoff,
 } from "../../../../lib/bookings";
-import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
@@ -88,6 +88,7 @@ function endedNote(b: BookingSummary): string | null {
  */
 export default function OwnerBookingDetail() {
   const styles = useThemedStyles(makeStyles);
+  const blocks = useTheme().ui.blocks;
   const toast = useToast();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const [state, setState] = useState<State>({ status: "loading" });
@@ -208,8 +209,8 @@ export default function OwnerBookingDetail() {
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
-        <Card style={styles.block}>
-          <Text accessibilityRole="header" style={styles.title} testID="booking-sitter">
+        <Card style={blocks ? { ...styles.block, ...styles.bare } : styles.block}>
+          <Text accessibilityRole="header" style={[styles.title, blocks && styles.displayTitle]} testID="booking-sitter">
             {sitter}
           </Text>
           <View style={styles.chips}>
@@ -223,7 +224,7 @@ export default function OwnerBookingDetail() {
         </Card>
 
         {hasStageBar(booking) || passing ? (
-          <Card style={styles.block}>
+          <Card style={blocks ? { ...styles.block, ...styles.bare } : styles.block}>
             <BookingStageBar booking={booking} viewer="owner" />
             {passing ? (
               <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
@@ -244,7 +245,7 @@ export default function OwnerBookingDetail() {
         ) : null}
 
         {needsCheckout ? (
-          <Card style={styles.block} testID="checkout-banner">
+          <Card style={styles.block} tone={blocks ? "butter" : undefined} testID="checkout-banner">
             <Text style={styles.label}>
               {checkoutReopened ? "Your stay changed — sign to finish →" : `${sitter} accepted! Finish booking →`}
             </Text>
@@ -275,7 +276,7 @@ export default function OwnerBookingDetail() {
         ) : null}
 
         {packing.length > 0 ? (
-          <Card style={styles.block} testID="packing-list">
+          <Card style={styles.block} tone={blocks ? "mint" : undefined} testID="packing-list">
             <Text style={styles.label}>{`Pack for ${petNames}`}</Text>
             <Text style={styles.muted}>Tick what you've packed. It's saved on this device so nothing gets forgotten.</Text>
             {packing.map((item) => (
@@ -476,6 +477,13 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.title,
       fontWeight: theme.fontWeight.bold,
       color: theme.color.text,
+    },
+    // Color-block skins: the header sits on the page, not in a card.
+    bare: { backgroundColor: "transparent", borderWidth: 0, padding: 0 },
+    displayTitle: {
+      fontSize: 34,
+      lineHeight: 39,
+      ...(theme.fontFamily.display ? { fontFamily: theme.fontFamily.display, fontWeight: undefined } : null),
     },
     label: {
       fontSize: theme.fontSize.body,

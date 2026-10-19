@@ -2,18 +2,18 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { InquirySheet } from "../../../components/InquirySheet";
-import { STATE_LABEL, SlotCalendar } from "../../../components/SlotCalendar";
-import { Button } from "../../../components/ui/Button";
-import { Card } from "../../../components/ui/Card";
-import { Chip } from "../../../components/ui/Chip";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { LoadingView } from "../../../components/ui/LoadingView";
-import { Screen } from "../../../components/ui/Screen";
-import { StarRating } from "../../../components/StarRating";
-import { RatingSummary, getRatingSummary } from "../../../features/completion/completionApi";
-import { addMonths, appToday, formatDay, formatTime, monthEnd, monthStart } from "../../../features/schedule/dates";
-import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../features/schedule/scheduleApi";
+import { SitterActions } from "../../../../components/SitterActions";
+import { NextOpenings, nextOpenings } from "../../../../components/NextOpenings";
+import { Button } from "../../../../components/ui/Button";
+import { Card } from "../../../../components/ui/Card";
+import { Chip } from "../../../../components/ui/Chip";
+import { EmptyState } from "../../../../components/ui/EmptyState";
+import { LoadingView } from "../../../../components/ui/LoadingView";
+import { Screen } from "../../../../components/ui/Screen";
+import { StarRating } from "../../../../components/StarRating";
+import { RatingSummary, getRatingSummary } from "../../../../features/completion/completionApi";
+import { addDays, appToday } from "../../../../features/schedule/dates";
+import { DaySlot, loadSitterMonth } from "../../../../features/schedule/scheduleApi";
 import {
   SERVICE_LABEL,
   SitterProfileView,
@@ -22,10 +22,10 @@ import {
   ownersSetting,
   setFavoriteSitter,
   sitterMeta,
-} from "../../../features/sitters/sitterApi";
-import { TextButton } from "../../../components/ui/TextButton";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
-import { Theme } from "../../../theme/themes";
+} from "../../../../features/sitters/sitterApi";
+import { TextButton } from "../../../../components/ui/TextButton";
+import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { Theme } from "../../../../theme/themes";
 
 type ProfileState =
   | { status: "loading" }
@@ -33,18 +33,13 @@ type ProfileState =
   | { status: "missing" }
   | { status: "error"; message: string };
 
-/** "Morning: Open · 8:00 AM–12:00 PM · 2 spots left" — never who else booked. */
-function slotLine(label: string, s: DaySlot | undefined): string {
-  const state = s?.state ?? "closed";
-  if (state !== "open" && state !== "full") return `${label}: ${STATE_LABEL.closed}`;
-  const hours = s?.startsAt && s.endsAt ? ` · ${formatTime(s.startsAt)}–${formatTime(s.endsAt)}` : "";
-  const spots = state === "full" ? "" : ` · ${s?.remaining === 1 ? "1 spot" : `${s?.remaining} spots`} left`;
-  return `${label}: ${STATE_LABEL[state]}${hours}${spots}`;
-}
+/** How far ahead the next openings look, and how many rows they show (#120). */
+const LOOK_AHEAD_DAYS = 60;
+const MAX_OPENINGS = 5;
 
 /**
- * A sitter as owners see them (phase-03b 3B.2): intro + month schedule from
- * get_sitter_schedule (own hours, open / full / closed, spots left). Book this sitter → 3B.3.
+ * A sitter as owners see them (phase-03b 3B.2): intro + the next open days from
+ * get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
  */
 export default function SitterProfileScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -52,11 +47,8 @@ export default function SitterProfileScreen() {
   const today = useMemo(() => appToday(), []);
 
   const [profile, setProfile] = useState<ProfileState>({ status: "loading" });
-  const [month, setMonth] = useState(() => monthStart(today));
   const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const [day, setDay] = useState<string | null>(null);
-  const [asking, setAsking] = useState(false);
   const [rating, setRating] = useState<RatingSummary | null>(null);
   /** Mine only (011h): favorites come first when I book. */
   const [favorite, setFavorite] = useState<boolean | null>(null);
@@ -90,11 +82,11 @@ export default function SitterProfileScreen() {
     if (!sitterId) return;
     setScheduleError(null);
     try {
-      setSlots(await loadSitterMonth(sitterId, monthStart(month), monthEnd(month)));
+      setSlots(await loadSitterMonth(sitterId, today, addDays(today, LOOK_AHEAD_DAYS - 1)));
     } catch (error) {
       setScheduleError((error as Error).message);
     }
-  }, [sitterId, month]);
+  }, [sitterId, today]);
 
   useEffect(() => {
     void loadProfile();
@@ -107,12 +99,6 @@ export default function SitterProfileScreen() {
   useEffect(() => {
     void loadSchedule();
   }, [loadSchedule]);
-
-  const changeMonth = (n: number) => {
-    setDay(null);
-    setSlots(null);
-    setMonth((m) => addMonths(m, n));
-  };
 
   if (profile.status === "loading") return <LoadingView />;
 
@@ -139,6 +125,7 @@ export default function SitterProfileScreen() {
 
   const { sitter } = profile;
   const meta = sitterMeta(sitter);
+  const openings = slots ? nextOpenings(slots, today, LOOK_AHEAD_DAYS, MAX_OPENINGS) : [];
 
   return (
     <View style={styles.root}>
@@ -186,18 +173,8 @@ export default function SitterProfileScreen() {
   
         <View style={styles.block}>
           <Text accessibilityRole="header" style={styles.label}>
-            Schedule
+            Next openings
           </Text>
-          <SlotCalendar
-            month={month}
-            today={today}
-            slots={slots ?? new Map()}
-            selection={day ? { from: day, to: day } : null}
-            onSelectDay={setDay}
-            onPrevMonth={() => changeMonth(-1)}
-            onNextMonth={() => changeMonth(1)}
-            canGoPrev={month > monthStart(today)}
-          />
           {scheduleError ? (
             <EmptyState
               emoji="📅"
@@ -205,44 +182,22 @@ export default function SitterProfileScreen() {
               message={scheduleError}
               action={{ label: "Try again", onPress: () => void loadSchedule() }}
             />
-          ) : null}
-        </View>
-  
-        <Card>
-          {day && slots ? (
-            <View style={styles.block} testID="sitter-day">
-              <Text style={styles.label}>{formatDay(day)}</Text>
-              {SLOTS.map(({ slot, label }) => (
-                <Text key={slot} style={styles.body} testID={`sitter-day-${slot}`}>
-                  {slotLine(label, slots.get(slotKey(day, slot)))}
-                </Text>
-              ))}
-            </View>
+          ) : !slots ? (
+            <Text style={styles.meta}>Loading…</Text>
+          ) : openings.length > 0 ? (
+            <NextOpenings openings={openings} onOpenDay={(d) => router.push(`/owner/sitters/${sitter.id}/day/${d}`)} />
           ) : (
-            <Text style={styles.meta}>Tap a day to see {sitter.displayName}'s hours and open spots.</Text>
+            <Text style={styles.meta} testID="sitter-no-openings">No open days in the next two months.</Text>
           )}
-        </Card>
-      </Screen>
-      <View style={styles.footer}>
-        {/* FB-33: asking first reads as "before booking", next to Book — Book stays the one filled button. */}
-        <View style={styles.actions}>
           <Button
-            label="Ask before booking"
+            label="See full month"
             variant="secondary"
-            onPress={() => setAsking(true)}
-            style={styles.action}
-            testID="ask-about-stay"
-          />
-          <Button
-            label="Book"
-            onPress={() => router.push(`/owner/bookings/new?sitter=${sitter.id}`)}
-            style={styles.action}
-            testID="book-this-sitter"
+            onPress={() => router.push(`/owner/sitters/${sitter.id}/calendar`)}
+            testID="sitter-see-month"
           />
         </View>
-        <Text style={styles.actionsHint}>Ask about dates, price or care first — nothing is booked until you send a request.</Text>
-      </View>
-      <InquirySheet visible={asking} onClose={() => setAsking(false)} sitter={sitter} />
+      </Screen>
+      <SitterActions sitter={sitter} />
     </View>
   );
 }
@@ -253,28 +208,9 @@ const makeStyles = (theme: Theme) =>
       flex: 1,
       backgroundColor: theme.color.background,
     },
-    footer: {
-      padding: theme.spacing.md,
-      maxWidth: 480,
-      width: "100%",
-      alignSelf: "center",
-    },
-    actions: {
-      flexDirection: "row",
-      gap: theme.spacing.sm,
-    },
-    action: {
-      flex: 1,
-    },
     ownersHint: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
-    },
-    actionsHint: {
-      marginTop: theme.spacing.xs,
-      fontSize: theme.fontSize.small,
-      color: theme.color.textMuted,
-      textAlign: "center",
     },
     content: {
       gap: theme.spacing.md,

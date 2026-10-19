@@ -64,6 +64,7 @@ test.describe("profile photos", () => {
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
     await expect(screen.getByTestId("photos-placeholder")).toBeVisible();
@@ -100,6 +101,7 @@ test.describe("profile photos", () => {
     );
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("photos-tile-p3")).toBeVisible();
 
@@ -131,6 +133,7 @@ test.describe("profile photos", () => {
     const db = await setup(page, { failComplete: true });
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await screen.getByTestId("photos-placeholder").click();
     await screen.getByTestId("sample-mood_tug").click();
@@ -146,6 +149,7 @@ test.describe("profile photos", () => {
     for (let i = 1; i <= 8; i++) db.profile_photos.push({ id: `p${i}`, profile_id: SITTER.id, public_id: `goldito/profile/${SITTER.id}/${i}` });
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("photos-tile-p8")).toBeVisible();
     await expect(screen.getByTestId("photos-add")).toHaveCount(0);
@@ -156,6 +160,7 @@ test.describe("profile photos", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
     await expect(screen.getByTestId("profile-photos-group")).toContainText("A sitter sees it only once you have a booking");
@@ -169,6 +174,7 @@ test.describe("profile photos", () => {
     const db = await setup(page);
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
     // The empty state is one photo-sized circle, not a big banner.

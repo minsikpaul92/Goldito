@@ -20,6 +20,8 @@ This file is written for both people and AI coding agents (including the designe
 | Base components | [`frontend/components/ui/`](frontend/components/ui/) — one file per Figma base component (§0.4) | same |
 | Every screen and every button | [`docs/design/screen-map.md`](docs/design/screen-map.md) — **generated**: route → file → each action's label, ID and line (§0.6) | regenerated, never hand-edited |
 
+**The Figma file since Oct 19:** Expressive is the look. The **Screens** page holds the Expressive sections plus "In the app · Oct 19" (what PRs #177, #178 and #183 built); the older Balanced and Live screens are on the **Archive** page. The logo is the pixel coin (**Brand** › `Logo/Pixel coin/Gold/Symbol master`, code `frontend/assets/brand/goldito-symbol.svg`). Most components and screens are built by the Goldito plugin from the HTML prototypes, so a fix goes into the prototype or the plugin's capture rules (`design/figma-plugin/README.md`), never only into the Figma output. Those rules: a label alone in a button or pill fills it; one-line labels hug; stacked text blocks and form fields are auto-layout (one-line fields cut long text with "…"); icons in circles are centred; steppers stack first on top.
+
 Code reads design values only through `useTheme()` (≈ 2,000 style references). Changing a value in `tokens.ts` changes every screen; no screen needs a separate edit for a color, size or type change.
 
 ### 0.2 Variables → tokens
@@ -87,7 +89,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 | Trip Map | `components/TripMap.tsx` / `TripMap.web.tsx` | ✅ |
 | Calendar Day | `components/SlotCalendar.tsx`, `components/ui/DayPickerSheet.tsx` | 🟡 |
 | Tab Bar / Tab Bar Item | `components/RoleTabs.tsx` — Figma's last tab says **Mood**, the app's is **Snap** (D61) | 🟡 |
-| Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx` | 🟡 |
+| Top Bar / Icon Button | `expo-router` headers + `components/HeaderActions.tsx`, `components/NotificationBell.tsx`, `components/HeaderMenu.tsx` | ✅ |
 | Profile Card | `components/SitterCard.tsx` + `app/owner/sitters/[sitterId].tsx` | 🟡 |
 | Choice Card | `components/RoleCard.tsx`; other big radio choices are local | 🟡 |
 | Next Task Card / Task Row | `components/SitterDashboard.tsx`, `components/TodayTasks.tsx`, `components/CareTasksSection.tsx` | 🟡 |
@@ -204,7 +206,8 @@ Goldito is a private care app for **dogs and cats**. Owners hand their pet to a 
 - Screen padding: `spacing.md` (16). Gap between cards: `spacing.md`. Inside a card: `spacing.md`.
 - **Content width: 370** (402 − 2 × 16). Full-width components (cards, rows, banners, fields) are built at 370 in Figma, and everything inside them fills or grows — never a fixed inner width — so they adapt from 360 to 440. Chat bubbles are 80 % of the content width.
 - Bottom tab bar per role (owner / sitter). The primary action sits at the bottom of the screen, within thumb reach.
-- Dev builds show a small role label (**Owner** / **Sitter**) in the header.
+- The header shows the role label (**Owner** / **Sitter**) to everyone (#147).
+- **≡ menu** (`components/HeaderMenu.tsx`): a full-width drawer that slides in from the right. You (→ Profile), Notifications with the count, Schedule (sitters), What's new, Settings, and Log out pinned at the bottom with a confirm. Settings has Log out with the same confirm.
 
 ### 2.1 Desktop browsers (judges): phone frame
 
@@ -299,7 +302,18 @@ A **look** is the overall palette the team chooses once for the app; a **skin** 
 
 `primary`, `primaryText` and the status colors are the same in both. Every text pair is ≥ 4.5:1 and every control outline ≥ 3:1 in both looks (audited Oct 5). Figma (*Goldito Design System*) shows **Balanced** only; Playful also changes outlines, shadows, corners and fonts, so it lives in the clickable prototypes (`design/concept-prototypes/redesign/`) until the team picks a look.
 
-**Expressive** (Oct 7, prototypes only) is a third direction with its own layouts, not just a palette: brand green stays primary, warm complements (`#E76F51` · `#F4A261` · `#E9C46A`) tint color-blocked sections, a display face (Lilita One) sets headlines, and a placeholder illustration set (`design/concept-prototypes/redesign/art.svg`) fills fixed slots — never over content. It needs new components (number tiles, color blocks, illustration slots) if the team picks it.
+**Expressive** is the app's look since Oct 18 (skin `expressive` in `themes.ts`, the default; `?skin=default` on web or `EXPO_PUBLIC_THEME=default` brings back the earlier look for debugging). Ink `#1B4332` text on cream `#FBF6EA`, mint accent, Fredoka for screen titles (`fontFamily.display`). Shape and chrome come from the skin's `theme.ui`, so components never check the skin name:
+
+| `theme.ui` | Expressive | default |
+| :--- | :--- | :--- |
+| `radius.button` · `chip` · `segment` · `tag` · `stepper` | `pill` (999) | 12 · 8 · 12 · 8 · 12 |
+| `radius.card` · `radius.block` | 16 · 24 | 16 · 16 |
+| `chrome` (header bar) | cream | white |
+| `stepperBorder` · `stepperPressed` | gold · butter | border · accent |
+| `tabs` | `pill`: white bar, 26 top corners, mint pill behind the selected icon | `pushed` |
+| `blocks` | on: tinted Card blocks and numbered stage dots on booking screens | off |
+
+`Card tone` (`mint` · `peach` · `butter` · `blush`) is a tinted block with no border; stages use mint (Inquiry, Care), peach (Meet & Greet), butter (Booking). `ScreenHeader` is the large in-page title with an optional subtitle and right-side slots. The logo is the gold coin symbol (`assets/brand/goldito-symbol.svg`) plus "Goldito" in the display face.
 
 ---
 
@@ -460,7 +474,7 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | Task row | full width; icon 40 | 16 | `lg` | Time Caption, title Body Strong | Pending · Next (2 px `primary` border + the one filled action) · Done (time + ✓ in `success`) |
 | `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Above the tab bar and pinned footer |
 | `Sheet` | full width | 16, footer 24 | 16 top | Title Body Strong + **Close** | — |
-| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong | App (title + 🔔 + profile) · Detail (Back + title) · Onboarding (Back + step dots) |
+| Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong (Expressive: 24 display face) | App: title (owner "Home", sitter "Today", else the tab name) + role `Tag` + 🔔 (24, count badge with a 2 px ring) + ≡ menu (#147) · Detail (Back + title) · Onboarding (Back + step dots) |
 | Tab bar | 60 tall (`layout.tabBarHeight`) | 0 × 8 | — | Caption | Active tab: `accent` pill behind the icon + `primary` label |
 | Icon button | 44 × 44 | — | full | — | Default · Badge (8 px `error` dot) |
 | Star · calendar day · stepper button | 44 × 44 | — | `md` (day, stepper) | — | Star Off uses `borderStrong`, On uses `warning` |
@@ -598,7 +612,7 @@ Counts (number of pets, times a day) are the only thing that still uses the plai
 
 ## 8. Imagery & icons
 
-- **Logo:** Muk's gold tag (brand page v2.1, `frontend/assets/brand/`). In the app use `<BrandLogo />` (`components/BrandLogo.tsx`): the light lockup `goldito-lockup-light.svg` on web, app icon + name on native. Never re-type the name as text with an emoji. Favicon: `goldito-favicon-48.png` (`app.json`).
+- **Logo:** the gold coin symbol (`frontend/assets/brand/goldito-symbol.svg`, PNG copy for native). In the app use `<BrandLogo />` (`components/BrandLogo.tsx`): the symbol + "Goldito" in the display face. Never re-type the name as text with an emoji. Favicon and app icons still use the gold tag (`goldito-favicon-48.png`, `app.json`) until they are redrawn.
 - Real pet photos are the hero; keep chrome minimal around them.
 - Icons: one outline icon set (Figma will choose); emoji are fine in notifications, chips, and empty states.
 - Stickers and report themes (P1, Phase 11.8): `sunny`, `cozy`, `playful`, `calm` — assets from the designer.
@@ -685,7 +699,7 @@ Done in Figma and synced: palette incl. `warning` and the `*Surface` tints, the 
 - [ ] Icon set
 - [ ] App icon at 1024 px (only the 180 px touch icon and favicons are in `assets/brand/`)
 - [ ] 🟡 / ❌ components in §0.4 (Tab Bar Snap label, Switch, Skeleton, Filter Chip, …), ProposalCard, ReportCard
-- [ ] App look for the demo: the Draft's design target is Expressive (Oct 15); whether the app moves toward it is a team decision
+- [ ] Expressive: dark mode, the new owner Home (prototype), Figma icon set in the tab bar
 - [ ] Report themes (4) + preset sticker set (Phase 11.8)
 - [ ] Welcome / Login screens ([#13](https://github.com/minsikpaul92/Pawddy/issues/13))
 - [ ] Figma frames at **402 × 874**; spot-check at 360 and 440

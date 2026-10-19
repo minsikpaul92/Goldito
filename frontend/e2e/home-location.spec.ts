@@ -55,6 +55,7 @@ async function mockReverse(page: Page, label: string | null, status = 200, posta
 async function openProfile(page: Page, user: typeof OWNER | typeof SITTER, home: string) {
   await signIn(page, user);
   await expect(page).toHaveURL(new RegExp(`/${home}$`));
+  await app(page).getByTestId("open-menu").click();
   await app(page).getByTestId("open-profile").click();
   await expect(page).toHaveURL(/\/profile$/);
 }
@@ -138,6 +139,7 @@ test.describe("home map pin", () => {
     expect([row?.home_lat, row?.home_lng]).toEqual([43.6536, -79.384]);
 
     // The saved pin is not shown on the Profile until the person reads their location again.
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-use-location")).toBeVisible();
     await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);

@@ -20,6 +20,7 @@ test.describe("demo tools", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("demo-tools")).toBeVisible();
     await expect(screen.getByTestId("demo-state-pets")).toHaveAttribute("aria-checked", "true");
@@ -47,6 +48,7 @@ test.describe("demo tools", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await screen.getByTestId("demo-reset-open").click();
     await screen.getByTestId("demo-reset-confirm").click();
@@ -61,6 +63,7 @@ test.describe("demo tools", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-save")).toBeVisible();
     await expect(screen.getByTestId("demo-tools")).toHaveCount(0);
