@@ -265,6 +265,17 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("search-none")).toHaveText("No sitters free.");
   });
 
+  test("with no favorites yet the list says so, not that none are free", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.owner_favorite_sitters.splice(0);
+    const screen = await openBookings(page);
+
+    await expect(screen.getByTestId("search-none")).toHaveText("No favorites yet.");
+    await screen.getByTestId("bar-search").click();
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+  });
+
   test("a tile opens the sitter detail with the stay", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);

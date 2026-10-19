@@ -49,15 +49,15 @@ test.describe("privacy page", () => {
     await expect(screen.getByText("It is a prototype", { exact: false })).toBeHidden();
   });
 
-  test("a signed-in person can open it from Profile and a direct link stays on the page", async ({ page }) => {
+  test("a signed-in person can open it from Settings and a direct link stays on the page", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
     await screen.getByTestId("open-menu").click();
-    await screen.getByTestId("open-profile").click();
-    await screen.getByTestId("profile-privacy").click();
+    await screen.getByTestId("open-settings").click();
+    await screen.getByTestId("settings-privacy").click();
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(screen.getByTestId("privacy")).toBeVisible();
 

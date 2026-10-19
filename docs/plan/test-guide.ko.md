@@ -147,7 +147,7 @@
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 | **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
-| **Settings · What's New** (Profile → Settings: 계정 · 알림 안내 · What's New = `docs/CHANGELOG.md` · 앱 버전) | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 | 11 / 11.11 |
+| **Settings · What's new** (메뉴 → Settings: 계정 · Edit profile · 알림 안내 · Privacy · 앱 버전 · Log out / 메뉴 → What's new: `docs/CHANGELOG.md`의 **1.0.0 이후**만, 없으면 "Nothing new yet") | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 |
 
 ### Stage 5 — Completion · 기타
 
@@ -633,8 +633,9 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| SET-1 | 견주 / 시터 → 헤더 Profile → 맨 아래 **Settings · What's New** | Settings 화면: Account(이름 · 이메일 · Pet owner/sitter · Edit profile), Notifications("앱이 열려 있을 때 벨 · 화면 메시지로 옴, 폰 알림 · 조용한 시간은 아직 없음"), What's New(최신 릴리스 0.2.0 · 2026-10-15의 Added · Fixed · Changed), 맨 아래 "Goldito 0.2.0" · Privacy | 🤖 `settings.spec.ts` (두 역할) | 사람 확인 대기 |
-| SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목 | 앱 What's New에 보이지 않음(출시된 것만) | 🤖 `settings.spec.ts` · `node --test scripts/` | 사람 확인 대기 |
+| SET-1 | 견주 / 시터 → ≡ 메뉴 → **Settings** | Account(이름 · 이메일 · Pet owner/sitter · **Edit profile**), Notifications 안내, **About**(Privacy · 앱 버전), Log out. What's New는 여기에 없음. Edit profile은 Profile을 열고, Profile 맨 아래에는 Settings · What's New · Privacy 링크가 없음 | 🤖 `settings.spec.ts` | 사람 확인 대기 |
+| SET-4 | ≡ 메뉴 → **What's new** | 출시(1.0.0) 이후에 생긴 것만 버전별로. 지금은 출시 전이라 "Nothing new yet". 해커톤까지의 기능(P0)은 적지 않음. 출시 후 기능은 CHANGELOG.md에 새 버전으로 적고 `node scripts/changelog.mjs` | 🤖 `settings.spec.ts` · `node --test scripts/changelog.test.mjs` | 사람 확인 대기 |
+| SET-2 | `docs/CHANGELOG.md`의 `### Planned` 항목과 0.x 버전 | 앱 What's new에 보이지 않음(출시 후 것만) | 🤖 `settings.spec.ts` · `node --test scripts/changelog.test.mjs` | 사람 확인 대기 |
 | SET-3 | (개발) CHANGELOG.md만 고치고 `node scripts/changelog.mjs`를 안 돌린 PR | CI frontend 잡의 "What's New matches docs/CHANGELOG.md" 단계가 실패 | CI | ➖ |
 
 
@@ -734,7 +735,7 @@
 | HDR-1 | 오너 Home · 시터 Home | 제목은 오너 "Home", 시터 "Today". 오른쪽에 역할 칩(Owner / Sitter), 종(안 읽은 수), ≡. 글자로 된 "Log out" 없음 | 🤖 `auth` · `split` | ➖ |
 | HDR-2 | ≡ 누르기 | 오른쪽에서 화면 전체 너비로 미끄러져 들어옴. 나(→ Profile), Notifications(숫자), Schedule(시터만), What's new, Settings, 맨 아래 Log out. ✕나 항목을 누르면 미끄러져 나감 | 🤖 `profile` · `schedule` | ➖ |
 | HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
-| HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
+| HDR-4 | ≡ 메뉴 → Settings → Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
 
 ### 3.30 Expressive 룩 (EXP) · *사전: 없음. `?skin=default`로 예전 룩*
 
@@ -753,7 +754,7 @@
 | HDR-1 | 오너 Home · 시터 Home | 제목은 오너 "Home", 시터 "Today". 오른쪽에 역할 칩(Owner / Sitter), 종(안 읽은 수), ≡. 글자로 된 "Log out" 없음 | 🤖 `auth` · `split` | ➖ |
 | HDR-2 | ≡ 누르기 | 오른쪽에서 화면 전체 너비로 미끄러져 들어옴. 나(→ Profile), Notifications(숫자), Schedule(시터만), What's new, Settings, 맨 아래 Log out. ✕나 항목을 누르면 미끄러져 나감 | 🤖 `profile` · `schedule` | ➖ |
 | HDR-3 | ≡ → Log out | "Log out?" 확인 후에만 로그아웃, Welcome으로 | 🤖 `auth` | ➖ |
-| HDR-4 | Profile → Settings → 맨 아래 Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
+| HDR-4 | ≡ 메뉴 → Settings → Log out | 같은 확인 시트, 확인하면 Welcome으로 | **👤** | ➖ |
 
 ### 3.32 시터 일정 보기 (CAL) · #120
 
@@ -765,6 +766,16 @@
 | CAL-4 | 그날 페이지에서 Book | Book care가 그날로 시작(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기, 둘 다 바꿀 수 있음) | **👤** | ➖ |
 
 ---
+
+### 3.33 프로필 주소 · 만남 장소 (ADDR) · *사전: 백엔드가 떠 있음(`/api/geo/suggest`), 견주 또는 시터 계정*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| ADDR-1 | Profile → **Home address**에 주소나 우편번호를 쓰고 **Check address** | 실제 주소 후보가 최대 5개 나옴(예: "127 Broadway Ave, Toronto, ON M4P 1V9"). 하나를 누르면 칸이 그 주소로 바뀌고 "✓ Found on the map". 입력할 때마다 조회하지 않고 버튼을 누를 때 한 번만(OpenStreetMap 정책) | 🤖 `home-location.spec.ts` (+ pytest `test_geo`) | 사람 확인 대기 |
+| ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
+| ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
+| ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
+| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | "No favorites yet."(즐겨찾기가 있는데 날짜에 안 맞을 때만 "No favorites free."). 🔍를 누르면 주변 시터 | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
 
 ### 3.32 채팅 허브 (CHAT) — 3D.4 · #141 · *사전: 호스팅 DB에 `014j`(적용은 요청할 때만), 오너와 시터 계정 둘(예: Peter와 Chloe), 두 브라우저나 창*
 

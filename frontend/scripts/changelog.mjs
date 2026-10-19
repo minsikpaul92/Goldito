@@ -41,7 +41,9 @@ export function parse(markdown) {
     const item = line.match(/^- (.+)/);
     if (item && section) section.items.push(plain(item[1]));
   }
-  return releases.filter((rel) => rel.sections.some((s) => s.items.length > 0));
+  // What's new is news since launch: 0.x is the build-up to 1.0.0 and stays in the file as history only.
+  const launched = (rel) => Number.parseInt(rel.version, 10) >= 1;
+  return releases.filter((rel) => launched(rel) && rel.sections.some((s) => s.items.length > 0));
 }
 
 const runDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

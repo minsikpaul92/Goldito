@@ -97,6 +97,21 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   return { found: false };
 }
 
+export type AddressSuggestion = { label: string; point: LatLng };
+
+/**
+ * Real addresses for what the person typed (OpenStreetMap through our server), up to five, one lookup per press of
+ * "Check address". `null` means the lookup is down; an empty list means nothing matched.
+ */
+export async function suggestAddresses(address: string): Promise<AddressSuggestion[] | null> {
+  try {
+    const result = await apiPost<{ results: { label: string; lat: number; lng: number }[] }>("/api/geo/suggest", { address });
+    return result.results.map((r) => ({ label: r.label, point: { lat: r.lat, lng: r.lng } }));
+  } catch {
+    return null;
+  }
+}
+
 export type PinPlace = { label: string; postal: string | null; address: string | null };
 
 /**

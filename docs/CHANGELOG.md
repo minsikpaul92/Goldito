@@ -2,7 +2,7 @@
 
 All notable **user-facing** Goldito changes. Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-The in-app **Profile → Settings → What's New** screen (Phase 11.11) shows the released entries of this file. Release rule: when a feature ships to the demo / production URL, add its line here and run `node scripts/changelog.mjs` in `frontend/` (it writes `features/settings/changelog.json`; CI fails when the two differ). Planned items are never shown in the app.
+The in-app **Menu → What's new** screen (Phase 11.11) shows the released entries of this file, **from 1.0.0 on**: what people can do now that they could not at launch. Everything before 1.0.0 (the hackathon build, P0) stays below as history and is never shown in the app. Release rule: when a feature ships after launch (P1, post-hackathon, post-release), add its line under the new version here and run `node scripts/changelog.mjs` in `frontend/` (it writes `features/settings/changelog.json`; CI fails when the two differ). Planned items are never shown in the app.
 
 ## [Unreleased]
 

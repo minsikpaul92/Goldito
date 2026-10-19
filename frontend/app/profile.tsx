@@ -26,7 +26,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { PinPlace, geocodeAddress, reverseGeocode } from "../lib/transit";
+import { AddressSuggestion, PinPlace, reverseGeocode, suggestAddresses } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -108,7 +108,7 @@ function cleanSpots(spots: string[]): string[] {
   return out.slice(0, MAX_SPOTS);
 }
 
-/** Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11). */
+/** Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu. */
 export default function ProfileScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
@@ -121,6 +121,8 @@ export default function ProfileScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [spots, setSpots] = useState<string[]>(padSpots([]));
+  // How many spot fields are showing: one to start, "+" adds up to MAX_SPOTS.
+  const [spotFields, setSpotFields] = useState(1);
   const [services, setServices] = useState<Service[]>(["boarding"]);
   const [multiOwner, setMultiOwner] = useState(false);
   const [aiMode, setAiMode] = useState<AiReplyMode>({ mode: "manual", consented: false });
@@ -132,6 +134,11 @@ export default function ProfileScreen() {
   const [homeNote, setHomeNote] = useState<string | null>(null);
   // "Trinity Bellwoods, Toronto" for the pin; `undefined` while it is being looked up, `null` when it has no name.
   const [homePlace, setHomePlace] = useState<PinPlace | null | undefined>(undefined);
+  // The address text that is placed on the map (it matches the pin). Anything else typed has to be checked first.
+  const [placedAddress, setPlacedAddress] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[] | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [checkNote, setCheckNote] = useState<string | null>(null);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -143,9 +150,15 @@ export default function ProfileScreen() {
         setLoaded(result);
         setDraft(toDraft(result));
         setSpots(padSpots(result.fields.meet_spots));
+        setSpotFields(Math.max(1, Math.min(MAX_SPOTS, result.fields.meet_spots.length)));
         setHome(
           result.fields.home_lat != null && result.fields.home_lng != null
             ? { lat: result.fields.home_lat, lng: result.fields.home_lng }
+            : null,
+        );
+        setPlacedAddress(
+          result.fields.home_address && result.fields.home_lat != null && result.fields.home_lng != null
+            ? result.fields.home_address
             : null,
         );
         if (result.role === "sitter") {
@@ -173,7 +186,12 @@ export default function ProfileScreen() {
       if (!current) return;
       setHomePlace(place);
       // The location fills the home address (street, city, postal area); the person adds the house number.
-      if (place?.address) setDraft((prev) => ({ ...prev, home_address: place.address ?? "" }));
+      if (place?.address) {
+        setDraft((prev) => ({ ...prev, home_address: place.address ?? "" }));
+        setPlacedAddress(place.address);
+        setSuggestions(null);
+        setCheckNote(null);
+      }
     });
     return () => {
       current = false;
@@ -204,30 +222,20 @@ export default function ProfileScreen() {
     }
     if (loaded.role === "sitter" && services.length === 0) found.services = "Pick at least one service.";
     const meetSpots = cleanSpots(spots);
-    setErrors(found);
-    if (Object.keys(found).length > 0) return;
 
     const value = (key: string) => {
       const trimmed = (draft[key] ?? "").trim();
       return trimmed === "" ? null : trimmed;
     };
     const packing = packingListFromDraft(draft.packing_list ?? "");
-    // The map pin follows the address: a new address is looked up (unless the pin was just set from the phone's
-    // location); one that can't be placed clears the old pin, which belonged to the old address.
+    // The address is required and has to be one that was found on the map (Check address, or the current location).
     const address = value("home_address");
-    let pin = home;
+    const pin = home;
     let pinNote: string | null = null;
-    if (address && address !== (loaded.fields.home_address ?? null) && !pinFromGps) {
-      setSaving(true);
-      const placed = await geocodeAddress(address);
-      if (placed.found) {
-        pin = placed.point;
-        pinNote = placed.label ? `Pin placed near ${placed.label}` : "Pin placed from your address";
-      } else {
-        pin = null;
-        pinNote = "We couldn't place that address on the map — use your current location for the pin";
-      }
-    }
+    if (!address) found.home_address = "Add your home address.";
+    else if (address !== placedAddress || !pin) found.home_address = "Check your address so it's on the map.";
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
     if (pinFromGps && pin && homePlace) pinNote = `Pin saved near ${homePlace.label}`;
     const next: RoleProfile =
       loaded.role === "owner"
@@ -284,6 +292,30 @@ export default function ProfileScreen() {
     }
   }
 
+  async function checkAddress() {
+    const query = (draft.home_address ?? "").trim();
+    if (query.length < 3 || checking) return;
+    setChecking(true);
+    setCheckNote(null);
+    setSuggestions(null);
+    const found = await suggestAddresses(query);
+    setChecking(false);
+    if (found === null) setCheckNote("The address check is down. Try again in a moment, or use your current location.");
+    else if (found.length === 0) setCheckNote("We couldn't find that address. Check the spelling or add the postal code.");
+    else setSuggestions(found);
+  }
+
+  /** The person picked one of the real addresses: its text and its point become the home address and pin. */
+  function pickSuggestion(suggestion: AddressSuggestion) {
+    setDraft((prev) => ({ ...prev, home_address: suggestion.label }));
+    setPlacedAddress(suggestion.label);
+    setHome(suggestion.point);
+    setPinFromGps(false);
+    setSuggestions(null);
+    setCheckNote(null);
+    setErrors((prev) => ({ ...prev, home_address: "" }));
+  }
+
   async function useCurrentLocation() {
     setLocating(true);
     setHomeNote(null);
@@ -324,15 +356,56 @@ export default function ProfileScreen() {
       {fields.map((field) => (
         <View key={field.key} style={styles.fieldWithPin}>
           <TextField
-            label={`${field.label} (optional)`}
+            label={field.key === "home_address" ? field.label : `${field.label} (optional)`}
             value={draft[field.key] ?? ""}
-            onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+            onChangeText={(text) => {
+              setDraft((prev) => ({ ...prev, [field.key]: text }));
+              if (field.key === "home_address") {
+                setSuggestions(null);
+                setCheckNote(null);
+              }
+            }}
             placeholder={field.placeholder}
             multiline={field.multiline}
             inputMode={field.numeric ? "numeric" : undefined}
             error={errors[field.key]}
             testID={`profile-${field.key}`}
           />
+          {field.key === "home_address" ? (
+            <View style={styles.checkRow}>
+              {(draft.home_address ?? "").trim() !== "" && (draft.home_address ?? "").trim() === placedAddress && home ? (
+                <Text style={styles.found} testID="profile-address-ok">
+                  ✓ Found on the map
+                </Text>
+              ) : (
+                <TextButton
+                  label={checking ? "Checking…" : "Check address"}
+                  onPress={() => void checkAddress()}
+                  disabled={checking || (draft.home_address ?? "").trim().length < 3}
+                  style={styles.addSpot}
+                  testID="profile-check-address"
+                />
+              )}
+            </View>
+          ) : null}
+          {field.key === "home_address" && suggestions && suggestions.length > 0 ? (
+            <View style={styles.suggestions} testID="profile-suggestions">
+              {suggestions.map((s, i) => (
+                <TextButton
+                  key={s.label}
+                  label={s.label}
+                  onPress={() => pickSuggestion(s)}
+                  style={styles.suggestion}
+                  testID={`profile-suggestion-${i + 1}`}
+                />
+              ))}
+            </View>
+          ) : null}
+          {field.key === "home_address" && checkNote ? (
+            <Text style={styles.muted} testID="profile-check-note">
+              {checkNote}
+            </Text>
+          ) : null}
           {field.key === "home_address" ? (
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>
@@ -483,21 +556,22 @@ export default function ProfileScreen() {
         </View>
       ) : null}
       <View style={styles.group} testID="profile-spots">
-        <Text style={styles.groupTitle}>Preferred meeting spots (optional)</Text>
-        <Text style={styles.muted}>
-          Up to 3 public places for a first Meet & Greet — a park gate or a café, never a home address.
-        </Text>
-        {spots.map((spot, i) => (
+        <Text style={styles.groupTitle}>Preferred meeting spots</Text>
+        <Text style={styles.muted}>Up to 3 public places for a first Meet & Greet, never a home address.</Text>
+        {spots.slice(0, spotFields).map((spot, i) => (
           <TextField
             key={i}
             label={`Spot ${i + 1}`}
             value={spot}
             onChangeText={(text) => setSpots((cur) => cur.map((s, k) => (k === i ? text : s)))}
-            placeholder={i === 0 ? "e.g. Christie Pits — east entrance" : undefined}
+            placeholder={i === 0 ? "e.g. Christie Pits, east entrance" : undefined}
             maxLength={60}
             testID={`profile-spot-${i + 1}`}
           />
         ))}
+        {spotFields < MAX_SPOTS ? (
+          <TextButton label="+ Add a spot" onPress={() => setSpotFields((n) => Math.min(MAX_SPOTS, n + 1))} style={styles.addSpot} testID="profile-add-spot" />
+        ) : null}
       </View>
       <View style={styles.privacy}>
         <Text style={styles.hint}>
@@ -513,8 +587,6 @@ export default function ProfileScreen() {
       ) : null}
       <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
       {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
-      <TextButton label="Settings · What's New" onPress={() => router.push("/settings")} testID="profile-settings" />
-      <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="profile-privacy" />
     </Screen>
   );
 }
@@ -533,6 +605,11 @@ const makeStyles = (theme: Theme) =>
     fieldWithPin: {
       gap: theme.spacing.md,
     },
+    checkRow: { alignItems: "flex-start" },
+    found: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.success },
+    suggestions: { gap: theme.spacing.xs },
+    suggestion: { alignSelf: "flex-start", paddingHorizontal: 0, minHeight: 36 },
+    addSpot: { alignSelf: "flex-start", paddingHorizontal: 0 },
     group: {
       gap: theme.spacing.sm,
     },

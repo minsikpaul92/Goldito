@@ -1,5 +1,6 @@
 """POST /api/geo/geocode — a home address → a point on the map (phase-06b 6B.2, D32).
 POST /api/geo/reverse — a point → "Trinity Bellwoods, Toronto", so the Profile can say where the home pin is.
+POST /api/geo/suggest — an address or postal code → up to five real addresses to pick from (Profile "Check address").
 
 Only used when someone saves their home address (or reads their location), so the trip screens have a destination
 and the person sees where the pin landed. The lookup is the free
@@ -69,6 +70,13 @@ def _search(address: str) -> list[dict]:
     )
 
 
+def _search_many(address: str) -> list[dict]:
+    return _get(
+        NOMINATIM_URL,
+        {"q": address, "format": "jsonv2", "limit": 5, "addressdetails": 1, "countrycodes": "ca"},
+    )
+
+
 def _reverse(lat: float, lng: float) -> dict:
     # The point is rounded to 3 decimals (about 100 m) before it leaves for OpenStreetMap: a neighbourhood name
     # does not need more, and the exact spot of a home stays here.
@@ -119,6 +127,48 @@ def geocode(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)
     except (KeyError, TypeError, ValueError):
         return GeocodeResponse(found=False)
     return GeocodeResponse(found=True, lat=lat, lng=lng, label=place_label(hit))
+
+
+class Suggestion(BaseModel):
+    label: str
+    lat: float
+    lng: float
+
+
+class SuggestResponse(BaseModel):
+    results: list[Suggestion]
+
+
+def address_line(hit: dict) -> str | None:
+    """'127 Broadway Ave, Toronto, ON M4P 1V9' from a Nominatim hit, for the person to pick from a short list."""
+    parts = hit.get("address") or {}
+    street = " ".join(p for p in (parts.get("house_number"), parts.get("road")) if p)
+    city = parts.get("city") or parts.get("town") or parts.get("village") or parts.get("municipality")
+    province = (parts.get("ISO3166-2-lvl4") or "").removeprefix("CA-") or None
+    area = " ".join(p for p in (province, parts.get("postcode")) if p)
+    line = ", ".join(p for p in (street, city, area) if p)
+    return line or None
+
+
+@router.post("/suggest", response_model=SuggestResponse)
+def suggest(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)) -> SuggestResponse:
+    """Up to five real places for what the person typed, one lookup per press of "Check address". Never one per
+    keystroke: the public Nominatim service does not allow search-as-you-type."""
+    try:
+        hits = _search_many(body.address.strip())
+    except (httpx.HTTPError, ValueError) as exc:
+        log.info("suggest: lookup failed (%s)", exc.__class__.__name__)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The map lookup is unavailable right now.") from exc
+    results: list[Suggestion] = []
+    for hit in hits if isinstance(hits, list) else []:
+        try:
+            lat, lng = float(hit["lat"]), float(hit["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        label = address_line(hit)
+        if label and not any(r.label == label for r in results):
+            results.append(Suggestion(label=label, lat=lat, lng=lng))
+    return SuggestResponse(results=results)
 
 
 class ReverseRequest(BaseModel):

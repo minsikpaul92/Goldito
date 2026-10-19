@@ -8,6 +8,7 @@ import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 test.describe("profile", () => {
   test("an owner saves an emergency contact and a new name", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER]);
+    db.owner_profiles.push({ id: OWNER.id, home_address: "1 Test St, Toronto, ON", home_lat: 43.65, home_lng: -79.38 });
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
@@ -28,7 +29,7 @@ test.describe("profile", () => {
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
     expect(row?.emergency_contact_name).toBe("Min");
     expect(row?.emergency_contact_phone).toBe("416-555-0100");
-    expect(row?.home_address).toBeNull();
+    expect(row?.home_address).toBe("1 Test St, Toronto, ON");
 
     await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
@@ -45,6 +46,8 @@ test.describe("profile", () => {
       experience_years: null,
       home_notes: null,
       home_address: "12 Maple St",
+      home_lat: 43.6477,
+      home_lng: -79.4194,
     });
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
@@ -68,7 +71,7 @@ test.describe("profile", () => {
 
   test("a sitter picks services and meeting spots; at least one service is required", async ({ page }) => {
     const { db } = await mockSupabase(page, [SITTER]);
-    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null });
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: "12 Maple St", home_lat: 43.6477, home_lng: -79.4194 });
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
@@ -83,6 +86,8 @@ test.describe("profile", () => {
 
     await screen.getByTestId("profile-service-house_sitting").click();
     await screen.getByTestId("profile-spot-1").fill("Christie Pits — east entrance");
+    await expect(screen.getByTestId("profile-spot-2")).toHaveCount(0); // one field to start
+    await screen.getByTestId("profile-add-spot").click();
     await screen.getByTestId("profile-spot-2").fill("  christie pits — east entrance ");
     await screen.getByTestId("profile-save").click();
     await expect(page).toHaveURL(/\/sitter$/);
@@ -94,7 +99,7 @@ test.describe("profile", () => {
 
   test("a sitter chooses between one owner at a time (default) and several owners", async ({ page }) => {
     const { db } = await mockSupabase(page, [SITTER]);
-    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null });
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: "12 Maple St", home_lat: 43.6477, home_lng: -79.4194 });
     await signIn(page, SITTER);
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
@@ -110,6 +115,7 @@ test.describe("profile", () => {
 
   test("an owner saves preferred meeting spots", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER]);
+    db.owner_profiles.push({ id: OWNER.id, home_address: "1 Test St, Toronto, ON", home_lat: 43.65, home_lng: -79.38 });
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);

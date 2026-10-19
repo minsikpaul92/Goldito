@@ -143,7 +143,7 @@ export default function OwnerBookings() {
             <Text style={styles.hint}>Looking…</Text>
           ) : shown.length === 0 ? (
             <Text style={styles.hint} testID="search-none">
-              {searched ? "No sitters free." : "No favorites free."}
+              {searched ? "No sitters free." : search.favorites.size === 0 ? "No favorites yet." : "No favorites free."}
             </Text>
           ) : (
             <View style={styles.rows}>

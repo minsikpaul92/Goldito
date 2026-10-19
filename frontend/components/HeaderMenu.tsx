@@ -131,7 +131,7 @@ export function HeaderMenu() {
                   ) : undefined,
                 )}
                 {profile?.role === "sitter" ? row("calendar-outline", "Schedule", () => go("/sitter/schedule"), "open-schedule") : null}
-                {row("sparkles-outline", "What's new", () => go("/settings"), "menu-whats-new")}
+                {row("sparkles-outline", "What's new", () => go("/whats-new"), "menu-whats-new")}
                 {row("settings-outline", "Settings", () => go("/settings"), "open-settings")}
               </View>
               <Pressable
