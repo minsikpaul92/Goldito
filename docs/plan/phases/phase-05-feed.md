@@ -86,6 +86,7 @@ FeedCard / Diary rows: 썸네일(4:3, 영상은 poster + ▶), 캡션, 상대 �
 | **5.8** | **done** — `007c_feed_visibility.sql`: `posted_by` + `visibility` (`shared` / `private`), owner posts (`sitter_id` null), author-only delete, private media row hidden from the other party, private posts never notify. Sitter chip **Share with {owner}** (default on); owner **+ Photo** with **Visible to sitter** (default off). |
 | **5.9** | **done** — owner's shared post → `feed_post` notice to the on-duty sitter(s) (tap → `/sitter/feed/[petId]`); sitter's shared post → owner; private → nobody. In `007c`. |
 | **5.10** | **done** — `FeedViewer` renders only the active post (swipe, ‹ › buttons, ←/→ keys); tracked by post id, so Load more never moves it; a tapped photo opens that photo, a tapped video plays that video. Playwright `feed.spec.ts`. |
+| **5.11** | **Petstagram (2026-10-19, 계획, [#187](https://github.com/minsikpaul92/Goldito/issues/187), [phase-11 § 11.17](phase-11-p1.md))** | 공개 또는 비공개 선택, 공개 피드, 반응. `visibility`의 `shared` / `private`에 공개를 더하고 비공개 미디어 행이 공개 경로로 새지 않게 한다 |
 
 ---
 

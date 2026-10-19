@@ -63,6 +63,18 @@ Rules live in one module (`lib/petStatus.ts`) — tunable without schema churn.
 
 ---
 
+## 7. Decisions 2026-10-19 (Tamagotchi, plan only, issue [#184](https://github.com/minsikpaul92/Goldito/issues/184))
+
+- **Where:** the Home hero is a swipe pager with two pages (today's Home, the pet) and dots. Works with a mouse too (drag and wheel).
+- **Look:** a preset sprite chosen by `species x coat color x mood` (pets' breed, coat color and size). First presets are Muk's hand made pixel pets (17 files in the logo files, drop into `frontend/assets/pixel-pets/` with the same key names). No AI generation yet.
+- **Motion:** idle sway left and right and one of five mood faces (excited, calm, tired, hungry, sleepy). Head only, no body yet.
+- **Sitter actions:** while a pet is in care the sitter taps feed, walk, poop or nap on the pet. Each tap is a `care_checkins` row (see `frontend/components/QuickCheckIn.tsx`), the sprite reacts and the owner sees it live.
+- **Archive:** after a stay ends well the sitter archives the pet as a medal. An archived pet is its own object the owner keeps (needs a migration when the build starts). What the owner can do with it afterwards is out of scope.
+- **Later:** a layered generator (head shape, coat palette swap, expression overlay) and photo to sprite with AI once the quality is good. The coat color asked in onboarding ([#185](https://github.com/minsikpaul92/Goldito/issues/185)) is the same key.
+- **Open:** Muk marked #119 "not a priority" on 2026-10-19. Tell Muk the presets are wanted now.
+
+---
+
 ## 6. Related
 
 - Settings & patch notes: [phase-11 §11.11](phases/phase-11-p1.md)

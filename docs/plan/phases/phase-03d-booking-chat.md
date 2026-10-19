@@ -1,6 +1,6 @@
 # Phase 03D — 채팅 중심 부킹 (Stage 1 – 5를 한 채팅으로)
 
-> **상태 (2026-10-17):** 시작 전 · P0 (결정 2026-10-17, Minsik). 에픽: [#130](https://github.com/minsikpaul92/Goldito/issues/130). 03B의 시터 검색(PR #128)이 먼저 머지되어야 한다.
+> **상태 (2026-10-17):** 시작 전 · P0 (결정 2026-10-17, Minsik). 에픽: [#130](https://github.com/minsikpaul92/Goldito/issues/130). **담당 (2026-10-19):** Minsik = 3D.1 ([#138](https://github.com/minsikpaul92/Goldito/issues/138)) · 요청 화면 단순화 ([#168](https://github.com/minsikpaul92/Goldito/issues/168)) · 3D.4~3D.9. JeonBeomGu-S = 사진 한 줄과 뷰어 ([#136](https://github.com/minsikpaul92/Goldito/issues/136)) · 3D.3 ([#140](https://github.com/minsikpaul92/Goldito/issues/140)). 03B의 시터 검색(PR #128)이 먼저 머지되어야 한다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D27–D47, **D29 견적 · D31 보안 해제 · D35/D36 시터 말투·승인 · D38 타이핑 최소**
 
@@ -76,3 +76,18 @@
 - 트립 · 다이어리 · 리포트 · 리뷰 화면은 **다시 만들지 않는다.** 1차는 채팅 카드에서 기존 화면으로 연결.
 - 새 마이그레이션은 `supabase/README.md` § Naming의 다음 빈 이름을 쓴다. 호스팅 DB 적용은 사용자가 요청할 때만.
 - 브랜치 · PR은 묶음별로 제안: ① 빠른 수정 + 캘린더(#131 – #134) ② 사진(#135 – #137) ③ 검색 후속 + 시터 프로필(#138 – #140) ④ 채팅(#141 – #146). 각각 한 PR.
+
+## 함께 정리할 QA 이슈 (2026-10-19, 담당 JeonBeomGu-S)
+
+채팅 카드가 대체하는 화면이 있어서 순서를 지킨다. 먼저 독립적인 것, 채팅이 바꿀 화면은 해당 3D 단계 전에 Minsik과 확인한다.
+
+| 이슈 | 내용 | 채팅과의 관계 |
+| :--- | :--- | :--- |
+| [#173](https://github.com/minsikpaul92/Goldito/issues/173) | UI 문구의 대시 제거, Cancelled 칩 | 독립. 먼저 |
+| [#172](https://github.com/minsikpaul92/Goldito/issues/172) | 같은 날 보딩 견적이 "0 nights"로 나옴 (거짓 문구) | 독립. 견적 카드 [#143](https://github.com/minsikpaul92/Goldito/issues/143) 전에 |
+| [#189](https://github.com/minsikpaul92/Goldito/issues/189) | 가격이 비면 `rates_not_set` (R60-6) | 독립 |
+| [#169](https://github.com/minsikpaul92/Goldito/issues/169) | 시간 제안을 한 번에 (드롭오프와 픽업) | 3D.6 [#143](https://github.com/minsikpaul92/Goldito/issues/143)이 대체할 수 있음. 시작 전 확인 |
+| [#170](https://github.com/minsikpaul92/Goldito/issues/170) | Meet & Greet 선택임을 분명히, 구글 캘린더 | 3D.7 [#144](https://github.com/minsikpaul92/Goldito/issues/144)이 대체할 수 있음. 시작 전 확인 |
+| [#171](https://github.com/minsikpaul92/Goldito/issues/171) | 문의 채팅 수정 | 문의 흐름 결정 전까지 보류 (3D.5 [#142](https://github.com/minsikpaul92/Goldito/issues/142)) |
+| [#179](https://github.com/minsikpaul92/Goldito/issues/179)~[#182](https://github.com/minsikpaul92/Goldito/issues/182) | 달력 한 번에 선택, 선택 입력 숨기기, 카드 축소, 라인 아이콘 | 묵의 Expressive 룩([#177](https://github.com/minsikpaul92/Goldito/issues/177)) 머지 후 가능 |
+

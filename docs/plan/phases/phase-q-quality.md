@@ -70,6 +70,8 @@
 
 > 순서를 바꾸고 싶으면 민식과 먼저 얘기한다(특히 Q.6은 R1b 머지 전에는 시작하지 않음).
 
+> **Q.1 영역 (2026-10-19):** 손 테스트를 네 영역으로 나눠 이슈로 올린다. **1 Booking · 2 Care & Pet Transit · 3 Completion · 4 Sign-up** (test-guide의 해당 절). 올라온 QA 이슈의 수정은 JeonBeomGu-S가 먼저 맡는다 ([phase-03d § 함께 정리할 QA 이슈](phase-03d-booking-chat.md)).
+
 ---
 
 ## 2. 범위
