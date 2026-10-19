@@ -669,13 +669,13 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 · (014i) 즐겨찾기 시터는 반경 밖(30 km)이어도 일정이 맞으면 거리와 함께 나옴, 일정이 안 맞거나 즐겨찾기가 아니면 안 나옴, 오너별로 다름 · 마지막 반경 저장, 101 km 거부 | SQL `rls_smoke` | ➖ |
-| SEARCH-2 | 견주 → Bookings → **Book care** | **Find a sitter**가 열림(Who's staying · When · Near · 슬라이더). 펫이 하나면 미리 선택. **Search** → 머무는 내내 가능한 시터만 가까운 순으로 카드(이름 · "≈ 3 km away" · 가격 · 서비스). 반경 밖 · 시간 밖 시터는 아예 없음 | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-3 | 슬라이더를 마우스로 끌기 · 트랙 클릭 · 키보드(→ +1, PageUp +10) | 값(km)이 따라가고 **Search를 다시 누르지 않아도** 쉬면 한 번만 다시 검색(끄는 동안 이전 결과는 흐리게). 슬라이더를 끌어도 화면은 스크롤되지 않음 | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-4 | 검색 뒤 날짜 · 시간 · 펫 · 장소를 바꿈 | 자동 검색 없이 "tap Search to update the list" 안내, **Search** 누르면 갱신 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-2 | 견주 → Bookings → **Book care** | **Find a sitter** 필터 화면이 열림(Who's staying · When · Near · 슬라이더, 스크롤 없이 버튼까지 보임). 처음 반경은 **5 km**(이전에 바꿨다면 마지막 값). 버튼이 **Show N sitters**로 바뀜. 누르면 다음 화면에 머무는 내내 가능한 시터가 가까운 순으로 나옴(이름 · "≈ 3 km away" · 가격 · 서비스). 반경 밖 · 시간 밖 시터는 없음. **Edit search**로 돌아감 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-3 | 슬라이더를 마우스로 끌기 · 트랙 클릭 · 키보드(→ +1, PageUp +10) | 값(km)이 따라가고 쉬면 한 번만 다시 검색해 버튼 숫자가 바뀜. 마지막 반경이 저장되어 다음에 열 때 그 값. 슬라이더를 끌어도 화면은 스크롤되지 않음 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-4 | 날짜 · 시간 · 펫 · 장소를 바꿈 | Search 버튼 없이 쉬면 자동으로 다시 검색해 버튼 숫자가 바뀜(검색 중에는 "Searching…", 오래된 응답은 버림) | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-5 | **Where I am now** 선택 / 브라우저에서 위치 차단 | 위치는 한 번만 묻고 그 좌표로 검색. 차단되면 어떻게 풀지 안내하고 Search는 기다림 | 🤖 `sitter-search`(위치 목업) · 실제 브라우저 권한은 👤 | 사람 확인 대기 |
 | SEARCH-6 | 집 위치가 없는 견주 | "Your home isn't on the map yet" + Profile 열기 / 현재 위치로 검색 | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-7 | 반경 안에 시터가 없음 | "No sitter free within N km" + 무엇을 바꾸면 되는지 + **Widen to 25 / 50 / 100 km** 버튼, 누르면 바로 다시 검색 | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-8 | 결과의 **Book {시터}** | Book care가 그 시터 · 같은 날짜와 시간 · 같은 펫으로 채워져 열림(**Request booking with {시터}**) | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-7 | 반경 안에 시터가 없음 | 버튼이 **No sitters free**로 비활성 + **Widen to 25 / 50 / 100 km** 링크, 누르면 바로 다시 검색 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-8 | 결과 카드를 누름 | 시터 상세(`/owner/sitters/{id}`)가 열림(머무는 날짜 · 시간 · 펫이 주소에 실림). 결과에 Book 버튼은 없음. 시터를 이미 고른 채 Book care가 열리면 시터 목록은 그 시터 하나만 | 🤖 `sitter-search` | 사람 확인 대기 |
 
 ### 3.27 시터 온보딩 (ONB) — 3D.2 · #139 · *DB와 번호 질문 화면까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 

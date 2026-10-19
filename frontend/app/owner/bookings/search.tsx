@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -16,30 +16,28 @@ import { TextButton } from "../../../components/ui/TextButton";
 import { TimePickerSheet } from "../../../components/ui/TimePickerSheet";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
 import { useMyPets } from "../../../features/pets/useMyPets";
-import { loadRoleProfile } from "../../../features/profile/profileApi";
-import { addDays, appToday, formatDay, formatDayRange, formatTime, isoToZoned, shiftTime, zonedToIso } from "../../../features/schedule/dates";
+import { loadRoleProfile, loadSearchRadius, saveSearchRadius } from "../../../features/profile/profileApi";
+import { addDays, appToday, formatDay, formatDayRange, formatTime, shiftTime, zonedToIso } from "../../../features/schedule/dates";
 import { SERVICE_LABEL, favoritesFirst, listFavoriteSitterIds, ownersSetting } from "../../../features/sitters/sitterApi";
 import { BookingError, NearbySitter, searchSittersNearby } from "../../../lib/bookings";
 import { LatLng, LocationError, getCurrentPosition } from "../../../lib/location";
 import { tripProblem } from "../../../lib/trip";
 import { useSession } from "../../../providers/SessionProvider";
-import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
+import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
-/** Moving the slider after a search re-searches once it rests this long. */
-const RADIUS_DELAY_MS = 400;
+/** Any change to the filters re-searches once it rests this long. */
+const SEARCH_DELAY_MS = 400;
 const MIN_KM = 1;
 const MAX_KM = 100;
-const START_KM = 10;
+const START_KM = 5;
 const TIME_STEP = 15;
 
 type When = { day: string; time: string };
 type Place = "home" | "here";
-/** What a search ran with; the slider changes only radiusKm. */
-type Criteria = { dropIso: string; pickIso: string; petIds: string[]; point: LatLng | null; place: Place };
 type Results =
   | { status: "idle" }
-  | { status: "loading"; previous: NearbySitter[] }
+  | { status: "loading" }
   | { status: "ready"; sitters: NearbySitter[]; radiusKm: number }
   | { status: "error"; code: string; message: string };
 
@@ -113,12 +111,11 @@ function WhenRow({ title, kind, value, minDay, onChange }: { title: string; kind
 }
 
 /**
- * Find a sitter (SS-2) — the start of a new booking, like booking a hotel: who's staying, drop-off and pick-up,
- * from home or from here, how far. Search lists only sitters free for the whole stay (search_sitters_nearby, 014c);
- * after that the radius slider updates the list by itself. Book opens Book care with the same stay filled in.
+ * Find a sitter: who's staying, drop-off and pick-up, from home or from here, how far. Every change re-searches by
+ * itself (search_sitters_nearby, 014c/014i) and the button says how many sitters are free for the whole stay; it
+ * opens the results on the next screen, and a result opens the sitter detail.
  */
 export default function FindSitter() {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const { status: petStatus, pets } = useMyPets();
@@ -133,12 +130,13 @@ export default function FindSitter() {
   const [here, setHere] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [radiusKm, setRadiusKm] = useState(START_KM);
-  const [criteria, setCriteria] = useState<Criteria | null>(null);
+  // null = the owner's last radius is still loading
+  const [radiusKm, setRadiusKm] = useState<number | null>(null);
+  const savedRadius = useRef<number | null>(null);
   const [results, setResults] = useState<Results>({ status: "idle" });
+  const [retry, setRetry] = useState(0);
+  const [showing, setShowing] = useState(false);
   const [favorites, setFavorites] = useState<ReadonlySet<string>>(new Set());
-  // Search runs at once; a slider move waits for the slider to rest.
-  const immediate = useRef(false);
 
   // Everyone is staying unless the owner says otherwise.
   useEffect(() => {
@@ -150,10 +148,26 @@ export default function FindSitter() {
     loadRoleProfile(profile.id, "owner")
       .then((r) => setHome(r.fields.home_lat != null && r.fields.home_lng != null ? { lat: r.fields.home_lat, lng: r.fields.home_lng } : null))
       .catch(() => setHome(null));
+    loadSearchRadius(profile.id)
+      .catch(() => null)
+      .then((km) => {
+        savedRadius.current = km;
+        setRadiusKm(km ?? START_KM);
+      });
     listFavoriteSitterIds()
       .then((ids) => setFavorites(new Set(ids)))
       .catch(() => undefined);
   }, [profile]);
+
+  // Remember the radius the owner settles on.
+  useEffect(() => {
+    if (!profile || radiusKm == null || radiusKm === savedRadius.current) return;
+    const timer = setTimeout(() => {
+      savedRadius.current = radiusKm;
+      saveSearchRadius(profile.id, radiusKm).catch(() => undefined);
+    }, SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [profile, radiusKm]);
 
   const locate = async () => {
     setLocating(true);
@@ -189,37 +203,20 @@ export default function FindSitter() {
         : locating
           ? "Finding your location…"
           : (locationError ?? "Allow your location to search from here.");
+  const ready = !problem && !placeProblem && home !== undefined && radiusKm != null;
   const point = place === "here" ? here : null;
-  // The criteria changed since the last search: the list is for the old ones until Search runs again.
-  const changed =
-    criteria != null &&
-    (criteria.dropIso !== dropIso ||
-      criteria.pickIso !== pickIso ||
-      criteria.place !== place ||
-      criteria.petIds.join() !== petIds.join() ||
-      (place === "here" && (criteria.point?.lat !== here?.lat || criteria.point?.lng !== here?.lng)));
+  const petKey = petIds.join();
 
-  const search = () => {
-    if (problem || placeProblem || home === undefined) return;
-    immediate.current = true;
-    setCriteria({ dropIso, pickIso, petIds: [...petIds], point, place });
-  };
-
-  // Runs on Search (at once) and on every radius change after it (debounced); stale answers are dropped.
+  // Runs on every filter change (debounced); stale answers are dropped.
   useEffect(() => {
-    if (!criteria) return;
-    const delay = immediate.current ? 0 : RADIUS_DELAY_MS;
-    immediate.current = false;
+    if (!ready || radiusKm == null) {
+      setResults({ status: "idle" });
+      return;
+    }
     let current = true;
-    setResults((r) => ({ status: "loading", previous: r.status === "ready" ? r.sitters : r.status === "loading" ? r.previous : [] }));
+    setResults({ status: "loading" });
     const timer = setTimeout(() => {
-      searchSittersNearby({
-        dropOffAt: criteria.dropIso,
-        pickUpAt: criteria.pickIso,
-        petCount: criteria.petIds.length,
-        radiusKm,
-        point: criteria.point,
-      })
+      searchSittersNearby({ dropOffAt: dropIso, pickUpAt: pickIso, petCount: petKey.split(",").length, radiusKm, point })
         .then((sitters) => current && setResults({ status: "ready", sitters, radiusKm }))
         .catch((error: Error) => {
           if (!current) return;
@@ -227,17 +224,17 @@ export default function FindSitter() {
           if (code === "no_home_point") setHome(null);
           setResults({ status: "error", code, message: error.message });
         });
-    }, delay);
+    }, SEARCH_DELAY_MS);
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [criteria, radiusKm]);
+    // point is read through its coordinates so a new object with the same place does not search again
+  }, [ready, dropIso, pickIso, petKey, radiusKm, point?.lat, point?.lng, retry]);
 
-  const book = (s: NearbySitter) => {
-    if (!criteria) return;
-    const q = new URLSearchParams({ sitter: s.sitterId, drop: criteria.dropIso, pick: criteria.pickIso, pets: criteria.petIds.join(",") });
-    router.push(`/owner/bookings/new?${q.toString()}`);
+  const openSitter = (s: NearbySitter) => {
+    const q = new URLSearchParams({ drop: dropIso, pick: pickIso, pets: petIds.join(",") });
+    router.push(`/owner/sitters/${s.sitterId}?${q.toString()}`);
   };
 
   if (petStatus === "loading" && pets.length === 0) return <LoadingView />;
@@ -255,11 +252,9 @@ export default function FindSitter() {
     );
   }
 
-  const shown =
-    results.status === "ready" ? results.sitters : results.status === "loading" ? results.previous : [];
-  const sorted = favoritesFirst(shown, favorites, (s) => s.sitterId);
-  const wider = widerRadius(radiusKm);
-  const stayLabel = criteria ? formatDayRange(isoToZoned(criteria.dropIso).day, isoToZoned(criteria.pickIso).day) : "";
+  const found = results.status === "ready" ? results.sitters : [];
+  const sorted = favoritesFirst(found, favorites, (s) => s.sitterId);
+  const wider = radiusKm != null ? widerRadius(radiusKm) : null;
 
   const resultCard = (s: NearbySitter) => {
     const meta = [`≈ ${s.distanceKm} km away`, priceLine(s)].filter(Boolean).join(" · ");
@@ -267,27 +262,57 @@ export default function FindSitter() {
       .filter(Boolean)
       .join(" · ");
     return (
-      <Card key={s.sitterId} style={styles.result} testID={`search-result-${s.displayName}`}>
-        <View style={styles.resultHead}>
-          <Text style={styles.resultName} numberOfLines={1}>
-            {favorites.has(s.sitterId) ? `★ ${s.displayName}` : s.displayName}
+      <Pressable
+        key={s.sitterId}
+        accessibilityRole="button"
+        accessibilityLabel={`${s.displayName}, open profile`}
+        onPress={() => openSitter(s)}
+        testID={`search-result-${s.displayName}`}
+      >
+        <Card style={styles.result}>
+          <View style={styles.resultHead}>
+            <Text style={styles.resultName} numberOfLines={1}>
+              {favorites.has(s.sitterId) ? `★ ${s.displayName}` : s.displayName}
+            </Text>
+            {s.isMySitter ? <Text style={styles.tag}>Your sitter</Text> : null}
+          </View>
+          <Text style={styles.resultMeta} testID={`search-result-${s.displayName}-meta`}>
+            {meta}
           </Text>
-          {s.isMySitter ? <Text style={styles.tag}>Your sitter</Text> : null}
-        </View>
-        <Text style={styles.resultMeta} testID={`search-result-${s.displayName}-meta`}>
-          {meta}
-        </Text>
-        {about ? <Text style={styles.hint}>{about}</Text> : null}
-        <Text style={styles.hint}>
-          {[s.services.map((x) => SERVICE_LABEL[x]).join(" · "), ownersSetting(s.acceptsMultipleOwners).badge].join(" — ")}
-        </Text>
-        <View style={styles.resultActions}>
-          <TextButton label="Profile" onPress={() => router.push(`/owner/sitters/${s.sitterId}`)} testID={`search-profile-${s.displayName}`} />
-          <Button label={`Book ${s.displayName}`} variant="secondary" onPress={() => book(s)} style={styles.bookButton} testID={`search-book-${s.displayName}`} />
-        </View>
-      </Card>
+          {about ? <Text style={styles.hint}>{about}</Text> : null}
+          <Text style={styles.hint}>
+            {[s.services.map((x) => SERVICE_LABEL[x]).join(" · "), ownersSetting(s.acceptsMultipleOwners).badge].join(" · ")}
+          </Text>
+        </Card>
+      </Pressable>
     );
   };
+
+  if (showing) {
+    return (
+      <Screen contentStyle={styles.content}>
+        <View style={styles.resultsHead}>
+          <TextButton label="Edit search" onPress={() => setShowing(false)} style={styles.left} testID="search-edit" />
+          <Text style={styles.subtitle} testID="search-count">
+            {`${found.length} ${found.length === 1 ? "sitter" : "sitters"} · ${formatDayRange(dropOff.day, pickUp.day)}`}
+          </Text>
+        </View>
+        <View style={styles.section} testID="search-results">
+          {sorted.map(resultCard)}
+        </View>
+      </Screen>
+    );
+  }
+
+  const count = results.status === "ready" ? results.sitters.length : 0;
+  const buttonLabel =
+    results.status === "ready"
+      ? count === 0
+        ? "No sitters free"
+        : `Show ${count} ${count === 1 ? "sitter" : "sitters"}`
+      : results.status === "loading"
+        ? "Searching…"
+        : "Show sitters";
 
   return (
     <View style={styles.root}>
@@ -351,91 +376,54 @@ export default function FindSitter() {
               <TextButton label="Open Profile" onPress={() => router.push("/profile")} style={styles.left} testID="search-open-profile" />
             </View>
           ) : null}
-          {place === "here" ? (
-            locating ? (
-              <Text style={styles.hint} testID="search-locating">
-                Finding your location…
+          {place === "here" && locating ? (
+            <Text style={styles.hint} testID="search-locating">
+              Finding your location…
+            </Text>
+          ) : null}
+          {place === "here" && !locating && !here ? (
+            <View style={styles.inline}>
+              <Text style={styles.error} testID="search-location-error">
+                {locationError ?? "Allow your location to search from here."}
               </Text>
-            ) : here ? (
-              <Text style={styles.hint} testID="search-located">
-                Using where you are now.
-              </Text>
-            ) : (
-              <View style={styles.inline}>
-                <Text style={styles.error} testID="search-location-error">
-                  {locationError ?? "Allow your location to search from here."}
-                </Text>
-                <TextButton label="Try again" onPress={() => void locate()} style={styles.left} testID="search-locate-again" />
-              </View>
-            )
+              <TextButton label="Try again" onPress={() => void locate()} style={styles.left} testID="search-locate-again" />
+            </View>
           ) : null}
 
           <View style={styles.radiusHead}>
             <Text style={styles.label}>Within</Text>
             <Text style={styles.radiusValue} testID="radius-value">
-              {`${radiusKm} km`}
+              {`${radiusKm ?? START_KM} km`}
             </Text>
           </View>
           <Slider
-            value={radiusKm}
+            value={radiusKm ?? START_KM}
             min={MIN_KM}
             max={MAX_KM}
             onChange={setRadiusKm}
             label="Search radius"
-            valueText={`${radiusKm} km`}
+            valueText={`${radiusKm ?? START_KM} km`}
             testID="radius-slider"
           />
-          <Text style={styles.hint}>Distances are in a straight line and rounded to whole km.</Text>
         </Card>
 
-        {criteria ? (
-          <View style={styles.section} testID="search-results" accessibilityLiveRegion="polite">
-            {changed ? (
-              <Text style={styles.warning} testID="search-changed">
-                You changed the stay or place — tap Search to update the list.
-              </Text>
+        {results.status === "error" ? (
+          <View style={styles.inline}>
+            <Text accessibilityRole="alert" style={styles.error} testID="search-error">
+              {results.message}
+            </Text>
+            {results.code !== "no_home_point" ? (
+              <TextButton label="Try again" onPress={() => setRetry((n) => n + 1)} style={styles.left} testID="search-retry" />
             ) : null}
-            {results.status === "error" ? (
-              <View style={styles.inline}>
-                <Text accessibilityRole="alert" style={styles.error} testID="search-error">
-                  {results.message}
-                </Text>
-                {results.code !== "no_home_point" ? (
-                  <TextButton label="Try again" onPress={search} style={styles.left} testID="search-retry" />
-                ) : null}
-              </View>
-            ) : results.status === "loading" && shown.length === 0 ? (
-              <ActivityIndicator color={theme.color.primary} accessibilityLabel="Looking for sitters" />
-            ) : results.status === "ready" && results.sitters.length === 0 ? (
-              <EmptyState
-                emoji="🔎"
-                title={`No sitter free within ${results.radiusKm} km`}
-                message={`No sitter within ${results.radiusKm} km is free for your whole stay (${stayLabel}) at those times. ${
-                  wider ? "Try a wider radius, other dates or other times." : "Try other dates or other times."
-                }`}
-                action={wider ? { label: `Widen to ${wider} km`, onPress: () => setRadiusKm(wider) } : undefined}
-              />
-            ) : (
-              <>
-                <Text style={styles.subtitle} testID="search-count">
-                  {results.status === "loading"
-                    ? "Updating…"
-                    : `${shown.length} ${shown.length === 1 ? "sitter" : "sitters"} free for your whole stay`}
-                </Text>
-                <View style={[styles.section, results.status === "loading" && styles.dimmed]}>{sorted.map(resultCard)}</View>
-              </>
-            )}
           </View>
+        ) : null}
+        {results.status === "ready" && count === 0 && wider ? (
+          <TextButton label={`Widen to ${wider} km`} onPress={() => setRadiusKm(wider)} style={styles.left} testID="search-widen" />
         ) : null}
       </Screen>
 
       <View style={styles.footer}>
-        <Button
-          label={criteria && !changed ? "Search again" : "Search"}
-          onPress={search}
-          disabled={!!problem || !!placeProblem || home === undefined}
-          testID="search-submit"
-        />
+        <Button label={buttonLabel} onPress={() => setShowing(true)} disabled={results.status !== "ready" || count === 0} testID="search-submit" />
       </View>
     </View>
   );
@@ -475,10 +463,6 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
-    },
-    warning: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.warning,
     },
     when: {
       gap: theme.spacing.xs,
@@ -535,17 +519,8 @@ const makeStyles = (theme: Theme) =>
       fontWeight: "600",
       color: theme.color.text,
     },
-    resultActions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginTop: theme.spacing.xs,
-    },
-    bookButton: {
-      minWidth: 140,
-    },
-    dimmed: {
-      opacity: 0.5,
+    resultsHead: {
+      gap: theme.spacing.xs,
     },
     footer: {
       padding: theme.spacing.md,

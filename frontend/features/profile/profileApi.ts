@@ -6,6 +6,16 @@ import { OwnerProfile, SitterProfile } from "../../types/db";
 const OWNER_COLUMNS =
   "home_address, home_lat, home_lng, emergency_contact_name, emergency_contact_phone, vet_clinic_name, vet_clinic_phone, meet_spots";
 
+/** The radius the owner last searched with (014i); null until they change it. */
+export async function loadSearchRadius(userId: string): Promise<number | null> {
+  const { data } = await getSupabase().from("owner_profiles").select("search_radius_km").eq("id", userId).maybeSingle();
+  return (data as { search_radius_km: number | null } | null)?.search_radius_km ?? null;
+}
+
+export async function saveSearchRadius(userId: string, km: number): Promise<void> {
+  await getSupabase().from("owner_profiles").update({ search_radius_km: km }).eq("id", userId);
+}
+
 export type RoleProfile =
   | { role: "owner"; fields: OwnerProfile }
   | { role: "sitter"; fields: SitterProfile };

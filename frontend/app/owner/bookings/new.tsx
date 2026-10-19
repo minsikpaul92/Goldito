@@ -209,6 +209,10 @@ export default function BookCare() {
   const offers = (m: SitterMatch | undefined) => !!m && m.services.includes(service);
   const pickable = (m: SitterMatch | undefined) => !!m && coversWholeTrip(m) && offers(m);
   const chosen = sitterId ? matchFor(sitterId) : undefined;
+  // Arrived with a sitter already picked (search, profile): that sitter only, no second list (#168).
+  const lockedId = params.sitter && !params.other ? params.sitter : null;
+  const noFit = lockedId ? !pickable(matchFor(lockedId)) : !matches.some(pickable);
+  const lockedName = lockedId ? (matchFor(lockedId)?.displayName ?? mySitters.find((x) => x.id === lockedId)?.displayName ?? null) : null;
   const chosenOk = pickable(chosen) && !!chosen;
   const sitterName = chosenOk && chosen ? chosen.displayName : null;
   const houseSitting = service === "house_sitting";
@@ -391,26 +395,29 @@ export default function BookCare() {
             <Text style={styles.error}>{search.message}</Text>
           ) : (
             <View style={styles.section} accessibilityRole="radiogroup" testID="sitter-options">
-              {mySitters.length > 0 ? (
+              {lockedId ? (
+                lockedName ? sitterOption(lockedId, lockedName, matchFor(lockedId)) : null
+              ) : null}
+              {lockedId ? null : mySitters.length > 0 ? (
                 <>
                   <Text style={styles.subtitle}>Your sitters</Text>
                   {mySitters.map((s) => sitterOption(s.id, s.displayName, matchFor(s.id)))}
                 </>
               ) : null}
-              {otherWhole.length > 0 ? (
+              {!lockedId && otherWhole.length > 0 ? (
                 <>
                   <Text style={styles.subtitle}>{mySitters.length > 0 ? "Other sitters" : "Sitters free for your trip"}</Text>
                   {otherWhole.map((m) => sitterOption(m.sitterId, m.displayName, m))}
                 </>
               ) : null}
-              {!matches.some(pickable) ? (
+              {noFit ? (
                 <Text style={styles.hint} testID="no-whole-trip">
                   {houseSitting
                     ? "No sitter offers house sitting for your whole trip. Try other dates or Boarding."
                     : "No sitter is free for your whole trip. Try other dates or times."}
                 </Text>
               ) : null}
-              {otherPartial.length > 0 ? (
+              {!lockedId && otherPartial.length > 0 ? (
                 <>
                   <TextButton
                     label={showPartial ? "Hide other options" : `Other options (${otherPartial.length})`}
