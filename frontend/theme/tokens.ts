@@ -42,6 +42,11 @@ export const tokens = {
     goldOnLight: "#C9962E",
     /** Warm expressive ground for brand moments (welcome, celebration). */
     cream: "#FBF6EA",
+    // Color blocks (Expressive): tinted card grounds. Text on them uses `text`.
+    blockMint: "#D8F3DC",
+    blockPeach: "#FDE2CC",
+    blockButter: "#FBEFC8",
+    blockBlush: "#FAD6CB",
   },
   spacing: {
     xs: 4,
@@ -54,6 +59,10 @@ export const tokens = {
     sm: 8,
     md: 12,
     lg: 16,
+    /** (Expressive) Color-block cards. */
+    xl: 24,
+    /** Fully rounded ends (pill buttons, segmented controls). */
+    pill: 999,
   },
   fontSize: {
     title: 24,
@@ -62,6 +71,8 @@ export const tokens = {
     /** (proposed) Tiny labels inside dense grids, e.g. slot letters in SlotCalendar. */
     caption: 11,
   },
+  /** Loaded font families. Unset = the platform font. A skin sets `display` for screen titles (Expressive: Fredoka). */
+  fontFamily: {} as { display?: string },
   /** Figma text styles: Body = regular, Body/Small Strong = semibold, Title = bold, Caption = medium. */
   fontWeight: {
     regular: "400",

@@ -84,13 +84,13 @@ const makeStyles = (theme: Theme) =>
       height: 44,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: theme.radius.md,
+      borderRadius: theme.ui.radius.stepper,
       borderWidth: 1,
-      borderColor: theme.color.border,
+      borderColor: theme.ui.stepperBorder,
       backgroundColor: theme.color.surface,
     },
     pressed: {
-      backgroundColor: theme.color.accent,
+      backgroundColor: theme.ui.stepperPressed,
     },
     disabled: {
       opacity: 0.4,

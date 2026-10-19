@@ -24,7 +24,7 @@ import {
   respondMeetGreet,
   respondSkipMeetGreet,
 } from "../lib/meetGreet";
-import { useThemedStyles } from "../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 
@@ -50,6 +50,7 @@ export function meetGreetSummary(b: BookingSummary): string | null {
  * request asks the other side to Continue without meeting or Decline (cancels).
  */
 export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const [busy, setBusy] = useState(false);
@@ -98,7 +99,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
 
   if (status === "done" || status === "skipped" || !open) {
     return (
-      <Card style={styles.card} testID="meet-greet">
+      <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
         <Text style={styles.muted}>
           {status === "done"
             ? `Met ✓${summary ? ` — ${summary}` : ""}`
@@ -262,7 +263,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
   }
 
   return (
-    <Card style={styles.card} testID="meet-greet">
+    <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
       {body}
       {error ? (
         <Text accessibilityRole="alert" style={styles.error} testID="meet-error">

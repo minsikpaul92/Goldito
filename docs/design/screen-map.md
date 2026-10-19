@@ -61,19 +61,19 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 141 |
-| EmptyState | Couldn't load this booking | — | 148 |
-| Tag | `b.label` | — | 217 |
-| Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 256 |
-| CheckRow | `item` | ``pack-${item}`` | 282 |
-| Button | Find a new sitter | `find-new-sitter` | 344 |
-| Button | Change time or place | `change-booking` | 351 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
-| Sheet | Decline and end the request | `end-request-sheet` | 438 |
-| Button | Decline and end the request | `end-request-confirm` | 444 |
+| EmptyState | Booking not found | — | 142 |
+| EmptyState | Couldn't load this booking | — | 149 |
+| Tag | `b.label` | — | 218 |
+| Tag | Paid | `paid-chip` | 221 |
+| Button | Finish booking | `open-checkout` | 257 |
+| CheckRow | `item` | ``pack-${item}`` | 283 |
+| Button | Find a new sitter | `find-new-sitter` | 345 |
+| Button | Change time or place | `change-booking` | 352 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 360 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 370 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 376 |
+| Sheet | Decline and end the request | `end-request-sheet` | 439 |
+| Button | Decline and end the request | `end-request-confirm` | 445 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -836,25 +836,25 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 143 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 144 |
-| TextButton | Change | `meet-change` | 153 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 154 |
-| Button | Accept | `meet-accept` | 163 |
-| TextButton | Suggest another time | `meet-counter` | 176 |
-| TextButton | Decline | `meet-decline` | 177 |
-| LinkButton | Join Google Meet | `meet-join` | 193 |
-| TextButton | Get the Meet link | `meet-link-retry` | 197 |
-| CheckRow | `item` | ``meet-check-${item}`` | 211 |
-| Button | Done — we met | `meet-done` | 220 |
-| TextButton | Add to calendar | `meet-calendar` | 230 |
-| TextButton | Change | `meet-change` | 231 |
-| Button | Continue without meeting | `meet-skip-accept` | 247 |
-| TextButton | Decline — cancels the booking | `meet-skip-decline` | 253 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 285 |
-| Button | Ask to skip | `meet-skip-confirm` | 291 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 304 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 310 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 144 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 145 |
+| TextButton | Change | `meet-change` | 154 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 155 |
+| Button | Accept | `meet-accept` | 164 |
+| TextButton | Suggest another time | `meet-counter` | 177 |
+| TextButton | Decline | `meet-decline` | 178 |
+| LinkButton | Join Google Meet | `meet-join` | 194 |
+| TextButton | Get the Meet link | `meet-link-retry` | 198 |
+| CheckRow | `item` | ``meet-check-${item}`` | 212 |
+| Button | Done — we met | `meet-done` | 221 |
+| TextButton | Add to calendar | `meet-calendar` | 231 |
+| TextButton | Change | `meet-change` | 232 |
+| Button | Continue without meeting | `meet-skip-accept` | 248 |
+| TextButton | Decline — cancels the booking | `meet-skip-decline` | 254 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 286 |
+| Button | Ask to skip | `meet-skip-confirm` | 292 |
+| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 305 |
+| Button | Decline and cancel the booking | `meet-decline-confirm` | 311 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
@@ -999,7 +999,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 41 |
+| Pressable | aria["aria-label"] | `testID` | 63 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 

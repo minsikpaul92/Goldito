@@ -91,7 +91,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: theme.spacing.xs,
-      borderRadius: theme.radius.md,
+      borderRadius: theme.ui.radius.segment,
       borderWidth: 1,
       borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
