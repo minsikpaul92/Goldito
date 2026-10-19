@@ -42,16 +42,17 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
-Owner Bookings tab: my bookings with status badges (3B.3) and "Your sitters" (3B.2) → their profile and month. Book care is the one primary action.
+Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3) and questions.
 
-Shows: `BookingCard` · `SitterCard`
+Shows: `BookingCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 81 |
-| EmptyState | No bookings yet | — | 95 |
-| Pressable | — | ``question-card-${inq.id}`` | 129 |
-| Button | Book care | `book-care` | 185 |
+| EmptyState | Couldn't load your bookings | — | 90 |
+| TextButton | Open Profile | `search-open-profile` | 114 |
+| TextButton | Try again | `search-retry` | 122 |
+| Pressable | `sitter.displayName` | ``sitter-tile-${sitter.displayName}`` | 135 |
+| Pressable | — | ``question-card-${inq.id}`` | 179 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -121,25 +122,6 @@ Shows: `HandoffDraft` · `HandoffPicker`
 | CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 348 |
 | TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 422 |
 | Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 456 |
-
-### `/owner/bookings/search` — [app/owner/bookings/search.tsx](../../frontend/app/owner/bookings/search.tsx)
-
-Find a sitter: who's staying, drop-off and pick-up, from home or from here, how far. Every change re-searches by itself (search_sitters_nearby, 014c/014i) and the button says how many sitters are free for the whole stay; it opens the results on the next screen, and a result opens the sitter detail.
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Stepper | ``${title} day`` | ``search-${kind}-day`` | 71 |
-| Stepper | ``${title} time`` | ``search-${kind}-time`` | 80 |
-| EmptyState | Add a pet first | — | 245 |
-| Pressable | ``${s.displayName}, open profile`` | ``search-result-${s.displayName}`` | 265 |
-| TextButton | Edit search | `search-edit` | 295 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 325 |
-| SegmentedControl | — | `search-place` | 362 |
-| TextButton | Open Profile | `search-open-profile` | 376 |
-| TextButton | Try again | `search-locate-again` | 389 |
-| TextButton | Try again | `search-retry` | 416 |
-| TextButton | ``Widen to ${wider} km`` | `search-widen` | 421 |
-| Button | `buttonLabel` | `search-submit` | 426 |
 
 ### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
 
@@ -1109,6 +1091,26 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | ``Check in on ${p.name}`` | ``caring-pet-${p.id}`` | 190 |
 | Sheet | Heads-up | `headsup-sheet` | 211 |
 
+### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | `text` | `id` | 56 |
+| Pressable | Search | `bar-search` | 84 |
+| Sheet | Done | `place-done` | 88 |
+| Button | Done | `place-done` | 92 |
+| Button | Use this place | `place-use-address` | 106 |
+| CheckRow | 🏠 My home | `place-home` | 113 |
+| CheckRow | 📍 Current location | `place-here` | 114 |
+| TextButton | Open Profile | `place-open-profile` | 135 |
+| Sheet | Done | `stay-done` | 153 |
+| Button | Done | `stay-done` | 157 |
+| Stepper | Drop-off time | `search-drop_off-time` | 172 |
+| Stepper | Pick-up time | `search-pick_up-time` | 181 |
+| Sheet | Done | `pets-done` | 213 |
+| Button | Done | `pets-done` | 217 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 221 |
+
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1290,4 +1292,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-374 actions · 373 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+377 actions · 376 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
