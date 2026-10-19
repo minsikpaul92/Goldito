@@ -32,6 +32,13 @@ export const DEMO_SETS: DemoSet[] = [
     sitter: { email: "demo-sitter-allen@goldito.test", name: "Allen" },
     pets: ["Cooper", "Olive"],
   },
+  {
+    key: "daniel",
+    label: "Daniel",
+    owner: { email: "demo-owner-daniel@goldito.test", name: "David" },
+    sitter: { email: "demo-sitter-daniel@goldito.test", name: "Daniel" },
+    pets: ["Teddy", "Leo"],
+  },
 ];
 
 export const DEFAULT_DEMO_SET = DEMO_SETS[0];

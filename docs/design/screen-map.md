@@ -422,6 +422,7 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | TextButton | Suggest drop-off time | `suggest-drop_off` | 309 |
 | TextButton | Suggest pick-up time | `suggest-pick_up` | 314 |
 | TextButton | Change time or place | `change-booking` | 322 |
+| Tag | `a` | — | 351 |
 | Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 378 |
 | Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 385 |
 | TextButton | Decline | `decline-booking` | 392 |
@@ -957,6 +958,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 26 |
+| Tag | `allergy.allergen` | — | 51 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
