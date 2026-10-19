@@ -102,7 +102,7 @@ test.describe("book care", () => {
     expect(db.searches.at(-1)).toMatchObject({ p_pet_count: 2 });
 
     await expect(screen.getByTestId("pick-sitter-Chloe")).toContainText("Available for your whole trip");
-    await expect(screen.getByTestId("pick-sitter-Paul")).toContainText("outside Paul's hours — you can still ask");
+    await expect(screen.getByTestId("pick-sitter-Paul")).toContainText("outside Paul's hours. You can still ask");
     await expect(screen.getByTestId("pick-sitter-Allen")).toHaveCount(0);
     await screen.getByTestId("toggle-partial").click();
     await expect(screen.getByTestId("pick-sitter-Allen")).toContainText("Covers part of your trip");
@@ -111,7 +111,7 @@ test.describe("book care", () => {
     await expect(screen.getByTestId("request-booking")).toBeDisabled();
     await screen.getByTestId("pick-sitter-Chloe").click();
     await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("drop_off-place-sitter_home")).toContainText("at Chloe's place");
+    await expect(screen.getByTestId("drop_off-place-sitter_home")).toContainText("to Chloe's place");
 
     // Drop-off 9:00 → 9:30 AM; Chloe brings them home.
     await screen.getByTestId("drop_off-time-plus").click();

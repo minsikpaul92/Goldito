@@ -59,7 +59,7 @@ test.describe("handoff check", () => {
 
     await expect(screen.getByTestId("handoff-returned")).toHaveCount(0);
     await screen.getByTestId("handoff-received").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max checked in — Robert gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Max checked in. Robert gets a notice");
     expect(db.completions).toEqual([{ p_booking: BOOKING, p_kind: "drop_off" }]);
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("✓ Received");
     await expect(screen.getByText("In care", { exact: true })).toBeVisible(); // FB-26
@@ -78,7 +78,7 @@ test.describe("handoff check", () => {
     await expect(screen.getByTestId("return-confirm")).toHaveText("Return");
     await expect(screen.getByTestId("return-confirm").locator("div").first()).toHaveCSS("color", "rgb(255, 255, 255)");
     await screen.getByTestId("return-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max home safe — Robert gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Max home safe. Robert gets a notice");
     await expect(screen.getByTestId("handoff-pick_up")).toContainText("✓ Returned");
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
     await expect(screen.getByTestId("received-review")).toContainText("Robert hasn't left a review yet."); // FB-29
@@ -90,7 +90,7 @@ test.describe("handoff check", () => {
     await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
     await screen.getByTestId("sitter-bookings-tabs-past").click();
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("✓ Returned");
-    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Completed — pets home"); // not "Confirmed" (FB-26)
+    await expect(screen.getByTestId(`booking-card-${BOOKING}`)).toContainText("Completed"); // not "Confirmed" (FB-26)
     await expect(screen.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("Confirmed");
   });
 
@@ -189,7 +189,7 @@ test.describe("handoff check", () => {
     await page.goto(`/sitter/bookings/${BOOKING}`);
     const screen = app(page);
     const card = screen.getByTestId("owner-note");
-    await expect(card).toContainText("Only you can see this — Robert is never told.");
+    await expect(card).toContainText("Only you can see this. Robert is never told.");
     const notices = db.notifications.length;
 
     await screen.getByTestId("owner-note-start").click();

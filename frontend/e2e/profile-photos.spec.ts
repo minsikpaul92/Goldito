@@ -163,7 +163,7 @@ test.describe("profile photos", () => {
     await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
 
-    await expect(screen.getByTestId("profile-photos-group")).toContainText("A sitter sees it only once you have a booking");
+    await expect(screen.getByTestId("profile-photos-group")).toContainText("Your sitter sees this once you book.");
     await addOne(page, "mood_tug");
     expect(db.profile_photos).toHaveLength(1);
     expect(db.profile_photos[0]).toMatchObject({ profile_id: OWNER.id });

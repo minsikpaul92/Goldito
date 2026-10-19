@@ -151,7 +151,7 @@ test.describe("owner inquiry", () => {
     await screen.getByTestId("inquiry-pet-Max").click();
     await screen.getByTestId("inquiry-send").click();
     await expect(page).toHaveURL(/\/owner\/inquiries\/.+/);
-    expect(String(db.inquiry_messages[0].body)).toMatch(/^Boarding · .+ – .+ · Max$/);
+    expect(String(db.inquiry_messages[0].body)).toMatch(/^Boarding · .+ to .+ · Max$/);
   });
 
   test("a reply for dates the sitter can't take points to other sitters, with no Request booking", async ({ page }) => {

@@ -137,7 +137,7 @@ export default function SitterProfileScreen() {
           {meta ? <Text style={styles.meta}>{meta}</Text> : null}
           {favorite != null ? (
             <TextButton
-              label={favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites"}
+              label={favorite ? "★ Favorite" : "☆ Add to favorites"}
               onPress={() => void toggleFavorite()}
               testID="sitter-favorite"
             />
@@ -157,7 +157,7 @@ export default function SitterProfileScreen() {
               {rating.recent.map((r, i) => (
                 <View key={`${r.createdAt}-${i}`} style={styles.block} testID="sitter-review">
                   <StarRating value={r.rating} size={14} />
-                  <Text style={styles.body}>{`“${r.comment}” — ${r.reviewer}`}</Text>
+                  <Text style={styles.body}>{`“${r.comment}” · ${r.reviewer}`}</Text>
                 </View>
               ))}
             </View>

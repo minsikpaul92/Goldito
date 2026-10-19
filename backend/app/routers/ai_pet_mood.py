@@ -269,7 +269,7 @@ def pet_mood(body: PetMoodRequest, user: CurrentUser = Depends(get_current_user)
                 detail="Couldn't read the mood right now. Try again in a moment.",
             )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="We couldn't find a pet — try a clearer photo."
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="We couldn't find a pet. Try a clearer photo."
         )
 
     moods = []

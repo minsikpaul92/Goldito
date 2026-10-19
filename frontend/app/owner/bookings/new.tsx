@@ -52,10 +52,10 @@ function fitLines(match: SitterMatch | undefined, dropOff: HandoffDraft, pickUp:
   if (!coversWholeTrip(match)) return "Covers part of your trip";
   const lines = ["Available for your whole trip"];
   if (!match.dropOffWithinHours) {
-    lines.push(`Drop-off ${formatTime(dropOff.time)} is outside ${name}'s hours — you can still ask`);
+    lines.push(`Drop-off ${formatTime(dropOff.time)} is outside ${name}'s hours. You can still ask`);
   }
   if (!match.pickUpWithinHours) {
-    lines.push(`Pick-up ${formatTime(pickUp.time)} is outside ${name}'s hours — you can still ask`);
+    lines.push(`Pick-up ${formatTime(pickUp.time)} is outside ${name}'s hours. You can still ask`);
   }
   return lines.join("\n");
 }
@@ -312,7 +312,7 @@ export default function BookCare() {
       <Screen contentStyle={styles.content}>
         {rebookedFrom ? (
           <Text style={styles.hint} testID="rebook-note">
-            Finding a new sitter — same pets, times and places as before. Change anything you like.
+            Finding a new sitter with the same pets, times and places.
           </Text>
         ) : null}
 
@@ -331,7 +331,7 @@ export default function BookCare() {
           />
           <Text style={styles.hint}>
             {houseSitting
-              ? "The sitter cares for them at your place — drop-off and pick-up happen at home."
+              ? "The sitter cares for them at your place."
               : "Your pets stay at the sitter's place."}
           </Text>
         </Card>

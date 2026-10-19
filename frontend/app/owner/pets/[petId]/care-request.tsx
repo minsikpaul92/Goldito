@@ -278,7 +278,7 @@ export default function CareRequestScreen() {
       </Text>
       <Text style={styles.intro}>
         {requestMode
-          ? `${stay.sitterName} is caring for ${pet.name}. Build your request — it only takes effect once ${stay.sitterName} approves it.`
+          ? `${stay.sitterName} is caring for ${pet.name}. It takes effect once ${stay.sitterName} approves it.`
           : `Build it one line at a time. Your sitter can read it before deciding on the booking, and every change is saved by itself.`}
       </Text>
 

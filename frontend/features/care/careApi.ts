@@ -17,7 +17,7 @@ export type CareTaskInput = {
 };
 
 /** While a stay is on the owner asks through a care request instead (008j). */
-const STAY_ON_MESSAGE = "A stay is on — send a care request instead, and your sitter can approve it.";
+const STAY_ON_MESSAGE = "A stay is on. Send a care request instead.";
 
 function fail(action: string): never {
   throw new Error(`Couldn't ${action}. Check your connection and try again.`);

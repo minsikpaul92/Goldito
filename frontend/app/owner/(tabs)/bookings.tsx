@@ -95,7 +95,7 @@ export default function OwnerBookings() {
         <EmptyState
           emoji="📅"
           title="No bookings yet"
-          message="Book a sitter for your next trip — your requests and stays will show here."
+          message="Book a sitter for your next trip."
           action={{ label: "Book care", onPress: bookCare }}
         />
       </Screen>
@@ -135,7 +135,7 @@ export default function OwnerBookings() {
                 <Card style={styles.question}>
                   <Text style={styles.questionTitle}>{`${inq.sitterName} · ${inq.petNames.join(", ")}`}</Text>
                   <Text style={styles.hint}>
-                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} – ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
+                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} to ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
                   </Text>
                   <Text style={inq.state === "replied" && inq.status === "open" ? styles.ready : styles.hint}>
                     {inq.status === "booked"
@@ -172,7 +172,7 @@ export default function OwnerBookings() {
             </Text>
             <Text style={styles.hint}>
               {nothingYet
-                ? "Open a profile to ask before booking — or Book care to see who's free for your dates."
+                ? "Open a profile to ask, or Book care to see who's free."
                 : "Open a profile to ask before booking."}
             </Text>
             {state.others.map((sitter) => (

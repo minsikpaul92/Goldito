@@ -86,7 +86,7 @@ test.describe("sitter schedule", () => {
 
     await expect(screen.getByTestId(`day-${mid}`)).toHaveAttribute("aria-label", /Morning open, Afternoon open, Night blocked/);
     await screen.getByTestId(`day-${mid}`).click();
-    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/3 booked");
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM to 1:00 PM · 0/3 booked");
     // Opening only some slots closes the others on those days, even though a sitter is open by default (014d).
     await expect(screen.getByTestId("summary-overnight")).toHaveText("Night: Blocked");
 
@@ -247,9 +247,9 @@ test.describe("sitter schedule", () => {
     expect(db.sitter_profiles[0].default_hours).toMatchObject({ morning: ["09:00", "13:00"] });
 
     await screen.getByTestId(`day-${monday}`).click();
-    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM–1:00 PM · 0/2 booked");
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:30 AM to 1:00 PM · 0/2 booked");
     await screen.getByTestId(`day-${tuesday}`).click();
-    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:00 AM–1:00 PM · 0/2 booked");
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 9:00 AM to 1:00 PM · 0/2 booked");
 
     // The sheet starts from what is saved; Same as every day removes the weekday's own hours.
     await screen.getByTestId("schedule-rules").click();
@@ -327,7 +327,7 @@ test.describe("sitter schedule", () => {
 
     await expect(screen.getByTestId(`day-${day}`)).toHaveAttribute("aria-label", /Morning open/);
     await screen.getByTestId(`day-${day}`).click();
-    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 8:00 AM–12:00 PM · 1/2 booked");
+    await expect(screen.getByTestId("summary-morning")).toHaveText("Morning: Open · 8:00 AM to 12:00 PM · 1/2 booked");
 
     await screen.getByTestId("schedule-edit").click();
     await screen.getByTestId("schedule-mode-block").click();

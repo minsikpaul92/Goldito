@@ -283,7 +283,7 @@ export default function SitterPetFeed() {
               <EmptyState
                 emoji="📸"
                 title="No posts yet"
-                message={`No posts yet — tap + to share ${pet.name}'s day.`}
+                message={`No posts yet. Tap + to share ${pet.name}'s day.`}
               />
             )
           }

@@ -187,8 +187,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
         title={`Share your live location with ${pending?.args.otherName ?? ""}?`}
         lines={[
           `${pending?.args.otherName ?? "They"} will see where you are on a map, with your ETA, until you arrive.`,
-          "It stops by itself when you arrive. Goldito keeps only your latest spot — no route history.",
-          "Keep this screen on while you travel — the browser stops sharing when it sleeps.",
+          "It stops by itself when you arrive. Goldito keeps only your latest spot, no route history.",
+          "Keep this screen on while you travel. The browser stops sharing when it sleeps.",
           `Prefer not to share? ${pending?.args.otherName ?? "They"} will see the meeting place and an Open in Google Maps button instead.`,
         ]}
         allowLabel="Allow"

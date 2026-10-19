@@ -85,7 +85,7 @@ export default function ReviewScreen() {
       <Screen>
         <EmptyState
           emoji="⭐"
-          title="Thanks — you already reviewed this stay"
+          title="Thanks, you already reviewed this stay"
           message="Your review is on the booking."
           action={{ label: "Back to the booking", onPress: () => router.replace(`/owner/bookings/${booking.id}`) }}
         />

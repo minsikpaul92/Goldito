@@ -24,13 +24,13 @@ type Badge = { label: string; tone: TagTone };
 /** Status badges per side (phase-03b screens table). Text always says it — never color alone. */
 export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   if (b.status === "declined") return [{ label: "Declined", tone: "neutral" }];
-  if (requestExpired(b)) return [{ label: "Expired — the times have passed", tone: "neutral" }];
+  if (requestExpired(b)) return [{ label: "Expired", tone: "neutral" }];
   if (b.status === "cancelled") {
-    return [{ label: viewer === "owner" ? "Cancelled — find a new sitter" : "Cancelled", tone: "neutral" }];
+    return [{ label: "Cancelled", tone: "neutral" }];
   }
   if (b.status === "confirmed") {
     // The booking row stays "confirmed" for life; what happened at the handoffs says where the stay is (FB-26).
-    if (b.pickUp?.completedAt) return [{ label: "Completed — pets home", tone: "success" }];
+    if (b.pickUp?.completedAt) return [{ label: "Completed", tone: "success" }];
     const me = viewer === "owner" ? b.ownerId : b.sitterId;
     const open = [b.pending.drop_off, b.pending.pick_up].filter((p) => p !== null);
     const badges: Badge[] = [b.dropOff?.completedAt ? { label: "In care", tone: "success" } : { label: "Confirmed", tone: "success" }];
@@ -48,7 +48,7 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
     if (datesOnHold(b) && meetGreetBlocksAccept(b)) return { label: "Dates held · Meet & Greet", tone: "brand" };
     if (datesOnHold(b)) {
       return viewer === "sitter"
-        ? { label: "Met — ready to confirm", tone: "warning" }
+        ? { label: "Met, ready to confirm", tone: "warning" }
         : { label: `Waiting for ${b.sitterName} to confirm`, tone: "neutral" };
     }
     return null;
@@ -64,7 +64,7 @@ export function bookingBadges(b: BookingSummary, viewer: Viewer): Badge[] {
   const badges: Badge[] = [];
   if (b.sitterSuggested) badges.push({ label: `Waiting for ${b.ownerName}`, tone: "neutral" });
   const custom = [b.dropOff, b.pickUp].some((h) => h && h.pending && !h.withinSitterHours);
-  if (custom && !b.sitterSuggested) badges.push({ label: "Custom time — needs your OK", tone: "warning" });
+  if (custom && !b.sitterSuggested) badges.push({ label: "Custom time, needs your OK", tone: "warning" });
   const meet = meetBadge();
   if (meet) badges.push(meet);
   if (badges.length === 0) badges.push({ label: "New request", tone: "brand" });
@@ -105,7 +105,7 @@ export function transportLine(b: BookingSummary, viewer: Viewer): string | null 
 }
 
 export function handoffLine(label: string, h: Handoff | null, b: BookingSummary, viewer: Viewer): string {
-  if (!h) return `${label}: —`;
+  if (!h) return `${label}: not set`;
   const done = h.completedAt
     ? ` · ✓ ${label === "Drop-off" ? "Received" : "Returned"} ${formatTime(isoToZoned(h.completedAt).time)}`
     : "";

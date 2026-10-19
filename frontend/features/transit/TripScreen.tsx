@@ -107,7 +107,7 @@ export function TripScreen({ role }: { role: Role }) {
             {mayStart && Date.now() < opens
               ? `You can start the trip from ${clock(new Date(opens).toISOString())}.`
               : mayStart
-                ? `Start the trip when you head out — ${other} can follow you on a map until you arrive.`
+                ? `Start the trip when you head out. ${other} can follow you on a map.`
                 : `When ${other} heads out, you can follow them here.`}
           </Text>
           {mayStart && next && Date.now() >= opens ? (
@@ -156,12 +156,12 @@ export function TripScreen({ role }: { role: Role }) {
           body={
             here
               ? `📡 Sharing your location with ${other} until you arrive`
-              : `This device isn't sharing right now — ${other} sees your last spot.`
+              : `This device isn't sharing. ${other} sees your last spot.`
           }
         />
       ) : null}
       {mine && !shared ? (
-        <Banner testID="trip-not-sharing-banner" body={`You're not sharing your location — ${other} sees the meeting place.`} />
+        <Banner testID="trip-not-sharing-banner" body={`You're not sharing your location. ${other} sees the meeting place.`} />
       ) : null}
 
       <View style={styles.head} testID="trip-status">
@@ -182,14 +182,14 @@ export function TripScreen({ role }: { role: Role }) {
               ? "Not sharing a live location"
               : `${other} isn't sharing a live location`
             : arrived
-            ? `Arrived at ${live.arrived_at ? clock(live.arrived_at) : "—"}`
+            ? `Arrived at ${live.arrived_at ? clock(live.arrived_at) : "-"}`
             : `${mine ? "You're" : `${other} is`} on the way${live.simulated ? " (simulated drive)" : ""}`}
         </Text>
       </View>
 
       {lastSeenMin >= 1 ? (
         <Text style={styles.muted} testID="trip-last-seen">
-          {`Last location ${lastSeenMin} min ago — sharing pauses while the browser is in the background.`}
+          {`Last location ${lastSeenMin} min ago. Sharing pauses while the browser is in the background.`}
         </Text>
       ) : null}
       {shared && place ? <TripMap traveler={position} dest={place} travelerLabel={travelerName === "You" ? "You" : other} /> : null}
@@ -210,7 +210,7 @@ export function TripScreen({ role }: { role: Role }) {
       {arrived && !mine ? (
         <Card style={styles.card} testID="trip-arrived-card">
           <Text style={styles.title}>{`${other} has arrived`}</Text>
-          <Text style={styles.muted}>Head out and meet them — then the handoff is checked in the booking.</Text>
+          <Text style={styles.muted}>Head out and meet them, then check the handoff in the booking.</Text>
         </Card>
       ) : null}
 

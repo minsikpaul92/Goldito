@@ -68,7 +68,7 @@ export function QuoteCard({ quote, compact, testID }: Props) {
         <Text style={styles.total}>Total</Text>
         <Text style={styles.total} testID="quote-total">{`${money(quote.total)} ${quote.currency}`}</Text>
       </View>
-      <Text style={styles.muted}>Price is set at checkout — demo payment, no card.</Text>
+      <Text style={styles.muted}>Price is set at checkout. Demo payment, no card.</Text>
     </Card>
   );
 }
