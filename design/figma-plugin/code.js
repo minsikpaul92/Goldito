@@ -417,10 +417,10 @@ const LIBRARY = [
   // ===== Core (only if the file doesn't already have hand-made versions)
   ["Core", async () => {
     // Tag: status label on a light surface of the same tone (never tone on tone).
-    const TONES = { Danger: ["error-surface", "error"], Warning: ["warning-surface", "warning"], Success: ["success-surface", "success"], Brand: ["accent", "primary"], Neutral: ["surface", "text-muted"] };
-    TAG_SET = await variants("Tag", "Status label. Text always sits on the light surface of its tone (error-surface, warning-surface, success-surface, accent), never on the solid tone color. Warning = heads-up (allergy, behavior); Danger = blocked ingredient; Brand = booking status.",
+    const TONES = { Danger: ["error-surface", "error"], Warning: ["warning-surface", "warning"], Success: ["success-surface", "success"], Brand: ["accent", "primary"], Neutral: ["track", "text-muted"] };
+    TAG_SET = await variants("Tag", "Status label. Text always sits on the light surface of its tone (error-surface, warning-surface, success-surface, accent), never on the solid tone color. Warning = heads-up (allergy, behavior); Danger = blocked ingredient; Brand = booking status; Neutral = plain fact on track. Read-only: flat fill, never a border (a border means a tappable Chip). Code: components/ui/Tag.tsx",
       Object.entries(TONES).map(([tone, [bg, fg]]) => [`Tone=${tone}`, async () =>
-        box("Tag", { dir: "H", pad: [4, "sm", 4, "sm"], radius: "sm", fill: bg, stroke: tone === "Neutral" ? "border" : undefined, align: "CENTER" },
+        box("Tag", { dir: "H", pad: [4, "sm", 4, "sm"], radius: "sm", fill: bg, align: "CENTER" },
           [await txt(tone === "Warning" ? "⚠️ Allergic to chicken" : tone === "Danger" ? "chicken" : tone === "Success" ? "Passes AA ✓" : tone === "Brand" ? "Confirmed" : "😊 Happy", "Small Strong", fg, { name: "Label" })])]), [["Label", "Label"]]);
     const has = (name) => figma.currentPage.children.some((n) => n.name === name && n.getPluginData("pawnote") !== "components" && (n.type === "COMPONENT" || n.type === "COMPONENT_SET"));
     if (!has("Button")) await variants("Button", "The one filled action per screen (§7.1). Secondary = white + border. Disabled = neutral (never a faded brand color). Loading keeps the color and adds a spinner. Code: components/ui/Button.tsx",

@@ -348,7 +348,7 @@ export default function SitterBookingDetail() {
               <View style={styles.chips}>
                 <Text style={styles.warning}>Allergies</Text>
                 {pet.allergies.map((a) => (
-                  <Chip key={a} label={a} />
+                  <Tag key={a} tone="warning" label={a} />
                 ))}
               </View>
             ) : (

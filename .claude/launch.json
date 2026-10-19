@@ -1,6 +1,0 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    { "name": "goldito-web", "runtimeExecutable": "bash", "runtimeArgs": ["-c", "cd /Users/mooque/Claude/pawnote/.claude/worktrees/design-system-extraction-8428b7/frontend && npx expo start --web --port 8081"], "port": 8081 }
-  ]
-}
