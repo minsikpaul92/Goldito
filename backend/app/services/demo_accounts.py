@@ -66,6 +66,16 @@ DEMO_SETS = (
             ("Olive", "cat", "British Shorthair", 4, 5.1, []),
         ),
     ),
+    DemoSet(
+        "daniel",
+        "Daniel",
+        DemoUser("demo-owner-daniel@goldito.test", "owner", "David"),
+        DemoUser("demo-sitter-daniel@goldito.test", "sitter", "Daniel"),
+        pets=(
+            ("Teddy", "dog", "Maltese", 4, 3.2, ["chicken"]),
+            ("Leo", "cat", "British Shorthair", 4, 5.1, []),
+        ),
+    ),
 )
 DEFAULT_SET = DEMO_SETS[0]
 # Every demo account, for the seed.

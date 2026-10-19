@@ -38,12 +38,13 @@
 | Chloe (기본, 슬기 QA) | `demo-owner@goldito.test` (Robert) | `demo-sitter@goldito.test` (Chloe) |
 | Paul | `demo-owner-paul@goldito.test` (Peter) | `demo-sitter-paul@goldito.test` (Paul) |
 | Allen | `demo-owner-allen@goldito.test` (Alex) | `demo-sitter-allen@goldito.test` (Allen) |
+| Daniel | `demo-owner-daniel@goldito.test` (David) | `demo-sitter-daniel@goldito.test` (Daniel) |
 
-> **이름:** 여섯 계정 이름이 모두 다르고 펫 이름도 세트마다 다르다(Chloe 세트 Max · Mochi, Paul 세트 Biscuit · Luna, Allen 세트 Cooper · Olive). 강아지는 모든 세트에서 닭고기 알레르기가 있어 Treat check 샘플 결과는 같다.
+> **이름:** 여덟 계정 이름이 모두 다르고 펫 이름도 세트마다 다르다(Chloe 세트 Max · Mochi, Paul 세트 Biscuit · Luna, Allen 세트 Cooper · Olive, Daniel 세트 Teddy · Leo). 강아지는 모든 세트에서 닭고기 알레르기가 있어 Treat check 샘플 결과는 같다.
 >
 > **초기화 범위:** 오너가 초기화하면 오너쪽(펫과 돌봄 계획, 오너의 알림)과 **그 세트 시터와의 예약 · 문의**가 지워지고 시터의 일정과 말투는 그대로. 시터가 초기화하면 시터쪽(일정, 시터의 알림)과 같은 예약 · 문의가 지워지고 오너의 펫과 돌봄 계획은 그대로. 다른 세트의 계정과 주고받은 예약은 어느 쪽 초기화에도 안 지워진다.
 >
-> **세트가 서로 만나는 곳:** 모든 데모 시터는 모든 오너의 검색에 보인다. 세트 사이의 예약(예: Paul 오너와 Chloe 시터)은 어느 세트의 초기화에도 지워지지 않는다. 새 세트(Paul · Allen)는 시드를 돌린 뒤 첫 초기화(Pets only)로 펫과 일정이 생긴다.
+> **세트가 서로 만나는 곳:** 모든 데모 시터는 모든 오너의 검색에 보인다. 세트 사이의 예약(예: Paul 오너와 Chloe 시터)은 어느 세트의 초기화에도 지워지지 않는다. 새 세트(Paul · Allen · Daniel)는 시드를 돌린 뒤 첫 초기화(Pets only)로 펫과 일정이 생긴다.
 
 > **데모 이메일:** 호스팅 DB 계정은 `@goldito.test`(이름 Robert / Chloe). 호스팅 DB에 옛 `seed_demo.py`(`@pawddy.test`)를 돌리지 말 것.
 
@@ -698,12 +699,12 @@
 | PFP-6 | 오너 → Profile → **Your photos** | 시터와 같은 갤러리(추가 · 크롭 · 대표 · 이동 · 삭제). 안내 문구: "A sitter sees it only once you have a booking or a question with them." | 🤖 `profile-photos` | 사람 확인 대기 |
 | PFP-7 | 시터 → 그 오너와의 예약 요청 · 문의 화면 | 오너 이름 옆(문의는 위쪽)에 **대표 사진 원**이 보임. 사진이 없으면 이니셜. 예약도 문의도 없는 오너의 사진은 DB 규칙(`014g`) 때문에 시터에게 안 보임 → 이니셜 | 🤖 `sitter-bookings` (사진 있음 / 없음) · SQL `rls_smoke` (읽기 규칙) | 사람 확인 대기 |
 
-### 3.29 데모 계정 세트 (DSET): #163 · *사전: 데모 도구가 켜진 빌드(`EXPO_PUBLIC_DEMO_TOOLS=1`), 호스팅 DB는 Paul · Allen 계정을 시드한 뒤*
+### 3.29 데모 계정 세트 (DSET): #163 · *사전: 데모 도구가 켜진 빌드(`EXPO_PUBLIC_DEMO_TOOLS=1`), 호스팅 DB는 Paul · Allen · Daniel 계정을 시드한 뒤*
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
-| DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen 계정을 시드한 뒤) |
+| DSET-1 | 로그인 화면(데모 도구가 켜진 빌드) → **Whose demo** 드롭다운 → Paul → **Demo owner** 또는 **Demo sitter** | 드롭다운에 Chloe · Paul · Allen · Daniel. 고른 세트의 오너(Peter) 또는 시터(Paul)로 로그인되고 폰 위(또는 화면 위)에 "Peter · Owner" 또는 "Paul · Sitter". 아무것도 안 고르면 Chloe 세트(Robert · Chloe) | 🤖 `demo-sets` | 사람 확인 대기 |
+| DSET-2 | Peter(Paul 세트의 오너)로 Profile → **Demo tools (Peter)** → 상태 고르고 **Reset demo…**. 이어서 Paul(시터)로도 같은 것 | 확인 시트에 "Peter goes back to ... with Paul". 오너 초기화는 시터의 일정과 말투를 안 건드리고, 시터 초기화는 오너의 펫과 돌봄 계획을 안 건드림(시터에는 Empty 상태가 없고 Clean이 있음). Chloe 세트(슬기님)는 그대로. 세트에 없는 계정은 도구가 안 보이고 서버도 403 | 🤖 `demo-sets` · `test_demo_reset_api.py` · `test_reset_demo.py` | 사람 확인 대기(호스팅 DB에 Paul · Allen · Daniel 계정을 시드한 뒤) |
 
 ---
 
