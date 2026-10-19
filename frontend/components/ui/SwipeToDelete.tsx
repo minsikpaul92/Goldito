@@ -12,6 +12,8 @@ type Props = {
   onDelete: () => void;
   /** Corner radius of the row, so the red layer under it is cut to the same shape. */
   radius?: number;
+  /** The word on the red layer and for screen readers; default "Delete". */
+  label?: string;
   testID?: string;
 };
 
@@ -20,7 +22,7 @@ type Props = {
  * `onDelete` runs; otherwise it springs back. A tap still goes through to the row's own press.
  * Screen readers get a "Delete" action instead of the gesture.
  */
-export function SwipeToDelete({ children, onDelete, radius = 0, testID }: Props) {
+export function SwipeToDelete({ children, onDelete, radius = 0, label = "Delete", testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const x = useRef(new Animated.Value(0)).current;
   const [width, setWidth] = useState(0);
@@ -54,7 +56,7 @@ export function SwipeToDelete({ children, onDelete, radius = 0, testID }: Props)
     <View
       style={{ overflow: "hidden", borderRadius: radius }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      accessibilityActions={[{ name: "delete", label: "Delete" }]}
+      accessibilityActions={[{ name: "delete", label }]}
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === "delete") deleteRef.current();
       }}
@@ -69,7 +71,7 @@ export function SwipeToDelete({ children, onDelete, radius = 0, testID }: Props)
         pointerEvents="none"
         testID={testID ? `${testID}-behind` : undefined}
       >
-        <Text style={styles.behindText}>🗑️ Delete</Text>
+        <Text style={styles.behindText}>{label === "Delete" ? "🗑️ Delete" : label}</Text>
       </Animated.View>
       <Animated.View style={{ transform: [{ translateX: x }] }} {...pan.panHandlers}>
         {children}

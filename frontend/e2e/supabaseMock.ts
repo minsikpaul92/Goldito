@@ -159,6 +159,9 @@ export type MockDb = {
   sitter_profile_answers: Row[];
   /** 014g: { id, profile_id, public_id }, in the person's order (first = cover). */
   profile_photos: Row[];
+  /** 014j: one thread per owner and sitter, and its messages (text or card). */
+  chat_threads: Row[];
+  chat_messages: Row[];
   bookings: Row[];
   /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
   booking_slots: Row[];
@@ -253,6 +256,8 @@ function createMockDb(): MockDb {
     sitter_weekday_hours: [],
     sitter_profile_answers: [],
     profile_photos: [],
+    chat_threads: [],
+    chat_messages: [],
     bookings: [],
     booking_slots: [],
     cancellations: [],
@@ -689,6 +694,118 @@ function respond(route: Route, rows: Row[], wantsObject: boolean, status = 200, 
   });
 }
 
+/** Chat RPCs (014j): the same rules, in memory. Message times step by one ms so their order is stable. */
+function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me: string | null) {
+  const args = route.request().postDataJSON() ?? {};
+  const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+  const meUser = users.find((u) => u.id === me);
+  if (!meUser || !me) return fail("not_authenticated");
+  const stamp = () => new Date(nowMs() + db.chat_messages.length).toISOString();
+  const post = (thread: Row, sender: string, kind: string, body: string | null, card: unknown) => {
+    const row = { id: crypto.randomUUID(), thread_id: thread.id, sender_id: sender, kind, body, card, created_at: stamp() };
+    db.chat_messages.push(row);
+    thread[sender === thread.owner_id ? "owner_read_at" : "sitter_read_at"] = row.created_at;
+    return row;
+  };
+  const mine = (t: Row) => t.owner_id === me || t.sitter_id === me;
+  const side = (t: Row) => (t.owner_id === me ? "owner" : "sitter");
+  const nameOf = (id: unknown) => users.find((u) => u.id === id)?.displayName ?? "";
+  const threadOf = (id: unknown) => db.chat_threads.find((t) => t.id === id && mine(t));
+  const messagesOf = (t: Row) => db.chat_messages.filter((m) => m.thread_id === t.id);
+
+  if (fn === "open_chat_thread") {
+    const other = users.find((u) => u.id === args.p_other);
+    if (!other || other.id === me) return fail("forbidden");
+    let owner: string;
+    let sitter: string;
+    if (meUser.role === "owner") {
+      if (other.role !== "sitter") return fail("forbidden");
+      owner = me;
+      sitter = other.id;
+    } else {
+      owner = other.id;
+      sitter = me;
+      if (!db.chat_threads.some((t) => t.owner_id === owner && t.sitter_id === sitter)) return fail("forbidden");
+    }
+    let thread = db.chat_threads.find((t) => t.owner_id === owner && t.sitter_id === sitter);
+    if (!thread) {
+      thread = { id: crypto.randomUUID(), owner_id: owner, sitter_id: sitter, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null };
+      db.chat_threads.push(thread);
+    }
+    thread[`${side(thread)}_left_at`] = null;
+    if (meUser.role === "owner" && args.p_drop_off_at) {
+      const pets = (args.p_pet_ids as string[]).map((id) => db.pets.find((p) => p.id === id)).filter(Boolean) as Row[];
+      if (!args.p_pick_up_at || Date.parse(args.p_pick_up_at) <= Date.parse(args.p_drop_off_at) || pets.length === 0) return fail("invalid_stay");
+      const card = {
+        type: "stay",
+        drop_off_at: args.p_drop_off_at,
+        pick_up_at: args.p_pick_up_at,
+        pets: pets.map((p) => ({ id: p.id, name: p.name })).sort((a, b) => String(a.name).localeCompare(String(b.name))),
+      };
+      const last = messagesOf(thread).filter((m) => m.kind === "card" && (m.card as Row).type === "stay").at(-1);
+      if (JSON.stringify(last?.card) !== JSON.stringify(card)) post(thread, me, "card", null, card);
+    }
+    return json(route, 200, thread);
+  }
+
+  if (fn === "send_chat_message") {
+    const thread = threadOf(args.p_thread);
+    if (!thread) return fail("forbidden");
+    const body = String(args.p_body ?? "").trim();
+    if (!body) return fail("body_required");
+    if (body.length > 2000) return fail("body_too_long");
+    return json(route, 200, post(thread, me, "text", body, null));
+  }
+
+  if (fn === "mark_chat_read") {
+    const thread = threadOf(args.p_thread);
+    if (!thread) return fail("forbidden");
+    thread[`${side(thread)}_read_at`] = messagesOf(thread).at(-1)?.created_at ?? null;
+    return route.fulfill({ status: 204 });
+  }
+
+  if (fn === "leave_chat") {
+    const thread = threadOf(args.p_thread);
+    if (!thread) return fail("forbidden");
+    thread[`${side(thread)}_left_at`] = messagesOf(thread).at(-1)?.created_at ?? new Date(nowMs()).toISOString();
+    return route.fulfill({ status: 204 });
+  }
+
+  if (fn === "get_chat_thread") {
+    const thread = threadOf(args.p_thread);
+    if (!thread) return json(route, 200, []);
+    const other = thread.owner_id === me ? thread.sitter_id : thread.owner_id;
+    return json(route, 200, [
+      { thread_id: thread.id, owner_id: thread.owner_id, sitter_id: thread.sitter_id, other_id: other, other_name: nameOf(other), my_role: side(thread) },
+    ]);
+  }
+
+  // list_my_chats
+  const rows = db.chat_threads
+    .filter(mine)
+    .flatMap((t) => {
+      const all = messagesOf(t);
+      const last = all.at(-1);
+      const left = t[`${side(t)}_left_at`] as string | null;
+      if (!last || (left && String(last.created_at) <= left)) return [];
+      const read = t[`${side(t)}_read_at`] as string | null;
+      const other = t.owner_id === me ? t.sitter_id : t.owner_id;
+      return [
+        {
+          thread_id: t.id,
+          other_id: other,
+          other_name: nameOf(other),
+          last_kind: last.kind,
+          last_body: last.body,
+          last_at: last.created_at,
+          unread_count: all.filter((m) => m.sender_id !== me && (!read || String(m.created_at) > read)).length,
+        },
+      ];
+    })
+    .sort((a, b) => String(b.last_at).localeCompare(String(a.last_at)));
+  return json(route, 200, rows);
+}
+
 async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   ensureRoleRows(users, db);
   const request = route.request();
@@ -700,6 +817,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const wantsObject = (headers.accept ?? "").includes("vnd.pgrst.object");
   const wantsRows = (headers.prefer ?? "").includes("return=representation");
   const me = callerId(headers.authorization);
+
+  if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread)$/.test(path)) {
+    return handleChat(route, path.slice(4), users, db, me);
+  }
 
   if (path === "rpc/get_my_sitter_profile") {
     return respond(route, db.sitter_profiles.filter((row) => row.id === me), wantsObject);
@@ -1662,6 +1783,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "sitter_owner_notes" || row.sitter_id === me) &&
         // RLS (011h): an owner's favorites are theirs alone.
         (path !== "owner_favorite_sitters" || row.owner_id === me) &&
+        // RLS (014j): a chat is for its two people.
+        (path !== "chat_messages" || db.chat_threads.some((t) => t.id === row.thread_id && (t.owner_id === me || t.sitter_id === me))) &&
+        (path !== "chat_threads" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||

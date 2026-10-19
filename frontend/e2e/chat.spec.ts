@@ -1,0 +1,189 @@
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { app, box, drag, signIn } from "./helpers";
+import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+
+// Chat hub (03D 3D.4, 014j): one chat per owner and sitter, a WhatsApp-style list inside the Bookings tab, free
+// chat both ways, the stay card and the booking progress bar on top, unread counts and leaving a chat.
+// The thread rules themselves are tested in rls_smoke.sql; the mock keeps the same ones.
+
+const MAX = "00000000-0000-4000-8000-0000000000c1";
+const MOCHI = "00000000-0000-4000-8000-0000000000c2";
+const THREAD = "00000000-0000-4000-8000-0000000000f1";
+const BOOKING = "00000000-0000-4000-8000-0000000000e1";
+
+function pet(id: string, name: string, species: "dog" | "cat") {
+  return { id, owner_id: OWNER.id, species, name, breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-01-01T00:00:00Z" };
+}
+
+/** Robert has Max and Mochi and a saved home; Chloe is 3 km away. */
+function seed(db: MockDb) {
+  db.pets.push(pet(MAX, "Max", "dog"), pet(MOCHI, "Mochi", "cat"));
+  db.owner_profiles.push({ id: OWNER.id, home_address: null, home_lat: 43.6644, home_lng: -79.3573 });
+  db.nearby_sitters.push({
+    sitter_id: SITTER.id,
+    display_name: SITTER.displayName,
+    bio: null,
+    service_area: null,
+    experience_years: null,
+    services: ["boarding"],
+    is_my_sitter: false,
+    accepts_multiple_owners: false,
+    distance_km: 3,
+    boarding_nightly: null,
+    house_sitting_nightly: null,
+  });
+  db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id });
+}
+
+/** An existing chat: Robert asked, Chloe answered, Robert wrote again (two unread for Chloe). */
+function seedThread(db: MockDb) {
+  db.chat_threads.push({
+    id: THREAD,
+    owner_id: OWNER.id,
+    sitter_id: SITTER.id,
+    owner_read_at: "2026-10-10T10:03:00.000Z",
+    sitter_read_at: "2026-10-10T10:01:00.000Z",
+    owner_left_at: null,
+    sitter_left_at: null,
+  });
+  const at = (m: number) => `2026-10-10T10:0${m}:00.000Z`;
+  db.chat_messages.push(
+    { id: "m1", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "Can you take Max in March?", card: null, created_at: at(0) },
+    { id: "m2", thread_id: THREAD, sender_id: SITTER.id, kind: "text", body: "Yes, I have room", card: null, created_at: at(1) },
+    { id: "m3", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "Great, anything I should bring?", card: null, created_at: at(2) },
+    { id: "m4", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "He eats at 8", card: null, created_at: at(3) },
+  );
+}
+
+async function openBookings(page: Page, user: MockUser, home: "owner" | "sitter") {
+  await signIn(page, user);
+  await expect(page).toHaveURL(new RegExp(`/${home}$`));
+  const screen = app(page);
+  await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/${home}/bookings$`));
+  return screen;
+}
+
+test.describe("chat hub", () => {
+  test("an owner starts a chat from a sitter: the stay card first, then messages both ways, in the same thread", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const screen = await openBookings(page, OWNER, "owner");
+
+    await screen.getByTestId("sitter-chat-Chloe").click();
+    await expect(page).toHaveURL(/\/chat\//);
+    const url = page.url();
+    await expect(screen.getByTestId("chat-stay-card")).toContainText("Max, Mochi");
+    await expect(screen.getByTestId("chat-stay-card")).toContainText("Drop-off");
+    await expect(screen.getByTestId("chat-empty")).toBeHidden();
+
+    // Free chat: the same person sends again and again.
+    for (const text of ["Hi Chloe", "Is Max okay with cats?", "Thanks!"]) {
+      await screen.getByTestId("chat-input").fill(text);
+      await screen.getByTestId("chat-send").click();
+      await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: text })).toBeVisible();
+    }
+    expect(db.chat_messages.filter((m) => m.kind === "text")).toHaveLength(3);
+
+    // The sitter writes back (as they would from their own phone).
+    const thread = db.chat_threads[0];
+    db.chat_messages.push({ id: "reply", thread_id: thread.id, sender_id: SITTER.id, kind: "text", body: "Max is welcome!", card: null, created_at: new Date(Date.now() + 5000).toISOString() });
+    await expect(screen.getByTestId("chat-bubble-them").filter({ hasText: "Max is welcome!" })).toBeVisible({ timeout: 10000 });
+
+    // Back is the list; the same sitter opens the same thread, with the history and a second stay card.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+    await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Max is welcome!");
+    await screen.getByTestId("sitter-chat-Chloe").click();
+    await expect(page).toHaveURL(url);
+    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
+    expect(db.chat_threads).toHaveLength(1);
+    expect(db.chat_messages.filter((m) => m.kind === "card")).toHaveLength(1); // the same stay is not posted twice
+  });
+
+  test("the sitter sees the unread count in Chats, opens at the latest message and replies as often as they like", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await expect(screen.getByTestId("chat-row-Robert")).toContainText("He eats at 8");
+    await expect(screen.getByTestId("chat-unread-Robert")).toHaveText("2");
+    await screen.getByTestId("chat-row-Robert").click();
+
+    await expect(page).toHaveURL(new RegExp(`/chat/${THREAD}$`));
+    await expect(screen.getByTestId("chat-bubble-them").last()).toBeInViewport();
+    for (const text of ["Bring his food", "And the leash"]) {
+      await screen.getByTestId("chat-input").fill(text);
+      await screen.getByTestId("chat-send").click();
+      await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: text })).toBeVisible();
+    }
+
+    await page.goBack();
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await expect(screen.getByTestId("chat-row-Robert")).toContainText("And the leash");
+    await expect(screen.getByTestId("chat-unread-Robert")).toHaveCount(0);
+  });
+
+  test("leaving a chat hides it from my list only, by the Leave button or a swipe", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    seedThread(db);
+    const screen = await openBookings(page, OWNER, "owner");
+
+    await expect(screen.getByTestId("chat-row-Chloe")).toBeVisible();
+    await screen.getByTestId("chat-row-Chloe").click();
+    await screen.getByTestId("chat-leave").click();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+    await expect(screen.getByTestId("chat-row-Chloe")).toHaveCount(0);
+    expect(db.chat_messages).toHaveLength(4); // the history stays
+
+    // Start it again: the chat is back with its history.
+    await screen.getByTestId("sitter-chat-Chloe").click();
+    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
+    await page.goBack();
+    await expect(screen.getByTestId("chat-row-Chloe")).toBeVisible();
+
+    // A swipe to the left does the same.
+    const row = await box(screen.getByTestId("chat-row-Chloe"));
+    const y = row.y + row.height / 2;
+    await drag(page, { x: row.x + row.width - 10, y }, { x: row.x + 10, y }, 12);
+    await expect(screen.getByTestId("chat-row-Chloe")).toHaveCount(0);
+    expect(db.chat_threads[0].owner_left_at).not.toBeNull();
+    expect(db.chat_threads[0].sitter_left_at).toBeNull(); // Chloe still has it
+  });
+
+  test("the booking progress bar sits on top of the chat and opens the booking", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    db.pets.push(pet(MAX, "Max", "dog"));
+    db.bookings.push({
+      id: BOOKING,
+      owner_id: OWNER.id,
+      sitter_id: SITTER.id,
+      status: "requested",
+      service_type: "boarding",
+      meet_greet_status: "not_needed",
+      created_at: "2026-10-02T18:00:00Z",
+    });
+    db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });
+    const screen = await openBookings(page, OWNER, "owner");
+
+    await screen.getByTestId("chat-row-Chloe").click();
+    await expect(screen.getByTestId("stage-bar")).toBeVisible();
+    await screen.getByTestId("chat-stage").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+  });
+
+  test("someone outside the chat cannot open it", async ({ page }) => {
+    const other: MockUser = { id: "00000000-0000-4000-8000-000000000009", email: "joy@goldito.test", password: "joy-pass", role: "owner", displayName: "Joy" };
+    const { db } = await mockSupabase(page, [OWNER, SITTER, other]);
+    seedThread(db);
+    await signIn(page, other);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    await expect(app(page).getByText("Chat not found")).toBeVisible();
+  });
+});

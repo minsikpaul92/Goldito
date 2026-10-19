@@ -1,8 +1,10 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
+import { ChatList } from "../../../components/ChatList";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
 import { Avatar } from "../../../components/ui/Avatar";
 import { Card } from "../../../components/ui/Card";
@@ -11,13 +13,16 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { OwnerInquiryCard, listOwnerInquiries } from "../../../features/inquiries/inquiryApi";
+import { openChatThread } from "../../../features/chat/chatApi";
+import { useMyChats } from "../../../features/chat/useMyChats";
 import { ProfilePhoto, loadCoverPhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
 import { formatDay, isoToZoned } from "../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
+import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useSession } from "../../../providers/SessionProvider";
-import { useThemedStyles } from "../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -36,11 +41,14 @@ type State =
  * badges (3B.3) and questions.
  */
 export default function OwnerBookings() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const ownerId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
   const search = useSitterSearch();
+  const chats = useMyChats();
+  const errorDialog = useErrorDialog();
   // Favorites until the owner presses Search, then everyone nearby.
   const [searched, setSearched] = useState(false);
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
@@ -76,6 +84,16 @@ export default function OwnerBookings() {
       current = false;
     };
   }, [shownKey]);
+
+  // Start (or continue) the chat with this sitter; the stay from the search becomes its first card.
+  const startChat = async (id: string) => {
+    try {
+      const thread = await openChatThread(id, { dropOffAt: search.dropIso, pickUpAt: search.pickIso, petIds: search.petIds });
+      router.push(`/chat/${thread}`);
+    } catch (e) {
+      errorDialog.show({ title: "Couldn't open the chat", message: (e as Error).message });
+    }
+  };
 
   const openSitter = (id: string) => {
     const q = new URLSearchParams({ drop: search.dropIso, pick: search.pickIso, pets: search.petIds.join(",") });
@@ -149,12 +167,29 @@ export default function OwnerBookings() {
                       {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
                     </Text>
                     <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Chat with ${sitter.displayName}`}
+                      onPress={() => void startChat(sitter.sitterId)}
+                      style={styles.chatButton}
+                      testID={`sitter-chat-${sitter.displayName}`}
+                    >
+                      <Ionicons name="chatbubble-ellipses-outline" size={theme.icon.sm} color={theme.color.primary} />
+                    </Pressable>
                   </Pressable>
                 );
               })}
             </View>
           )}
         </View>
+        {chats.items.length > 0 ? (
+          <View style={styles.section} testID="owner-chats">
+            <Text accessibilityRole="header" style={styles.heading}>
+              Chats
+            </Text>
+            <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
+          </View>
+        ) : null}
         {state.bookings.length === 0 && state.inquiries.length === 0 ? <Text style={styles.hint}>No bookings yet</Text> : null}
         {state.bookings.length > 0 ? (
           <View style={styles.section}>
@@ -233,5 +268,6 @@ const makeStyles = (theme: Theme) =>
     rows: { gap: theme.spacing.xs },
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.xs },
     rowName: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    chatButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     rowKm: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

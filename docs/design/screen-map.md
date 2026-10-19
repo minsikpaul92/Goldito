@@ -16,6 +16,20 @@
 | EmptyState | error ?? "Something went wrong." | — | 27 |
 | TextButton | Log out | `gate-logout` | 33 |
 
+### `/chat/[threadId]` — [app/chat/[threadId].tsx](../../frontend/app/chat/[threadId].tsx)
+
+One chat per owner and sitter (3D.4): the booking progress on top, the stay card and then everyone's messages, and a box to write any time. Opens at the latest message and keeps itself current (Realtime + a slow poll).
+
+Shows: `BookingStageBar` · `MessageBubble`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load this chat | — | 90 |
+| EmptyState | Chat not found | — | 98 |
+| TextButton | Leave | `chat-leave` | 138 |
+| Pressable | — | `chat-stage` | 143 |
+| Button | sending ? "…" : "Send" | `chat-send` | 183 |
+
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
 Shows: `BrandLogo`
@@ -44,15 +58,16 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3) and questions.
 
-Shows: `BookingCard` · `SitterSearchBar`
+Shows: `BookingCard` · `ChatList` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 90 |
-| TextButton | Open Profile | `search-open-profile` | 114 |
-| TextButton | Try again | `search-retry` | 122 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 135 |
-| Pressable | — | ``question-card-${inq.id}`` | 180 |
+| EmptyState | Couldn't load your bookings | — | 108 |
+| TextButton | Open Profile | `search-open-profile` | 132 |
+| TextButton | Try again | `search-retry` | 140 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 153 |
+| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 170 |
+| Pressable | — | ``question-card-${inq.id}`` | 215 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -381,14 +396,14 @@ Shows: `SitterAnswersForm`
 
 Sitter Bookings tab (phase-03b 3B.4): Requests · Questions · In progress · Upcoming · Past → booking detail.
 
-Shows: `BookingCard`
+Shows: `BookingCard` · `ChatList`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 100 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 119 |
-| EmptyState | — | — | 136 |
-| Pressable | — | ``inquiry-card-${inq.id}`` | 140 |
+| EmptyState | Couldn't load your bookings | — | 108 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 128 |
+| EmptyState | — | — | 146 |
+| Pressable | — | ``inquiry-card-${inq.id}`` | 152 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -657,6 +672,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 374 |
 | Pressable | — | ``care-type-${t.type}`` | 389 |
 | Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 427 |
+
+### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 28 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
@@ -1292,4 +1313,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-377 actions · 376 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
