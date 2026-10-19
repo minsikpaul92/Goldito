@@ -668,7 +668,7 @@
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 | SQL `rls_smoke` | ➖ |
+| SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 · (014i) 즐겨찾기 시터는 반경 밖(30 km)이어도 일정이 맞으면 거리와 함께 나옴, 일정이 안 맞거나 즐겨찾기가 아니면 안 나옴, 오너별로 다름 · 마지막 반경 저장, 101 km 거부 | SQL `rls_smoke` | ➖ |
 | SEARCH-2 | 견주 → Bookings → **Book care** | **Find a sitter**가 열림(Who's staying · When · Near · 슬라이더). 펫이 하나면 미리 선택. **Search** → 머무는 내내 가능한 시터만 가까운 순으로 카드(이름 · "≈ 3 km away" · 가격 · 서비스). 반경 밖 · 시간 밖 시터는 아예 없음 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-3 | 슬라이더를 마우스로 끌기 · 트랙 클릭 · 키보드(→ +1, PageUp +10) | 값(km)이 따라가고 **Search를 다시 누르지 않아도** 쉬면 한 번만 다시 검색(끄는 동안 이전 결과는 흐리게). 슬라이더를 끌어도 화면은 스크롤되지 않음 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-4 | 검색 뒤 날짜 · 시간 · 펫 · 장소를 바꿈 | 자동 검색 없이 "tap Search to update the list" 안내, **Search** 누르면 갱신 | 🤖 `sitter-search` | 사람 확인 대기 |

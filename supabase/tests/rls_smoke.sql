@@ -4884,6 +4884,70 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 014i (Sitter search follow-up): favorites beyond the radius (when the stay fits) and a remembered radius
+-- ---------------------------------------------------------------------------
+
+-- Three sitters 30 km north of Robert's home: Wes (favorite, free), Xan (favorite, morning blocked), Yan (not a favorite).
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-0000000000d5', 'wes@example.test', '{"role":"sitter","display_name":"Wes"}'),
+  ('00000000-0000-4000-8000-0000000000d6', 'xan@example.test', '{"role":"sitter","display_name":"Xan"}'),
+  ('00000000-0000-4000-8000-0000000000d7', 'yan@example.test', '{"role":"sitter","display_name":"Yan"}');
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  sana constant uuid := '00000000-0000-4000-8000-0000000000d1';
+  wes constant uuid := '00000000-0000-4000-8000-0000000000d5';
+  xan constant uuid := '00000000-0000-4000-8000-0000000000d6';
+  yan constant uuid := '00000000-0000-4000-8000-0000000000d7';
+  d constant date := app_today() + 202;
+  drop_at timestamptz := local_ts(d, '09:30');
+  pick_at timestamptz := local_ts(d, '16:00');
+  r record;
+  v_err text;
+  v_radius int;
+begin
+  perform _t_as(null);
+  update public.sitter_profiles set home_lat = 43.6644 + 30 * 0.008993, home_lng = -79.3573 where id in (wes, xan, yan);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+  values (xan, 'blocked', d, d, 'morning');
+
+  perform _t_as(robert);
+  insert into public.owner_favorite_sitters (sitter_id) values (wes), (xan);
+
+  select * into r from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = wes;
+  perform _t_ok(r.sitter_id is not null and r.distance_km = 30,
+    '014i: a favorite 30 km away is listed at a 5 km radius, with its distance');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = xan),
+    '014i: …but not when the stay does not fit its calendar');
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = yan),
+    '014i: a sitter who is not a favorite keeps the exact radius rule');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5) x where x.sitter_id = sana),
+    '014i: sitters inside the radius are unchanged');
+  perform _t_ok(pg_get_function_result(
+      'public.search_sitters_nearby(timestamptz, timestamptz, int, int, double precision, double precision)'::regprocedure
+    ) !~* '(lat|lng|lon)', '014i: the result still has no coordinate columns');
+
+  -- Another owner's favorites do not leak into this owner's search
+  perform _t_as(joy);
+  perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 1, 5, 43.6644, -79.3573) x
+      where x.sitter_id = wes),
+    '014i: favorites are per owner');
+
+  -- The last radius
+  perform _t_as(robert);
+  update public.owner_profiles set search_radius_km = 12 where id = robert;
+  select search_radius_km into v_radius from public.owner_profiles where id = robert;
+  perform _t_ok(v_radius = 12, '014i: an owner saves the radius they last used');
+  begin update public.owner_profiles set search_radius_km = 101 where id = robert; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%search_radius_km%', '014i: a radius over 100 km is refused');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Open by default + weekly closing rules (014d)
 -- ---------------------------------------------------------------------------
 
