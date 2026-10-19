@@ -85,12 +85,14 @@ curl -s localhost:8000/api/me -H "Authorization: Bearer $TOKEN"
 
 ## Demo accounts
 
-`scripts/seed_demo.py` creates (or refreshes) the two demo accounts used for testing now and by judges / **Try demo** later:
+`scripts/seed_demo.py` creates (or refreshes) the demo accounts: one owner and one sitter per teammate (`DEMO_SETS` in `app/services/demo_accounts.py`, kept in sync with `frontend/lib/demo.ts`). Judges and **Try demo** use the first set.
 
-| Email | Role | Name |
+| Set | Owner | Sitter |
 | :--- | :--- | :--- |
-| `demo-owner@goldito.test` | owner | Robert |
-| `demo-sitter@goldito.test` | sitter | Chloe |
+| Chloe (default) | `demo-owner@goldito.test` (Robert) | `demo-sitter@goldito.test` (Chloe) |
+| Paul | `demo-owner-paul@goldito.test` (Peter) | `demo-sitter-paul@goldito.test` (Paul) |
+| Allen | `demo-owner-allen@goldito.test` (Alex) | `demo-sitter-allen@goldito.test` (Allen) |
+| Daniel | `demo-owner-daniel@goldito.test` (David) | `demo-sitter-daniel@goldito.test` (Daniel) |
 
 The password is `DEMO_PASSWORD` in `backend/.env` (same value as `EXPO_PUBLIC_DEMO_PASSWORD` in `frontend/.env`). It is a demo-only value that will be shared with judges — never reuse a real password. `.test` addresses never receive mail.
 

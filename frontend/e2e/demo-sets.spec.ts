@@ -20,7 +20,7 @@ test.describe("demo sets", () => {
     // The default set is Chloe's (the judges' pair).
     await expect(screen.getByTestId("demo-set")).toContainText("Chloe");
     await screen.getByTestId("demo-set").click();
-    for (const key of ["chloe", "paul", "allen"]) await expect(screen.getByTestId(`demo-set-${key}`)).toBeVisible();
+    for (const key of ["chloe", "paul", "allen", "daniel"]) await expect(screen.getByTestId(`demo-set-${key}`)).toBeVisible();
     await screen.getByTestId("demo-set-paul").click();
     await expect(screen.getByTestId("demo-set")).toContainText("Paul");
 
