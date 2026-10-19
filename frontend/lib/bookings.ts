@@ -31,6 +31,14 @@ export function bookingErrorMessage(code: string | undefined, fallback: string):
   return (code && MESSAGES[code]) || fallback;
 }
 
+const PRICED_SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
+
+/** quote_booking's rates_not_set names the service when the sitter has prices but not this one (014k, #189). */
+function priceErrorMessage(code: string, detail: string | null, fallback: string): string {
+  const service = code === "rates_not_set" && detail ? PRICED_SERVICE[detail] : undefined;
+  return service ? `This sitter hasn't set a ${service} price yet.` : bookingErrorMessage(code, fallback);
+}
+
 /** Error with the RPC code kept, so a screen can add its own copy (e.g. a pet's name). */
 export class BookingError extends Error {
   constructor(
@@ -94,9 +102,11 @@ export async function quoteBooking(input: {
   if (error) {
     // quote_booking raises service_not_offered both for a service the sitter doesn't offer and for a
     // sitter with no price row at all. The rates are readable by every signed-in user, so tell them apart.
+    // A row without this service's price is rates_not_set from the server, with the service as detail (014k).
     let code = error.message;
     if (code === "service_not_offered" && !(await sitterHasRates(input.sitterId))) code = "rates_not_set";
-    throw new BookingError(code, bookingErrorMessage(code, "Couldn't load the price. Try again."), error.details ?? null);
+    const detail = error.details ?? null;
+    throw new BookingError(code, priceErrorMessage(code, detail, "Couldn't load the price. Try again."), detail);
   }
   return asQuote(data);
 }
@@ -110,7 +120,7 @@ export async function payBookingDemo(bookingId: string): Promise<PriceQuote> {
   if (error) {
     throw new BookingError(
       error.message,
-      bookingErrorMessage(error.message, "Couldn't complete the demo payment. Try again."),
+      priceErrorMessage(error.message, error.details ?? null, "Couldn't complete the demo payment. Try again."),
       error.details ?? null,
     );
   }

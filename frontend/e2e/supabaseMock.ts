@@ -233,6 +233,8 @@ export type MockDb = {
   report_decor: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
+  /** RPC detail sent with quote_error (rates_not_set names the service, 014k). */
+  quote_error_detail: string | null;
   /** When set, quote_booking returns this instead of DEMO_QUOTE. */
   quote: Record<string, unknown> | null;
 };
@@ -299,6 +301,7 @@ function createMockDb(): MockDb {
     pet_stickers: [],
     report_decor: [],
     quote_error: null,
+    quote_error_detail: null,
     quote: null,
   };
 }
@@ -1088,7 +1091,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   }
 
   if (path === "rpc/quote_booking") {
-    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: null });
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: db.quote_error_detail });
     return json(route, 200, db.quote ?? DEMO_QUOTE);
   }
 
