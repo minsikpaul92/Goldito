@@ -64,7 +64,7 @@ async function openSitterDiary(page: import("@playwright/test").Page, extraChips
     });
   });
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto("/sitter/diary");
   await app(page).getByTestId(`report-${MAX.id}`).waitFor();
   return { db, chipRequests, reportRequests, served };
@@ -287,7 +287,7 @@ test.describe("daily report", () => {
       { id: "draft1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: "2026-10-06", body: "SECRET DRAFT", status: "draft", source_snapshot: null, created_at: "2026-10-06T22:00:00Z" },
     );
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/diary");
     const screen = app(page);
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
@@ -384,7 +384,7 @@ test.describe("daily report", () => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [MAX]);
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/diary");
     await expect(app(page).getByText("When a stay is on, updates show up here live", { exact: false })).toBeVisible();
   });

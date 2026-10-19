@@ -79,6 +79,7 @@ test.describe("sitter onboarding", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     // The saved answers are listed read only on Profile, with the answered questions only.
     await expect(screen.getByTestId("profile-answers-list")).toContainText("Do you take cats?");

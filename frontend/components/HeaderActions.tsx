@@ -1,56 +1,24 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
+import { HeaderMenu } from "./HeaderMenu";
 import { NotificationBell } from "./NotificationBell";
 import { Tag } from "./ui/Tag";
 import { useSession } from "../providers/SessionProvider";
-import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
+import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/**
- * Header right side for both roles: dev role label, notifications bell (Phase 05),
- * Schedule (sitters, 3B.1), Profile, Log out.
- */
+/** Header right side for both roles (#147): role chip, bell, menu (Profile, Schedule, Settings, Log out). */
 export function HeaderActions() {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { profile, signOut } = useSession();
+  const { profile } = useSession();
 
   return (
     <View style={styles.row}>
-      {__DEV__ && profile ? (
-        <Tag label={profile.role === "owner" ? "Owner" : "Sitter"} tone="brand" style={{ alignSelf: "center" }} />
+      {profile ? (
+        <Tag label={profile.role === "owner" ? "Owner" : "Sitter"} tone="brand" style={styles.chip} testID="role-chip" />
       ) : null}
       <NotificationBell />
-      {profile?.role === "sitter" ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Schedule"
-          onPress={() => router.push("/sitter/schedule")}
-          style={styles.iconButton}
-          testID="open-schedule"
-        >
-          <Ionicons name="calendar-outline" size={theme.icon.sm} color={theme.color.primary} />
-        </Pressable>
-      ) : null}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Profile"
-        onPress={() => router.push("/profile")}
-        style={styles.iconButton}
-        testID="open-profile"
-      >
-        <Ionicons name="person-circle-outline" size={theme.icon.md} color={theme.color.primary} />
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void signOut()}
-        style={styles.logout}
-        testID="log-out"
-      >
-        <Text style={styles.logoutText}>Log out</Text>
-      </Pressable>
+      <HeaderMenu />
     </View>
   );
 }
@@ -60,23 +28,8 @@ const makeStyles = (theme: Theme) =>
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.spacing.sm,
-      paddingRight: theme.spacing.md,
+      gap: theme.spacing.xs,
+      paddingRight: theme.spacing.sm,
     },
-    iconButton: {
-      minWidth: 44,
-      minHeight: 44,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    logout: {
-      minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.xs,
-    },
-    logoutText: {
-      fontSize: theme.fontSize.small,
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.primary,
-    },
+    chip: { alignSelf: "center", marginRight: theme.spacing.xs },
   });

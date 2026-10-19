@@ -43,6 +43,7 @@ test.describe("demo sets", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("demo-tools")).toContainText("Demo tools (Paul)");
     await expect(screen.getByTestId("demo-state-empty")).toHaveCount(0);
@@ -58,6 +59,7 @@ test.describe("demo sets", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("demo-tools")).toContainText("Demo tools (Peter)");
     await screen.getByTestId("demo-reset-open").click();

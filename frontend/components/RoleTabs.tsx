@@ -84,7 +84,7 @@ export function headerOptions(theme: Theme) {
     headerTintColor: theme.color.primary,
     headerTitleStyle: {
       color: theme.color.text,
-      fontSize: theme.fontSize.body,
+      fontSize: display ? theme.fontSize.title : theme.fontSize.body,
       // The display file carries its own weight; a fontWeight on top would fake-bold it.
       ...(display ? { fontFamily: display } : { fontWeight: theme.fontWeight.semibold }),
     },

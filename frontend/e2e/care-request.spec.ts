@@ -38,7 +38,7 @@ async function setup(page: Page, opts: { petId?: string; plan?: Plan; stay?: boo
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(current) });
   });
   await signIn(page, OWNER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto(`/owner/pets/${opts.petId ?? MAX}`);
   await app(page).getByTestId("care-tasks").waitFor();
   return { db, calls, setPlan: (next: Plan) => (current = next) };

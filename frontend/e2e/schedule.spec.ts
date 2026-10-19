@@ -37,6 +37,7 @@ test.describe("sitter schedule", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-schedule").click();
     await expect(page).toHaveURL(/\/sitter\/schedule$/);
     await expect(screen.getByTestId("calendar-prev")).toBeDisabled();
@@ -108,6 +109,7 @@ test.describe("sitter schedule", () => {
     db.sitter_profiles.push({ ...SITTER_DEFAULTS });
     await signIn(page, SITTER);
     const screen = app(page);
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-schedule").click();
     await screen.getByTestId("calendar-next").click();
 

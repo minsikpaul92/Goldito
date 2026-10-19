@@ -16,7 +16,7 @@ export function NotificationBell() {
   const { profile } = useSession();
   const { unreadCount } = useNotifications();
   const label =
-    unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications";
+    unreadCount > 0 ? `Notifications, ${unreadCount} new` : "Notifications";
 
   const openCenter = () => {
     if (profile?.role === "owner") router.push("/owner/notifications");
@@ -31,7 +31,7 @@ export function NotificationBell() {
       style={styles.wrap}
       testID="notification-bell"
     >
-      <Ionicons name="notifications-outline" size={theme.icon.sm} color={theme.color.textMuted} />
+      <Ionicons name="notifications-outline" size={24} color={theme.color.text} />
       {unreadCount > 0 ? (
         <View style={styles.badge} testID="notification-badge">
           <Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : String(unreadCount)}</Text>
@@ -52,12 +52,14 @@ const makeStyles = (theme: Theme) =>
     },
     badge: {
       position: "absolute",
-      top: 4,
-      right: 4,
-      minWidth: 16,
-      height: 16,
-      paddingHorizontal: 3,
-      borderRadius: 8,
+      top: 3,
+      right: 2,
+      minWidth: 18,
+      height: 18,
+      paddingHorizontal: 4,
+      borderRadius: 9,
+      borderWidth: 2,
+      borderColor: theme.ui.chrome,
       backgroundColor: theme.color.error,
       alignItems: "center",
       justifyContent: "center",

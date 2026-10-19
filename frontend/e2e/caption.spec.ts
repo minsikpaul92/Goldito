@@ -25,7 +25,7 @@ async function openSitterFeed(page: Page, caption: { status: number; body?: obje
     });
   });
   await signIn(page, SITTER);
-  await app(page).getByRole("heading", { name: "Home" }).waitFor();
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
   await page.goto(`/sitter/feed/${PET_ID}`);
   await app(page).getByTestId("feed-add-photo").waitFor();
   return { db, asked };
@@ -98,7 +98,7 @@ test.describe("feed album", () => {
       });
     });
     await signIn(page, OWNER);
-    await app(page).getByRole("heading", { name: "Home" }).waitFor();
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/feed");
     await app(page).getByTestId("feed-mode").waitFor();
   }

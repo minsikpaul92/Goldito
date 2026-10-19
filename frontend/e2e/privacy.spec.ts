@@ -55,6 +55,7 @@ test.describe("privacy page", () => {
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
 
+    await screen.getByTestId("open-menu").click();
     await screen.getByTestId("open-profile").click();
     await screen.getByTestId("profile-privacy").click();
     await expect(page).toHaveURL(/\/privacy$/);

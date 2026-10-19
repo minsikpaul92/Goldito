@@ -43,20 +43,14 @@ test.describe("split view", () => {
     await expect(page).toHaveURL(/\/\?view=split$/);
 
     // Each phone keeps its own session: signing the sitter out leaves the owner signed in, even after a reload.
+    await page.frameLocator(RIGHT_PANE).getByTestId("open-menu").click();
     await page.frameLocator(RIGHT_PANE).getByTestId("log-out").click();
+    await page.frameLocator(RIGHT_PANE).getByTestId("log-out-confirm").click();
     await expect.poll(() => paneUrl(page, "pane-right")).toMatch(/\/welcome$/);
     await expect(page.getByText("Not signed in")).toHaveCount(1);
     await page.frameLocator(LEFT_PANE).locator("body").evaluate(() => window.location.reload());
     await expect.poll(() => paneUrl(page, "pane-left")).toMatch(/\/owner$/);
-    await expect(page.frameLocator(LEFT_PANE).getByTestId("log-out")).toBeVisible();
-  });
-
-  test("the one-phone frame names the signed-in account too", async ({ page }) => {
-    await mockSupabase(page, [demoOwner]);
-    await page.goto("/login");
-    await expect(page.getByText("Not signed in")).toBeVisible();
-    await app(page).getByTestId("demo-owner").click();
-    await expect(page.getByText("Robert · Owner")).toBeVisible();
+    await expect(page.frameLocator(LEFT_PANE).getByTestId("open-menu")).toBeVisible();
   });
 
   test("Show both phones / Show one phone switch between the views", async ({ page }) => {

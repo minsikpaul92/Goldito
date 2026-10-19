@@ -1,10 +1,13 @@
 import Constants from "expo-constants";
 import { Redirect, router } from "expo-router";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
+import { Sheet } from "../components/ui/Sheet";
 import { TextButton } from "../components/ui/TextButton";
 import changelog from "../features/settings/changelog.json";
 import { useSession } from "../providers/SessionProvider";
@@ -22,6 +25,7 @@ const RELEASES = changelog as Release[];
 export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
+  const [confirmLogOut, setConfirmLogOut] = useState(false);
   if (session.status === "loading") return <LoadingView />;
   if (session.status !== "signedIn") return <Redirect href="/welcome" />;
   const { profile } = session;
@@ -76,12 +80,20 @@ export default function SettingsScreen() {
         Goldito {version}
       </Text>
       <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="settings-privacy" />
+      <Button label="Log out" variant="secondary" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
+      <Sheet visible={confirmLogOut} title="Log out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
+        <View style={styles.confirm}>
+          <Button label="Log out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
+          <Button label="Cancel" variant="secondary" onPress={() => setConfirmLogOut(false)} />
+        </View>
+      </Sheet>
     </Screen>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    confirm: { gap: theme.spacing.sm },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
     heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
