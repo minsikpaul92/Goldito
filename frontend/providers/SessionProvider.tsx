@@ -104,6 +104,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [load]);
 
+  // A phone frame around the app names the signed-in account above the phone.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.parent === window) return;
+    const account = state.status === "signedIn" ? { name: state.profile.displayName, role: state.profile.role } : null;
+    try {
+      window.parent.postMessage({ type: "goldito:account", pane: window.name, account }, window.location.origin);
+    } catch {
+      // The page around us is not ours.
+    }
+  }, [state]);
+
   const reload = useCallback(() => {
     profileUserId.current = null;
     if (state.session) void load(state.session);

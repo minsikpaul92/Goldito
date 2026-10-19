@@ -1,7 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 
-import { DEMO_ACCOUNTS } from "../../lib/demo";
 import { tokens } from "../../theme/tokens";
 import { DeviceFrame, FrameLink } from "./DeviceFrame.web";
 import {
@@ -11,6 +10,7 @@ import {
   readSplitRequest,
   resolvePresentation,
 } from "./presentation";
+import { FrameAccount, accountLabel, isAccountMessage } from "./accountMessage";
 import { installTouchEmulation } from "./TouchEmulation.web";
 import { ShellContext } from "./useShell";
 
@@ -50,16 +50,34 @@ function useTouchPrimary(): boolean {
   return touchPrimary;
 }
 
+/** Who is signed in inside each phone, by the iframe's name, as the app tells us. */
+function useFrameAccounts(): Record<string, FrameAccount> {
+  const [accounts, setAccounts] = useState<Record<string, FrameAccount>>({});
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || !isAccountMessage(event.data)) return;
+      const { pane, account } = event.data;
+      setAccounts((current) => ({ ...current, [pane]: account }));
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  return accounts;
+}
+
 /**
  * Web entry for the app (architecture D25).
  * - Computer (mouse / trackpad), any window width → phone frame with the same app in a same-origin iframe.
  * - Phone / tablet browser, `?frame=0`, or inside that iframe → the app as-is.
- * - Computer, `?view=split`, window ≥ 900 px → owner and sitter phones side by side, each signed in
- *   to its own demo account (10.10; the judges' link).
+ * - Computer, `?view=split`, window ≥ 900 px → two phones side by side, each with its own session (10.10; the
+ *   judges' link). Each one starts at the login screen; the account that signs in is named above the phone.
  */
 export function AppShell({ children }: Props) {
   const [embedded] = useState(isEmbedded);
   const touchPrimary = useTouchPrimary();
+  const accounts = useFrameAccounts();
   const { width: windowWidth } = useWindowDimensions();
   // Read once: while the window is too narrow the one-phone frame mirrors its own URL into the address bar,
   // and widening again must still bring both phones back.
@@ -83,19 +101,15 @@ export function AppShell({ children }: Props) {
   if (presentation === "split") {
     return (
       <View style={{ flex: 1, flexDirection: "row" }} testID="split-view">
-        {(["owner", "sitter"] as const).map((role) => (
-          <View key={role} style={{ flex: 1 }}>
+        {(["left", "right"] as const).map((side) => (
+          <View key={side} style={{ flex: 1 }}>
             <DeviceFrame
               columns={2}
-              label={`${role === "owner" ? "Owner" : "Sitter"} · ${DEMO_ACCOUNTS[role].name}`}
-              // Both phones keep the same height; the link sits under the owner's.
-              footer={role === "owner" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <View />}
+              label={accountLabel(accounts[`pane-${side}`])}
+              // Both phones keep the same height; the link sits under the left one.
+              footer={side === "left" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <View />}
             >
-              <AppFrame
-                src={`/login?demo=${role}`}
-                name={`pane-${role}`}
-                title={`Goldito app — ${role === "owner" ? "Owner" : "Sitter"}`}
-              />
+              <AppFrame src="/login" name={`pane-${side}`} title={`Goldito app (${side} phone)`} />
             </DeviceFrame>
           </View>
         ))}
@@ -106,6 +120,7 @@ export function AppShell({ children }: Props) {
   if (presentation === "framed") {
     return (
       <DeviceFrame
+        label={accountLabel(accounts[""])}
         footer={
           windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
             <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />

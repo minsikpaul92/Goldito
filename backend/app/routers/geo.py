@@ -1,6 +1,8 @@
 """POST /api/geo/geocode — a home address → a point on the map (phase-06b 6B.2, D32).
+POST /api/geo/reverse — a point → "Trinity Bellwoods, Toronto", so the Profile can say where the home pin is.
 
-Only used when someone saves their home address, so the trip screens have a destination. The lookup is the free
+Only used when someone saves their home address (or reads their location), so the trip screens have a destination
+and the person sees where the pin landed. The lookup is the free
 OpenStreetMap Nominatim service (no key). Its usage policy asks for an identifying User-Agent and at most one request
 a second, which is what this does. The address text goes to OpenStreetMap — the privacy page says so.
 """
@@ -19,6 +21,7 @@ router = APIRouter(prefix="/api/geo", tags=["geo"])
 log = logging.getLogger("goldito.geo")
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 USER_AGENT = "Goldito/0.1 (pet care hackathon demo; https://goldito-petcare.vercel.app)"
 TIMEOUT_S = 8.0
 MIN_GAP_S = 1.0  # Nominatim policy: at most one request a second
@@ -39,8 +42,8 @@ class GeocodeResponse(BaseModel):
     label: str | None = None
 
 
-def _search(address: str) -> list[dict]:
-    """One Nominatim lookup, spaced at least a second after the previous one (any user)."""
+def _get(url: str, params: dict):
+    """One Nominatim request, spaced at least a second after the previous one (any user)."""
     global _last_call
     with _gate:
         wait = MIN_GAP_S - (time.monotonic() - _last_call)
@@ -48,8 +51,8 @@ def _search(address: str) -> list[dict]:
             time.sleep(wait)
         try:
             response = httpx.get(
-                NOMINATIM_URL,
-                params={"q": address, "format": "jsonv2", "limit": 1, "addressdetails": 1, "countrycodes": "ca"},
+                url,
+                params=params,
                 headers={"User-Agent": USER_AGENT, "Accept-Language": "en"},
                 timeout=TIMEOUT_S,
             )
@@ -59,6 +62,22 @@ def _search(address: str) -> list[dict]:
             _last_call = time.monotonic()
 
 
+def _search(address: str) -> list[dict]:
+    return _get(
+        NOMINATIM_URL,
+        {"q": address, "format": "jsonv2", "limit": 1, "addressdetails": 1, "countrycodes": "ca"},
+    )
+
+
+def _reverse(lat: float, lng: float) -> dict:
+    # The point is rounded to 3 decimals (about 100 m) before it leaves for OpenStreetMap: a neighbourhood name
+    # does not need more, and the exact spot of a home stays here.
+    return _get(
+        NOMINATIM_REVERSE_URL,
+        {"lat": round(lat, 3), "lon": round(lng, 3), "format": "jsonv2", "zoom": 18, "addressdetails": 1},
+    )
+
+
 def place_label(hit: dict) -> str | None:
     """'Trinity Bellwoods, Toronto' from a Nominatim hit; falls back to the road when there is no neighbourhood."""
     parts = hit.get("address") or {}
@@ -66,6 +85,14 @@ def place_label(hit: dict) -> str | None:
     city = parts.get("city") or parts.get("town") or parts.get("village") or parts.get("municipality")
     label = ", ".join(p for p in (area, city) if p)
     return label or None
+
+
+def postal_area(hit: dict) -> str | None:
+    """'M6J' from a Canadian postal code ('M6J 1G1'): the first three characters, which name the area. The point the
+    lookup got is rounded to about 100 m, so the full code could belong to the next building."""
+    code = ((hit.get("address") or {}).get("postcode") or "").replace(" ", "").upper()
+    area = code[:3]
+    return area if len(area) == 3 and area[0].isalpha() and area[1].isdigit() and area[2].isalpha() else None
 
 
 @router.post("/geocode", response_model=GeocodeResponse)
@@ -83,3 +110,28 @@ def geocode(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)
     except (KeyError, TypeError, ValueError):
         return GeocodeResponse(found=False)
     return GeocodeResponse(found=True, lat=lat, lng=lng, label=place_label(hit))
+
+
+class ReverseRequest(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
+class ReverseResponse(BaseModel):
+    found: bool
+    label: str | None = None
+    # The first three characters of the postal code, e.g. "M6J".
+    postal: str | None = None
+
+
+@router.post("/reverse", response_model=ReverseResponse)
+def reverse(body: ReverseRequest, _user: CurrentUser = Depends(get_current_user)) -> ReverseResponse:
+    try:
+        hit = _reverse(body.lat, body.lng)
+    except (httpx.HTTPError, ValueError) as exc:
+        log.info("reverse: lookup failed (%s)", exc.__class__.__name__)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="The map lookup is unavailable right now.") from exc
+    if not isinstance(hit, dict):
+        return ReverseResponse(found=False)
+    label = place_label(hit)
+    return ReverseResponse(found=label is not None, label=label, postal=postal_area(hit))

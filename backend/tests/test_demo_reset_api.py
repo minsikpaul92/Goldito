@@ -21,7 +21,7 @@ def client(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.delenv("DEMO_RESET_ENABLED", raising=False)
     get_settings.cache_clear()
     monkeypatch.setattr(demo, "get_service_client", lambda: object())
-    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c: (DEMO_OWNER, DEMO_SITTER))
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c, _set=None: (DEMO_OWNER, DEMO_SITTER))
     yield TestClient(app)
     app.dependency_overrides.clear()
     get_settings.cache_clear()
@@ -77,7 +77,7 @@ def test_a_demo_account_resets_to_the_chosen_state(client: TestClient, monkeypat
     sign_in_as(DEMO_SITTER, "demo-sitter@goldito.test")
     seen = {}
 
-    def fake_reset(_client, owner_id, sitter_id, today, *, state, apply):
+    def fake_reset(_client, owner_id, sitter_id, today, *, state, apply, demo_set, scope):
         seen.update(owner=owner_id, sitter=sitter_id, state=state, apply=apply)
         return [("bookings", 1), ("notifications", 0)]
 
@@ -101,3 +101,44 @@ def test_rpc_json_accepts_the_empty_answer_of_a_void_function(monkeypatch: pytes
 
     assert authz.rpc_json("token", "request_skip_meet_greet", {"p_booking": "b1"}) is None
     get_settings.cache_clear()
+
+
+def test_each_set_resets_only_its_own_pair(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """Paul's owner resets Paul's pair; the default pair is not touched (the point of the sets)."""
+    enable(monkeypatch)
+    def ids(_client, demo_set=None):
+        return {"paul": ("po", "ps"), "chloe": ("o1", "s1")}[demo_set.key]
+
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", ids)
+    seen = []
+    monkeypatch.setattr(
+        demo.demo_reset,
+        "reset",
+        lambda _c, owner_id, sitter_id, today, *, state, apply, demo_set, scope: seen.append((owner_id, sitter_id, demo_set.key, scope)) or [],
+    )
+    sign_in_as("po", "demo-owner-paul@goldito.test")
+
+    assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
+    assert seen == [("po", "ps", "paul", "owner")]  # an owner resets the owner side only
+
+
+def test_a_set_cannot_reset_another_sets_accounts(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    enable(monkeypatch)
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c, demo_set=None: ("po", "ps"))
+    sign_in_as("o1", "demo-owner-paul@goldito.test")  # Paul's email on the default owner's id
+
+    assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 403
+
+
+def test_a_sitter_account_resets_the_sitter_side_only(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    enable(monkeypatch)
+    monkeypatch.setattr(demo.demo_reset, "demo_ids", lambda _c, demo_set=None: ("po", "ps"))
+    scopes = []
+    monkeypatch.setattr(
+        demo.demo_reset, "reset", lambda _c, *a, scope, **k: scopes.append(scope) or []
+    )
+    sign_in_as("ps", "demo-sitter-paul@goldito.test")
+
+    assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
+    assert scopes == ["sitter"]
+

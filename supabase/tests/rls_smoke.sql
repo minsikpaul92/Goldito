@@ -504,6 +504,9 @@ begin
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (paul, 'open', d - 1, d + 20, 'morning', '09:00', '13:00', 2),
          (paul, 'open', d - 1, d + 20, 'afternoon', '13:00', '17:00', 2);
+  -- 014d: a sitter is open by default, so "no overnights" means closing them.
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+  values (paul, 'blocked', d - 1, d + 20, 'overnight');
   perform _t_as(allen);
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (allen, 'open', d - 1, d + 20, 'morning', '08:00', '12:00', 3),
@@ -3319,11 +3322,11 @@ begin
   v := stay_capacity_check(chloe, local_ts(d + 1, '10:00'), local_ts(d + 3, '10:00'), 1);
   perform _t_ok(v is null, '011c: …while one pet still fits');
   v := stay_capacity_check(chloe, local_ts(d + 10, '10:00'), local_ts(d + 11, '10:00'), 1);
-  perform _t_ok(v like '%' || (d + 10)::text || ' afternoon%' and v like '%overnight%',
-    '011c: days the sitter never opened count as no room (their default slots are listed)');
+  perform _t_ok(v is null,
+    '011c (014d): days the sitter never touched are open with their default spots');
   v := stay_capacity_check(chloe, local_ts(d + 3, '10:00'), local_ts(d + 5, '10:00'), 1);
-  perform _t_ok(v like '%' || (d + 4)::text || '%' and v not like '%' || (d + 3)::text || ' morning%',
-    '011c: a stay running past the opened days names the unopened slots');
+  perform _t_ok(v is null,
+    '011c (014d): a stay running past the opened days still fits the default spots');
   v := stay_capacity_check(chloe, local_ts(d + 1, '10:00'), local_ts(d, '10:00'), 1);
   perform _t_ok(v = 'invalid_window', '011c: a reversed window is invalid_window');
 
@@ -4791,6 +4794,9 @@ begin
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (vic, 'open', d, d, 'morning', '10:00', '12:00', 2),
          (vic, 'open', d, d, 'afternoon', '12:00', '18:00', 2);
+  -- 014d: open by default — these four keep to daytime hours, so they close that day's overnight.
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+  select x, 'blocked', d, d, 'overnight' from unnest(array[sana, theo, uma, vic]) x;
   insert into public.sitter_rates (sitter_id, boarding_nightly) values (sana, 48);
 
   -- Robert searches from his saved home: only sitters inside the radius, nearest first
@@ -4819,9 +4825,9 @@ begin
   perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, local_ts(d, '19:00'), 1, 100) x
       where x.sitter_id in (sana, theo, uma)),
     '014c: a pick-up after the sitters'' hours leaves them out');
-  perform _t_ok(not exists (select 1 from search_sitters_nearby(local_ts(d + 1, '09:30'), local_ts(d + 1, '16:00'), 1, 100) x
-      where x.sitter_id in (sana, theo, uma, vic)),
-    '014c: a day the sitters did not open leaves them out');
+  perform _t_ok(exists (select 1 from search_sitters_nearby(local_ts(d + 1, '09:30'), local_ts(d + 1, '16:00'), 1, 100) x
+      where x.sitter_id in (sana, theo, uma)),
+    '014c (014d): a day the sitters never touched is open by default, so they show');
   perform _t_ok(not exists (select 1 from search_sitters_nearby(drop_at, pick_at, 3, 100) x where x.sitter_id = sana),
     '014c: more pets than the sitter has room for leaves her out');
 
@@ -4873,6 +4879,410 @@ begin
   begin perform home_lat from public.sitter_profiles where id = sana; v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014c: an owner still cannot read a sitter''s home point');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Open by default + weekly closing rules (014d)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 500;
+  v_dow int := extract(dow from d)::int;
+  v_spots int;
+  v_id uuid;
+  v_err text;
+  v_state text;
+  v_left int;
+begin
+  perform _t_as(null);
+  select default_max_pets into v_spots from public.sitter_profiles where id = chloe;
+
+  -- Nothing set: every slot is open with the sitter's defaults
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from get_sitter_schedule(chloe, d, d) where state = 'open' and remaining = v_spots) = 3,
+    '014d: a day nobody touched is open in all three slots, with the default spots');
+  perform _t_ok((select starts_at = '08:00' and ends_at = '12:00' from get_sitter_schedule(chloe, d, d) where slot = 'morning')
+    or (select count(*) from get_sitter_schedule(chloe, d, d) where starts_at is not null and ends_at is not null) = 3,
+    '014d: the default hours come back for a day nobody touched');
+  perform _t_ok(stay_capacity_check(chloe, local_ts(d, '10:00'), local_ts(d + 1, '10:00'), 1) is null,
+    '014d: a stay on untouched days fits');
+
+  -- A rule closes that weekday × slot for good
+  perform _t_as(chloe);
+  perform save_closing_rules(jsonb_build_array(jsonb_build_object('weekday', v_dow, 'slot', 'overnight')));
+  perform _t_as(robert);
+  select state, remaining into v_state, v_left from get_sitter_schedule(chloe, d, d) where slot = 'overnight';
+  perform _t_ok(v_state = 'closed' and v_left = 0, '014d: the rule closes that weekday''s overnight');
+  perform _t_ok((select count(*) from get_sitter_schedule(chloe, d, d) where state = 'open') = 2,
+    '014d: …and only that slot');
+  perform _t_ok((select state from get_sitter_schedule(chloe, d + 7, d + 7) where slot = 'overnight') = 'closed',
+    '014d: …every week');
+  perform _t_ok((select state from get_sitter_schedule(chloe, d + 1, d + 1) where slot = 'overnight') = 'open',
+    '014d: …but not other weekdays');
+  perform _t_ok(stay_capacity_check(chloe, local_ts(d, '10:00'), local_ts(d + 1, '10:00'), 1) like '%overnight%',
+    '014d: a stay through a rule-closed night is turned away');
+  begin
+    perform request_booking(chloe, array[max], local_ts(d, '10:00'), 'sitter_home', null,
+      local_ts(d + 1, '10:00'), 'sitter_home', null, 'rule check');
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'sitter_unavailable', '014d: request_booking refuses a rule-closed night');
+  perform _t_as(null);
+  perform _t_ok(not within_sitter_hours(chloe, local_ts(d, '20:00')), '014d: a time in a rule-closed slot is outside the hours');
+  perform _t_ok(within_sitter_hours(chloe, local_ts(d + 2, '20:00')), '014d: …and inside the default hours on a day with no rule');
+
+  -- A day closed by hand still works, next to the rule
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot)
+  values (chloe, 'blocked', d + 1, d + 1, 'morning');
+  perform _t_as(robert);
+  perform _t_ok((select state from get_sitter_schedule(chloe, d + 1, d + 1) where slot = 'morning') = 'blocked',
+    '014d: a hand-closed day shows as blocked, the rule as closed');
+
+  -- A rule never cancels a confirmed stay: the stay stays, nobody new can book that slot
+  perform _t_as(chloe);
+  perform save_closing_rules('[]'::jsonb);
+  perform _t_as(robert);
+  v_id := request_booking(chloe, array[max], local_ts(d + 14, '10:00'), 'sitter_home', null,
+    local_ts(d + 15, '10:00'), 'sitter_home', null, 'before the rule');
+  perform _t_as(chloe);
+  perform respond_booking(v_id, true, null);
+  perform save_closing_rules(jsonb_build_array(jsonb_build_object('weekday', extract(dow from d + 14)::int, 'slot', 'overnight')));
+  perform _t_as(null);
+  perform _t_ok((select status from public.bookings where id = v_id) = 'confirmed',
+    '014d: a closing rule leaves a confirmed stay as it is');
+  perform _t_as(robert);
+  select state, remaining into v_state, v_left from get_sitter_schedule(chloe, d + 14, d + 14) where slot = 'overnight';
+  perform _t_ok(v_state = 'full' and v_left = 0, '014d: …and the booked night reads full, not closed');
+
+  -- Rules belong to the sitter
+  perform _t_ok((select count(*) from public.sitter_closing_rules where sitter_id = chloe) = 0,
+    '014d: an owner cannot read a sitter''s rules');
+  begin perform save_closing_rules('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014d: an owner cannot save closing rules');
+  perform _t_as(null, 'anon');
+  begin perform save_closing_rules('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014d: anon cannot save closing rules');
+  perform _t_as(chloe);
+  begin perform save_closing_rules('{"weekday": 1}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_rules', '014d: rules must be a list');
+  begin perform save_closing_rules('[{"weekday": 9, "slot": "morning"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%sitter_closing_rules_weekday_check%', '014d: a weekday is 0 – 6');
+  perform _t_ok((select count(*) from public.sitter_closing_rules where sitter_id = chloe) = 1,
+    '014d: a sitter reads their own rules (and a refused save changed nothing)');
+  perform save_closing_rules('[]'::jsonb);
+  perform _t_ok((select count(*) from public.sitter_closing_rules where sitter_id = chloe) = 0,
+    '014d: saving an empty list opens everything again');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Hours by weekday (014e)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 900;
+  v_dow int := extract(dow from d)::int;
+  v_err text;
+  v_start time;
+  v_end time;
+begin
+  perform _t_as(chloe);
+  perform save_weekday_hours(jsonb_build_array(
+    jsonb_build_object('weekday', v_dow, 'slot', 'morning', 'starts_at', '10:00', 'ends_at', '13:00')));
+
+  -- That weekday's morning has its own hours; the other days keep the default
+  perform _t_as(robert);
+  select starts_at, ends_at into v_start, v_end from get_sitter_schedule(chloe, d, d) where slot = 'morning';
+  perform _t_ok(v_start = '10:00' and v_end = '13:00', '014e: a weekday''s own hours show on that weekday');
+  select starts_at into v_start from get_sitter_schedule(chloe, d + 7, d + 7) where slot = 'morning';
+  perform _t_ok(v_start = '10:00', '014e: …every week');
+  select starts_at into v_start from get_sitter_schedule(chloe, d + 1, d + 1) where slot = 'morning';
+  perform _t_ok(v_start = '08:00', '014e: …and the other weekdays keep the default hours');
+  select starts_at into v_start from get_sitter_schedule(chloe, d, d) where slot = 'afternoon';
+  perform _t_ok(v_start = '12:00', '014e: …and the other slots of that weekday too');
+
+  perform _t_as(null);
+  perform _t_ok(not within_sitter_hours(chloe, local_ts(d, '08:30')), '014e: 08:30 is outside a morning that starts at 10:00');
+  perform _t_ok(within_sitter_hours(chloe, local_ts(d + 1, '08:30')), '014e: …but inside the default morning on another weekday');
+
+  -- A date opened by hand still wins over the weekday hours
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d, d, 'morning', '11:00', '12:00', 2);
+  perform _t_as(robert);
+  select starts_at into v_start from get_sitter_schedule(chloe, d, d) where slot = 'morning';
+  perform _t_ok(v_start = '11:00', '014e: an open row for the date beats the weekday hours');
+
+  -- Rules belong to the sitter and are checked
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 0,
+    '014e: an owner cannot read a sitter''s weekday hours');
+  begin perform save_weekday_hours('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014e: an owner cannot save weekday hours');
+  perform _t_as(null, 'anon');
+  begin perform save_weekday_hours('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014e: anon cannot save weekday hours');
+  perform _t_as(chloe);
+  begin perform save_weekday_hours('{"weekday": 1}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: weekday hours must be a list');
+  begin
+    perform save_weekday_hours('[{"weekday": 1, "slot": "morning", "starts_at": "13:00", "ends_at": "09:00"}]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: a morning that ends before it starts is refused');
+  begin
+    perform save_weekday_hours('[{"weekday": 9, "slot": "morning", "starts_at": "09:00", "ends_at": "12:00"}]'::jsonb);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_hours', '014e: a weekday is 0 – 6');
+  perform save_weekday_hours('[{"weekday": 5, "slot": "overnight", "starts_at": "20:00", "ends_at": "07:00"}]'::jsonb);
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 1,
+    '014e: an overnight may end the next morning, and a refused save changed nothing');
+  perform save_weekday_hours('[]'::jsonb);
+  perform _t_ok((select count(*) from public.sitter_weekday_hours where sitter_id = chloe) = 0,
+    '014e: saving an empty list puts the default hours back');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Sitter onboarding answers (014f)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_err text;
+begin
+  perform _t_as(null);
+  perform _t_ok((select onboarded_at is null from public.sitter_profiles where id = chloe),
+    '014f: a sitter who has not been through onboarding has no onboarded_at');
+
+  -- Finishing with every question skipped is allowed
+  perform _t_as(chloe);
+  perform save_sitter_answers('[]'::jsonb);
+  perform _t_ok((select onboarded_at is not null from public.sitter_profiles where id = chloe),
+    '014f: onboarding can be finished with every question skipped');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: …and nothing is stored');
+
+  -- Save: typed answers, a choice, a custom question, the intro
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'multiple_owners', 'choice', 'yes', 'answer', 'Two households at most'),
+    jsonb_build_object('key', 'max_pets', 'choice', '3'),
+    jsonb_build_object('key', 'walks_per_day', 'answer', 'Three, one long'),
+    jsonb_build_object('key', 'dog_sizes', 'choice', 'small,medium'),
+    jsonb_build_object('key', 'handoff', 'choice', 'owner_brings'),
+    jsonb_build_object('key', 'park_nearby', 'answer', '   '),
+    jsonb_build_object('key', 'custom_1', 'question', 'Do you have a fenced yard?', 'answer', 'Yes, small one')
+  ), 'Hi, I am Chloe.');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 6,
+    '014f: six answers are stored; a blank one counts as skipped');
+  perform _t_ok((select accepts_multiple_owners and default_max_pets = 3 and bio = 'Hi, I am Chloe.'
+                 from public.sitter_profiles where id = chloe),
+    '014f: multiple_owners, max_pets and the intro reach the columns the booking rules read');
+  perform _t_ok((select source = 'typed' and quote is null from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'walks_per_day'),
+    '014f: a typed answer has source typed and no quote');
+  perform _t_ok((select question_text = 'Do you have a fenced yard?' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'custom_1'),
+    '014f: a custom question keeps its own wording');
+
+  -- Replace-all: a second save drops what is not sent, and a voice answer keeps its quote
+  perform save_sitter_answers(jsonb_build_array(
+    jsonb_build_object('key', 'cats', 'choice', 'no', 'source', 'voice', 'quote', 'no cats please')
+  ), null, false);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: saving again replaces the whole list');
+  perform _t_ok((select source = 'voice' and quote = 'no cats please' from public.sitter_profile_answers
+                 where sitter_id = chloe and question_key = 'cats'),
+    '014f: a voice answer keeps the sentence it was read from');
+  perform _t_ok((select bio = 'Hi, I am Chloe.' from public.sitter_profiles where id = chloe),
+    '014f: no intro sent leaves the bio as it was');
+
+  -- Checks
+  begin perform save_sitter_answers('[{"key": "max_pets", "choice": "11"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_choice', '014f: a choice outside the question''s options is refused');
+  perform save_sitter_answers('[{"key": "handoff", "choice": "sitter_picks_up,owner_brings"}]'::jsonb);
+  perform _t_ok((select choice from public.sitter_profile_answers where sitter_id = chloe and question_key = 'handoff') = 'sitter_picks_up,owner_brings',
+    '014h: the handoff answer can hold both options');
+  begin perform save_sitter_answers('[{"key": "handoff", "choice": "owner_brings,sitter_picks_up"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_choice', '014h: …in the one order the app sends, and no other spelling');
+  begin perform save_sitter_answers('[{"key": "favourite_colour", "answer": "blue"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: an unknown question is refused');
+  begin perform save_sitter_answers('[{"key": "custom_2", "answer": "no question text"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: a custom answer needs its question');
+  begin perform save_sitter_answers('{"key": "cats"}'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: answers must be a list');
+  begin perform save_sitter_answers('[{"key": "cats", "choice": "no", "source": "robot"}]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_answers', '014f: the source is typed or voice');
+  begin perform save_sitter_answers('[]'::jsonb, repeat('x', 601)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_intro', '014f: an intro over 600 characters is refused');
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 1,
+    '014f: a refused save changed nothing');
+
+  -- Who reads and who writes
+  perform _t_as(paul);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id = chloe) = 0,
+    '014f: another sitter cannot read Chloe''s answers');
+  perform save_sitter_answers(jsonb_build_array(jsonb_build_object('key', 'cats', 'choice', 'yes')));
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.sitter_profile_answers where sitter_id in (chloe, paul)) = 2,
+    '014f: an owner reads every sitter''s answers');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014f: an owner cannot save sitter answers');
+  begin insert into public.sitter_profile_answers (sitter_id, question_key, answer) values (robert, 'cats', 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: there is no direct write to the table');
+  perform _t_as(null, 'anon');
+  begin perform save_sitter_answers('[]'::jsonb); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot save sitter answers');
+  begin perform count(*) from public.sitter_profile_answers; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014f: anon cannot read the answers');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Profile photos (014g)
+-- ---------------------------------------------------------------------------
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-4000-8000-0000000000e1', 'zed@example.test', '{"role":"sitter","display_name":"Zed"}');
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  zed constant uuid := '00000000-0000-4000-8000-0000000000e1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  v_ids uuid[];
+  v_first uuid;
+  v_out text;
+  v_err text;
+begin
+  perform _t_as(null);
+
+  -- Adding is the backend's job: positions run 0, 1, 2 and the 9th photo is refused
+  perform add_profile_photo(chloe, 'profiles/chloe-a');
+  perform add_profile_photo(chloe, 'profiles/chloe-b');
+  perform add_profile_photo(chloe, 'profiles/chloe-c');
+  perform _t_ok((select array_agg(position order by position) from public.profile_photos where profile_id = chloe) = array[0, 1, 2]::smallint[],
+    '014g: photos are added at the end, cover first');
+  for i in 4..8 loop perform add_profile_photo(paul, 'profiles/paul-' || i); end loop;
+  perform add_profile_photo(paul, 'profiles/paul-9'); perform add_profile_photo(paul, 'profiles/paul-10'); perform add_profile_photo(paul, 'profiles/paul-11');
+  begin perform add_profile_photo(paul, 'profiles/paul-12'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_many_photos', '014g: a person keeps at most 8 photos');
+
+  -- Who reads a sitter's photos: the sitter, every owner; not another sitter, not anon
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: a sitter reads their own photos');
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = paul) = 0, '014g: …and not another sitter''s');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: an owner reads a sitter''s photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = chloe) = 3, '014g: …any owner');
+  perform _t_as(null, 'anon');
+  begin perform count(*) from public.profile_photos; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: anon cannot read photos');
+
+  -- An owner's photos: only a sitter who shares a booking or an inquiry sees them
+  perform _t_as(null);
+  perform add_profile_photo(robert, 'profiles/robert-a');
+  perform add_profile_photo(robert, 'profiles/robert-b');
+  perform add_profile_photo(joy, 'profiles/joy-a');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 2, '014g: an owner reads their own photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 0, '014g: …and no other owner reads them');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 2,
+    '014g: a sitter with a booking with the owner reads their photos');
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id in (robert, joy)) = 0,
+    '014g: a sitter with no booking or inquiry reads no owner photos');
+  perform _t_as(null);
+  insert into public.inquiries (owner_id, sitter_id, drop_off_at, pick_up_at, pet_ids)
+  values (joy, zed, now() + interval '900 days', now() + interval '901 days', array[coco]);
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = joy) = 1, '014g: an inquiry is enough to see the owner''s photos');
+  perform _t_ok((select count(*) from public.profile_photos where profile_id = robert) = 0, '014g: …only for that owner');
+
+  -- Reorder: exactly your own ids, first = cover
+  perform _t_as(chloe);
+  select array_agg(id order by position desc) into v_ids from public.profile_photos where profile_id = chloe;
+  perform reorder_profile_photos(v_ids);
+  perform _t_ok((select public_id from public.profile_photos where profile_id = chloe and position = 0) = 'profiles/chloe-c',
+    '014g: reordering moves the cover');
+  begin perform reorder_profile_photos(v_ids[1:2]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: a reorder that leaves a photo out is refused');
+  begin perform reorder_profile_photos(array[v_ids[1], v_ids[1], v_ids[2]]); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: …or repeats one');
+  begin perform reorder_profile_photos(array[v_ids[1], v_ids[2], (select id from public.profile_photos where profile_id = paul limit 1)]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014g: …or names someone else''s photo');
+
+  -- Remove (the backend's call): that person's photo only, positions close up, the public id comes back
+  perform _t_as(null);
+  select id into v_first from public.profile_photos where profile_id = chloe and position = 0;
+  v_out := remove_profile_photo(chloe, v_first);
+  perform _t_ok(v_out = 'profiles/chloe-c', '014g: removing returns the Cloudinary public id');
+  perform _t_ok((select array_agg(position order by position) from public.profile_photos where profile_id = chloe) = array[0, 1]::smallint[],
+    '014g: …and the gap closes');
+  begin perform remove_profile_photo(chloe, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014g: a photo already gone is not found');
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = chloe limit 1)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014g: a photo is removed only for the person it belongs to');
+  perform _t_as(robert);
+  begin perform remove_profile_photo(robert, (select id from public.profile_photos where profile_id = robert limit 1)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: removing goes through the backend, not a signed-in user');
+
+  -- No direct writes; the add function is the backend's
+  begin insert into public.profile_photos (profile_id, public_id) values (robert, 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: there is no direct insert');
+  begin perform add_profile_photo(robert, 'profiles/sneaky'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: add_profile_photo is not callable by a signed-in user');
+  perform _t_as(null, 'anon');
+  begin perform remove_profile_photo(robert, v_first); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014g: anon cannot remove photos');
   perform _t_as(null);
 end;
 $$;

@@ -81,6 +81,11 @@ def media_folder(pet_id: str, purpose: str) -> str:
     return f"goldito/{pet_id}/{purpose}"
 
 
+def profile_folder(user_id: str) -> str:
+    """Where one person's profile photos live: `goldito/profile/<user id>/<random>`."""
+    return f"goldito/profile/{user_id}"
+
+
 def sign(
     *,
     pet_id: str,
@@ -98,12 +103,21 @@ def sign(
         raise ValueError(f"unsupported purpose: {purpose}")
     if resource_type not in RESOURCE_TYPES:
         raise ValueError(f"unsupported resource_type: {resource_type}")
-    cloud, key, secret = _configured()
-    folder = media_folder(pet_id, purpose)
-    timestamp = int(time())
-    transformation = incoming_transformation(
-        resource_type, trim_start=trim_start, trim_duration=trim_duration
+    return _sign_folder(
+        media_folder(pet_id, purpose),
+        resource_type,
+        incoming_transformation(resource_type, trim_start=trim_start, trim_duration=trim_duration),
     )
+
+
+def sign_profile(user_id: str) -> SignParams:
+    """Sign a direct browser upload of one profile photo into the person's own folder."""
+    return _sign_folder(profile_folder(user_id), "image", INCOMING_IMAGE)
+
+
+def _sign_folder(folder: str, resource_type: str, transformation: str) -> SignParams:
+    cloud, key, secret = _configured()
+    timestamp = int(time())
     signature = cloudinary.utils.api_sign_request(
         {"folder": folder, "timestamp": timestamp, "transformation": transformation},
         secret,

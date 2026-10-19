@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
-import { BookingStageBar } from "../../../../components/BookingStageBar";
+import { BookingStageBar, hasStageBar } from "../../../../components/BookingStageBar";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { FinishedStay } from "../../../../components/FinishedStay";
 import { HandoffChange, HandoffChangeSheet } from "../../../../components/HandoffChangeSheet";
@@ -222,12 +222,14 @@ export default function OwnerBookingDetail() {
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>
 
-        <Card style={styles.block}>
-          <BookingStageBar booking={booking} viewer="owner" />
-          {passing ? (
-            <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
-          ) : null}
-        </Card>
+        {hasStageBar(booking) || passing ? (
+          <Card style={styles.block}>
+            <BookingStageBar booking={booking} viewer="owner" />
+            {passing ? (
+              <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
+            ) : null}
+          </Card>
+        ) : null}
 
         {booking.status === "confirmed" && booking.pickUp?.completedAt ? <FinishedStay booking={booking} /> : null}
 

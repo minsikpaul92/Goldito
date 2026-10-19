@@ -6,7 +6,7 @@ import { MediaConfirm } from "../components/MediaConfirm";
 import { MediaPicker } from "../components/MediaPicker";
 import { VideoTrimSheet } from "../components/VideoTrimSheet";
 import { useShell } from "../components/shell/useShell";
-import { DEMO_ACCOUNTS } from "../lib/demo";
+import { findDemoAccount } from "../lib/demo";
 import { DemoSample, samplesFor } from "../lib/demoSamples";
 import { MediaKind, PickMediaOptions, PickedMedia, registerMediaPicker } from "../lib/media";
 import { VIDEO_MAX_SECONDS, VideoTrim, readVideoDuration } from "../lib/mediaNormalize";
@@ -70,7 +70,7 @@ export function MediaPickerProvider({ children }: { children: ReactNode }) {
   const { session } = useSession();
   const toast = useToast();
   const email = session?.user.email ?? "";
-  const useTray = embedded || Object.values(DEMO_ACCOUNTS).some((account) => account.email === email);
+  const useTray = embedded || findDemoAccount(email) !== null;
   const useTrayRef = useRef(useTray);
   useTrayRef.current = useTray;
 

@@ -3,10 +3,10 @@ import { addDays, shortTime } from "./dates";
 
 export type CareSlot = "morning" | "afternoon" | "overnight";
 
-export const SLOTS: { slot: CareSlot; label: string; short: string }[] = [
-  { slot: "morning", label: "Morning", short: "M" },
-  { slot: "afternoon", label: "Afternoon", short: "A" },
-  { slot: "overnight", label: "Overnight", short: "N" },
+export const SLOTS: { slot: CareSlot; label: string }[] = [
+  { slot: "morning", label: "Morning" },
+  { slot: "afternoon", label: "Afternoon" },
+  { slot: "overnight", label: "Night" },
 ];
 
 export type SlotState = "open" | "full" | "blocked" | "closed";
@@ -53,6 +53,12 @@ export type SitterDefaults = {
   maxPets: number;
 };
 
+/** A weekly closing rule: every `weekday` (0 = Sunday) × `slot` is closed (014d). */
+export type ClosingRule = { weekday: number; slot: CareSlot };
+
+/** Hours a weekday keeps for one slot instead of the every-day hours (014e). */
+export type WeekdayHour = { weekday: number; slot: CareSlot; startsAt: string; endsAt: string };
+
 export type MonthSchedule = {
   /** `${day}:${slot}` → state */
   slots: Map<string, DaySlot>;
@@ -71,7 +77,7 @@ export class OverlapError extends Error {
 export type OverlappingBooking = { id: string; ownerName: string; startDate: string; endDate: string };
 
 const ROW_COLUMNS = "id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets, note, created_at";
-const FALLBACK_HOURS: Record<CareSlot, [string, string]> = {
+export const FALLBACK_HOURS: Record<CareSlot, [string, string]> = {
   morning: ["08:00", "12:00"],
   afternoon: ["12:00", "18:00"],
   overnight: ["18:00", "08:00"],
@@ -107,6 +113,51 @@ export async function loadSitterDefaults(): Promise<SitterDefaults> {
   return { hours, maxPets: row.default_max_pets ?? 2 };
 }
 
+/** The sitter's weekly closing rules (RLS: own rows only). */
+export async function loadClosingRules(sitterId: string): Promise<ClosingRule[]> {
+  const { data, error } = await getSupabase()
+    .from("sitter_closing_rules")
+    .select("weekday, slot")
+    .eq("sitter_id", sitterId);
+  if (error) fail("load your closing rules");
+  return (data ?? []) as ClosingRule[];
+}
+
+/** Replace the whole rule set; an empty list opens everything again. */
+export async function saveClosingRules(rules: ClosingRule[]): Promise<void> {
+  const { error } = await getSupabase().rpc("save_closing_rules", { p_rules: rules });
+  if (error) fail("save your closing rules");
+}
+
+/** The three slots' default hours (profile): used by every day the sitter has not set by hand. */
+export async function saveDefaultHours(sitterId: string, hours: Record<CareSlot, [string, string]>): Promise<void> {
+  const { error } = await getSupabase().from("sitter_profiles").update({ default_hours: hours }).eq("id", sitterId);
+  if (error) fail("save your hours");
+}
+
+/** The sitter's per-weekday hours (RLS: own rows only). */
+export async function loadWeekdayHours(sitterId: string): Promise<WeekdayHour[]> {
+  const { data, error } = await getSupabase()
+    .from("sitter_weekday_hours")
+    .select("weekday, slot, starts_at, ends_at")
+    .eq("sitter_id", sitterId);
+  if (error) fail("load your weekday hours");
+  return ((data ?? []) as { weekday: number; slot: CareSlot; starts_at: string; ends_at: string }[]).map((r) => ({
+    weekday: r.weekday,
+    slot: r.slot,
+    startsAt: shortTime(r.starts_at),
+    endsAt: shortTime(r.ends_at),
+  }));
+}
+
+/** Replace the whole set; an empty list puts the every-day hours back on every weekday. */
+export async function saveWeekdayHours(hours: WeekdayHour[]): Promise<void> {
+  const { error } = await getSupabase().rpc("save_weekday_hours", {
+    p_hours: hours.map((h) => ({ weekday: h.weekday, slot: h.slot, starts_at: h.startsAt, ends_at: h.endsAt })),
+  });
+  if (error) fail("save your weekday hours");
+}
+
 function newestOpenRow(rows: AvailabilityRow[], day: string, slot: CareSlot): AvailabilityRow | undefined {
   return rows
     .filter((r) => r.kind === "open" && r.slot === slot && r.start_date <= day && day <= r.end_date)
@@ -115,11 +166,11 @@ function newestOpenRow(rows: AvailabilityRow[], day: string, slot: CareSlot): Av
 
 /**
  * The sitter's month: states and remaining spots from get_sitter_schedule (counts confirmed
- * bookings), capacity from their own availability rows (RLS: own rows only).
+ * bookings), capacity from their own availability rows (RLS: own rows only) or the profile default.
  */
 export async function loadMonthSchedule(sitterId: string, from: string, to: string): Promise<MonthSchedule> {
   const supabase = getSupabase();
-  const [schedule, availability] = await Promise.all([
+  const [schedule, availability, defaults] = await Promise.all([
     supabase.rpc("get_sitter_schedule", { p_sitter: sitterId, p_from: from, p_to: to }),
     supabase
       .from("sitter_availability")
@@ -127,6 +178,7 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
       .eq("sitter_id", sitterId)
       .lte("start_date", to)
       .gte("end_date", from),
+    loadSitterDefaults(),
   ]);
   if (schedule.error || availability.error) fail("load your schedule");
 
@@ -134,7 +186,8 @@ export async function loadMonthSchedule(sitterId: string, from: string, to: stri
   const slots = new Map<string, DaySlot>();
   for (const item of (schedule.data ?? []) as ScheduleRpcRow[]) {
     const open = newestOpenRow(rows, item.day, item.slot);
-    const capacity = open?.max_pets ?? null;
+    // A day nobody set by hand uses the profile's default spots (014d).
+    const capacity = open?.max_pets ?? defaults.maxPets;
     slots.set(slotKey(item.day, item.slot), {
       day: item.day,
       slot: item.slot,
@@ -179,10 +232,10 @@ export async function loadSitterMonth(sitterId: string, from: string, to: string
 }
 
 /**
- * Open slots for [from, to]: a new open row per slot (the newest row sets hours and spots),
- * then lift any block on those days — a block that reaches outside the range is split so
- * the other days stay blocked. Open rows go first: if they fail the capacity guard,
- * nothing else has changed.
+ * Open slots for [from, to] (and close `closeSlots` there): a new open row per slot (the newest row sets hours and
+ * spots), then lift any block on those days — a block that reaches outside the range is split so
+ * the other days stay blocked. The closing goes first: a booking in the way is refused before anything
+ * else has changed.
  */
 export async function saveOpen(
   sitterId: string,
@@ -191,8 +244,16 @@ export async function saveOpen(
   to: string,
   slots: OpenSlotInput[],
   maxPets: number,
+  closeSlots: CareSlot[] = [],
 ): Promise<void> {
   const supabase = getSupabase();
+  // The slots left unchecked are closed on these days — a sitter who opens only the morning is open only in the
+  // morning. Closing goes first: a booking in the way is refused here, before anything else has changed.
+  const toClose = closeSlots.filter(
+    (slot) => !rows.some((r) => r.kind === "blocked" && r.slot === slot && r.start_date <= from && to <= r.end_date),
+  );
+  if (toClose.length > 0) await saveBlock(sitterId, from, to, toClose);
+
   const { error } = await supabase.from("sitter_availability").insert(
     slots.map((s) => ({
       sitter_id: sitterId,

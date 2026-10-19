@@ -186,7 +186,7 @@ def test_the_confirmed_state_books_after_everything_is_ready_and_pets_does_not()
     db = world()
     calls = []
 
-    def book(client, owner_id, sitter_id, today, state):
+    def book(client, owner_id, sitter_id, today, state, demo_set):
         # By now the pets, prices and schedule must already exist for the booking RPCs to accept it.
         calls.append((owner_id, sitter_id, today, state, len(client.tables["sitter_availability"]), len(client.tables["sitter_rates"])))
         return "b-new"
@@ -297,3 +297,59 @@ def test_any_other_error_on_the_first_yes_stops_the_reset(monkeypatch):
 
     with pytest.raises(demo_reset.authz.RpcError):
         demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")
+
+
+def test_an_owner_reset_keeps_the_sitters_own_data():
+    """The owner side: pets and their care data go, the pair's bookings go, the sitter's schedule and voice stay."""
+    db = world()
+    db.tables["care_tasks"] = [{"id": "ct1", "pet_id": MAX}]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="empty", apply=True, scope="owner")
+
+    assert ids(db, "bookings") == {"b-other"}
+    assert ids(db, "care_tasks") == set()
+    assert ids(db, "pets") == {"other-pet"}
+    assert ids(db, "notifications") == {"n2", "n3"}  # the sitter's notice stays
+    assert ids(db, "sitter_availability") == {"a-old"}  # her schedule stays
+    assert db.tables["sitter_rates"] == []  # nothing was built on her side
+    assert db.tables["profiles"][1]["display_name"] == "y"  # and her name was not touched
+
+
+def test_a_sitter_reset_keeps_the_owners_own_data():
+    """The sitter side: her schedule is reopened and the pair's bookings go, the owner's pets and care plan stay."""
+    db = world()
+    db.tables["care_tasks"] = [{"id": "ct1", "pet_id": MAX}]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, scope="sitter")
+
+    assert ids(db, "bookings") == {"b-other"}
+    assert ids(db, "pets") == {MAX, "other-pet"}
+    assert ids(db, "care_tasks") == {"ct1"}  # the owner's care plan stays
+    assert ids(db, "daily_reports") == set()  # what the stay left on the pet goes with the booking
+    assert ids(db, "notifications") == {"n1", "n3"}  # the owner's notice stays
+    assert "a-old" not in ids(db, "sitter_availability")  # her schedule was reopened
+    assert len(db.tables["sitter_rates"]) == 1
+    assert db.tables["profiles"][0]["display_name"] == "x"  # the owner's name was not touched
+
+
+def test_each_set_gets_its_own_pets():
+    """Paul's owner is given Biscuit and Luna, not Max and Mochi, so the sets are told apart on Home."""
+    from app.services.demo_accounts import set_for_key
+
+    db = world()
+    db.tables["pets"] = []
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True, demo_set=set_for_key("paul"), scope="owner")
+
+    assert sorted(p["name"] for p in db.tables["pets"]) == ["Biscuit", "Luna"]
+    dog = next(p for p in db.tables["pets"] if p["name"] == "Biscuit")
+    assert dog["species"] == "dog"
+    assert [a["allergen"] for a in db.tables["pet_allergies"]] == ["chicken"]  # the Treat check demo still works
+
+
+def test_all_pet_names_in_the_demo_sets_differ():
+    from app.services.demo_accounts import DEMO_SETS
+
+    names = [pet[0] for demo_set in DEMO_SETS for pet in demo_set.pets]
+    assert len(names) == len(set(names))
+

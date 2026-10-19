@@ -22,11 +22,11 @@ Shows: `BrandLogo`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `login-back` | 66 |
-| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 109 |
-| TextButton | New here? Create an account | `go-signup` | 112 |
-| Button | Demo owner | `demo-owner` | 122 |
-| Button | Demo sitter | `demo-sitter` | 130 |
+| BackLink | — | `login-back` | 69 |
+| Button | submitting ? "Signing in…" : "Sign in" | `sign-in` | 112 |
+| TextButton | New here? Create an account | `go-signup` | 115 |
+| Button | Demo owner | `demo-owner` | 134 |
+| Button | Demo sitter | `demo-sitter` | 142 |
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
@@ -65,15 +65,15 @@ Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChang
 | EmptyState | Couldn't load this booking | — | 148 |
 | Tag | `b.label` | — | 217 |
 | Tag | Paid | `paid-chip` | 220 |
-| Button | Finish booking | `open-checkout` | 254 |
-| CheckRow | `item` | ``pack-${item}`` | 280 |
-| Button | Find a new sitter | `find-new-sitter` | 342 |
-| Button | Change time or place | `change-booking` | 349 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 357 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 367 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 373 |
-| Sheet | Decline and end the request | `end-request-sheet` | 436 |
-| Button | Decline and end the request | `end-request-confirm` | 442 |
+| Button | Finish booking | `open-checkout` | 256 |
+| CheckRow | `item` | ``pack-${item}`` | 282 |
+| Button | Find a new sitter | `find-new-sitter` | 344 |
+| Button | Change time or place | `change-booking` | 351 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 359 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 369 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 375 |
+| Sheet | Decline and end the request | `end-request-sheet` | 438 |
+| Button | Decline and end the request | `end-request-confirm` | 444 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -298,27 +298,32 @@ Shows: `TreatCheckScreen`
 
 ### `/privacy` — [app/privacy.tsx](../../frontend/app/privacy.tsx)
 
-Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here.
+Public privacy page (10.11): reachable signed out — the Google OAuth consent screen (Branding) and the Welcome screen link here. Sections open one at a time; closed ones stay in the DOM (hidden) so the text is still there for crawlers and tests. `/privacy?open=google-calendar-and-meet` opens that section, for the consent-screen reviewer.
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``privacy-${id}-toggle`` | 132 |
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
 Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
 
-Shows: `DemoTools` · `ShareLocationSheet`
+Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 164 |
-| TextButton | locating ? "Locating…" : "Use my current location" | `profile-use-location` | 317 |
-| TextButton | Edit entry info | `profile-home-access` | 347 |
-| SegmentedControl | — | `profile-ai-mode` | 363 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 388 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 390 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 407 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 417 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 455 |
-| TextButton | Settings · What's New | `profile-settings` | 457 |
-| TextButton | Privacy | `profile-privacy` | 458 |
+| EmptyState | Couldn't load your profile | — | 185 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 374 |
+| TextButton | Edit entry info | `profile-home-access` | 391 |
+| SegmentedControl | — | `profile-ai-mode` | 407 |
+| Button | Edit your answers | `profile-answers-edit` | 436 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 444 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 446 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 463 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 473 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 511 |
+| TextButton | Settings · What's New | `profile-settings` | 513 |
+| TextButton | Privacy | `profile-privacy` | 514 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -355,6 +360,16 @@ Shows: `ActiveTripCard` · `SitterDashboard`
 | Pressable | — | ``handoff-row-${b.id}-${kind}`` | 170 |
 | Pressable | — | ``request-row-${b.id}`` | 190 |
 
+### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
+
+Sitter onboarding (3D.2, #139). Shown once to a new sitter (the sitter area sends them here until they finish), and reachable later from Profile to edit the same answers (`?edit=1`).
+
+Shows: `SitterAnswersForm`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Couldn't load your answers | — | 45 |
+
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
 Sitter Bookings tab (phase-03b 3B.4): Requests · Questions · In progress · Upcoming · Past → booking detail.
@@ -372,32 +387,32 @@ Shows: `BookingCard`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time / Decline. Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 148 |
-| EmptyState | Couldn't load this booking | — | 155 |
-| Tag | `b.label` | — | 238 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 303 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 308 |
-| TextButton | Change time or place | `change-booking` | 316 |
-| Tag | `a` | — | 345 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 372 |
-| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 379 |
-| TextButton | Decline | `decline-booking` | 386 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 397 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 407 |
-| TextButton | Cancel booking | `cancel-booking` | 427 |
-| Sheet | Return | `return-sheet` | 432 |
-| Button | Return | `return-confirm` | 439 |
-| Button | Cancel | `return-cancel` | 452 |
-| TextButton | Send today's note first | `return-send-note` | 472 |
-| Sheet | Cancel booking | `cancel-sheet` | 484 |
-| Button | Cancel booking | `cancel-confirm` | 490 |
-| Sheet | Decline request | `decline-sheet` | 527 |
-| Button | Decline request | `decline-confirm` | 533 |
-| TextButton | Suggest another time instead | `decline-suggest` | 572 |
+| EmptyState | Booking not found | — | 149 |
+| EmptyState | Couldn't load this booking | — | 156 |
+| Tag | `b.label` | — | 242 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 309 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 314 |
+| TextButton | Change time or place | `change-booking` | 322 |
+| Tag | `a` | — | 351 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 378 |
+| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 385 |
+| TextButton | Decline | `decline-booking` | 392 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 403 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 413 |
+| TextButton | Cancel booking | `cancel-booking` | 433 |
+| Sheet | Return | `return-sheet` | 438 |
+| Button | Return | `return-confirm` | 445 |
+| Button | Cancel | `return-cancel` | 458 |
+| TextButton | Send today's note first | `return-send-note` | 478 |
+| Sheet | Cancel booking | `cancel-sheet` | 490 |
+| Button | Cancel booking | `cancel-confirm` | 496 |
+| Sheet | Decline request | `decline-sheet` | 533 |
+| Button | Decline request | `decline-confirm` | 539 |
+| TextButton | Suggest another time instead | `decline-suggest` | 578 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -487,18 +502,18 @@ Shows: `DiaryTimeline`
 
 The sitter's side of one inquiry (phase-07B 7B.6): the owner's question, the draft in the sitter's own voice with the warning line, and one tap to **Send** it as is — or Edit / Add, Regenerate, or lean it with an intent chip. Nothing reaches the owner until Send (D36 · D38).
 
-Shows: `InquiryReplySheet` · `ReplyKind` · `MessageBubble` · `QuoteCard`
+Shows: `InquiryReplySheet` · `ReplyKind` · `MessageBubble` · `ProfileAvatar` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this question | — | 95 |
-| EmptyState | Question not found | — | 103 |
-| CheckRow | Include the price and a Request booking button | `inquiry-offer` | 197 |
-| Button | busy === "send" ? "Sending…" : "Send" | `inquiry-send` | 205 |
-| TextButton | editing ? "Use the draft text" : "Edit / Add" | `inquiry-edit-toggle` | 215 |
-| TextButton | busy === "regenerate" ? "Writing…" : "Regenerate" | `inquiry-regenerate` | 223 |
-| Button | `q.label` | ``inquiry-intent-${q.value}`` | 233 |
-| TextButton | Write it myself | `inquiry-write-myself` | 247 |
+| EmptyState | Couldn't load this question | — | 96 |
+| EmptyState | Question not found | — | 104 |
+| CheckRow | Include the price and a Request booking button | `inquiry-offer` | 199 |
+| Button | busy === "send" ? "Sending…" : "Send" | `inquiry-send` | 207 |
+| TextButton | editing ? "Use the draft text" : "Edit / Add" | `inquiry-edit-toggle` | 217 |
+| TextButton | busy === "regenerate" ? "Writing…" : "Regenerate" | `inquiry-regenerate` | 225 |
+| Button | `q.label` | ``inquiry-intent-${q.value}`` | 235 |
+| TextButton | Write it myself | `inquiry-write-myself` | 249 |
 
 ### `/sitter/notifications` — [app/sitter/notifications.tsx](../../frontend/app/sitter/notifications.tsx)
 
@@ -510,12 +525,13 @@ Shows: `NotificationsCenter`
 
 Sitter schedule (phase-03b 3B.1): open days × slots with own hours and spots, or block them. Opening never notifies owners. A block or fewer spots over a confirmed booking is refused by the capacity guard → cancel those bookings here → the save runs again.
 
-Shows: `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
+Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your schedule | — | 184 |
-| Button | Open or block | `schedule-edit` | 251 |
+| EmptyState | Couldn't load your schedule | — | 247 |
+| Pressable | Closing rules | `schedule-rules` | 270 |
+| Button | Open or block | `schedule-edit` | 333 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -651,6 +667,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | ``${chip.label}: ${on ? "on" : "off"}`` | ``${testIDPrefix}-${chip.id}`` | 27 |
 | Pressable | ``Remove ${chip.label}`` | ``${testIDPrefix}-${chip.id}-remove`` | 38 |
 
+### ClosingRulesSheet — [components/ClosingRulesSheet.tsx](../../frontend/components/ClosingRulesSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 117 |
+| Button | saving ? "Applying…" : "Apply" | `rules-apply` | 123 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 151 |
+| TextButton | Open everything | `rules-clear` | 167 |
+| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 179 |
+| TextButton | Same as every day | `rules-hours-reset` | 201 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 217 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 227 |
+
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -662,10 +691,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `option.label` | ``demo-state-${option.value}`` | 50 |
-| TextButton | Reset demo… | `demo-reset-open` | 60 |
-| Sheet | Reset the demo? | `demo-reset-sheet` | 61 |
-| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 68 |
+| CheckRow | `option.label` | ``demo-state-${option.value}`` | 53 |
+| TextButton | Reset demo… | `demo-reset-open` | 63 |
+| Sheet | Reset the demo? | `demo-reset-sheet` | 64 |
+| Button | busy ? "Resetting…" : "Reset now" | `demo-reset-confirm` | 71 |
 
 ### DiaryFeedCell — [components/DiaryFeedCell.tsx](../../frontend/components/DiaryFeedCell.tsx)
 
@@ -905,6 +934,28 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | ``record-fold-toggle-${petId}`` | 32 |
 
+### PhotoCropSheet — [components/PhotoCropSheet.tsx](../../frontend/components/PhotoCropSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 111 |
+| Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 117 |
+
+### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Add a photo | `photos-placeholder` | 131 |
+| Pressable | i === 0 ? "Cover photo" : `Photo ${i + 1}` | ``photos-tile-${photo.id}`` | 140 |
+| Pressable | Add a photo | `photos-add` | 153 |
+| Sheet | index === 0 ? "Cover photo" : "Photo" | `photo-actions` | 171 |
+| Button | working ? "Removing…" : "Remove photo" | `photo-remove-confirm` | 175 |
+| Button | Keep it | `photo-remove-cancel` | 176 |
+| Button | Make cover | `photo-make-cover` | 180 |
+| Button | Move earlier | `photo-move-earlier` | 181 |
+| Button | Move later | `photo-move-later` | 183 |
+| TextButton | Remove photo | `photo-remove` | 185 |
+
 ### ProposalCard — [components/ProposalCard.tsx](../../frontend/components/ProposalCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -980,6 +1031,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | `label` | `testID` | 19 |
 
+### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 129 |
+| Button | Add a question | `onboarding-custom-add` | 137 |
+| Button | Set weekly availability | `onboarding-availability-open` | 151 |
+| Button | Review | `onboarding-review` | 187 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 188 |
+| Button | Finish | `onboarding-finish` | 249 |
+| Button | Back to edit | `onboarding-back` | 250 |
+
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1003,9 +1066,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Previous month | `calendar-prev` | 55 |
-| Pressable | Next month | `calendar-next` | 68 |
-| Pressable | `label` | ``day-${day}`` | 96 |
+| Pressable | Previous month | `calendar-prev` | 164 |
+| Pressable | Next month | `calendar-next` | 177 |
+| Pressable | `label` | ``day-${day}`` | 206 |
 
 ### StarRating — [components/StarRating.tsx](../../frontend/components/StarRating.tsx)
 
@@ -1174,4 +1237,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-337 actions · 337 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).
+364 actions · 364 with an ID · 0 without (**none** above — add a `testID` when you touch that screen).

@@ -94,6 +94,21 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId(`record-fold-${MOCHI}`)).toHaveCount(0); // no record for Mochi: nothing shown
   });
 
+  test("the sitter sees the owner's cover photo on the request, or their initial when there is none (#137)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "not_needed");
+    const { screen, card } = await openRequest(page);
+    await card.click();
+    await expect(screen.getByTestId("booking-owner")).toHaveText("Robert");
+    await expect(screen.getByTestId("booking-owner-avatar-initial")).toBeVisible();
+    await expect(screen.getByTestId("booking-owner-avatar-photo")).toHaveCount(0);
+
+    db.profile_photos.push({ id: "p1", profile_id: OWNER.id, public_id: `goldito/profile/${OWNER.id}/a` });
+    await page.reload();
+    await expect(screen.getByTestId("booking-owner-avatar-photo")).toBeVisible();
+    await expect(screen.getByTestId("booking-owner-avatar-initial")).toHaveCount(0);
+  });
+
   test("a first-time request shows custom time and Meet first; the sitter's button is Yes, let's meet", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");
@@ -308,5 +323,20 @@ test.describe("sitter requests", () => {
     const screen = app(page);
     await expect(screen.getByTestId("booking-ended")).toContainText("Chloe can't take this one.");
     await expect(screen.getByTestId("declined-reason")).toHaveText("“Fully booked those dates”");
+    // No empty card between the header card and the ended notice (#133).
+    await expect(screen.getByTestId("stage-bar")).toHaveCount(0);
+    await expect(screen.getByTestId("booking-ended").locator("xpath=preceding-sibling::*[1]")).not.toBeEmpty();
+  });
+
+  test("a cancelled booking shows the sitter no empty progress card either", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "required");
+    Object.assign(db.bookings[0], { status: "cancelled", cancelled_by: OWNER.id, cancel_reason: "Plans changed" });
+    await signIn(page, SITTER);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("booking-ended")).toBeVisible();
+    await expect(screen.getByTestId("stage-bar")).toHaveCount(0);
+    await expect(screen.getByTestId("booking-ended").locator("xpath=preceding-sibling::*[1]")).not.toBeEmpty();
   });
 });

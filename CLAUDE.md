@@ -86,8 +86,19 @@ Tab bar (D47 · D47b · D61): both roles `Home · Bookings · Feed · Diary · S
 ### When implementing UI
 
 - **Read [`DESIGN.md`](DESIGN.md) before building UI** (tokens, components, patterns). If a Figma frame exists for the screen, it wins; otherwise follow `DESIGN.md` and `frontend/theme/tokens.ts`.
-- Empty states matter for judges: "No posts yet — sitter will share photos here."
+- Empty states matter for judges: "No posts yet. Your sitter will share photos here."
 - Prefer **working interaction** over pixel-perfect static screens.
+
+### Minimal UI and copy
+
+Build the app minimal. A screen should be understandable at a glance, without explanations.
+
+- **Prefer an obvious UI over an explained one.** Add a hint, caption, helper text, or description only when the screen cannot be understood without it. If it can, leave it out.
+- **No tutorial-style text.** Do not restate what a label or button already says, and do not write "this is where you..." sentences. When a line is truly needed, keep it to one short sentence.
+- **Keep every string short.** Labels, buttons, empty states, errors, toasts, placeholders, and confirmations are a few words or one short sentence. Detailed or lengthy copy reads as AI-written and makes the app look cluttered.
+- **Hide optional inputs by default** (for example, a note box behind a "+" button) instead of showing every field with a description.
+- **Punctuation: never use em dashes or en dashes** in anything you write (UI copy, hints, placeholders, comments, docs, commit and PR text, replies). Use a comma, parentheses, or split the text into two sentences. For ranges write "1 to 4" or "1-4" with a hyphen.
+- Do not rewrite existing text in bulk. Fix a line when you touch it (surgical changes still apply).
 
 ### Ask the human when blocked
 

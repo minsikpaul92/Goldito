@@ -1,5 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Platform, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { dayOfMonth, formatDay, formatMonth, monthGrid } from "../features/schedule/dates";
 import { DaySlot, SLOTS, SlotState, slotKey } from "../features/schedule/scheduleApi";
@@ -23,15 +24,108 @@ type Props = {
   /** Inclusive range; from === to for one day. */
   selection: { from: string; to: string } | null;
   onSelectDay: (day: string) => void;
+  /** Press a day and drag to another to pick the range in one go (web; touch: long-press first). Omit for single days. */
+  onSelectRange?: (from: string, to: string) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   canGoPrev: boolean;
 };
 
+const LONG_PRESS_MS = 350;
+const TOUCH_SLOP = 8;
+
 /**
- * Month grid, one column per weekday, three slot letters (M · A · N) per day. States differ
- * by fill and strike-through as well as color (DESIGN.md §9). Past days are disabled.
- * Range selection is two clicks (start, end) — no drag (phase-03b, D25).
+ * Drag over day cells to pick a range (web). A mouse drags at once; a finger long-presses first, so a swipe still
+ * scrolls the page. A click that ends a drag is swallowed so it doesn't restart the selection. Cells are found by
+ * their `day-YYYY-MM-DD` test id; days before `today` are ignored.
+ */
+function useDragSelect(ref: React.RefObject<View | null>, today: string, onSelectRange?: (from: string, to: string) => void) {
+  const callback = useRef(onSelectRange);
+  callback.current = onSelectRange;
+  const enabled = !!onSelectRange;
+
+  useEffect(() => {
+    const el = ref.current as unknown as HTMLElement | null;
+    if (Platform.OS !== "web" || !enabled || !el) return;
+    const doc = el.ownerDocument;
+    let start: string | null = null;
+    let armed = false;
+    let dragging = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let origin = { x: 0, y: 0 };
+
+    const dayAt = (x: number, y: number) => {
+      const cell = doc.elementFromPoint(x, y)?.closest('[data-testid^="day-"]');
+      const day = cell?.getAttribute("data-testid")?.slice(4) ?? null;
+      return day && day >= today ? day : null;
+    };
+    const swallowClick = () => {
+      const stop = (e: Event) => {
+        e.stopPropagation();
+        e.preventDefault();
+      };
+      el.addEventListener("click", stop, { capture: true, once: true });
+      setTimeout(() => el.removeEventListener("click", stop, { capture: true }), 0);
+    };
+    const reset = () => {
+      clearTimeout(timer);
+      start = null;
+      armed = false;
+      dragging = false;
+    };
+
+    const down = (e: PointerEvent) => {
+      start = dayAt(e.clientX, e.clientY);
+      origin = { x: e.clientX, y: e.clientY };
+      dragging = false;
+      clearTimeout(timer);
+      if (e.pointerType === "touch") timer = setTimeout(() => (armed = true), LONG_PRESS_MS);
+      else armed = true;
+    };
+    const move = (e: PointerEvent) => {
+      if (!start) return;
+      if (!armed) {
+        if (Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > TOUCH_SLOP) reset();
+        return;
+      }
+      const day = dayAt(e.clientX, e.clientY);
+      if (!day || (!dragging && day === start)) return;
+      dragging = true;
+      callback.current?.(day < start ? day : start, day < start ? start : day);
+    };
+    const up = () => {
+      if (dragging) swallowClick();
+      reset();
+    };
+    // Once armed, a touch drag must not scroll the page.
+    const touchMove = (e: TouchEvent) => {
+      if (armed && start) e.preventDefault();
+    };
+
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointermove", move);
+    doc.addEventListener("pointerup", up);
+    doc.addEventListener("pointercancel", up);
+    el.addEventListener("touchmove", touchMove, { passive: false });
+    return () => {
+      reset();
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("pointermove", move);
+      doc.removeEventListener("pointerup", up);
+      doc.removeEventListener("pointercancel", up);
+      el.removeEventListener("touchmove", touchMove);
+    };
+  }, [ref, enabled, today]);
+}
+
+/** A slot an owner can't book: blocked by the sitter, fully booked, or not opened. */
+const unavailable = (state: SlotState) => state !== "open";
+
+/**
+ * Month grid, one column per weekday. Each day cell is split into three horizontal bands behind the date — from the
+ * bottom up: morning, afternoon, night — and a band is hatched (diagonal stripes) when that slot can't be booked, so
+ * the state is a pattern and not a color (DESIGN.md §9). Past days are greyed out. Why a slot is unavailable is in
+ * the detail list under the calendar. A range is two clicks (start, end) or a drag across days (phase-03b, D25).
  */
 export function SlotCalendar({
   month,
@@ -39,15 +133,30 @@ export function SlotCalendar({
   slots,
   selection,
   onSelectDay,
+  onSelectRange,
   onPrevMonth,
   onNextMonth,
   canGoPrev,
 }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const gridRef = useRef<View>(null);
+  useDragSelect(gridRef, today, onSelectRange);
 
-  const pillStyle = (state: SlotState) => [styles.pill, styles[`pill_${state}`]];
-  const letterStyle = (state: SlotState) => [styles.letter, styles[`letter_${state}`]];
+  // Stripes are CSS on web: one hatch over the whole cell, with a plain layer on the open slots, so the three bands
+  // share one pattern. Native needs react-native-svg (not installed), so an unavailable slot there is a flat muted fill.
+  const stripe = `color-mix(in srgb, ${theme.color.borderStrong} 45%, transparent)`;
+  const web = Platform.OS === "web";
+  const hatch: ViewStyle = web
+    ? ({
+        backgroundImage: `repeating-linear-gradient(135deg, ${stripe} 0, ${stripe} 1px, transparent 1px, transparent 4px)`,
+      } as unknown as ViewStyle)
+    : { backgroundColor: theme.color.border };
+  const cellStyle = (past: boolean) => [styles.thirds, web && !past && hatch];
+  const thirdStyle = (state: SlotState, past: boolean) => [
+    styles.third,
+    web ? !unavailable(state) && !past && styles.thirdOpen : unavailable(state) && !past && styles.thirdMuted,
+  ];
 
   return (
     <View style={styles.root}>
@@ -84,48 +193,48 @@ export function SlotCalendar({
         ))}
       </View>
 
-      {monthGrid(month).map((week, w) => (
-        <View key={w} style={styles.week}>
-          {week.map((day, i) => {
-            if (!day) return <View key={i} style={styles.cell} />;
-            const past = day < today;
-            const selected = !!selection && selection.from <= day && day <= selection.to;
-            const states = SLOTS.map(({ slot }) => slots.get(slotKey(day, slot))?.state ?? "closed");
-            const label = `${formatDay(day)}: ${SLOTS.map((s, k) => `${s.label} ${STATE_LABEL[states[k]].toLowerCase()}`).join(", ")}`;
-            return (
-              <Pressable
-                key={day}
-                accessibilityRole="button"
-                accessibilityLabel={label}
-                aria-selected={selected}
-                disabled={past}
-                onPress={() => onSelectDay(day)}
-                style={[styles.cell, styles.day, selected && styles.selected, past && styles.past]}
-                testID={`day-${day}`}
-              >
-                <Text style={[styles.date, day === today && styles.today]}>{dayOfMonth(day)}</Text>
-                <View style={styles.pills}>
-                  {SLOTS.map(({ slot, short }, k) => (
-                    <View key={slot} style={pillStyle(states[k])}>
-                      <Text style={letterStyle(states[k])}>{short}</Text>
-                    </View>
-                  ))}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-      ))}
-
-      <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no">
-        {(Object.keys(STATE_LABEL) as SlotState[]).map((state) => (
-          <View key={state} style={styles.legendItem}>
-            <View style={pillStyle(state)}>
-              <Text style={letterStyle(state)}>M</Text>
-            </View>
-            <Text style={styles.legendText}>{STATE_LABEL[state]}</Text>
+      <View ref={gridRef} style={styles.grid}>
+        {monthGrid(month).map((week, w) => (
+          <View key={w} style={styles.week}>
+            {week.map((day, i) => {
+              if (!day) return <View key={i} style={styles.cell} />;
+              const past = day < today;
+              const selected = !!selection && selection.from <= day && day <= selection.to;
+              const states = SLOTS.map(({ slot }) => slots.get(slotKey(day, slot))?.state ?? "closed");
+              const label = `${formatDay(day)}: ${SLOTS.map((s, k) => `${s.label} ${STATE_LABEL[states[k]].toLowerCase()}`).join(", ")}`;
+              return (
+                <Pressable
+                  key={day}
+                  accessibilityRole="button"
+                  accessibilityLabel={label}
+                  aria-selected={selected}
+                  disabled={past}
+                  onPress={() => onSelectDay(day)}
+                  style={[styles.cell, styles.day, selected && styles.selected, past && styles.past]}
+                  testID={`day-${day}`}
+                >
+                  <View style={cellStyle(past)} pointerEvents="none">
+                    {SLOTS.map(({ slot }, k) => (
+                      <View key={slot} style={thirdStyle(states[k], past)} testID={`third-${day}-${slot}`} />
+                    ))}
+                  </View>
+                  <Text style={[styles.date, day === today && styles.today]}>{dayOfMonth(day)}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         ))}
+      </View>
+
+      <View style={styles.legend} accessibilityElementsHidden importantForAccessibility="no">
+        <View style={styles.legendItem}>
+          <View style={styles.swatch} />
+          <Text style={styles.legendText}>Available</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.swatch, hatch]} />
+          <Text style={styles.legendText}>Not available</Text>
+        </View>
       </View>
     </View>
   );
@@ -135,6 +244,13 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: {
       gap: theme.spacing.xs,
+      padding: theme.spacing.sm,
+      borderRadius: theme.radius.lg,
+      backgroundColor: theme.color.surface,
+    },
+    grid: {
+      gap: theme.spacing.xs,
+      ...(Platform.OS === "web" ? ({ userSelect: "none" } as ViewStyle) : null),
     },
     header: {
       flexDirection: "row",
@@ -172,7 +288,6 @@ const makeStyles = (theme: Theme) =>
     day: {
       alignItems: "center",
       justifyContent: "center",
-      gap: 2,
       borderRadius: theme.radius.sm,
       borderWidth: 2,
       borderColor: "transparent",
@@ -193,50 +308,35 @@ const makeStyles = (theme: Theme) =>
       color: theme.color.primary,
       textDecorationLine: "underline",
     },
-    pills: {
-      flexDirection: "row",
-      gap: 2,
+    thirds: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      // Bottom to top: morning, afternoon, night — the morning band is the lowest and the night the highest.
+      flexDirection: "column-reverse",
+      overflow: "hidden",
+      borderRadius: theme.radius.sm,
+      backgroundColor: theme.color.surface,
     },
-    pill: {
-      width: 14,
-      height: 16,
-      alignItems: "center",
-      justifyContent: "center",
+    third: {
+      flex: 1,
+    },
+    thirdOpen: {
+      backgroundColor: theme.color.surface,
+    },
+    thirdMuted: {
+      backgroundColor: theme.color.border,
+    },
+    swatch: {
+      width: 24,
+      height: 12,
+      overflow: "hidden",
       borderRadius: 4,
       borderWidth: 1,
-    },
-    pill_open: {
-      backgroundColor: theme.color.accent,
-      borderColor: theme.color.accent,
-    },
-    pill_full: {
-      backgroundColor: theme.color.primary,
-      borderColor: theme.color.primary,
-    },
-    pill_blocked: {
-      backgroundColor: theme.color.surface,
-      borderColor: theme.color.textMuted,
-    },
-    pill_closed: {
-      backgroundColor: "transparent",
       borderColor: theme.color.border,
-    },
-    letter: {
-      fontSize: theme.fontSize.caption,
-      fontWeight: theme.fontWeight.semibold,
-    },
-    letter_open: {
-      color: theme.color.primary,
-    },
-    letter_full: {
-      color: theme.color.primaryText,
-    },
-    letter_blocked: {
-      color: theme.color.textMuted,
-      textDecorationLine: "line-through",
-    },
-    letter_closed: {
-      color: theme.color.border,
+      backgroundColor: theme.color.surface,
     },
     legend: {
       flexDirection: "row",
