@@ -145,7 +145,7 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("search-pick_up-clock")).toBeVisible();
   });
 
-  test("the radius slider sits under the bar, starts at 5 km a quarter in, and is remembered", async ({ page }) => {
+  test("the radius slider sits under the bar, goes 1 to 100 km in 1 km steps, and is remembered", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
     db.owner_profiles[0].search_radius_km = 20;
@@ -154,15 +154,17 @@ test.describe("find a sitter", () => {
     expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 20 });
     await expect(screen.getByTestId("radius-value")).toHaveText("20 km");
 
-    // Page Up moves the slider ten steps along its scale (20 km → 28 km) and the list follows.
+    // → is 1 km, Page Up is 10 km, and the list follows.
     await screen.getByTestId("radius-slider").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(screen.getByTestId("radius-value")).toHaveText("21 km");
     await page.keyboard.press("PageUp");
-    await expect(screen.getByTestId("radius-value")).toHaveText("28 km");
-    await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(28);
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 28 });
+    await expect(screen.getByTestId("radius-value")).toHaveText("31 km");
+    await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(31);
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 31 });
   });
 
-  test("5 km starts a quarter of the way along the slider, not at the end", async ({ page }) => {
+  test("5 km sits at 1/20 of the slider and a click on the track moves in whole km", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
     const screen = await openBookings(page);
@@ -170,8 +172,9 @@ test.describe("find a sitter", () => {
     const track = await box(screen.getByTestId("radius-slider"));
     const thumb = await box(screen.getByTestId("radius-slider-thumb"));
     const ratio = (thumb.x + thumb.width / 2 - track.x) / track.width;
-    expect(ratio).toBeGreaterThan(0.18);
-    expect(ratio).toBeLessThan(0.32);
+    expect(ratio).toBeLessThan(0.12);
+    await page.mouse.click(track.x + track.width - 4, track.y + track.height / 2);
+    await expect(screen.getByTestId("radius-value")).toHaveText("100 km");
   });
 
   test("an address or a postal code sends that point; the postal area is the fallback", async ({ page }) => {

@@ -315,18 +315,18 @@ Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnsw
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 185 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 374 |
-| TextButton | Edit entry info | `profile-home-access` | 391 |
-| SegmentedControl | — | `profile-ai-mode` | 407 |
-| Button | Edit your answers | `profile-answers-edit` | 436 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 444 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 446 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 463 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 473 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 511 |
-| TextButton | Settings · What's New | `profile-settings` | 513 |
-| TextButton | Privacy | `profile-privacy` | 514 |
+| EmptyState | Couldn't load your profile | — | 188 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 377 |
+| TextButton | Edit entry info | `profile-home-access` | 394 |
+| SegmentedControl | — | `profile-ai-mode` | 410 |
+| Button | Edit your answers | `profile-answers-edit` | 439 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 447 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 449 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 466 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 476 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 514 |
+| TextButton | Settings · What's New | `profile-settings` | 516 |
+| TextButton | Privacy | `profile-privacy` | 517 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -1095,21 +1095,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 55 |
-| Pressable | Search | `bar-search` | 84 |
-| Sheet | Done | `place-done` | 88 |
-| Button | Done | `place-done` | 92 |
-| Button | Use this place | `place-use-address` | 106 |
-| CheckRow | 🏠 My home | `place-home` | 113 |
-| CheckRow | 📍 Current location | `place-here` | 114 |
-| TextButton | Open Profile | `place-open-profile` | 135 |
-| Sheet | Done | `stay-done` | 140 |
-| Button | Done | `stay-done` | 144 |
-| Stepper | Drop-off time | `search-drop_off-time` | 159 |
-| Stepper | Pick-up time | `search-pick_up-time` | 168 |
-| Sheet | Done | `pets-done` | 200 |
-| Button | Done | `pets-done` | 204 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 208 |
+| Pressable | `text` | `id` | 54 |
+| Pressable | Search | `bar-search` | 83 |
+| Sheet | Done | `place-done` | 87 |
+| Button | Done | `place-done` | 91 |
+| Button | Use this place | `place-use-address` | 105 |
+| CheckRow | 🏠 My home | `place-home` | 112 |
+| CheckRow | 📍 Current location | `place-here` | 113 |
+| TextButton | Open Profile | `place-open-profile` | 134 |
+| Sheet | Done | `stay-done` | 139 |
+| Button | Done | `stay-done` | 143 |
+| Stepper | Drop-off time | `search-drop_off-time` | 158 |
+| Stepper | Pick-up time | `search-pick_up-time` | 167 |
+| Sheet | Done | `pets-done` | 199 |
+| Button | Done | `pets-done` | 203 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 207 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 

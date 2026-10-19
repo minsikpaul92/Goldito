@@ -5,7 +5,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatDay, formatTime, shiftTime } from "../features/schedule/dates";
-import { RADIUS_POSITIONS, kmToPosition, positionToKm } from "../features/sitters/radiusScale";
 import { SitterSearch } from "../features/sitters/useSitterSearch";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -222,10 +221,10 @@ export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; on
         <Text style={styles.radiusValue} testID="radius-value">{`${search.radiusKm} km`}</Text>
       </View>
       <Slider
-        value={kmToPosition(search.radiusKm)}
-        min={0}
-        max={RADIUS_POSITIONS}
-        onChange={(position) => search.setRadiusKm(positionToKm(position))}
+        value={search.radiusKm}
+        min={1}
+        max={100}
+        onChange={search.setRadiusKm}
         label="Search radius"
         valueText={`${search.radiusKm} km`}
         testID="radius-slider"

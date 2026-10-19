@@ -170,7 +170,10 @@ export default function ProfileScreen() {
     let current = true;
     setHomePlace(undefined);
     void reverseGeocode({ lat: pinLat, lng: pinLng }).then((place) => {
-      if (current) setHomePlace(place);
+      if (!current) return;
+      setHomePlace(place);
+      // The location fills the home address (street, city, postal area); the person adds the house number.
+      if (place?.address) setDraft((prev) => ({ ...prev, home_address: place.address ?? "" }));
     });
     return () => {
       current = false;
