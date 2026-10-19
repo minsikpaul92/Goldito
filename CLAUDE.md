@@ -4,7 +4,7 @@
 
 This file guides AI assistants (Claude, Cursor, etc.) working in **Goldito**: a Kidsnote-style pet care app for the **Nebius x NVIDIA Global AI Hackathon** (track: Best Apps and Agents).
 
-**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q-quality.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI).  
+**Human team:** Minsik (full-stack **and, since 2026-10-04, the AI backend track too** — from 2026-10-09 the urgent demo-path work), Seulgi (from 2026-10-09 **Phase Q**: QA, sitter-eye UX and wording, anonymized data and tone, R3/R4 review items — `docs/plan/phases/phase-q-quality.md`, split in `docs/plan/work-split-2026-10-09.ko.md`), Muk (UX/UI), JeonBeomGu-S (from 2026-10-19: QA fixes first, new features after; full stack).  
 **User-facing explanations to Minsik:** Korean. **Code & comments:** English.
 
 ---
