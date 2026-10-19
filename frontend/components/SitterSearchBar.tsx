@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatDay, formatTime, shiftTime } from "../features/schedule/dates";
+import { RADIUS_POSITIONS, kmToPosition, positionToKm } from "../features/sitters/radiusScale";
 import { SitterSearch } from "../features/sitters/useSitterSearch";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -22,8 +23,6 @@ type Open = "place" | "stay" | "pets" | null;
 type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const TIME_STEP = 15;
-const MIN_KM = 1;
-const MAX_KM = 100;
 
 /** "Oct 20" from "Tue, Oct 20". */
 const shortDay = (day: string) => formatDay(day).replace(/^\w+,\s*/, "");
@@ -75,6 +74,7 @@ export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; on
   };
 
   return (
+    <View style={styles.wrap}>
     <View style={styles.bar} testID="sitter-search-bar">
       {segment("location-outline", placeText, () => setOpen("place"), "bar-place", 1)}
       <View style={styles.divider} />
@@ -135,19 +135,6 @@ export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; on
             <TextButton label="Open Profile" onPress={() => (close(), router.push("/profile"))} style={styles.left} testID="place-open-profile" />
           </View>
         ) : null}
-        <View style={styles.radiusHead}>
-          <Text style={styles.label}>Within</Text>
-          <Text style={styles.radiusValue} testID="radius-value">{`${search.radiusKm} km`}</Text>
-        </View>
-        <Slider
-          value={search.radiusKm}
-          min={MIN_KM}
-          max={MAX_KM}
-          onChange={search.setRadiusKm}
-          label="Search radius"
-          valueText={`${search.radiusKm} km`}
-          testID="radius-slider"
-        />
       </Sheet>
 
       <Sheet
@@ -229,11 +216,33 @@ export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; on
         {petIds.length === 0 ? <Text style={styles.error}>Pick at least one pet.</Text> : null}
       </Sheet>
     </View>
+    <View style={styles.radius}>
+      <View style={styles.radiusHead}>
+        <Text style={styles.label}>Within</Text>
+        <Text style={styles.radiusValue} testID="radius-value">{`${search.radiusKm} km`}</Text>
+      </View>
+      <Slider
+        value={kmToPosition(search.radiusKm)}
+        min={0}
+        max={RADIUS_POSITIONS}
+        onChange={(position) => search.setRadiusKm(positionToKm(position))}
+        label="Search radius"
+        valueText={`${search.radiusKm} km`}
+        testID="radius-slider"
+      />
+    </View>
+    </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
+    wrap: {
+      gap: theme.spacing.sm,
+    },
+    radius: {
+      paddingHorizontal: theme.spacing.sm,
+    },
     bar: {
       flexDirection: "row",
       alignItems: "center",
@@ -300,7 +309,6 @@ const makeStyles = (theme: Theme) =>
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "baseline",
-      marginTop: theme.spacing.sm,
     },
     radiusValue: {
       fontSize: theme.fontSize.body,

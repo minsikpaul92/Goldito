@@ -115,9 +115,12 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
     await expect(screen.getByTestId("sitter-tile-Uma")).toHaveCount(0);
+    // One sitter per line, nearest first, each with how far away.
     const chloe = await box(screen.getByTestId("sitter-tile-Chloe"));
     const paul = await box(screen.getByTestId("sitter-tile-Paul"));
-    expect(chloe.x).toBeLessThan(paul.x);
+    expect(chloe.y).toBeLessThan(paul.y);
+    await expect(screen.getByTestId("sitter-km-Chloe")).toHaveText("3 km");
+    await expect(screen.getByTestId("sitter-km-Paul")).toHaveText("4 km");
   });
 
   test("a range on the calendar and exact times set the stay", async ({ page }) => {
@@ -142,21 +145,33 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("search-pick_up-clock")).toBeVisible();
   });
 
-  test("the radius lives in the place sheet, starts at 5 km and is remembered", async ({ page }) => {
+  test("the radius slider sits under the bar, starts at 5 km a quarter in, and is remembered", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
     db.owner_profiles[0].search_radius_km = 20;
     const screen = await openBookings(page);
     await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 20 });
-
-    await screen.getByTestId("bar-place").click();
     await expect(screen.getByTestId("radius-value")).toHaveText("20 km");
+
+    // Page Up moves the slider ten steps along its scale (20 km → 28 km) and the list follows.
     await screen.getByTestId("radius-slider").focus();
     await page.keyboard.press("PageUp");
-    await expect(screen.getByTestId("radius-value")).toHaveText("30 km");
-    await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(30);
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 30 });
+    await expect(screen.getByTestId("radius-value")).toHaveText("28 km");
+    await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(28);
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 28 });
+  });
+
+  test("5 km starts a quarter of the way along the slider, not at the end", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("radius-value")).toHaveText("5 km");
+    const track = await box(screen.getByTestId("radius-slider"));
+    const thumb = await box(screen.getByTestId("radius-slider-thumb"));
+    const ratio = (thumb.x + thumb.width / 2 - track.x) / track.width;
+    expect(ratio).toBeGreaterThan(0.18);
+    expect(ratio).toBeLessThan(0.32);
   });
 
   test("an address or a postal code sends that point; the postal area is the fallback", async ({ page }) => {

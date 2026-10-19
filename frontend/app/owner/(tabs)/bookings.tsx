@@ -128,26 +128,27 @@ export default function OwnerBookings() {
               {searched ? "No sitters free." : "No favorites free."}
             </Text>
           ) : (
-            <View style={styles.tiles}>
+            <View style={styles.rows}>
               {shown.map((sitter) => {
                 const cover = covers.get(sitter.sitterId);
                 return (
                   <Pressable
                     key={sitter.sitterId}
                     accessibilityRole="button"
-                    accessibilityLabel={sitter.displayName}
+                    accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
                     onPress={() => openSitter(sitter.sitterId)}
-                    style={styles.tile}
+                    style={styles.row}
                     testID={`sitter-tile-${sitter.displayName}`}
                   >
                     {cover ? (
-                      <Avatar kind="photo" uri={photoThumb(cover, 200)} size={72} />
+                      <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} />
                     ) : (
-                      <Avatar kind="initial" name={sitter.displayName} size={72} />
+                      <Avatar kind="initial" name={sitter.displayName} size={48} />
                     )}
-                    <Text style={styles.tileName} numberOfLines={1}>
+                    <Text style={styles.rowName} numberOfLines={1}>
                       {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
                     </Text>
+                    <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
                   </Pressable>
                 );
               })}
@@ -229,7 +230,8 @@ const makeStyles = (theme: Theme) =>
     questionTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     ready: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
-    tiles: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md },
-    tile: { width: 88, alignItems: "center", gap: theme.spacing.xs },
-    tileName: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.text, maxWidth: 88 },
+    rows: { gap: theme.spacing.xs },
+    row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.xs },
+    rowName: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    rowKm: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

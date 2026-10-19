@@ -51,8 +51,8 @@ Shows: `BookingCard` · `SitterSearchBar`
 | EmptyState | Couldn't load your bookings | — | 90 |
 | TextButton | Open Profile | `search-open-profile` | 114 |
 | TextButton | Try again | `search-retry` | 122 |
-| Pressable | `sitter.displayName` | ``sitter-tile-${sitter.displayName}`` | 135 |
-| Pressable | — | ``question-card-${inq.id}`` | 179 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 135 |
+| Pressable | — | ``question-card-${inq.id}`` | 180 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -1095,7 +1095,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 56 |
+| Pressable | `text` | `id` | 55 |
 | Pressable | Search | `bar-search` | 84 |
 | Sheet | Done | `place-done` | 88 |
 | Button | Done | `place-done` | 92 |
@@ -1103,13 +1103,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | CheckRow | 🏠 My home | `place-home` | 113 |
 | CheckRow | 📍 Current location | `place-here` | 114 |
 | TextButton | Open Profile | `place-open-profile` | 135 |
-| Sheet | Done | `stay-done` | 153 |
-| Button | Done | `stay-done` | 157 |
-| Stepper | Drop-off time | `search-drop_off-time` | 172 |
-| Stepper | Pick-up time | `search-pick_up-time` | 181 |
-| Sheet | Done | `pets-done` | 213 |
-| Button | Done | `pets-done` | 217 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 221 |
+| Sheet | Done | `stay-done` | 140 |
+| Button | Done | `stay-done` | 144 |
+| Stepper | Drop-off time | `search-drop_off-time` | 159 |
+| Stepper | Pick-up time | `search-pick_up-time` | 168 |
+| Sheet | Done | `pets-done` | 200 |
+| Button | Done | `pets-done` | 204 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 208 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
