@@ -62,12 +62,12 @@ Shows: `BookingCard` · `ChatList` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 108 |
-| TextButton | Open Profile | `search-open-profile` | 132 |
-| TextButton | Try again | `search-retry` | 140 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 153 |
-| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 170 |
-| Pressable | — | ``question-card-${inq.id}`` | 215 |
+| EmptyState | Couldn't load your bookings | — | 110 |
+| TextButton | Open Profile | `search-open-profile` | 134 |
+| TextButton | Try again | `search-retry` | 142 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 156 |
+| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 173 |
+| Pressable | — | ``question-card-${inq.id}`` | 218 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 

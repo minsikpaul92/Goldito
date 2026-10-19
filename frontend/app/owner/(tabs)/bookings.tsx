@@ -75,7 +75,9 @@ export default function OwnerBookings() {
   );
 
   const found: NearbySitter[] = search.results.status === "ready" ? search.results.sitters : [];
-  const shown = searched ? found : found.filter((x) => search.favorites.has(x.sitterId));
+  // Favorites first; with none yet (or after Search) everyone nearby.
+  const everyone = searched || search.favorites.size === 0;
+  const shown = everyone ? found : found.filter((x) => search.favorites.has(x.sitterId));
   const shownKey = shown.map((x) => x.sitterId).join();
   useEffect(() => {
     let current = true;
@@ -121,7 +123,7 @@ export default function OwnerBookings() {
         <SitterSearchBar search={search} onSearch={() => setSearched(true)} />
         <View style={styles.section} testID="sitter-results">
           <Text accessibilityRole="header" style={styles.heading}>
-            {searched ? "Sitters nearby" : "Favorites"}
+            {everyone ? "Sitters nearby" : "Favorites"}
           </Text>
           {search.problem || search.placeProblem ? (
             <View style={styles.section}>
@@ -143,30 +145,31 @@ export default function OwnerBookings() {
             <Text style={styles.hint}>Looking…</Text>
           ) : shown.length === 0 ? (
             <Text style={styles.hint} testID="search-none">
-              {searched ? "No sitters free." : search.favorites.size === 0 ? "No favorites yet." : "No favorites free."}
+              {everyone ? `No sitters within ${search.radiusKm} km for these dates.` : "No favorites free for these dates."}
             </Text>
           ) : (
             <View style={styles.rows}>
               {shown.map((sitter) => {
                 const cover = covers.get(sitter.sitterId);
                 return (
-                  <Pressable
-                    key={sitter.sitterId}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
-                    onPress={() => openSitter(sitter.sitterId)}
-                    style={styles.row}
-                    testID={`sitter-tile-${sitter.displayName}`}
-                  >
-                    {cover ? (
-                      <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} />
-                    ) : (
-                      <Avatar kind="initial" name={sitter.displayName} size={48} />
-                    )}
-                    <Text style={styles.rowName} numberOfLines={1}>
-                      {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
-                    </Text>
-                    <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
+                  <View key={sitter.sitterId} style={styles.row}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
+                      onPress={() => openSitter(sitter.sitterId)}
+                      style={styles.rowMain}
+                      testID={`sitter-tile-${sitter.displayName}`}
+                    >
+                      {cover ? (
+                        <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} />
+                      ) : (
+                        <Avatar kind="initial" name={sitter.displayName} size={48} />
+                      )}
+                      <Text style={styles.rowName} numberOfLines={1}>
+                        {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
+                      </Text>
+                      <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
+                    </Pressable>
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Chat with ${sitter.displayName}`}
@@ -176,7 +179,7 @@ export default function OwnerBookings() {
                     >
                       <Ionicons name="chatbubble-ellipses-outline" size={theme.icon.sm} color={theme.color.primary} />
                     </Pressable>
-                  </Pressable>
+                  </View>
                 );
               })}
             </View>
@@ -266,7 +269,8 @@ const makeStyles = (theme: Theme) =>
     ready: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
     rows: { gap: theme.spacing.xs },
-    row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.xs },
+    row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
+    rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
     rowName: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     chatButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     rowKm: { fontSize: theme.fontSize.small, color: theme.color.textMuted },

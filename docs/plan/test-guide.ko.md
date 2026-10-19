@@ -676,7 +676,7 @@
 | SEARCH-4 | 날짜 칸 → 범위 달력에서 시작일 · 종료일을 차례로 누르고 시간 −/+ 또는 시간 값을 눌러 시계로 설정 | 바에 "Oct 24 - 28"처럼 한 줄로 나오고, **Done** 뒤 자동으로 다시 검색. 펫 칸에서 펫을 바꿔도 같음 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-5 | 장소 칸 → **Current location** / 주소 · **우편번호** 입력 후 Use this place | 현재 위치는 브라우저가 한 번만 묻고 그 좌표로 검색, 차단되면 푸는 법 안내(집 기준 유지). 우편번호(예 M5V 2T6)는 전체 코드를 못 찾으면 앞 3자리(M5V)로 다시 찾음. 못 찾으면 "Couldn't find that place". 주소 조회는 백엔드(`/api/geo/geocode`)가 떠 있어야 함 | 🤖 `sitter-search`(위치 · 조회 목업) · 실제 브라우저 권한은 👤 | 사람 확인 대기 |
 | SEARCH-6 | 집 위치가 없는 견주 | 목록 자리에 "Your home isn't on the map yet." + Open Profile. 장소 시트에서 현재 위치 · 주소로 검색 가능 | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-7 | 맞는 시터가 없음 | Favorites에서는 "No favorites free.", 🔍 뒤에는 "No sitters free." | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-7 | 맞는 시터가 없음 | Favorites에서는 "No favorites free for these dates.", 주변 목록에서는 "No sitters within N km for these dates." | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-8 | 시터 타일을 누름 | 시터 상세(`/owner/sitters/{id}`)가 열림(머무는 날짜 · 시간 · 펫이 주소에 실림). 시터를 이미 고른 채 Book care가 열리면 시터 목록은 그 시터 하나만 | 🤖 `sitter-search` | 사람 확인 대기 |
 
 ### 3.27 시터 온보딩 (ONB) — 3D.2 · #139 · *DB와 번호 질문 화면까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
@@ -775,7 +775,7 @@
 | ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
-| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | "No favorites yet."(즐겨찾기가 있는데 날짜에 안 맞을 때만 "No favorites free."). 🔍를 누르면 주변 시터 | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
+| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | 즐겨찾기가 하나도 없으면 처음부터 주변 시터("Sitters nearby")가 보임. 즐겨찾기가 있는데 날짜에 안 맞으면 "No favorites free for these dates.", 🔍 뒤에 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
 | ADDR-6 | 데모 계정(`@goldito.test`) 전부 | 계정마다 **자기 주소와 핀**이 있음(토론토 공공 건물 주소, 실제 사람 집 아님): 오너 Robert · Peter · Alex · David, 시터 Chloe · Paul · Allen · Daniel. 서로 0.6 ~ 14 km라 반경 슬라이더로 결과가 달라짐. **Reset demo**나 `seed_demo.py`를 다시 돌려도 이 주소가 유지됨 | 🤖 pytest `test_seed_demo` · `test_reset_demo` | 사람 확인 대기 |
 
 ### 3.32 채팅 허브 (CHAT) — 3D.4 · #141 · *사전: 호스팅 DB에 `014j`(적용은 요청할 때만), 오너와 시터 계정 둘(예: Peter와 Chloe), 두 브라우저나 창*
