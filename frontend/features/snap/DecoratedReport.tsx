@@ -63,6 +63,8 @@ type Props = {
   day: string;
   body: string;
   writing?: DiaryWriting;
+  /** The owner's own page (014p): the picture may be one of the owner's private photos. */
+  ownPage?: boolean;
   /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
@@ -78,7 +80,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -127,7 +129,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   // The picture box: the day's first shared photo, if there is one.
   useEffect(() => {
     let live = true;
-    listReportPhotos(petId, day)
+    listReportPhotos(petId, day, ownPage && role === "owner")
       .then((photos) => {
         const first = photos[0];
         if (!live || !first) return;
@@ -137,7 +139,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     return () => {
       live = false;
     };
-  }, [petId, day]);
+  }, [petId, day, ownPage, role]);
 
   const mine = layers.find((l) => l.userId === me)?.items ?? [];
   const others = layers.filter((l) => l.userId !== me);

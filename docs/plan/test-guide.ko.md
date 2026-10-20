@@ -302,7 +302,7 @@
 | HIST-4 | 시간이 지난 미완료 할 일 | ⚠️ "… · Missed" | 🤖 `diary` | ➖ |
 | HIST-5 | 줄 탭 | 사진이 있으면 크게, 없으면 상세(시각 · 사람 · 메모) | 🤖 `diary` | ➖ |
 | HIST-6 | 펫이 둘이면 칩으로 전환 | 펫마다 자기 기록만 | 🤖 `diary` | ➖ |
-| DIARY-1 | 오너 **Diary 탭** | "시터가 하루를 정리해 쓰면 여기에 나타나요" 안내 + Open History 버튼 (일기 쓰기는 Phase 07) | 🤖 `live-updates` | ➖ |
+| DIARY-1 | 오너 **Diary 탭** | "시터가 하루를 정리해 쓰면 여기에 나타나요" 안내 + Open History 버튼 + ✏️ Write a page (DBK-11) | 🤖 `live-updates` | ➖ |
 | DIARY-7 | (이전 화면에서 확인) 새로고침 없이 새 줄 추가 | 같은 동작이 이제 **Home 카드(LIVE-5)** 로 옮겨감 — 재확인 | **👤만** | ✅ 10/04 민식 (이전 Diary 화면) |
 
 ### 3.7 보안 · 권한 (SEC) — 실제 DB에서 👤
@@ -671,6 +671,7 @@
 | DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
 | DBK-10 | (DB) `rls_smoke.sql`의 014p 블록 | 오너가 자기 펫의 일기 쪽을 `add_owner_diary_entry`로 씀: 곧바로 **보냄** 상태, 앞뒤 공백 제거, 작성자는 오너, 하루에 여러 장 가능, 알림 없음 · 같은 펫을 돌보는 시터는 **못 봄**(작성자 열이 오너라서) · 다른 오너 · 시터는 쓸 수 없음(`not_owner`) · 빈 글(`body_required`)과 2000자 초과(`body_too_long`) 거부 · anon 불가 · 오너는 자기 쪽에 스티커 가능 | SQL `rls_smoke` | ➖ |
+| DBK-11 | 견주 → **Diary** → **✏️ Write a page** (펫이 둘 이상이면 위에서 펫 고르기) | 시트 "New page": 그림일기 종이 위에 바로 쓰기("Dear diary, today…"), 글이 비면 Save page는 꺼짐. **+ Photo**로 사진 한 장(선택). Save page → "Page saved", 책이 새 장("Your page")으로 열림. 사진은 **Feed에 비공개**로도 남고 종이의 그림 칸에 보임. 알림 없음, 시터는 못 봄. ✨ Decorate로 스티커도 붙임. 일기가 하나도 없어도 버튼이 있음 | 🤖 `diary-owner-entry.spec.ts` | 사람 확인 대기 |
 
 ### 3.26 시터 검색 (SEARCH) — 03B SS · *사전: 호스팅 DB에 `014c`, 견주 프로필에 집 위치(데모 Robert는 시드에 있음), 시터의 일정 · 집 위치(데모 Chloe는 시드에 있음, 약 7 km)*
 

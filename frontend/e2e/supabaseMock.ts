@@ -1742,6 +1742,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, draft.id);
   }
 
+  if (path === "rpc/add_owner_diary_entry") {
+    // 014p: the owner's own page, sent at once, no notice. The author column holds the owner.
+    const { p_pet, p_body } = request.postDataJSON();
+    if (!db.pets.some((p) => p.id === p_pet && p.owner_id === me)) return json(route, 400, { code: "P0001", message: "not_owner" });
+    const text = String(p_body ?? "").trim();
+    if (!text) return json(route, 400, { code: "P0001", message: "body_required" });
+    const now = new Date(nowMs()).toISOString();
+    const row = { id: `owner-${db.daily_reports.length + 1}`, pet_id: p_pet, sitter_id: me, report_date: appToday(new Date(nowMs())), body: text, status: "sent", source_snapshot: null, sent_at: now, created_at: now };
+    db.daily_reports.push(row);
+    return json(route, 200, row.id);
+  }
+
   if (path === "rpc/send_daily_report") {
     const { p_report, p_body } = request.postDataJSON();
     const report = db.daily_reports.find((r) => r.id === p_report);
@@ -1981,8 +1993,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "notifications" || (row.user_id === me && (row.visible_at == null || Date.parse(String(row.visible_at)) <= Date.now()))) &&
         // RLS: a private post is only visible to its author (5.8).
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
-        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
-        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent") &&
+        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009). A sent page is read by
+        // its author and by the pet's owner, so a sitter never reads an owner's own page (014p).
+        (path !== "daily_reports" || row.sitter_id === me || (row.status === "sent" && db.pets.some((p) => p.id === row.pet_id && p.owner_id === me))) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011g): the sitter's note about an owner is the sitter's alone.

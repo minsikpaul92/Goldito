@@ -1216,15 +1216,26 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| SegmentedControl | — | ``${testID}-pet`` | 173 |
-| Pressable | `hint` | `testID` | 242 |
+| SegmentedControl | — | ``${testID}-pet`` | 176 |
+| Pressable | `hint` | `testID` | 246 |
 
 ### OwnerDiaryBook — [features/diary/OwnerDiaryBook.tsx](../../frontend/features/diary/OwnerDiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the diary | — | 41 |
-| EmptyState | No diary yet | — | 48 |
+| EmptyState | Couldn't load the diary | — | 52 |
+| Button | ✏️ Write a page | `diary-write` | 56 |
+| EmptyState | No diary yet | — | 72 |
+
+### OwnerEntrySheet — [features/diary/OwnerEntrySheet.tsx](../../frontend/features/diary/OwnerEntrySheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 95 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 100 |
+| SegmentedControl | — | `diary-write-pet` | 103 |
+| TextButton | Remove | `diary-write-photo-remove` | 127 |
+| TextButton | + Photo | `diary-write-photo` | 130 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1242,14 +1253,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 308 |
-| TextButton | Make a sticker | `decor-make` | 328 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 333 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 367 |
-| TextButton | Cancel | `decor-cancel` | 368 |
-| TextButton | ✨ Decorate | `decor-start` | 379 |
-| TextButton | ↗ Share | `decor-share` | 380 |
-| Pressable | `hint` | `testID` | 401 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 310 |
+| TextButton | Make a sticker | `decor-make` | 330 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 335 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 369 |
+| TextButton | Cancel | `decor-cancel` | 370 |
+| TextButton | ✨ Decorate | `decor-start` | 381 |
+| TextButton | ↗ Share | `decor-share` | 382 |
+| Pressable | `hint` | `testID` | 403 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1333,4 +1344,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-384 actions · 383 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+389 actions · 388 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
