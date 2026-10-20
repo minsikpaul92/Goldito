@@ -51,6 +51,10 @@ function short(iso: string): string {
 export default function Chat() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const blocks = theme.ui.blocks;
+  // The text an AI chip last put in the box, so the box can say it's a draft until it's sent.
+  const [draftText, setDraftText] = useState<string | null>(null);
+  const [inputHeight, setInputHeight] = useState(44);
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const { profile } = useSession();
   const { pets } = useMyPets();
@@ -134,6 +138,7 @@ export default function Chat() {
     setDrafting(false);
     if (draft) {
       setText(draft);
+      setDraftText(draft);
       setChips([]);
       input.current?.focus();
     }
@@ -182,6 +187,8 @@ export default function Chat() {
     try {
       await sendChatMessage(threadId, body);
       setText("");
+      setDraftText(null);
+      setInputHeight(44);
       await load();
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
@@ -198,11 +205,17 @@ export default function Chat() {
     const live = booking && booking.id === c.bookingId ? stageCaption(booking, header.myRole) : null;
     return (
       <View key={m.id} style={[styles.cardRow, mine ? styles.cardMine : styles.cardTheirs]}>
-      <Card style={styles.request} testID="chat-request-card">
-        <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
+      <Card style={styles.request} tone={blocks ? "mint" : undefined} testID="chat-request-card">
+        <Text style={[styles.requestTitle, blocks && styles.cardTitleDisplay]}>{mine ? "You sent a booking request" : "Booking request"}</Text>
         <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
-        <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
-        <Text style={styles.requestLine}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        <View style={styles.cardLine}>
+          <Ionicons name="log-in-outline" size={16} color={theme.color.textMuted} accessibilityElementsHidden importantForAccessibility="no" />
+          <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        </View>
+        <View style={styles.cardLine}>
+          <Ionicons name="log-out-outline" size={16} color={theme.color.textMuted} accessibilityElementsHidden importantForAccessibility="no" />
+          <Text style={styles.requestLine}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        </View>
         {c.note ? <Text style={styles.requestNote} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
         {live ? <Text style={styles.requestLive}>{live}</Text> : null}
       </Card>
@@ -242,11 +255,20 @@ export default function Chat() {
         {messages.map((m) =>
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
-              <Card style={styles.stay} testID="chat-stay-card">
-                <Text style={styles.requestTitle}>Stay</Text>
-                <Text style={styles.requestLine}>{`Drop-off ${short(m.card.dropOffAt)}`}</Text>
-                <Text style={styles.requestLine}>{`Pick-up ${short(m.card.pickUpAt)}`}</Text>
-                <Text style={styles.requestLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
+              <Card style={styles.stay} tone={blocks ? "butter" : undefined} testID="chat-stay-card">
+                <Text style={[styles.requestTitle, blocks && styles.cardTitleDisplay]}>Stay</Text>
+                <View style={styles.cardLine}>
+                  <Ionicons name="log-in-outline" size={16} color={theme.color.textMuted} accessibilityElementsHidden importantForAccessibility="no" />
+                  <Text style={styles.requestLine}>{`Drop-off ${short(m.card.dropOffAt)}`}</Text>
+                </View>
+                <View style={styles.cardLine}>
+                  <Ionicons name="log-out-outline" size={16} color={theme.color.textMuted} accessibilityElementsHidden importantForAccessibility="no" />
+                  <Text style={styles.requestLine}>{`Pick-up ${short(m.card.pickUpAt)}`}</Text>
+                </View>
+                <View style={styles.cardLine}>
+                  <Ionicons name="paw-outline" size={16} color={theme.color.textMuted} accessibilityElementsHidden importantForAccessibility="no" />
+                  <Text style={styles.requestLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
+                </View>
               </Card>
             </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
@@ -269,6 +291,12 @@ export default function Chat() {
       ) : null}
       {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
         <View style={styles.chips} testID="chat-chips">
+          {!drafting && chipsReady && chips.length > 0 ? (
+            <View style={styles.chipsLabel}>
+              <Ionicons name="sparkles" size={14} color={theme.color.primary} accessibilityElementsHidden importantForAccessibility="no" />
+              <Text style={styles.chipsLabelText}>Reply ideas</Text>
+            </View>
+          ) : null}
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
@@ -289,6 +317,12 @@ export default function Chat() {
           ))}
         </View>
       ) : null}
+      {draftText !== null && text.trim() !== "" ? (
+        <View style={styles.draftNote} testID="chat-draft-note">
+          <Ionicons name="sparkles" size={14} color={theme.color.primary} accessibilityElementsHidden importantForAccessibility="no" />
+          <Text style={styles.draftNoteText}>{text === draftText ? "AI draft · edit before sending" : "Edited AI draft"}</Text>
+        </View>
+      ) : null}
       <View style={styles.compose}>
         <TextInput
           ref={input}
@@ -298,9 +332,17 @@ export default function Chat() {
           placeholder={`Message ${header.otherName}`}
           placeholderTextColor={`${theme.color.textMuted}80`}
           maxLength={2000}
-          returnKeyType="send"
-          onSubmitEditing={() => void send()}
-          style={styles.input}
+          multiline
+          // Enter sends, Shift+Enter is a new line (web); the box grows to about four lines so an AI draft can be read whole.
+          onKeyPress={(e) => {
+            const ev = e.nativeEvent as { key: string; shiftKey?: boolean };
+            if (ev.key === "Enter" && !ev.shiftKey) {
+              (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+              void send();
+            }
+          }}
+          onContentSizeChange={(e) => setInputHeight(Math.min(120, Math.max(44, Math.ceil(e.nativeEvent.contentSize.height))))}
+          style={[styles.input, { height: inputHeight }]}
           testID="chat-input"
         />
         <Pressable
@@ -340,6 +382,12 @@ const makeStyles = (theme: Theme) =>
     cardTheirs: { alignItems: "flex-start" },
     stay: { gap: 2, maxWidth: "88%" },
     request: { gap: 2, maxWidth: "88%" },
+    cardLine: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs },
+    cardTitleDisplay: theme.fontFamily.display ? { fontFamily: theme.fontFamily.display, fontWeight: undefined, fontSize: 18 } : {},
+    chipsLabel: { flexDirection: "row", alignItems: "center", gap: 4, minHeight: 36, paddingRight: theme.spacing.xs },
+    chipsLabelText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
+    draftNote: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: theme.spacing.md + theme.spacing.xs, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
+    draftNoteText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
@@ -352,7 +400,7 @@ const makeStyles = (theme: Theme) =>
     chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-end",
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       maxWidth: 480,
@@ -361,8 +409,10 @@ const makeStyles = (theme: Theme) =>
     },
     input: {
       flex: 1,
-      height: 44,
+      minHeight: 44,
+      maxHeight: 120,
       paddingHorizontal: theme.spacing.md,
+      paddingVertical: 11,
       borderRadius: 22,
       borderWidth: 1,
       borderColor: theme.color.border,
