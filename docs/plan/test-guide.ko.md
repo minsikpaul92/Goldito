@@ -764,6 +764,43 @@
 | CAL-3 | See full month → 날짜 누르기 | 달력 페이지(#150 빗금 그대로) → 그날 페이지. ← 누르면 보던 달 그대로 달력으로 | 🤖 `sitters` | ➖ |
 | CAL-4 | 그날 페이지에서 Book | Book care가 그날로 시작(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기, 둘 다 바꿀 수 있음) | **👤** | ➖ |
 
+### 3.33 문구 대시 정리 (COPY) · #173
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| COPY-1 | `frontend`에서 `rg -n "[–—]" -g '*.ts' -g '*.tsx' --glob '!e2e' --glob '!app/dev'` | 주석 말고는 결과 없음. 날짜 · 시간 범위는 "Oct 19 to 21", "9:30 AM to 1:00 PM" | **👤** (grep) | ➖ |
+| COPY-2 | 오너 → Bookings, 취소된 예약 카드 | 칩이 **Cancelled** 한 단어 | 🤖 `rebook` | ➖ |
+| COPY-3 | 시터 → Schedule | 안내 한 줄("Tap a day to open or block it. Drag for a range."), 오른쪽 위 ⚙ 옆에 **Weekly rules** 글자 | 🤖 `schedule` | ➖ |
+| COPY-4 | 오너 → Book care 검색, 반경 안에 시터 없음 | "For Oct 19 to 21. Try a wider area." 슬라이더 아래 직선거리 안내 줄은 없음 | 🤖 `sitter-search` | ➖ |
+
+### 3.34 당일 숙박 견적 (QUOTE) · #172
+
+`quote_booking`은 당일 숙박(맡기기 · 찾기가 같은 날)을 `nights: 0`, `days: 1`로 돌려주고 하루치 요금을 받는다. 카드는 이때 밤 대신 날로 보여 주고, AI 초안에는 `nights`를 넘기지 않는다.
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| QUOTE-1 | Boarding을 같은 날(예: Oct 21, 9:00 AM에서 5:00 PM)로 요청 → 견적 카드 | **"1 day × $55.00"**, 합계 $55.00. "0 nights"는 안 나옴 | 🤖 `checkout` | ➖ |
+| QUOTE-2 | 1박 · 2박으로 다시 | "1 night × …", "2 nights × …", 단가 × 수 = 기본 금액 | 🤖 `checkout`(3박) | ➖ |
+| QUOTE-3 | 같은 날 문의의 AI 초안 | 합계만 말하고 "0 nights"라고 쓰지 않음(모델은 `days`만 받음) | pytest `test_inquiry` · `test_inquiry_agent` · **실제 모델 👤** | ➖ |
+
+### 3.35 서비스 가격이 빈 시터 (RATE) · #189 · *사전: 호스팅 DB에 `014k` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| RATE-1 | 요금표는 있는데 Boarding 가격만 비어 있는 시터에게 Boarding 체크아웃 | **"This sitter hasn't set a Boarding price yet."** "doesn't offer that service"는 안 나옴 | SQL `rls_smoke`(014k) · 🤖 `checkout` | ➖ |
+| RATE-2 | Daycare 가격만 빈 경우 | `rates_not_set`, detail `daycare` | SQL `rls_smoke`(014k) | ➖ |
+| RATE-3 | 요금표가 아예 없는 시터 | 예전 그대로 "This sitter hasn't set their prices yet…" | SQL `rls_smoke`(3C.1) · 🤖 `checkout` | ➖ |
+| RATE-4 | 프로필에 없는 서비스(예: House sitting을 안 하는 시터) | 예전 그대로 "This sitter doesn't offer that service." | SQL `rls_smoke`(014k) · 🤖 `checkout` | ➖ |
+
+### 3.36 시터 프로필 헤더 · 사진 뷰어 (PROF) · #136
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PROF-1 | 오너 → 시터 프로필 (폰 너비 402) | 둥근 대표 사진 · 이름(+ 지역 · 경력) · 하트가 **한 줄**. "Add to favorites" 줄은 없음 | 🤖 `sitters` | ➖ |
+| PROF-2 | 하트 누르기 → 새로고침 → 다시 누르기 | ♥로 채워지고 "Added to favorites", 새로고침해도 유지, 다시 누르면 ♡ + "Removed from favorites". 즐겨찾기 시터는 시터 고르는 목록 맨 앞 | 🤖 `sitters` · `completion`(FB-28) | ➖ |
+| PROF-3 | 사진 누르기 | 전체 화면 뷰어, 대표 사진이 첫 장, "1 / 3". ‹ › 버튼 · ← → 키 · 마우스 드래그(터치는 스와이프)로 넘기고, ✕ 또는 Esc로 닫힘 | 🤖 `sitters` · **👤** (실제 폰 스와이프) | ➖ |
+| PROF-4 | 사진이 없는 시터 | 빈 칸 대신 **이름 첫 글자** 동그라미(다른 화면과 같은 모양), 눌러도 뷰어는 안 열림 | 🤖 `sitters` | ➖ |
+
 ---
 
 ### 3.32 채팅 허브 (CHAT) — 3D.4 · #141 · *사전: 호스팅 DB에 `014j`(적용은 요청할 때만), 오너와 시터 계정 둘(예: Peter와 Chloe), 두 브라우저나 창*
@@ -781,6 +818,8 @@
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **채팅은 아직 알림을 보내지 않는다 (CHAT):** 새 메시지는 목록의 안 읽은 수와 열려 있는 채팅 갱신으로만 알 수 있다(알림 종은 울리지 않음). 기존 문의 화면과 시터의 AI 초안 흐름은 그대로이고, 새 문의의 메시지는 채팅으로 복사되지 않는다(#142에서 합침). 기존 문의는 `014j` 적용 때 한 번만 스레드로 옮겨진다.
+- **DB에서 만드는 문구에는 아직 대시가 남아 있다 (COPY, #173):** 알림 제목 · 본문(`005` · `006` · `009d` · `010` · `011l` · `012`), 할 일 완료 캡션(`008`), `fmt_date_range`(`003`). 앱 코드만 고쳤고, SQL은 새 마이그레이션이 필요해서 따로 다룬다.
+
 - **시터 검색 거리는 직선거리이고 정수 km로 반올림해 보여 준다 (SEARCH):** 반경은 정확히 적용된다(5 km면 5 km 안). 시터 좌표는 절대 내려가지 않지만, 오너가 좌표를 바꿔 가며 여러 번 검색하면 시터 집을 대략 1 km 안으로 좁힐 수 있다 — 해커톤 데모(익명 시드)에서는 그대로 두고, TODO Later에 거리 구간화 · 호출 제한을 적어 둠.
 
 - **사진 요청 버튼은 앱의 "돌봄 중" 기준(맡긴 시각 ~ 데려가는 시각, `isCaring`)으로만 보인다 (11.1):** 서버(`request_photo`)는 맡기기 30분 전부터 받지만, 그 30분 동안 Feed에는 버튼이 아직 없다.

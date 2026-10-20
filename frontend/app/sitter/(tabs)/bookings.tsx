@@ -158,7 +158,7 @@ export default function SitterBookings() {
               <Card style={styles.inquiry}>
                 <Text style={styles.inquiryTitle}>{`${inq.ownerName} · ${inq.petNames.join(", ")}`}</Text>
                 <Text style={styles.muted}>
-                  {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} – ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
+                  {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} to ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
                 </Text>
                 <Text style={inq.state === "draft" ? styles.ready : styles.muted}>
                   {inq.state === "draft" ? "✍️ Draft ready" : inq.state === "replied" ? "Replied" : "Writing the draft…"}

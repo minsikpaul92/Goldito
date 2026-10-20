@@ -74,7 +74,7 @@ export function StickerCanvas({ which, zIndex, layers, editing, selected, onSele
               data-layer={side}
               data-selected={isSelected ? "true" : undefined}
               role={live ? "button" : undefined}
-              aria-label={live ? "Sticker — drag to move" : undefined}
+              aria-label={live ? "Sticker, drag to move" : undefined}
               onPointerDown={live ? onPointerDown(index, item.x, item.y) : undefined}
               onPointerMove={live ? onPointerMove : undefined}
               onPointerUp={live ? onPointerUp : undefined}

@@ -121,9 +121,9 @@ test.describe("finished stay", () => {
     expect(db.owner_favorite_sitters).toMatchObject([{ owner_id: OWNER.id, sitter_id: SITTER.id }]);
 
     await page.goto(`/owner/sitters/${SITTER.id}`);
-    await expect(screen.getByTestId("sitter-favorite")).toContainText("★ Favorite");
+    await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Remove from favorites");
     await screen.getByTestId("sitter-favorite").click(); // and off again
-    await expect(screen.getByTestId("sitter-favorite")).toContainText("☆ Add to favorites");
+    await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Add to favorites");
     await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
   });
 
@@ -211,7 +211,7 @@ test.describe("life record", () => {
     await expect(screen.getByTestId(`life-record-${MAX}-meds`)).toContainText("skin pill");
     await expect(screen.getByTestId(`life-record-${MAX}-potty`)).toHaveCount(0); // nothing recorded → no square
     await expect(screen.getByTestId(`life-record-${MAX}-heads-up`)).toContainText("Chicken allergy");
-    await expect(screen.getByTestId(`life-record-${MAX}-source`)).toHaveText(/^From Chloe · Oct 9 – Oct 12$/);
+    await expect(screen.getByTestId(`life-record-${MAX}-source`)).toHaveText(/^From Chloe · Oct 9 to Oct 12$/);
     await expect(screen.getByTestId(`life-record-${MOCHI}`)).toContainText("Nothing was recorded");
     await expect(screen.getByTestId("record-writing")).toHaveCount(0);
   });
@@ -293,9 +293,9 @@ test.describe("life record", () => {
     await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}/record$`));
     const screen = app(page);
     await expect(screen.getByTestId("record-latest")).toContainText("ate less on day 2");
-    await expect(screen.getByTestId("record-latest-source")).toHaveText("From Chloe · Oct 9 – Oct 12");
+    await expect(screen.getByTestId("record-latest-source")).toHaveText("From Chloe · Oct 9 to Oct 12");
     await expect(screen.getByTestId("record-old")).toContainText("Old note.");
-    await expect(screen.getByTestId("record-old-source")).toHaveText("From Chloe · Sep 1 – Sep 3");
+    await expect(screen.getByTestId("record-old-source")).toHaveText("From Chloe · Sep 1 to Sep 3");
   });
 
   test("no stay yet: the page explains what will appear", async ({ page }) => {
@@ -323,7 +323,7 @@ test.describe("sitter rating", () => {
     const screen = app(page);
     await expect(screen.getByTestId("sitter-rating-line")).toHaveText("★ 4.7 · 3 reviews");
     await expect(screen.getByTestId("sitter-review")).toHaveCount(2); // only reviews with a comment
-    await expect(screen.getByTestId("sitter-rating")).toContainText("“Wonderful with Max!” — Robert");
+    await expect(screen.getByTestId("sitter-rating")).toContainText("“Wonderful with Max!” · Robert");
   });
 
   test("no reviews yet: no rating line", async ({ page }) => {

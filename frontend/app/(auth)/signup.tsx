@@ -97,7 +97,7 @@ export default function SignupScreen() {
         <RoleCard
           icon="home-outline"
           title="I'm a pet owner"
-          description="Learn without asking — updates and photos arrive while you're away."
+          description="Updates and photos arrive while you're away."
           selected={role === "owner"}
           onPress={() => setRole("owner")}
           testID="role-owner"
@@ -105,7 +105,7 @@ export default function SignupScreen() {
         <RoleCard
           icon="heart-outline"
           title="I'm a pet sitter"
-          description="Care, snap, tap — no reports to type, no repeat messages."
+          description="Care, snap, tap. No reports to type."
           selected={role === "sitter"}
           onPress={() => setRole("sitter")}
           testID="role-sitter"

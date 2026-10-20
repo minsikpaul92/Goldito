@@ -75,7 +75,7 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
       <Text accessibilityRole="header" style={styles.heading}>
         Heads-up
       </Text>
-      <Text style={styles.hint}>{`What ${pet.name}'s sitter should watch out for — shown at the top of their Home.`}</Text>
+      <Text style={styles.hint}>{`What ${pet.name}'s sitter should watch out for.`}</Text>
       {items != null && items.length === 0 ? (
         <Text style={styles.muted} testID="heads-up-empty">
           {stay ? "None yet. Write a care request to add one." : "None yet. Write a care request, or add one below."}
@@ -88,7 +88,7 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
       </View>
       {stay ? (
         <Text style={styles.hint} testID="heads-up-locked">
-          {`A stay is on — new Heads-ups go through a care request, and ${stay.sitterName} approves them.`}
+          A stay is on, so new Heads-ups need a care request.
         </Text>
       ) : (
         <>

@@ -112,7 +112,7 @@ Shows: `ChipSuggestions` · `StarRating`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Not ready yet | — | 73 |
-| EmptyState | Thanks — you already reviewed this stay | — | 86 |
+| EmptyState | Thanks, you already reviewed this stay | — | 86 |
 | Button | sending ? "Sending…" : "Send review" | `review-send` | 139 |
 | Sheet | ``Add ${booking.sitterName} to your favorites?`` | `favorite-sheet` | 146 |
 | Button | ⭐ Add to favorites | `favorite-add` | 153 |
@@ -258,15 +258,16 @@ Shows: `PetForm`
 
 A sitter as owners see them (phase-03b 3B.2): intro + the next open days from get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
 
-Shows: `SitterActions` · `NextOpenings` · `StarRating`
+Shows: `PhotoViewer` · `SitterActions` · `NextOpenings` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 108 |
-| EmptyState | Couldn't load this sitter | — | 116 |
-| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 139 |
-| EmptyState | Couldn't load the schedule | — | 179 |
-| Button | See full month | `sitter-see-month` | 192 |
+| EmptyState | Sitter not found | — | 128 |
+| EmptyState | Couldn't load this sitter | — | 136 |
+| Pressable | ``See ${sitter.displayName}'s photos`` | `sitter-photo` | 156 |
+| Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `sitter-favorite` | 174 |
+| EmptyState | Couldn't load the schedule | — | 225 |
+| Button | See full month | `sitter-see-month` | 238 |
 
 ### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
 
@@ -552,8 +553,8 @@ Shows: `ClosingRulesSheet` · `ScheduleDraft` · `ScheduleSheet` · `SlotCalenda
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your schedule | — | 247 |
-| Pressable | Closing rules | `schedule-rules` | 270 |
-| Button | Open or block | `schedule-edit` | 333 |
+| Pressable | Weekly rules | `schedule-rules` | 270 |
+| Button | Open or block | `schedule-edit` | 334 |
 
 ### `/sitter/snap` — [app/sitter/(tabs)/snap.tsx](../../frontend/app/sitter/(tabs)/snap.tsx)
 
@@ -883,11 +884,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | LinkButton | Join Google Meet | `meet-join` | 194 |
 | TextButton | Get the Meet link | `meet-link-retry` | 198 |
 | CheckRow | `item` | ``meet-check-${item}`` | 212 |
-| Button | Done — we met | `meet-done` | 221 |
+| Button | Done, we met | `meet-done` | 221 |
 | TextButton | Add to calendar | `meet-calendar` | 231 |
 | TextButton | Change | `meet-change` | 232 |
 | Button | Continue without meeting | `meet-skip-accept` | 248 |
-| TextButton | Decline — cancels the booking | `meet-skip-decline` | 254 |
+| TextButton | Decline and cancel booking | `meet-skip-decline` | 254 |
 | Sheet | Ask to skip | `meet-skip-sheet` | 286 |
 | Button | Ask to skip | `meet-skip-confirm` | 292 |
 | Sheet | Decline and cancel the booking | `meet-decline-sheet` | 305 |
@@ -983,6 +984,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 111 |
 | Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 117 |
+
+### PhotoViewer — [components/PhotoViewer.tsx](../../frontend/components/PhotoViewer.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Previous photo | `photo-viewer-prev` | 83 |
+| Pressable | Next photo | `photo-viewer-next` | 94 |
+| Pressable | Close | `photo-viewer-close` | 105 |
 
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
@@ -1108,7 +1117,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 118 |
 | Tag | `tag` | — | 158 |
 | Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 161 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more — see all tasks`` | `today-more` | 171 |
+| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 171 |
 | Pressable | ``Check in on ${p.name}`` | ``caring-pet-${p.id}`` | 190 |
 | Sheet | Heads-up | `headsup-sheet` | 211 |
 
@@ -1306,11 +1315,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | EmptyState | Couldn't load this trip | — | 86 |
 | Button | Start trip | `trip-start` | 114 |
 | Button | Open booking | `trip-open-booking` | 124 |
-| Banner | here ? `📡 Sharing your location with ${other} until you arrive` : `This device isn't sharing right now — ${other} sees your last spot.` | `trip-sharing-banner` | 154 |
-| Banner | ``You're not sharing your location — ${other} sees the meeting place.`` | `trip-not-sharing-banner` | 164 |
+| Banner | here ? `📡 Sharing your location with ${other} until you arrive` : `This device isn't sharing. ${other} sees your last spot.` | `trip-sharing-banner` | 154 |
+| Banner | ``You're not sharing your location. ${other} sees the meeting place.`` | `trip-not-sharing-banner` | 164 |
 | TextButton | cancelling ? "Cancelling…" : "Cancel trip" | `trip-cancel` | 219 |
 | Button | Open booking | `trip-open-booking` | 221 |
 
 ---
 
-382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+386 actions · 385 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

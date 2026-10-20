@@ -204,7 +204,7 @@ test.describe("care checklist (no stay)", () => {
     await screen.getByTestId("line-kind-meal").click();
     await screen.getByTestId("line-add").click();
     await screen.getByTestId("care-request-make").click();
-    await expect(screen.getByTestId("checklist-skipped")).toContainText("Raw diet — Not something we can schedule.");
+    await expect(screen.getByTestId("checklist-skipped")).toContainText("Raw diet: Not something we can schedule.");
     await screen.locator("[data-testid^='skipped-ack-']").click();
     await expect(screen.getByTestId("checklist-skipped")).toHaveCount(0);
   });

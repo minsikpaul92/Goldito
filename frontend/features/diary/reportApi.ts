@@ -71,7 +71,7 @@ export async function generateReport(input: GenerateInput): Promise<ReportDraft>
     });
     return { id: res.report_id, body: res.body, status: "draft", fallback: res.fallback ?? false };
   } catch (error) {
-    if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights — turn a few off and try again.");
+    if (error instanceof ApiError && error.status === 422) throw new Error("Too many highlights. Turn a few off and try again.");
     throw explain(error, "Couldn't write the report. Check your connection and try again.");
   }
 }

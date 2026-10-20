@@ -24,7 +24,7 @@ export default function WelcomeLanding() {
           Care updates without the back-and-forth
         </Text>
         <Text style={styles.lead}>
-          Choose how you use Goldito — we'll show you what matters for that role. Sign in stays on the
+          Choose how you use Goldito. We'll show you what matters for that role. Sign in stays on the
           next screen, same as before.
         </Text>
 
@@ -38,7 +38,7 @@ export default function WelcomeLanding() {
           <View style={styles.roleText}>
             <Text style={styles.roleTitle}>Pet owner</Text>
             <Text style={styles.roleBody}>
-              See care updates as if your sitter already knows what you care about — no more chasing them
+              See care updates as if your sitter already knows what you care about. No more chasing them
               for how the stay is going.
             </Text>
             <Text style={styles.ctaHint}>See owner tour →</Text>
@@ -55,7 +55,7 @@ export default function WelcomeLanding() {
           <View style={styles.roleText}>
             <Text style={styles.roleTitle}>Pet sitter</Text>
             <Text style={styles.roleBody}>
-              Focus on the pets. Care needs, allergies, reports, and bookings — the app helps you handle
+              Focus on the pets. Care needs, allergies, reports, and bookings: the app helps you handle
               them in moments, not essays.
             </Text>
             <Text style={styles.ctaHint}>See sitter tour →</Text>

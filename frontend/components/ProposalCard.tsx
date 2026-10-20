@@ -72,8 +72,8 @@ export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest,
       {partner ? (
         <Text style={styles.muted} testID={`proposal-${kind}-paired`}>
           {mine
-            ? `Goes with your new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}) — ${other} answers both at once.`
-            : `Comes with the new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}) — Accept or Decline answers both.`}
+            ? `Goes with your new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}). ${other} answers both at once.`
+            : `Comes with the new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}). Accept or Decline answers both.`}
         </Text>
       ) : null}
       {history ? <Text style={styles.muted}>{history}</Text> : null}

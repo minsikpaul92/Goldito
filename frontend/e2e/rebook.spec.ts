@@ -62,8 +62,11 @@ test.describe("cancel and rebook", () => {
     await page.evaluate(() => localStorage.clear());
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
-    await page.goto(`/owner/bookings/${BOOKING}`);
     const owner = app(page);
+    await page.goto("/owner/bookings");
+    await expect(owner.getByTestId(`booking-card-${BOOKING}`)).toContainText("Cancelled");
+    await expect(owner.getByTestId(`booking-card-${BOOKING}`)).not.toContainText("find a new sitter");
+    await page.goto(`/owner/bookings/${BOOKING}`);
     await expect(owner.getByTestId("booking-ended")).toContainText("Chloe cancelled this booking.");
     await expect(owner.getByTestId("cancel-booking")).toHaveCount(0);
     await owner.getByTestId("find-new-sitter").click();

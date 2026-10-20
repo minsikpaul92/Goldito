@@ -53,7 +53,7 @@ export default function PetLifeRecord() {
         <EmptyState
           emoji="📖"
           title="No Life Record yet"
-          message={`After ${state.name}'s first stay, what the sitter learned shows up here — and travels to the next sitter.`}
+          message={`After ${state.name}'s first stay, what the sitter learned shows up here.`}
         />
       </Screen>
     );

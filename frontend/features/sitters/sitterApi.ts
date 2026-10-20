@@ -23,7 +23,7 @@ export type SitterSummary = {
 export function ownersSetting(multiple: boolean | undefined): { badge: string; hint: string } {
   return multiple
     ? { badge: "Hosts several owners' pets", hint: "Takes pets from more than one owner at a time, within their pet limit." }
-    : { badge: "One owner at a time", hint: "Takes one owner's pets at a time — dates held for another owner aren't available." };
+    : { badge: "One owner at a time", hint: "Takes one owner's pets at a time. Dates held for another owner aren't available." };
 }
 
 /** "Your sitters": sitters this owner has had a confirmed booking with (list_my_sitters). */
