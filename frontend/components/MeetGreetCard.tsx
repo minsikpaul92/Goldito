@@ -14,7 +14,7 @@ import { BookingSummary, awaitingFirstYes, datesOnHold } from "../lib/bookings";
 import {
   MeetGreetMode,
   MeetSpots,
-  addMeetGreetToCalendar,
+  meetGreetCalendarUrl,
   completeMeetGreet,
   getMeetGreetOptions,
   meetGreetPrimary,
@@ -78,6 +78,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const open = booking.status === "requested";
   const mg = booking.meetGreet;
   const summary = meetGreetSummary(booking);
+  const calendarUrl = meetGreetCalendarUrl(booking);
   const timeHasCome = !!mg.at && Date.parse(mg.at) <= Date.now();
 
   const run = async (action: () => Promise<void>, done: string) => {
@@ -150,7 +151,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         <Text style={styles.title}>Meet before the first stay</Text>
         <Text style={styles.muted}>
           {viewer === "sitter"
-            ? `Say "Yes, let's meet" to hold these dates, then set a time with ${other}.`
+            ? `Tap Next to hold these dates, then meet ${other} or agree to skip.`
             : `Waiting for ${other} to say yes to meeting. Your dates are held once they do.`}
         </Text>
       </>
@@ -191,7 +192,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
             onPress={() =>
               void run(async () => {
                 await respondMeetGreet(booking.id, true);
-                // Video: the Google Meet link is made right away (3B.11); without Google it stays time + .ics.
+                // Video: the Google Meet link is made right away (3B.11); without Google it stays time + Add to calendar.
                 if (mg.mode === "video") await requestVideoLink(booking.id);
               }, `Meet & Greet set with ${other}`)
             }
@@ -256,7 +257,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
           <Text style={styles.muted}>After you meet, tap Done here.</Text>
         )}
         <View style={styles.links}>
-          <TextButton label="Add to calendar" onPress={() => addMeetGreetToCalendar(booking)} testID="meet-calendar" />
+          {calendarUrl ? <LinkButton label="Add to calendar" href={calendarUrl} look="text" testID="meet-calendar" /> : null}
           <TextButton label="Change" onPress={() => void openSheet()} testID="meet-change" />
         </View>
       </>

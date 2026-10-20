@@ -132,6 +132,16 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("meet-join")).toHaveAttribute("target", "_blank");
     await expect(screen.getByTestId("meet-join")).toHaveAttribute("rel", /noopener/);
     await expect(screen.getByTestId("meet-calendar")).toBeVisible();
+    // #170: a Google Calendar event page in a new tab, as a real link (no .ics download).
+    const calendar = screen.getByTestId("meet-calendar");
+    await expect(calendar).toHaveAttribute("target", "_blank");
+    const href = new URL((await calendar.getAttribute("href"))!);
+    expect(href.origin + href.pathname).toBe("https://calendar.google.com/calendar/render");
+    expect(href.searchParams.get("action")).toBe("TEMPLATE");
+    expect(href.searchParams.get("text")).toBe("Goldito Meet & Greet: Max with Robert & Chloe");
+    expect(href.searchParams.get("dates")).toBe("20301004T230000Z/20301004T233000Z");
+    expect(href.searchParams.get("location")).toBe("https://meet.google.com/abc-defg-hij");
+    expect(href.searchParams.get("details")).toBe("Join: https://meet.google.com/abc-defg-hij");
   });
 
   test("a skip needs the other side: Continue unlocks Accept", async ({ page }) => {
@@ -166,12 +176,13 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("hold-note")).toHaveCount(0);
   });
 
-  test("the sitter's \"Yes, let's meet\" holds the dates and opens the Meet & Greet", async ({ page }) => {
+  test("the sitter's Next holds the dates and opens the Meet & Greet; a disabled I accept says why (#170)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { sitter_interest_at: null, meet_greet_due_at: null });
     const screen = await openDetail(page, SITTER);
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
-    await expect(screen.getByTestId("meet-greet")).toContainText("Say \"Yes, let's meet\" to hold these dates");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Tap Next to hold these dates");
+    await expect(screen.getByTestId("interest-booking")).toHaveText("Next");
 
     await screen.getByTestId("interest-booking").click();
     await expect(screen.getByTestId("toast")).toContainText("Dates held");
@@ -181,6 +192,7 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("stage-caption")).toContainText("Day 1");
     await expect(screen.getByTestId("accept-booking")).toHaveText("I accept");
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
+    await expect(screen.getByTestId("accept-reason")).toHaveText("Meet Robert first, or agree to skip the Meet & Greet.");
   });
 
   test("two days without a time: the card asks for a time, a skip or a decline", async ({ page }) => {

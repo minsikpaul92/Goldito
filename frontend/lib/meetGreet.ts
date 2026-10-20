@@ -111,7 +111,7 @@ async function backend(path: string, bookingId: string): Promise<{ link: string 
 
 /**
  * Ask FastAPI for the Google Meet link of an agreed video Meet & Greet (3B.11, D45). Safe to
- * call again; returns null while Google isn't set up — the card then keeps the time + .ics.
+ * call again; returns null while Google isn't set up; the card then keeps the time and Add to calendar.
  */
 export async function requestVideoLink(bookingId: string): Promise<string | null> {
   return (await backend("/api/meet-greet/video-link", bookingId))?.link ?? null;
@@ -122,39 +122,27 @@ export async function releaseVideoLink(bookingId: string): Promise<void> {
   await backend("/api/meet-greet/video-link/release", bookingId);
 }
 
-function icsStamp(date: Date): string {
+/** "20261005T140000Z", the UTC form Google Calendar's `dates` takes. */
+function calendarStamp(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
 /**
- * A 30-minute calendar event for "Add to calendar" (3B.9 / 3B.11). On the web it downloads
- * an .ics file; elsewhere it is a no-op until native calendar support lands.
+ * "Add to calendar" (3B.9 / 3B.11, #170): a Google Calendar event page with the title, the 30-minute time and the
+ * place (or the Meet link) filled in. The card renders it as a real link so the new tab is never blocked.
  */
-export function addMeetGreetToCalendar(b: BookingSummary): void {
+export function meetGreetCalendarUrl(b: BookingSummary): string | null {
   const { at, mode, place, link } = b.meetGreet;
-  if (!at || typeof document === "undefined") return;
+  if (!at) return null;
   const start = new Date(at);
   const end = new Date(start.getTime() + 30 * 60_000);
   const pets = b.pets.map((p) => p.name).join(" & ");
-  const where = mode === "video" ? (link ?? "Google Meet") : (place ?? "");
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Goldito//Meet & Greet//EN",
-    "BEGIN:VEVENT",
-    `UID:meet-greet-${b.id}@goldito`,
-    `DTSTAMP:${icsStamp(new Date())}`,
-    `DTSTART:${icsStamp(start)}`,
-    `DTEND:${icsStamp(end)}`,
-    `SUMMARY:Goldito Meet & Greet: ${pets} with ${b.ownerName} & ${b.sitterName}`,
-    `LOCATION:${where.replace(/[,;]/g, " ")}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "goldito-meet-greet.ics";
-  a.click();
-  URL.revokeObjectURL(url);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Goldito Meet & Greet: ${pets} with ${b.ownerName} & ${b.sitterName}`,
+    dates: `${calendarStamp(start)}/${calendarStamp(end)}`,
+    location: mode === "video" ? (link ?? "Google Meet") : (place ?? ""),
+  });
+  if (mode === "video" && link) params.set("details", `Join: ${link}`);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
