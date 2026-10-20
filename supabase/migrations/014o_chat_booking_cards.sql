@@ -584,4 +584,73 @@ from authenticated;
 
 grant execute on function public.agree_to_book(uuid), public.quote_booking_for(uuid) to authenticated, service_role;
 
+-- ---------------------------------------------------------------------------
+-- Chat cards for the booking steps (they hold only the booking's id; the app reads the booking to draw them)
+-- ---------------------------------------------------------------------------
+
+-- A booking's step cards: `meet_greet` (from the sitter's first yes, first-time pairs), `agreement` (once the Meet & Greet
+-- is over or not needed) and `payment` (once confirmed). Each is posted once; every change to the booking touches them
+-- (`rev`), so the Realtime UPDATE brings the other person's chat up to date. The actor is the sender when they are one of
+-- the two, so their own step is not unread for them.
+create or replace function public.post_booking_chat_cards()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_thread uuid;
+  v_sender uuid;
+  v_type text;
+begin
+  select t.id into v_thread from public.chat_threads t where t.owner_id = new.owner_id and t.sitter_id = new.sitter_id;
+  if v_thread is null then
+    return new; -- booked outside the chat (3B screens): no thread, no cards
+  end if;
+  v_sender := case when auth.uid() in (new.owner_id, new.sitter_id) then auth.uid() end;
+
+  for v_type in
+    select x from unnest(array[
+      case when new.sitter_interest_at is not null and new.meet_greet_status <> 'not_needed' then 'meet_greet' end,
+      case when new.status in ('requested', 'confirmed') and new.meet_greet_status in ('not_needed', 'done', 'skipped')
+           then 'agreement' end,
+      case when new.status = 'confirmed' then 'payment' end
+    ]) x where x is not null
+  loop
+    if not exists (
+      select 1 from public.chat_messages m
+      where m.thread_id = v_thread and m.kind = 'card' and m.card ->> 'type' = v_type and m.card ->> 'booking_id' = new.id::text
+    ) then
+      insert into public.chat_messages (thread_id, sender_id, kind, card)
+      values (v_thread, v_sender, 'card', jsonb_build_object('type', v_type, 'booking_id', new.id, 'rev', 0));
+    end if;
+  end loop;
+
+  update public.chat_messages m
+  set card = jsonb_set(m.card, '{rev}', to_jsonb(coalesce((m.card ->> 'rev')::int, 0) + 1))
+  where m.thread_id = v_thread and m.kind = 'card'
+    and m.card ->> 'type' in ('meet_greet', 'agreement', 'payment') and m.card ->> 'booking_id' = new.id::text;
+  return new;
+end;
+$$;
+
+create trigger bookings_chat_cards
+  after update on public.bookings
+  for each row
+  when (
+    old.status is distinct from new.status
+    or old.sitter_interest_at is distinct from new.sitter_interest_at
+    or old.meet_greet_status is distinct from new.meet_greet_status
+    or old.meet_greet_mode is distinct from new.meet_greet_mode
+    or old.meet_greet_at is distinct from new.meet_greet_at
+    or old.meet_greet_place is distinct from new.meet_greet_place
+    or old.meet_greet_link is distinct from new.meet_greet_link
+    or old.owner_agreed_at is distinct from new.owner_agreed_at
+    or old.sitter_accepted_at is distinct from new.sitter_accepted_at
+    or old.paid_at is distinct from new.paid_at
+  )
+  execute function public.post_booking_chat_cards();
+
+revoke execute on function public.post_booking_chat_cards() from public, anon, authenticated;
+
 notify pgrst, 'reload schema';

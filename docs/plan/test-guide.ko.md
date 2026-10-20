@@ -841,7 +841,7 @@
 | CHAT-14 | 시터 → 채팅(오너의 Stay 카드가 있음) → **Send quote** → 시트에서 서비스(여러 개일 때) 확인 → **Send quote** | 채팅에 **Quote 카드**: 박 수 × 단가, 추가 펫, 공휴일, **Total은 서버 계산값**(Checkout과 같은 `quote_booking`). 같은 일정에는 Send quote 버튼이 다시 안 나옴. 요금 미설정이면 "This sitter hasn't set a Boarding price yet." | 🤖 `chat` · SQL `rls_smoke` 014n | ➖ |
 | CHAT-15 | 시터가 열린 견적에서 **Add a fee**(라벨 칩 또는 직접 입력 + 금액 $0 초과 500 이하, 최대 5개) | 카드에 수수료 줄 + 시터에게는 "Waiting for an answer". **Total은 아직 그대로**. 오너는 줄마다 **Accept / Decline** | 🤖 `chat` · SQL | ➖ |
 | CHAT-16 | 오너가 수수료 하나 Accept, 하나 Decline → **Confirm quote** | Accept한 금액만 Total에 더해짐, Decline은 취소선 + "Declined"로 Total에 없음. 답 안 한 수수료가 있으면 Confirm 비활성. 확인하면 카드 **Confirmed**, 이후 수수료 추가 불가. 새 견적을 보내면 열려 있던 이전 견적은 Replaced (확인된 것은 그대로). 채팅 목록 미리보기는 "Quote" | 🤖 `chat` · SQL | ➖ |
-| CHAT-17 | (DB) `rls_smoke.sql`의 014o 블록 | 반복 쌍은 요청 직후 `confirm`(다음 차례 both) · 시터가 먼저 수락하면 요청 상태로 남고 오너 차례 · 오너가 먼저 동의하면 시터 차례 · 둘 다 있으면 `confirmed`와 두 핸드오프 agreed, 순서는 자유 · 시터가 제안한 새 시간은 양쪽 동의를 지움 · 처음 보는 쌍은 Meet & Greet이 끝나야 동의 가능 · 가격은 같은 일정의 확인된 최종 견적에서 수락한 수수료만 더함(미확인 · 다른 일정 견적 제외) · `pay_booking_demo`가 같은 총액을 얼림 · 낯선 사람 · anon 불가 | SQL `rls_smoke` | ➖ |
+| CHAT-17 | (DB) `rls_smoke.sql`의 014o 블록 | 반복 쌍은 요청 직후 `confirm`(다음 차례 both) · 시터가 먼저 수락하면 요청 상태로 남고 오너 차례 · 오너가 먼저 동의하면 시터 차례 · 둘 다 있으면 `confirmed`와 두 핸드오프 agreed, 순서는 자유 · 시터가 제안한 새 시간은 양쪽 동의를 지움 · 처음 보는 쌍은 Meet & Greet이 끝나야 동의 가능 · 가격은 같은 일정의 확인된 최종 견적에서 수락한 수수료만 더함(미확인 · 다른 일정 견적 제외) · `pay_booking_demo`가 같은 총액을 얼림 · 채팅 카드: `meet_greet`(시터 첫 yes부터, 첫 만남 쌍만) · `agreement` · `payment`가 부킹당 한 번씩, booking id만 들고, 변경마다 `rev`가 올라 상대 화면이 따라옴, 쌍 밖은 못 읽음 · 낯선 사람 · anon 불가 | SQL `rls_smoke` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

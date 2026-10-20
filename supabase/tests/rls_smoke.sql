@@ -5819,6 +5819,10 @@ begin
   perform _t_as(null);
   perform _t_meet(v3, 'required');
   perform _t_as(joy);
+  perform open_chat_thread(allen);
+  perform _t_as(allen);
+  perform express_interest(v3);
+  perform _t_as(joy);
   begin perform agree_to_book(v3); v_err := null; exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'meet_greet_required', '014o: no "I''d like to book" before the Meet & Greet is over');
   perform _t_as(null);
@@ -5895,6 +5899,40 @@ begin
   perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'booking_paid' and booking_id = v1
       and body like '%$' || (v_base + 12.50)::text || '%'),
     '014o: the sitter''s payment notice shows the total with fees');
+
+  -- The steps show up in the pair's chat as cards that hold only the booking's id.
+  perform _t_as(null);
+  select * into t1 from public.chat_threads where owner_id = robert and sitter_id = chloe;
+  perform _t_ok((select count(*) from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'agreement'
+        and card ->> 'booking_id' = v1::text) = 1
+      and (select count(*) from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'payment'
+        and card ->> 'booking_id' = v1::text) = 1,
+    '014o: one agreement card and one payment card for the booking');
+  perform _t_ok(not exists (select 1 from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'meet_greet'
+        and card ->> 'booking_id' = v1::text),
+    '014o: a repeat pair has no Meet & Greet card');
+  perform _t_ok((select sender_id = chloe and (card ->> 'rev')::int >= 1 and card - 'rev' - 'type' - 'booking_id' = '{}'::jsonb
+        from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'agreement' and card ->> 'booking_id' = v1::text),
+    '014o: the card is sent by who acted first, is touched on every change, and carries only the booking id');
+  perform _t_ok((select sender_id = robert from public.chat_messages
+        where thread_id = t1.id and card ->> 'type' = 'payment' and card ->> 'booking_id' = v1::text),
+    '014o: the payment card is sent by the one who confirmed it');
+  perform _t_ok((select count(*) from public.chat_messages m join public.chat_threads t on t.id = m.thread_id
+        where t.owner_id = joy and t.sitter_id = allen and m.card ->> 'booking_id' = v3::text and m.card ->> 'type' = 'meet_greet') = 1
+      and (select count(*) from public.chat_messages m join public.chat_threads t on t.id = m.thread_id
+        where t.owner_id = joy and t.sitter_id = allen and m.card ->> 'booking_id' = v3::text and m.card ->> 'type' = 'agreement') = 1,
+    '014o: a first-time pair gets a Meet & Greet card at the sitter''s first yes and an agreement card after it');
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from public.chat_messages where card ->> 'booking_id' = v3::text),
+    '014o: another pair''s booking cards are not readable');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text) = 2,
+    '014o: the pair reads its own booking cards');
+  perform _t_as(null);
+  update public.bookings set status = 'cancelled' where id = v3;
+  perform _t_ok((select min((card ->> 'rev')::int) from public.chat_messages where card ->> 'booking_id' = v3::text) >= 2,
+    '014o: a cancelled booking touches its cards and posts no new one');
+  perform _t_ok((select count(*) from public.chat_messages where card ->> 'booking_id' = v3::text) = 2, '014o: …still two cards');
 
   -- Anon cannot call the new functions.
   perform _t_as(null, 'anon');
