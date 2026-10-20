@@ -59,6 +59,13 @@ def test_the_tools_return_only_what_the_server_already_holds():
     assert "error" in agent.run_tool("nope", {}, g)
 
 
+def test_get_quote_hands_a_same_day_stay_over_as_one_day():
+    g = grounding()
+    g["quote"] = {**QUOTE, "nights": 0, "days": 1, "total": 55}
+    tool = agent.run_tool("get_quote", {}, g)
+    assert "nights" not in tool and tool["days"] == 1 and tool["total"] == 55
+
+
 def test_there_is_no_price_to_get_when_the_dates_cannot_be_hosted():
     assert "error" in agent.run_tool("get_quote", {}, grounding(can_host=False))
 

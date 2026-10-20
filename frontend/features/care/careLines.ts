@@ -67,7 +67,7 @@ export function lineSummary(line: Line): string {
 
 /** The sentence the helper reads for one task (it also stays the fallback wording). */
 export function taskSentence(line: Line, time: string): string {
-  return `${kindMeta(line.kind).label}: ${formatTime(time)} — ${line.text}`;
+  return `${kindMeta(line.kind).label}: ${formatTime(time)}, ${line.text}`;
 }
 
 /** One line → its checklist rows (no helper involved: this is what the owner chose). */

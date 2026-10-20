@@ -171,7 +171,7 @@ export default function SitterInquiry() {
         <Card style={styles.draft} testID="inquiry-draft">
           {draft?.needsSitter ? (
             <Text style={styles.check} testID="inquiry-needs-you">
-              ⚠️ Check this one — something needs your confirmation.
+              ⚠️ Check this one. Something needs your confirmation.
             </Text>
           ) : null}
           {draft?.canHost === false ? (

@@ -138,6 +138,98 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");
   });
 
+  test("photo, name and heart share one row; the heart saves and survives a reload (#136)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: "North York", experience_years: 3, services: ["boarding"] });
+    db.profile_photos.push({ id: "ph-1", profile_id: SITTER.id, public_id: "goldito/profiles/chloe-1", position: 0 });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    const screen = app(page);
+
+    // One line at phone width: the photo, the name and the heart sit side by side.
+    const photo = await screen.getByTestId("sitter-photo").boundingBox();
+    const name = await screen.getByTestId("sitter-name").boundingBox();
+    const heart = await screen.getByTestId("sitter-favorite").boundingBox();
+    expect(photo && name && heart).toBeTruthy();
+    expect(photo!.x + photo!.width).toBeLessThanOrEqual(name!.x);
+    expect(name!.x + name!.width).toBeLessThanOrEqual(heart!.x);
+    for (const box of [name!, heart!]) {
+      expect(box.y).toBeLessThan(photo!.y + photo!.height);
+      expect(box.y + box.height).toBeGreaterThan(photo!.y);
+    }
+    await expect(screen.getByText("Add to favorites", { exact: true })).toHaveCount(0); // no separate row
+
+    await screen.getByTestId("sitter-favorite").click();
+    await expect(screen.getByTestId("toast")).toContainText("Added to favorites");
+    await expect.poll(() => db.owner_favorite_sitters.length).toBe(1);
+    await page.reload();
+    await expect(app(page).getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Remove from favorites");
+    await app(page).getByTestId("sitter-favorite").click();
+    await expect(app(page).getByTestId("toast")).toContainText("Removed from favorites");
+    await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
+  });
+
+  test("the photo opens a full-screen viewer: cover first, arrows, keys and swipe move, Escape closes (#136)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: "North York", experience_years: 3, services: ["boarding"] });
+    // The mock keeps insert order (no order=position), so the rows go in by position.
+    db.profile_photos.push(
+      { id: "ph-1", profile_id: SITTER.id, public_id: "goldito/profiles/chloe-1", position: 0 },
+      { id: "ph-2", profile_id: SITTER.id, public_id: "goldito/profiles/chloe-2", position: 1 },
+      { id: "ph-3", profile_id: SITTER.id, public_id: "goldito/profiles/chloe-3", position: 2 },
+    );
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    const screen = app(page);
+
+    await screen.getByTestId("sitter-photo").click();
+    const viewer = screen.getByTestId("photo-viewer");
+    await expect(viewer).toBeVisible();
+    await expect(screen.getByTestId("photo-viewer-photo-ph-1")).toBeVisible(); // the cover first
+    await expect(screen.getByTestId("photo-viewer-count")).toHaveText("1 / 3");
+    await expect(screen.getByTestId("photo-viewer-prev")).toHaveCount(0);
+
+    await screen.getByTestId("photo-viewer-next").click();
+    await expect(screen.getByTestId("photo-viewer-photo-ph-2")).toBeVisible();
+    await page.keyboard.press("ArrowRight");
+    await expect(screen.getByTestId("photo-viewer-count")).toHaveText("3 / 3");
+    await expect(screen.getByTestId("photo-viewer-next")).toHaveCount(0);
+    await page.keyboard.press("ArrowLeft");
+    await expect(screen.getByTestId("photo-viewer-photo-ph-2")).toBeVisible();
+
+    // A mouse drag to the right goes back one (the frame turns mouse drags into touches).
+    const box = (await viewer.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(box.x + box.width * 0.3, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.6, y, { steps: 8 });
+    await page.mouse.move(box.x + box.width * 0.8, y, { steps: 8 });
+    await page.mouse.up();
+    await expect(screen.getByTestId("photo-viewer-photo-ph-1")).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(viewer).toHaveCount(0);
+    await screen.getByTestId("sitter-photo").click();
+    await screen.getByTestId("photo-viewer-close").click();
+    await expect(screen.getByTestId("photo-viewer")).toHaveCount(0);
+  });
+
+  test("a sitter with no photos shows their initial, and it opens nothing (#136)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: "North York", experience_years: 3, services: ["boarding"] });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("sitter-photo-initial")).toHaveText("C");
+    await expect(screen.getByTestId("sitter-photo")).toHaveCount(0);
+    await screen.getByTestId("sitter-photo-initial").click();
+    await expect(screen.getByTestId("photo-viewer")).toHaveCount(0);
+  });
+
   test("an unknown sitter link shows a friendly empty state", async ({ page }) => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
