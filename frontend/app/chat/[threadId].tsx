@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
@@ -22,6 +22,7 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
+import { ChatChip, fetchChatChips, fetchChatDraft } from "../../features/chat/chatAi";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -63,6 +64,10 @@ export default function Chat() {
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [viewing, setViewing] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [chips, setChips] = useState<ChatChip[]>([]);
+  const [drafting, setDrafting] = useState(false);
+  const askedFor = useRef<string | null>(null);
+  const input = useRef<TextInput>(null);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -98,6 +103,34 @@ export default function Chat() {
       .then(setPhotos)
       .catch(() => setPhotos([]));
   }, [otherId]);
+
+  // Chips for what the other person just wrote (or openers in an empty chat): asked once per latest message.
+  const last = loaded?.messages.at(-1);
+  const key = loaded ? `${threadId}:${last?.id ?? "none"}` : null;
+  useEffect(() => {
+    if (!key || askedFor.current === key) return;
+    askedFor.current = key;
+    setChips([]);
+    let current = true;
+    void fetchChatChips(threadId).then((r) => {
+      if (current && r) setChips(r.chips);
+    });
+    return () => {
+      current = false;
+    };
+  }, [key, threadId]);
+
+  /** A tapped chip becomes a draft in the box; nothing is sent until the person presses Send (D62). */
+  const pickChip = async (chip: ChatChip) => {
+    setDrafting(true);
+    const draft = await fetchChatDraft(threadId, chip.label);
+    setDrafting(false);
+    if (draft) {
+      setText(draft);
+      setChips([]);
+      input.current?.focus();
+    }
+  };
 
   // Open at the latest message, and follow new ones.
   const count = loaded?.messages.length ?? 0;
@@ -227,8 +260,26 @@ export default function Chat() {
           <Button label="Request booking" onPress={() => setRequesting(true)} testID="chat-request-booking" />
         </View>
       ) : null}
+      {chips.length > 0 || drafting ? (
+        <View style={styles.chips} testID="chat-chips">
+          {drafting ? <ActivityIndicator color={theme.color.primary} accessibilityLabel="Writing a draft" /> : null}
+          {chips.map((chip, i) => (
+            <Pressable
+              key={chip.id}
+              accessibilityRole="button"
+              disabled={drafting}
+              onPress={() => void pickChip(chip)}
+              style={[styles.chip, drafting && styles.sendOff]}
+              testID={`chat-chip-${i + 1}`}
+            >
+              <Text style={styles.chipText}>{chip.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.compose}>
         <TextInput
+          ref={input}
           accessibilityLabel={`Message ${header.otherName}`}
           value={text}
           onChangeText={setText}
@@ -282,6 +333,9 @@ const makeStyles = (theme: Theme) =>
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",
       alignItems: "center",

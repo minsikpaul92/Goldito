@@ -24,11 +24,12 @@ Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewer
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 114 |
-| EmptyState | Chat not found | — | 122 |
-| Pressable | — | `chat-stage` | 193 |
-| Button | Request booking | `chat-request-booking` | 227 |
-| Pressable | Send | `chat-send` | 243 |
+| EmptyState | Couldn't load this chat | — | 147 |
+| EmptyState | Chat not found | — | 155 |
+| Pressable | — | `chat-stage` | 226 |
+| Button | Request booking | `chat-request-booking` | 260 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 267 |
+| Pressable | Send | `chat-send` | 294 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -1343,4 +1344,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-388 actions · 387 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+389 actions · 388 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

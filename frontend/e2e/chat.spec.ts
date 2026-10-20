@@ -335,6 +335,70 @@ test.describe("chat hub", () => {
     expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "request")).toHaveLength(1);
   });
 
+  test("chips answer what the other person wrote; a tapped chip becomes a draft in the box and nothing is sent until Send", async ({ page }) => {
+    const asked: { chips: unknown[]; drafts: unknown[] } = { chips: [], drafts: [] };
+    await page.route("**/api/ai/chat-chips", (route) => {
+      asked.chips.push(route.request().postDataJSON());
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }),
+      });
+    });
+    await page.route("**/api/ai/chat-draft", (route) => {
+      asked.drafts.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: "Yes, I can host Max! The total is $268.13 CAD.", source: "model" }) });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+    expect(asked.chips).toEqual([{ thread_id: THREAD }]);
+    const before = db.chat_messages.length;
+    await screen.getByTestId("chat-chip-1").click();
+    await expect(screen.getByTestId("chat-input")).toHaveValue("Yes, I can host Max! The total is $268.13 CAD.");
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0);
+    expect(asked.drafts).toEqual([{ thread_id: THREAD, chip: "Yes, I can host" }]);
+    expect(db.chat_messages).toHaveLength(before); // a draft is only text in the box
+
+    // The person edits and sends it themselves.
+    await screen.getByTestId("chat-input").fill("Yes, I can host Max! The total is $268.13 CAD. See you then.");
+    await screen.getByTestId("chat-send").click();
+    await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "See you then" })).toBeVisible();
+    expect(db.chat_messages).toHaveLength(before + 1);
+  });
+
+  test("with no AI the chat has no chips and typing works as always", async ({ page }) => {
+    await page.route("**/api/ai/chat-chips", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) }));
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-input")).toBeVisible();
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0);
+    await screen.getByTestId("chat-input").fill("Typing still works");
+    await screen.getByTestId("chat-send").click();
+    await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "Typing still works" })).toBeVisible();
+  });
+
+  test("an owner opening a new chat gets opener chips", async ({ page }) => {
+    await page.route("**/api/ai/chat-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Hi, I need care for Max" }, { id: "c1", label: "Do you take dogs?" }], for_message_id: null, source: "model" }) }),
+    );
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/sitters/${SITTER.id}`);
+    await app(page).getByTestId("start-chat").click();
+    await expect(app(page).getByTestId("chat-chip-1")).toHaveText("Hi, I need care for Max");
+    await expect(app(page).getByTestId("chat-chip-2")).toHaveText("Do you take dogs?");
+  });
+
   test("someone outside the chat cannot open it", async ({ page }) => {
     const other: MockUser = { id: "00000000-0000-4000-8000-000000000009", email: "joy@goldito.test", password: "joy-pass", role: "owner", displayName: "Joy" };
     const { db } = await mockSupabase(page, [OWNER, SITTER, other]);
