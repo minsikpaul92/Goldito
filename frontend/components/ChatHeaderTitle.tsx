@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "./ui/Avatar";
 import type { ChatPet } from "../features/chat/chatApi";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
-import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { photoThumb, type ProfilePhoto } from "../features/profile/profilePhotosApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -19,13 +18,7 @@ type Props = {
   onName?: () => void;
 };
 
-/** "Oct 20 9:00 AM": the day and the time of one handoff, short enough for a header line. */
-function when(iso: string): string {
-  const z = isoToZoned(iso);
-  return `${formatDay(z.day)} ${formatTime(z.time)}`;
-}
-
-/** The chat's header: the person (avatar and name, each tappable) and, pinned under it, the stay and its pets. */
+/** The chat's header: the person (avatar and name, each tappable) and, pinned under it, the pets of the stay. */
 export function ChatHeaderTitle({ name, cover, stay, onAvatar, onName }: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
@@ -41,7 +34,6 @@ export function ChatHeaderTitle({ name, cover, stay, onAvatar, onName }: Props) 
         </Pressable>
         {stay ? (
           <View style={styles.stay} testID="chat-header-stay">
-            <Text style={styles.stayText} numberOfLines={1}>{`${when(stay.dropOffAt)} to ${when(stay.pickUpAt)}`}</Text>
             {stay.pets.map((pet) => (
               <Text key={pet.id} accessibilityLabel={pet.name} style={styles.pet} testID={`chat-header-pet-${pet.name}`}>
                 {pet.species ? SPECIES_EMOJI[pet.species] : "🐾"}
@@ -60,6 +52,5 @@ const makeStyles = (theme: Theme) =>
     text: { flexShrink: 1 },
     name: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     stay: { flexDirection: "row", alignItems: "center", gap: 4 },
-    stayText: { flexShrink: 1, fontSize: 12, color: theme.color.textMuted },
     pet: { fontSize: 14 },
   });

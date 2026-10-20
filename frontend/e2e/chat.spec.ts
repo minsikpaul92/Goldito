@@ -76,11 +76,13 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/chat\//);
     const url = page.url();
     await expect(screen.getByTestId("chat-stay-card")).toContainText("Max, Mochi");
-    // The stay is pinned in the header with the pets; in the thread it is one thin line.
-    await expect(screen.getByTestId("chat-header-stay")).toContainText(" to ");
+    // The header has the pets only (no dates, they are on the card); my stay card sits on the right like my messages.
+    await expect(screen.getByTestId("chat-header-stay")).not.toContainText(" to ");
     await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
     await expect(screen.getByTestId("chat-header-pet-Mochi")).toBeVisible();
-    expect((await box(screen.getByTestId("chat-stay-card"))).height).toBeLessThan(30);
+    const frame = await box(page.locator("iframe"));
+    const card = await box(screen.getByTestId("chat-stay-card"));
+    expect(card.x + card.width / 2).toBeGreaterThan(frame.x + frame.width / 2);
     expect((await box(screen.getByTestId("chat-input"))).height).toBeLessThanOrEqual(48);
     await expect(screen.getByTestId("chat-empty")).toBeHidden();
 
@@ -228,7 +230,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("chat-row-Chloe").click();
 
     await expect(screen.getByTestId("chat-header-name")).toHaveText("Chloe");
-    await expect(screen.getByTestId("chat-header-stay")).toContainText("Oct 24");
+    await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
     await screen.getByTestId("chat-header-avatar").click();
     await expect(screen.getByTestId("chat-photos-photo-1")).toBeVisible();
     await screen.getByTestId("chat-photos-close").click();
@@ -260,10 +262,19 @@ test.describe("chat hub", () => {
     expect(Math.abs(day.y - time.y)).toBeLessThan(4);
     await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place");
 
-    // Change one place, add a note, send everything at once.
+    // Change one place to a checked address, add a note, send everything at once.
+    await page.route("**/api/geo/suggest", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [{ label: "750 Bloor St W, Toronto, ON M6G 3K4", lat: 43.664, lng: -79.42 }] }) }),
+    );
     await screen.getByTestId("request-pick-change").click();
     await screen.getByTestId("request-pick-type").getByText("Elsewhere").click();
-    await screen.getByTestId("request-pick-note").fill("Christie Pits east gate");
+    await screen.getByTestId("request-pick-address").fill("750 Bloor");
+    await expect(screen.getByTestId("request-send")).toBeDisabled(); // not checked yet
+    await expect(screen.getByTestId("request-problem")).toContainText("Check the address");
+    await screen.getByTestId("request-pick-address-check-address").click();
+    await screen.getByTestId("request-pick-address-suggestion-1").click();
+    await expect(screen.getByTestId("request-pick-address-address-ok")).toBeVisible();
+    await expect(screen.getByTestId("request-pick-place")).toHaveText("At 750 Bloor St W, Toronto, ON M6G 3K4");
     await screen.getByTestId("request-note-toggle").click();
     await screen.getByTestId("request-note").fill("Max gets anxious with loud noises");
     await screen.getByTestId("request-send").click();
@@ -275,13 +286,13 @@ test.describe("chat hub", () => {
       p_pets: [MAX, MOCHI],
       p_drop_off_location_type: "sitter_home",
       p_pick_up_location_type: "other",
-      p_pick_up_note: "Christie Pits east gate",
+      p_pick_up_note: "750 Bloor St W, Toronto, ON M6G 3K4",
       p_note: "Max gets anxious with loud noises",
       p_service_type: "boarding",
     });
     // The request is in the chat as one card with the note, and the Request booking button is gone.
     await expect(screen.getByTestId("chat-request-card")).toContainText("You sent a booking request");
-    await expect(screen.getByTestId("chat-request-card")).toContainText("Christie Pits east gate");
+    await expect(screen.getByTestId("chat-request-card")).toContainText("750 Bloor St W, Toronto, ON M6G 3K4");
     await expect(screen.getByTestId("chat-request-note")).toHaveText("“Max gets anxious with loud noises”");
     await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
     expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "request")).toHaveLength(1);

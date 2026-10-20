@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AddressInput } from "./AddressInput";
 import { Button } from "./ui/Button";
 import { CheckRow } from "./ui/CheckRow";
 import { DayPickerSheet } from "./ui/DayPickerSheet";
@@ -13,10 +14,12 @@ import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { ChatPet, postBookingRequestCard } from "../features/chat/chatApi";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
+import { loadRoleProfile } from "../features/profile/profileApi";
 import { addDays, appToday, formatDay, formatTime, isoToZoned, zonedToIso } from "../features/schedule/dates";
 import { ServiceType, getSitterProfile } from "../features/sitters/sitterApi";
 import { BookingError, LocationType, requestBooking } from "../lib/bookings";
 import { tripProblem } from "../lib/trip";
+import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
@@ -34,7 +37,8 @@ type Props = {
 
 type Kind = "drop" | "pick";
 type When = { day: string; time: string };
-type Place = { type: LocationType; note: string };
+/** `placed` is the address text that was found on the map, for "elsewhere". */
+type Place = { type: LocationType; note: string; placed: string | null };
 type Picker = { kind: Kind; part: "day" | "time" } | null;
 
 /**
@@ -46,12 +50,15 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const { pets } = useMyPets();
+  const { profile } = useSession();
+  const [myAddress, setMyAddress] = useState<string | null>(null);
+  const [sitterArea, setSitterArea] = useState<string | null>(null);
   const today = appToday();
 
   const [petIds, setPetIds] = useState<string[]>([]);
   const [dropOff, setDropOff] = useState<When>({ day: addDays(today, 1), time: "09:00" });
   const [pickUp, setPickUp] = useState<When>({ day: addDays(today, 3), time: "17:00" });
-  const [places, setPlaces] = useState<Record<Kind, Place>>({ drop: { type: "sitter_home", note: "" }, pick: { type: "sitter_home", note: "" } });
+  const [places, setPlaces] = useState<Record<Kind, Place>>({ drop: { type: "sitter_home", note: "", placed: null }, pick: { type: "sitter_home", note: "", placed: null } });
   const [changing, setChanging] = useState<Record<Kind, boolean>>({ drop: false, pick: false });
   const [note, setNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
@@ -67,7 +74,7 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
     setNote("");
     setNoteOpen(false);
     setChanging({ drop: false, pick: false });
-    setPlaces({ drop: { type: "sitter_home", note: "" }, pick: { type: "sitter_home", note: "" } });
+    setPlaces({ drop: { type: "sitter_home", note: "", placed: null }, pick: { type: "sitter_home", note: "", placed: null } });
     if (stay) {
       setPetIds(stay.pets.map((p) => p.id));
       setDropOff(isoToZoned(stay.dropOffAt));
@@ -83,16 +90,27 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
   useEffect(() => {
     if (!visible) return;
     getSitterProfile(sitterId)
-      .then((s) => setService(s?.services.includes("boarding") || !s ? "boarding" : "house_sitting"))
+      .then((s) => {
+        setService(s?.services.includes("boarding") || !s ? "boarding" : "house_sitting");
+        setSitterArea(s?.serviceArea ?? null);
+      })
       .catch(() => undefined);
   }, [visible, sitterId]);
+
+  // My own address, so "my place" says where.
+  useEffect(() => {
+    if (!visible || !profile) return;
+    loadRoleProfile(profile.id, "owner")
+      .then((r) => setMyAddress(r.fields.home_address ?? null))
+      .catch(() => undefined);
+  }, [visible, profile]);
 
   const houseSitting = service === "house_sitting";
   const draft = (w: When, p: Place) => ({ ...w, locationType: houseSitting ? ("owner_home" as const) : p.type, note: p.note });
   const problem =
     tripProblem(petIds, draft(dropOff, places.drop), draft(pickUp, places.pick)) ??
-    (!houseSitting && ((places.drop.type === "other" && !places.drop.note.trim()) || (places.pick.type === "other" && !places.pick.note.trim()))
-      ? "Say where you will meet."
+    (!houseSitting && ([places.drop, places.pick] as Place[]).some((p) => p.type === "other" && (!p.note.trim() || p.note.trim() !== p.placed))
+      ? "Check the address of the place."
       : null);
 
   const shownPets = stay ? stay.pets.map((p) => ({ ...p, species: pets.find((x) => x.id === p.id)?.species })) : [];
@@ -106,9 +124,11 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
   };
 
   const placeText = (kind: Kind): string => {
-    if (houseSitting) return "At my place";
+    if (houseSitting) return myAddress ? `At my place, ${myAddress}` : "At my place";
     const p = places[kind];
-    return p.type === "sitter_home" ? `At ${sitterName}'s place` : p.type === "owner_home" ? "At my place" : `Somewhere else${p.note ? `: ${p.note}` : ""}`;
+    if (p.type === "sitter_home") return `At ${sitterName}'s place${sitterArea ? `, ${sitterArea}` : ""}`;
+    if (p.type === "owner_home") return myAddress ? `At my place, ${myAddress}` : "At my place";
+    return p.placed ? `At ${p.placed}` : "Somewhere else";
   };
 
   const send = async () => {
@@ -171,13 +191,14 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
             testID={`request-${kind}-type`}
           />
           {places[kind].type === "other" ? (
-            <TextField
+            <AddressInput
               label=""
-              placeholder="Where, e.g. Christie Pits east gate"
+              placeholder="Address or postal code"
               value={places[kind].note}
-              maxLength={120}
               onChangeText={(text) => setPlaces((p) => ({ ...p, [kind]: { ...p[kind], note: text } }))}
-              testID={`request-${kind}-note`}
+              placed={places[kind].placed}
+              onPick={(s) => setPlaces((p) => ({ ...p, [kind]: { ...p[kind], note: s.label, placed: s.label } }))}
+              testID={`request-${kind}-address`}
             />
           ) : null}
         </View>

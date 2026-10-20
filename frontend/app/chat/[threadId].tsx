@@ -157,7 +157,8 @@ export default function Chat() {
     const mine = m.senderId === me;
     const live = booking && booking.id === c.bookingId ? stageCaption(booking, header.myRole) : null;
     return (
-      <Card key={m.id} style={styles.request} testID="chat-request-card">
+      <View key={m.id} style={[styles.cardRow, mine ? styles.cardMine : styles.cardTheirs]}>
+      <Card style={styles.request} testID="chat-request-card">
         <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
         <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
         <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
@@ -165,6 +166,7 @@ export default function Chat() {
         {c.note ? <Text style={styles.requestNote} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
         {live ? <Text style={styles.requestLive}>{live}</Text> : null}
       </Card>
+      </View>
     );
   };
 
@@ -199,9 +201,14 @@ export default function Chat() {
         ) : null}
         {messages.map((m) =>
           m.kind === "card" && m.card?.type === "stay" ? (
-            <Text key={m.id} style={styles.stayRow} testID="chat-stay-card">
-              {`${short(m.card.dropOffAt)} to ${short(m.card.pickUpAt)} · ${m.card.pets.map((p) => p.name).join(", ")}`}
-            </Text>
+            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
+              <Card style={styles.stay} testID="chat-stay-card">
+                <Text style={styles.requestTitle}>Stay</Text>
+                <Text style={styles.requestLine}>{`Drop-off ${short(m.card.dropOffAt)}`}</Text>
+                <Text style={styles.requestLine}>{`Pick-up ${short(m.card.pickUpAt)}`}</Text>
+                <Text style={styles.requestLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
+              </Card>
+            </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
             requestCard(m, m.card)
           ) : m.kind === "text" ? (
@@ -265,8 +272,11 @@ const makeStyles = (theme: Theme) =>
     root: { flex: 1, backgroundColor: theme.color.background },
     content: { gap: theme.spacing.sm },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center", paddingVertical: theme.spacing.md },
-    stayRow: { alignSelf: "center", fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
-    request: { gap: 2 },
+    cardRow: { width: "100%" },
+    cardMine: { alignItems: "flex-end" },
+    cardTheirs: { alignItems: "flex-start" },
+    stay: { gap: 2, maxWidth: "88%" },
+    request: { gap: 2, maxWidth: "88%" },
     requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },

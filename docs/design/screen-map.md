@@ -26,9 +26,9 @@ Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewer
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 114 |
 | EmptyState | Chat not found | — | 122 |
-| Pressable | — | `chat-stage` | 191 |
-| Button | Request booking | `chat-request-booking` | 220 |
-| Pressable | Send | `chat-send` | 236 |
+| Pressable | — | `chat-stage` | 193 |
+| Button | Request booking | `chat-request-booking` | 227 |
+| Pressable | Send | `chat-send` | 243 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -325,23 +325,21 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 206 |
-| TextButton | checking ? "Checking…" : "Check address" | `profile-check-address` | 381 |
-| TextButton | `s.label` | ``profile-suggestion-${i + 1}`` | 394 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 450 |
-| TextButton | Edit entry info | `profile-home-access` | 467 |
-| SegmentedControl | — | `profile-ai-mode` | 483 |
-| Button | Edit your answers | `profile-answers-edit` | 512 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 520 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 522 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 539 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 549 |
-| TextButton | + Add a spot | `profile-add-spot` | 573 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 588 |
+| EmptyState | Couldn't load your profile | — | 202 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 403 |
+| TextButton | Edit entry info | `profile-home-access` | 420 |
+| SegmentedControl | — | `profile-ai-mode` | 436 |
+| Button | Edit your answers | `profile-answers-edit` | 465 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 473 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 475 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 492 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 502 |
+| TextButton | + Add a spot | `profile-add-spot` | 526 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 541 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -634,6 +632,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | `active-trip-card` | 41 |
 
+### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | checking ? "Checking…" : "Check address" | ``${testID}-check-address`` | 64 |
+| TextButton | `s.label` | ``${testID}-suggestion-${i + 1}`` | 76 |
+
 ### AlbumView — [components/AlbumView.tsx](../../frontend/components/AlbumView.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -685,8 +690,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 33 |
-| Pressable | ``${name}'s profile`` | `chat-header-name` | 37 |
+| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 26 |
+| Pressable | ``${name}'s profile`` | `chat-header-name` | 30 |
 
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 
@@ -1051,13 +1056,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${label} day`` | ``request-${kind}-day`` | 146 |
-| Pressable | ``${label} time`` | ``request-${kind}-time`` | 149 |
-| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 158 |
-| SegmentedControl | — | ``request-${kind}-type`` | 163 |
-| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 189 |
-| Button | sending ? "Sending…" : "Send request" | `request-send` | 204 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 218 |
+| Pressable | ``${label} day`` | ``request-${kind}-day`` | 166 |
+| Pressable | ``${label} time`` | ``request-${kind}-time`` | 169 |
+| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 178 |
+| SegmentedControl | — | ``request-${kind}-type`` | 183 |
+| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 210 |
+| Button | sending ? "Sending…" : "Send request" | `request-send` | 225 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 239 |
 
 ### RoleCard — [components/RoleCard.tsx](../../frontend/components/RoleCard.tsx)
 
