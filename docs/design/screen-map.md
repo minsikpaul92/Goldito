@@ -18,18 +18,17 @@
 
 ### `/chat/[threadId]` — [app/chat/[threadId].tsx](../../frontend/app/chat/[threadId].tsx)
 
-One chat per owner and sitter (3D.4): the booking progress on top, the stay card and then everyone's messages, and a box to write any time. Opens at the latest message and keeps itself current (Realtime + a slow poll).
+One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `BookingStageBar` · `MessageBubble`
+Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 90 |
-| EmptyState | Chat not found | — | 98 |
-| TextButton | Leave | `chat-leave` | 150 |
-| Pressable | — | `chat-stage` | 155 |
-| Button | Request booking | `chat-request-booking` | 185 |
-| Button | sending ? "…" : "Send" | `chat-send` | 200 |
+| EmptyState | Couldn't load this chat | — | 114 |
+| EmptyState | Chat not found | — | 122 |
+| Pressable | — | `chat-stage` | 191 |
+| Button | Request booking | `chat-request-booking` | 220 |
+| Pressable | Send | `chat-send` | 236 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -682,6 +681,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | — | ``care-type-${t.type}`` | 389 |
 | Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 427 |
 
+### ChatHeaderTitle — [components/ChatHeaderTitle.tsx](../../frontend/components/ChatHeaderTitle.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 33 |
+| Pressable | ``${name}'s profile`` | `chat-header-name` | 37 |
+
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -987,6 +993,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 111 |
 | Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 117 |
 
+### PhotoViewerSheet — [components/PhotoViewerSheet.tsx](../../frontend/components/PhotoViewerSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | `title` | `testID` | 23 |
+
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1034,6 +1046,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 448 |
 | Button | Add | ``report-custom-add-${pet.id}`` | 468 |
 | Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 470 |
+
+### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${label} day`` | ``request-${kind}-day`` | 146 |
+| Pressable | ``${label} time`` | ``request-${kind}-time`` | 149 |
+| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 158 |
+| SegmentedControl | — | ``request-${kind}-type`` | 163 |
+| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 189 |
+| Button | sending ? "Sending…" : "Send request" | `request-send` | 204 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 218 |
 
 ### RoleCard — [components/RoleCard.tsx](../../frontend/components/RoleCard.tsx)
 
@@ -1315,4 +1339,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+389 actions · 388 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

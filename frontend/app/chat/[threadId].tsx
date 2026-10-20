@@ -1,45 +1,58 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { BookingStageBar, hasStageBar } from "../../components/BookingStageBar";
+import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
+import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
 import { MessageBubble } from "../../components/MessageBubble";
+import { PhotoViewerSheet } from "../../components/PhotoViewerSheet";
+import { RequestBookingSheet } from "../../components/RequestBookingSheet";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
-import { TextButton } from "../../components/ui/TextButton";
-import { TextField } from "../../components/ui/TextField";
 import {
+  ChatCard,
   ChatHeader,
   ChatMessage,
   getChatHeader,
-  leaveChat,
   loadChatMessages,
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
 import { useLiveChat } from "../../features/chat/useLiveChat";
-import { formatStamp } from "../../features/schedule/dates";
+import { useMyPets } from "../../features/pets/useMyPets";
+import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
+import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
+import { SERVICE_LABEL } from "../../features/sitters/sitterApi";
 import { BookingSummary, listOwnerBookings, listSitterBookings } from "../../lib/bookings";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
-import { useThemedStyles } from "../../providers/ThemeProvider";
-import { useToast } from "../../providers/ToastProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type Loaded = { header: ChatHeader; messages: ChatMessage[]; booking: BookingSummary | null };
+type StayCard = Extract<ChatCard, { type: "stay" }>;
+type RequestCard = Extract<ChatCard, { type: "request" }>;
+
+/** "Oct 20 9:00 AM" for one handoff. */
+function short(iso: string): string {
+  const z = isoToZoned(iso);
+  return `${formatDay(z.day)} ${formatTime(z.time)}`;
+}
 
 /**
- * One chat per owner and sitter (3D.4): the booking progress on top, the stay card and then everyone's messages,
- * and a box to write any time. Opens at the latest message and keeps itself current (Realtime + a slow poll).
+ * One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then
+ * everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
  */
 export default function Chat() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const { profile } = useSession();
-  const toast = useToast();
+  const { pets } = useMyPets();
   const errorDialog = useErrorDialog();
   const scroller = useRef<ScrollView>(null);
   const lastCount = useRef(0);
@@ -47,6 +60,9 @@ export default function Chat() {
   const [error, setError] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
+  const [viewing, setViewing] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -75,6 +91,14 @@ export default function Chat() {
   }, [load]);
   useLiveChat(threadId, load);
 
+  const otherId = loaded?.header.otherId;
+  useEffect(() => {
+    if (!otherId) return;
+    loadProfilePhotos(otherId)
+      .then(setPhotos)
+      .catch(() => setPhotos([]));
+  }, [otherId]);
+
   // Open at the latest message, and follow new ones.
   const count = loaded?.messages.length ?? 0;
   useEffect(() => {
@@ -102,6 +126,14 @@ export default function Chat() {
 
   const { header, messages, booking } = loaded;
   const me = profile?.id;
+  const owner = header.myRole === "owner";
+
+  // The stay in the header is the latest one asked about or requested.
+  const latest = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.card as StayCard | RequestCard | undefined;
+  const stay: StayCard | null = latest ? { type: "stay", dropOffAt: latest.dropOffAt, pickUpAt: latest.pickUpAt, pets: latest.pets } : null;
+  const headerStay: HeaderStay | null = stay ? { ...stay, pets: stay.pets.map((p) => ({ ...p, species: pets.find((x) => x.id === p.id)?.species })) } : null;
+  // No booking in progress (a finished stay does not count): the owner's next step is the request.
+  const canRequest = owner && (!booking || booking.stage === "completed");
 
   const send = async () => {
     const body = text.trim();
@@ -118,36 +150,40 @@ export default function Chat() {
     }
   };
 
-  const leave = async () => {
-    try {
-      await leaveChat(threadId);
-      toast.show("Left the chat");
-      router.back();
-    } catch (e) {
-      errorDialog.show({ title: "Couldn't leave", message: (e as Error).message });
-    }
+  const placeText = (place: RequestCard["dropOffPlace"], sitter: string): string =>
+    place.type === "sitter_home" ? `At ${sitter}'s place` : place.type === "owner_home" ? "At the owner's place" : `Elsewhere${place.note ? `: ${place.note}` : ""}`;
+
+  const requestCard = (m: ChatMessage, c: RequestCard) => {
+    const mine = m.senderId === me;
+    const live = booking && booking.id === c.bookingId ? stageCaption(booking, header.myRole) : null;
+    return (
+      <Card key={m.id} style={styles.request} testID="chat-request-card">
+        <Text style={styles.requestTitle}>{mine ? "You sent a booking request" : "Booking request"}</Text>
+        <Text style={styles.requestLine}>{`${SERVICE_LABEL[c.serviceType].replace(/^\S+\s/, "")} · ${c.pets.map((p) => p.name).join(", ")}`}</Text>
+        <Text style={styles.requestLine}>{`Drop-off ${short(c.dropOffAt)} · ${placeText(c.dropOffPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        <Text style={styles.requestLine}>{`Pick-up ${short(c.pickUpAt)} · ${placeText(c.pickUpPlace, mine ? header.otherName : (profile?.displayName ?? "the sitter"))}`}</Text>
+        {c.note ? <Text style={styles.requestNote} testID="chat-request-note">{`“${c.note}”`}</Text> : null}
+        {live ? <Text style={styles.requestLive}>{live}</Text> : null}
+      </Card>
+    );
   };
 
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
-  // No booking in progress (a finished stay does not count): the owner's next step is the request, filled in from the latest stay card. The chat
-  // steps that replace this screen (quote, agreement, payment) come with 3D.6 and 3D.7.
-  const stayCard = [...messages].reverse().find((m) => m.card?.type === "stay")?.card;
-  const requestHref =
-    header.myRole === "owner" && (!booking || booking.stage === "completed")
-      ? `/owner/bookings/new?${new URLSearchParams({
-          sitter: header.otherId,
-          ...(stayCard?.type === "stay"
-            ? { drop: stayCard.dropOffAt, pick: stayCard.pickUpAt, pets: stayCard.pets.map((p) => p.id).join(",") }
-            : {}),
-        }).toString()}`
-      : null;
 
   return (
     <View style={styles.root} testID="chat">
       <Stack.Screen
         options={{
           title: header.otherName,
-          headerRight: () => <TextButton label="Leave" onPress={() => void leave()} testID="chat-leave" />,
+          headerTitle: () => (
+            <ChatHeaderTitle
+              name={header.otherName}
+              cover={photos[0] ?? null}
+              stay={headerStay}
+              onAvatar={photos.length > 0 ? () => setViewing(true) : undefined}
+              onName={owner ? () => router.push(`/owner/sitters/${header.otherId}`) : undefined}
+            />
+          ),
         }}
       />
       <Screen ref={scroller} contentStyle={styles.content} testID="chat-scroll">
@@ -163,12 +199,11 @@ export default function Chat() {
         ) : null}
         {messages.map((m) =>
           m.kind === "card" && m.card?.type === "stay" ? (
-            <Card key={m.id} style={styles.stay} testID="chat-stay-card">
-              <Text style={styles.stayTitle}>Stay</Text>
-              <Text style={styles.stayLine}>{`Drop-off ${formatStamp(m.card.dropOffAt)}`}</Text>
-              <Text style={styles.stayLine}>{`Pick-up ${formatStamp(m.card.pickUpAt)}`}</Text>
-              <Text style={styles.stayLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
-            </Card>
+            <Text key={m.id} style={styles.stayRow} testID="chat-stay-card">
+              {`${short(m.card.dropOffAt)} to ${short(m.card.pickUpAt)} · ${m.card.pets.map((p) => p.name).join(", ")}`}
+            </Text>
+          ) : m.kind === "card" && m.card?.type === "request" ? (
+            requestCard(m, m.card)
           ) : m.kind === "text" ? (
             <MessageBubble
               key={m.id}
@@ -180,25 +215,47 @@ export default function Chat() {
           ) : null,
         )}
       </Screen>
-      {requestHref ? (
+      {canRequest ? (
         <View style={styles.next}>
-          <Button label="Request booking" onPress={() => router.push(requestHref as never)} testID="chat-request-booking" />
+          <Button label="Request booking" onPress={() => setRequesting(true)} testID="chat-request-booking" />
         </View>
       ) : null}
       <View style={styles.compose}>
-        <View style={styles.input}>
-          <TextField
-            label=""
-            value={text}
-            placeholder={`Message ${header.otherName}`}
-            multiline
-            maxLength={2000}
-            onChangeText={setText}
-            testID="chat-input"
-          />
-        </View>
-        <Button label={sending ? "…" : "Send"} onPress={() => void send()} disabled={sending || !text.trim()} testID="chat-send" />
+        <TextInput
+          accessibilityLabel={`Message ${header.otherName}`}
+          value={text}
+          onChangeText={setText}
+          placeholder={`Message ${header.otherName}`}
+          placeholderTextColor={`${theme.color.textMuted}80`}
+          maxLength={2000}
+          returnKeyType="send"
+          onSubmitEditing={() => void send()}
+          style={styles.input}
+          testID="chat-input"
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send"
+          disabled={sending || !text.trim()}
+          onPress={() => void send()}
+          style={[styles.sendButton, (sending || !text.trim()) && styles.sendOff]}
+          testID="chat-send"
+        >
+          <Ionicons name="arrow-up" size={20} color={theme.color.primaryText} />
+        </Pressable>
       </View>
+      {owner ? (
+        <RequestBookingSheet
+          visible={requesting}
+          onClose={() => setRequesting(false)}
+          threadId={threadId}
+          sitterId={header.otherId}
+          sitterName={header.otherName}
+          stay={stay}
+          onSent={() => void load()}
+        />
+      ) : null}
+      <PhotoViewerSheet visible={viewing} title={header.otherName} photos={photos} onClose={() => setViewing(false)} testID="chat-photos" />
     </View>
   );
 }
@@ -208,18 +265,33 @@ const makeStyles = (theme: Theme) =>
     root: { flex: 1, backgroundColor: theme.color.background },
     content: { gap: theme.spacing.sm },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center", paddingVertical: theme.spacing.md },
-    stay: { gap: 2 },
-    stayTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    stayLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    stayRow: { alignSelf: "center", fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
+    request: { gap: 2 },
+    requestTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    requestLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
+    requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     compose: {
       flexDirection: "row",
-      alignItems: "flex-end",
+      alignItems: "center",
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       maxWidth: 480,
       width: "100%",
       alignSelf: "center",
     },
-    input: { flex: 1 },
+    input: {
+      flex: 1,
+      height: 44,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+      backgroundColor: theme.color.surface,
+      fontSize: theme.fontSize.body,
+      color: theme.color.text,
+    },
+    sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.primary },
+    sendOff: { opacity: 0.4 },
   });
