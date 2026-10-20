@@ -225,6 +225,28 @@ def chosen_action(action: str | None, confidence: float | None, available: list[
     return {"id": action, "label": ACTIONS[action]["label"]}
 
 
+def shown_quote(messages: list[dict]) -> dict | None:
+    """The quote the chat shows: the newest quote card that is not replaced, with its total (accepted fees included).
+    None when there is no quote card; a price the chat does not show is never worked out from anyone's rates."""
+    for m in reversed(messages):
+        card = m.get("card") or {}
+        if m.get("kind") == "card" and card.get("type") == "quote" and card.get("status") != "replaced" and isinstance(card.get("quote"), dict):
+            quote = dict(card["quote"])
+            if card.get("total") is not None:
+                quote["total"] = card["total"]
+            return quote
+    return None
+
+
+def latest_stay(messages: list[dict]) -> dict | None:
+    """The newest stay or request card with dates (what the chat is about)."""
+    for m in reversed(messages):
+        card = m.get("card") or {}
+        if m.get("kind") == "card" and card.get("type") in ("stay", "request") and card.get("drop_off_at"):
+            return card
+    return None
+
+
 def _instant(value) -> datetime | None:
     try:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))

@@ -8,6 +8,9 @@ from types import SimpleNamespace
 
 import jwt
 import pytest
+from app.ai import tone
+from app.ai.chat_agents import OWNER_STYLE
+from app.ai.chat_agents import base as agents_base
 from app.routers import ai_chat
 from app.services import authz, nebius, rag
 
@@ -213,7 +216,7 @@ def test_the_sitters_draft_follows_their_own_anonymized_replies(client, setup, m
         return SimpleNamespace(style_notes="Warm, short. 1. Situation: asked about a pill. Reply: Of course, no problem {OWNER}!", examples=1)
 
     ctx = setup({"reply": "Of course, I can host!"})
-    monkeypatch.setattr(ai_chat.tone, "compose", compose)
+    monkeypatch.setattr(tone, "compose", compose)
     draft(client, "Yes, I can host")
     # the samples live under kind "inquiry" (tone_samples), searched with the chip and what the owner wrote
     assert asked == [{"sitter_id": SITTER_ID, "kind": "inquiry", "query": "Yes, I can host: Can you take Max?"}]
@@ -249,7 +252,7 @@ def test_the_owner_and_the_sitter_get_different_voices_and_the_state_of_the_chat
 def test_the_owner_gets_a_neutral_voice_and_no_price_unless_the_facts_have_it(client, setup):
     ctx = setup({"reply": "Thank you, that works for us."})
     assert draft(client, "Thank you!", owner_token()).json()["source"] == "model"
-    assert ctx.model.payload()["style_notes"] == ai_chat.OWNER_STYLE
+    assert ctx.model.payload()["style_notes"] == OWNER_STYLE
 
 
 def test_an_instruction_in_the_other_persons_message_changes_nothing(client, setup):
@@ -450,3 +453,64 @@ def test_a_finished_booking_does_not_block_a_new_request(client, setup):
     done = booking(status="confirmed")
     setup(with_action("request_booking"), db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Happy to host again"), bookings=[done]), stage="completed")
     assert action_of(chips(client, owner_token())) == "request_booking"
+
+
+# --- two agents --------------------------------------------------------------------------------------------------
+
+
+QUOTE_CARD = {
+    "type": "quote", "drop_off_at": STAY["drop_off_at"], "pick_up_at": STAY["pick_up_at"], "pets": STAY["pets"],
+    "quote": {"service": "boarding", "unit_price": 55, "base": 165, "total": 268.13, "currency": "CAD"},
+    "extras": [], "total": 268.13, "status": "sent",
+}
+
+
+SITTER_LAST = (
+    message(1, OWNER_ID, card=STAY, n=0),
+    message(2, OWNER_ID, "Can you take Max?"),
+    message(3, SITTER_ID, "Yes, I have room for Max."),
+)
+
+
+def test_each_side_reads_its_own_prompt(client, setup):
+    ctx = setup({"chips": ["Thanks!", "A question"]}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST))
+    chips(client, owner_token())
+    draft(client, "Yes, I can host", sitter_token())
+    owner_system, sitter_system = (ctx.model.calls[i]["messages"][0]["content"] for i in (0, 1))
+    assert "PET OWNER" in owner_system and "PET SITTER" not in owner_system
+    assert "PET SITTER" in sitter_system and "PET OWNER" not in sitter_system
+
+
+def test_the_owner_never_reads_the_sitters_rates_policy_or_availability(client, setup):
+    ctx = setup({"chips": ["Thanks!", "A question"]}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST))
+    chips(client, owner_token())
+    draft(client, "Yes, I can host", sitter_token())
+    owner, sitter = ctx.model.payload(0)["facts"], ctx.model.payload(1)["facts"]
+    assert set(owner) == {"owner", "sitter", "inquiry", "availability", "quote", "pets"}
+    assert owner["sitter"] == {"name": "Chloe"} and "rates" not in owner
+    assert owner["quote"] is None  # the chat shows no quote card: no price for the owner agent
+    assert sitter["rates"]["boarding_nightly"] == 55 and sitter["sitter"].get("service_area") == "Toronto"
+    assert "policy_conflicts" in sitter and "sources" in sitter
+
+
+def test_the_owner_reads_the_quote_the_chat_shows_and_only_that(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=QUOTE_CARD, n=1), message(3, SITTER_ID, "That is the total."))
+    ctx = setup({"chips": ["Looks good", "A question"]}, db=db)
+    chips(client, owner_token())
+    assert ctx.model.payload()["facts"]["quote"]["total"] == 268.13
+
+
+def test_each_side_can_run_on_its_own_model_and_blank_means_the_fast_model(client, setup, monkeypatch):
+    ctx = setup({"chips": ["Thanks!", "A question"]}, {"chips": ["Thanks!", "A question"]}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST))
+    chips(client, owner_token())
+    monkeypatch.setattr(agents_base, "get_settings", lambda: SimpleNamespace(model_chat_owner="nvidia/owner-model", model_chat_sitter="  "))
+    chips(client, owner_token())
+    draft(client, "Yes, I can host", sitter_token())
+    assert [c["model"] for c in ctx.model.calls] == [None, "nvidia/owner-model", None]
+
+
+def test_an_owner_draft_that_talks_like_a_host_is_rewritten(client, setup):
+    ctx = setup({"reply": "Sure, I can host Max at my place."}, {"reply": "Thanks, Chloe! Is Max okay with the other dog?"})
+    out = draft(client, "Ask about the other dog", owner_token()).json()
+    assert out == {"text": "Thanks, Chloe! Is Max okay with the other dog?", "source": "model"}
+    assert "host" in ctx.model.calls[1]["messages"][-1]["content"]

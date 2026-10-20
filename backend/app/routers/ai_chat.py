@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.ai import chat as logic
 from app.ai import inquiry as inquiry_logic
-from app.ai import tone
+from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
 from app.config import get_settings
 from app.deps.auth import CurrentUser, get_current_user
@@ -30,15 +30,6 @@ from app.services import authz, nebius
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 log = logging.getLogger("goldito.ai")
 
-# The owner has no samples of their own, so they get a voice of their own: a pet parent talking to the person who will
-# look after their animals, not a host (the sitter's voice is their style card and their own replies).
-OWNER_STYLE = (
-    "A pet owner writing to their sitter: relaxed, direct and a little caring, like a text to someone you are trusting "
-    "with your pet. Talk about your own pets by name and what they need, thank the sitter for specifics, and ask one "
-    "practical thing when it helps (pick-up time, feeding, a photo update). Never use host words like \"my place\", "
-    "\"I can host\" or \"I'll take care of\"; you are the one asking, not the one hosting."
-)
-NEUTRAL_STYLE = OWNER_STYLE
 
 
 class ChatChipsRequest(BaseModel):
@@ -110,19 +101,11 @@ def _context(db, user: CurrentUser, thread_id: UUID) -> dict:
     }
 
 
-def _latest_stay(messages: list[dict]) -> dict | None:
-    for m in reversed(messages):
-        card = m.get("card") or {}
-        if m.get("kind") == "card" and card.get("type") in ("stay", "request") and card.get("drop_off_at"):
-            return card
-    return None
-
-
 def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today: date, *, with_sources: bool = True) -> dict:
     """The facts the database knows. With a stay: the inquiry's own gathering (availability, quote, pets, policy); without
     one only the sitter and their rates. Entry codes and addresses never get here (D31)."""
     thread = ctx["thread"]
-    stay = _latest_stay(ctx["messages"])
+    stay = logic.latest_stay(ctx["messages"])
     facts: dict | None = None
     if stay and stay.get("pets"):
         # Book care's service: the stay card has none, so boarding unless the sitter only offers house sitting.
@@ -180,7 +163,7 @@ def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
             return []
         if stage is None:
             return []
-    stay = _latest_stay(messages)
+    stay = logic.latest_stay(messages)
     return logic.available_actions(ctx["role"], booking, stage, has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
 
 
@@ -214,19 +197,20 @@ def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
 
 
 def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *, with_sources: bool = True) -> tuple[dict, dict, dict | None]:
-    """(the model input without the task, the facts, the other person's latest text message)."""
+    """(the model input without the task, the facts this side may read, the other person's latest text message)."""
     messages = ctx["messages"]
+    agent = agent_for(ctx["role"])
     texts_them = [m for m in messages if m.get("kind") == "text" and m.get("sender_id") != user.id]
     last_them = texts_them[-1] if texts_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
-    facts = _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources)
+    facts = agent.facts(_facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources), messages)
+    inquiry_logic.assert_no_secrets(facts)
     me = ctx["owner_name"] if ctx["role"] == "owner" else ctx["sitter_name"]
     them = ctx["sitter_name"] if ctx["role"] == "owner" else ctx["owner_name"]
     base = {
         "role": ctx["role"],
-        # An empty chat is an opening; once anyone has written, even an owner answers instead of introducing themselves.
-        "state": "reply" if any(m.get("kind") == "text" for m in messages) else "opening",
+        "state": agent.state(messages),
         "me": me,
         "them": them,
         **({"summary": summary} if summary else {}),
@@ -242,6 +226,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     ctx = _context(db, user, body.thread_id)
     tz = ZoneInfo(get_settings().app_timezone)
     today = _now().astimezone(tz).date()
+    agent = agent_for(ctx["role"])
     base, facts, last_them = _prompt_input(db, user, ctx, tz, today, with_sources=False)
     started = any(m.get("kind") == "text" for m in ctx["messages"])
     for_id = last_them["id"] if last_them else None
@@ -261,10 +246,11 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     try:
         out, _ = nebius.chat_json(
             "fast",
-            [{"role": "system", "content": load_prompt("chat/chips.md")}, {"role": "user", "content": json.dumps(base)}],
+            [{"role": "system", "content": agent.prompt("chips")}, {"role": "user", "content": json.dumps(base)}],
             ChipsOut,
             endpoint="chat-chips",
             max_tokens=200,
+            model=agent.model(),
         )
         seen: set[str] = set()
         for label in out.chips:
@@ -274,13 +260,12 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
                 labels.append(label)
         labels = labels[: logic.MAX_CHIPS]
         action = logic.chosen_action(out.action, out.confidence, available)
-        if facts["availability"].get("can_host") is False and ctx["role"] == "sitter":
-            labels = [c for c in labels if not inquiry_logic._SAYS_YES.search(c)]
+        labels = agent.keep_chips(labels, facts)
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.warning("chat-chips: model failed (%s)", exc)
     if len(labels) < 2:
         source = "fallback"
-        labels = logic.generic_chips(ctx["role"], started=started, can_host=facts["availability"].get("can_host"))
+        labels = agent.fallback_chips(started=started, facts=facts)
     return ChatChipsResponse(
         chips=[Chip(id=f"c{i}", label=c) for i, c in enumerate(labels)],
         action=ChatAction(**action) if action else None,
@@ -295,28 +280,26 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
     ctx = _context(db, user, body.thread_id)
     tz = ZoneInfo(get_settings().app_timezone)
     today = _now().astimezone(tz).date()
+    agent = agent_for(ctx["role"])
     base, facts, last_them = _prompt_input(db, user, ctx, tz, today)
     chip = " ".join(body.chip.split())
     if logic.chip_problems(chip[: logic.CHIP_MAX * 2]) and len(chip) > logic.CHIP_MAX * 2:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That option is too long.")
 
-    style = NEUTRAL_STYLE
-    if ctx["role"] == "sitter":
-        # The sitter's own anonymized replies to owners ("inquiry" samples) are the closest voice for a chat reply too.
-        style = tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body', '')}").style_notes
+    style = agent.style(db, ctx, chip, last_them)
     payload = {**base, "chip": chip, "style_notes": style}
-    messages = [{"role": "system", "content": load_prompt("chat/draft.md")}, {"role": "user", "content": json.dumps(payload)}]
+    messages = [{"role": "system", "content": agent.prompt("draft")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None
 
     for attempt in range(2):
         try:
-            out, _ = nebius.chat_json("fast", messages, DraftOut, endpoint="chat-draft", max_tokens=300, temperature=0.4)
+            out, _ = nebius.chat_json("fast", messages, DraftOut, endpoint="chat-draft", max_tokens=300, temperature=0.4, model=agent.model())
         except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
             log.warning("chat-draft: model failed (%s)", exc)
             break
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
-        problems = logic.chat_problems(text, facts, ctx["role"], sitter_first, known)
+        problems = agent.problems(text, facts, known, sitter_first)
         if not problems:
             return ChatDraftResponse(text=text, source="model")
         log.info("chat-draft: attempt %s rejected (%s)", attempt + 1, "; ".join(problems))
