@@ -671,13 +671,13 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 · (014i) 즐겨찾기 시터는 반경 밖(30 km)이어도 일정이 맞으면 거리와 함께 나옴, 일정이 안 맞거나 즐겨찾기가 아니면 안 나옴, 오너별로 다름 · 마지막 반경 저장, 101 km 거부 | SQL `rls_smoke` | ➖ |
-| SEARCH-2 | 견주 → **Bookings** 탭 열기 | 맨 위에 한 줄 검색 바(📍 장소 · 📅 날짜 · 🐾 펫 · 🔍). 처음엔 **Favorites**만 사진(없으면 이니셜) · 이름 · 거리 한 줄씩 보임(머무는 동안 가능한 즐겨찾기 시터만). 🔍를 누르면 **Sitters nearby**로 바뀌어 반경 안 모든 시터가 가까운 순으로 한 줄씩(사진 · 이름 · 거리 km) 나옴. 아래에 예약 · 질문 목록 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-2 | 견주 → **Bookings** 탭 열기 | 맨 위에 한 줄 검색 바(📍 장소 · 📅 날짜 · 🐾 펫)와 그 아래 반경 슬라이더. **Search 버튼은 없음**: 장소 · 날짜 · 시간 · 펫 · 반경 중 무엇이든 바꾸면 잠깐 뒤 저절로 다시 검색됨. 결과는 **Favorites**(즐겨찾기 중 그 기간이 맞는 시터)가 맨 위, 그 아래 **Sitters nearby**(나머지, 반경 안에서 머무는 내내 가능한 시터)가 한 줄씩(아바타 · 이름 · 거리). 즐겨찾기가 없으면 Sitters nearby만. 아래에 Chats · 예약 · 질문 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-3 | 검색 바 바로 아래 **Within** 슬라이더(1~100 km, 1 km 단위: 끌기 · 트랙 클릭 · →/PageUp) | 처음 **5 km**(이전에 바꿨다면 마지막 값), 쉬면 한 번만 다시 검색해 목록이 바뀜. 마지막 반경이 저장되어 다음에 열 때 그 값 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-4 | 날짜 칸 → 범위 달력에서 시작일 · 종료일을 차례로 누르고 시간 −/+ 또는 시간 값을 눌러 시계로 설정 | 바에 "Oct 24 - 28"처럼 한 줄로 나오고, **Done** 뒤 자동으로 다시 검색. 펫 칸에서 펫을 바꿔도 같음 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-5 | 장소 칸 → **Current location** / 주소 · **우편번호** 입력 후 Use this place | 현재 위치는 브라우저가 한 번만 묻고 그 좌표로 검색, 차단되면 푸는 법 안내(집 기준 유지). 우편번호(예 M5V 2T6)는 전체 코드를 못 찾으면 앞 3자리(M5V)로 다시 찾음. 못 찾으면 "Couldn't find that place". 주소 조회는 백엔드(`/api/geo/geocode`)가 떠 있어야 함 | 🤖 `sitter-search`(위치 · 조회 목업) · 실제 브라우저 권한은 👤 | 사람 확인 대기 |
 | SEARCH-6 | 집 위치가 없는 견주 | 목록 자리에 "Your home isn't on the map yet." + Open Profile. 장소 시트에서 현재 위치 · 주소로 검색 가능 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-7 | 맞는 시터가 없음 | Favorites에서는 "No favorites free for these dates.", 주변 목록에서는 "No sitters within N km for these dates." | 🤖 `sitter-search` | 사람 확인 대기 |
-| SEARCH-8 | 시터 타일을 누름 | 시터 상세(`/owner/sitters/{id}`)가 열림(머무는 날짜 · 시간 · 펫이 주소에 실림). 시터를 이미 고른 채 Book care가 열리면 시터 목록은 그 시터 하나만 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-8 | 시터 줄의 **아바타**(사진이 있으면 큰 사진 보기, 없으면 프로필) / **이름**(시터 프로필) | 시터 상세(`/owner/sitters/{id}`)가 열림(머무는 날짜 · 시간 · 펫이 주소에 실림). 시터를 이미 고른 채 Book care가 열리면 시터 목록은 그 시터 하나만 | 🤖 `sitter-search` | 사람 확인 대기 |
 
 ### 3.27 시터 온보딩 (ONB) — 3D.2 · #139 · *DB와 번호 질문 화면까지 — 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 
@@ -812,7 +812,7 @@
 | ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
-| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | 즐겨찾기가 하나도 없으면 처음부터 주변 시터("Sitters nearby")가 보임. 즐겨찾기가 있는데 날짜에 안 맞으면 "No favorites free for these dates.", 🔍 뒤에 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
+| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | Favorites 칸 없이 **Sitters nearby**에 주변 시터가 바로 보임. 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search` | 사람 확인 대기 |
 | ADDR-6 | 데모 계정(`@goldito.test`) 전부 | 계정마다 **자기 주소와 핀**이 있음(토론토 공공 건물 주소, 실제 사람 집 아님): 오너 Robert · Peter · Alex · David, 시터 Chloe · Paul · Allen · Daniel. 서로 0.6 ~ 14 km라 반경 슬라이더로 결과가 달라짐. **Reset demo**나 `seed_demo.py`를 다시 돌려도 이 주소가 유지됨 | 🤖 pytest `test_seed_demo` · `test_reset_demo` | 사람 확인 대기 |
 | ADDR-7 | 시터가 Profile에서 주소를 확인하고 저장 | 직접 쓴 서비스 지역이 없으면 **도시 + 우편 앞 3자리**("Toronto M4W")가 서비스 지역이 됨. 오너의 예약 요청 시트에는 "At Allen's place, Toronto M4W"처럼 대략적인 위치만 나오고 정확한 주소는 결제 뒤에만 공개 | 🤖 `home-location` · `chat` | 사람 확인 대기 |
 
@@ -821,7 +821,7 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | CHAT-1 | (DB) `rls_smoke.sql`의 014j 블록 | 같은 쌍은 늘 같은 스레드 · 메시지가 없으면 목록에 안 나옴 · 같은 머무름은 첫 카드를 한 번만, 다르면 새 카드 · 둘 다 여러 번 보내기 · 안 읽은 수와 읽음 처리 · 시터는 새 채팅을 시작할 수 없고 있는 채팅은 열 수 있음 · 제3자는 읽기 · 쓰기 · 읽음 표시 모두 불가 · 직접 insert 없음 · 빈 메시지와 2000자 초과 거부 · 나가기는 내 목록에서만, 새 메시지나 다시 열면 돌아옴 · anon 불가 | SQL `rls_smoke` | ➖ |
-| CHAT-2 | 오너 → Bookings → 시터 줄의 💬 | 채팅이 열리고 헤더에 **시터 사진(없으면 이니셜) · 이름**과 그 아래 **펫 아바타**만(날짜는 카드에 있어 헤더에 없음). Stay는 **카드**로, 내가 보낸 것은 오른쪽 · 상대 것은 왼쪽(와츠앱처럼). 입력창은 **한 줄**(오른쪽 보내기 버튼). 같은 시터의 💬를 다시 누르면 같은 채팅(같은 머무름이면 카드는 한 번만) | 🤖 `chat` | 사람 확인 대기 | 날짜를 바꿔 💬를 또 눌렀을 때 아직 아무도 말하지 않았다면 Stay 카드는 **새로 쌓이지 않고 그 카드가 새 날짜로 바뀜**(누군가 말한 뒤에는 새 카드, `014l`)
+| CHAT-2 | 오너 → Bookings → 시터 이름 → 시터 프로필 → **Start chat**(시터 줄에는 채팅 버튼이 없음) | 채팅이 열리고 헤더에 **시터 사진(없으면 이니셜) · 이름**과 그 아래 **펫 아바타**만(날짜는 카드에 있어 헤더에 없음). Stay는 **카드**로, 내가 보낸 것은 오른쪽 · 상대 것은 왼쪽(와츠앱처럼). 입력창은 **한 줄**(오른쪽 보내기 버튼). 같은 시터의 💬를 다시 누르면 같은 채팅(같은 머무름이면 카드는 한 번만) | 🤖 `chat` | 사람 확인 대기 | 날짜를 바꿔 💬를 또 눌렀을 때 아직 아무도 말하지 않았다면 Stay 카드는 **새로 쌓이지 않고 그 카드가 새 날짜로 바뀜**(누군가 말한 뒤에는 새 카드, `014l`)
 | CHAT-3 | 시터 → Bookings → **Chats** 칸 | 오너 이름 · 마지막 메시지 · 안 읽은 수. 열면 가장 최근 메시지에서 시작하고 안 읽은 수가 사라짐. 시터도 계속 답할 수 있음 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-4 | 한쪽이 보내면 다른 쪽 화면 | 열려 있는 채팅에 새 메시지가 곧바로(Realtime, 안 되면 5초 안에) 나타남. 목록의 미리보기와 숫자도 갱신 | 🤖 `chat`(폴링) · 실제 Realtime은 👤 | 사람 확인 대기 |
 | CHAT-5 | 목록의 채팅 줄을 왼쪽으로 밀기 | 내 목록에서만 사라지고 기록은 남음. 상대 목록에는 그대로. 다시 💬로 열거나 상대가 새로 보내면 돌아옴. 채팅 화면에는 Leave 버튼이 없음(← 가 나가는 길) | 🤖 `chat` | 사람 확인 대기 |

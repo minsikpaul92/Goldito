@@ -35,9 +35,9 @@ function stayText(from: string, to: string): string {
 
 /**
  * One hotel-style line: a place (my home, here, an address or postal code), the stay (dates and times) and the
- * pets. Each part opens a sheet; the search runs by itself, and the button at the end asks for sitters nearby.
+ * pets. Each part opens a sheet; the search runs by itself whenever anything changes.
  */
-export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; onSearch: () => void }) {
+export function SitterSearchBar({ search }: { search: SitterSearch }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [open, setOpen] = useState<Open>(null);
@@ -80,9 +80,6 @@ export function SitterSearchBar({ search, onSearch }: { search: SitterSearch; on
       {segment("calendar-outline", dateText, () => setOpen("stay"), "bar-dates", 0)}
       <View style={styles.divider} />
       {segment("paw-outline", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
-      <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={onSearch} style={styles.go} testID="bar-search">
-        <Ionicons name="search" size={theme.icon.sm} color={theme.color.primaryText} />
-      </Pressable>
 
       <Sheet
         visible={open === "place"}
@@ -247,7 +244,7 @@ const makeStyles = (theme: Theme) =>
       alignItems: "center",
       gap: theme.spacing.xs,
       paddingLeft: theme.spacing.sm,
-      paddingRight: theme.spacing.xs,
+      paddingRight: theme.spacing.sm,
       paddingVertical: theme.spacing.xs,
       borderRadius: 999,
       borderWidth: 1,

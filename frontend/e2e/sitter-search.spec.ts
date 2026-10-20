@@ -92,16 +92,19 @@ async function stubGps(page: Page, deny = false) {
 }
 
 test.describe("find a sitter", () => {
-  test("opens on one line with the favorites; Search lists everyone nearby, nearest first", async ({ page }) => {
+  test("opens on one line: favorites on top, then the other sitters free for the stay, with no Search button", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
     const screen = await openBookings(page);
 
     await expect(screen.getByTestId("bar-place")).toContainText("My home");
     await expect(screen.getByTestId("bar-pets")).toContainText("2 pets");
-    await expect(screen.getByText("Favorites", { exact: true })).toBeVisible();
-    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
-    await expect(screen.getByTestId("sitter-tile-Paul")).toHaveCount(0);
+    await expect(screen.getByTestId("bar-search")).toHaveCount(0); // nothing to press: it searches by itself
+    // Chloe (a favorite) is under Favorites, Paul (not) under Sitters nearby, Uma is out of range.
+    await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Chloe")).toHaveCount(0);
+    await expect(screen.getByTestId("sitter-tile-Uma")).toHaveCount(0);
     expect(db.nearbySearches.at(-1)).toMatchObject({ p_pet_count: 2, p_radius_km: 5, p_lat: null, p_lng: null });
     // The bar is one line: its three parts sit side by side.
     const place = await box(screen.getByTestId("bar-place"));
@@ -110,12 +113,7 @@ test.describe("find a sitter", () => {
     expect(Math.abs(place.y - dates.y)).toBeLessThan(4);
     expect(Math.abs(dates.y - pets.y)).toBeLessThan(4);
 
-    await screen.getByTestId("bar-search").click();
-    await expect(screen.getByText("Sitters nearby")).toBeVisible();
-    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
-    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
-    await expect(screen.getByTestId("sitter-tile-Uma")).toHaveCount(0);
-    // One sitter per line, nearest first, each with how far away.
+    // One sitter per line, each with how far away; favorites first.
     const chloe = await box(screen.getByTestId("sitter-tile-Chloe"));
     const paul = await box(screen.getByTestId("sitter-tile-Paul"));
     expect(chloe.y).toBeLessThan(paul.y);
@@ -260,9 +258,8 @@ test.describe("find a sitter", () => {
     db.nearby_sitters.splice(0, 2); // only Uma, 40 km away
     const screen = await openBookings(page);
 
-    await expect(screen.getByTestId("search-none")).toHaveText("No favorites free for these dates.");
-    await screen.getByTestId("bar-search").click();
     await expect(screen.getByTestId("search-none")).toHaveText("No sitters within 5 km for these dates.");
+    await expect(screen.getByTestId("sitter-favorites")).toHaveCount(0);
   });
 
   test("with no favorites yet everyone nearby shows at once", async ({ page }) => {
@@ -274,6 +271,25 @@ test.describe("find a sitter", () => {
     await expect(screen.getByText("Sitters nearby")).toBeVisible();
     await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
+  });
+
+  test("the avatar opens the sitter's photos (the profile when there are none), the name opens the profile, and there is no chat button", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.profile_photos.push({ id: "ph1", profile_id: SITTER.id, public_id: "goldito/chloe/1" });
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-chat-Chloe")).toHaveCount(0);
+
+    await screen.getByTestId("sitter-avatar-Chloe").click();
+    await expect(screen.getByTestId("sitter-photos-photo-1")).toBeVisible();
+    await screen.getByTestId("sitter-photos-close").click();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+
+    // Paul has no photo: the avatar goes to his profile, like the name.
+    await screen.getByTestId("sitter-avatar-Paul").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${PAUL.id}\\?`));
   });
 
   test("a tile opens the sitter detail with the stay", async ({ page }) => {
