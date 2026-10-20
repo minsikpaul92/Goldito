@@ -1,10 +1,10 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
 import { ChatList } from "../../../components/ChatList";
+import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
 import { Avatar } from "../../../components/ui/Avatar";
 import { Card } from "../../../components/ui/Card";
@@ -13,16 +13,14 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { OwnerInquiryCard, listOwnerInquiries } from "../../../features/inquiries/inquiryApi";
-import { openChatThread } from "../../../features/chat/chatApi";
 import { useMyChats } from "../../../features/chat/useMyChats";
-import { ProfilePhoto, loadCoverPhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
+import { ProfilePhoto, loadCoverPhotos, loadProfilePhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
 import { formatDay, isoToZoned } from "../../../features/schedule/dates";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
-import { useErrorDialog } from "../../../providers/ErrorDialogProvider";
 import { useSession } from "../../../providers/SessionProvider";
-import { useTheme, useThemedStyles } from "../../../providers/ThemeProvider";
+import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
@@ -41,14 +39,13 @@ type State =
  * badges (3B.3) and questions.
  */
 export default function OwnerBookings() {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const ownerId = profile?.id;
   const [state, setState] = useState<State>({ status: "loading" });
   const search = useSitterSearch();
   const chats = useMyChats();
-  const errorDialog = useErrorDialog();
+  const [viewer, setViewer] = useState<{ name: string; photos: ProfilePhoto[] } | null>(null);
   // Favorites until the owner presses Search, then everyone nearby.
   const [searched, setSearched] = useState(false);
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
@@ -87,14 +84,11 @@ export default function OwnerBookings() {
     };
   }, [shownKey]);
 
-  // Start (or continue) the chat with this sitter; the stay from the search becomes its first card.
-  const startChat = async (id: string) => {
-    try {
-      const thread = await openChatThread(id, { dropOffAt: search.dropIso, pickUpAt: search.pickIso, petIds: search.petIds });
-      router.push(`/chat/${thread}`);
-    } catch (e) {
-      errorDialog.show({ title: "Couldn't open the chat", message: (e as Error).message });
-    }
+  // The avatar opens the sitter's photos (the profile when there are none); the name opens the sitter.
+  const viewPhotos = async (id: string, name: string) => {
+    const found = await loadProfilePhotos(id).catch(() => [] as ProfilePhoto[]);
+    if (found.length === 0) openSitter(id);
+    else setViewer({ name, photos: found });
   };
 
   const openSitter = (id: string) => {
@@ -155,29 +149,27 @@ export default function OwnerBookings() {
                   <View key={sitter.sitterId} style={styles.row}>
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
-                      onPress={() => openSitter(sitter.sitterId)}
-                      style={styles.rowMain}
-                      testID={`sitter-tile-${sitter.displayName}`}
+                      accessibilityLabel={`${sitter.displayName}'s photos`}
+                      onPress={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
+                      testID={`sitter-avatar-${sitter.displayName}`}
                     >
                       {cover ? (
                         <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} />
                       ) : (
                         <Avatar kind="initial" name={sitter.displayName} size={48} />
                       )}
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
+                      onPress={() => openSitter(sitter.sitterId)}
+                      style={styles.rowMain}
+                      testID={`sitter-tile-${sitter.displayName}`}
+                    >
                       <Text style={styles.rowName} numberOfLines={1}>
                         {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
                       </Text>
                       <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Chat with ${sitter.displayName}`}
-                      onPress={() => void startChat(sitter.sitterId)}
-                      style={styles.chatButton}
-                      testID={`sitter-chat-${sitter.displayName}`}
-                    >
-                      <Ionicons name="chatbubble-ellipses-outline" size={theme.icon.sm} color={theme.color.primary} />
                     </Pressable>
                   </View>
                 );
@@ -185,6 +177,7 @@ export default function OwnerBookings() {
             </View>
           )}
         </View>
+        <PhotoViewerSheet visible={viewer !== null} title={viewer?.name ?? ""} photos={viewer?.photos ?? []} onClose={() => setViewer(null)} testID="sitter-photos" />
         {chats.items.length > 0 ? (
           <View style={styles.section} testID="owner-chats">
             <Text accessibilityRole="header" style={styles.heading}>
@@ -272,6 +265,5 @@ const makeStyles = (theme: Theme) =>
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },
     rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
     rowName: { flex: 1, fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
-    chatButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     rowKm: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

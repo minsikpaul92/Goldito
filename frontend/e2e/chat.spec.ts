@@ -66,13 +66,23 @@ async function openBookings(page: Page, user: MockUser, home: "owner" | "sitter"
   return screen;
 }
 
+/** Bookings, the sitter's name, the profile, Start chat: a chat starts only from the profile. */
+async function startChatFromRow(page: Page, name: string) {
+  const screen = app(page);
+  await screen.getByTestId(`sitter-tile-${name}`).click();
+  await expect(page).toHaveURL(/\/owner\/sitters\//);
+  await screen.getByTestId("start-chat").click();
+}
+
 test.describe("chat hub", () => {
   test("an owner starts a chat from a sitter: the stay card first, then messages both ways, in the same thread", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     const screen = await openBookings(page, OWNER, "owner");
 
-    await screen.getByTestId("sitter-chat-Chloe").click();
+    // The row has no chat button: the avatar shows photos, the name opens the profile, and Start chat is there.
+    await expect(screen.getByTestId("sitter-chat-Chloe")).toHaveCount(0);
+    await startChatFromRow(page, "Chloe");
     await expect(page).toHaveURL(/\/chat\//);
     const url = page.url();
     await expect(screen.getByTestId("chat-stay-card")).toContainText("Max, Mochi");
@@ -99,11 +109,12 @@ test.describe("chat hub", () => {
     db.chat_messages.push({ id: "reply", thread_id: thread.id, sender_id: SITTER.id, kind: "text", body: "Max is welcome!", card: null, created_at: new Date(Date.now() + 5000).toISOString() });
     await expect(screen.getByTestId("chat-bubble-them").filter({ hasText: "Max is welcome!" })).toBeVisible({ timeout: 10000 });
 
-    // Back is the list; the same sitter opens the same thread, with the history and a second stay card.
+    // Back leaves the chat (the profile, then the list); the same sitter opens the same thread, with the history.
+    await page.goBack();
     await page.goBack();
     await expect(page).toHaveURL(/\/owner\/bookings$/);
     await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Max is welcome!");
-    await screen.getByTestId("sitter-chat-Chloe").click();
+    await startChatFromRow(page, "Chloe");
     await expect(page).toHaveURL(url);
     await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
     expect(db.chat_threads).toHaveLength(1);
@@ -156,7 +167,7 @@ test.describe("chat hub", () => {
     expect(db.chat_threads[0].sitter_left_at).toBeNull();
 
     // Start it again: the chat is back with its history.
-    await screen.getByTestId("sitter-chat-Chloe").click();
+    await startChatFromRow(page, "Chloe");
     await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
   });
 

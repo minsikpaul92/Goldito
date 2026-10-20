@@ -276,6 +276,26 @@ test.describe("find a sitter", () => {
     await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
   });
 
+  test("the avatar opens the sitter's photos (the profile when there are none), the name opens the profile, and there is no chat button", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.profile_photos.push({ id: "ph1", profile_id: SITTER.id, public_id: "goldito/chloe/1" });
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await screen.getByTestId("bar-search").click();
+    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-chat-Chloe")).toHaveCount(0);
+
+    await screen.getByTestId("sitter-avatar-Chloe").click();
+    await expect(screen.getByTestId("sitter-photos-photo-1")).toBeVisible();
+    await screen.getByTestId("sitter-photos-close").click();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+
+    // Paul has no photo: the avatar goes to his profile, like the name.
+    await screen.getByTestId("sitter-avatar-Paul").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${PAUL.id}\\?`));
+  });
+
   test("a tile opens the sitter detail with the stay", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);

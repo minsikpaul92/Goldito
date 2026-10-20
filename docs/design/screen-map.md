@@ -58,16 +58,16 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3) and questions.
 
-Shows: `BookingCard` · `ChatList` · `SitterSearchBar`
+Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 110 |
-| TextButton | Open Profile | `search-open-profile` | 134 |
-| TextButton | Try again | `search-retry` | 142 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 156 |
-| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 173 |
-| Pressable | — | ``question-card-${inq.id}`` | 218 |
+| EmptyState | Couldn't load your bookings | — | 104 |
+| TextButton | Open Profile | `search-open-profile` | 128 |
+| TextButton | Try again | `search-retry` | 136 |
+| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 150 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 162 |
+| Pressable | — | ``question-card-${inq.id}`` | 211 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -330,16 +330,16 @@ Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `ProfilePhotoGalle
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 202 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 403 |
-| TextButton | Edit entry info | `profile-home-access` | 420 |
-| SegmentedControl | — | `profile-ai-mode` | 436 |
-| Button | Edit your answers | `profile-answers-edit` | 465 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 473 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 475 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 492 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 502 |
-| TextButton | + Add a spot | `profile-add-spot` | 526 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 541 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 404 |
+| TextButton | Edit entry info | `profile-home-access` | 421 |
+| SegmentedControl | — | `profile-ai-mode` | 437 |
+| Button | Edit your answers | `profile-answers-edit` | 466 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 474 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 476 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 493 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 503 |
+| TextButton | + Add a spot | `profile-add-spot` | 527 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 542 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
