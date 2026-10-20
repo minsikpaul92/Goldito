@@ -142,3 +142,34 @@ def test_a_sitter_account_resets_the_sitter_side_only(client: TestClient, monkey
     assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
     assert scopes == ["sitter"]
 
+
+
+def test_a_failed_reset_answers_json_not_a_bare_500(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    enable(monkeypatch)
+    sign_in_as(DEMO_OWNER)
+
+    def boom(*a, **k):
+        raise RuntimeError("Could not insert into booking_consents (403)")
+
+    monkeypatch.setattr(demo.demo_reset, "reset", boom)
+    response = client.post("/api/demo/reset", json={"state": "in_care"})
+
+    assert response.status_code == 500
+    assert "booking_consents" in response.json()["detail"]
+    demo._running.clear()
+
+
+def test_a_second_reset_of_the_same_set_is_refused_while_one_runs(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    enable(monkeypatch)
+    sign_in_as(DEMO_OWNER)
+    answers = []
+
+    def reset_while_another_runs(*a, **k):
+        answers.append(client.post("/api/demo/reset", json={"state": "pets"}).status_code)
+        return []
+
+    monkeypatch.setattr(demo.demo_reset, "reset", reset_while_another_runs)
+
+    assert client.post("/api/demo/reset", json={"state": "pets"}).status_code == 200
+    assert answers == [409]
+    demo._running.clear()
