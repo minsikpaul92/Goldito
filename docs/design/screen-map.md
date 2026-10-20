@@ -26,13 +26,13 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentC
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 198 |
 | EmptyState | Chat not found | — | 206 |
-| Pressable | — | `chat-stage` | 372 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 425 |
-| Button | Send quote | `chat-send-quote` | 432 |
-| TextButton | Send quote | `chat-send-quote` | 435 |
-| Pressable | — | `chat-action-chip` | 453 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 464 |
-| Pressable | Send | `chat-send` | 502 |
+| Pressable | — | `chat-stage` | 376 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 430 |
+| Button | Send quote | `chat-send-quote` | 437 |
+| TextButton | Send quote | `chat-send-quote` | 440 |
+| Pressable | — | `chat-action-chip` | 458 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 469 |
+| Pressable | Send | `chat-send` | 507 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -700,19 +700,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Decline | `quote-extra-decline` | 80 |
-| TextButton | Accept | `quote-extra-accept` | 81 |
-| TextButton | Add a fee | `quote-add-fee` | 97 |
-| Button | Confirm quote | `quote-confirm` | 99 |
+| TextButton | Decline | `quote-extra-decline` | 82 |
+| TextButton | Accept | `quote-extra-accept` | 83 |
+| TextButton | Add a fee | `quote-add-fee` | 99 |
+| Button | Confirm quote | `quote-confirm` | 101 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Send quote | `send-quote-sheet` | 67 |
-| Button | Send quote | `send-quote-submit` | 72 |
-| Sheet | Add fee | `add-fee-sheet` | 122 |
-| Button | Add fee | `add-fee-submit` | 127 |
+| Sheet | final ? "Send final quote" : "Send quote" | `send-quote-sheet` | 129 |
+| Button | final ? "Send final quote" : "Send quote" | `send-quote-submit` | 135 |
+| TextButton | Remove | `draft-fee-remove` | 168 |
+| TextButton | Add fee | `draft-fee-add` | 190 |
+| Sheet | Add fee | `add-fee-sheet` | 231 |
+| Button | Add fee | `add-fee-submit` | 236 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
@@ -1365,4 +1367,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-396 actions · 395 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+398 actions · 397 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

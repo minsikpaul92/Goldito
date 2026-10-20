@@ -243,6 +243,10 @@ export default function Chat() {
         }
       : null;
 
+  // A quote sent after a booking's payment card is that booking's final quote.
+  const payAt = messages.findIndex((m) => m.card?.type === "payment");
+  const isFinal = (id: string) => payAt >= 0 && messages.findIndex((m) => m.id === id) > payAt;
+
   /** One owner action on a quote card; the cards come back from the server. */
   const quoteAction = async (run: () => Promise<void>) => {
     setQuoteBusy(true);
@@ -399,6 +403,7 @@ export default function Chat() {
               <ChatQuoteCard
                 card={m.card as QuoteCard}
                 role={header.myRole}
+                final={isFinal(m.id)}
                 busy={quoteBusy}
                 onAddFee={() => setFeeFor(m.id)}
                 onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
@@ -442,7 +447,7 @@ export default function Chat() {
         </View>
       ) : null}
       {text.trim() === "" && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady)) ? (
-        <View style={styles.chips} testID="chat-chips">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled" testID="chat-chips">
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
@@ -472,7 +477,7 @@ export default function Chat() {
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}
-        </View>
+        </ScrollView>
       ) : null}
       <View style={styles.compose}>
         <TextInput
@@ -532,6 +537,7 @@ export default function Chat() {
             threadId={threadId}
             sitterId={header.sitterId}
             stay={quoting === "final" ? finalStay : stay}
+            final={quoting === "final"}
             onSent={() => void load()}
           />
           <AddFeeSheet visible={feeFor !== null} onClose={() => setFeeFor(null)} messageId={feeFor} onAdded={() => void load()} />
@@ -560,9 +566,10 @@ const makeStyles = (theme: Theme) =>
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
-    actionChip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: theme.color.primary },
+    chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs },
+    chip: { height: 30, justifyContent: "center", paddingHorizontal: theme.spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    actionChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: theme.color.primary },
     actionChipText: { color: theme.color.primaryText },
     chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
     chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },

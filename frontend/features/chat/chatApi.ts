@@ -270,8 +270,8 @@ function quoteFail(error: { message: string; details?: string | null }, fallback
 }
 
 /** The sitter prices the stay with their saved rates; the numbers come from the server. */
-export async function sendChatQuote(threadId: string, input: { service: string; dropOffAt: string; pickUpAt: string; petIds: string[] }): Promise<void> {
-  const { error } = await getSupabase().rpc("send_chat_quote", {
+export async function sendChatQuote(threadId: string, input: { service: string; dropOffAt: string; pickUpAt: string; petIds: string[] }): Promise<string> {
+  const { data, error } = await getSupabase().rpc("send_chat_quote", {
     p_thread: threadId,
     p_service: input.service,
     p_drop_off_at: input.dropOffAt,
@@ -279,6 +279,7 @@ export async function sendChatQuote(threadId: string, input: { service: string; 
     p_pet_ids: input.petIds,
   });
   if (error) quoteFail(error, "Couldn't send the quote. Try again.");
+  return String((data as { id?: string } | null)?.id ?? "");
 }
 
 export async function addQuoteExtra(messageId: string, label: string, amount: number): Promise<void> {

@@ -547,6 +547,41 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("quote-confirm")).toHaveCount(0);
   });
 
+  test("the sitter reviews the quote draft, adds and removes fees, and sends them with the quote", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+
+    // The draft is the server's number; nothing is sent until Send.
+    await screen.getByTestId("chat-send-quote").click();
+    await expect(screen.getByTestId("send-quote-draft")).toContainText("$268.13");
+    await expect(screen.getByTestId("draft-total")).toHaveText("$268.13 CAD");
+    expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "quote")).toHaveLength(0);
+
+    // Two fees go on the draft, one comes off again; the total follows.
+    await screen.getByTestId("draft-fee-labels").getByText("Medication").click();
+    await screen.getByTestId("draft-fee-amount").fill("12.50");
+    await screen.getByTestId("draft-fee-add").click();
+    await screen.getByTestId("draft-fee-labels").getByText("Extra walks").click();
+    await screen.getByTestId("draft-fee-amount").fill("8");
+    await screen.getByTestId("draft-fee-add").click();
+    await expect(screen.getByTestId("draft-fee")).toHaveCount(2);
+    await expect(screen.getByTestId("draft-total")).toHaveText("$288.63 CAD");
+    await screen.getByTestId("draft-fee-remove").last().click();
+    await expect(screen.getByTestId("draft-total")).toHaveText("$280.63 CAD");
+
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toBeHidden();
+    await expect(screen.getByTestId("quote-extra-offered")).toContainText("Medication");
+    await expect(screen.getByTestId("quote-extra-offered")).toHaveCount(1);
+    await expect(screen.getByTestId("quote-total")).toHaveText("$268.13 CAD"); // an offered fee is not in the total yet
+  });
+
   test("the owner accepts one fee and declines another: the total follows, and the quote is confirmed after the last answer", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
@@ -595,8 +630,9 @@ test.describe("chat hub", () => {
     await screen.getByTestId("sitter-bookings-tabs-chats").click();
     await screen.getByTestId("chat-row-Robert").click();
     await screen.getByTestId("chat-send-quote").click();
-    await screen.getByTestId("send-quote-submit").click();
-    await expect(screen.getByText("This sitter hasn't set a Boarding price yet.")).toBeVisible();
+    // The draft says why before anything is sent.
+    await expect(screen.getByTestId("send-quote-problem")).toHaveText("This sitter hasn't set a Boarding price yet.");
+    await expect(screen.getByTestId("send-quote-submit")).toBeDisabled();
   });
 
   // 3D.7 / 014o: Meet & Greet, both say yes, the final quote and the payment, all in the chat. The stage comes from the
@@ -718,8 +754,10 @@ test.describe("chat hub", () => {
     // The sitter sends the final quote and adds a fee.
     await expect(screen.getByTestId("chat-payment-card")).toContainText("Waiting for Robert to pay");
     await screen.getByTestId("chat-next-final_quote").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toContainText("Send final quote");
     await screen.getByTestId("send-quote-submit").click();
     await expect(screen.getByTestId("chat-quote-card")).toContainText("$268.13");
+    await expect(screen.getByTestId("quote-title")).toHaveText("Final quote"); // after the Meet & Greet and the agreement
     await screen.getByTestId("quote-add-fee").click();
     await screen.getByTestId("add-fee-labels").getByText("Medication").click();
     await screen.getByTestId("add-fee-amount").fill("12.50");
