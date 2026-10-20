@@ -3,7 +3,7 @@
 from datetime import date
 
 import pytest
-from app.services import demo_reset
+from app.services import demo_accounts, demo_reset
 from scripts import reset_demo
 
 from tests.fakes import FakeDB
@@ -353,3 +353,73 @@ def test_all_pet_names_in_the_demo_sets_differ():
     names = [pet[0] for demo_set in DEMO_SETS for pet in demo_set.pets]
     assert len(names) == len(set(names))
 
+
+
+def chat_of(db: FakeDB):
+    threads = [t for t in db.tables["chat_threads"] if t["owner_id"] == OWNER and t["sitter_id"] == SITTER]
+    assert len(threads) == 1
+    return [m for m in db.tables["chat_messages"] if m["thread_id"] == threads[0]["id"]]
+
+
+def test_the_reset_replaces_the_pairs_chat_and_keeps_another_pairs():
+    db = world()
+    db.tables["chat_threads"] = [
+        {"id": "t-old", "owner_id": OWNER, "sitter_id": SITTER},
+        {"id": "t-other", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
+    ]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert "t-old" not in ids(db, "chat_threads")
+    assert "t-other" in ids(db, "chat_threads")
+
+
+def test_a_pets_state_chat_has_the_stay_card_and_a_short_talk_but_no_request():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    messages = chat_of(db)
+    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages] == [("card", "stay"), ("text", None), ("text", None)]
+    assert [p["name"] for p in messages[0]["card"]["pets"]] == ["Max", "Mochi"]
+    assert messages[0]["sender_id"] == OWNER and messages[2]["sender_id"] == SITTER
+
+
+def test_a_booked_state_chat_also_has_the_request_card_of_the_booking():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+
+    cards = [m["card"] for m in chat_of(db) if m["kind"] == "card"]
+    assert [c["type"] for c in cards] == ["stay", "request"]
+    assert cards[1]["booking_id"] == "b-new" and cards[1]["service_type"] == "boarding"
+
+
+def test_the_empty_state_has_no_chat_and_no_favorite():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="empty", apply=True)
+
+    assert db.tables.get("chat_threads", []) == []
+    assert db.tables.get("owner_favorite_sitters", []) == []
+
+
+def test_the_set_sitter_is_the_owners_one_favorite_and_a_second_reset_does_not_double_it():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["owner_favorite_sitters"] == [{"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}]
+
+
+def test_the_sitter_gets_her_onboarding_answers_and_is_marked_done():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    answers = [a for a in db.tables["sitter_profile_answers"] if a["sitter_id"] == SITTER]
+    assert [a["question_key"] for a in answers] == [k for k, _a, _c in demo_accounts.DEMO_SITTER_ANSWERS]  # replaced, not doubled
+    assert all(a["answer"] or a["choice"] for a in answers)
+    assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
