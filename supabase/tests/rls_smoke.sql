@@ -5072,6 +5072,72 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 014k (Booking request in the chat): the request becomes one card; a chat shows photos
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  sana constant uuid := '00000000-0000-4000-8000-0000000000d1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 230;
+  t1 public.chat_threads;
+  t2 public.chat_threads;
+  v_b uuid;
+  r public.chat_messages;
+  r2 public.chat_messages;
+  v_n int;
+  v_err text;
+begin
+  perform _t_as(robert);
+  v_b := request_booking(chloe, array[max], local_ts(d, '09:00'), 'sitter_home', null,
+    local_ts(d + 1, '17:00'), 'owner_home', null, 'Pill at 2 PM');
+  t1 := open_chat_thread(chloe);
+  r := post_booking_request_card(t1.id, v_b);
+  perform _t_ok(r.kind = 'card' and r.card ->> 'type' = 'request' and r.card ->> 'booking_id' = v_b::text,
+    '014k: the request is posted into the chat as a card');
+  perform _t_ok(r.card ->> 'note' = 'Pill at 2 PM'
+      and r.card -> 'drop_off_place' ->> 'type' = 'sitter_home' and r.card -> 'pick_up_place' ->> 'type' = 'owner_home'
+      and jsonb_array_length(r.card -> 'pets') = 1,
+    '014k: the card carries the note, both places and the pets');
+  r2 := post_booking_request_card(t1.id, v_b);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'request';
+  perform _t_ok(r2.id = r.id and v_n = 1, '014k: the same booking is never posted twice');
+
+  -- Only the owner of the booking, in their own thread with that sitter
+  perform _t_as(chloe);
+  begin perform post_booking_request_card(t1.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: the sitter cannot post a request card');
+  perform _t_as(joy);
+  begin perform post_booking_request_card(t1.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: a third person cannot post into the thread');
+  -- Robert has a photo; Sana shares nothing with him yet, then a chat counts
+  perform _t_as(null);
+  insert into public.profile_photos (profile_id, public_id, position) values (robert, 'goldito/robert/p1', 0);
+  perform _t_as(sana);
+  perform _t_ok(not exists (select 1 from public.profile_photos where profile_id = robert),
+    '014k: a sitter does not see the photos of an owner they share nothing with');
+  perform _t_as(robert);
+  t2 := open_chat_thread(sana);
+  perform _t_as(sana);
+  perform _t_ok(exists (select 1 from public.profile_photos where profile_id = robert),
+    '014k: …but does once the owner has a chat with them');
+  perform _t_as(robert);
+  begin perform post_booking_request_card(t2.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: a booking with another sitter does not go into this thread');
+
+  perform _t_as(null);
+  delete from public.profile_photos where public_id = 'goldito/robert/p1'; -- the later 014g block counts Robert's photos
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Open by default + weekly closing rules (014d)
 -- ---------------------------------------------------------------------------
 
