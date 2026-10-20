@@ -188,12 +188,13 @@ def ensure_sitter_rates(client: Client, sitter_id: str) -> str:
 
 def ensure_sitter_answers(client: Client, sitter_id: str) -> None:
     """Give a demo sitter the onboarding answers and mark onboarding as done (014f), so signing in does not send
-    her through the questions. Replaces her answers; safe to run again."""
-    client.table("sitter_profile_answers").delete().eq("sitter_id", sitter_id).execute()
-    for position, (key, answer, choice) in enumerate(DEMO_SITTER_ANSWERS):
-        client.table("sitter_profile_answers").insert(
-            {"sitter_id": sitter_id, "question_key": key, "answer": answer, "choice": choice, "position": position}
-        ).execute()
+    her through the questions. A sitter who already has answers (a teammate filled them in) keeps them."""
+    has_answers = client.table("sitter_profile_answers").select("question_key").eq("sitter_id", sitter_id).limit(1).execute().data
+    if not has_answers:
+        for position, (key, answer, choice) in enumerate(DEMO_SITTER_ANSWERS):
+            client.table("sitter_profile_answers").insert(
+                {"sitter_id": sitter_id, "question_key": key, "answer": answer, "choice": choice, "position": position}
+            ).execute()
     client.table("sitter_profiles").update({"onboarded_at": datetime.now(UTC).isoformat()}).eq("id", sitter_id).is_(
         "onboarded_at", "null"
     ).execute()
