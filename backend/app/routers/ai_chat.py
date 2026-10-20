@@ -50,8 +50,15 @@ class Chip(BaseModel):
     label: str
 
 
+class ChatAction(BaseModel):
+    id: str
+    label: str
+
+
 class ChatChipsResponse(BaseModel):
     chips: list[Chip]
+    # One thing to do next (open a card or a sheet) when their last message leads to it; the person presses it (D62).
+    action: ChatAction | None = None
     # The other person's latest text the chips answer (null at the start of a chat); the app asks again when it changes.
     for_message_id: str | None = None
     source: str  # model | fallback
@@ -69,6 +76,8 @@ class ChatDraftResponse(BaseModel):
 
 class ChipsOut(BaseModel):
     chips: list[str] = Field(default_factory=list)
+    action: str | None = None
+    confidence: float | None = None
 
 
 class DraftOut(BaseModel):
@@ -148,6 +157,33 @@ def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today
     return facts
 
 
+def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
+    """The actions that are possible for me right now. The booking's stage is the database's own (booking_stage through
+    get_booking_stages, D60), never worked out here; when it can't be read there are no actions."""
+    thread, messages = ctx["thread"], ctx["messages"]
+    rows = (
+        db.table("bookings")
+        .select("id, status, created_at, owner_id, sitter_id, meet_greet_status, meet_greet_proposed_by, sitter_interest_at, owner_agreed_at, sitter_accepted_at")
+        .eq("owner_id", thread["owner_id"])
+        .eq("sitter_id", thread["sitter_id"])
+        .execute()
+        .data
+    )
+    booking = next(iter(sorted((r for r in rows if r.get("status") in ("requested", "confirmed")), key=lambda r: str(r.get("created_at", "")), reverse=True)), None)
+    stage = None
+    if booking:
+        try:
+            stages = authz.rpc_json(user.access_token, "get_booking_stages", {"p_ids": [booking["id"]]})
+            stage = next((r["stage"] for r in stages or [] if r.get("booking_id") == booking["id"]), None)
+        except (authz.RpcError, HTTPException) as exc:
+            log.warning("chat: could not read the booking stage (%s)", exc)
+            return []
+        if stage is None:
+            return []
+    stay = _latest_stay(messages)
+    return logic.available_actions(ctx["role"], booking, stage, has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
+
+
 def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
     """The rolling summary of everything before the window, refreshed when enough older messages are not in it yet."""
     thread, messages = ctx["thread"], ctx["messages"]
@@ -214,8 +250,14 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     if started and last_text and last_text.get("sender_id") == user.id:
         return ChatChipsResponse(chips=[], for_message_id=for_id, source="model")
 
+    # What the person could do next, if their last message leads to it (only when there is something to answer).
+    available = _actions(db, user, ctx) if last_them else []
+    if available:
+        base["actions"] = {a: logic.ACTIONS[a]["meaning"] for a in available}
+
     labels: list[str] = []
     source = "model"
+    action: dict | None = None
     try:
         out, _ = nebius.chat_json(
             "fast",
@@ -231,6 +273,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
                 seen.add(label.lower())
                 labels.append(label)
         labels = labels[: logic.MAX_CHIPS]
+        action = logic.chosen_action(out.action, out.confidence, available)
         if facts["availability"].get("can_host") is False and ctx["role"] == "sitter":
             labels = [c for c in labels if not inquiry_logic._SAYS_YES.search(c)]
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
@@ -238,7 +281,12 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     if len(labels) < 2:
         source = "fallback"
         labels = logic.generic_chips(ctx["role"], started=started, can_host=facts["availability"].get("can_host"))
-    return ChatChipsResponse(chips=[Chip(id=f"c{i}", label=c) for i, c in enumerate(labels)], for_message_id=for_id, source=source)
+    return ChatChipsResponse(
+        chips=[Chip(id=f"c{i}", label=c) for i, c in enumerate(labels)],
+        action=ChatAction(**action) if action else None,
+        for_message_id=for_id,
+        source=source,
+    )
 
 
 @router.post("/chat-draft", response_model=ChatDraftResponse)

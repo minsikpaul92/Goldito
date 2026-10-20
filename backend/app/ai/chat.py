@@ -15,6 +15,24 @@ SUMMARY_STEP = 10  # ... refreshed when this many older messages are not in it y
 MAX_CHIPS = 3
 CHIP_MAX = 36
 DRAFT_MAX = 600
+ACTION_MIN_CONFIDENCE = 0.7  # below this the model is guessing: no action chip at all
+
+# The things a person can do next from the chat (D62). The code decides which are possible right now; the model may point
+# at one when the other person's last message leads to it, and a person always presses it. `label` is what the chip says,
+# `meaning` is what the model reads (it never writes a label).
+ACTIONS: dict[str, dict[str, str]] = {
+    "request_booking": {"label": "Request booking", "meaning": "I ask the sitter to take the stay (a first step, not a promise)."},
+    "send_quote": {"label": "Send quote", "meaning": "I price the stay for the owner with my saved rates."},
+    "interest": {"label": "Yes, let's meet", "meaning": "I say yes to meeting first; my dates are held for this owner."},
+    "meet_time": {"label": "Pick a time", "meaning": "I choose a time and place for the Meet & Greet."},
+    "meet_accept": {"label": "Accept", "meaning": "I accept the Meet & Greet time they suggested."},
+    "meet_skip": {"label": "Skip Meet & Greet", "meaning": "I ask to skip the Meet & Greet."},
+    "agree": {"label": "I'd like to book", "meaning": "I, the owner, say I want to book this sitter."},
+    "accept": {"label": "I accept", "meaning": "I, the sitter, accept this booking."},
+    "final_quote": {"label": "Send final quote", "meaning": "I send the final quote now that we both agreed."},
+    "confirm_quote": {"label": "Confirm quote", "meaning": "I confirm the final quote."},
+    "pay": {"label": "Pay", "meaning": "I pay for the stay (a demo payment)."},
+}
 
 _NUMBER = re.compile(r"\d")
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
@@ -136,3 +154,94 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
     if len(text) > DRAFT_MAX:
         problems.append("it is too long")
     return problems
+
+
+def final_quote(messages: list[dict], booking_id: str) -> dict | None:
+    """The final quote of a booking: the newest quote card (not replaced) posted after its payment card, with whether a fee
+    still waits for the owner's answer. None before there is a payment card or a quote (same rule as the app's footer)."""
+    paid_at = next(
+        (i for i, m in enumerate(messages) if m.get("kind") == "card" and (m.get("card") or {}).get("type") == "payment" and (m.get("card") or {}).get("booking_id") == booking_id),
+        None,
+    )
+    if paid_at is None:
+        return None
+    later = [
+        m["card"] for m in messages[paid_at + 1 :]
+        if m.get("kind") == "card" and (m.get("card") or {}).get("type") == "quote" and m["card"].get("status") != "replaced"
+    ]
+    if not later:
+        return None
+    card = later[-1]
+    return {"status": card.get("status"), "fee_waiting": any(e.get("status") == "offered" for e in card.get("extras") or [])}
+
+
+def available_actions(
+    role: str,
+    booking: dict | None,
+    stage: str | None,
+    *,
+    has_stay: bool,
+    priced: bool,
+    messages: list[dict],
+) -> list[str]:
+    """The action ids that are possible for me right now, from the booking as the database computes it (`stage` is
+    booking_stage). Mirrors what the app's footer would let me do; the app checks again before it shows a chip."""
+    owner = role == "owner"
+    live = booking is not None and stage not in (None, "completed", "declined", "cancelled")
+    out: list[str] = []
+    if not live:
+        return ["request_booking"] if owner else (["send_quote"] if has_stay and not priced else [])
+    me_agreed = booking.get("owner_agreed_at") if owner else booking.get("sitter_accepted_at")
+    mg_status = booking.get("meet_greet_status")
+    mine = booking.get("owner_id") if owner else booking.get("sitter_id")
+    if stage == "requested" and not owner:
+        out.append("interest")
+    if stage == "meet_greet" and booking.get("sitter_interest_at"):
+        if mg_status == "required":
+            out.append("meet_time")
+        if mg_status == "proposed" and booking.get("meet_greet_proposed_by") != mine:
+            out.append("meet_accept")
+        if mg_status in ("required", "proposed", "agreed"):
+            out.append("meet_skip")
+    if stage == "confirm" and not me_agreed:
+        out.append("agree" if owner else "accept")
+    if stage == "awaiting_payment":
+        final = final_quote(messages, booking["id"])
+        if not owner and final is None and any(m.get("kind") == "card" and (m.get("card") or {}).get("type") == "payment" for m in messages):
+            out.append("final_quote")
+        if owner and final and final["status"] == "sent" and not final["fee_waiting"]:
+            out.append("confirm_quote")
+        if owner and final and final["status"] == "confirmed":
+            out.append("pay")
+    if not owner and has_stay and not priced and stage in ("requested", "meet_greet", "confirm"):
+        out.append("send_quote")
+    return out
+
+
+def chosen_action(action: str | None, confidence: float | None, available: list[str]) -> dict | None:
+    """The model's pick, only if it is one of the possible actions and the model is sure; the label is ours."""
+    if not action or action not in available or float(confidence or 0) < ACTION_MIN_CONFIDENCE:
+        return None
+    return {"id": action, "label": ACTIONS[action]["label"]}
+
+
+def _instant(value) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def is_priced(messages: list[dict], stay: dict | None) -> bool:
+    """A quote that is not replaced already prices the stay on the latest stay or request card."""
+    if not stay:
+        return False
+    drop, pick = _instant(stay.get("drop_off_at")), _instant(stay.get("pick_up_at"))
+    return any(
+        m.get("kind") == "card"
+        and (m.get("card") or {}).get("type") == "quote"
+        and m["card"].get("status") != "replaced"
+        and _instant(m["card"].get("drop_off_at")) == drop
+        and _instant(m["card"].get("pick_up_at")) == pick
+        for m in messages
+    )
