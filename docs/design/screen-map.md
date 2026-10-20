@@ -24,14 +24,15 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentC
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 177 |
-| EmptyState | Chat not found | — | 185 |
-| Pressable | — | `chat-stage` | 341 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 391 |
-| Button | Send quote | `chat-send-quote` | 398 |
-| TextButton | Send quote | `chat-send-quote` | 401 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 419 |
-| Pressable | Send | `chat-send` | 446 |
+| EmptyState | Couldn't load this chat | — | 180 |
+| EmptyState | Chat not found | — | 188 |
+| Pressable | — | `chat-stage` | 354 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 404 |
+| Button | Send quote | `chat-send-quote` | 411 |
+| TextButton | Send quote | `chat-send-quote` | 414 |
+| Pressable | — | `chat-action-chip` | 432 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 443 |
+| Pressable | Send | `chat-send` | 470 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -1333,4 +1334,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-384 actions · 383 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+385 actions · 384 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
