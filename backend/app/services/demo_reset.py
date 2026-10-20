@@ -3,7 +3,7 @@
 Five states, each a point to start a manual test from:
 
 - `empty`      the owner has no pets; the sitter has her schedule, services and prices
-- `pets`       the set's two pets (Max + Mochi for the default set), nothing else (before any booking)
+- `pets`       the set's two pets (Max + Mochi for the default set), nothing else (no chat, no favorite, no booking)
 - `confirmed`  `pets` + one booking the sitter accepted, before checkout (Finish booking)
 - `ready`      the same, paid; drop-off is in an hour, so the sitter's Received is open (it opens 2 h before)
 - `in_care`    paid and received a moment ago: the pets are with the sitter (check-ins, photos, reports)
@@ -60,6 +60,8 @@ class Step:
     where: dict[str, list] = field(default_factory=dict)
     # Columns that must be null.
     nulls: tuple[str, ...] = ()
+    # A column the table has, to count rows by (a table with a composite key has no `id`).
+    count_column: str = "id"
 
 
 # What a stay leaves behind on the owner's pets (the sitter's posts and notes). Either side's reset removes these
@@ -103,6 +105,7 @@ def plan(
         Step("inquiries", "inquiries", pair),
         # Their chat (its messages and cards go with it); the reset builds a fresh one for the state.
         Step("chat", "chat_threads", pair),
+        Step("favorite sitter", "owner_favorite_sitters", pair, count_column="owner_id"),
         # Notices about a booking went with it; one about another account's booking stays.
         Step("notifications", "notifications", {"user_id": ([owner_id] if owner_side else []) + ([sitter_id] if sitter_side else [])}, nulls=("booking_id",)),
     ]
@@ -119,7 +122,7 @@ def plan(
 
 
 def _query(client: Client, step: Step, op: str):
-    query = client.table(step.table).select("id") if op == "count" else client.table(step.table).delete()
+    query = client.table(step.table).select(step.count_column) if op == "count" else client.table(step.table).delete()
     for column, values in step.where.items():
         query = query.in_(column, values)
     for column in step.nulls:
@@ -367,7 +370,7 @@ def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state:
         return
     names = " and ".join(p["name"] for p in pets)
     tz = ZoneInfo(get_settings().app_timezone)
-    drop_off, pick_up = stay_times("confirmed" if state == "pets" else state, datetime.now(tz), today)
+    drop_off, pick_up = stay_times(state, datetime.now(tz), today)
     pet_cards = [{"id": p["id"], "name": p["name"]} for p in sorted(pets, key=lambda p: p["name"])]
     thread = client.table("chat_threads").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute().data[0]
 
@@ -453,9 +456,9 @@ def reset(
                 open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id, demo_set, scope)
         booking = book(client, owner_id, sitter_id, today, state, demo_set) if building else None
-        if state != "empty":
-            # The owner's one favorite is the set's sitter; the chat is the pair's talk up to this state.
-            client.table("owner_favorite_sitters").delete().eq("owner_id", owner_id).eq("sitter_id", sitter_id).execute()
+        if building:
+            # Once there is a booking, the owner's one favorite is the set's sitter and the chat is the pair's talk.
+            # `empty` and `pets` start before the two have met, so they have neither.
             client.table("owner_favorite_sitters").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute()
             seed_chat(client, owner_id, sitter_id, today, state, booking)
     return report

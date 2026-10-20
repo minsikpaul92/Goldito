@@ -368,19 +368,30 @@ def test_the_reset_replaces_the_pairs_chat_and_keeps_another_pairs():
         {"id": "t-other", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
     ]
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
 
     assert "t-old" not in ids(db, "chat_threads")
     assert "t-other" in ids(db, "chat_threads")
 
 
-def test_a_pets_state_chat_has_the_stay_card_and_a_short_talk_but_no_request():
+def test_a_pets_state_has_no_chat_and_no_favorite_even_when_an_earlier_one_exists():
     db = world()
+    db.tables["chat_threads"] = [{"id": "t-old", "owner_id": OWNER, "sitter_id": SITTER}]
+    db.tables["owner_favorite_sitters"] = [{"id": "f-old", "owner_id": OWNER, "sitter_id": SITTER}]
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
+    assert db.tables.get("chat_threads", []) == []
+    assert db.tables.get("owner_favorite_sitters", []) == []
+
+
+def test_a_booked_state_chat_starts_with_the_stay_card_and_a_short_talk():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+
     messages = chat_of(db)
-    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages] == [("card", "stay"), ("text", None), ("text", None)]
+    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages[:3]] == [("card", "stay"), ("text", None), ("text", None)]
     assert [p["name"] for p in messages[0]["card"]["pets"]] == ["Max", "Mochi"]
     assert messages[0]["sender_id"] == OWNER and messages[2]["sender_id"] == SITTER
 
@@ -409,8 +420,8 @@ def test_the_empty_state_has_no_chat_and_no_favorite():
 def test_the_set_sitter_is_the_owners_one_favorite_and_a_second_reset_does_not_double_it():
     db = world()
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    for _ in range(2):
+        demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
 
     assert db.tables["owner_favorite_sitters"] == [{"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}]
 
