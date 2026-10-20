@@ -95,16 +95,18 @@ test.describe("negotiation", () => {
     await expect(screen.getByText("Waiting for Chloe to answer your request.")).toBeVisible();
   });
 
-  test("declining the sitter's time before confirm asks first and ends the request", async ({ page }) => {
+  test("a proposal card has no Decline, so a new time can't end the request (#169)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "requested", SITTER_COUNTER);
     const screen = await openDetail(page, OWNER);
 
-    await screen.getByTestId("proposal-drop_off-decline").click();
-    await expect(screen.getByTestId("end-request-sheet")).toContainText("This will end the booking request.");
-    await screen.getByTestId("end-request-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Request ended");
-    expect(db.bookings[0].status).toBe("cancelled");
+    const proposal = screen.getByTestId("proposal-drop_off");
+    await expect(screen.getByTestId("proposal-drop_off-accept")).toBeVisible();
+    await expect(screen.getByTestId("proposal-drop_off-suggest")).toBeVisible();
+    await expect(screen.getByTestId("proposal-drop_off-decline")).toHaveCount(0);
+    await expect(proposal.getByText("Decline", { exact: true })).toHaveCount(0);
+    expect(db.responses).toEqual([]);
+    expect(db.bookings[0].status).toBe("requested");
   });
 
   test("the owner counters with another time and then waits", async ({ page }) => {
@@ -331,9 +333,12 @@ test.describe("negotiation", () => {
     ]);
     const sitter = await openDetail(page, SITTER);
     await expect(sitter.getByTestId("proposal-drop_off-paired")).toContainText(
-      "Comes with the new pick-up (Oct 14, 5:00 PM). Accept or Decline answers both.",
+      "Comes with the new pick-up (Oct 14, 5:00 PM). Accept answers both.",
     );
     // The pick-up fits on its own (Oct 5 – Oct 14), so it can be answered alone.
     await expect(sitter.getByTestId("proposal-pick_up-paired")).toHaveCount(0);
+    // The sitter's cards have no Decline either (#169).
+    await expect(sitter.getByTestId("proposal-drop_off-suggest")).toBeVisible();
+    await expect(sitter.getByTestId(/^proposal-(drop_off|pick_up)-decline$/)).toHaveCount(0);
   });
 });

@@ -96,7 +96,6 @@ export default function OwnerBookingDetail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
-  const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [agreeing, setAgreeing] = useState(false);
   const [passReasons, setPassReasons] = useState<string[]>([]);
@@ -191,12 +190,6 @@ export default function OwnerBookingDetail() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const decline = (handoffId: string) => {
-    // Before confirm, declining the sitter's time ends the request (respond_handoff, 003).
-    if (booking.status === "requested") setConfirmEnd(handoffId);
-    else void run(() => respondHandoff(handoffId, false), `${sitter} keeps the original time`);
   };
 
   // The sheet sends, shows what went wrong inside itself, and stays open until everything went through (FB-5).
@@ -321,7 +314,6 @@ export default function OwnerBookingDetail() {
             busy={busy}
             onAccept={(id) => void run(() => respondHandoff(id, true), `New time agreed with ${sitter}`)}
             onSuggest={(k) => setSheet({ key: Date.now(), kind: k, mode: "suggest" })}
-            onDecline={decline}
           />
         ))}
 
@@ -453,27 +445,6 @@ export default function OwnerBookingDetail() {
         />
       ) : null}
 
-      <Sheet
-        visible={!!confirmEnd}
-        title="Decline this time?"
-        onClose={() => setConfirmEnd(null)}
-        testID="end-request-sheet"
-        footer={
-          <Button
-            label="Decline and end the request"
-            onPress={() => {
-              const id = confirmEnd;
-              setConfirmEnd(null);
-              if (id) void run(() => respondHandoff(id, false), "Request ended");
-            }}
-            testID="end-request-confirm"
-          />
-        }
-      >
-        <Text style={styles.body}>
-          {`This will end the booking request. To keep it going, suggest another time to ${sitter} instead.`}
-        </Text>
-      </Sheet>
     </View>
   );
 }
