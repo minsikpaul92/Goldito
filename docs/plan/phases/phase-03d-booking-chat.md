@@ -1,6 +1,6 @@
 # Phase 03D — 채팅 중심 부킹 (Stage 1 – 5를 한 채팅으로)
 
-> **상태 (2026-10-17):** 시작 전 · P0 (결정 2026-10-17, Minsik). 에픽: [#130](https://github.com/minsikpaul92/Goldito/issues/130). **담당 (2026-10-19):** Minsik = 3D.1 ([#138](https://github.com/minsikpaul92/Goldito/issues/138)) · 요청 화면 단순화 ([#168](https://github.com/minsikpaul92/Goldito/issues/168)) · 3D.4~3D.9. JeonBeomGu-S = 사진 한 줄과 뷰어 ([#136](https://github.com/minsikpaul92/Goldito/issues/136)) · 3D.3 ([#140](https://github.com/minsikpaul92/Goldito/issues/140)). 03B의 시터 검색(PR #128)이 먼저 머지되어야 한다.
+> **상태 (2026-10-20):** 진행 중 · 3D.1 ~ 3D.7 머지, 다음은 3D.8 ([#145](https://github.com/minsikpaul92/Goldito/issues/145)) · P0 (결정 2026-10-17, Minsik). 에픽: [#130](https://github.com/minsikpaul92/Goldito/issues/130). **담당 (2026-10-19):** Minsik = 3D.1 ([#138](https://github.com/minsikpaul92/Goldito/issues/138)) · 요청 화면 단순화 ([#168](https://github.com/minsikpaul92/Goldito/issues/168)) · 3D.4~3D.9. JeonBeomGu-S = 사진 한 줄과 뷰어 ([#136](https://github.com/minsikpaul92/Goldito/issues/136)) · 3D.3 ([#140](https://github.com/minsikpaul92/Goldito/issues/140)). 03B의 시터 검색(PR #128)이 먼저 머지되어야 한다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D27–D47, **D29 견적 · D31 보안 해제 · D35/D36 시터 말투·승인 · D38 타이핑 최소**
 
@@ -82,7 +82,7 @@
 | 3D.4 | 채팅 허브 (스레드 · 목록 · 진행도) | [#141](https://github.com/minsikpaul92/Goldito/issues/141) | 3D.3 |
 | 3D.5 | AI 칩 · 초안 | [#142](https://github.com/minsikpaul92/Goldito/issues/142) | 3D.4 |
 | 3D.6 | 채팅 안 견적 · 추가요금 (구현: 시터 한 번 눌러 견적 카드, 수수료 줄, 오너 수락 · 확인) | [#143](https://github.com/minsikpaul92/Goldito/issues/143) | 3D.4 |
-| 3D.7 | Meet & Greet · 합의 · 최종 견적 · 결제 (PR [#218](https://github.com/minsikpaul92/Goldito/pull/218), 리뷰 중) | [#144](https://github.com/minsikpaul92/Goldito/issues/144) | 3D.6 |
+| 3D.7 | Meet & Greet · 합의 · 최종 견적 · 결제 (머지됨, PR [#218](https://github.com/minsikpaul92/Goldito/pull/218)) | [#144](https://github.com/minsikpaul92/Goldito/issues/144) | 3D.6 |
 | 3D.8 | 인계 협의 · 트립 · 케어 연결 | [#145](https://github.com/minsikpaul92/Goldito/issues/145) | 3D.7 |
 | 3D.9 | 종료 · 리뷰 | [#146](https://github.com/minsikpaul92/Goldito/issues/146) | 3D.8 |
 
