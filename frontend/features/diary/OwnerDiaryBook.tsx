@@ -1,11 +1,12 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -28,6 +29,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
   // A page just written: the book opens on it.
   const [written, setWritten] = useState<string | null>(null);
   const session = useSession();
+  const { diaryRevision } = useNotifications();
   const me = session.status === "signedIn" ? session.profile.id : null;
   const openId = written ?? initialId ?? null;
 
@@ -44,6 +46,10 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
       void load();
     }, [load]),
   );
+  // A sitter just sent a page: look again, no spinner (the reader keeps their place).
+  useEffect(() => {
+    if (diaryRevision > 0) void load();
+  }, [diaryRevision, load]);
 
   if (!pages && !error) return <LoadingView />;
   if (error && !pages) {

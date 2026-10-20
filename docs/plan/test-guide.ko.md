@@ -673,6 +673,7 @@
 | DBK-10 | (DB) `rls_smoke.sql`의 014p 블록 | 오너가 자기 펫의 일기 쪽을 `add_owner_diary_entry`로 씀: 곧바로 **보냄** 상태, 앞뒤 공백 제거, 작성자는 오너, 하루에 여러 장 가능, 알림 없음 · 같은 펫을 돌보는 시터는 **못 봄**(작성자 열이 오너라서) · 다른 오너 · 시터는 쓸 수 없음(`not_owner`) · 빈 글(`body_required`)과 2000자 초과(`body_too_long`) 거부 · anon 불가 · 오너는 자기 쪽에 스티커 가능 | SQL `rls_smoke` | ➖ |
 | DBK-11 | 견주 → **Diary** → **✏️ Write a page** (펫이 둘 이상이면 위에서 펫 고르기) | 시트 "New page": 그림일기 종이 위에 바로 쓰기("Dear diary, today…"), 글이 비면 Save page는 꺼짐. **+ Photo**로 사진 한 장(선택). Save page → "Page saved", 책이 새 장("Your page")으로 열림. 사진은 **Feed에 비공개**로도 남고 종이의 그림 칸에 보임. 알림 없음, 시터는 못 봄. ✨ Decorate로 스티커도 붙임. 일기가 하나도 없어도 버튼이 있음 | 🤖 `diary-owner-entry.spec.ts` | 사람 확인 대기 |
 | DBK-12 | (#186) 돌보는 펫이 있는 시터 → Diary → 직접 쓰기 → Send / 스티커 | 시터는 돌보는 펫의 오늘 쪽을 직접 쓰고 보낼 수 있음(AI 칩 · 사진 제안도 그대로 동작). Snap에서 만든 스티커는 오너 · 시터 둘 다의 ✨ Decorate 서랍에 뜨고 쪽에 붙음(오너가 새로 쓴 쪽 포함). 코드 점검에서 막는 곳은 못 찾음. 돌봄 시간이 끝나고 2시간이 지나면 DB가 쓰기를 막음(`not_on_duty`) | 🤖 `report.spec.ts` · `decor.spec.ts` · `diary-owner-entry.spec.ts` | 사람 확인 대기 |
+| DBK-13 | (#186) 견주가 **Diary**를 연 채로 시터가 알림장을 Send | 새로고침 없이 쪽 수가 늘어남("Page 3 of 3" → "Page 3 of 4"), 읽던 쪽은 그대로(맨 뒤로 튀지 않음), 스피너 없음. 알림 벨도 같이 올라감 | Realtime은 e2e에서 흉내 내지 않음 → 👤만. 2026-10-20 **어시스턴트(사람 아님)**가 Paul 데모 세트로 `?view=split`에서 실행: 위 동작 확인 | 사람 확인 대기 (어시스턴트 실행만, 사람 확인 아님) |
 
 ### 3.26 시터 검색 (SEARCH) — 03B SS · *사전: 호스팅 DB에 `014c`, 견주 프로필에 집 위치(데모 Robert는 시드에 있음), 시터의 일정 · 집 위치(데모 Chloe는 시드에 있음, 약 7 km)*
 
