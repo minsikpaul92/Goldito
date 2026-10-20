@@ -76,7 +76,7 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("meet-greet")).toContainText("In person · Christie Pits — east entrance");
   });
 
-  test("the sitter accepts, marks it done after meeting, and can then accept the booking", async ({ page }) => {
+  test("the sitter accepts, marks it done after meeting, and can then accept; the booking waits for the owner's yes", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, {
       meet_greet_status: "proposed",
@@ -105,7 +105,10 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
     await expect(screen.getByTestId("accept-booking")).toBeEnabled();
     await screen.getByTestId("accept-booking").click();
-    expect(db.bookings[0].status).toBe("confirmed");
+    // 014o: the sitter's yes is half of the agreement; the owner still has to say "I'd like to book".
+    await expect(screen.getByTestId("accepted-waiting")).toContainText("Waiting for Robert to book");
+    expect(db.bookings[0].status).toBe("requested");
+    expect(db.bookings[0].sitter_accepted_at).toBeTruthy();
   });
 
   test("an agreed video Meet & Greet shows Join Google Meet once the link exists", async ({ page }) => {
@@ -176,7 +179,7 @@ test.describe("meet & greet", () => {
     expect(db.notifications.find((n) => n.type === "booking_interest")).toMatchObject({ user_id: OWNER.id });
     await expect(screen.getByTestId("meet-greet")).toContainText("These dates are on hold for Robert");
     await expect(screen.getByTestId("stage-caption")).toContainText("Day 1");
-    await expect(screen.getByTestId("accept-booking")).toHaveText("Confirm booking");
+    await expect(screen.getByTestId("accept-booking")).toHaveText("I accept");
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
   });
 

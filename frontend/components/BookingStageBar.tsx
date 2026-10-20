@@ -12,7 +12,7 @@ const REPEAT = ["Request", "Confirm", "Pay", "Stay"];
 function currentStep(stage: BookingStage, firstTime: boolean): number | null {
   const at: Partial<Record<BookingStage, number>> = firstTime
     ? { requested: 0, meet_greet: 1, confirm: 2, awaiting_payment: 3, paid: 4, in_care: 4, completed: 5 }
-    : { requested: 0, awaiting_payment: 2, paid: 3, in_care: 3, completed: 4 };
+    : { requested: 0, confirm: 1, awaiting_payment: 2, paid: 3, in_care: 3, completed: 4 };
   return at[stage] ?? null;
 }
 

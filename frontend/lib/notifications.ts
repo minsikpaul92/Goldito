@@ -157,6 +157,10 @@ export function hrefForNotification(
       return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";
     case "booking_requested":
       return role === "sitter" ? bookingHref(notice.bookingId) : null;
+    case "booking_agree_requested":
+      return role === "sitter" ? bookingHref(notice.bookingId) : null;
+    case "booking_sitter_accepted":
+      return role === "owner" ? bookingHref(notice.bookingId) : null;
     case "checkout_needed":
       // An agreed change needs a new consent (009d) — straight to Checkout.
       if (role !== "owner") return null;

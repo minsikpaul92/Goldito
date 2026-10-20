@@ -27,7 +27,7 @@ import {
   needsOwnerHomeAccess,
   ownerHasHomeAccess,
   payBookingDemo,
-  quoteBooking,
+  quoteBookingFor,
   type PriceQuote,
 } from "../../../../lib/bookings";
 import { useSession } from "../../../../providers/SessionProvider";
@@ -82,13 +82,8 @@ export default function CheckoutScreen() {
         return;
       }
       const [quote, required, signed, profile, hasEntry] = await Promise.all([
-        quoteBooking({
-          sitterId: booking.sitterId,
-          serviceType: booking.serviceType,
-          dropOffAt: booking.dropOff.at,
-          pickUpAt: booking.pickUp.at,
-          petCount: Math.max(booking.pets.length, 1),
-        }),
+        // Includes the fees the owner accepted on the confirmed chat quote: the total paid is this total.
+        quoteBookingFor(booking.id, booking.sitterId),
         fetchRequiredConsents(booking.id),
         listBookingConsents(booking.id),
         loadRoleProfile(session.profile.id, "owner"),

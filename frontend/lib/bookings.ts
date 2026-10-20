@@ -25,6 +25,8 @@ const MESSAGES: Record<string, string> = {
   invalid_location: "House sitting happens at the owner's home.",
   interest_required: "Say yes to meeting first, then plan the Meet & Greet.",
   interest_not_needed: "You've met before, so there is no first yes. Just Accept.",
+  meet_greet_required: "Meet first, or agree to skip the Meet & Greet, then book.",
+  handoff_pending: "Answer the proposed time first.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
@@ -75,6 +77,14 @@ export function asQuote(raw: unknown): PriceQuote {
     nights: Number(q.nights),
     days: Number(q.days),
     holiday_days: q.holiday_days ?? [],
+    // The booking's accepted chat fees (014o); a plain quote_booking has none.
+    ...(q.extras
+      ? {
+          extras: q.extras.map((e) => ({ label: e.label, amount: Number(e.amount) })),
+          extras_total: Number(q.extras_total ?? 0),
+          subtotal: Number(q.subtotal ?? q.total),
+        }
+      : {}),
   };
 }
 
@@ -105,6 +115,22 @@ export async function quoteBooking(input: {
     // A row without this service's price is rates_not_set from the server, with the service as detail (014k).
     let code = error.message;
     if (code === "service_not_offered" && !(await sitterHasRates(input.sitterId))) code = "rates_not_set";
+    const detail = error.details ?? null;
+    throw new BookingError(code, priceErrorMessage(code, detail, "Couldn't load the price. Try again."), detail);
+  }
+  return asQuote(data);
+}
+
+/**
+ * The booking's price as payment will freeze it: quote_booking plus the accepted fees of the confirmed chat quote
+ * (quote_booking_for, 014o). Checkout and the chat read this one.
+ */
+export async function quoteBookingFor(bookingId: string, sitterId?: string): Promise<PriceQuote> {
+  const { data, error } = await getSupabase().rpc("quote_booking_for", { p_booking: bookingId });
+  if (error) {
+    // Same as quoteBooking: no price row at all reads as "hasn't set their prices yet", not "doesn't offer that service".
+    let code = error.message;
+    if (code === "service_not_offered" && sitterId && !(await sitterHasRates(sitterId))) code = "rates_not_set";
     const detail = error.details ?? null;
     throw new BookingError(code, priceErrorMessage(code, detail, "Couldn't load the price. Try again."), detail);
   }
@@ -444,6 +470,13 @@ export type PriceQuote = {
   total: number;
   currency: string;
   rate_version: string;
+  /**
+   * The fees the owner accepted on the confirmed chat quote for this stay (014o). With them `total` includes
+   * `extras_total` and `subtotal` is what quote_booking alone said. Absent on a plain quote_booking.
+   */
+  extras?: { label: string; amount: number }[];
+  extras_total?: number;
+  subtotal?: number;
 };
 
 type HandoffRow = {
@@ -502,6 +535,9 @@ export type BookingSummary = {
   sitterInterestAt: string | null;
   /** First yes + 2 days: with no Meet & Greet time by then both sides are asked (stalled). */
   meetGreetDueAt: string | null;
+  /** The owner's "I'd like to book" and the sitter's "I accept" (014o): the booking is confirmed when both are set. */
+  ownerAgreedAt: string | null;
+  sitterAcceptedAt: string | null;
   /** Computed by the database (booking_stage) and who has to act next (booking_next_actor). */
   stage: BookingStage;
   nextActor: NextActor;
@@ -614,7 +650,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
   "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, sitter_note, " +
-  "paid_at, price_snapshot, sitter_interest_at, meet_greet_due_at, created_at, " +
+  "paid_at, price_snapshot, sitter_interest_at, meet_greet_due_at, owner_agreed_at, sitter_accepted_at, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -640,6 +676,8 @@ type BookingRow = {
   price_snapshot: PriceQuote | null;
   sitter_interest_at: string | null;
   meet_greet_due_at: string | null;
+  owner_agreed_at: string | null;
+  sitter_accepted_at: string | null;
   created_at: string;
   owner: { display_name: string } | null;
   sitter: { display_name: string } | null;
@@ -667,16 +705,19 @@ export function localStage(b: Omit<BookingSummary, "stage" | "nextActor">): Pick
   let stage: BookingStage;
   if (b.status === "declined" || b.status === "cancelled") stage = b.status;
   else if (b.status === "requested") {
-    if (b.meetGreetStatus === "not_needed" || !b.sitterInterestAt) stage = "requested";
-    else stage = b.meetGreetStatus === "done" || b.meetGreetStatus === "skipped" ? "confirm" : "meet_greet";
+    // Over or never needed: both still say yes (014o). Otherwise it waits for the sitter's first yes, then the Meet & Greet.
+    if (["not_needed", "done", "skipped"].includes(b.meetGreetStatus)) stage = "confirm";
+    else stage = b.sitterInterestAt ? "meet_greet" : "requested";
   } else if (b.pickUp?.completedAt) stage = "completed";
   else if (b.dropOff?.completedAt) stage = "in_care";
   else stage = b.paidAt ? "paid" : "awaiting_payment";
 
   const otherThan = (by: string | null): NextActor => (by === b.ownerId ? "sitter" : "owner");
   let nextActor: NextActor = "none";
-  if (stage === "requested" || stage === "confirm") nextActor = "sitter";
-  else if (stage === "awaiting_payment") nextActor = "owner";
+  if (stage === "requested") nextActor = "sitter";
+  else if (stage === "confirm") {
+    nextActor = !b.ownerAgreedAt && !b.sitterAcceptedAt ? "both" : !b.ownerAgreedAt ? "owner" : !b.sitterAcceptedAt ? "sitter" : "none";
+  } else if (stage === "awaiting_payment") nextActor = "owner";
   else if (stage === "meet_greet") {
     if (b.meetGreetStatus === "proposed") nextActor = otherThan(b.meetGreet.proposedBy);
     else if (b.meetGreetStatus === "skip_requested") nextActor = otherThan(b.meetGreet.skipRequestedBy);
@@ -714,6 +755,8 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     sitterNote: b.sitter_note ?? null,
     sitterInterestAt: b.sitter_interest_at ?? null,
     meetGreetDueAt: b.meet_greet_due_at ?? null,
+    ownerAgreedAt: b.owner_agreed_at ?? null,
+    sitterAcceptedAt: b.sitter_accepted_at ?? null,
     paidAt: b.paid_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
@@ -844,6 +887,18 @@ export async function expressInterest(bookingId: string): Promise<void> {
     throw new BookingError(
       error.message,
       bookingErrorMessage(error.message, "Couldn't hold these dates. Try again."),
+      error.details ?? null,
+    );
+  }
+}
+
+/** agree_to_book — the owner's "I'd like to book" once the Meet & Greet is over (or was never needed); the booking is confirmed when the sitter has accepted too (014o). */
+export async function agreeToBook(bookingId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("agree_to_book", { p_booking: bookingId });
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't save your yes. Try again."),
       error.details ?? null,
     );
   }

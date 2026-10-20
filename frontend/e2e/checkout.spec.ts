@@ -172,7 +172,7 @@ test.describe("checkout", () => {
     expect(db.payments).toEqual([{ p_booking: BOOKING }]);
     expect(db.booking_consents).toHaveLength(KINDS.length);
     expect(db.bookings[0].paid_at).toBeTruthy();
-    expect(db.bookings[0].price_snapshot).toEqual(DEMO_QUOTE);
+    expect(db.bookings[0].price_snapshot).toMatchObject({ ...DEMO_QUOTE, extras: [], extras_total: 0 });
 
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
     await expect(screen.getByText("Paid", { exact: true })).toBeVisible();

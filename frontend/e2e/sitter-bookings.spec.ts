@@ -212,14 +212,29 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("booking-card-old1")).toHaveCount(0);
   });
 
-  test("Accept confirms a pair that has met and moves it to Upcoming", async ({ page }) => {
+  test("Accept alone is half of the agreement: the booking waits for the owner's yes", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "not_needed");
     const { screen, card } = await openRequest(page);
     await card.click();
 
     await screen.getByTestId("accept-booking").click();
-    await expect(screen.getByTestId("toast")).toContainText("Booking confirmed. Robert gets a notice");
+    await expect(screen.getByTestId("toast")).toContainText("Accepted. Robert gets a notice");
+    await expect(screen.getByTestId("accepted-waiting")).toContainText("Waiting for Robert to book");
+    await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
+    expect(db.bookings[0].status).toBe("requested");
+    expect(db.notifications.find((n) => n.type === "booking_sitter_accepted")).toMatchObject({ user_id: OWNER.id });
+  });
+
+  test("Accept after the owner's yes confirms a pair that has met and moves it to Upcoming", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, "not_needed");
+    db.bookings[0].owner_agreed_at = "2026-10-09T16:00:00.000Z";
+    const { screen, card } = await openRequest(page);
+    await card.click();
+
+    await screen.getByTestId("accept-booking").click();
+    await expect(screen.getByTestId("toast")).toContainText("Accepted. Robert gets a notice");
     expect(db.responses).toEqual([{ p_booking: BOOKING, p_accept: true, p_note: null }]);
     expect(db.bookings[0].status).toBe("confirmed");
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);

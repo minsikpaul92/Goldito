@@ -180,9 +180,7 @@ export default function SitterBookingDetail() {
           ? `${owner} passed: “${booking.cancelReason}”`
           : null;
   const firstYes = isRequest && awaitingFirstYes(booking);
-  const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking);
-  // First-time pairs (D60): "Yes, let's meet" holds the dates; after the Meet & Greet the same button confirms.
-  const firstTimePair = isRequest && booking.meetGreetStatus !== "not_needed";
+  const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking) && !booking.sitterAcceptedAt;
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
@@ -381,10 +379,12 @@ export default function SitterBookingDetail() {
               disabled={busy || requestExpired(booking)}
               testID="interest-booking"
             />
+          ) : booking.sitterAcceptedAt ? (
+            <Text style={styles.muted} testID="accepted-waiting">{`You accepted. Waiting for ${owner} to book.`}</Text>
           ) : (
             <Button
-              label={busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept"}
-              onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed. ${owner} gets a notice`)}
+              label={busy ? "Saving…" : "I accept"}
+              onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
               disabled={!canAccept}
               testID="accept-booking"
             />

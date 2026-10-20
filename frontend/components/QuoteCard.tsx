@@ -67,6 +67,12 @@ export function QuoteCard({ quote, compact, testID }: Props) {
           <Text style={styles.body}>{money(quote.holiday_surcharge)}</Text>
         </View>
       ) : null}
+      {(quote.extras ?? []).map((e, i) => (
+        <View key={`${e.label}-${i}`} style={styles.row} testID={`quote-extra-${i}`}>
+          <Text style={styles.body}>{e.label}</Text>
+          <Text style={styles.body}>{money(e.amount)}</Text>
+        </View>
+      ))}
       <View style={[styles.row, styles.totalRow]}>
         <Text style={styles.total}>Total</Text>
         <Text style={styles.total} testID="quote-total">{`${money(quote.total)} ${quote.currency}`}</Text>

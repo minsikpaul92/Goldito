@@ -74,23 +74,24 @@ Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 
 Owner booking detail (phase-03b 3B.5): pets, the two handoffs (addresses once confirmed), the sitter's offers to Accept / Suggest another time / Decline, and **Change time or place** after confirm. Cancel + Find a new sitter land in 3B.7.
 
-Shows: `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChangeSheet` · `MeetGreetCard` · `PaidConfirmation` · `TripEntry` · `ProposalCard`
+Shows: `AgreeSheet` · `BookingStageBar` · `ChipSuggestions` · `FinishedStay` · `HandoffChangeSheet` · `MeetGreetCard` · `PaidConfirmation` · `TripEntry` · `ProposalCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 142 |
-| EmptyState | Couldn't load this booking | — | 149 |
-| Tag | `b.label` | — | 218 |
-| Tag | Paid | `paid-chip` | 221 |
-| Button | Finish booking | `open-checkout` | 257 |
-| CheckRow | `item` | ``pack-${item}`` | 283 |
-| Button | Find a new sitter | `find-new-sitter` | 345 |
-| Button | Change time or place | `change-booking` | 352 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 360 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 370 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 376 |
-| Sheet | Decline and end the request | `end-request-sheet` | 439 |
-| Button | Decline and end the request | `end-request-confirm` | 445 |
+| EmptyState | Booking not found | — | 144 |
+| EmptyState | Couldn't load this booking | — | 151 |
+| Tag | `b.label` | — | 220 |
+| Tag | Paid | `paid-chip` | 223 |
+| Button | I'd like to book | `agree-booking` | 244 |
+| Button | Finish booking | `open-checkout` | 272 |
+| CheckRow | `item` | ``pack-${item}`` | 298 |
+| Button | Find a new sitter | `find-new-sitter` | 360 |
+| Button | Change time or place | `change-booking` | 367 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 375 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 387 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 393 |
+| Sheet | Decline and end the request | `end-request-sheet` | 456 |
+| Button | Decline and end the request | `end-request-confirm` | 462 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -100,9 +101,9 @@ Shows: `ConsentCard` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Can't open checkout | — | 153 |
-| Button | Add entry info | `checkout-entry-add` | 181 |
-| Button | `totalLabel` | `checkout-pay` | 223 |
+| EmptyState | Can't open checkout | — | 148 |
+| Button | Add entry info | `checkout-entry-add` | 176 |
+| Button | `totalLabel` | `checkout-pay` | 218 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -398,13 +399,13 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | --- | --- | --- | --- |
 | EmptyState | Booking not found | — | 149 |
 | EmptyState | Couldn't load this booking | — | 156 |
-| Tag | `b.label` | — | 242 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 309 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 314 |
-| TextButton | Change time or place | `change-booking` | 322 |
-| Tag | `a` | — | 351 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 378 |
-| Button | busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept" | `accept-booking` | 385 |
+| Tag | `b.label` | — | 240 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 307 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 312 |
+| TextButton | Change time or place | `change-booking` | 320 |
+| Tag | `a` | — | 349 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 376 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 385 |
 | TextButton | Decline | `decline-booking` | 392 |
 | Button | busy ? "Saving…" : "Received" | `handoff-received` | 403 |
 | Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 413 |
@@ -606,6 +607,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | TextButton | checking ? "Checking…" : "Check address" | ``${testID}-check-address`` | 64 |
 | TextButton | `s.label` | ``${testID}-suggestion-${i + 1}`` | 76 |
+
+### AgreeSheet — [components/AgreeSheet.tsx](../../frontend/components/AgreeSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | I'd like to book | `agree-sheet` | 68 |
+| Button | I'd like to book | `agree-submit` | 73 |
 
 ### AlbumView — [components/AlbumView.tsx](../../frontend/components/AlbumView.tsx)
 
@@ -1318,4 +1326,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-380 actions · 379 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
