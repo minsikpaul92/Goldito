@@ -450,6 +450,8 @@ def _gather(
     today: date,
     owner_name: str,
     sitter_name: str,
+    *,
+    with_sources: bool = True,
 ) -> dict:
     drop_off = _ts(inquiry["drop_off_at"])
     pick_up = _ts(inquiry["pick_up_at"])
@@ -505,6 +507,8 @@ def _gather(
             return None
 
     def sources():
+        if not with_sources:  # the chat's chips do not use them, and the search is the slowest part
+            return []
         query = f"{question['body']} ({inquiry['service_type']}, {', '.join(d.isoformat() for d in (days[0], days[-1]))})"
         try:
             return rag.search(

@@ -8,6 +8,7 @@ from app.config import get_settings
 from app.routers import (
     ai_caption,
     ai_care_plan,
+    ai_chat,
     ai_daily_report,
     ai_handoff_check,
     ai_inquiry,
@@ -49,6 +50,7 @@ app.include_router(profile_photos.router)
 app.include_router(feed.router)
 app.include_router(geo.router)
 app.include_router(ai_care_plan.router)
+app.include_router(ai_chat.router)
 app.include_router(ai_caption.router)
 app.include_router(ai_daily_report.router)
 app.include_router(ai_handoff_check.router)

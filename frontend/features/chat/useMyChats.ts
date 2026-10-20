@@ -1,6 +1,7 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
+import { prefetchChatChips } from "./chatAi";
 import { ChatListItem, leaveChat, listMyChats } from "./chatApi";
 import { useLiveChat } from "./useLiveChat";
 
@@ -11,7 +12,10 @@ export function useMyChats() {
 
   const reload = useCallback(async () => {
     try {
-      setItems(await listMyChats());
+      const list = await listMyChats();
+      setItems(list);
+      // A chat with something new: its chips are made now, so the chat opens with them ready.
+      for (const chat of list) if (chat.unread > 0) prefetchChatChips(chat.threadId, chat.lastAt);
     } catch {
       // keep what is on screen; the next refresh tries again
     } finally {

@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
@@ -22,6 +22,7 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
+import { ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -63,6 +64,9 @@ export default function Chat() {
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [viewing, setViewing] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [chips, setChips] = useState<ChatChip[]>([]);
+  const [drafting, setDrafting] = useState(false);
+  const input = useRef<TextInput>(null);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -98,6 +102,42 @@ export default function Chat() {
       .then(setPhotos)
       .catch(() => setPhotos([]));
   }, [otherId]);
+
+  // Chips for what the other person just wrote (or openers in an empty chat). The slot is there from the start with a
+  // spinner, so nothing jumps when they arrive; the list may have asked ahead, then they are ready at once.
+  const all = loaded?.messages;
+  const lastText = all?.filter((m) => m.kind === "text").at(-1);
+  const waitingForMe = !!all && (lastText ? lastText.senderId !== profile?.id : loaded?.header.myRole === "owner");
+  const latestAt = all?.at(-1)?.at ?? "none";
+  const key = loaded && waitingForMe ? `${threadId}:${latestAt}` : null;
+  const [chipsReady, setChipsReady] = useState(false);
+  useEffect(() => {
+    setChips([]);
+    setChipsReady(false);
+    if (!key) return;
+    let current = true;
+    void chipsFor(threadId, latestAt).then((r) => {
+      if (!current) return;
+      setChips(r?.chips ?? []);
+      setChipsReady(true);
+    });
+    return () => {
+      current = false;
+    };
+    // the chips belong to the latest message: a new one asks again
+  }, [key, threadId, latestAt]);
+
+  /** A tapped chip becomes a draft in the box; nothing is sent until the person presses Send (D62). */
+  const pickChip = async (chip: ChatChip) => {
+    setDrafting(true);
+    const draft = await fetchChatDraft(threadId, chip.label);
+    setDrafting(false);
+    if (draft) {
+      setText(draft);
+      setChips([]);
+      input.current?.focus();
+    }
+  };
 
   // Open at the latest message, and follow new ones.
   const count = loaded?.messages.length ?? 0;
@@ -227,8 +267,31 @@ export default function Chat() {
           <Button label="Request booking" onPress={() => setRequesting(true)} testID="chat-request-booking" />
         </View>
       ) : null}
+      {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
+        <View style={styles.chips} testID="chat-chips">
+          {drafting || !chipsReady ? (
+            <View style={styles.chipsBusy} testID="chat-chips-loading">
+              <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
+              <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Writing replies…"}</Text>
+            </View>
+          ) : null}
+          {chips.map((chip, i) => (
+            <Pressable
+              key={chip.id}
+              accessibilityRole="button"
+              disabled={drafting}
+              onPress={() => void pickChip(chip)}
+              style={[styles.chip, drafting && styles.sendOff]}
+              testID={`chat-chip-${i + 1}`}
+            >
+              <Text style={styles.chipText}>{chip.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.compose}>
         <TextInput
+          ref={input}
           accessibilityLabel={`Message ${header.otherName}`}
           value={text}
           onChangeText={setText}
@@ -282,6 +345,11 @@ const makeStyles = (theme: Theme) =>
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
+    chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",
       alignItems: "center",
