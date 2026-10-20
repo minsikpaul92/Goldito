@@ -6,6 +6,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, T
 import { AgreeSheet } from "../../components/AgreeSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
+import { ChatCareCards } from "../../components/ChatCareCards";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
 import { ChatTripCard } from "../../components/ChatTripCard";
 import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
@@ -413,6 +414,7 @@ export default function Chat() {
             />
           ) : null,
         )}
+        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (

@@ -159,3 +159,84 @@ test.describe("trip in the chat", () => {
     await expect(screen.getByTestId("chat-trip-start")).toHaveCount(0);
   });
 });
+
+test.describe("care in the chat", () => {
+  /** The drop-off is done: Max is with Chloe. */
+  function inCare(db: MockDb) {
+    seed(db);
+    db.booking_handoffs[0].completed_at = new Date(Date.now() - HOUR).toISOString();
+  }
+
+  test("the owner asks for a photo; the sitter is pointed at the Feed; the answer shows with its one-line caption", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    inCare(db);
+    let screen = await openChatAs(page, OWNER);
+
+    await screen.getByTestId("chat-ask-photo").click();
+    await expect(screen.getByTestId("chat-photo-open")).toContainText("You asked for a photo of Max");
+    await expect(screen.getByTestId("chat-photo-open")).toContainText("Waiting for Chloe");
+    await expect(screen.getByTestId("chat-ask-photo")).toHaveCount(0); // one open ask per pet
+    expect(db.photo_requests).toHaveLength(1);
+
+    await page.evaluate(() => localStorage.clear());
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-photo-open")).toContainText("Robert asked for a photo of Max");
+    await expect(screen.getByTestId("chat-ask-photo")).toHaveCount(0); // only the owner asks
+    await screen.getByTestId("chat-photo-send").click();
+    await expect(page).toHaveURL(new RegExp(`/sitter/feed/${MAX}$`));
+
+    // The sitter's next shared photo answers the ask (the database does this); the caption is one line.
+    db.media.push({ id: "media-1", pet_id: MAX, cloudinary_public_id: "pets/max-nap", resource_type: "image", purpose: "feed" });
+    db.feed_posts.push({
+      id: "post-1",
+      pet_id: MAX,
+      sitter_id: SITTER.id,
+      posted_by: SITTER.id,
+      visibility: "shared",
+      media_id: "media-1",
+      caption: "Max naps in the sun",
+      caption_source: "ai",
+      category: null,
+      task_log_id: null,
+      created_at: new Date().toISOString(),
+    });
+    Object.assign(db.photo_requests[0], { status: "fulfilled", fulfilled_post_id: "post-1", fulfilled_at: new Date().toISOString() });
+
+    await page.goto(`/chat/${THREAD}`);
+    await expect(screen.getByTestId("chat-photo-done")).toContainText("You sent a photo of Max");
+    await page.evaluate(() => localStorage.clear());
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-photo-done")).toContainText("Chloe sent a photo of Max");
+    await expect(screen.getByTestId("chat-photo-caption")).toHaveText("Max naps in the sun");
+    await expect(screen.getByTestId("chat-ask-photo")).toBeVisible(); // answered: the owner may ask again
+  });
+
+  test("the day's diary page shows in the chat and opens the Diary", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    inCare(db);
+    db.daily_reports.push({
+      id: "report-1",
+      pet_id: MAX,
+      sitter_id: SITTER.id,
+      report_date: "2026-10-21",
+      body: "Max had a lovely day.",
+      status: "sent",
+      source_snapshot: null,
+      sent_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    });
+    const screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-diary-card")).toContainText("Diary written");
+    await screen.getByTestId("chat-diary-open").click();
+    await expect(page).toHaveURL(/\/owner\/diary\/report-1$/);
+  });
+
+  test("before the drop-off there are no care cards and no Ask for a photo", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-bubble-me")).toBeVisible();
+    await expect(screen.getByTestId("chat-ask-photo")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-diary-card")).toHaveCount(0);
+  });
+});

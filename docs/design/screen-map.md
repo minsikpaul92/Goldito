@@ -20,19 +20,19 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatQuoteCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatQuoteCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 196 |
-| EmptyState | Chat not found | — | 204 |
-| Pressable | — | `chat-stage` | 370 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 421 |
-| Button | Send quote | `chat-send-quote` | 428 |
-| TextButton | Send quote | `chat-send-quote` | 431 |
-| Pressable | — | `chat-action-chip` | 449 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 460 |
-| Pressable | Send | `chat-send` | 498 |
+| EmptyState | Couldn't load this chat | — | 197 |
+| EmptyState | Chat not found | — | 205 |
+| Pressable | — | `chat-stage` | 371 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 423 |
+| Button | Send quote | `chat-send-quote` | 430 |
+| TextButton | Send quote | `chat-send-quote` | 433 |
+| Pressable | — | `chat-action-chip` | 451 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 462 |
+| Pressable | Send | `chat-send` | 500 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -667,6 +667,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | — | `chat-payment-open` | 84 |
+
+### ChatCareCards — [components/ChatCareCards.tsx](../../frontend/components/ChatCareCards.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Send photo | `chat-photo-send` | 51 |
+| Button | Open diary | `chat-diary-open` | 74 |
+| Button | Ask for a photo | `chat-ask-photo` | 92 |
 
 ### ChatHeaderTitle — [components/ChatHeaderTitle.tsx](../../frontend/components/ChatHeaderTitle.tsx)
 
@@ -1350,4 +1358,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-391 actions · 390 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+394 actions · 393 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
