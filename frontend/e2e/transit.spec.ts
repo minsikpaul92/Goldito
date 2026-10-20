@@ -296,7 +296,7 @@ test.describe("pet transit", () => {
     await expect(owner).toHaveURL(/\/trip$/);
     expect(db.trips).toHaveLength(1);
     expect(db.trips[0]).toMatchObject({ sharing: false, last_lat: null, eta_at: null, traveler_id: OWNER.id });
-    await expect(screen.getByTestId("trip-not-sharing-banner")).toContainText("You're not sharing your location — Chloe sees the meeting place");
+    await expect(screen.getByTestId("trip-not-sharing-banner")).toContainText("You're not sharing your location. Chloe sees the meeting place");
     await expect(screen.getByTestId("trip-map")).toHaveCount(0);
     await expect(screen.getByTestId("trip-meeting-place")).toContainText("Chloe's place");
     await expect(screen.getByTestId("trip-meeting-place")).toContainText("12 Maple St");

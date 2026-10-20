@@ -17,7 +17,7 @@ export function SnapScreen({ role }: { role: Role }) {
 
   return (
     <Screen contentStyle={styles.content} testID="snap">
-      <Text style={styles.intro}>Snap a photo — check a treat, see a mood, make a sticker.</Text>
+      <Text style={styles.intro}>Check a treat, see a mood, make a sticker.</Text>
       {SNAP_TOOLS.map((tool) => (
         <SnapToolCard
           key={tool.key}

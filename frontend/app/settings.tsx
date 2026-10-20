@@ -41,7 +41,7 @@ export default function SettingsScreen() {
       </Text>
       <Card testID="settings-notifications">
         <Text style={styles.body}>
-          Updates arrive in the app — the bell and a short message on screen — while Goldito is open.
+          Updates arrive in the app (the bell and a short message) while Goldito is open.
         </Text>
         <Text style={styles.muted}>Phone notifications and quiet hours are not available yet.</Text>
       </Card>

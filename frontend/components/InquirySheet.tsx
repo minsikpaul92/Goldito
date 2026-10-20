@@ -127,7 +127,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
           inquiryId: change.inquiryId,
           dropOff: { at: dropOffAt, locationType: place(dropOff) },
           pickUp: { at: pickUpAt, locationType: place(pickUp) },
-          body: `Changed dates: ${formatStamp(dropOffAt)} – ${formatStamp(pickUpAt)}${note ? `\n${note}` : ""}`,
+          body: `Changed dates: ${formatStamp(dropOffAt)} to ${formatStamp(pickUpAt)}${note ? `\n${note}` : ""}`,
         });
         void requestInquiryReply(change.inquiryId); // the thread keeps waiting for the sitter either way
         onClose();
@@ -179,7 +179,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
       footer={
         noRoom ? (
           <View style={styles.ask} testID="inquiry-no-room">
-            <Text style={styles.askText}>{`${sitter.displayName} has no room on these dates. You can still ask — they may open them — or pick other dates.`}</Text>
+            <Text style={styles.askText}>{`${sitter.displayName} has no room on these dates. You can still ask, or pick other dates.`}</Text>
             <Button label={sending ? "Sending…" : "Ask anyway"} disabled={sending} onPress={() => void submit()} testID="inquiry-ask-anyway" />
             <Button label="Pick other dates" variant="secondary" onPress={() => setNoRoom(false)} testID="inquiry-pick-other" />
           </View>
@@ -196,7 +196,7 @@ export function InquirySheet({ visible, onClose, sitter, prefill, change }: Prop
       <View style={styles.body}>
         {sitter.acceptsMultipleOwners !== undefined ? (
           <Text style={styles.hint} testID="inquiry-owners-setting">
-            {`${ownersSetting(sitter.acceptsMultipleOwners).badge} — ${ownersSetting(sitter.acceptsMultipleOwners).hint}`}
+            {`${ownersSetting(sitter.acceptsMultipleOwners).badge}. ${ownersSetting(sitter.acceptsMultipleOwners).hint}`}
           </Text>
         ) : null}
         {sitter.services.length > 1 && !change ? (

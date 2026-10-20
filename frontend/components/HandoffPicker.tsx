@@ -34,13 +34,13 @@ function placeOptions(kind: Props["kind"], sitter: string | null): { value: Loca
   const who = sitter ?? "The sitter";
   return kind === "drop_off"
     ? [
-        { value: "sitter_home", label: `🚗 I'll drive — at ${at}` },
-        { value: "owner_home", label: `🚙 ${who} picks up — at my place` },
+        { value: "sitter_home", label: `🚗 I'll drive to ${at}` },
+        { value: "owner_home", label: `🚙 ${who} picks up at my place` },
         { value: "other", label: "📍 Somewhere else" },
       ]
     : [
-        { value: "sitter_home", label: `🚗 I'll pick up — at ${at}` },
-        { value: "owner_home", label: `🚙 ${who} brings them home — to my place` },
+        { value: "sitter_home", label: `🚗 I'll pick up at ${at}` },
+        { value: "owner_home", label: `🚙 ${who} brings them home` },
         { value: "other", label: "📍 Somewhere else" },
       ];
 }
@@ -88,8 +88,8 @@ export function HandoffPicker({ kind, value, onChange, minDay, sitterName, fixed
       {dayMarks && dayMarks.get(value.day) && dayMarks.get(value.day) !== "open" ? (
         <Text style={styles.dayNote} testID={`${kind}-day-note`}>
           {dayMarks.get(value.day) === "full"
-            ? `${sitterName ?? "The sitter"} has no room for your pets that day — you can still ask.`
-            : `${sitterName ?? "The sitter"} hasn't opened that day — you can still ask.`}
+            ? `${sitterName ?? "The sitter"} has no room for your pets that day. You can still ask.`
+            : `${sitterName ?? "The sitter"} hasn't opened that day. You can still ask.`}
         </Text>
       ) : null}
       {fixedPlace ? (

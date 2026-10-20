@@ -248,7 +248,7 @@ export default function OwnerFeed() {
         <EmptyState
           emoji="🐾"
           title="No pets yet"
-          message="Add a pet on Home — then your sitter can share photos here."
+          message="Add a pet on Home first."
         />
       </SafeAreaView>
     );

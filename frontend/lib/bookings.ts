@@ -7,7 +7,7 @@ import type { ServiceType } from "../features/sitters/sitterApi";
  */
 
 const MESSAGES: Record<string, string> = {
-  booking_in_progress: "The pets are already with you — change the pick-up time instead.",
+  booking_in_progress: "The pets are already with you. Change the pick-up time instead.",
   invalid_status: "This booking has already changed. Reopen it to see the latest.",
   not_allowed: "You can't change this booking.",
   invalid_window: "Pick a drop-off in the future and a pick-up after it.",
@@ -17,18 +17,26 @@ const MESSAGES: Record<string, string> = {
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
-  access_locked: "Entry info isn't available yet — or the stay has ended.",
+  access_locked: "Entry info isn't available yet, or the stay has ended.",
   forbidden: "You can't view this entry info.",
   not_paid: "Addresses unlock after checkout.",
-  proposal_expired: "That time has already passed — suggest another time.",
+  proposal_expired: "That time has passed. Suggest another time.",
   request_expired: "This request's pick-up time has passed, so it can't be accepted.",
   invalid_location: "House sitting happens at the owner's home.",
-  interest_required: "Say yes to meeting first — then the Meet & Greet can be planned.",
-  interest_not_needed: "You've met before, so there is no first yes — just Accept.",
+  interest_required: "Say yes to meeting first, then plan the Meet & Greet.",
+  interest_not_needed: "You've met before, so there is no first yes. Just Accept.",
 };
 
 export function bookingErrorMessage(code: string | undefined, fallback: string): string {
   return (code && MESSAGES[code]) || fallback;
+}
+
+const PRICED_SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
+
+/** quote_booking's rates_not_set names the service when the sitter has prices but not this one (014k, #189). */
+function priceErrorMessage(code: string, detail: string | null, fallback: string): string {
+  const service = code === "rates_not_set" && detail ? PRICED_SERVICE[detail] : undefined;
+  return service ? `This sitter hasn't set a ${service} price yet.` : bookingErrorMessage(code, fallback);
 }
 
 /** Error with the RPC code kept, so a screen can add its own copy (e.g. a pet's name). */
@@ -94,9 +102,11 @@ export async function quoteBooking(input: {
   if (error) {
     // quote_booking raises service_not_offered both for a service the sitter doesn't offer and for a
     // sitter with no price row at all. The rates are readable by every signed-in user, so tell them apart.
+    // A row without this service's price is rates_not_set from the server, with the service as detail (014k).
     let code = error.message;
     if (code === "service_not_offered" && !(await sitterHasRates(input.sitterId))) code = "rates_not_set";
-    throw new BookingError(code, bookingErrorMessage(code, "Couldn't load the price. Try again."), error.details ?? null);
+    const detail = error.details ?? null;
+    throw new BookingError(code, priceErrorMessage(code, detail, "Couldn't load the price. Try again."), detail);
   }
   return asQuote(data);
 }
@@ -110,7 +120,7 @@ export async function payBookingDemo(bookingId: string): Promise<PriceQuote> {
   if (error) {
     throw new BookingError(
       error.message,
-      bookingErrorMessage(error.message, "Couldn't complete the demo payment. Try again."),
+      priceErrorMessage(error.message, error.details ?? null, "Couldn't complete the demo payment. Try again."),
       error.details ?? null,
     );
   }

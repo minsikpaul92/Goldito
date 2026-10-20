@@ -22,7 +22,7 @@ function mood(top: keyof typeof ZERO, extra: object = {}) {
   const { x, y, w, h } = LEFT;
   return { frame: 0, box: { x, y, w, h }, emotions, top, summary: `This pup seems ${top}.`, frames_used: 1, ...extra };
 }
-const DISCLAIMER = "For fun only — not a behavior or health assessment.";
+const DISCLAIMER = "For fun only, not a health check.";
 
 type Reply = { status: number; body: object };
 
@@ -136,7 +136,7 @@ test.describe("snap mood", () => {
     const { asked } = await open(page, OWNER, { boxes: [], seed: ownerPets });
     const screen = app(page);
     await pick(page, "mood_grass");
-    await expect(screen.getByTestId("mood-no-pet")).toHaveText("We couldn't find a pet — try a clearer photo.");
+    await expect(screen.getByTestId("mood-no-pet")).toHaveText("We couldn't find a pet. Try a clearer photo.");
     expect(asked).toHaveLength(0);
     await expect(screen.getByTestId("mood-pick")).toContainText("Try another photo");
   });
@@ -144,7 +144,7 @@ test.describe("snap mood", () => {
   test("the server finding no pet in the crops shows the same line", async ({ page }) => {
     await open(page, OWNER, {
       boxes: [LEFT],
-      replies: [{ status: 422, body: { detail: "We couldn't find a pet — try a clearer photo." } }],
+      replies: [{ status: 422, body: { detail: "We couldn't find a pet. Try a clearer photo." } }],
       seed: ownerPets,
     });
     await pick(page, "mood_grass");

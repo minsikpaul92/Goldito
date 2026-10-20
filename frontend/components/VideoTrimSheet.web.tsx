@@ -314,7 +314,7 @@ export function VideoTrimSheet({ visible, file, duration, onConfirm, onCancel }:
       </div>
 
       <Text style={styles.summary} testID="trim-summary">
-        {formatTime(range.start)} – {formatTime(range.end)} · {Math.round(length)} s of {formatTime(duration)}
+        {formatTime(range.start)} to {formatTime(range.end)} · {Math.round(length)} s of {formatTime(duration)}
       </Text>
     </Sheet>
   );

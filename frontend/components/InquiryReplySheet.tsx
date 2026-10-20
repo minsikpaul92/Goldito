@@ -160,7 +160,7 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
     kind === "suggest" && shortfall
       ? shortfall === "invalid_window"
         ? "Pick dates in the future, up to 31 days."
-        : "You have no room on those dates — pick days you have open."
+        : "You have no room on those dates. Pick days you have open."
       : null;
   const canSend = !noRoom && !writing && !sending && !problem && shown.trim().length > 0;
 
@@ -204,7 +204,7 @@ export function InquiryReplySheet({ kind, inquiry, draft, onClose, onSent }: Pro
       <View style={styles.body}>
         {noRoom ? (
           <Text style={styles.note} testID="reply-no-room">
-            📅 You have no room on {asked}, so a reply can't say yes — the owner couldn't book it. Open those days in your schedule first,
+            📅 You have no room on {asked}, so a reply can't say yes. Open those days in your schedule first,
             then accept. Or decline, or suggest other dates.
           </Text>
         ) : kind === "suggest" ? (

@@ -66,7 +66,7 @@ export default function SitterCareRequest() {
     setBusy(true);
     try {
       await respondCareChangeRequest(request.id, approve, approve ? null : reason, approve ? null : note.trim() || null);
-      done(approve ? `Added to ${request.petName}'s tasks ✅` : "Declined — the owner was told");
+      done(approve ? `Added to ${request.petName}'s tasks ✅` : "Declined. The owner was told");
     } catch (error) {
       errorDialog.show({ title: "Not sent", message: (error as Error).message, onRetry: () => void answer(approve) });
     } finally {
@@ -81,7 +81,7 @@ export default function SitterCareRequest() {
     setBusy(true);
     try {
       await counterCareChangeRequest(request.id, note.trim(), cents, ownerTasks);
-      done("Counter-request sent — the owner will answer");
+      done("Counter-request sent");
     } catch (error) {
       errorDialog.show({ title: "Not sent", message: (error as Error).message, onRetry: () => void counter() });
     } finally {
@@ -103,7 +103,7 @@ export default function SitterCareRequest() {
           {{
             approved: "✅ You approved this request.",
             declined: "You declined this request.",
-            countered: "💬 You sent a counter-request — waiting for the owner.",
+            countered: "💬 Counter-request sent. Waiting for the owner.",
             accepted: "✅ The owner accepted your counter-request.",
             withdrawn: "The owner declined your counter-request.",
             closed: "The stay ended before this request was answered.",
@@ -145,7 +145,7 @@ export default function SitterCareRequest() {
       ) : null}
 
       <Sheet visible={declining} title="Reply to this request" onClose={() => setDeclining(false)} testID="decline-sheet">
-        <Text style={styles.muted}>Pick a reason and/or leave a note — the owner sees both.</Text>
+        <Text style={styles.muted}>Pick a reason or leave a note. The owner sees both.</Text>
         <View style={styles.reasons}>
           {DECLINE_REASONS.map((r, i) => (
             <Pressable

@@ -139,7 +139,7 @@ test.describe("care tasks", () => {
     await screen.getByTestId("time-picker-set").click();
     await screen.getByTestId("care-save").click();
 
-    await expect(screen.getByTestId("toast")).toContainText("Saved — now at 6:45 PM");
+    await expect(screen.getByTestId("toast")).toContainText("Saved, now at 6:45 PM");
     expect(db.care_tasks).toHaveLength(1);
     expect(db.care_tasks[0]).toMatchObject({ title: "Joint pill (with food)", scheduled_time: "18:45", type: "medication" });
     await expect(screen.getByText("Joint pill (with food)")).toBeVisible();

@@ -166,12 +166,12 @@ test.describe("pickMedia", () => {
     await (await chooser).setFiles(path.join(FIXTURES, "video-35s.webm"));
 
     await expect(app(page).getByTestId("trim-sheet")).toBeVisible();
-    await expect(app(page).getByTestId("trim-summary")).toHaveText("0:00 – 0:30 · 30 s of 0:35");
+    await expect(app(page).getByTestId("trim-summary")).toHaveText("0:00 to 0:30 · 30 s of 0:35");
     expect(calls.sign).toHaveLength(0);
 
     const handle = center(await box(app(page).getByTestId("trim-handle-start")));
     await drag(page, handle, { x: handle.x + 100, y: handle.y });
-    await expect(app(page).getByTestId("trim-summary")).not.toHaveText("0:00 – 0:30 · 30 s of 0:35");
+    await expect(app(page).getByTestId("trim-summary")).not.toHaveText("0:00 to 0:30 · 30 s of 0:35");
 
     const endHandle = center(await box(app(page).getByTestId("trim-handle-end")));
     const strip = await box(app(page).getByTestId("trim-strip"));

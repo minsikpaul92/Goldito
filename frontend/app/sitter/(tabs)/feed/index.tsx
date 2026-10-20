@@ -73,7 +73,7 @@ export default function SitterFeed() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <Text style={styles.hint}>Tap a pet to share photos — they show up in the owner's Feed.</Text>
+      <Text style={styles.hint}>Tap a pet to share photos.</Text>
       {pets.map((pet) => (
         <Pressable
           key={pet.id}
