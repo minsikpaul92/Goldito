@@ -296,6 +296,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
     payload = {**base, "chip": chip, "style_notes": style}
     messages = [{"role": "system", "content": agent.prompt("draft")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None
+    previous = [m.get("body") or "" for m in ctx["messages"] if m.get("kind") == "text"][-logic.REPEAT_WINDOW :]
 
     for attempt in range(2):
         try:
@@ -305,7 +306,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
             break
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
-        problems = agent.problems(text, facts, known, sitter_first)
+        problems = agent.problems(text, facts, known, sitter_first, previous)
         if not problems:
             return ChatDraftResponse(text=text, source="model")
         log.info("chat-draft: attempt %s rejected (%s)", attempt + 1, "; ".join(problems))

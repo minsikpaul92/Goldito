@@ -1,10 +1,15 @@
 """The sitter's agent: the warm host. It sees its rates, policy, availability and the quote for the stay, and writes in the
 sitter's own anonymized voice."""
 
+import re
+
 from app.ai import chat as logic
 from app.ai import inquiry as inquiry_logic
 from app.ai import tone
 from app.ai.chat_agents.base import ChatAgent
+
+# Reversed hand-over: the owner drops off and picks up, so "I pick up" / "I'll drop off" is wrong in the sitter's mouth.
+_OWNER_HANDS_OVER = re.compile(r"\b(?:i|i'll|i will|i can|i could|i'd)\s+(?:be\s+)?(?:pick(?:ing)?|drop(?:ping)?)\b", re.IGNORECASE)
 
 
 class SitterAgent(ChatAgent):
@@ -40,3 +45,8 @@ class SitterAgent(ChatAgent):
         if state == "first_reply":
             return ["Hi, nice to meet you", "Happy to help"]
         return logic.generic_chips("sitter", started=started, can_host=facts["availability"].get("can_host"))
+
+    def extra_problems(self, text: str, facts: dict) -> list[str]:
+        if _OWNER_HANDS_OVER.search(text):
+            return ["it says I pick up or drop off, but the owner drops off and picks up"]
+        return []

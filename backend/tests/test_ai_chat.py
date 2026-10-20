@@ -555,3 +555,48 @@ def test_an_emoji_for_a_species_the_stay_does_not_have_is_rejected(client, setup
     ctx = setup({"reply": "Happy to help Max \U0001F431"}, {"reply": "Happy to help Max \U0001F436"}, db=asked_price_db())
     assert draft(client, "Happy to help").json()["text"] == "Happy to help Max \U0001F436"
     assert "cat emoji" in ctx.model.calls[1]["messages"][-1]["content"]
+
+
+def test_a_draft_that_repeats_the_last_message_of_either_side_is_rewritten(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"),
+        message(3, SITTER_ID, "Hi Robert, I'm Chloe. I'd love to look after Max!"),
+    )
+    ctx = setup(
+        {"reply": "Hi Robert, I'm Chloe. I'd love to look after Max!"},
+        {"reply": "Thanks for asking, Robert! Max sounds great."},
+        db=db,
+    )
+    out = draft(client, "Say it again").json()
+    assert out["text"] == "Thanks for asking, Robert! Max sounds great." and out["source"] == "model"
+    assert "repeats" in ctx.model.calls[1]["messages"][-1]["content"]
+    ctx = setup({"reply": "Can you take Max?"}, {"reply": "Could Max have a short walk each day?"}, db=db)
+    assert draft(client, "Ask about walks", owner_token()).json()["text"] == "Could Max have a short walk each day?"  # the owner's own last text too
+
+
+@pytest.mark.parametrize(
+    "token, bad",
+    [
+        (owner_token, "Could you pick them up at 9 AM and drop them off at 5 PM?"),
+        (owner_token, "Please pick Max up at 9 AM."),
+        (owner_token, "You will drop Max off on Friday."),
+        (sitter_token, "I'll pick Max up at 9 AM."),
+        (sitter_token, "I can drop them off at 5 PM."),
+    ],
+)
+def test_a_draft_that_reverses_who_picks_up_and_drops_off_is_rewritten(client, setup, token, bad):
+    ctx = setup({"reply": bad}, {"reply": "Thanks, that works for me."}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Hi!"), message(3, OWNER_ID, "Hello again.")))
+    out = draft(client, "Plan the hand-over", token()).json()
+    assert out["text"] == "Thanks, that works for me."
+    assert "drops off and picks up" in ctx.model.calls[1]["messages"][-1]["content"]
+
+
+def test_the_owner_may_say_they_drop_off_and_pick_up(client, setup):
+    setup({"reply": "I'll drop Max off on Friday and pick him up on Monday."})
+    assert draft(client, "Say the plan", owner_token()).json()["source"] == "model"
+
+
+def test_the_stay_card_the_model_reads_says_the_owner_hands_over(client, setup):
+    ctx = setup({"chips": ["Yes, I can host", "Let me check"]})
+    chips(client)
+    assert "The owner drops off and picks up." in ctx.model.payload()["recent"][0]["text"]

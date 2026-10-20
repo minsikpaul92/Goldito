@@ -18,6 +18,14 @@ OWNER_STYLE = (
 _HOSTING = re.compile(r"\b(my (?:place|home|house)|i can (?:host|take|watch)|i(?:'ll| will) (?:take care|look after|host))\b", re.IGNORECASE)
 
 
+# Reversed hand-over: the owner drops off and picks up, so "you pick up" / "you drop off" is wrong in the owner's mouth.
+_SITTER_HANDS_OVER = re.compile(
+    r"\b(?:you|you'll|you will|you can|you could|you'd)\s+(?:be\s+)?(?:pick(?:ing)?|drop(?:ping)?)\b"
+    r"|\bplease\s+(?:pick|drop)\b|(?:^|[.!?]\s+)(?:pick|drop)\b",
+    re.IGNORECASE,
+)
+
+
 class OwnerAgent(ChatAgent):
     role = "owner"
     model_setting = "model_chat_owner"
@@ -41,4 +49,9 @@ class OwnerAgent(ChatAgent):
         return logic.generic_chips("owner", started=started, can_host=None)
 
     def extra_problems(self, text: str, facts: dict) -> list[str]:
-        return ["it talks like a host, but I am the owner asking for care"] if _HOSTING.search(text) else []
+        problems = []
+        if _HOSTING.search(text):
+            problems.append("it talks like a host, but I am the owner asking for care")
+        if _SITTER_HANDS_OVER.search(text):
+            problems.append("it says the sitter picks up or drops off, but the owner drops off and picks up")
+        return problems
