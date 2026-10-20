@@ -113,8 +113,20 @@ export async function sendReport(reportId: string, body: string): Promise<void> 
   throw new Error("Couldn't send the report. Check your connection and try again.");
 }
 
+/** An owner's own diary page (014p): sent at once, no AI, no notice; only the owner ever sees it. */
+export async function addOwnerEntry(petId: string, body: string): Promise<string> {
+  const { data, error } = await getSupabase().rpc("add_owner_diary_entry", { p_pet: petId, p_body: body });
+  if (!error) return data as string;
+  if (error.message.includes("not_owner")) throw new Error("You can write a page only for your own pet.");
+  if (error.message.includes("body_required")) throw new Error("Write something first.");
+  if (error.message.includes("body_too_long")) throw new Error(`Keep it under ${REPORT_BODY_MAX} characters.`);
+  throw new Error("Couldn't save the page. Check your connection and try again.");
+}
+
 export type SentReport = {
   id: string;
+  /** Who wrote the page (a profile id): the sitter, or the owner for their own page. */
+  authorId: string;
   petId: string;
   petName: string;
   sitterName: string;
@@ -127,6 +139,7 @@ export type SentReport = {
 type Embed<T> = T | T[] | null;
 type ReportRow = {
   id: string;
+  sitter_id: string;
   pet_id: string;
   report_date: string;
   body: string;
@@ -137,11 +150,12 @@ type ReportRow = {
 };
 const first = <T,>(v: Embed<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 const COLUMNS =
-  "id, pet_id, report_date, body, sent_at, source_snapshot, pets(name), sitter:profiles!daily_reports_sitter_id_fkey(display_name)";
+  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name), sitter:profiles!daily_reports_sitter_id_fkey(display_name)";
 
 function toSent(row: ReportRow): SentReport {
   return {
     id: row.id,
+    authorId: row.sitter_id,
     petId: row.pet_id,
     petName: first(row.pets)?.name ?? "Your pet",
     sitterName: first(row.sitter)?.display_name ?? "Your sitter",
@@ -190,13 +204,14 @@ export async function getSentReport(reportId: string): Promise<SentReport | null
 
 export type ReportPhoto = { id: string; publicId: string; resourceType: "image" | "video" };
 
-/** The photos the sitter shared that day (the strip under the report). */
-export async function listReportPhotos(petId: string, day: string): Promise<ReportPhoto[]> {
-  const { data, error } = await getSupabase()
-    .from("feed_posts")
-    .select("id, media(cloudinary_public_id, resource_type)")
-    .eq("pet_id", petId)
-    .eq("visibility", "shared")
+/**
+ * The photos shared that day (the picture on the page). `includePrivate`: the owner's own page also shows the
+ * owner's private photos (RLS lets only the owner read them).
+ */
+export async function listReportPhotos(petId: string, day: string, includePrivate = false): Promise<ReportPhoto[]> {
+  let query = getSupabase().from("feed_posts").select("id, media(cloudinary_public_id, resource_type)").eq("pet_id", petId);
+  if (!includePrivate) query = query.eq("visibility", "shared");
+  const { data, error } = await query
     .gte("created_at", zonedToIso(day, "00:00"))
     .lt("created_at", zonedToIso(addDays(day, 1), "00:00"))
     .order("created_at", { ascending: true });

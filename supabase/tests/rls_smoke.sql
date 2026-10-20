@@ -5947,4 +5947,60 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014p (Diary, #186): the owner writes a diary page of their own
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  v_id uuid;
+  v_second uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+
+  -- The owner writes a page: sent at once, trimmed, the owner is the author
+  perform _t_as(robert);
+  v_id := public.add_owner_diary_entry(pip, '  A long walk in the park.  ');
+  perform _t_ok((select status = 'sent' and sent_at is not null and sitter_id = robert and body = 'A long walk in the park.'
+        and report_date = public.app_today() and model is null
+      from public.daily_reports where id = v_id),
+    '014p: the owner''s page is sent at once, trimmed, with the owner as its author');
+  v_second := public.add_owner_diary_entry(pip, 'Evening cuddles.');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 2 and v_second <> v_id,
+    '014p: the owner may write more than one page a day');
+  perform _t_ok(public.can_decorate_report(v_id), '014p: the owner can put stickers on their own page');
+
+  -- Nobody else sees it, and nobody else can write one
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 0,
+    '014p: the sitter on duty does not see the owner''s pages');
+  perform _t_ok(not public.can_decorate_report(v_id), '014p: the sitter cannot decorate the owner''s page');
+  begin perform public.add_owner_diary_entry(pip, 'Sitter text.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014p: a sitter cannot write an owner page');
+  perform _t_as(joy);
+  begin perform public.add_owner_diary_entry(pip, 'Not my dog.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014p: another owner cannot write on my pet''s page');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 0, '014p: another owner does not see it');
+
+  -- Empty and too long are refused; no notice goes out; anon cannot call it
+  perform _t_as(robert);
+  begin perform public.add_owner_diary_entry(pip, '   '); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_required', '014p: an empty page is refused');
+  begin perform public.add_owner_diary_entry(pip, repeat('x', 2001)); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_too_long', '014p: a page over 2000 characters is refused');
+  perform _t_ok(not exists (select 1 from public.notifications where pet_id = pip), '014p: nobody is notified of an owner page');
+  perform _t_as(null, 'anon');
+  begin perform public.add_owner_diary_entry(pip, 'Anon.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014p: anon cannot write a page');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;

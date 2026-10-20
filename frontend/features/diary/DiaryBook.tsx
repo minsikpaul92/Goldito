@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { DecoratedReport } from "../snap/DecoratedReport";
@@ -38,6 +39,8 @@ export function bookOrder(pages: SentReport[]): SentReport[] {
  */
 export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: DiaryBookProps) {
   const styles = useThemedStyles(makeStyles);
+  const session = useSession();
+  const me = session.status === "signedIn" ? session.profile.id : null;
   const ordered = useMemo(() => bookOrder(pages), [pages]);
   const pets = useMemo(() => {
     const seen = new Map<string, string>();
@@ -222,6 +225,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
                   petName={p.petName}
                   day={p.day}
                   body={p.body}
+                  ownPage={me != null && p.authorId === me}
                   onEditingChange={isCurrent ? setDecorating : undefined}
                   testID={isCurrent ? testID : undefined}
                 />
