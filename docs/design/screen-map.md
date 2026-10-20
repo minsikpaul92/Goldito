@@ -62,12 +62,12 @@ Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 104 |
-| TextButton | Open Profile | `search-open-profile` | 128 |
-| TextButton | Try again | `search-retry` | 136 |
-| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 150 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 162 |
-| Pressable | — | ``question-card-${inq.id}`` | 211 |
+| EmptyState | Couldn't load your bookings | — | 103 |
+| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 117 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 125 |
+| TextButton | Open Profile | `search-open-profile` | 152 |
+| TextButton | Try again | `search-retry` | 160 |
+| Pressable | — | ``question-card-${inq.id}`` | 220 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -1148,20 +1148,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | `text` | `id` | 54 |
-| Pressable | Search | `bar-search` | 83 |
-| Sheet | Done | `place-done` | 87 |
-| Button | Done | `place-done` | 91 |
-| Button | Use this place | `place-use-address` | 105 |
-| CheckRow | 🏠 My home | `place-home` | 112 |
-| CheckRow | 📍 Current location | `place-here` | 113 |
-| TextButton | Open Profile | `place-open-profile` | 134 |
-| Sheet | Done | `stay-done` | 139 |
-| Button | Done | `stay-done` | 143 |
-| Stepper | Drop-off time | `search-drop_off-time` | 158 |
-| Stepper | Pick-up time | `search-pick_up-time` | 167 |
-| Sheet | Done | `pets-done` | 199 |
-| Button | Done | `pets-done` | 203 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 207 |
+| Sheet | Done | `place-done` | 84 |
+| Button | Done | `place-done` | 88 |
+| Button | Use this place | `place-use-address` | 102 |
+| CheckRow | 🏠 My home | `place-home` | 109 |
+| CheckRow | 📍 Current location | `place-here` | 110 |
+| TextButton | Open Profile | `place-open-profile` | 131 |
+| Sheet | Done | `stay-done` | 136 |
+| Button | Done | `stay-done` | 140 |
+| Stepper | Drop-off time | `search-drop_off-time` | 155 |
+| Stepper | Pick-up time | `search-pick_up-time` | 164 |
+| Sheet | Done | `pets-done` | 196 |
+| Button | Done | `pets-done` | 200 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 204 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
@@ -1344,4 +1343,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-389 actions · 388 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+388 actions · 387 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

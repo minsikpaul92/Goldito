@@ -671,7 +671,7 @@
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
 | SEARCH-1 | (DB) `rls_smoke.sql`의 014c 블록 | 7 km → 3 km · 6.4 km 시터만, 가까운 순 · 6 km면 6.4 km 시터 빠짐 · 8 km에도 9 km 시터 없음 · 맡기기 시각이 시터 시간 밖이면 반경 100 km에도 없음 · 열지 않은 날 · 정원 초과도 없음 · 앱이 보낸 좌표로 검색 · 집 없음 → `no_home_point` · 반경 0 / 101 → `invalid_radius` · 시터 `forbidden` · anon 권한 없음 · 결과에 좌표 컬럼 없음 · (014i) 즐겨찾기 시터는 반경 밖(30 km)이어도 일정이 맞으면 거리와 함께 나옴, 일정이 안 맞거나 즐겨찾기가 아니면 안 나옴, 오너별로 다름 · 마지막 반경 저장, 101 km 거부 | SQL `rls_smoke` | ➖ |
-| SEARCH-2 | 견주 → **Bookings** 탭 열기 | 맨 위에 한 줄 검색 바(📍 장소 · 📅 날짜 · 🐾 펫 · 🔍). 처음엔 **Favorites**만 사진(없으면 이니셜) · 이름 · 거리 한 줄씩 보임(머무는 동안 가능한 즐겨찾기 시터만). 🔍를 누르면 **Sitters nearby**로 바뀌어 반경 안 모든 시터가 가까운 순으로 한 줄씩(사진 · 이름 · 거리 km) 나옴. 아래에 예약 · 질문 목록 | 🤖 `sitter-search` | 사람 확인 대기 |
+| SEARCH-2 | 견주 → **Bookings** 탭 열기 | 맨 위에 한 줄 검색 바(📍 장소 · 📅 날짜 · 🐾 펫)와 그 아래 반경 슬라이더. **Search 버튼은 없음**: 장소 · 날짜 · 시간 · 펫 · 반경 중 무엇이든 바꾸면 잠깐 뒤 저절로 다시 검색됨. 결과는 **Favorites**(즐겨찾기 중 그 기간이 맞는 시터)가 맨 위, 그 아래 **Sitters nearby**(나머지, 반경 안에서 머무는 내내 가능한 시터)가 한 줄씩(아바타 · 이름 · 거리). 즐겨찾기가 없으면 Sitters nearby만. 아래에 Chats · 예약 · 질문 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-3 | 검색 바 바로 아래 **Within** 슬라이더(1~100 km, 1 km 단위: 끌기 · 트랙 클릭 · →/PageUp) | 처음 **5 km**(이전에 바꿨다면 마지막 값), 쉬면 한 번만 다시 검색해 목록이 바뀜. 마지막 반경이 저장되어 다음에 열 때 그 값 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-4 | 날짜 칸 → 범위 달력에서 시작일 · 종료일을 차례로 누르고 시간 −/+ 또는 시간 값을 눌러 시계로 설정 | 바에 "Oct 24 - 28"처럼 한 줄로 나오고, **Done** 뒤 자동으로 다시 검색. 펫 칸에서 펫을 바꿔도 같음 | 🤖 `sitter-search` | 사람 확인 대기 |
 | SEARCH-5 | 장소 칸 → **Current location** / 주소 · **우편번호** 입력 후 Use this place | 현재 위치는 브라우저가 한 번만 묻고 그 좌표로 검색, 차단되면 푸는 법 안내(집 기준 유지). 우편번호(예 M5V 2T6)는 전체 코드를 못 찾으면 앞 3자리(M5V)로 다시 찾음. 못 찾으면 "Couldn't find that place". 주소 조회는 백엔드(`/api/geo/geocode`)가 떠 있어야 함 | 🤖 `sitter-search`(위치 · 조회 목업) · 실제 브라우저 권한은 👤 | 사람 확인 대기 |
@@ -775,7 +775,7 @@
 | ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
-| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | 즐겨찾기가 하나도 없으면 처음부터 주변 시터("Sitters nearby")가 보임. 즐겨찾기가 있는데 날짜에 안 맞으면 "No favorites free for these dates.", 🔍 뒤에 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
+| ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | Favorites 칸 없이 **Sitters nearby**에 주변 시터가 바로 보임. 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search` | 사람 확인 대기 |
 | ADDR-6 | 데모 계정(`@goldito.test`) 전부 | 계정마다 **자기 주소와 핀**이 있음(토론토 공공 건물 주소, 실제 사람 집 아님): 오너 Robert · Peter · Alex · David, 시터 Chloe · Paul · Allen · Daniel. 서로 0.6 ~ 14 km라 반경 슬라이더로 결과가 달라짐. **Reset demo**나 `seed_demo.py`를 다시 돌려도 이 주소가 유지됨 | 🤖 pytest `test_seed_demo` · `test_reset_demo` | 사람 확인 대기 |
 | ADDR-7 | 시터가 Profile에서 주소를 확인하고 저장 | 직접 쓴 서비스 지역이 없으면 **도시 + 우편 앞 3자리**("Toronto M4W")가 서비스 지역이 됨. 오너의 예약 요청 시트에는 "At Allen's place, Toronto M4W"처럼 대략적인 위치만 나오고 정확한 주소는 결제 뒤에만 공개 | 🤖 `home-location` · `chat` | 사람 확인 대기 |
 

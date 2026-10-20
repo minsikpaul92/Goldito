@@ -46,8 +46,6 @@ export default function OwnerBookings() {
   const search = useSitterSearch();
   const chats = useMyChats();
   const [viewer, setViewer] = useState<{ name: string; photos: ProfilePhoto[] } | null>(null);
-  // Favorites until the owner presses Search, then everyone nearby.
-  const [searched, setSearched] = useState(false);
   const [covers, setCovers] = useState<Map<string, ProfilePhoto>>(new Map());
 
   const load = useCallback(async () => {
@@ -72,9 +70,10 @@ export default function OwnerBookings() {
   );
 
   const found: NearbySitter[] = search.results.status === "ready" ? search.results.sitters : [];
-  // Favorites first; with none yet (or after Search) everyone nearby.
-  const everyone = searched || search.favorites.size === 0;
-  const shown = everyone ? found : found.filter((x) => search.favorites.has(x.sitterId));
+  // Favorites on top, everyone else free for the stay under "Sitters nearby".
+  const favoriteRows = found.filter((x) => search.favorites.has(x.sitterId));
+  const otherRows = found.filter((x) => !search.favorites.has(x.sitterId));
+  const shown = [...favoriteRows, ...otherRows];
   const shownKey = shown.map((x) => x.sitterId).join();
   useEffect(() => {
     let current = true;
@@ -111,14 +110,39 @@ export default function OwnerBookings() {
     );
   }
 
+  const sitterRow = (sitter: NearbySitter) => {
+    const cover = covers.get(sitter.sitterId);
+    return (
+      <View key={sitter.sitterId} style={styles.row}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${sitter.displayName}'s photos`}
+          onPress={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
+          testID={`sitter-avatar-${sitter.displayName}`}
+        >
+          {cover ? <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} /> : <Avatar kind="initial" name={sitter.displayName} size={48} />}
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
+          onPress={() => openSitter(sitter.sitterId)}
+          style={styles.rowMain}
+          testID={`sitter-tile-${sitter.displayName}`}
+        >
+          <Text style={styles.rowName} numberOfLines={1}>
+            {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
+          </Text>
+          <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
+        </Pressable>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.root}>
       <Screen contentStyle={styles.list}>
-        <SitterSearchBar search={search} onSearch={() => setSearched(true)} />
+        <SitterSearchBar search={search} />
         <View style={styles.section} testID="sitter-results">
-          <Text accessibilityRole="header" style={styles.heading}>
-            {everyone ? "Sitters nearby" : "Favorites"}
-          </Text>
           {search.problem || search.placeProblem ? (
             <View style={styles.section}>
               <Text style={styles.hint} testID="search-problem">
@@ -137,44 +161,29 @@ export default function OwnerBookings() {
             </View>
           ) : search.results.status !== "ready" ? (
             <Text style={styles.hint}>Looking…</Text>
-          ) : shown.length === 0 ? (
-            <Text style={styles.hint} testID="search-none">
-              {everyone ? `No sitters within ${search.radiusKm} km for these dates.` : "No favorites free for these dates."}
-            </Text>
           ) : (
-            <View style={styles.rows}>
-              {shown.map((sitter) => {
-                const cover = covers.get(sitter.sitterId);
-                return (
-                  <View key={sitter.sitterId} style={styles.row}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${sitter.displayName}'s photos`}
-                      onPress={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
-                      testID={`sitter-avatar-${sitter.displayName}`}
-                    >
-                      {cover ? (
-                        <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} />
-                      ) : (
-                        <Avatar kind="initial" name={sitter.displayName} size={48} />
-                      )}
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
-                      onPress={() => openSitter(sitter.sitterId)}
-                      style={styles.rowMain}
-                      testID={`sitter-tile-${sitter.displayName}`}
-                    >
-                      <Text style={styles.rowName} numberOfLines={1}>
-                        {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
-                      </Text>
-                      <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
+            <>
+              {favoriteRows.length > 0 ? (
+                <View style={styles.section} testID="sitter-favorites">
+                  <Text accessibilityRole="header" style={styles.heading}>
+                    Favorites
+                  </Text>
+                  <View style={styles.rows}>{favoriteRows.map(sitterRow)}</View>
+                </View>
+              ) : null}
+              <View style={styles.section} testID="sitter-nearby">
+                <Text accessibilityRole="header" style={styles.heading}>
+                  Sitters nearby
+                </Text>
+                {otherRows.length === 0 ? (
+                  <Text style={styles.hint} testID="search-none">
+                    {`No ${favoriteRows.length > 0 ? "other " : ""}sitters within ${search.radiusKm} km for these dates.`}
+                  </Text>
+                ) : (
+                  <View style={styles.rows}>{otherRows.map(sitterRow)}</View>
+                )}
+              </View>
+            </>
           )}
         </View>
         <PhotoViewerSheet visible={viewer !== null} title={viewer?.name ?? ""} photos={viewer?.photos ?? []} onClose={() => setViewer(null)} testID="sitter-photos" />
