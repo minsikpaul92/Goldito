@@ -217,3 +217,23 @@ def test_suggest_being_down_is_a_502_and_it_needs_sign_in(client, monkeypatch):
     assert post_suggest(client, owner_token()).status_code == 502
     assert post_suggest(client).status_code == 401
     assert post_suggest(client, owner_token(), address="ab").status_code == 422
+
+
+def test_a_postal_code_is_searched_in_one_spelling_and_falls_back_to_its_area(client, monkeypatch):
+    asked: list[dict] = []
+    monkeypatch.setattr(geo, "_get", lambda url, params: asked.append(params) or [])
+    body = post_suggest(client, owner_token(), address="m4p1v4").json()
+    assert asked[0]["q"] == "M4P 1V4" and asked[0]["countrycodes"] == "ca"
+    # OpenStreetMap had nothing: the postal area is the answer (a point near the middle of M4P)
+    assert [r["label"] for r in body["results"]] == ["M4P, Toronto, ON"]
+    assert abs(body["results"][0]["lat"] - 43.7135) < 0.01
+
+    # a street address is searched as typed, and a code nobody has is an empty list
+    asked.clear()
+    assert post_suggest(client, owner_token(), address="127 Broadway Avenue").json() == {"results": []}
+    assert asked[0]["q"] == "127 Broadway Avenue"
+    assert post_suggest(client, owner_token(), address="Z9Z 9Z9").json() == {"results": []}
+
+
+def test_the_bundled_postal_areas_cover_toronto():
+    assert {"M4P", "M4W", "M5V", "M6J"} <= set(geo.POSTAL_AREAS)

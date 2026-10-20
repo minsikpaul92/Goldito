@@ -3,7 +3,22 @@ import { getSupabase } from "../../lib/supabase";
 export type ChatPet = { id: string; name: string };
 
 /** The cards a chat can carry. Later steps add quote, Meet & Greet, trip and diary cards. */
-export type ChatCard = { type: "stay"; dropOffAt: string; pickUpAt: string; pets: ChatPet[] } | { type: "unknown" };
+export type ChatPlace = { type: "sitter_home" | "owner_home" | "other"; note: string | null };
+
+export type ChatCard =
+  | { type: "stay"; dropOffAt: string; pickUpAt: string; pets: ChatPet[] }
+  | {
+      type: "request";
+      bookingId: string;
+      serviceType: "boarding" | "house_sitting";
+      note: string | null;
+      dropOffAt: string;
+      pickUpAt: string;
+      dropOffPlace: ChatPlace;
+      pickUpPlace: ChatPlace;
+      pets: ChatPet[];
+    }
+  | { type: "unknown" };
 
 export type ChatMessage = {
   id: string;
@@ -62,7 +77,30 @@ export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody">): st
 }
 
 function toCard(raw: unknown): ChatCard {
-  const c = raw as { type?: string; drop_off_at?: string; pick_up_at?: string; pets?: ChatPet[] } | null;
+  const c = raw as {
+    type?: string;
+    drop_off_at?: string;
+    pick_up_at?: string;
+    pets?: ChatPet[];
+    booking_id?: string;
+    service_type?: "boarding" | "house_sitting";
+    note?: string | null;
+    drop_off_place?: ChatPlace;
+    pick_up_place?: ChatPlace;
+  } | null;
+  if (c?.type === "request" && c.booking_id && c.drop_off_at && c.pick_up_at) {
+    return {
+      type: "request",
+      bookingId: c.booking_id,
+      serviceType: c.service_type ?? "boarding",
+      note: c.note ?? null,
+      dropOffAt: c.drop_off_at,
+      pickUpAt: c.pick_up_at,
+      dropOffPlace: c.drop_off_place ?? { type: "sitter_home", note: null },
+      pickUpPlace: c.pick_up_place ?? { type: "sitter_home", note: null },
+      pets: c.pets ?? [],
+    };
+  }
   if (c?.type === "stay" && c.drop_off_at && c.pick_up_at) {
     return { type: "stay", dropOffAt: c.drop_off_at, pickUpAt: c.pick_up_at, pets: c.pets ?? [] };
   }
@@ -161,4 +199,10 @@ export async function markChatRead(threadId: string): Promise<void> {
 export async function leaveChat(threadId: string): Promise<void> {
   const { error } = await getSupabase().rpc("leave_chat", { p_thread: threadId });
   if (error) fail(error, "Couldn't leave the chat. Try again.");
+}
+
+/** After request_booking from the chat: the request goes into the thread as one card for the sitter to read. */
+export async function postBookingRequestCard(threadId: string, bookingId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("post_booking_request_card", { p_thread: threadId, p_booking: bookingId });
+  if (error) fail(error, "The request was sent, but it did not show in the chat.");
 }

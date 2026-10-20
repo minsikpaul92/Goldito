@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { DemoTools } from "../components/DemoTools";
+import { AddressInput } from "../components/AddressInput";
 import { OpenInMapsButton } from "../components/OpenInMapsButton";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
 import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
@@ -26,7 +27,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { AddressSuggestion, PinPlace, reverseGeocode, suggestAddresses } from "../lib/transit";
+import { AddressSuggestion, PinPlace, areaFromAddress, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -136,9 +137,6 @@ export default function ProfileScreen() {
   const [homePlace, setHomePlace] = useState<PinPlace | null | undefined>(undefined);
   // The address text that is placed on the map (it matches the pin). Anything else typed has to be checked first.
   const [placedAddress, setPlacedAddress] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[] | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [checkNote, setCheckNote] = useState<string | null>(null);
 
   const profile = session.status === "signedIn" ? session.profile : null;
 
@@ -189,8 +187,6 @@ export default function ProfileScreen() {
       if (place?.address) {
         setDraft((prev) => ({ ...prev, home_address: place.address ?? "" }));
         setPlacedAddress(place.address);
-        setSuggestions(null);
-        setCheckNote(null);
       }
     });
     return () => {
@@ -256,7 +252,8 @@ export default function ProfileScreen() {
             role: "sitter",
             fields: {
               bio: value("bio"),
-              service_area: value("service_area"),
+              // Owners see only a rough place: the one typed, else the city and postal area of the checked address.
+              service_area: value("service_area") ?? areaFromAddress(address),
               experience_years: experience ? Number(experience) : null,
               home_notes: value("home_notes"),
               home_address: address,
@@ -292,27 +289,12 @@ export default function ProfileScreen() {
     }
   }
 
-  async function checkAddress() {
-    const query = (draft.home_address ?? "").trim();
-    if (query.length < 3 || checking) return;
-    setChecking(true);
-    setCheckNote(null);
-    setSuggestions(null);
-    const found = await suggestAddresses(query);
-    setChecking(false);
-    if (found === null) setCheckNote("The address check is down. Try again in a moment, or use your current location.");
-    else if (found.length === 0) setCheckNote("We couldn't find that address. Check the spelling or add the postal code.");
-    else setSuggestions(found);
-  }
-
   /** The person picked one of the real addresses: its text and its point become the home address and pin. */
   function pickSuggestion(suggestion: AddressSuggestion) {
     setDraft((prev) => ({ ...prev, home_address: suggestion.label }));
     setPlacedAddress(suggestion.label);
     setHome(suggestion.point);
     setPinFromGps(false);
-    setSuggestions(null);
-    setCheckNote(null);
     setErrors((prev) => ({ ...prev, home_address: "" }));
   }
 
@@ -355,57 +337,29 @@ export default function ProfileScreen() {
       />
       {fields.map((field) => (
         <View key={field.key} style={styles.fieldWithPin}>
-          <TextField
-            label={field.key === "home_address" ? field.label : `${field.label} (optional)`}
-            value={draft[field.key] ?? ""}
-            onChangeText={(text) => {
-              setDraft((prev) => ({ ...prev, [field.key]: text }));
-              if (field.key === "home_address") {
-                setSuggestions(null);
-                setCheckNote(null);
-              }
-            }}
-            placeholder={field.placeholder}
-            multiline={field.multiline}
-            inputMode={field.numeric ? "numeric" : undefined}
-            error={errors[field.key]}
-            testID={`profile-${field.key}`}
-          />
           {field.key === "home_address" ? (
-            <View style={styles.checkRow}>
-              {(draft.home_address ?? "").trim() !== "" && (draft.home_address ?? "").trim() === placedAddress && home ? (
-                <Text style={styles.found} testID="profile-address-ok">
-                  ✓ Found on the map
-                </Text>
-              ) : (
-                <TextButton
-                  label={checking ? "Checking…" : "Check address"}
-                  onPress={() => void checkAddress()}
-                  disabled={checking || (draft.home_address ?? "").trim().length < 3}
-                  style={styles.addSpot}
-                  testID="profile-check-address"
-                />
-              )}
-            </View>
-          ) : null}
-          {field.key === "home_address" && suggestions && suggestions.length > 0 ? (
-            <View style={styles.suggestions} testID="profile-suggestions">
-              {suggestions.map((s, i) => (
-                <TextButton
-                  key={s.label}
-                  label={s.label}
-                  onPress={() => pickSuggestion(s)}
-                  style={styles.suggestion}
-                  testID={`profile-suggestion-${i + 1}`}
-                />
-              ))}
-            </View>
-          ) : null}
-          {field.key === "home_address" && checkNote ? (
-            <Text style={styles.muted} testID="profile-check-note">
-              {checkNote}
-            </Text>
-          ) : null}
+            <AddressInput
+              label={field.label}
+              value={draft[field.key] ?? ""}
+              onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+              placed={home ? placedAddress : null}
+              onPick={pickSuggestion}
+              placeholder={field.placeholder}
+              error={errors[field.key]}
+              testID="profile-home_address"
+            />
+          ) : (
+            <TextField
+              label={`${field.label} (optional)`}
+              value={draft[field.key] ?? ""}
+              onChangeText={(text) => setDraft((prev) => ({ ...prev, [field.key]: text }))}
+              placeholder={field.placeholder}
+              multiline={field.multiline}
+              inputMode={field.numeric ? "numeric" : undefined}
+              error={errors[field.key]}
+              testID={`profile-${field.key}`}
+            />
+          )}
           {field.key === "home_address" ? (
             <View style={styles.group} testID="profile-home-pin">
               <Text style={styles.groupTitle}>Map pin for trips</Text>

@@ -61,6 +61,7 @@ def test_a_named_demo_account_gets_its_own_address_and_point():
     assert owner["home_address"] == "100 Queen St W, Toronto, ON M5H 2N2"
     assert (owner["home_lat"], owner["home_lng"]) == (43.6534, -79.3841)
     assert sitter["home_address"] == "3401 Dufferin St, Toronto, ON M6A 2T9"
+    assert sitter["service_area"] == "Toronto M6A"  # the rough place owners see
     assert (sitter["home_lat"], sitter["home_lng"]) == (43.7253, -79.4524)
 
 

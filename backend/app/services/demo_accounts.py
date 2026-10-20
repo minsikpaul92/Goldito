@@ -130,6 +130,14 @@ DEMO_HOMES: dict[str, tuple[str, float, float]] = {
     "demo-sitter-daniel@goldito.test": ("3401 Dufferin St, Toronto, ON M6A 2T9", 43.7253, -79.4524),
 }
 
+# The rough place owners see for a demo sitter ("Toronto M4W"), never the street.
+DEMO_SERVICE_AREAS = {
+    "demo-sitter@goldito.test": "Toronto M5V",
+    "demo-sitter-paul@goldito.test": "Toronto M5A",
+    "demo-sitter-allen@goldito.test": "Toronto M4W",
+    "demo-sitter-daniel@goldito.test": "Toronto M6A",
+}
+
 # A demo account that is not in DEMO_HOMES gets a point by role.
 DEMO_HOME_POINTS = {
     "sitter": (43.6477, -79.4194),
@@ -176,6 +184,8 @@ def ensure_home_point(client: Client, role: str, user_id: str, email: str | None
     if home:
         address, lat, lng = home
         fields = {"home_address": address, "home_lat": lat, "home_lng": lng}
+        if role == "sitter" and (email or "").lower() in DEMO_SERVICE_AREAS:
+            fields["service_area"] = DEMO_SERVICE_AREAS[(email or "").lower()]
     else:
         lat, lng = DEMO_HOME_POINTS[role]
         fields = {"home_lat": lat, "home_lng": lng}

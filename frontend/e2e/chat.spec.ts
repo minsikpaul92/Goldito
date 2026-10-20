@@ -76,7 +76,14 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/chat\//);
     const url = page.url();
     await expect(screen.getByTestId("chat-stay-card")).toContainText("Max, Mochi");
-    await expect(screen.getByTestId("chat-stay-card")).toContainText("Drop-off");
+    // The header has the pets only (no dates, they are on the card); my stay card sits on the right like my messages.
+    await expect(screen.getByTestId("chat-header-stay")).not.toContainText(" to ");
+    await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
+    await expect(screen.getByTestId("chat-header-pet-Mochi")).toBeVisible();
+    const frame = await box(page.locator("iframe"));
+    const card = await box(screen.getByTestId("chat-stay-card"));
+    expect(card.x + card.width / 2).toBeGreaterThan(frame.x + frame.width / 2);
+    expect((await box(screen.getByTestId("chat-input"))).height).toBeLessThanOrEqual(48);
     await expect(screen.getByTestId("chat-empty")).toBeHidden();
 
     // Free chat: the same person sends again and again.
@@ -127,7 +134,7 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-unread-Robert")).toHaveCount(0);
   });
 
-  test("leaving a chat hides it from my list only, by the Leave button or a swipe", async ({ page }) => {
+  test("leaving a chat hides it from my list only; a swipe does it and the chat has no Leave button", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     seedThread(db);
@@ -135,24 +142,22 @@ test.describe("chat hub", () => {
 
     await expect(screen.getByTestId("chat-row-Chloe")).toBeVisible();
     await screen.getByTestId("chat-row-Chloe").click();
-    await screen.getByTestId("chat-leave").click();
-    await expect(page).toHaveURL(/\/owner\/bookings$/);
-    await expect(screen.getByTestId("chat-row-Chloe")).toHaveCount(0);
-    expect(db.chat_messages).toHaveLength(4); // the history stays
-
-    // Start it again: the chat is back with its history.
-    await screen.getByTestId("sitter-chat-Chloe").click();
-    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
+    await expect(screen.getByTestId("chat-leave")).toHaveCount(0); // the back arrow is the way out
     await page.goBack();
     await expect(screen.getByTestId("chat-row-Chloe")).toBeVisible();
 
-    // A swipe to the left does the same.
+    // A swipe to the left leaves the chat: gone from my list, the history stays and Chloe still has it.
     const row = await box(screen.getByTestId("chat-row-Chloe"));
     const y = row.y + row.height / 2;
     await drag(page, { x: row.x + row.width - 10, y }, { x: row.x + 10, y }, 12);
     await expect(screen.getByTestId("chat-row-Chloe")).toHaveCount(0);
+    expect(db.chat_messages).toHaveLength(4);
     expect(db.chat_threads[0].owner_left_at).not.toBeNull();
-    expect(db.chat_threads[0].sitter_left_at).toBeNull(); // Chloe still has it
+    expect(db.chat_threads[0].sitter_left_at).toBeNull();
+
+    // Start it again: the chat is back with its history.
+    await screen.getByTestId("sitter-chat-Chloe").click();
+    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(3);
   });
 
   test("the booking progress bar sits on top of the chat and opens the booking", async ({ page }) => {
@@ -196,12 +201,10 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/chat\//);
     await expect(screen.getByTestId("chat-stay-card")).toContainText("Max");
     await screen.getByTestId("chat-request-booking").click();
-    await expect(page).toHaveURL(/\/owner\/bookings\/new\?/);
-    const q = new URL(page.url()).searchParams;
-    expect(q.get("sitter")).toBe(SITTER.id);
-    expect(q.get("pets")).toBe(MAX);
-    expect(q.get("drop")).toBe(drop);
-    expect(q.get("pick")).toBe(pick);
+    await expect(screen.getByTestId("request-sheet")).toBeVisible();
+    await screen.getByTestId("request-send").click();
+    await expect.poll(() => db.requests.length).toBe(1);
+    expect(db.requests[0]).toMatchObject({ p_sitter: SITTER.id, p_pets: [MAX], p_drop_off_at: drop, p_pick_up_at: pick });
   });
 
   test("the sitter has no Request booking in the chat, and an owner with a booking in progress has none either", async ({ page }) => {
@@ -215,6 +218,110 @@ test.describe("chat hub", () => {
     await page.goto(`/chat/${THREAD}`);
     await expect(app(page).getByTestId("chat-stay-card").or(app(page).getByTestId("chat-bubble-me").first())).toBeVisible();
     await expect(app(page).getByTestId("chat-request-booking")).toHaveCount(0);
+  });
+
+  test("asking about a different stay with nothing said since changes the stay card; after a message it adds one", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    const q = (drop: string, pick: string) => `drop=${encodeURIComponent(drop)}&pick=${encodeURIComponent(pick)}&pets=${MAX}`;
+
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-20T13:00:00.000Z", "2030-10-22T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(1);
+    await page.goBack();
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-20T13:00:00.000Z", "2030-10-23T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(1); // the same card, new dates
+    await expect(screen.getByTestId("chat-stay-card")).toContainText("Oct 23");
+
+    await screen.getByTestId("chat-input").fill("Hi Chloe");
+    await screen.getByTestId("chat-send").click();
+    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(1);
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-21T13:00:00.000Z", "2030-10-24T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(2); // something was said: a new card
+  });
+
+  test("the header has the avatar, the name and the pinned stay: the avatar shows photos, the name opens the sitter and back returns", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    seedThread(db);
+    db.chat_messages.unshift({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-28T21:00:00Z", pets: [{ id: MAX, name: "Max" }] }, created_at: "2026-10-10T09:59:00.000Z" });
+    db.profile_photos.push({ id: "ph1", profile_id: SITTER.id, public_id: "goldito/chloe/1" }, { id: "ph2", profile_id: SITTER.id, public_id: "goldito/chloe/2" });
+    const screen = await openBookings(page, OWNER, "owner");
+    await screen.getByTestId("chat-row-Chloe").click();
+
+    await expect(screen.getByTestId("chat-header-name")).toHaveText("Chloe");
+    await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
+    await screen.getByTestId("chat-header-avatar").click();
+    await expect(screen.getByTestId("chat-photos-photo-1")).toBeVisible();
+    await screen.getByTestId("chat-photos-close").click();
+
+    await screen.getByTestId("chat-header-name").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/chat/${THREAD}$`));
+    await expect(screen.getByTestId("chat-header-name")).toBeVisible();
+  });
+
+  test("Request booking is a sheet over the chat: no service or pet choice, one line for the day and time, one send posts a card the sitter reads", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-28T21:00:00Z", pets: [{ id: MAX, name: "Max" }, { id: MOCHI, name: "Mochi" }] }, created_at: "2026-10-10T09:59:00.000Z" });
+    const screen = await openBookings(page, OWNER, "owner");
+    await screen.getByTestId("chat-row-Chloe").click();
+
+    await screen.getByTestId("chat-request-booking").click();
+    await expect(screen.getByTestId("request-sheet")).toBeVisible();
+    await expect(screen.getByTestId("chat-header")).toBeVisible(); // the chat stays behind the sheet
+    await expect(screen.getByText("Who's staying?")).toHaveCount(0);
+    await expect(screen.getByText("Boarding", { exact: true })).toHaveCount(0);
+    await expect(screen.getByTestId("request-pets")).toContainText("Max");
+    // The day and the time share one line.
+    const day = await box(screen.getByTestId("request-drop-day"));
+    const time = await box(screen.getByTestId("request-drop-time"));
+    expect(Math.abs(day.y - time.y)).toBeLessThan(4);
+    await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place, Toronto M4W"); // the rough place, never the street
+
+    // Change one place to a checked address, add a note, send everything at once.
+    await page.route("**/api/geo/suggest", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [{ label: "750 Bloor St W, Toronto, ON M6G 3K4", lat: 43.664, lng: -79.42 }] }) }),
+    );
+    await screen.getByTestId("request-pick-change").click();
+    await screen.getByTestId("request-pick-type").getByText("Elsewhere").click();
+    await screen.getByTestId("request-pick-address").fill("750 Bloor");
+    await expect(screen.getByTestId("request-send")).toBeDisabled(); // not checked yet
+    await expect(screen.getByTestId("request-problem")).toContainText("Check the address");
+    await screen.getByTestId("request-pick-address-check-address").click();
+    await screen.getByTestId("request-pick-address-suggestion-1").click();
+    await expect(screen.getByTestId("request-pick-address-address-ok")).toBeVisible();
+    await expect(screen.getByTestId("request-pick-place")).toHaveText("At 750 Bloor St W, Toronto, ON M6G 3K4");
+    await screen.getByTestId("request-note-toggle").click();
+    await screen.getByTestId("request-note").fill("Max gets anxious with loud noises");
+    await screen.getByTestId("request-send").click();
+
+    await expect(screen.getByTestId("request-sheet")).toBeHidden();
+    expect(db.requests).toHaveLength(1);
+    expect(db.requests[0]).toMatchObject({
+      p_sitter: SITTER.id,
+      p_pets: [MAX, MOCHI],
+      p_drop_off_location_type: "sitter_home",
+      p_pick_up_location_type: "other",
+      p_pick_up_note: "750 Bloor St W, Toronto, ON M6G 3K4",
+      p_note: "Max gets anxious with loud noises",
+      p_service_type: "boarding",
+    });
+    // The request is in the chat as one card with the note, and the Request booking button is gone.
+    await expect(screen.getByTestId("chat-request-card")).toContainText("You sent a booking request");
+    await expect(screen.getByTestId("chat-request-card")).toContainText("750 Bloor St W, Toronto, ON M6G 3K4");
+    await expect(screen.getByTestId("chat-request-note")).toHaveText("“Max gets anxious with loud noises”");
+    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "request")).toHaveLength(1);
   });
 
   test("someone outside the chat cannot open it", async ({ page }) => {

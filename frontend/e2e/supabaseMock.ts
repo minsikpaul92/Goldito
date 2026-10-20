@@ -748,8 +748,14 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
         pick_up_at: args.p_pick_up_at,
         pets: pets.map((p) => ({ id: p.id, name: p.name })).sort((a, b) => String(a.name).localeCompare(String(b.name))),
       };
-      const last = messagesOf(thread).filter((m) => m.kind === "card" && (m.card as Row).type === "stay").at(-1);
-      if (JSON.stringify(last?.card) !== JSON.stringify(card)) post(thread, me, "card", null, card);
+      const end = messagesOf(thread).at(-1);
+      if (end && end.kind === "card" && (end.card as Row).type === "stay" && end.sender_id === me) {
+        // 014l: nothing was said after my last stay card, so it becomes the new stay.
+        end.card = card;
+      } else {
+        const last = messagesOf(thread).filter((m) => m.kind === "card" && (m.card as Row).type === "stay").at(-1);
+        if (JSON.stringify(last?.card) !== JSON.stringify(card)) post(thread, me, "card", null, card);
+      }
     }
     return json(route, 200, thread);
   }
@@ -775,6 +781,32 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
     if (!thread) return fail("forbidden");
     thread[`${side(thread)}_left_at`] = messagesOf(thread).at(-1)?.created_at ?? new Date(nowMs()).toISOString();
     return route.fulfill({ status: 204 });
+  }
+
+  if (fn === "post_booking_request_card") {
+    const thread = db.chat_threads.find((t) => t.id === args.p_thread && t.owner_id === me);
+    const booking = db.bookings.find((b) => b.id === args.p_booking);
+    if (!thread || !booking || booking.owner_id !== me || booking.sitter_id !== thread.sitter_id) return fail("forbidden");
+    const existing = messagesOf(thread).find((m) => m.kind === "card" && (m.card as Row).type === "request" && (m.card as Row).booking_id === booking.id);
+    if (existing) return json(route, 200, existing);
+    const handoff = (kind: string) => db.booking_handoffs.find((h) => h.booking_id === booking.id && h.kind === kind);
+    const place = (kind: string) => ({ type: handoff(kind)?.location_type, note: handoff(kind)?.location_note ?? null });
+    const petRows = db.booking_pets
+      .filter((bp) => bp.booking_id === booking.id)
+      .map((bp) => db.pets.find((p) => p.id === bp.pet_id))
+      .filter(Boolean) as Row[];
+    const card = {
+      type: "request",
+      booking_id: booking.id,
+      service_type: booking.service_type,
+      note: booking.owner_note ?? null,
+      drop_off_at: handoff("drop_off")?.scheduled_at,
+      drop_off_place: place("drop_off"),
+      pick_up_at: handoff("pick_up")?.scheduled_at,
+      pick_up_place: place("pick_up"),
+      pets: petRows.map((p) => ({ id: p.id, name: p.name })),
+    };
+    return json(route, 200, post(thread, me, "card", null, card));
   }
 
   if (fn === "get_chat_thread") {
@@ -824,7 +856,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const wantsRows = (headers.prefer ?? "").includes("return=representation");
   const me = callerId(headers.authorization);
 
-  if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread)$/.test(path)) {
+  if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread|post_booking_request_card)$/.test(path)) {
     return handleChat(route, path.slice(4), users, db, me);
   }
 
@@ -953,6 +985,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       sitter_id: args.p_sitter,
       status: "requested",
       service_type: args.p_service_type ?? "boarding",
+      owner_note: args.p_note ?? null,
       created_at: created,
     });
     for (const [kind, at, type, note] of [

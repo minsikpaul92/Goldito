@@ -18,18 +18,17 @@
 
 ### `/chat/[threadId]` — [app/chat/[threadId].tsx](../../frontend/app/chat/[threadId].tsx)
 
-One chat per owner and sitter (3D.4): the booking progress on top, the stay card and then everyone's messages, and a box to write any time. Opens at the latest message and keeps itself current (Realtime + a slow poll).
+One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `BookingStageBar` · `MessageBubble`
+Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 90 |
-| EmptyState | Chat not found | — | 98 |
-| TextButton | Leave | `chat-leave` | 150 |
-| Pressable | — | `chat-stage` | 155 |
-| Button | Request booking | `chat-request-booking` | 185 |
-| Button | sending ? "…" : "Send" | `chat-send` | 200 |
+| EmptyState | Couldn't load this chat | — | 114 |
+| EmptyState | Chat not found | — | 122 |
+| Pressable | — | `chat-stage` | 193 |
+| Button | Request booking | `chat-request-booking` | 227 |
+| Pressable | Send | `chat-send` | 243 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -327,23 +326,21 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 206 |
-| TextButton | checking ? "Checking…" : "Check address" | `profile-check-address` | 381 |
-| TextButton | `s.label` | ``profile-suggestion-${i + 1}`` | 394 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 450 |
-| TextButton | Edit entry info | `profile-home-access` | 467 |
-| SegmentedControl | — | `profile-ai-mode` | 483 |
-| Button | Edit your answers | `profile-answers-edit` | 512 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 520 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 522 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 539 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 549 |
-| TextButton | + Add a spot | `profile-add-spot` | 573 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 588 |
+| EmptyState | Couldn't load your profile | — | 202 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 404 |
+| TextButton | Edit entry info | `profile-home-access` | 421 |
+| SegmentedControl | — | `profile-ai-mode` | 437 |
+| Button | Edit your answers | `profile-answers-edit` | 466 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 474 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 476 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 493 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 503 |
+| TextButton | + Add a spot | `profile-add-spot` | 527 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 542 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -636,6 +633,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | `active-trip-card` | 41 |
 
+### AddressInput — [components/AddressInput.tsx](../../frontend/components/AddressInput.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | checking ? "Checking…" : "Check address" | ``${testID}-check-address`` | 64 |
+| TextButton | `s.label` | ``${testID}-suggestion-${i + 1}`` | 76 |
+
 ### AlbumView — [components/AlbumView.tsx](../../frontend/components/AlbumView.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -682,6 +686,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | saving ? "Saving…" : task ? "Save changes" : "Save task" | `care-save` | 374 |
 | Pressable | — | ``care-type-${t.type}`` | 389 |
 | Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 427 |
+
+### ChatHeaderTitle — [components/ChatHeaderTitle.tsx](../../frontend/components/ChatHeaderTitle.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${name}'s photos`` | `chat-header-avatar` | 26 |
+| Pressable | ``${name}'s profile`` | `chat-header-name` | 30 |
 
 ### ChatList — [components/ChatList.tsx](../../frontend/components/ChatList.tsx)
 
@@ -996,6 +1007,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | Next photo | `photo-viewer-next` | 94 |
 | Pressable | Close | `photo-viewer-close` | 105 |
 
+### PhotoViewerSheet — [components/PhotoViewerSheet.tsx](../../frontend/components/PhotoViewerSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | `title` | `testID` | 23 |
+
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1043,6 +1060,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 448 |
 | Button | Add | ``report-custom-add-${pet.id}`` | 468 |
 | Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 470 |
+
+### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${label} day`` | ``request-${kind}-day`` | 166 |
+| Pressable | ``${label} time`` | ``request-${kind}-time`` | 169 |
+| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 178 |
+| SegmentedControl | — | ``request-${kind}-type`` | 183 |
+| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 210 |
+| Button | sending ? "Sending…" : "Send request" | `request-send` | 225 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 239 |
 
 ### RoleCard — [components/RoleCard.tsx](../../frontend/components/RoleCard.tsx)
 
@@ -1324,4 +1353,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-386 actions · 385 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+393 actions · 392 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

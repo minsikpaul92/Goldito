@@ -230,7 +230,7 @@ test.describe("book care", () => {
     await expect(card).toContainText("Paul cares for them at your place");
   });
 
-  test("Start chat on the profile, then Request booking in the chat, picks the sitter for you", async ({ page }) => {
+  test("Start chat on the profile, then Request booking in the chat, sends the request to that sitter", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
     seed(db, [pet(MAX, "Max", "dog")]);
     // Chloe's earlier stay is over (the pick-up is done), so nothing is in progress and the chat offers a new request.
@@ -243,9 +243,11 @@ test.describe("book care", () => {
     await screen.getByTestId("start-chat").click();
     await expect(page).toHaveURL(/\/chat\//);
     await screen.getByTestId("chat-request-booking").click();
-    await expect(page).toHaveURL(new RegExp(`/owner/bookings/new\\?sitter=${SITTER.id}$`));
-    await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Chloe");
+    await expect(screen.getByTestId("request-sheet")).toBeVisible();
+    await expect(screen.getByTestId("request-pet-Max")).toHaveAttribute("aria-checked", "true"); // no stay from a search: every pet starts picked
+    await screen.getByTestId("request-send").click();
+    await expect.poll(() => db.requests.length).toBe(1);
+    expect(db.requests[0]).toMatchObject({ p_sitter: SITTER.id });
   });
 
   test("no sitter free for the whole trip says so, and no pets asks for one", async ({ page }) => {

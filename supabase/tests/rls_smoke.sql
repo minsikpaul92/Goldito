@@ -5022,7 +5022,9 @@ begin
   perform _t_ok(v_n = 1, '014j: the first card (dates, times, pets) is posted once for the same stay');
   t2 := open_chat_thread(chloe, drop_at, pick_at + interval '1 day', array[biscuit]);
   select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
-  perform _t_ok(v_n = 2, '014j: a different stay posts a new card in the same thread');
+  perform _t_ok(v_n = 1 and (select (card ->> 'pick_up_at')::timestamptz from public.chat_messages where thread_id = t1.id and kind = 'card') = pick_at + interval '1 day',
+    '014l: a different stay with nothing said since changes the card instead of adding one');
+
   begin perform open_chat_thread(chloe, pick_at, drop_at, array[biscuit]); v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'invalid_stay', '014j: a pick-up before the drop-off is refused');
@@ -5032,8 +5034,8 @@ begin
   perform send_chat_message(t1.id, 'Can you take Biscuit?');
   perform _t_as(chloe);
   select * into r from list_my_chats() x where x.thread_id = t1.id;
-  perform _t_ok(r.unread_count = 4 and r.last_body = 'Can you take Biscuit?' and r.other_name is not null,
-    '014j: the sitter sees the two cards and two messages as unread, the last one and the owner''s name');
+  perform _t_ok(r.unread_count = 3 and r.last_body = 'Can you take Biscuit?' and r.other_name is not null,
+    '014j: the sitter sees the card and two messages as unread, the last one and the owner''s name');
   perform send_chat_message(t1.id, 'Yes, happy to');
   perform send_chat_message(t1.id, 'Any allergies?');
   perform mark_chat_read(t1.id);
@@ -5044,6 +5046,9 @@ begin
   perform _t_ok(r.unread_count = 2, '014j: the owner sees the sitter''s two replies as unread');
   select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'text';
   perform _t_ok(v_n = 4, '014j: either person can send repeatedly in the same thread');
+  t2 := open_chat_thread(chloe, drop_at, pick_at + interval '3 days', array[biscuit]);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
+  perform _t_ok(v_n = 2, '014j: once something was said, a different stay is a new card in the same thread');
 
   -- A sitter can open an existing chat but cannot start one
   perform _t_as(chloe);
@@ -5104,6 +5109,72 @@ begin
   begin perform count(*) from public.chat_messages; v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014j: anon cannot read messages');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014k (Booking request in the chat): the request becomes one card; a chat shows photos
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  sana constant uuid := '00000000-0000-4000-8000-0000000000d1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 230;
+  t1 public.chat_threads;
+  t2 public.chat_threads;
+  v_b uuid;
+  r public.chat_messages;
+  r2 public.chat_messages;
+  v_n int;
+  v_err text;
+begin
+  perform _t_as(robert);
+  v_b := request_booking(chloe, array[max], local_ts(d, '09:00'), 'sitter_home', null,
+    local_ts(d + 1, '17:00'), 'owner_home', null, 'Pill at 2 PM');
+  t1 := open_chat_thread(chloe);
+  r := post_booking_request_card(t1.id, v_b);
+  perform _t_ok(r.kind = 'card' and r.card ->> 'type' = 'request' and r.card ->> 'booking_id' = v_b::text,
+    '014k: the request is posted into the chat as a card');
+  perform _t_ok(r.card ->> 'note' = 'Pill at 2 PM'
+      and r.card -> 'drop_off_place' ->> 'type' = 'sitter_home' and r.card -> 'pick_up_place' ->> 'type' = 'owner_home'
+      and jsonb_array_length(r.card -> 'pets') = 1,
+    '014k: the card carries the note, both places and the pets');
+  r2 := post_booking_request_card(t1.id, v_b);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'request';
+  perform _t_ok(r2.id = r.id and v_n = 1, '014k: the same booking is never posted twice');
+
+  -- Only the owner of the booking, in their own thread with that sitter
+  perform _t_as(chloe);
+  begin perform post_booking_request_card(t1.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: the sitter cannot post a request card');
+  perform _t_as(joy);
+  begin perform post_booking_request_card(t1.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: a third person cannot post into the thread');
+  -- Robert has a photo; Sana shares nothing with him yet, then a chat counts
+  perform _t_as(null);
+  insert into public.profile_photos (profile_id, public_id, position) values (robert, 'goldito/robert/p1', 0);
+  perform _t_as(sana);
+  perform _t_ok(not exists (select 1 from public.profile_photos where profile_id = robert),
+    '014k: a sitter does not see the photos of an owner they share nothing with');
+  perform _t_as(robert);
+  t2 := open_chat_thread(sana);
+  perform _t_as(sana);
+  perform _t_ok(exists (select 1 from public.profile_photos where profile_id = robert),
+    '014k: …but does once the owner has a chat with them');
+  perform _t_as(robert);
+  begin perform post_booking_request_card(t2.id, v_b); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014k: a booking with another sitter does not go into this thread');
+
+  perform _t_as(null);
+  delete from public.profile_photos where public_id = 'goldito/robert/p1'; -- the later 014g block counts Robert's photos
   perform _t_as(null);
 end;
 $$;

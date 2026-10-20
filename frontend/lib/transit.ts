@@ -97,6 +97,15 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   return { found: false };
 }
 
+/** "Toronto M4W" from "2 Bloor St W, Toronto, ON M4W 3E2" or "M4W, Toronto, ON": the rough place, never the street. */
+export function areaFromAddress(address: string | null | undefined): string | null {
+  const text = (address ?? "").trim();
+  const full = text.match(/,\s*([^,]+),\s*[A-Z]{2}\s+([A-Z]\d[A-Z])/i);
+  if (full) return `${full[1].trim()} ${full[2].toUpperCase()}`;
+  const area = text.match(/^([A-Z]\d[A-Z]),\s*([^,]+),/i);
+  return area ? `${area[2].trim()} ${area[1].toUpperCase()}` : null;
+}
+
 export type AddressSuggestion = { label: string; point: LatLng };
 
 /**

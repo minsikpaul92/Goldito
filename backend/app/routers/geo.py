@@ -8,9 +8,12 @@ OpenStreetMap Nominatim service (no key). Its usage policy asks for an identifyi
 a second, which is what this does. The address text goes to OpenStreetMap — the privacy page says so.
 """
 
+import json
 import logging
+import re
 import threading
 import time
+from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -70,11 +73,30 @@ def _search(address: str) -> list[dict]:
     )
 
 
+POSTAL_CODE = re.compile(r"^\s*([A-Za-z]\d[A-Za-z])\s*(\d[A-Za-z]\d)?\s*$")
+# First three characters of a Canadian postal code -> [city, province, lat, lng] (GeoNames, CC BY 4.0). OpenStreetMap
+# knows few postal codes, so a code it cannot find still gets its area, enough to search sitters near it.
+POSTAL_AREAS: dict[str, list] = json.loads((Path(__file__).parent.parent / "data" / "ca_postal_areas.json").read_text())
+
+
 def _search_many(address: str) -> list[dict]:
+    postal = POSTAL_CODE.match(address)
+    # A postal code is searched as "M4P 1V4" whatever the spelling ("m4p1v4").
+    query = f"{postal.group(1).upper()} {postal.group(2).upper()}" if postal and postal.group(2) else address
     return _get(
         NOMINATIM_URL,
-        {"q": address, "format": "jsonv2", "limit": 5, "addressdetails": 1, "countrycodes": "ca"},
+        {"q": query, "format": "jsonv2", "limit": 5, "addressdetails": 1, "countrycodes": "ca"},
     )
+
+
+def postal_area_suggestion(address: str) -> "Suggestion | None":
+    """The area of a postal code ("M4P, Toronto, ON") when OpenStreetMap had nothing for it."""
+    postal = POSTAL_CODE.match(address)
+    area = POSTAL_AREAS.get(postal.group(1).upper()) if postal else None
+    if not area:
+        return None
+    city, province, lat, lng = area
+    return Suggestion(label=f"{postal.group(1).upper()}, {city}, {province}", lat=lat, lng=lng)
 
 
 def _reverse(lat: float, lng: float) -> dict:
@@ -168,6 +190,10 @@ def suggest(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)
         label = address_line(hit)
         if label and not any(r.label == label for r in results):
             results.append(Suggestion(label=label, lat=lat, lng=lng))
+    if not results:
+        area = postal_area_suggestion(body.address.strip())
+        if area:
+            results.append(area)
     return SuggestResponse(results=results)
 
 
