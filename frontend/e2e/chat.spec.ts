@@ -371,6 +371,62 @@ test.describe("chat hub", () => {
     expect(db.chat_messages).toHaveLength(before + 1);
   });
 
+  test("chips come back after my own message as follow-ups", async ({ page }) => {
+    const asked: unknown[] = [];
+    await page.route("**/api/ai/chat-chips", (route) => {
+      asked.push(route.request().postDataJSON());
+      const labels = asked.length === 1 ? ["Yes, I can host", "Let me check"] : ["Any questions for me?", "Shall we set a Meet & Greet?"];
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ chips: labels.map((label, i) => ({ id: `c${i}`, label })), for_message_id: null, source: "model" }),
+      });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+
+    await screen.getByTestId("chat-input").fill("Hi Robert, I'm Chloe!");
+    await screen.getByTestId("chat-send").click();
+    await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "I'm Chloe" })).toBeVisible();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Any questions for me?");
+    expect(asked).toHaveLength(2);
+  });
+
+  test("a long drafted reply is fully visible in a box that grows; Enter sends and Shift+Enter is a new line", async ({ page }) => {
+    const long = "Hi Robert, thanks for asking! Max is welcome with me. He would have his own bed, two walks a day and a photo update every evening, and we can set up a Meet & Greet first if that helps you feel comfortable.";
+    await page.route("**/api/ai/chat-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: null, source: "model" }) }),
+    );
+    await page.route("**/api/ai/chat-draft", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: long, source: "model" }) }));
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    const input = screen.getByTestId("chat-input");
+    const empty = (await box(input)).height;
+
+    await screen.getByTestId("chat-chip-1").click();
+    await expect(input).toHaveValue(long);
+    await expect.poll(async () => (await box(input)).height).toBeGreaterThan(empty + 20);
+    expect((await box(input)).height).toBeLessThanOrEqual(320); // about a third of the phone, then it scrolls
+    // every character is inside the box: nothing is scrolled out of sight
+    expect(await input.evaluate((el) => (el as HTMLTextAreaElement).scrollHeight <= (el as HTMLTextAreaElement).clientHeight + 1)).toBe(true);
+
+    await input.fill("First line");
+    await input.press("Shift+Enter");
+    await input.pressSequentially("Second line");
+    await expect(input).toHaveValue("First line\nSecond line");
+    const before = db.chat_messages.length;
+    await input.press("Enter");
+    await expect.poll(() => db.chat_messages.length).toBe(before + 1);
+    await expect.poll(async () => (await box(input)).height).toBeLessThanOrEqual(empty + 1);
+  });
+
   test("a spinner holds the chips' place from the start; typing hides it; the list asks ahead so the chat opens with chips ready", async ({ page }) => {
     let calls = 0;
     let release: () => void = () => undefined;

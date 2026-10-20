@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
@@ -54,6 +54,11 @@ type StayCard = Extract<ChatCard, { type: "stay" }>;
 type RequestCard = Extract<ChatCard, { type: "request" }>;
 type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 
+// The message box grows with its text (a drafted reply is read in full) up to about a third of the screen, then scrolls.
+const INPUT_MIN = 44;
+const INPUT_PAD = 11;
+const inputMax = (screenHeight: number) => Math.max(150, Math.round(screenHeight * 0.35));
+
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
   const z = isoToZoned(iso);
@@ -90,6 +95,18 @@ export default function Chat() {
   const [action, setAction] = useState<ChatAction | null>(null);
   const [drafting, setDrafting] = useState(false);
   const input = useRef<TextInput>(null);
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN);
+  const { height: screenHeight } = useWindowDimensions();
+
+  // On the web the box is a textarea: it is as tall as its text (measured on the element), up to a third of the screen, then it scrolls.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const el = input.current as unknown as HTMLTextAreaElement | null;
+    if (!el?.style) return;
+    el.style.height = "auto";
+    const borders = el.offsetHeight - el.clientHeight; // scrollHeight leaves the border out
+    el.style.height = `${Math.min(inputMax(screenHeight), Math.max(INPUT_MIN, el.scrollHeight + borders))}px`;
+  }, [text, screenHeight]);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -127,13 +144,12 @@ export default function Chat() {
       .catch(() => setPhotos([]));
   }, [otherId]);
 
-  // Chips for what the other person just wrote (or openers in an empty chat). The slot is there from the start with a
-  // spinner, so nothing jumps when they arrive; the list may have asked ahead, then they are ready at once.
+  // Chips are always there: replies to what the other person wrote, or follow-ups after my own message (or openers in an
+  // empty chat). The slot is there from the start with a spinner, so nothing jumps when they arrive; the list may have
+  // asked ahead, then they are ready at once.
   const all = loaded?.messages;
-  const lastText = all?.filter((m) => m.kind === "text").at(-1);
-  const waitingForMe = !!all && (lastText ? lastText.senderId !== profile?.id : loaded?.header.myRole === "owner");
   const latestAt = all?.at(-1)?.at ?? "none";
-  const key = loaded && waitingForMe ? `${threadId}:${latestAt}` : null;
+  const key = loaded ? `${threadId}:${latestAt}` : null;
   const [chipsReady, setChipsReady] = useState(false);
   useEffect(() => {
     setChips([]);
@@ -462,9 +478,20 @@ export default function Chat() {
           placeholder={`Message ${header.otherName}`}
           placeholderTextColor={`${theme.color.textMuted}80`}
           maxLength={2000}
-          returnKeyType="send"
-          onSubmitEditing={() => void send()}
-          style={styles.input}
+          multiline
+          numberOfLines={1}
+          onContentSizeChange={(e) => {
+            if (Platform.OS !== "web") setInputHeight(Math.min(inputMax(screenHeight), Math.max(INPUT_MIN, Math.ceil(e.nativeEvent.contentSize.height) + INPUT_PAD * 2)));
+          }}
+          onKeyPress={(e) => {
+            // Enter sends on the web, Shift+Enter is a new line; on a phone the keyboard's Enter is a new line.
+            const ev = e.nativeEvent as unknown as { key: string; shiftKey?: boolean };
+            if (Platform.OS === "web" && ev.key === "Enter" && !ev.shiftKey) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+          style={[styles.input, Platform.OS === "web" ? null : { height: inputHeight }]}
           testID="chat-input"
         />
         <Pressable
@@ -537,7 +564,7 @@ const makeStyles = (theme: Theme) =>
     chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-end",
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       maxWidth: 480,
@@ -546,8 +573,10 @@ const makeStyles = (theme: Theme) =>
     },
     input: {
       flex: 1,
-      height: 44,
+      minHeight: INPUT_MIN,
       paddingHorizontal: theme.spacing.md,
+      paddingVertical: INPUT_PAD,
+      textAlignVertical: "top",
       borderRadius: 22,
       borderWidth: 1,
       borderColor: theme.color.border,
