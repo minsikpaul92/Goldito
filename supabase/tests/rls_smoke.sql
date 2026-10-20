@@ -3990,6 +3990,12 @@ begin
   end;
   perform _t_ok(v_err = 'invalid_position', 'L: a position must be a real point');
 
+  -- 014r: about 780 m out is under 5 minutes → the other person is told once
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'trip_near' and ref_id = v_trip.id
+        and title like 'Robert is about 5 minutes away%') = 1
+      and (select near_notified_at is not null from public.trips where id = v_trip.id),
+    '014r: within 5 minutes of the ETA → one "about 5 minutes away" notice for the other person');
   -- Within 150 m → arrived, both told once, no more positions stored
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
@@ -4007,6 +4013,8 @@ begin
   perform _t_ok(v_n = 2 and exists (select 1 from public.notifications where user_id = chloe and type = 'trip_arrived' and title = 'Robert has arrived 🚗')
       and exists (select 1 from public.notifications where user_id = robert and type = 'trip_arrived'),
     'L: both are told, once');
+  perform _t_ok((select count(*) from public.notifications where type = 'trip_near' and ref_id = v_trip.id) = 1,
+    '014r: …and only once, however many positions follow');
 
   -- End: only the traveler, and the position is erased
   perform _t_as(chloe);
@@ -6000,6 +6008,138 @@ begin
   begin perform public.add_owner_diary_entry(pip, 'Anon.'); v_err := null; exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014p: anon cannot write a page');
   perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014r: a drop-off + pick-up suggestion is one pair; the owner's default handoff place
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 800;
+  rex uuid;
+  v_b uuid;
+  v_pair uuid;
+  v_drop uuid;
+  v_pick uuid;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 12, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Rex') returning id into rex;
+  v_b := _t_booking(robert, chloe, array[rex], local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 'confirmed');
+
+  -- One suggestion for both: two rows with one key, one notice
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'));
+  perform _t_ok(v_pair is not null
+      and (select count(*) from public.booking_handoffs where booking_id = v_b and status = 'proposed' and pair_id = v_pair) = 2
+      and (select count(distinct kind) from public.booking_handoffs where pair_id = v_pair) = 2,
+    '014r: a pair suggestion writes the drop-off and the pick-up with one key');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'handoff_proposed'
+      and title = 'Robert suggested a new drop-off and pick-up') = 1,
+    '014r: …and the other person gets one notice, not two');
+
+  -- The window has to be real, and only the two people on the booking can suggest
+  perform _t_as(robert);
+  begin perform propose_handoff_pair(v_b, local_ts(d + 4, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '014r: a pick-up before the drop-off is refused');
+  perform _t_as(joy);
+  begin perform propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014r: a third party cannot suggest a pair');
+  perform _t_as(null, 'anon');
+  begin perform propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014r: anon cannot suggest a pair');
+  perform _t_as(null);
+
+  -- The answer takes both, even though each time fits on its own
+  select id into v_pick from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up';
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  perform _t_as(robert);
+  begin perform respond_handoff(v_pick, true); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014r: the one who suggested cannot answer');
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_pick) = 'agreed',
+    '014r: accepting one row of a pair agrees both');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'), '[)'),
+    '014r: …and the stay is rebuilt for the new window');
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'handoff_agreed'
+      and ref_id = v_pick and title like 'Chloe agreed to the new drop-off and pick-up%') = 1,
+    '014r: …and the owner is told once');
+
+  -- Declining takes both; the agreed stay stays
+  perform _t_as(chloe);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 2, '09:00'), local_ts(d + 4, '17:00'));
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  select id into v_pick from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up';
+  perform _t_as(robert);
+  perform respond_handoff(v_pick, false);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'rejected'
+      and (select status from public.booking_handoffs where id = v_pick) = 'rejected',
+    '014r: declining one row of a pair declines both');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'), '[)'),
+    '014r: …and the agreed stay stays');
+
+  -- A newer suggestion for one handoff turns the other row into a single one
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 2, '09:00'), local_ts(d + 4, '17:00'));
+  perform propose_handoff(v_b, 'drop_off', local_ts(d + 2, '10:00'));
+  perform _t_as(null);
+  perform _t_ok((select pair_id is null from public.booking_handoffs where pair_id is not distinct from null
+      and booking_id = v_b and kind = 'pick_up' and status = 'proposed')
+      and not exists (select 1 from public.booking_handoffs where pair_id = v_pair and status = 'proposed'),
+    '014r: replacing one row of a pair leaves the other as a single suggestion');
+  select id into v_pick from public.booking_handoffs where booking_id = v_b and kind = 'pick_up' and status = 'proposed';
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where booking_id = v_b and kind = 'drop_off' and status <> 'agreed' and scheduled_at = local_ts(d + 2, '10:00')) = 'proposed',
+    '014r: …and answering that one leaves the new drop-off waiting');
+
+  -- Before confirm: the sitter answers a pair of the owner's suggestions; no rebuild, both agreed
+  perform _t_as(null);
+  v_b := _t_booking(robert, chloe, array[rex], local_ts(d + 7, '09:00'), local_ts(d + 9, '17:00'), 'requested');
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 7, '10:00'), local_ts(d + 9, '16:00'), 'owner_home');
+  perform _t_as(null);
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  perform _t_ok((select location_type from public.booking_handoffs where id = v_drop) = 'owner_home'
+      and (select location_type from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up') = 'sitter_home',
+    '014r: each row of a pair keeps its own place (an omitted place stays as it was)');
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, true);
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v_b and status = 'agreed') = 2
+      and (select status from public.bookings where id = v_b) = 'requested',
+    '014r: before confirm a pair is agreed together and the request stays a request');
+
+  -- The owner's default handoff place
+  perform _t_as(robert);
+  update public.owner_profiles set default_handoff = 'owner_home' where id = robert;
+  perform _t_ok((select default_handoff from public.owner_profiles where id = robert) = 'owner_home',
+    '014r: the owner saves a default handoff place');
+  begin update public.owner_profiles set default_handoff = 'on_the_moon' where id = robert; v_err := null; exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23514', '014r: …only one of the three places');
+  perform _t_as(joy);
+  update public.owner_profiles set default_handoff = 'other' where id = robert;
+  perform _t_as(null);
+  perform _t_ok((select default_handoff from public.owner_profiles where id = robert) = 'owner_home',
+    '014r: …and nobody else changes it');
 end;
 $$;
 

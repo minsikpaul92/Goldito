@@ -567,6 +567,7 @@
 | TRIP-21 | Allow를 눌렀는데 브라우저가 위치를 거절 | 자동으로 공유 없는 trip으로 시작되고 토스트 "Location is off in this browser, so Chloe sees the meeting place instead" | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-22 | **두 사람 동시** — 시터(Chloe)가 견주 집으로 Start trip → Simulate, 견주는 Home에 있음 | 견주 Home에 새로고침 없이 "Chloe is on the way" 카드 → 탭하면 지도 + ETA가 줄어들며 갱신 → "Chloe has arrived" 카드. 시터 화면에는 출입 정보 카드. 시터가 Received를 누르면 견주 Trip 화면이 "No trip running"이 되고 예약에 ✓ Received | 🤖 `transit.spec.ts`(브라우저 둘, 같은 DB, 폴링으로 갱신) · **실제 두 계정 · 두 폰 👤** | ➖ |
 | TRIP-23 | 견주가 드롭오프 2시간 전 Start trip(위치 공유 중) → 둘 중 한 명이 예약을 **Cancel** (CR-1) | 그 trip이 같은 순간 `cancelled`가 되고 위치 · ETA · 거리가 지워짐. 이동하던 기기의 다음 위치는 `trip_not_active`로 거절돼 공유가 멈추고, 양쪽 Home의 이동 카드가 사라짐 | SQL `rls_smoke` CR-1 · 화면은 👤 (DB는 10/13 적용 — 사람 확인 대기) | ➖ |
+| TRIP-24 | 이동 중 ETA가 5분 이하로 줄어듦 (`014r`) | 상대에게 알림 한 번 "Robert is about 5 minutes away 🚗"(`trip_near`, 누르면 Trip 화면), 이후 위치가 더 와도 다시 안 옴. 도착하면 기존 `trip_arrived`. 채팅 카드의 "N min away" 줄과 같은 기준 | SQL `rls_smoke` L · 014r | ➖ |
 
 ### 3.19 개인정보 페이지 (PRIV) — Phase 10 · 10.11
 
@@ -858,6 +859,7 @@
 | CHAT-26 | 칩 요청이 실패하거나 연결이 끊김, 로그 | Supabase 연결이 끊겨도 `chat-chips`는 200과 기본 칩(채팅 자체를 못 읽으면 한 번 다시 시도한 뒤 503). 칩 · 초안마다 서버 로그 한 줄 `chat_ai {...}`(쪽 · 상태 · source model/fallback · 버려진 이유 · 칩 문구 · 초안 문구): 이름은 `{NAME}`으로 가려지고 id는 없음 | 🤖 pytest `test_ai_chat` · 🤖 `chat` | 사람 확인 대기 |
 | CHAT-27 | 결제한 확정 부킹의 채팅 (3D.8 트립, #145): 오너가 드롭오프 2시간 안에 열기 → 시터 집이면 오너에게 **Heading to the drop-off?** + **Start trip** (동의 화면 뒤에 트립 화면), 시터 쪽에는 Start 없음. 2시간보다 이르면 오너에게 "You can start the trip from …" 한 줄. 이동 중에는 양쪽 카드가 "You're on the way" / "Robert is on the way · ETA" → ETA 5분 안이면 "Robert is 3 min away" → "Robert has arrived", 누르면 기존 Trip 화면(**Open trip** / **Track Robert**). 도착하면 카드에 한 번 누르는 인사 버튼(드롭오프: 오너 **Please take care of them**, 시터 **We will**; 픽업: 오너 **Thank you for everything**, 시터 **It was a pleasure**)이 있고 누르면 내 말풍선으로 들어가며 버튼이 사라짐. 결제 전 부킹엔 카드 없음. 카드는 `trips`를 읽어 그릴 뿐 채팅에 저장하지 않음 | 🤖 `chat-trip` · `transit` | 사람 확인 대기 (두 폰 · 실제 위치 👤) |
 | CHAT-28 | 케어 중(드롭오프 완료, 픽업 전) 채팅의 케어 카드 (3D.8, #145): 오너에게 **Ask for a photo**(펫마다 열린 요청이 없을 때만) → "You asked for a photo of Max · Waiting for Chloe", 시터에게는 "Robert asked for a photo of Max 📷" + **Send photo**(피드 올리기 화면으로). 시터가 공유 사진을 올리면(DB가 요청을 채움) 양쪽에 사진 카드(오너 "Chloe sent a photo of Max", 시터 "You sent a photo of Max") + 사진 아래 **한 줄 캡션**. 저녁에 시터가 알림장을 보내면 "Diary written 📖 · Max · Oct 21" + **Open diary**(오너는 그 페이지, 시터는 Diary 탭). 드롭오프 전에는 버튼도 카드도 없음. 카드는 `photo_requests` · `feed_posts` · `daily_reports`를 읽어 그릴 뿐 채팅에 저장하지 않으며 열려 있는 동안 10초마다 갱신 | 🤖 `chat-trip` | 사람 확인 대기 (두 계정 · 실제 사진 👤) |
+| CHAT-29 | (DB, `014r`) 드롭오프 + 픽업을 한 쌍으로 제안 (#145 · #169) | `propose_handoff_pair`는 두 행을 같은 `pair_id`로 쓰고 알림은 한 번("… suggested a new drop-off and pick-up"). 한 행에 응답하면 시각이 따로 맞아도 두 행이 함께 수락 · 거절(확정 전에도), 확정 뒤 수락하면 스테이가 새 구간으로 다시 만들어지고 알림은 한 번. 한 행만 새로 제안하면 짝은 단일 제안이 됨(`pair_id` 해제). 제안자는 응답 불가, 제3자 · anon 불가, 픽업이 드롭오프보다 빠르면 `invalid_window`. 오너 `default_handoff`는 세 장소 중 하나만, 남은 못 바꿈 | SQL `rls_smoke` 014r | ➖ |
 
 ### 3.37 제안 카드에 Decline 없음 (PROP) · #169
 
