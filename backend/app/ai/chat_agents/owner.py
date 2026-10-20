@@ -22,7 +22,7 @@ class OwnerAgent(ChatAgent):
     role = "owner"
     model_setting = "model_chat_owner"
 
-    def facts(self, raw: dict, messages: list[dict]) -> dict:
+    def facts(self, raw: dict, messages: list[dict], *, state: str, last_them: str) -> dict:
         card = logic.shown_quote(messages)
         return {
             "owner": raw["owner"],
@@ -37,7 +37,7 @@ class OwnerAgent(ChatAgent):
     def style(self, db, ctx: dict, chip: str, last_them: dict | None) -> str:
         return OWNER_STYLE
 
-    def fallback_chips(self, *, started: bool, facts: dict) -> list[str]:
+    def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
         return logic.generic_chips("owner", started=started, can_host=None)
 
     def extra_problems(self, text: str, facts: dict) -> list[str]:

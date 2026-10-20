@@ -17,11 +17,11 @@ class ChatAgent:
     def model(self) -> str | None:
         return (getattr(get_settings(), self.model_setting, None) or "").strip() or None
 
-    def state(self, messages: list[dict]) -> str:
-        # An empty chat is an opening; once anyone has written, even an owner answers instead of introducing themselves.
+    def state(self, messages: list[dict], me_id: str) -> str:
+        """opening: nobody has written. reply: someone has, so even an owner answers instead of introducing themselves."""
         return "reply" if any(m.get("kind") == "text" for m in messages) else "opening"
 
-    def facts(self, raw: dict, messages: list[dict]) -> dict:
+    def facts(self, raw: dict, messages: list[dict], *, state: str, last_them: str) -> dict:
         """The part of what the database knows that this side may read."""
         raise NotImplementedError
 
@@ -31,7 +31,7 @@ class ChatAgent:
     def keep_chips(self, labels: list[str], facts: dict) -> list[str]:
         return labels
 
-    def fallback_chips(self, *, started: bool, facts: dict) -> list[str]:
+    def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
         return logic.generic_chips(self.role, started=started, can_host=None)
 
     def extra_problems(self, text: str, facts: dict) -> list[str]:

@@ -37,6 +37,9 @@ ACTIONS: dict[str, dict[str, str]] = {
 _NUMBER = re.compile(r"\d")
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
 _NAME_FIRST = re.compile(r"^\s*[A-Z][a-z]+:\s")
+# The other side asked about money: a price, a rate, a quote, a fee or "how much".
+_MONEY_TALK = re.compile(r"\b(price|prices|pricing|cost|costs|how much|rate|rates|quote|fee|fees|charge|charges|total|pay|payment|deposit)\b|\$", re.IGNORECASE)
+_EMOJI_SPECIES = {"cat": re.compile("[\U0001F408\U0001F431\U0001F63A-\U0001F640]"), "dog": re.compile("[\U0001F415\U0001F436\U0001F429]")}
 _UNAVAILABLE = re.compile(r"\b(?:i(?:'m| am)|we(?:'re| are)|already|fully)\s+booked\b|\bfully booked\b|\bno room\b|\bunavailable\b", re.IGNORECASE)
 
 
@@ -97,6 +100,21 @@ def chip_problems(label: str) -> list[str]:
     return problems
 
 
+def asks_about_money(text: str | None) -> bool:
+    return bool(text and _MONEY_TALK.search(text))
+
+
+def wrong_species_emoji(text: str, pets: list[dict]) -> str | None:
+    """A cat or dog emoji for a species the stay does not have (a cat for two dogs); None when it fits or can't be known."""
+    species = {str(p.get("species", "")).lower() for p in pets}
+    if not species:
+        return None
+    for name, pattern in _EMOJI_SPECIES.items():
+        if pattern.search(text) and name not in species:
+            return name
+    return None
+
+
 def generic_chips(role: str, *, started: bool, can_host: bool | None) -> list[str]:
     """What is offered when the model is down: plain, safe, and the same words every time."""
     if not started:
@@ -149,6 +167,9 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
         role == "sitter" and sitter_first and re.search(rf"\b{re.escape(sitter_first)}(?:'s)? (is|has|will|can|would|may)\b", text)
     ):
         problems.append("it talks about me in the third person or mentions an assistant, write in the first person")
+    wrong = wrong_species_emoji(text, grounding.get("pets") or [])
+    if wrong:
+        problems.append(f"it has a {wrong} emoji, but the pets are not a {wrong}")
     if not text.strip():
         problems.append("it is empty")
     if len(text) > DRAFT_MAX:

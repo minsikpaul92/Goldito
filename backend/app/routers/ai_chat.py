@@ -204,13 +204,19 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     last_them = texts_them[-1] if texts_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
-    facts = agent.facts(_facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources), messages)
+    state = agent.state(messages, user.id)
+    facts = agent.facts(
+        _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources),
+        messages,
+        state=state,
+        last_them=(last_them or {}).get("body", ""),
+    )
     inquiry_logic.assert_no_secrets(facts)
     me = ctx["owner_name"] if ctx["role"] == "owner" else ctx["sitter_name"]
     them = ctx["sitter_name"] if ctx["role"] == "owner" else ctx["owner_name"]
     base = {
         "role": ctx["role"],
-        "state": agent.state(messages),
+        "state": state,
         "me": me,
         "them": them,
         **({"summary": summary} if summary else {}),
@@ -265,7 +271,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         log.warning("chat-chips: model failed (%s)", exc)
     if len(labels) < 2:
         source = "fallback"
-        labels = agent.fallback_chips(started=started, facts=facts)
+        labels = agent.fallback_chips(started=started, state=base["state"], facts=facts)
     return ChatChipsResponse(
         chips=[Chip(id=f"c{i}", label=c) for i, c in enumerate(labels)],
         action=ChatAction(**action) if action else None,

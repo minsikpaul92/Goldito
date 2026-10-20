@@ -11,8 +11,21 @@ class SitterAgent(ChatAgent):
     role = "sitter"
     model_setting = "model_chat_sitter"
 
-    def facts(self, raw: dict, messages: list[dict]) -> dict:
-        return raw
+    def state(self, messages: list[dict], me_id: str) -> str:
+        """first_reply: the owner has written and I have not yet, so I greet and say who I am before anything else."""
+        if not any(m.get("kind") == "text" for m in messages):
+            return "opening"
+        if not any(m.get("kind") == "text" and m.get("sender_id") == me_id for m in messages):
+            return "first_reply"
+        return "reply"
+
+    def facts(self, raw: dict, messages: list[dict], *, state: str, last_them: str) -> dict:
+        """Money (the quote and my rates) is in the facts only when the owner asked about it or a quote card is in the
+        chat, and never in my first reply: that one introduces me, the price comes with the Send quote step."""
+        asked = state != "first_reply" and (logic.asks_about_money(last_them) or logic.shown_quote(messages) is not None)
+        if asked:
+            return raw
+        return {**raw, "quote": None, "rates": {}}
 
     def style(self, db, ctx: dict, chip: str, last_them: dict | None) -> str:
         # The sitter's own anonymized replies to owners ("inquiry" samples) are the closest voice for a chat reply too.
@@ -23,5 +36,7 @@ class SitterAgent(ChatAgent):
             return [c for c in labels if not inquiry_logic._SAYS_YES.search(c)]
         return labels
 
-    def fallback_chips(self, *, started: bool, facts: dict) -> list[str]:
+    def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
+        if state == "first_reply":
+            return ["Hi, nice to meet you", "Happy to help"]
         return logic.generic_chips("sitter", started=started, can_host=facts["availability"].get("can_host"))
