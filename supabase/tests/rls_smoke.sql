@@ -5947,4 +5947,83 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014q (the fees agreed in the chat stay in the price): no payment over an open final quote, and a paid booking keeps
+-- its fees when its times change
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 340;
+  v1 uuid;
+  v_h uuid;
+  t1 public.chat_threads;
+  q public.chat_messages;
+  v_base numeric;
+  v_quote jsonb;
+  v_kind text;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 6, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 6, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 6, 'overnight', '18:00', '08:00', 3);
+
+  perform _t_as(robert);
+  t1 := open_chat_thread(chloe);
+  v1 := request_booking(chloe, array[max], local_ts(d, '09:00'), 'sitter_home', null,
+    local_ts(d + 2, '17:00'), 'sitter_home', null, null);
+  perform agree_to_book(v1);
+  perform _t_as(chloe);
+  perform respond_booking(v1, true);
+  perform _t_as(robert);
+  foreach v_kind in array required_consents(v1) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+    values (v1, v_kind, '1', robert, 'Robert',
+      case v_kind
+        when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Robert')
+        else '{}'::jsonb
+      end);
+  end loop;
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 1) ->> 'total')::numeric;
+
+  -- The sitter's final quote with a fee: no payment until the owner answers it.
+  perform _t_as(chloe);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]);
+  q := add_chat_quote_extra(q.id, 'Medication visits', 15);
+  perform _t_as(robert);
+  begin perform pay_booking_demo(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'quote_pending', '014q: no payment while the final quote waits for the owner');
+  perform _t_ok((select paid_at is null from public.bookings where id = v1), '014q: ...so nothing is paid');
+  q := answer_chat_quote_extra(q.id, (q.card -> 'extras' -> 0 ->> 'id')::uuid, true);
+  q := confirm_chat_quote(q.id);
+  v_quote := pay_booking_demo(v1);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 15, '014q: once confirmed, the fee is paid');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'booking_paid' and booking_id = v1
+      and title not like '%' || chr(8212) || '%'),
+    '014q: the payment notice has no em dash');
+
+  -- A later pick-up, agreed after payment: re-quoted with the paid fee still in.
+  perform _t_as(robert);
+  v_h := propose_handoff(v1, 'pick_up', local_ts(d + 3, '17:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_h, true);
+  perform _t_as(null);
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 3, '17:00'), 1) ->> 'total')::numeric;
+  perform _t_ok((select paid_at is not null and (price_snapshot ->> 'total')::numeric = v_base + 15
+        and jsonb_array_length(price_snapshot -> 'extras') = 1
+      from public.bookings where id = v1),
+    '014q: a paid booking keeps its fee when the times change');
+  perform _t_as(robert);
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 15, '014q: Checkout shows the same total');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
