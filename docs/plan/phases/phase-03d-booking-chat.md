@@ -37,6 +37,40 @@
 - 가격 · 날짜 · 가용성은 코드가 DB에서 넣고 모델은 쓰지 않는다. 출입 코드는 프롬프트에 넣지 않는다. 상대 메시지는 데이터이지 지시가 아니다. 칩을 눌렀는지 닫았는지 로그로 남겨 "제안 채택률"을 지표로 쓴다.
 - **순서.** #140 상세(See schedule · Start chat, Minsik가 가져옴) → #142 전반부(말 칩 · AI 초안 답장, 옛 문의 화면 제거) → #143 견적 카드(먼저 사람이 누르는 버튼) → #142 후반부(행동 칩을 견적 · Meet & Greet 카드에 연결) → #144.
 
+## 3D.7 Meet & Greet · 합의 · 최종 견적 · 결제 ([#144](https://github.com/minsikpaul92/Goldito/issues/144), 2026-10-20 Minsik 확정)
+
+**시나리오 (이 단계는 1 ~ 7, 8은 #145 · #146)**
+
+1. 오너가 날짜 · 펫으로 시터를 찾아 채팅을 시작한다. 첫 카드(Stay)에 날짜, 시간, 펫.
+2. 인사하고 시터가 맡을 수 있는지 답한다. 오너의 **Request booking은 확정이 아닌 간 보기**다(Meet & Greet이 일어날 `bookings` 행을 만든다).
+3. 맡을 수 있으면 시터가 **견적**을 준다(금액이 맞아야 맡기므로). 시터의 첫 yes(`express_interest`)가 날짜 홀드.
+4. **처음 보는 쌍만** Meet & Greet. 필수 아님, 둘 다 건너뛰기로 하면 둘 다 동의로 보고 진행. 하면 온라인/오프라인, 시간, 장소.
+5. 만난 뒤 **오너 "I'd like to book"**(체크리스트, 펫, 시간, 가격 요약을 보고 Confirm이 오너의 결정)와 **시터 "I accept"**. 순서 자유, 둘 다 있어야 한다.
+6. 둘 다 동의하면 **시터가 최종 견적**을 보내고(견적 카드, 수수료 포함) 오너가 확인한다.
+7. 오너 **결제(데모)** = 부킹 완료. 돈은 케어가 끝날 때까지 보관된다(문구만, 정산은 #146).
+8. 인계, 케어, Returned, 리뷰, 시터 정산은 #145 · #146.
+
+반복 쌍은 Meet & Greet과 "만난 뒤 결정"(5)만 건너뛴다. 오너 컨펌 이후는 같다. 채팅 화면은 **최종 견적이 확인되어야** Pay 버튼을 보여 주고, DB는 견적 카드가 없어도 결제를 막지 않는다(기존 부킹 화면과 데모 시드 그대로). 카드가 있으면 수락한 수수료를 가격에 더한다.
+
+**지금 있는 것 (코드를 읽고 정리, 2026-10-20)**
+
+| 무엇 | 이미 있음 | 이 단계에서 |
+| :--- | :--- | :--- |
+| 단계 | `booking_stage` / `booking_next_actor` (011l): requested → meet_greet → confirm → awaiting_payment → paid → in_care → completed. 반복 쌍(`not_needed`)은 `requested`에서 시터 Accept 한 번 | 반복 쌍도 `confirm`으로. `confirm`의 다음 차례는 "아직 동의 안 한 쪽" |
+| 시터 첫 yes | `express_interest` | 변경 없음 |
+| Meet & Greet | `propose_meet_greet`(제안 · 역제안은 같은 RPC), `respond_meet_greet`, `complete_meet_greet`, `request_skip_meet_greet`, `respond_skip_meet_greet`, `get_meet_greet_options`. Meet 링크는 FastAPI `/api/meet-greet/video-link` (앱 `lib/meetGreet.ts`) | RPC 변경 없음. 채팅 카드가 `MeetGreetCard`를 재사용 |
+| 동의 | 오너: 요청 자체. 시터: `respond_booking(true)`가 곧바로 `confirmed` | `bookings.owner_agreed_at` / `sitter_accepted_at`, 새 RPC `agree_to_book`, 둘 다 있을 때 `confirmed` |
+| 결제 | `pay_booking_demo`: 서명 확인 후 `quote_booking` 재계산 → `paid_at`, `price_snapshot`. 009d가 일정 변경 시 재계산 | 확인된 최종 견적의 수락 수수료를 SQL에서 더해 `price_snapshot.extras`, `total` |
+| 채팅 | 014j 스레드, 014k 요청 카드, 014n 견적 카드(상태 jsonb), Realtime INSERT/UPDATE 구독 | `meet_greet` · `agreement` · `payment` 카드(`{type, booking_id}`만 저장, DB 상태를 읽어 그림) |
+| 앱 | `BookingStageBar`(첫 만남 5칸, 반복 4칸), 채팅 푸터는 `Request booking` / `Send quote`만 | 푸터는 지금 내 차례 한 가지, 맨 위에 고정된 원 5개 |
+
+**정한 것**
+
+- `status`의 의미는 그대로다. `confirmed` = 둘 다 동의(결제 대기), 화면의 "부킹 완료"는 `paid_at`이 찍힌 `paid` 단계.
+- 최종 견적 = 부킹이 `confirmed`가 된 뒤 보낸 견적 카드. 수수료는 서비스 · 드롭오프 · 픽업 · 펫이 부킹과 같은 확인된 가장 새 견적에서만 읽는다(SQL, 모델 글 없음, 반올림은 03C 그대로).
+- 카드 게시는 bookings 트리거가 한다(3B 화면에서 진행해도 채팅에 남음). 마이그레이션 `014o_chat_booking_cards.sql`.
+- 진행 원은 늘 5개(`Request · Meet · Confirm · Pay · Stay`), 반복 쌍은 Meet이 체크된 채로 보인다.
+
 ## 단계 (GitHub 이슈 = 상태 · 체크리스트의 정본)
 
 | ID | 단계 | 이슈 | 의존 |

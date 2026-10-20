@@ -94,7 +94,7 @@ Heads-up: No knocking or doorbell — text me instead.
 | **Video** (영상) | 날짜·시각을 제안 → 상대가 수락하는 순간 **Google Meet 링크가 자동으로 생성**되어 양쪽 예약 카드에 **Join Google Meet**, 양쪽 이메일로 **Google Calendar 초대** (D45). 앱 설치 없이 브라우저로 참여(폰은 Meet 앱 권장), 링크는 새 탭으로 연다 |
 | **건너뛰기** | 한쪽이 **Skip Meet & Greet** → 먼저 "If Chloe says no, this booking will be cancelled." 확인 → 상대에게 "Continue the booking without a Meet & Greet?" → **Continue**면 그대로 진행 / **Decline**이면 **예약이 취소**되고 견주는 **Find a new sitter**로 다른 시터를 찾는다 |
 
-> **예약 단계 (2026-10-11 결정 — 구현 예정, [phase-03B](phases/phase-03b-booking.md) Booking steps · D60):** 요청 → **시터의 첫 동의**("Yes, let's meet") → 밋&그릿(제안 · 수락 · Done, 또는 양쪽이 동의해 건너뛰기) → **시터의 최종 컨펌** → 오너 서명 · 결제. 단골이거나 이미 만난 사이면 요청 → 시터 **Accept** → 오너 서명 · 결제로 끝난다.
+> **예약 단계 (2026-10-11 결정, 2026-10-20 채팅 안으로 이동, [phase-03B](phases/phase-03b-booking.md) Booking steps · D60 · [phase-03D](phases/phase-03d-booking-chat.md) 3D.7):** 요청(간 보기, 확정 아님) → **시터의 첫 동의**("Yes, let's meet", 견적) → 밋&그릿(제안 · 수락 · Done, 또는 양쪽이 동의해 건너뛰기) → **오너 "I'd like to book"**(체크리스트 · 펫 · 시간 · 가격을 보고 컨펌) + **시터 "I accept"**(순서 자유, 둘 다 있어야 함) → **시터의 최종 견적**을 오너가 확인 → 오너 서명 · 결제(돈은 케어가 끝날 때까지 보관). 단골이거나 이미 만난 사이면 밋&그릿과 만난 뒤 결정만 건너뛰고 나머지는 같다. 이 흐름은 채팅 카드로 진행된다.
 > - 시터가 첫 동의를 누른 순간부터 그 날짜는 **홀드**된다(다른 오너의 예약 · 요청과 시터의 일정 막기가 안 됨). 확정 · 거절 · 취소 · 시간 초과 때 풀린다.
 > - 만난 뒤에는 시터도 **오너도** 거절할 수 있다(오너의 "Not this sitter"는 사유 칩).
 > - 밋&그릿 시간이 2일 안에 안 잡히면 양쪽에게 시간 잡기 · 스킵 · 거절을 묻고, 3일 더 답이 없으면 자동 취소(홀드 해제).
@@ -116,7 +116,7 @@ House sitting은 돌봄 장소가 견주 집이라 시작·끝 모두 **Sitter d
 
 ### Stage 3 — Booking (예약 확정) · 목표: 캐나다 맞춤 안전 동의서 + 조건부 보안 해제
 
-1. (첫 만남이면 Meet & Greet **Done** 또는 건너뛰기 동의 뒤) 시터가 요청 수락 → 견주 **Checkout**: 서비스·이동 방식 확정 + **견적**(기본·다두·공휴일, CAD) 
+1. (첫 만남이면 Meet & Greet **Done** 또는 건너뛰기 동의 뒤) 오너 **I'd like to book** + 시터 **I accept** → 시터가 **최종 견적**(기본 · 다두 · 공휴일 + 채팅에서 수락한 추가요금, CAD)을 보내고 오너가 확인 → 견주 **Checkout**: 서비스·이동 방식 확정
 2. 선택한 옵션에 맞춘 **전자 동의서**가 자동으로 정해짐 (규칙 기반, D30) → 항목마다 체크 + 이름 입력 서명
 3. **결제** (해커톤: **데모 결제** — 카드 정보 없음, D30)
 4. **조건부 보안 해제** (D31)
