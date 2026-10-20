@@ -155,6 +155,14 @@ def assert_no_secrets(value, path: str = "") -> None:
             assert_no_secrets(inner, f"{path}{i}.")
 
 
+def quote_for_model(quote: dict | None) -> dict | None:
+    """The quote as the model sees it. A same-day stay (and daycare) has 0 or meaningless nights but is billed by the
+    day (quote_booking), so the model gets only `days` and can't write "0 nights" (#172)."""
+    if not quote or (quote.get("service") != "daycare" and quote.get("nights")):
+        return quote
+    return {k: v for k, v in quote.items() if k != "nights"}
+
+
 def _money_values(quote: dict | None) -> set[float]:
     if not quote:
         return set()

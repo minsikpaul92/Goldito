@@ -76,7 +76,7 @@ export function DueAlert({ reminder, paused, onDone }: Props) {
             <TextButton label="Dismiss" onPress={() => dismiss(item.log.id)} testID="due-alert-dismiss" />
             {more > 0 ? (
               <Pressable accessibilityRole="button" onPress={() => router.push("/sitter/tasks")} testID="due-alert-more">
-                <Text style={styles.more}>{`+ ${more} more waiting — see all tasks`}</Text>
+                <Text style={styles.more}>{`+ ${more} more waiting`}</Text>
               </Pressable>
             ) : null}
           </View>

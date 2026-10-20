@@ -83,7 +83,7 @@ export default function OwnerHistory() {
   if (pets.length === 0) {
     return (
       <Screen>
-        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home — then your sitter's updates show up here." />
+        <EmptyState emoji="🐾" title="No pets yet" message="Add a pet on Home first." />
       </Screen>
     );
   }

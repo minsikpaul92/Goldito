@@ -111,7 +111,7 @@ test.describe("snap sticker", () => {
     const screen = app(page);
     await screen.getByTestId("sticker-pick").click();
     await screen.getByTestId("sample-mood_grass").click();
-    await expect(screen.getByTestId("sticker-missed")).toHaveText("We couldn't cut out a pet there — tap your pet.");
+    await expect(screen.getByTestId("sticker-missed")).toHaveText("We couldn't cut out a pet there. Tap your pet.");
     await expect(screen.getByTestId("sticker-save")).toHaveCount(0);
     await expect(screen.getByTestId("sticker-photo")).toBeVisible();
   });

@@ -88,7 +88,7 @@ function firstSlot(detail: string | null): string | null {
 function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
-  if (error.code === "meet_greet_required") return `Meet ${owner} first — or agree to skip the Meet & Greet.`;
+  if (error.code === "meet_greet_required") return `Meet ${owner} first, or agree to skip the Meet & Greet.`;
   if (error.code === "interest_required") return `Say "Yes, let's meet" to ${owner} first.`;
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
@@ -223,8 +223,8 @@ export default function SitterBookingDetail() {
   const handoffNote = (kind: HandoffKind) => {
     const h = kind === "drop_off" ? booking.dropOff : booking.pickUp;
     if (!isRequest || !h || !h.pending || showsProposal(booking, "sitter", kind)) return null;
-    if (h.proposedBy === booking.sitterId) return `You suggested this — waiting for ${owner}.`;
-    return h.withinSitterHours ? null : "Custom time — outside your hours, needs your OK.";
+    if (h.proposedBy === booking.sitterId) return `You suggested this. Waiting for ${owner}.`;
+    return h.withinSitterHours ? null : "Custom time, outside your hours. Needs your OK.";
   };
 
   return (
@@ -377,14 +377,14 @@ export default function SitterBookingDetail() {
           {firstYes ? (
             <Button
               label={busy ? "Saving…" : "Yes, let's meet"}
-              onPress={() => void run(() => expressInterest(booking.id), `Dates held — ${owner} is asked to set a time`)}
+              onPress={() => void run(() => expressInterest(booking.id), `Dates held. ${owner} is asked to set a time`)}
               disabled={busy || requestExpired(booking)}
               testID="interest-booking"
             />
           ) : (
             <Button
               label={busy ? "Saving…" : firstTimePair ? "Confirm booking" : "Accept"}
-              onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed — ${owner} gets a notice`)}
+              onPress={() => void run(() => respondBooking(booking.id, true), `Booking confirmed. ${owner} gets a notice`)}
               disabled={!canAccept}
               testID="accept-booking"
             />
@@ -403,7 +403,7 @@ export default function SitterBookingDetail() {
               <Button
                 label={busy ? "Saving…" : "Received"}
                 onPress={() =>
-                  void run(() => completeHandoff(booking.id, "drop_off"), `${petNames} checked in — ${owner} gets a notice`)
+                  void run(() => completeHandoff(booking.id, "drop_off"), `${petNames} checked in. ${owner} gets a notice`)
                 }
                 disabled={busy || !checkInFrom || Date.now() < checkInFrom}
                 testID="handoff-received"
@@ -451,7 +451,7 @@ export default function SitterBookingDetail() {
                   await completeHandoff(booking.id, "pick_up");
                   // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
                   void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe — ${owner} gets a notice`);
+                }, `${petNames} home safe. ${owner} gets a notice`);
               }}
               testID="return-confirm"
             />
@@ -461,7 +461,7 @@ export default function SitterBookingDetail() {
       >
         {returnsEarly && booking.pickUp ? (
           <Text style={styles.warning} testID="return-early-warning">
-            {`It's not pick-up time yet — pick-up is ${formatInstant(booking.pickUp.at)}. Do you really want to return ${petNames} now?`}
+            {`It's not pick-up time yet (pick-up is ${formatInstant(booking.pickUp.at)}). Do you really want to return ${petNames} now?`}
           </Text>
         ) : null}
         <Text style={styles.body}>{`${petNames} ${booking.pets.length > 1 ? "go" : "goes"} home with ${owner}. This can't be undone, and it writes the Life Record.`}</Text>
@@ -556,7 +556,7 @@ export default function SitterBookingDetail() {
         }
       >
         <Text style={styles.body}>{`${owner} gets a notice and can find another sitter.`}</Text>
-        <Text style={styles.muted}>Pick a reason and/or leave a short note — {owner} sees both.</Text>
+        <Text style={styles.muted}>Pick a reason or leave a short note. {owner} sees both.</Text>
         <ChipSuggestions
           chips={DECLINE_REASONS.map((r, i) => ({ id: String(i), kind: "episode", label: r, source: "custom", check: null, media_id: null }))}
           off={new Set(DECLINE_REASONS.flatMap((r, i) => (declineReasons.includes(r) ? [] : [String(i)])))}

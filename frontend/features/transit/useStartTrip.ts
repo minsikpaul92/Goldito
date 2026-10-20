@@ -27,7 +27,7 @@ export function useStartTrip(booking: BookingSummary, role: Role): (kind: Handof
             ? `Sharing your location with ${otherName}`
             : result.because === "denied"
               ? `Location is off in this browser, so ${otherName} sees the meeting place instead`
-              : `Trip started — ${otherName} sees the meeting place`,
+              : `Trip started. ${otherName} sees the meeting place`,
         );
       } else if (result.reason === "error" && result.message) toast.show(result.message);
       return result;

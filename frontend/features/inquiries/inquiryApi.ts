@@ -85,7 +85,7 @@ function fail(action: string): never {
 /** "Boarding · Oct 9 – Oct 12 · Max, Mochi" — what is sent when the owner writes no question. */
 export function tripSummary(serviceType: ServiceType, dropOffAt: string, pickUpAt: string, petNames: string[]): string {
   const label = SERVICE_LABEL[serviceType].replace(/^\S+\s/, "");
-  return `${label} · ${formatDay(isoToZoned(dropOffAt).day)} – ${formatDay(isoToZoned(pickUpAt).day)} · ${petNames.join(", ")}`;
+  return `${label} · ${formatDay(isoToZoned(dropOffAt).day)} to ${formatDay(isoToZoned(pickUpAt).day)} · ${petNames.join(", ")}`;
 }
 
 /** Insert the inquiry and the owner's message (RLS: only the owner, only their own pets, only a sitter). */
@@ -277,7 +277,7 @@ export type ReplyOutcome = "accept" | "decline" | "suggest";
 /** The owner wrote again (or changed the dates) after this draft was written (012f, CR-7): reload, a new draft is coming. */
 export class StaleDraftError extends Error {
   constructor() {
-    super("The owner wrote again after this draft, so it no longer answers them. A new draft is on its way — check the thread.");
+    super("The owner wrote again after this draft, so it no longer answers them. A new draft is on its way.");
   }
 }
 
@@ -317,7 +317,7 @@ export async function changeInquiryDates(input: {
     p_body: input.body.slice(0, 2000),
   });
   if (!error) return;
-  if (error.message.includes("invalid_window")) throw new Error("Check the dates — a stay can be up to 31 days.");
+  if (error.message.includes("invalid_window")) throw new Error("Check the dates. A stay can be up to 31 days.");
   if (error.message.includes("inquiry_closed")) throw new Error("This question is closed. Start a new one.");
   fail("change the dates");
 }

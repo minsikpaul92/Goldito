@@ -107,7 +107,6 @@ Playbook §5B — (3C.1·3C.3–3C.5 SQL) / (3C.2·3C.6 UI) 두 번
 | **BF.8** | `009d follow_paid_booking_change`가 `required_consents`를 부르는데, 아직 *제안* 상태인 견주 집 인수인계도 센다 → 상관없는 변경(예: 새 드롭오프 시각)에 동의하면 체크아웃이 일찍 다시 열리고 아무도 수락하지 않은 제안 때문에 출입 코드가 잠긴다. 트리거에서 `home_access`는 **동의된** 인수인계만 센다. 또 트리거는 `required_consents` · `quote_booking`의 오류를 삼킨다 — 서비스 role이 바꾸는 경로가 생기면 그 둘을 건너뛰므로 그때 다시 본다 |
 | **BF.9** | 다시 열린 체크아웃이 첫 결제처럼 읽힘: `priceSnapshot`이 있으면 버튼을 "Sign and confirm"으로, 시터에게는 "all set" 대신 "{owner} signed the new consent" |
 | **FB-7b** | 오너가 요금표 없는 시터에게 체크아웃하면 시터에게 "Set your prices" 알림 (서비스 role 쓰기나 마이그레이션 + RPC 필요 — 시터 요금 입력 화면 FB-11과 함께) |
-| **R60-6** | 요금표 행은 있는데 이 서비스 가격만 null이면 FB-7이 "doesn't offer that service"라고 말함 → `quote_booking`이 `rates_not_set`을 던지게 (`pay_booking_demo` 경로도 맞춰서) |
 
 ---
 

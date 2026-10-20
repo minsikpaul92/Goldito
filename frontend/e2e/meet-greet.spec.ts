@@ -148,7 +148,7 @@ test.describe("meet & greet", () => {
     await expect(sitter.getByTestId("meet-greet")).toContainText("Robert would like to skip the Meet & Greet");
     await sitter.getByTestId("meet-skip-accept").click();
     await expect(sitter.getByTestId("toast")).toContainText("Meet & Greet skipped");
-    await expect(sitter.getByTestId("meet-greet")).toContainText("Meet & Greet skipped — you both agreed");
+    await expect(sitter.getByTestId("meet-greet")).toContainText("Meet & Greet skipped, you both agreed");
     await expect(sitter.getByTestId("accept-booking")).toBeEnabled();
   });
 

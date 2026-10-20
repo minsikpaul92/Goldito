@@ -131,7 +131,7 @@ export default function SitterHome() {
             style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
             testID="home-photo-request"
           >
-            <Text style={styles.requestsText}>{`📷 ${pet.ownerName} asked for a photo of ${pet.name} — tap to share`}</Text>
+            <Text style={styles.requestsText}>{`📷 ${pet.ownerName} asked for a photo of ${pet.name}`}</Text>
           </Pressable>
         );
       })}
@@ -142,7 +142,7 @@ export default function SitterHome() {
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
           testID="today-requests"
         >
-          <Text style={styles.requestsText}>{`📬 Requests (${requests}) — tap to answer`}</Text>
+          <Text style={styles.requestsText}>{`📬 Requests (${requests})`}</Text>
         </Pressable>
       ) : null}
 
@@ -153,7 +153,7 @@ export default function SitterHome() {
           style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
           testID="today-questions"
         >
-          <Text style={styles.requestsText}>{`💬 Questions (${questions}) — tap to answer`}</Text>
+          <Text style={styles.requestsText}>{`💬 Questions (${questions})`}</Text>
         </Pressable>
       ) : null}
 

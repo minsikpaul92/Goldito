@@ -59,7 +59,7 @@ const SECTIONS: Section[] = [
     title: "Google Calendar and Meet",
     body: [
       "Goldito does not ask you to sign in with Google and never reads your Google account. One Google account owned by the Goldito team uses the Google Calendar API (only the calendar.events permission) to create, move and cancel the calendar event that carries the Google Meet link for a video Meet & Greet.",
-      "That event holds the meeting time, a title with the pets' names and the sitter's name, and — when invites are switched on — the owner's and the sitter's email addresses as guests, so Google sends them the invite. Demo accounts never get invites. Goldito keeps only the event's ID and the Meet link, on the booking. A cancelled meeting's event is deleted.",
+      "That event holds the meeting time, a title with the pets' names and the sitter's name, and (when invites are switched on) the owner's and the sitter's email addresses as guests, so Google sends them the invite. Demo accounts never get invites. Goldito keeps only the event's ID and the Meet link, on the booking. A cancelled meeting's event is deleted.",
       "Goldito's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. That information is used only to run the video Meet & Greet; it is never sold, never used for advertising, and never sent to an AI model or used to train one.",
     ],
   },

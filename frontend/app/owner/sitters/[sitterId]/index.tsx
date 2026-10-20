@@ -1,8 +1,11 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { PhotoViewer } from "../../../../components/PhotoViewer";
 import { SitterActions } from "../../../../components/SitterActions";
+import { Avatar } from "../../../../components/ui/Avatar";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { Chip } from "../../../../components/ui/Chip";
@@ -11,6 +14,7 @@ import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { StarRating } from "../../../../components/StarRating";
 import { RatingSummary, getRatingSummary } from "../../../../features/completion/completionApi";
+import { ProfilePhoto, loadProfilePhotos, photoThumb } from "../../../../features/profile/profilePhotosApi";
 import {
   SERVICE_LABEL,
   SitterProfileView,
@@ -21,8 +25,8 @@ import {
   sitterMeta,
 } from "../../../../features/sitters/sitterApi";
 import { StayParams, stayFromParams, stayQuery } from "../../../../features/sitters/stayParams";
-import { TextButton } from "../../../../components/ui/TextButton";
-import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 
 type ProfileState =
@@ -31,12 +35,17 @@ type ProfileState =
   | { status: "missing" }
   | { status: "error"; message: string };
 
+/** The round cover photo in the header row (#136). */
+const PHOTO_SIZE = 64;
+
 /**
  * A sitter as owners see them (phase-03b 3B.2, 3D.3): the intro, and See schedule for the openings and closed days
  * (#120: the month and each day on their own pages). Start chat is the one action; the stay a search carried stays with it.
  */
 export default function SitterProfileScreen() {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
+  const toast = useToast();
   const params = useLocalSearchParams<{ sitterId: string } & StayParams>();
   const { sitterId } = params;
 
@@ -55,10 +64,22 @@ export default function SitterProfileScreen() {
     setFavorite(next);
     try {
       await setFavoriteSitter(sitterId, next);
+      toast.show(next ? "Added to favorites" : "Removed from favorites");
     } catch {
       setFavorite(!next);
+      toast.show("Couldn't save. Try again.");
     }
   };
+
+  /** Cover first (014g); a failed load just shows the initial. */
+  const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  useEffect(() => {
+    if (!sitterId) return;
+    loadProfilePhotos(sitterId)
+      .then(setPhotos)
+      .catch(() => setPhotos([]));
+  }, [sitterId]);
 
   const loadProfile = useCallback(async () => {
     if (!sitterId) return;
@@ -108,17 +129,43 @@ export default function SitterProfileScreen() {
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
         <Card style={styles.intro}>
-          <Text accessibilityRole="header" style={styles.name} testID="sitter-name">
-            {sitter.displayName}
-          </Text>
-          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
-          {favorite != null ? (
-            <TextButton
-              label={favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites"}
-              onPress={() => void toggleFavorite()}
-              testID="sitter-favorite"
-            />
-          ) : null}
+          <View style={styles.header} testID="sitter-header">
+            {photos.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`See ${sitter.displayName}'s photos`}
+                onPress={() => setViewerOpen(true)}
+                testID="sitter-photo"
+              >
+                <Avatar kind="photo" uri={photoThumb(photos[0], PHOTO_SIZE * 3)} size={PHOTO_SIZE} />
+              </Pressable>
+            ) : (
+              <Avatar kind="initial" name={sitter.displayName} size={PHOTO_SIZE} testID="sitter-photo-initial" />
+            )}
+            <View style={styles.headerText}>
+              <Text accessibilityRole="header" style={styles.name} numberOfLines={1} testID="sitter-name">
+                {sitter.displayName}
+              </Text>
+              {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+            </View>
+            {favorite != null ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={favorite ? "Remove from favorites" : "Add to favorites"}
+                accessibilityState={{ selected: favorite }}
+                hitSlop={theme.spacing.sm}
+                onPress={() => void toggleFavorite()}
+                style={styles.heart}
+                testID="sitter-favorite"
+              >
+                <Ionicons
+                  name={favorite ? "heart" : "heart-outline"}
+                  size={theme.icon.md}
+                  color={theme.color.primary}
+                />
+              </Pressable>
+            ) : null}
+          </View>
           <View style={styles.chips}>
             {sitter.services.map((service) => (
               <Chip key={service} label={SERVICE_LABEL[service]} testID={`sitter-service-${service}`} />
@@ -134,7 +181,7 @@ export default function SitterProfileScreen() {
               {rating.recent.map((r, i) => (
                 <View key={`${r.createdAt}-${i}`} style={styles.block} testID="sitter-review">
                   <StarRating value={r.rating} size={14} />
-                  <Text style={styles.body}>{`“${r.comment}” — ${r.reviewer}`}</Text>
+                  <Text style={styles.body}>{`“${r.comment}” · ${r.reviewer}`}</Text>
                 </View>
               ))}
             </View>
@@ -156,6 +203,7 @@ export default function SitterProfileScreen() {
         />
       </Screen>
       <SitterActions sitter={sitter} stay={stayFromParams(params)} />
+      <PhotoViewer visible={viewerOpen} photos={photos} onClose={() => setViewerOpen(false)} />
     </View>
   );
 }
@@ -175,6 +223,21 @@ const makeStyles = (theme: Theme) =>
     },
     intro: {
       gap: theme.spacing.sm,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.md,
+    },
+    headerText: {
+      flex: 1,
+      gap: theme.spacing.xs,
+    },
+    heart: {
+      width: 44,
+      height: 44,
+      alignItems: "center",
+      justifyContent: "center",
     },
     name: {
       fontSize: theme.fontSize.title,
