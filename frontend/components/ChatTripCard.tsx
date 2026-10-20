@@ -7,10 +7,11 @@ import { formatTime, isoToZoned } from "../features/schedule/dates";
 import { Role, canTravel, greetingFor, minutesAway, nextHandoff, startOpensAt } from "../features/transit/tripLogic";
 import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { useStartTrip } from "../features/transit/useStartTrip";
-import type { BookingSummary } from "../lib/bookings";
+import { BookingSummary, completeHandoff } from "../lib/bookings";
 import { isLive } from "../lib/transit";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useSession } from "../providers/SessionProvider";
+import { useToast } from "../providers/ToastProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
@@ -36,6 +37,7 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const errorDialog = useErrorDialog();
+  const toast = useToast();
   const enabled = booking.status === "confirmed" && !!booking.paidAt;
   const { trips } = useLiveTrips(booking.id, enabled);
   const start = useStartTrip(booking, viewer);
@@ -91,18 +93,32 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
       if (result.started) router.push(tripHref);
     });
   };
+  // At the sitter's door the card also carries Received: one card says they have arrived and lets the sitter take the pets.
+  const receive = async () => {
+    setSending(true);
+    try {
+      await completeHandoff(booking.id, "drop_off");
+      toast.show(`${booking.pets.map((p) => p.name).join(" & ") || "The pets"} checked in. ${booking.ownerName} gets a notice`);
+      onSent();
+    } catch (e) {
+      errorDialog.show({ title: "Not saved", message: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
   const hello = greeting && !greeted ? <Button label={greeting} onPress={() => void greet()} disabled={sending} testID="trip-greet" /> : null;
 
   if (live) {
     const mine = live.traveler_id === profile?.id;
     const traveler = nameOf(live.traveler_id);
     const mins = live.status === "en_route" && live.sharing ? minutesAway(live.eta_at, Date.now()) : null;
+    const at = live.arrived_at ? ` · ${formatTime(isoToZoned(live.arrived_at).time)}` : "";
     const eta = live.eta_at && live.sharing ? ` · ETA ${formatTime(isoToZoned(live.eta_at).time)}` : "";
     const line =
       live.status === "arrived"
         ? mine
-          ? "You've arrived 📍"
-          : `${traveler} has arrived 🚗`
+          ? `You've arrived 📍${at}`
+          : `${traveler} has arrived 🚗${at}`
         : mins !== null
           ? mine
             ? `You're ${mins < 1 ? "almost there" : `${mins} min away`} 🚗`
@@ -115,6 +131,9 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
         <Card style={styles.card} testID="chat-trip-live">
           <Text style={styles.title}>{line}</Text>
           <Button label={mine ? "Open trip" : `Track ${traveler}`} onPress={() => router.push(tripHref)} testID="chat-trip-open" />
+          {viewer === "sitter" && live.status === "arrived" && live.handoff_kind === "drop_off" && !booking.dropOff?.completedAt ? (
+            <Button label="Received" onPress={() => void receive()} disabled={sending} testID="chat-received" />
+          ) : null}
           {hello}
         </Card>
       </View>

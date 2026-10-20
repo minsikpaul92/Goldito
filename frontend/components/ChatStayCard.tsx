@@ -5,8 +5,10 @@ import { ReturnSheet } from "./ReturnSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { requestLifeRecord } from "../features/completion/completionApi";
+import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { formatInstant } from "../features/schedule/dates";
 import { BookingSummary, CHECK_IN_WINDOW_MS, completeHandoff } from "../lib/bookings";
+import { isLive } from "../lib/transit";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -28,6 +30,7 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
   const sitter = viewer === "sitter";
   const pets = booking.pets.map((p) => p.name).join(" & ") || "The pets";
   const are = booking.pets.length > 1 ? "are" : "is";
+  const { trips } = useLiveTrips(booking.id, booking.status === "confirmed" && !!booking.paidAt);
 
   if (booking.status !== "confirmed" || !booking.paidAt) return null;
 
@@ -90,6 +93,8 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
   // Not received yet: only the sitter has something to press, from 2 hours before the drop-off.
   const opens = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   if (!sitter || opens === null || Date.now() < opens) return null;
+  // The owner has arrived: the trip card above carries Received, one card instead of two.
+  if (trips?.some((t) => isLive(t) && t.status === "arrived" && t.handoff_kind === "drop_off")) return null;
   return (
     <View style={styles.wrap}>
       <Card style={styles.card} testID="chat-stay-receive">

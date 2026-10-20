@@ -327,6 +327,31 @@ test.describe("the pets changing hands in the chat", () => {
     await expect(screen.getByTestId("chat-stay-home")).toContainText("Max is back with you");
   });
 
+  test("when the owner has arrived the sitter gets one card: arrived with the time, Track and Received together", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    const arrivedAt = new Date(Date.now() - 60_000).toISOString();
+    db.trips.push(runningTrip({ status: "arrived", arrived_at: arrivedAt, eta_at: null }));
+
+    let screen = await openChatAs(page, SITTER);
+    const card = screen.getByTestId("chat-trip-live");
+    await expect(card).toContainText("Robert has arrived");
+    await expect(card).toContainText(/\d{1,2}:\d{2} (AM|PM)/); // when
+    await expect(card.getByTestId("chat-trip-open")).toHaveText("Track Robert");
+    await expect(card.getByTestId("chat-received")).toBeVisible();
+    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0); // not a second card
+
+    // The owner sees the arrival but has no Received.
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-trip-live")).toContainText("You've arrived");
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("chat-received").click();
+    await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
+    expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
+  });
+
   test("before the check-in window the sitter has no Received, and the owner has none ever", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, 5 * HOUR);

@@ -725,16 +725,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 68 |
-| Button | Received | `chat-received` | 97 |
+| Button | Returned | `chat-returned` | 71 |
+| Button | Received | `chat-received` | 102 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | `greeting` | `trip-greet` | 94 |
-| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 117 |
-| Button | Start trip | `chat-trip-start-button` | 143 |
+| Button | `greeting` | `trip-greet` | 109 |
+| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 133 |
+| Button | Received | `chat-received` | 135 |
+| Button | Start trip | `chat-trip-start-button` | 162 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
@@ -1388,4 +1389,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-403 actions · 402 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+404 actions · 403 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
