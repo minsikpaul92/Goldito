@@ -791,6 +791,15 @@
 | RATE-3 | 요금표가 아예 없는 시터 | 예전 그대로 "This sitter hasn't set their prices yet…" | SQL `rls_smoke`(3C.1) · 🤖 `checkout` | ➖ |
 | RATE-4 | 프로필에 없는 서비스(예: House sitting을 안 하는 시터) | 예전 그대로 "This sitter doesn't offer that service." | SQL `rls_smoke`(014k) · 🤖 `checkout` | ➖ |
 
+### 3.36 시터 프로필 헤더 · 사진 뷰어 (PROF) · #136
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PROF-1 | 오너 → 시터 프로필 (폰 너비 402) | 둥근 대표 사진 · 이름(+ 지역 · 경력) · 하트가 **한 줄**. "Add to favorites" 줄은 없음 | 🤖 `sitters` | ➖ |
+| PROF-2 | 하트 누르기 → 새로고침 → 다시 누르기 | ♥로 채워지고 "Added to favorites", 새로고침해도 유지, 다시 누르면 ♡ + "Removed from favorites". 즐겨찾기 시터는 시터 고르는 목록 맨 앞 | 🤖 `sitters` · `completion`(FB-28) | ➖ |
+| PROF-3 | 사진 누르기 | 전체 화면 뷰어, 대표 사진이 첫 장, "1 / 3". ‹ › 버튼 · ← → 키 · 마우스 드래그(터치는 스와이프)로 넘기고, ✕ 또는 Esc로 닫힘 | 🤖 `sitters` · **👤** (실제 폰 스와이프) | ➖ |
+| PROF-4 | 사진이 없는 시터 | 빈 칸 대신 **이름 첫 글자** 동그라미(다른 화면과 같은 모양), 눌러도 뷰어는 안 열림 | 🤖 `sitters` | ➖ |
+
 ---
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)

@@ -261,15 +261,16 @@ Shows: `PetForm`
 
 A sitter as owners see them (phase-03b 3B.2): intro + the next open days from get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
 
-Shows: `SitterActions` · `NextOpenings` · `StarRating`
+Shows: `PhotoViewer` · `SitterActions` · `NextOpenings` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 108 |
-| EmptyState | Couldn't load this sitter | — | 116 |
-| TextButton | favorite ? "★ Favorite" : "☆ Add to favorites" | `sitter-favorite` | 139 |
-| EmptyState | Couldn't load the schedule | — | 179 |
-| Button | See full month | `sitter-see-month` | 192 |
+| EmptyState | Sitter not found | — | 128 |
+| EmptyState | Couldn't load this sitter | — | 136 |
+| Pressable | ``See ${sitter.displayName}'s photos`` | `sitter-photo` | 156 |
+| Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `sitter-favorite` | 174 |
+| EmptyState | Couldn't load the schedule | — | 225 |
+| Button | See full month | `sitter-see-month` | 238 |
 
 ### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
 
@@ -981,6 +982,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | busy ? "Saving…" : "Use photo" | `crop-sheet` | 111 |
 | Button | busy ? "Saving…" : "Use photo" | `crop-confirm` | 117 |
 
+### PhotoViewer — [components/PhotoViewer.tsx](../../frontend/components/PhotoViewer.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Previous photo | `photo-viewer-prev` | 83 |
+| Pressable | Next photo | `photo-viewer-next` | 94 |
+| Pressable | Close | `photo-viewer-close` | 105 |
+
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1290,4 +1299,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-373 actions · 372 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+377 actions · 376 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

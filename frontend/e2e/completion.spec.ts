@@ -123,9 +123,9 @@ test.describe("finished stay", () => {
     await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("★ Favorite");
 
     await page.goto(`/owner/sitters/${SITTER.id}`);
-    await expect(screen.getByTestId("sitter-favorite")).toContainText("★ Favorite");
+    await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Remove from favorites");
     await screen.getByTestId("sitter-favorite").click(); // and off again
-    await expect(screen.getByTestId("sitter-favorite")).toContainText("☆ Add to favorites");
+    await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Add to favorites");
     await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
   });
 
