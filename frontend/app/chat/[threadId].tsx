@@ -10,6 +10,7 @@ import { ChatCareCards } from "../../components/ChatCareCards";
 import { ChatHandoffCard } from "../../components/ChatHandoffCard";
 import { ChatPlusMenu, PlusItem } from "../../components/ChatPlusMenu";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
+import { ChatStayCard } from "../../components/ChatStayCard";
 import { ChatTripCard } from "../../components/ChatTripCard";
 import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
@@ -408,6 +409,9 @@ export default function Chat() {
     );
   };
 
+  // The stay itself (Received, in care, Returned) follows the pair's paid booking even after the progress bar is done.
+  const stayBooking = booking ?? pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt) ?? null;
+
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
 
   /** Meet & Greet, agreement and payment cards hold only a booking id: they draw that booking as it is now. */
@@ -503,6 +507,7 @@ export default function Chat() {
         )}
         {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
+        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (

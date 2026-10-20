@@ -71,6 +71,7 @@ const runningTrip = (patch: Record<string, unknown> = {}) => ({
 });
 
 async function openChatAs(page: Page, user: MockUser) {
+  await page.evaluate(() => localStorage.clear()).catch(() => undefined); // switching phones: sign in fresh
   await signIn(page, user);
   await expect(page).toHaveURL(user.role === "owner" ? /\/owner$/ : /\/sitter$/);
   await page.goto(`/chat/${THREAD}`);
@@ -287,6 +288,56 @@ test.describe("the + menu", () => {
     await screen.getByTestId("chat-plus-photo").click();
     await expect(screen.getByTestId("chat-photo-open")).toContainText("You asked for a photo of Max");
     expect(db.photo_requests).toHaveLength(1);
+  });
+});
+
+test.describe("the pets changing hands in the chat", () => {
+  test("the sitter taps Received in the chat, the owner sees the pets are with her, and Returned ends the stay with Home safe", async ({ page }) => {
+    await page.route("**/api/ai/life-record", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) }));
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db); // the drop-off is 30 minutes away: the check-in window is open
+
+    let screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-stay-receive")).toContainText("Max arrived?");
+    await screen.getByTestId("chat-received").click();
+    await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
+    expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
+    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0);
+
+    // Robert's chat says where Max is; he has nothing to press.
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with Chloe");
+    await expect(screen.getByTestId("chat-returned")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+
+    // Returned goes through the same sheet as the booking page (early here: pick-up is days away).
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("chat-returned").click();
+    await expect(screen.getByTestId("return-sheet")).toBeVisible();
+    await expect(screen.getByTestId("return-early-warning")).toBeVisible();
+    await screen.getByTestId("return-cancel").click();
+    expect(db.booking_handoffs.find((h) => h.kind === "pick_up")?.completed_at).toBeFalsy();
+    await screen.getByTestId("chat-returned").click();
+    await screen.getByTestId("return-confirm").click();
+    await expect(screen.getByTestId("chat-stay-home")).toContainText("Home safe");
+    expect(db.booking_handoffs.find((h) => h.kind === "pick_up")?.completed_at).toBeTruthy();
+    await expect(screen.getByTestId("chat-returned")).toHaveCount(0);
+
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-stay-home")).toContainText("Max is back with you");
+  });
+
+  test("before the check-in window the sitter has no Received, and the owner has none ever", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, 5 * HOUR);
+    let screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-bubble-them")).toBeVisible();
+    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0);
+
+    db.booking_handoffs[0].scheduled_at = new Date(Date.now() + 30 * 60_000).toISOString();
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-bubble-me")).toBeVisible();
+    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0);
   });
 });
 
