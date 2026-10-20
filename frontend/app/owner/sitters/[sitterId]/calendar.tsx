@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { SitterActions } from "../../../../components/SitterActions";
+import { StayParams, stayFromParams, stayQuery } from "../../../../features/sitters/stayParams";
 import { SlotCalendar } from "../../../../components/SlotCalendar";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
@@ -16,7 +17,8 @@ import { Theme } from "../../../../theme/themes";
 /** #120 (D): the sitter's month on its own page. Tapping a day opens that day's page. */
 export default function SitterCalendarScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { sitterId } = useLocalSearchParams<{ sitterId: string }>();
+  const params = useLocalSearchParams<{ sitterId: string } & StayParams>();
+  const { sitterId } = params;
   const today = useMemo(() => appToday(), []);
   const [sitter, setSitter] = useState<SitterProfileView | null | undefined>(undefined);
   const [month, setMonth] = useState(() => monthStart(today));
@@ -63,7 +65,7 @@ export default function SitterCalendarScreen() {
           today={today}
           slots={slots ?? new Map()}
           selection={null}
-          onSelectDay={(day) => router.push(`/owner/sitters/${sitter.id}/day/${day}`)}
+          onSelectDay={(day) => router.push(`/owner/sitters/${sitter.id}/day/${day}${stayQuery(params)}`)}
           onPrevMonth={() => changeMonth(-1)}
           onNextMonth={() => changeMonth(1)}
           canGoPrev={month > monthStart(today)}
@@ -74,7 +76,7 @@ export default function SitterCalendarScreen() {
           <Text style={styles.note}>Tap a day to see its hours.</Text>
         )}
       </Screen>
-      <SitterActions sitter={sitter} />
+      <SitterActions sitter={sitter} stay={stayFromParams(params)} />
     </View>
   );
 }

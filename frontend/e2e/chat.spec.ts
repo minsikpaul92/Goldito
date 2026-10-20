@@ -177,6 +177,46 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
   });
 
+  test("Start chat on a sitter's pages carries the stay: the first card, and Request booking in the chat is filled in", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    const drop = "2030-10-24T13:00:00.000Z";
+    const pick = "2030-10-28T21:00:00.000Z";
+    const stay = `drop=${encodeURIComponent(drop)}&pick=${encodeURIComponent(pick)}&pets=${MAX}`;
+
+    // The stay follows See schedule and a day, and Start chat posts it as the first card.
+    await page.goto(`/owner/sitters/${SITTER.id}?${stay}`);
+    await screen.getByTestId("sitter-see-schedule").click();
+    await expect(page).toHaveURL(new RegExp(`/calendar\\?drop=`));
+    await page.goBack();
+    await screen.getByTestId("start-chat").click();
+    await expect(page).toHaveURL(/\/chat\//);
+    await expect(screen.getByTestId("chat-stay-card")).toContainText("Max");
+    await screen.getByTestId("chat-request-booking").click();
+    await expect(page).toHaveURL(/\/owner\/bookings\/new\?/);
+    const q = new URL(page.url()).searchParams;
+    expect(q.get("sitter")).toBe(SITTER.id);
+    expect(q.get("pets")).toBe(MAX);
+    expect(q.get("drop")).toBe(drop);
+    expect(q.get("pick")).toBe(pick);
+  });
+
+  test("the sitter has no Request booking in the chat, and an owner with a booking in progress has none either", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    db.pets.push(pet(MAX, "Max", "dog"));
+    db.bookings.push({ id: BOOKING, owner_id: OWNER.id, sitter_id: SITTER.id, status: "requested", service_type: "boarding", meet_greet_status: "not_needed", created_at: "2026-10-02T18:00:00Z" });
+    db.booking_pets.push({ booking_id: BOOKING, pet_id: MAX });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    await expect(app(page).getByTestId("chat-stay-card").or(app(page).getByTestId("chat-bubble-me").first())).toBeVisible();
+    await expect(app(page).getByTestId("chat-request-booking")).toHaveCount(0);
+  });
+
   test("someone outside the chat cannot open it", async ({ page }) => {
     const other: MockUser = { id: "00000000-0000-4000-8000-000000000009", email: "joy@goldito.test", password: "joy-pass", role: "owner", displayName: "Joy" };
     const { db } = await mockSupabase(page, [OWNER, SITTER, other]);

@@ -7,16 +7,17 @@ import { SlotRows, dayTitle, isOpen } from "../../../../../components/SlotRows";
 import { EmptyState } from "../../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../../components/ui/LoadingView";
 import { Screen } from "../../../../../components/ui/Screen";
-import { shortTime } from "../../../../../features/schedule/dates";
+import { addDays, shortTime, zonedToIso } from "../../../../../features/schedule/dates";
 import { DaySlot, SLOTS, loadSitterMonth, slotKey } from "../../../../../features/schedule/scheduleApi";
 import { SitterProfileView, getSitterProfile } from "../../../../../features/sitters/sitterApi";
+import { StayParams, stayFromParams } from "../../../../../features/sitters/stayParams";
 import { useThemedStyles } from "../../../../../providers/ThemeProvider";
 import { Theme } from "../../../../../theme/themes";
 
-/** #120 (D): one day of a sitter's schedule as big rows, with Ask and Book. Back returns where it came from. */
+/** #120 (D): one day of a sitter's schedule as big rows, with Start chat. Back returns where it came from. */
 export default function SitterDayScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { sitterId, date } = useLocalSearchParams<{ sitterId: string; date: string }>();
+  const { sitterId, date, pets } = useLocalSearchParams<{ sitterId: string; date: string } & StayParams>();
   const [sitter, setSitter] = useState<SitterProfileView | null | undefined>(undefined);
   const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,7 @@ export default function SitterDayScreen() {
     );
   }
 
-  // Book starts at the first open slot of the day.
+  // The chat's stay starts at the first open slot of the day.
   const first = slots ? SLOTS.map(({ slot }) => slots.get(slotKey(date, slot))).find((s) => isOpen(s) && s?.startsAt) : undefined;
 
   return (
@@ -60,7 +61,14 @@ export default function SitterDayScreen() {
           <SlotRows day={date} slots={slots!} />
         )}
       </Screen>
-      <SitterActions sitter={sitter} day={date} dropTime={first?.startsAt ? shortTime(first.startsAt) : undefined} />
+      <SitterActions
+        sitter={sitter}
+        stay={stayFromParams({
+          pets,
+          drop: zonedToIso(date, first?.startsAt ? shortTime(first.startsAt) : "09:00"),
+          pick: zonedToIso(addDays(date, 1), "17:00"),
+        })}
+      />
     </View>
   );
 }

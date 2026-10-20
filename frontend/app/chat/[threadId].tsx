@@ -129,6 +129,18 @@ export default function Chat() {
   };
 
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
+  // No booking in progress (a finished stay does not count): the owner's next step is the request, filled in from the latest stay card. The chat
+  // steps that replace this screen (quote, agreement, payment) come with 3D.6 and 3D.7.
+  const stayCard = [...messages].reverse().find((m) => m.card?.type === "stay")?.card;
+  const requestHref =
+    header.myRole === "owner" && (!booking || booking.stage === "completed")
+      ? `/owner/bookings/new?${new URLSearchParams({
+          sitter: header.otherId,
+          ...(stayCard?.type === "stay"
+            ? { drop: stayCard.dropOffAt, pick: stayCard.pickUpAt, pets: stayCard.pets.map((p) => p.id).join(",") }
+            : {}),
+        }).toString()}`
+      : null;
 
   return (
     <View style={styles.root} testID="chat">
@@ -168,6 +180,11 @@ export default function Chat() {
           ) : null,
         )}
       </Screen>
+      {requestHref ? (
+        <View style={styles.next}>
+          <Button label="Request booking" onPress={() => router.push(requestHref as never)} testID="chat-request-booking" />
+        </View>
+      ) : null}
       <View style={styles.compose}>
         <View style={styles.input}>
           <TextField
@@ -194,6 +211,7 @@ const makeStyles = (theme: Theme) =>
     stay: { gap: 2 },
     stayTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     stayLine: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     compose: {
       flexDirection: "row",
       alignItems: "flex-end",

@@ -107,9 +107,13 @@ test.describe("your sitters", () => {
     await expect(screen.getByTestId("sitter-service-house_sitting")).toBeVisible();
     await expect(screen.getByText("12 Maple St")).toHaveCount(0);
 
-    // #120: the profile lists the next openings; the month and each day open as their own pages.
-    await expect(screen.getByTestId(/^sitter-opening-/).first()).toBeVisible();
-    await screen.getByTestId("sitter-see-month").click();
+    // #120: See schedule opens the month, and each day opens as its own page; the profile has no openings list.
+    await expect(screen.getByTestId(/^sitter-opening-/)).toHaveCount(0);
+    await expect(screen.getByText("Next openings")).toHaveCount(0);
+    await expect(screen.getByTestId("ask-about-stay")).toHaveCount(0);
+    await expect(screen.getByTestId("book-this-sitter")).toHaveCount(0);
+    await expect(screen.getByTestId("start-chat")).toHaveText("Start chat");
+    await screen.getByTestId("sitter-see-schedule").click();
     await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}/calendar$`));
     await screen.getByTestId("calendar-next").click();
     // A blocked slot reads as not available to owners; a slot nobody touched is open by default (014d).

@@ -230,15 +230,19 @@ test.describe("book care", () => {
     await expect(card).toContainText("Paul cares for them at your place");
   });
 
-  test("Book this sitter picks the sitter for you", async ({ page }) => {
+  test("Start chat on the profile, then Request booking in the chat, picks the sitter for you", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, ALLEN]);
     seed(db, [pet(MAX, "Max", "dog")]);
+    // Chloe's earlier stay is over (the pick-up is done), so nothing is in progress and the chat offers a new request.
+    db.booking_handoffs.push({ id: "h-pick", booking_id: "00000000-0000-4000-8000-0000000000e9", kind: "pick_up", status: "accepted", completed_at: "2026-09-03T00:00:00Z", scheduled_at: "2026-09-03T00:00:00Z", location_type: "sitter_home" });
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/owner/sitters/${SITTER.id}`);
     const screen = app(page);
 
-    await screen.getByTestId("book-this-sitter").click();
+    await screen.getByTestId("start-chat").click();
+    await expect(page).toHaveURL(/\/chat\//);
+    await screen.getByTestId("chat-request-booking").click();
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/new\\?sitter=${SITTER.id}$`));
     await expect(screen.getByTestId("pick-sitter-Chloe")).toHaveAttribute("aria-checked", "true");
     await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Chloe");
