@@ -7,6 +7,7 @@ import { AgreeSheet } from "../../components/AgreeSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
+import { ChatTripCard } from "../../components/ChatTripCard";
 import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
 import { MeetGreetCard, MeetGreetHandle } from "../../components/MeetGreetCard";
@@ -412,6 +413,7 @@ export default function Chat() {
             />
           ) : null,
         )}
+        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (
         <View style={styles.next}>

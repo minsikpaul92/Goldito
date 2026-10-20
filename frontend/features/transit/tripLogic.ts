@@ -34,3 +34,19 @@ export const startOpensAt = (handoff: Handoff): number => Date.parse(handoff.at)
 export function placeFor(handoff: Handoff | null | undefined, address: string | null | undefined, point: LatLng | null): PlaceQuery {
   return { text: address ?? (handoff?.locationType === "other" ? handoff.note : null) ?? null, point };
 }
+
+/** The "about N min away" line shows from this far out (5 minutes before the ETA). */
+export const NEAR_MINUTES = 5;
+
+/** Whole minutes until the ETA when the traveller is within NEAR_MINUTES of it, else null. Past the ETA still counts as 0. */
+export function minutesAway(etaAt: string | null, now: number): number | null {
+  if (!etaAt) return null;
+  const mins = Math.max(0, Math.ceil((Date.parse(etaAt) - now) / 60_000));
+  return mins <= NEAR_MINUTES ? mins : null;
+}
+
+/** The one-tap hello after an arrival: the owner leaves the pets, the sitter answers; the same pair again at pick-up. */
+export function greetingFor(kind: HandoffKind, role: Role): string {
+  if (kind === "drop_off") return role === "owner" ? "Please take care of them" : "We will";
+  return role === "owner" ? "Thank you for everything" : "It was a pleasure";
+}
