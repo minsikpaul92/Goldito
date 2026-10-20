@@ -101,7 +101,7 @@ function actionError(error: unknown, owner: string): string {
 /**
  * Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks,
  * the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time /
- * Decline. The owner's offers: Accept / Suggest another time / Decline. Confirmed:
+ * Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed:
  * **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
  */
 export default function SitterBookingDetail() {
@@ -275,13 +275,6 @@ export default function SitterBookingDetail() {
             busy={busy}
             onAccept={(id) => void run(() => respondHandoff(id, true), `New time agreed with ${owner}`)}
             onSuggest={(k) => setSheet({ key: Date.now(), kind: k, mode: "suggest" })}
-            onDecline={(id) =>
-              void run(
-                () => respondHandoff(id, false),
-                isRequest ? "Request declined" : `${owner} keeps the original time`,
-                isRequest ? () => router.back() : undefined,
-              )
-            }
           />
         ))}
 

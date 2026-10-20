@@ -80,20 +80,18 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChipSuggestions` · `FinishedStay` 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 144 |
-| EmptyState | Couldn't load this booking | — | 151 |
-| Tag | `b.label` | — | 220 |
-| Tag | Paid | `paid-chip` | 223 |
-| Button | I'd like to book | `agree-booking` | 244 |
-| Button | Finish booking | `open-checkout` | 272 |
-| CheckRow | `item` | ``pack-${item}`` | 298 |
-| Button | Find a new sitter | `find-new-sitter` | 360 |
-| Button | Change time or place | `change-booking` | 367 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 375 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 387 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 393 |
-| Sheet | Decline and end the request | `end-request-sheet` | 456 |
-| Button | Decline and end the request | `end-request-confirm` | 462 |
+| EmptyState | Booking not found | — | 143 |
+| EmptyState | Couldn't load this booking | — | 150 |
+| Tag | `b.label` | — | 213 |
+| Tag | Paid | `paid-chip` | 216 |
+| Button | I'd like to book | `agree-booking` | 237 |
+| Button | Finish booking | `open-checkout` | 265 |
+| CheckRow | `item` | ``pack-${item}`` | 291 |
+| Button | Find a new sitter | `find-new-sitter` | 352 |
+| Button | Change time or place | `change-booking` | 359 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 367 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 379 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 385 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -393,7 +391,7 @@ Shows: `BookingCard` · `ChatList`
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
-Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time / Decline. Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
+Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
 Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
 
@@ -402,25 +400,25 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | EmptyState | Booking not found | — | 149 |
 | EmptyState | Couldn't load this booking | — | 156 |
 | Tag | `b.label` | — | 240 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 307 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 312 |
-| TextButton | Change time or place | `change-booking` | 320 |
-| Tag | `a` | — | 349 |
-| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 376 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 385 |
-| TextButton | Decline | `decline-booking` | 392 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 403 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 413 |
-| TextButton | Cancel booking | `cancel-booking` | 433 |
-| Sheet | Return | `return-sheet` | 438 |
-| Button | Return | `return-confirm` | 445 |
-| Button | Cancel | `return-cancel` | 458 |
-| TextButton | Send today's note first | `return-send-note` | 478 |
-| Sheet | Cancel booking | `cancel-sheet` | 490 |
-| Button | Cancel booking | `cancel-confirm` | 496 |
-| Sheet | Decline request | `decline-sheet` | 533 |
-| Button | Decline request | `decline-confirm` | 539 |
-| TextButton | Suggest another time instead | `decline-suggest` | 578 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 300 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 305 |
+| TextButton | Change time or place | `change-booking` | 313 |
+| Tag | `a` | — | 342 |
+| Button | busy ? "Saving…" : "Yes, let's meet" | `interest-booking` | 369 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 378 |
+| TextButton | Decline | `decline-booking` | 385 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 396 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 406 |
+| TextButton | Cancel booking | `cancel-booking` | 426 |
+| Sheet | Return | `return-sheet` | 431 |
+| Button | Return | `return-confirm` | 438 |
+| Button | Cancel | `return-cancel` | 451 |
+| TextButton | Send today's note first | `return-send-note` | 471 |
+| Sheet | Cancel booking | `cancel-sheet` | 483 |
+| Button | Cancel booking | `cancel-confirm` | 489 |
+| Sheet | Decline request | `decline-sheet` | 526 |
+| Button | Decline request | `decline-confirm` | 532 |
+| TextButton | Suggest another time instead | `decline-suggest` | 571 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -1014,9 +1012,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Accept | ``proposal-${kind}-accept`` | 82 |
+| Button | Accept | ``proposal-${kind}-accept`` | 83 |
 | TextButton | Suggest another time | ``proposal-${kind}-suggest`` | 84 |
-| TextButton | Decline | ``proposal-${kind}-decline`` | 85 |
 
 ### QuickCheckIn — [components/QuickCheckIn.tsx](../../frontend/components/QuickCheckIn.tsx)
 
@@ -1345,4 +1342,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-390 actions · 389 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+388 actions · 387 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
