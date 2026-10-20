@@ -24,12 +24,12 @@ Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewer
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 147 |
-| EmptyState | Chat not found | — | 155 |
-| Pressable | — | `chat-stage` | 226 |
-| Button | Request booking | `chat-request-booking` | 260 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 267 |
-| Pressable | Send | `chat-send` | 294 |
+| EmptyState | Couldn't load this chat | — | 154 |
+| EmptyState | Chat not found | — | 162 |
+| Pressable | — | `chat-stage` | 233 |
+| Button | Request booking | `chat-request-booking` | 267 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 279 |
+| Pressable | Send | `chat-send` | 306 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 

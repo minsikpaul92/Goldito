@@ -89,10 +89,11 @@ def setup(monkeypatch):
         monkeypatch.setattr(ai_chat, "_now", lambda: daily.NOW)
         monkeypatch.setattr(ai_chat, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto"))
         monkeypatch.setattr(authz, "rpc_json", rpc)
-        monkeypatch.setattr(rag, "search", lambda *_a, **_k: [])
+        searches: list = []
+        monkeypatch.setattr(rag, "search", lambda *_a, **_k: searches.append(1) or [])
         monkeypatch.setattr(nebius, "chat_json", model)
         monkeypatch.setattr(nebius, "embed", lambda texts, **kw: [[0.1] * 3 for _ in texts])
-        return SimpleNamespace(db=db, model=model)
+        return SimpleNamespace(db=db, model=model, searches=searches)
 
     return _setup
 
@@ -119,6 +120,14 @@ def test_a_sitter_gets_two_or_three_chips_for_the_owners_last_message(client, se
     assert payload["facts"]["rates"]["boarding_nightly"] == 55
     assert payload["recent"][-1] == {"who": "them", "text": "Can you take Max?"}
     assert payload["recent"][0]["text"].startswith("[Stay Oct 9")  # the stay card reads as a card
+
+
+def test_the_chips_skip_the_slow_source_search_but_the_draft_keeps_it(client, setup):
+    ctx = setup({"chips": ["Yes, I can host", "Let me check"]}, {"reply": "Yes, I can host Max!"})
+    chips(client)
+    assert ctx.searches == []  # the chips are asked for as soon as a message arrives: fast first
+    draft(client, "Yes, I can host")
+    assert ctx.searches == [1]
 
 
 def test_a_chip_with_a_number_is_dropped_because_amounts_and_dates_come_with_the_draft(client, setup):
@@ -206,10 +215,36 @@ def test_the_sitters_draft_follows_their_own_anonymized_replies(client, setup, m
     assert "Of course, no problem" in ctx.model.payload()["style_notes"]
 
 
+def test_a_sitter_draft_cannot_invent_that_it_is_booked(client, setup):
+    setup({"reply": "I'm booked on Oct 12, sorry."}, {"reply": "Let me check that time and get back to you."})
+    assert draft(client, "Let me check").json()["text"] == "Let me check that time and get back to you."
+
+
+def test_a_time_nobody_mentioned_and_a_leading_name_are_rejected(client, setup):
+    setup({"reply": "Chloe: Let me check if 6:30 AM works."}, {"reply": "Let me check if an earlier pick-up works."})
+    assert draft(client, "Let me check").json()["text"] == "Let me check if an earlier pick-up works."
+
+
+def test_a_time_the_other_person_wrote_is_fine(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can I come at 4:30 PM?"))
+    setup({"reply": "Yes, 4:30 PM works."}, db=db)
+    assert draft(client, "Let me check").json() == {"text": "Yes, 4:30 PM works.", "source": "model"}
+
+
+def test_the_owner_and_the_sitter_get_different_voices_and_the_state_of_the_chat(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"), message(3, SITTER_ID, "Yes, I have room for Max."))
+    ctx = setup({"chips": ["Thanks for the update", "Can you send photos?"]}, {"reply": "Thanks, Chloe! Could you send a photo later?"}, db=db)
+    chips(client, owner_token())
+    draft(client, "Thanks for the update", owner_token())
+    first, second = ctx.model.payload(0), ctx.model.payload(1)
+    assert first["state"] == "reply" and first["role"] == "owner"  # someone wrote: no introductions
+    assert "pet owner writing to their sitter" in second["style_notes"] and "host" in second["style_notes"].lower()
+
+
 def test_the_owner_gets_a_neutral_voice_and_no_price_unless_the_facts_have_it(client, setup):
     ctx = setup({"reply": "Thank you, that works for us."})
     assert draft(client, "Thank you!", owner_token()).json()["source"] == "model"
-    assert ctx.model.payload()["style_notes"] == ai_chat.NEUTRAL_STYLE
+    assert ctx.model.payload()["style_notes"] == ai_chat.OWNER_STYLE
 
 
 def test_an_instruction_in_the_other_persons_message_changes_nothing(client, setup):

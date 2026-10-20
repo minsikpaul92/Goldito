@@ -38,3 +38,27 @@ export async function fetchChatDraft(threadId: string, chip: string): Promise<st
     return null;
   }
 }
+
+const TTL_MS = 10 * 60 * 1000;
+const RETRY_AFTER_MS = 60 * 1000;
+const asked = new Map<string, { at: number; promise: Promise<ChatChips | null> }>();
+
+/**
+ * The chips for the latest message of a chat, asked once per (chat, message time) and shared: the list asks ahead for
+ * chats with something new, so the chat opens with its chips ready. A failed ask is tried again after a minute.
+ */
+export function chipsFor(threadId: string, latestAt: string): Promise<ChatChips | null> {
+  const key = `${threadId}:${latestAt}`;
+  const hit = asked.get(key);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.promise;
+  const entry = { at: Date.now(), promise: fetchChatChips(threadId) };
+  asked.set(key, entry);
+  void entry.promise.then((r) => {
+    if (!r) entry.at = Date.now() - TTL_MS + RETRY_AFTER_MS;
+  });
+  return entry.promise;
+}
+
+export function prefetchChatChips(threadId: string, latestAt: string): void {
+  void chipsFor(threadId, latestAt);
+}

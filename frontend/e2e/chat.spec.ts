@@ -371,6 +371,46 @@ test.describe("chat hub", () => {
     expect(db.chat_messages).toHaveLength(before + 1);
   });
 
+  test("a spinner holds the chips' place from the start; typing hides it; the list asks ahead so the chat opens with chips ready", async ({ page }) => {
+    let calls = 0;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    await page.route("**/api/ai/chat-chips", async (route) => {
+      calls += 1;
+      await gate;
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }),
+      });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    // The list asked for this chat's chips as soon as it saw something new, before the chat was opened.
+    await expect.poll(() => calls).toBe(1);
+    await screen.getByTestId("chat-row-Robert").click();
+
+    // Still being written: the spinner is there at once (the slot does not jump later) and the box works.
+    await expect(screen.getByTestId("chat-chips-loading")).toContainText("Writing replies");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveCount(0);
+    await screen.getByTestId("chat-input").fill("Typing first");
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0); // someone who is typing does not get chips popping in
+    await screen.getByTestId("chat-input").fill("");
+    release();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+    await expect(screen.getByTestId("chat-chips-loading")).toHaveCount(0);
+    expect(calls).toBe(1); // the chat reused what the list asked for
+
+    // Prefetched before the chat opens: a second visit has them ready with no new ask.
+    await page.goBack();
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
+    expect(calls).toBe(1);
+  });
+
   test("with no AI the chat has no chips and typing works as always", async ({ page }) => {
     await page.route("**/api/ai/chat-chips", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) }));
     const { db } = await mockSupabase(page, [OWNER, SITTER]);

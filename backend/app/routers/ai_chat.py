@@ -30,7 +30,15 @@ from app.services import authz, nebius
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 log = logging.getLogger("goldito.ai")
 
-NEUTRAL_STYLE = "Friendly, polite and plain. Short sentences. No slang."
+# The owner has no samples of their own, so they get a voice of their own: a pet parent talking to the person who will
+# look after their animals, not a host (the sitter's voice is their style card and their own replies).
+OWNER_STYLE = (
+    "A pet owner writing to their sitter: relaxed, direct and a little caring, like a text to someone you are trusting "
+    "with your pet. Talk about your own pets by name and what they need, thank the sitter for specifics, and ask one "
+    "practical thing when it helps (pick-up time, feeding, a photo update). Never use host words like \"my place\", "
+    "\"I can host\" or \"I'll take care of\"; you are the one asking, not the one hosting."
+)
+NEUTRAL_STYLE = OWNER_STYLE
 
 
 class ChatChipsRequest(BaseModel):
@@ -101,7 +109,7 @@ def _latest_stay(messages: list[dict]) -> dict | None:
     return None
 
 
-def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today: date) -> dict:
+def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today: date, *, with_sources: bool = True) -> dict:
     """The facts the database knows. With a stay: the inquiry's own gathering (availability, quote, pets, policy); without
     one only the sitter and their rates. Entry codes and addresses never get here (D31)."""
     thread = ctx["thread"]
@@ -120,7 +128,7 @@ def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today
             "pet_ids": [p["id"] for p in stay["pets"]],
         }
         try:
-            facts = _gather(db, inquiry, {"body": last_them}, user, tz, today, ctx["owner_name"], ctx["sitter_name"])
+            facts = _gather(db, inquiry, {"body": last_them}, user, tz, today, ctx["owner_name"], ctx["sitter_name"], with_sources=with_sources)
         except (authz.RpcError, HTTPException) as exc:
             log.warning("chat: could not gather the facts (%s)", exc)
     if facts is None:
@@ -169,18 +177,20 @@ def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
     return thread.get("ai_summary") or None
 
 
-def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date) -> tuple[dict, dict, dict | None]:
+def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *, with_sources: bool = True) -> tuple[dict, dict, dict | None]:
     """(the model input without the task, the facts, the other person's latest text message)."""
     messages = ctx["messages"]
     texts_them = [m for m in messages if m.get("kind") == "text" and m.get("sender_id") != user.id]
     last_them = texts_them[-1] if texts_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
-    facts = _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today)
+    facts = _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources)
     me = ctx["owner_name"] if ctx["role"] == "owner" else ctx["sitter_name"]
     them = ctx["sitter_name"] if ctx["role"] == "owner" else ctx["owner_name"]
     base = {
         "role": ctx["role"],
+        # An empty chat is an opening; once anyone has written, even an owner answers instead of introducing themselves.
+        "state": "reply" if any(m.get("kind") == "text" for m in messages) else "opening",
         "me": me,
         "them": them,
         **({"summary": summary} if summary else {}),
@@ -196,7 +206,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     ctx = _context(db, user, body.thread_id)
     tz = ZoneInfo(get_settings().app_timezone)
     today = _now().astimezone(tz).date()
-    base, facts, last_them = _prompt_input(db, user, ctx, tz, today)
+    base, facts, last_them = _prompt_input(db, user, ctx, tz, today, with_sources=False)
     started = any(m.get("kind") == "text" for m in ctx["messages"])
     for_id = last_them["id"] if last_them else None
     # A chat where I spoke last has nothing to answer: no chips (the app shows none), except my opener when it is empty.
@@ -257,7 +267,8 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
             log.warning("chat-draft: model failed (%s)", exc)
             break
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
-        problems = logic.chat_problems(text, facts, ctx["role"], sitter_first)
+        known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
+        problems = logic.chat_problems(text, facts, ctx["role"], sitter_first, known)
         if not problems:
             return ChatDraftResponse(text=text, source="model")
         log.info("chat-draft: attempt %s rejected (%s)", attempt + 1, "; ".join(problems))

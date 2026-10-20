@@ -22,7 +22,7 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatChip, fetchChatChips, fetchChatDraft } from "../../features/chat/chatAi";
+import { ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -66,7 +66,6 @@ export default function Chat() {
   const [requesting, setRequesting] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [drafting, setDrafting] = useState(false);
-  const askedFor = useRef<string | null>(null);
   const input = useRef<TextInput>(null);
 
   const load = useCallback(async () => {
@@ -104,21 +103,29 @@ export default function Chat() {
       .catch(() => setPhotos([]));
   }, [otherId]);
 
-  // Chips for what the other person just wrote (or openers in an empty chat): asked once per latest message.
-  const last = loaded?.messages.at(-1);
-  const key = loaded ? `${threadId}:${last?.id ?? "none"}` : null;
+  // Chips for what the other person just wrote (or openers in an empty chat). The slot is there from the start with a
+  // spinner, so nothing jumps when they arrive; the list may have asked ahead, then they are ready at once.
+  const all = loaded?.messages;
+  const lastText = all?.filter((m) => m.kind === "text").at(-1);
+  const waitingForMe = !!all && (lastText ? lastText.senderId !== profile?.id : loaded?.header.myRole === "owner");
+  const latestAt = all?.at(-1)?.at ?? "none";
+  const key = loaded && waitingForMe ? `${threadId}:${latestAt}` : null;
+  const [chipsReady, setChipsReady] = useState(false);
   useEffect(() => {
-    if (!key || askedFor.current === key) return;
-    askedFor.current = key;
     setChips([]);
+    setChipsReady(false);
+    if (!key) return;
     let current = true;
-    void fetchChatChips(threadId).then((r) => {
-      if (current && r) setChips(r.chips);
+    void chipsFor(threadId, latestAt).then((r) => {
+      if (!current) return;
+      setChips(r?.chips ?? []);
+      setChipsReady(true);
     });
     return () => {
       current = false;
     };
-  }, [key, threadId]);
+    // the chips belong to the latest message: a new one asks again
+  }, [key, threadId, latestAt]);
 
   /** A tapped chip becomes a draft in the box; nothing is sent until the person presses Send (D62). */
   const pickChip = async (chip: ChatChip) => {
@@ -260,9 +267,14 @@ export default function Chat() {
           <Button label="Request booking" onPress={() => setRequesting(true)} testID="chat-request-booking" />
         </View>
       ) : null}
-      {chips.length > 0 || drafting ? (
+      {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
         <View style={styles.chips} testID="chat-chips">
-          {drafting ? <ActivityIndicator color={theme.color.primary} accessibilityLabel="Writing a draft" /> : null}
+          {drafting || !chipsReady ? (
+            <View style={styles.chipsBusy} testID="chat-chips-loading">
+              <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
+              <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Writing replies…"}</Text>
+            </View>
+          ) : null}
           {chips.map((chip, i) => (
             <Pressable
               key={chip.id}
@@ -335,6 +347,8 @@ const makeStyles = (theme: Theme) =>
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
     chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
+    chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",

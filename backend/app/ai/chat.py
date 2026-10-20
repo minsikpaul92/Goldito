@@ -17,6 +17,9 @@ CHIP_MAX = 36
 DRAFT_MAX = 600
 
 _NUMBER = re.compile(r"\d")
+_CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
+_NAME_FIRST = re.compile(r"^\s*[A-Z][a-z]+:\s")
+_UNAVAILABLE = re.compile(r"\b(?:i(?:'m| am)|we(?:'re| are)|already|fully)\s+booked\b|\bfully booked\b|\bno room\b|\bunavailable\b", re.IGNORECASE)
 
 
 def _clip(text: str, n: int = 240) -> str:
@@ -91,7 +94,7 @@ def fixed_draft(label: str) -> str:
     return (text[:1].upper() + text[1:] + ".") if text else ""
 
 
-def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None) -> list[str]:
+def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None, known: str = "") -> list[str]:
     """What is wrong with a draft, in words the model can act on. Empty = it passes."""
     problems: list[str] = []
     availability = grounding.get("availability") or {}
@@ -109,8 +112,17 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
         if (month, int(match.group(2))) not in allowed_dates:
             problems.append(f"the date {match.group(0)} is not in the facts")
             break
+    seen = {(int(h), int(m or 0), ap.upper()) for h, m, ap in _CLOCK.findall(known)}
+    for h, m, ap in _CLOCK.findall(text):
+        if (int(h), int(m or 0), ap.upper()) not in seen:  # a time nobody mentioned is a guess
+            problems.append(f"the time {h}{':' + m if m else ''} {ap.upper()} is not in the chat or the facts")
+            break
+    if _NAME_FIRST.search(text):
+        problems.append("it starts with a name and a colon, write the message itself")
     if role == "sitter" and not can_host and logic._SAYS_YES.search(text):
         problems.append("it says I can host, but these dates are not available")
+    if role == "sitter" and can_host and not availability.get("unchecked") and _UNAVAILABLE.search(text):
+        problems.append("it says I am booked or unavailable, but the facts say I can host these dates")
     if logic._PLACEHOLDER.search(text):
         problems.append("it still contains a placeholder")
     if logic.FORBIDDEN_WORDS.search(text):
