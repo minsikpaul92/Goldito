@@ -1221,9 +1221,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the diary | — | 52 |
-| Button | ✏️ Write a page | `diary-write` | 56 |
-| EmptyState | No diary yet | — | 72 |
+| EmptyState | Couldn't load the diary | — | 58 |
+| Button | ✏️ Write a page | `diary-write` | 62 |
+| EmptyState | No diary yet | — | 78 |
 
 ### OwnerEntrySheet — [features/diary/OwnerEntrySheet.tsx](../../frontend/features/diary/OwnerEntrySheet.tsx)
 
