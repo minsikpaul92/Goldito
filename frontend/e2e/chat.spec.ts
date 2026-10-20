@@ -396,12 +396,13 @@ test.describe("chat hub", () => {
     expect(asked).toHaveLength(2);
   });
 
-  test("a long drafted reply is fully visible in a box that grows; Enter sends and Shift+Enter is a new line", async ({ page }) => {
-    const long = "Hi Robert, thanks for asking! Max is welcome with me. He would have his own bed, two walks a day and a photo update every evening, and we can set up a Meet & Greet first if that helps you feel comfortable.";
+  test("the message box grows with the text up to about six lines, then it stays that tall and scrolls; Enter sends and Shift+Enter is a new line", async ({ page }) => {
+    const medium = "Hi Robert, thanks for asking! Max is welcome with me and he would have his own bed.";
+    const long = Array.from({ length: 6 }, () => "Max would have his own bed, two walks a day and a photo update every evening.").join(" ");
     await page.route("**/api/ai/chat-chips", (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: null, source: "model" }) }),
     );
-    await page.route("**/api/ai/chat-draft", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: long, source: "model" }) }));
+    await page.route("**/api/ai/chat-draft", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: medium, source: "model" }) }));
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedThread(db);
     const screen = await openBookings(page, SITTER, "sitter");
@@ -409,13 +410,22 @@ test.describe("chat hub", () => {
     await screen.getByTestId("chat-row-Robert").click();
     const input = screen.getByTestId("chat-input");
     const empty = (await box(input)).height;
+    const metrics = () => input.evaluate((el) => { const t = el as HTMLTextAreaElement; return { scroll: t.scrollHeight, client: t.clientHeight, bar: t.offsetWidth - t.clientWidth }; });
 
+    // A drafted reply that fits is fully visible, no scrolling.
     await screen.getByTestId("chat-chip-1").click();
-    await expect(input).toHaveValue(long);
+    await expect(input).toHaveValue(medium);
     await expect.poll(async () => (await box(input)).height).toBeGreaterThan(empty + 20);
-    expect((await box(input)).height).toBeLessThanOrEqual(320); // about a third of the phone, then it scrolls
-    // every character is inside the box: nothing is scrolled out of sight
-    expect(await input.evaluate((el) => (el as HTMLTextAreaElement).scrollHeight <= (el as HTMLTextAreaElement).clientHeight + 1)).toBe(true);
+    expect((await box(input)).height).toBeLessThanOrEqual(150);
+    expect((await metrics()).scroll).toBeLessThanOrEqual((await metrics()).client + 1);
+
+    // Past about six lines the box stops growing and shows a scrollbar.
+    await input.fill(long);
+    await expect.poll(async () => (await box(input)).height).toBeGreaterThanOrEqual(140);
+    expect((await box(input)).height).toBeLessThanOrEqual(150);
+    const tall = await metrics();
+    expect(tall.scroll).toBeGreaterThan(tall.client + 20);
+    expect(tall.bar).toBeGreaterThan(0);
 
     await input.fill("First line");
     await input.press("Shift+Enter");

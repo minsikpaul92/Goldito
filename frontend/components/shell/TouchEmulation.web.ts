@@ -51,6 +51,9 @@ const CSS = `
 html, body { overscroll-behavior: contain; }
 * { scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+textarea { scrollbar-width: thin; scrollbar-color: ${tokens.color.border} transparent; }
+textarea::-webkit-scrollbar { display: block; width: 6px; }
+textarea::-webkit-scrollbar-thumb { background: ${tokens.color.border}; border-radius: 3px; }
 html, body, body * {
   -webkit-user-select: none;
   user-select: none;

@@ -24,15 +24,15 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentC
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 196 |
-| EmptyState | Chat not found | — | 204 |
-| Pressable | — | `chat-stage` | 370 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 420 |
-| Button | Send quote | `chat-send-quote` | 427 |
-| TextButton | Send quote | `chat-send-quote` | 430 |
-| Pressable | — | `chat-action-chip` | 448 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 459 |
-| Pressable | Send | `chat-send` | 497 |
+| EmptyState | Couldn't load this chat | — | 195 |
+| EmptyState | Chat not found | — | 203 |
+| Pressable | — | `chat-stage` | 369 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 419 |
+| Button | Send quote | `chat-send-quote` | 426 |
+| TextButton | Send quote | `chat-send-quote` | 429 |
+| Pressable | — | `chat-action-chip` | 447 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 458 |
+| Pressable | Send | `chat-send` | 496 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 

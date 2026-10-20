@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
@@ -54,10 +54,10 @@ type StayCard = Extract<ChatCard, { type: "stay" }>;
 type RequestCard = Extract<ChatCard, { type: "request" }>;
 type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 
-// The message box grows with its text (a drafted reply is read in full) up to about a third of the screen, then scrolls.
+// The message box grows with its text up to about six lines, then it stays that tall and scrolls.
 const INPUT_MIN = 44;
+const INPUT_MAX = 150;
 const INPUT_PAD = 11;
-const inputMax = (screenHeight: number) => Math.max(150, Math.round(screenHeight * 0.35));
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -96,17 +96,16 @@ export default function Chat() {
   const [drafting, setDrafting] = useState(false);
   const input = useRef<TextInput>(null);
   const [inputHeight, setInputHeight] = useState(INPUT_MIN);
-  const { height: screenHeight } = useWindowDimensions();
 
-  // On the web the box is a textarea: it is as tall as its text (measured on the element), up to a third of the screen, then it scrolls.
+  // On the web the box is a textarea: it is as tall as its text (measured on the element), up to INPUT_MAX, then it scrolls.
   useEffect(() => {
     if (Platform.OS !== "web") return;
     const el = input.current as unknown as HTMLTextAreaElement | null;
     if (!el?.style) return;
     el.style.height = "auto";
     const borders = el.offsetHeight - el.clientHeight; // scrollHeight leaves the border out
-    el.style.height = `${Math.min(inputMax(screenHeight), Math.max(INPUT_MIN, el.scrollHeight + borders))}px`;
-  }, [text, screenHeight]);
+    el.style.height = `${Math.min(INPUT_MAX, Math.max(INPUT_MIN, el.scrollHeight + borders))}px`;
+  }, [text]);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -481,7 +480,7 @@ export default function Chat() {
           multiline
           numberOfLines={1}
           onContentSizeChange={(e) => {
-            if (Platform.OS !== "web") setInputHeight(Math.min(inputMax(screenHeight), Math.max(INPUT_MIN, Math.ceil(e.nativeEvent.contentSize.height) + INPUT_PAD * 2)));
+            if (Platform.OS !== "web") setInputHeight(Math.min(INPUT_MAX, Math.max(INPUT_MIN, Math.ceil(e.nativeEvent.contentSize.height) + INPUT_PAD * 2)));
           }}
           onKeyPress={(e) => {
             // Enter sends on the web, Shift+Enter is a new line; on a phone the keyboard's Enter is a new line.
