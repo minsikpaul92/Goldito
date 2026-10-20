@@ -652,6 +652,9 @@ test.describe("chat hub", () => {
     // The sitter sends the final quote and adds a fee.
     await expect(screen.getByTestId("chat-payment-card")).toContainText("Waiting for Robert to pay");
     await screen.getByTestId("chat-next-final_quote").click();
+    // The final quote prices the booking's own service; there is no service to pick.
+    await expect(screen.getByTestId("send-quote-fixed-service")).toHaveText("Boarding");
+    await expect(screen.getByTestId("send-quote-service")).toHaveCount(0);
     await screen.getByTestId("send-quote-submit").click();
     await expect(screen.getByTestId("chat-quote-card")).toContainText("$268.13");
     await screen.getByTestId("quote-add-fee").click();

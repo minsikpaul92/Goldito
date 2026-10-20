@@ -25,7 +25,8 @@ type SendProps = {
   onClose: () => void;
   threadId: string;
   sitterId: string;
-  stay: { dropOffAt: string; pickUpAt: string; pets: ChatPet[] } | null;
+  /** `service` set: the booking's own service (the final quote), so the price matches the booking. */
+  stay: { dropOffAt: string; pickUpAt: string; pets: ChatPet[]; service?: string } | null;
   onSent: () => void;
 };
 
@@ -49,11 +50,12 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, onS
   }, [visible, sitterId]);
 
   if (!stay) return null;
+  const fixed = stay.service;
 
   const send = async () => {
     setSending(true);
     try {
-      await sendChatQuote(threadId, { service, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
+      await sendChatQuote(threadId, { service: fixed ?? service, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
       onClose();
       onSent();
     } catch (e) {
@@ -71,7 +73,9 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, onS
       testID="send-quote-sheet"
       footer={<Button label="Send quote" disabled={sending} onPress={() => void send()} testID="send-quote-submit" />}
     >
-      {services.length > 1 ? (
+      {fixed ? (
+        <Text style={styles.line} testID="send-quote-fixed-service">{SERVICE[fixed] ?? fixed}</Text>
+      ) : services.length > 1 ? (
         <ChoiceChips
           options={services.map((s) => ({ value: s, label: SERVICE[s] ?? s }))}
           value={[service]}

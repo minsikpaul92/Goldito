@@ -16,6 +16,7 @@ const MESSAGES: Record<string, string> = {
   rates_not_set: "This sitter hasn't set their prices yet, so there is nothing to pay. Ask them to add prices, then try again.",
   consents_missing: "Sign every consent before paying.",
   already_paid: "This booking is already paid.",
+  quote_pending: "Answer the sitter's new quote in the chat first.",
   handoff_missing: "Agree on drop-off and pick-up times first.",
   access_locked: "Entry info isn't available yet, or the stay has ended.",
   forbidden: "You can't view this entry info.",
