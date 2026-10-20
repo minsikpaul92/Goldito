@@ -245,6 +245,7 @@ test.describe("chat hub", () => {
   test("Request booking is a sheet over the chat: no service or pet choice, one line for the day and time, one send posts a card the sitter reads", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
     db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
     db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-28T21:00:00Z", pets: [{ id: MAX, name: "Max" }, { id: MOCHI, name: "Mochi" }] }, created_at: "2026-10-10T09:59:00.000Z" });
     const screen = await openBookings(page, OWNER, "owner");
@@ -260,7 +261,7 @@ test.describe("chat hub", () => {
     const day = await box(screen.getByTestId("request-drop-day"));
     const time = await box(screen.getByTestId("request-drop-time"));
     expect(Math.abs(day.y - time.y)).toBeLessThan(4);
-    await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place");
+    await expect(screen.getByTestId("request-drop-place")).toHaveText("At Chloe's place, Toronto M4W"); // the rough place, never the street
 
     // Change one place to a checked address, add a note, send everything at once.
     await page.route("**/api/geo/suggest", (route) =>

@@ -122,3 +122,7 @@ Policies and grants: [`supabase/migrations/002_rls_policies.sql`](../supabase/mi
 ## Planned layout
 
 See [architecture §2](../docs/plan/phases/architecture.ko.md#2-리포-구조-최종-형태): `app/main.py`, `routers/`, `services/nebius.py`, `ai/prompts/`, etc.
+
+## Data sources
+
+- `app/data/ca_postal_areas.json`: Canadian postal areas (first three characters of a postal code, with a city and a center point), from [GeoNames](https://www.geonames.org/postalcodes/) `CA.zip`, CC BY 4.0. Used by `POST /api/geo/suggest` when OpenStreetMap does not know a postal code.

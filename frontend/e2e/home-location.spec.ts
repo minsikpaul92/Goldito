@@ -158,6 +158,20 @@ test.describe("home map pin", () => {
     expect([row?.home_lat, row?.home_lng]).toEqual([43.6536, -79.384]);
   });
 
+  test("a sitter's checked address also gives the rough place owners see (city and postal area)", async ({ page }) => {
+    await mockSuggest(page, [{ label: "2 Bloor St W, Toronto, ON M4W 3E2", lat: 43.6709, lng: -79.3866 }]);
+    const { db } = await mockSupabase(page, [SITTER]);
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null, services: ["boarding"] });
+    await openProfile(page, SITTER, "sitter");
+    const screen = app(page);
+    await screen.getByTestId("profile-home_address").fill("2 Bloor St W");
+    await screen.getByTestId("profile-home_address-check-address").click();
+    await screen.getByTestId("profile-home_address-suggestion-1").click();
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
+    expect(db.sitter_profiles.find((r) => r.id === SITTER.id)?.service_area).toBe("Toronto M4W");
+  });
+
   test("the address is required and has to be checked: empty, unchecked and edited-after-check are all refused", async ({ page }) => {
     await mockSuggest(page, [{ label: "100 Queen St W, Toronto, ON M5H 2N2", lat: 43.6536, lng: -79.384 }]);
     const { db } = await mockSupabase(page, [OWNER]);

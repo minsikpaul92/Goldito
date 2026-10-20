@@ -27,7 +27,7 @@ import {
 } from "../features/profile/profileApi";
 import { isDemoAccount, isDemoToolsEnabled } from "../lib/demoReset";
 import { LatLng, LocationError, getCurrentPosition } from "../lib/location";
-import { AddressSuggestion, PinPlace, reverseGeocode } from "../lib/transit";
+import { AddressSuggestion, PinPlace, areaFromAddress, reverseGeocode } from "../lib/transit";
 import { homeFor, useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -252,7 +252,8 @@ export default function ProfileScreen() {
             role: "sitter",
             fields: {
               bio: value("bio"),
-              service_area: value("service_area"),
+              // Owners see only a rough place: the one typed, else the city and postal area of the checked address.
+              service_area: value("service_area") ?? areaFromAddress(address),
               experience_years: experience ? Number(experience) : null,
               home_notes: value("home_notes"),
               home_address: address,

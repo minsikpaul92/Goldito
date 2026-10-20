@@ -771,12 +771,13 @@
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| ADDR-1 | 주소를 쓰는 모든 칸(Profile의 Home address, 예약 요청의 Elsewhere)에서 주소나 우편번호를 쓰고 **Check address** | 실제 주소 후보가 최대 5개 나옴(예: "127 Broadway Ave, Toronto, ON M4P 1V9"). 하나를 누르면 칸이 그 주소로 바뀌고 "✓ Found on the map". 입력할 때마다 조회하지 않고 버튼을 누를 때 한 번만(OpenStreetMap 정책) | 🤖 `home-location.spec.ts` (+ pytest `test_geo`) | 사람 확인 대기 |
+| ADDR-1 | 주소를 쓰는 모든 칸(Profile의 Home address, 예약 요청의 Elsewhere)에서 주소나 우편번호를 쓰고 **Check address** | 실제 주소 후보가 최대 5개 나옴(예: "127 Broadway Ave, Toronto, ON M4P 1V9"). 하나를 누르면 칸이 그 주소로 바뀌고 "✓ Found on the map". 입력할 때마다 조회하지 않고 버튼을 누를 때 한 번만(OpenStreetMap 정책) | 🤖 `home-location.spec.ts` (+ pytest `test_geo`) | 사람 확인 대기 | 우편번호는 어떤 철자든(`m4p1v4`) 한 형태로 찾고, 지도에 그 코드가 없으면 **우편 앞 3자리 지역**("M4P, Toronto, ON")으로 대신함(번들한 GeoNames 지역 표, CC BY 4.0)
 | ADDR-2 | 주소를 비우고 / 쓰기만 하고 / 확인한 뒤 고쳐서 **Save** | 주소는 필수: "Add your home address." / "Check your address so it's on the map." 로 막힘. 못 찾은 주소는 "We couldn't find that address…", 조회가 꺼져 있으면 안내 문구, 저장된 주소와 핀은 그대로 | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-3 | **Use my current location** | 핀이 찍히고 Home address가 "거리명, 도시, 우편 앞 3자리"로 자동으로 채워짐(집 번호는 직접 덧붙이면 다시 Check address) | 🤖 `home-location.spec.ts` | 사람 확인 대기 |
 | ADDR-4 | Profile → **Preferred meeting spots** | 칸은 하나로 시작, **+ Add a spot**으로 늘리고 최대 3개. 저장된 개수만큼 열림 | 🤖 `profile.spec.ts` | 사람 확인 대기 |
 | ADDR-5 | 즐겨찾기가 없는 오너의 Bookings 탭 | 즐겨찾기가 하나도 없으면 처음부터 주변 시터("Sitters nearby")가 보임. 즐겨찾기가 있는데 날짜에 안 맞으면 "No favorites free for these dates.", 🔍 뒤에 반경 안에 없으면 "No sitters within N km for these dates." | 🤖 `sitter-search.spec.ts` | 사람 확인 대기 |
 | ADDR-6 | 데모 계정(`@goldito.test`) 전부 | 계정마다 **자기 주소와 핀**이 있음(토론토 공공 건물 주소, 실제 사람 집 아님): 오너 Robert · Peter · Alex · David, 시터 Chloe · Paul · Allen · Daniel. 서로 0.6 ~ 14 km라 반경 슬라이더로 결과가 달라짐. **Reset demo**나 `seed_demo.py`를 다시 돌려도 이 주소가 유지됨 | 🤖 pytest `test_seed_demo` · `test_reset_demo` | 사람 확인 대기 |
+| ADDR-7 | 시터가 Profile에서 주소를 확인하고 저장 | 직접 쓴 서비스 지역이 없으면 **도시 + 우편 앞 3자리**("Toronto M4W")가 서비스 지역이 됨. 오너의 예약 요청 시트에는 "At Allen's place, Toronto M4W"처럼 대략적인 위치만 나오고 정확한 주소는 결제 뒤에만 공개 | 🤖 `home-location` · `chat` | 사람 확인 대기 |
 
 ### 3.32 채팅 허브 (CHAT) — 3D.4 · #141 · *사전: 호스팅 DB에 `014j`(적용은 요청할 때만), 오너와 시터 계정 둘(예: Peter와 Chloe), 두 브라우저나 창*
 
