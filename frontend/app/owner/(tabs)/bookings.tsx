@@ -7,16 +7,12 @@ import { ChatList } from "../../../components/ChatList";
 import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
 import { Avatar } from "../../../components/ui/Avatar";
-import { Card } from "../../../components/ui/Card";
 import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
-import { OwnerInquiryCard, listOwnerInquiries } from "../../../features/inquiries/inquiryApi";
 import { useMyChats } from "../../../features/chat/useMyChats";
 import { ProfilePhoto, loadCoverPhotos, loadProfilePhotos, photoThumb } from "../../../features/profile/profilePhotosApi";
-import { formatDay, isoToZoned } from "../../../features/schedule/dates";
-import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import { useSitterSearch } from "../../../features/sitters/useSitterSearch";
 import { NearbySitter, OwnerBooking, listOwnerBookings } from "../../../lib/bookings";
 import { useSession } from "../../../providers/SessionProvider";
@@ -29,14 +25,13 @@ type State =
   | {
       status: "ready";
       bookings: OwnerBooking[];
-      inquiries: OwnerInquiryCard[];
     }
   | { status: "error"; message: string };
 
 /**
  * Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those
  * dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status
- * badges (3B.3) and questions.
+ * badges (3B.3).
  */
 export default function OwnerBookings() {
   const styles = useThemedStyles(makeStyles);
@@ -51,11 +46,7 @@ export default function OwnerBookings() {
   const load = useCallback(async () => {
     if (!ownerId) return;
     try {
-      const [bookings, inquiries] = await Promise.all([
-        listOwnerBookings(ownerId),
-        listOwnerInquiries().catch(() => [] as OwnerInquiryCard[]),
-      ]);
-      setState({ status: "ready", bookings, inquiries });
+      setState({ status: "ready", bookings: await listOwnerBookings(ownerId) });
     } catch (error) {
       setState({ status: "error", message: (error as Error).message });
     }
@@ -195,7 +186,7 @@ export default function OwnerBookings() {
             <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
           </View>
         ) : null}
-        {state.bookings.length === 0 && state.inquiries.length === 0 ? <Text style={styles.hint}>No bookings yet</Text> : null}
+        {state.bookings.length === 0 ? <Text style={styles.hint}>No bookings yet</Text> : null}
         {state.bookings.length > 0 ? (
           <View style={styles.section}>
             <Text accessibilityRole="header" style={styles.heading}>
@@ -208,35 +199,6 @@ export default function OwnerBookings() {
                 viewer="owner"
                 onPress={() => router.push(`/owner/bookings/${booking.id}`)}
               />
-            ))}
-          </View>
-        ) : null}
-        {state.inquiries.length > 0 ? (
-          <View style={styles.section} testID="owner-questions">
-            <Text accessibilityRole="header" style={styles.heading}>
-              Your questions
-            </Text>
-            {state.inquiries.map((inq) => (
-              <Pressable
-                key={inq.id}
-                accessibilityRole="button"
-                onPress={() => router.push(`/owner/inquiries/${inq.id}`)}
-                testID={`question-card-${inq.id}`}
-              >
-                <Card style={styles.question}>
-                  <Text style={styles.questionTitle}>{`${inq.sitterName} · ${inq.petNames.join(", ")}`}</Text>
-                  <Text style={styles.hint}>
-                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} to ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
-                  </Text>
-                  <Text style={inq.state === "replied" && inq.status === "open" ? styles.ready : styles.hint}>
-                    {inq.status === "booked"
-                      ? "Booking requested"
-                      : inq.state === "replied"
-                        ? "💬 Reply ready"
-                        : `Waiting for ${inq.sitterName}`}
-                  </Text>
-                </Card>
-              </Pressable>
             ))}
           </View>
         ) : null}
@@ -266,9 +228,6 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
-    question: { gap: theme.spacing.xs },
-    questionTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    ready: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     left: { alignSelf: "flex-start", paddingHorizontal: 0 },
     rows: { gap: theme.spacing.xs },
     row: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingVertical: theme.spacing.xs },

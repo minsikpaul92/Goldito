@@ -40,7 +40,6 @@ export default function SitterLayout() {
         <Stack.Screen name="tasks" options={{ title: "Today's tasks" }} />
         <Stack.Screen name="checkin/[petId]" options={{ title: "Check-in" }} />
         <Stack.Screen name="care-request/[requestId]" options={{ title: "Care request" }} />
-        <Stack.Screen name="inquiries/[inquiryId]" options={{ title: "Question" }} />
         <Stack.Screen name="history" options={{ title: "My history" }} />
         <Stack.Screen name="snap/treat" options={{ title: "Treat check" }} />
         <Stack.Screen name="snap/mood" options={{ title: "Mood" }} />

@@ -147,11 +147,11 @@ export function hrefForNotification(
       return role === "owner" && notice.petId ? `/owner/pets/${notice.petId}` : null;
     case "care_counter_accepted":
       return role === "sitter" ? "/sitter/tasks" : null;
+    // Old question notices: the conversation lives in the chat now, so they open the Bookings tab.
     case "inquiry_replied":
-      return role === "owner" && notice.refId ? `/owner/inquiries/${notice.refId}` : null;
     case "inquiry_received":
     case "inquiry_needs_you":
-      return role === "sitter" && notice.refId ? `/sitter/inquiries/${notice.refId}` : null;
+      return role === "owner" ? "/owner/bookings" : role === "sitter" ? "/sitter/bookings" : null;
     case "report_sent":
       if (role !== "owner") return null;
       return notice.refId ? `/owner/diary/${notice.refId}` : "/owner/diary";

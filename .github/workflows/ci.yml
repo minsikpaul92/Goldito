@@ -16,6 +16,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      app: ${{ steps.filter.outputs.app }}
       supabase: ${{ steps.filter.outputs.supabase }}
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +29,27 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docs/CHANGELOG.md'
+            # What a browser can see. The Playwright run (export, browsers, specs) needs it; a change that only touches
+            # frontend docs, scripts or Vercel config does not. Keep this list in step with the folders in frontend/:
+            # main always runs everything, so a miss shows up there.
+            app:
+              - 'frontend/app/**'
+              - 'frontend/components/**'
+              - 'frontend/features/**'
+              - 'frontend/lib/**'
+              - 'frontend/providers/**'
+              - 'frontend/theme/**'
+              - 'frontend/types/**'
+              - 'frontend/assets/**'
+              - 'frontend/public/**'
+              - 'frontend/e2e/**'
+              - 'frontend/package.json'
+              - 'frontend/package-lock.json'
+              - 'frontend/app.json'
+              - 'frontend/babel.config.js'
+              - 'frontend/tsconfig.json'
+              - 'frontend/playwright.config.ts'
+              - '.github/workflows/ci.yml'
             supabase:
               - 'supabase/**'
 
@@ -76,6 +98,9 @@ jobs:
       matrix:
         shard: [1, 2]
     env:
+      # The cheap checks (What's New, screen map, typecheck) run for every frontend change; the export and Playwright
+      # only when the app itself changed, and always on main.
+      RUN_E2E: ${{ (github.event_name == 'push' || needs.changes.outputs.app == 'true') && 'true' || 'false' }}
       # PRs check the frame in Chromium only (the app flows and the phone run in Chromium anyway); main also runs
       # Firefox and WebKit, so a browser-specific break shows up there.
       PW_BROWSERS: ${{ github.event_name == 'push' && 'chromium firefox webkit' || 'chromium' }}
@@ -98,6 +123,7 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Expo web export
+        if: env.RUN_E2E == 'true'
         run: npx expo export -p web
         env:
           # Test-only build for the Playwright checks below (never deployed):
@@ -112,6 +138,7 @@ jobs:
           # Test-only: the Profile → Demo tools sheet (testing reset) is built in so its spec can open it.
           EXPO_PUBLIC_DEMO_TOOLS: "1"
       - name: Cache Playwright browsers
+        if: env.RUN_E2E == 'true'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -119,20 +146,21 @@ jobs:
           key: playwright-${{ runner.os }}-${{ env.PW_BROWSERS }}-${{ hashFiles('frontend/package-lock.json') }}
       - name: Install Playwright browsers
         # A stuck browser/apt download once hung this step; fail fast and re-run instead.
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
         timeout-minutes: 8
         run: npx playwright install --with-deps ${{ env.PW_BROWSERS }}
       - name: Install Playwright system libraries (browsers come from the cache)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
         timeout-minutes: 8
         run: npx playwright install-deps ${{ env.PW_BROWSERS }}
       - name: Playwright (desktop phone frame + mouse)
+        if: env.RUN_E2E == 'true'
         env:
           # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
           PW_FRAME_VIEWPORTS: ${{ github.event_name == 'push' && 'all' || '1366' }}
         run: npx playwright test --shard=${{ matrix.shard }}/2
       - name: Upload Playwright traces
-        if: failure()
+        if: failure() && env.RUN_E2E == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results-${{ matrix.shard }}
