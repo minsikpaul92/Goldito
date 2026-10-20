@@ -1,6 +1,7 @@
 import { ApiError, apiPost } from "../../lib/api";
 import { getSupabase } from "../../lib/supabase";
 import { CHECKIN_GROUPS } from "../care/checkinOptions";
+import type { Species } from "../../types/db";
 import { addDays, appToday, zonedToIso } from "../schedule/dates";
 
 /** One chip from `POST /api/ai/report-chips`. A record chip carries the `check` it turns off. */
@@ -129,6 +130,7 @@ export type SentReport = {
   authorId: string;
   petId: string;
   petName: string;
+  species: Species;
   sitterName: string;
   day: string;
   body: string;
@@ -145,12 +147,12 @@ type ReportRow = {
   body: string;
   sent_at: string | null;
   source_snapshot: { tasks?: { title: string; status: string }[] } | null;
-  pets: Embed<{ name: string }>;
+  pets: Embed<{ name: string; species: Species }>;
   sitter: Embed<{ display_name: string }>;
 };
 const first = <T,>(v: Embed<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 const COLUMNS =
-  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name), sitter:profiles!daily_reports_sitter_id_fkey(display_name)";
+  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name, species), sitter:profiles!daily_reports_sitter_id_fkey(display_name)";
 
 function toSent(row: ReportRow): SentReport {
   return {
@@ -158,6 +160,7 @@ function toSent(row: ReportRow): SentReport {
     authorId: row.sitter_id,
     petId: row.pet_id,
     petName: first(row.pets)?.name ?? "Your pet",
+    species: first(row.pets)?.species ?? "dog",
     sitterName: first(row.sitter)?.display_name ?? "Your sitter",
     day: row.report_date,
     body: row.body,
@@ -220,6 +223,24 @@ export async function listReportPhotos(petId: string, day: string, includePrivat
   for (const row of (data ?? []) as unknown as { id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video" }> }[]) {
     const media = first(row.media);
     if (media) out.push({ id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type });
+  }
+  return out;
+}
+
+/** The newest photo of each pet I can see, for the diary covers (RLS: an owner also sees their private ones). */
+export async function listPetCoverPhotos(petIds: string[]): Promise<Record<string, ReportPhoto>> {
+  if (petIds.length === 0) return {};
+  const { data, error } = await getSupabase()
+    .from("feed_posts")
+    .select("id, pet_id, media(cloudinary_public_id, resource_type)")
+    .in("pet_id", petIds)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return {};
+  const out: Record<string, ReportPhoto> = {};
+  for (const row of (data ?? []) as unknown as { id: string; pet_id: string; media: Embed<{ cloudinary_public_id: string; resource_type: "image" | "video" }> }[]) {
+    const media = first(row.media);
+    if (media && !out[row.pet_id]) out[row.pet_id] = { id: row.id, publicId: media.cloudinary_public_id, resourceType: media.resource_type };
   }
   return out;
 }

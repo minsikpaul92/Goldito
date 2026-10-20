@@ -1214,8 +1214,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| SegmentedControl | — | ``${testID}-pet`` | 176 |
-| Pressable | `hint` | `testID` | 246 |
+| TextButton | ‹ Diaries | ``${testID}-covers`` | 210 |
+| Pressable | `hint` | `testID` | 273 |
+
+### DiaryCover — [features/diary/DiaryCover.tsx](../../frontend/features/diary/DiaryCover.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``Open ${petName}'s diary`` | `testID` | 32 |
 
 ### OwnerDiaryBook — [features/diary/OwnerDiaryBook.tsx](../../frontend/features/diary/OwnerDiaryBook.tsx)
 
@@ -1251,14 +1257,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 310 |
-| TextButton | Make a sticker | `decor-make` | 330 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 335 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 369 |
-| TextButton | Cancel | `decor-cancel` | 370 |
-| TextButton | ✨ Decorate | `decor-start` | 381 |
-| TextButton | ↗ Share | `decor-share` | 382 |
-| Pressable | `hint` | `testID` | 403 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 312 |
+| TextButton | Make a sticker | `decor-make` | 332 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 337 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 371 |
+| TextButton | Cancel | `decor-cancel` | 372 |
+| TextButton | ✨ Decorate | `decor-start` | 383 |
+| TextButton | ↗ Share | `decor-share` | 384 |
+| Pressable | `hint` | `testID` | 405 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1342,4 +1348,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-388 actions · 387 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+389 actions · 388 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

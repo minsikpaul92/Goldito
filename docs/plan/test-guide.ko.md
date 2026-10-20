@@ -662,12 +662,12 @@
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| DBK-1 | 견주 → **Diary** 탭 | 보낸 알림장이 **한 권의 책**: 맨 위 **All · Max · Mochi**(쪽이 있는 펫만), 그 아래 **‹ · "Max · Oct 7" · Page 3 of 3 · ›**, 가장 **최근 장이 펼쳐져** 있음. 초안은 안 보임. 쪽 아래 "From {시터}"와 그날 할 일(✓ / ⚠️ missed) | 🤖 `diary-book.spec.ts` · `report.spec.ts` | 사람 확인 대기 |
+| DBK-1 | 견주 → **Diary** 탭 → 펫 **표지**(Max) 누르기 | 보낸 알림장이 펫마다 **한 권의 책**: 맨 위 **‹ Diaries**, 그 아래 **‹ · "Max · Oct 7" · Page 2 of 2 · ›**, 그 펫의 가장 **최근 장이 펼쳐져** 있음. 초안은 안 보임. 쪽 아래 "From {시터}"와 그날 할 일(✓ / ⚠️ missed) | 🤖 `diary-book.spec.ts` · `report.spec.ts` | 사람 확인 대기 |
 | DBK-2 | **‹** / **›** 누르기 | 오래된 → 최신 순서로 한 장씩(여러 날 · 여러 펫이 날짜순으로 섞임), 첫 장에서 ‹ · 마지막 장에서 ›는 꺼짐. 넘길 때 종이가 왼쪽 모서리(책등)를 축으로 넘어가는 모션 | 🤖 `diary-book.spec.ts` · 모션은 👤 | 사람 확인 대기 |
-| DBK-3 | 펫 이름(**Max**) 누르기 → 다시 **All** | 그 펫의 쪽만, 그 펫의 최신 장부터. All로 돌아오면 전체의 최신 장 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-3 | (표지) **‹ Diaries** → 다른 펫(**Mochi**) 표지 | 그 펫의 쪽만, 그 펫의 최신 장부터. 다른 펫의 쪽은 이 책에 없음 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-4 | 손가락(폰) / 마우스로 쪽을 **왼쪽으로 끌기**, **오른쪽으로 끌기**, 조금만 끌다 놓기 | 왼쪽 → 다음 날, 오른쪽 → 전날: 끄는 만큼 종이가 들리고 놓으면 넘어감(폭의 30% 넘게, 또는 빠르게 튕기기). 조금만 끌면 제자리로. 위아래로는 화면이 그대로 스크롤. ✨ Decorate 중에는 책이 안 넘어감(스티커 끌기와 안 섞임) | 🤖 `diary-book.spec.ts`(마우스 끌기) · 폰 손가락 · Safari는 👤 | 사람 확인 대기 |
 | DBK-5 | 알림 "…sent Max's daily report" 누르기(`/owner/diary/{id}`) | 책이 **그 장으로** 열림, 앞뒤로 넘길 수 있음 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
-| DBK-6 | 시터 → **Diary** → **Diary book** | 지금까지 보낸 쪽 전부(돌봤던 펫별 이름 버튼 + All), 최신 장부터, 초안 없음. 지금 돌보는 펫이 없으면 Diary를 열면 바로 책 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
+| DBK-6 | 시터 → **Diary** → **Diary book** | 지금까지 보낸 쪽 전부(돌봤던 펫마다 표지, 누르면 그 펫의 책), 최신 장부터, 초안 없음. 지금 돌보는 펫이 없으면 Diary를 열면 바로 표지들 | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-7 | (DB.4) 견주 → **Feed** (알림장을 보낸 날의 펫) | 사진 사이에 **📔 다이어리 칸**이 보낸 시각 순서대로(최신이 위): 그날 **첫 공유 사진**이 썸네일, 사진이 없던 날은 📔, 아래 "Diary · Oct 5". 초안은 안 보임. 칸을 누르면 다이어리 책이 그 장으로 열림. 사진을 더 불러오기 전(Load more)에는 화면에 있는 가장 오래된 사진보다 오래된 장은 기다렸다가 같이 나옴 | 🤖 `diary-book.spec.ts`(순서 · 썸네일 `data-public-id` · 열기) · 실제 썸네일 이미지는 👤 | 사람 확인 대기 |
 | DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
@@ -675,6 +675,8 @@
 | DBK-11 | 견주 → **Diary** → **✏️ Write a page** (펫이 둘 이상이면 위에서 펫 고르기) | 시트 "New page": 그림일기 종이 위에 바로 쓰기("Dear diary, today…"), 글이 비면 Save page는 꺼짐. **+ Photo**로 사진 한 장(선택). Save page → "Page saved", 책이 새 장("Your page")으로 열림. 사진은 **Feed에 비공개**로도 남고 종이의 그림 칸에 보임. 알림 없음, 시터는 못 봄. ✨ Decorate로 스티커도 붙임. 일기가 하나도 없어도 버튼이 있음 | 🤖 `diary-owner-entry.spec.ts` | 사람 확인 대기 |
 | DBK-12 | (#186) 돌보는 펫이 있는 시터 → Diary → 직접 쓰기 → Send / 스티커 | 시터는 돌보는 펫의 오늘 쪽을 직접 쓰고 보낼 수 있음(AI 칩 · 사진 제안도 그대로 동작). Snap에서 만든 스티커는 오너 · 시터 둘 다의 ✨ Decorate 서랍에 뜨고 쪽에 붙음(오너가 새로 쓴 쪽 포함). 코드 점검에서 막는 곳은 못 찾음. 돌봄 시간이 끝나고 2시간이 지나면 DB가 쓰기를 막음(`not_on_duty`) | 🤖 `report.spec.ts` · `decor.spec.ts` · `diary-owner-entry.spec.ts` | 사람 확인 대기 |
 | DBK-13 | (#186) 견주가 **Diary**를 연 채로 시터가 알림장을 Send | 새로고침 없이 쪽 수가 늘어남("Page 3 of 3" → "Page 3 of 4"), 읽던 쪽은 그대로(맨 뒤로 튀지 않음), 스피너 없음. 알림 벨도 같이 올라감 | Realtime은 e2e에서 흉내 내지 않음 → 👤만. 2026-10-20 **어시스턴트(사람 아님)**가 Paul 데모 세트로 `?view=split`에서 실행: 위 동작 확인 | 사람 확인 대기 (어시스턴트 실행만, 사람 확인 아님) |
+| DBK-14 | (#243) 견주 · 시터 → Diary book(시터는 **Diary book** 칩) | **펫마다 표지 하나**: 펫 사진(그 펫의 가장 최근 사진, 없으면 🐶 · 🐱) · "Max's diary" · "2 pages". 표지를 누르면 그 펫의 책이 열리고, **‹ Diaries**로 표지들로 돌아옴. 알림 · Feed 칸에서 들어오면 표지를 건너뛰고 그 장이 펼쳐짐 | 🤖 `diary-book.spec.ts`(표지 · 펼침 · 돌아오기) · 사진 썸네일은 👤. Figma 프레임 없음, 와이어프레임 수준(Muk 확인 대기) | 사람 확인 대기 |
+| DBK-15 | (#243) 책의 모든 쪽 · 표지 · 쓰기 시트의 쪽 | 쪽 **왼쪽에 스프링 제본**(고리가 줄지어 있음), 글 · 스티커 위치는 그대로, 쪽 넘김 · 스티커 끌기가 평소처럼 동작 | 🤖 `diary-book.spec.ts`(spiral 보임) · 모양은 👤(Muk) | 사람 확인 대기 |
 
 > **2026-10-20 어시스턴트 실행 (사람 아님):** Paul 데모 세트(견주 Peter · 시터 Paul, Biscuit · Luna, `in_care`로 리셋)로 `?view=split` 로컬 앱 + 호스팅 DB에서 DBK-11(글 · 사진 · 비공개 Feed · 시터에게 안 보임 · 알림 없음), DBK-12(시터 직접 쓰기 · Send · AI 칩 · 사진 칩 · 초안), Snap 스티커가 견주 · 시터 Decorate 서랍에 뜸, DBK-7(Feed의 📔 칸)을 돌려 봤고 오류는 없었다. 이 줄은 "사람이 확인함"이 아니므로 위 시나리오의 상태는 그대로 **사람 확인 대기**다.
 

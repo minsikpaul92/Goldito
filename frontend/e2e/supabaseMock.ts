@@ -2096,7 +2096,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({
         ...r,
-        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null, species: db.pets.find((p) => p.id === r.pet_id)?.species ?? null },
         sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
       }));
     }

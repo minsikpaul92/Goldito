@@ -66,6 +66,7 @@ test.describe("owner diary page", () => {
   test("write a page: it lands in the book at once as 'Your page', with no notice", async ({ page }) => {
     const db = await openOwnerDiary(page, oneStay);
     const screen = app(page);
+    await screen.getByTestId("diary-entry-cover-" + MAX.id).click();
     await expect(screen.getByText("From Chloe")).toBeVisible();
 
     await screen.getByTestId("diary-write").click();
@@ -162,6 +163,7 @@ test.describe("owner diary page", () => {
     await page.goto("/sitter/diary");
     const screen = app(page);
     await screen.getByTestId("sitter-diary-view-book").click();
+    await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
     await expect(screen.getByTestId("sitter-book-body")).toContainText("Max napped a lot.");
     await expect(screen.getByText("Page 1 of 1")).toBeVisible();
     await expect(screen.getByText("OWNER'S PRIVATE PAGE")).toHaveCount(0);

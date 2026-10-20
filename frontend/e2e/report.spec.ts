@@ -290,6 +290,7 @@ test.describe("daily report", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/diary");
     const screen = app(page);
+    await screen.getByTestId("diary-entry-cover-" + MAX.id).click();
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
     await expect(screen.getByText("From Chloe")).toBeVisible();
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);

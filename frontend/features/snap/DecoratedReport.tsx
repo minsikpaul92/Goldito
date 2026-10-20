@@ -10,6 +10,7 @@ import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
+import { SPIRAL_W, SpiralEdge } from "../diary/SpiralEdge";
 import { listReportPhotos } from "../diary/reportApi";
 import { formatDay } from "../schedule/dates";
 import { DecorItem, DecorLayer, MAX_ITEMS, listDecor, saveDecor } from "./decorApi";
@@ -31,10 +32,10 @@ const PICTURE_HEIGHT = 180;
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // Picture-diary handwriting (web): Gaegu, Google Fonts (SIL OFL). Native keeps the system font.
-const DIARY_FONT = Platform.select({ web: 'Gaegu, "Comic Sans MS", system-ui, sans-serif', default: undefined });
+export const DIARY_FONT = Platform.select({ web: 'Gaegu, "Comic Sans MS", system-ui, sans-serif', default: undefined });
 const FONT_LINK_ID = "goldito-diary-font";
 
-function useDiaryFont() {
+export function useDiaryFont() {
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined" || document.getElementById(FONT_LINK_ID)) return;
     const link = document.createElement("link");
@@ -235,6 +236,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   return (
     <View style={styles.wrap}>
       <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]} testID={id("paper")}>
+        <SpiralEdge testID={id("spiral")} />
         <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
             <View key={i} style={[styles.rule, { top: (i + 1) * LINE - 1 }]} />
@@ -410,6 +412,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { gap: theme.spacing.sm },
     paper: {
+      // The spiral binding sits in the gutter to the left of the paper.
+      marginLeft: SPIRAL_W,
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       borderRadius: theme.radius.md,
