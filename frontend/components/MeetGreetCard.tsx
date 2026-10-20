@@ -42,7 +42,7 @@ type Props = {
 };
 
 /** What the chat footer can ask of the card: do the step that is this person's turn. */
-export type MeetGreetHandle = { primary: () => void };
+export type MeetGreetHandle = { primary: () => void; skip: () => void };
 
 export function meetGreetSummary(b: BookingSummary): string | null {
   const { mode, at, place } = b.meetGreet;
@@ -68,7 +68,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const [confirm, setConfirm] = useState<"skip" | "decline-skip" | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const primaryRef = useRef<() => void>(() => undefined);
-  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current() }), []);
+  useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip") }), []);
 
   const status = booking.meetGreetStatus;
   if (status === "not_needed") return null;

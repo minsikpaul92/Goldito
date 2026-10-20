@@ -2,8 +2,12 @@ import { apiPost } from "../../lib/api";
 
 export type ChatChip = { id: string; label: string };
 
+/** One thing to do next that their last message leads to (open a card or a sheet). The person presses it (D62). */
+export type ChatAction = { id: string; label: string };
+
 export type ChatChips = {
   chips: ChatChip[];
+  action: ChatAction | null;
   /** The other person's latest text the chips answer; null at the start of a chat. */
   forMessageId: string | null;
   source: "model" | "fallback";
@@ -15,12 +19,14 @@ export type ChatChips = {
  */
 export async function fetchChatChips(threadId: string): Promise<ChatChips | null> {
   try {
-    const r = await apiPost<{ chips: ChatChip[]; for_message_id: string | null; source: "model" | "fallback" }>("/api/ai/chat-chips", {
-      thread_id: threadId,
-    });
+    const r = await apiPost<{ chips: ChatChip[]; action?: ChatAction | null; for_message_id: string | null; source: "model" | "fallback" }>(
+      "/api/ai/chat-chips",
+      { thread_id: threadId },
+    );
     if (!r || !Array.isArray(r.chips)) return null; // anything but a list of chips is "no AI"
     return {
       chips: r.chips.filter((c) => c && typeof c.label === "string" && c.label.trim() !== ""),
+      action: r.action && typeof r.action.id === "string" && typeof r.action.label === "string" ? r.action : null,
       forMessageId: r.for_message_id ?? null,
       source: r.source,
     };

@@ -724,6 +724,105 @@ test.describe("chat hub", () => {
     await expect(app(page).getByTestId("chat-request-booking")).toBeVisible();
   });
 
+  // #142 second half: besides the word chips, one action chip can point at the next step. It does what the footer or the
+  // card would do, only while that is possible on the screen, and nothing happens until the person presses it.
+  const chipsAnswer = async (page: Page, action: { id: string; label: string } | null) =>
+    page.route("**/api/ai/chat-chips", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ chips: [{ id: "c0", label: "Sounds good" }, { id: "c1", label: "One moment" }], action, for_message_id: "t1", source: "model" }),
+      }),
+    );
+  const saidLast = (db: MockDb, from: string, body: string) =>
+    db.chat_messages.push({ id: "t1", thread_id: THREAD, sender_id: from, kind: "text", body, card: null, created_at: "2026-10-10T10:05:00.000Z" });
+
+  test("the owner is pointed at I'd like to book; the chip only opens the sheet", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+    saidLast(db, SITTER.id, "Shall we book it?");
+    await chipsAnswer(page, { id: "agree", label: "I'd like to book" });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("chat-action-chip")).toContainText("I'd like to book");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Sounds good"); // the word chips stay
+    expect(db.agreements).toHaveLength(0);
+    await screen.getByTestId("chat-action-chip").click();
+    await expect(screen.getByTestId("agree-sheet")).toBeVisible();
+    expect(db.agreements).toHaveLength(0); // opening it says nothing yet
+    await expect(screen.getByTestId("chat-action-chip")).toHaveCount(0);
+  });
+
+  test("the sitter asked for a price is pointed at Send quote", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    saidLast(db, OWNER.id, "How much would it be?");
+    await chipsAnswer(page, { id: "send_quote", label: "Send quote" });
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+
+    await screen.getByTestId("chat-action-chip").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toBeVisible();
+    expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "quote")).toHaveLength(0);
+  });
+
+  test("an action that is not possible here is not shown, even if the server names it", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+    saidLast(db, SITTER.id, "Ready when you are");
+    await chipsAnswer(page, { id: "pay", label: "Pay" }); // the booking is not confirmed yet
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
+    await expect(screen.getByTestId("chat-action-chip")).toHaveCount(0);
+  });
+
+  test("an answer without an action shows only the word chips", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+    saidLast(db, SITTER.id, "Thanks!");
+    await chipsAnswer(page, null);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
+    await expect(screen.getByTestId("chat-action-chip")).toHaveCount(0);
+  });
+
+  test("Skip Meet & Greet from a chip opens the card's question and asks nothing until confirmed", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, true);
+    db.bookings[0].sitter_interest_at = new Date().toISOString();
+    db.bookings[0].meet_greet_due_at = new Date(Date.now() + 2 * 86_400_000).toISOString();
+    // The sitter's first yes posted the Meet & Greet card (the 014o trigger).
+    db.chat_messages.push({ id: "mg0", thread_id: THREAD, sender_id: SITTER.id, kind: "card", body: null, card: { type: "meet_greet", booking_id: BOOKING, rev: 0 }, created_at: "2026-10-10T10:01:00.000Z" });
+    saidLast(db, SITTER.id, "Do we really have to meet first?");
+    await chipsAnswer(page, { id: "meet_skip", label: "Skip Meet & Greet" });
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+
+    await screen.getByTestId("chat-action-chip").click();
+    await expect(screen.getByTestId("meet-skip-sheet")).toContainText("If Chloe says no, this booking will be cancelled.");
+    expect(db.meetGreetCalls.find((c) => c.fn === "request_skip_meet_greet")).toBeUndefined();
+    await screen.getByTestId("meet-skip-confirm").click();
+    await expect.poll(() => db.meetGreetCalls.some((c) => c.fn === "request_skip_meet_greet")).toBe(true);
+  });
+
   test("someone outside the chat cannot open it", async ({ page }) => {
     const other: MockUser = { id: "00000000-0000-4000-8000-000000000009", email: "joy@goldito.test", password: "joy-pass", role: "owner", displayName: "Joy" };
     const { db } = await mockSupabase(page, [OWNER, SITTER, other]);

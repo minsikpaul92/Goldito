@@ -30,8 +30,8 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
-import { Primary, finalQuote, nextStep } from "../../features/chat/nextStep";
+import { ChatAction, ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
+import { Primary, actionPossible, finalQuote, nextStep } from "../../features/chat/nextStep";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -87,6 +87,7 @@ export default function Chat() {
   const [feeFor, setFeeFor] = useState<string | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
+  const [action, setAction] = useState<ChatAction | null>(null);
   const [drafting, setDrafting] = useState(false);
   const input = useRef<TextInput>(null);
 
@@ -136,12 +137,14 @@ export default function Chat() {
   const [chipsReady, setChipsReady] = useState(false);
   useEffect(() => {
     setChips([]);
+    setAction(null);
     setChipsReady(false);
     if (!key) return;
     let current = true;
     void chipsFor(threadId, latestAt).then((r) => {
       if (!current) return;
       setChips(r?.chips ?? []);
+      setAction(r?.action ?? null);
       setChipsReady(true);
     });
     return () => {
@@ -256,6 +259,16 @@ export default function Chat() {
     }
     return undefined;
   };
+
+  /** An action chip: the same thing the footer or the card would do. Shown only while it is possible (actionPossible). */
+  const doAction = async (a: ChatAction) => {
+    setAction(null);
+    if (a.id === "send_quote") return setQuoting("first");
+    if (a.id === "meet_time" || a.id === "meet_accept") return meetCard.current?.primary();
+    if (a.id === "meet_skip") return meetCard.current?.skip();
+    return step.primary ? doPrimary(step.primary) : undefined;
+  };
+  const shownAction = action && actionPossible(action.id, step, booking, header.myRole) ? action : null;
 
   const send = async () => {
     const body = text.trim();
@@ -407,13 +420,24 @@ export default function Chat() {
           ) : null}
         </View>
       ) : null}
-      {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
+      {text.trim() === "" && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady)) ? (
         <View style={styles.chips} testID="chat-chips">
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
               <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Writing replies…"}</Text>
             </View>
+          ) : null}
+          {shownAction && chipsReady && !drafting ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void doAction(shownAction)}
+              style={[styles.chip, styles.actionChip]}
+              testID="chat-action-chip"
+            >
+              <Ionicons name="flash-outline" size={14} color={theme.color.primaryText} />
+              <Text style={[styles.chipText, styles.actionChipText]}>{shownAction.label}</Text>
+            </Pressable>
           ) : null}
           {chips.map((chip, i) => (
             <Pressable
@@ -506,6 +530,8 @@ const makeStyles = (theme: Theme) =>
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
     chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    actionChip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: theme.color.primary },
+    actionChipText: { color: theme.color.primaryText },
     chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
     chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
