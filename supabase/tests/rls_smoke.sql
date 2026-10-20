@@ -4985,7 +4985,9 @@ begin
   perform _t_ok(v_n = 1, '014j: the first card (dates, times, pets) is posted once for the same stay');
   t2 := open_chat_thread(chloe, drop_at, pick_at + interval '1 day', array[biscuit]);
   select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
-  perform _t_ok(v_n = 2, '014j: a different stay posts a new card in the same thread');
+  perform _t_ok(v_n = 1 and (select (card ->> 'pick_up_at')::timestamptz from public.chat_messages where thread_id = t1.id and kind = 'card') = pick_at + interval '1 day',
+    '014l: a different stay with nothing said since changes the card instead of adding one');
+
   begin perform open_chat_thread(chloe, pick_at, drop_at, array[biscuit]); v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err = 'invalid_stay', '014j: a pick-up before the drop-off is refused');
@@ -4995,8 +4997,8 @@ begin
   perform send_chat_message(t1.id, 'Can you take Biscuit?');
   perform _t_as(chloe);
   select * into r from list_my_chats() x where x.thread_id = t1.id;
-  perform _t_ok(r.unread_count = 4 and r.last_body = 'Can you take Biscuit?' and r.other_name is not null,
-    '014j: the sitter sees the two cards and two messages as unread, the last one and the owner''s name');
+  perform _t_ok(r.unread_count = 3 and r.last_body = 'Can you take Biscuit?' and r.other_name is not null,
+    '014j: the sitter sees the card and two messages as unread, the last one and the owner''s name');
   perform send_chat_message(t1.id, 'Yes, happy to');
   perform send_chat_message(t1.id, 'Any allergies?');
   perform mark_chat_read(t1.id);
@@ -5007,6 +5009,9 @@ begin
   perform _t_ok(r.unread_count = 2, '014j: the owner sees the sitter''s two replies as unread');
   select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'text';
   perform _t_ok(v_n = 4, '014j: either person can send repeatedly in the same thread');
+  t2 := open_chat_thread(chloe, drop_at, pick_at + interval '3 days', array[biscuit]);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
+  perform _t_ok(v_n = 2, '014j: once something was said, a different stay is a new card in the same thread');
 
   -- A sitter can open an existing chat but cannot start one
   perform _t_as(chloe);

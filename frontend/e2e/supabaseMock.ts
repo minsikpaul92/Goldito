@@ -742,8 +742,14 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
         pick_up_at: args.p_pick_up_at,
         pets: pets.map((p) => ({ id: p.id, name: p.name })).sort((a, b) => String(a.name).localeCompare(String(b.name))),
       };
-      const last = messagesOf(thread).filter((m) => m.kind === "card" && (m.card as Row).type === "stay").at(-1);
-      if (JSON.stringify(last?.card) !== JSON.stringify(card)) post(thread, me, "card", null, card);
+      const end = messagesOf(thread).at(-1);
+      if (end && end.kind === "card" && (end.card as Row).type === "stay" && end.sender_id === me) {
+        // 014l: nothing was said after my last stay card, so it becomes the new stay.
+        end.card = card;
+      } else {
+        const last = messagesOf(thread).filter((m) => m.kind === "card" && (m.card as Row).type === "stay").at(-1);
+        if (JSON.stringify(last?.card) !== JSON.stringify(card)) post(thread, me, "card", null, card);
+      }
     }
     return json(route, 200, thread);
   }

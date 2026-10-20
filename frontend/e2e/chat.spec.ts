@@ -220,6 +220,31 @@ test.describe("chat hub", () => {
     await expect(app(page).getByTestId("chat-request-booking")).toHaveCount(0);
   });
 
+  test("asking about a different stay with nothing said since changes the stay card; after a message it adds one", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    const q = (drop: string, pick: string) => `drop=${encodeURIComponent(drop)}&pick=${encodeURIComponent(pick)}&pets=${MAX}`;
+
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-20T13:00:00.000Z", "2030-10-22T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(1);
+    await page.goBack();
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-20T13:00:00.000Z", "2030-10-23T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(1); // the same card, new dates
+    await expect(screen.getByTestId("chat-stay-card")).toContainText("Oct 23");
+
+    await screen.getByTestId("chat-input").fill("Hi Chloe");
+    await screen.getByTestId("chat-send").click();
+    await expect(screen.getByTestId("chat-bubble-me")).toHaveCount(1);
+    await page.goto(`/owner/sitters/${SITTER.id}?${q("2030-10-21T13:00:00.000Z", "2030-10-24T21:00:00.000Z")}`);
+    await screen.getByTestId("start-chat").click();
+    await expect(screen.getByTestId("chat-stay-card")).toHaveCount(2); // something was said: a new card
+  });
+
   test("the header has the avatar, the name and the pinned stay: the avatar shows photos, the name opens the sitter and back returns", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
