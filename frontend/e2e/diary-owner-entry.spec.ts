@@ -126,9 +126,14 @@ test.describe("owner diary page", () => {
     await expect(screen.locator("[data-testid^='feed-private-']")).toHaveCount(1);
   });
 
-  test("the saved page takes stickers like any page", async ({ page }) => {
+  test("the saved page takes a Goldito sticker and a sticker made in Snap", async ({ page }) => {
     // One page only: the book keeps its neighbours mounted, and each has a Decorate button.
-    const db = await openOwnerDiary(page, (d) => caring(d, [MAX]));
+    const db = await openOwnerDiary(page, (d) => {
+      caring(d, [MAX]);
+      // A sticker the sitter made in Snap sits in the pet's box.
+      d.media.push({ id: "m-st", pet_id: MAX.id, uploaded_by: SITTER.id, cloudinary_public_id: `goldito/${MAX.id}/sticker/a`, resource_type: "image", purpose: "sticker" });
+      d.pet_stickers.push({ id: "st-1", pet_id: MAX.id, media_id: "m-st", created_by: SITTER.id, created_at: "2026-10-05T10:00:00Z" });
+    });
     const screen = app(page);
     await screen.getByTestId("diary-write").click();
     await screen.getByTestId("diary-write-body").fill("Sticker day.");
@@ -137,9 +142,12 @@ test.describe("owner diary page", () => {
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-heart").click();
+    await screen.getByTestId("decor-add").click();
     await screen.getByTestId("decor-save").click();
     await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
-    expect(db.report_decor.find((r) => r.user_id === OWNER.id)?.items).toHaveLength(1);
+    const items = db.report_decor.find((r) => r.user_id === OWNER.id)?.items as { sticker_id: string }[];
+    expect(items).toHaveLength(2);
+    expect(items.map((i) => i.sticker_id)).toContain("st-1");
   });
 
   test("the sitter does not see the owner's page", async ({ page }) => {
