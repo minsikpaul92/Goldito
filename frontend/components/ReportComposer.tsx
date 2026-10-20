@@ -29,6 +29,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
+import { type DecorItem, saveDecor } from "../features/snap/decorApi";
 import { DecoratedReport } from "../features/snap/DecoratedReport";
 import { ChipSuggestions } from "./ChipSuggestions";
 import { Button } from "./ui/Button";
@@ -76,6 +77,8 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<"chips" | "generate" | "send" | null>(null);
   const [sent, setSent] = useState(false);
+  /** Stickers put on the page before it is sent; they are saved with it. */
+  const [stickers, setStickers] = useState<DecorItem[]>([]);
   /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
   const [sentId, setSentId] = useState<string | null>(null);
 
@@ -283,6 +286,14 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       // A page written only by hand has no draft row yet: save it as today's draft first (014b), then send.
       const id = draft?.id ?? (await saveDraftByHand(pet.id, body.trim()));
       await sendReport(id, body.trim());
+      if (stickers.length > 0 && sitterId) {
+        try {
+          await saveDecor(id, sitterId, stickers);
+        } catch {
+          toast.show("Sent, but the stickers weren't saved.");
+        }
+        setStickers([]);
+      }
       setSent(true);
       setSentId(id);
       setDraft(null);
@@ -308,6 +319,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
     setSent(false);
     setSentId(null);
     setBody("");
+    setStickers([]);
     setOff(new Set());
     setCustom([]);
     setOverrides({});
@@ -361,6 +373,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         petName={pet.name}
         day={day.current}
         body={body}
+        pending={{ items: stickers, onChange: setStickers }}
         writing={{
           onChangeText: setBody,
           placeholder: "Dear diary, today…",

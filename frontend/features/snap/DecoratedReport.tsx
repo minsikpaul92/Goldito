@@ -66,6 +66,11 @@ type Props = {
   writing?: DiaryWriting;
   /** The owner's own page (014p): the picture may be one of the owner's private photos. */
   ownPage?: boolean;
+  /**
+   * Stickers put on a page that is still being written (no report row yet): kept by the parent and saved with the
+   * page once it exists. Without it a page being written has no Decorate.
+   */
+  pending?: { items: DecorItem[]; onChange: (items: DecorItem[]) => void };
   /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
@@ -81,7 +86,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pending, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -142,7 +147,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     };
   }, [petId, day, ownPage, role]);
 
-  const mine = layers.find((l) => l.userId === me)?.items ?? [];
+  const drafting = !reportId && !!pending;
+  const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
   const others = layers.filter((l) => l.userId !== me);
   const shownMine = editing ? draft : mine;
   const canvasLayers = [...others.map((l) => ({ items: l.items, mine: false })), { items: shownMine, mine: true }];
@@ -188,6 +194,14 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   };
 
   const save = async () => {
+    if (drafting) {
+      // Not a report yet: the parent keeps the stickers and saves them with the page.
+      pending.onChange(draft);
+      setEditing(false);
+      setSelected(null);
+      toast.show("Stickers added ✨");
+      return;
+    }
     if (!me || !reportId || saving) return;
     setSaving(true);
     try {
@@ -300,7 +314,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       </View>
 
-      {Platform.OS !== "web" || !me || !reportId || writing ? null : editing ? (
+      {Platform.OS !== "web" || !me || (!reportId && !pending) ? null : editing ? (
         <View style={styles.tools} testID="decor-tools">
           <Text style={styles.hint}>
             {current ? "Drag to move · size, turn, or tuck it behind the writing below." : "Add a sticker, then drag it anywhere on the page."}
@@ -381,7 +395,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       ) : (
         <View style={styles.row}>
           <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
-          <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" />
+          {reportId && !writing ? <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" /> : null}
         </View>
       )}
       {reportId && !writing && Platform.OS === "web" ? (

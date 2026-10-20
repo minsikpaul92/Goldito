@@ -140,6 +140,7 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-body").fill("Sticker day.");
     await screen.getByTestId("diary-write-save").click();
     await expect(screen.getByText("Your page")).toBeVisible();
+    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0); // the sheet has its own Decorate while open
 
     await screen.getByTestId("decor-start").click();
     await screen.getByTestId("decor-preset-heart").click();
@@ -149,6 +150,23 @@ test.describe("owner diary page", () => {
     const items = db.report_decor.find((r) => r.user_id === OWNER.id)?.items as { sticker_id: string }[];
     expect(items).toHaveLength(2);
     expect(items.map((i) => i.sticker_id)).toContain("st-1");
+  });
+
+  test("stickers go on while the page is written and are saved with it", async ({ page }) => {
+    const db = await openOwnerDiary(page, (d) => caring(d, [MAX]));
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("Sticker day.");
+    await screen.getByTestId("decor-start").click();
+    await expect(screen.getByTestId("decor-share")).toHaveCount(0); // not a page yet: nothing to share
+    await screen.getByTestId("decor-preset-heart").click();
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    expect(db.report_decor).toHaveLength(0); // kept on the screen, not saved yet
+
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByText("Your page")).toBeVisible();
+    await expect.poll(() => (db.report_decor.find((r) => r.user_id === OWNER.id)?.items as unknown[] | undefined)?.length).toBe(1);
   });
 
   test("the sitter does not see the owner's page", async ({ page }) => {

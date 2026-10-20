@@ -366,6 +366,22 @@ test.describe("daily report", () => {
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe(db.daily_reports[0].id);
   });
 
+  test("stickers go on the page before Send and are saved with the sent report", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("A day with a sticker.");
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-preset-star").click();
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    expect(db.report_decor).toHaveLength(0);
+
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect.poll(() => (db.report_decor.find((r) => r.user_id === SITTER.id)?.items as unknown[] | undefined)?.length).toBe(1);
+    expect(db.report_decor[0].report_id).toBe(db.daily_reports[0].id);
+  });
+
   test("generated text lands on the page as a draft; the sitter edits it there and only Send shares it", async ({ page }) => {
     const { db } = await openSitterDiary(page);
     const screen = app(page);
