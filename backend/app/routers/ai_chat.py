@@ -244,7 +244,8 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
 
     style = NEUTRAL_STYLE
     if ctx["role"] == "sitter":
-        style = tone.compose(db, ctx["thread"]["sitter_id"], kind="chat", query=f"{chip}: {(last_them or {}).get('body', '')}").style_notes
+        # The sitter's own anonymized replies to owners ("inquiry" samples) are the closest voice for a chat reply too.
+        style = tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body', '')}").style_notes
     payload = {**base, "chip": chip, "style_notes": style}
     messages = [{"role": "system", "content": load_prompt("chat/draft.md")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None

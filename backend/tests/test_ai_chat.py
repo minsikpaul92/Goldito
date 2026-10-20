@@ -191,6 +191,21 @@ def test_a_draft_cannot_say_yes_to_days_that_are_not_available(client, setup):
     assert draft(client, "Let me check").json()["text"] == "Sorry, those days are full."
 
 
+def test_the_sitters_draft_follows_their_own_anonymized_replies(client, setup, monkeypatch):
+    asked: list[dict] = []
+
+    def compose(_db, sitter_id, **kwargs):
+        asked.append({"sitter_id": sitter_id, **kwargs})
+        return SimpleNamespace(style_notes="Warm, short. 1. Situation: asked about a pill. Reply: Of course, no problem {OWNER}!", examples=1)
+
+    ctx = setup({"reply": "Of course, I can host!"})
+    monkeypatch.setattr(ai_chat.tone, "compose", compose)
+    draft(client, "Yes, I can host")
+    # the samples live under kind "inquiry" (tone_samples), searched with the chip and what the owner wrote
+    assert asked == [{"sitter_id": SITTER_ID, "kind": "inquiry", "query": "Yes, I can host: Can you take Max?"}]
+    assert "Of course, no problem" in ctx.model.payload()["style_notes"]
+
+
 def test_the_owner_gets_a_neutral_voice_and_no_price_unless_the_facts_have_it(client, setup):
     ctx = setup({"reply": "Thank you, that works for us."})
     assert draft(client, "Thank you!", owner_token()).json()["source"] == "model"
