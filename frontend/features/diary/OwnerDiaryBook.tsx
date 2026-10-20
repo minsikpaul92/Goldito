@@ -2,23 +2,34 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
+import { OwnerEntrySheet } from "./OwnerEntrySheet";
 import { SentReport, listBookPages } from "./reportApi";
 
 /**
  * The owner's diary book (Diary book DB.3): every page the sitters sent about their pets, all or one pet, oldest →
  * newest, opening on the newest (or on `initialId` — a notice, a Feed card). Each page says who wrote it and the
- * day's tasks. Read-only text; the owner may add their own stickers (12.3b).
+ * day's tasks. The owner can write a page of their own too (014p, #186) and add their own stickers (12.3b).
  */
 export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
   const styles = useThemedStyles(makeStyles);
+  const { pets } = useMyPets();
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [writing, setWriting] = useState(false);
+  // A page just written: the book opens on it.
+  const [written, setWritten] = useState<string | null>(null);
+  const session = useSession();
+  const me = session.status === "signedIn" ? session.profile.id : null;
+  const openId = written ?? initialId ?? null;
 
   const load = useCallback(async () => {
     try {
@@ -42,35 +53,59 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
       </Screen>
     );
   }
+  const write = pets.length > 0 ? <Button label="✏️ Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
+  const sheet = (
+    <OwnerEntrySheet
+      visible={writing}
+      pets={pets}
+      onClose={() => setWriting(false)}
+      onSaved={(reportId) => {
+        setWriting(false);
+        setWritten(reportId);
+        void load();
+      }}
+    />
+  );
   if (!pages || pages.length === 0) {
     return (
-      <Screen>
+      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
         <EmptyState
           emoji="📔"
           title="No diary yet"
           message="When a stay is on, updates show up here live. Everything your sitter did is in History."
           action={{ label: "Open History", onPress: () => router.push("/owner/history") }}
         />
+        {write}
+        {sheet}
       </Screen>
     );
   }
   return (
     <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
+      {write}
       <DiaryBook
+        key={openId ?? "book"}
         pages={pages}
-        initialId={initialId}
+        initialId={openId}
         testID="diary-entry"
         footer={(page) => (
           <View style={styles.footer}>
-            <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
-            {page.tasks.map((t, i) => (
-              <Text key={`${i}-${t.title}`} style={styles.task}>
-                {`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
-              </Text>
-            ))}
+            {page.authorId === me ? (
+              <Text style={styles.meta}>Your page</Text>
+            ) : (
+              <>
+                <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
+                {page.tasks.map((t, i) => (
+                  <Text key={`${i}-${t.title}`} style={styles.task}>
+                    {`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
+                  </Text>
+                ))}
+              </>
+            )}
           </View>
         )}
       />
+      {sheet}
     </Screen>
   );
 }

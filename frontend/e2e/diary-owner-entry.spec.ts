@@ -1,0 +1,160 @@
+import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { caring } from "./careFixtures";
+import { app, signIn } from "./helpers";
+import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+
+// The owner writes a diary page of their own (014p, #186): on the page, a photo if they like, sent to their book at
+// once. No AI, no notice, and the sitter never sees it. Stickers go on the saved page like any other.
+
+const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
+const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
+
+function sitterPage(day: string, body: string) {
+  return { id: "s1", pet_id: MAX.id, sitter_id: SITTER.id, report_date: day, body, status: "sent", sent_at: `${day}T22:00:00Z`, source_snapshot: { tasks: [] }, created_at: `${day}T22:00:00Z` };
+}
+
+/** sign → Cloudinary → complete for a feed photo (the same pipe a real photo takes). */
+async function mockFeedUpload(page: Page, db: MockDb) {
+  await page.route("**/api/media/sign", (route) => {
+    const body = route.request().postDataJSON();
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        cloud_name: "goldito-test",
+        api_key: "123",
+        timestamp: 1_700_000_000,
+        signature: "sig",
+        folder: `goldito/${body.pet_id}/${body.purpose}`,
+        upload_url: "http://127.0.0.1:4174/cloudinary-mock/image/upload",
+        transformation: "c_limit,w_2000/q_auto",
+      }),
+    });
+  });
+  await page.route("**/cloudinary-mock/**", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ public_id: `goldito/${MAX.id}/feed/own`, width: 1200, height: 900 }) }),
+  );
+  await page.route("**/api/media/complete", (route) => {
+    const body = route.request().postDataJSON();
+    db.media.push({ id: "media-own", pet_id: body.pet_id, cloudinary_public_id: `goldito/${MAX.id}/feed/own`, resource_type: "image", purpose: "feed", width: 1200, height: 900, duration_s: null, created_at: new Date().toISOString() });
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ media_id: "media-own", public_id: `goldito/${MAX.id}/feed/own`, secure_url: "https://res.cloudinary.com/goldito-test/image/upload/own", thumb_url: "" }),
+    });
+  });
+}
+
+async function openOwnerDiary(page: Page, seed: (db: MockDb) => void) {
+  const { db } = await mockSupabase(page, [OWNER, SITTER]);
+  seed(db);
+  await signIn(page, OWNER);
+  await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+  await page.goto("/owner/diary");
+  await app(page).getByTestId("diary-write").waitFor();
+  return db;
+}
+
+const oneStay = (db: MockDb) => {
+  caring(db, [MAX]);
+  db.daily_reports.push(sitterPage("2026-10-05", "Max napped a lot."));
+};
+
+test.describe("owner diary page", () => {
+  test("write a page: it lands in the book at once as 'Your page', with no notice", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await expect(screen.getByText("From Chloe")).toBeVisible();
+
+    await screen.getByTestId("diary-write").click();
+    await expect(screen.getByTestId("diary-write-save")).toBeDisabled(); // nothing written yet
+    await screen.getByTestId("diary-write-body").fill("Max met a duck at the park today.");
+    await screen.getByTestId("diary-write-save").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Page saved");
+    await expect(screen.getByTestId("diary-entry-body")).toContainText("met a duck");
+    await expect(screen.getByText("Your page")).toBeVisible();
+    await expect(screen.getByText("Page 2 of 2")).toBeVisible();
+
+    const mine = db.daily_reports.find((r) => r.sitter_id === OWNER.id)!;
+    expect(mine).toMatchObject({ pet_id: MAX.id, status: "sent", body: "Max met a duck at the park today." });
+    expect(db.notifications.filter((n) => n.type === "report_sent")).toHaveLength(0);
+  });
+
+  test("an empty book still has the button; the first page opens the book", async ({ page }) => {
+    await openOwnerDiary(page, (db) => caring(db, [MAX]));
+    const screen = app(page);
+    await expect(screen.getByText("No diary yet")).toBeVisible();
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("First page.");
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByTestId("diary-entry-body")).toContainText("First page.");
+    await expect(screen.getByText("Page 1 of 1")).toBeVisible();
+  });
+
+  test("with two pets the page goes to the pet picked", async ({ page }) => {
+    const db = await openOwnerDiary(page, (d) => caring(d, [MAX, MOCHI]));
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId(`diary-write-pet-${MOCHI.id}`).click();
+    await expect(screen.getByTestId("diary-write-body")).toBeVisible();
+    await screen.getByTestId("diary-write-body").fill("Mochi slept on the sofa.");
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByTestId("diary-entry-where")).toContainText("Mochi");
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ pet_id: MOCHI.id });
+  });
+
+  test("a photo goes on the page and is kept in Feed, private", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    await mockFeedUpload(page, db);
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("A walk in the sun.");
+    await screen.getByTestId("diary-write-photo").click();
+    await screen.getByTestId("sample-walk").click();
+    await expect(screen.getByTestId("diary-write-photo-added")).toBeVisible();
+    await screen.getByTestId("diary-write-save").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Page saved");
+    await expect(screen.getByTestId("diary-entry-body")).toContainText("A walk in the sun.");
+    expect(db.feed_posts).toHaveLength(1);
+    expect(db.feed_posts[0]).toMatchObject({ pet_id: MAX.id, posted_by: OWNER.id, sitter_id: null, visibility: "private", media_id: "media-own" });
+
+    await page.goto("/owner/feed");
+    await expect(screen.locator("[data-testid^='feed-private-']")).toHaveCount(1);
+  });
+
+  test("the saved page takes stickers like any page", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("Sticker day.");
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByText("Your page")).toBeVisible();
+
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-preset-heart").click();
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers saved");
+    expect(db.report_decor.find((r) => r.user_id === OWNER.id)?.items).toHaveLength(1);
+  });
+
+  test("the sitter does not see the owner's page", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    oneStay(db);
+    db.daily_reports.push({ ...sitterPage("2026-10-06", "OWNER'S PRIVATE PAGE"), id: "o1", sitter_id: OWNER.id });
+    await page.route("**/api/ai/report-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
+    );
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/diary");
+    const screen = app(page);
+    await screen.getByTestId("sitter-diary-view-book").click();
+    await expect(screen.getByTestId("sitter-book-body")).toContainText("Max napped a lot.");
+    await expect(screen.getByText("Page 1 of 1")).toBeVisible();
+    await expect(screen.getByText("OWNER'S PRIVATE PAGE")).toHaveCount(0);
+  });
+});
