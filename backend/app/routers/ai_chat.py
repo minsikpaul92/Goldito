@@ -164,7 +164,7 @@ def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
             summary = out.summary.strip()[:2000]
             db.table("chat_threads").update({"ai_summary": summary, "ai_summary_upto": fresh[-1]["created_at"]}).eq("id", thread["id"]).execute()
             thread["ai_summary"], thread["ai_summary_upto"] = summary, fresh[-1]["created_at"]
-        except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
+        except Exception as exc:  # noqa: BLE001 - a missing summary column (014m not applied) or a model outage must not stop the chips
             log.warning("chat: summary not refreshed (%s)", exc)
     return thread.get("ai_summary") or None
 
