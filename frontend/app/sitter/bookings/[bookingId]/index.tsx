@@ -43,6 +43,7 @@ import {
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
+  proposeHandoffPair,
   requestExpired,
   respondBooking,
   respondHandoff,
@@ -213,6 +214,13 @@ export default function SitterBookingDetail() {
   const sendChange = async (change: HandoffChange) => {
     try {
       await proposeHandoff(booking.id, change.kind, change.at, change.place);
+    } catch (err) {
+      throw new Error(actionError(err, owner));
+    }
+  };
+  const sendPair = async (drop: HandoffChange, pick: HandoffChange) => {
+    try {
+      await proposeHandoffPair(booking.id, drop, pick);
     } catch (err) {
       throw new Error(actionError(err, owner));
     }
@@ -514,6 +522,7 @@ export default function SitterBookingDetail() {
           title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
           submitLabel={`Send to ${owner}`}
           onSend={sendChange}
+          onSendPair={sendPair}
           onChanged={() => void load()}
           onDone={() => {
             setSheet(null);

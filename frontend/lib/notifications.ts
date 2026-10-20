@@ -189,6 +189,7 @@ export function hrefForNotification(
     case "review_received":
       return bookingHref(notice.bookingId);
     case "trip_started":
+    case "trip_near":
     case "trip_arrived":
       // Straight to the Trip screen: the map and the ETA are what the notice is about.
       return notice.bookingId ? (`/${role}/bookings/${notice.bookingId}/trip` as Href) : bookingHref(null);
