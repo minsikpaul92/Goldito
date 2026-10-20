@@ -20,16 +20,17 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `BookingStageBar` · `ChatQuoteCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 154 |
-| EmptyState | Chat not found | — | 162 |
-| Pressable | — | `chat-stage` | 233 |
-| Button | Request booking | `chat-request-booking` | 267 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 279 |
-| Pressable | Send | `chat-send` | 306 |
+| EmptyState | Couldn't load this chat | — | 162 |
+| EmptyState | Chat not found | — | 170 |
+| Pressable | — | `chat-stage` | 265 |
+| Button | Request booking | `chat-request-booking` | 310 |
+| Button | Send quote | `chat-send-quote` | 315 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 327 |
+| Pressable | Send | `chat-send` | 354 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -701,6 +702,24 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 28 |
 
+### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | Decline | `quote-extra-decline` | 80 |
+| TextButton | Accept | `quote-extra-accept` | 81 |
+| TextButton | Add a fee | `quote-add-fee` | 97 |
+| Button | Confirm quote | `quote-confirm` | 99 |
+
+### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Send quote | `send-quote-sheet` | 67 |
+| Button | Send quote | `send-quote-submit` | 72 |
+| Sheet | Add fee | `add-fee-sheet` | 122 |
+| Button | Add fee | `add-fee-submit` | 127 |
+
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1353,4 +1372,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-393 actions · 392 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+400 actions · 399 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

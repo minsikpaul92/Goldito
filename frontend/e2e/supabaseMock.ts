@@ -809,6 +809,74 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
     return json(route, 200, post(thread, me, "card", null, card));
   }
 
+  // 014n quotes: the card holds the negotiation; totals are recomputed here as in SQL.
+  const quoteMessage = (role: "owner" | "sitter") => {
+    const row = db.chat_messages.find((m) => m.id === args.p_message && (m.card as Row | null)?.type === "quote");
+    const thread = row && db.chat_threads.find((t) => t.id === row.thread_id);
+    if (!row || !thread || thread[`${role}_id`] !== me) return { error: "forbidden" } as const;
+    if ((row.card as Row).status !== "sent") return { error: "quote_closed" } as const;
+    return { row, card: row.card as Row & { extras: Row[] } } as const;
+  };
+  const retotal = (card: Row & { extras: Row[] }) => {
+    const accepted = card.extras.filter((e) => e.status === "accepted").reduce((sum, e) => sum + Number(e.amount), 0);
+    card.total = Math.round((Number((card.quote as Row).total) + accepted) * 100) / 100;
+  };
+
+  if (fn === "send_chat_quote") {
+    const thread = db.chat_threads.find((t) => t.id === args.p_thread && t.sitter_id === me);
+    if (!thread) return fail("forbidden");
+    const petIds = (args.p_pet_ids ?? []) as string[];
+    if (petIds.length < 1 || !petIds.every((id) => db.pets.some((p) => p.id === id && p.owner_id === thread.owner_id))) return fail("invalid_stay");
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: db.quote_error_detail });
+    for (const m of messagesOf(thread)) {
+      const c = m.card as Row | null;
+      if (c?.type === "quote" && c.status === "sent") c.status = "replaced";
+    }
+    const quote = (db.quote ?? DEMO_QUOTE) as Row;
+    const card = {
+      type: "quote",
+      service_type: args.p_service,
+      drop_off_at: args.p_drop_off_at,
+      pick_up_at: args.p_pick_up_at,
+      pets: petIds.map((id) => ({ id, name: db.pets.find((p) => p.id === id)?.name })),
+      quote,
+      extras: [],
+      total: Number(quote.total),
+      status: "sent",
+    };
+    return json(route, 200, post(thread, me, "card", null, card));
+  }
+
+  if (fn === "add_chat_quote_extra") {
+    const found = quoteMessage("sitter");
+    if ("error" in found) return fail(found.error);
+    const label = String(args.p_label ?? "").trim();
+    const amount = Number(args.p_amount);
+    if (!label || label.length > 40 || !(amount > 0) || amount > 500) return fail("invalid_extra");
+    if (found.card.extras.length >= 5) return fail("too_many_extras");
+    found.card.extras.push({ id: crypto.randomUUID(), label, amount: Math.round(amount * 100) / 100, status: "offered" });
+    retotal(found.card);
+    return json(route, 200, found.row);
+  }
+
+  if (fn === "answer_chat_quote_extra") {
+    const found = quoteMessage("owner");
+    if ("error" in found) return fail(found.error);
+    const extra = found.card.extras.find((e) => e.id === args.p_extra && e.status === "offered");
+    if (!extra) return fail("invalid_extra");
+    extra.status = args.p_accept ? "accepted" : "declined";
+    retotal(found.card);
+    return json(route, 200, found.row);
+  }
+
+  if (fn === "confirm_chat_quote") {
+    const found = quoteMessage("owner");
+    if ("error" in found) return fail(found.error);
+    if (found.card.extras.some((e) => e.status === "offered")) return fail("extras_pending");
+    found.card.status = "confirmed";
+    return json(route, 200, found.row);
+  }
+
   if (fn === "get_chat_thread") {
     const thread = threadOf(args.p_thread);
     if (!thread) return json(route, 200, []);
@@ -835,6 +903,7 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
           other_name: nameOf(other),
           last_kind: last.kind,
           last_body: last.body,
+          last_card_type: last.kind === "card" ? (last.card as Row).type : null,
           last_at: last.created_at,
           unread_count: all.filter((m) => m.sender_id !== me && (!read || String(m.created_at) > read)).length,
         },
@@ -856,7 +925,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const wantsRows = (headers.prefer ?? "").includes("return=representation");
   const me = callerId(headers.authorization);
 
-  if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread|post_booking_request_card)$/.test(path)) {
+  if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread|post_booking_request_card|send_chat_quote|add_chat_quote_extra|answer_chat_quote_extra|confirm_chat_quote)$/.test(path)) {
     return handleChat(route, path.slice(4), users, db, me);
   }
 
