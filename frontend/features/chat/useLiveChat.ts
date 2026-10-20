@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 
 import { getSupabase } from "../../lib/supabase";
 
@@ -9,10 +9,12 @@ const POLL_MS = 5000;
  * RLS-scoped) and a slow poll covers a missed event or a dropped socket, the same pair the inquiry thread uses.
  */
 export function useLiveChat(threadId: string | undefined, reload: () => unknown): void {
+  // Home and Bookings both watch the chat list while mounted; a channel name is shared, so each hook gets its own.
+  const instance = useId();
   useEffect(() => {
     const supabase = getSupabase();
     const channel = supabase
-      .channel(`chat:${threadId ?? "list"}`)
+      .channel(`chat:${threadId ?? "list"}:${instance}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", ...(threadId ? { filter: `thread_id=eq.${threadId}` } : {}) },
@@ -30,5 +32,5 @@ export function useLiveChat(threadId: string | undefined, reload: () => unknown)
       clearInterval(poll);
       void supabase.removeChannel(channel);
     };
-  }, [threadId, reload]);
+  }, [threadId, reload, instance]);
 }
