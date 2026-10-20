@@ -102,9 +102,9 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
       <Card style={styles.card} tone={theme.ui.blocks ? "peach" : undefined} testID="meet-greet">
         <Text style={styles.muted}>
           {status === "done"
-            ? `Met ✓${summary ? ` — ${summary}` : ""}`
+            ? `Met ✓${summary ? ` · ${summary}` : ""}`
             : status === "skipped"
-              ? "Meet & Greet skipped — you both agreed"
+              ? "Meet & Greet skipped, you both agreed"
               : `Meet & Greet: ${summary ?? "not scheduled"}`}
         </Text>
       </Card>
@@ -123,7 +123,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
     // Nothing can be planned until the sitter says yes to meeting (D60) — the sitter's button is in the footer.
     body = (
       <>
-        <Text style={styles.title}>First stay together — meet first</Text>
+        <Text style={styles.title}>Meet before the first stay</Text>
         <Text style={styles.muted}>
           {viewer === "sitter"
             ? `Say "Yes, let's meet" to hold these dates, then set a time with ${other}.`
@@ -139,7 +139,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
         <Text style={styles.muted}>
           {stalled
             ? "Set a time, skip the Meet & Greet, or decline. With no answer in 3 days the booking is cancelled."
-            : `Pick a time with ${other} — or agree to skip the Meet & Greet.`}
+            : `Pick a time with ${other}, or agree to skip the Meet & Greet.`}
         </Text>
         <Button label="Schedule Meet & Greet" onPress={() => void openSheet()} disabled={busy} testID="meet-schedule" />
         <TextButton label="Skip Meet & Greet" onPress={() => setConfirm("skip")} style={styles.left} testID="meet-skip" />
@@ -194,7 +194,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
             <LinkButton label="Join Google Meet" href={mg.link} testID="meet-join" />
           ) : (
             <View style={styles.links}>
-              <Text style={styles.muted}>No Google Meet link yet — the time and calendar file still work.</Text>
+              <Text style={styles.muted}>No Google Meet link yet. The time and calendar file still work.</Text>
               <TextButton
                 label="Get the Meet link"
                 onPress={() =>
@@ -219,7 +219,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
         ))}
         {timeHasCome ? (
           <Button
-            label="Done — we met"
+            label="Done, we met"
             onPress={() => void run(() => completeMeetGreet(booking.id), "Meet & Greet done 🐾")}
             disabled={busy}
             testID="meet-done"
@@ -252,7 +252,7 @@ export function MeetGreetCard({ booking, viewer, onChanged }: Props) {
           testID="meet-skip-accept"
         />
         <TextButton
-          label="Decline — cancels the booking"
+          label="Decline and cancel booking"
           danger
           onPress={() => setConfirm("decline-skip")}
           style={styles.left}

@@ -113,7 +113,7 @@ export function EntryInfoCard({ bookingId, visible, waitingForSignature, ownerNa
     return (
       <Card style={styles.card} testID="entry-info-empty">
         <Text style={styles.title}>🔑 Entry info</Text>
-        <Text style={styles.body}>{`${ownerName ?? "The owner"} hasn't added entry info yet — message them.`}</Text>
+        <Text style={styles.body}>{`${ownerName ?? "The owner"} hasn't added entry info yet.`}</Text>
       </Card>
     );
   }

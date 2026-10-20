@@ -347,12 +347,12 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       <Text style={styles.title}>{pet.name}</Text>
       <Text style={styles.muted} testID={`report-state-${pet.id}`}>
         {draft || body.trim()
-          ? `Draft — only you can see it. Check it, then send it to ${pet.ownerName}.`
+          ? `Draft. Only you can see it until you send it to ${pet.ownerName}.`
           : `Write ${pet.name}'s day on the page, or let Goldito write it from today's chips below.`}
       </Text>
       {draft?.fallback ? (
         <Text style={styles.muted} testID={`report-fallback-${pet.id}`}>
-          The writing helper is down — here's a plain list. Edit it if you like, then send.
+          The writing helper is down. Here's a plain list to edit and send.
         </Text>
       ) : null}
       <DecoratedReport
@@ -389,13 +389,13 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
           <ChipSuggestions chips={all} off={off} onToggle={toggle} onRemove={removeCustom} testIDPrefix={`report-chip-${pet.id}`} />
           {highlights.length > REPORT_MAX_HIGHLIGHTS ? (
             <Text style={styles.muted} testID={`report-too-many-${pet.id}`}>
-              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights go into the report — turn a few off to choose.`}
+              {`Only ${REPORT_MAX_HIGHLIGHTS} highlights fit in the report. Turn a few off.`}
             </Text>
           ) : null}
         </>
       ) : (
         <Text style={styles.muted} testID={`report-nochips-${pet.id}`}>
-          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet — add a photo or a short line below."}
+          {busy === "chips" ? "Looking at today…" : "Nothing recorded yet. Add a photo or a short line below."}
         </Text>
       )}
 
@@ -474,7 +474,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         onPress={() => void generate()}
         testID={`report-generate-${pet.id}`}
       />
-      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page — nothing is sent.</Text> : null}
+      {body.trim() ? <Text style={styles.muted}>This replaces what's on the page. Nothing is sent.</Text> : null}
     </Card>
   );
 }

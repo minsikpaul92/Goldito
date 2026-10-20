@@ -655,8 +655,9 @@ def _earlier_messages(messages: list[dict], question: dict) -> list[dict]:
 def _facts_message(grounding: dict, question: str, intent: str | None) -> str:
     payload = {
         **{
-            k: grounding[k] for k in ("owner", "sitter", "inquiry", "availability", "quote", "pets")
+            k: grounding[k] for k in ("owner", "sitter", "inquiry", "availability", "pets")
         },
+        "quote": logic.quote_for_model(grounding["quote"]),
         **(
             {"policy_conflicts": grounding["policy_conflicts"]}
             if grounding["policy_conflicts"]

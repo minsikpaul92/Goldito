@@ -80,7 +80,7 @@ def run_tool(name: str, arguments: dict, grounding: dict) -> dict:
     if name == "get_quote":
         if not grounding["availability"]["can_host"]:
             return {"error": "The sitter cannot host these dates, so there is no price."}
-        return grounding["quote"] or {"error": "No price is available for these dates."}
+        return logic.quote_for_model(grounding["quote"]) or {"error": "No price is available for these dates."}
     if name == "search_records":
         query = str(arguments.get("query", "")).lower().split()
         sources = grounding["sources"]

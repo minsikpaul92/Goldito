@@ -3,20 +3,20 @@ import { OnboardingTour, type TourStep } from "../../../components/OnboardingTou
 const STEPS: TourStep[] = [
   {
     title: "Care updates that feel like they already know you",
-    body: "Stop pinging your sitter for “how’s Max?” Photos, meds, and the daily note arrive in your feed — like they understood what you care about without you asking.",
+    body: "Stop pinging your sitter for “how’s Max?” Photos, meds, and the daily note arrive in your feed, like they understood what you care about without you asking.",
     media: {
       kind: "image",
-      title: "Owner home — next booking + pets",
+      title: "Owner home: next booking + pets",
       brief:
         "Still of Robert’s Home: Max & Mochi cards, “Next: Chloe · Thanksgiving stay,” warm Kidsnote-style layout. No real address or faces.",
     },
   },
   {
     title: "Follow the stay as it happens",
-    body: "Walks, meals, naps, and meds show up on a timeline. Open the album by day when you want the full picture — no DM scroll.",
+    body: "Walks, meals, naps, and meds show up on a timeline. Open the album by day when you want the full picture. No DM scroll.",
     media: {
       kind: "video",
-      title: "Feed & album walkthrough (8–12 s)",
+      title: "Feed & album walkthrough (8 to 12 s)",
       brief:
         "Screen recording: new care post → Album (Meals · Walks · Naps). Soft UI sounds OK; no voiceover for P0.",
     },

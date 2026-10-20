@@ -226,7 +226,7 @@ export default function OwnerBookings() {
                 <Card style={styles.question}>
                   <Text style={styles.questionTitle}>{`${inq.sitterName} · ${inq.petNames.join(", ")}`}</Text>
                   <Text style={styles.hint}>
-                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} – ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
+                    {`${SERVICE_LABEL[inq.serviceType].replace(/^\S+\s/, "")} · ${formatDay(isoToZoned(inq.dropOffAt).day)} to ${formatDay(isoToZoned(inq.pickUpAt).day)}`}
                   </Text>
                   <Text style={inq.state === "replied" && inq.status === "open" ? styles.ready : styles.hint}>
                     {inq.status === "booked"

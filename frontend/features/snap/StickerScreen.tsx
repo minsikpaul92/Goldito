@@ -42,7 +42,7 @@ const BUSY: Record<Step, string> = {
 /** A mask this small or this big did not catch one pet. */
 const MIN_COVER = 0.005;
 const MAX_COVER = 0.95;
-const MISSED = "We couldn't cut out a pet there — tap your pet.";
+const MISSED = "We couldn't cut out a pet there. Tap your pet.";
 
 /**
  * Snap → Sticker (Phase 12.3a, D61): pick a photo → the biggest pet is found (MediaPipe box) and cut out under its
@@ -305,7 +305,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
         <Text style={styles.label}>Sticker box</Text>
         {box.length === 0 ? (
           <Text style={styles.hint} testID="sticker-box-empty">
-            No stickers yet — saved stickers show up here for both of you.
+            No stickers yet.
           </Text>
         ) : (
           <View style={styles.grid}>

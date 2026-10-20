@@ -9,7 +9,7 @@ import { MockDb, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 const MAX = "00000000-0000-4000-8000-0000000000c1";
 const MOCHI = "00000000-0000-4000-8000-0000000000c2";
 const QUOTE = {
-  service: "boarding", nights: 3, days: 0, unit_price: 55, base: 165, extra_pets: 82.5,
+  service: "boarding", nights: 3, days: 3, unit_price: 55, base: 165, extra_pets: 82.5,
   holiday_days: [{ day: "2026-10-12", name: "Thanksgiving" }], holiday_surcharge: 20.63,
   total: 268.13, currency: "CAD", rate_version: "e2e",
 };
@@ -157,7 +157,7 @@ test.describe("owner inquiry", () => {
     await screen.getByTestId("inquiry-pet-Max").click();
     await screen.getByTestId("inquiry-send").click();
     await expect(page).toHaveURL(/\/owner\/inquiries\/.+/);
-    expect(String(db.inquiry_messages[0].body)).toMatch(/^Boarding · .+ – .+ · Max$/);
+    expect(String(db.inquiry_messages[0].body)).toMatch(/^Boarding · .+ to .+ · Max$/);
   });
 
 // The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the

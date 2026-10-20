@@ -121,7 +121,7 @@ export function addMeetGreetToCalendar(b: BookingSummary): void {
     `DTSTAMP:${icsStamp(new Date())}`,
     `DTSTART:${icsStamp(start)}`,
     `DTEND:${icsStamp(end)}`,
-    `SUMMARY:Goldito Meet & Greet — ${pets} with ${b.ownerName} & ${b.sitterName}`,
+    `SUMMARY:Goldito Meet & Greet: ${pets} with ${b.ownerName} & ${b.sitterName}`,
     `LOCATION:${where.replace(/[,;]/g, " ")}`,
     "END:VEVENT",
     "END:VCALENDAR",

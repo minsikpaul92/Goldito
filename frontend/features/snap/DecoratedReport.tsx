@@ -323,7 +323,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           {box === null ? null : box.length === 0 ? (
             <View style={styles.row}>
               <Text style={styles.hint} testID="decor-no-stickers">
-                {`No stickers of ${petName} yet — make one in Snap.`}
+                {`No stickers of ${petName} yet. Make one in Snap.`}
               </Text>
               <TextButton label="Make a sticker" onPress={() => role && router.push(`/${role}/snap/sticker`)} testID="decor-make" />
             </View>
