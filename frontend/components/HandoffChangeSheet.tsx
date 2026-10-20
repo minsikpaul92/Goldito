@@ -186,7 +186,7 @@ export function HandoffChangeSheet({
       <View style={styles.row}>
         <Stepper
           label="Day"
-          value={draft.day ? formatDay(draft.day) : "—"}
+          value={draft.day ? formatDay(draft.day) : "-"}
           onDecrease={() => set({ day: addDays(draft.day, -1) })}
           onIncrease={() => set({ day: addDays(draft.day, 1) })}
           testID="change-day"
@@ -224,7 +224,7 @@ export function HandoffChangeSheet({
         </View>
       ) : (
         <Text style={styles.hint}>
-          {allowPlace ? "House sitting — handoffs stay at the owner's home." : "The place stays the same."}
+          {allowPlace ? "House sitting: handoffs stay at the owner's home." : "The place stays the same."}
         </Text>
       )}
       {shownProblem ? <Text style={styles.problem}>{shownProblem}</Text> : null}

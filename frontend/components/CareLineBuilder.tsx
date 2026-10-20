@@ -127,11 +127,11 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
             label={
               kind === "headsup"
                 ? "What should your sitter watch out for?"
-                : `${kindMeta(kind).label} — what to give or do (empty = the hint)`
+                : `${kindMeta(kind).label}: what to give or do (empty = the hint)`
             }
             value={text}
             maxLength={kind === "headsup" ? CAUTION_MAX : TEXT_MAX}
-            placeholder={kind === "headsup" ? "e.g. No knocking — text me instead" : presetText(kind, species)}
+            placeholder={kind === "headsup" ? "e.g. No knocking, text me instead" : presetText(kind, species)}
             onChangeText={setText}
             testID="line-text"
           />
@@ -174,7 +174,7 @@ export function CareLineBuilder({ species, lines, onLines, disabled }: Props) {
                     onIncrease={() => setCount((c) => Math.min(COUNT_MAX, c + 1))}
                     testID="line-count"
                   />
-                  <Text style={styles.hint}>We spread them over the day — you can change each time in the checklist.</Text>
+                  <Text style={styles.hint}>We spread them over the day. You can change each time later.</Text>
                 </View>
               )}
               <View style={styles.chips}>

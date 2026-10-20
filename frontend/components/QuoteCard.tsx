@@ -19,10 +19,11 @@ function money(n: number): string {
 /** Breakdown from quote_booking — same numbers as Checkout and Pay (03C, D29). */
 export function QuoteCard({ quote, compact, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  // A same-day stay has 0 nights but is billed as 1 day (quote_booking), so it reads as a day.
   const unitLabel =
-    quote.service === "daycare"
-      ? `${quote.days} day${quote.days === 1 ? "" : "s"} × ${money(quote.unit_price)}`
-      : `${quote.nights} night${quote.nights === 1 ? "" : "s"} × ${money(quote.unit_price)}`;
+    quote.service !== "daycare" && quote.nights > 0
+      ? `${quote.nights} night${quote.nights === 1 ? "" : "s"} × ${money(quote.unit_price)}`
+      : `${quote.days} day${quote.days === 1 ? "" : "s"} × ${money(quote.unit_price)}`;
 
   if (compact) {
     return (
@@ -39,7 +40,9 @@ export function QuoteCard({ quote, compact, testID }: Props) {
         Your quote
       </Text>
       <View style={styles.row}>
-        <Text style={styles.body}>{unitLabel}</Text>
+        <Text style={styles.body} testID="quote-unit">
+          {unitLabel}
+        </Text>
         <Text style={styles.body}>{money(quote.base)}</Text>
       </View>
       {quote.extra_pets > 0 ? (
@@ -68,7 +71,7 @@ export function QuoteCard({ quote, compact, testID }: Props) {
         <Text style={styles.total}>Total</Text>
         <Text style={styles.total} testID="quote-total">{`${money(quote.total)} ${quote.currency}`}</Text>
       </View>
-      <Text style={styles.muted}>Price is set at checkout — demo payment, no card.</Text>
+      <Text style={styles.muted}>Price is set at checkout. Demo payment, no card.</Text>
     </Card>
   );
 }

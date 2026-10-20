@@ -104,7 +104,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           {spot === OTHER ? (
             <TextField
               label="Where to meet"
-              placeholder="A park entrance or café — not a home address"
+              placeholder="A park entrance or café, not a home"
               value={other}
               onChangeText={setOther}
               maxLength={120}

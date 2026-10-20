@@ -112,7 +112,7 @@ export function FinishedStay({ booking }: { booking: BookingSummary }) {
     }, [booking.id]),
   );
 
-  const period = `${formatDay(isoToZoned(from).day)} – ${formatDay(isoToZoned(to).day)}`;
+  const period = `${formatDay(isoToZoned(from).day)} to ${formatDay(isoToZoned(to).day)}`;
   const names = booking.pets.map((p) => p.name).join(" & ") || "Your pet";
 
   return (

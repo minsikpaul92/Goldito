@@ -28,7 +28,7 @@ const UNREADABLE = "Couldn't read the label. Try a closer, well-lit photo.";
 /**
  * Snap → Treat check (Phase 12.1c, D61, the Phase 08 design): pick the pet → snap the label → the server reads it,
  * checks the rule table, asks trusted vet sites and the reasoning model → DANGER / WARNING / SAFE with sources.
- * DANGER is a red full-screen modal that closes only through "I understand — don't feed" (DESIGN.md §7.4).
+ * DANGER is a red full-screen modal that closes only through "I understand, don't feed" (DESIGN.md §7.4).
  * Owners check their own pets; a sitter only the pets in their care right now (the API enforces both).
  */
 export function TreatCheckScreen({ role }: { role: Role }) {
@@ -270,7 +270,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
         title={`Don't give this to ${name}`}
         message={result?.warning_message || `This treat isn't safe for ${name}.`}
         chips={result ? [...result.matched_allergens, ...result.toxic_ingredients] : []}
-        actionLabel="I understand — don't feed"
+        actionLabel="I understand, don't feed"
         onAcknowledge={() => void acknowledge()}
         busy={acknowledging}
         testID="treat-danger"
@@ -337,7 +337,7 @@ function ResultCard({
           {result.hidden_sources.map((h) => (
             <Text key={h.ingredient} style={styles.body}>
               <Text style={styles.strong}>{h.ingredient}</Text> may contain {h.may_contain}
-              {h.reason ? ` — ${h.reason}` : ""}
+              {h.reason ? `: ${h.reason}` : ""}
             </Text>
           ))}
         </View>
@@ -382,7 +382,7 @@ function ResultCard({
         )}
         {result.sources_unavailable && result.sources.length > 0 ? (
           <Text style={styles.note} testID="treat-sources-unavailable">
-            Live sources unavailable right now — these come from our safety list.
+            Live sources are down. These come from our safety list.
           </Text>
         ) : null}
       </View>
