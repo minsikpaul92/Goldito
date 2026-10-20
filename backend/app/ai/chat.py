@@ -6,9 +6,12 @@ here after the fact, like the inquiry draft's checks, so a chip or draft can nev
 
 import re
 from datetime import datetime
+from difflib import SequenceMatcher
 
 from app.ai import inquiry as logic
 
+REPEAT_RATIO = 0.85  # a draft this close to a recent message is a repeat
+REPEAT_WINDOW = 4  # ... of the last this-many texts, from either side
 WINDOW = 20  # the last messages every call reads
 SUMMARY_OVER = 40  # a thread longer than this keeps a rolling summary of everything before the window
 SUMMARY_STEP = 10  # ... refreshed when this many older messages are not in it yet
@@ -37,7 +40,14 @@ ACTIONS: dict[str, dict[str, str]] = {
 _NUMBER = re.compile(r"\d")
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
 _NAME_FIRST = re.compile(r"^\s*[A-Z][a-z]+:\s")
+# The other side asked about money: a price, a rate, a quote, a fee or "how much".
+_MONEY_TALK = re.compile(r"\b(price|prices|pricing|cost|costs|how much|rate|rates|quote|fee|fees|charge|charges|total|pay|payment|deposit)\b|\$", re.IGNORECASE)
+_EMOJI_SPECIES = {"cat": re.compile("[\U0001F408\U0001F431\U0001F63A-\U0001F640]"), "dog": re.compile("[\U0001F415\U0001F436\U0001F429]")}
 _UNAVAILABLE = re.compile(r"\b(?:i(?:'m| am)|we(?:'re| are)|already|fully)\s+booked\b|\bfully booked\b|\bno room\b|\bunavailable\b", re.IGNORECASE)
+
+
+# Who hands over: the stay card never says it, so the text the model reads does (the owner drops off and picks up).
+HANDOFF = "The owner drops off and picks up."
 
 
 def _clip(text: str, n: int = 240) -> str:
@@ -58,10 +68,10 @@ def describe(message: dict, me_id: str, tz) -> dict | None:
     card = message.get("card") or {}
     pets = ", ".join(p.get("name", "") for p in card.get("pets", []))
     if card.get("type") == "stay" and card.get("drop_off_at") and card.get("pick_up_at"):
-        return {"who": who, "text": f"[Stay {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}]"}
+        return {"who": who, "text": f"[Stay {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}]"}
     if card.get("type") == "request" and card.get("drop_off_at") and card.get("pick_up_at"):
         note = f" Note: {_clip(card['note'], 160)}" if card.get("note") else ""
-        return {"who": who, "text": f"[Booking request {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}.{note}]"}
+        return {"who": who, "text": f"[Booking request {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}{note}]"}
     return None
 
 
@@ -95,6 +105,41 @@ def chip_problems(label: str) -> list[str]:
     if logic.FORBIDDEN_WORDS.search(label) or logic._THIRD_PERSON.search(label):
         problems.append("it mentions entry information or an assistant")
     return problems
+
+
+def asks_about_money(text: str | None) -> bool:
+    return bool(text and _MONEY_TALK.search(text))
+
+
+def wrong_species_emoji(text: str, pets: list[dict]) -> str | None:
+    """A cat or dog emoji for a species the stay does not have (a cat for two dogs); None when it fits or can't be known."""
+    species = {str(p.get("species", "")).lower() for p in pets}
+    if not species:
+        return None
+    for name, pattern in _EMOJI_SPECIES.items():
+        if pattern.search(text) and name not in species:
+            return name
+    return None
+
+
+def _plain(text: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9 ]+", " ", text.lower()).split())
+
+
+def repeats(text: str, previous: list[str]) -> bool:
+    """Whether a draft says (nearly) what one of the last texts already said: the same words, a close variant, or the
+    same long sentence inside a bigger one."""
+    now = _plain(text)
+    for old in previous[-REPEAT_WINDOW:]:
+        before = _plain(old)
+        if not now or not before:
+            continue
+        if now == before or SequenceMatcher(None, now, before).ratio() >= REPEAT_RATIO:
+            return True
+        short, long_ = sorted((now, before), key=len)
+        if len(short.split()) >= 5 and short in long_:
+            return True
+    return False
 
 
 def generic_chips(role: str, *, started: bool, can_host: bool | None) -> list[str]:
@@ -149,6 +194,9 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
         role == "sitter" and sitter_first and re.search(rf"\b{re.escape(sitter_first)}(?:'s)? (is|has|will|can|would|may)\b", text)
     ):
         problems.append("it talks about me in the third person or mentions an assistant, write in the first person")
+    wrong = wrong_species_emoji(text, grounding.get("pets") or [])
+    if wrong:
+        problems.append(f"it has a {wrong} emoji, but the pets are not a {wrong}")
     if not text.strip():
         problems.append("it is empty")
     if len(text) > DRAFT_MAX:
@@ -223,6 +271,28 @@ def chosen_action(action: str | None, confidence: float | None, available: list[
     if not action or action not in available or float(confidence or 0) < ACTION_MIN_CONFIDENCE:
         return None
     return {"id": action, "label": ACTIONS[action]["label"]}
+
+
+def shown_quote(messages: list[dict]) -> dict | None:
+    """The quote the chat shows: the newest quote card that is not replaced, with its total (accepted fees included).
+    None when there is no quote card; a price the chat does not show is never worked out from anyone's rates."""
+    for m in reversed(messages):
+        card = m.get("card") or {}
+        if m.get("kind") == "card" and card.get("type") == "quote" and card.get("status") != "replaced" and isinstance(card.get("quote"), dict):
+            quote = dict(card["quote"])
+            if card.get("total") is not None:
+                quote["total"] = card["total"]
+            return quote
+    return None
+
+
+def latest_stay(messages: list[dict]) -> dict | None:
+    """The newest stay or request card with dates (what the chat is about)."""
+    for m in reversed(messages):
+        card = m.get("card") or {}
+        if m.get("kind") == "card" and card.get("type") in ("stay", "request") and card.get("drop_off_at"):
+            return card
+    return None
 
 
 def _instant(value) -> datetime | None:

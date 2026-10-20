@@ -96,6 +96,23 @@ def test_chat_uses_the_role_model_and_turns_reasoning_off(monkeypatch):
     assert (result.prompt_tokens, result.completion_tokens) == (11, 7)
 
 
+def test_a_model_name_replaces_the_role_model_and_blank_means_the_role_model(monkeypatch):
+    completions, _ = install(monkeypatch, "a", "b", "c")
+    nebius.chat("fast", [], model="nvidia/owner-model")
+    nebius.chat("fast", [], model="  ")
+    nebius.chat("fast", [], model=None)
+    assert [c["model"] for c in completions.calls] == ["nvidia/owner-model", "nvidia/fast-model", "nvidia/fast-model"]
+
+
+def test_the_chat_agents_models_are_optional_settings(monkeypatch):
+    assert get_settings().model_chat_owner is None and get_settings().model_chat_sitter is None
+    monkeypatch.setenv("MODEL_CHAT_OWNER", "nvidia/owner-model")
+    monkeypatch.setenv("MODEL_CHAT_SITTER", "")
+    get_settings.cache_clear()
+    assert get_settings().model_chat_owner == "nvidia/owner-model"
+    assert not get_settings().model_chat_sitter
+
+
 def test_reasoning_can_be_kept_on_and_vision_gets_no_flag(monkeypatch):
     completions, _ = install(monkeypatch, "a", "b")
     nebius.chat("report", [], reasoning=True)

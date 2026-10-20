@@ -102,10 +102,14 @@ def chat(
     max_tokens: int = 800,
     temperature: float = 0.2,
     timeout: float = DEFAULT_TIMEOUT_S,
+    model: str | None = None,
     _retried: bool = False,
 ) -> ChatResult:
-    """One chat completion. Returns the answer text (think blocks removed) plus the call's numbers."""
-    model, base_url = _role_config(role)
+    """One chat completion. Returns the answer text (think blocks removed) plus the call's numbers.
+
+    `model` replaces the role's model id (same base URL); unset or blank = the role's own."""
+    role_model, base_url = _role_config(role)
+    model = (model or "").strip() or role_model
     client = _client(base_url)
 
     kwargs: dict[str, Any] = {
