@@ -413,13 +413,23 @@ def test_the_set_sitter_is_the_owners_one_favorite_and_a_second_reset_does_not_d
     assert db.tables["owner_favorite_sitters"] == [{"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}]
 
 
-def test_the_sitter_gets_her_onboarding_answers_and_is_marked_done():
+def test_the_sitter_gets_her_onboarding_answers_once_and_is_marked_done():
     db = world()
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
     answers = [a for a in db.tables["sitter_profile_answers"] if a["sitter_id"] == SITTER]
-    assert [a["question_key"] for a in answers] == [k for k, _a, _c in demo_accounts.DEMO_SITTER_ANSWERS]  # replaced, not doubled
+    assert [a["question_key"] for a in answers] == [k for k, _a, _c in demo_accounts.DEMO_SITTER_ANSWERS]  # once, not doubled
     assert all(a["answer"] or a["choice"] for a in answers)
+    assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
+
+
+def test_answers_a_teammate_filled_in_are_kept():
+    db = world()
+    db.tables["sitter_profile_answers"] = [{"sitter_id": SITTER, "question_key": "cats", "answer": "No cats", "choice": "no"}]
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert [(a["question_key"], a["choice"]) for a in db.tables["sitter_profile_answers"]] == [("cats", "no")]
     assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
