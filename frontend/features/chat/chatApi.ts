@@ -32,6 +32,8 @@ export type ChatCard =
       total: number;
       status: "sent" | "confirmed" | "replaced";
     }
+  // The booking's step cards (014o) hold only the booking id; the screen reads the booking itself to draw them.
+  | { type: "meet_greet" | "agreement" | "payment"; bookingId: string }
   | { type: "unknown" };
 
 export type ChatMessage = {
@@ -93,7 +95,20 @@ function fail(error: { message: string }, fallback: string): never {
 /** The preview line of a message in the list. */
 export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody" | "lastCardType">): string {
   if (item.lastKind !== "card") return item.lastBody ?? "";
-  return item.lastCardType === "quote" ? "Quote" : item.lastCardType === "request" ? "Booking request" : "Stay details";
+  switch (item.lastCardType) {
+    case "quote":
+      return "Quote";
+    case "request":
+      return "Booking request";
+    case "meet_greet":
+      return "Meet & Greet";
+    case "agreement":
+      return "Booking";
+    case "payment":
+      return "Payment";
+    default:
+      return "Stay details";
+  }
 }
 
 function toCard(raw: unknown): ChatCard {
@@ -112,6 +127,9 @@ function toCard(raw: unknown): ChatCard {
     total?: number | string;
     status?: "sent" | "confirmed" | "replaced";
   } | null;
+  if ((c?.type === "meet_greet" || c?.type === "agreement" || c?.type === "payment") && c.booking_id) {
+    return { type: c.type, bookingId: c.booking_id };
+  }
   if (c?.type === "request" && c.booking_id && c.drop_off_at && c.pick_up_at) {
     return {
       type: "request",

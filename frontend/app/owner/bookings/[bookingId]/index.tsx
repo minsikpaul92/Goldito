@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { AgreeSheet } from "../../../../components/AgreeSheet";
 import { bookingBadges, handoffLine } from "../../../../components/BookingCard";
 import { BookingStageBar, hasStageBar } from "../../../../components/BookingStageBar";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
@@ -97,6 +98,7 @@ export default function OwnerBookingDetail() {
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
   const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [agreeing, setAgreeing] = useState(false);
   const [passReasons, setPassReasons] = useState<string[]>([]);
   const [passNote, setPassNote] = useState("");
 
@@ -229,6 +231,19 @@ export default function OwnerBookingDetail() {
             {passing ? (
               <Text style={styles.muted} testID="hold-note">{`${sitter} is holding your dates while you arrange the Meet & Greet.`}</Text>
             ) : null}
+          </Card>
+        ) : null}
+
+        {booking.stage === "confirm" ? (
+          <Card style={styles.block} testID="agree-card">
+            {booking.ownerAgreedAt ? (
+              <Text style={styles.muted} testID="agree-waiting">{`You'd like to book. Waiting for ${sitter} to accept.`}</Text>
+            ) : (
+              <>
+                <Text style={styles.label}>{booking.sitterAcceptedAt ? `${sitter} accepted. Your turn` : "Ready to book?"}</Text>
+                <Button label="I'd like to book" onPress={() => setAgreeing(true)} testID="agree-booking" />
+              </>
+            )}
           </Card>
         ) : null}
 
@@ -366,6 +381,8 @@ export default function OwnerBookingDetail() {
           ) : null}
         </View>
       ) : null}
+
+      <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
 
       <Sheet
         visible={confirmCancel}

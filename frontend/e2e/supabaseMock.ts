@@ -162,6 +162,10 @@ export type MockDb = {
   /** 014j: one thread per owner and sitter, and its messages (text or card). */
   chat_threads: Row[];
   chat_messages: Row[];
+  /** The 014o trigger, in memory: what each booking looked like when its step cards were last brought up to date. */
+  cardSigs: Record<string, string>;
+  /** Who made the last RPC call: the sender of the step cards that call caused. */
+  lastActor: string | null;
   bookings: Row[];
   /** Capacity units of a booking: { booking_id, day, slot } (phase-02 booking_slots). */
   booking_slots: Row[];
@@ -209,6 +213,8 @@ export type MockDb = {
   owner_home_access: Row[];
   /** pay_booking_demo calls. */
   payments: Row[];
+  /** agree_to_book calls: { p_booking }. */
+  agreements: Row[];
   /** Unread / Realtime notices (Phase 05) — empty in e2e unless a test seeds rows. */
   notifications: Row[];
   /** Feed posts + media rows (Phase 05 upload path). */
@@ -259,6 +265,8 @@ function createMockDb(): MockDb {
     profile_photos: [],
     chat_threads: [],
     chat_messages: [],
+    cardSigs: {},
+    lastActor: null,
     bookings: [],
     booking_slots: [],
     cancellations: [],
@@ -287,6 +295,7 @@ function createMockDb(): MockDb {
     booking_consents: [],
     owner_home_access: [],
     payments: [],
+    agreements: [],
     notifications: [],
     feed_posts: [],
     media: [],
@@ -895,6 +904,110 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
   return json(route, 200, rows);
 }
 
+/** The booking's current handoff, as current_handoff (003). */
+function currentHandoffRow(db: MockDb, b: Row, kind: string): Row | undefined {
+  const rows = db.booking_handoffs.filter((h) => h.booking_id === b.id && h.kind === kind);
+  return (
+    (b.status === "requested" ? rows.find((h) => h.status === "proposed") : undefined) ?? rows.find((h) => h.status === "agreed")
+  );
+}
+
+/** booking_extra_fees (014o): the accepted fees of the pair's newest CONFIRMED chat quote for this very stay. */
+function acceptedFees(db: MockDb, b: Row): { label: string; amount: number }[] {
+  const thread = db.chat_threads.find((t) => t.owner_id === b.owner_id && t.sitter_id === b.sitter_id);
+  const drop = currentHandoffRow(db, b, "drop_off");
+  const pick = currentHandoffRow(db, b, "pick_up");
+  if (!thread || !drop || !pick) return [];
+  const pets = db.booking_pets.filter((bp) => bp.booking_id === b.id).map((bp) => String(bp.pet_id)).sort().join(",");
+  const card = db.chat_messages
+    .filter((m) => m.thread_id === thread.id && (m.card as Row | null)?.type === "quote")
+    .map((m) => ({ at: String(m.created_at), card: m.card as Row & { extras: Row[]; pets: Row[] } }))
+    .filter(
+      ({ card: c }) =>
+        c.status === "confirmed" &&
+        c.service_type === b.service_type &&
+        Date.parse(String(c.drop_off_at)) === Date.parse(String(drop.scheduled_at)) &&
+        Date.parse(String(c.pick_up_at)) === Date.parse(String(pick.scheduled_at)) &&
+        c.pets.map((p) => String(p.id)).sort().join(",") === pets,
+    )
+    .sort((x, y) => y.at.localeCompare(x.at))[0]?.card;
+  return (card?.extras ?? []).filter((e) => e.status === "accepted").map((e) => ({ label: String(e.label), amount: Number(e.amount) }));
+}
+
+/** price_with_fees (014o). */
+function priceWithFees(db: MockDb, b: Row, quote: Row): Row {
+  const extras = acceptedFees(db, b);
+  const sum = extras.reduce((total, e) => total + e.amount, 0);
+  return { ...quote, extras, extras_total: sum, subtotal: quote.total, total: Math.round((Number(quote.total) + sum) * 100) / 100 };
+}
+
+/** The agreed state of a request: the Meet & Greet is over (or never was) and both said yes, in any order (014o). */
+function confirmBooking(db: MockDb, b: Row, by: string, users: MockUser[]) {
+  const open = db.booking_handoffs.filter((h) => h.booking_id === b.id && h.status === "proposed");
+  b.status = "confirmed";
+  b.responded_at = new Date(nowMs()).toISOString();
+  for (const h of open) h.status = "agreed";
+  const name = users.find((u) => u.id === by)?.displayName;
+  db.notifications.push({
+    id: crypto.randomUUID(),
+    user_id: by === b.sitter_id ? b.owner_id : b.sitter_id,
+    type: "booking_confirmed",
+    title: by === b.sitter_id ? `${name} confirmed your booking` : `${name} agreed to book`,
+    body: null,
+    pet_id: null,
+    booking_id: b.id,
+    ref_id: b.id,
+    read_at: null,
+    created_at: new Date(nowMs()).toISOString(),
+  });
+}
+
+/**
+ * The 014o trigger: when a booking changes, its Meet & Greet, agreement and payment cards appear in the pair's chat
+ * (once each, holding only the booking id) and every existing one is touched (`rev`). A booking is first seen as it
+ * is (nothing changed yet), like a row that existed before the trigger.
+ */
+function syncBookingCards(db: MockDb) {
+  for (const b of db.bookings) {
+    const sig = JSON.stringify([
+      b.status, b.sitter_interest_at, b.meet_greet_status, b.meet_greet_mode, b.meet_greet_at, b.meet_greet_place,
+      b.meet_greet_link, b.owner_agreed_at, b.sitter_accepted_at, b.paid_at,
+    ]);
+    const before = db.cardSigs[String(b.id)];
+    db.cardSigs[String(b.id)] = sig;
+    if (before === undefined || before === sig) continue;
+    const thread = db.chat_threads.find((t) => t.owner_id === b.owner_id && t.sitter_id === b.sitter_id);
+    if (!thread) continue;
+    const mg = String(b.meet_greet_status ?? "not_needed");
+    const wanted = [
+      b.sitter_interest_at && mg !== "not_needed" ? "meet_greet" : null,
+      ["requested", "confirmed"].includes(String(b.status)) && ["not_needed", "done", "skipped"].includes(mg) ? "agreement" : null,
+      b.status === "confirmed" ? "payment" : null,
+    ].filter((x): x is string => !!x);
+    const sender = db.lastActor && [b.owner_id, b.sitter_id].includes(db.lastActor) ? db.lastActor : null;
+    for (const type of wanted) {
+      const has = db.chat_messages.some((m) => m.thread_id === thread.id && (m.card as Row | null)?.type === type && (m.card as Row).booking_id === b.id);
+      if (!has) {
+        db.chat_messages.push({
+          id: crypto.randomUUID(),
+          thread_id: thread.id,
+          sender_id: sender,
+          kind: "card",
+          body: null,
+          card: { type, booking_id: b.id, rev: 0 },
+          created_at: new Date(nowMs() + db.chat_messages.length).toISOString(),
+        });
+      }
+    }
+    for (const m of db.chat_messages) {
+      const c = m.card as Row | null;
+      if (m.thread_id === thread.id && c && ["meet_greet", "agreement", "payment"].includes(String(c.type)) && c.booking_id === b.id) {
+        c.rev = Number(c.rev ?? 0) + 1;
+      }
+    }
+  }
+}
+
 async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   ensureRoleRows(users, db);
   const request = route.request();
@@ -906,6 +1019,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
   const wantsObject = (headers.accept ?? "").includes("vnd.pgrst.object");
   const wantsRows = (headers.prefer ?? "").includes("return=representation");
   const me = callerId(headers.authorization);
+  // The trigger of the previous call has run by now; this call's actor is the sender of what it causes.
+  syncBookingCards(db);
+  if (path.startsWith("rpc/") && me) db.lastActor = me;
 
   if (path.startsWith("rpc/") && /^rpc\/(open_chat_thread|send_chat_message|mark_chat_read|leave_chat|list_my_chats|get_chat_thread|post_booking_request_card|send_chat_quote|add_chat_quote_extra|answer_chat_quote_extra|confirm_chat_quote)$/.test(path)) {
     return handleChat(route, path.slice(4), users, db, me);
@@ -1103,8 +1219,60 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       return fail("meet_greet_required");
     }
     if (open.some((h) => h.proposed_by === me)) return fail("handoff_pending");
-    booking.status = "confirmed";
-    for (const h of open) h.status = "agreed";
+    // 014o: the sitter's yes is half of the agreement; the booking is confirmed when the owner said yes too.
+    booking.sitter_accepted_at = booking.sitter_accepted_at ?? new Date(nowMs()).toISOString();
+    booking.sitter_note = args.p_note ?? booking.sitter_note ?? null;
+    if (!booking.owner_agreed_at) {
+      db.notifications.push({
+        id: crypto.randomUUID(),
+        user_id: booking.owner_id,
+        type: "booking_sitter_accepted",
+        title: `${users.find((u) => u.id === me)?.displayName} accepted. Your turn to book`,
+        body: null,
+        pet_id: null,
+        booking_id: booking.id,
+        ref_id: booking.id,
+        read_at: null,
+        created_at: new Date(nowMs()).toISOString(),
+      });
+      return route.fulfill({ status: 204 });
+    }
+    confirmBooking(db, booking, me, users);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/agree_to_book") {
+    // agree_to_book (014o): the owner's "I'd like to book", once the Meet & Greet is over or never needed.
+    const { p_booking } = request.postDataJSON();
+    db.agreements.push({ p_booking });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const booking = db.bookings.find((b) => b.id === p_booking && b.owner_id === me);
+    if (!booking) return fail("not_allowed");
+    if (booking.owner_agreed_at) return route.fulfill({ status: 204 });
+    if (booking.status !== "requested") return fail("invalid_status");
+    if (!["not_needed", "done", "skipped", undefined].includes(booking.meet_greet_status as string | undefined)) {
+      return fail("meet_greet_required");
+    }
+    if (db.booking_handoffs.some((h) => h.booking_id === booking.id && h.status === "proposed" && h.proposed_by === booking.sitter_id)) {
+      return fail("handoff_pending");
+    }
+    booking.owner_agreed_at = new Date(nowMs()).toISOString();
+    if (!booking.sitter_accepted_at) {
+      db.notifications.push({
+        id: crypto.randomUUID(),
+        user_id: booking.sitter_id,
+        type: "booking_agree_requested",
+        title: `${users.find((u) => u.id === me)?.displayName} would like to book`,
+        body: null,
+        pet_id: null,
+        booking_id: booking.id,
+        ref_id: booking.id,
+        read_at: null,
+        created_at: new Date(nowMs()).toISOString(),
+      });
+      return route.fulfill({ status: 204 });
+    }
+    confirmBooking(db, booking, me, users);
     return route.fulfill({ status: 204 });
   }
 
@@ -1116,6 +1284,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const current = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === args.p_kind);
     const base = current.find((h) => h.status === "proposed") ?? current.find((h) => h.status === "agreed");
     for (const h of current) if (h.status === "proposed") h.status = "superseded";
+    // 014o: new terms on a request clear both yes.
+    if (booking.status === "requested") {
+      booking.owner_agreed_at = null;
+      booking.sitter_accepted_at = null;
+    }
     const id = crypto.randomUUID();
     db.booking_handoffs.push({
       id,
@@ -1173,14 +1346,22 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         let stage: string;
         if (b.status === "declined" || b.status === "cancelled") stage = String(b.status);
         else if (b.status === "requested") {
-          stage = mg === "not_needed" || !b.sitter_interest_at ? "requested" : ["done", "skipped"].includes(mg) ? "confirm" : "meet_greet";
+          stage = ["not_needed", "done", "skipped"].includes(mg) ? "confirm" : b.sitter_interest_at ? "meet_greet" : "requested";
         } else if (done("pick_up")) stage = "completed";
         else if (done("drop_off")) stage = "in_care";
         else stage = b.paid_at ? "paid" : "awaiting_payment";
         const next =
-          stage === "requested" || stage === "confirm"
+          stage === "requested"
             ? "sitter"
-            : stage === "awaiting_payment"
+            : stage === "confirm"
+              ? !b.owner_agreed_at && !b.sitter_accepted_at
+                ? "both"
+                : !b.owner_agreed_at
+                  ? "owner"
+                  : !b.sitter_accepted_at
+                    ? "sitter"
+                    : "none"
+              : stage === "awaiting_payment"
               ? "owner"
               : stage === "meet_greet"
                 ? mg === "proposed"
@@ -1300,6 +1481,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, db.quote ?? DEMO_QUOTE);
   }
 
+  if (path === "rpc/quote_booking_for") {
+    // quote_booking_for (014o): the booking's price with the accepted fees of the confirmed chat quote.
+    const { p_booking } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
+    if (db.quote_error) return json(route, 400, { code: "P0001", message: db.quote_error, details: db.quote_error_detail });
+    return json(route, 200, priceWithFees(db, booking, (db.quote ?? DEMO_QUOTE) as Row));
+  }
+
   if (path === "rpc/required_consents") {
     const { p_booking } = request.postDataJSON();
     const booking = db.bookings.find((b) => b.id === p_booking && (b.owner_id === me || b.sitter_id === me));
@@ -1324,8 +1514,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const missing = required.filter((k) => !signed.has(k));
     if (missing.length > 0) return fail("consents_missing", missing.join(","));
     booking.paid_at = new Date(nowMs()).toISOString();
-    booking.price_snapshot = DEMO_QUOTE;
-    return json(route, 200, DEMO_QUOTE);
+    const priced = priceWithFees(db, booking, DEMO_QUOTE);
+    booking.price_snapshot = priced;
+    return json(route, 200, priced);
   }
 
   if (path === "rpc/ensure_today_task_logs") {
