@@ -216,9 +216,6 @@ export type MockDb = {
   media: Row[];
   /** AI drafts (private to the sitter) and sent reports (Phase 07). */
   daily_reports: Row[];
-  /** Inquiries and their thread (Phase 07B). */
-  inquiries: Row[];
-  inquiry_messages: Row[];
   /** Reviews of finished stays (Phase 07C). */
   reviews: Row[];
   sitter_owner_notes: Row[];
@@ -294,8 +291,6 @@ function createMockDb(): MockDb {
     feed_posts: [],
     media: [],
     daily_reports: [],
-    inquiries: [],
-    inquiry_messages: [],
     reviews: [],
     sitter_owner_notes: [],
     owner_favorite_sitters: [],
@@ -632,19 +627,6 @@ function handleTrip(route: Route, name: string, args: Record<string, unknown>, m
     });
   }
   return json(route, 200, trip);
-}
-
-/** The 010 RLS for inquiry_messages. */
-function inquiryMessageVisible(db: MockDb, row: Row, me: string | null): boolean {
-  const inquiry = db.inquiries.find((i) => i.id === row.inquiry_id);
-  if (!inquiry) return false;
-  if (inquiry.sitter_id === me) return true;
-  return (
-    inquiry.owner_id === me &&
-    (row.author === "owner" || row.author === "sitter") &&
-    (row.status ?? "sent") === "sent" &&
-    Date.parse(String(row.visible_at ?? row.created_at ?? 0)) <= Date.now()
-  );
 }
 
 /** Same as the SQL `pet_has_open_stay`. */
@@ -1647,68 +1629,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, { avg, count: mine.length, recent });
   }
 
-  if (path === "rpc/send_inquiry_reply") {
-    // 010b: only the thread's sitter; quote / sources / can_host are copied from the draft, nothing else.
-    const { p_inquiry, p_body, p_draft, p_outcome } = request.postDataJSON();
-    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
-    if (!inquiry || inquiry.sitter_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
-    const body = String(p_body ?? "").trim();
-    if (!body) return json(route, 400, { code: "P0001", message: "body_required" });
-    const draft = p_draft ? db.inquiry_messages.find((m) => m.id === p_draft && m.inquiry_id === p_inquiry && m.author === "ai") : null;
-    if (p_draft && !draft) return json(route, 400, { code: "P0001", message: "draft_not_found" });
-    // 012f (CR-7): a draft older than the owner's latest message is refused.
-    if (draft && db.inquiry_messages.some((m) => m.inquiry_id === p_inquiry && m.author === "owner" && String(m.created_at) > String(draft.created_at))) {
-      return json(route, 400, { code: "P0001", message: "draft_stale" });
-    }
-    let grounding: Row | null = null;
-    if (p_outcome === "decline" || p_outcome === "suggest") {
-      // 011k: a decline / suggestion can't host and carries no quote.
-      grounding = { availability: { can_host: false } };
-    } else if (draft) {
-      const g = (draft.grounding ?? {}) as Row;
-      grounding = { quote: g.quote ?? null, sources: g.sources ?? [], availability: { can_host: (g.availability as Row | undefined)?.can_host ?? true } };
-    }
-    const row = {
-      id: crypto.randomUUID(),
-      inquiry_id: p_inquiry,
-      author: "sitter",
-      sender_id: me,
-      body,
-      grounding,
-      drafted_by_ai: !!p_draft,
-      status: "sent",
-      confirmed_by_sitter_at: new Date().toISOString(),
-      visible_at: new Date().toISOString(),
-      read_at: null,
-      created_at: new Date().toISOString(),
-    };
-    db.inquiry_messages.push(row);
-    db.notifications.push({
-      id: crypto.randomUUID(), user_id: inquiry.owner_id, type: "inquiry_replied", title: "reply", body: body.slice(0, 140),
-      pet_id: null, booking_id: null, ref_id: p_inquiry, read_at: null, created_at: row.created_at,
-    });
-    return json(route, 200, row);
-  }
-
-  if (path === "rpc/change_inquiry_dates") {
-    // 011j: the owner's own open inquiry only; one owner message records the change.
-    const { p_inquiry, p_drop_off_at, p_pick_up_at, p_drop_off_place, p_pick_up_place, p_body } = request.postDataJSON();
-    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
-    if (!inquiry || inquiry.owner_id !== me) return json(route, 400, { code: "P0001", message: "forbidden" });
-    if (inquiry.status !== "open") return json(route, 400, { code: "P0001", message: "inquiry_closed" });
-    if (!(Date.parse(p_pick_up_at) > Date.parse(p_drop_off_at))) return json(route, 400, { code: "P0001", message: "invalid_window" });
-    inquiry.drop_off_at = p_drop_off_at;
-    inquiry.pick_up_at = p_pick_up_at;
-    if (p_drop_off_place) inquiry.drop_off_location_type = p_drop_off_place;
-    if (p_pick_up_place) inquiry.pick_up_location_type = p_pick_up_place;
-    const row = {
-      id: crypto.randomUUID(), inquiry_id: p_inquiry, author: "owner", sender_id: me, body: String(p_body), grounding: null,
-      drafted_by_ai: false, status: "sent", visible_at: new Date().toISOString(), read_at: null, created_at: new Date().toISOString(),
-    };
-    db.inquiry_messages.push(row);
-    return json(route, 200, row);
-  }
-
   if (path === "rpc/stay_capacity_check") {
     // 011c: null = fits; a spec sets `db.stayShortfall` to see the refusal.
     db.stayChecks.push(request.postDataJSON());
@@ -1725,17 +1645,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       if (p_mode === "auto" && p_consent) profile.ai_consent_at = new Date().toISOString();
     }
     return json(route, 200, { mode: profile.ai_reply_mode ?? "manual", consented: !!profile.ai_consent_at });
-  }
-
-  if (path === "rpc/mark_inquiry_read") {
-    const { p_inquiry } = request.postDataJSON();
-    const inquiry = db.inquiries.find((i) => i.id === p_inquiry);
-    if (inquiry?.sitter_id === me) {
-      for (const m of db.inquiry_messages) {
-        if (m.inquiry_id === p_inquiry && m.author === "owner" && !m.read_at) m.read_at = new Date().toISOString();
-      }
-    }
-    return route.fulfill({ status: 204 });
   }
 
   if (path === "rpc/log_care_checkin") {
@@ -1883,8 +1792,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
         // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
         (path !== "daily_reports" || row.sitter_id === me || row.status === "sent") &&
-        // RLS: a party sees their own inquiries; the owner never sees an AI draft or an unsent / not-yet-visible reply (010).
-        (path !== "inquiries" || row.owner_id === me || row.sitter_id === me) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011g): the sitter's note about an owner is the sitter's alone.
@@ -1905,8 +1812,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
               db.booking_pets.some((bp) => bp.booking_id === b.id && bp.pet_id === row.pet_id),
           )) &&
         // RLS (014): the owner who asked and the asked sitter.
-        (path !== "photo_requests" || row.owner_id === me || row.sitter_id === me) &&
-        (path !== "inquiry_messages" || inquiryMessageVisible(db, row, me)),
+        (path !== "photo_requests" || row.owner_id === me || row.sitter_id === me),
     );
     if (path === "pets" && (params.get("select") ?? "").includes("pet_allergies(")) {
       rows = rows.map((pet) => ({
@@ -1980,10 +1886,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         };
       });
     }
-    if (path === "inquiries" && select.includes("sitter:profiles")) {
-      const name = (id: unknown) => ({ display_name: users.find((u) => u.id === id)?.displayName ?? null });
-      rows = rows.map((r) => ({ ...r, sitter: name(r.sitter_id), owner: name(r.owner_id) }));
-    }
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
@@ -2029,7 +1931,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if ((params.get("order") ?? "").startsWith("created_at")) {
       rows = [...rows].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
       // Feed + notifications are read newest first (`order=created_at.desc`).
-      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "inquiries" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
+      if ((path === "pet_life_records" || path === "feed_posts" || path === "notifications" || path === "care_checkins" || path === "care_change_requests" || path === "pet_stickers" || path === "safety_checks") && params.get("order")!.endsWith(".desc")) {
         rows.reverse();
       }
     }
@@ -2057,8 +1959,6 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       ...(path === "feed_posts" ? { visibility: "shared" } : {}),
       ...(path === "pet_cautions" ? { active: true } : {}),
       // Column defaults of 010.
-      ...(path === "inquiries" ? { status: "open", booking_id: null } : {}),
-      ...(path === "inquiry_messages" ? { status: "sent", visible_at: new Date().toISOString(), read_at: null } : {}),
       // 011h: owner_id defaults to the caller.
       ...(path === "owner_favorite_sitters" ? { owner_id: me } : {}),
       ...row,

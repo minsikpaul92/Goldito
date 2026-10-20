@@ -13,7 +13,6 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { TextButton } from "../../../components/ui/TextButton";
 import { TextField } from "../../../components/ui/TextField";
 import { SPECIES_EMOJI } from "../../../features/pets/petFormat";
-import { getInquiry, markInquiryBooked } from "../../../features/inquiries/inquiryApi";
 import { useMyPets } from "../../../features/pets/useMyPets";
 import { addDays, appToday, formatTime, isoToZoned, zonedToIso } from "../../../features/schedule/dates";
 import {
@@ -73,7 +72,6 @@ export default function BookCare() {
   const params = useLocalSearchParams<{
     sitter?: string;
     rebook?: string;
-    inquiry?: string;
     other?: string;
     /** From the sitter search (SS-2): the searched stay, ISO times and pet ids. */
     drop?: string;
@@ -108,8 +106,8 @@ export default function BookCare() {
 
   // One pet → picked for you (unless a rebook already filled the pets in).
   useEffect(() => {
-    if (pets.length === 1 && !params.rebook && !params.inquiry && !params.pets) setPetIds([pets[0].id]);
-  }, [pets, params.rebook, params.inquiry, params.pets]);
+    if (pets.length === 1 && !params.rebook && !params.pets) setPetIds([pets[0].id]);
+  }, [pets, params.rebook, params.pets]);
 
   // From the sitter search: the same stay and pets the owner searched with.
   useEffect(() => {
@@ -143,23 +141,6 @@ export default function BookCare() {
       })
       .catch(() => undefined);
   }, [params.rebook]);
-
-  // From an inquiry (07B 7B.5): the same trip; the same sitter unless the owner is looking elsewhere.
-  useEffect(() => {
-    if (!params.inquiry) return;
-    getInquiry(params.inquiry)
-      .then((inq) => {
-        if (!inq) return;
-        setService(inq.serviceType);
-        setPetIds(inq.petIds);
-        if (!params.other) setSitterId(inq.sitterId);
-        const fill = (at: string, place: HandoffDraft["locationType"], set: (d: HandoffDraft) => void) =>
-          set({ ...isoToZoned(at), locationType: place, note: "" });
-        fill(inq.dropOffAt, inq.dropOffPlace, setDropOff);
-        fill(inq.pickUpAt, inq.pickUpPlace, setPickUp);
-      })
-      .catch(() => undefined);
-  }, [params.inquiry, params.other]);
 
   const [favorites, setFavorites] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
@@ -238,7 +219,7 @@ export default function BookCare() {
         ? { locationType: "owner_home" as const, note: null }
         : { locationType: h.locationType, note: h.note.trim() || null };
     try {
-      const bookingId = await requestBooking({
+      await requestBooking({
         sitterId: chosen.sitterId,
         petIds,
         dropOff: { at: dropIso, ...place(dropOff) },
@@ -247,10 +228,6 @@ export default function BookCare() {
         serviceType: service,
         rebookedFrom,
       });
-      if (params.inquiry && !params.other) {
-        // The question led to this request; a failed link must not undo a booking that went out.
-        await markInquiryBooked(params.inquiry, bookingId).catch(() => undefined);
-      }
       toast.show(`Request sent to ${chosen.displayName} 📨`);
       router.replace("/owner/bookings");
     } catch (error) {

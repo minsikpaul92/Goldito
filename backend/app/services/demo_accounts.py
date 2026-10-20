@@ -6,6 +6,7 @@ Shared by `scripts/seed_demo.py`, `scripts/reset_demo.py` and the demo reset ser
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from supabase import Client
 
@@ -116,6 +117,19 @@ DEMO_SITTER_RATES = {
     "holiday_pct": 25,
 }
 
+# What a demo sitter said in onboarding (014f), so the profile an owner opens shows a real "About" and the search can
+# tell sitters apart. Built-in questions only, display text; the same answers for every demo sitter.
+# (key, answer text or None, choice or None)
+DEMO_SITTER_ANSWERS: tuple[tuple[str, str | None, str | None], ...] = (
+    ("walks_per_day", "Two walks, morning and evening, longer on weekends.", "2"),
+    ("meals_per_day", "I follow your feeding plan.", "2"),
+    ("home_all_day", "I work from home, so someone is always around.", "home"),
+    ("activity", "Playtime in the yard, then quiet time on the couch.", "relaxed"),
+    ("park_nearby", "There is a dog park a 5 minute walk away.", "yes"),
+    ("dog_sizes", None, "small,medium"),
+    ("cats", "Cats are welcome, they get their own room.", "yes"),
+)
+
 # Where the demo homes are on the map (Phase 06B, D32): public landmark addresses in Toronto, never a real person's
 # home. Each account has its own, so the sitter search shows a spread of distances (about 0.6 to 14 km).
 # address, lat, lng
@@ -170,6 +184,19 @@ def ensure_sitter_rates(client: Client, sitter_id: str) -> str:
         return "updated"
     client.table("sitter_rates").insert({"sitter_id": sitter_id, **DEMO_SITTER_RATES}).execute()
     return "created"
+
+
+def ensure_sitter_answers(client: Client, sitter_id: str) -> None:
+    """Give a demo sitter the onboarding answers and mark onboarding as done (014f), so signing in does not send
+    her through the questions. Replaces her answers; safe to run again."""
+    client.table("sitter_profile_answers").delete().eq("sitter_id", sitter_id).execute()
+    for position, (key, answer, choice) in enumerate(DEMO_SITTER_ANSWERS):
+        client.table("sitter_profile_answers").insert(
+            {"sitter_id": sitter_id, "question_key": key, "answer": answer, "choice": choice, "position": position}
+        ).execute()
+    client.table("sitter_profiles").update({"onboarded_at": datetime.now(UTC).isoformat()}).eq("id", sitter_id).is_(
+        "onboarded_at", "null"
+    ).execute()
 
 
 def check_sitter_rates(client: Client, sitter_id: str) -> str | None:

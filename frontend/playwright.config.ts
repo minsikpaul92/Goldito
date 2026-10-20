@@ -36,7 +36,7 @@ const FLOW_SPECS = new RegExp(
     "auth", "pets", "profile", "schedule", "sitters", "booking", "sitter-bookings", "negotiation", "meet-greet",
     "handoff", "rebook", "today", "checkout", "welcome", "media-picker", "feed", "care-tasks", "sitter-tasks",
     "quick-checkin", "diary", "sitter-home", "live-updates", "due-reminder", "care-request", "heads-up", "report",
-    "inquiry", "caption", "completion", "demo-tools", "location", "home-location", "transit", "privacy", "snap",
+    "caption", "completion", "demo-tools", "location", "home-location", "transit", "privacy", "snap",
     "treat-check", "mood", "sticker", "decor", "photo-request", "split", "settings", "sitter-onboarding", "demo-sets", "profile-photos", "skin", "chat",
   ].join("|")})\\.spec\\.ts$`,
 );

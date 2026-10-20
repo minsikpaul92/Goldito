@@ -58,18 +58,17 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
-Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3) and questions.
+Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3).
 
 Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 103 |
-| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 117 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 125 |
-| TextButton | Open Profile | `search-open-profile` | 152 |
-| TextButton | Try again | `search-retry` | 160 |
-| Pressable | — | ``question-card-${inq.id}`` | 220 |
+| EmptyState | Couldn't load your bookings | — | 94 |
+| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 108 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 116 |
+| TextButton | Open Profile | `search-open-profile` | 143 |
+| TextButton | Try again | `search-retry` | 151 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -132,13 +131,13 @@ Shows: `HandoffDraft` · `HandoffPicker`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Add a pet first | — | 276 |
-| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 290 |
-| TextButton | Profile | ``sitter-profile-${name}`` | 306 |
-| SegmentedControl | — | `service` | 327 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 348 |
-| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 422 |
-| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 456 |
+| EmptyState | Add a pet first | — | 253 |
+| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 267 |
+| TextButton | Profile | ``sitter-profile-${name}`` | 283 |
+| SegmentedControl | — | `service` | 304 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 325 |
+| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 399 |
+| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 433 |
 
 ### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
 
@@ -194,22 +193,6 @@ Owner entry codes form (03C). Shown to the booked sitter only from 2 h before ar
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load entry info | — | 64 |
 | Button | Save | `home-access-save` | 136 |
-
-### `/owner/inquiries/[inquiryId]` — [app/owner/inquiries/[inquiryId].tsx](../../frontend/app/owner/inquiries/[inquiryId].tsx)
-
-The owner's side of one inquiry (phase-07B 7B.5): their question, then the sitter's reply — shown as the sitter's own message, with the quote and where the answer came from. While nothing has been sent yet it says so; a draft the sitter hasn't approved is never visible here (RLS).
-
-Shows: `MessageBubble` · `QuoteCard` · `InquirySheet`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load this conversation | — | 88 |
-| EmptyState | Conversation not found | — | 96 |
-| Button | See your booking | `inquiry-see-booking` | 161 |
-| Button | Request booking | `inquiry-request-booking` | 168 |
-| Button | Change dates | `inquiry-change-dates` | 175 |
-| TextButton | Find other sitters | `inquiry-find-others` | 176 |
-| Button | sending ? "Sending…" : "Send" | `inquiry-followup-send` | 196 |
 
 ### `/owner/notifications` — [app/owner/notifications.tsx](../../frontend/app/owner/notifications.tsx)
 
@@ -376,12 +359,12 @@ Shows: `ActiveTripCard` · `SitterDashboard`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load today | — | 74 |
-| EmptyState | No bookings yet | — | 107 |
-| Pressable | — | `home-photo-request` | 127 |
-| Pressable | — | `today-requests` | 139 |
-| Pressable | — | `today-questions` | 150 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 170 |
-| Pressable | — | ``request-row-${b.id}`` | 190 |
+| EmptyState | No bookings yet | — | 106 |
+| Pressable | — | `home-photo-request` | 126 |
+| Pressable | — | `today-requests` | 138 |
+| Pressable | — | `today-chats` | 149 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 169 |
+| Pressable | — | ``request-row-${b.id}`` | 189 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -395,16 +378,15 @@ Shows: `SitterAnswersForm`
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
-Sitter Bookings tab (phase-03b 3B.4): Requests · Questions · In progress · Upcoming · Past → booking detail.
+Sitter Bookings tab (phase-03b 3B.4): Chats · Requests · In progress · Upcoming · Past → booking detail.
 
 Shows: `BookingCard` · `ChatList`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 108 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 128 |
-| EmptyState | — | — | 146 |
-| Pressable | — | ``inquiry-card-${inq.id}`` | 152 |
+| EmptyState | Couldn't load your bookings | — | 93 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 110 |
+| EmptyState | — | — | 127 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -520,23 +502,6 @@ Shows: `DiaryTimeline`
 | EmptyState | Nothing to show yet | — | 47 |
 | EmptyState | Couldn't load your history | — | 54 |
 | EmptyState | Nothing sent yet | — | 62 |
-
-### `/sitter/inquiries/[inquiryId]` — [app/sitter/inquiries/[inquiryId].tsx](../../frontend/app/sitter/inquiries/[inquiryId].tsx)
-
-The sitter's side of one inquiry (phase-07B 7B.6): the owner's question, the draft in the sitter's own voice with the warning line, and one tap to **Send** it as is — or Edit / Add, Regenerate, or lean it with an intent chip. Nothing reaches the owner until Send (D36 · D38).
-
-Shows: `InquiryReplySheet` · `ReplyKind` · `MessageBubble` · `ProfileAvatar` · `QuoteCard`
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| EmptyState | Couldn't load this question | — | 96 |
-| EmptyState | Question not found | — | 104 |
-| CheckRow | Include the price and a Request booking button | `inquiry-offer` | 199 |
-| Button | busy === "send" ? "Sending…" : "Send" | `inquiry-send` | 207 |
-| TextButton | editing ? "Use the draft text" : "Edit / Add" | `inquiry-edit-toggle` | 217 |
-| TextButton | busy === "regenerate" ? "Writing…" : "Regenerate" | `inquiry-regenerate` | 225 |
-| Button | `q.label` | ``inquiry-intent-${q.value}`` | 235 |
-| TextButton | Write it myself | `inquiry-write-myself` | 249 |
 
 ### `/sitter/notifications` — [app/sitter/notifications.tsx](../../frontend/app/sitter/notifications.tsx)
 
@@ -862,25 +827,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 104 |
-
-### InquiryReplySheet — [components/InquiryReplySheet.tsx](../../frontend/components/InquiryReplySheet.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Sheet | Open my schedule | `reply-sheet` | 191 |
-| Button | Open my schedule | `reply-open-schedule` | 198 |
-| Button | sending ? "Sending…" : SEND[kind] | `reply-send` | 200 |
-
-### InquirySheet — [components/InquirySheet.tsx](../../frontend/components/InquirySheet.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Sheet | sending ? "Sending…" : "Ask anyway" | `inquiry-sheet` | 174 |
-| Button | sending ? "Sending…" : "Ask anyway" | `inquiry-ask-anyway` | 183 |
-| Button | Pick other dates | `inquiry-pick-other` | 184 |
-| Button | sending ? "Sending…" : "Send" | `inquiry-send` | 187 |
-| SegmentedControl | — | `inquiry-service` | 203 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``inquiry-pet-${pet.name}`` | 212 |
 
 ### LiveUpdates — [components/LiveUpdates.tsx](../../frontend/components/LiveUpdates.tsx)
 
@@ -1372,4 +1318,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-400 actions · 399 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+380 actions · 379 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
