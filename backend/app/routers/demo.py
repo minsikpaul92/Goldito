@@ -7,6 +7,8 @@ the demo accounts may call it, each resetting only itself. Remove it before judg
 this file, `app/services/demo_reset.py` and the Demo tools sheet (docs/plan/TODO.md, "Demo reset").
 """
 
+import logging
+import threading
 from datetime import datetime
 from typing import Literal
 from zoneinfo import ZoneInfo
@@ -20,6 +22,10 @@ from app.deps.supabase import get_service_client
 from app.services import demo_accounts, demo_reset
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
+logger = logging.getLogger(__name__)
+
+# One reset per demo set at a time: two overlapping runs delete and rebuild the same pair's rows under each other.
+_running: dict[str, threading.Lock] = {}
 
 
 class ResetRequest(BaseModel):
@@ -50,5 +56,15 @@ def reset_demo(body: ResetRequest, user: CurrentUser = Depends(get_current_user)
     today = datetime.now(ZoneInfo(settings.app_timezone)).date()
     # Each account resets on its own: an owner resets the owner side, a sitter the sitter side.
     scope = demo_accounts.role_for_email(user.email)
-    report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
+    lock = _running.setdefault(demo_set.key, threading.Lock())
+    if not lock.acquire(blocking=False):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A reset is already running. Wait for it to finish.")
+    try:
+        report = demo_reset.reset(client, owner_id, sitter_id, today, state=body.state, apply=True, demo_set=demo_set, scope=scope)
+    except Exception as exc:
+        # An HTTPException keeps the CORS headers; a bare 500 does not, and the browser then only says "Failed to fetch".
+        logger.exception("demo reset failed")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Reset failed: {str(exc)[:200]}") from exc
+    finally:
+        lock.release()
     return ResetResponse(state=body.state, deleted={label: rows for label, rows in report if rows})
