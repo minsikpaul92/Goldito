@@ -82,7 +82,7 @@
 | 3D.4 | 채팅 허브 (스레드 · 목록 · 진행도) | [#141](https://github.com/minsikpaul92/Goldito/issues/141) | 3D.3 |
 | 3D.5 | AI 칩 · 초안 | [#142](https://github.com/minsikpaul92/Goldito/issues/142) | 3D.4 |
 | 3D.6 | 채팅 안 견적 · 추가요금 (구현: 시터 한 번 눌러 견적 카드, 수수료 줄, 오너 수락 · 확인) | [#143](https://github.com/minsikpaul92/Goldito/issues/143) | 3D.4 |
-| 3D.7 | Meet & Greet · 합의 · 결제 | [#144](https://github.com/minsikpaul92/Goldito/issues/144) | 3D.6 |
+| 3D.7 | Meet & Greet · 합의 · 최종 견적 · 결제 (PR [#218](https://github.com/minsikpaul92/Goldito/pull/218), 리뷰 중) | [#144](https://github.com/minsikpaul92/Goldito/issues/144) | 3D.6 |
 | 3D.8 | 인계 협의 · 트립 · 케어 연결 | [#145](https://github.com/minsikpaul92/Goldito/issues/145) | 3D.7 |
 | 3D.9 | 종료 · 리뷰 | [#146](https://github.com/minsikpaul92/Goldito/issues/146) | 3D.8 |
 
