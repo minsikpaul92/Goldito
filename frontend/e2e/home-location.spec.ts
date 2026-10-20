@@ -32,11 +32,13 @@ async function stubGps(page: Page, deny = false): Promise<Gps> {
   return { reads: () => frame().evaluate(() => (window as unknown as { __gpsReads: number }).__gpsReads) };
 }
 
-async function mockGeocode(page: Page, answer: object, status = 200) {
+/** "Check address": the real addresses the lookup finds, or a status >= 400 when it is down. */
+async function mockSuggest(page: Page, results: { label: string; lat: number; lng: number }[], status = 200) {
   const asked: unknown[] = [];
-  await page.route("**/api/geo/geocode", async (route) => {
+  await page.route("**/api/geo/suggest", async (route) => {
     asked.push(route.request().postDataJSON());
-    return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(answer) });
+    const body = status >= 400 ? { detail: "down" } : { results };
+    return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
   });
   return asked;
 }
@@ -95,7 +97,7 @@ test.describe("home map pin", () => {
 
   test("One tap reads the location once and Save keeps it as the pin", async ({ page }) => {
     const gps = await stubGps(page);
-    const asked = await mockGeocode(page, { found: false });
+    const asked = await mockSuggest(page, []);
     const reversed = await mockReverse(page, "Trinity Bellwoods, Toronto");
     const { db } = await mockSupabase(page, [OWNER]);
     await openProfile(page, OWNER, "owner");
@@ -117,7 +119,7 @@ test.describe("home map pin", () => {
     expect(row?.home_lat).toBe(43.6477);
     expect(row?.home_lng).toBe(-79.4194);
     expect(row?.home_address).toBe("Dundas St W, Toronto, M6J");
-    expect(asked).toEqual([]); // a pin from the phone is not overwritten by a lookup of the typed address
+    expect(asked).toEqual([]); // a pin from the phone needs no address check
     expect(reversed).toEqual([{ lat: 43.6477, lng: -79.4194 }]);
   });
 
@@ -133,45 +135,81 @@ test.describe("home map pin", () => {
     expect(await gps.reads()).toBe(1);
   });
 
-  test("a saved address is looked up, the pin is stored and one line says where it landed", async ({ page }) => {
-    const asked = await mockGeocode(page, { found: true, lat: 43.6536, lng: -79.384, label: "Spadina—Fort York, Toronto" });
+  test("Check address lists real addresses; the one picked is saved with its pin", async ({ page }) => {
+    const asked = await mockSuggest(page, [
+      { label: "100 Queen St W, Toronto, ON M5H 2N2", lat: 43.6536, lng: -79.384 },
+      { label: "100 Queen St W, Hamilton, ON L8P 4S9", lat: 43.25, lng: -79.87 },
+    ]);
     const { db } = await mockSupabase(page, [OWNER]);
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
-    await screen.getByTestId("profile-home_address").fill("100 Queen St W, Toronto");
+    await screen.getByTestId("profile-home_address").fill("100 Queen St W");
+    await screen.getByTestId("profile-check-address").click();
+    await expect(screen.getByTestId("profile-suggestions")).toContainText("Toronto");
+    expect(asked).toEqual([{ address: "100 Queen St W" }]);
+    await screen.getByTestId("profile-suggestion-1").click();
+    await expect(screen.getByTestId("profile-address-ok")).toBeVisible();
+    await expect(screen.getByTestId("profile-home_address")).toHaveValue("100 Queen St W, Toronto, ON M5H 2N2");
     await screen.getByTestId("profile-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Pin placed near Spadina—Fort York, Toronto");
-    expect(asked).toEqual([{ address: "100 Queen St W, Toronto" }]);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
-    expect(row?.home_address).toBe("100 Queen St W, Toronto");
+    expect(row?.home_address).toBe("100 Queen St W, Toronto, ON M5H 2N2");
     expect([row?.home_lat, row?.home_lng]).toEqual([43.6536, -79.384]);
-
-    // The saved pin is not shown on the Profile until the person reads their location again.
-    await screen.getByTestId("open-menu").click();
-    await screen.getByTestId("open-profile").click();
-    await expect(screen.getByTestId("profile-use-location")).toBeVisible();
-    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0);
   });
 
-  test("an address that can't be placed clears the old pin and says so; the lookup being down reads the same", async ({ page }) => {
-    await mockGeocode(page, { detail: "down" }, 502);
+  test("the address is required and has to be checked: empty, unchecked and edited-after-check are all refused", async ({ page }) => {
+    await mockSuggest(page, [{ label: "100 Queen St W, Toronto, ON M5H 2N2", lat: 43.6536, lng: -79.384 }]);
+    const { db } = await mockSupabase(page, [OWNER]);
+    await openProfile(page, OWNER, "owner");
+    const screen = app(page);
+
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByText("Add your home address.")).toBeVisible();
+
+    await screen.getByTestId("profile-home_address").fill("100 Queen St W");
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByText("Check your address so it's on the map.")).toBeVisible();
+
+    await screen.getByTestId("profile-check-address").click();
+    await screen.getByTestId("profile-suggestion-1").click();
+    await screen.getByTestId("profile-home_address").fill("100 Queen St W, Toronto, ON M5H 2N2 apt 4");
+    await expect(screen.getByTestId("profile-address-ok")).toHaveCount(0); // edited: it has to be checked again
+    await screen.getByTestId("profile-save").click();
+    await expect(screen.getByText("Check your address so it's on the map.")).toBeVisible();
+    expect(db.owner_profiles.find((r) => r.id === OWNER.id)?.home_address ?? null).toBeNull();
+  });
+
+  test("an address nobody knows says so; the check being down reads the same and nothing is saved", async ({ page }) => {
+    await mockSuggest(page, [], 200);
     const { db } = await mockSupabase(page, [OWNER]);
     db.owner_profiles.push({ id: OWNER.id, home_address: "1 Old St", home_lat: 43.1, home_lng: -79.1 });
     await openProfile(page, OWNER, "owner");
     const screen = app(page);
 
-    await expect(screen.getByTestId("profile-home-pin-status")).toHaveCount(0); // an old pin is not shown
+    await expect(screen.getByTestId("profile-address-ok")).toBeVisible(); // a saved, placed address
     await screen.getByTestId("profile-home_address").fill("2 New St, Nowhere");
+    await screen.getByTestId("profile-check-address").click();
+    await expect(screen.getByTestId("profile-check-note")).toContainText("couldn't find that address");
     await screen.getByTestId("profile-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("couldn't place that address");
+    await expect(screen.getByText("Check your address so it's on the map.")).toBeVisible();
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
-    expect(row?.home_address).toBe("2 New St, Nowhere");
-    expect(row?.home_lat).toBeNull();
+    expect(row?.home_address).toBe("1 Old St"); // the old pin and address stay
+    expect(row?.home_lat).toBe(43.1);
+  });
+
+  test("the address check being down says so", async ({ page }) => {
+    await mockSuggest(page, [], 502);
+    await mockSupabase(page, [OWNER]);
+    await openProfile(page, OWNER, "owner");
+    const screen = app(page);
+    await screen.getByTestId("profile-home_address").fill("2 New St");
+    await screen.getByTestId("profile-check-address").click();
+    await expect(screen.getByTestId("profile-check-note")).toContainText("address check is down");
   });
 
   test("saving without touching the address does not look it up and keeps the pin", async ({ page }) => {
-    const asked = await mockGeocode(page, { found: false });
+    const asked = await mockSuggest(page, []);
     const { db } = await mockSupabase(page, [SITTER]);
     db.sitter_profiles.push({
       id: SITTER.id,

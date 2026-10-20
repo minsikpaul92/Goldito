@@ -355,7 +355,7 @@ test.describe("sitter inquiry", () => {
 
   test("the sitter's policies are saved and handed to the assistant", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: null, services: ["boarding"], policies: null });
+    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: null, experience_years: null, home_notes: null, home_address: "12 Maple St", home_lat: 43.6477, home_lng: -79.4194, services: ["boarding"], policies: null });
     const reindex: number[] = [];
     await page.route("**/api/rag/reindex-sitter", (route) => {
       reindex.push(1);

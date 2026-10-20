@@ -95,7 +95,7 @@ def main() -> int:
             else:
                 action = f"{action}, rates {ensure_sitter_rates(client, user_id)}"
         if user_id and problem is None and not args.check:
-            ensure_home_point(client, demo.role, user_id)
+            ensure_home_point(client, demo.role, user_id, demo.email)
         all_ok = all_ok and problem is None
         status = "ok" if problem is None else problem
         print(f"{demo.email:<26} {demo.role:<6} {action:<8} {status}")

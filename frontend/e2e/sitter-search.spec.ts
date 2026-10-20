@@ -260,9 +260,20 @@ test.describe("find a sitter", () => {
     db.nearby_sitters.splice(0, 2); // only Uma, 40 km away
     const screen = await openBookings(page);
 
-    await expect(screen.getByTestId("search-none")).toHaveText("No favorites free.");
+    await expect(screen.getByTestId("search-none")).toHaveText("No favorites free for these dates.");
     await screen.getByTestId("bar-search").click();
-    await expect(screen.getByTestId("search-none")).toHaveText("No sitters free.");
+    await expect(screen.getByTestId("search-none")).toHaveText("No sitters within 5 km for these dates.");
+  });
+
+  test("with no favorites yet everyone nearby shows at once", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.owner_favorite_sitters.splice(0);
+    const screen = await openBookings(page);
+
+    await expect(screen.getByText("Sitters nearby")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
   });
 
   test("a tile opens the sitter detail with the stay", async ({ page }) => {

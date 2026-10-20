@@ -390,9 +390,9 @@ def reset(
         if sitter_side or building:
             ensure_sitter_rates(client, sitter_id)
         if owner_side:
-            ensure_home_point(client, "owner", owner_id)
+            ensure_home_point(client, "owner", owner_id, demo_set.owner.email)
         if sitter_side:
-            ensure_home_point(client, "sitter", sitter_id)
+            ensure_home_point(client, "sitter", sitter_id, demo_set.sitter.email)
             if not keep_schedule:
                 open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id, demo_set, scope)

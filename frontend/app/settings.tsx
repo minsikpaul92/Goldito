@@ -9,19 +9,11 @@ import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
 import { Sheet } from "../components/ui/Sheet";
 import { TextButton } from "../components/ui/TextButton";
-import changelog from "../features/settings/changelog.json";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-type Release = { version: string; title: string | null; sections: { heading: string; items: string[] }[] };
-
-const RELEASES = changelog as Release[];
-
-/**
- * Profile → Settings (Phase 11.11, D47): account, notifications, What's New and the app version.
- * What's New is docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match).
- */
+/** Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Log out. */
 export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
@@ -41,7 +33,7 @@ export default function SettingsScreen() {
         <Text style={styles.muted}>
           {session.session?.user.email ?? ""} · {profile.role === "owner" ? "Pet owner" : "Pet sitter"}
         </Text>
-        <TextButton label="Edit profile" onPress={() => router.push("/profile")} testID="settings-edit-profile" />
+        <TextButton label="Edit profile" onPress={() => router.push("/profile")} style={styles.left} testID="settings-edit-profile" />
       </Card>
 
       <Text accessibilityRole="header" style={styles.heading}>
@@ -55,31 +47,14 @@ export default function SettingsScreen() {
       </Card>
 
       <Text accessibilityRole="header" style={styles.heading}>
-        What&apos;s New
+        About
       </Text>
-      {RELEASES.map((release) => (
-        <Card key={release.version} testID={`settings-release-${release.version}`}>
-          <Text style={styles.release}>
-            {release.version}
-            {release.title ? ` · ${release.title}` : ""}
-          </Text>
-          {release.sections.map((section) => (
-            <View key={section.heading} style={styles.section}>
-              <Text style={styles.sectionHeading}>{section.heading}</Text>
-              {section.items.map((item) => (
-                <Text key={item} style={styles.item}>
-                  • {item}
-                </Text>
-              ))}
-            </View>
-          ))}
-        </Card>
-      ))}
-
-      <Text style={styles.muted} testID="settings-version">
-        Goldito {version}
-      </Text>
-      <TextButton label="Privacy" onPress={() => router.push("/privacy")} testID="settings-privacy" />
+      <Card>
+        <TextButton label="Privacy" onPress={() => router.push("/privacy")} style={styles.left} testID="settings-privacy" />
+        <Text style={styles.muted} testID="settings-version">
+          Goldito {version}
+        </Text>
+      </Card>
       <Button label="Log out" variant="secondary" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
       <Sheet visible={confirmLogOut} title="Log out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
         <View style={styles.confirm}>
@@ -98,8 +73,5 @@ const makeStyles = (theme: Theme) =>
     heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    release: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    section: { gap: theme.spacing.xs, marginTop: theme.spacing.sm },
-    sectionHeading: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
-    item: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
+    left: { alignSelf: "flex-start", paddingHorizontal: 0 },
   });

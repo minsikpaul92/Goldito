@@ -62,12 +62,12 @@ Shows: `BookingCard` · `ChatList` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 108 |
-| TextButton | Open Profile | `search-open-profile` | 132 |
-| TextButton | Try again | `search-retry` | 140 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 153 |
-| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 170 |
-| Pressable | — | ``question-card-${inq.id}`` | 215 |
+| EmptyState | Couldn't load your bookings | — | 110 |
+| TextButton | Open Profile | `search-open-profile` | 134 |
+| TextButton | Try again | `search-retry` | 142 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 156 |
+| Pressable | ``Chat with ${sitter.displayName}`` | ``sitter-chat-${sitter.displayName}`` | 173 |
+| Pressable | — | ``question-card-${inq.id}`` | 218 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -325,37 +325,38 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 ### `/profile` — [app/profile.tsx](../../frontend/app/profile.tsx)
 
-Role profile (phase-03 3.8). Settings + What's New are their own screen, linked at the bottom (11.11).
+Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
 Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 188 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 377 |
-| TextButton | Edit entry info | `profile-home-access` | 394 |
-| SegmentedControl | — | `profile-ai-mode` | 410 |
-| Button | Edit your answers | `profile-answers-edit` | 439 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 447 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 449 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 466 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 476 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 514 |
-| TextButton | Settings · What's New | `profile-settings` | 516 |
-| TextButton | Privacy | `profile-privacy` | 517 |
+| EmptyState | Couldn't load your profile | — | 206 |
+| TextButton | checking ? "Checking…" : "Check address" | `profile-check-address` | 381 |
+| TextButton | `s.label` | ``profile-suggestion-${i + 1}`` | 394 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 450 |
+| TextButton | Edit entry info | `profile-home-access` | 467 |
+| SegmentedControl | — | `profile-ai-mode` | 483 |
+| Button | Edit your answers | `profile-answers-edit` | 512 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 520 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 522 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 539 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 549 |
+| TextButton | + Add a spot | `profile-add-spot` | 573 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 588 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
-Profile → Settings (Phase 11.11, D47): account, notifications, What's New and the app version. What's New is docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match).
+Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Log out.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Edit profile | `settings-edit-profile` | 44 |
-| TextButton | Privacy | `settings-privacy` | 82 |
-| Button | Log out | `settings-log-out` | 83 |
-| Sheet | Log out? | `settings-log-out-sheet` | 84 |
-| Button | Log out | `settings-log-out-confirm` | 86 |
-| Button | Cancel | **none** | 87 |
+| TextButton | Edit profile | `settings-edit-profile` | 36 |
+| TextButton | Privacy | `settings-privacy` | 53 |
+| Button | Log out | `settings-log-out` | 58 |
+| Sheet | Log out? | `settings-log-out-sheet` | 59 |
+| Button | Log out | `settings-log-out-confirm` | 61 |
+| Button | Cancel | **none** | 62 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -616,6 +617,14 @@ Shows: `OnboardingTour`
 Sitter-only onboarding tour → existing `/login`.
 
 Shows: `OnboardingTour`
+
+### `/whats-new` — [app/whats-new.tsx](../../frontend/app/whats-new.tsx)
+
+What's new: what people can now do that they could not at launch. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match); only releases from 1.0.0 on are shown, never the build-up to launch.
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| EmptyState | Nothing new yet | — | 30 |
 
 ## Components
 
@@ -1322,4 +1331,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-386 actions · 385 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+387 actions · 386 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

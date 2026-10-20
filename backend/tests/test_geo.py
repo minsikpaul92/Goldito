@@ -166,3 +166,54 @@ def test_the_postal_area_is_the_first_three_characters_or_nothing():
     assert geo.postal_area({"address": {"postcode": "90210"}}) is None  # not a Canadian code
     assert geo.postal_area({"address": {}}) is None
     assert geo.postal_area({}) is None
+
+
+HITS = [
+    {
+        "lat": "43.7102",
+        "lon": "-79.3923",
+        "address": {
+            "house_number": "127",
+            "road": "Broadway Avenue",
+            "city": "Toronto",
+            "ISO3166-2-lvl4": "CA-ON",
+            "postcode": "M4P 1V9",
+        },
+    },
+    {"lat": "43.7103", "lon": "-79.3924", "address": {"road": "Broadway Avenue", "town": "Aurora", "ISO3166-2-lvl4": "CA-ON"}},
+    {"lat": "43.7104", "lon": "-79.3925", "address": {"road": "Broadway Avenue", "town": "Aurora", "ISO3166-2-lvl4": "CA-ON"}},
+    {"lat": "bad", "lon": "x", "address": {"road": "Broken"}},
+    {"lat": "43.0", "lon": "-79.0", "address": {}},
+]
+
+
+def post_suggest(client, token=None, address="127 Broadway Avenue"):
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return client.post("/api/geo/suggest", headers=headers, json={"address": address})
+
+
+def test_suggest_returns_real_places_to_pick_from(client, monkeypatch):
+    seen: list[str] = []
+    monkeypatch.setattr(geo, "_search_many", lambda address: seen.append(address) or HITS)
+    body = post_suggest(client, owner_token()).json()
+    assert [r["label"] for r in body["results"]] == [
+        "127 Broadway Avenue, Toronto, ON M4P 1V9",
+        "Broadway Avenue, Aurora, ON",
+    ]  # the same place twice, a broken point and an empty address are left out
+    assert body["results"][0]["lat"] == 43.7102 and body["results"][0]["lng"] == -79.3923
+    assert seen == ["127 Broadway Avenue"]
+
+
+def test_suggest_with_nothing_found_is_an_empty_list(client, monkeypatch):
+    monkeypatch.setattr(geo, "_search_many", lambda address: [])
+    assert post_suggest(client, owner_token()).json() == {"results": []}
+
+
+def test_suggest_being_down_is_a_502_and_it_needs_sign_in(client, monkeypatch):
+    def down(address):
+        raise httpx.ConnectError("no route")
+
+    monkeypatch.setattr(geo, "_search_many", down)
+    assert post_suggest(client, owner_token()).status_code == 502
+    assert post_suggest(client).status_code == 401
+    assert post_suggest(client, owner_token(), address="ab").status_code == 422

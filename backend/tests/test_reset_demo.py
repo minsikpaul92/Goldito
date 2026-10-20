@@ -152,8 +152,8 @@ def test_apply_rebuilds_the_starting_state():
     assert {p["id"]: p["display_name"] for p in db.tables["profiles"]} == {OWNER: "Robert", SITTER: "Chloe"}
     assert db.tables["sitter_profiles"][0]["services"] == ["boarding", "house_sitting"]
     # Both homes have a map point, so Start trip has a destination (06B).
-    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6477, -79.4194)
-    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6644, -79.3573)
+    assert (db.tables["sitter_profiles"][0]["home_lat"], db.tables["sitter_profiles"][0]["home_lng"]) == (43.6502, -79.3896)  # Chloe: 299 Queen St W
+    assert (db.tables["owner_profiles"][0]["home_lat"], db.tables["owner_profiles"][0]["home_lng"]) == (43.6534, -79.3841)  # Robert: 100 Queen St W
 
 
 def test_an_owner_with_no_pets_yet_does_not_break_the_plan():
