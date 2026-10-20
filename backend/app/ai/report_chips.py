@@ -7,7 +7,7 @@ it can see. The sitter's kept chips are what `/api/ai/daily-report` is allowed t
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.ai.daily_report import CAPTION_MAX, CHIP_MAX, NOTE_MAX, _clean
+from app.ai.daily_report import CAPTION_MAX, CHIP_MAX, NOTE_MAX, _chip, _clean
 
 MAX_PHOTOS = 2
 MAX_PHOTO_CHIPS = 2
@@ -36,7 +36,7 @@ class PhotoRead(BaseModel):
         seen: set[str] = set()
         out: list[str] = []
         for item in value:
-            text = _clean(item if isinstance(item, str) else "", CHIP_MAX)
+            text = _chip(item if isinstance(item, str) else "", CHIP_MAX)
             if text and text.lower() not in seen:
                 seen.add(text.lower())
                 out.append(text)
@@ -68,10 +68,10 @@ def record_chips(snapshot: dict) -> list[dict]:
 
     # Episode chips are named after their record (`_ref`), so turning one off (`off`) removes that record.
     for i, c in enumerate(c for c in snapshot["checkins"] if c.get("note_text")):
-        if label := _clean(c["note_text"], CHIP_MAX):
+        if label := _chip(c["note_text"], CHIP_MAX):
             out.append({"id": c.get("_ref") or f"note-{i}", "kind": "episode", "label": label, "source": "checkin", "check": None})
     for i, p in enumerate(p for p in snapshot["photos"] if p["source"] == "feed"):
-        if label := _clean(p["caption"], CHIP_MAX):
+        if label := _chip(p["caption"], CHIP_MAX):
             out.append({"id": p.get("_ref") or f"feed-{i}", "kind": "episode", "label": label, "source": "feed", "check": None})
     return out
 
