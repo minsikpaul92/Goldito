@@ -179,7 +179,7 @@ Thanksgiving weekend, Oct 9 to 12: Robert leaves **Max** (dog, Maltese, allergic
 | | 3 · Owner | Reads the reply and the quote and taps **Request booking**. It is a request, not yet a booking. ✅ |
 | **Meet & Greet** | 4 · Owner | Writes the care note, such as *"8 AM kibble · 2 PM pill in a treat · no knocking"*, by typing ✅ or, soon, by speaking 🚧. |
 | | 5 · System | Nemotron turns the note into a timed **checklist** and **Heads-up** cards; the owner reviews and saves. ✅ |
-| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). Declines, or says **"Yes, let's meet"**, the first agreement. For a repeat client one **Accept** covers it and the Meet & Greet steps are skipped. ✅ |
+| | 6 · Sitter | Opens the request: the checklist, the Heads-up cards, and the pet's profile (an "at a glance" card 🚧). Declines, or taps **Next**, the first agreement (it holds the dates; the Meet & Greet or a skip comes after). For a repeat client one **Accept** covers it and the Meet & Greet steps are skipped. ✅ |
 | | 7 · System | Holds Chloe's dates for Robert so nobody else can book them, tells him she would like to meet, and shows both of them a **progress bar** with the current step and the one next action. ✅ |
 | | 8 · Owner | Proposes a first meeting with a date and time, either **in person** at a public spot either of them saved (for example a park near Chloe's) or **on video**. ✅ |
 | | 9 · Sitter | Accepts the time. For video, Goldito creates the **Google Meet** link and calendar invites. ✅ (link: server ✅, app check 🚧) |

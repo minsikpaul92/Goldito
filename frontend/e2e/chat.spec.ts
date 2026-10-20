@@ -673,7 +673,7 @@ test.describe("chat hub", () => {
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
     expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
-    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Yes, let's meet");
+    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Next");
     await screen.getByTestId("chat-next-interest").click();
     await expect(screen.getByTestId("meet-greet")).toBeVisible();
     expect((await circles(screen)).label).toBe("Step 2 of 5");
