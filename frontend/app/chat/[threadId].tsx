@@ -8,6 +8,7 @@ import { BookingStageBar, hasStageBar, stageCaption } from "../../components/Boo
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
 import { ChatCareCards } from "../../components/ChatCareCards";
 import { ChatHandoffCard } from "../../components/ChatHandoffCard";
+import { ChatPlusMenu, PlusItem } from "../../components/ChatPlusMenu";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
 import { ChatTripCard } from "../../components/ChatTripCard";
 import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
@@ -34,7 +35,10 @@ import {
   sendChatMessage,
 } from "../../features/chat/chatApi";
 import { ChatAction, ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
-import { Primary, actionPossible, finalQuote, nextStep } from "../../features/chat/nextStep";
+import { Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
+import { inCare } from "../../features/chat/careCards";
+import { canStartTripNow } from "../../features/transit/tripLogic";
+import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -90,6 +94,8 @@ export default function Chat() {
   const [requesting, setRequesting] = useState(false);
   const [quoting, setQuoting] = useState<"first" | "final" | null>(null);
   const [agreeing, setAgreeing] = useState(false);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
   const [feeFor, setFeeFor] = useState<string | null>(null);
@@ -292,6 +298,55 @@ export default function Chat() {
   };
   const shownAction = action && actionPossible(action.id, step, booking, header.myRole) ? action : null;
 
+  // The + menu (#235): each entry opens what the flow opens. Entries that cannot work right now are dimmed.
+  const bump = (key: "handoff" | "trip" | "photo") => setSignals((n) => ({ ...n, [key]: n[key] + 1 }));
+  const quoteKind = booking && hasPaymentCard(messages, booking.id) ? "final" : "first";
+  const plusItems: PlusItem[] = [
+    {
+      id: "meet",
+      label: "Meet & Greet request",
+      icon: "people-outline",
+      enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
+      onPress: () => meetCard.current?.primary(),
+    },
+    ...(!owner
+      ? [
+          {
+            id: "quote",
+            label: quoteKind === "final" ? "Final quote" : "Quote",
+            icon: "pricetag-outline" as const,
+            enabled: quoteKind === "final" ? !!finalStay : !!stay,
+            onPress: () => setQuoting(quoteKind),
+          },
+        ]
+      : []),
+    {
+      id: "date",
+      label: "Date change",
+      icon: "calendar-outline",
+      enabled: !!booking && ["requested", "confirmed"].includes(booking.status) && !(booking.dropOff?.completedAt && booking.pickUp?.completedAt),
+      onPress: () => bump("handoff"),
+    },
+    {
+      id: "trip",
+      label: "Start trip",
+      icon: "car-outline",
+      enabled: !!booking && canStartTripNow(booking, header.myRole),
+      onPress: () => bump("trip"),
+    },
+    ...(owner
+      ? [
+          {
+            id: "photo",
+            label: "Photo request",
+            icon: "camera-outline" as const,
+            enabled: !!booking && inCare(booking),
+            onPress: () => bump("photo"),
+          },
+        ]
+      : []),
+  ];
+
   const send = async () => {
     const body = text.trim();
     if (sending || !body) return;
@@ -420,9 +475,9 @@ export default function Chat() {
             />
           ) : null,
         )}
-        {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} /> : null}
-        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} /> : null}
-        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} /> : null}
+        {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
+        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (
         <View style={styles.next}>
@@ -480,6 +535,15 @@ export default function Chat() {
         </ScrollView>
       ) : null}
       <View style={styles.compose}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send a card"
+          onPress={() => setPlusOpen(true)}
+          style={styles.plusButton}
+          testID="chat-plus"
+        >
+          <Ionicons name="add" size={24} color={theme.color.primary} />
+        </Pressable>
         <TextInput
           ref={input}
           accessibilityLabel={`Message ${header.otherName}`}
@@ -543,6 +607,7 @@ export default function Chat() {
           <AddFeeSheet visible={feeFor !== null} onClose={() => setFeeFor(null)} messageId={feeFor} onAdded={() => void load()} />
         </>
       ) : null}
+      <ChatPlusMenu visible={plusOpen} items={plusItems} onClose={() => setPlusOpen(false)} />
       <PhotoViewerSheet visible={viewing} title={header.otherName} photos={photos} onClose={() => setViewing(false)} testID="chat-photos" />
     </View>
   );
@@ -596,6 +661,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       color: theme.color.text,
     },
+    plusButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface },
     sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.primary },
     sendOff: { opacity: 0.4 },
   });

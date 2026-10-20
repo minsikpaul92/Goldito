@@ -240,3 +240,53 @@ test.describe("care in the chat", () => {
     await expect(screen.getByTestId("chat-diary-card")).toHaveCount(0);
   });
 });
+
+test.describe("the + menu", () => {
+  test("Start trip, Date change and Photo request open what the flow opens; entries that cannot work yet are dimmed", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    let screen = await openChatAs(page, OWNER);
+
+    // Before the drop-off: the trip can start, there is no photo to ask for, the sitter's Quote is not Robert's.
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-menu")).toBeVisible();
+    await expect(screen.getByTestId("chat-plus-trip")).toBeEnabled();
+    await expect(screen.getByTestId("chat-plus-photo")).toBeDisabled();
+    await expect(screen.getByTestId("chat-plus-quote")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-plus-meet")).toBeDisabled();
+
+    // Date change opens the suggestion sheet.
+    await screen.getByTestId("chat-plus-date").click();
+    await expect(screen.getByTestId("change-sheet")).toBeVisible();
+    await screen.getByTestId("change-sheet-close").click();
+
+    // Start trip goes through the consent screen like the card's button.
+    await screen.getByTestId("chat-plus").click();
+    await screen.getByTestId("chat-plus-trip").click();
+    await expect(screen.getByTestId("share-trip-sheet")).toBeVisible();
+    expect(db.trips).toHaveLength(0);
+    await screen.getByTestId("share-trip-sheet-decline").click();
+
+    // The sitter has Quote and no Start trip (the owner drives to her).
+    await page.evaluate(() => localStorage.clear());
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-trip")).toBeDisabled();
+    await expect(screen.getByTestId("chat-plus-photo")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-plus-quote")).toBeDisabled(); // this chat has no stay card to price
+  });
+
+  test("Photo request in the menu asks for a photo while the pet is in care", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.booking_handoffs[0].completed_at = new Date(Date.now() - HOUR).toISOString();
+    const screen = await openChatAs(page, OWNER);
+
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-photo")).toBeEnabled();
+    await screen.getByTestId("chat-plus-photo").click();
+    await expect(screen.getByTestId("chat-photo-open")).toContainText("You asked for a photo of Max");
+    expect(db.photo_requests).toHaveLength(1);
+  });
+});
+

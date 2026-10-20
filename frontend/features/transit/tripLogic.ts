@@ -50,3 +50,9 @@ export function greetingFor(kind: HandoffKind, role: Role): string {
   if (kind === "drop_off") return role === "owner" ? "Please take care of them" : "We will";
   return role === "owner" ? "Thank you for everything" : "It was a pleasure";
 }
+
+/** Start trip is possible now: paid, the next handoff is mine to travel to, and the 2-hour window is open. */
+export function canStartTripNow(booking: BookingSummary, role: Role, now: number = Date.now()): boolean {
+  const next = nextHandoff(booking);
+  return !!booking.paidAt && !!next && canTravel(role, next.handoff.locationType) && now >= startOpensAt(next.handoff);
+}

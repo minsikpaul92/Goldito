@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 
 import { CareItem, inCare, useCareItems } from "../features/chat/careCards";
@@ -13,13 +13,18 @@ import { Theme } from "../theme/themes";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 
-type Props = { booking: BookingSummary; viewer: "owner" | "sitter" };
+type Props = {
+  booking: BookingSummary;
+  viewer: "owner" | "sitter";
+  /** The + menu's Photo request: asks each time this number goes up. */
+  askSignal?: number;
+};
 
 /**
  * The stay's care news, in the chat (3D.8): a photo asked for and its answer with a one-line caption, and the day's
  * diary page. Cards read the database like the Feed and Diary do and link to them; nothing is stored in the chat.
  */
-export function ChatCareCards({ booking, viewer }: Props) {
+export function ChatCareCards({ booking, viewer, askSignal = 0 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
   const { items, reload } = useCareItems(booking);
@@ -39,6 +44,14 @@ export function ChatCareCards({ booking, viewer }: Props) {
       setAsking(false);
     }
   };
+
+  const askRef = useRef<() => void>(() => undefined);
+  askRef.current = () => {
+    if (owner && inCare(booking) && askable.length > 0 && !asking) void ask();
+  };
+  useEffect(() => {
+    if (askSignal > 0) askRef.current();
+  }, [askSignal]);
 
   const photo = (i: Extract<CareItem, { kind: "photo" }>) => {
     if (i.status === "open") {

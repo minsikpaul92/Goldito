@@ -23,7 +23,13 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 
-type Props = { booking: BookingSummary; viewer: "owner" | "sitter"; onChanged: () => void };
+type Props = {
+  booking: BookingSummary;
+  viewer: "owner" | "sitter";
+  onChanged: () => void;
+  /** The + menu's Date change: opens the suggestion sheet each time this number goes up. */
+  openSignal?: number;
+};
 
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 const LABEL: Record<HandoffKind, string> = { drop_off: "Drop-off", pick_up: "Pick-up" };
@@ -33,7 +39,7 @@ const LABEL: Record<HandoffKind, string> = { drop_off: "Drop-off", pick_up: "Pic
  * for the pair), or, for the sitter, a request whose places differ from their default (#145). Reads the booking; the
  * sheet is the same one the booking page uses.
  */
-export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
+export function ChatHandoffCard({ booking, viewer, onChanged, openSignal = 0 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
   const toast = useToast();
@@ -43,6 +49,10 @@ export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
   const owner = viewer === "owner";
   const other = owner ? booking.sitterName : booking.ownerName;
   const me = owner ? booking.ownerId : booking.sitterId;
+
+  useEffect(() => {
+    if (openSignal > 0) setSheet({ key: Date.now() });
+  }, [openSignal]);
 
   useEffect(() => {
     if (owner) return;
@@ -73,8 +83,6 @@ export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
     booking.serviceType !== "house_sitting" &&
     !(fitsWays(ways, booking.dropOff.locationType) && fitsWays(ways, booking.pickUp.locationType));
 
-  if (offers.length === 0 && !differs) return null;
-
   const line = (kind: HandoffKind, at: string, type: LocationType, note: string | null) =>
     `${LABEL[kind]} ${formatInstant(at)} · ${placeLabel(type, note, booking, viewer)}`;
 
@@ -102,8 +110,10 @@ export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
       ]
     : offers.map((o) => line(o.kind, o.step.at, o.step.locationType, o.step.note));
 
+  const showCard = offers.length > 0 || differs;
   return (
     <View style={styles.wrap}>
+      {showCard ? (
       <Card style={styles.card} testID="chat-handoff-card">
         <Text style={styles.title}>
           {differs
@@ -126,6 +136,7 @@ export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
           </View>
         ) : null}
       </Card>
+      ) : null}
       {sheet ? (
         <HandoffChangeSheet
           key={sheet.key}
@@ -134,7 +145,7 @@ export function ChatHandoffCard({ booking, viewer, onChanged }: Props) {
           viewer={viewer}
           initialKind="drop_off"
           allowPlace
-          title="Suggest another"
+          title={showCard ? "Suggest another" : "Change time or place"}
           submitLabel={`Send to ${other}`}
           onSend={sendChange}
           onSendPair={sendPair}

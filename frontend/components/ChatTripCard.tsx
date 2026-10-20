@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ChatMessage, sendChatMessage } from "../features/chat/chatApi";
@@ -23,6 +23,8 @@ type Props = {
   messages: ChatMessage[];
   /** A hello was sent: the chat reloads. */
   onSent: () => void;
+  /** The + menu's Start trip: starts it (or opens the running trip) each time this number goes up. */
+  startSignal?: number;
 };
 
 /**
@@ -30,7 +32,7 @@ type Props = {
  * for both, and a one-tap hello once they are there. It reads the booking's trips like the booking page does and
  * opens the same Trip screen; nothing is stored in the chat.
  */
-export function ChatTripCard({ booking, viewer, threadId, messages, onSent }: Props) {
+export function ChatTripCard({ booking, viewer, threadId, messages, onSent, startSignal = 0 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const { profile } = useSession();
   const errorDialog = useErrorDialog();
@@ -47,6 +49,12 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent }: Pr
     const timer = setInterval(() => tick((n) => n + 1), 15_000);
     return () => clearInterval(timer);
   }, [live]);
+
+  // What the + menu asks for: set below, once the trip's state is known.
+  const onStart = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    if (startSignal > 0) onStart.current();
+  }, [startSignal]);
 
   if (!enabled || trips === null) return null;
 
@@ -71,6 +79,17 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent }: Pr
     } finally {
       setSending(false);
     }
+  };
+  onStart.current = () => {
+    if (live) {
+      router.push(tripHref);
+      return;
+    }
+    const upcoming = nextHandoff(booking);
+    if (!upcoming || !canTravel(viewer, upcoming.handoff.locationType) || Date.now() < startOpensAt(upcoming.handoff)) return;
+    void start(upcoming.kind).then((result) => {
+      if (result.started) router.push(tripHref);
+    });
   };
   const hello = greeting && !greeted ? <Button label={greeting} onPress={() => void greet()} disabled={sending} testID="trip-greet" /> : null;
 
