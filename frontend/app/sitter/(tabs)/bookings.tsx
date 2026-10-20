@@ -3,11 +3,13 @@ import { useCallback, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
+import { ChatList } from "../../../components/ChatList";
 import { Card } from "../../../components/ui/Card";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
 import { Screen } from "../../../components/ui/Screen";
 import { SegmentedControl } from "../../../components/ui/SegmentedControl";
+import { useMyChats } from "../../../features/chat/useMyChats";
 import { SitterInquiryCard, listSitterInquiries } from "../../../features/inquiries/inquiryApi";
 import { SERVICE_LABEL } from "../../../features/sitters/sitterApi";
 import { formatDay, isoToZoned } from "../../../features/schedule/dates";
@@ -17,7 +19,7 @@ import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
 
-type Bucket = SitterBucket | "inquiries";
+type Bucket = SitterBucket | "inquiries" | "chats";
 
 type State =
   | { status: "loading" }
@@ -25,6 +27,11 @@ type State =
   | { status: "error"; message: string };
 
 const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> = {
+  chats: {
+    emoji: "💬",
+    title: "No chats yet",
+    message: "Chats with owners show here.",
+  },
   requests: {
     emoji: "📬",
     title: "No requests yet",
@@ -60,6 +67,7 @@ export default function SitterBookings() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [bucket, setBucket] = useState<Bucket>("requests");
   const userPicked = useRef(false);
+  const chats = useMyChats();
 
   // `open` = choose the tab to land on (when the sitter arrives); a refresh in place never moves them.
   const load = useCallback(
@@ -108,16 +116,18 @@ export default function SitterBookings() {
   }
 
   const count = (b: SitterBucket) => state.bookings.filter((x) => sitterBucket(x) === b).length;
-  const shown = bucket === "inquiries" ? [] : state.bookings.filter((b) => sitterBucket(b) === bucket);
+  const shown = bucket === "inquiries" || bucket === "chats" ? [] : state.bookings.filter((b) => sitterBucket(b) === bucket);
   const requests = count("requests");
   // Open questions that still wait for the sitter's reply.
   const waiting = state.inquiries.filter((i) => i.status === "open" && i.state !== "replied").length;
-  const empty = bucket === "inquiries" ? state.inquiries.length === 0 : shown.length === 0;
+  const empty =
+    bucket === "chats" ? chats.items.length === 0 : bucket === "inquiries" ? state.inquiries.length === 0 : shown.length === 0;
 
   return (
     <Screen contentStyle={styles.content}>
       <SegmentedControl
         options={[
+          { value: "chats", label: "Chats", count: chats.unread },
           { value: "requests", label: "Requests", count: requests },
           { value: "inquiries", label: "Questions", count: waiting },
           { value: "in_progress", label: "In progress", count: count("in_progress") },
@@ -134,6 +144,8 @@ export default function SitterBookings() {
       />
       {empty ? (
         <EmptyState {...EMPTY[bucket]} />
+      ) : bucket === "chats" ? (
+        <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
       ) : bucket === "inquiries" ? (
         <View style={styles.list} testID="sitter-inquiries">
           {state.inquiries.map((inq) => (

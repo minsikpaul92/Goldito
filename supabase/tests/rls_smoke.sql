@@ -4985,6 +4985,130 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 014j (Chat hub): one thread per owner and sitter pair, free chat, unread, leave, RLS
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  sana constant uuid := '00000000-0000-4000-8000-0000000000d1';
+  biscuit constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 210;
+  drop_at timestamptz := local_ts(d, '09:00');
+  pick_at timestamptz := local_ts(d + 2, '17:00');
+  t1 public.chat_threads;
+  t2 public.chat_threads;
+  v_n int;
+  r record;
+  v_err text;
+begin
+  perform _t_as(null);
+
+  -- An owner opens a chat with a sitter; the same pair always gets the same thread
+  perform _t_as(robert);
+  t1 := open_chat_thread(chloe);
+  t2 := open_chat_thread(chloe);
+  perform _t_ok(t1.id = t2.id and t1.owner_id = robert and t1.sitter_id = chloe,
+    '014j: the same owner and sitter always get the same thread');
+  perform _t_ok(not exists (select 1 from list_my_chats() x where x.thread_id = t1.id),
+    '014j: a chat with no message yet is not in the list');
+
+  -- The stay becomes the first card, once for the same stay
+  t2 := open_chat_thread(chloe, drop_at, pick_at, array[biscuit]);
+  t2 := open_chat_thread(chloe, drop_at, pick_at, array[biscuit]);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
+  perform _t_ok(v_n = 1, '014j: the first card (dates, times, pets) is posted once for the same stay');
+  t2 := open_chat_thread(chloe, drop_at, pick_at + interval '1 day', array[biscuit]);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'card';
+  perform _t_ok(v_n = 2, '014j: a different stay posts a new card in the same thread');
+  begin perform open_chat_thread(chloe, pick_at, drop_at, array[biscuit]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_stay', '014j: a pick-up before the drop-off is refused');
+
+  -- Free chat, both sides, as often as they like
+  perform send_chat_message(t1.id, 'Hi Chloe');
+  perform send_chat_message(t1.id, 'Can you take Biscuit?');
+  perform _t_as(chloe);
+  select * into r from list_my_chats() x where x.thread_id = t1.id;
+  perform _t_ok(r.unread_count = 4 and r.last_body = 'Can you take Biscuit?' and r.other_name is not null,
+    '014j: the sitter sees the two cards and two messages as unread, the last one and the owner''s name');
+  perform send_chat_message(t1.id, 'Yes, happy to');
+  perform send_chat_message(t1.id, 'Any allergies?');
+  perform mark_chat_read(t1.id);
+  select * into r from list_my_chats() x where x.thread_id = t1.id;
+  perform _t_ok(r.unread_count = 0, '014j: opening the chat marks it read');
+  perform _t_as(robert);
+  select * into r from list_my_chats() x where x.thread_id = t1.id;
+  perform _t_ok(r.unread_count = 2, '014j: the owner sees the sitter''s two replies as unread');
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and kind = 'text';
+  perform _t_ok(v_n = 4, '014j: either person can send repeatedly in the same thread');
+
+  -- A sitter can open an existing chat but cannot start one
+  perform _t_as(chloe);
+  t2 := open_chat_thread(robert);
+  perform _t_ok(t2.id = t1.id, '014j: a sitter opens the existing chat with an owner');
+  begin perform open_chat_thread(joy); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014j: a sitter cannot start a chat with an owner');
+  perform _t_as(robert);
+  begin perform open_chat_thread(joy); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014j: an owner cannot open a chat with another owner');
+
+  -- Only the two people read or write
+  perform _t_as(joy);
+  perform _t_ok(not exists (select 1 from public.chat_threads where id = t1.id)
+      and not exists (select 1 from public.chat_messages where thread_id = t1.id),
+    '014j: a third person reads neither the thread nor its messages');
+  begin perform send_chat_message(t1.id, 'hello'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014j: a third person cannot write in it');
+  begin perform mark_chat_read(t1.id); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014j: …nor mark it read');
+  perform _t_ok(not exists (select 1 from get_chat_thread(t1.id)), '014j: …nor read its header');
+  perform _t_as(robert);
+  begin insert into public.chat_messages (thread_id, sender_id, body) values (t1.id, robert, 'x'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014j: there is no direct insert');
+  begin perform send_chat_message(t1.id, '   '); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_required', '014j: an empty message is refused');
+  begin perform send_chat_message(t1.id, repeat('a', 2001)); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_too_long', '014j: a message over 2000 characters is refused');
+  select * into r from get_chat_thread(t1.id);
+  perform _t_ok(r.my_role = 'owner' and r.other_id = chloe and r.other_name is not null,
+    '014j: the header says who the other person is');
+
+  -- Leaving hides the chat for that person only; a new message brings it back
+  perform leave_chat(t1.id);
+  perform _t_ok(not exists (select 1 from list_my_chats() x where x.thread_id = t1.id), '014j: a left chat leaves the list');
+  perform _t_ok(exists (select 1 from public.chat_messages where thread_id = t1.id), '014j: …but the history is kept');
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from list_my_chats() x where x.thread_id = t1.id), '014j: …and the other person still has it');
+  perform send_chat_message(t1.id, 'Still there?');
+  perform _t_as(robert);
+  perform _t_ok(exists (select 1 from list_my_chats() x where x.thread_id = t1.id), '014j: a new message brings the chat back');
+  perform leave_chat(t1.id);
+  t2 := open_chat_thread(chloe);
+  perform _t_ok(exists (select 1 from list_my_chats() x where x.thread_id = t1.id), '014j: opening the chat again brings it back');
+
+  -- No anon access
+  perform _t_as(null, 'anon');
+  begin perform list_my_chats(); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014j: anon cannot call the chat functions');
+  begin perform count(*) from public.chat_messages; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014j: anon cannot read messages');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Open by default + weekly closing rules (014d)
 -- ---------------------------------------------------------------------------
 
