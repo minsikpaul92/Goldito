@@ -238,7 +238,7 @@ def test_each_booked_state_starts_where_its_test_needs_it():
 
 
 def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
-    """ready = accept → sign → pay; in_care also taps Received; confirmed stops after the sitter accepts."""
+    """ready = both say yes → sign → pay; in_care also taps Received; confirmed stops after both said yes."""
     calls = []
 
     def fake_rpc(token, fn, params, **_):
@@ -258,7 +258,7 @@ def test_the_stay_is_checked_out_then_received_in_the_right_order(monkeypatch):
         demo_reset.book_for_state(db, OWNER, SITTER, TODAY, state)
         return [fn for _t, fn in calls]
 
-    base = ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
+    base = ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "agree_to_book", "respond_booking"]
     assert run("confirmed") == base
     assert inserted == []
     assert run("ready") == [*base, "required_consents", "pay_booking_demo"]
@@ -282,7 +282,7 @@ def test_a_pair_that_has_met_before_just_goes_on_without_a_first_yes(monkeypatch
 
     demo_reset.book_for_state(world(), OWNER, SITTER, TODAY, "confirmed")
 
-    assert calls == ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "respond_booking"]
+    assert calls == ["request_booking", "express_interest", "request_skip_meet_greet", "respond_skip_meet_greet", "agree_to_book", "respond_booking"]
 
 
 def test_any_other_error_on_the_first_yes_stops_the_reset(monkeypatch):
@@ -385,14 +385,16 @@ def test_a_pets_state_chat_has_the_stay_card_and_a_short_talk_but_no_request():
     assert messages[0]["sender_id"] == OWNER and messages[2]["sender_id"] == SITTER
 
 
-def test_a_booked_state_chat_also_has_the_request_card_of_the_booking():
+def test_a_booked_state_chat_also_has_the_request_card_and_the_booking_steps():
     db = world()
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
 
     cards = [m["card"] for m in chat_of(db) if m["kind"] == "card"]
-    assert [c["type"] for c in cards] == ["stay", "request"]
+    assert [c["type"] for c in cards] == ["stay", "request", "meet_greet", "agreement", "payment"]
     assert cards[1]["booking_id"] == "b-new" and cards[1]["service_type"] == "boarding"
+    # The step cards hold only the booking's id (the app reads the booking to draw them).
+    assert all(set(c) == {"type", "booking_id", "rev"} and c["booking_id"] == "b-new" for c in cards[2:])
 
 
 def test_the_empty_state_has_no_chat_and_no_favorite():

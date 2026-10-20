@@ -315,8 +315,9 @@ Booker = Callable[[Client, str, str, date, State, DemoSet], str]
 
 def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, state: State, demo_set: DemoSet = DEFAULT_SET) -> str:
     """The owner requests a boarding stay (both pets, the sitter's place), the Meet & Greet is skipped by
-    agreement (after the sitter's first yes) and the sitter accepts ("Chloe accepted — Finish booking"). `ready` and `in_care` go on with
-    the checkout (consents + demo payment); `in_care` also has the sitter tap Received."""
+    agreement (after the sitter's first yes), then the owner says "I'd like to book" and the sitter accepts: the booking is
+    confirmed and waits for payment. `ready` and `in_care` go on with the checkout (consents + demo payment); `in_care` also
+    has the sitter tap Received."""
     owner_demo, sitter_demo = demo_set.owner, demo_set.sitter
     owner_token, sitter_token = sign_in(owner_demo.email), sign_in(sitter_demo.email)
     tz = ZoneInfo(get_settings().app_timezone)
@@ -347,6 +348,8 @@ def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, s
             raise
     authz.rpc_json(owner_token, "request_skip_meet_greet", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_skip_meet_greet", {"p_booking": booking, "p_accept": True})
+    # Both say yes (014o): the booking is confirmed only when the owner and the sitter both did.
+    authz.rpc_json(owner_token, "agree_to_book", {"p_booking": booking})
     authz.rpc_json(sitter_token, "respond_booking", {"p_booking": booking, "p_accept": True})
     if state in ("ready", "in_care"):
         _sign_and_pay(owner_token, owner_id, owner_demo.display_name, booking)
@@ -394,7 +397,14 @@ def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state:
             "pets": pet_cards,
         },
     )
-    say(sitter_id, "text", body="Got it, I accepted. Finish the booking when you're ready.")
+    # What the booking steps posted into the chat (014o); the cards read the booking, so they hold only its id.
+    for step in ("meet_greet", "agreement", "payment"):
+        say(sitter_id, "card", card={"type": step, "booking_id": booking, "rev": 0})
+    say(
+        sitter_id,
+        "text",
+        body="I accepted. I'll send the final quote." if state == "confirmed" else "All set, see you soon!",
+    )
 
 
 def reset(

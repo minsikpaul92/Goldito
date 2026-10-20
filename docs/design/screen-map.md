@@ -20,17 +20,18 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `BookingStageBar` · `ChatQuoteCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatQuoteCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 162 |
-| EmptyState | Chat not found | — | 170 |
-| Pressable | — | `chat-stage` | 265 |
-| Button | Request booking | `chat-request-booking` | 310 |
-| Button | Send quote | `chat-send-quote` | 315 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 327 |
-| Pressable | Send | `chat-send` | 354 |
+| EmptyState | Couldn't load this chat | — | 177 |
+| EmptyState | Chat not found | — | 185 |
+| Pressable | — | `chat-stage` | 341 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 391 |
+| Button | Send quote | `chat-send-quote` | 398 |
+| TextButton | Send quote | `chat-send-quote` | 401 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 419 |
+| Pressable | Send | `chat-send` | 446 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -662,6 +663,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | — | ``care-type-${t.type}`` | 389 |
 | Pressable | ``Task time ${formatTime(time)}, tap to change`` | `care-time` | 427 |
 
+### ChatBookingCards — [components/ChatBookingCards.tsx](../../frontend/components/ChatBookingCards.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `chat-payment-open` | 84 |
+
 ### ChatHeaderTitle — [components/ChatHeaderTitle.tsx](../../frontend/components/ChatHeaderTitle.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -868,25 +875,25 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 144 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 145 |
-| TextButton | Change | `meet-change` | 154 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 155 |
-| Button | Accept | `meet-accept` | 164 |
-| TextButton | Suggest another time | `meet-counter` | 177 |
-| TextButton | Decline | `meet-decline` | 178 |
-| LinkButton | Join Google Meet | `meet-join` | 194 |
-| TextButton | Get the Meet link | `meet-link-retry` | 198 |
-| CheckRow | `item` | ``meet-check-${item}`` | 212 |
-| Button | Done, we met | `meet-done` | 221 |
-| TextButton | Add to calendar | `meet-calendar` | 231 |
-| TextButton | Change | `meet-change` | 232 |
-| Button | Continue without meeting | `meet-skip-accept` | 248 |
-| TextButton | Decline and cancel booking | `meet-skip-decline` | 254 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 286 |
-| Button | Ask to skip | `meet-skip-confirm` | 292 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 305 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 311 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 168 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 169 |
+| TextButton | Change | `meet-change` | 178 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 179 |
+| Button | Accept | `meet-accept` | 189 |
+| TextButton | Suggest another time | `meet-counter` | 203 |
+| TextButton | Decline | `meet-decline` | 204 |
+| LinkButton | Join Google Meet | `meet-join` | 220 |
+| TextButton | Get the Meet link | `meet-link-retry` | 224 |
+| CheckRow | `item` | ``meet-check-${item}`` | 238 |
+| Button | Done, we met | `meet-done` | 248 |
+| TextButton | Add to calendar | `meet-calendar` | 259 |
+| TextButton | Change | `meet-change` | 260 |
+| Button | Continue without meeting | `meet-skip-accept` | 277 |
+| TextButton | Decline and cancel booking | `meet-skip-decline` | 284 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 316 |
+| Button | Ask to skip | `meet-skip-confirm` | 322 |
+| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 335 |
+| Button | Decline and cancel the booking | `meet-decline-confirm` | 341 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
@@ -1326,4 +1333,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+384 actions · 383 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

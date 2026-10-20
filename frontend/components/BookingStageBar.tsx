@@ -39,15 +39,48 @@ export function hasStageBar(booking: BookingSummary): boolean {
   return currentStep(booking.stage, booking.meetGreetStatus !== "not_needed") !== null;
 }
 
-/** Progress through the booking steps, from the stage the database computes (D60). */
-export function BookingStageBar({ booking, viewer }: { booking: BookingSummary; viewer: Viewer }) {
+/**
+ * Progress through the booking steps, from the stage the database computes (D60).
+ * `chat` is the small row of five connected circles pinned on top of the chat: it always has the five steps (a pair that
+ * has met shows Meet as done) and, with no booking yet, sits on Request.
+ */
+export function BookingStageBar({ booking, viewer, chat }: { booking: BookingSummary | null; viewer: Viewer; chat?: boolean }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const firstTime = booking.meetGreetStatus !== "not_needed";
+  const firstTime = chat || !booking || booking.meetGreetStatus !== "not_needed";
   const steps = firstTime ? FIRST_TIME : REPEAT;
-  const current = currentStep(booking.stage, firstTime);
+  const current = booking ? currentStep(booking.stage, firstTime) : 0;
   if (current === null) return null;
-  const caption = stageCaption(booking, viewer);
+  const caption = booking ? stageCaption(booking, viewer) : null;
+
+  if (chat) {
+    return (
+      <View style={styles.wrap} testID="stage-bar" accessibilityLabel={`Step ${Math.min(current + 1, steps.length)} of ${steps.length}`}>
+        <View style={styles.row}>
+          {steps.map((label, i) => {
+            const done = i < current;
+            const now = i === current;
+            return (
+              <View key={label} style={[styles.miniStep, { zIndex: steps.length - i }]}>
+                {i > 0 ? <View style={[styles.miniLink, (done || now) && styles.linkDone]} /> : null}
+                <View style={[styles.miniDot, done && styles.dotDone, now && styles.dotNow]}>
+                  <Text style={[styles.miniText, done && styles.dotTextDone, now && styles.dotTextNow]}>{done ? "✓" : i + 1}</Text>
+                </View>
+                <Text style={[styles.miniLabel, now && styles.dotLabelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
+                  {label === "Meet & Greet" ? "Meet" : label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+        {caption ? (
+          <Text style={styles.caption} testID="stage-caption">
+            {caption}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
 
   if (theme.ui.blocks) {
     return (
@@ -126,4 +159,10 @@ const makeStyles = (theme: Theme) =>
       ...(theme.fontFamily.display ? { fontFamily: theme.fontFamily.display } : { fontWeight: theme.fontWeight.semibold }),
     },
     dotLabelNow: { color: theme.color.text },
+    // The small pinned row of the chat.
+    miniStep: { flex: 1, alignItems: "center", gap: 3, paddingTop: 2 },
+    miniLink: { position: "absolute", top: 12, left: "-50%", right: "50%", height: 2, borderRadius: 1, backgroundColor: theme.color.track },
+    miniDot: { zIndex: 1, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
+    miniText: { fontSize: 11, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
+    miniLabel: { fontSize: 11, color: theme.color.textMuted, fontWeight: theme.fontWeight.semibold },
   });

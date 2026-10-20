@@ -9,6 +9,31 @@ import { getSupabase } from "./supabase";
 
 export type MeetGreetMode = "in_person" | "video";
 
+/** The one Meet & Greet step that is this person's turn, as the chat footer names it (3D.7). */
+export type MeetGreetPrimary = { key: "schedule" | "accept" | "done" | "continue"; label: string };
+
+/**
+ * What the footer offers for a first-time booking's Meet & Greet, or null when nothing is waiting for this person.
+ * The card does the work; this only says which step it is.
+ */
+export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", now: number = Date.now()): MeetGreetPrimary | null {
+  if (b.status !== "requested") return null;
+  const me = viewer === "owner" ? b.ownerId : b.sitterId;
+  const mg = b.meetGreet;
+  switch (b.meetGreetStatus) {
+    case "required":
+      return b.sitterInterestAt ? { key: "schedule", label: "Pick a time" } : null;
+    case "proposed":
+      return mg.proposedBy !== me ? { key: "accept", label: "Accept" } : null;
+    case "agreed":
+      return mg.at && Date.parse(mg.at) <= now ? { key: "done", label: "Done, we met" } : null;
+    case "skip_requested":
+      return mg.skipRequestedBy !== me ? { key: "continue", label: "Continue without meeting" } : null;
+    default:
+      return null;
+  }
+}
+
 const MESSAGES: Record<string, string> = {
   place_required: "Pick a place to meet.",
   place_too_long: "Keep the place to one short line.",
