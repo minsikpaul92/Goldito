@@ -178,7 +178,7 @@ export function LiveUpdates() {
 
       {items != null && shown.length === 0 ? (
         <Text style={styles.muted} testID="live-empty">
-          Nothing new. During a stay, what your sitter does shows up here — swipe to dismiss.
+          Nothing new yet.
         </Text>
       ) : null}
 

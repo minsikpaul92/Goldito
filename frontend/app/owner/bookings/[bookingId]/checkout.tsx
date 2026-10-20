@@ -176,7 +176,7 @@ export default function CheckoutScreen() {
           <Card style={styles.entryCard} testID="checkout-entry-missing">
             <Text style={styles.entryTitle}>🔑 Add entry info</Text>
             <Text style={styles.entryBody}>
-              {`${booking.sitterName} will stand at your door with nothing to open it. Add the lockbox code, buzzer or steps now — they only see it from 2 hours before arrival.`}
+              {`${booking.sitterName} will stand at your door with nothing to open it. Add the lockbox code, buzzer or steps now. They see it 2 hours before arrival.`}
             </Text>
             <Button
               label="Add entry info"
@@ -219,7 +219,7 @@ export default function CheckoutScreen() {
       </Screen>
 
       <View style={styles.footerBar}>
-        <Text style={styles.demoHint}>Demo payment — no card needed</Text>
+        <Text style={styles.demoHint}>Demo payment, no card needed</Text>
         <Button
           label={totalLabel}
           onPress={() => void pay()}

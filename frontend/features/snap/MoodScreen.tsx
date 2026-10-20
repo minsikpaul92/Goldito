@@ -17,8 +17,8 @@ import { PetBox, cropPet, detectPets, loadFrames } from "./vision";
 type Step = "preparing" | "finding" | "reading";
 type Shown = { result: MoodResult; images: string[]; aspects: number[] };
 
-const DISCLAIMER = "For fun only — not a behavior or health assessment.";
-const NO_PET = "We couldn't find a pet — try a clearer photo.";
+const DISCLAIMER = "For fun only, not a health check.";
+const NO_PET = "We couldn't find a pet. Try a clearer photo.";
 /** The API takes ≤ 8 crops: up to 4 pets in a photo, 2 per frame in a clip (4 frames). */
 const PETS_IN_PHOTO = 4;
 const PETS_IN_CLIP = 2;

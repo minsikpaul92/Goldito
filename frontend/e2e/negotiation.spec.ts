@@ -277,7 +277,7 @@ test.describe("negotiation", () => {
     const screen = await openDetail(page, OWNER);
 
     await screen.getByTestId("change-booking").click();
-    await expect(screen.getByTestId("change-sheet")).toContainText("House sitting — handoffs stay at the owner's home.");
+    await expect(screen.getByTestId("change-sheet")).toContainText("House sitting: handoffs stay at the owner's home.");
     await expect(screen.getByTestId("change-place-sitter_home")).toHaveCount(0);
     await screen.getByTestId("change-time-plus").click();
     await screen.getByTestId("change-send").click();
@@ -331,7 +331,7 @@ test.describe("negotiation", () => {
     ]);
     const sitter = await openDetail(page, SITTER);
     await expect(sitter.getByTestId("proposal-drop_off-paired")).toContainText(
-      "Comes with the new pick-up (Oct 14, 5:00 PM) — Accept or Decline answers both.",
+      "Comes with the new pick-up (Oct 14, 5:00 PM). Accept or Decline answers both.",
     );
     // The pick-up fits on its own (Oct 5 – Oct 14), so it can be answered alone.
     await expect(sitter.getByTestId("proposal-pick_up-paired")).toHaveCount(0);

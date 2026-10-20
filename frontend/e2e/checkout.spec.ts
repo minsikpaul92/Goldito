@@ -77,6 +77,31 @@ test.describe("checkout", () => {
     expect(db.payments).toHaveLength(0);
   });
 
+  test("a same-day boarding stay reads 1 day, and the label times the rate is the total (#172)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.quote = {
+      ...DEMO_QUOTE, nights: 0, days: 1, base: 55, extra_pets: 0, holiday_days: [], holiday_surcharge: 0, total: 55,
+    };
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+    const screen = app(page);
+
+    await expect(screen.getByTestId("quote-unit")).toHaveText("1 day × $55.00");
+    await expect(screen.getByTestId("quote-total")).toContainText("$55.00");
+  });
+
+  test("a stay over nights still reads in nights", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+
+    await expect(app(page).getByTestId("quote-unit")).toHaveText("3 nights × $55.00");
+  });
+
   test("a sitter with no prices yet is named as the reason, not 'doesn't offer that service'", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seedUnpaid(db);
@@ -102,6 +127,20 @@ test.describe("checkout", () => {
 
     await expect(app(page).getByText("doesn't offer that service", { exact: false })).toBeVisible();
     await expect(app(page).getByText("hasn't set their prices yet", { exact: false })).toHaveCount(0);
+  });
+
+  test("a sitter with prices but none for this service says that price is not set (#189)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedUnpaid(db);
+    db.sitter_rates.push({ sitter_id: SITTER.id, daycare_daily: 35 });
+    db.quote_error = "rates_not_set"; // what quote_booking raises for an offered service with no price (014k)
+    db.quote_error_detail = "boarding";
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}/checkout`);
+
+    await expect(app(page).getByText("This sitter hasn't set a Boarding price yet.")).toBeVisible();
+    await expect(app(page).getByText("doesn't offer that service", { exact: false })).toHaveCount(0);
   });
 
   test("checking every consent and Pay completes demo checkout", async ({ page }) => {

@@ -26,7 +26,7 @@ export function recordSource(record: LifeRecord): string {
   if (!record.stayFrom || !record.stayTo) return who;
   const from = formatDay(record.stayFrom);
   const to = formatDay(record.stayTo);
-  return `${who} · ${from === to ? from : `${from} – ${to}`}`;
+  return `${who} · ${from === to ? from : `${from} to ${to}`}`;
 }
 
 /**

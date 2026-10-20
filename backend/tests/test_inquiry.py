@@ -21,7 +21,7 @@ client = base.client
 INQ = "00000000-0000-4000-8000-0000000000e1"
 OTHER = "00000000-0000-4000-8000-0000000000e9"
 QUOTE = {
-    "service": "boarding", "nights": 3, "days": 0, "unit_price": 55, "base": 165, "extra_pets": 82.5,
+    "service": "boarding", "nights": 3, "days": 3, "unit_price": 55, "base": 165, "extra_pets": 82.5,
     "holiday_days": [{"day": "2026-10-12", "name": "Thanksgiving"}], "holiday_surcharge": 20.63,
     "total": 268.13, "currency": "CAD", "rate_version": "t",
 }
@@ -153,6 +153,20 @@ def test_b_thanksgiving_is_in_the_facts_and_the_total_is_the_servers(client, set
     quote = ctx.model.facts["quote"]
     assert quote["holiday_days"] == [{"day": "2026-10-12", "name": "Thanksgiving"}] and quote["total"] == 268.13
     assert ctx.model.facts["inquiry"]["service"] == "boarding" and ctx.model.facts["owner"] == {"first_name": "Robert"}
+
+
+def test_a_same_day_stay_reaches_the_model_as_one_day_not_zero_nights(client, setup):
+    same_day = {**QUOTE, "nights": 0, "days": 1, "base": 55, "extra_pets": 0, "holiday_days": [], "holiday_surcharge": 0, "total": 55}
+    ctx = setup("Hi Robert! I'm available for Max 🐾 The total is $55.00 CAD. Tap **Request booking** to send your request.", quote=same_day)
+    body = post(client).json()
+    assert "nights" not in ctx.model.facts["quote"] and ctx.model.facts["quote"]["days"] == 1
+    assert body["quote"]["total"] == 55  # the app still gets the server's quote as is
+
+
+def test_a_stay_over_nights_keeps_its_nights_for_the_model(client, setup):
+    ctx = setup()
+    post(client)
+    assert ctx.model.facts["quote"]["nights"] == 3
 
 
 # --- availability -------------------------------------------------------------------------------------

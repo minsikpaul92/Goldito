@@ -64,7 +64,7 @@ function actionError(error: unknown, sitter: string, pets: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "sitter_unavailable") return `${sitter} no longer has room for that time. Try another one.`;
   if (error.code === "handoff_completed") return "That handoff already happened.";
-  if (error.code === "booking_in_progress") return `${pets} is already with ${sitter} — change the pick-up time instead.`;
+  if (error.code === "booking_in_progress") return `${pets} is already with ${sitter}. Change the pick-up time instead.`;
   return error.message;
 }
 
@@ -240,19 +240,19 @@ export default function OwnerBookingDetail() {
             {booking.status === "declined" && booking.sitterNote ? (
               <Text style={styles.body} testID="declined-reason">{`“${booking.sitterNote}”`}</Text>
             ) : null}
-            <Text style={styles.muted}>Same pets, times and places — pick another sitter.</Text>
+            <Text style={styles.muted}>Same pets, times and places. Pick another sitter.</Text>
           </Card>
         ) : null}
 
         {needsCheckout ? (
           <Card style={styles.block} tone={blocks ? "butter" : undefined} testID="checkout-banner">
             <Text style={styles.label}>
-              {checkoutReopened ? "Your stay changed — sign to finish →" : `${sitter} accepted! Finish booking →`}
+              {checkoutReopened ? "Your stay changed. Sign to finish →" : `${sitter} accepted! Finish booking →`}
             </Text>
             <Text style={styles.muted}>
               {checkoutReopened
                 ? `The new plan needs one more consent. Entry info stays locked for ${sitter} until you sign.`
-                : "Review the quote, sign the consents, and pay (demo — no card)."}
+                : "Review the quote, sign the consents, and pay (demo, no card)."}
             </Text>
             <Button
               label="Finish booking"
@@ -393,7 +393,7 @@ export default function OwnerBookingDetail() {
         <Text style={styles.body}>{`${sitter} gets a notice. You can book again any time.`}</Text>
         {passing ? (
           <>
-            <Text style={styles.muted}>Pick a reason and/or leave a short note — optional.</Text>
+            <Text style={styles.muted}>Pick a reason or leave a short note (optional).</Text>
             <ChipSuggestions
               chips={OWNER_PASS_REASONS.map((r, i) => ({ id: String(i), kind: "episode", label: r, source: "custom", check: null, media_id: null }))}
               off={new Set(OWNER_PASS_REASONS.flatMap((r, i) => (passReasons.includes(r) ? [] : [String(i)])))}

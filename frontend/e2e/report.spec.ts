@@ -135,7 +135,7 @@ test.describe("daily report", () => {
     const notes = Array.from({ length: 7 }, (_, i) => ({ id: `note-c${i}`, kind: "episode", label: `Moment ${i}`, source: "checkin", check: null, media_id: null }));
     const { reportRequests } = await openSitterDiary(page, notes);
     const screen = app(page);
-    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveText("Only 8 highlights go into the report — turn a few off to choose.");
+    await expect(screen.getByTestId(`report-too-many-${MAX.id}`)).toHaveText("Only 8 highlights fit in the report. Turn a few off.");
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(/lovely day with Max/);
     expect((reportRequests[0].chips as string[]).length).toBe(9);
@@ -150,7 +150,7 @@ test.describe("daily report", () => {
     await page.route("**/api/ai/daily-report", (route) => route.fulfill({ status: 422, contentType: "application/json", body: JSON.stringify({ detail: [] }) }));
     const screen = app(page);
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
-    await expect(screen.getByText("Too many highlights — turn a few off and try again.")).toBeVisible();
+    await expect(screen.getByText("Too many highlights. Turn a few off and try again.")).toBeVisible();
   });
 
   test("the writing helper is down: a plain-list draft with a notice, and it can still be sent", async ({ page }) => {
@@ -166,7 +166,7 @@ test.describe("daily report", () => {
     });
     const screen = app(page);
     await screen.getByTestId(`report-generate-${MAX.id}`).click();
-    await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveText("The writing helper is down — here's a plain list. Edit it if you like, then send.");
+    await expect(screen.getByTestId(`report-fallback-${MAX.id}`)).toHaveText("The writing helper is down. Here's a plain list to edit and send.");
     await expect(screen.getByTestId(`report-body-${MAX.id}`)).toHaveValue(plain);
     await screen.getByTestId(`report-send-${MAX.id}`).click();
     await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
@@ -355,7 +355,7 @@ test.describe("daily report", () => {
     await expect(screen.getByTestId(`report-send-${MAX.id}`)).toBeDisabled();
 
     await screen.getByTestId(`report-body-${MAX.id}`).fill("We played fetch until Max flopped on the grass.");
-    await expect(screen.getByTestId(`report-state-${MAX.id}`)).toContainText("Draft — only you can see it");
+    await expect(screen.getByTestId(`report-state-${MAX.id}`)).toContainText("Draft. Only you can see it");
     expect(db.daily_reports).toHaveLength(0); // typing saves nothing for the owner
     await screen.getByTestId(`report-send-${MAX.id}`).click();
     await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
