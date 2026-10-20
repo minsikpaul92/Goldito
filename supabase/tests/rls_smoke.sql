@@ -100,8 +100,14 @@ language sql security definer set search_path = public as $$
   where id = p_booking
 $$;
 
+-- Stand-in for the owner's "I'd like to book" (agree_to_book, 014o) on a fixture booking: the sitter's Accept then confirms.
+create function public._t_agree(p_booking uuid) returns void
+language sql security definer set search_path = public as $$
+  update bookings set owner_agreed_at = coalesce(owner_agreed_at, now()) where id = p_booking
+$$;
+
 grant execute on function public._t_put(text, uuid), public._t_get(text), public._t_as(uuid, text),
-  public._t_ok(boolean, text), public._t_meet(uuid, text), public._t_interest(uuid) to authenticated, anon;
+  public._t_ok(boolean, text), public._t_meet(uuid, text), public._t_interest(uuid), public._t_agree(uuid) to authenticated, anon;
 
 -- ---------------------------------------------------------------------------
 -- Fixtures (signup trigger creates profiles)
@@ -539,6 +545,7 @@ begin
       from public.bookings where id = v_a),
     'A: boarding by default; a pair that already had a drop-off skips the Meet & Greet');
   perform _t_as(chloe);
+  perform _t_agree(v_a);
   perform respond_booking(v_a, true, 'See you!');
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed', 'A: booking confirmed');
@@ -561,6 +568,7 @@ begin
     'B: first stay together needs a Meet & Greet');
   perform _t_as(chloe);
   begin
+    perform _t_agree(v_b);
     perform respond_booking(v_b, true);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -568,8 +576,10 @@ begin
   perform _t_ok(v_err = 'meet_greet_required', 'B: sitter cannot accept a first-time pair before meeting');
   perform _t_meet(v_b);
   perform _t_meet(v_h);
+  perform _t_agree(v_b);
   perform respond_booking(v_b, true);
   begin
+    perform _t_agree(v_h);
     perform respond_booking(v_h, true);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -634,6 +644,7 @@ begin
   perform _t_as(paul);
   perform propose_handoff(v_a, 'drop_off', local_ts(d + 10, '08:30'));
   begin
+    perform _t_agree(v_a);
     perform respond_booking(v_a, true);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -646,6 +657,7 @@ begin
   perform _t_as(robert);
   perform respond_handoff(v_h, true);
   perform _t_as(paul);
+  perform _t_agree(v_a);
   perform respond_booking(v_a, true);
   perform _t_as(null);
   perform _t_ok((select status from public.bookings where id = v_a) = 'confirmed', 'C: booking confirmed');
@@ -775,6 +787,7 @@ begin
     local_ts(d + 3, '19:30'), 'owner_home', null, null, v_a);
   perform _t_meet(v_b, 'skipped');
   perform _t_as(allen);
+  perform _t_agree(v_b);
   perform respond_booking(v_b, true);
   perform _t_as(null);
   perform _t_ok((select status = 'confirmed' and rebooked_from = v_a from public.bookings where id = v_b),
@@ -789,8 +802,10 @@ begin
   perform _t_ok((select meet_greet_status from public.bookings where id = v_a) = 'not_needed',
     'F: a pair whose Meet & Greet was done (in B) does not meet again');
   perform _t_as(chloe);
+  perform _t_agree(v_a);
   perform respond_booking(v_a, true);
   perform _t_as(paul);
+  perform _t_agree(v_b);
   perform respond_booking(v_b, true);
   perform _t_as(joy);
   begin
@@ -1057,6 +1072,7 @@ begin
     '3B.9: the proposer gets meet_greet_agreed');
   perform _t_as(nora);
   begin
+    perform _t_agree(v_a);
     perform respond_booking(v_a, true);
     v_err := null;
   exception when others then v_err := sqlerrm;
@@ -1089,6 +1105,7 @@ begin
   from unnest(array['morning', 'afternoon']::care_slot[]) s;
   insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
   values (nora, 'open', app_today() + 38, app_today() + 43, 'overnight', '18:00', '08:00', 3);
+  perform _t_agree(v_a);
   perform respond_booking(v_a, true);
   perform _t_as(null);
   perform _t_ok((select status = 'confirmed' and meet_greet_status = 'done' from public.bookings where id = v_a),
@@ -5248,6 +5265,7 @@ begin
   v_id := request_booking(chloe, array[max], local_ts(d + 14, '10:00'), 'sitter_home', null,
     local_ts(d + 15, '10:00'), 'sitter_home', null, 'before the rule');
   perform _t_as(chloe);
+  perform _t_agree(v_id);
   perform respond_booking(v_id, true, null);
   perform save_closing_rules(jsonb_build_array(jsonb_build_object('weekday', extract(dow from d + 14)::int, 'slot', 'overnight')));
   perform _t_as(null);
@@ -5684,6 +5702,209 @@ begin
   begin perform send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]); v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'permission denied%', '014n: anon cannot call the quote functions');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014o (Both sides agree, the final quote's fees in the price): the owner's "I'd like to book" and the sitter's "I accept"
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  coco constant uuid := '00000000-0000-4000-8000-0000000000c3';
+  d constant date := app_today() + 300;
+  v1 uuid;
+  v2 uuid;
+  v3 uuid;
+  v_h uuid;
+  t1 public.chat_threads;
+  q public.chat_messages;
+  v_extra uuid;
+  v_extra2 uuid;
+  v_base numeric;
+  v_quote jsonb;
+  v_kind text;
+  v_err text;
+  r record;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 12, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'overnight', '18:00', '08:00', 3);
+
+  -- A repeat pair (Robert and Chloe have met) is at "confirm" as soon as the request is in: both still have to say yes.
+  perform _t_as(robert);
+  v1 := request_booking(chloe, array[max], local_ts(d, '09:00'), 'sitter_home', null,
+    local_ts(d + 2, '17:00'), 'sitter_home', null, null);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'confirm' and r.next_actor = 'both', '014o: a repeat pair is at confirm, both still to agree');
+  begin perform pay_booking_demo(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_status', '014o: no payment before the booking is confirmed');
+
+  -- The sitter says yes first: still a request, now the owner's turn.
+  perform _t_as(chloe);
+  begin perform agree_to_book(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014o: only the owner says "I''d like to book"');
+  perform respond_booking(v1, true, 'See you!');
+  perform _t_as(robert);
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok((select status = 'requested' and sitter_accepted_at is not null and owner_agreed_at is null
+        and sitter_note = 'See you!' from public.bookings where id = v1)
+      and r.stage = 'confirm' and r.next_actor = 'owner',
+    '014o: the sitter''s yes alone does not confirm; it is the owner''s turn');
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'booking_sitter_accepted'
+      and booking_id = v1) = 1,
+    '014o: the owner is told it is their turn');
+  perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v1 and status = 'agreed') = 0,
+    '014o: nothing is agreed on the handoffs yet');
+
+  -- The owner says yes: confirmed, waiting for payment.
+  perform agree_to_book(v1);
+  perform agree_to_book(v1);
+  perform _t_ok((select status = 'confirmed' and owner_agreed_at is not null from public.bookings where id = v1)
+      and (select count(*) from public.booking_handoffs where booking_id = v1 and status = 'agreed') = 2,
+    '014o: both said yes, so it is confirmed with both handoffs agreed (and the owner''s yes is idempotent)');
+  select * into r from get_booking_stages(array[v1]);
+  perform _t_ok(r.stage = 'awaiting_payment' and r.next_actor = 'owner', '014o: confirmed and unpaid waits for the owner to pay');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'booking_confirmed'
+      and booking_id = v1) = 1,
+    '014o: the sitter is told when the owner''s yes completes it');
+  perform _t_as(robert);
+
+  -- The owner says yes first; a new time the sitter proposes clears both yes.
+  v2 := request_booking(chloe, array[max], local_ts(d + 5, '09:00'), 'sitter_home', null,
+    local_ts(d + 6, '17:00'), 'sitter_home', null, null);
+  perform agree_to_book(v2);
+  perform _t_ok((select status = 'requested' and owner_agreed_at is not null and sitter_accepted_at is null
+        from public.bookings where id = v2),
+    '014o: the owner''s yes alone does not confirm');
+  select * into r from get_booking_stages(array[v2]);
+  perform _t_ok(r.stage = 'confirm' and r.next_actor = 'sitter', '014o: then it is the sitter''s turn');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'booking_agree_requested'
+      and booking_id = v2) = 1,
+    '014o: the sitter is told the owner would like to book');
+  perform _t_as(robert);
+  perform _t_as(chloe);
+  v_h := propose_handoff(v2, 'drop_off', local_ts(d + 5, '10:00'));
+  perform _t_ok((select owner_agreed_at is null and sitter_accepted_at is null from public.bookings where id = v2),
+    '014o: a new proposed time clears both yes');
+  begin perform respond_booking(v2, true); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'handoff_pending', '014o: the sitter cannot say yes over her own pending time');
+  perform _t_as(robert);
+  begin perform agree_to_book(v2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'handoff_pending', '014o: the owner answers the proposed time first');
+  perform respond_handoff(v_h, true);
+  perform agree_to_book(v2);
+  perform _t_as(chloe);
+  perform respond_booking(v2, true);
+  perform _t_ok((select status = 'confirmed' from public.bookings where id = v2), '014o: the second yes confirms, in either order');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'booking_confirmed'
+      and booking_id = v2) = 1,
+    '014o: the owner is told when the sitter''s yes completes it');
+
+  -- A first-time pair needs the Meet & Greet over before either yes.
+  perform _t_as(joy);
+  v3 := request_booking(allen, array[coco], local_ts(d + 8, '09:00'), 'sitter_home', null,
+    local_ts(d + 9, '17:00'), 'sitter_home', null, null);
+  perform _t_as(null);
+  perform _t_meet(v3, 'required');
+  perform _t_as(joy);
+  begin perform agree_to_book(v3); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'meet_greet_required', '014o: no "I''d like to book" before the Meet & Greet is over');
+  perform _t_as(null);
+  perform _t_meet(v3, 'skipped');
+  perform _t_as(joy);
+  select * into r from get_booking_stages(array[v3]);
+  perform _t_ok(r.stage = 'confirm' and r.next_actor = 'both', '014o: after a skipped Meet & Greet both still say yes');
+  perform _t_as(null);
+
+  -- The price: the final quote's accepted fees, computed here.
+  perform _t_as(robert);
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 1) ->> 'total')::numeric;
+  v_quote := quote_booking_for(v1);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base and jsonb_array_length(v_quote -> 'extras') = 0
+      and (v_quote ->> 'extras_total')::numeric = 0,
+    '014o: no confirmed quote card, no fees: the price is quote_booking''s');
+  perform _t_as(joy);
+  begin perform quote_booking_for(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014o: a stranger cannot read the booking''s price');
+
+  perform _t_as(robert);
+  t1 := open_chat_thread(chloe);
+  perform _t_as(chloe);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]);
+  q := add_chat_quote_extra(q.id, 'Medication visits', 12.50);
+  v_extra := (q.card -> 'extras' -> 0 ->> 'id')::uuid;
+  q := add_chat_quote_extra(q.id, 'Long walks', 20);
+  v_extra2 := (q.card -> 'extras' -> 1 ->> 'id')::uuid;
+  perform _t_as(robert);
+  q := answer_chat_quote_extra(q.id, v_extra, true);
+  q := answer_chat_quote_extra(q.id, v_extra2, false);
+  v_quote := quote_booking_for(v1);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base and jsonb_array_length(v_quote -> 'extras') = 0,
+    '014o: fees on a quote nobody confirmed are not in the price');
+  q := confirm_chat_quote(q.id);
+  v_quote := quote_booking_for(v1);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 12.50 and (v_quote ->> 'subtotal')::numeric = v_base
+      and (v_quote ->> 'extras_total')::numeric = 12.50
+      and jsonb_array_length(v_quote -> 'extras') = 1 and v_quote -> 'extras' -> 0 ->> 'label' = 'Medication visits',
+    '014o: only the accepted fee of the confirmed quote is in the price');
+  perform _t_as(chloe);
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 12.50, '014o: the sitter sees the same total');
+
+  -- A newer quote nobody confirmed, and a confirmed quote for another stay, change nothing.
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]);
+  q := add_chat_quote_extra(q.id, 'Grooming', 99);
+  perform _t_as(robert);
+  q := answer_chat_quote_extra(q.id, (q.card -> 'extras' -> 0 ->> 'id')::uuid, true);
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 12.50, '014o: an open newer quote does not change the price');
+  perform _t_as(chloe);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d + 20, '09:00'), local_ts(d + 21, '17:00'), array[max]);
+  q := add_chat_quote_extra(q.id, 'Elsewhere', 40);
+  perform _t_as(robert);
+  q := answer_chat_quote_extra(q.id, (q.card -> 'extras' -> 0 ->> 'id')::uuid, true);
+  q := confirm_chat_quote(q.id);
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 12.50, '014o: a confirmed quote for another stay does not change the price');
+
+  -- Pay: the snapshot is what Checkout showed.
+  foreach v_kind in array required_consents(v1) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+    values (v1, v_kind, '1', robert, 'Robert',
+      case v_kind
+        when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Robert')
+        else '{}'::jsonb
+      end);
+  end loop;
+  v_quote := pay_booking_demo(v1);
+  perform _t_as(null);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 12.50
+      and (select (price_snapshot ->> 'total')::numeric = v_base + 12.50 and jsonb_array_length(price_snapshot -> 'extras') = 1
+            and paid_at is not null from public.bookings where id = v1),
+    '014o: payment freezes the base price plus the accepted fees');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'booking_paid' and booking_id = v1
+      and body like '%$' || (v_base + 12.50)::text || '%'),
+    '014o: the sitter''s payment notice shows the total with fees');
+
+  -- Anon cannot call the new functions.
+  perform _t_as(null, 'anon');
+  begin perform agree_to_book(v2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014o: anon cannot say yes');
+  begin perform quote_booking_for(v2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014o: anon cannot read a booking price');
+  perform _t_as(robert);
+  begin perform booking_extra_fees(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014o: the fee helper is internal');
   perform _t_as(null);
 end;
 $$;
