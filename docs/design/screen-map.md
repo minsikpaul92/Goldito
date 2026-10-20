@@ -42,16 +42,17 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
-Owner Bookings tab: my bookings with status badges (3B.3) and "Your sitters" (3B.2) → their profile and month. Book care is the one primary action.
+Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3) and questions.
 
-Shows: `BookingCard` · `SitterCard`
+Shows: `BookingCard` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 81 |
-| EmptyState | No bookings yet | — | 95 |
-| Pressable | — | ``question-card-${inq.id}`` | 129 |
-| Button | Book care | `book-care` | 185 |
+| EmptyState | Couldn't load your bookings | — | 90 |
+| TextButton | Open Profile | `search-open-profile` | 114 |
+| TextButton | Try again | `search-retry` | 122 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 135 |
+| Pressable | — | ``question-card-${inq.id}`` | 180 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -114,32 +115,13 @@ Shows: `HandoffDraft` · `HandoffPicker`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Add a pet first | — | 272 |
-| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 286 |
-| TextButton | Profile | ``sitter-profile-${name}`` | 302 |
-| SegmentedControl | — | `service` | 323 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 344 |
-| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 415 |
-| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 449 |
-
-### `/owner/bookings/search` — [app/owner/bookings/search.tsx](../../frontend/app/owner/bookings/search.tsx)
-
-Find a sitter (SS-2) — the start of a new booking, like booking a hotel: who's staying, drop-off and pick-up, from home or from here, how far. Search lists only sitters free for the whole stay (search_sitters_nearby, 014c); after that the radius slider updates the list by itself. Book opens Book care with the same stay filled in.
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Stepper | ``${title} day`` | ``search-${kind}-day`` | 73 |
-| Stepper | ``${title} time`` | ``search-${kind}-time`` | 82 |
-| EmptyState | Add a pet first | — | 248 |
-| TextButton | Profile | ``search-profile-${s.displayName}`` | 285 |
-| Button | ``Book ${s.displayName}`` | ``search-book-${s.displayName}`` | 286 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 300 |
-| SegmentedControl | — | `search-place` | 337 |
-| TextButton | Open Profile | `search-open-profile` | 351 |
-| TextButton | Try again | `search-locate-again` | 368 |
-| TextButton | Try again | `search-retry` | 403 |
-| EmptyState | ``No sitter free within ${results.radiusKm} km`` | — | 409 |
-| Button | criteria && !changed ? "Search again" : "Search" | `search-submit` | 430 |
+| EmptyState | Add a pet first | — | 276 |
+| CheckRow | `favorites.has(id) ? `★ ${name}` : name` | ``pick-sitter-${name}`` | 290 |
+| TextButton | Profile | ``sitter-profile-${name}`` | 306 |
+| SegmentedControl | — | `service` | 327 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``pick-pet-${pet.name}`` | 348 |
+| TextButton | showPartial ? "Hide other options" : `Other options (${otherPartial.length})` | `toggle-partial` | 422 |
+| Button | sending ? "Sending…" : sitterName ? `Request booking with ${sitterName}` : "Request booking" | `request-booking` | 456 |
 
 ### `/owner/diary` — [app/owner/(tabs)/diary.tsx](../../frontend/app/owner/(tabs)/diary.tsx)
 
@@ -334,18 +316,18 @@ Shows: `DemoTools` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnsw
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 185 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 374 |
-| TextButton | Edit entry info | `profile-home-access` | 391 |
-| SegmentedControl | — | `profile-ai-mode` | 407 |
-| Button | Edit your answers | `profile-answers-edit` | 436 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 444 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 446 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 463 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 473 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 511 |
-| TextButton | Settings · What's New | `profile-settings` | 513 |
-| TextButton | Privacy | `profile-privacy` | 514 |
+| EmptyState | Couldn't load your profile | — | 188 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 377 |
+| TextButton | Edit entry info | `profile-home-access` | 394 |
+| SegmentedControl | — | `profile-ai-mode` | 410 |
+| Button | Edit your answers | `profile-answers-edit` | 439 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 447 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 449 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 466 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 476 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 514 |
+| TextButton | Settings · What's New | `profile-settings` | 516 |
+| TextButton | Privacy | `profile-privacy` | 517 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -1118,6 +1100,26 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | ``Check in on ${p.name}`` | ``caring-pet-${p.id}`` | 190 |
 | Sheet | Heads-up | `headsup-sheet` | 211 |
 
+### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | `text` | `id` | 54 |
+| Pressable | Search | `bar-search` | 83 |
+| Sheet | Done | `place-done` | 87 |
+| Button | Done | `place-done` | 91 |
+| Button | Use this place | `place-use-address` | 105 |
+| CheckRow | 🏠 My home | `place-home` | 112 |
+| CheckRow | 📍 Current location | `place-here` | 113 |
+| TextButton | Open Profile | `place-open-profile` | 134 |
+| Sheet | Done | `stay-done` | 139 |
+| Button | Done | `stay-done` | 143 |
+| Stepper | Drop-off time | `search-drop_off-time` | 158 |
+| Stepper | Pick-up time | `search-pick_up-time` | 167 |
+| Sheet | Done | `pets-done` | 199 |
+| Button | Done | `pets-done` | 203 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 207 |
+
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1299,4 +1301,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-377 actions · 376 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+381 actions · 380 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

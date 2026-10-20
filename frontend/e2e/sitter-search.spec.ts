@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-import { app, box, drag, signIn } from "./helpers";
+import { app, box, signIn } from "./helpers";
 import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Find a sitter (03B SS-2): the start of a new booking — pets, drop-off / pick-up, home or current location and a
-// 1–100 km slider. Only sitters free for the whole stay come back (search_sitters_nearby, 014c — the filter itself
-// is tested in rls_smoke.sql); the mock keeps rows within the radius. Everything here is done with the mouse in
-// the desktop phone frame.
+// Bookings tab sitter search (03D 3D.1): one hotel-style line (place, dates, pets), favorites first as photo and name,
+// everyone nearby after Search; every change re-searches by itself (search_sitters_nearby, 014c / 014i — the filter
+// itself is tested in rls_smoke.sql; the mock keeps rows within the radius). A tile opens the sitter detail.
+// Everything is done with the mouse in the desktop phone frame.
 
 const PAUL: MockUser = {
   id: "00000000-0000-4000-8000-000000000003",
@@ -48,22 +48,30 @@ function nearby(user: MockUser, km: number, extra: Record<string, unknown> = {})
   };
 }
 
-/** Robert has Max and Mochi and a saved home; Chloe is 3 km away, Paul 6.4 km, Uma 40 km. */
+/** Robert has Max and Mochi and a saved home; Chloe (his favorite) is 3 km away, Paul 4.4 km, Uma 40 km. */
 function seed(db: MockDb, { home = true } = {}) {
   db.pets.push(pet(MAX, "Max", "dog"), pet(MOCHI, "Mochi", "cat"));
   // The mock adds role rows on the first request; add Robert's now so his home point is there.
   if (home) db.owner_profiles.push({ id: OWNER.id, home_address: "1 Owner Ave", home_lat: 43.6644, home_lng: -79.3573 });
-  db.nearby_sitters.push(nearby(SITTER, 3), nearby(PAUL, 6.4, { boarding_nightly: null, house_sitting_nightly: "70.00" }), nearby(UMA, 40));
+  db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id });
+  db.nearby_sitters.push(nearby(SITTER, 3), nearby(PAUL, 4.4, { boarding_nightly: null, house_sitting_nightly: "70.00" }), nearby(UMA, 40));
 }
 
-async function openSearch(page: Page) {
+async function openBookings(page: Page) {
   await signIn(page, OWNER);
   await expect(page).toHaveURL(/\/owner$/);
   const screen = app(page);
   await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
-  await screen.getByTestId("book-care").click();
-  await expect(page).toHaveURL(/\/owner\/bookings\/search$/);
+  await expect(page).toHaveURL(/\/owner\/bookings$/);
   return screen;
+}
+
+/** The app's "today" in Toronto plus n days. */
+function inDays(n: number): string {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
+  const d = new Date(`${today}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
 }
 
 /** Replaces navigator.geolocation in every frame; `deny` answers "permission denied". */
@@ -84,150 +92,200 @@ async function stubGps(page: Page, deny = false) {
 }
 
 test.describe("find a sitter", () => {
-  test("Book care opens the search; Search lists sitters free for the stay, nearest first, with distance and price", async ({ page }) => {
+  test("opens on one line with the favorites; Search lists everyone nearby, nearest first", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    const screen = await openSearch(page);
+    const screen = await openBookings(page);
 
-    await expect(screen.getByTestId("search-pet-Max")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("search-pet-Mochi")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("radius-value")).toHaveText("10 km");
-    expect(db.nearbySearches).toHaveLength(0); // nothing runs before Search
+    await expect(screen.getByTestId("bar-place")).toContainText("My home");
+    await expect(screen.getByTestId("bar-pets")).toContainText("2 pets");
+    await expect(screen.getByText("Favorites", { exact: true })).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Paul")).toHaveCount(0);
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_pet_count: 2, p_radius_km: 5, p_lat: null, p_lng: null });
+    // The bar is one line: its three parts sit side by side.
+    const place = await box(screen.getByTestId("bar-place"));
+    const dates = await box(screen.getByTestId("bar-dates"));
+    const pets = await box(screen.getByTestId("bar-pets"));
+    expect(Math.abs(place.y - dates.y)).toBeLessThan(4);
+    expect(Math.abs(dates.y - pets.y)).toBeLessThan(4);
 
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByTestId("search-count")).toHaveText("2 sitters free for your whole stay");
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_pet_count: 2, p_radius_km: 10, p_lat: null, p_lng: null });
-    await expect(screen.getByTestId("search-result-Chloe-meta")).toHaveText("≈ 3 km away · 🏠 Boarding $55 / night");
-    await expect(screen.getByTestId("search-result-Paul-meta")).toHaveText("≈ 6 km away · 🔑 House sitting $70 / night");
-    await expect(screen.getByTestId("search-result-Uma")).toHaveCount(0);
-    const chloe = await box(screen.getByTestId("search-result-Chloe"));
-    const paul = await box(screen.getByTestId("search-result-Paul"));
+    await screen.getByTestId("bar-search").click();
+    await expect(screen.getByText("Sitters nearby")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-tile-Uma")).toHaveCount(0);
+    // One sitter per line, nearest first, each with how far away.
+    const chloe = await box(screen.getByTestId("sitter-tile-Chloe"));
+    const paul = await box(screen.getByTestId("sitter-tile-Paul"));
     expect(chloe.y).toBeLessThan(paul.y);
+    await expect(screen.getByTestId("sitter-km-Chloe")).toHaveText("3 km");
+    await expect(screen.getByTestId("sitter-km-Paul")).toHaveText("4 km");
   });
 
-  test("moving the slider with the mouse re-searches by itself — drag, track click and keyboard", async ({ page }) => {
+  test("a range on the calendar and exact times set the stay", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    const screen = await openSearch(page);
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByTestId("search-count")).toHaveText("2 sitters free for your whole stay");
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
     const calls = db.nearbySearches.length;
 
-    // Drag the thumb to the right end: the value follows the mouse, and one search runs once it rests.
-    const slider = screen.getByTestId("radius-slider");
-    await slider.scrollIntoViewIfNeeded();
-    const track = await box(slider);
-    const thumb = await box(screen.getByTestId("radius-slider-thumb"));
-    const y = thumb.y + thumb.height / 2;
-    await drag(page, { x: thumb.x + thumb.width / 2, y }, { x: track.x + track.width + 30, y }, 15);
-    await expect(screen.getByTestId("radius-value")).toHaveText("100 km");
-    await expect(screen.getByTestId("search-result-Uma")).toBeVisible();
-    await expect(screen.getByTestId("search-count")).toHaveText("3 sitters free for your whole stay");
-    await page.waitForTimeout(600);
-    expect(db.nearbySearches.length).toBe(calls + 1); // debounced: one call for the whole drag
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 100 });
+    await screen.getByTestId("bar-dates").click();
+    await screen.getByTestId(`stay-calendar-${inDays(5)}`).click();
+    await screen.getByTestId(`stay-calendar-${inDays(8)}`).click();
+    await screen.getByTestId("search-drop_off-time-plus").click(); // 9:15 AM
+    await screen.getByTestId("stay-done").click();
+    await expect.poll(() => db.nearbySearches.length).toBeGreaterThan(calls);
+    await expect.poll(() => String(db.nearbySearches.at(-1)?.p_drop_off_at)).toContain(`${inDays(5)}T13:15`);
+    expect(String(db.nearbySearches.at(-1)?.p_pick_up_at)).toContain(`${inDays(8)}T21:00`);
 
-    // A click near the left end of the track jumps there.
-    await page.mouse.click(track.x + 4, track.y + track.height / 2);
-    await expect(screen.getByTestId("radius-value")).toHaveText("1 km");
-    await expect(screen.getByTestId("search-result-Chloe")).toHaveCount(0); // 3 km is past the line: the radius is exact
-    await expect(screen.getByText("No sitter free within 1 km")).toBeVisible();
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 1 });
+    // The clock opens from the time itself.
+    await screen.getByTestId("bar-dates").click();
+    await screen.getByTestId("search-pick_up-time-value").click();
+    await expect(screen.getByTestId("search-pick_up-clock")).toBeVisible();
+  });
 
-    // Keyboard: → +1, Page Up +10.
-    await slider.focus();
+  test("the radius slider sits under the bar, goes 1 to 100 km in 1 km steps, and is remembered", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.owner_profiles[0].search_radius_km = 20;
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 20 });
+    await expect(screen.getByTestId("radius-value")).toHaveText("20 km");
+
+    // → is 1 km, Page Up is 10 km, and the list follows.
+    await screen.getByTestId("radius-slider").focus();
     await page.keyboard.press("ArrowRight");
+    await expect(screen.getByTestId("radius-value")).toHaveText("21 km");
     await page.keyboard.press("PageUp");
-    await expect(screen.getByTestId("radius-value")).toHaveText("12 km");
-    await expect(screen.getByTestId("search-result-Paul")).toBeVisible();
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 12 });
-
-    // Dragging the slider does not scroll the screen (it owns its drag, DESIGN.md §7.7).
-    const before = (await box(slider)).y;
-    const t = await box(screen.getByTestId("radius-slider-thumb"));
-    await drag(page, { x: t.x + t.width / 2, y: t.y + t.height / 2 }, { x: t.x + t.width / 2 + 40, y: t.y + t.height / 2 - 120 });
-    expect((await box(slider)).y).toBeCloseTo(before, 0);
+    await expect(screen.getByTestId("radius-value")).toHaveText("31 km");
+    await expect.poll(() => db.owner_profiles[0].search_radius_km).toBe(31);
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 31 });
   });
 
-  test("changing the stay asks for Search again instead of searching by itself", async ({ page }) => {
+  test("5 km sits at 1/20 of the slider and a click on the track moves in whole km", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    const screen = await openSearch(page);
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByTestId("search-count")).toBeVisible();
-    const calls = db.nearbySearches.length;
-
-    await screen.getByTestId("search-drop_off-time-plus").click();
-    await expect(screen.getByTestId("search-changed")).toBeVisible();
-    await page.waitForTimeout(600);
-    expect(db.nearbySearches.length).toBe(calls);
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByTestId("search-changed")).toHaveCount(0);
-    expect(db.nearbySearches.length).toBe(calls + 1);
-
-    await screen.getByTestId("search-pet-Mochi").click();
-    await screen.getByTestId("search-submit").click();
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_pet_count: 1 });
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("radius-value")).toHaveText("5 km");
+    const track = await box(screen.getByTestId("radius-slider"));
+    const thumb = await box(screen.getByTestId("radius-slider-thumb"));
+    const ratio = (thumb.x + thumb.width / 2 - track.x) / track.width;
+    expect(ratio).toBeLessThan(0.12);
+    await page.mouse.click(track.x + track.width - 4, track.y + track.height / 2);
+    await expect(screen.getByTestId("radius-value")).toHaveText("100 km");
   });
 
-  test("Where I am now asks the browser once and sends that point", async ({ page }) => {
+  test("an address or a postal code sends that point; the postal area is the fallback", async ({ page }) => {
+    const asked: unknown[] = [];
+    await page.route("**/api/geo/geocode", async (route) => {
+      const body = route.request().postDataJSON() as { address: string };
+      asked.push(body.address);
+      const found = body.address === "M5V";
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(found ? { found: true, lat: 43.6456, lng: -79.3929, label: "Toronto" } : { found: false, lat: null, lng: null, label: null }),
+      });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    const screen = await openBookings(page);
+
+    await screen.getByTestId("bar-place").click();
+    await screen.getByTestId("place-input").fill("M5V 2T6");
+    await screen.getByTestId("place-use-address").click();
+    await expect(screen.getByTestId("bar-place")).toContainText("M5V 2T6");
+    expect(asked).toEqual(["M5V 2T6", "M5V"]);
+    await expect.poll(() => db.nearbySearches.at(-1)?.p_lat).toBe(43.6456);
+
+    await screen.getByTestId("bar-place").click();
+    await screen.getByTestId("place-input").fill("nowhere at all");
+    await screen.getByTestId("place-use-address").click();
+    await expect(screen.getByTestId("place-error")).toContainText("Couldn't find that place");
+  });
+
+  test("Current location asks the browser once and sends that point", async ({ page }) => {
     await stubGps(page);
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    const screen = await openSearch(page);
+    const screen = await openBookings(page);
 
-    await screen.getByTestId("search-place").getByText("📍 Where I am now").click();
-    await expect(screen.getByTestId("search-located")).toBeVisible();
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByTestId("search-count")).toBeVisible();
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_lat: 43.6477, p_lng: -79.4194 });
+    await screen.getByTestId("bar-place").click();
+    await screen.getByTestId("place-here").click();
+    await expect(screen.getByTestId("bar-place")).toContainText("Current location");
+    await expect.poll(() => db.nearbySearches.at(-1)?.p_lat).toBe(43.6477);
+    expect(db.nearbySearches.at(-1)).toMatchObject({ p_lng: -79.4194 });
   });
 
-  test("a blocked location says how to fix it and Search waits", async ({ page }) => {
+  test("a blocked location says how to fix it and keeps the home", async ({ page }) => {
     await stubGps(page, true);
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
-    const screen = await openSearch(page);
+    const screen = await openBookings(page);
 
-    await screen.getByTestId("search-place").getByText("📍 Where I am now").click();
-    await expect(screen.getByTestId("search-location-error")).toContainText("Location is blocked for this site");
-    await expect(screen.getByTestId("search-submit")).toBeDisabled();
+    await screen.getByTestId("bar-place").click();
+    await screen.getByTestId("place-here").click();
+    await expect(screen.getByTestId("place-error")).toContainText("Location is blocked for this site");
+    await screen.getByTestId("place-done").click();
+    await expect(screen.getByTestId("bar-place")).toContainText("My home");
   });
 
-  test("no saved home: the screen says so and offers Profile or the current location", async ({ page }) => {
+  test("the pets sheet picks who is staying", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-tile-Chloe")).toBeVisible();
+
+    await screen.getByTestId("bar-pets").click();
+    await screen.getByTestId("search-pet-Mochi").click();
+    await screen.getByTestId("pets-done").click();
+    await expect(screen.getByTestId("bar-pets")).toContainText("Max");
+    await expect.poll(() => db.nearbySearches.at(-1)?.p_pet_count).toBe(1);
+  });
+
+  test("no saved home: the tab says so and offers Profile", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, { home: false });
-    const screen = await openSearch(page);
+    const screen = await openBookings(page);
 
-    await expect(screen.getByTestId("search-no-home")).toContainText("Your home isn't on the map yet");
-    await expect(screen.getByTestId("search-submit")).toBeDisabled();
+    await expect(screen.getByTestId("search-problem")).toHaveText("Your home isn't on the map yet.");
     await expect(screen.getByTestId("search-open-profile")).toBeVisible();
   });
 
-  test("nothing in range: the empty state says what to change and Widen searches farther", async ({ page }) => {
+  test("nobody free: the list says so", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
     db.nearby_sitters.splice(0, 2); // only Uma, 40 km away
-    const screen = await openSearch(page);
+    const screen = await openBookings(page);
 
-    await screen.getByTestId("search-submit").click();
-    await expect(screen.getByText("No sitter free within 10 km")).toBeVisible();
-    await expect(screen.getByText(/Try a wider area/)).toBeVisible();
-    await screen.getByRole("button", { name: "Widen to 25 km" }).click();
-    await expect(screen.getByTestId("radius-value")).toHaveText("25 km");
-    await expect(screen.getByText("No sitter free within 25 km")).toBeVisible();
-    await screen.getByRole("button", { name: "Widen to 50 km" }).click();
-    await expect(screen.getByTestId("search-result-Uma")).toBeVisible();
-    expect(db.nearbySearches.at(-1)).toMatchObject({ p_radius_km: 50 });
+    await expect(screen.getByTestId("search-none")).toHaveText("No favorites free.");
+    await screen.getByTestId("bar-search").click();
+    await expect(screen.getByTestId("search-none")).toHaveText("No sitters free.");
   });
 
-  test("Book opens Book care with the sitter, the stay and the pets filled in", async ({ page }) => {
+  test("a tile opens the sitter detail with the stay", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);
-    // Book care's own search (search_sitters) knows Chloe for the whole trip.
-    db.search_results.push({
-      sitter_id: SITTER.id,
-      display_name: SITTER.displayName,
+    const screen = await openBookings(page);
+    await screen.getByTestId("bar-pets").click();
+    await screen.getByTestId("search-pet-Mochi").click(); // only Max
+    await screen.getByTestId("pets-done").click();
+    await screen.getByTestId("sitter-tile-Chloe").click();
+
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}\\?`));
+    const q = new URL(page.url()).searchParams;
+    expect(q.get("pets")).toBe(MAX);
+    expect(q.get("drop")).toContain("T13:00");
+  });
+
+  test("Book care with a sitter already chosen shows no second sitter list", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    const match = (user: MockUser) => ({
+      sitter_id: user.id,
+      display_name: user.displayName,
       bio: null,
       service_area: null,
       experience_years: null,
@@ -238,18 +296,13 @@ test.describe("find a sitter", () => {
       drop_off_within_hours: true,
       pick_up_within_hours: true,
     });
-    const screen = await openSearch(page);
-    await screen.getByTestId("search-pet-Mochi").click(); // only Max
-    await screen.getByTestId("search-drop_off-time-plus").click(); // 9:15 AM
-    await screen.getByTestId("search-submit").click();
-    await screen.getByTestId("search-book-Chloe").click();
-
-    await expect(page).toHaveURL(/\/owner\/bookings\/new\?/);
-    expect(new URL(page.url()).searchParams.get("sitter")).toBe(SITTER.id);
-    await expect(screen.getByTestId("pick-pet-Max")).toHaveAttribute("aria-checked", "true");
-    await expect(screen.getByTestId("pick-pet-Mochi")).toHaveAttribute("aria-checked", "false");
-    await expect(screen.getByTestId("drop_off-time-value")).toHaveText("9:15 AM");
-    await expect(screen.getByTestId("pick_up-time-value")).toHaveText("5:00 PM");
-    await expect(screen.getByTestId("request-booking")).toHaveText("Request booking with Chloe");
+    db.search_results.push(match(SITTER), match(PAUL));
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    const screen = app(page);
+    await page.goto(`/owner/bookings/new?sitter=${SITTER.id}&pets=${MAX}`);
+    await expect(screen.getByTestId("pick-sitter-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("pick-sitter-Paul")).toHaveCount(0);
+    await expect(screen.getByText("Sitters free for your trip")).toHaveCount(0);
   });
 });

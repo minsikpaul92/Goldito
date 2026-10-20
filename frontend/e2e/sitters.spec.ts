@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { app, signIn } from "./helpers";
 import { MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Owner "Your sitters" + a sitter's profile and month schedule (phase-03b 3B.2).
+// An owner opens a sitter's profile and month schedule (phase-03b 3B.2).
 
 const PAUL: MockUser = {
   id: "00000000-0000-4000-8000-000000000003",
@@ -99,16 +99,8 @@ test.describe("your sitters", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     const screen = app(page);
-    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
-    await expect(screen.getByText("Your sitters")).toBeVisible();
-    await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(1);
-
-    const card = screen.getByTestId("sitter-card-Chloe");
-    await expect(card).toContainText("North York · 3 yrs experience");
-    await expect(card).toContainText("1 booking with you");
-    await expect(card).toContainText("House sitting");
-    await card.click();
-
+    // The Bookings tab lists sitters as tiles now (sitter-search.spec); the profile opens from there or by link.
+    await page.goto(`/owner/sitters/${SITTER.id}`);
     await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
     await expect(screen.getByTestId("sitter-name")).toHaveText("Chloe");
     await expect(screen.getByText("Fenced yard, no other pets.")).toBeVisible();
@@ -140,24 +132,6 @@ test.describe("your sitters", () => {
     await screen.getByTestId(`day-${nextMonthDay(11)}`).click();
     await expect(screen.getByTestId("sitter-day-morning")).toContainText("Full");
     await expect(screen.getByTestId("sitter-day")).not.toContainText("Robert");
-  });
-
-  test("a first-time owner finds the sitters on Goldito and opens a profile (FB-32)", async ({ page }) => {
-    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL]);
-    db.sitter_profiles.push({ id: SITTER.id, bio: null, service_area: "North York", experience_years: 3, services: ["boarding"] });
-    await signIn(page, OWNER);
-    await expect(page).toHaveURL(/\/owner$/);
-    const screen = app(page);
-    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
-
-    // No bookings, no sitters of their own: the sitters on Goldito instead of an empty page.
-    await expect(screen.getByTestId("sitters-on-goldito")).toContainText("Open a profile to ask");
-    await expect(screen.getByTestId(/^sitter-card-/)).toHaveCount(2);
-    await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("North York · 3 yrs experience");
-    await expect(screen.getByTestId("book-care")).toBeVisible();
-    await screen.getByTestId("sitter-card-Chloe").click();
-    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}$`));
-    await expect(screen.getByTestId("sitter-name")).toHaveText("Chloe");
   });
 
   test("photo, name and heart share one row; the heart saves and survives a reload (#136)", async ({ page }) => {

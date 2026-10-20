@@ -47,6 +47,22 @@ export async function loadCoverPhoto(profileId: string): Promise<ProfilePhoto | 
   return { id: row.id, publicId: row.public_id };
 }
 
+/** The cover photos of several people at once (one query), keyed by profile id; people without one are left out. */
+export async function loadCoverPhotos(profileIds: string[]): Promise<Map<string, ProfilePhoto>> {
+  const covers = new Map<string, ProfilePhoto>();
+  if (profileIds.length === 0) return covers;
+  const { data, error } = await getSupabase()
+    .from("profile_photos")
+    .select("id, public_id, profile_id, position")
+    .in("profile_id", profileIds)
+    .order("position");
+  if (error) return covers;
+  for (const row of (data ?? []) as (PhotoRow & { profile_id: string })[]) {
+    if (!covers.has(row.profile_id)) covers.set(row.profile_id, { id: row.id, publicId: row.public_id });
+  }
+  return covers;
+}
+
 /** The round thumbnail of a photo (Cloudinary, square fill; the circle is drawn by the view). */
 export function photoThumb(photo: ProfilePhoto, size = 160): string {
   return thumbUrl(photo.publicId, size);

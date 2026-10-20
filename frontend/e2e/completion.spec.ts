@@ -119,8 +119,6 @@ test.describe("finished stay", () => {
     await screen.getByTestId("favorite-add").click();
     await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
     expect(db.owner_favorite_sitters).toMatchObject([{ owner_id: OWNER.id, sitter_id: SITTER.id }]);
-    await page.goto("/owner/bookings");
-    await expect(screen.getByTestId("sitter-card-Chloe")).toContainText("★ Favorite");
 
     await page.goto(`/owner/sitters/${SITTER.id}`);
     await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Remove from favorites");

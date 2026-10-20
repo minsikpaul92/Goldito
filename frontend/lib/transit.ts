@@ -97,7 +97,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult> {
   return { found: false };
 }
 
-export type PinPlace = { label: string; postal: string | null };
+export type PinPlace = { label: string; postal: string | null; address: string | null };
 
 /**
  * A point → "Trinity Bellwoods, Toronto" and the postal area ("M6J") (OpenStreetMap through our server), so the
@@ -105,11 +105,11 @@ export type PinPlace = { label: string; postal: string | null };
  */
 export async function reverseGeocode(point: LatLng): Promise<PinPlace | null> {
   try {
-    const result = await apiPost<{ found: boolean; label: string | null; postal?: string | null }>(
+    const result = await apiPost<{ found: boolean; label: string | null; postal?: string | null; address?: string | null }>(
       "/api/geo/reverse",
       point,
     );
-    return result.found && result.label ? { label: result.label, postal: result.postal ?? null } : null;
+    return result.found && result.label ? { label: result.label, postal: result.postal ?? null, address: result.address ?? null } : null;
   } catch {
     return null;
   }

@@ -95,6 +95,15 @@ def postal_area(hit: dict) -> str | None:
     return area if len(area) == 3 and area[0].isalpha() and area[1].isdigit() and area[2].isalpha() else None
 
 
+def street_address(hit: dict) -> str | None:
+    """'Dundas St W, Toronto, M6J' for the Profile's home address: the street, the city and the postal area, never
+    the house number or the full code (the lookup point is rounded to about 100 m, so both could be the neighbour's)."""
+    parts = hit.get("address") or {}
+    city = parts.get("city") or parts.get("town") or parts.get("village") or parts.get("municipality")
+    line = ", ".join(p for p in (parts.get("road"), city, postal_area(hit)) if p)
+    return line or None
+
+
 @router.post("/geocode", response_model=GeocodeResponse)
 def geocode(body: GeocodeRequest, _user: CurrentUser = Depends(get_current_user)) -> GeocodeResponse:
     try:
@@ -122,6 +131,8 @@ class ReverseResponse(BaseModel):
     label: str | None = None
     # The first three characters of the postal code, e.g. "M6J".
     postal: str | None = None
+    # A street line without the house number, to start the home address from (see street_address).
+    address: str | None = None
 
 
 @router.post("/reverse", response_model=ReverseResponse)
@@ -134,4 +145,4 @@ def reverse(body: ReverseRequest, _user: CurrentUser = Depends(get_current_user)
     if not isinstance(hit, dict):
         return ReverseResponse(found=False)
     label = place_label(hit)
-    return ReverseResponse(found=label is not None, label=label, postal=postal_area(hit))
+    return ReverseResponse(found=label is not None, label=label, postal=postal_area(hit), address=street_address(hit))
