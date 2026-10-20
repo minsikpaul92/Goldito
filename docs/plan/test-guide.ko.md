@@ -74,8 +74,8 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 오너 **문의 보내기** (시터 프로필 → Ask before booking: 서비스 · 반려동물 · 날짜 · 장소 · 질문(선택) → 대화 화면, 시터가 보낸 답만 보임, 견적 카드 · 출처 칩, Request booking 자동 입력, 불가 날짜면 **Change dates**(날짜 · 펫이 채워진 새 문의) + Find other sitters(보조), 시터 답장 뒤 오너가 **Write back**으로 이어 쓰기 → 새 AI 초안, 시터 목록은 **마지막 오너 메시지** 기준으로 "답함" 판정 — FB-34) | ✅ 🤖 `inquiry.spec.ts` (실제 두 계정 · 실제 DB는 👤 — 호스팅 DB에 010 적용됨 2026-10-07) | 07B / 7B.5 |
-| 시터 **문의함** (Questions 탭 · 초안 Send 한 번 / Edit·Add / Regenerate / 의도 칩 · 경고 문구 · 열면 읽음) + 정책 편집 | ✅ 🤖 `inquiry.spec.ts` | 07B / 7B.6 |
+| 오너 **문의 보내기** — 화면 제거됨(채팅이 대신함, #142): 채팅의 말 칩 · AI 초안 → `chat.spec.ts` (CHAT-*) | 🤖 `chat.spec.ts` (옛 `inquiry.spec.ts` 삭제) | 07B / 7B.5 → 3D.5 |
+| 시터 **문의함** — 화면 제거됨(Questions 탭 · 문의 상세). 채팅 목록(Chats)이 대신함. 정책 편집은 그대로 | 🤖 `chat.spec.ts` | 07B / 7B.6 → 3D.5 |
 | 문의 답장 **초안 API** (일정 · 견적 · 반려동물 · RAG 근거 → Nano, 금액 · 날짜 · 1인칭 · 출입 정보 검사, 정책 체중 한도, 멱등, 오너에게는 초안을 안 줌) | ✅ 🤖 pytest a–k (실제 모델 확인 · 지연 p50 3.2 s) | 07B / 7B.3–7B.4 · 7B.7 |
 | RAG (문단 청크 · 재색인 · 범위 제한 검색) | ✅ 🤖 pytest + SQL smoke M | 07B / 7B.2 |
 | **시터 말투** (스타일 카드 + 본인 예시 · 익명화 · 그대로 / 수정 / 다시 생성 학습) | ✅ 🤖 pytest · 실제 모델로 두 시터 다른 말투 확인 · 블라인드 평가(약 50건)는 👤 | 07B / 7B.8–7B.9 |
@@ -367,6 +367,8 @@
 | REPORT-15 | (DB.2) 페이지에 몇 줄 쓴 뒤 아래 **Let Goldito write it** → **✨ Rewrite the page from the chips** | "This replaces what's on the page — nothing is sent." 안내, 만든 글이 **종이 위에** 초안으로 들어감(견주에게 안 감). 종이에서 고친 뒤 Send → 그 초안이 보내짐(새 행 없음). 칩 · 사진 · 내 줄은 같은 화면에 그대로 있어 끄고 다시 쓸 수 있음(이전의 Back to chips 없음) | 🤖 `report.spec.ts` | 사람 확인 대기 |
 
 ### 3.11 문의 AI (INQ) — Phase 07B · *사전: 백엔드 + `NEBIUS_API_KEY`, Chloe의 일정 · 요금이 있고 Robert에게 Max(+Mochi)가 있음*
+
+> **2026-10-20:** 옛 문의 화면(오너 Your questions · 대화 · 시터 Questions 탭 · 초안 시트)과 `inquiry.spec.ts`는 삭제됨. 아래 INQ 중 화면 단계(INQ-1~3 · 5~7 · 11 · 14 · 17 · 19 · 21~28)는 **폐기**(채팅 CHAT-*가 대신함). 서버 쪽(초안 API · 정책 · 보안 · 말투: INQ-4 · 8 · 9 · 10 · 12 · 13 · 15 · 16 · 18 · 20)은 pytest · SQL로 유지. 백엔드 `/api/ai/inquiry-reply`와 `inquiries` 테이블은 기존 기록 때문에 남겨 둠.
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |

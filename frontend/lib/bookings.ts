@@ -812,13 +812,12 @@ const SOON_MS = 48 * 3_600_000;
 
 /**
  * Which sitter segment to open on: a stay in progress; else one starting within 48 h → Upcoming; else open Requests;
- * else Questions waiting for an answer; else Upcoming if any.
+ * else Upcoming if any.
  */
 export function firstSitterBucket(
   bookings: BookingSummary[],
   now = Date.now(),
-  waitingQuestions = 0,
-): "requests" | "inquiries" | "in_progress" | "upcoming" | "past" {
+): "requests" | "in_progress" | "upcoming" | "past" {
   if (bookings.some((b) => sitterBucket(b) === "in_progress")) return "in_progress";
   const upcoming = bookings.filter((b) => sitterBucket(b) === "upcoming");
   // "Soon" = the drop-off is within 48 h (or a little late) and the pick-up is still ahead — an old booking nobody
@@ -828,7 +827,6 @@ export function firstSitterBucket(
   );
   if (soon) return "upcoming";
   if (bookings.some((b) => sitterBucket(b) === "requests")) return "requests";
-  if (waitingQuestions > 0) return "inquiries";
   return upcoming.length > 0 ? "upcoming" : "requests";
 }
 

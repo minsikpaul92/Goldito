@@ -3,7 +3,7 @@ import { zonedToIso } from "../features/schedule/dates";
 
 export const MAX_TRIP_DAYS = 31;
 
-/** Why a trip (pets + drop-off + pick-up) can't be sent yet, or null. Shared by booking and inquiries. */
+/** Why a trip (pets + drop-off + pick-up) can't be sent yet, or null.. */
 export function tripProblem(petIds: string[], dropOff: HandoffDraft, pickUp: HandoffDraft): string | null {
   if (petIds.length === 0) return "Pick at least one pet.";
   const drop = Date.parse(zonedToIso(dropOff.day, dropOff.time));
