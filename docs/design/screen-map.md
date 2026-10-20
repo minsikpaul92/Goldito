@@ -24,12 +24,12 @@ Shows: `BookingStageBar` · `ChatHeaderTitle` · `MessageBubble` · `PhotoViewer
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 154 |
-| EmptyState | Chat not found | — | 162 |
-| Pressable | — | `chat-stage` | 233 |
-| Button | Request booking | `chat-request-booking` | 267 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 279 |
-| Pressable | Send | `chat-send` | 306 |
+| EmptyState | Couldn't load this chat | — | 159 |
+| EmptyState | Chat not found | — | 167 |
+| Pressable | — | `chat-stage` | 246 |
+| Button | Request booking | `chat-request-booking` | 289 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 307 |
+| Pressable | Send | `chat-send` | 348 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -51,9 +51,12 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 28 |
-| EmptyState | No pets yet | — | 41 |
-| Button | Add pet | `add-pet` | 61 |
+| EmptyState | Couldn't load your pets | — | 31 |
+| EmptyState | No pets yet | — | 44 |
+| TextButton | + Add pet | `add-pet` | 73 |
+| Button | See today's updates | `home-updates` | 93 |
+| Button | Find a sitter | `home-find-sitter` | 95 |
+| Button | Add pet | `add-pet` | 98 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -976,8 +979,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 26 |
-| Tag | `allergy.allergen` | — | 51 |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 36 |
+| Tag | `allergy.allergen` | — | 67 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
@@ -1353,4 +1356,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-393 actions · 392 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+396 actions · 395 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
