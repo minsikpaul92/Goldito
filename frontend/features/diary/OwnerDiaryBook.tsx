@@ -74,7 +74,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
   );
   if (!pages || pages.length === 0) {
     return (
-      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
+      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
         <EmptyState
           emoji="📔"
           title="No diary yet"
@@ -87,7 +87,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
     );
   }
   return (
-    <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
+    <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
       {write}
       <DiaryBook
         key={openId ?? "book"}

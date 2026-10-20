@@ -224,7 +224,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
         onLayout={onLayout}
         style={styles.stage}
         // Our own drag: TouchEmulation leaves the mouse to it (DESIGN.md §7.7); a finger may still scroll up and down.
-        {...(Platform.OS === "web" ? ({ dataSet: { gestureOwner: "true" } } as object) : null)}
+        {...(Platform.OS === "web" ? ({ dataSet: { gestureOwner: "x" } } as object) : null)}
         {...pan.panHandlers}
         testID={`${testID}-stage`}
       >

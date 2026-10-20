@@ -17,8 +17,10 @@ const SNAP_RESTORE_FALLBACK_MS = 700;
 const LINE_HEIGHT_PX = 16;
 
 const PRESSING_CLASS = "touch-emulation-pressing";
+// `data-gesture-owner="x"` owns sideways drags only (the diary page turn): up and down still scrolls the screen.
 const EXEMPT_SELECTOR =
-  'input, textarea, select, [contenteditable="true"], [data-gesture-owner]';
+  'input, textarea, select, [contenteditable="true"], [data-gesture-owner]:not([data-gesture-owner="x"])';
+const X_OWNER_SELECTOR = '[data-gesture-owner="x"]';
 
 type Axis = "x" | "y";
 
@@ -54,6 +56,10 @@ html, body { overscroll-behavior: contain; }
 textarea { scrollbar-width: thin; scrollbar-color: ${tokens.color.border} transparent; }
 textarea::-webkit-scrollbar { display: block; width: 6px; }
 textarea::-webkit-scrollbar-thumb { background: ${tokens.color.border}; border-radius: 3px; }
+/* A long page (the diary): its scroller keeps a thin visible bar, marked with data-scrollbar. */
+[data-scrollbar] { scrollbar-width: thin; scrollbar-color: ${tokens.color.borderStrong} transparent; }
+[data-scrollbar]::-webkit-scrollbar { display: block; width: 6px; }
+[data-scrollbar]::-webkit-scrollbar-thumb { background: ${tokens.color.borderStrong}; border-radius: 3px; }
 html, body, body * {
   -webkit-user-select: none;
   user-select: none;
@@ -280,6 +286,12 @@ export function installTouchEmulation(): () => void {
       const dy = e.clientY - drag.startY;
       if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
       const axis: Axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (axis === "x" && drag.target.closest(X_OWNER_SELECTOR)) {
+        // A sideways drag on a page-turning surface belongs to the app, not to the screen's scroller.
+        drag = null;
+        document.documentElement.classList.remove(PRESSING_CLASS);
+        return;
+      }
       drag.axis = axis;
       drag.scroller = findScroller(drag.target, axis);
       // Moved past the threshold: this is a swipe, never a tap.

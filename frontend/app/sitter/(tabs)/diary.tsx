@@ -80,7 +80,7 @@ export default function SitterDiary() {
   }
   const current = caring.find((p) => p.id === selected) ?? caring[0];
   return (
-    <Screen testID="sitter-diary-screen" contentStyle={{ gap: 12 }}>
+    <Screen testID="sitter-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
       <SegmentedControl
         options={[
           { value: "today", label: "Today" },

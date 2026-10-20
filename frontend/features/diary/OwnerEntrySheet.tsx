@@ -96,6 +96,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       visible={visible}
       title="New page"
       onClose={onClose}
+      scrollbar
       testID="diary-write-sheet"
       footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || body.trim().length === 0} testID="diary-write-save" />}
     >

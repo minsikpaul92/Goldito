@@ -1236,10 +1236,10 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 95 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 100 |
-| SegmentedControl | — | `diary-write-pet` | 103 |
-| TextButton | Remove | `diary-write-photo-remove` | 127 |
-| TextButton | + Photo | `diary-write-photo` | 130 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 101 |
+| SegmentedControl | — | `diary-write-pet` | 104 |
+| TextButton | Remove | `diary-write-photo-remove` | 128 |
+| TextButton | + Photo | `diary-write-photo` | 131 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
