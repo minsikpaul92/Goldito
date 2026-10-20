@@ -670,6 +670,7 @@
 | DBK-7 | (DB.4) 견주 → **Feed** (알림장을 보낸 날의 펫) | 사진 사이에 **📔 다이어리 칸**이 보낸 시각 순서대로(최신이 위): 그날 **첫 공유 사진**이 썸네일, 사진이 없던 날은 📔, 아래 "Diary · Oct 5". 초안은 안 보임. 칸을 누르면 다이어리 책이 그 장으로 열림. 사진을 더 불러오기 전(Load more)에는 화면에 있는 가장 오래된 사진보다 오래된 장은 기다렸다가 같이 나옴 | 🤖 `diary-book.spec.ts`(순서 · 썸네일 `data-public-id` · 열기) · 실제 썸네일 이미지는 👤 | 사람 확인 대기 |
 | DBK-8 | (DB.4) 시터 → Feed → 펫 | 내가 보낸 장이 같은 방식으로 사진 사이에, 누르면 **Diary → Diary book**이 그 장으로(`/sitter/diary?page=…`) | 🤖 `diary-book.spec.ts` | 사람 확인 대기 |
 | DBK-9 | (DB.5) 보낸 장 아래 **↗ Share** | 시트 "Share {펫}'s page": **↗ Share image**(폰 브라우저처럼 파일 공유가 되는 곳에서만 — 카톡 · 메시지 등 공유 시트로 PNG), **⬇ Download image**(`goldito-max-diary-2026-10-05.png`), 안내 "A link is a public copy of this page as an image: anyone who has the link can open it." 뒤 **🔗 Copy public link** → 그때 처음 이미지를 올림(`diary_page`, 014b) → 링크가 클립보드에 복사되고 칸에도 보임. 같은 장 · 같은 스티커면 다시 눌러도 같은 링크(다시 안 올림), 스티커를 바꾸면 새 링크 | 🤖 `decor.spec.ts`(다운로드 PNG · 링크 업로드 1번 · 목적 `diary_page`) · 폰 공유 시트 · 실제 Cloudinary 링크는 `014b` 적용 뒤 👤 | 사람 확인 대기 |
+| DBK-10 | (DB) `rls_smoke.sql`의 014p 블록 | 오너가 자기 펫의 일기 쪽을 `add_owner_diary_entry`로 씀: 곧바로 **보냄** 상태, 앞뒤 공백 제거, 작성자는 오너, 하루에 여러 장 가능, 알림 없음 · 같은 펫을 돌보는 시터는 **못 봄**(작성자 열이 오너라서) · 다른 오너 · 시터는 쓸 수 없음(`not_owner`) · 빈 글(`body_required`)과 2000자 초과(`body_too_long`) 거부 · anon 불가 · 오너는 자기 쪽에 스티커 가능 | SQL `rls_smoke` | ➖ |
 
 ### 3.26 시터 검색 (SEARCH) — 03B SS · *사전: 호스팅 DB에 `014c`, 견주 프로필에 집 위치(데모 Robert는 시드에 있음), 시터의 일정 · 집 위치(데모 Chloe는 시드에 있음, 약 7 km)*
 
