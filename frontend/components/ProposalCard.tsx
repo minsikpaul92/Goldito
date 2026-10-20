@@ -32,14 +32,15 @@ type Props = {
   busy: boolean;
   onAccept: (handoffId: string) => void;
   onSuggest: (kind: HandoffKind) => void;
-  onDecline: (handoffId: string) => void;
 };
 
 /**
  * One open time / place offer (DESIGN.md ProposalCard): the other side's offer with
- * Accept / Suggest another time / Decline, or my own with "Change pending" (phase-03b 3B.5).
+ * Accept / Suggest another time, or my own with "Change pending" (phase-03b 3B.5). No Decline here: before
+ * confirm it ended the whole request (respond_handoff), and people read it as "not this time" (#169). Ending a
+ * booking stays with the screen's own Decline / Cancel.
  */
-export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest, onDecline }: Props) {
+export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest }: Props) {
   const styles = useThemedStyles(makeStyles);
   const open = booking.pending[kind];
   if (!open) return null;
@@ -73,17 +74,14 @@ export function ProposalCard({ booking, viewer, kind, busy, onAccept, onSuggest,
         <Text style={styles.muted} testID={`proposal-${kind}-paired`}>
           {mine
             ? `Goes with your new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}). ${other} answers both at once.`
-            : `Comes with the new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}). Accept or Decline answers both.`}
+            : `Comes with the new ${KIND_LABEL[kind === "drop_off" ? "pick_up" : "drop_off"]} (${formatInstant(partner.at)}). Accept answers both.`}
         </Text>
       ) : null}
       {history ? <Text style={styles.muted}>{history}</Text> : null}
       {!mine ? (
         <View style={styles.actions}>
           <Button label="Accept" onPress={() => onAccept(open.id)} disabled={busy} testID={`proposal-${kind}-accept`} />
-          <View style={styles.links}>
-            <TextButton label="Suggest another time" onPress={() => onSuggest(kind)} testID={`proposal-${kind}-suggest`} />
-            <TextButton label="Decline" danger onPress={() => onDecline(open.id)} testID={`proposal-${kind}-decline`} />
-          </View>
+          <TextButton label="Suggest another time" onPress={() => onSuggest(kind)} testID={`proposal-${kind}-suggest`} />
         </View>
       ) : null}
     </Card>
@@ -112,10 +110,5 @@ const makeStyles = (theme: Theme) =>
     actions: {
       gap: theme.spacing.xs,
       marginTop: theme.spacing.sm,
-    },
-    links: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
     },
   });
