@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
+import { ChatQuoteCard } from "../../components/ChatQuoteCard";
+import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
 import { MessageBubble } from "../../components/MessageBubble";
 import { PhotoViewerSheet } from "../../components/PhotoViewerSheet";
@@ -17,6 +19,8 @@ import {
   ChatCard,
   ChatHeader,
   ChatMessage,
+  answerQuoteExtra,
+  confirmQuote,
   getChatHeader,
   loadChatMessages,
   markChatRead,
@@ -37,6 +41,7 @@ import { Theme } from "../../theme/themes";
 type Loaded = { header: ChatHeader; messages: ChatMessage[]; booking: BookingSummary | null };
 type StayCard = Extract<ChatCard, { type: "stay" }>;
 type RequestCard = Extract<ChatCard, { type: "request" }>;
+type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -64,6 +69,9 @@ export default function Chat() {
   const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
   const [viewing, setViewing] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+  const [feeFor, setFeeFor] = useState<string | null>(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [drafting, setDrafting] = useState(false);
   const input = useRef<TextInput>(null);
@@ -175,6 +183,30 @@ export default function Chat() {
   // No booking in progress (a finished stay does not count): the owner's next step is the request.
   const canRequest = owner && (!booking || booking.stage === "completed");
 
+  // The sitter's next step: price the stay on the latest card, unless an open or confirmed quote already does.
+  const priced = messages.some(
+    (m) =>
+      m.card?.type === "quote" &&
+      m.card.status !== "replaced" &&
+      !!stay &&
+      Date.parse(m.card.dropOffAt) === Date.parse(stay.dropOffAt) &&
+      Date.parse(m.card.pickUpAt) === Date.parse(stay.pickUpAt),
+  );
+  const canQuote = !owner && !!stay && !priced;
+
+  /** One owner action on a quote card; the cards come back from the server. */
+  const quoteAction = async (run: () => Promise<void>) => {
+    setQuoteBusy(true);
+    try {
+      await run();
+      await load();
+    } catch (e) {
+      errorDialog.show({ title: "Not saved", message: (e as Error).message });
+    } finally {
+      setQuoteBusy(false);
+    }
+  };
+
   const send = async () => {
     const body = text.trim();
     if (sending || !body) return;
@@ -251,6 +283,17 @@ export default function Chat() {
             </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
             requestCard(m, m.card)
+          ) : m.kind === "card" && m.card?.type === "quote" ? (
+            <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
+              <ChatQuoteCard
+                card={m.card as QuoteCard}
+                role={header.myRole}
+                busy={quoteBusy}
+                onAddFee={() => setFeeFor(m.id)}
+                onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
+                onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
+              />
+            </View>
           ) : m.kind === "text" ? (
             <MessageBubble
               key={m.id}
@@ -265,6 +308,11 @@ export default function Chat() {
       {canRequest ? (
         <View style={styles.next}>
           <Button label="Request booking" onPress={() => setRequesting(true)} testID="chat-request-booking" />
+        </View>
+      ) : null}
+      {canQuote ? (
+        <View style={styles.next}>
+          <Button label="Send quote" onPress={() => setQuoting(true)} testID="chat-send-quote" />
         </View>
       ) : null}
       {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
@@ -324,6 +372,19 @@ export default function Chat() {
           stay={stay}
           onSent={() => void load()}
         />
+      ) : null}
+      {!owner ? (
+        <>
+          <SendQuoteSheet
+            visible={quoting}
+            onClose={() => setQuoting(false)}
+            threadId={threadId}
+            sitterId={header.sitterId}
+            stay={stay}
+            onSent={() => void load()}
+          />
+          <AddFeeSheet visible={feeFor !== null} onClose={() => setFeeFor(null)} messageId={feeFor} onAdded={() => void load()} />
+        </>
       ) : null}
       <PhotoViewerSheet visible={viewing} title={header.otherName} photos={photos} onClose={() => setViewing(false)} testID="chat-photos" />
     </View>

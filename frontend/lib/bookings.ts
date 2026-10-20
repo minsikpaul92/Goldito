@@ -34,7 +34,7 @@ export function bookingErrorMessage(code: string | undefined, fallback: string):
 const PRICED_SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
 
 /** quote_booking's rates_not_set names the service when the sitter has prices but not this one (014k, #189). */
-function priceErrorMessage(code: string, detail: string | null, fallback: string): string {
+export function priceErrorMessage(code: string, detail: string | null, fallback: string): string {
   const service = code === "rates_not_set" && detail ? PRICED_SERVICE[detail] : undefined;
   return service ? `This sitter hasn't set a ${service} price yet.` : bookingErrorMessage(code, fallback);
 }
@@ -63,7 +63,7 @@ export async function cancelBooking(bookingId: string, reason: string | null): P
 // Checkout quote + demo pay (03C — no Stripe)
 // ---------------------------------------------------------------------------
 
-function asQuote(raw: unknown): PriceQuote {
+export function asQuote(raw: unknown): PriceQuote {
   const q = raw as PriceQuote;
   return {
     ...q,

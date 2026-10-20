@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import { app, box, drag, signIn } from "./helpers";
-import { MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
+import { DEMO_QUOTE, MockDb, MockUser, OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Chat hub (03D 3D.4, 014j): one chat per owner and sitter, a WhatsApp-style list inside the Bookings tab, free
 // chat both ways, the stay card and the booking progress bar on top, unread counts and leaving a chat.
@@ -437,6 +437,100 @@ test.describe("chat hub", () => {
     await app(page).getByTestId("start-chat").click();
     await expect(app(page).getByTestId("chat-chip-1")).toHaveText("Hi, I need care for Max");
     await expect(app(page).getByTestId("chat-chip-2")).toHaveText("Do you take dogs?");
+  });
+
+  // 3D.6 / 014n: the quote and its extra fees live in one card; the numbers are the server's.
+  const STAY_CARD = { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-27T21:00:00Z", pets: [{ id: MAX, name: "Max" }] };
+  const quoteCard = (extras: unknown[] = [], status = "sent", total = 268.13) => ({
+    type: "quote",
+    service_type: "boarding",
+    drop_off_at: "2030-10-24T13:00:00Z",
+    pick_up_at: "2030-10-27T21:00:00Z",
+    pets: [{ id: MAX, name: "Max" }],
+    quote: DEMO_QUOTE,
+    extras,
+    total,
+    status,
+  });
+
+  test("the sitter prices the stay with one tap, adds a fee, and the owner's pending fee is shown as waiting", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding", "house_sitting"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+
+    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    await screen.getByTestId("chat-send-quote").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toContainText("Max");
+    await screen.getByTestId("send-quote-submit").click();
+
+    await expect(screen.getByTestId("chat-quote-card")).toContainText("$268.13");
+    await expect(screen.getByTestId("chat-send-quote")).toHaveCount(0); // the stay is priced
+    await screen.getByTestId("quote-add-fee").click();
+    await screen.getByTestId("add-fee-labels").getByText("Medication").click();
+    await screen.getByTestId("add-fee-amount").fill("12.50");
+    await screen.getByTestId("add-fee-submit").click();
+
+    await expect(screen.getByTestId("quote-extra-offered")).toContainText("Medication");
+    await expect(screen.getByTestId("quote-extra-offered")).toContainText("Waiting for an answer");
+    await expect(screen.getByTestId("quote-total")).toHaveText("$268.13 CAD"); // not accepted yet
+    await expect(screen.getByTestId("quote-confirm")).toHaveCount(0);
+  });
+
+  test("the owner accepts one fee and declines another: the total follows, and the quote is confirmed after the last answer", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push(
+      { id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" },
+      {
+        id: "q0",
+        thread_id: THREAD,
+        sender_id: SITTER.id,
+        kind: "card",
+        body: null,
+        card: quoteCard([
+          { id: "x1", label: "Medication", amount: 12.5, status: "offered" },
+          { id: "x2", label: "Extra walks", amount: 20, status: "offered" },
+        ]),
+        created_at: "2026-10-10T10:00:00.000Z",
+      },
+    );
+    const screen = await openBookings(page, OWNER, "owner");
+    await expect(screen.getByTestId("chat-row-Chloe")).toContainText("Quote"); // the list names a quote card
+    await screen.getByTestId("chat-row-Chloe").click();
+
+    await expect(screen.getByTestId("quote-total")).toHaveText("$268.13 CAD");
+    await expect(screen.getByTestId("quote-confirm")).toBeDisabled(); // two fees wait for an answer
+    await screen.getByTestId("quote-extra-offered").first().getByTestId("quote-extra-accept").click();
+    await expect(screen.getByTestId("quote-total")).toHaveText("$280.63 CAD");
+    await screen.getByTestId("quote-extra-offered").first().getByTestId("quote-extra-decline").click();
+    await expect(screen.getByTestId("quote-total")).toHaveText("$280.63 CAD"); // a declined fee is not in the total
+    await expect(screen.getByTestId("quote-extra-declined")).toContainText("Declined");
+    await screen.getByTestId("quote-confirm").click();
+
+    await expect(screen.getByTestId("quote-status")).toHaveText("Confirmed");
+    await expect(screen.getByTestId("quote-confirm")).toHaveCount(0);
+    expect((db.chat_messages.find((m) => m.id === "q0")!.card as { status: string }).status).toBe("confirmed");
+  });
+
+  test("a sitter who has not set a price gets the plain reason", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    db.quote_error = "rates_not_set";
+    db.quote_error_detail = "boarding";
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await screen.getByTestId("chat-send-quote").click();
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByText("This sitter hasn't set a Boarding price yet.")).toBeVisible();
   });
 
   test("someone outside the chat cannot open it", async ({ page }) => {

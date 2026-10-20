@@ -1,9 +1,12 @@
+import { PriceQuote, asQuote, priceErrorMessage } from "../../lib/bookings";
 import { getSupabase } from "../../lib/supabase";
 
 export type ChatPet = { id: string; name: string };
 
 /** The cards a chat can carry. Later steps add quote, Meet & Greet, trip and diary cards. */
 export type ChatPlace = { type: "sitter_home" | "owner_home" | "other"; note: string | null };
+
+export type ChatQuoteExtra = { id: string; label: string; amount: number; status: "offered" | "accepted" | "declined" };
 
 export type ChatCard =
   | { type: "stay"; dropOffAt: string; pickUpAt: string; pets: ChatPet[] }
@@ -17,6 +20,17 @@ export type ChatCard =
       dropOffPlace: ChatPlace;
       pickUpPlace: ChatPlace;
       pets: ChatPet[];
+    }
+  | {
+      type: "quote";
+      serviceType: "boarding" | "house_sitting" | "daycare";
+      dropOffAt: string;
+      pickUpAt: string;
+      pets: ChatPet[];
+      quote: PriceQuote;
+      extras: ChatQuoteExtra[];
+      total: number;
+      status: "sent" | "confirmed" | "replaced";
     }
   | { type: "unknown" };
 
@@ -45,6 +59,7 @@ export type ChatListItem = {
   otherName: string;
   lastKind: "text" | "card";
   lastBody: string | null;
+  lastCardType: string | null;
   lastAt: string;
   unread: number;
 };
@@ -65,6 +80,10 @@ const MESSAGES: Record<string, string> = {
   body_required: "Write a message first.",
   body_too_long: "That message is too long.",
   invalid_stay: "Pick a drop-off and a later pick-up.",
+  invalid_extra: "Check the fee and try again.",
+  too_many_extras: "That's enough fees on one quote.",
+  quote_closed: "This quote is closed.",
+  extras_pending: "Answer each fee first.",
 };
 
 function fail(error: { message: string }, fallback: string): never {
@@ -72,8 +91,9 @@ function fail(error: { message: string }, fallback: string): never {
 }
 
 /** The preview line of a message in the list. */
-export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody">): string {
-  return item.lastKind === "card" ? "Stay details" : (item.lastBody ?? "");
+export function previewOf(item: Pick<ChatListItem, "lastKind" | "lastBody" | "lastCardType">): string {
+  if (item.lastKind !== "card") return item.lastBody ?? "";
+  return item.lastCardType === "quote" ? "Quote" : item.lastCardType === "request" ? "Booking request" : "Stay details";
 }
 
 function toCard(raw: unknown): ChatCard {
@@ -83,22 +103,39 @@ function toCard(raw: unknown): ChatCard {
     pick_up_at?: string;
     pets?: ChatPet[];
     booking_id?: string;
-    service_type?: "boarding" | "house_sitting";
+    service_type?: "boarding" | "house_sitting" | "daycare";
     note?: string | null;
     drop_off_place?: ChatPlace;
     pick_up_place?: ChatPlace;
+    quote?: PriceQuote;
+    extras?: { id: string; label: string; amount: number | string; status: ChatQuoteExtra["status"] }[];
+    total?: number | string;
+    status?: "sent" | "confirmed" | "replaced";
   } | null;
   if (c?.type === "request" && c.booking_id && c.drop_off_at && c.pick_up_at) {
     return {
       type: "request",
       bookingId: c.booking_id,
-      serviceType: c.service_type ?? "boarding",
+      serviceType: (c.service_type ?? "boarding") as "boarding" | "house_sitting",
       note: c.note ?? null,
       dropOffAt: c.drop_off_at,
       pickUpAt: c.pick_up_at,
       dropOffPlace: c.drop_off_place ?? { type: "sitter_home", note: null },
       pickUpPlace: c.pick_up_place ?? { type: "sitter_home", note: null },
       pets: c.pets ?? [],
+    };
+  }
+  if (c?.type === "quote" && c.quote && c.drop_off_at && c.pick_up_at) {
+    return {
+      type: "quote",
+      serviceType: c.service_type ?? "boarding",
+      dropOffAt: c.drop_off_at,
+      pickUpAt: c.pick_up_at,
+      pets: c.pets ?? [],
+      quote: asQuote(c.quote),
+      extras: (c.extras ?? []).map((e) => ({ id: e.id, label: e.label, amount: Number(e.amount), status: e.status })),
+      total: Number(c.total ?? c.quote.total),
+      status: c.status ?? "sent",
     };
   }
   if (c?.type === "stay" && c.drop_off_at && c.pick_up_at) {
@@ -128,6 +165,7 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     other_name: string;
     last_kind: "text" | "card";
     last_body: string | null;
+    last_card_type: string | null;
     last_at: string;
     unread_count: number;
   }[]).map((r) => ({
@@ -136,6 +174,7 @@ export async function listMyChats(): Promise<ChatListItem[]> {
     otherName: r.other_name,
     lastKind: r.last_kind,
     lastBody: r.last_body,
+    lastCardType: r.last_card_type,
     lastAt: r.last_at,
     unread: r.unread_count,
   }));
@@ -205,4 +244,36 @@ export async function leaveChat(threadId: string): Promise<void> {
 export async function postBookingRequestCard(threadId: string, bookingId: string): Promise<void> {
   const { error } = await getSupabase().rpc("post_booking_request_card", { p_thread: threadId, p_booking: bookingId });
   if (error) fail(error, "The request was sent, but it did not show in the chat.");
+}
+
+/** Quote errors from quote_booking (rates not set, service not offered ...) keep their own wording. */
+function quoteFail(error: { message: string; details?: string | null }, fallback: string): never {
+  throw new ChatError(error.message, MESSAGES[error.message] ?? priceErrorMessage(error.message, error.details ?? null, fallback));
+}
+
+/** The sitter prices the stay with their saved rates; the numbers come from the server. */
+export async function sendChatQuote(threadId: string, input: { service: string; dropOffAt: string; pickUpAt: string; petIds: string[] }): Promise<void> {
+  const { error } = await getSupabase().rpc("send_chat_quote", {
+    p_thread: threadId,
+    p_service: input.service,
+    p_drop_off_at: input.dropOffAt,
+    p_pick_up_at: input.pickUpAt,
+    p_pet_ids: input.petIds,
+  });
+  if (error) quoteFail(error, "Couldn't send the quote. Try again.");
+}
+
+export async function addQuoteExtra(messageId: string, label: string, amount: number): Promise<void> {
+  const { error } = await getSupabase().rpc("add_chat_quote_extra", { p_message: messageId, p_label: label, p_amount: amount });
+  if (error) fail(error, "Couldn't add the fee. Try again.");
+}
+
+export async function answerQuoteExtra(messageId: string, extraId: string, accept: boolean): Promise<void> {
+  const { error } = await getSupabase().rpc("answer_chat_quote_extra", { p_message: messageId, p_extra: extraId, p_accept: accept });
+  if (error) fail(error, "Couldn't save your answer. Try again.");
+}
+
+export async function confirmQuote(messageId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("confirm_chat_quote", { p_message: messageId });
+  if (error) fail(error, "Couldn't confirm the quote. Try again.");
 }

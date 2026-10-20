@@ -5583,4 +5583,109 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014n (Quotes in the chat): the sitter's quote, extra fees, the owner's answers
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 270;
+  t1 public.chat_threads;
+  q public.chat_messages;
+  q2 public.chat_messages;
+  v_extra uuid;
+  v_extra2 uuid;
+  v_base numeric;
+  v_n int;
+  v_err text;
+begin
+  perform _t_as(robert);
+  t1 := open_chat_thread(chloe);
+
+  -- Only the thread's sitter sends a quote, and the numbers are the server's
+  begin perform send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014n: an owner cannot send a quote');
+  perform _t_as(chloe);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]);
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 1) ->> 'total')::numeric;
+  perform _t_ok(q.kind = 'card' and q.card ->> 'type' = 'quote' and q.sender_id = chloe and q.card ->> 'status' = 'sent',
+    '014n: the sitter posts a quote card');
+  perform _t_ok((q.card ->> 'total')::numeric = v_base and (q.card -> 'quote' ->> 'total')::numeric = v_base,
+    '014n: the card total is quote_booking''s total');
+  begin perform send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[]::uuid[]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_stay', '014n: a quote needs pets');
+  begin perform send_chat_quote(t1.id, 'boarding', local_ts(d + 2, '17:00'), local_ts(d, '09:00'), array[max]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '014n: a pick-up before the drop-off is refused by the quote function');
+
+  -- Extra fees: the sitter adds, the owner answers
+  q := add_chat_quote_extra(q.id, 'Medication visits', 12.50);
+  v_extra := (q.card -> 'extras' -> 0 ->> 'id')::uuid;
+  perform _t_ok(q.card -> 'extras' -> 0 ->> 'status' = 'offered' and (q.card ->> 'total')::numeric = v_base,
+    '014n: an offered fee is not in the total yet');
+  q := add_chat_quote_extra(q.id, 'Long walks', 20);
+  v_extra2 := (q.card -> 'extras' -> 1 ->> 'id')::uuid;
+  begin perform add_chat_quote_extra(q.id, 'Free', 0); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_extra', '014n: a fee must be above zero');
+  begin perform add_chat_quote_extra(q.id, '', 5); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_extra', '014n: a fee needs a label');
+  begin perform answer_chat_quote_extra(q.id, v_extra, true); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014n: the sitter cannot answer her own fee');
+
+  perform _t_as(robert);
+  begin perform add_chat_quote_extra(q.id, 'Sneaky', 99); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014n: the owner cannot add a fee');
+  begin perform confirm_chat_quote(q.id); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'extras_pending', '014n: the quote cannot be confirmed while a fee waits for an answer');
+  q := answer_chat_quote_extra(q.id, v_extra, true);
+  perform _t_ok((q.card ->> 'total')::numeric = v_base + 12.50, '014n: an accepted fee is added to the total');
+  q := answer_chat_quote_extra(q.id, v_extra2, false);
+  perform _t_ok((q.card ->> 'total')::numeric = v_base + 12.50 and q.card -> 'extras' -> 1 ->> 'status' = 'declined',
+    '014n: a declined fee is not in the total');
+  begin perform answer_chat_quote_extra(q.id, v_extra2, true); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_extra', '014n: a fee that was answered cannot be answered again');
+
+  q := confirm_chat_quote(q.id);
+  perform _t_ok(q.card ->> 'status' = 'confirmed' and q.card ? 'confirmed_at', '014n: the owner confirms the quote');
+  perform _t_as(chloe);
+  begin perform add_chat_quote_extra(q.id, 'Late', 5); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'quote_closed', '014n: a confirmed quote takes no more fees');
+
+  -- A new quote replaces an open one but not a confirmed one
+  q2 := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 3, '17:00'), array[max]);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 4, '17:00'), array[max]);
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'quote' and card ->> 'status' = 'replaced';
+  perform _t_ok(v_n = 1, '014n: a newer quote replaces the open one');
+  select count(*) into v_n from public.chat_messages where thread_id = t1.id and card ->> 'type' = 'quote' and card ->> 'status' = 'confirmed';
+  perform _t_ok(v_n = 1, '014n: …and leaves the confirmed one');
+
+  -- The list says what the last message is
+  perform _t_ok((select last_card_type from list_my_chats() x where x.thread_id = t1.id) = 'quote', '014n: the chat list knows the last card is a quote');
+
+  -- Outsiders
+  perform _t_as(joy);
+  begin perform confirm_chat_quote(q.id); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'forbidden', '014n: a third person cannot confirm');
+  perform _t_as(null, 'anon');
+  begin perform send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014n: anon cannot call the quote functions');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
