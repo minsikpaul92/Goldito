@@ -371,6 +371,75 @@ test.describe("chat hub", () => {
     expect(db.chat_messages).toHaveLength(before + 1);
   });
 
+  test("after a pause in typing the chips follow the text; emptying the box brings the usual chips back; the draft keeps the typed text (#235)", async ({ page }) => {
+    const asked: { typed: unknown[]; drafts: unknown[] } = { typed: [], drafts: [] };
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    await page.route("**/api/ai/chat-chips", async (route) => {
+      const body = route.request().postDataJSON() as { typed?: string };
+      if (body.typed) {
+        asked.typed.push(body);
+        await gate;
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Ask about early pick-up" }, { id: "c1", label: "Ask about the leash" }], for_message_id: "m4", source: "model" }) });
+      }
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }) });
+    });
+    await page.route("**/api/ai/chat-draft", (route) => {
+      asked.drafts.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: "Could Max be picked up a bit earlier?", source: "model" }) });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+
+    // Typing hides the usual chips; nothing is asked while the text is still changing.
+    await screen.getByTestId("chat-input").fill("can you take them early");
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0);
+    expect(asked.typed).toHaveLength(0);
+    // After 1.5 seconds without typing: a spinner, then chips that fit the text.
+    await expect(screen.getByTestId("chat-chips-loading")).toContainText("Finding replies", { timeout: 4000 });
+    expect(asked.typed).toEqual([{ thread_id: THREAD, typed: "can you take them early" }]);
+    release();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Ask about early pick-up");
+    await expect(screen.getByTestId("chat-chip-2")).toHaveText("Ask about the leash");
+
+    // A tapped chip goes through the draft step with the typed text; the box gets the draft, nothing is sent.
+    const before = db.chat_messages.length;
+    await screen.getByTestId("chat-chip-1").click();
+    await expect(screen.getByTestId("chat-input")).toHaveValue("Could Max be picked up a bit earlier?");
+    expect(asked.drafts).toEqual([{ thread_id: THREAD, chip: "Ask about early pick-up", typed: "can you take them early" }]);
+    expect(db.chat_messages).toHaveLength(before);
+    expect(asked.typed).toHaveLength(1); // the draft in the box does not ask again
+
+    // Emptying the box brings the usual chips back.
+    await screen.getByTestId("chat-input").fill("");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+  });
+
+  test("when the typed-text ask fails the box just has no chips, and the usual ones return on clearing", async ({ page }) => {
+    let typedAsks = 0;
+    await page.route("**/api/ai/chat-chips", (route) => {
+      const body = route.request().postDataJSON() as { typed?: string };
+      if (body.typed) typedAsks += 1;
+      if (body.typed) return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }) });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
+    await screen.getByTestId("chat-input").fill("anything at all");
+    await expect.poll(() => typedAsks, { timeout: 4000 }).toBe(1);
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0); // nothing to show: no guess
+    await screen.getByTestId("chat-input").fill("");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+  });
+
   test("chips come back after my own message as follow-ups", async ({ page }) => {
     const asked: unknown[] = [];
     await page.route("**/api/ai/chat-chips", (route) => {

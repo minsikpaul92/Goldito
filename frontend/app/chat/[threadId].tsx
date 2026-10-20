@@ -34,7 +34,7 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatAction, ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
+import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
 import { Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { canStartTripNow } from "../../features/transit/tripLogic";
@@ -103,6 +103,9 @@ export default function Chat() {
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [action, setAction] = useState<ChatAction | null>(null);
   const [drafting, setDrafting] = useState(false);
+  // Chips that follow the typed text: null = none (the usual chips show when the box is empty), "busy" = asking.
+  const [typedChips, setTypedChips] = useState<ChatChip[] | "busy" | null>(null);
+  const draftedText = useRef<string | null>(null);
   const input = useRef<TextInput>(null);
   const [inputHeight, setInputHeight] = useState(INPUT_MIN);
 
@@ -180,14 +183,34 @@ export default function Chat() {
   /** A tapped chip becomes a draft in the box; nothing is sent until the person presses Send (D62). */
   const pickChip = async (chip: ChatChip) => {
     setDrafting(true);
-    const draft = await fetchChatDraft(threadId, chip.label);
+    const draft = await fetchChatDraft(threadId, chip.label, text);
     setDrafting(false);
     if (draft) {
+      draftedText.current = draft;
       setText(draft);
-      setChips([]);
+      setTypedChips(null);
       input.current?.focus();
     }
   };
+
+  // When the box has text and stays still for a moment, the chips follow it: a spinner, then chips that fit. Emptying the
+  // box brings the usual chips back. The AI only words; the person presses Send (D62).
+  useEffect(() => {
+    const typed = text.trim();
+    setTypedChips(null);
+    if (!typed || typed === draftedText.current?.trim()) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      setTypedChips("busy");
+      void fetchTypedChips(threadId, typed).then((r) => {
+        if (current) setTypedChips(r);
+      });
+    }, TYPED_PAUSE_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [text, threadId]);
 
   // Open at the latest message, and follow new ones.
   const count = loaded?.messages.length ?? 0;
@@ -296,6 +319,9 @@ export default function Chat() {
     if (a.id === "meet_skip") return meetCard.current?.skip();
     return step.primary ? doPrimary(step.primary) : undefined;
   };
+  const typing = text.trim() !== "";
+  const typedBusy = typing && (typedChips === "busy" || drafting);
+  const typingChips = typing && (typedBusy || Array.isArray(typedChips));
   const shownAction = action && actionPossible(action.id, step, booking, header.myRole) ? action : null;
 
   // The + menu (#235): each entry opens what the flow opens. Entries that cannot work right now are dimmed.
@@ -501,8 +527,32 @@ export default function Chat() {
           ) : null}
         </View>
       ) : null}
-      {text.trim() === "" && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady)) ? (
+      {typingChips || (!typing && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled" testID="chat-chips">
+          {typing ? (
+            <>
+              {typedBusy ? (
+            <View style={styles.chipsBusy} testID="chat-chips-loading">
+                  <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing your message" : "Finding replies"} />
+                  <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Finding replies…"}</Text>
+                </View>
+              ) : null}
+              {!typedBusy && Array.isArray(typedChips)
+                ? typedChips.map((chip, i) => (
+                    <Pressable
+                      key={chip.id}
+                      accessibilityRole="button"
+                      onPress={() => void pickChip(chip)}
+                      style={styles.chip}
+                      testID={`chat-chip-${i + 1}`}
+                    >
+                      <Text style={styles.chipText}>{chip.label}</Text>
+                    </Pressable>
+                  ))
+                : null}
+            </>
+          ) : (
+            <>
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
@@ -532,6 +582,8 @@ export default function Chat() {
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}
+                    </>
+          )}
         </ScrollView>
       ) : null}
       <View style={styles.compose}>
