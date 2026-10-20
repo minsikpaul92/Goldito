@@ -18,11 +18,10 @@ class SitterAgent(ChatAgent):
 
     def state(self, messages: list[dict], me_id: str) -> str:
         """first_reply: the owner has written and I have not yet, so I greet and say who I am before anything else."""
-        if not any(m.get("kind") == "text" for m in messages):
-            return "opening"
-        if not any(m.get("kind") == "text" and m.get("sender_id") == me_id for m in messages):
+        state = super().state(messages, me_id)
+        if state == "reply" and not any(m.get("kind") == "text" and m.get("sender_id") == me_id for m in messages):
             return "first_reply"
-        return "reply"
+        return state
 
     def facts(self, raw: dict, messages: list[dict], *, state: str, last_them: str) -> dict:
         """Money (the quote and my rates) is in the facts only when the owner asked about it or a quote card is in the
@@ -44,6 +43,8 @@ class SitterAgent(ChatAgent):
     def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
         if state == "first_reply":
             return ["Hi, nice to meet you", "Happy to help"]
+        if state == "follow_up":
+            return ["Any questions for me?", "Shall we set a Meet & Greet?"]
         return logic.generic_chips("sitter", started=started, can_host=facts["availability"].get("can_host"))
 
     def extra_problems(self, text: str, facts: dict) -> list[str]:

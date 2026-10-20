@@ -18,8 +18,12 @@ class ChatAgent:
         return (getattr(get_settings(), self.model_setting, None) or "").strip() or None
 
     def state(self, messages: list[dict], me_id: str) -> str:
-        """opening: nobody has written. reply: someone has, so even an owner answers instead of introducing themselves."""
-        return "reply" if any(m.get("kind") == "text" for m in messages) else "opening"
+        """opening: nobody has written. reply: the other person spoke last, so even an owner answers instead of introducing
+        themselves. follow_up: I spoke last, so there is nothing to answer, only something to add."""
+        last = next((m for m in reversed(messages) if m.get("kind") == "text"), None)
+        if last is None:
+            return "opening"
+        return "follow_up" if last.get("sender_id") == me_id else "reply"
 
     def facts(self, raw: dict, messages: list[dict], *, state: str, last_them: str) -> dict:
         """The part of what the database knows that this side may read."""

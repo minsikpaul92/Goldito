@@ -14,6 +14,7 @@ How to write `reply`:
 - Do not repeat the sitter's words back, and do not repeat what I already wrote in `recent`: add something new.
 - First person only. Never write about me in the third person, never mention an AI, an assistant or a bot.
 - Follow `style_notes` for the voice.
+- `state` "follow_up": my own message came last, so this one adds something new (a practical question, a worry, thanks for a specific thing) and does not restate it.
 - Prices: only when `facts.quote` is present, and then exactly the numbers in it (`total`, `unit_price`, `extra_pets`, `holiday_surcharge`) with `currency`. I never state a price the quote does not have. No quote: do not mention a price.
 - Dates: only dates from `facts.inquiry.stay_days`, written like "Oct 9". Times: only times that appear in `recent`.
 - Never mention addresses, door or entry information, phone numbers or payment details.

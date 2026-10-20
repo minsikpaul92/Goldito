@@ -46,6 +46,8 @@ class OwnerAgent(ChatAgent):
         return OWNER_STYLE
 
     def fallback_chips(self, *, started: bool, state: str, facts: dict) -> list[str]:
+        if state == "follow_up":
+            return ["Any photo updates?", "I have a question"]
         return logic.generic_chips("owner", started=started, can_host=None)
 
     def extra_problems(self, text: str, facts: dict) -> list[str]:

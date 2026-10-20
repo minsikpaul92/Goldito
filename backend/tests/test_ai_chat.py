@@ -3,9 +3,11 @@ the database's, every amount / date is checked afterwards, and nothing is sent o
 gathering and the checks are real."""
 
 import json
+import logging
 import time
 from types import SimpleNamespace
 
+import httpx
 import jwt
 import pytest
 from app.ai import tone
@@ -161,11 +163,20 @@ def test_when_the_dates_are_not_available_no_chip_says_yes(client, setup):
     assert ctx.model.payload()["facts"]["availability"]["can_host"] is False
 
 
-def test_when_i_spoke_last_there_is_nothing_to_answer(client, setup):
+def test_when_i_spoke_last_the_chips_are_still_there_as_follow_ups(client, setup):
     db = make_db(message(1, OWNER_ID, "Hi"), message(2, SITTER_ID, "Hello!"))
-    ctx = setup(db=db)
+    ctx = setup({"chips": ["Any questions for me?", "Shall we meet first?"]}, db=db)
     body = chips(client).json()
-    assert body["chips"] == [] and ctx.model.calls == []  # no model call either
+    assert [c["label"] for c in body["chips"]] == ["Any questions for me?", "Shall we meet first?"] and body["source"] == "model"
+    assert ctx.model.payload()["state"] == "follow_up"
+
+
+def test_the_follow_up_chips_fall_back_per_side_when_the_model_is_down(client, setup):
+    owner_last = make_db(message(1, OWNER_ID, "Hi"), message(2, SITTER_ID, "Hello!"), message(3, OWNER_ID, "Thanks!"))
+    setup(nebius.AIUnavailable("down"), db=owner_last)
+    assert [c["label"] for c in chips(client, owner_token()).json()["chips"]] == ["Any photo updates?", "I have a question"]
+    setup(nebius.AIUnavailable("down"), db=make_db(message(1, OWNER_ID, "Hi"), message(2, SITTER_ID, "Hello!")))
+    assert [c["label"] for c in chips(client).json()["chips"]] == ["Any questions for me?", "Shall we set a Meet & Greet?"]
 
 
 def test_the_owner_opens_a_new_chat_from_chips(client, setup):
@@ -365,10 +376,10 @@ def test_an_action_that_is_not_possible_right_now_is_dropped_even_if_the_message
     assert action_of(chips(client)) is None
 
 
-def test_nothing_is_offered_when_i_spoke_last(client, setup):
-    ctx = setup(db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Hello")))
+def test_no_action_is_offered_when_the_other_person_has_not_written(client, setup):
+    ctx = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Hello")))
     assert chips(client).json()["action"] is None
-    assert ctx.model.calls == []
+    assert "actions" not in ctx.model.payload()
 
 
 def test_the_model_being_down_gives_no_action(client, setup):
@@ -600,3 +611,62 @@ def test_the_stay_card_the_model_reads_says_the_owner_hands_over(client, setup):
     ctx = setup({"chips": ["Yes, I can host", "Let me check"]})
     chips(client)
     assert "The owner drops off and picks up." in ctx.model.payload()["recent"][0]["text"]
+
+
+# --- connection errors and logs ------------------------------------------------------------------------------------
+
+
+def test_a_dropped_connection_while_gathering_still_gives_model_chips_on_the_basics(client, setup, monkeypatch):
+    ctx = setup({"chips": ["Yes, I can host", "Let me check"]})
+
+    def boom(*_a, **_k):
+        raise httpx.RemoteProtocolError("Server disconnected")
+
+    monkeypatch.setattr(ai_chat, "_gather", boom)
+    response = chips(client)
+    assert response.status_code == 200 and [c["label"] for c in response.json()["chips"]] == ["Yes, I can host", "Let me check"]
+    facts = ctx.model.payload()["facts"]
+    assert facts["availability"]["unchecked"] is True and facts["quote"] is None  # the basics, no invented answer
+
+
+def test_a_dropped_connection_while_reading_the_basics_gives_fallback_chips_not_a_500(client, setup, monkeypatch):
+    ctx = setup(nebius.AIUnavailable("down"), db=make_db(message(1, OWNER_ID, "Hi"), message(2, SITTER_ID, "Hello!"), message(3, OWNER_ID, "Thanks!")))
+    real = ctx.db.table
+
+    def flaky(name):
+        if name in ("sitter_rates", "sitter_profiles", "bookings"):
+            raise httpx.ReadError("Server disconnected")
+        return real(name)
+
+    monkeypatch.setattr(ctx.db, "table", flaky)
+    response = chips(client)
+    assert response.status_code == 200 and response.json()["source"] == "fallback" and response.json()["chips"]
+
+
+def test_the_chat_not_being_readable_twice_is_a_503_after_one_retry(client, setup, monkeypatch):
+    ctx = setup()
+    tries: list[str] = []
+    real = ctx.db.table
+
+    def down(name):
+        tries.append(name)
+        raise httpx.RemoteProtocolError("Server disconnected")
+
+    monkeypatch.setattr(ctx.db, "table", down)
+    assert chips(client).status_code == 503 and len(tries) == 2
+    monkeypatch.setattr(ctx.db, "table", real)
+
+
+def test_the_chips_and_the_draft_are_logged_without_names(client, setup, caplog):
+    caplog.set_level(logging.INFO, logger="goldito.ai")
+    setup({"chips": ["Yes, I can host", "Add 5 extra"]}, {"reply": "Hi Robert, Max is welcome with me, Chloe!"}, {"reply": "Hi Robert, I'm Chloe and Max is welcome."})
+    chips(client)
+    draft(client, "Say hello")
+    lines = [r.getMessage() for r in caplog.records if r.getMessage().startswith("chat_ai ")]
+    assert len(lines) == 2
+    chip_line, draft_line = (json.loads(line.removeprefix("chat_ai ")) for line in lines)
+    assert chip_line["source"] == "fallback" and chip_line["reason"] == "too_few_chips"  # one chip survived: not enough
+    assert any("it contains a number" in d for d in chip_line["dropped"])
+    assert draft_line["endpoint"] == "chat-draft" and draft_line["source"] == "model" and draft_line["role"] == "sitter"
+    text = "\n".join(lines)
+    assert "Robert" not in text and "Chloe" not in text and "Max" not in text and "{NAME}" in text
