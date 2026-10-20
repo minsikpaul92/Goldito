@@ -16,7 +16,8 @@ export type MeetGreetPrimary = { key: "schedule" | "accept" | "done" | "continue
  * What the footer offers for a first-time booking's Meet & Greet, or null when nothing is waiting for this person.
  * The card does the work; this only says which step it is.
  */
-export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", now: number = Date.now()): MeetGreetPrimary | null {
+/** `_now` is kept for callers that pass a clock; no step depends on the time since 014s. */
+export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", _now: number = Date.now()): MeetGreetPrimary | null {
   if (b.status !== "requested") return null;
   const me = viewer === "owner" ? b.ownerId : b.sitterId;
   const mg = b.meetGreet;
@@ -26,7 +27,8 @@ export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", 
     case "proposed":
       return mg.proposedBy !== me ? { key: "accept", label: "Accept" } : null;
     case "agreed":
-      return mg.at && Date.parse(mg.at) <= now ? { key: "done", label: "Done, we met" } : null;
+      // Any time once agreed; the card asks first when the agreed time has not come yet (014s, #229).
+      return { key: "done", label: "Done, we met" };
     case "skip_requested":
       return mg.skipRequestedBy !== me ? { key: "continue", label: "Continue without meeting" } : null;
     default:
@@ -38,7 +40,6 @@ const MESSAGES: Record<string, string> = {
   place_required: "Pick a place to meet.",
   place_too_long: "Keep the place to one short line.",
   invalid_window: "Pick a time in the future.",
-  meet_greet_not_yet: "You can mark it done once the meeting time has come.",
   invalid_status: "This Meet & Greet has already changed. Reopen the booking to see the latest.",
 };
 

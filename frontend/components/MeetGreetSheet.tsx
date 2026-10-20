@@ -3,10 +3,12 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "./ui/Button";
 import { CheckRow } from "./ui/CheckRow";
+import { DayPickerSheet } from "./ui/DayPickerSheet";
 import { SegmentedControl } from "./ui/SegmentedControl";
 import { Sheet } from "./ui/Sheet";
 import { Stepper } from "./ui/Stepper";
 import { TextField } from "./ui/TextField";
+import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { addDays, appToday, formatDay, formatTime, isoToZoned, shiftTime, zonedToIso } from "../features/schedule/dates";
 import { BookingSummary } from "../lib/bookings";
 import { MeetGreetMode, MeetSpots } from "../lib/meetGreet";
@@ -44,6 +46,8 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
     current.place ? (known.includes(current.place) ? current.place : OTHER) : (known[0] ?? OTHER),
   );
   const [other, setOther] = useState(current.place && !known.includes(current.place) ? current.place : "");
+  /** Tap the day for the calendar, the time for the clock (DESIGN.md §7.10, #229: any minute, not only 15 minute steps). */
+  const [picker, setPicker] = useState<"day" | "time" | null>(null);
 
   const at = zonedToIso(day, time);
   const place = mode === "in_person" ? (spot === OTHER ? other.trim() : spot) : null;
@@ -122,6 +126,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           onDecrease={() => setDay(addDays(day, -1))}
           onIncrease={() => setDay(addDays(day, 1))}
           canDecrease={day > appToday()}
+          onPressValue={() => setPicker("day")}
           testID="meet-day"
         />
         <Stepper
@@ -129,10 +134,35 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           value={formatTime(time)}
           onDecrease={() => setTime(shiftTime(time, -TIME_STEP))}
           onIncrease={() => setTime(shiftTime(time, TIME_STEP))}
+          onPressValue={() => setPicker("time")}
           testID="meet-time"
         />
       </View>
       {problem ? <Text style={styles.problem}>{problem}</Text> : null}
+
+      <DayPickerSheet
+        visible={picker === "day"}
+        title="Meet & Greet day"
+        value={day}
+        minDay={appToday()}
+        onPick={(d) => {
+          setDay(d);
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+        testID="meet-calendar-sheet"
+      />
+      <TimePickerSheet
+        visible={picker === "time"}
+        title="Meet & Greet time"
+        value={time}
+        onPick={(t) => {
+          setTime(t);
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+        testID="meet-clock"
+      />
     </Sheet>
   );
 }
