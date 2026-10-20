@@ -370,7 +370,7 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| INQ-1 | 오너 → Chloe 프로필 → **Ask before booking** → 반려동물 · 날짜 · 질문("Can you give Max his pill at 2 PM?") → **Send** | 시트가 닫히고 대화 화면. 내 질문 말풍선, "Chloe will reply soon". **시터가 보내기 전에는 답이 안 보임** | 🤖 `inquiry` | ➖ |
+| INQ-1 | (프로필의 Ask before booking은 3D.3에서 없어짐. 이 흐름은 #142 채팅 AI 초안이 대신하며, 해당 e2e는 그때까지 skip) 오너 → Chloe 프로필 → **Ask before booking** → 반려동물 · 날짜 · 질문("Can you give Max his pill at 2 PM?") → **Send** | 시트가 닫히고 대화 화면. 내 질문 말풍선, "Chloe will reply soon". **시터가 보내기 전에는 답이 안 보임** | 🤖 `inquiry` | ➖ |
 | INQ-2 | 질문을 비우고 Send | 질문 자리에 "Boarding · Oct 9 – Oct 12 · Max" 같은 한 줄 요약이 감 | 🤖 `inquiry` | ➖ |
 | INQ-3 | 시터 → Bookings → **Questions (1)** → 문의 카드("✍️ Draft ready") → 열기 | 경고 문구 "AI drafts can be wrong. You're responsible for what you send.", **시터 1인칭** 초안, 견적 카드(03C와 **같은 금액**), 출처 칩. 열면 오너 질문이 읽음 처리 | 🤖 `inquiry` · pytest · **실제 모델 👤** | ➖ |
 | INQ-4 | 초안의 금액 · 날짜가 서버 값과 같은가 (Thanksgiving 포함 3박 2마리 → $268.13 CAD) | 금액 = 견적 total, 날짜는 문의한 기간 안, `{PRICE}` 같은 자리표시자 없음 | pytest a–c · h | ➖ |
@@ -760,10 +760,10 @@
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |
-| CAL-1 | 오너 → Bookings → Chloe 프로필 | 월 달력 대신 **Next openings**: 오늘부터 빈 날 최대 5줄("Tue, Oct 20 · Morning, Afternoon", 다 비면 "All day"). 아래 **See full month** | 🤖 `sitters` | ➖ |
+| CAL-1 | 오너 → Bookings → 시터 줄 → 시터 프로필 | 소개와 **See schedule**(열린 날과 닫힌 날을 보는 곳). **Next openings 목록은 없음**(검색에 나온 시터는 이미 그 기간이 맞음). 아래 고정 버튼은 **Start chat** 하나(Ask before booking · Book은 없음) | 🤖 `sitters` | ➖ |
 | CAL-2 | 한 줄 누르기 | 그날 페이지: 제목 "Tue, Oct 20", 세 줄(Morning · 시간 · "2 spots left" / "Full" / "Not available"). ← 누르면 프로필로 | 🤖 `sitters` | ➖ |
-| CAL-3 | See full month → 날짜 누르기 | 달력 페이지(#150 빗금 그대로) → 그날 페이지. ← 누르면 보던 달 그대로 달력으로 | 🤖 `sitters` | ➖ |
-| CAL-4 | 그날 페이지에서 Book | Book care가 그날로 시작(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기, 둘 다 바꿀 수 있음) | **👤** | ➖ |
+| CAL-3 | See schedule → 날짜 누르기 | 달력 페이지(#150 빗금 그대로) → 그날 페이지. ← 누르면 보던 달 그대로 달력으로. 검색에서 온 날짜 · 펫은 프로필 → 달력 → 하루 페이지로 따라감 | 🤖 `sitters` · `chat` | ➖ |
+| CAL-4 | 그날 페이지에서 **Start chat** | 채팅이 열리고 첫 카드가 그날로 채워짐(첫 빈 시간에 맡기기, 다음 날 5 PM에 찾기; 검색에서 온 펫이 있을 때). 채팅 맨 아래 **Request booking**이 같은 시터 · 날짜 · 펫으로 Book care를 엶 | 🤖 `chat` · `booking` | 사람 확인 대기 |
 
 ---
 
@@ -789,6 +789,7 @@
 | CHAT-5 | 채팅 안 **Leave** 또는 목록 줄을 왼쪽으로 밀기 | 내 목록에서만 사라지고 기록은 남음. 상대 목록에는 그대로. 다시 💬로 열거나 상대가 새로 보내면 돌아옴 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-6 | 부킹이 있는 쌍의 채팅 | 맨 위 진행도(Request · Confirm · Pay · Stay)와 "Waiting for …". 누르면 그 부킹으로 이동 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-7 | 채팅 주소를 다른 사람(쌍이 아닌 오너)이 직접 열기 | "Chat not found" | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-8 | 시터 프로필(또는 일정 · 하루 페이지) → **Start chat** | 한 버튼. 검색에서 온 날짜 · 펫이 있으면 채팅 첫 카드로 올라감. 채팅 맨 아래 **Request booking**(진행 중인 예약이 없는 오너에게만)이 Book care를 시터 · 날짜 · 펫이 채워진 채로 엶. 시터에게는 이 버튼 없음. 3D.7이 이 임시 연결을 채팅 안 흐름으로 바꿈 | 🤖 `chat` · `booking` | 사람 확인 대기 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

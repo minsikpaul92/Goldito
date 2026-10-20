@@ -1,9 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { SitterActions } from "../../../../components/SitterActions";
-import { NextOpenings, nextOpenings } from "../../../../components/NextOpenings";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { Chip } from "../../../../components/ui/Chip";
@@ -12,8 +11,6 @@ import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { StarRating } from "../../../../components/StarRating";
 import { RatingSummary, getRatingSummary } from "../../../../features/completion/completionApi";
-import { addDays, appToday } from "../../../../features/schedule/dates";
-import { DaySlot, loadSitterMonth } from "../../../../features/schedule/scheduleApi";
 import {
   SERVICE_LABEL,
   SitterProfileView,
@@ -23,6 +20,7 @@ import {
   setFavoriteSitter,
   sitterMeta,
 } from "../../../../features/sitters/sitterApi";
+import { StayParams, stayFromParams, stayQuery } from "../../../../features/sitters/stayParams";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { Theme } from "../../../../theme/themes";
@@ -33,22 +31,16 @@ type ProfileState =
   | { status: "missing" }
   | { status: "error"; message: string };
 
-/** How far ahead the next openings look, and how many rows they show (#120). */
-const LOOK_AHEAD_DAYS = 60;
-const MAX_OPENINGS = 5;
-
 /**
- * A sitter as owners see them (phase-03b 3B.2): intro + the next open days from
- * get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
+ * A sitter as owners see them (phase-03b 3B.2, 3D.3): the intro, and See schedule for the openings and closed days
+ * (#120: the month and each day on their own pages). Start chat is the one action; the stay a search carried stays with it.
  */
 export default function SitterProfileScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { sitterId } = useLocalSearchParams<{ sitterId: string }>();
-  const today = useMemo(() => appToday(), []);
+  const params = useLocalSearchParams<{ sitterId: string } & StayParams>();
+  const { sitterId } = params;
 
   const [profile, setProfile] = useState<ProfileState>({ status: "loading" });
-  const [slots, setSlots] = useState<Map<string, DaySlot> | null>(null);
-  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [rating, setRating] = useState<RatingSummary | null>(null);
   /** Mine only (011h): favorites come first when I book. */
   const [favorite, setFavorite] = useState<boolean | null>(null);
@@ -78,16 +70,6 @@ export default function SitterProfileScreen() {
     }
   }, [sitterId]);
 
-  const loadSchedule = useCallback(async () => {
-    if (!sitterId) return;
-    setScheduleError(null);
-    try {
-      setSlots(await loadSitterMonth(sitterId, today, addDays(today, LOOK_AHEAD_DAYS - 1)));
-    } catch (error) {
-      setScheduleError((error as Error).message);
-    }
-  }, [sitterId, today]);
-
   useEffect(() => {
     void loadProfile();
   }, [loadProfile]);
@@ -95,10 +77,6 @@ export default function SitterProfileScreen() {
   useEffect(() => {
     if (sitterId) void getRatingSummary(sitterId).then(setRating);
   }, [sitterId]);
-
-  useEffect(() => {
-    void loadSchedule();
-  }, [loadSchedule]);
 
   if (profile.status === "loading") return <LoadingView />;
 
@@ -125,7 +103,6 @@ export default function SitterProfileScreen() {
 
   const { sitter } = profile;
   const meta = sitterMeta(sitter);
-  const openings = slots ? nextOpenings(slots, today, LOOK_AHEAD_DAYS, MAX_OPENINGS) : [];
 
   return (
     <View style={styles.root}>
@@ -171,33 +148,14 @@ export default function SitterProfileScreen() {
           ) : null}
         </Card>
   
-        <View style={styles.block}>
-          <Text accessibilityRole="header" style={styles.label}>
-            Next openings
-          </Text>
-          {scheduleError ? (
-            <EmptyState
-              emoji="📅"
-              title="Couldn't load the schedule"
-              message={scheduleError}
-              action={{ label: "Try again", onPress: () => void loadSchedule() }}
-            />
-          ) : !slots ? (
-            <Text style={styles.meta}>Loading…</Text>
-          ) : openings.length > 0 ? (
-            <NextOpenings openings={openings} onOpenDay={(d) => router.push(`/owner/sitters/${sitter.id}/day/${d}`)} />
-          ) : (
-            <Text style={styles.meta} testID="sitter-no-openings">No open days in the next two months.</Text>
-          )}
-          <Button
-            label="See full month"
-            variant="secondary"
-            onPress={() => router.push(`/owner/sitters/${sitter.id}/calendar`)}
-            testID="sitter-see-month"
-          />
-        </View>
+        <Button
+          label="See schedule"
+          variant="secondary"
+          onPress={() => router.push(`/owner/sitters/${sitter.id}/calendar${stayQuery(params)}`)}
+          testID="sitter-see-schedule"
+        />
       </Screen>
-      <SitterActions sitter={sitter} />
+      <SitterActions sitter={sitter} stay={stayFromParams(params)} />
     </View>
   );
 }

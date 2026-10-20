@@ -26,9 +26,10 @@ Shows: `BookingStageBar` · `MessageBubble`
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 90 |
 | EmptyState | Chat not found | — | 98 |
-| TextButton | Leave | `chat-leave` | 138 |
-| Pressable | — | `chat-stage` | 143 |
-| Button | sending ? "…" : "Send" | `chat-send` | 183 |
+| TextButton | Leave | `chat-leave` | 150 |
+| Pressable | — | `chat-stage` | 155 |
+| Button | Request booking | `chat-request-booking` | 185 |
+| Button | sending ? "…" : "Send" | `chat-send` | 200 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -256,17 +257,16 @@ Shows: `PetForm`
 
 ### `/owner/sitters/[sitterId]` — [app/owner/sitters/[sitterId]/index.tsx](../../frontend/app/owner/sitters/[sitterId]/index.tsx)
 
-A sitter as owners see them (phase-03b 3B.2): intro + the next open days from get_sitter_schedule (#120: openings here, the month and each day on their own pages). Book → 3B.3.
+A sitter as owners see them (phase-03b 3B.2, 3D.3): the intro, and See schedule for the openings and closed days (#120: the month and each day on their own pages). Start chat is the one action; the stay a search carried stays with it.
 
-Shows: `SitterActions` · `NextOpenings` · `StarRating`
+Shows: `SitterActions` · `StarRating`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 108 |
-| EmptyState | Couldn't load this sitter | — | 116 |
-| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 139 |
-| EmptyState | Couldn't load the schedule | — | 179 |
-| Button | See full month | `sitter-see-month` | 192 |
+| EmptyState | Sitter not found | — | 86 |
+| EmptyState | Couldn't load this sitter | — | 94 |
+| TextButton | favorite ? "★ Favorite — shows first when you book" : "☆ Add to favorites" | `sitter-favorite` | 116 |
+| Button | See schedule | `sitter-see-schedule` | 151 |
 
 ### `/owner/sitters/[sitterId]/calendar` — [app/owner/sitters/[sitterId]/calendar.tsx](../../frontend/app/owner/sitters/[sitterId]/calendar.tsx)
 
@@ -276,19 +276,19 @@ Shows: `SitterActions` · `SlotCalendar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 47 |
-| EmptyState | Couldn't load the schedule | — | 72 |
+| EmptyState | Sitter not found | — | 49 |
+| EmptyState | Couldn't load the schedule | — | 74 |
 
 ### `/owner/sitters/[sitterId]/day/[date]` — [app/owner/sitters/[sitterId]/day/[date].tsx](../../frontend/app/owner/sitters/[sitterId]/day/[date].tsx)
 
-#120 (D): one day of a sitter's schedule as big rows, with Ask and Book. Back returns where it came from.
+#120 (D): one day of a sitter's schedule as big rows, with Start chat. Back returns where it came from.
 
 Shows: `SitterActions` · `SlotRows`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Sitter not found | — | 45 |
-| EmptyState | Couldn't load this day | — | 58 |
+| EmptyState | Sitter not found | — | 46 |
+| EmptyState | Couldn't load this day | — | 59 |
 
 ### `/owner/snap` — [app/owner/(tabs)/snap.tsx](../../frontend/app/owner/(tabs)/snap.tsx)
 
@@ -914,12 +914,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Stepper | Meet & Greet day | `meet-day` | 119 |
 | Stepper | Meet & Greet time | `meet-time` | 127 |
 
-### NextOpenings — [components/NextOpenings.tsx](../../frontend/components/NextOpenings.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | ``${dayTitle(day)}, ${slotsText} open`` | ``sitter-opening-${day}`` | 35 |
-
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1087,8 +1081,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Ask before booking | `ask-about-stay` | 33 |
-| Button | Book | `book-this-sitter` | 34 |
+| Button | opening ? "Opening…" : "Start chat" | `start-chat` | 38 |
 
 ### SitterAnswersForm — [components/SitterAnswersForm.tsx](../../frontend/components/SitterAnswersForm.tsx)
 
@@ -1322,4 +1315,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-383 actions · 382 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+382 actions · 381 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

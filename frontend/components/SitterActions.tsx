@@ -1,51 +1,46 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { InquirySheet } from "./InquirySheet";
-import { dayTitle } from "./SlotRows";
 import { Button } from "./ui/Button";
-import { addDays, zonedToIso } from "../features/schedule/dates";
+import { Stay, openChatThread } from "../features/chat/chatApi";
 import { SitterProfileView } from "../features/sitters/sitterApi";
+import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 type Props = {
   sitter: SitterProfileView;
-  /** A day page: Book starts the form on this day (drop-off at `dropTime`, pick-up the next day). */
-  day?: string;
-  dropTime?: string;
+  /** The stay from the search (or the day being looked at): it becomes the first card of the chat. */
+  stay?: Stay;
 };
 
-/** Ask before booking · Book, pinned under a sitter's profile, month and day pages. */
-export function SitterActions({ sitter, day, dropTime = "09:00" }: Props) {
+/** Start chat, pinned under a sitter's profile, schedule and day pages: questions and booking both happen in the chat. */
+export function SitterActions({ sitter, stay }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const [asking, setAsking] = useState(false);
-  const book = () => {
-    const stay = day ? `&drop=${encodeURIComponent(zonedToIso(day, dropTime))}&pick=${encodeURIComponent(zonedToIso(addDays(day, 1), "17:00"))}` : "";
-    router.push(`/owner/bookings/new?sitter=${sitter.id}${stay}`);
+  const errorDialog = useErrorDialog();
+  const [opening, setOpening] = useState(false);
+
+  const start = async () => {
+    if (opening) return;
+    setOpening(true);
+    try {
+      router.push(`/chat/${await openChatThread(sitter.id, stay)}`);
+    } catch (e) {
+      errorDialog.show({ title: "Couldn't open the chat", message: (e as Error).message, onRetry: () => void start() });
+    } finally {
+      setOpening(false);
+    }
   };
+
   return (
-    <>
-      <View style={styles.footer}>
-        {/* FB-33: asking first reads as "before booking", next to Book. Book stays the one filled button. */}
-        <View style={styles.actions}>
-          <Button label="Ask before booking" variant="secondary" onPress={() => setAsking(true)} style={styles.action} testID="ask-about-stay" />
-          <Button label="Book" onPress={book} style={styles.action} testID="book-this-sitter" />
-        </View>
-        <Text style={styles.hint}>
-          {day ? `${dayTitle(day)} is filled in when you book.` : "Nothing is booked until you send a request."}
-        </Text>
-      </View>
-      <InquirySheet visible={asking} onClose={() => setAsking(false)} sitter={sitter} />
-    </>
+    <View style={styles.footer}>
+      <Button label={opening ? "Opening…" : "Start chat"} onPress={() => void start()} disabled={opening} testID="start-chat" />
+    </View>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     footer: { padding: theme.spacing.md, maxWidth: 480, width: "100%", alignSelf: "center" },
-    actions: { flexDirection: "row", gap: theme.spacing.sm },
-    action: { flex: 1 },
-    hint: { marginTop: theme.spacing.xs, fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
   });

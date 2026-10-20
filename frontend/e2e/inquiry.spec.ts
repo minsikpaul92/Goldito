@@ -53,7 +53,9 @@ function dayFromToday(n: number): string {
 }
 
 test.describe("ask before booking (FB-33)", () => {
-  test("the profile reads Ask before booking next to Book, and the dates show the sitter's days for these pets", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("the profile reads Ask before booking next to Book, and the dates show the sitter's days for these pets", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     const first = dayFromToday(0);
@@ -92,7 +94,9 @@ test.describe("ask before booking (FB-33)", () => {
 });
 
 test.describe("owner inquiry", () => {
-  test("ask → thread waits for the sitter → the sent reply shows with the quote → Request booking is prefilled", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("ask → thread waits for the sitter → the sent reply shows with the quote → Request booking is prefilled", async ({ page }) => {
     const { db, replyRequests } = await openProfile(page);
     const screen = app(page);
 
@@ -145,7 +149,9 @@ test.describe("owner inquiry", () => {
     expect(db.inquiries[0].booking_id).toBe(db.bookings.at(-1)?.id);
   });
 
-  test("with no question a one-line summary of the trip is sent", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("with no question a one-line summary of the trip is sent", async ({ page }) => {
     const { db } = await openProfile(page);
     const screen = app(page);
     await screen.getByTestId("inquiry-pet-Max").click();
@@ -154,7 +160,9 @@ test.describe("owner inquiry", () => {
     expect(String(db.inquiry_messages[0].body)).toMatch(/^Boarding · .+ – .+ · Max$/);
   });
 
-  test("a reply for dates the sitter can't take points to other sitters, with no Request booking", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("a reply for dates the sitter can't take points to other sitters, with no Request booking", async ({ page }) => {
     const { db } = await openProfile(page);
     const screen = app(page);
     await screen.getByTestId("inquiry-pet-Max").click();
@@ -749,7 +757,9 @@ test.describe("sitter quick replies (FB-34)", () => {
 });
 
 test.describe("asking for days with no room (FB-33 follow-up)", () => {
-  test("Send on days the sitter has no room for asks first: Pick other dates goes back, Ask anyway sends", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("Send on days the sitter has no room for asks first: Pick other dates goes back, Ask anyway sends", async ({ page }) => {
     const { db } = await openProfile(page);
     db.stayShortfall = "2030-10-20 overnight";
     const screen = app(page);
@@ -768,7 +778,9 @@ test.describe("asking for days with no room (FB-33 follow-up)", () => {
     expect(db.inquiries).toHaveLength(1);
   });
 
-  test("with room, Send goes straight through; Change dates asks the same way", async ({ page }) => {
+// The profile no longer has "Ask before booking" (3D.3, #140): questions go through the chat, and the AI draft joins the
+// chat in #142, which replaces these owner-side inquiry flows. Skipped until then.
+  test.fixme("with room, Send goes straight through; Change dates asks the same way", async ({ page }) => {
     const { db } = await openOwnerThread(page);
     const screen = app(page);
     await screen.getByTestId("inquiry-change-dates").click();
