@@ -35,6 +35,7 @@ from app.services.demo_accounts import (
     MAX_AND_MOCHI,
     DemoSet,
     ensure_home_point,
+    ensure_sitter_answers,
     ensure_sitter_rates,
     find_user_id,
 )
@@ -100,6 +101,8 @@ def plan(
         Step("learned tone samples", "tone_samples", {"sitter_id": [sitter_id], "source": LEARNED_SAMPLES, "source_message_id": pair_message_ids or []}),
         Step("bookings", "bookings", pair),
         Step("inquiries", "inquiries", pair),
+        # Their chat (its messages and cards go with it); the reset builds a fresh one for the state.
+        Step("chat", "chat_threads", pair),
         # Notices about a booking went with it; one about another account's booking stays.
         Step("notifications", "notifications", {"user_id": ([owner_id] if owner_side else []) + ([sitter_id] if sitter_side else [])}, nulls=("booking_id",)),
     ]
@@ -352,6 +355,48 @@ def book_for_state(client: Client, owner_id: str, sitter_id: str, today: date, s
     return booking
 
 
+def seed_chat(client: Client, owner_id: str, sitter_id: str, today: date, state: State, booking: str | None) -> None:
+    """One chat for the pair, as the app would have it at this point of the story: the owner's stay card and a short
+    talk, and once there is a booking, its request card and the sitter's answer. Written with the service role, so the
+    chat functions' rules are not involved; the reset has just deleted the pair's earlier chat."""
+    pets = client.table("pets").select("id, name").eq("owner_id", owner_id).execute().data
+    if not pets:
+        return
+    names = " and ".join(p["name"] for p in pets)
+    tz = ZoneInfo(get_settings().app_timezone)
+    drop_off, pick_up = stay_times("confirmed" if state == "pets" else state, datetime.now(tz), today)
+    pet_cards = [{"id": p["id"], "name": p["name"]} for p in sorted(pets, key=lambda p: p["name"])]
+    thread = client.table("chat_threads").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute().data[0]
+
+    def say(sender: str, kind: str, *, body: str | None = None, card: dict | None = None) -> None:
+        client.table("chat_messages").insert(
+            {"thread_id": thread["id"], "sender_id": sender, "kind": kind, "body": body, "card": card}
+        ).execute()
+
+    say(owner_id, "card", card={"type": "stay", "drop_off_at": drop_off.isoformat(), "pick_up_at": pick_up.isoformat(), "pets": pet_cards})
+    say(owner_id, "text", body=f"Hi! Could you take {names} for these days?")
+    say(sitter_id, "text", body="Yes, I have room. I'll send a quote.")
+    if booking is None:
+        return
+    place = {"type": "sitter_home", "note": None}
+    say(
+        owner_id,
+        "card",
+        card={
+            "type": "request",
+            "booking_id": booking,
+            "service_type": "boarding",
+            "note": None,
+            "drop_off_at": drop_off.isoformat(),
+            "drop_off_place": place,
+            "pick_up_at": pick_up.isoformat(),
+            "pick_up_place": place,
+            "pets": pet_cards,
+        },
+    )
+    say(sitter_id, "text", body="Got it, I accepted. Finish the booking when you're ready.")
+
+
 def reset(
     client: Client,
     owner_id: str,
@@ -393,9 +438,14 @@ def reset(
             ensure_home_point(client, "owner", owner_id, demo_set.owner.email)
         if sitter_side:
             ensure_home_point(client, "sitter", sitter_id, demo_set.sitter.email)
+            ensure_sitter_answers(client, sitter_id)
             if not keep_schedule:
                 open_schedule(client, sitter_id, today)
         sync_display_names(client, owner_id, sitter_id, demo_set, scope)
-        if building:
-            book(client, owner_id, sitter_id, today, state, demo_set)
+        booking = book(client, owner_id, sitter_id, today, state, demo_set) if building else None
+        if state != "empty":
+            # The owner's one favorite is the set's sitter; the chat is the pair's talk up to this state.
+            client.table("owner_favorite_sitters").delete().eq("owner_id", owner_id).eq("sitter_id", sitter_id).execute()
+            client.table("owner_favorite_sitters").insert({"owner_id": owner_id, "sitter_id": sitter_id}).execute()
+            seed_chat(client, owner_id, sitter_id, today, state, booking)
     return report
