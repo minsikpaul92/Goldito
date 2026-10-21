@@ -263,6 +263,7 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/pet-mood` | Snap → Mood (12.2) — pet crops from the browser → body-language tags (vision) → server-computed emotion % (sum 100) + one "seems" line; for fun only, nothing saved |
 | `POST /api/ai/pet-photo` | P1 (11.15) — pet photo → breed guesses (≤ 3, owner confirms) + coat color |
 | `POST /api/ai/pet-voice/transcribe` | 11.15 — the recording (audio body) → speech-to-text (Groq Whisper free plan; Token Factory has none) → text the owner can fix; nothing is stored |
+| `POST /api/ai/sitter-voice` | Sitter onboarding — the (fixed) text → picks for the numbered onboarding questions, each with a quote the server checks; recording to text uses `/api/ai/pet-voice/transcribe` (owners and sitters) |
 | `POST /api/ai/pet-voice` | 11.15 — the (fixed) text → profile facts from Nemotron, each with a quote from the text; safety answers are never pre-selected |
 
 Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; checked with `GET /v1/models`) and phase-07/08 docs.

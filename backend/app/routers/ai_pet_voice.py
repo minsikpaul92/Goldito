@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.ai.pet_voice import Facts, RawFacts, validate_facts
 from app.ai.prompts import load_prompt
+from app.ai.sitter_voice import Pick, RawPicks, validate_picks
 from app.deps.auth import CurrentUser, get_current_user
 from app.services import nebius, stt
 
@@ -33,8 +34,9 @@ def _owner_only(user: CurrentUser) -> None:
 
 @router.post("/pet-voice/transcribe", response_model=TranscribeResponse)
 async def pet_voice_transcribe(request: Request, user: CurrentUser = Depends(get_current_user)) -> TranscribeResponse:
-    """The request body is the recording itself, with its audio content type (no form, no file name)."""
-    _owner_only(user)
+    """The request body is the recording itself, with its audio content type (no form, no file name).
+
+    Owners (pet answers) and sitters (onboarding answers) both use it; it only turns sound into text."""
     content_type = request.headers.get("content-type", "")
     if stt.audio_extension(content_type) is None:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Send the recording as audio.")
@@ -127,3 +129,53 @@ def pet_voice(body: PetVoiceRequest, user: CurrentUser = Depends(get_current_use
     options = {q.key: {o.value for o in q.options} for q in body.questions}
     facts = validate_facts(raw, text, options)
     return PetVoiceResponse(**facts.model_dump(), model=result.model, latency_ms=result.latency_ms)
+
+
+class SitterQuestion(BaseModel):
+    key: str = Field(pattern=r"^[a-z][a-z0-9_]{0,23}$")
+    prompt: str = Field(min_length=1, max_length=200)
+    multi: bool = False
+    options: list[Option] = Field(min_length=2, max_length=8)
+
+
+class SitterVoiceRequest(BaseModel):
+    transcript: str = Field(min_length=1, max_length=1500)
+    # Each question with its options and whether several may be picked: the app is the one source of the wording.
+    questions: list[SitterQuestion] = Field(min_length=1, max_length=20)
+
+
+
+
+class SitterVoiceResponse(BaseModel):
+    answers: dict[str, Pick]
+    model: str
+    latency_ms: int
+
+
+@router.post("/sitter-voice", response_model=SitterVoiceResponse)
+def sitter_voice(body: SitterVoiceRequest, user: CurrentUser = Depends(get_current_user)) -> SitterVoiceResponse:
+    """Picks for the sitter's onboarding questions from what they said, each with a quote the server found in the text."""
+    if user.role != "sitter":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only sitters can use this.")
+    text = " ".join(body.transcript.split())
+    if not text:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Say or type something first.")
+
+    context = [
+        {"key": q.key, "question": q.prompt, "multi": q.multi, "options": [{"value": o.value, "label": o.label} for o in q.options]}
+        for q in body.questions
+    ]
+    messages = [
+        {"role": "system", "content": load_prompt("sitter_voice/system.md")},
+        {"role": "user", "content": f"{json.dumps({'questions': context}, ensure_ascii=False)}\n\n<transcript>\n{text}\n</transcript>"},
+    ]
+    try:
+        raw, result = nebius.chat_json(
+            "fast", messages, RawPicks, endpoint="sitter-voice", timeout=EXTRACT_TIMEOUT_S, max_tokens=700
+        )
+    except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
+        code = status.HTTP_503_SERVICE_UNAVAILABLE if isinstance(exc, nebius.AIUnavailable) else status.HTTP_502_BAD_GATEWAY
+        raise HTTPException(status_code=code, detail="We couldn't read that just now. You can answer the questions yourself.") from exc
+
+    options = {q.key: ({o.value for o in q.options}, q.multi) for q in body.questions}
+    return SitterVoiceResponse(answers=validate_picks(raw, text, options), model=result.model, latency_ms=result.latency_ms)

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { SitterAnswersForm } from "../components/SitterAnswersForm";
 import { EmptyState } from "../components/ui/EmptyState";
 import { LoadingView } from "../components/ui/LoadingView";
-import { Screen } from "../components/ui/Screen";
 import { loadDraft, saveDraft } from "../features/onboarding/onboardingApi";
 import { OnboardingDraft, emptyDraft } from "../features/onboarding/questions";
 import { useSession } from "../providers/SessionProvider";
@@ -64,7 +63,7 @@ export default function SitterOnboarding() {
   };
 
   return (
-    <Screen testID="sitter-onboarding">
+    <>
       <SitterAnswersForm
         draft={draft}
         onChange={setDraft}
@@ -72,6 +71,6 @@ export default function SitterOnboarding() {
         onFinish={() => void save(draft)}
         saving={saving}
       />
-    </Screen>
+    </>
   );
 }

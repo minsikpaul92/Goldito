@@ -12,7 +12,8 @@ import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type Props = {
-  petName: string;
+  /** The box's hint, e.g. "What is Max like?". */
+  placeholder: string;
   /** The (possibly fixed) text, ready to be read for facts. The screen does the rest and moves on. */
   onUse: (text: string) => Promise<void>;
   /** A failure of the reading step, to show under the text. */
@@ -30,7 +31,7 @@ const clock = (ms: number) => `${Math.floor(ms / 60_000)}:${String(Math.floor((m
  * "Tell us about {name}": a big microphone button, the words it heard (the owner can fix them), or typing instead.
  * The recording goes to a speech-to-text service once and is not kept (11.15 §6.2).
  */
-export function VoiceStep({ petName, onUse, error, busy }: Props) {
+export function VoiceStep({ placeholder, onUse, error, busy }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [phase, setPhase] = useState<Phase>("idle");
@@ -123,8 +124,8 @@ export function VoiceStep({ petName, onUse, error, busy }: Props) {
           value={text}
           onChangeText={(value) => setText(value.slice(0, MAX_TEXT))}
           multiline
-          placeholder={`What is ${petName} like?`}
-          accessibilityLabel={`About ${petName}`}
+          placeholder={placeholder}
+          accessibilityLabel="What you said"
           testID="own-voice-text"
         />
       ) : (

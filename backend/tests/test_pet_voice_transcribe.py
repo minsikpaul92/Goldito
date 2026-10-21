@@ -63,9 +63,9 @@ def test_safari_recordings_are_mp4(client, monkeypatch, groq_key) -> None:
     assert sent["files"]["file"][0] == "voice.m4a"
 
 
-def test_only_owners_may_send_a_recording(client, monkeypatch, groq_key) -> None:
+def test_owners_and_sitters_may_send_a_recording_but_not_without_signing_in(client, monkeypatch, groq_key) -> None:
     monkeypatch.setattr(stt.httpx, "post", lambda *a, **k: FakeResponse())
-    assert client.post("/api/ai/pet-voice/transcribe", content=AUDIO, headers=headers(sitter_token())).status_code == 403
+    assert client.post("/api/ai/pet-voice/transcribe", content=AUDIO, headers=headers(sitter_token())).status_code == 200
     assert client.post("/api/ai/pet-voice/transcribe", content=AUDIO, headers={"Content-Type": "audio/webm"}).status_code == 401
 
 

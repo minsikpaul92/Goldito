@@ -396,7 +396,7 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-step-s:s1")).toBeVisible();
     await expect(screen.getByTestId("own-heard-safety")).toContainText("We heard");
     await expect(screen.getByTestId("own-safe-once")).toContainText("✨ suggested");
-    await expect(screen.getByTestId("own-safe-once")).not.toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId("own-safe-once")).not.toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId("own-safe-once").click();
     for (const key of ["s2", "s3", "s4", "s5"]) {
       await expect(screen.getByTestId(`own-step-s:${key}`)).toBeVisible();
@@ -405,7 +405,7 @@ test.describe("owner onboarding", () => {
     // The food it heard is a chip to tap, not added.
     await expect(screen.getByTestId("own-step-foods")).toBeVisible();
     await expect(screen.getByTestId("own-food-chicken")).toContainText("✨ suggested");
-    await expect(screen.getByTestId("own-food-chicken")).not.toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId("own-food-chicken")).not.toHaveAttribute("aria-pressed", "true");
     await expect(screen.getByTestId("own-next")).toBeDisabled();
     await screen.getByTestId("own-food-chicken").click();
     await screen.getByTestId("own-next").click();
@@ -480,7 +480,7 @@ test.describe("owner onboarding", () => {
 
     await expect(screen.getByTestId("own-title")).toHaveText("What color is Pip?");
     await expect(screen.getByTestId("own-coat-white")).toContainText("✨ suggested");
-    await expect(screen.getByTestId("own-coat-white")).not.toHaveAttribute("aria-selected", "true");
+    await expect(screen.getByTestId("own-coat-white")).not.toHaveAttribute("aria-pressed", "true");
     await screen.getByTestId("own-coat-cream").click();
     for (const id of ["age", "weight", "petIntro"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
