@@ -12,12 +12,23 @@ import { Card } from "./ui/Card";
  * The owner's review of a finished stay, on the sitter's booking (FB-29). The "left you N ⭐" notice opens this
  * page, so the stars and comment stay readable after the notice is gone. Read through RLS (the stay's sitter).
  */
-export function ReceivedReview({ bookingId, ownerName }: { bookingId: string; ownerName: string }) {
+export function ReceivedReview({
+  bookingId,
+  ownerName,
+  review: given,
+}: {
+  bookingId: string;
+  ownerName: string;
+  /** The chat already reads (and watches) the review: use it instead of loading it here. */
+  review?: Review | null;
+}) {
   const styles = useThemedStyles(makeStyles);
-  const [review, setReview] = useState<Review | null | undefined>(undefined);
+  const [loaded, setReview] = useState<Review | null | undefined>(undefined);
+  const review = given !== undefined ? given : loaded;
 
   useFocusEffect(
     useCallback(() => {
+      if (given !== undefined) return;
       let live = true;
       getReview(bookingId)
         .then((r) => live && setReview(r))
@@ -25,7 +36,7 @@ export function ReceivedReview({ bookingId, ownerName }: { bookingId: string; ow
       return () => {
         live = false;
       };
-    }, [bookingId]),
+    }, [bookingId, given]),
   );
 
   if (review === undefined) return null;

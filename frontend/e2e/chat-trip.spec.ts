@@ -366,3 +366,78 @@ test.describe("the pets changing hands in the chat", () => {
   });
 });
 
+test.describe("reviews in the chat", () => {
+  /** The pets are home: both handoffs are done. */
+  function finished(db: MockDb) {
+    seed(db);
+    for (const h of db.booking_handoffs) h.completed_at = new Date(Date.now() - HOUR).toISOString();
+    // the stay card the chat started with: once the stay is over it asks for nothing (no Send quote, no Request booking)
+    db.chat_messages.push({
+      id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, created_at: "2026-10-10T09:59:00.000Z",
+      card: { type: "stay", drop_off_at: "2030-10-24T13:00:00Z", pick_up_at: "2030-10-27T21:00:00Z", pets: [{ id: MAX, name: "Max" }] },
+    });
+  }
+
+  test("after Returned the owner reviews the sitter right in the chat and hearts her; the sitter reads it and keeps a private note", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    finished(db);
+
+    let screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-stay-home")).toContainText("Home safe");
+    await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-review")).toContainText("How was Max's stay with Chloe?");
+    await expect(screen.getByTestId("review-send")).toBeDisabled(); // no stars yet
+    await screen.getByTestId("review-rating-4").click();
+    await screen.getByTestId("review-comment").fill("Max came home happy and tired!");
+    await screen.getByTestId("review-send").click();
+
+    // The form turns into the review, and the heart is there to add her as a favorite.
+    await expect(screen.getByTestId("chat-review")).toContainText("Your review");
+    await expect(screen.getByTestId("chat-review")).toContainText("Max came home happy and tired!");
+    expect(db.reviews).toHaveLength(1);
+    expect(db.reviews[0]).toMatchObject({ rating: 4, comment: "Max came home happy and tired!" });
+    await expect(screen.getByTestId("favorite-heart")).toContainText("Add Chloe to favorites");
+    await screen.getByTestId("favorite-heart").click();
+    await expect(screen.getByTestId("favorite-heart")).toContainText("Favorite");
+    expect(db.owner_favorite_sitters).toHaveLength(1);
+    await screen.getByTestId("favorite-heart").click(); // and off again
+    await expect(screen.getByTestId("favorite-heart")).toContainText("Add Chloe to favorites");
+    expect(db.owner_favorite_sitters).toHaveLength(0);
+
+    // Coming back later it is still the review, not the form.
+    await page.reload();
+    await expect(screen.getByTestId("chat-review")).toContainText("Your review");
+    await expect(screen.getByTestId("review-send")).toHaveCount(0);
+
+    // The sitter reads Robert's review in her chat and writes her own private note about him.
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("received-review")).toContainText("Max came home happy and tired!");
+    await expect(screen.getByTestId("chat-send-quote")).toHaveCount(0);
+    await expect(screen.getByTestId("favorite-heart")).toHaveCount(0); // not hers to see or press
+    await screen.getByTestId("owner-note-start").click();
+    await screen.getByTestId("owner-note-rating-5").click();
+    await screen.getByTestId("owner-note-comment").fill("Easy handoff.");
+    await screen.getByTestId("owner-note-save").click();
+    await expect(screen.getByTestId("owner-note")).toContainText("Only you can see this");
+    expect(db.sitter_owner_notes).toHaveLength(1);
+
+    // The owner never sees the sitter's note.
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("owner-note")).toHaveCount(0);
+  });
+
+  test("the sitter's chat shows the owner's review as soon as it is written, and no review cards before Returned", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db); // not returned yet
+    let screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-bubble-me")).toBeVisible();
+    await expect(screen.getByTestId("chat-review")).toHaveCount(0);
+
+    for (const h of db.booking_handoffs) h.completed_at = new Date(Date.now() - HOUR).toISOString();
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("received-review")).toContainText("Robert hasn't left a review yet.");
+    db.reviews.push({ id: "r1", booking_id: BOOKING, owner_id: OWNER.id, sitter_id: SITTER.id, rating: 5, comment: "Wonderful care", created_at: new Date().toISOString() });
+    await expect(screen.getByTestId("received-review")).toContainText("Wonderful care", { timeout: 15_000 });
+  });
+});
+

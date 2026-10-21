@@ -112,6 +112,7 @@
 | **채팅 안의 트립 (3D.8, #145 1단계)** — 이동하는 쪽 Start trip, 양쪽에 on the way · N min away · arrived 카드, 도착 인사 한 번 누르기. 기존 Trip 화면으로 연결 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 안의 케어 카드 (3D.8, #145 2단계)** — 사진 요청(Ask for a photo)과 사진 답장 + 한 줄 캡션, 저녁 알림장 카드가 Diary로 연결. 마이그레이션 없음 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 안의 인계 (3D.8, #145 3단계 · #169)** — 기본 방식(오너 마지막 요청 · 시터 온보딩 답), 드롭오프 + 픽업을 한 쌍으로 제안 · 한 번에 수락, 5분 전 트립 알림(`014r` 호스팅 적용 2026-10-20), 펫 Received · Returned를 채팅 카드로 | `014r` (호스팅 적용) | 🤖 `chat-handoff` · `chat-trip` e2e · SQL `rls_smoke` | 사람 확인 대기 |
+| **채팅 안의 종료 · 리뷰 (3D.9, #146)** — Home safe 아래 오너의 리뷰 폼 · 하트, 시터가 읽는 오너 리뷰 + 비공개 노트, 끝난 스테이의 푸터 정리. 리뷰 폼은 예약 화면과 공유 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 컨트롤 (#235)** — 견적 초안 검토(수수료 줄), Final quote 이름, 한 줄 칩, + 메뉴(카드 직접 보내기), 오너 동의가 시터 채팅에 바로 표시, 입력에 맞는 칩(1.5초 멈춤) | 없음 | 🤖 `chat` · `chat-trip` e2e · pytest | 사람 확인 대기 |
 | **채팅 안 견적 (3D.6, #143)** — 시터가 한 번 눌러 견적 카드(서버 계산), 추가 수수료 줄(시터 추가 → 오너 Accept/Decline), 오너 Confirm, 새 견적은 이전 것을 Replaced로. 합계는 DB 함수가 계산하고 모델은 가격을 쓰지 않음. 예약 · 결제 연결은 #144 | `014n` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
@@ -881,6 +882,7 @@
 | CHAT-34 | 오너의 "I'd like to book" (#235): 시터의 채팅이 열려 있는 동안 오너가 동의하면 새로고침 없이(폴링 5초 안, Realtime) 동의 카드가 "Booked, you both agreed"로 바뀜. 오너 쪽도 같은 카드에 "✓ Robert would like to book" | 🤖 `chat` | 사람 확인 대기 (두 폰) |
 | CHAT-35 | 입력에 맞는 칩 (#235): 메시지창에 글을 쓰다 **1.5초** 멈추면 평소 칩이 사라진 자리에 스피너("Finding replies…") → 쓰는 글에 맞는 칩 2–3개(예: "can you take them early" → 조기 픽업 · 목줄 같은 질문). 쓰는 도중에는 아무것도 묻지 않음. 칩을 누르면 **쓴 글을 살린 초안**이 상자에 들어가고(보내는 건 사람), 초안을 넣은 뒤에는 다시 묻지 않음. 상자를 비우면 평소 칩이 돌아옴. 실패하면 칩 없음(추측 안 함), 비우면 평소 칩. 서버: `/api/ai/chat-chips`에 `typed`(≤300자)를 주면 이메일 · 4자리 이상 숫자(전화 · 출입 코드)를 지운 뒤에만 프롬프트로 가고, 행동(action)은 없음, 로그에는 글 내용 없이 길이만 + 이름이 가려진 칩. 가격 · 날짜는 계속 서버가 넣음 | 🤖 `chat` e2e · pytest `test_ai_chat` | 사람 확인 대기 (실제 모델로 칩 품질 👤) |
 | CHAT-36 | 펫 인계도 채팅에서 (3D.8, #145): 결제한 확정 부킹에서 드롭오프 2시간 전부터 시터 채팅에 **"Max & Mochi arrived?" + Received**(그 전엔 없음, 오너에겐 없음). 오너가 이미 도착했다면 카드는 하나로 합쳐져 **"Robert has arrived 🚗 · 7:16 PM"**(도착 시각) 아래에 **Track Robert** · **Received**(· 인사 버튼)가 같이 보임. 누르면 "Max & Mochi are with you 🐾 · Received …" + **Returned**로 바뀌고 오너 채팅에는 "… are with Chloe 🐾"(누를 것 없음). **Returned**는 예약 화면과 같은 Return 시트(남은 오늘 할 일 · 오늘 알림장 안 보냄 경고, 픽업 30분 전보다 이르면 빨간 Return과 "really?"), 확인하면 "Home safe 🏠"(시터 "… went home with Robert", 오너 "… are back with you")이고 오너에게 알림, Life Record는 뒤에서 생성. 트립 카드의 도착 인사 → Received → 케어 카드 → Returned → Home safe가 한 채팅에서 이어짐. 종료 · 리뷰는 #146 | 🤖 `chat-trip` · `completion` | 사람 확인 대기 (두 계정) |
+| CHAT-37 | 종료와 리뷰도 채팅에서 (3D.9, #146): Returned 뒤 두 채팅에 "Home safe 🏠" 아래로 리뷰 카드. **오너**: "How was Biscuit and Luna's stay with Paul?" + 별점 · 별마다 한 번에 고르는 문구 · 한마디(선택) · **Send review**(한 스테이에 한 번, 시터에게 알림). 보내면 같은 자리가 **"Your review"**(별 · 코멘트)로 바뀌고 그 아래 **하트**(♡ "Add Paul to favorites" / ♥ "Favorite", 누르면 바로 저장 · 다시 누르면 해제, 시터는 모름). 다시 열어도 폼이 아니라 리뷰가 보임. **시터**: "Peter's review"(오너가 쓰기 전엔 "hasn't left a review yet", 쓰면 10초 안에 새로고침 없이 별 · 코멘트가 보임)와 **"How was it working with Peter?" 🔒 Only you can see this** 비공개 노트(별 · 문구 · 한마디, 오너는 절대 못 봄, 하트는 없음). 끝난 스테이의 채팅 맨 아래에는 **Send quote · Request booking 버튼이 없음**(새 Stay 카드가 생기면 다시 나옴). 예약 화면의 리뷰 화면은 같은 폼을 쓰고 그대로 동작 | 🤖 `chat-trip` · `completion` · `handoff` | 사람 확인 대기 (두 계정, 데모 계정으로 한 번 눌러 봄 2026-10-20) |
 
 ### 3.37 제안 카드에 Decline 없음 (PROP) · #169
 
@@ -906,6 +908,14 @@
 | MGCARD-2 | 화상으로 정해진 카드 | "Go over together" 체크리스트가 없음. 대면이면 그대로 있음 | 🤖 `meet-greet` | ➖ |
 | MGCARD-3 | 정해진 시간 **전**에 **Done, we met** (카드 또는 채팅 푸터) | "It is not time yet / Did you already meet …?" 확인. **Cancel**은 아무것도 안 바뀜, **Yes, we met**이면 Met ✓. "After you meet, tap Done here." 줄은 없음. 양쪽이 둘 다 눌러도 오류 없음 | 🤖 `meet-greet` · `chat` · SQL `rls_smoke`(014s) | ➖ |
 | MGCARD-4 | Schedule Meet & Greet 시트에서 날짜 · 시간 누르기 | 날짜는 **달력**, 시간은 **시계**(분 단위, 예: 3:07 PM). −/+는 빠른 조정용으로 남음 | 🤖 `meet-greet` | ➖ |
+
+### 3.40 일찍 찾아가면 시터 일정이 다시 열림 (EARLY) · #232 · *사전: 호스팅 DB에 `014u` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| EARLY-1 | 여러 날 숙박을 맡기고(Received) 첫날 바로 **Returned** → 시터 Schedule, 다른 오너의 검색 | 반납 뒤의 날짜 · 칸이 다시 비어 있음(남은 자리가 돌아옴). 반납 시각이 들어 있는 칸과 그 전 칸은 그대로 | SQL `rls_smoke`(014u) | ➖ |
+| EARLY-2 | 약속한 픽업 시각이 지난 뒤 Returned | 아무 칸도 바뀌지 않음 | SQL `rls_smoke`(014u) | ➖ |
+| EARLY-3 | `014u` 적용 직후 호스팅 DB | 이미 일찍 반납된 예약(예: `c717fdcc…`)의 반납 뒤 칸도 한 번에 정리됨 | **👤** (읽기 전용 확인) | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
