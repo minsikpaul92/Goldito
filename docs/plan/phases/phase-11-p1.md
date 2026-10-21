@@ -46,6 +46,19 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ---
 
+### 11.12 사진 → 픽셀 머리 (PR #261, 2026-10-21)
+
+오너의 펫 사진에서 16x16 픽셀 펫을 만든다. 프리셋(종 × 털색)이 그 펫처럼 안 보일 때를 위한 것. AI 생성은 하지 않는다(브라우저에서 MediaPipe 오리기 + 계산만).
+
+| Step | 내용 | 확인 |
+| :--- | :--- | :--- |
+| **PH.1** ✅ | `features/pets/sprites/pixelize.ts`: 오린 펫(`features/snap/cutout.ts`의 `segmentAt` 마스크) → 위쪽 정사각형으로 자르기(머리 쪽) → 14x14 칸 평균색 → median cut으로 6색 → 1칸 어두운 외곽선 → `{ v: 1, palette, rows }`(약 350자, `pets.profile`에 들어갈 크기). `PetSprite`의 `head` 프롭이 프리셋 대신 그린다. dev 갤러리 `/dev/sprites` 맨 위 **From a photo**(샘플 사진이나 내 사진) | 🤖 `pet-sprite.spec.ts`(저장 모양 검사, 테스트 훅으로 사진 → 머리) · 실제 MediaPipe로 샘플 사진 확인 |
+| PH.2 | 오너 Pet 페이지에서 **Make from photo**: 펫 대표 사진(`pet_photos`) 또는 새 사진 → 미리보기 → Save → `pets.profile.pixel_head`. 다시 만들기 · 프리셋으로 되돌리기. 오너가 `pets.profile`을 직접 못 고치면 RPC 하나(다음 빈 이름, `015b` 뒤) | e2e(목 Supabase) |
+| PH.3 | 저장된 머리를 어디서나: 오너 Pet 페이지, 시터 Home 펫 방(`usePetCoat` → 털색과 머리를 함께 읽기). 기분 얼굴은 사진 위에 못 그리므로 기분 글자 · 흔들림 그대로, sleepy만 Z | e2e `pet-room` · `pet-room-sitter` |
+| PH.4 | test-guide TAMA-10 사람 확인(실제 사진 여러 장, 개 · 고양이), TODO 정리 | 사람 |
+
+한계: 옆모습 전신 사진은 몸까지 들어간다(머리 감지 없음). 얼굴 감지로 머리만 자르기는 나중.
+
 ## Definition of Done (DoD)
 
 1. 11.1 ✅: 두 브라우저에서 요청 → 게시 → 자동 완료까지 새로고침 없이 (사람 확인은 test-guide PHOTO)
