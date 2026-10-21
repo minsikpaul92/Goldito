@@ -20,19 +20,21 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatQuoteCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 195 |
-| EmptyState | Chat not found | — | 203 |
-| Pressable | — | `chat-stage` | 369 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 419 |
-| Button | Send quote | `chat-send-quote` | 426 |
-| TextButton | Send quote | `chat-send-quote` | 429 |
-| Pressable | — | `chat-action-chip` | 447 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 458 |
-| Pressable | Send | `chat-send` | 496 |
+| EmptyState | Couldn't load this chat | — | 228 |
+| EmptyState | Chat not found | — | 236 |
+| Pressable | — | `chat-stage` | 461 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 516 |
+| Button | Send quote | `chat-send-quote` | 523 |
+| TextButton | Send quote | `chat-send-quote` | 526 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 547 |
+| Pressable | — | `chat-action-chip` | 568 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 579 |
+| Pressable | Send a card | `chat-plus` | 595 |
+| Pressable | Send | `chat-send` | 628 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -80,18 +82,18 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChipSuggestions` · `FinishedStay` 
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 143 |
-| EmptyState | Couldn't load this booking | — | 150 |
-| Tag | `b.label` | — | 213 |
-| Tag | Paid | `paid-chip` | 216 |
-| Button | I'd like to book | `agree-booking` | 237 |
-| Button | Finish booking | `open-checkout` | 265 |
-| CheckRow | `item` | ``pack-${item}`` | 291 |
-| Button | Find a new sitter | `find-new-sitter` | 352 |
-| Button | Change time or place | `change-booking` | 359 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 367 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 379 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 385 |
+| EmptyState | Booking not found | — | 144 |
+| EmptyState | Couldn't load this booking | — | 151 |
+| Tag | `b.label` | — | 221 |
+| Tag | Paid | `paid-chip` | 224 |
+| Button | I'd like to book | `agree-booking` | 245 |
+| Button | Finish booking | `open-checkout` | 273 |
+| CheckRow | `item` | ``pack-${item}`` | 299 |
+| Button | Find a new sitter | `find-new-sitter` | 360 |
+| Button | Change time or place | `change-booking` | 367 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 375 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 387 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 393 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -393,32 +395,28 @@ Shows: `BookingCard` · `ChatList`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 149 |
-| EmptyState | Couldn't load this booking | — | 156 |
-| Tag | `b.label` | — | 248 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 308 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 313 |
-| TextButton | Change time or place | `change-booking` | 321 |
-| Tag | `a` | — | 350 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 377 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 392 |
-| TextButton | Decline | `decline-booking` | 400 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 411 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 421 |
-| TextButton | Cancel booking | `cancel-booking` | 441 |
-| Sheet | Return | `return-sheet` | 446 |
-| Button | Return | `return-confirm` | 453 |
-| Button | Cancel | `return-cancel` | 466 |
-| TextButton | Send today's note first | `return-send-note` | 486 |
-| Sheet | Cancel booking | `cancel-sheet` | 498 |
-| Button | Cancel booking | `cancel-confirm` | 504 |
-| Sheet | Decline request | `decline-sheet` | 541 |
-| Button | Decline request | `decline-confirm` | 547 |
-| TextButton | Suggest another time instead | `decline-suggest` | 586 |
+| EmptyState | Booking not found | — | 148 |
+| EmptyState | Couldn't load this booking | — | 155 |
+| Tag | `b.label` | — | 251 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 311 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 316 |
+| TextButton | Change time or place | `change-booking` | 324 |
+| Tag | `a` | — | 353 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 380 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 395 |
+| TextButton | Decline | `decline-booking` | 403 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 414 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 424 |
+| TextButton | Cancel booking | `cancel-booking` | 442 |
+| Sheet | Cancel booking | `cancel-sheet` | 461 |
+| Button | Cancel booking | `cancel-confirm` | 467 |
+| Sheet | Decline request | `decline-sheet` | 505 |
+| Button | Decline request | `decline-confirm` | 511 |
+| TextButton | Suggest another time instead | `decline-suggest` | 550 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -668,6 +666,21 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | `chat-payment-open` | 84 |
 
+### ChatCareCards — [components/ChatCareCards.tsx](../../frontend/components/ChatCareCards.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Send photo | `chat-photo-send` | 64 |
+| Button | Open diary | `chat-diary-open` | 87 |
+| Button | Ask for a photo | `chat-ask-photo` | 105 |
+
+### ChatHandoffCard — [components/ChatHandoffCard.tsx](../../frontend/components/ChatHandoffCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Accept | `chat-handoff-accept` | 134 |
+| TextButton | Suggest another | `chat-handoff-suggest` | 135 |
+
 ### ChatHeaderTitle — [components/ChatHeaderTitle.tsx](../../frontend/components/ChatHeaderTitle.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -681,23 +694,48 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 28 |
 
+### ChatPlusMenu — [components/ChatPlusMenu.tsx](../../frontend/components/ChatPlusMenu.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Send a card | `chat-plus-menu` | 25 |
+| Pressable | — | ``chat-plus-${item.id}`` | 27 |
+
 ### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Decline | `quote-extra-decline` | 80 |
-| TextButton | Accept | `quote-extra-accept` | 81 |
-| TextButton | Add a fee | `quote-add-fee` | 97 |
-| Button | Confirm quote | `quote-confirm` | 99 |
+| TextButton | Decline | `quote-extra-decline` | 82 |
+| TextButton | Accept | `quote-extra-accept` | 83 |
+| TextButton | Add a fee | `quote-add-fee` | 99 |
+| Button | Confirm quote | `quote-confirm` | 101 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Send quote | `send-quote-sheet` | 67 |
-| Button | Send quote | `send-quote-submit` | 72 |
-| Sheet | Add fee | `add-fee-sheet` | 122 |
-| Button | Add fee | `add-fee-submit` | 127 |
+| Sheet | final ? "Send final quote" : "Send quote" | `send-quote-sheet` | 129 |
+| Button | final ? "Send final quote" : "Send quote" | `send-quote-submit` | 135 |
+| TextButton | Remove | `draft-fee-remove` | 168 |
+| TextButton | Add fee | `draft-fee-add` | 190 |
+| Sheet | Add fee | `add-fee-sheet` | 231 |
+| Button | Add fee | `add-fee-submit` | 236 |
+
+### ChatStayCard — [components/ChatStayCard.tsx](../../frontend/components/ChatStayCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | Returned | `chat-returned` | 71 |
+| Button | Received | `chat-received` | 102 |
+
+### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | `greeting` | `trip-greet` | 109 |
+| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 133 |
+| Button | Received | `chat-received` | 135 |
+| Button | Start trip | `chat-trip-start-button` | 162 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
@@ -803,12 +841,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `submitLabel` | `change-sheet` | 162 |
-| Button | `submitLabel` | `change-send` | 168 |
-| SegmentedControl | — | `change-kind` | 176 |
-| Stepper | Day | `change-day` | 187 |
-| Stepper | Time | `change-time` | 194 |
-| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 205 |
+| Sheet | `submitLabel` | `change-sheet` | 186 |
+| Button | `submitLabel` | `change-send` | 192 |
+| SegmentedControl | — | `change-kind` | 200 |
+| Stepper | Day | `change-day` | 211 |
+| Stepper | Time | `change-time` | 218 |
+| CheckRow | type === "other" ? "📍 Somewhere else" : placeLabel(type, null, booking, viewer) | ``change-place-${type}`` | 229 |
 
 ### HandoffPicker — [components/HandoffPicker.tsx](../../frontend/components/HandoffPicker.tsx)
 
@@ -1047,13 +1085,22 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${label} day`` | ``request-${kind}-day`` | 166 |
-| Pressable | ``${label} time`` | ``request-${kind}-time`` | 169 |
-| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 178 |
-| SegmentedControl | — | ``request-${kind}-type`` | 183 |
-| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 210 |
-| Button | sending ? "Sending…" : "Send request" | `request-send` | 225 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 239 |
+| Pressable | ``${label} day`` | ``request-${kind}-day`` | 182 |
+| Pressable | ``${label} time`` | ``request-${kind}-time`` | 185 |
+| TextButton | changing[kind] ? "Done" : "Change place" | ``request-${kind}-change`` | 194 |
+| SegmentedControl | — | ``request-${kind}-type`` | 199 |
+| Sheet | sending ? "Sending…" : "Send request" | `request-error` | 226 |
+| Button | sending ? "Sending…" : "Send request" | `request-send` | 241 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``request-pet-${pet.name}`` | 255 |
+
+### ReturnSheet — [components/ReturnSheet.tsx](../../frontend/components/ReturnSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | Return | `return-sheet` | 42 |
+| Button | Return | `return-confirm` | 49 |
+| Button | Cancel | `return-cancel` | 58 |
+| TextButton | Send today's note first | `return-send-note` | 78 |
 
 ### RoleCard — [components/RoleCard.tsx](../../frontend/components/RoleCard.tsx)
 
@@ -1345,4 +1392,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-390 actions · 389 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+406 actions · 405 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

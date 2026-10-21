@@ -12,6 +12,7 @@ import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { ChatPet, postBookingRequestCard } from "../features/chat/chatApi";
+import { loadOwnerDefault, loadSitterWays, openingPlace, saveOwnerDefault } from "../features/chat/handoffDefaults";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { useMyPets } from "../features/pets/useMyPets";
 import { loadRoleProfile } from "../features/profile/profileApi";
@@ -97,6 +98,20 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
       .catch(() => undefined);
   }, [visible, sitterId]);
 
+  // The places open on my usual one (the last request), else the sitter's preference (3D.8 defaults).
+  useEffect(() => {
+    if (!visible || !profile) return;
+    let current = true;
+    Promise.all([loadOwnerDefault(profile.id).catch(() => null), loadSitterWays(sitterId).catch(() => null)]).then(([mine, ways]) => {
+      if (!current) return;
+      const type = openingPlace(mine, ways);
+      setPlaces({ drop: { type, note: "", placed: null }, pick: { type, note: "", placed: null } });
+    });
+    return () => {
+      current = false;
+    };
+  }, [visible, profile, sitterId]);
+
   // My own address, so "my place" says where.
   useEffect(() => {
     if (!visible || !profile) return;
@@ -146,6 +161,7 @@ export function RequestBookingSheet({ visible, onClose, threadId, sitterId, sitt
         serviceType: service,
       });
       await postBookingRequestCard(threadId, bookingId).catch(() => undefined);
+      if (profile && !houseSitting) void saveOwnerDefault(profile.id, places.drop.type).catch(() => undefined);
       toast.show(`Request sent to ${sitterName} 📨`);
       onSent();
       onClose();

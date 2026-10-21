@@ -40,6 +40,7 @@ import {
   getBooking,
   getHandoffDetails,
   proposeHandoff,
+  proposeHandoffPair,
   respondHandoff,
 } from "../../../../lib/bookings";
 import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
@@ -196,6 +197,13 @@ export default function OwnerBookingDetail() {
   const sendChange = async (change: HandoffChange) => {
     try {
       await proposeHandoff(booking.id, change.kind, change.at, change.place);
+    } catch (err) {
+      throw new Error(actionError(err, sitter, petNames));
+    }
+  };
+  const sendPair = async (drop: HandoffChange, pick: HandoffChange) => {
+    try {
+      await proposeHandoffPair(booking.id, drop, pick);
     } catch (err) {
       throw new Error(actionError(err, sitter, petNames));
     }
@@ -436,6 +444,7 @@ export default function OwnerBookingDetail() {
           title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
           submitLabel={`Send to ${sitter}`}
           onSend={sendChange}
+          onSendPair={sendPair}
           onChanged={() => void load()}
           onDone={() => {
             setSheet(null);
