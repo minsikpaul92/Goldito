@@ -109,7 +109,7 @@ test.describe("sitter requests", () => {
     await expect(screen.getByTestId("booking-owner-avatar-initial")).toHaveCount(0);
   });
 
-  test("a first-time request shows custom time and Meet first; the sitter's button is Yes, let's meet", async ({ page }) => {
+  test("a first-time request shows custom time and Meet first; the sitter's button is Next (#170)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "required");
     const { screen, card } = await openRequest(page);
@@ -123,13 +123,13 @@ test.describe("sitter requests", () => {
 
     await card.click();
     await expect(page).toHaveURL(new RegExp(`/sitter/bookings/${BOOKING}$`));
-    await expect(screen.getByTestId("meet-greet")).toContainText("Say \"Yes, let's meet\" to hold these dates");
+    await expect(screen.getByTestId("meet-greet")).toContainText("Tap Next to hold these dates, then meet Robert or agree to skip.");
     await expect(screen.getByTestId("stage-caption")).toHaveText("Your turn");
     await expect(screen.getByTestId("handoff-drop_off")).toContainText("Custom time, outside your hours. Needs your OK.");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("chicken");
     await expect(screen.getByTestId("pet-care-Max")).toContainText("8:00 AM · Breakfast");
     await expect(screen.getByTestId("pet-care-Mochi")).toContainText("No allergies listed");
-    await expect(screen.getByTestId("interest-booking")).toHaveText("Yes, let's meet");
+    await expect(screen.getByTestId("interest-booking")).toHaveText("Next");
     await expect(screen.getByTestId("accept-booking")).toHaveCount(0);
   });
 
@@ -276,6 +276,7 @@ test.describe("sitter requests", () => {
     await expect(card).toContainText("Expired");
     await card.click();
     await expect(screen.getByTestId("accept-booking")).toBeDisabled();
+    await expect(screen.getByTestId("accept-reason")).toHaveText("The pick-up time has passed."); // #170
   });
 
   test("Decline asks first, ends the request and lands it in Past", async ({ page }) => {

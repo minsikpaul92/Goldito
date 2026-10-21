@@ -13,6 +13,8 @@ type QuoteCardData = Extract<ChatCard, { type: "quote" }>;
 type Props = {
   card: QuoteCardData;
   role: "owner" | "sitter";
+  /** Sent after the booking's payment card: the price the owner pays (3D.8, #235). */
+  final?: boolean;
   busy?: boolean;
   onAddFee: () => void;
   onAnswer: (extraId: string, accept: boolean) => void;
@@ -31,7 +33,7 @@ function short(iso: string): string {
  * The sitter's quote in the chat (3D.6): the server's breakdown, the extra fees with the owner's answer on each, and the
  * total. Every number is read from the card; the model never writes a price (D29).
  */
-export function ChatQuoteCard({ card, role, busy, onAddFee, onAnswer, onConfirm }: Props) {
+export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -44,7 +46,7 @@ export function ChatQuoteCard({ card, role, busy, onAddFee, onAnswer, onConfirm 
   return (
     <Card style={card.status === "replaced" ? styles.cardFaded : styles.card} testID="chat-quote-card">
       <View style={styles.row}>
-        <Text style={styles.title}>Quote</Text>
+        <Text style={styles.title} testID="quote-title">{final ? "Final quote" : "Quote"}</Text>
         {card.status === "confirmed" ? <Text style={styles.ok} testID="quote-status">Confirmed</Text> : null}
         {card.status === "replaced" ? <Text style={styles.muted} testID="quote-status">Replaced</Text> : null}
       </View>

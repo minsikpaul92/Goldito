@@ -371,6 +371,75 @@ test.describe("chat hub", () => {
     expect(db.chat_messages).toHaveLength(before + 1);
   });
 
+  test("after a pause in typing the chips follow the text; emptying the box brings the usual chips back; the draft keeps the typed text (#235)", async ({ page }) => {
+    const asked: { typed: unknown[]; drafts: unknown[] } = { typed: [], drafts: [] };
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    await page.route("**/api/ai/chat-chips", async (route) => {
+      const body = route.request().postDataJSON() as { typed?: string };
+      if (body.typed) {
+        asked.typed.push(body);
+        await gate;
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Ask about early pick-up" }, { id: "c1", label: "Ask about the leash" }], for_message_id: "m4", source: "model" }) });
+      }
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }) });
+    });
+    await page.route("**/api/ai/chat-draft", (route) => {
+      asked.drafts.push(route.request().postDataJSON());
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ text: "Could Max be picked up a bit earlier?", source: "model" }) });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+
+    // Typing hides the usual chips; nothing is asked while the text is still changing.
+    await screen.getByTestId("chat-input").fill("can you take them early");
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0);
+    expect(asked.typed).toHaveLength(0);
+    // After 1.5 seconds without typing: a spinner, then chips that fit the text.
+    await expect(screen.getByTestId("chat-chips-loading")).toContainText("Finding replies", { timeout: 4000 });
+    expect(asked.typed).toEqual([{ thread_id: THREAD, typed: "can you take them early" }]);
+    release();
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Ask about early pick-up");
+    await expect(screen.getByTestId("chat-chip-2")).toHaveText("Ask about the leash");
+
+    // A tapped chip goes through the draft step with the typed text; the box gets the draft, nothing is sent.
+    const before = db.chat_messages.length;
+    await screen.getByTestId("chat-chip-1").click();
+    await expect(screen.getByTestId("chat-input")).toHaveValue("Could Max be picked up a bit earlier?");
+    expect(asked.drafts).toEqual([{ thread_id: THREAD, chip: "Ask about early pick-up", typed: "can you take them early" }]);
+    expect(db.chat_messages).toHaveLength(before);
+    expect(asked.typed).toHaveLength(1); // the draft in the box does not ask again
+
+    // Emptying the box brings the usual chips back.
+    await screen.getByTestId("chat-input").fill("");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+  });
+
+  test("when the typed-text ask fails the box just has no chips, and the usual ones return on clearing", async ({ page }) => {
+    let typedAsks = 0;
+    await page.route("**/api/ai/chat-chips", (route) => {
+      const body = route.request().postDataJSON() as { typed?: string };
+      if (body.typed) typedAsks += 1;
+      if (body.typed) return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [{ id: "c0", label: "Yes, I can host" }, { id: "c1", label: "Let me check" }], for_message_id: "m4", source: "model" }) });
+    });
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+    await expect(screen.getByTestId("chat-chip-1")).toBeVisible();
+    await screen.getByTestId("chat-input").fill("anything at all");
+    await expect.poll(() => typedAsks, { timeout: 4000 }).toBe(1);
+    await expect(screen.getByTestId("chat-chips")).toHaveCount(0); // nothing to show: no guess
+    await screen.getByTestId("chat-input").fill("");
+    await expect(screen.getByTestId("chat-chip-1")).toHaveText("Yes, I can host");
+  });
+
   test("chips come back after my own message as follow-ups", async ({ page }) => {
     const asked: unknown[] = [];
     await page.route("**/api/ai/chat-chips", (route) => {
@@ -547,6 +616,62 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("quote-confirm")).toHaveCount(0);
   });
 
+  test("the sitter reviews the quote draft, adds and removes fees, and sends them with the quote", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+
+    // The draft is the server's number; nothing is sent until Send.
+    await screen.getByTestId("chat-send-quote").click();
+    await expect(screen.getByTestId("send-quote-draft")).toContainText("$268.13");
+    await expect(screen.getByTestId("draft-total")).toHaveText("$268.13 CAD");
+    expect(db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "quote")).toHaveLength(0);
+
+    // Two fees go on the draft, one comes off again; the total follows.
+    await screen.getByTestId("draft-fee-labels").getByText("Medication").click();
+    await screen.getByTestId("draft-fee-amount").fill("12.50");
+    await screen.getByTestId("draft-fee-add").click();
+    await screen.getByTestId("draft-fee-labels").getByText("Extra walks").click();
+    await screen.getByTestId("draft-fee-amount").fill("8");
+    await screen.getByTestId("draft-fee-add").click();
+    await expect(screen.getByTestId("draft-fee")).toHaveCount(2);
+    await expect(screen.getByTestId("draft-total")).toHaveText("$288.63 CAD");
+    await screen.getByTestId("draft-fee-remove").last().click();
+    await expect(screen.getByTestId("draft-total")).toHaveText("$280.63 CAD");
+
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toBeHidden();
+    await expect(screen.getByTestId("quote-extra-offered")).toContainText("Medication");
+    await expect(screen.getByTestId("quote-extra-offered")).toHaveCount(1);
+    await expect(screen.getByTestId("quote-total")).toHaveText("$268.13 CAD"); // an offered fee is not in the total yet
+  });
+
+  test("the + menu sends a quote by hand and dims what cannot work yet (#235)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding"] });
+    db.chat_threads.push({ id: THREAD, owner_id: OWNER.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "c0", thread_id: THREAD, sender_id: OWNER.id, kind: "card", body: null, card: STAY_CARD, created_at: "2026-10-10T09:59:00.000Z" });
+    const screen = await openBookings(page, SITTER, "sitter");
+    await screen.getByTestId("sitter-bookings-tabs-chats").click();
+    await screen.getByTestId("chat-row-Robert").click();
+
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-quote")).toContainText("Quote");
+    await expect(screen.getByTestId("chat-plus-meet")).toBeDisabled(); // no booking yet
+    await expect(screen.getByTestId("chat-plus-date")).toBeDisabled();
+    await expect(screen.getByTestId("chat-plus-trip")).toBeDisabled();
+    await screen.getByTestId("chat-plus-quote").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toContainText("Max");
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("quote-title")).toHaveText("Quote");
+  });
+
   test("the owner accepts one fee and declines another: the total follows, and the quote is confirmed after the last answer", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
@@ -595,8 +720,9 @@ test.describe("chat hub", () => {
     await screen.getByTestId("sitter-bookings-tabs-chats").click();
     await screen.getByTestId("chat-row-Robert").click();
     await screen.getByTestId("chat-send-quote").click();
-    await screen.getByTestId("send-quote-submit").click();
-    await expect(screen.getByText("This sitter hasn't set a Boarding price yet.")).toBeVisible();
+    // The draft says why before anything is sent.
+    await expect(screen.getByTestId("send-quote-problem")).toHaveText("This sitter hasn't set a Boarding price yet.");
+    await expect(screen.getByTestId("send-quote-submit")).toBeDisabled();
   });
 
   // 3D.7 / 014o: Meet & Greet, both say yes, the final quote and the payment, all in the chat. The stage comes from the
@@ -673,7 +799,7 @@ test.describe("chat hub", () => {
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
     expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
-    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Yes, let's meet");
+    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Next");
     await screen.getByTestId("chat-next-interest").click();
     await expect(screen.getByTestId("meet-greet")).toBeVisible();
     expect((await circles(screen)).label).toBe("Step 2 of 5");
@@ -685,15 +811,14 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-waiting")).toHaveText("Waiting for Robert");
     expect(db.meetGreetCalls.find((c) => c.fn === "propose_meet_greet")).toBeTruthy();
 
-    // Robert accepts from his footer; after the time has come he says they met. The card is now one line.
+    // Robert accepts from his footer; the footer offers Done right away and asks first while it is early (#229).
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-next-meet")).toHaveText("Accept");
     await screen.getByTestId("chat-next-meet").click();
     await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
-    db.bookings[0].meet_greet_at = new Date(Date.now() - 3_600_000).toISOString();
-    await page.reload();
     await expect(screen.getByTestId("chat-next-meet")).toHaveText("Done, we met");
     await screen.getByTestId("chat-next-meet").click();
+    await screen.getByTestId("meet-done-early-confirm").click();
     await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
     expect((await circles(screen)).label).toBe("Step 3 of 5");
 
@@ -718,8 +843,10 @@ test.describe("chat hub", () => {
     // The sitter sends the final quote and adds a fee.
     await expect(screen.getByTestId("chat-payment-card")).toContainText("Waiting for Robert to pay");
     await screen.getByTestId("chat-next-final_quote").click();
+    await expect(screen.getByTestId("send-quote-sheet")).toContainText("Send final quote");
     await screen.getByTestId("send-quote-submit").click();
     await expect(screen.getByTestId("chat-quote-card")).toContainText("$268.13");
+    await expect(screen.getByTestId("quote-title")).toHaveText("Final quote"); // after the Meet & Greet and the agreement
     await screen.getByTestId("quote-add-fee").click();
     await screen.getByTestId("add-fee-labels").getByText("Medication").click();
     await screen.getByTestId("add-fee-amount").fill("12.50");
@@ -750,6 +877,23 @@ test.describe("chat hub", () => {
     await page.goto(`/chat/${THREAD}`);
     await expect(screen.getByTestId("chat-payment-card")).toContainText("Held until the stay ends");
     expect((await circles(screen)).label).toBe("Step 5 of 5");
+  });
+
+  test("the owner's yes to book shows in the sitter's open chat without a refresh (#235)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+    await screen.getByTestId("chat-next-accept").click();
+    await expect(screen.getByTestId("agreement-owner")).toContainText("Robert: not yet");
+    await expect(screen.getByTestId("agreement-sitter")).toContainText("✓ Chloe accepts");
+
+    // Robert taps I'd like to book on his phone; the sitter's chat follows.
+    db.bookings[0].owner_agreed_at = new Date().toISOString();
+    await expect(screen.getByTestId("chat-agreement-card")).toContainText("you both agreed", { timeout: 15_000 });
   });
 
   test("a pair that has met skips the Meet & Greet: Meet is already checked and both only say yes", async ({ page }) => {

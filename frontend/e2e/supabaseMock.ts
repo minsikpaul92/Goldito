@@ -501,8 +501,9 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
       return done();
     }
     case "complete_meet_greet": {
+      // 014s: any time after it is agreed, and a second press is a no-op.
+      if (status === "done") return done();
       if (status !== "agreed") return fail("invalid_status");
-      if (nowMs() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
       b.meet_greet_status = "done";
       return done();
     }
@@ -1283,7 +1284,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
     const current = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === args.p_kind);
     const base = current.find((h) => h.status === "proposed") ?? current.find((h) => h.status === "agreed");
-    for (const h of current) if (h.status === "proposed") h.status = "superseded";
+    for (const h of current) {
+      if (h.status !== "proposed") continue;
+      h.status = "superseded";
+      // 014r: the other row of a pair becomes a single suggestion.
+      if (h.pair_id) for (const x of db.booking_handoffs) if (x.pair_id === h.pair_id && x.status === "proposed") x.pair_id = null;
+    }
     // 014o: new terms on a request clear both yes.
     if (booking.status === "requested") {
       booking.owner_agreed_at = null;
@@ -1305,6 +1311,47 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
+  }
+
+  if (path === "rpc/propose_handoff_pair") {
+    // propose_handoff_pair (014r): the drop-off and the pick-up as one suggestion, one key.
+    const args = request.postDataJSON();
+    db.proposals.push({ pair: true, ...args });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const booking = db.bookings.find((b) => b.id === args.p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return fail("not_allowed");
+    if (Date.parse(args.p_pick_at) <= Date.parse(args.p_drop_at)) return fail("invalid_window");
+    const base = (kind: string) => {
+      const rows = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === kind);
+      return rows.find((h) => h.status === "proposed") ?? rows.find((h) => h.status === "agreed");
+    };
+    const drop = base("drop_off");
+    const pick = base("pick_up");
+    for (const h of db.booking_handoffs) if (h.booking_id === booking.id && h.status === "proposed") h.status = "superseded";
+    if (booking.status === "requested") {
+      booking.owner_agreed_at = null;
+      booking.sitter_accepted_at = null;
+    }
+    const pair = crypto.randomUUID();
+    const row = (kind: string, at: string, type: string | null, note: string | null, from: Row | undefined) => ({
+      id: crypto.randomUUID(),
+      booking_id: booking.id,
+      kind,
+      scheduled_at: at,
+      location_type: type ?? from?.location_type ?? "sitter_home",
+      location_note: type ? (note ?? null) : (from?.location_note ?? null),
+      within_sitter_hours: true,
+      status: "proposed",
+      proposed_by: me,
+      completed_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+      pair_id: pair,
+    });
+    db.booking_handoffs.push(
+      row("drop_off", args.p_drop_at, args.p_drop_type ?? null, args.p_drop_note ?? null, drop),
+      row("pick_up", args.p_pick_at, args.p_pick_type ?? null, args.p_pick_note ?? null, pick),
+    );
+    return json(route, 200, pair);
   }
 
   if (path === "rpc/express_interest") {
@@ -1419,15 +1466,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       return fail("not_allowed");
     }
     if (h.status !== "proposed") return fail("invalid_status");
+    // 014r: the other row of an explicit pair is answered with it.
+    const partner = h.pair_id ? db.booking_handoffs.find((x) => x.pair_id === h.pair_id && x.id !== h.id && x.status === "proposed") : undefined;
+    const answered = partner ? [h, partner] : [h];
     if (!p_accept) {
-      h.status = "rejected";
+      for (const x of answered) x.status = "rejected";
       if (booking.status === "requested") booking.status = me === booking.sitter_id ? "declined" : "cancelled";
       return route.fulfill({ status: 204 });
     }
     for (const x of db.booking_handoffs) {
-      if (x.booking_id === h.booking_id && x.kind === h.kind && x.status === "agreed") x.status = "superseded";
+      if (x.booking_id === h.booking_id && answered.some((a) => a.kind === x.kind) && x.status === "agreed") x.status = "superseded";
     }
-    h.status = "agreed";
+    for (const x of answered) x.status = "agreed";
     return route.fulfill({ status: 204 });
   }
 

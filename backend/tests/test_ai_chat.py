@@ -670,3 +670,59 @@ def test_the_chips_and_the_draft_are_logged_without_names(client, setup, caplog)
     assert draft_line["endpoint"] == "chat-draft" and draft_line["source"] == "model" and draft_line["role"] == "sitter"
     text = "\n".join(lines)
     assert "Robert" not in text and "Chloe" not in text and "Max" not in text and "{NAME}" in text
+
+
+# --- chips from the text being typed (#235) ------------------------------------------------------------------------
+
+
+def typed_chips(client, typed, token=None):
+    return client.post("/api/ai/chat-chips", headers={"Authorization": f"Bearer {token or owner_token()}"}, json={"thread_id": THREAD, "typed": typed})
+
+
+def test_the_chips_follow_the_text_being_typed_and_the_prompt_says_so(client, setup):
+    ctx = setup({"chips": ["Ask about early pick-up", "Ask about the leash"], "action": "confirm_quote", "confidence": 0.9})
+    body = typed_chips(client, "can you take them early").json()
+    assert [c["label"] for c in body["chips"]] == ["Ask about early pick-up", "Ask about the leash"]
+    assert body["action"] is None  # an action belongs to the other person's last message
+    payload = ctx.model.payload()
+    assert payload["typing"] == "can you take them early"
+    assert "typing" in ctx.model.calls[0]["messages"][0]["content"]  # the side's prompt explains it
+
+
+def test_typed_text_is_scrubbed_before_it_reaches_the_model(client, setup):
+    ctx = setup({"chips": ["Ask about early pick-up", "Ask about the leash"]})
+    typed_chips(client, "the code is 4821 or call 416-555-0199 or mail bob@example.com please")
+    sent = ctx.model.payload()["typing"]
+    assert "4821" not in sent and "555" not in sent and "bob@example.com" not in sent
+    assert sent.startswith("the code is")
+
+
+def test_typed_text_and_names_stay_out_of_the_log(client, setup, caplog):
+    setup({"chips": ["Ask Chloe about it", "Ask about the leash"]})
+    with caplog.at_level(logging.INFO, logger="goldito.ai"):
+        typed_chips(client, "Chloe, can Max stay longer on Friday")
+    line = next(r.getMessage() for r in caplog.records if "chat_ai" in r.getMessage())
+    assert "can Max stay longer" not in line and "Chloe" not in line and "typed" in line
+
+
+def test_when_the_model_is_down_typing_gets_no_chips_not_a_guess(client, setup):
+    setup(nebius.AIUnavailable("down"))
+    body = typed_chips(client, "can you take them early").json()
+    assert body["chips"] == [] and body["source"] == "fallback"
+
+
+def test_an_empty_typed_text_is_the_normal_chips(client, setup):
+    ctx = setup({"chips": ["Yes, I can host", "Let me check"]})
+    chips(client)  # a sitter, nothing typed
+    assert "typing" not in ctx.model.payload()
+
+
+def test_the_draft_keeps_what_was_typed(client, setup):
+    ctx = setup({"reply": "Could Max be picked up a bit earlier?"})
+    r = client.post(
+        "/api/ai/chat-draft",
+        headers={"Authorization": f"Bearer {owner_token()}"},
+        json={"thread_id": THREAD, "chip": "Ask about early pick-up", "typed": "can you do earlier pick up"},
+    )
+    assert r.status_code == 200
+    assert ctx.model.payload()["typing"] == "can you do earlier pick up"

@@ -32,7 +32,6 @@ import {
   awaitingFirstYes,
   cancelBooking,
   CHECK_IN_WINDOW_MS,
-  EARLY_RETURN_MS,
   expressInterest,
   HandoffKind,
   PetCare,
@@ -43,6 +42,7 @@ import {
   loadPetCare,
   meetGreetBlocksAccept,
   proposeHandoff,
+  proposeHandoffPair,
   requestExpired,
   respondBooking,
   respondHandoff,
@@ -50,9 +50,9 @@ import {
 } from "../../../../lib/bookings";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
+import { ReturnSheet } from "../../../../components/ReturnSheet";
 import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
 import { requestLifeRecord } from "../../../../features/completion/completionApi";
-import { ReturnChecks, loadReturnChecks } from "../../../../features/completion/returnChecks";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
 import { useToast } from "../../../../providers/ToastProvider";
@@ -89,7 +89,7 @@ function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
   if (error.code === "meet_greet_required") return `Meet ${owner} first, or agree to skip the Meet & Greet.`;
-  if (error.code === "interest_required") return `Say "Yes, let's meet" to ${owner} first.`;
+  if (error.code === "interest_required") return "Tap Next to hold these dates first.";
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
     const slot = firstSlot(error.detail);
@@ -116,7 +116,6 @@ export default function SitterBookingDetail() {
   const [declineNote, setDeclineNote] = useState("");
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmReturn, setConfirmReturn] = useState(false);
-  const [returnChecks, setReturnChecks] = useState<ReturnChecks | null>(null);
   const [sheet, setSheet] = useState<{ key: number; kind: HandoffKind; mode: "suggest" | "change" } | null>(null);
 
   const load = useCallback(async () => {
@@ -181,12 +180,17 @@ export default function SitterBookingDetail() {
           : null;
   const firstYes = isRequest && awaitingFirstYes(booking);
   const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking) && !booking.sitterAcceptedAt;
+  // Why I accept is off, in one line (#170). The rule is unchanged; `waiting` already has its own line above.
+  const acceptBlocked = !isRequest || waiting
+    ? null
+    : requestExpired(booking)
+      ? "The pick-up time has passed."
+      : meetFirst
+        ? `Meet ${owner} first, or agree to skip the Meet & Greet.`
+        : null;
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
-  // Returned is allowed any time (a stay can end early). From 30 minutes before the agreed pick-up on it is the normal
-  // case; earlier than that the sitter is asked "really?" and the button turns red.
-  const returnsEarly = booking.pickUp != null && Date.now() < Date.parse(booking.pickUp.at) - EARLY_RETURN_MS;
 
   const run = async (action: () => Promise<void>, done: string, after?: () => void) => {
     setBusy(true);
@@ -213,6 +217,13 @@ export default function SitterBookingDetail() {
   const sendChange = async (change: HandoffChange) => {
     try {
       await proposeHandoff(booking.id, change.kind, change.at, change.place);
+    } catch (err) {
+      throw new Error(actionError(err, owner));
+    }
+  };
+  const sendPair = async (drop: HandoffChange, pick: HandoffChange) => {
+    try {
+      await proposeHandoffPair(booking.id, drop, pick);
     } catch (err) {
       throw new Error(actionError(err, owner));
     }
@@ -367,7 +378,7 @@ export default function SitterBookingDetail() {
           {waiting ? <Text style={styles.muted}>{`Waiting for ${owner} to confirm the new time.`}</Text> : null}
           {firstYes ? (
             <Button
-              label={busy ? "Saving…" : "Yes, let's meet"}
+              label={busy ? "Saving…" : "Next"}
               onPress={() => void run(() => expressInterest(booking.id), `Dates held. ${owner} is asked to set a time`)}
               disabled={busy || requestExpired(booking)}
               testID="interest-booking"
@@ -375,12 +386,19 @@ export default function SitterBookingDetail() {
           ) : booking.sitterAcceptedAt ? (
             <Text style={styles.muted} testID="accepted-waiting">{`You accepted. Waiting for ${owner} to book.`}</Text>
           ) : (
-            <Button
-              label={busy ? "Saving…" : "I accept"}
-              onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
-              disabled={!canAccept}
-              testID="accept-booking"
-            />
+            <>
+              {acceptBlocked ? (
+                <Text style={styles.muted} testID="accept-reason">
+                  {acceptBlocked}
+                </Text>
+              ) : null}
+              <Button
+                label={busy ? "Saving…" : "I accept"}
+                onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
+                disabled={!canAccept}
+                testID="accept-booking"
+              />
+            </>
           )}
           <TextButton label="Decline" danger onPress={() => setConfirmDecline(true)} testID="decline-booking" />
         </View>
@@ -406,9 +424,7 @@ export default function SitterBookingDetail() {
             <Button
               label={busy ? "Saving…" : "Returned"}
               onPress={() => {
-                setReturnChecks(null);
                 setConfirmReturn(true);
-                void loadReturnChecks(booking.pets, booking.sitterId).then(setReturnChecks).catch(() => undefined);
               }}
               disabled={busy}
               testID="handoff-returned"
@@ -428,57 +444,19 @@ export default function SitterBookingDetail() {
         </View>
       ) : null}
 
-      <Sheet
+      <ReturnSheet
         visible={confirmReturn}
-        title={`Return ${petNames}?`}
+        booking={booking}
+        ownerName={owner}
         onClose={() => setConfirmReturn(false)}
-        testID="return-sheet"
-        footer={
-          <View style={styles.returnActions}>
-            <Button
-              label="Return"
-              variant={returnsEarly ? "danger" : "primary"}
-              onPress={() => {
-                setConfirmReturn(false);
-                void run(async () => {
-                  await completeHandoff(booking.id, "pick_up");
-                  // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
-                  void requestLifeRecord(booking.id).catch(() => undefined);
-                }, `${petNames} home safe. ${owner} gets a notice`);
-              }}
-              testID="return-confirm"
-            />
-            <Button label="Cancel" variant="secondary" onPress={() => setConfirmReturn(false)} testID="return-cancel" />
-          </View>
+        onConfirm={() =>
+          void run(async () => {
+            await completeHandoff(booking.id, "pick_up");
+            // The stay is over: write the Life Record in the background (the owner's booking page retries if this fails).
+            void requestLifeRecord(booking.id).catch(() => undefined);
+          }, `${petNames} home safe. ${owner} gets a notice`)
         }
-      >
-        {returnsEarly && booking.pickUp ? (
-          <Text style={styles.warning} testID="return-early-warning">
-            {`It's not pick-up time yet (pick-up is ${formatInstant(booking.pickUp.at)}). Do you really want to return ${petNames} now?`}
-          </Text>
-        ) : null}
-        <Text style={styles.body}>{`${petNames} ${booking.pets.length > 1 ? "go" : "goes"} home with ${owner}. This can't be undone, and it writes the Life Record.`}</Text>
-        {returnChecks && returnChecks.tasksLeft > 0 ? (
-          <Text style={styles.body} testID="return-tasks-left">
-            {`• ${returnChecks.tasksLeft} care task${returnChecks.tasksLeft === 1 ? "" : "s"} still open today`}
-          </Text>
-        ) : null}
-        {returnChecks && returnChecks.petsWithoutNote.length > 0 ? (
-          <>
-            <Text style={styles.body} testID="return-note-missing">
-              {`• You haven't sent today's note for ${returnChecks.petsWithoutNote.join(" & ")}`}
-            </Text>
-            <TextButton
-              label="Send today's note first"
-              onPress={() => {
-                setConfirmReturn(false);
-                router.push("/sitter/diary");
-              }}
-              testID="return-send-note"
-            />
-          </>
-        ) : null}
-      </Sheet>
+      />
 
       <Sheet
         visible={confirmCancel}
@@ -514,6 +492,7 @@ export default function SitterBookingDetail() {
           title={sheet.mode === "change" ? "Change time or place" : "Suggest another time"}
           submitLabel={`Send to ${owner}`}
           onSend={sendChange}
+          onSendPair={sendPair}
           onChanged={() => void load()}
           onDone={() => {
             setSheet(null);
@@ -611,9 +590,6 @@ const makeStyles = (theme: Theme) =>
     muted: {
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
-    },
-    returnActions: {
-      gap: theme.spacing.sm,
     },
     warning: {
       fontSize: theme.fontSize.small,

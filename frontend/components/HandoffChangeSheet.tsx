@@ -45,6 +45,8 @@ type Props = {
   submitLabel: string;
   /** Propose one handoff — throws an Error whose message is ready to show in the sheet. */
   onSend: (change: HandoffChange) => Promise<void>;
+  /** Both handoffs changed: send them as one suggestion (014r). Without it they go one after the other through onSend. */
+  onSendPair?: (drop: HandoffChange, pick: HandoffChange) => Promise<void>;
   /** After any change went through (the screen reloads behind the sheet). */
   onChanged: () => void;
   /** After every change went through (the screen closes the sheet and says so). */
@@ -68,6 +70,7 @@ export function HandoffChangeSheet({
   title,
   submitLabel,
   onSend,
+  onSendPair,
   onChanged,
   onDone,
   onClose,
@@ -127,6 +130,27 @@ export function HandoffChangeSheet({
 
   const submit = async () => {
     if (busy || pending.length === 0 || shownProblem) return;
+    const change = (k: HandoffKind): HandoffChange => ({
+      kind: k,
+      at: atOf(k)!,
+      place: placeEditable ? { locationType: drafts[k].locationType, note: drafts[k].note.trim() || null } : undefined,
+    });
+    if (onSendPair && pending.length === 2) {
+      setBusy(true);
+      setError(null);
+      try {
+        await onSendPair(change("drop_off"), change("pick_up"));
+      } catch (err) {
+        setError((err as Error).message);
+        setBusy(false);
+        return;
+      }
+      setSent([...KINDS]);
+      onChanged();
+      setBusy(false);
+      onDone();
+      return;
+    }
     // The server checks each new time against the other handoff's current one, so go in the order that stays valid:
     // a drop-off that moves past the old pick-up needs the pick-up moved first.
     const oldPick = booking.pending.pick_up?.at ?? booking.pickUp?.at;

@@ -34,8 +34,22 @@ log = logging.getLogger("goldito.ai")
 
 
 
+TYPED_MAX = 300
+
+
+def scrub_typed(text: str | None) -> str:
+    """What the person is typing, made safe for a prompt: one line, no emails, no long digit runs (phone numbers, entry
+    codes), at most TYPED_MAX characters (D29, D31). Names are not removed here; they stay out of the log instead."""
+    clean = " ".join((text or "").split())
+    clean = re.sub(r"\S+@\S+", "", clean)
+    clean = re.sub(r"\d[\d\s().-]{2,}\d", "#", clean)
+    return " ".join(clean.split())[:TYPED_MAX]
+
+
 class ChatChipsRequest(BaseModel):
     thread_id: UUID
+    # The text in the person's message box (#235): the chips then fit what they are writing instead of the last message.
+    typed: str | None = Field(default=None, max_length=TYPED_MAX * 2)
 
 
 class Chip(BaseModel):
@@ -60,6 +74,8 @@ class ChatChipsResponse(BaseModel):
 class ChatDraftRequest(BaseModel):
     thread_id: UUID
     chip: str = Field(min_length=1, max_length=logic.CHIP_MAX * 2)
+    # The text they had typed when they tapped the chip: the draft keeps its meaning.
+    typed: str | None = Field(default=None, max_length=TYPED_MAX * 2)
 
 
 class ChatDraftResponse(BaseModel):
@@ -278,8 +294,12 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
     started = any(m.get("kind") == "text" for m in ctx["messages"])
     for_id = last_them["id"] if last_them else None
 
-    # What the person could do next, if the other person's last message leads to it.
-    available = _actions(db, user, ctx) if last_them else []
+    typed = scrub_typed(body.typed)
+    if typed:
+        base["typing"] = typed
+
+    # What the person could do next, if the other person's last message leads to it (not while they are typing their own).
+    available = _actions(db, user, ctx) if last_them and not typed else []
     if available:
         base["actions"] = {a: logic.ACTIONS[a]["meaning"] for a in available}
 
@@ -315,9 +335,13 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         reason = "model_failed"
     if len(labels) < 2:
         source, reason = "fallback", reason or "too_few_chips"
-        labels = agent.fallback_chips(started=started, state=base["state"], facts=facts)
+        # While typing, a fallback is no chips: the app keeps the usual ones instead of guessing at the text.
+        labels = [] if typed else agent.fallback_chips(started=started, state=base["state"], facts=facts)
+    if typed:
+        labels = labels[: logic.MAX_CHIPS]
     _log_ai(
-        "chat-chips", ctx, state=base["state"], source=source, reason=reason, chips=labels, dropped=dropped,
+        "chat-chips", ctx, state=base["state"], source=source, reason=reason, typed=len(typed) or None,
+        chips=[_redact(c, ctx, facts) for c in labels] if typed else labels, dropped=dropped,
         action=action["id"] if action else None, offered=sorted(base.get("actions", {})), facts="basic" if ctx.get("facts_basic") else "full",
     )
     return ChatChipsResponse(
@@ -341,7 +365,8 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="That option is too long.")
 
     style = agent.style(db, ctx, chip, last_them)
-    payload = {**base, "chip": chip, "style_notes": style}
+    typed = scrub_typed(body.typed)
+    payload = {**base, "chip": chip, "style_notes": style, **({"typing": typed} if typed else {})}
     messages = [{"role": "system", "content": agent.prompt("draft")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None
     previous = [m.get("body") or "" for m in ctx["messages"] if m.get("kind") == "text"][-logic.REPEAT_WINDOW :]
