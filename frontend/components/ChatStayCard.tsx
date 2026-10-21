@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { ChatReviewCard } from "./ChatReviewCard";
 import { ReturnSheet } from "./ReturnSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -57,6 +58,7 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
           <Text style={styles.title}>Home safe 🏠</Text>
           <Text style={styles.muted}>{`${pets} ${sitter ? `went home with ${booking.ownerName}` : `${are} back with you`}`}</Text>
         </Card>
+        <ChatReviewCard booking={booking} viewer={viewer} />
       </View>
     );
   }
@@ -112,7 +114,7 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    wrap: { width: "100%", alignItems: "center" },
+    wrap: { width: "100%", alignItems: "center", gap: theme.spacing.sm },
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
