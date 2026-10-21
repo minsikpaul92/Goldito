@@ -169,6 +169,63 @@ test.describe("owner diary page", () => {
     await expect.poll(() => (db.report_decor.find((r) => r.user_id === OWNER.id)?.items as unknown[] | undefined)?.length).toBe(1);
   });
 
+  test("a writer deletes their own page after a confirm; the sitter's page stays", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("A page to delete.");
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByText("Your page")).toBeVisible();
+    await expect(screen.getByTestId("diary-write-sheet")).toHaveCount(0);
+    const mine = db.daily_reports.find((r) => r.sitter_id === OWNER.id)!;
+
+    await screen.getByTestId(`diary-page-delete-${mine.id}`).click();
+    await expect(screen.getByText("It is deleted for good.")).toBeVisible();
+    await screen.getByTestId(`diary-page-delete-${mine.id}-confirm`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Page deleted");
+    await expect(screen.getByText("Your page")).toHaveCount(0);
+    expect(db.daily_reports.map((r) => r.id)).toEqual(["s1"]); // the sitter's page is not touched
+    await expect(screen.getByText("From Chloe")).toBeVisible();
+  });
+
+  test("the owner hides a sitter's page on their own side only; the sitter keeps it", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await screen.getByTestId("diary-entry-cover-" + MAX.id).click();
+    await screen.getByTestId("diary-page-hide-s1").click();
+    await expect(screen.getByText("It leaves your diary. Chloe keeps their copy.")).toBeVisible();
+    await screen.getByTestId("diary-page-hide-s1-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Page hidden");
+    await expect(screen.getByText("No diary yet")).toBeVisible();
+    expect(db.diary_page_hidden).toHaveLength(1);
+    expect(db.daily_reports.map((r) => r.id)).toEqual(["s1"]); // the sitter's copy stays
+
+    await page.reload();
+    await app(page).getByText("No diary yet").waitFor();
+  });
+
+  test("a sitter deletes a page they wrote; the owner loses it too", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    oneStay(db);
+    db.notifications.push({ id: "n1", user_id: OWNER.id, type: "report_sent", title: "Chloe sent Max's daily report", ref_id: "s1", pet_id: MAX.id, read_at: null, created_at: new Date().toISOString() });
+    await page.route("**/api/ai/report-chips", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ summary: { tasks_done: 0, tasks_missed: 0, checkins: 0 }, chips: [], photos: [] }) }),
+    );
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/diary");
+    const screen = app(page);
+    await screen.getByTestId("sitter-diary-view-book").click();
+    await screen.getByTestId("sitter-book-cover-" + MAX.id).click();
+    await screen.getByTestId("diary-page-delete-s1").click();
+    await expect(screen.getByText("It is deleted for good. The owner loses it too.")).toBeVisible();
+    await screen.getByTestId("diary-page-delete-s1-confirm").click();
+    await expect(screen.getByTestId("toast")).toContainText("Page deleted");
+    await expect(screen.getByText("No pages yet")).toBeVisible();
+    expect(db.daily_reports).toHaveLength(0);
+    expect(db.notifications.some((n) => n.ref_id === "s1")).toBe(false);
+  });
+
   test("the sitter does not see the owner's page", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     oneStay(db);

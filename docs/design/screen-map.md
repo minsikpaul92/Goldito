@@ -452,16 +452,16 @@ Shows: `QuickCheckIn`
 
 Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the day's chips, checked and sent (phase-07 7.3; with more than one pet the sitter picks the pet first, FB-19, and each composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared for or one, oldest → newest.
 
-Shows: `ReportComposer` · `ReportStatus` · `DiaryBook`
+Shows: `ReportComposer` · `ReportStatus` · `DiaryBook` · `PageActions`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 72 |
-| SegmentedControl | — | `sitter-diary-view` | 84 |
-| EmptyState | Diary | — | 99 |
-| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 107 |
-| EmptyState | Couldn't load the diary | — | 135 |
-| EmptyState | No pages yet | — | 137 |
+| EmptyState | Couldn't load your pets | — | 75 |
+| SegmentedControl | — | `sitter-diary-view` | 87 |
+| EmptyState | Diary | — | 102 |
+| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 110 |
+| EmptyState | Couldn't load the diary | — | 138 |
+| EmptyState | No pages yet | — | 140 |
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
@@ -1069,17 +1069,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 336 |
-| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 349 |
-| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 386 |
-| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 416 |
-| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 418 |
-| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 430 |
-| Button | Done | ``report-edit-done-${pet.id}`` | 450 |
-| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 457 |
-| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 461 |
-| Button | Add | ``report-custom-add-${pet.id}`` | 481 |
-| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 483 |
+| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 337 |
+| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 351 |
+| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 388 |
+| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 418 |
+| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 420 |
+| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 432 |
+| Button | Done | ``report-edit-done-${pet.id}`` | 452 |
+| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 459 |
+| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 463 |
+| Button | Add | ``report-custom-add-${pet.id}`` | 483 |
+| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 485 |
 
 ### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
 
@@ -1277,9 +1277,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the diary | — | 58 |
-| Button | ✏️ Write a page | `diary-write` | 62 |
-| EmptyState | No diary yet | — | 78 |
+| EmptyState | Couldn't load the diary | — | 59 |
+| Button | ✏️ Write a page | `diary-write` | 63 |
+| EmptyState | No diary yet | — | 79 |
 
 ### OwnerEntrySheet — [features/diary/OwnerEntrySheet.tsx](../../frontend/features/diary/OwnerEntrySheet.tsx)
 
@@ -1290,6 +1290,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | SegmentedControl | — | `diary-write-pet` | 117 |
 | TextButton | Remove | `diary-write-photo-remove` | 142 |
 | TextButton | + Photo | `diary-write-photo` | 145 |
+
+### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | hide ? "Hide page" : "Delete page" | `testID` | 51 |
+| Sheet | hide ? "Hide this page?" : "Delete this page?" | ``${testID}-sheet`` | 52 |
+| Button | busy ? "Please wait…" : hide ? "Hide" : "Delete" | ``${testID}-confirm`` | 63 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1398,4 +1406,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-407 actions · 406 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+409 actions · 408 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

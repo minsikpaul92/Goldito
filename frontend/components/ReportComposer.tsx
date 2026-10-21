@@ -29,6 +29,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
+import { PageActions } from "../features/diary/PageActions";
 import { type DecorItem, saveDecor } from "../features/snap/decorApi";
 import { DecoratedReport } from "../features/snap/DecoratedReport";
 import { ChipSuggestions } from "./ChipSuggestions";
@@ -346,6 +347,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         ) : (
           <Text style={styles.body}>{body}</Text>
         )}
+        {sentId ? <PageActions reportId={sentId} action="delete" other={pet.ownerName} onDone={writeAnother} /> : null}
         <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
         <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>

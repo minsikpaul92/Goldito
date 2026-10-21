@@ -9,6 +9,7 @@ import { SegmentedControl } from "../../../components/ui/SegmentedControl";
 import { ReportComposer, type ReportStatus } from "../../../components/ReportComposer";
 import { useCaringPets } from "../../../features/care/useCaringPets";
 import { DiaryBook } from "../../../features/diary/DiaryBook";
+import { PageActions } from "../../../features/diary/PageActions";
 import { SentReport, listBookPages } from "../../../features/diary/reportApi";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
@@ -37,6 +38,8 @@ export default function SitterDiary() {
   }, [pageParam]);
   // With nobody in care there is nothing to write today: open the book.
   const shownView: View_ = view ?? (state.status === "ready" && caring.length === 0 ? "book" : "today");
+  // A page deleted in the book: the Today cards start again (their "sent" state is stale).
+  const [deleted, setDeleted] = useState(0);
   const [pages, setPages] = useState<SentReport[] | null>(null);
   const [bookError, setBookError] = useState<string | null>(null);
   const onStatus = useCallback(
@@ -61,7 +64,7 @@ export default function SitterDiary() {
   const sentCount = Object.values(statuses).filter((s) => s === "sent").length;
   useFocusEffect(
     useCallback(() => {
-      if (sentCount > 0) void loadBook();
+      void loadBook();
     }, [sentCount, loadBook]),
   );
 
@@ -123,7 +126,7 @@ export default function SitterDiary() {
         {caring.map((pet) => (
           // Every pet's composer stays mounted (its chips, lines and page survive switching); only the picked one shows.
           <View key={pet.id} style={pet.id === current?.id ? undefined : styles.hidden}>
-            <ReportComposer pet={pet} onStatus={onStatus(pet.id)} />
+            <ReportComposer key={deleted} pet={pet} onStatus={onStatus(pet.id)} />
           </View>
         ))}
       </View>
@@ -136,7 +139,23 @@ export default function SitterDiary() {
         ) : !pages || pages.length === 0 ? (
           <EmptyState emoji="📔" title="No pages yet" message="Every page you send collects here, one pet at a time or all together." />
         ) : (
-          <DiaryBook key={pageParam ?? "book"} pages={pages} initialId={pageParam} testID="sitter-book" />
+          <DiaryBook
+            key={pageParam ?? "book"}
+            pages={pages}
+            initialId={pageParam}
+            footer={(page) => (
+              <PageActions
+                reportId={page.id}
+                action="delete"
+                other="The owner"
+                onDone={() => {
+                  setDeleted((n) => n + 1);
+                  void loadBook();
+                }}
+              />
+            )}
+            testID="sitter-book"
+          />
         )
       ) : null}
     </Screen>

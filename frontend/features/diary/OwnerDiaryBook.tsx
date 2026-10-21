@@ -13,6 +13,7 @@ import { Theme } from "../../theme/themes";
 import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
 import { OwnerEntrySheet } from "./OwnerEntrySheet";
+import { PageActions } from "./PageActions";
 import { SentReport, listBookPages } from "./reportApi";
 
 /**
@@ -97,7 +98,10 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
         footer={(page) => (
           <View style={styles.footer}>
             {page.authorId === me ? (
-              <Text style={styles.meta}>Your page</Text>
+              <>
+                <Text style={styles.meta}>Your page</Text>
+                <PageActions reportId={page.id} action="delete" onDone={() => void load()} />
+              </>
             ) : (
               <>
                 <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
@@ -106,6 +110,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
                     {`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
                   </Text>
                 ))}
+                <PageActions reportId={page.id} action="hide" other={page.sitterName} onDone={() => void load()} />
               </>
             )}
           </View>

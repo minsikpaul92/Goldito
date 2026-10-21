@@ -124,6 +124,22 @@ export async function addOwnerEntry(petId: string, body: string): Promise<string
   throw new Error("Couldn't save the page. Check your connection and try again.");
 }
 
+/** The writer deletes their own page (014t): draft or sent. A sitter's sent page leaves the owner's book too. */
+export async function deleteDiaryPage(reportId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("delete_diary_page", { p_report: reportId });
+  if (!error || error.message.includes("not_found")) return; // already gone is fine
+  if (error.message.includes("not_author")) throw new Error("You can delete only a page you wrote.");
+  throw new Error("Couldn't delete the page. Check your connection and try again.");
+}
+
+/** The owner takes a sitter's page out of their own book (014t). The sitter keeps their copy. */
+export async function hideDiaryPage(reportId: string): Promise<void> {
+  const { error } = await getSupabase().rpc("hide_diary_page", { p_report: reportId });
+  if (!error || error.message.includes("not_found")) return;
+  if (error.message.includes("own_page")) throw new Error("Delete your own page instead.");
+  throw new Error("Couldn't hide the page. Check your connection and try again.");
+}
+
 export type SentReport = {
   id: string;
   /** Who wrote the page (a profile id): the sitter, or the owner for their own page. */
