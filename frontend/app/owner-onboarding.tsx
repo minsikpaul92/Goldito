@@ -259,7 +259,7 @@ export default function OwnerOnboarding() {
     };
     return frame(
       `Tell us about ${petName}`,
-      <VoiceStep petName={petName} onUse={read} error={voiceError} busy={voiceBusy} />,
+      <VoiceStep placeholder={`What is ${petName} like?`} onUse={read} error={voiceError} busy={voiceBusy} />,
       skipLink,
       `What is ${petName} like? Brag a little!`,
     );

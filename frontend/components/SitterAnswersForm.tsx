@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ClosingRulesSheet } from "./ClosingRulesSheet";
+import { BigInput } from "./ownerOnboarding/BigInput";
+import { BigOption } from "./ownerOnboarding/BigOption";
+import { StepFrame } from "./ownerOnboarding/StepFrame";
+import { VoiceStep } from "./ownerOnboarding/VoiceStep";
 import { Button } from "./ui/Button";
-import { ChoiceChips } from "./ui/ChoiceChips";
+import { Screen } from "./ui/Screen";
 import { TextButton } from "./ui/TextButton";
-import { NoteToggle } from "./ui/NoteToggle";
 import { TextField } from "./ui/TextField";
 import {
   AnswerDraft,
@@ -20,6 +23,7 @@ import {
   choiceLabel,
   choiceList,
 } from "../features/onboarding/questions";
+import { extractSitterAnswers } from "../features/onboarding/voiceApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -32,96 +36,201 @@ type Props = {
   saving: boolean;
 };
 
+const PICK_DELAY_MS = 200;
+// The screens in order: voice, the numbered questions, then the extras, then the check.
+const STEPS = ["voice", ...QUESTIONS.map((q) => `q:${q.key}`), "custom", "availability", "intro", "review"];
+
 /**
- * Sitter onboarding, typed version (3D.2, #139): a numbered list, a note box (and chips) under each question, then a
- * review step before anything is saved. Every question can be skipped. The voice version fills these same fields later.
+ * Sitter onboarding (3D.2, #139): one question per screen in large text. A pick goes on by itself; a question that
+ * takes several picks, or has a note open, waits for Next. Every question has Skip and a "+" for a note. The first
+ * screen takes the answers by voice (or typing): what the sitter says is suggested on the questions, never final.
  */
 export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving }: Props) {
   const styles = useThemedStyles(makeStyles);
-  const [step, setStep] = useState<"answer" | "review">("answer");
+  const [step, setStep] = useState("voice");
   const [rulesOpen, setRulesOpen] = useState(false);
   const [rulesKey, setRulesKey] = useState(0);
-  // A note stays hidden behind a "+" until it is opened, or when the question already has one.
   const [openNotes, setOpenNotes] = useState<Set<string>>(
     () => new Set(QUESTIONS.filter((q) => (draft.answers[q.key]?.answer ?? "").trim() !== "").map((q) => q.key)),
   );
+  // What the voice filled in and has not been touched since: key to the words it came from.
+  const [heard, setHeard] = useState<Record<string, string>>({});
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
-  const setAnswer = (key: string, patch: Partial<AnswerDraft>) =>
+  const index = STEPS.indexOf(step);
+  const go = (id: string) => setStep(id);
+  const next = () => go(STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(step) + 1)]);
+  const back = index > 0 ? () => go(STEPS[index - 1]) : undefined;
+  const progress = index / (STEPS.length - 1);
+
+  const setAnswer = (key: string, patch: Partial<AnswerDraft>) => {
     onChange({
       ...draft,
       answers: { ...draft.answers, [key]: { ...(draft.answers[key] ?? { answer: "", choice: null }), ...patch } },
     });
+    setHeard((h) => {
+      if (!(key in h)) return h;
+      const { [key]: _gone, ...rest } = h;
+      return rest;
+    });
+  };
 
-  if (step === "review") return <Review draft={draft} onBack={() => setStep("answer")} onFinish={onFinish} saving={saving} />;
+  const skip = <TextButton label="Skip" onPress={next} testID="onboarding-skip" />;
+  const nextButton = <Button label="Next" onPress={next} testID="onboarding-next" />;
 
-  const { availability } = draft;
+  if (step === "voice") {
+    const read = async (text: string) => {
+      setVoiceBusy(true);
+      setVoiceError(null);
+      try {
+        const picks = await extractSitterAnswers(text);
+        const answers = { ...draft.answers };
+        const said: Record<string, string> = {};
+        for (const [key, pick] of Object.entries(picks)) {
+          // Only a question that is still empty is filled; the sitter's own picks stay.
+          if (!QUESTIONS.some((q) => q.key === key) || answers[key]?.choice) continue;
+          answers[key] = { answer: answers[key]?.answer ?? "", choice: pick.value };
+          said[key] = pick.quote;
+        }
+        onChange({ ...draft, answers });
+        setHeard(said);
+        go(`q:${QUESTIONS[0].key}`);
+      } catch (e) {
+        setVoiceError((e as Error).message);
+      } finally {
+        setVoiceBusy(false);
+      }
+    };
+    return (
+      <StepFrame
+        progress={0}
+        title="Tell us how you look after pets"
+        hint="Say it in your own words, or type it."
+        footer={
+          <>
+            {skip}
+            {onSkipAll ? <TextButton label="Skip all for now" onPress={onSkipAll} disabled={saving} testID="onboarding-skip-all" /> : null}
+          </>
+        }
+        testID="onboarding-step-voice"
+      >
+        <VoiceStep placeholder="How many pets, which dogs, walks, meals…" onUse={read} error={voiceError} busy={voiceBusy} />
+      </StepFrame>
+    );
+  }
 
-  return (
-    <View style={styles.form} testID="onboarding-form">
-      <Text style={styles.title}>A few questions about you</Text>
+  if (step.startsWith("q:")) {
+    const q = QUESTIONS.find((x) => `q:${x.key}` === step);
+    if (!q) return null;
+    const a = draft.answers[q.key];
+    const picked = choiceList(a?.choice);
+    const noteOpen = openNotes.has(q.key);
+    const answered = picked.length > 0 || (a?.answer ?? "").trim() !== "";
+    const choose = (value: string) => {
+      const on = picked.includes(value);
+      // Several picks are kept in the order of the options, whatever order they were tapped in.
+      const nextPicked = q.multi
+        ? (q.choices ?? []).map((c) => c.value).filter((v) => (v === value ? !on : picked.includes(v)))
+        : on
+          ? []
+          : [value];
+      setAnswer(q.key, { choice: nextPicked.length ? nextPicked.join(",") : null });
+      // One pick goes on by itself, unless a note is open or this tap cleared it (Next is there when it does not).
+      if (!q.multi && !noteOpen && nextPicked.length > 0) {
+        if (timer.current) clearTimeout(timer.current);
+        // Only if the sitter is still on this screen: a Skip or Back in the meantime is not undone.
+        const from = step;
+        timer.current = setTimeout(() => setStep((cur) => (cur === from ? STEPS[Math.min(STEPS.length - 1, STEPS.indexOf(from) + 1)] : cur)), PICK_DELAY_MS);
+      }
+    };
+    return (
+      <StepFrame
+        progress={progress}
+        title={q.prompt}
+        hint={q.multi ? "Pick all that fit." : undefined}
+        onBack={back}
+        footer={
+          <>
+            {answered ? nextButton : null}
+            {skip}
+          </>
+        }
+        testID={`onboarding-q-${q.key}`}
+      >
+        {heard[q.key] ? (
+          <Text style={styles.heard} testID={`onboarding-heard-${q.key}`}>{`✨ You said: “${heard[q.key]}”`}</Text>
+        ) : null}
+        {(q.choices ?? []).map((c) => (
+          <BigOption
+            key={c.value}
+            label={c.label}
+            selected={picked.includes(c.value)}
+            badge={heard[q.key] && picked.includes(c.value) ? "✨ suggested" : undefined}
+            onPress={() => choose(c.value)}
+            testID={`onboarding-choice-${q.key}-${c.value}`}
+          />
+        ))}
+        {noteOpen ? (
+          <BigInput
+            value={a?.answer ?? ""}
+            onChangeText={(text) => setAnswer(q.key, { answer: text })}
+            maxLength={MAX_ANSWER}
+            multiline
+            placeholder="Add a note"
+            accessibilityLabel="Note"
+            testID={`onboarding-note-${q.key}`}
+          />
+        ) : null}
+        <TextButton
+          label={noteOpen ? "Hide note" : "+ Add a note"}
+          onPress={() =>
+            setOpenNotes((open) => {
+              const nextOpen = new Set(open);
+              if (!nextOpen.delete(q.key)) nextOpen.add(q.key);
+              return nextOpen;
+            })
+          }
+          testID={`onboarding-note-toggle-${q.key}`}
+        />
+      </StepFrame>
+    );
+  }
 
-      {QUESTIONS.map((q, i) => {
-        const a = draft.answers[q.key];
-        return (
-          <View key={q.key} style={styles.question} testID={`onboarding-q-${q.key}`}>
-            <Text style={styles.prompt}>
-              {i + 1}. {q.prompt}
-            </Text>
-            <ChoiceChips
-              options={q.choices ?? []}
-              multi={q.multi}
-              value={choiceList(a?.choice)}
-              onChange={(v) => setAnswer(q.key, { choice: v.length ? v.join(",") : null })}
-              trailing={
-                <NoteToggle
-                  open={openNotes.has(q.key)}
-                  filled={(a?.answer ?? "").trim() !== ""}
-                  onPress={() =>
-                    setOpenNotes((open) => {
-                      const next = new Set(open);
-                      if (!next.delete(q.key)) next.add(q.key);
-                      return next;
-                    })
-                  }
-                  testID={`onboarding-note-toggle-${q.key}`}
-                />
-              }
-              testID={`onboarding-choice-${q.key}`}
-            />
-            {openNotes.has(q.key) ? (
-              <TextField
-                label=""
-                accessibilityLabel="Note"
-                value={a?.answer ?? ""}
-                onChangeText={(text) => setAnswer(q.key, { answer: text })}
-                maxLength={MAX_ANSWER}
-                multiline
-                testID={`onboarding-note-${q.key}`}
-              />
-            ) : null}
-          </View>
-        );
-      })}
-
-      <View style={styles.question} testID="onboarding-custom">
-        <Text style={styles.prompt}>Your own questions</Text>
+  if (step === "custom") {
+    return (
+      <StepFrame
+        progress={progress}
+        title="Your own questions"
+        hint="Anything owners should know that we did not ask."
+        onBack={back}
+        footer={
+          <>
+            {nextButton}
+          </>
+        }
+        testID="onboarding-custom"
+      >
         {draft.custom.map((c, i) => (
           <View key={i} style={styles.custom}>
             <TextField
               label={`Question ${i + 1}`}
               value={c.question}
-              onChangeText={(text) =>
-                onChange({ ...draft, custom: draft.custom.map((x, j) => (j === i ? { ...x, question: text } : x)) })
-              }
+              onChangeText={(text) => onChange({ ...draft, custom: draft.custom.map((x, j) => (j === i ? { ...x, question: text } : x)) })}
               maxLength={MAX_QUESTION}
               testID={`onboarding-custom-q-${i}`}
             />
             <TextField
               label="Your answer"
               value={c.answer}
-              onChangeText={(text) =>
-                onChange({ ...draft, custom: draft.custom.map((x, j) => (j === i ? { ...x, answer: text } : x)) })
-              }
+              onChangeText={(text) => onChange({ ...draft, custom: draft.custom.map((x, j) => (j === i ? { ...x, answer: text } : x)) })}
               maxLength={MAX_ANSWER}
               multiline
               testID={`onboarding-custom-a-${i}`}
@@ -141,10 +250,14 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
             testID="onboarding-custom-add"
           />
         ) : null}
-      </View>
+      </StepFrame>
+    );
+  }
 
-      <View style={styles.question} testID="onboarding-availability">
-        <Text style={styles.prompt}>When can you host?</Text>
+  if (step === "availability") {
+    const { availability } = draft;
+    return (
+      <StepFrame progress={progress} title="When can you host?" onBack={back} footer={nextButton} testID="onboarding-availability">
         <Text style={styles.answer} testID="onboarding-availability-summary">
           {availabilitySummary(availability)}
         </Text>
@@ -157,37 +270,47 @@ export function SitterAnswersForm({ draft, onChange, onSkipAll, onFinish, saving
           }}
           testID="onboarding-availability-open"
         />
-      </View>
+        <ClosingRulesSheet
+          key={rulesKey}
+          visible={rulesOpen}
+          rules={availability.rules}
+          hours={availability.hours}
+          weekdayHours={availability.weekdayHours}
+          saving={false}
+          error={null}
+          onApply={(rules, hours, weekdayHours) => {
+            onChange({ ...draft, availability: { touched: true, rules, hours, weekdayHours } });
+            setRulesOpen(false);
+          }}
+          onClose={() => setRulesOpen(false)}
+        />
+      </StepFrame>
+    );
+  }
 
-      <ClosingRulesSheet
-        key={rulesKey}
-        visible={rulesOpen}
-        rules={availability.rules}
-        hours={availability.hours}
-        weekdayHours={availability.weekdayHours}
-        saving={false}
-        error={null}
-        onApply={(rules, hours, weekdayHours) => {
-          onChange({ ...draft, availability: { touched: true, rules, hours, weekdayHours } });
-          setRulesOpen(false);
-        }}
-        onClose={() => setRulesOpen(false)}
-      />
-      <View style={styles.question}>
-        <TextField
-          label="A few words about you (optional)"
+  if (step === "intro") {
+    return (
+      <StepFrame
+        progress={progress}
+        title="A few words about you"
+        hint="Optional. Owners read this."
+        onBack={back}
+        footer={<Button label="Review" onPress={() => go("review")} testID="onboarding-review" />}
+        testID="onboarding-step-intro"
+      >
+        <BigInput
           value={draft.intro}
           onChangeText={(text) => onChange({ ...draft, intro: text })}
           maxLength={MAX_INTRO}
           multiline
+          accessibilityLabel="About you"
           testID="onboarding-intro"
         />
-      </View>
+      </StepFrame>
+    );
+  }
 
-      <Button label="Review" onPress={() => setStep("review")} testID="onboarding-review" />
-      {onSkipAll ? <TextButton label="Skip all for now" onPress={onSkipAll} disabled={saving} testID="onboarding-skip-all" /> : null}
-    </View>
-  );
+  return <Review draft={draft} onBack={() => go("intro")} onFinish={onFinish} saving={saving} />;
 }
 
 function Review({
@@ -209,7 +332,7 @@ function Review({
   const skipped = QUESTIONS.length - answeredCount(draft);
 
   return (
-    <View style={styles.form} testID="onboarding-review-step">
+    <Screen contentStyle={styles.form} testID="onboarding-review-step">
       <Text style={styles.title}>Check your answers</Text>
 
       {answered.map(({ q, n, a }) => (
@@ -248,7 +371,7 @@ function Review({
 
       <Button label="Finish" onPress={onFinish} disabled={saving} testID="onboarding-finish" />
       <Button label="Back to edit" variant="secondary" onPress={onBack} disabled={saving} testID="onboarding-back" />
-    </View>
+    </Screen>
   );
 }
 
@@ -257,9 +380,9 @@ const makeStyles = (theme: Theme) =>
     form: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.title, lineHeight: theme.lineHeight.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
-    question: { gap: theme.spacing.sm },
     prompt: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     custom: { gap: theme.spacing.sm },
     reviewRow: { gap: theme.spacing.xs },
-    answer: { fontSize: theme.fontSize.body, lineHeight: theme.lineHeight.body, color: theme.color.text },
+    answer: { fontSize: 18, lineHeight: 24, color: theme.color.text },
+    heard: { fontSize: 18, lineHeight: 24, color: theme.color.primary },
   });

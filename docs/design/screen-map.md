@@ -397,7 +397,7 @@ Shows: `SitterAnswersForm`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your answers | — | 45 |
+| EmptyState | Couldn't load your answers | — | 44 |
 
 ### `/sitter/bookings` — [app/sitter/(tabs)/bookings.tsx](../../frontend/app/sitter/(tabs)/bookings.tsx)
 
@@ -1209,13 +1209,16 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 129 |
-| Button | Add a question | `onboarding-custom-add` | 137 |
-| Button | Set weekly availability | `onboarding-availability-open` | 151 |
-| Button | Review | `onboarding-review` | 187 |
-| TextButton | Skip all for now | `onboarding-skip-all` | 188 |
-| Button | Finish | `onboarding-finish` | 249 |
-| Button | Back to edit | `onboarding-back` | 250 |
+| TextButton | Skip | `onboarding-skip` | 86 |
+| Button | Next | `onboarding-next` | 87 |
+| TextButton | Skip all for now | `onboarding-skip-all` | 120 |
+| TextButton | noteOpen ? "Hide note" : "+ Add a note" | ``onboarding-note-toggle-${q.key}`` | 192 |
+| TextButton | Remove | ``onboarding-custom-remove-${i}`` | 238 |
+| Button | Add a question | `onboarding-custom-add` | 246 |
+| Button | Set weekly availability | `onboarding-availability-open` | 264 |
+| Button | Review | `onboarding-review` | 298 |
+| Button | Finish | `onboarding-finish` | 372 |
+| Button | Back to edit | `onboarding-back` | 373 |
 
 ### SitterCard — [components/SitterCard.tsx](../../frontend/components/SitterCard.tsx)
 
@@ -1341,11 +1344,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 103 |
-| Banner | `problem` | `own-voice-problem` | 119 |
-| TextButton | Or type it | `own-voice-type` | 131 |
-| Banner | `error` | `own-voice-error` | 134 |
-| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 136 |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 104 |
+| Banner | `problem` | `own-voice-problem` | 120 |
+| TextButton | Or type it | `own-voice-type` | 132 |
+| Banner | `error` | `own-voice-error` | 135 |
+| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
 
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
@@ -1493,4 +1496,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-436 actions · 435 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+439 actions · 438 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

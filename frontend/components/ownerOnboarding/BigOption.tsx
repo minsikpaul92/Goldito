@@ -22,7 +22,8 @@ export function BigOption({ label, selected, badge, onPress, style, testID }: Pr
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected: !!selected }}
+      // react-native-web ignores accessibilityState.selected; aria-pressed reaches the DOM.
+      aria-pressed={!!selected}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => [styles.base, selected && styles.selected, pressed && styles.pressed, style]}
