@@ -18,6 +18,7 @@ from app.routers import (
     ai_pet_voice,
     ai_report_chips,
     ai_safety_check,
+    breed_needs,
     demo,
     feed,
     geo,
@@ -51,6 +52,7 @@ app.include_router(demo.router)
 app.include_router(media.router)
 app.include_router(profile_photos.router)
 app.include_router(pet_photos.router)
+app.include_router(breed_needs.router)
 app.include_router(feed.router)
 app.include_router(geo.router)
 app.include_router(ai_care_plan.router)

@@ -29,14 +29,15 @@ def _domain(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
-def search(query: Query, *, api_key: str, timeout: float) -> list[dict]:
-    """One basic search (1 credit) on the trusted domains: [{title, url, domain, content}]."""
+def search(query: Query, *, api_key: str, timeout: float, domains: list[str] | None = None) -> list[dict]:
+    """One basic search (1 credit) on the trusted domains (the treat check's, or `domains`): [{title, url, domain, content}]."""
+    domains = domains or TRUSTED_DOMAINS
     payload: dict = {
         "query": query.text,
         "search_depth": "basic",
         "topic": query.topic,
         "max_results": MAX_RESULTS,
-        "include_domains": TRUSTED_DOMAINS,
+        "include_domains": domains,
     }
     if query.time_range:
         payload["time_range"] = query.time_range
@@ -47,7 +48,7 @@ def search(query: Query, *, api_key: str, timeout: float) -> list[dict]:
         url = str(item.get("url") or "")
         domain = _domain(url)
         # The filter is Tavily's; keep only what really is on a trusted site.
-        if not url or not any(domain == d or domain.endswith(f".{d}") for d in TRUSTED_DOMAINS):
+        if not url or not any(domain == d or domain.endswith(f".{d}") for d in domains):
             continue
         hits.append({
             "title": str(item.get("title") or domain)[:200],
