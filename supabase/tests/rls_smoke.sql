@@ -6144,4 +6144,76 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014u (#232): an early Returned gives the sitter the rest of the stay back
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  v_pet uuid;
+  v_pet2 uuid;
+  v_b uuid;
+  v_on uuid;
+  v_before int;
+  v_after_now int;
+  v_n int;
+  v_from timestamptz := date_trunc('hour', now()) - interval '1 day';
+  v_to timestamptz := date_trunc('hour', now()) + interval '3 days';
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Biscuit') returning id into v_pet;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Pepper') returning id into v_pet2;
+
+  -- A stay that started yesterday and runs three more days, already Received.
+  v_b := _t_booking(joy, allen, array[v_pet], v_from, v_to, 'confirmed', true);
+  delete from public.booking_slots where booking_id = v_b;
+  insert into public.booking_slots (booking_id, pet_id, day, slot)
+  select v_b, v_pet, f.day, f.slot from public.slots_for_window(allen, v_from, v_to) f;
+  select count(*) into v_before from public.booking_slots where booking_id = v_b;
+  select count(*) into v_after_now from public.booking_slots s
+  where s.booking_id = v_b
+    and lower(coalesce(sitter_hours(allen, s.day, s.slot), default_slot_range(allen, s.day, s.slot))) >= now();
+  perform _t_ok(v_after_now > 0 and v_before > v_after_now, '014u: fixture holds slots before and after now');
+
+  -- Returned today, days early.
+  perform _t_as(allen);
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null);
+  select count(*) into v_n from public.booking_slots s
+  where s.booking_id = v_b
+    and lower(coalesce(sitter_hours(allen, s.day, s.slot), default_slot_range(allen, s.day, s.slot))) >= now();
+  perform _t_ok(v_n = 0, '014u: an early Returned frees every slot that starts after the return');
+  perform _t_ok((select count(*) from public.booking_slots where booking_id = v_b) = v_before - v_after_now,
+    '014u: …and keeps the slots the stay already used');
+  perform _t_ok(not exists (
+      select 1 from public.booking_slots s where s.booking_id = v_b
+        and s.day = (v_to at time zone app_timezone())::date - 1),
+    '014u: …so tomorrow and later count nothing for this sitter');
+
+  -- A return after the agreed pick-up changes nothing.
+  v_on := _t_booking(joy, allen, array[v_pet2], v_from - interval '3 days', now() - interval '1 hour', 'confirmed', true);
+  delete from public.booking_slots where booking_id = v_on;
+  insert into public.booking_slots (booking_id, pet_id, day, slot)
+  select v_on, v_pet2, f.day, f.slot from public.slots_for_window(allen, v_from - interval '3 days', now() - interval '1 hour') f;
+  select count(*) into v_before from public.booking_slots where booking_id = v_on;
+  perform _t_as(allen);
+  perform complete_handoff(v_on, 'pick_up');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_slots where booking_id = v_on) = v_before,
+    '014u: a return after the agreed pick-up keeps every slot');
+
+  -- Nobody can call the helper directly.
+  perform _t_as(allen);
+  begin
+    perform release_slots_after(v_on, now() - interval '10 days');
+    v_n := null;
+  exception when others then v_n := -1;
+  end;
+  perform _t_ok(v_n = -1, '014u: release_slots_after is not callable by a signed-in user');
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
