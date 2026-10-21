@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../ui/Screen";
+import { TextButton } from "../ui/TextButton";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -42,7 +43,12 @@ export function StepFrame({ progress, title, hint, onBack, children, footer, tes
       </Text>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <View style={styles.body}>{children}</View>
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+      {footer || onBack ? (
+        <View style={styles.footer}>
+          {footer}
+          {onBack ? <TextButton label="Back" onPress={onBack} testID="own-back-bottom" /> : null}
+        </View>
+      ) : null}
     </Screen>
   );
 }
