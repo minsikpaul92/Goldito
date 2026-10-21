@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { birthdateFromAge, foodsFromDraft, EMPTY_DRAFT, weightFromDraft } from "../features/ownerOnboarding/draft";
 import { CAT_QUESTIONS, DOG_QUESTIONS, SAFETY_QUESTIONS, chartAxes, fill } from "../features/ownerOnboarding/questions";
 import { axisLevels, glance, missingAxes, parseProfile, safetyChips } from "../features/ownerOnboarding/scoring";
@@ -78,5 +80,47 @@ test.describe("owner onboarding logic", () => {
     expect(weightFromDraft({ ...EMPTY_DRAFT, weightKg: "" })).toBeNull();
     expect(weightFromDraft({ ...EMPTY_DRAFT, weightKg: "abc" })).toBeNull();
     expect(foodsFromDraft({ ...EMPTY_DRAFT, foods: [" Chicken ", "chicken", "Dairy", ""] })).toEqual(["chicken", "dairy"]);
+  });
+});
+
+test.describe("voice facts in the draft", () => {
+  const facts = {
+    breed: { value: "Maltese", quote: "a Maltese" },
+    age_years: { value: 4, quote: "four years old" },
+    weight_kg: { value: 5.9, quote: "13 pounds" },
+    foods: [{ value: "chicken", quote: "allergic to chicken" }],
+    answers: {
+      d4: { value: "3", quote: "gets nervous" },
+      d1: { value: "9", quote: "x" },
+      s1: { value: "once", quote: "once snapped" },
+    },
+  };
+
+  test("empty fields are filled, chart answers are marked suggested, safety and foods are never filled", () => {
+    const patch = applyVoiceFacts(EMPTY_DRAFT, facts);
+    expect(patch).toMatchObject({ breed: "Maltese", ageYears: 4, weightKg: "5.9", answers: { d4: 3 }, suggested: ["d4"] });
+    expect(patch.safety).toBeUndefined();
+    expect(patch.foods).toBeUndefined();
+    expect(patch.voice).toBe(facts);
+  });
+
+  test("what the owner already picked is kept", () => {
+    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weightKg: "3", answers: { d4: 1 } }, facts);
+    expect(patch.breed).toBeUndefined();
+    expect(patch.ageYears).toBeUndefined();
+    expect(patch.weightKg).toBeUndefined();
+    expect(patch.answers).toEqual({ d4: 1 });
+    expect(patch.suggested).toEqual([]);
+  });
+
+  test("the open questions list only what is not answered, with the pet's name in the wording", () => {
+    const questions = openQuestions("dog", "Pip", { d1: 2 }, { s1: "never" });
+    const keys = questions.map((q) => q.key);
+    expect(keys).not.toContain("d1");
+    expect(keys).not.toContain("s1");
+    expect(keys).toContain("d2");
+    expect(keys).toContain("s2");
+    expect(questions.find((q) => q.key === "d2")?.prompt).toContain("Pip");
+    expect(questions.find((q) => q.key === "d2")?.options.map((o) => o.value)).toEqual(["1", "2", "3", "4"]);
   });
 });

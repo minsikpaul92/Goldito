@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import { Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -7,13 +7,15 @@ import { Theme } from "../../theme/themes";
 type Props = {
   label: string;
   selected?: boolean;
+  /** A small line under the label, e.g. "✨ suggested". */
+  badge?: string;
   onPress: () => void;
   style?: ViewStyle;
   testID?: string;
 };
 
 /** A full-width answer for the large-text sign-up flow: 20 px text, 64 px high (11.15 §7.1). */
-export function BigOption({ label, selected, onPress, style, testID }: Props) {
+export function BigOption({ label, selected, badge, onPress, style, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -25,7 +27,10 @@ export function BigOption({ label, selected, onPress, style, testID }: Props) {
       testID={testID}
       style={({ pressed }) => [styles.base, selected && styles.selected, pressed && styles.pressed, style]}
     >
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.text}>
+        <Text style={styles.label}>{label}</Text>
+        {badge ? <Text style={styles.badge}>{badge}</Text> : null}
+      </View>
       {selected ? <Ionicons name="checkmark-circle" size={theme.icon.md} color={theme.color.primary} /> : null}
     </Pressable>
   );
@@ -51,8 +56,9 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.accent,
     },
     pressed: { opacity: theme.opacity.pressed },
+    text: { flex: 1 },
+    badge: { fontSize: 14, lineHeight: 18, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     label: {
-      flex: 1,
       fontSize: 20,
       lineHeight: 26,
       fontWeight: theme.fontWeight.semibold,

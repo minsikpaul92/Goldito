@@ -62,22 +62,22 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
-Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `StepFrame` · `AddressInput`
+Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `VoiceStep` · `StepFrame` · `AddressInput`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 145 |
-| Button | Next | `own-next` | 147 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 170 |
-| Banner | `error` | — | 181 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 207 |
-| Stepper | Age | `own-age` | 238 |
-| Button | Next | `own-next` | 250 |
-| Button | Add | `own-food-other-add` | 389 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 445 |
-| Banner | `error` | `own-error` | 496 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 497 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 514 |
+| TextButton | Skip | `own-skip` | 150 |
+| Button | Next | `own-next` | 152 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 182 |
+| Banner | `error` | — | 193 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 219 |
+| Stepper | Age | `own-age` | 276 |
+| Button | Next | `own-next` | 289 |
+| Button | Add | `own-food-other-add` | 467 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 523 |
+| Banner | `error` | `own-error` | 574 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 575 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 592 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1300,7 +1300,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `testID` | 21 |
+| Pressable | — | `testID` | 23 |
 
 ### PetPhotosStep — [components/ownerOnboarding/PetPhotosStep.tsx](../../frontend/components/ownerOnboarding/PetPhotosStep.tsx)
 
@@ -1317,6 +1317,16 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | Back | `own-back` | 30 |
+
+### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 103 |
+| Banner | `problem` | `own-voice-problem` | 119 |
+| TextButton | Or type it | `own-voice-type` | 131 |
+| Banner | `error` | `own-voice-error` | 134 |
+| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 136 |
 
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
@@ -1464,4 +1474,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-426 actions · 425 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+429 actions · 428 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

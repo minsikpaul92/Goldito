@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Species } from "../../types/db";
 import { normalizeAllergen } from "../pets/petValidation";
 import { EMPTY_PROFILE, PetProfile } from "./scoring";
+import { NO_FACTS, VoiceFacts } from "./voiceApi";
 import type { Score } from "./questions";
 
 /** Everything the owner has typed or picked so far. Kept on the device after every answer, so a reload goes on. */
@@ -21,6 +22,10 @@ export type OwnerOnboardingDraft = {
   /** Foods to avoid: chip names and typed ones, lowercase. */
   foods: string[];
   intro: string;
+  /** What the owner said about the pet (voice sign-up): suggestions with their quotes, kept so a reload still shows them. */
+  voice: VoiceFacts;
+  /** Chart questions the voice filled in and the owner has not touched yet. They show "suggested". */
+  suggested: string[];
   /** The home address as found on the map (a picked suggestion), or empty when only the pin is set. */
   homeAddress: string;
   home: { lat: number; lng: number } | null;
@@ -42,6 +47,8 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   safety: {},
   foods: [],
   intro: "",
+  voice: NO_FACTS,
+  suggested: [],
   homeAddress: "",
   home: null,
   step: "species",

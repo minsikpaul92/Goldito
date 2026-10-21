@@ -29,5 +29,5 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
     },
-    multiline: { minHeight: 140, textAlignVertical: "top" },
+    multiline: { minHeight: 140, textAlignVertical: "top", borderRadius: theme.ui.radius.card },
   });
