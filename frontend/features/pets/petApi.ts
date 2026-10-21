@@ -3,6 +3,7 @@ import { randomUUID } from "expo-crypto";
 import { getSupabase } from "../../lib/supabase";
 import { Pet, Species } from "../../types/db";
 import { Coat, isCoat } from "../ownerOnboarding/questions";
+import type { PixelHead } from "./sprites/pixelize";
 
 const PET_COLUMNS =
   "id, owner_id, species, name, breed, birthdate, weight_kg, notes, profile, created_at, pet_allergies(id, allergen)";
@@ -38,6 +39,20 @@ export async function getPetCoat(petId: string): Promise<Coat | null> {
   if (error || !data) return null;
   const coat = (data as { profile?: { coat?: unknown } | null }).profile?.coat;
   return isCoat(coat) ? coat : null;
+}
+
+/**
+ * Save the pixel head made from a photo into `pets.profile.pixel_head`, or remove it (`null`) to go back to the preset.
+ * The owner may update `profile` (grant in 014v, pets_update); the rest of the profile is kept.
+ */
+export async function savePixelHead(petId: string, head: PixelHead | null): Promise<void> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("pets").select("profile").eq("id", petId).maybeSingle();
+  if (error || !data) fail("save the pixel pet");
+  const { pixel_head: _old, ...rest } = ((data as { profile?: Record<string, unknown> | null }).profile ?? {}) as Record<string, unknown>;
+  const profile = head ? { ...rest, pixel_head: head } : rest;
+  const { error: saveError } = await supabase.from("pets").update({ profile }).eq("id", petId);
+  if (saveError) fail("save the pixel pet");
 }
 
 export async function getPet(petId: string): Promise<Pet | null> {

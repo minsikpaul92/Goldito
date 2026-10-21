@@ -69,7 +69,7 @@ export default function OwnerHome() {
         testID="home-pager"
         pages={[
           { label: "Today", content: today },
-          { label: "Pet", content: <PetPage pets={pets} /> },
+          { label: "Pet", content: <PetPage pets={pets} onChanged={() => void reload()} /> },
         ]}
       />
       <View style={styles.footer}>

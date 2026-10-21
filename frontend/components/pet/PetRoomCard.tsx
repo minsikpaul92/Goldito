@@ -6,12 +6,15 @@ import { formatTime, isoToZoned } from "../../features/schedule/dates";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Species } from "../../types/db";
+import type { PixelHead } from "../../features/pets/sprites/pixelize";
 import { PetSprite } from "./PetSprite";
 
 type Props = {
   name: string;
   species: Species;
   coat?: unknown;
+  /** A saved photo head (`pets.profile.pixel_head`), drawn instead of the preset. */
+  head?: PixelHead | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */
   status: PetStatus | null;
   /** Tapping the pet. */
@@ -29,14 +32,14 @@ const MOOD_LABEL = { excited: "Happy", calm: "Calm", tired: "Tired", hungry: "Hu
  * The pet room (11.12): the 8-bit pet on a retro "screen", its mood, and a short HUD (meal, potty, walk, next task)
  * worked out from today's check-ins. Pure display: `PetRoom` loads the data.
  */
-export function PetRoomCard({ name, species, coat, status, onPress, compact, children, testID }: Props) {
+export function PetRoomCard({ name, species, coat, head, status, onPress, compact, children, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const mood = status?.mood ?? "calm";
   const hud = status ? hudItems(status, species) : [];
 
   const screen = (
     <View style={[styles.screen, compact && styles.screenCompact]}>
-      <PetSprite species={species} coat={coat} mood={mood} pixel={compact ? 4 : 8} testID={testID ? `${testID}-sprite` : undefined} />
+      <PetSprite species={species} coat={coat} head={head} mood={mood} pixel={compact ? 4 : 8} testID={testID ? `${testID}-sprite` : undefined} />
     </View>
   );
 

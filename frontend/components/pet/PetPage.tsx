@@ -3,18 +3,26 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../ui/Screen";
+import { TextButton } from "../ui/TextButton";
+import { asPixelHead } from "../../features/pets/sprites/pixelize";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
 import { PetMedals } from "./PetMedals";
 import { PetRoom } from "./PetRoom";
+import { PixelHeadSheet } from "./PixelHeadSheet";
 
-/** Owner Home, page two (11.12): the pet room of one pet, with a switch when there are several. Tap the pet: Diary. */
-export function PetPage({ pets }: { pets: Pet[] }) {
+/**
+ * Owner Home, page two (11.12): the pet room of one pet, with a switch when there are several. Tap the pet: Diary.
+ * "Make from photo" turns a photo into the pet's own pixel head (PH.2); `onChanged` reloads the pets after a save.
+ */
+export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => void }) {
   const styles = useThemedStyles(makeStyles);
   const [selected, setSelected] = useState(pets[0]?.id);
+  const [making, setMaking] = useState(false);
   const pet = pets.find((p) => p.id === selected) ?? pets[0];
   if (!pet) return null;
+  const head = asPixelHead(pet.profile?.pixel_head);
 
   return (
     <Screen contentStyle={styles.page} testID="pet-page">
@@ -35,8 +43,15 @@ export function PetPage({ pets }: { pets: Pet[] }) {
         </View>
       ) : null}
       <PetRoom
-        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat }}
+        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, head }}
         onPress={() => router.push("/owner/diary")}
+      />
+      <TextButton label="🎨 Make from photo" onPress={() => setMaking(true)} style={styles.make} testID="pixel-head-open" />
+      <PixelHeadSheet
+        visible={making}
+        onClose={() => setMaking(false)}
+        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, head }}
+        onSaved={() => onChanged?.()}
       />
       <PetMedals petId={pet.id} />
     </Screen>
@@ -46,6 +61,7 @@ export function PetPage({ pets }: { pets: Pet[] }) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     page: { gap: theme.spacing.md },
+    make: { alignSelf: "center" },
     switcher: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     pill: {
       minHeight: theme.layout.touchTarget,

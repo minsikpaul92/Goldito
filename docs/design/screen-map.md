@@ -1362,13 +1362,24 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``pet-switch-${p.name}`` | 24 |
+| Pressable | — | ``pet-switch-${p.name}`` | 32 |
+| TextButton | 🎨 Make from photo | `pixel-head-open` | 49 |
 
 ### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 68 |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 71 |
+
+### PixelHeadSheet — [components/pet/PixelHeadSheet.tsx](../../frontend/components/pet/PixelHeadSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy === "saving" ? "Saving..." : "Save" | `pixel-head-sheet` | 71 |
+| Button | busy === "saving" ? "Saving..." : "Save" | `pixel-head-save` | 78 |
+| Button | busy === "making" ? "Making..." : "Pick a photo" | `pixel-head-pick` | 80 |
+| TextButton | Try another photo | `pixel-head-again` | 92 |
+| TextButton | Use the preset | `pixel-head-reset` | 94 |
 
 ### SitterPetRoom — [components/pet/SitterPetRoom.tsx](../../frontend/components/pet/SitterPetRoom.tsx)
 
@@ -1523,4 +1534,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-446 actions · 445 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

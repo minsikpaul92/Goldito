@@ -5,10 +5,9 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { PetSprite } from "../../components/pet/PetSprite";
 import { Button } from "../../components/ui/Button";
 import { Screen } from "../../components/ui/Screen";
-import { pixelize, type PixelHead } from "../../features/pets/sprites/pixelize";
+import { headFromPhoto } from "../../features/pets/sprites/headFromPhoto";
+import type { PixelHead } from "../../features/pets/sprites/pixelize";
 import { COAT_PALETTES } from "../../features/pets/sprites/sprites";
-import { segmentAt } from "../../features/snap/cutout";
-import { detectPets, loadFrames } from "../../features/snap/vision";
 import { pickMedia } from "../../lib/media";
 import type { PetMood } from "../../lib/petStatus";
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -65,11 +64,9 @@ function FromPhoto() {
     setError(null);
     setHead(null);
     try {
-      const [frame] = await loadFrames(picked.file);
-      setPhoto(frame.toDataURL("image/jpeg", 0.85));
-      const biggest = [...(await detectPets(frame))].sort((a, b) => b.w * b.h - a.w * a.h)[0];
-      const at = biggest ? { x: biggest.x + biggest.w / 2, y: biggest.y + biggest.h / 2 } : { x: 0.5, y: 0.5 };
-      setHead(pixelize(frame, await segmentAt(frame, at)));
+      const made = await headFromPhoto(picked.file);
+      setPhoto(made.photo);
+      setHead(made.head);
     } catch (e) {
       setError((e as Error).message);
     } finally {

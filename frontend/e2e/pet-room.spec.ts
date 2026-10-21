@@ -2,9 +2,11 @@ import { expect, test } from "@playwright/test";
 
 import { HOUR } from "./careFixtures";
 import { NOON_TORONTO, app, box, center, drag, signIn } from "./helpers";
+import { fakePetPhoto } from "./pixelHooks";
 import { OWNER, mockSupabase, type MockDb } from "./supabaseMock";
 
-// The pet room on owner Home (11.12, #184): a swipe pager (Today / Pet), the 8-bit pet and its HUD.
+// The pet room on owner Home (11.12, #184): a swipe pager (Today / Pet), the 8-bit pet and its HUD, and the pixel pet
+// made from a photo (PH.2, MediaPipe replaced by test hooks).
 
 const pet = (id: string, name: string, species: "dog" | "cat", extra: object = {}) => ({
   id,
@@ -130,4 +132,47 @@ test.describe("pet room", () => {
     await screen.getByTestId("pet-room-Max-open").click();
     await expect(page).toHaveURL(/\/owner\/diary$/);
   });
+
+  test("Make from photo: the pixel pet is saved to the pet, and Use the preset takes it back", async ({ page }) => {
+    await fakePetPhoto(page);
+    const db = await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog", { profile: { coat: "cream", v: 1 } })));
+    const screen = app(page);
+    await screen.getByTestId("home-pager-dot-1").click();
+    const sprite = screen.getByTestId("pet-room-Max-sprite");
+    const preset = await colorsOf(sprite);
+
+    await screen.getByTestId("pixel-head-open").click();
+    await screen.getByTestId("pixel-head-pick").click();
+    await screen.getByTestId("sample-mood_tug").click();
+    await expect(screen.getByTestId("pixel-head-save")).toBeVisible();
+    await screen.getByTestId("pixel-head-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Max's pixel pet saved");
+
+    // Saved next to the owner's other answers, which stay.
+    const profile = db.pets[0].profile as { coat: string; v: number; pixel_head?: { v: number; rows: string[] } };
+    expect(profile.coat).toBe("cream");
+    expect(profile.v).toBe(1);
+    expect(profile.pixel_head?.v).toBe(1);
+    expect(profile.pixel_head?.rows).toHaveLength(16);
+    // The room now draws the photo head.
+    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).not.toBe(JSON.stringify(preset));
+
+    await screen.getByTestId("pixel-head-open").click();
+    await screen.getByTestId("pixel-head-reset").click();
+    await expect(screen.getByTestId("toast")).toContainText("Back to the preset");
+    expect("pixel_head" in (db.pets[0].profile as object)).toBe(false);
+    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).toBe(JSON.stringify(preset));
+  });
 });
+
+/** The background colors drawn in a sprite, sorted. */
+async function colorsOf(sprite: import("@playwright/test").Locator): Promise<string[]> {
+  return sprite.evaluate((el) => {
+    const seen = new Set<string>();
+    el.querySelectorAll("div").forEach((d) => {
+      const c = getComputedStyle(d).backgroundColor;
+      if (c && c !== "rgba(0, 0, 0, 0)") seen.add(c);
+    });
+    return [...seen].sort();
+  });
+}
