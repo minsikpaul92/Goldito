@@ -133,6 +133,22 @@ test.describe("pet room", () => {
     await expect(page).toHaveURL(/\/owner\/diary$/);
   });
 
+  test("the breed picks the head and the weight the size: a small dog takes less of the screen", async ({ page }) => {
+    await setup(page, (db) => {
+      db.pets.push(pet("pet-max", "Max", "dog", { breed: "Maltese", weight_kg: 4 }));
+      db.pets.push(pet("pet-rex", "Rex", "dog", { breed: "German Shepherd", weight_kg: 32, created_at: "2026-10-02T09:00:00Z" }));
+    });
+    const screen = app(page);
+    await screen.getByTestId("home-pager-dot-1").click();
+    const small = await box(screen.getByTestId("pet-room-Max-sprite"));
+    const roomMax = await box(screen.getByTestId("pet-room-Max"));
+    await screen.getByTestId("pet-switch-Rex").click();
+    const big = await box(screen.getByTestId("pet-room-Rex-sprite"));
+    expect(small.width).toBeLessThan(big.width * 0.8);
+    // The screen keeps its height, so switching pets doesn't jump the page.
+    expect((await box(screen.getByTestId("pet-room-Rex"))).height).toBeCloseTo(roomMax.height, -1);
+  });
+
   test("Make from photo: the pixel pet is saved to the pet, and Use the preset takes it back", async ({ page }) => {
     await fakePetPhoto(page);
     const db = await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog", { profile: { coat: "cream", v: 1 } })));

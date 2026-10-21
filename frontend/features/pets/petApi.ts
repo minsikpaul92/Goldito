@@ -33,15 +33,15 @@ export async function listMyPets(ownerId: string): Promise<Pet[]> {
   return (data ?? []) as Pet[];
 }
 
-export type PetLook = { coat: Coat | null; breed: string | null; head: PixelHead | null };
+export type PetLook = { coat: Coat | null; breed: string | null; weightKg: number | null; head: PixelHead | null };
 
-/** How the pet room draws the pet: the breed (head shape), the coat color the owner picked and the photo head. */
+/** How the pet room draws the pet: the breed (head shape), the weight (size), the coat color and the photo head. */
 export async function getPetLook(petId: string): Promise<PetLook> {
-  const { data, error } = await getSupabase().from("pets").select("breed, profile").eq("id", petId).maybeSingle();
-  if (error || !data) return { coat: null, breed: null, head: null };
-  const row = data as { breed?: string | null; profile?: { coat?: unknown; pixel_head?: unknown } | null };
+  const { data, error } = await getSupabase().from("pets").select("breed, weight_kg, profile").eq("id", petId).maybeSingle();
+  if (error || !data) return { coat: null, breed: null, weightKg: null, head: null };
+  const row = data as { breed?: string | null; weight_kg?: number | string | null; profile?: { coat?: unknown; pixel_head?: unknown } | null };
   const profile = row.profile;
-  return { coat: isCoat(profile?.coat) ? profile.coat : null, breed: row.breed ?? null, head: asPixelHead(profile?.pixel_head) };
+  return { coat: isCoat(profile?.coat) ? profile.coat : null, breed: row.breed ?? null, weightKg: row.weight_kg == null ? null : Number(row.weight_kg), head: asPixelHead(profile?.pixel_head) };
 }
 
 /**

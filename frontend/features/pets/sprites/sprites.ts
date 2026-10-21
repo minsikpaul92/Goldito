@@ -172,6 +172,17 @@ export function petShape(species: Species, breed: string | null | undefined): Sh
   return found?.shape ?? DEFAULT_SHAPE[species];
 }
 
+export type PetSize = "S" | "M" | "L";
+
+/** Dogs by weight: S under 10 kg, M to 25 kg, L above; no weight is M. Cats are one size. */
+export function petSize(species: Species, weightKg: number | null | undefined): PetSize {
+  if (species === "cat" || weightKg == null || !(weightKg > 0)) return "M";
+  return weightKg < 10 ? "S" : weightKg <= 25 ? "M" : "L";
+}
+
+/** How much of the pet room a size fills. */
+export const SIZE_SCALE: Record<PetSize, number> = { S: 0.7, M: 0.85, L: 1 };
+
 const BODY: Record<Shape, { rows: string[]; mouthRow: number }> = Object.fromEntries(
   Object.entries(SHAPE_HALVES).map(([shape, { rows, mouthRow }]) => [shape, { rows: rows.map(mirror), mouthRow }]),
 ) as Record<Shape, { rows: string[]; mouthRow: number }>;

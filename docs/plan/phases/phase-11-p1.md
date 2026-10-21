@@ -53,7 +53,7 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 | Step | 내용 | 확인 |
 | :--- | :--- | :--- |
 | **PS.1** ✅ | **머리 모양 프리셋** (`features/pets/sprites/sprites.ts`): 개 4개, 고양이 2개, 모두 16x16 역할 글자 + 같은 눈 · 입 자리라 기분 5개가 다 됨. 견종 글자(자유 입력)를 검토된 24종(`backend/app/data/breed_needs.json`)에 맞춰 모양으로: **floppy**(늘어진 귀: 래브라도 · 골든 · 비글 · 닥스훈트 · 캐벌리어 · 로트와일러 · 오스트레일리안 셰퍼드 · 보더콜리, 모르는 견종 기본값) · **pointy**(선 귀: 저먼 셰퍼드 · 허스키 · 웰시코기 · 치와와) · **fluffy**(복슬: 푸들 · 말티즈 · 시츄 · 포메라니안 · 요크셔테리어) · **flat**(납작 얼굴: 불독 · 보스턴테리어 · 퍼그). 고양이 **short**(기본 · 벵갈) · **long**(장모 · 메인쿤 · 랙돌). 키는 `species_shape_coat_mood`(묵의 PNG도 이 이름). dev 갤러리에 모양 × 털색 × 기분 | 🤖 `pet-sprite`(모양마다 16x16 · 기분 5개 · 견종 매핑) |
-| PS.2 | **크기는 몸무게**: 개 S(10 kg 미만) · M(25 kg까지) · L(그 위), 몸무게가 없으면 M. 고양이는 하나. 오너 히어로와 시터 Home 펫 방에서 펫이 차지하는 크기(S 70% · M 85% · L 100%) | 🤖 `pet-room` · `pet-room-sitter` |
+| **PS.2** ✅ | **크기는 몸무게**: 개 S(10 kg 미만) · M(25 kg까지) · L(그 위), 몸무게가 없으면 M. 고양이는 하나. 오너 히어로와 시터 Home 펫 방에서 펫이 차지하는 크기(S 70% · M 85% · L 100%) | 🤖 `pet-room` · `pet-room-sitter` |
 | PS.3 | **사진은 색만**: Pet 페이지 **🎨 Match colors from photo** → 오린 펫에서 주된 색 3개(털 · 그늘 · 밝은 곳, 밝기 순) → 미리보기(그 펫의 프리셋 모양에 그 색) → Save → `pets.profile.pixel_colors`. **Use coat color**로 지우면 온보딩 털색. 사진 머리(`pixel_head`)는 더 그리지 않고, 저장된 것은 무시 | 🤖 `pet-room`(저장 · 다른 답 유지 · 되돌리기) · `pet-sprite`(색 뽑기) |
 | PS.4 | test-guide TAMA-10 · TAMA-11 다시 쓰기, 사람 확인(데모 펫: Max 말티즈 → fluffy S, Mochi 고양이), TODO 정리 | 사람 |
 
