@@ -25,6 +25,7 @@ from app.services.demo_accounts import (
     DemoUser,
     check_sitter_rates,
     ensure_home_point,
+    ensure_owner_onboarded,
     ensure_sitter_answers,
     ensure_sitter_rates,
     find_user_id,
@@ -98,6 +99,8 @@ def main() -> int:
                 ensure_sitter_answers(client, user_id)
         if user_id and problem is None and not args.check:
             ensure_home_point(client, demo.role, user_id, demo.email)
+            if demo.role == "owner":
+                ensure_owner_onboarded(client, user_id)
         all_ok = all_ok and problem is None
         status = "ok" if problem is None else problem
         print(f"{demo.email:<26} {demo.role:<6} {action:<8} {status}")

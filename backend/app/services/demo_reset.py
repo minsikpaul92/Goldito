@@ -32,9 +32,11 @@ from app.config import get_settings
 from app.services import authz
 from app.services.demo_accounts import (
     DEFAULT_SET,
+    DEMO_PET_PROFILES,
     MAX_AND_MOCHI,
     DemoSet,
     ensure_home_point,
+    ensure_owner_onboarded,
     ensure_sitter_answers,
     ensure_sitter_rates,
     find_user_id,
@@ -172,10 +174,15 @@ def owner_pet_ids(client: Client, owner_id: str) -> list[str]:
 
 def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[str]:
     """Create the set's two pets when missing (never duplicates one that is there). Returns what was added."""
-    existing = {row["name"] for row in client.table("pets").select("id, name").eq("owner_id", owner_id).execute().data}
+    existing = {
+        row["name"]: row for row in client.table("pets").select("id, name, profile").eq("owner_id", owner_id).execute().data
+    }
     added = []
     for name, species, breed, years, kg, allergens in pets:
         if name in existing:
+            # A pet from before the sign-up questions (014v) gets its answers; one with answers keeps them.
+            if name in DEMO_PET_PROFILES and not existing[name].get("profile"):
+                client.table("pets").update({"profile": DEMO_PET_PROFILES[name]}).eq("id", existing[name]["id"]).execute()
             continue
         birthdate = today.replace(year=today.year - years, day=min(today.day, 28))
         pet = (
@@ -188,6 +195,7 @@ def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[s
                     "breed": breed,
                     "birthdate": birthdate.isoformat(),
                     "weight_kg": kg,
+                    **({"profile": DEMO_PET_PROFILES[name]} if name in DEMO_PET_PROFILES else {}),
                 }
             )
             .execute()
@@ -449,6 +457,7 @@ def reset(
             ensure_sitter_rates(client, sitter_id)
         if owner_side:
             ensure_home_point(client, "owner", owner_id, demo_set.owner.email)
+            ensure_owner_onboarded(client, owner_id)
         if sitter_side:
             ensure_home_point(client, "sitter", sitter_id, demo_set.sitter.email)
             ensure_sitter_answers(client, sitter_id)

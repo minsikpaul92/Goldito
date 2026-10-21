@@ -446,3 +446,40 @@ def test_answers_a_teammate_filled_in_are_kept():
 
     assert [(a["question_key"], a["choice"]) for a in db.tables["sitter_profile_answers"]] == [("cats", "no")]
     assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
+
+
+def test_a_reset_marks_the_owner_done_with_the_sign_up_questions():
+    db = world()
+    db.tables["owner_profiles"][0]["onboarded_at"] = None
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["owner_profiles"][0]["onboarded_at"] is not None
+
+
+def test_the_demo_pets_get_their_answers_and_an_old_pet_gets_them_too():
+    db = world()  # Max is already there, from before the sign-up questions, with no answers
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    by_name = {p["name"]: p for p in db.tables["pets"] if p["owner_id"] == OWNER}
+    assert by_name["Max"]["profile"] == demo_accounts.DEMO_PET_PROFILES["Max"]
+    assert by_name["Mochi"]["profile"] == demo_accounts.DEMO_PET_PROFILES["Mochi"]
+
+
+def test_answers_an_owner_gave_are_kept():
+    db = world()
+    db.tables["pets"][0]["profile"] = {"v": 1, "answers": {"d1": 1}, "safety": {}}
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["pets"][0]["profile"] == {"v": 1, "answers": {"d1": 1}, "safety": {}}
+
+
+def test_the_demo_answers_use_real_question_keys():
+    dog = {f"d{i}" for i in range(1, 13)}
+    cat = {f"c{i}" for i in range(1, 11)}
+    assert set(demo_accounts.DEMO_PET_PROFILES["Max"]["answers"]) == dog
+    assert set(demo_accounts.DEMO_PET_PROFILES["Mochi"]["answers"]) == cat
+    for profile in demo_accounts.DEMO_PET_PROFILES.values():
+        assert all(1 <= v <= 4 for v in profile["answers"].values())
