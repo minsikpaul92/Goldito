@@ -6615,13 +6615,12 @@ begin
   v_h := propose_handoff(v1, 'pick_up', local_ts(d + 3, '17:00'));
   perform _t_as(chloe);
   perform respond_handoff(v_h, true);
-  perform _t_as(null);
+  perform _t_as(robert); -- quote_booking needs a signed-in user
   v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 3, '17:00'), 1) ->> 'total')::numeric;
   perform _t_ok((select paid_at is not null and (price_snapshot ->> 'total')::numeric = v_base + 15
         and jsonb_array_length(price_snapshot -> 'extras') = 1
       from public.bookings where id = v1),
     '014y: a paid booking keeps its fee when the times change');
-  perform _t_as(robert);
   perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 15, '014y: Checkout shows the same total');
   perform _t_as(null);
 end;
