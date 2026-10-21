@@ -1,12 +1,19 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
+import { ChatCounterSheet } from "../../components/ChatCounterSheet";
+import { ChatDeclineSheet } from "../../components/ChatDeclineSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
+import { ChatCareCards } from "../../components/ChatCareCards";
+import { ChatHandoffCard } from "../../components/ChatHandoffCard";
+import { ChatPlusMenu, PlusItem } from "../../components/ChatPlusMenu";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
+import { ChatStayCard } from "../../components/ChatStayCard";
+import { ChatTripCard } from "../../components/ChatTripCard";
 import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
 import { MeetGreetCard, MeetGreetHandle } from "../../components/MeetGreetCard";
@@ -30,8 +37,11 @@ import {
   markChatRead,
   sendChatMessage,
 } from "../../features/chat/chatApi";
-import { ChatChip, chipsFor, fetchChatDraft } from "../../features/chat/chatAi";
-import { Primary, finalQuote, nextStep } from "../../features/chat/nextStep";
+import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
+import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
+import { inCare } from "../../features/chat/careCards";
+import { canStartTripNow } from "../../features/transit/tripLogic";
+import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
@@ -53,6 +63,13 @@ type Loaded = {
 type StayCard = Extract<ChatCard, { type: "stay" }>;
 type RequestCard = Extract<ChatCard, { type: "request" }>;
 type QuoteCard = Extract<ChatCard, { type: "quote" }>;
+
+// The message box grows with its text up to about six lines, then it stays that tall and scrolls.
+const INPUT_MIN = 44;
+const INPUT_MAX = 150;
+const INPUT_PAD = 11;
+/** Footer steps that get a Decline next to them (#230): the owner's yes, the sitter's yes, the owner's final quote. */
+const DECLINABLE: Primary["kind"][] = ["agree", "accept", "confirm_quote"];
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -82,13 +99,34 @@ export default function Chat() {
   const [requesting, setRequesting] = useState(false);
   const [quoting, setQuoting] = useState<"first" | "final" | null>(null);
   const [agreeing, setAgreeing] = useState(false);
+  /** Decline at the agreement step or on the final quote (#230); `quote` when it is the final quote. */
+  const [declining, setDeclining] = useState<{ quote: boolean } | null>(null);
+  /** The final quote's total the owner counters (#230 part 3). */
+  const [countering, setCountering] = useState<number | null>(null);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
   const [feeFor, setFeeFor] = useState<string | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
+  const [action, setAction] = useState<ChatAction | null>(null);
   const [drafting, setDrafting] = useState(false);
+  // Chips that follow the typed text: null = none (the usual chips show when the box is empty), "busy" = asking.
+  const [typedChips, setTypedChips] = useState<ChatChip[] | "busy" | null>(null);
+  const draftedText = useRef<string | null>(null);
   const input = useRef<TextInput>(null);
+  const [inputHeight, setInputHeight] = useState(INPUT_MIN);
+
+  // On the web the box is a textarea: it is as tall as its text (measured on the element), up to INPUT_MAX, then it scrolls.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const el = input.current as unknown as HTMLTextAreaElement | null;
+    if (!el?.style) return;
+    el.style.height = "auto";
+    const borders = el.offsetHeight - el.clientHeight; // scrollHeight leaves the border out
+    el.style.height = `${Math.min(INPUT_MAX, Math.max(INPUT_MIN, el.scrollHeight + borders))}px`;
+  }, [text]);
 
   const load = useCallback(async () => {
     if (!profile) return;
@@ -126,22 +164,23 @@ export default function Chat() {
       .catch(() => setPhotos([]));
   }, [otherId]);
 
-  // Chips for what the other person just wrote (or openers in an empty chat). The slot is there from the start with a
-  // spinner, so nothing jumps when they arrive; the list may have asked ahead, then they are ready at once.
+  // Chips are always there: replies to what the other person wrote, or follow-ups after my own message (or openers in an
+  // empty chat). The slot is there from the start with a spinner, so nothing jumps when they arrive; the list may have
+  // asked ahead, then they are ready at once.
   const all = loaded?.messages;
-  const lastText = all?.filter((m) => m.kind === "text").at(-1);
-  const waitingForMe = !!all && (lastText ? lastText.senderId !== profile?.id : loaded?.header.myRole === "owner");
   const latestAt = all?.at(-1)?.at ?? "none";
-  const key = loaded && waitingForMe ? `${threadId}:${latestAt}` : null;
+  const key = loaded ? `${threadId}:${latestAt}` : null;
   const [chipsReady, setChipsReady] = useState(false);
   useEffect(() => {
     setChips([]);
+    setAction(null);
     setChipsReady(false);
     if (!key) return;
     let current = true;
     void chipsFor(threadId, latestAt).then((r) => {
       if (!current) return;
       setChips(r?.chips ?? []);
+      setAction(r?.action ?? null);
       setChipsReady(true);
     });
     return () => {
@@ -153,14 +192,34 @@ export default function Chat() {
   /** A tapped chip becomes a draft in the box; nothing is sent until the person presses Send (D62). */
   const pickChip = async (chip: ChatChip) => {
     setDrafting(true);
-    const draft = await fetchChatDraft(threadId, chip.label);
+    const draft = await fetchChatDraft(threadId, chip.label, text);
     setDrafting(false);
     if (draft) {
+      draftedText.current = draft;
       setText(draft);
-      setChips([]);
+      setTypedChips(null);
       input.current?.focus();
     }
   };
+
+  // When the box has text and stays still for a moment, the chips follow it: a spinner, then chips that fit. Emptying the
+  // box brings the usual chips back. The AI only words; the person presses Send (D62).
+  useEffect(() => {
+    const typed = text.trim();
+    setTypedChips(null);
+    if (!typed || typed === draftedText.current?.trim()) return;
+    let current = true;
+    const timer = setTimeout(() => {
+      setTypedChips("busy");
+      void fetchTypedChips(threadId, typed).then((r) => {
+        if (current) setTypedChips(r);
+      });
+    }, TYPED_PAUSE_MS);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [text, threadId]);
 
   // Open at the latest message, and follow new ones.
   const count = loaded?.messages.length ?? 0;
@@ -204,14 +263,21 @@ export default function Chat() {
       Date.parse(m.card.dropOffAt) === Date.parse(stay.dropOffAt) &&
       Date.parse(m.card.pickUpAt) === Date.parse(stay.pickUpAt),
   );
-  const step = nextStep({
-    role: header.myRole,
-    booking,
-    messages,
-    hasStay: !!stay,
-    priced,
-    otherName: header.otherName,
-  });
+  // A stay that is over has nothing left to press (no Send quote, no Request booking), unless a newer stay card was started.
+  const returnedStay = pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt && !!b.pickUp?.completedAt);
+  const newerBooking = !!booking && booking.id !== returnedStay?.id;
+  const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;
+  const finished = !!returnedStay && !newerBooking && (!latestCardAt || Date.parse(latestCardAt) < Date.parse(returnedStay.pickUp?.completedAt ?? ""));
+  const step: NextStep = finished
+    ? { primary: null, quote: false, wait: null }
+    : nextStep({
+        role: header.myRole,
+        booking,
+        messages,
+        hasStay: !!stay,
+        priced,
+        otherName: header.otherName,
+      });
   // The final quote prices the booking as it stands now (agreed times and pets), not the first card.
   const finalStay =
     booking?.dropOff && booking.pickUp
@@ -222,6 +288,18 @@ export default function Chat() {
           service: booking.serviceType,
         }
       : null;
+
+  // A quote sent after a booking's payment card is that booking's final quote.
+  const payAt = messages.findIndex((m) => m.card?.type === "payment");
+  const isFinal = (id: string) => payAt >= 0 && messages.findIndex((m) => m.id === id) > payAt;
+  // What a quote asks for: the server's price plus every fee the owner has not declined (a fee still waiting counts,
+  // because that is when the owner wants to answer it). A final quote is compared with the quote before the payment
+  // card (the one before the Meet & Greet and the agreement). No such quote (a booking made outside the chat) means
+  // nothing to compare, so no counter.
+  const asked = (c: QuoteCard) =>
+    Math.round((c.quote.total + c.extras.filter((e) => e.status !== "declined").reduce((sum, e) => sum + e.amount, 0)) * 100) / 100;
+  const firstQuote = payAt >= 0 ? (messages.slice(0, payAt).filter((m) => m.card?.type === "quote").at(-1)?.card as QuoteCard | undefined) : undefined;
+  const totalChanged = (c: QuoteCard) => firstQuote != null && Math.abs(asked(c) - asked(firstQuote)) >= 0.005;
 
   /** One owner action on a quote card; the cards come back from the server. */
   const quoteAction = async (run: () => Promise<void>) => {
@@ -258,6 +336,68 @@ export default function Chat() {
     return undefined;
   };
 
+  /** An action chip: the same thing the footer or the card would do. Shown only while it is possible (actionPossible). */
+  const doAction = async (a: ChatAction) => {
+    setAction(null);
+    if (a.id === "send_quote") return setQuoting("first");
+    if (a.id === "meet_time" || a.id === "meet_accept") return meetCard.current?.primary();
+    if (a.id === "meet_skip") return meetCard.current?.skip();
+    return step.primary ? doPrimary(step.primary) : undefined;
+  };
+  const typing = text.trim() !== "";
+  const typedBusy = typing && (typedChips === "busy" || drafting);
+  const typingChips = typing && (typedBusy || Array.isArray(typedChips));
+  const shownAction = action && actionPossible(action.id, step, booking, header.myRole) ? action : null;
+
+  // The + menu (#235): each entry opens what the flow opens. Entries that cannot work right now are dimmed.
+  const bump = (key: "handoff" | "trip" | "photo") => setSignals((n) => ({ ...n, [key]: n[key] + 1 }));
+  const quoteKind = booking && hasPaymentCard(messages, booking.id) ? "final" : "first";
+  const plusItems: PlusItem[] = [
+    {
+      id: "meet",
+      label: "Meet & Greet request",
+      icon: "people-outline",
+      enabled: !!booking && !!meetGreetPrimary(booking, header.myRole) && !!meetCard.current,
+      onPress: () => meetCard.current?.primary(),
+    },
+    ...(!owner
+      ? [
+          {
+            id: "quote",
+            label: quoteKind === "final" ? "Final quote" : "Quote",
+            icon: "pricetag-outline" as const,
+            enabled: !finished && (quoteKind === "final" ? !!finalStay : !!stay),
+            onPress: () => setQuoting(quoteKind),
+          },
+        ]
+      : []),
+    {
+      id: "date",
+      label: "Date change",
+      icon: "calendar-outline",
+      enabled: !!booking && ["requested", "confirmed"].includes(booking.status) && !(booking.dropOff?.completedAt && booking.pickUp?.completedAt),
+      onPress: () => bump("handoff"),
+    },
+    {
+      id: "trip",
+      label: "Start trip",
+      icon: "car-outline",
+      enabled: !!booking && canStartTripNow(booking, header.myRole),
+      onPress: () => bump("trip"),
+    },
+    ...(owner
+      ? [
+          {
+            id: "photo",
+            label: "Photo request",
+            icon: "camera-outline" as const,
+            enabled: !!booking && inCare(booking),
+            onPress: () => bump("photo"),
+          },
+        ]
+      : []),
+  ];
+
   const send = async () => {
     const body = text.trim();
     if (sending || !body) return;
@@ -292,6 +432,9 @@ export default function Chat() {
       </View>
     );
   };
+
+  // The stay itself (Received, in care, Returned) follows the pair's paid booking even after the progress bar is done.
+  const stayBooking = booking ?? pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt) ?? null;
 
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
 
@@ -369,10 +512,13 @@ export default function Chat() {
               <ChatQuoteCard
                 card={m.card as QuoteCard}
                 role={header.myRole}
+                final={isFinal(m.id)}
                 busy={quoteBusy}
                 onAddFee={() => setFeeFor(m.id)}
                 onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
+                onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
+                onCounter={isFinal(m.id) && totalChanged(m.card as QuoteCard) ? () => setCountering(asked(m.card as QuoteCard)) : undefined}
               />
             </View>
           ) : m.kind === "text" ? (
@@ -385,6 +531,10 @@ export default function Chat() {
             />
           ) : null,
         )}
+        {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
+        {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
+        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} /> : null}
+        {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (
         <View style={styles.next}>
@@ -401,20 +551,67 @@ export default function Chat() {
           {step.primary && step.quote ? (
             <TextButton label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />
           ) : null}
+          {step.primary && booking && DECLINABLE.includes(step.primary.kind) ? (
+            <TextButton
+              label="Decline"
+              danger
+              disabled={stepBusy}
+              onPress={() => setDeclining({ quote: step.primary?.kind === "confirm_quote" })}
+              testID="chat-decline"
+            />
+          ) : null}
           {!step.primary && step.wait ? (
             <Text style={styles.waiting} testID="chat-waiting">
               {step.wait}
             </Text>
           ) : null}
+          {!owner && booking && finalQuote(messages, booking.id)?.card.status === "sent" ? (
+            <TextButton label="Send a new final quote" onPress={() => setQuoting("final")} testID="chat-requote" />
+          ) : null}
         </View>
       ) : null}
-      {text.trim() === "" && (drafting || chips.length > 0 || (key !== null && !chipsReady)) ? (
-        <View style={styles.chips} testID="chat-chips">
+      {typingChips || (!typing && (drafting || chips.length > 0 || shownAction || (key !== null && !chipsReady))) ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled" testID="chat-chips">
+          {typing ? (
+            <>
+              {typedBusy ? (
+            <View style={styles.chipsBusy} testID="chat-chips-loading">
+                  <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing your message" : "Finding replies"} />
+                  <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Finding replies…"}</Text>
+                </View>
+              ) : null}
+              {!typedBusy && Array.isArray(typedChips)
+                ? typedChips.map((chip, i) => (
+                    <Pressable
+                      key={chip.id}
+                      accessibilityRole="button"
+                      onPress={() => void pickChip(chip)}
+                      style={styles.chip}
+                      testID={`chat-chip-${i + 1}`}
+                    >
+                      <Text style={styles.chipText}>{chip.label}</Text>
+                    </Pressable>
+                  ))
+                : null}
+            </>
+          ) : (
+            <>
           {drafting || !chipsReady ? (
             <View style={styles.chipsBusy} testID="chat-chips-loading">
               <ActivityIndicator color={theme.color.primary} accessibilityLabel={drafting ? "Writing a draft" : "Writing replies"} />
               <Text style={styles.chipsBusyText}>{drafting ? "Writing your message…" : "Writing replies…"}</Text>
             </View>
+          ) : null}
+          {shownAction && chipsReady && !drafting ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void doAction(shownAction)}
+              style={[styles.chip, styles.actionChip]}
+              testID="chat-action-chip"
+            >
+              <Ionicons name="flash-outline" size={14} color={theme.color.primaryText} />
+              <Text style={[styles.chipText, styles.actionChipText]}>{shownAction.label}</Text>
+            </Pressable>
           ) : null}
           {chips.map((chip, i) => (
             <Pressable
@@ -428,9 +625,20 @@ export default function Chat() {
               <Text style={styles.chipText}>{chip.label}</Text>
             </Pressable>
           ))}
-        </View>
+                    </>
+          )}
+        </ScrollView>
       ) : null}
       <View style={styles.compose}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send a card"
+          onPress={() => setPlusOpen(true)}
+          style={styles.plusButton}
+          testID="chat-plus"
+        >
+          <Ionicons name="add" size={24} color={theme.color.primary} />
+        </Pressable>
         <TextInput
           ref={input}
           accessibilityLabel={`Message ${header.otherName}`}
@@ -439,9 +647,20 @@ export default function Chat() {
           placeholder={`Message ${header.otherName}`}
           placeholderTextColor={`${theme.color.textMuted}80`}
           maxLength={2000}
-          returnKeyType="send"
-          onSubmitEditing={() => void send()}
-          style={styles.input}
+          multiline
+          numberOfLines={1}
+          onContentSizeChange={(e) => {
+            if (Platform.OS !== "web") setInputHeight(Math.min(INPUT_MAX, Math.max(INPUT_MIN, Math.ceil(e.nativeEvent.contentSize.height) + INPUT_PAD * 2)));
+          }}
+          onKeyPress={(e) => {
+            // Enter sends on the web, Shift+Enter is a new line; on a phone the keyboard's Enter is a new line.
+            const ev = e.nativeEvent as unknown as { key: string; shiftKey?: boolean };
+            if (Platform.OS === "web" && ev.key === "Enter" && !ev.shiftKey) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+          style={[styles.input, Platform.OS === "web" ? null : { height: inputHeight }]}
           testID="chat-input"
         />
         <Pressable
@@ -457,6 +676,33 @@ export default function Chat() {
       </View>
       {owner && booking ? (
         <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+      ) : null}
+      {owner && countering != null ? (
+        <ChatCounterSheet
+          visible
+          threadId={threadId}
+          sitterName={header.otherName}
+          total={countering}
+          onClose={() => setCountering(null)}
+          onSent={() => {
+            setCountering(null);
+            void load();
+          }}
+        />
+      ) : null}
+      {booking && declining ? (
+        <ChatDeclineSheet
+          visible
+          bookingId={booking.id}
+          role={header.myRole}
+          otherName={header.otherName}
+          quote={declining.quote}
+          onClose={() => setDeclining(null)}
+          onDone={() => {
+            setDeclining(null);
+            void load();
+          }}
+        />
       ) : null}
       {owner ? (
         <RequestBookingSheet
@@ -477,11 +723,13 @@ export default function Chat() {
             threadId={threadId}
             sitterId={header.sitterId}
             stay={quoting === "final" ? finalStay : stay}
+            final={quoting === "final"}
             onSent={() => void load()}
           />
           <AddFeeSheet visible={feeFor !== null} onClose={() => setFeeFor(null)} messageId={feeFor} onAdded={() => void load()} />
         </>
       ) : null}
+      <ChatPlusMenu visible={plusOpen} items={plusItems} onClose={() => setPlusOpen(false)} />
       <PhotoViewerSheet visible={viewing} title={header.otherName} photos={photos} onClose={() => setViewing(false)} testID="chat-photos" />
     </View>
   );
@@ -505,14 +753,17 @@ const makeStyles = (theme: Theme) =>
     requestNote: { fontSize: theme.fontSize.small, color: theme.color.text, fontStyle: "italic", marginTop: 2 },
     requestLive: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary, marginTop: 2 },
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chips: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs, maxWidth: 480, width: "100%", alignSelf: "center" },
-    chip: { minHeight: 36, justifyContent: "center", paddingHorizontal: theme.spacing.md, borderRadius: 18, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
+    chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs },
+    chip: { height: 30, justifyContent: "center", paddingHorizontal: theme.spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
+    actionChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: theme.color.primary },
+    actionChipText: { color: theme.color.primaryText },
     chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
     chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     compose: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-end",
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       maxWidth: 480,
@@ -521,8 +772,10 @@ const makeStyles = (theme: Theme) =>
     },
     input: {
       flex: 1,
-      height: 44,
+      minHeight: INPUT_MIN,
       paddingHorizontal: theme.spacing.md,
+      paddingVertical: INPUT_PAD,
+      textAlignVertical: "top",
       borderRadius: 22,
       borderWidth: 1,
       borderColor: theme.color.border,
@@ -530,6 +783,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.body,
       color: theme.color.text,
     },
+    plusButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: theme.color.border, backgroundColor: theme.color.surface },
     sendButton: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: theme.color.primary },
     sendOff: { opacity: 0.4 },
   });

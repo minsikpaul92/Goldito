@@ -109,7 +109,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 
 ## 4. How work progresses (mandatory loop)
 
-**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update TODO. **One PR per phase (or per large chunk)** — it stays the same PR until the phase / chunk is done; never one PR per task or per step.
+**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update TODO. **One PR per bundle of work** (a phase, or everything one person does in one stretch on one track, such as several issues of the booking chat) — it stays the same PR until the bundle is done; never one PR per task, per issue or per step, and never a stack of PRs on each other. Every PR costs a full CI wait, so fewer and bigger is the rule.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -131,7 +131,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 
 - **One phase = one branch = one PR** (e.g. all of Phase 03 on `feat/phase-03-auth`), from its first task until its DoD passes. Do not mix tasks from other phases.
 - Start the branch from latest `main` (`git pull origin main` then `git checkout -b <branch>`); merge `main` into it when `main` moves.
-- A very large or risky chunk inside a phase may get its own branch + PR — decide with the user. Once a chunk has its branch and PR, everything of that chunk goes into that one PR.
+- **Do not split a bundle into several PRs, and do not stack a PR on another PR's branch.** A bundle that spans several issues (for example #145 and #235 in one session) is one branch and one PR, with one commit per step and the issues named in the title and body. Open a second PR only for work that has nothing to do with the first (a different track or person) or that must go out alone (an urgent fix). When in doubt, put it in the PR that is already open.
 - Small standalone fixes (typo, config, one-file chore) can be a small branch + PR when they can't wait for the phase.
 - **Naming:** short, descriptive, **kebab-case**.
 
@@ -262,7 +262,9 @@ Implement in FastAPI; all call **Nebius Token Factory** — Nemotron for text, M
 | `POST /api/ai/safety-check` | Snap → Treat check (12.1) — label photo → JSON safety (+ Tavily sources on trusted sites) |
 | `POST /api/ai/pet-mood` | Snap → Mood (12.2) — pet crops from the browser → body-language tags (vision) → server-computed emotion % (sum 100) + one "seems" line; for fun only, nothing saved |
 | `POST /api/ai/pet-photo` | P1 (11.15) — pet photo → breed guesses (≤ 3, owner confirms) + coat color |
-| `POST /api/ai/pet-voice` | 11.15 — audio (or text) → speech-to-text (Groq Whisper free plan; Token Factory has none) → profile facts from Nemotron, each with a quote from the transcript; safety answers are never pre-selected |
+| `POST /api/ai/pet-voice/transcribe` | 11.15 — the recording (audio body) → speech-to-text (Groq Whisper free plan; Token Factory has none) → text the owner can fix; nothing is stored |
+| `POST /api/ai/sitter-voice` | Sitter onboarding — the (fixed) text → picks for the numbered onboarding questions, each with a quote the server checks; recording to text uses `/api/ai/pet-voice/transcribe` (owners and sitters) |
+| `POST /api/ai/pet-voice` | 11.15 — the (fixed) text → profile facts from Nemotron, each with a quote from the text; safety answers are never pre-selected |
 
 Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; checked with `GET /v1/models`) and phase-07/08 docs.
 

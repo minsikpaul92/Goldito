@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CareTasksSection } from "../../../components/CareTasksSection";
 import { HeadsUpSection } from "../../../components/HeadsUpSection";
 import { PetForm } from "../../../components/PetForm";
+import { PetGlance } from "../../../components/PetGlance";
 import { TextButton } from "../../../components/ui/TextButton";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { LoadingView } from "../../../components/ui/LoadingView";
@@ -58,6 +59,7 @@ export default function PetProfileScreen() {
   return (
     <Screen>
       <Stack.Screen options={{ title: pet.name }} />
+      <PetGlance petId={pet.id} />
       <PetForm
         key={pet.id}
         initial={petToFormValues(pet)}

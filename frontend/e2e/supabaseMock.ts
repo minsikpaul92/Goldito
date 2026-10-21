@@ -151,6 +151,8 @@ export type MockDb = {
   stayChecks: Row[];
   pets: Row[];
   pet_allergies: Row[];
+  /** 014v: public_id and position per pet. */
+  pet_photos: Row[];
   owner_profiles: Row[];
   sitter_profiles: Row[];
   sitter_availability: Row[];
@@ -199,6 +201,8 @@ export type MockDb = {
   proposals: Row[];
   /** Meet & Greet RPC calls: { fn, ...params }. */
   meetGreetCalls: Row[];
+  /** create_pet_with_profile calls (014v) with their parameters. */
+  createPetCalls: Row[];
   /** complete_handoff calls. */
   completions: Row[];
   /** Pet Transit (012): the trips of the two parties; the RPCs below follow the SQL rules. */
@@ -237,6 +241,8 @@ export type MockDb = {
   pet_stickers: Row[];
   /** Sticker layers on a report (12.3b, 013b): one row per report and person; an upsert replaces it. */
   report_decor: Row[];
+  /** Pages an owner hid from their own book (014t). */
+  diary_page_hidden: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
   /** RPC detail sent with quote_error (rates_not_set names the service, 014k). */
@@ -256,6 +262,7 @@ function createMockDb(): MockDb {
   return {
     pets: [],
     pet_allergies: [],
+    pet_photos: [],
     owner_profiles: [],
     sitter_profiles: [],
     sitter_availability: [],
@@ -288,6 +295,7 @@ function createMockDb(): MockDb {
     proposals: [],
     stayChecks: [],
     meetGreetCalls: [],
+    createPetCalls: [],
     completions: [],
     trips: [],
     taskCompletions: [],
@@ -309,6 +317,7 @@ function createMockDb(): MockDb {
     photo_requests: [],
     pet_stickers: [],
     report_decor: [],
+    diary_page_hidden: [],
     quote_error: null,
     quote_error_detail: null,
     quote: null,
@@ -501,8 +510,9 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
       return done();
     }
     case "complete_meet_greet": {
+      // 014s: any time after it is agreed, and a second press is a no-op.
+      if (status === "done") return done();
       if (status !== "agreed") return fail("invalid_status");
-      if (nowMs() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
       b.meet_greet_status = "done";
       return done();
     }
@@ -1077,6 +1087,30 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return route.fulfill({ status: 204 });
   }
 
+  if (path === "rpc/create_pet_with_profile") {
+    const a = request.postDataJSON();
+    if (!me || !a.p_id || !String(a.p_name ?? "").trim()) return fail("invalid_pet");
+    db.createPetCalls.push(a);
+    const row = {
+      id: a.p_id,
+      owner_id: me,
+      species: a.p_species,
+      name: a.p_name,
+      breed: a.p_breed,
+      birthdate: a.p_birthdate,
+      weight_kg: a.p_weight_kg,
+      notes: a.p_notes,
+      profile: a.p_profile ?? {},
+      created_at: new Date(nowMs()).toISOString(),
+    };
+    const at = db.pets.findIndex((p) => p.id === a.p_id);
+    if (at >= 0) db.pets[at] = { ...db.pets[at], ...row };
+    else db.pets.push(row);
+    db.pet_allergies.splice(0, db.pet_allergies.length, ...db.pet_allergies.filter((x) => x.pet_id !== a.p_id));
+    for (const allergen of a.p_allergens ?? []) db.pet_allergies.push({ id: `al-${a.p_id}-${allergen}`, pet_id: a.p_id, allergen });
+    return json(route, 200, a.p_id);
+  }
+
   if (path === "rpc/save_weekday_hours") {
     const { p_hours } = request.postDataJSON();
     if (!Array.isArray(p_hours)) return fail("invalid_hours");
@@ -1283,7 +1317,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (!booking) return json(route, 400, { code: "P0001", message: "not_allowed", details: null });
     const current = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === args.p_kind);
     const base = current.find((h) => h.status === "proposed") ?? current.find((h) => h.status === "agreed");
-    for (const h of current) if (h.status === "proposed") h.status = "superseded";
+    for (const h of current) {
+      if (h.status !== "proposed") continue;
+      h.status = "superseded";
+      // 014r: the other row of a pair becomes a single suggestion.
+      if (h.pair_id) for (const x of db.booking_handoffs) if (x.pair_id === h.pair_id && x.status === "proposed") x.pair_id = null;
+    }
     // 014o: new terms on a request clear both yes.
     if (booking.status === "requested") {
       booking.owner_agreed_at = null;
@@ -1305,6 +1344,47 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       created_at: new Date(nowMs()).toISOString(),
     });
     return json(route, 200, id);
+  }
+
+  if (path === "rpc/propose_handoff_pair") {
+    // propose_handoff_pair (014r): the drop-off and the pick-up as one suggestion, one key.
+    const args = request.postDataJSON();
+    db.proposals.push({ pair: true, ...args });
+    const fail = (message: string) => json(route, 400, { code: "P0001", message, details: null });
+    const booking = db.bookings.find((b) => b.id === args.p_booking && (b.owner_id === me || b.sitter_id === me));
+    if (!booking) return fail("not_allowed");
+    if (Date.parse(args.p_pick_at) <= Date.parse(args.p_drop_at)) return fail("invalid_window");
+    const base = (kind: string) => {
+      const rows = db.booking_handoffs.filter((h) => h.booking_id === booking.id && h.kind === kind);
+      return rows.find((h) => h.status === "proposed") ?? rows.find((h) => h.status === "agreed");
+    };
+    const drop = base("drop_off");
+    const pick = base("pick_up");
+    for (const h of db.booking_handoffs) if (h.booking_id === booking.id && h.status === "proposed") h.status = "superseded";
+    if (booking.status === "requested") {
+      booking.owner_agreed_at = null;
+      booking.sitter_accepted_at = null;
+    }
+    const pair = crypto.randomUUID();
+    const row = (kind: string, at: string, type: string | null, note: string | null, from: Row | undefined) => ({
+      id: crypto.randomUUID(),
+      booking_id: booking.id,
+      kind,
+      scheduled_at: at,
+      location_type: type ?? from?.location_type ?? "sitter_home",
+      location_note: type ? (note ?? null) : (from?.location_note ?? null),
+      within_sitter_hours: true,
+      status: "proposed",
+      proposed_by: me,
+      completed_at: null,
+      created_at: new Date(nowMs()).toISOString(),
+      pair_id: pair,
+    });
+    db.booking_handoffs.push(
+      row("drop_off", args.p_drop_at, args.p_drop_type ?? null, args.p_drop_note ?? null, drop),
+      row("pick_up", args.p_pick_at, args.p_pick_type ?? null, args.p_pick_note ?? null, pick),
+    );
+    return json(route, 200, pair);
   }
 
   if (path === "rpc/express_interest") {
@@ -1419,15 +1499,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       return fail("not_allowed");
     }
     if (h.status !== "proposed") return fail("invalid_status");
+    // 014r: the other row of an explicit pair is answered with it.
+    const partner = h.pair_id ? db.booking_handoffs.find((x) => x.pair_id === h.pair_id && x.id !== h.id && x.status === "proposed") : undefined;
+    const answered = partner ? [h, partner] : [h];
     if (!p_accept) {
-      h.status = "rejected";
+      for (const x of answered) x.status = "rejected";
       if (booking.status === "requested") booking.status = me === booking.sitter_id ? "declined" : "cancelled";
       return route.fulfill({ status: 204 });
     }
     for (const x of db.booking_handoffs) {
-      if (x.booking_id === h.booking_id && x.kind === h.kind && x.status === "agreed") x.status = "superseded";
+      if (x.booking_id === h.booking_id && answered.some((a) => a.kind === x.kind) && x.status === "agreed") x.status = "superseded";
     }
-    h.status = "agreed";
+    for (const x of answered) x.status = "agreed";
     return route.fulfill({ status: 204 });
   }
 
@@ -1742,6 +1825,58 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, draft.id);
   }
 
+  if (path === "rpc/add_owner_diary_entry") {
+    // 014p: the owner's own page, sent at once, no notice. The author column holds the owner.
+    const { p_pet, p_body } = request.postDataJSON();
+    if (!db.pets.some((p) => p.id === p_pet && p.owner_id === me)) return json(route, 400, { code: "P0001", message: "not_owner" });
+    const text = String(p_body ?? "").trim();
+    if (!text) return json(route, 400, { code: "P0001", message: "body_required" });
+    const now = new Date(nowMs()).toISOString();
+    const row = { id: `owner-${db.daily_reports.length + 1}`, pet_id: p_pet, sitter_id: me, report_date: appToday(new Date(nowMs())), body: text, status: "sent", source_snapshot: null, sent_at: now, created_at: now };
+    db.daily_reports.push(row);
+    return json(route, 200, row.id);
+  }
+
+  if (path === "rpc/delete_diary_page") {
+    // 014t: the author deletes a page; its stickers and its "report sent" notice go with it.
+    const { p_report } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    for (const list of [db.daily_reports, db.report_decor, db.diary_page_hidden]) {
+      const keep = list.filter((r) => (list === db.daily_reports ? r.id : r.report_id) !== p_report);
+      list.splice(0, list.length, ...keep);
+    }
+    const notices = db.notifications.filter((n) => !(n.type === "report_sent" && n.ref_id === p_report));
+    db.notifications.splice(0, db.notifications.length, ...notices);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/hide_diary_page") {
+    // 014t: the owner hides a sitter's sent page from their own book; the sitter keeps it.
+    const { p_report } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report || report.status !== "sent") return json(route, 400, { code: "P0001", message: "not_found" });
+    if (!db.pets.some((p) => p.id === report.pet_id && p.owner_id === me)) return json(route, 400, { code: "P0001", message: "not_owner" });
+    if (report.sitter_id === me) return json(route, 400, { code: "P0001", message: "own_page" });
+    if (!db.diary_page_hidden.some((h) => h.report_id === p_report && h.user_id === me)) db.diary_page_hidden.push({ report_id: p_report, user_id: me });
+    const notices = db.notifications.filter((n) => !(n.user_id === me && n.type === "report_sent" && n.ref_id === p_report));
+    db.notifications.splice(0, db.notifications.length, ...notices);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/set_diary_page_photo") {
+    // 014t: the author puts one of their own images of that pet on the page.
+    const { p_report, p_media } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    const media = p_media ? db.media.find((m) => m.id === p_media) : null;
+    if (p_media && (!media || media.pet_id !== report.pet_id || media.resource_type !== "image")) return json(route, 400, { code: "P0001", message: "bad_photo" });
+    report.media_id = p_media ?? null;
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "rpc/send_daily_report") {
     const { p_report, p_body } = request.postDataJSON();
     const report = db.daily_reports.find((r) => r.id === p_report);
@@ -1981,8 +2116,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "notifications" || (row.user_id === me && (row.visible_at == null || Date.parse(String(row.visible_at)) <= Date.now()))) &&
         // RLS: a private post is only visible to its author (5.8).
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
-        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009).
-        (path !== "daily_reports" || row.sitter_id === me || row.status === "sent") &&
+        // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009). A sent page is read by
+        // its author and by the pet's owner, so a sitter never reads an owner's own page (014p).
+        (path !== "daily_reports" ||
+          row.sitter_id === me ||
+          (row.status === "sent" &&
+            db.pets.some((p) => p.id === row.pet_id && p.owner_id === me) &&
+            !db.diary_page_hidden.some((h) => h.report_id === row.id && h.user_id === me))) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011g): the sitter's note about an owner is the sitter's alone.
@@ -2080,10 +2220,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
+    if (path === "daily_reports" && select.includes("media(")) {
+      rows = rows.map((r) => ({ ...r, media: mediaOf(r.media_id) }));
+    }
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({
         ...r,
-        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null, species: db.pets.find((p) => p.id === r.pet_id)?.species ?? null },
         sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
       }));
     }

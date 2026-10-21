@@ -2,8 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 
-import { ChipSuggestions } from "../../../../components/ChipSuggestions";
-import { StarRating } from "../../../../components/StarRating";
+import { OwnerReviewForm } from "../../../../components/OwnerReviewForm";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { EmptyState } from "../../../../components/ui/EmptyState";
@@ -12,15 +11,11 @@ import { Screen } from "../../../../components/ui/Screen";
 import { Sheet } from "../../../../components/ui/Sheet";
 import { TextButton } from "../../../../components/ui/TextButton";
 import { listFavoriteSitterIds, setFavoriteSitter } from "../../../../features/sitters/sitterApi";
-import { TextField } from "../../../../components/ui/TextField";
-import { getReview, submitReview } from "../../../../features/completion/completionApi";
-import { OWNER_REVIEW_PRESETS, composeComment, presetsFor } from "../../../../features/completion/reviewPresets";
+import { getReview } from "../../../../features/completion/completionApi";
 import { BookingSummary, getBooking } from "../../../../lib/bookings";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
-
-const COMMENT_MAX = 500;
 
 /** "How was Max and Mochi's stay with Chloe?" — ★1–5 and an optional comment, once (phase-07C 7C.3). */
 export default function ReviewScreen() {
@@ -29,20 +24,6 @@ export default function ReviewScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<BookingSummary | null | undefined>(undefined);
   const [done, setDone] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  /** Phrases picked for the current stars (FB-27); a new rating offers its own three. */
-  const [picked, setPicked] = useState<string[]>([]);
-  const presets = presetsFor(OWNER_REVIEW_PRESETS, rating);
-  const full = composeComment(picked, comment);
-  const rate = (n: number) => {
-    setRating(n);
-    setPicked((prev) => prev.filter((p) => presetsFor(OWNER_REVIEW_PRESETS, n).includes(p)));
-  };
-  const togglePreset = (phrase: string) =>
-    setPicked((prev) => (prev.includes(phrase) ? prev.filter((p) => p !== phrase) : [...prev, phrase]));
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   /** After the review: offer to add the sitter to favorites unless they already are (FB-28). */
   const [askFavorite, setAskFavorite] = useState(false);
   const [isFavorite, setIsFavorite] = useState(true);
@@ -94,53 +75,21 @@ export default function ReviewScreen() {
   }
 
   const names = booking.pets.map((p) => p.name).join(" and ") || "your pet";
-  const send = async () => {
-    if (rating < 1 || sending) return;
-    setSending(true);
-    setError(null);
-    try {
-      await submitReview(booking.id, rating, full);
-      toast.show(`Thanks! ${booking.sitterName} was told ⭐`);
-      if (isFavorite) leave(booking.id);
-      else {
-        setDone(true);
-        setAskFavorite(true);
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSending(false);
-    }
-  };
-
   return (
     <Screen testID="review-screen" contentStyle={styles.content}>
       <Card style={styles.card}>
         <Text accessibilityRole="header" style={styles.title}>{`How was ${names}'s stay with ${booking.sitterName}?`}</Text>
-        <StarRating value={rating} onChange={rate} size={40} testID="review-rating" />
-        {presets.length > 0 ? (
-          <ChipSuggestions
-            chips={presets.map((p) => ({ id: p, kind: "episode", label: p, source: "custom", check: null, media_id: null }))}
-            off={new Set(presets.filter((p) => !picked.includes(p)))}
-            onToggle={togglePreset}
-            testIDPrefix="review-preset"
-          />
-        ) : null}
-        <TextField
-          label="Say a few words (optional)"
-          value={comment}
-          maxLength={Math.max(0, COMMENT_MAX - (picked.length ? picked.join(" · ").length + 1 : 0))}
-          multiline
-          onChangeText={setComment}
-          placeholder="What did you like?"
-          testID="review-comment"
-        />
-        {error ? <Text style={styles.error} testID="review-error">{error}</Text> : null}
-        <Button
-          label={sending ? "Sending…" : "Send review"}
-          disabled={rating < 1 || sending || done}
-          onPress={() => void send()}
-          testID="review-send"
+        <OwnerReviewForm
+          bookingId={booking.id}
+          sitterName={booking.sitterName}
+          locked={done}
+          onSent={() => {
+            if (isFavorite) leave(booking.id);
+            else {
+              setDone(true);
+              setAskFavorite(true);
+            }
+          }}
         />
       </Card>
       <Sheet
@@ -171,6 +120,5 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md },
     card: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    error: { fontSize: theme.fontSize.small, color: theme.color.error },
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

@@ -1,5 +1,5 @@
 import { ReactNode, forwardRef } from "react";
-import { ScrollView, StyleSheet, ViewStyle } from "react-native";
+import { Platform, ScrollView, StyleSheet, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
@@ -8,10 +8,12 @@ import { Theme } from "../../theme/themes";
 type Props = {
   children: ReactNode;
   contentStyle?: ViewStyle;
+  /** Keep a thin visible scrollbar on the desktop frame (long pages, the diary). */
+  scrollbar?: boolean;
   testID?: string;
 };
 
-export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, testID }, ref) {
+export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, scrollbar, testID }, ref) {
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -20,6 +22,7 @@ export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, 
         ref={ref}
         contentContainerStyle={[styles.content, contentStyle]}
         keyboardShouldPersistTaps="handled"
+        {...(scrollbar && Platform.OS === "web" ? ({ dataSet: { scrollbar: "true" } } as object) : null)}
         testID={testID}
       >
         {children}

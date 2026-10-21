@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, LayoutChangeEvent, PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { SegmentedControl } from "../../components/ui/SegmentedControl";
+import { TextButton } from "../../components/ui/TextButton";
+import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { DecoratedReport } from "../snap/DecoratedReport";
 import { formatDay } from "../schedule/dates";
-import type { SentReport } from "./reportApi";
+import { DiaryCover } from "./DiaryCover";
+import { type ReportPhoto, type SentReport, listPetCoverPhotos } from "./reportApi";
 
-const ALL = "all";
 /** Past this share of the page width a drag turns the page; a quick flick turns it too. */
 const TURN_AT = 0.3;
 const FLICK = 0.5; // px per ms
@@ -31,40 +32,59 @@ export function bookOrder(pages: SentReport[]): SentReport[] {
 }
 
 /**
- * The diary as a book (Diary book DB.3): every sent page, oldest → newest, opening on the newest. "All" or one pet.
+ * The diary as a book (Diary book DB.3): a cover per pet; tapping it opens that pet's pages, oldest → newest, on the
+ * newest (or on `initialId`, which skips the covers).
  * Swipe sideways (or drag with the mouse) and the page turns like paper — pivoting on the spine at the left edge — to
  * the next or the previous day; ‹ › do the same (DESIGN.md §7.7: never gesture-only). While a page is being
  * decorated the book holds still, so dragging a sticker never turns the page.
  */
 export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: DiaryBookProps) {
   const styles = useThemedStyles(makeStyles);
+  const session = useSession();
+  const me = session.status === "signedIn" ? session.profile.id : null;
   const ordered = useMemo(() => bookOrder(pages), [pages]);
-  const pets = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const p of ordered) if (!seen.has(p.petId)) seen.set(p.petId, p.petName);
-    return [...seen].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  const covers = useMemo(() => {
+    const seen = new Map<string, { petId: string; petName: string; species: SentReport["species"]; pages: number }>();
+    for (const p of ordered) {
+      const known = seen.get(p.petId);
+      if (known) known.pages += 1;
+      else seen.set(p.petId, { petId: p.petId, petName: p.petName, species: p.species, pages: 1 });
+    }
+    return [...seen.values()].sort((a, b) => a.petName.localeCompare(b.petName));
   }, [ordered]);
 
-  const [pet, setPet] = useState<string>(ALL);
-  const shown = useMemo(() => (pet === ALL ? ordered : ordered.filter((p) => p.petId === pet)), [ordered, pet]);
+  // null: the covers. A pet: that pet's pages.
+  const [pet, setPet] = useState<string | null>(() => ordered.find((p) => p.id === initialId)?.petId ?? null);
+  const shown = useMemo(() => (pet ? ordered.filter((p) => p.petId === pet) : []), [ordered, pet]);
   const [index, setIndex] = useState(() => {
-    const at = initialId ? ordered.findIndex((p) => p.id === initialId) : -1;
-    return at >= 0 ? at : ordered.length - 1;
+    const at = initialId ? ordered.filter((p) => p.petId === pet).findIndex((p) => p.id === initialId) : -1;
+    return at >= 0 ? at : Math.max(0, shown.length - 1);
   });
+  const [photos, setPhotos] = useState<Record<string, ReportPhoto>>({});
+  const coverIds = covers.map((c) => c.petId).join(",");
+  useEffect(() => {
+    if (pet || !coverIds) return;
+    let live = true;
+    void listPetCoverPhotos(coverIds.split(",")).then((found) => live && setPhotos(found));
+    return () => {
+      live = false;
+    };
+  }, [pet, coverIds]);
   const [turning, setTurning] = useState<Turn | null>(null);
   const [decorating, setDecorating] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
   const width = useRef(1);
 
-  // A new filter opens on its newest page; pages arriving later keep the reader where they are if possible.
+  // A cover opens on its pet's newest page; pages arriving later keep the reader where they are if possible.
   const pick = (value: string) => {
     setPet(value);
-    const next = value === ALL ? ordered : ordered.filter((p) => p.petId === value);
-    setIndex(next.length - 1);
+    setIndex(ordered.filter((p) => p.petId === value).length - 1);
   };
   useEffect(() => {
     setIndex((i) => Math.min(Math.max(0, i), Math.max(0, shown.length - 1)));
-  }, [shown.length]);
+    // A pet with no pages left goes back to the covers.
+    if (pet && shown.length === 0) setPet(null);
+  }, [shown.length, pet]);
 
   const current = shown[index] ?? null;
   const hasNext = index < shown.length - 1;
@@ -138,6 +158,24 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
     [progress],
   );
 
+  if (!pet) {
+    return (
+      <View style={styles.shelf} testID={`${testID}-shelf`}>
+        {covers.map((c) => (
+          <View key={c.petId} style={styles.shelfItem}>
+            <DiaryCover
+              petName={c.petName}
+              species={c.species}
+              pages={c.pages}
+              photo={photos[c.petId]}
+              onPress={() => pick(c.petId)}
+              testID={`${testID}-cover-${c.petId}`}
+            />
+          </View>
+        ))}
+      </View>
+    );
+  }
   if (!current) return null;
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -169,15 +207,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
 
   return (
     <View style={styles.wrap} testID={testID}>
-      {pets.length > 1 ? (
-        <SegmentedControl
-          options={[{ value: ALL, label: "All" }, ...pets]}
-          value={pet}
-          onChange={pick}
-          scrollable={pets.length > 3}
-          testID={`${testID}-pet`}
-        />
-      ) : null}
+      <TextButton label="‹ Diaries" onPress={() => setPet(null)} disabled={turning != null || decorating} testID={`${testID}-covers`} />
 
       <View style={styles.bar}>
         <NavButton label="‹" hint="Previous page" disabled={!hasPrev || turning != null || decorating} onPress={() => turn("prev")} testID={`${testID}-prev`} />
@@ -194,7 +224,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
         onLayout={onLayout}
         style={styles.stage}
         // Our own drag: TouchEmulation leaves the mouse to it (DESIGN.md §7.7); a finger may still scroll up and down.
-        {...(Platform.OS === "web" ? ({ dataSet: { gestureOwner: "true" } } as object) : null)}
+        {...(Platform.OS === "web" ? ({ dataSet: { gestureOwner: "x" } } as object) : null)}
         {...pan.panHandlers}
         testID={`${testID}-stage`}
       >
@@ -222,6 +252,8 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
                   petName={p.petName}
                   day={p.day}
                   body={p.body}
+                  ownPage={me != null && p.authorId === me}
+                  pictureUrl={p.photoUrl}
                   onEditingChange={isCurrent ? setDecorating : undefined}
                   testID={isCurrent ? testID : undefined}
                 />
@@ -256,6 +288,8 @@ function NavButton({ label, hint, disabled, onPress, testID }: { label: string; 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { gap: theme.spacing.sm },
+    shelf: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.md },
+    shelfItem: { flexGrow: 1, flexBasis: 150, maxWidth: "100%" },
     bar: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     where: { flex: 1, alignItems: "center" },
     whereTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },

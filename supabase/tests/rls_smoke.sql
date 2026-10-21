@@ -779,8 +779,16 @@ begin
       like 'Chloe can''t take Max and Mochi on %. Find a new sitter.',
     'E: owner told to find a new sitter');
   perform _t_as(robert);
-  select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) limit 1;
-  perform _t_ok(r.sitter_id = allen and r.covered_slots = r.total_slots, 'E: fully available sitter ranks first');
+  -- Only the fixture sitters count: a hosted database has real sitters (the demo ones) who are just as available and
+  -- can rank first, so the ranking is read among the fixtures.
+  select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s where s.sitter_id = allen;
+  perform _t_ok(r.covered_slots = r.total_slots, 'E: fully available sitter is fully covered');
+  perform _t_ok(
+    (select count(*) from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s
+      where s.sitter_id in (allen, paul, chloe) and s.covered_slots = s.total_slots) = 1
+    and (select s.sitter_id from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s
+         where s.sitter_id in (allen, paul, chloe) limit 1) = allen,
+    'E: among the fixture sitters the fully available one ranks first');
   select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s where s.sitter_id = paul;
   perform _t_ok(r.covered_slots < r.total_slots, 'E: sitter without overnights shows as partly available');
   v_b := request_booking(allen, array[max, mochi], local_ts(d, '09:30'), 'sitter_home', null,
@@ -1059,7 +1067,7 @@ begin
   perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'meet_greet_declined'),
     '3B.9: the proposer hears about the decline');
 
-  -- Video: Nora proposes, Robert agrees, done only once the time has come, then Accept works
+  -- Video: Nora proposes, Robert agrees, done even before the time (014s, #229), then Accept works
   perform _t_as(nora);
   perform propose_meet_greet(v_a, 'video', now() + interval '2 days');
   perform _t_as(robert);
@@ -1078,16 +1086,17 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'meet_greet_required', '3B.9: Accept still waits while the Meet & Greet is only agreed');
+  -- 014s: Done works before the agreed time, and a second press (the other side) is a no-op.
+  perform _t_as(robert);
+  perform complete_meet_greet(v_a);
+  perform _t_as(nora);
   begin
     perform complete_meet_greet(v_a);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
-  perform _t_ok(v_err = 'meet_greet_not_yet', '3B.9: Done only after the meeting time');
-  perform _t_as(null);
-  update public.bookings set meet_greet_at = now() - interval '1 hour' where id = v_a;
-  perform _t_as(robert);
-  perform complete_meet_greet(v_a);
+  perform _t_ok(v_err is null and (select meet_greet_status = 'done' from public.bookings where id = v_a),
+    '014s: Done before the meeting time, and again from the other side, leaves it done');
   perform _t_as(chloe);
   begin
     select * into r from get_meet_greet_options(v_a);
@@ -3990,6 +3999,12 @@ begin
   end;
   perform _t_ok(v_err = 'invalid_position', 'L: a position must be a real point');
 
+  -- 014r: about 780 m out is under 5 minutes → the other person is told once
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'trip_near' and ref_id = v_trip.id
+        and title like 'Robert is about 5 minutes away%') = 1
+      and (select near_notified_at is not null from public.trips where id = v_trip.id),
+    '014r: within 5 minutes of the ETA → one "about 5 minutes away" notice for the other person');
   -- Within 150 m → arrived, both told once, no more positions stored
   perform _t_as(null);
   update public.trips set last_at = last_at - interval '5 seconds' where id = v_trip.id;
@@ -4007,6 +4022,8 @@ begin
   perform _t_ok(v_n = 2 and exists (select 1 from public.notifications where user_id = chloe and type = 'trip_arrived' and title = 'Robert has arrived 🚗')
       and exists (select 1 from public.notifications where user_id = robert and type = 'trip_arrived'),
     'L: both are told, once');
+  perform _t_ok((select count(*) from public.notifications where type = 'trip_near' and ref_id = v_trip.id) = 1,
+    '014r: …and only once, however many positions follow');
 
   -- End: only the traveler, and the position is erased
   perform _t_as(chloe);
@@ -5948,7 +5965,591 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- 014q (the fees agreed in the chat stay in the price): no payment over an open final quote, and a paid booking keeps
+-- 014p (Diary, #186): the owner writes a diary page of their own
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  v_id uuid;
+  v_second uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip') returning id into pip;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+
+  -- The owner writes a page: sent at once, trimmed, the owner is the author
+  perform _t_as(robert);
+  v_id := public.add_owner_diary_entry(pip, '  A long walk in the park.  ');
+  perform _t_ok((select status = 'sent' and sent_at is not null and sitter_id = robert and body = 'A long walk in the park.'
+        and report_date = public.app_today() and model is null
+      from public.daily_reports where id = v_id),
+    '014p: the owner''s page is sent at once, trimmed, with the owner as its author');
+  v_second := public.add_owner_diary_entry(pip, 'Evening cuddles.');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 2 and v_second <> v_id,
+    '014p: the owner may write more than one page a day');
+  perform _t_ok(public.can_decorate_report(v_id), '014p: the owner can put stickers on their own page');
+
+  -- Nobody else sees it, and nobody else can write one
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 0,
+    '014p: the sitter on duty does not see the owner''s pages');
+  perform _t_ok(not public.can_decorate_report(v_id), '014p: the sitter cannot decorate the owner''s page');
+  begin perform public.add_owner_diary_entry(pip, 'Sitter text.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014p: a sitter cannot write an owner page');
+  perform _t_as(joy);
+  begin perform public.add_owner_diary_entry(pip, 'Not my dog.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014p: another owner cannot write on my pet''s page');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 0, '014p: another owner does not see it');
+
+  -- Empty and too long are refused; no notice goes out; anon cannot call it
+  perform _t_as(robert);
+  begin perform public.add_owner_diary_entry(pip, '   '); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_required', '014p: an empty page is refused');
+  begin perform public.add_owner_diary_entry(pip, repeat('x', 2001)); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'body_too_long', '014p: a page over 2000 characters is refused');
+  perform _t_ok(not exists (select 1 from public.notifications where pet_id = pip), '014p: nobody is notified of an owner page');
+  perform _t_as(null, 'anon');
+  begin perform public.add_owner_diary_entry(pip, 'Anon.'); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014p: anon cannot write a page');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014r: a drop-off + pick-up suggestion is one pair; the owner's default handoff place
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  d constant date := app_today() + 800;
+  rex uuid;
+  v_b uuid;
+  v_pair uuid;
+  v_drop uuid;
+  v_pick uuid;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 12, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 12, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Rex') returning id into rex;
+  v_b := _t_booking(robert, chloe, array[rex], local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 'confirmed');
+
+  -- One suggestion for both: two rows with one key, one notice
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'));
+  perform _t_ok(v_pair is not null
+      and (select count(*) from public.booking_handoffs where booking_id = v_b and status = 'proposed' and pair_id = v_pair) = 2
+      and (select count(distinct kind) from public.booking_handoffs where pair_id = v_pair) = 2,
+    '014r: a pair suggestion writes the drop-off and the pick-up with one key');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.notifications where user_id = chloe and type = 'handoff_proposed'
+      and title = 'Robert suggested a new drop-off and pick-up') = 1,
+    '014r: …and the other person gets one notice, not two');
+
+  -- The window has to be real, and only the two people on the booking can suggest
+  perform _t_as(robert);
+  begin perform propose_handoff_pair(v_b, local_ts(d + 4, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_window', '014r: a pick-up before the drop-off is refused');
+  perform _t_as(joy);
+  begin perform propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014r: a third party cannot suggest a pair');
+  perform _t_as(null, 'anon');
+  begin perform propose_handoff_pair(v_b, local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00')); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014r: anon cannot suggest a pair');
+  perform _t_as(null);
+
+  -- The answer takes both, even though each time fits on its own
+  select id into v_pick from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up';
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  perform _t_as(robert);
+  begin perform respond_handoff(v_pick, true); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '014r: the one who suggested cannot answer');
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'agreed'
+      and (select status from public.booking_handoffs where id = v_pick) = 'agreed',
+    '014r: accepting one row of a pair agrees both');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'), '[)'),
+    '014r: …and the stay is rebuilt for the new window');
+  perform _t_ok((select count(*) from public.notifications where user_id = robert and type = 'handoff_agreed'
+      and ref_id = v_pick and title like 'Chloe agreed to the new drop-off and pick-up%') = 1,
+    '014r: …and the owner is told once');
+
+  -- Declining takes both; the agreed stay stays
+  perform _t_as(chloe);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 2, '09:00'), local_ts(d + 4, '17:00'));
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  select id into v_pick from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up';
+  perform _t_as(robert);
+  perform respond_handoff(v_pick, false);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where id = v_drop) = 'rejected'
+      and (select status from public.booking_handoffs where id = v_pick) = 'rejected',
+    '014r: declining one row of a pair declines both');
+  perform _t_ok((select care_range from public.booking_pets where booking_id = v_b)
+      = tstzrange(local_ts(d + 1, '09:00'), local_ts(d + 3, '17:00'), '[)'),
+    '014r: …and the agreed stay stays');
+
+  -- A newer suggestion for one handoff turns the other row into a single one
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 2, '09:00'), local_ts(d + 4, '17:00'));
+  perform propose_handoff(v_b, 'drop_off', local_ts(d + 2, '10:00'));
+  perform _t_as(null);
+  perform _t_ok((select pair_id is null from public.booking_handoffs where pair_id is not distinct from null
+      and booking_id = v_b and kind = 'pick_up' and status = 'proposed')
+      and not exists (select 1 from public.booking_handoffs where pair_id = v_pair and status = 'proposed'),
+    '014r: replacing one row of a pair leaves the other as a single suggestion');
+  select id into v_pick from public.booking_handoffs where booking_id = v_b and kind = 'pick_up' and status = 'proposed';
+  perform _t_as(chloe);
+  perform respond_handoff(v_pick, true);
+  perform _t_as(null);
+  perform _t_ok((select status from public.booking_handoffs where booking_id = v_b and kind = 'drop_off' and status <> 'agreed' and scheduled_at = local_ts(d + 2, '10:00')) = 'proposed',
+    '014r: …and answering that one leaves the new drop-off waiting');
+
+  -- Before confirm: the sitter answers a pair of the owner's suggestions; no rebuild, both agreed
+  perform _t_as(null);
+  v_b := _t_booking(robert, chloe, array[rex], local_ts(d + 7, '09:00'), local_ts(d + 9, '17:00'), 'requested');
+  perform _t_as(robert);
+  v_pair := propose_handoff_pair(v_b, local_ts(d + 7, '10:00'), local_ts(d + 9, '16:00'), 'owner_home');
+  perform _t_as(null);
+  select id into v_drop from public.booking_handoffs where pair_id = v_pair and kind = 'drop_off';
+  perform _t_ok((select location_type from public.booking_handoffs where id = v_drop) = 'owner_home'
+      and (select location_type from public.booking_handoffs where pair_id = v_pair and kind = 'pick_up') = 'sitter_home',
+    '014r: each row of a pair keeps its own place (an omitted place stays as it was)');
+  perform _t_as(chloe);
+  perform respond_handoff(v_drop, true);
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_handoffs where booking_id = v_b and status = 'agreed') = 2
+      and (select status from public.bookings where id = v_b) = 'requested',
+    '014r: before confirm a pair is agreed together and the request stays a request');
+
+  -- The owner's default handoff place
+  perform _t_as(robert);
+  update public.owner_profiles set default_handoff = 'owner_home' where id = robert;
+  perform _t_ok((select default_handoff from public.owner_profiles where id = robert) = 'owner_home',
+    '014r: the owner saves a default handoff place');
+  begin update public.owner_profiles set default_handoff = 'on_the_moon' where id = robert; v_err := null; exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '23514', '014r: …only one of the three places');
+  perform _t_as(joy);
+  update public.owner_profiles set default_handoff = 'other' where id = robert;
+  perform _t_as(null);
+  perform _t_ok((select default_handoff from public.owner_profiles where id = robert) = 'owner_home',
+    '014r: …and nobody else changes it');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014t (Diary, #243): delete a page, hide a sitter's page on the owner's side, a photo on the page
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  other_pet uuid;
+  v_sit uuid;
+  v_sit2 uuid;
+  v_draft uuid;
+  v_own uuid;
+  m_ok uuid;
+  m_robert uuid;
+  m_other uuid;
+  m_video uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip14t') returning id into pip;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Kit14t') returning id into other_pet;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+    values (pip, chloe, public.app_today(), 'Sitter page one.', 'sent', now()) returning id into v_sit;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+    values (pip, chloe, public.app_today(), 'Sitter page two.', 'sent', now()) returning id into v_sit2;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status)
+    values (pip, chloe, public.app_today(), 'Sitter draft.', 'draft') returning id into v_draft;
+  perform public.notify_user(robert, 'report_sent', 'one', null, pip, null, v_sit);
+  perform public.notify_user(robert, 'report_sent', 'two', null, pip, null, v_sit2);
+  insert into public.report_decor (report_id, user_id, items) values (v_sit2, robert, '[]'), (v_sit2, chloe, '[]');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/014t/ok', 'image', 'report') returning id into m_ok;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, robert, 'smoke/014t/robert', 'image', 'feed') returning id into m_robert;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (other_pet, chloe, 'smoke/014t/other', 'image', 'report') returning id into m_other;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/014t/video', 'video', 'feed') returning id into m_video;
+
+  -- Hide: the owner takes a sitter's page out of their own book only
+  perform _t_as(robert);
+  v_own := public.add_owner_diary_entry(pip, 'My own page.');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 3, '014t: the owner sees both sitter pages and their own');
+  perform public.hide_diary_page(v_sit);
+  perform public.hide_diary_page(v_sit); -- a second hide is a no-op
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 2
+      and not exists (select 1 from public.daily_reports where id = v_sit),
+    '014t: a hidden page is gone from the owner''s book');
+  perform _t_ok(not exists (select 1 from public.notifications where user_id = robert and ref_id = v_sit)
+      and exists (select 1 from public.notifications where user_id = robert and ref_id = v_sit2),
+    '014t: hiding clears that page''s notice and no other');
+  begin perform public.hide_diary_page(v_own); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'own_page', '014t: the owner''s own page is deleted, not hidden');
+  begin perform public.hide_diary_page(v_draft); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014t: a draft cannot be hidden');
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from public.daily_reports where id = v_sit), '014t: the sitter''s copy of a hidden page stays');
+  begin perform public.hide_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014t: a sitter cannot hide a page');
+  perform _t_as(joy);
+  begin perform public.hide_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014t: another owner cannot hide my pet''s page');
+  perform _t_ok((select count(*) from public.diary_page_hidden) = 0, '014t: nobody reads another person''s hidden rows');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.diary_page_hidden) = 1, '014t: the owner reads their own hidden rows');
+  begin insert into public.diary_page_hidden (report_id) values (v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: hidden rows are written only through hide_diary_page');
+
+  -- A photo on the page: the author's own image of that pet
+  perform _t_as(chloe);
+  perform public.set_diary_page_photo(v_sit2, m_ok);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok, '014t: the sitter puts a photo on their page');
+  begin perform public.set_diary_page_photo(v_sit2, m_robert); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not someone else''s photo');
+  begin perform public.set_diary_page_photo(v_sit2, m_other); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not another pet''s photo');
+  begin perform public.set_diary_page_photo(v_sit2, m_video); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not a video');
+  perform _t_as(robert);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok
+      and exists (select 1 from public.media where id = m_ok),
+    '014t: the owner reads the photo of the page');
+  begin perform public.set_diary_page_photo(v_sit2, m_robert); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: the owner cannot change a sitter''s page photo');
+  perform public.set_diary_page_photo(v_own, m_robert);
+  perform _t_ok((select media_id from public.daily_reports where id = v_own) = m_robert, '014t: the owner puts a photo on their own page');
+  perform _t_as(chloe);
+  perform public.set_diary_page_photo(v_sit2, null);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) is null, '014t: the photo can be taken off');
+
+  -- Delete: only the author, the page and its stickers and notice go, the photo stays
+  perform public.set_diary_page_photo(v_sit2, m_ok);
+  perform _t_as(robert);
+  begin perform public.delete_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: the owner cannot delete a sitter''s page');
+  perform _t_as(joy);
+  begin perform public.delete_diary_page(v_own); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: another owner cannot delete my page');
+  perform _t_as(chloe);
+  perform public.delete_diary_page(v_draft);
+  perform public.delete_diary_page(v_sit2);
+  begin perform public.delete_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014t: a page is deleted once');
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from public.daily_reports where id = v_sit2)
+      and not exists (select 1 from public.notifications where ref_id = v_sit2)
+      and not exists (select 1 from public.report_decor where report_id = v_sit2),
+    '014t: a sitter''s deleted page is gone for the owner too, with its notice and stickers');
+  perform _t_ok(exists (select 1 from public.media where id = m_ok), '014t: deleting a page keeps its photo');
+  perform public.delete_diary_page(v_own);
+  perform _t_ok((select count(*) from public.daily_reports where id = v_own) = 0, '014t: the owner deletes their own page');
+  perform _t_as(null, 'anon');
+  begin perform public.delete_diary_page(v_sit); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot delete');
+  begin perform public.hide_diary_page(v_sit); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot hide');
+  begin perform public.set_diary_page_photo(v_sit, null); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot set a page photo');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014u (#232): an early Returned gives the sitter the rest of the stay back
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  allen constant uuid := '00000000-0000-4000-8000-0000000000b3';
+  v_pet uuid;
+  v_pet2 uuid;
+  v_b uuid;
+  v_on uuid;
+  v_before int;
+  v_after_now int;
+  v_n int;
+  v_from timestamptz := date_trunc('hour', now()) - interval '1 day';
+  v_to timestamptz := date_trunc('hour', now()) + interval '3 days';
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Biscuit') returning id into v_pet;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Pepper') returning id into v_pet2;
+
+  -- A stay that started yesterday and runs three more days, already Received.
+  v_b := _t_booking(joy, allen, array[v_pet], v_from, v_to, 'confirmed', true);
+  delete from public.booking_slots where booking_id = v_b;
+  insert into public.booking_slots (booking_id, pet_id, day, slot)
+  select v_b, v_pet, f.day, f.slot from public.slots_for_window(allen, v_from, v_to) f;
+  select count(*) into v_before from public.booking_slots where booking_id = v_b;
+  select count(*) into v_after_now from public.booking_slots s
+  where s.booking_id = v_b
+    and lower(coalesce(sitter_hours(allen, s.day, s.slot), default_slot_range(allen, s.day, s.slot))) >= now();
+  perform _t_ok(v_after_now > 0 and v_before > v_after_now, '014u: fixture holds slots before and after now');
+
+  -- Returned today, days early.
+  perform _t_as(allen);
+  perform complete_handoff(v_b, 'pick_up');
+  perform _t_as(null);
+  select count(*) into v_n from public.booking_slots s
+  where s.booking_id = v_b
+    and lower(coalesce(sitter_hours(allen, s.day, s.slot), default_slot_range(allen, s.day, s.slot))) >= now();
+  perform _t_ok(v_n = 0, '014u: an early Returned frees every slot that starts after the return');
+  perform _t_ok((select count(*) from public.booking_slots where booking_id = v_b) = v_before - v_after_now,
+    '014u: …and keeps the slots the stay already used');
+  perform _t_ok(not exists (
+      select 1 from public.booking_slots s where s.booking_id = v_b
+        and s.day = (v_to at time zone app_timezone())::date - 1),
+    '014u: …so tomorrow and later count nothing for this sitter');
+
+  -- A return after the agreed pick-up changes nothing.
+  v_on := _t_booking(joy, allen, array[v_pet2], v_from - interval '3 days', now() - interval '1 hour', 'confirmed', true);
+  delete from public.booking_slots where booking_id = v_on;
+  insert into public.booking_slots (booking_id, pet_id, day, slot)
+  select v_on, v_pet2, f.day, f.slot from public.slots_for_window(allen, v_from - interval '3 days', now() - interval '1 hour') f;
+  select count(*) into v_before from public.booking_slots where booking_id = v_on;
+  perform _t_as(allen);
+  perform complete_handoff(v_on, 'pick_up');
+  perform _t_as(null);
+  perform _t_ok((select count(*) from public.booking_slots where booking_id = v_on) = v_before,
+    '014u: a return after the agreed pick-up keeps every slot');
+
+  -- Nobody can call the helper directly.
+  perform _t_as(allen);
+  begin
+    perform release_slots_after(v_on, now() - interval '10 days');
+    v_n := null;
+  exception when others then v_n := -1;
+  end;
+  perform _t_ok(v_n = -1, '014u: release_slots_after is not callable by a signed-in user');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014v (11.15 S1, #185): pet answers, owner intro, pet photos, save a pet in one call
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  zed constant uuid := '00000000-0000-4000-8000-0000000000e1';
+  v_id uuid := gen_random_uuid();
+  v_tmp uuid := gen_random_uuid();
+  v_ids uuid[];
+  v_first uuid;
+  v_out text;
+  v_err text;
+begin
+  perform _t_as(robert);
+
+  -- One call saves the pet, its answers and its allergies
+  perform create_pet_with_profile(v_id, 'dog', 'Pip14v', 'Maltese', null, 6, null,
+    '{"answers":{"q1":3},"safety":{"s1":"never"}}', array[' Chicken ', 'chicken', 'Dairy', '']);
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '3', '014v: the answers are saved with the pet');
+  perform _t_ok((select count(*) from public.pet_allergies where pet_id = v_id) = 2,
+    '014v: allergies are trimmed, lowercased and unique');
+
+  -- A retry with the same id updates instead of failing, and replaces the allergies
+  perform create_pet_with_profile(v_id, 'dog', 'Pip14v', 'Maltese', null, 6, null, '{"answers":{"q1":4}}', array['dairy', 'fish']);
+  perform _t_ok((select count(*) from public.pets where id = v_id) = 1, '014v: a retry does not make a second pet');
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '4', '014v: …and updates the answers');
+  perform _t_ok((select array_agg(allergen order by allergen) from public.pet_allergies where pet_id = v_id) = array['dairy', 'fish'],
+    '014v: …and the allergies follow the new list');
+
+  -- The answers must be an object, and not huge
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Bad', null, null, null, null, '[1]', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%pets_profile_shape%', '014v: pets.profile must be an object');
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Big', null, null, null, null,
+    jsonb_build_object('x', repeat('a', 17000)), '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%pets_profile_shape%', '014v: pets.profile is capped at 16000 characters');
+
+  -- Another owner's pet id is not overwritten, a sitter cannot save a pet
+  perform _t_as(joy);
+  begin perform create_pet_with_profile(v_id, 'dog', 'Stolen', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '014v: another owner cannot reuse a pet id');
+  perform _t_as(robert);
+  perform _t_ok((select name from public.pets where id = v_id) = 'Pip14v', '014v: …and the pet is unchanged');
+  perform _t_as(chloe);
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Sitter', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '014v: a sitter cannot save a pet');
+  perform _t_as(null, 'anon');
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Anon', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: anon cannot save a pet');
+
+  -- The owner edits the answers and the intro; nobody else can
+  perform _t_as(robert);
+  update public.pets set profile = '{"answers":{"q1":2}}' where id = v_id;
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '2', '014v: the owner edits their pet''s answers');
+  update public.owner_profiles set intro = 'Hello, I am Robert.' where id = robert;
+  perform _t_ok((select intro from public.owner_profiles where id = robert) = 'Hello, I am Robert.', '014v: the owner writes an intro');
+  begin update public.owner_profiles set intro = repeat('a', 501) where id = robert; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%owner_profiles_intro_length%', '014v: the intro is at most 500 characters');
+  perform _t_ok((select onboarded_at is null from public.owner_profiles where id = robert),
+    '014v: a new owner starts with onboarded_at null');
+  update public.owner_profiles set onboarded_at = now() where id = robert;
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: the owner marks themselves onboarded');
+  perform _t_as(joy);
+  update public.owner_profiles set onboarded_at = null where id = robert;
+  update public.pets set profile = '{"hacked":true}' where id = v_id;
+  perform _t_as(robert);
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: another owner cannot change the flag');
+  perform _t_ok((select profile ? 'hacked' from public.pets where id = v_id) = false, '014v: another owner cannot edit the answers');
+
+  -- Photos: added by the backend, the 9th is refused, a stranger's pet is refused
+  perform _t_as(null);
+  for i in 1..8 loop perform add_pet_photo(robert, v_id, 'pets/pip-' || i); end loop;
+  begin perform add_pet_photo(robert, v_id, 'pets/pip-9'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_many_photos', '014v: a pet keeps at most 8 photos');
+  begin perform add_pet_photo(joy, v_id, 'pets/joy-1'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: photos are added only for the pet''s own owner');
+  perform _t_ok((select array_agg(position order by position) from public.pet_photos where pet_id = v_id) = array[0,1,2,3,4,5,6,7]::smallint[],
+    '014v: photos are added at the end, cover first');
+
+  -- Who reads them: the owner; not another owner, not an unrelated sitter, not anon; a booked sitter does
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 8, '014v: the owner reads their pet''s photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 0, '014v: …and no other owner does');
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 0, '014v: a sitter with no booking or inquiry does not');
+  perform _t_as(null);
+  perform _t_booking(robert, chloe, array[v_id], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 8, '014v: a booked sitter reads the photos');
+  perform _t_as(null, 'anon');
+  begin perform count(*) from public.pet_photos; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: anon cannot read pet photos');
+
+  -- Reorder: the owner only, exactly the pet's own ids
+  perform _t_as(robert);
+  select array_agg(id order by position desc) into v_ids from public.pet_photos where pet_id = v_id;
+  perform reorder_pet_photos(v_id, v_ids);
+  select id into v_first from public.pet_photos where pet_id = v_id and position = 0;
+  perform _t_ok(v_first = v_ids[1], '014v: the owner reorders, first = cover');
+  begin perform reorder_pet_photos(v_id, v_ids[1:7]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014v: a partial order is refused');
+  perform _t_as(joy);
+  begin perform reorder_pet_photos(v_id, v_ids); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: another owner cannot reorder');
+  perform _t_as(robert);
+  begin perform remove_pet_photo(robert, v_id, v_ids[1]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: an owner cannot call remove_pet_photo directly');
+
+  -- Remove (backend): returns the file id and closes the gap
+  perform _t_as(null);
+  v_out := remove_pet_photo(robert, v_id, v_ids[1]);
+  perform _t_ok(v_out is not null, '014v: remove returns the Cloudinary public id');
+  perform _t_ok((select array_agg(position order by position) from public.pet_photos where pet_id = v_id) = array[0,1,2,3,4,5,6]::smallint[],
+    '014v: removing closes the gap');
+  begin perform remove_pet_photo(joy, v_id, v_ids[2]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: only the pet''s owner can remove a photo');
+
+  -- Photos go with the pet
+  perform _t_as(robert);
+  perform create_pet_with_profile(v_tmp, 'cat', 'Tmp14v', null, null, null, null, '{}', '{}');
+  perform _t_as(null);
+  perform add_pet_photo(robert, v_tmp, 'pets/tmp-1');
+  perform _t_as(robert);
+  delete from public.pets where id = v_tmp;
+  perform _t_as(null);
+  perform _t_ok(not exists (select 1 from public.pet_photos where pet_id = v_tmp), '014v: photos go with the pet');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014w (11.15 S4, #185): the breed needs cache is for the backend only
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.breed_notes (species, breed_key, chips, sources, found)
+    values ('dog', 'maltese', '["Brush daily"]', '[{"title":"AKC","url":"https://www.akc.org/x"}]', true);
+  perform _t_ok((select b.found from public.breed_notes b where b.breed_key = 'maltese'), '014w: the backend writes and reads a breed note');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('dog', 'maltese', false);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%duplicate key%', '014w: one row per species and breed');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('bird', 'parrot', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: only dogs and cats');
+  begin
+    insert into public.breed_notes (species, breed_key, chips, found) values ('cat', 'x', '{}', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: chips are a list');
+
+  foreach v_err in array array['owner', 'sitter', 'anon'] loop
+    if v_err = 'owner' then perform _t_as(robert);
+    elsif v_err = 'sitter' then perform _t_as(chloe);
+    else perform _t_as(null, 'anon');
+    end if;
+    begin
+      perform count(*) from public.breed_notes;
+      perform _t_ok(false, '014w: ' || v_err || ' cannot read the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot read the cache');
+    end;
+    begin
+      insert into public.breed_notes (species, breed_key, found) values ('dog', 'poodle', true);
+      perform _t_ok(false, '014w: ' || v_err || ' cannot write the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot write the cache');
+    end;
+  end loop;
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014y (the fees agreed in the chat stay in the price): no payment over an open final quote, and a paid booking keeps
 -- its fees when its times change
 -- ---------------------------------------------------------------------------
 
@@ -5998,16 +6599,16 @@ begin
   q := add_chat_quote_extra(q.id, 'Medication visits', 15);
   perform _t_as(robert);
   begin perform pay_booking_demo(v1); v_err := null; exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'quote_pending', '014q: no payment while the final quote waits for the owner');
-  perform _t_ok((select paid_at is null from public.bookings where id = v1), '014q: ...so nothing is paid');
+  perform _t_ok(v_err = 'quote_pending', '014y: no payment while the final quote waits for the owner');
+  perform _t_ok((select paid_at is null from public.bookings where id = v1), '014y: ...so nothing is paid');
   q := answer_chat_quote_extra(q.id, (q.card -> 'extras' -> 0 ->> 'id')::uuid, true);
   q := confirm_chat_quote(q.id);
   v_quote := pay_booking_demo(v1);
-  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 15, '014q: once confirmed, the fee is paid');
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 15, '014y: once confirmed, the fee is paid');
   perform _t_as(null);
   perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'booking_paid' and booking_id = v1
       and title not like '%' || chr(8212) || '%'),
-    '014q: the payment notice has no em dash');
+    '014y: the payment notice has no em dash');
 
   -- A later pick-up, agreed after payment: re-quoted with the paid fee still in.
   perform _t_as(robert);
@@ -6019,9 +6620,9 @@ begin
   perform _t_ok((select paid_at is not null and (price_snapshot ->> 'total')::numeric = v_base + 15
         and jsonb_array_length(price_snapshot -> 'extras') = 1
       from public.bookings where id = v1),
-    '014q: a paid booking keeps its fee when the times change');
+    '014y: a paid booking keeps its fee when the times change');
   perform _t_as(robert);
-  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 15, '014q: Checkout shows the same total');
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 15, '014y: Checkout shows the same total');
   perform _t_as(null);
 end;
 $$;

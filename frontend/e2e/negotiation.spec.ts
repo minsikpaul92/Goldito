@@ -95,16 +95,18 @@ test.describe("negotiation", () => {
     await expect(screen.getByText("Waiting for Chloe to answer your request.")).toBeVisible();
   });
 
-  test("declining the sitter's time before confirm asks first and ends the request", async ({ page }) => {
+  test("a proposal card has no Decline, so a new time can't end the request (#169)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "requested", SITTER_COUNTER);
     const screen = await openDetail(page, OWNER);
 
-    await screen.getByTestId("proposal-drop_off-decline").click();
-    await expect(screen.getByTestId("end-request-sheet")).toContainText("This will end the booking request.");
-    await screen.getByTestId("end-request-confirm").click();
-    await expect(screen.getByTestId("toast")).toContainText("Request ended");
-    expect(db.bookings[0].status).toBe("cancelled");
+    const proposal = screen.getByTestId("proposal-drop_off");
+    await expect(screen.getByTestId("proposal-drop_off-accept")).toBeVisible();
+    await expect(screen.getByTestId("proposal-drop_off-suggest")).toBeVisible();
+    await expect(screen.getByTestId("proposal-drop_off-decline")).toHaveCount(0);
+    await expect(proposal.getByText("Decline", { exact: true })).toHaveCount(0);
+    expect(db.responses).toEqual([]);
+    expect(db.bookings[0].status).toBe("requested");
   });
 
   test("the owner counters with another time and then waits", async ({ page }) => {
@@ -162,7 +164,7 @@ test.describe("negotiation", () => {
     await expect(screen.getByTestId("proposal-pick_up")).toHaveCount(0);
   });
 
-  test("the change sheet keeps each handoff's edits while flipping between them, and Send proposes both (FB-5)", async ({ page }) => {
+  test("the change sheet keeps each handoff's edits while flipping between them, and Send proposes both as one pair (FB-5, 014r)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", CONFIRMED);
     const screen = await openDetail(page, OWNER);
@@ -180,13 +182,14 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
     await expect(screen.getByTestId("change-sheet")).toHaveCount(0);
-    expect(db.proposals.map((p) => [p.p_kind, p.p_at])).toEqual([
-      ["drop_off", "2030-10-05T12:45:00.000Z"],
-      ["pick_up", "2030-10-08T21:15:00.000Z"],
-    ]);
+    // One call for both: one suggestion, one key.
+    expect(db.proposals.map((p) => [p.pair, p.p_drop_at, p.p_pick_at])).toEqual([[true, "2030-10-05T12:45:00.000Z", "2030-10-08T21:15:00.000Z"]]);
+    const open = db.booking_handoffs.filter((h) => h.status === "proposed");
+    expect(open).toHaveLength(2);
+    expect(open[0].pair_id).toBe(open[1].pair_id);
   });
 
-  test("Send goes pick-up first when the new drop-off lands after the old pick-up", async ({ page }) => {
+  test("a new drop-off past the old pick-up goes as one pair, in any order (014r)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", CONFIRMED);
     const screen = await openDetail(page, OWNER);
@@ -198,7 +201,8 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
-    expect(db.proposals.map((p) => p.p_kind)).toEqual(["pick_up", "drop_off"]);
+    expect(db.proposals).toHaveLength(1);
+    expect(db.proposals[0]).toMatchObject({ pair: true });
   });
 
   test("Close sends and saves nothing, and the next sheet starts from the booking again (FB-5)", async ({ page }) => {
@@ -217,13 +221,13 @@ test.describe("negotiation", () => {
     await expect(screen.getByTestId("change-send")).toBeDisabled(); // nothing changed yet
   });
 
-  test("when the second proposal fails the sheet stays open, says which one went, and Send retries only the rest", async ({ page }) => {
+  test("when the pair fails the sheet stays open and nothing was sent; Send tries again (014r)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, "confirmed", CONFIRMED);
     let calls = 0;
-    await page.route("**/rpc/propose_handoff", (route) => {
+    await page.route("**/rpc/propose_handoff_pair", (route) => {
       calls += 1;
-      if (calls === 2) {
+      if (calls === 1) {
         return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "P0001", message: "sitter_unavailable", details: null }) });
       }
       return route.fallback();
@@ -236,13 +240,13 @@ test.describe("negotiation", () => {
     await screen.getByTestId("change-time-plus").click();
     await screen.getByTestId("change-send").click();
 
-    await expect(screen.getByTestId("change-error")).toContainText("Drop-off was sent. Pick-up didn't go through: Chloe no longer has room");
+    await expect(screen.getByTestId("change-error")).toContainText("Chloe no longer has room");
     await expect(screen.getByTestId("change-sheet")).toBeVisible();
-    expect(db.proposals.map((p) => p.p_kind)).toEqual(["drop_off"]);
+    expect(db.proposals).toEqual([]);
 
-    await screen.getByTestId("change-send").click(); // retries only the pick-up
+    await screen.getByTestId("change-send").click();
     await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
-    expect(db.proposals.map((p) => p.p_kind)).toEqual(["drop_off", "pick_up"]);
+    expect(db.proposals.map((p) => p.pair)).toEqual([true]);
   });
 
   test("a handoff that already happened can't be picked, and a finished stay has no change button (FB-6)", async ({ page }) => {
@@ -331,9 +335,12 @@ test.describe("negotiation", () => {
     ]);
     const sitter = await openDetail(page, SITTER);
     await expect(sitter.getByTestId("proposal-drop_off-paired")).toContainText(
-      "Comes with the new pick-up (Oct 14, 5:00 PM). Accept or Decline answers both.",
+      "Comes with the new pick-up (Oct 14, 5:00 PM). Accept answers both.",
     );
     // The pick-up fits on its own (Oct 5 – Oct 14), so it can be answered alone.
     await expect(sitter.getByTestId("proposal-pick_up-paired")).toHaveCount(0);
+    // The sitter's cards have no Decline either (#169).
+    await expect(sitter.getByTestId("proposal-drop_off-suggest")).toBeVisible();
+    await expect(sitter.getByTestId(/^proposal-(drop_off|pick_up)-decline$/)).toHaveCount(0);
   });
 });

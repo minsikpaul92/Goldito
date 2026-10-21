@@ -60,6 +60,10 @@ class Settings(BaseSettings):
         alias="MODEL_FAST_BASE_URL",
     )
 
+    # The chat AI's two agents (#226) can run on their own model; unset = the fast model, on the fast model's base URL.
+    model_chat_owner: str | None = Field(default=None, alias="MODEL_CHAT_OWNER")
+    model_chat_sitter: str | None = Field(default=None, alias="MODEL_CHAT_SITTER")
+
     # Embeddings for RAG (D33): Qwen3-Embedding, 1024 dimensions → pgvector vector(1024).
     model_embed: str = Field(default="Qwen/Qwen3-Embedding-8B", alias="MODEL_EMBED")
     model_embed_base_url: str = Field(
@@ -72,6 +76,11 @@ class Settings(BaseSettings):
     inquiry_agent: Literal["off", "auto", "on"] = Field(default="auto", alias="INQUIRY_AGENT")
 
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
+
+    # Speech to text for voice sign-up (11.15 S3, #158). Token Factory has no STT, so this one call goes to Groq's
+    # free plan; the text it returns is read by Nemotron like any other text.
+    groq_api_key: str | None = Field(default=None, alias="GROQ_API_KEY")
+    groq_stt_model: str = Field(default="whisper-large-v3-turbo", alias="GROQ_STT_MODEL")
 
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
     # Testing only: lets the demo accounts reset the demo (POST /api/demo/reset). Off unless set to 1/true.

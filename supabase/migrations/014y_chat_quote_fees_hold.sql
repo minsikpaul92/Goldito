@@ -1,4 +1,4 @@
--- 014q (#144 review): the fees agreed in the chat stay in the price.
+-- 014y (#144 review): the fees agreed in the chat stay in the price.
 --
 -- * booking_extra_fees: a paid booking keeps the fees it was paid with when its times change (009d re-quote, or a
 --   checkout reopened for a new consent). Before, the confirmed quote had to price the exact new times, so the fees

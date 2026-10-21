@@ -82,6 +82,18 @@ def _clean(text: str | None, limit: int) -> str | None:
     return text[:limit].rstrip() or None
 
 
+def _chip(text: str | None, limit: int) -> str | None:
+    """A chip label: whole words when it has to be cut, ending with an ellipsis (still within `limit`)."""
+    text = " ".join((text or "").split())
+    if len(text) <= limit:
+        return text or None
+    cut = text[: limit - 1]
+    head = cut.rsplit(" ", 1)[0]
+    if " " in cut and len(head) >= limit // 2:
+        cut = head
+    return cut.rstrip(" ,.;:-") + "…"
+
+
 def _hhmm(moment: datetime, tz: ZoneInfo) -> str:
     return moment.astimezone(tz).strftime("%H:%M")
 

@@ -205,3 +205,11 @@ def test_it_requires_a_signed_in_user(client, setup):
     setup()
     assert client.post("/api/ai/report-chips", json={"pet_id": PET_ID}).status_code == 401
     assert ai_daily_report.load_day_records  # shared loader stays public for both routes
+
+
+def test_a_long_chip_label_is_cut_on_a_whole_word_and_ends_with_an_ellipsis():
+    from app.ai.daily_report import _chip
+
+    assert _chip("Chased a squirrel and rolled in the grass", 40) == "Chased a squirrel and rolled in the…"
+    assert _chip("x" * 80, 40) == "x" * 39 + "…"
+    assert _chip("a" * 40, 40) == "a" * 40 and _chip("  Ate   all ", 40) == "Ate all" and _chip("  ", 40) is None

@@ -368,19 +368,30 @@ def test_the_reset_replaces_the_pairs_chat_and_keeps_another_pairs():
         {"id": "t-other", "owner_id": OTHER_OWNER, "sitter_id": SITTER},
     ]
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
 
     assert "t-old" not in ids(db, "chat_threads")
     assert "t-other" in ids(db, "chat_threads")
 
 
-def test_a_pets_state_chat_has_the_stay_card_and_a_short_talk_but_no_request():
+def test_a_pets_state_has_no_chat_and_no_favorite_even_when_an_earlier_one_exists():
     db = world()
+    db.tables["chat_threads"] = [{"id": "t-old", "owner_id": OWNER, "sitter_id": SITTER}]
+    db.tables["owner_favorite_sitters"] = [{"id": "f-old", "owner_id": OWNER, "sitter_id": SITTER}]
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
+    assert db.tables.get("chat_threads", []) == []
+    assert db.tables.get("owner_favorite_sitters", []) == []
+
+
+def test_a_booked_state_chat_starts_with_the_stay_card_and_a_short_talk():
+    db = world()
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
+
     messages = chat_of(db)
-    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages] == [("card", "stay"), ("text", None), ("text", None)]
+    assert [(m["kind"], (m["card"] or {}).get("type")) for m in messages[:3]] == [("card", "stay"), ("text", None), ("text", None)]
     assert [p["name"] for p in messages[0]["card"]["pets"]] == ["Max", "Mochi"]
     assert messages[0]["sender_id"] == OWNER and messages[2]["sender_id"] == SITTER
 
@@ -409,8 +420,8 @@ def test_the_empty_state_has_no_chat_and_no_favorite():
 def test_the_set_sitter_is_the_owners_one_favorite_and_a_second_reset_does_not_double_it():
     db = world()
 
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
-    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+    for _ in range(2):
+        demo_reset.reset(db, OWNER, SITTER, TODAY, state="confirmed", apply=True, book=lambda *_a: "b-new")
 
     assert db.tables["owner_favorite_sitters"] == [{"id": db.tables["owner_favorite_sitters"][0]["id"], "owner_id": OWNER, "sitter_id": SITTER}]
 
@@ -435,3 +446,40 @@ def test_answers_a_teammate_filled_in_are_kept():
 
     assert [(a["question_key"], a["choice"]) for a in db.tables["sitter_profile_answers"]] == [("cats", "no")]
     assert db.tables["sitter_profiles"][0]["onboarded_at"] is not None
+
+
+def test_a_reset_marks_the_owner_done_with_the_sign_up_questions():
+    db = world()
+    db.tables["owner_profiles"][0]["onboarded_at"] = None
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["owner_profiles"][0]["onboarded_at"] is not None
+
+
+def test_the_demo_pets_get_their_answers_and_an_old_pet_gets_them_too():
+    db = world()  # Max is already there, from before the sign-up questions, with no answers
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    by_name = {p["name"]: p for p in db.tables["pets"] if p["owner_id"] == OWNER}
+    assert by_name["Max"]["profile"] == demo_accounts.DEMO_PET_PROFILES["Max"]
+    assert by_name["Mochi"]["profile"] == demo_accounts.DEMO_PET_PROFILES["Mochi"]
+
+
+def test_answers_an_owner_gave_are_kept():
+    db = world()
+    db.tables["pets"][0]["profile"] = {"v": 1, "answers": {"d1": 1}, "safety": {}}
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["pets"][0]["profile"] == {"v": 1, "answers": {"d1": 1}, "safety": {}}
+
+
+def test_the_demo_answers_use_real_question_keys():
+    dog = {f"d{i}" for i in range(1, 13)}
+    cat = {f"c{i}" for i in range(1, 11)}
+    assert set(demo_accounts.DEMO_PET_PROFILES["Max"]["answers"]) == dog
+    assert set(demo_accounts.DEMO_PET_PROFILES["Mochi"]["answers"]) == cat
+    for profile in demo_accounts.DEMO_PET_PROFILES.values():
+        assert all(1 <= v <= 4 for v in profile["answers"].values())

@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -12,6 +12,8 @@ type Props = {
   children: ReactNode;
   /** Pinned under the scrolling body — the sheet's one primary action. */
   footer?: ReactNode;
+  /** Keep a thin visible scrollbar on the desktop frame (a long page inside the sheet). */
+  scrollbar?: boolean;
   testID?: string;
 };
 
@@ -20,7 +22,7 @@ type Props = {
  * dismiss (DESIGN.md §6 Sheet, §7.7). Inside the desktop frame it stays in the phone,
  * because the app runs in the frame's iframe.
  */
-export function Sheet({ visible, title, onClose, children, footer, testID }: Props) {
+export function Sheet({ visible, title, onClose, children, footer, scrollbar, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
 
   return (
@@ -39,7 +41,11 @@ export function Sheet({ visible, title, onClose, children, footer, testID }: Pro
             </Text>
             <TextButton label="Close" onPress={onClose} testID={testID ? `${testID}-close` : undefined} />
           </View>
-          <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.body}
+            keyboardShouldPersistTaps="handled"
+            {...(scrollbar && Platform.OS === "web" ? ({ dataSet: { scrollbar: "true" } } as object) : null)}
+          >
             {children}
           </ScrollView>
           {footer ? <View style={styles.footer}>{footer}</View> : null}

@@ -56,6 +56,42 @@ export function hasPaymentCard(messages: ChatMessage[], bookingId: string): bool
   return messages.some((m) => m.card?.type === "payment" && m.card.bookingId === bookingId);
 }
 
+/**
+ * Whether an action the server pointed at (chat-chips `action`) is possible on this screen right now. The server worked
+ * it out from the database; this checks the same thing against what the footer would offer, so a chip can never open
+ * something the person cannot do (a stale answer, a step someone else just took).
+ */
+export function actionPossible(id: string, step: NextStep, booking: BookingSummary | null, role: Role, now?: number): boolean {
+  const kind = step.primary?.kind;
+  const meet = booking ? meetGreetPrimary(booking, role, now)?.key : undefined;
+  switch (id) {
+    case "request_booking":
+      return kind === "request";
+    case "send_quote":
+      return step.quote;
+    case "interest":
+      return kind === "interest";
+    case "meet_time":
+      return meet === "schedule";
+    case "meet_accept":
+      return meet === "accept";
+    case "meet_skip":
+      return !!booking && booking.stage === "meet_greet" && !!booking.sitterInterestAt && ["required", "proposed", "agreed"].includes(booking.meetGreetStatus);
+    case "agree":
+      return kind === "agree";
+    case "accept":
+      return kind === "accept";
+    case "final_quote":
+      return kind === "final_quote";
+    case "confirm_quote":
+      return step.primary?.kind === "confirm_quote" && !step.primary.disabled;
+    case "pay":
+      return kind === "pay";
+    default:
+      return false;
+  }
+}
+
 export function nextStep(i: Input): NextStep {
   const { role, booking, messages, hasStay, priced, otherName } = i;
   const waiting = `Waiting for ${otherName}`;
@@ -71,7 +107,7 @@ export function nextStep(i: Input): NextStep {
     case "requested":
       // A first-time request waits for the sitter's first yes.
       return role === "sitter"
-        ? { primary: { kind: "interest", label: "Yes, let's meet" }, quote, wait: null }
+        ? { primary: { kind: "interest", label: "Next" }, quote, wait: null }
         : { primary: null, quote: false, wait: waiting };
 
     case "meet_greet": {

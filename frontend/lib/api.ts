@@ -80,7 +80,12 @@ export function apiDelete<T>(path: string): Promise<T> {
   return apiRequest<T>("DELETE", path);
 }
 
-async function apiRequest<T>(method: "POST" | "DELETE", path: string, body?: unknown): Promise<T> {
+/** Authenticated POST of a file as the request body (a voice recording): the Content-Type is the file's own. */
+export function apiPostFile<T>(path: string, file: Blob): Promise<T> {
+  return apiRequest<T>("POST", path, undefined, file);
+}
+
+async function apiRequest<T>(method: "POST" | "DELETE", path: string, body?: unknown, file?: Blob): Promise<T> {
   const base = getApiBaseUrl();
   if (!base) {
     throw new ApiError("API URL is not set.", 0, "not_configured");
@@ -95,9 +100,9 @@ async function apiRequest<T>(method: "POST" | "DELETE", path: string, body?: unk
     method,
     headers: {
       Authorization: `Bearer ${session.access_token}`,
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(file ? { "Content-Type": file.type } : body === undefined ? {} : { "Content-Type": "application/json" }),
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: file ?? (body === undefined ? undefined : JSON.stringify(body)),
   });
   let payload: { detail?: string; code?: string } = {};
   try {

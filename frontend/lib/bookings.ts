@@ -491,6 +491,8 @@ type HandoffRow = {
   proposed_by: string;
   completed_at: string | null;
   created_at: string;
+  /** 014r: the drop-off and the pick-up of one suggestion share a key. */
+  pair_id?: string | null;
 };
 
 export type HandoffKind = HandoffRow["kind"];
@@ -503,6 +505,8 @@ export type ProposalStep = {
   note: string | null;
   proposedBy: string;
   status: HandoffRow["status"];
+  /** Set when this offer and the other handoff's offer are one suggestion (014r). */
+  pairId: string | null;
 };
 
 export type Handoff = {
@@ -593,6 +597,9 @@ export function meetGreetBlocksAccept(b: BookingSummary): boolean {
   return !["not_needed", "done", "skipped"].includes(b.meetGreetStatus);
 }
 
+/** Why a sitter declines a request (booking page Decline, chat Decline #230). The chosen ones go to respond_booking's note. */
+export const SITTER_DECLINE_REASONS = ["Fully booked those dates", "Can't take this pet type", "Not a good fit", "Let's talk first"];
+
 /** Why an owner says no after the Meet & Greet started ("Not this sitter", D60). The chosen ones go to cancel_booking. */
 export const OWNER_PASS_REASONS = [
   "Doesn't seem like a fit",
@@ -616,10 +623,12 @@ export function awaitingFirstYes(b: BookingSummary): boolean {
  * the whole stay moved past its old window. The server answers both at once — Accept or Decline takes the pair.
  */
 export function pairedProposal(b: BookingSummary, kind: HandoffKind): ProposalStep | null {
-  if (b.status !== "confirmed") return null;
   const offer = b.pending[kind];
   const partner = b.pending[kind === "drop_off" ? "pick_up" : "drop_off"];
   if (!offer || !partner || partner.proposedBy !== offer.proposedBy) return null;
+  // One suggestion for both (014r): answered together, whatever the times.
+  if (offer.pairId && offer.pairId === partner.pairId) return partner;
+  if (b.status !== "confirmed") return null;
   const agreedOther = kind === "drop_off" ? b.pickUp : b.dropOff;
   if (!agreedOther) return null;
   const [from, to] = kind === "drop_off" ? [offer.at, agreedOther.at] : [agreedOther.at, offer.at];
@@ -655,7 +664,7 @@ const BOOKING_COLUMNS =
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
-  "completed_at, created_at)";
+  "completed_at, created_at, pair_id)";
 
 type BookingRow = {
   id: string;
@@ -694,6 +703,7 @@ function toStep(h: HandoffRow): ProposalStep {
     note: h.location_note,
     proposedBy: h.proposed_by,
     status: h.status,
+    pairId: h.pair_id ?? null,
   };
 }
 
@@ -937,6 +947,34 @@ export async function proposeHandoff(
     throw new BookingError(
       error.message,
       bookingErrorMessage(error.message, "Couldn't send the new time. Try again."),
+      error.details ?? null,
+    );
+  }
+}
+
+/**
+ * propose_handoff_pair (014r) — a new time (and optionally place) for the drop-off AND the pick-up as one suggestion:
+ * one notice, and the other side answers both at once. An omitted place stays as it is.
+ */
+export async function proposeHandoffPair(
+  bookingId: string,
+  drop: { at: string; place?: { locationType: LocationType; note: string | null } },
+  pick: { at: string; place?: { locationType: LocationType; note: string | null } },
+): Promise<void> {
+  const args: Record<string, unknown> = { p_booking: bookingId, p_drop_at: drop.at, p_pick_at: pick.at };
+  if (drop.place) {
+    args.p_drop_type = drop.place.locationType;
+    args.p_drop_note = drop.place.note;
+  }
+  if (pick.place) {
+    args.p_pick_type = pick.place.locationType;
+    args.p_pick_note = pick.place.note;
+  }
+  const { error } = await getSupabase().rpc("propose_handoff_pair", args);
+  if (error) {
+    throw new BookingError(
+      error.message,
+      bookingErrorMessage(error.message, "Couldn't send the new times. Try again."),
       error.details ?? null,
     );
   }
