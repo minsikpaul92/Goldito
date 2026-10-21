@@ -596,6 +596,9 @@ export function meetGreetBlocksAccept(b: BookingSummary): boolean {
   return !["not_needed", "done", "skipped"].includes(b.meetGreetStatus);
 }
 
+/** Why a sitter declines a request (booking page Decline, chat Decline #230). The chosen ones go to respond_booking's note. */
+export const SITTER_DECLINE_REASONS = ["Fully booked those dates", "Can't take this pet type", "Not a good fit", "Let's talk first"];
+
 /** Why an owner says no after the Meet & Greet started ("Not this sitter", D60). The chosen ones go to cancel_booking. */
 export const OWNER_PASS_REASONS = [
   "Doesn't seem like a fit",

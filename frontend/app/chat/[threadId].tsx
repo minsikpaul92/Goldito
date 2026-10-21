@@ -4,6 +4,8 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
+import { ChatCounterSheet } from "../../components/ChatCounterSheet";
+import { ChatDeclineSheet } from "../../components/ChatDeclineSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
 import { ChatCareCards } from "../../components/ChatCareCards";
@@ -66,6 +68,8 @@ type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 const INPUT_MIN = 44;
 const INPUT_MAX = 150;
 const INPUT_PAD = 11;
+/** Footer steps that get a Decline next to them (#230): the owner's yes, the sitter's yes, the owner's final quote. */
+const DECLINABLE: Primary["kind"][] = ["agree", "accept", "confirm_quote"];
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -95,6 +99,10 @@ export default function Chat() {
   const [requesting, setRequesting] = useState(false);
   const [quoting, setQuoting] = useState<"first" | "final" | null>(null);
   const [agreeing, setAgreeing] = useState(false);
+  /** Decline at the agreement step or on the final quote (#230); `quote` when it is the final quote. */
+  const [declining, setDeclining] = useState<{ quote: boolean } | null>(null);
+  /** The final quote's total the owner counters (#230 part 3). */
+  const [countering, setCountering] = useState<number | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
   const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
   const [stepBusy, setStepBusy] = useState(false);
@@ -283,6 +291,14 @@ export default function Chat() {
   // A quote sent after a booking's payment card is that booking's final quote.
   const payAt = messages.findIndex((m) => m.card?.type === "payment");
   const isFinal = (id: string) => payAt >= 0 && messages.findIndex((m) => m.id === id) > payAt;
+  // What a quote asks for: the server's price plus every fee the owner has not declined (a fee still waiting counts,
+  // because that is when the owner wants to answer it). A final quote is compared with the quote before the payment
+  // card (the one before the Meet & Greet and the agreement). No such quote (a booking made outside the chat) means
+  // nothing to compare, so no counter.
+  const asked = (c: QuoteCard) =>
+    Math.round((c.quote.total + c.extras.filter((e) => e.status !== "declined").reduce((sum, e) => sum + e.amount, 0)) * 100) / 100;
+  const firstQuote = payAt >= 0 ? (messages.slice(0, payAt).filter((m) => m.card?.type === "quote").at(-1)?.card as QuoteCard | undefined) : undefined;
+  const totalChanged = (c: QuoteCard) => firstQuote != null && Math.abs(asked(c) - asked(firstQuote)) >= 0.005;
 
   /** One owner action on a quote card; the cards come back from the server. */
   const quoteAction = async (run: () => Promise<void>) => {
@@ -500,6 +516,8 @@ export default function Chat() {
                 onAddFee={() => setFeeFor(m.id)}
                 onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
+                onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
+                onCounter={isFinal(m.id) && totalChanged(m.card as QuoteCard) ? () => setCountering(asked(m.card as QuoteCard)) : undefined}
               />
             </View>
           ) : m.kind === "text" ? (
@@ -532,10 +550,22 @@ export default function Chat() {
           {step.primary && step.quote ? (
             <TextButton label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />
           ) : null}
+          {step.primary && booking && DECLINABLE.includes(step.primary.kind) ? (
+            <TextButton
+              label="Decline"
+              danger
+              disabled={stepBusy}
+              onPress={() => setDeclining({ quote: step.primary?.kind === "confirm_quote" })}
+              testID="chat-decline"
+            />
+          ) : null}
           {!step.primary && step.wait ? (
             <Text style={styles.waiting} testID="chat-waiting">
               {step.wait}
             </Text>
+          ) : null}
+          {!owner && booking && finalQuote(messages, booking.id)?.card.status === "sent" ? (
+            <TextButton label="Send a new final quote" onPress={() => setQuoting("final")} testID="chat-requote" />
           ) : null}
         </View>
       ) : null}
@@ -645,6 +675,33 @@ export default function Chat() {
       </View>
       {owner && booking ? (
         <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+      ) : null}
+      {owner && countering != null ? (
+        <ChatCounterSheet
+          visible
+          threadId={threadId}
+          sitterName={header.otherName}
+          total={countering}
+          onClose={() => setCountering(null)}
+          onSent={() => {
+            setCountering(null);
+            void load();
+          }}
+        />
+      ) : null}
+      {booking && declining ? (
+        <ChatDeclineSheet
+          visible
+          bookingId={booking.id}
+          role={header.myRole}
+          otherName={header.otherName}
+          quote={declining.quote}
+          onClose={() => setDeclining(null)}
+          onDone={() => {
+            setDeclining(null);
+            void load();
+          }}
+        />
       ) : null}
       {owner ? (
         <RequestBookingSheet

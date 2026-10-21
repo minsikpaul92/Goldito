@@ -944,6 +944,16 @@
 | OWN-20 | 품종 목록 `backend/app/data/breed_needs.json` (`scripts/build_breed_needs.py`가 만든 후보) | 개 20종 · 고양이 8종 중 검색에서 근거가 나온 품종만 들어감(개 16 · 고양이 5 안팎, 나머지는 앱이 처음 볼 때 검색). 줄마다 `quote`(출처 페이지의 실제 문장)와 출처 링크가 있고 전부 `reviewed: false`. **슬기가 줄마다 출처 링크의 페이지와 맞는지 읽고 고치거나 지운 뒤 `reviewed: true`로 바꿈**(약한 줄 · 다른 품종 페이지에서 온 줄 · 일반 문서 출처가 섞여 있음) | 🤖 (만드는 스크립트는 앱과 같은 검증을 씀) | **👤 슬기 감수** |
 | OWN-21 | "at a glance" 카드의 **Needs** 줄(시터 예약 상세 · 오너 펫 상세 · 가입 요약) | 품종이 있으면 카드가 먼저 뜨고 잠시 뒤 "Needs" 아래에 최대 3줄("Grooming: Brush daily", "Watch for: …")과 "Source: akc.org" 같은 출처 링크가 붙음(링크는 새 탭). "Poodle mix"는 "Needs (based on Poodle)". 품종을 못 찾거나 실패하면 Needs 칸이 아예 없고 카드는 그대로. 품종 글을 쓰는 동안 글자마다 검색하지 않음(0.4초 쉼) | 🤖 `pet-glance` · `owner-onboarding` | 사람 확인 대기 (정적 목록에 없는 품종으로 데모 영상용 한 번) |
 
+### 3.42 합의와 최종 견적에서 거절 · 가격 역제안 (DECL) · #230
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| DECL-1 | 오너 → 채팅 푸터 **I'd like to book** 옆 **Decline** → 사유 칩(선택) · 메모(선택) → **Decline and end the request** | "Not this sitter?" 시트, 확인하면 토스트 "Request ended", 예약은 Cancelled(사유 저장), 시터에게 알림, 날짜 홀드가 풀림. 푸터는 다시 **Request booking** | 🤖 `chat` | ➖ |
+| DECL-2 | 시터 → 채팅 푸터 **I accept** 옆 **Decline** | "Decline this booking?" 시트, 확인하면 "Request declined", 예약은 Declined(사유는 오너가 읽는 메모로) | 🤖 `chat` | ➖ |
+| DECL-3 | 오너 → **Final quote** 카드의 **Decline** 또는 푸터 **Confirm quote** 옆 **Decline** | "Decline the final quote?" 시트, 사유 칩 맨 앞에 "The price doesn't work". 확인하면 예약 Cancelled, Pay 버튼 없음. 시터 화면의 최종 견적 카드에는 Decline 없음 | 🤖 `chat` | ➖ |
+| DECL-4 | 최종 견적이 첫 견적(Meet & Greet 전)과 **같은 금액** | 오너 카드에 Confirm과 Decline만, **Suggest another price** 없음. 첫 견적이 없는 예약(채팅 밖에서 만든 예약)도 없음 | 🤖 `chat` | ➖ |
+| DECL-5 | 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **검색이 서비스 · 인계 방식을 아직 걸러내지 않는다 (CHAT-10):** 예약 요청 시트에는 서비스 선택이 없다(시터가 하는 서비스, 둘 다면 Boarding). 오너 · 시터의 온보딩 선택(서비스, 누가 데려다주는지)으로 검색을 거르는 일은 온보딩 데이터가 생긴 뒤에 한다. 둘 다 맞는 경우는 요청을 받은 시터가 수락 · 변경 · 거절한다.
