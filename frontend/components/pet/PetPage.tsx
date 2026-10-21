@@ -4,17 +4,18 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../ui/Screen";
 import { TextButton } from "../ui/TextButton";
-import { asPixelHead } from "../../features/pets/sprites/pixelize";
+import { asPixelColors } from "../../features/pets/sprites/photoColors";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
 import { PetMedals } from "./PetMedals";
 import { PetRoom } from "./PetRoom";
-import { PixelHeadSheet } from "./PixelHeadSheet";
+import { PetColorsSheet } from "./PetColorsSheet";
 
 /**
  * Owner Home, page two (11.12): the pet room of one pet, with a switch when there are several. Tap the pet: Diary.
- * "Make from photo" turns a photo into the pet's own pixel head (PH.2); `onChanged` reloads the pets after a save.
+ * The pet is a preset for its breed and weight; "Match colors from photo" paints it in the photo's colors (PS.3), and
+ * `onChanged` reloads the pets after a save.
  */
 export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => void }) {
   const styles = useThemedStyles(makeStyles);
@@ -22,7 +23,8 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
   const [making, setMaking] = useState(false);
   const pet = pets.find((p) => p.id === selected) ?? pets[0];
   if (!pet) return null;
-  const head = asPixelHead(pet.profile?.pixel_head);
+  const colors = asPixelColors(pet.profile?.pixel_colors);
+  const look = { id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, colors };
 
   return (
     <Screen contentStyle={styles.page} testID="pet-page">
@@ -43,14 +45,14 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
         </View>
       ) : null}
       <PetRoom
-        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, head }}
+        pet={look}
         onPress={() => router.push("/owner/diary")}
       />
-      <TextButton label="🎨 Make from photo" onPress={() => setMaking(true)} style={styles.make} testID="pixel-head-open" />
-      <PixelHeadSheet
+      <TextButton label="🎨 Match colors from photo" onPress={() => setMaking(true)} style={styles.make} testID="pet-colors-open" />
+      <PetColorsSheet
         visible={making}
         onClose={() => setMaking(false)}
-        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, head }}
+        pet={look}
         onSaved={() => onChanged?.()}
       />
       <PetMedals petId={pet.id} />

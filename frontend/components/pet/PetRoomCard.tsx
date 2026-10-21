@@ -3,7 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 
 import { PetStatus } from "../../lib/petStatus";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
-import type { PixelHead } from "../../features/pets/sprites/pixelize";
+import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { SIZE_SCALE, SPRITE_SIZE, petSize } from "../../features/pets/sprites/sprites";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -18,8 +18,8 @@ type Props = {
   breed?: string | null;
   /** `pets.weight_kg`: a small dog takes less of the screen than a big one. */
   weightKg?: number | null;
-  /** A saved photo head (`pets.profile.pixel_head`), drawn instead of the preset. */
-  head?: PixelHead | null;
+  /** Colors picked from a photo (`pets.profile.pixel_colors`), instead of the coat. */
+  colors?: PixelColors | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */
   status: PetStatus | null;
   /** Tapping the pet. */
@@ -38,7 +38,7 @@ const MOOD_LABEL = { excited: "Happy", calm: "Calm", tired: "Tired", hungry: "Hu
  * worked out from today's check-ins. Pure display: `PetRoom` loads the data. The owner's room is the whole Home hero;
  * the sitter's is compact.
  */
-export function PetRoomCard({ name, species, coat, breed, weightKg, head, status, onPress, compact, children, testID }: Props) {
+export function PetRoomCard({ name, species, coat, breed, weightKg, colors, status, onPress, compact, children, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const mood = status?.mood ?? "calm";
   const hud = status ? hudItems(status, species) : [];
@@ -46,7 +46,7 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, head, status
   const [pixel, setPixel] = useState(BIG_PIXEL_MIN);
   const fit = (e: LayoutChangeEvent) => setPixel(bigPixel(e.nativeEvent.layout.width));
   const sprite = (px: number) => (
-    <PetSprite species={species} coat={coat} breed={breed} head={head} mood={mood} pixel={px} testID={testID ? `${testID}-sprite` : undefined} />
+    <PetSprite species={species} coat={coat} breed={breed} colors={colors} mood={mood} pixel={px} testID={testID ? `${testID}-sprite` : undefined} />
   );
   const chips =
     hud.length > 0 ? (

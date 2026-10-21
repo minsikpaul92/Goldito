@@ -5,8 +5,8 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { PetSprite } from "../../components/pet/PetSprite";
 import { Button } from "../../components/ui/Button";
 import { Screen } from "../../components/ui/Screen";
-import { headFromPhoto } from "../../features/pets/sprites/headFromPhoto";
-import type { PixelHead } from "../../features/pets/sprites/pixelize";
+import { colorsFromPhoto } from "../../features/pets/sprites/colorsFromPhoto";
+import type { PixelColors } from "../../features/pets/sprites/photoColors";
 import { COAT_PALETTES, SHAPES, type Shape } from "../../features/pets/sprites/sprites";
 import { pickMedia } from "../../lib/media";
 import type { PetMood } from "../../lib/petStatus";
@@ -66,11 +66,11 @@ function Gallery() {
   );
 }
 
-/** Photo to pixel head: pick a photo, the biggest pet is cut out at its centre and drawn as a 16x16 head. */
+/** Colors from a photo: pick a photo, the biggest pet is cut out at its centre and its colors paint a preset. */
 function FromPhoto() {
   const styles = useThemedStyles(makeStyles);
   const [photo, setPhoto] = useState<string | null>(null);
-  const [head, setHead] = useState<PixelHead | null>(null);
+  const [colors, setColors] = useState<PixelColors | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,11 +79,11 @@ function FromPhoto() {
     if (!picked) return;
     setBusy(true);
     setError(null);
-    setHead(null);
+    setColors(null);
     try {
-      const made = await headFromPhoto(picked.file);
+      const made = await colorsFromPhoto(picked.file);
       setPhoto(made.photo);
-      setHead(made.head);
+      setColors(made.colors);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -93,13 +93,13 @@ function FromPhoto() {
 
   return (
     <View style={styles.block}>
-      <Text style={styles.label}>From a photo</Text>
+      <Text style={styles.label}>Colors from a photo</Text>
       <View style={styles.row}>
         {photo ? <Image source={{ uri: photo }} style={styles.photo} /> : null}
-        {head ? <PetSprite species="dog" mood="calm" head={head} pixel={8} testID="sprite-from-photo" /> : null}
+        {colors ? <PetSprite species="dog" breed="Maltese" mood="calm" colors={colors} pixel={8} testID="sprite-from-photo" /> : null}
       </View>
       {error ? <Text style={styles.mood}>{error}</Text> : null}
-      <Button label={busy ? "Making..." : "Pick a photo"} onPress={pick} disabled={busy} testID="sprite-pick-photo" />
+      <Button label={busy ? "Reading colors..." : "Pick a photo"} onPress={pick} disabled={busy} testID="sprite-pick-photo" />
     </View>
   );
 }

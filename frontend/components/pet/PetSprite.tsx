@@ -3,8 +3,8 @@ import { Animated, Easing, Image, StyleSheet, View } from "react-native";
 
 import type { PetMood } from "../../lib/petStatus";
 import { PIXEL_PNGS } from "../../features/pets/sprites/pngs";
-import { headPixels, type PixelHead } from "../../features/pets/sprites/pixelize";
-import { SPRITE_SIZE, petShape, spriteKey, spritePixels, withZzz } from "../../features/pets/sprites/sprites";
+import type { PixelColors } from "../../features/pets/sprites/photoColors";
+import { SPRITE_SIZE, petShape, spriteKey, spritePixels } from "../../features/pets/sprites/sprites";
 import type { Species } from "../../types/db";
 
 type Props = {
@@ -14,8 +14,8 @@ type Props = {
   /** `pets.breed` as typed; picks the head shape (floppy, pointy, fluffy, flat; short or long for cats). */
   breed?: string | null;
   mood: PetMood;
-  /** A head made from the pet's photo (`pixelize.ts`); drawn instead of the preset. No mood face, only the sleepy Z. */
-  head?: PixelHead | null;
+  /** Colors picked from the pet's photo (`pets.profile.pixel_colors`); they win over the coat. */
+  colors?: PixelColors | null;
   /** Screen px of one sprite pixel (the pet is 16 of them wide). */
   pixel?: number;
   /** The idle sway left and right; off in lists and tests. */
@@ -27,7 +27,7 @@ type Props = {
  * The 8-bit pet (11.12). One look = `species_shape_coat_mood`: a PNG from `pngs.ts` when there is one (Muk's art), else the
  * pixel grid drawn in code. Pixels of one color in a row are merged into one View, so a sprite is ~100 Views, not 256.
  */
-export function PetSprite({ species, coat, breed, mood, head, pixel = 8, sway = true, testID }: Props) {
+export function PetSprite({ species, coat, breed, mood, colors, pixel = 8, sway = true, testID }: Props) {
   const size = SPRITE_SIZE * pixel;
   const shape = petShape(species, breed);
   const key = spriteKey(species, coat, mood, shape);
@@ -46,12 +46,9 @@ export function PetSprite({ species, coat, breed, mood, head, pixel = 8, sway = 
     return () => loop.stop();
   }, [shift, sway, pixel]);
 
-  const rows = useMemo(() => {
-    if (!head) return runs(spritePixels(species, coat, mood, shape));
-    const pixels = headPixels(head);
-    return runs(mood === "sleepy" ? withZzz(pixels) : pixels);
-  }, [head, species, coat, mood, shape]);
-  const png = head ? undefined : PIXEL_PNGS[key];
+  const rows = useMemo(() => runs(spritePixels(species, coat, mood, shape, colors)), [species, coat, mood, shape, colors]);
+  // Muk's PNGs come in the preset coats only, so photo colors are always drawn in code.
+  const png = colors ? undefined : PIXEL_PNGS[key];
 
   return (
     <Animated.View

@@ -1358,28 +1358,29 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Button | busy === pet.id ? "Saving…" : `🏅 Give ${pet.name} a medal` | ``medal-give-${pet.id}`` | 52 |
 
+### PetColorsSheet — [components/pet/PetColorsSheet.tsx](../../frontend/components/pet/PetColorsSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy === "saving" ? "Saving..." : "Save" | `pet-colors-sheet` | 69 |
+| Button | busy === "saving" ? "Saving..." : "Save" | `pet-colors-save` | 76 |
+| Button | busy === "making" ? "Reading colors..." : "Pick a photo" | `pet-colors-pick` | 78 |
+| TextButton | Try another photo | `pet-colors-again` | 90 |
+| TextButton | Use the coat color | `pet-colors-reset` | 92 |
+
 ### PetPage — [components/pet/PetPage.tsx](../../frontend/components/pet/PetPage.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``pet-switch-${p.name}`` | 32 |
-| TextButton | 🎨 Make from photo | `pixel-head-open` | 49 |
+| Pressable | — | ``pet-switch-${p.name}`` | 34 |
+| TextButton | 🎨 Match colors from photo | `pet-colors-open` | 51 |
 
 ### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 71 |
-
-### PixelHeadSheet — [components/pet/PixelHeadSheet.tsx](../../frontend/components/pet/PixelHeadSheet.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Sheet | busy === "saving" ? "Saving..." : "Save" | `pixel-head-sheet` | 71 |
-| Button | busy === "saving" ? "Saving..." : "Save" | `pixel-head-save` | 78 |
-| Button | busy === "making" ? "Making..." : "Pick a photo" | `pixel-head-pick` | 80 |
-| TextButton | Try another photo | `pixel-head-again` | 92 |
-| TextButton | Use the preset | `pixel-head-reset` | 94 |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 70 |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 101 |
 
 ### SitterPetRoom — [components/pet/SitterPetRoom.tsx](../../frontend/components/pet/SitterPetRoom.tsx)
 
@@ -1534,4 +1535,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+452 actions · 451 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

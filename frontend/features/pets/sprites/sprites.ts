@@ -1,6 +1,7 @@
 import type { PetMood } from "../../../lib/petStatus";
 import { isCoat, type Coat } from "../../ownerOnboarding/questions";
 import type { Species } from "../../../types/db";
+import { colorsPalette, type PixelColors } from "./photoColors";
 
 /**
  * Placeholder pixel pets drawn in code (11.12). A sprite is a 16x16 grid of role letters; a coat colors the roles and
@@ -226,19 +227,16 @@ export function spriteKey(species: Species, coat: unknown, mood: PetMood, shape:
   return `${species}_${shape}_${resolveCoat(species, coat)}_${mood}`;
 }
 
-/** The sleepy "Z" drawn over any sprite rows (a photo head has no face to change, so this is its only mood). */
-export function withZzz(pixels: (string | null)[][]): (string | null)[][] {
-  return pixels.map((row, y) => row.map((color, x) => (ZZZ_ROWS[y]?.[x] === "z" ? FIXED.zzz : color)));
-}
-
 /** The sprite as rows of CSS colors, `null` = transparent. */
 export function spritePixels(
   species: Species,
   coat: unknown,
   mood: PetMood,
   shape: Shape = DEFAULT_SHAPE[species],
+  colors?: PixelColors | null,
 ): (string | null)[][] {
-  const palette = COAT_PALETTES[resolveCoat(species, coat)];
+  // Colors picked from a photo win over the coat the owner chose.
+  const palette = colors ? colorsPalette(colors) : COAT_PALETTES[resolveCoat(species, coat)];
   const { rows, mouthRow } = BODY[SHAPES[species].includes(shape) ? shape : DEFAULT_SHAPE[species]];
   const face = FACE[mood];
   const overlay: Record<number, string> = {
@@ -246,7 +244,7 @@ export function spritePixels(
     [EYE_ROWS[1]]: mirror(face.eyes[1]),
     [mouthRow]: mirror(face.mouth),
   };
-  const colors: Record<string, string> = {
+  const roleColors: Record<string, string> = {
     o: palette.outline,
     b: palette.base,
     d: palette.shade,
@@ -263,7 +261,7 @@ export function spritePixels(
     const zzz = face.zzz ? (ZZZ_ROWS[y] ?? "") : "";
     return [...row].map((role, x) => {
       const top = zzz[x] && zzz[x] !== "." ? zzz[x] : over[x] && over[x] !== "." ? over[x] : role;
-      return top === "." ? null : colors[top];
+      return top === "." ? null : roleColors[top];
     });
   });
 }

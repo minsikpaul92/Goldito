@@ -4,8 +4,8 @@ import { caring } from "./careFixtures";
 import { NOON_TORONTO, app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// The pet room on the sitter's Home (11.12, #184): the pixel pet (a preset or the owner's photo head) and one-tap
-// feed / walk / poop / nap.
+// The pet room on the sitter's Home (11.12, #184): the pixel pet (its preset in the coat or the owner's photo colors)
+// and one-tap feed / walk / poop / nap.
 
 const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
 const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
@@ -65,20 +65,17 @@ test.describe("sitter pet room", () => {
     expect(db.care_checkins.every((c) => c.pet_id === MAX.id)).toBe(true);
   });
 
-  test("a pixel pet the owner made from a photo shows here too, and a nap adds the Z", async ({ page }) => {
-    // Rows 4 to 11: a red block in a dark outline (palette 0 = red).
-    const rows = Array.from({ length: 16 }, (_, y) =>
-      y === 3 || y === 12 ? "....oooooooo...." : y > 3 && y < 12 ? "....o000000o...." : "................",
-    );
-    await setup(page, { coat: "cream", pixel_head: { v: 1, palette: ["#CC2222"], rows } });
+  test("the owner's photo colors show here too, and a nap still gets the sleepy face", async ({ page }) => {
+    await setup(page, { coat: "cream", pixel_colors: { v: 1, base: "#CC2222", shade: "#661111", light: "#FFAAAA" } });
     const screen = app(page);
     const sprite = screen.getByTestId("pet-room-Max-sprite");
     await expect.poll(() => colorsOf(sprite)).toContain("rgb(204, 34, 34)");
-    expect(await colorsOf(sprite)).not.toContain("rgb(124, 131, 184)");
+    const awake = await sprite.evaluate((el) => el.innerHTML);
 
     await screen.getByTestId(tap(MAX, "nap")).click();
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Sleepy");
     await expect.poll(() => colorsOf(sprite)).toContain("rgb(124, 131, 184)"); // the Z
+    expect(await sprite.evaluate((el) => el.innerHTML)).not.toBe(awake);
     expect(await colorsOf(sprite)).toContain("rgb(204, 34, 34)");
   });
 

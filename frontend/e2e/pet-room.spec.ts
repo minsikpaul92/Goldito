@@ -5,8 +5,8 @@ import { NOON_TORONTO, app, box, center, drag, signIn } from "./helpers";
 import { fakePetPhoto } from "./pixelHooks";
 import { OWNER, mockSupabase, type MockDb } from "./supabaseMock";
 
-// The pet room on owner Home (11.12, #184): a swipe pager (Today / Pet), the 8-bit pet and its HUD, and the pixel pet
-// made from a photo (PH.2, MediaPipe replaced by test hooks).
+// The pet room on owner Home (11.12, #184): a swipe pager (Today / Pet), the 8-bit pet and its HUD, its shape and size
+// from the breed and weight, and colors from a photo (PS.3, MediaPipe replaced by test hooks).
 
 const pet = (id: string, name: string, species: "dog" | "cat", extra: object = {}) => ({
   id,
@@ -149,35 +149,38 @@ test.describe("pet room", () => {
     expect((await box(screen.getByTestId("pet-room-Rex"))).height).toBeCloseTo(roomMax.height, -1);
   });
 
-  test("Make from photo: the pixel pet is saved to the pet, and Use the preset takes it back", async ({ page }) => {
+  test("Match colors from photo: the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
     await fakePetPhoto(page);
-    const db = await setup(page, (db) => db.pets.push(pet("pet-max", "Max", "dog", { profile: { coat: "cream", v: 1 } })));
+    const db = await setup(page, (db) =>
+      db.pets.push(pet("pet-max", "Max", "dog", { breed: "Maltese", profile: { coat: "white", v: 1, pixel_head: { v: 1 } } })),
+    );
     const screen = app(page);
     await screen.getByTestId("home-pager-dot-1").click();
     const sprite = screen.getByTestId("pet-room-Max-sprite");
-    const preset = await colorsOf(sprite);
+    const coat = await colorsOf(sprite);
 
-    await screen.getByTestId("pixel-head-open").click();
-    await screen.getByTestId("pixel-head-pick").click();
+    await screen.getByTestId("pet-colors-open").click();
+    await screen.getByTestId("pet-colors-pick").click();
     await screen.getByTestId("sample-mood_tug").click();
-    await expect(screen.getByTestId("pixel-head-save")).toBeVisible();
-    await screen.getByTestId("pixel-head-save").click();
-    await expect(screen.getByTestId("toast")).toContainText("Max's pixel pet saved");
+    await expect(screen.getByTestId("pet-colors-save")).toBeVisible();
+    await screen.getByTestId("pet-colors-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Max's colors saved");
 
-    // Saved next to the owner's other answers, which stay.
-    const profile = db.pets[0].profile as { coat: string; v: number; pixel_head?: { v: number; rows: string[] } };
-    expect(profile.coat).toBe("cream");
+    // Saved next to the owner's other answers, which stay; the old photo head is dropped.
+    const profile = db.pets[0].profile as Record<string, unknown> & { pixel_colors?: { v: number; base: string } };
+    expect(profile.coat).toBe("white");
     expect(profile.v).toBe(1);
-    expect(profile.pixel_head?.v).toBe(1);
-    expect(profile.pixel_head?.rows).toHaveLength(16);
-    // The room now draws the photo head.
-    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).not.toBe(JSON.stringify(preset));
+    expect(profile.pixel_colors?.v).toBe(1);
+    expect(profile.pixel_colors?.base).toBe("#D9A441");
+    expect("pixel_head" in profile).toBe(false);
+    // Same Maltese head, now golden.
+    await expect.poll(() => colorsOf(sprite)).toContain("rgb(217, 164, 65)");
 
-    await screen.getByTestId("pixel-head-open").click();
-    await screen.getByTestId("pixel-head-reset").click();
-    await expect(screen.getByTestId("toast")).toContainText("Back to the preset");
-    expect("pixel_head" in (db.pets[0].profile as object)).toBe(false);
-    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).toBe(JSON.stringify(preset));
+    await screen.getByTestId("pet-colors-open").click();
+    await screen.getByTestId("pet-colors-reset").click();
+    await expect(screen.getByTestId("toast")).toContainText("Back to the coat color");
+    expect("pixel_colors" in (db.pets[0].profile as object)).toBe(false);
+    await expect.poll(async () => JSON.stringify(await colorsOf(sprite))).toBe(JSON.stringify(coat));
   });
 });
 

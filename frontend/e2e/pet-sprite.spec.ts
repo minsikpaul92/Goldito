@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import { asPixelHead, headPixels } from "../features/pets/sprites/pixelize";
-import { COAT_PALETTES, SHAPES, SPRITE_SIZE, petShape, resolveCoat, spriteKey, spritePixels, withZzz } from "../features/pets/sprites/sprites";
+import { asPixelColors } from "../features/pets/sprites/photoColors";
+import { COAT_PALETTES, SHAPES, SPRITE_SIZE, petShape, resolveCoat, spriteKey, spritePixels } from "../features/pets/sprites/sprites";
 import type { PetMood } from "../lib/petStatus";
 import { app } from "./helpers";
 import { fakePetPhoto } from "./pixelHooks";
 
-// Placeholder pixel pets (11.12, #184): the grid, coats, moods and keys (no browser needed), and photo to pixel head
-// in the dev gallery with MediaPipe replaced by test hooks.
+// Placeholder pixel pets (11.12, #184): shapes, coats, moods and keys (no browser needed), and colors from a photo in
+// the dev gallery with MediaPipe replaced by test hooks.
 
 const MOODS: PetMood[] = ["excited", "calm", "tired", "hungry", "sleepy"];
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -79,27 +79,22 @@ test.describe("pet sprites", () => {
     expect(spriteKey("dog", "white", "calm", "fluffy")).toBe("dog_fluffy_white_calm");
   });
 
-  test("a saved pixel head is checked before it is drawn", () => {
-    const rows = Array.from({ length: SPRITE_SIZE }, (_, y) => (y === 8 ? "......o01o......" : "................"));
-    const head = asPixelHead({ v: 1, palette: ["#D9A441", "#7A4A20"], rows });
-    expect(head).not.toBeNull();
-    const px = headPixels(head!);
-    expect(px[8][7]).toBe("#D9A441");
-    expect(px[8][6]).not.toBeNull(); // the outline
-    expect(px[0][0]).toBeNull();
-    expect(asPixelHead({ v: 1, palette: ["red"], rows })).toBeNull();
-    expect(asPixelHead({ v: 1, palette: [], rows: rows.slice(1) })).toBeNull();
-    expect(asPixelHead(null)).toBeNull();
-    // Sleepy on a photo head: only the Z is added, nothing else moves.
-    const z = withZzz(px);
-    const changed = z.flat().filter((c, i) => c !== px.flat()[i]);
-    expect(changed.length).toBeGreaterThan(0);
-    expect(new Set(changed)).toEqual(new Set(["#7C83B8"]));
+  test("saved photo colors are checked, then paint the preset without moving a pixel", () => {
+    const colors = asPixelColors({ v: 1, base: "#CC2222", shade: "#661111", light: "#FFAAAA" });
+    expect(colors).not.toBeNull();
+    const coat = spritePixels("dog", "golden", "calm", "fluffy");
+    const painted = spritePixels("dog", "golden", "calm", "fluffy", colors);
+    expect(painted.flat().map((c) => c === null)).toEqual(coat.flat().map((c) => c === null));
+    expect(painted.flat()).toContain("#CC2222");
+    expect(painted.flat()).not.toContain(COAT_PALETTES.golden.base);
+    expect(asPixelColors({ v: 1, base: "red", shade: "#661111", light: "#FFAAAA" })).toBeNull();
+    expect(asPixelColors({ base: "#CC2222", shade: "#661111", light: "#FFAAAA" })).toBeNull();
+    expect(asPixelColors(null)).toBeNull();
   });
 });
 
-test.describe("photo to pixel head", () => {
-  test("the cut-out pet becomes a 16x16 head of a few colors with an outline", async ({ page }) => {
+test.describe("colors from a photo", () => {
+  test("the cut-out pet's main colors paint the preset: the coat, a darker shade and a lighter muzzle", async ({ page }) => {
     await fakePetPhoto(page);
     await page.goto("/dev/sprites");
     const screen = app(page);
@@ -115,9 +110,8 @@ test.describe("photo to pixel head", () => {
       });
       return [...seen];
     });
-    // Up to six colors and the outline; the blue background was cut away.
-    expect(colors.length).toBeGreaterThanOrEqual(3);
-    expect(colors.length).toBeLessThanOrEqual(7);
+    // The fake dog is golden (#D9A441) with brown ears and a cream muzzle on blue: golden is the coat, blue is cut away.
+    expect(colors).toContain("rgb(217, 164, 65)");
     expect(colors).not.toContain("rgb(136, 170, 204)");
   });
 });
