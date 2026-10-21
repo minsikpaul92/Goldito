@@ -92,6 +92,47 @@ async function stubGps(page: Page, deny = false) {
 }
 
 test.describe("find a sitter", () => {
+  test("a heart on a sitter's page shows under Favorites at once, and removing it moves them back (#267)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.sitter_profiles.push(
+      { id: SITTER.id, bio: null, service_area: "Toronto", experience_years: 3, services: ["boarding"] },
+      { id: PAUL.id, bio: null, service_area: "Toronto", experience_years: 3, services: ["house_sitting"] },
+    );
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Paul")).toBeVisible();
+
+    // Heart Paul on his page, then back: he is a favorite now, without a reload.
+    await screen.getByTestId("sitter-tile-Paul").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${PAUL.id}(\\?|$)`));
+    await screen.getByTestId("sitter-favorite").click();
+    await expect(screen.getByTestId("toast")).toContainText("Added to favorites");
+    const searches = db.nearbySearches.length;
+    await page.goBack();
+    await expect(page).toHaveURL(/\/owner\/bookings$/);
+    await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Paul")).toBeVisible();
+    await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Paul")).toHaveCount(0);
+    // It searched again, so a favorite beyond the radius would show too (014i).
+    await expect.poll(() => db.nearbySearches.length).toBeGreaterThan(searches);
+
+    // Take the heart off Chloe: she goes back to Sitters nearby.
+    await screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Chloe").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/sitters/${SITTER.id}(\\?|$)`));
+    await screen.getByTestId("sitter-favorite").click();
+    await expect(screen.getByTestId("toast")).toContainText("Removed from favorites");
+    await page.goBack();
+    await expect(screen.getByTestId("sitter-nearby").getByTestId("sitter-tile-Chloe")).toBeVisible();
+    await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Chloe")).toHaveCount(0);
+  });
+
+  test("a favorite beyond the radius is listed (014i)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
+    seed(db);
+    db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: UMA.id });
+    const screen = await openBookings(page);
+    await expect(screen.getByTestId("sitter-favorites").getByTestId("sitter-tile-Uma")).toBeVisible();
+  });
+
   test("opens on one line: favorites on top, then the other sitters free for the stay, with no Search button", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER, PAUL, UMA]);
     seed(db);

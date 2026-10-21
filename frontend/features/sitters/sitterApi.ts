@@ -42,10 +42,21 @@ export async function listFavoriteSitterIds(): Promise<string[]> {
   return ((data ?? []) as { sitter_id: string }[]).map((r) => r.sitter_id);
 }
 
+/** Screens that show favorites (the Bookings tab search) hear about a heart toggled anywhere in the app (#267). */
+const favoriteListeners = new Set<() => void>();
+
+export function onFavoritesChanged(listener: () => void): () => void {
+  favoriteListeners.add(listener);
+  return () => {
+    favoriteListeners.delete(listener);
+  };
+}
+
 export async function setFavoriteSitter(sitterId: string, favorite: boolean): Promise<void> {
   const table = getSupabase().from("owner_favorite_sitters");
   const { error } = favorite ? await table.insert({ sitter_id: sitterId }) : await table.delete().eq("sitter_id", sitterId);
   if (error && !(favorite && error.code === "23505")) fail(favorite ? "add the favorite" : "remove the favorite");
+  favoriteListeners.forEach((listener) => listener());
 }
 
 /** Favorites first, otherwise the order stays as it was (a stable sort). */

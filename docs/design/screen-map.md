@@ -91,11 +91,11 @@ Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 94 |
-| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 108 |
-| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 116 |
-| TextButton | Open Profile | `search-open-profile` | 143 |
-| TextButton | Try again | `search-retry` | 151 |
+| EmptyState | Couldn't load your bookings | — | 97 |
+| Pressable | ``${sitter.displayName}'s photos`` | ``sitter-avatar-${sitter.displayName}`` | 111 |
+| Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 119 |
+| TextButton | Open Profile | `search-open-profile` | 146 |
+| TextButton | Try again | `search-retry` | 154 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 

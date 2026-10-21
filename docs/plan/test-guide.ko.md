@@ -974,6 +974,14 @@
 | REFUND-4 | 맡긴 뒤(Received) 취소 시도 | 예전처럼 `booking_in_progress`로 막히고 환불도 없음 | SQL `rls_smoke`(015c) | ➖ |
 | REFUND-5 | 오너 채팅의 결제 카드(취소된 예약) | "Cancelled" 아래 "Refunded in full · $…". 시터 카드에는 금액이 안 보임 | **👤** | ➖ |
 
+### 3.44 하트를 누르면 즐겨찾기에 바로 (FAV) · #267
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| FAV-1 | 오너 → Bookings → Sitters nearby의 시터 → 시터 페이지에서 하트 → 뒤로 | 새로고침 없이 그 시터가 **Favorites** 아래로 올라감, Sitters nearby에서는 빠짐 | 🤖 `sitter-search` | ➖ |
+| FAV-2 | Favorites의 시터 → 하트 해제 → 뒤로 | 바로 **Sitters nearby**로 내려감(반경 밖이면 목록에서 빠짐) | 🤖 `sitter-search` | ➖ |
+| FAV-3 | 반경 밖에 있는 시터를 즐겨찾기 | 반경과 상관없이 Favorites에 보임(014i). 하트를 누른 뒤 검색을 다시 해서 반영됨 | 🤖 `sitter-search` | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.

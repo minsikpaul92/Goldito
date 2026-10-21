@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BookingError, NearbySitter, searchSittersNearby } from "../../lib/bookings";
 import { LatLng, LocationError, getCurrentPosition } from "../../lib/location";
@@ -8,7 +8,7 @@ import { useSession } from "../../providers/SessionProvider";
 import { useMyPets } from "../pets/useMyPets";
 import { loadRoleProfile, loadSearchRadius, saveSearchRadius } from "../profile/profileApi";
 import { addDays, appToday, zonedToIso } from "../schedule/dates";
-import { listFavoriteSitterIds } from "./sitterApi";
+import { listFavoriteSitterIds, onFavoritesChanged } from "./sitterApi";
 
 /** Any change to the search re-runs it once it rests this long. */
 const SEARCH_DELAY_MS = 400;
@@ -56,11 +56,34 @@ export function useSitterSearch() {
   const [results, setResults] = useState<Results>({ status: "idle" });
   const [retry, setRetry] = useState(0);
   const [favorites, setFavorites] = useState<ReadonlySet<string>>(new Set());
+  /** The favorite ids as last loaded (sorted, joined), and whether a search has answered since the screen opened. */
+  const favoriteKey = useRef<string | null>(null);
+  const searched = useRef(false);
+
+  /**
+   * Reload my favorites (#267): the Bookings tab calls this when it gains focus, e.g. after the heart on a sitter's
+   * page. When they changed after a search, search again: the server lists a favorite even beyond the radius (014i).
+   */
+  const refreshFavorites = useCallback(() => {
+    listFavoriteSitterIds()
+      .then((ids) => {
+        const key = [...ids].sort().join();
+        if (key === favoriteKey.current) return;
+        const first = favoriteKey.current === null;
+        favoriteKey.current = key;
+        setFavorites(new Set(ids));
+        if (!first && searched.current) setRetry((n) => n + 1);
+      })
+      .catch(() => undefined);
+  }, []);
 
   // Everyone is staying unless the owner says otherwise.
   useEffect(() => {
     setPetIds((ids) => (ids.length === 0 ? pets.map((p) => p.id) : ids));
   }, [pets]);
+
+  // A heart toggled on a sitter's page (or after a review) reaches the list right away, focus or not.
+  useEffect(() => onFavoritesChanged(refreshFavorites), [refreshFavorites]);
 
   useEffect(() => {
     if (!profile) return;
@@ -73,10 +96,8 @@ export function useSitterSearch() {
         savedRadius.current = km;
         setRadiusKm(km ?? START_KM);
       });
-    listFavoriteSitterIds()
-      .then((ids) => setFavorites(new Set(ids)))
-      .catch(() => undefined);
-  }, [profile]);
+    refreshFavorites();
+  }, [profile, refreshFavorites]);
 
   // Remember the radius the owner settles on.
   useEffect(() => {
@@ -151,7 +172,11 @@ export function useSitterSearch() {
     setResults({ status: "loading" });
     const timer = setTimeout(() => {
       searchSittersNearby({ dropOffAt: dropIso, pickUpAt: pickIso, petCount: petKey.split(",").length, radiusKm, point })
-        .then((sitters) => current && setResults({ status: "ready", sitters }))
+        .then((sitters) => {
+          if (!current) return;
+          searched.current = true;
+          setResults({ status: "ready", sitters });
+        })
         .catch((error: Error) => {
           if (!current) return;
           const code = error instanceof BookingError ? error.code : "";
@@ -190,6 +215,7 @@ export function useSitterSearch() {
     placeProblem,
     results,
     favorites,
+    refreshFavorites,
     retry: () => setRetry((n) => n + 1),
   };
 }

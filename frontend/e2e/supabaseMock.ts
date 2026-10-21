@@ -1160,7 +1160,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       route,
       200,
       db.nearby_sitters
-        .filter((row) => Number(row.distance_km) <= radius)
+        // 014i: my favorites are listed even beyond the radius.
+        .filter(
+          (row) =>
+            Number(row.distance_km) <= radius ||
+            db.owner_favorite_sitters.some((f) => f.owner_id === me && f.sitter_id === row.sitter_id),
+        )
         .sort((a, b) => Number(a.distance_km) - Number(b.distance_km))
         .map((row) => ({ ...row, distance_km: Math.max(1, Math.round(Number(row.distance_km))) })),
     );
