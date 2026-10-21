@@ -377,7 +377,7 @@ Shows: `RoleCard`
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
-Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Tamagotchi / 8bit status joins later (11.12). Check-ins in Phase 06.
+Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
 Shows: `ActiveTripCard` · `SitterDashboard`
 
@@ -1232,14 +1232,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `id` | 84 |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 104 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 118 |
-| Tag | `tag` | — | 158 |
-| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 161 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 171 |
-| Pressable | ``Check in on ${p.name}`` | ``caring-pet-${p.id}`` | 190 |
-| Sheet | Heads-up | `headsup-sheet` | 211 |
+| Pressable | — | `id` | 79 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 99 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 113 |
+| Tag | `tag` | — | 153 |
+| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 156 |
+| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 166 |
+| Sheet | Heads-up | `headsup-sheet` | 185 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
 
@@ -1363,7 +1362,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 44 |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 68 |
+
+### SitterPetRoom — [components/pet/SitterPetRoom.tsx](../../frontend/components/pet/SitterPetRoom.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``caring-pet-${p.id}`` | 32 |
+| Pressable | ``${action.label} ${pet.name}`` | ``pet-action-${pet.id}-${action.key}`` | 86 |
 
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
@@ -1511,4 +1517,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-444 actions · 443 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+445 actions · 444 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

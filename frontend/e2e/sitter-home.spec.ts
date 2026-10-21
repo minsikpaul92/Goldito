@@ -45,7 +45,7 @@ test.describe("sitter home dashboard", () => {
     await expect(screen.getByTestId("stat-tasks")).toContainText("0/4");
     await expect(screen.getByTestId("stat-checkins")).toContainText("0");
     await expect(screen.getByTestId("tasks-next")).toBeVisible();
-    await expect(screen.getByTestId("today-caring")).toContainText("Robert's pets");
+    await expect(screen.getByTestId("today-caring")).toContainText("Max");
     // The Feed and Bookings tabs already cover those; Home keeps only the two extra shortcuts.
     await expect(screen.getByTestId("shortcut-photos")).toHaveCount(0);
     await expect(screen.getByTestId("shortcut-bookings")).toHaveCount(0);
@@ -99,6 +99,7 @@ test.describe("sitter home dashboard", () => {
     await screen.getByTestId("sitter-dashboard").waitFor();
 
     await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
+    await screen.getByTestId("pet-room-Mochi-open").click();
     await expect(page).toHaveURL(new RegExp(`/sitter/checkin/${MOCHI.id}$`));
     await expect(screen.getByTestId(`checkin-${MOCHI.id}`)).toBeVisible();
     await expect(screen.getByTestId("checkin-photos")).toBeVisible();

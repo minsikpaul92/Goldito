@@ -14,6 +14,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { Theme } from "../theme/themes";
 import { DueAlert } from "./DueAlert";
+import { SitterPetRoom } from "./pet/SitterPetRoom";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -64,12 +65,6 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const reminder = useDueReminder(items, state.status === "ready", reload);
   const open = items.filter((i) => i.log.status === "pending");
   const done = items.length - open.length;
-
-  const owners = useMemo(() => {
-    const groups = new Map<string, CaringPet[]>();
-    for (const p of pets) groups.set(p.ownerName, [...(groups.get(p.ownerName) ?? []), p]);
-    return [...groups.entries()];
-  }, [pets]);
 
   const petName = (id: string) => pets.find((p) => p.id === id)?.name ?? "";
 
@@ -180,28 +175,7 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         )}
       </Card>
 
-      <Card style={styles.caring} testID="today-caring">
-        <Text style={styles.nextLabel}>Now caring · tap a pet to check in</Text>
-        {owners.map(([owner, list]) => (
-          <View key={owner} style={styles.ownerRow}>
-            <Text style={styles.muted}>{`${owner}'s ${list.length > 1 ? "pets" : "pet"}`}</Text>
-            <View style={styles.chips}>
-              {list.map((p) => (
-                <Pressable
-                  key={p.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Check in on ${p.name}`}
-                  onPress={() => router.push(`/sitter/checkin/${p.id}`)}
-                  style={({ pressed }) => [styles.petChip, pressed && styles.pressed]}
-                  testID={`caring-pet-${p.id}`}
-                >
-                  <Text style={styles.petChipText}>{`${SPECIES_EMOJI[p.species]} ${p.name}`}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ))}
-      </Card>
+      <SitterPetRoom pets={pets} />
 
       <View style={styles.shortcuts}>
         {shortcut("✅ All tasks", () => router.push("/sitter/tasks"), "shortcut-tasks")}
@@ -252,19 +226,6 @@ const makeStyles = (theme: Theme) =>
     nextTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
-    caring: { gap: theme.spacing.xs },
-    ownerRow: { gap: 2 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    petChip: {
-      minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 22,
-      backgroundColor: theme.color.accent,
-      borderWidth: 1,
-      borderColor: theme.color.primary,
-    },
-    petChipText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     headsUp: {
       minHeight: 44,
       flexDirection: "row",

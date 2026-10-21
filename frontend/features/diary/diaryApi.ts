@@ -82,6 +82,8 @@ export function checkinLabel(kind: CareCheckinKind, value: string | null): { emo
       const [emoji, ...rest] = (MOODS[value ?? ""] ?? `😊 ${value}`).split(" ");
       return { emoji, label: `Mood · ${rest.join(" ")}` };
     }
+    case "nap":
+      return { emoji: "💤", label: "Nap" };
     default:
       return { emoji: "📝", label: "Note" };
   }

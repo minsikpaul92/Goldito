@@ -32,7 +32,7 @@ const pets = (b: BookingSummary) => b.pets.map((p) => `${SPECIES_EMOJI[p.species
 /**
  * Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty,
  * else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time.
- * Tamagotchi / 8bit status joins later (11.12). Check-ins in Phase 06.
+ * Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
  */
 export default function SitterHome() {
   const styles = useThemedStyles(makeStyles);

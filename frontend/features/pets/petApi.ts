@@ -2,6 +2,7 @@ import { randomUUID } from "expo-crypto";
 
 import { getSupabase } from "../../lib/supabase";
 import { Pet, Species } from "../../types/db";
+import { Coat, isCoat } from "../ownerOnboarding/questions";
 
 const PET_COLUMNS =
   "id, owner_id, species, name, breed, birthdate, weight_kg, notes, profile, created_at, pet_allergies(id, allergen)";
@@ -29,6 +30,14 @@ export async function listMyPets(ownerId: string): Promise<Pet[]> {
     .order("created_at", { ascending: true });
   if (error) fail("load your pets");
   return (data ?? []) as Pet[];
+}
+
+/** The coat color the owner picked (`pets.profile.coat`), for the pet room sprite; anything else is null. */
+export async function getPetCoat(petId: string): Promise<Coat | null> {
+  const { data, error } = await getSupabase().from("pets").select("profile").eq("id", petId).maybeSingle();
+  if (error || !data) return null;
+  const coat = (data as { profile?: { coat?: unknown } | null }).profile?.coat;
+  return isCoat(coat) ? coat : null;
 }
 
 export async function getPet(petId: string): Promise<Pet | null> {
