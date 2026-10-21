@@ -36,7 +36,7 @@ import {
   sendChatMessage,
 } from "../../features/chat/chatApi";
 import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
-import { Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
+import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
 import { canStartTripNow } from "../../features/transit/tripLogic";
 import { meetGreetPrimary } from "../../lib/meetGreet";
@@ -255,14 +255,21 @@ export default function Chat() {
       Date.parse(m.card.dropOffAt) === Date.parse(stay.dropOffAt) &&
       Date.parse(m.card.pickUpAt) === Date.parse(stay.pickUpAt),
   );
-  const step = nextStep({
-    role: header.myRole,
-    booking,
-    messages,
-    hasStay: !!stay,
-    priced,
-    otherName: header.otherName,
-  });
+  // A stay that is over has nothing left to press (no Send quote, no Request booking), unless a newer stay card was started.
+  const returnedStay = pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt && !!b.pickUp?.completedAt);
+  const newerBooking = !!booking && booking.id !== returnedStay?.id;
+  const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;
+  const finished = !!returnedStay && !newerBooking && (!latestCardAt || Date.parse(latestCardAt) < Date.parse(returnedStay.pickUp?.completedAt ?? ""));
+  const step: NextStep = finished
+    ? { primary: null, quote: false, wait: null }
+    : nextStep({
+        role: header.myRole,
+        booking,
+        messages,
+        hasStay: !!stay,
+        priced,
+        otherName: header.otherName,
+      });
   // The final quote prices the booking as it stands now (agreed times and pets), not the first card.
   const finalStay =
     booking?.dropOff && booking.pickUp
@@ -342,7 +349,7 @@ export default function Chat() {
             id: "quote",
             label: quoteKind === "final" ? "Final quote" : "Quote",
             icon: "pricetag-outline" as const,
-            enabled: quoteKind === "final" ? !!finalStay : !!stay,
+            enabled: !finished && (quoteKind === "final" ? !!finalStay : !!stay),
             onPress: () => setQuoting(quoteKind),
           },
         ]
