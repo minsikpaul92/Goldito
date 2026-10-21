@@ -6,7 +6,7 @@ import { logCareCheckin } from "../../features/care/careApi";
 import { PET_ACTIONS, petActionsFor } from "../../features/care/checkinOptions";
 import type { CaringPet } from "../../features/feed/caringPets";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
-import { usePetCoat } from "../../features/pets/usePetCoat";
+import { usePetLook } from "../../features/pets/usePetLook";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
@@ -52,7 +52,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
-  const coat = usePetCoat(pet.id);
+  const { coat, head } = usePetLook(pet.id);
   const [reloadKey, setReloadKey] = useState(0);
   const [sending, setSending] = useState<string | null>(null);
 
@@ -76,7 +76,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
 
   return (
     <PetRoom
-      pet={{ id: pet.id, name: pet.name, species: pet.species, coat }}
+      pet={{ id: pet.id, name: pet.name, species: pet.species, coat, head }}
       reloadKey={reloadKey}
       onPress={() => router.push(`/sitter/checkin/${pet.id}`)}
       compact

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { asPixelHead, headPixels } from "../features/pets/sprites/pixelize";
-import { COAT_PALETTES, SPRITE_SIZE, resolveCoat, spriteKey, spritePixels } from "../features/pets/sprites/sprites";
+import { COAT_PALETTES, SPRITE_SIZE, resolveCoat, spriteKey, spritePixels, withZzz } from "../features/pets/sprites/sprites";
 import type { PetMood } from "../lib/petStatus";
 import { app } from "./helpers";
 import { fakePetPhoto } from "./pixelHooks";
@@ -57,6 +57,11 @@ test.describe("pet sprites", () => {
     expect(asPixelHead({ v: 1, palette: ["red"], rows })).toBeNull();
     expect(asPixelHead({ v: 1, palette: [], rows: rows.slice(1) })).toBeNull();
     expect(asPixelHead(null)).toBeNull();
+    // Sleepy on a photo head: only the Z is added, nothing else moves.
+    const z = withZzz(px);
+    const changed = z.flat().filter((c, i) => c !== px.flat()[i]);
+    expect(changed.length).toBeGreaterThan(0);
+    expect(new Set(changed)).toEqual(new Set(["#7C83B8"]));
   });
 });
 

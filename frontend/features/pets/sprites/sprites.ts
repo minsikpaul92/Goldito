@@ -95,6 +95,11 @@ export function spriteKey(species: Species, coat: unknown, mood: PetMood): strin
   return `${species}_${resolveCoat(species, coat)}_${mood}`;
 }
 
+/** The sleepy "Z" drawn over any sprite rows (a photo head has no face to change, so this is its only mood). */
+export function withZzz(pixels: (string | null)[][]): (string | null)[][] {
+  return pixels.map((row, y) => row.map((color, x) => (ZZZ_ROWS[y]?.[x] === "z" ? FIXED.zzz : color)));
+}
+
 /** The sprite as rows of CSS colors, `null` = transparent. */
 export function spritePixels(species: Species, coat: unknown, mood: PetMood): (string | null)[][] {
   const palette = COAT_PALETTES[resolveCoat(species, coat)];

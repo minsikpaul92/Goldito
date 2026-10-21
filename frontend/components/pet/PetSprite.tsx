@@ -4,7 +4,7 @@ import { Animated, Easing, Image, StyleSheet, View } from "react-native";
 import type { PetMood } from "../../lib/petStatus";
 import { PIXEL_PNGS } from "../../features/pets/sprites/pngs";
 import { headPixels, type PixelHead } from "../../features/pets/sprites/pixelize";
-import { SPRITE_SIZE, spriteKey, spritePixels } from "../../features/pets/sprites/sprites";
+import { SPRITE_SIZE, spriteKey, spritePixels, withZzz } from "../../features/pets/sprites/sprites";
 import type { Species } from "../../types/db";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
   /** `pets.profile.coat`; anything unknown falls back to a generic dog or cat. */
   coat?: unknown;
   mood: PetMood;
-  /** A head made from the pet's photo (`pixelize.ts`); drawn instead of the preset, without a mood face for now. */
+  /** A head made from the pet's photo (`pixelize.ts`); drawn instead of the preset. No mood face, only the sleepy Z. */
   head?: PixelHead | null;
   /** Screen px of one sprite pixel (the pet is 16 of them wide). */
   pixel?: number;
@@ -43,7 +43,11 @@ export function PetSprite({ species, coat, mood, head, pixel = 8, sway = true, t
     return () => loop.stop();
   }, [shift, sway, pixel]);
 
-  const rows = useMemo(() => runs(head ? headPixels(head) : spritePixels(species, coat, mood)), [head, species, coat, mood]);
+  const rows = useMemo(() => {
+    if (!head) return runs(spritePixels(species, coat, mood));
+    const pixels = headPixels(head);
+    return runs(mood === "sleepy" ? withZzz(pixels) : pixels);
+  }, [head, species, coat, mood]);
   const png = head ? undefined : PIXEL_PNGS[key];
 
   return (

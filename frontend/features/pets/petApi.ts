@@ -3,7 +3,7 @@ import { randomUUID } from "expo-crypto";
 import { getSupabase } from "../../lib/supabase";
 import { Pet, Species } from "../../types/db";
 import { Coat, isCoat } from "../ownerOnboarding/questions";
-import type { PixelHead } from "./sprites/pixelize";
+import { asPixelHead, type PixelHead } from "./sprites/pixelize";
 
 const PET_COLUMNS =
   "id, owner_id, species, name, breed, birthdate, weight_kg, notes, profile, created_at, pet_allergies(id, allergen)";
@@ -33,12 +33,14 @@ export async function listMyPets(ownerId: string): Promise<Pet[]> {
   return (data ?? []) as Pet[];
 }
 
-/** The coat color the owner picked (`pets.profile.coat`), for the pet room sprite; anything else is null. */
-export async function getPetCoat(petId: string): Promise<Coat | null> {
+export type PetLook = { coat: Coat | null; head: PixelHead | null };
+
+/** How the pet room draws the pet: the coat color the owner picked and the head made from a photo (`pets.profile`). */
+export async function getPetLook(petId: string): Promise<PetLook> {
   const { data, error } = await getSupabase().from("pets").select("profile").eq("id", petId).maybeSingle();
-  if (error || !data) return null;
-  const coat = (data as { profile?: { coat?: unknown } | null }).profile?.coat;
-  return isCoat(coat) ? coat : null;
+  if (error || !data) return { coat: null, head: null };
+  const profile = (data as { profile?: { coat?: unknown; pixel_head?: unknown } | null }).profile;
+  return { coat: isCoat(profile?.coat) ? profile.coat : null, head: asPixelHead(profile?.pixel_head) };
 }
 
 /**
