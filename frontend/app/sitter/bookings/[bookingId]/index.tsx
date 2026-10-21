@@ -90,7 +90,7 @@ function actionError(error: unknown, owner: string): string {
   if (!(error instanceof BookingError)) return (error as Error).message;
   if (error.code === "handoff_pending") return `Waiting for ${owner} to confirm the new time.`;
   if (error.code === "meet_greet_required") return `Meet ${owner} first, or agree to skip the Meet & Greet.`;
-  if (error.code === "interest_required") return `Say "Yes, let's meet" to ${owner} first.`;
+  if (error.code === "interest_required") return "Tap Next to hold these dates first.";
   if (error.code === "handoff_completed") return "That handoff already happened.";
   if (error.code === "sitter_unavailable") {
     const slot = firstSlot(error.detail);
@@ -182,6 +182,14 @@ export default function SitterBookingDetail() {
           : null;
   const firstYes = isRequest && awaitingFirstYes(booking);
   const canAccept = isRequest && !meetFirst && !waiting && !busy && !requestExpired(booking) && !booking.sitterAcceptedAt;
+  // Why I accept is off, in one line (#170). The rule is unchanged; `waiting` already has its own line above.
+  const acceptBlocked = !isRequest || waiting
+    ? null
+    : requestExpired(booking)
+      ? "The pick-up time has passed."
+      : meetFirst
+        ? `Meet ${owner} first, or agree to skip the Meet & Greet.`
+        : null;
   // Received opens 2 h before the agreed drop-off (complete_handoff, 003).
   const checkInFrom = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
   const petNames = booking.pets.map((p) => p.name).join(" & ") || "The pets";
@@ -375,7 +383,7 @@ export default function SitterBookingDetail() {
           {waiting ? <Text style={styles.muted}>{`Waiting for ${owner} to confirm the new time.`}</Text> : null}
           {firstYes ? (
             <Button
-              label={busy ? "Saving…" : "Yes, let's meet"}
+              label={busy ? "Saving…" : "Next"}
               onPress={() => void run(() => expressInterest(booking.id), `Dates held. ${owner} is asked to set a time`)}
               disabled={busy || requestExpired(booking)}
               testID="interest-booking"
@@ -383,12 +391,19 @@ export default function SitterBookingDetail() {
           ) : booking.sitterAcceptedAt ? (
             <Text style={styles.muted} testID="accepted-waiting">{`You accepted. Waiting for ${owner} to book.`}</Text>
           ) : (
-            <Button
-              label={busy ? "Saving…" : "I accept"}
-              onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
-              disabled={!canAccept}
-              testID="accept-booking"
-            />
+            <>
+              {acceptBlocked ? (
+                <Text style={styles.muted} testID="accept-reason">
+                  {acceptBlocked}
+                </Text>
+              ) : null}
+              <Button
+                label={busy ? "Saving…" : "I accept"}
+                onPress={() => void run(() => respondBooking(booking.id, true), `Accepted. ${owner} gets a notice`)}
+                disabled={!canAccept}
+                testID="accept-booking"
+              />
+            </>
           )}
           <TextButton label="Decline" danger onPress={() => setConfirmDecline(true)} testID="decline-booking" />
         </View>
