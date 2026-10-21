@@ -39,12 +39,8 @@ TYPED_MAX = 300
 
 
 def scrub_typed(text: str | None) -> str:
-    """What the person is typing, made safe for a prompt: one line, no emails, no long digit runs (phone numbers, entry
-    codes), at most TYPED_MAX characters (D29, D31). Names are not removed here; they stay out of the log instead."""
-    clean = " ".join((text or "").split())
-    clean = re.sub(r"\S+@\S+", "", clean)
-    clean = re.sub(r"\d[\d\s().-]{2,}\d", "#", clean)
-    return " ".join(clean.split())[:TYPED_MAX]
+    """What the person is typing, scrubbed like the sent messages (logic.scrub), at most TYPED_MAX characters."""
+    return logic.scrub(text)[:TYPED_MAX]
 
 
 class ChatChipsRequest(BaseModel):
@@ -226,12 +222,13 @@ def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
 
 
 def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
-    """The rolling summary of everything before the window, refreshed when enough older messages are not in it yet."""
+    """The rolling summary of everything before the window, refreshed when enough older messages are not in it yet.
+    Scrubbed going in and coming out, so a summary saved before R20-7 does not carry a code into the next prompt."""
     thread, messages = ctx["thread"], ctx["messages"]
     fresh = logic.summary_due(messages, thread.get("ai_summary_upto"))
     if fresh:
         payload = {
-            "previous": thread.get("ai_summary") or "",
+            "previous": logic.scrub(thread.get("ai_summary")),
             "messages": [
                 {"who": "owner" if m.get("sender_id") == thread["owner_id"] else "sitter", "text": d["text"]}
                 for m in fresh
@@ -246,12 +243,12 @@ def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
                 endpoint="chat-summary",
                 max_tokens=300,
             )
-            summary = out.summary.strip()[:2000]
+            summary = logic.scrub(out.summary)[:2000]
             db.table("chat_threads").update({"ai_summary": summary, "ai_summary_upto": fresh[-1]["created_at"]}).eq("id", thread["id"]).execute()
             thread["ai_summary"], thread["ai_summary_upto"] = summary, fresh[-1]["created_at"]
         except Exception as exc:  # noqa: BLE001 - a missing summary column (014m not applied) or a model outage must not stop the chips
             log.warning("chat: summary not refreshed (%s)", exc)
-    return thread.get("ai_summary") or None
+    return logic.scrub(thread.get("ai_summary")) or None
 
 
 def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *, with_sources: bool = True) -> tuple[dict, dict, dict | None]:

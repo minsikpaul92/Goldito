@@ -962,6 +962,7 @@
 | DECL-4 | 최종 견적이 첫 견적(Meet & Greet 전)과 **같은 금액** | 오너 카드에 Confirm과 Decline만, **Suggest another price** 없음. 첫 견적이 없는 예약(채팅 밖에서 만든 예약)도 없음 | 🤖 `chat` | ➖ |
 | DECL-5 | 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
 | CHAT-38 | 채팅 수수료가 결제에 남는지 (014y): ① House sitting 부킹에서 시터 **Send final quote** ② 최종 견적이 열린 채(수수료 미응답) 오너가 예약 상세 → Checkout → Pay ③ 수수료 포함 결제 뒤 픽업 시간 변경을 둘이 합의 | ① 시트에 서비스 선택이 없고 부킹의 서비스(House sitting)로 가격이 나감 ② "Answer the sitter's new quote in the chat first." 결제 안 됨 ③ 새 총액 = 새 기본가 + 낸 수수료(수수료가 사라지지 않음) | 🤖 `chat`(①) · SQL `rls_smoke` 014q(②③) | 사람 확인 대기 · 호스팅 DB는 014q 적용 뒤 |
+| CHAT-39 | 채팅에 "door code 4821, call 416-555-0199"를 보내거나 예약 요청 메모에 쓰고, 다음 칩 · 초안을 부름 (R20-7) | 모델에 가는 대화 · 요약에는 `#`만 남고 코드 · 전화번호 · 이메일이 없음. "Oct 10-12" 같은 날짜와 가격은 그대로. 저장된 `chat_threads.ai_summary`에도 숫자 없음 | pytest `test_ai_chat`(scrub · 보낸 메시지 · 요청 메모 · 요약) | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

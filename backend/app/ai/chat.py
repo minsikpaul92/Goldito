@@ -50,6 +50,28 @@ _UNAVAILABLE = re.compile(r"\b(?:i(?:'m| am)|we(?:'re| are)|already|fully)\s+boo
 HANDOFF = "The owner drops off and picks up."
 
 
+_EMAIL = re.compile(r"\S+@\S+")
+_DIGIT_RUN = re.compile(r"\d[\d\s().-]*\d")
+_LONG_DIGITS = re.compile(r"\d{4,}")
+
+
+def _digits(match: re.Match) -> str:
+    """A phone number (7+ digits) goes whole; otherwise only runs of 4+ digits (entry codes), so "Oct 10-12" stays."""
+    run = match.group(0)
+    if sum(ch.isdigit() for ch in run) >= 7:
+        return "#"
+    return _LONG_DIGITS.sub("#", run)
+
+
+def scrub(text: str | None) -> str:
+    """Chat text made safe for a prompt and the stored summary (D29, D31, R20-7): one line, no emails, no phone numbers
+    or entry codes. Names are not removed here; they stay out of the log instead."""
+    clean = " ".join((text or "").split())
+    clean = _EMAIL.sub("", clean)
+    clean = _DIGIT_RUN.sub(_digits, clean)
+    return " ".join(clean.split())
+
+
 def _clip(text: str, n: int = 240) -> str:
     text = " ".join(str(text).split())
     return text if len(text) <= n else text[: n - 1] + "…"
@@ -61,16 +83,17 @@ def _when(iso: str, tz) -> str:
 
 
 def describe(message: dict, me_id: str, tz) -> dict | None:
-    """One message for the prompt: who said it and what (cards in square brackets). Empty cards are left out."""
+    """One message for the prompt and the summary: who said it and what (cards in square brackets), scrubbed like the
+    typed text. Empty cards are left out."""
     who = "me" if message.get("sender_id") == me_id else "them"
     if message.get("kind") == "text":
-        return {"who": who, "text": _clip(message.get("body") or "")}
+        return {"who": who, "text": _clip(scrub(message.get("body")))}
     card = message.get("card") or {}
     pets = ", ".join(p.get("name", "") for p in card.get("pets", []))
     if card.get("type") == "stay" and card.get("drop_off_at") and card.get("pick_up_at"):
         return {"who": who, "text": f"[Stay {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}]"}
     if card.get("type") == "request" and card.get("drop_off_at") and card.get("pick_up_at"):
-        note = f" Note: {_clip(card['note'], 160)}" if card.get("note") else ""
+        note = f" Note: {_clip(scrub(card['note']), 160)}" if scrub(card.get("note")) else ""
         return {"who": who, "text": f"[Booking request {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}{note}]"}
     return None
 

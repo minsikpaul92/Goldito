@@ -10,6 +10,7 @@ from types import SimpleNamespace
 import httpx
 import jwt
 import pytest
+from app.ai import chat as logic
 from app.ai import tone
 from app.ai.chat_agents import OWNER_STYLE
 from app.ai.chat_agents import base as agents_base
@@ -695,6 +696,50 @@ def test_typed_text_is_scrubbed_before_it_reaches_the_model(client, setup):
     sent = ctx.model.payload()["typing"]
     assert "4821" not in sent and "555" not in sent and "bob@example.com" not in sent
     assert sent.startswith("the code is")
+
+
+@pytest.mark.parametrize(
+    ("text", "kept", "gone"),
+    [
+        ("door code 4821 please", "door code # please", "4821"),
+        ("call 416-555-0199 tonight", "call # tonight", "555"),
+        ("call (416) 555 0199", "call (#", "0199"),
+        ("mail bob@example.com ok", "mail ok", "bob@"),
+        ("Oct 10-12 for Max", "Oct 10-12 for Max", None),
+        ("$268.13 total, 2 pets, 12 King St", "$268.13 total, 2 pets, 12 King St", None),
+    ],
+)
+def test_the_scrub_drops_codes_phones_and_emails_but_keeps_dates_and_prices(text, kept, gone):
+    assert logic.scrub(text) == kept
+    assert gone is None or gone not in logic.scrub(text)
+
+
+def test_sent_messages_and_request_notes_are_scrubbed_before_the_prompt(client, setup):
+    request = {**STAY, "type": "request", "note": "Gate code 4821, my cell 416-555-0199"}
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0),
+        message(2, OWNER_ID, "The door code is 7392 and bob@example.com"),
+        message(3, OWNER_ID, card=request),
+        message(4, OWNER_ID, "Oct 10-12 works?"),
+    )
+    ctx = setup({"chips": ["Yes, I can host", "Let me check"]}, db=db)
+    chips(client)
+    sent = json.dumps(ctx.model.payload()["recent"])
+    for secret in ("7392", "4821", "555", "bob@example.com"):
+        assert secret not in sent
+    assert "Oct 10-12 works?" in sent and "Gate code #" in sent
+
+
+def test_the_stored_summary_is_scrubbed_going_in_and_coming_out(client, setup):
+    older = [message(i, OWNER_ID if i % 2 else SITTER_ID, f"message {i} code 55{i:02d}") for i in range(1, 52)]
+    db = make_db(*older)
+    db.tables["chat_threads"][0]["ai_summary"] = "Old summary: alarm 9911."
+    ctx = setup({"summary": "Robert gave code 2468 for Oct 9 to 12."}, {"chips": ["Let me check", "Yes, I can host"]}, db=db)
+    chips(client)
+    summary_in = json.dumps(ctx.model.payload(0))
+    assert "9911" not in summary_in and "5501" not in summary_in
+    assert ctx.db.tables["chat_threads"][0]["ai_summary"] == "Robert gave code # for Oct 9 to 12."
+    assert "2468" not in json.dumps(ctx.model.payload(1))
 
 
 def test_typed_text_and_names_stay_out_of_the_log(client, setup, caplog):
