@@ -1,14 +1,20 @@
 """Voice sign-up (11.15 S3): a recording becomes text the owner can fix, then facts for the pet profile.
 
-`POST /api/ai/pet-voice/transcribe` is the recording to text. Nothing is saved and the audio is not kept.
+`POST /api/ai/pet-voice/transcribe` is the recording to text; `POST /api/ai/pet-voice` is the (fixed) text to facts.
+Nothing is saved, the audio is not kept, and neither the audio nor the words are logged.
 """
 
+import json
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
+from app.ai.pet_voice import Facts, RawFacts, validate_facts
+from app.ai.prompts import load_prompt
 from app.deps.auth import CurrentUser, get_current_user
-from app.services import stt
+from app.services import nebius, stt
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -54,3 +60,70 @@ async def pet_voice_transcribe(request: Request, user: CurrentUser = Depends(get
             detail="We couldn't read that recording. Try again, or type it instead.",
         ) from exc
     return TranscribeResponse(transcript=text)
+
+
+class Option(BaseModel):
+    value: str = Field(min_length=1, max_length=20)
+    label: str = Field(min_length=1, max_length=80)
+
+
+class Question(BaseModel):
+    key: str = Field(pattern=r"^[a-z][a-z0-9_]{0,11}$")
+    prompt: str = Field(min_length=1, max_length=200)
+    options: list[Option] = Field(min_length=2, max_length=6)
+
+
+class PetVoiceRequest(BaseModel):
+    species: Literal["dog", "cat"]
+    name: str = Field(default="", max_length=40)
+    transcript: str = Field(min_length=1, max_length=1500)
+    # The questions the app still has open, with their options: the app is the one source of the wording.
+    questions: list[Question] = Field(default_factory=list, max_length=30)
+
+
+class PetVoiceResponse(Facts):
+    model: str
+    latency_ms: int
+
+
+EXTRACT_TIMEOUT_S = 20.0
+
+
+@router.post("/pet-voice", response_model=PetVoiceResponse)
+def pet_voice(body: PetVoiceRequest, user: CurrentUser = Depends(get_current_user)) -> PetVoiceResponse:
+    """Facts from what the owner said, each with a quote the server found in the text. A suggestion, never a save."""
+    _owner_only(user)
+    text = " ".join(body.transcript.split())
+    if not text:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Say or type something first.")
+
+    # The name is only a label for the model; it is not trusted as an instruction.
+    context = {
+        "pet": {"name": body.name.strip() or None, "species": body.species},
+        "questions": [
+            {"key": q.key, "question": q.prompt, "options": [{"value": o.value, "label": o.label} for o in q.options]}
+            for q in body.questions
+        ],
+    }
+    messages = [
+        {"role": "system", "content": load_prompt("pet_voice/system.md")},
+        {"role": "user", "content": f"{json.dumps(context, ensure_ascii=False)}\n\n<transcript>\n{text}\n</transcript>"},
+    ]
+    try:
+        raw, result = nebius.chat_json(
+            "fast", messages, RawFacts, endpoint="pet-voice", timeout=EXTRACT_TIMEOUT_S, max_tokens=700
+        )
+    except nebius.AIUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="We couldn't read that just now. You can answer the questions yourself.",
+        ) from exc
+    except nebius.AIInvalidOutput as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="We couldn't read that just now. You can answer the questions yourself.",
+        ) from exc
+
+    options = {q.key: {o.value for o in q.options} for q in body.questions}
+    facts = validate_facts(raw, text, options)
+    return PetVoiceResponse(**facts.model_dump(), model=result.model, latency_ms=result.latency_ms)
