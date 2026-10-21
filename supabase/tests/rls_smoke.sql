@@ -6145,6 +6145,132 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 014t (Diary, #243): delete a page, hide a sitter's page on the owner's side, a photo on the page
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  pip uuid;
+  other_pet uuid;
+  v_sit uuid;
+  v_sit2 uuid;
+  v_draft uuid;
+  v_own uuid;
+  m_ok uuid;
+  m_robert uuid;
+  m_other uuid;
+  m_video uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Pip14t') returning id into pip;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Kit14t') returning id into other_pet;
+  perform _t_booking(robert, chloe, array[pip], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+    values (pip, chloe, public.app_today(), 'Sitter page one.', 'sent', now()) returning id into v_sit;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status, sent_at)
+    values (pip, chloe, public.app_today(), 'Sitter page two.', 'sent', now()) returning id into v_sit2;
+  insert into public.daily_reports (pet_id, sitter_id, report_date, body, status)
+    values (pip, chloe, public.app_today(), 'Sitter draft.', 'draft') returning id into v_draft;
+  perform public.notify_user(robert, 'report_sent', 'one', null, pip, null, v_sit);
+  perform public.notify_user(robert, 'report_sent', 'two', null, pip, null, v_sit2);
+  insert into public.report_decor (report_id, user_id, items) values (v_sit2, robert, '[]'), (v_sit2, chloe, '[]');
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/014t/ok', 'image', 'report') returning id into m_ok;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, robert, 'smoke/014t/robert', 'image', 'feed') returning id into m_robert;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (other_pet, chloe, 'smoke/014t/other', 'image', 'report') returning id into m_other;
+  insert into public.media (pet_id, uploaded_by, cloudinary_public_id, resource_type, purpose)
+    values (pip, chloe, 'smoke/014t/video', 'video', 'feed') returning id into m_video;
+
+  -- Hide: the owner takes a sitter's page out of their own book only
+  perform _t_as(robert);
+  v_own := public.add_owner_diary_entry(pip, 'My own page.');
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 3, '014t: the owner sees both sitter pages and their own');
+  perform public.hide_diary_page(v_sit);
+  perform public.hide_diary_page(v_sit); -- a second hide is a no-op
+  perform _t_ok((select count(*) from public.daily_reports where pet_id = pip) = 2
+      and not exists (select 1 from public.daily_reports where id = v_sit),
+    '014t: a hidden page is gone from the owner''s book');
+  perform _t_ok(not exists (select 1 from public.notifications where user_id = robert and ref_id = v_sit)
+      and exists (select 1 from public.notifications where user_id = robert and ref_id = v_sit2),
+    '014t: hiding clears that page''s notice and no other');
+  begin perform public.hide_diary_page(v_own); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'own_page', '014t: the owner''s own page is deleted, not hidden');
+  begin perform public.hide_diary_page(v_draft); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014t: a draft cannot be hidden');
+  perform _t_as(chloe);
+  perform _t_ok(exists (select 1 from public.daily_reports where id = v_sit), '014t: the sitter''s copy of a hidden page stays');
+  begin perform public.hide_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014t: a sitter cannot hide a page');
+  perform _t_as(joy);
+  begin perform public.hide_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_owner', '014t: another owner cannot hide my pet''s page');
+  perform _t_ok((select count(*) from public.diary_page_hidden) = 0, '014t: nobody reads another person''s hidden rows');
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.diary_page_hidden) = 1, '014t: the owner reads their own hidden rows');
+  begin insert into public.diary_page_hidden (report_id) values (v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: hidden rows are written only through hide_diary_page');
+
+  -- A photo on the page: the author's own image of that pet
+  perform _t_as(chloe);
+  perform public.set_diary_page_photo(v_sit2, m_ok);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok, '014t: the sitter puts a photo on their page');
+  begin perform public.set_diary_page_photo(v_sit2, m_robert); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not someone else''s photo');
+  begin perform public.set_diary_page_photo(v_sit2, m_other); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not another pet''s photo');
+  begin perform public.set_diary_page_photo(v_sit2, m_video); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'bad_photo', '014t: …not a video');
+  perform _t_as(robert);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) = m_ok
+      and exists (select 1 from public.media where id = m_ok),
+    '014t: the owner reads the photo of the page');
+  begin perform public.set_diary_page_photo(v_sit2, m_robert); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: the owner cannot change a sitter''s page photo');
+  perform public.set_diary_page_photo(v_own, m_robert);
+  perform _t_ok((select media_id from public.daily_reports where id = v_own) = m_robert, '014t: the owner puts a photo on their own page');
+  perform _t_as(chloe);
+  perform public.set_diary_page_photo(v_sit2, null);
+  perform _t_ok((select media_id from public.daily_reports where id = v_sit2) is null, '014t: the photo can be taken off');
+
+  -- Delete: only the author, the page and its stickers and notice go, the photo stays
+  perform public.set_diary_page_photo(v_sit2, m_ok);
+  perform _t_as(robert);
+  begin perform public.delete_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: the owner cannot delete a sitter''s page');
+  perform _t_as(joy);
+  begin perform public.delete_diary_page(v_own); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_author', '014t: another owner cannot delete my page');
+  perform _t_as(chloe);
+  perform public.delete_diary_page(v_draft);
+  perform public.delete_diary_page(v_sit2);
+  begin perform public.delete_diary_page(v_sit2); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014t: a page is deleted once');
+  perform _t_as(robert);
+  perform _t_ok(not exists (select 1 from public.daily_reports where id = v_sit2)
+      and not exists (select 1 from public.notifications where ref_id = v_sit2)
+      and not exists (select 1 from public.report_decor where report_id = v_sit2),
+    '014t: a sitter''s deleted page is gone for the owner too, with its notice and stickers');
+  perform _t_ok(exists (select 1 from public.media where id = m_ok), '014t: deleting a page keeps its photo');
+  perform public.delete_diary_page(v_own);
+  perform _t_ok((select count(*) from public.daily_reports where id = v_own) = 0, '014t: the owner deletes their own page');
+  perform _t_as(null, 'anon');
+  begin perform public.delete_diary_page(v_sit); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot delete');
+  begin perform public.hide_diary_page(v_sit); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot hide');
+  begin perform public.set_diary_page_photo(v_sit, null); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014t: anon cannot set a page photo');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 014u (#232): an early Returned gives the sitter the rest of the stay back
 -- ---------------------------------------------------------------------------
 

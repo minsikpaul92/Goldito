@@ -10,6 +10,7 @@ import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
+import { SPIRAL_W, SpiralEdge } from "../diary/SpiralEdge";
 import { listReportPhotos } from "../diary/reportApi";
 import { formatDay } from "../schedule/dates";
 import { DecorItem, DecorLayer, MAX_ITEMS, listDecor, saveDecor } from "./decorApi";
@@ -31,10 +32,10 @@ const PICTURE_HEIGHT = 180;
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // Picture-diary handwriting (web): Gaegu, Google Fonts (SIL OFL). Native keeps the system font.
-const DIARY_FONT = Platform.select({ web: 'Gaegu, "Comic Sans MS", system-ui, sans-serif', default: undefined });
+export const DIARY_FONT = Platform.select({ web: 'Gaegu, "Comic Sans MS", system-ui, sans-serif', default: undefined });
 const FONT_LINK_ID = "goldito-diary-font";
 
-function useDiaryFont() {
+export function useDiaryFont() {
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined" || document.getElementById(FONT_LINK_ID)) return;
     const link = document.createElement("link");
@@ -65,6 +66,13 @@ type Props = {
   writing?: DiaryWriting;
   /** The owner's own page (014p): the picture may be one of the owner's private photos. */
   ownPage?: boolean;
+  /** The page's own photo (014t), or a photo just added to a page being written. Without one: the day's first shared photo. */
+  pictureUrl?: string | null;
+  /**
+   * Stickers put on a page that is still being written (no report row yet): kept by the parent and saved with the
+   * page once it exists. Without it a page being written has no Decorate.
+   */
+  pending?: { items: DecorItem[]; onChange: (items: DecorItem[]) => void };
   /** Told when ✨ Decorate opens or closes (the diary book holds still meanwhile). */
   onEditingChange?: (editing: boolean) => void;
   testID?: string;
@@ -80,7 +88,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pending, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -126,8 +134,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     void load();
   }, [load]);
 
-  // The picture box: the day's first shared photo, if there is one.
+  // The picture box: the page's own photo; without one, the day's first shared photo, if there is one.
+  const shownPicture = pictureUrl || picture;
   useEffect(() => {
+    if (pictureUrl) return;
     let live = true;
     listReportPhotos(petId, day, ownPage && role === "owner")
       .then((photos) => {
@@ -139,9 +149,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     return () => {
       live = false;
     };
-  }, [petId, day, ownPage, role]);
+  }, [petId, day, ownPage, role, pictureUrl]);
 
-  const mine = layers.find((l) => l.userId === me)?.items ?? [];
+  const drafting = !reportId && !!pending;
+  const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
   const others = layers.filter((l) => l.userId !== me);
   const shownMine = editing ? draft : mine;
   const canvasLayers = [...others.map((l) => ({ items: l.items, mine: false })), { items: shownMine, mine: true }];
@@ -187,6 +198,14 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   };
 
   const save = async () => {
+    if (drafting) {
+      // Not a report yet: the parent keeps the stickers and saves them with the page.
+      pending.onChange(draft);
+      setEditing(false);
+      setSelected(null);
+      toast.show("Stickers added ✨");
+      return;
+    }
     if (!me || !reportId || saving) return;
     setSaving(true);
     try {
@@ -219,7 +238,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         layer: item.layer ?? "front",
       })),
     );
-    return renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
+    return renderDiaryPage({ paper, picture: pic, pictureUrl: shownPicture, lines: rules, text: [header, text], stickers });
   };
 
   const onTextLayout = (event: LayoutChangeEvent) => {
@@ -235,6 +254,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
   return (
     <View style={styles.wrap}>
       <View ref={paperRef} style={[styles.paper, editing && styles.paperEditing, focused && styles.paperWriting]} testID={id("paper")}>
+        <SpiralEdge testID={id("spiral")} />
         <View ref={linesRef} pointerEvents="none" style={[styles.lines, { top: lines.top, height: ruled * LINE }]}>
           {Array.from({ length: ruled }, (_, i) => (
             <View key={i} style={[styles.rule, { top: (i + 1) * LINE - 1 }]} />
@@ -255,8 +275,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
         </View>
         <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
-          {picture ? (
-            <Image source={{ uri: picture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          {shownPicture ? (
+            <Image source={{ uri: shownPicture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             <Text style={styles.pictureEmpty}>🖍️</Text>
           )}
@@ -298,7 +318,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         />
       </View>
 
-      {Platform.OS !== "web" || !me || !reportId || writing ? null : editing ? (
+      {Platform.OS !== "web" || !me || (!reportId && !pending) ? null : editing ? (
         <View style={styles.tools} testID="decor-tools">
           <Text style={styles.hint}>
             {current ? "Drag to move · size, turn, or tuck it behind the writing below." : "Add a sticker, then drag it anywhere on the page."}
@@ -379,7 +399,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       ) : (
         <View style={styles.row}>
           <TextButton label="✨ Decorate" onPress={() => void start()} testID="decor-start" />
-          <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" />
+          {reportId && !writing ? <TextButton label="↗ Share" onPress={() => setSharing(true)} testID="decor-share" /> : null}
         </View>
       )}
       {reportId && !writing && Platform.OS === "web" ? (
@@ -410,6 +430,8 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { gap: theme.spacing.sm },
     paper: {
+      // The spiral binding sits in the gutter to the left of the paper.
+      marginLeft: SPIRAL_W,
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       borderRadius: theme.radius.md,

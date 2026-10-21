@@ -237,6 +237,8 @@ export type MockDb = {
   pet_stickers: Row[];
   /** Sticker layers on a report (12.3b, 013b): one row per report and person; an upsert replaces it. */
   report_decor: Row[];
+  /** Pages an owner hid from their own book (014t). */
+  diary_page_hidden: Row[];
   /** When set, quote_booking fails with this code (the real one throws before it prices anything). */
   quote_error: string | null;
   /** RPC detail sent with quote_error (rates_not_set names the service, 014k). */
@@ -309,6 +311,7 @@ function createMockDb(): MockDb {
     photo_requests: [],
     pet_stickers: [],
     report_decor: [],
+    diary_page_hidden: [],
     quote_error: null,
     quote_error_detail: null,
     quote: null,
@@ -1804,6 +1807,46 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, row.id);
   }
 
+  if (path === "rpc/delete_diary_page") {
+    // 014t: the author deletes a page; its stickers and its "report sent" notice go with it.
+    const { p_report } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    for (const list of [db.daily_reports, db.report_decor, db.diary_page_hidden]) {
+      const keep = list.filter((r) => (list === db.daily_reports ? r.id : r.report_id) !== p_report);
+      list.splice(0, list.length, ...keep);
+    }
+    const notices = db.notifications.filter((n) => !(n.type === "report_sent" && n.ref_id === p_report));
+    db.notifications.splice(0, db.notifications.length, ...notices);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/hide_diary_page") {
+    // 014t: the owner hides a sitter's sent page from their own book; the sitter keeps it.
+    const { p_report } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report || report.status !== "sent") return json(route, 400, { code: "P0001", message: "not_found" });
+    if (!db.pets.some((p) => p.id === report.pet_id && p.owner_id === me)) return json(route, 400, { code: "P0001", message: "not_owner" });
+    if (report.sitter_id === me) return json(route, 400, { code: "P0001", message: "own_page" });
+    if (!db.diary_page_hidden.some((h) => h.report_id === p_report && h.user_id === me)) db.diary_page_hidden.push({ report_id: p_report, user_id: me });
+    const notices = db.notifications.filter((n) => !(n.user_id === me && n.type === "report_sent" && n.ref_id === p_report));
+    db.notifications.splice(0, db.notifications.length, ...notices);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/set_diary_page_photo") {
+    // 014t: the author puts one of their own images of that pet on the page.
+    const { p_report, p_media } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    const media = p_media ? db.media.find((m) => m.id === p_media) : null;
+    if (p_media && (!media || media.pet_id !== report.pet_id || media.resource_type !== "image")) return json(route, 400, { code: "P0001", message: "bad_photo" });
+    report.media_id = p_media ?? null;
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "rpc/send_daily_report") {
     const { p_report, p_body } = request.postDataJSON();
     const report = db.daily_reports.find((r) => r.id === p_report);
@@ -2045,7 +2088,11 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         (path !== "feed_posts" || row.posted_by === me || row.visibility !== "private") &&
         // RLS: an owner only sees reports that were sent; a draft is the sitter's alone (009). A sent page is read by
         // its author and by the pet's owner, so a sitter never reads an owner's own page (014p).
-        (path !== "daily_reports" || row.sitter_id === me || (row.status === "sent" && db.pets.some((p) => p.id === row.pet_id && p.owner_id === me))) &&
+        (path !== "daily_reports" ||
+          row.sitter_id === me ||
+          (row.status === "sent" &&
+            db.pets.some((p) => p.id === row.pet_id && p.owner_id === me) &&
+            !db.diary_page_hidden.some((h) => h.report_id === row.id && h.user_id === me))) &&
         // RLS: a review is private to the owner who wrote it and the sitter it is about (011).
         (path !== "reviews" || row.owner_id === me || row.sitter_id === me) &&
         // RLS (011g): the sitter's note about an owner is the sitter's alone.
@@ -2143,10 +2190,13 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
+    if (path === "daily_reports" && select.includes("media(")) {
+      rows = rows.map((r) => ({ ...r, media: mediaOf(r.media_id) }));
+    }
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({
         ...r,
-        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null },
+        pets: { name: db.pets.find((p) => p.id === r.pet_id)?.name ?? null, species: db.pets.find((p) => p.id === r.pet_id)?.species ?? null },
         sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null },
       }));
     }

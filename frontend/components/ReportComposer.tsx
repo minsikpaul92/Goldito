@@ -16,6 +16,7 @@ import {
   getTodayReport,
   sendReport,
   suggestChips,
+  setDiaryPagePhoto,
   summaryLine,
   type DaySummary,
 } from "../features/diary/reportApi";
@@ -29,6 +30,8 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 import type { CaringPet } from "../features/feed/caringPets";
+import { PageActions } from "../features/diary/PageActions";
+import { type DecorItem, saveDecor } from "../features/snap/decorApi";
 import { DecoratedReport } from "../features/snap/DecoratedReport";
 import { ChipSuggestions } from "./ChipSuggestions";
 import { Button } from "./ui/Button";
@@ -76,8 +79,12 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState<"chips" | "generate" | "send" | null>(null);
   const [sent, setSent] = useState(false);
+  /** Stickers put on the page before it is sent; they are saved with it. */
+  const [stickers, setStickers] = useState<DecorItem[]>([]);
   /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
   const [sentId, setSentId] = useState<string | null>(null);
+  /** The photo on the sent page (the first one added), if any. */
+  const [sentPhoto, setSentPhoto] = useState<string | null>(null);
 
   const refreshChips = useCallback(
     async (mediaIds: string[]) => {
@@ -105,6 +112,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         if (existing?.status === "sent") {
           setSent(true);
           setSentId(existing.id);
+          setSentPhoto(existing.photoUrl ?? null);
           setBody(existing.body);
         } else if (existing) {
           setDraft(existing);
@@ -283,8 +291,26 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       // A page written only by hand has no draft row yet: save it as today's draft first (014b), then send.
       const id = draft?.id ?? (await saveDraftByHand(pet.id, body.trim()));
       await sendReport(id, body.trim());
+      if (stickers.length > 0 && sitterId) {
+        try {
+          await saveDecor(id, sitterId, stickers);
+        } catch {
+          toast.show("Sent, but the stickers weren't saved.");
+        }
+        setStickers([]);
+      }
+      // The first photo added shows on the page the owner reads.
+      const pagePhoto = photos[0];
+      if (pagePhoto) {
+        try {
+          await setDiaryPagePhoto(id, pagePhoto.mediaId);
+        } catch {
+          toast.show("Sent, but the photo wasn't added to the page.");
+        }
+      }
       setSent(true);
       setSentId(id);
+      setSentPhoto(pagePhoto?.thumbUrl || null);
       setDraft(null);
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
     } catch (e) {
@@ -307,7 +333,9 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const writeAnother = () => {
     setSent(false);
     setSentId(null);
+    setSentPhoto(null);
     setBody("");
+    setStickers([]);
     setOff(new Set());
     setCustom([]);
     setOverrides({});
@@ -329,11 +357,13 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
             petName={pet.name}
             day={day.current}
             body={body}
+            pictureUrl={sentPhoto}
             testID={`report-sent-paper-${pet.id}`}
           />
         ) : (
           <Text style={styles.body}>{body}</Text>
         )}
+        {sentId ? <PageActions reportId={sentId} action="delete" other={pet.ownerName} onDone={writeAnother} /> : null}
         <Button label="✏️ Write another report" variant="secondary" onPress={writeAnother} testID={`report-another-${pet.id}`} />
         <Text style={styles.muted}>It covers what happens from now on.</Text>
       </Card>
@@ -361,6 +391,8 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         petName={pet.name}
         day={day.current}
         body={body}
+        pictureUrl={photos[0]?.thumbUrl || null}
+        pending={{ items: stickers, onChange: setStickers }}
         writing={{
           onChangeText: setBody,
           placeholder: "Dear diary, today…",

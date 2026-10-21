@@ -131,6 +131,29 @@ test.describe("daily report", () => {
     expect(reportRequests[1]).toMatchObject({ chips: ["Met a golden retriever", "Park walk", "Zoomies at the park"], photos: [] });
   });
 
+  test("the first photo added is on the page the owner reads", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    await mockUpload(page, db, MAX.id);
+    const screen = app(page);
+    await screen.getByTestId(`report-add-photo-${MAX.id}`).click();
+    await screen.getByTestId("sample-walk").click();
+    await screen.getByTestId("media-confirm-use").click();
+    await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).waitFor();
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("A walk with a photo.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    expect(db.daily_reports[0]).toMatchObject({ status: "sent", media_id: "media-proof" });
+  });
+
+  test("a page sent without a photo has none", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("No photo.");
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    expect(db.daily_reports[0].media_id ?? null).toBeNull();
+  });
+
   test("more than 8 highlights on: a hint says only 8 go in, and the report is still written", async ({ page }) => {
     const notes = Array.from({ length: 7 }, (_, i) => ({ id: `note-c${i}`, kind: "episode", label: `Moment ${i}`, source: "checkin", check: null, media_id: null }));
     const { reportRequests } = await openSitterDiary(page, notes);
@@ -290,6 +313,7 @@ test.describe("daily report", () => {
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/owner/diary");
     const screen = app(page);
+    await screen.getByTestId("diary-entry-cover-" + MAX.id).click();
     await expect(screen.getByTestId("diary-entry-where")).toContainText("Max · Oct 5");
     await expect(screen.getByText("From Chloe")).toBeVisible();
     await expect(screen.getByText("SECRET DRAFT")).toHaveCount(0);
@@ -363,6 +387,22 @@ test.describe("daily report", () => {
     expect(db.daily_reports).toHaveLength(1);
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "We played fetch until Max flopped on the grass.", sitter_id: SITTER.id });
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe(db.daily_reports[0].id);
+  });
+
+  test("stickers go on the page before Send and are saved with the sent report", async ({ page }) => {
+    const { db } = await openSitterDiary(page);
+    const screen = app(page);
+    await screen.getByTestId(`report-body-${MAX.id}`).fill("A day with a sticker.");
+    await screen.getByTestId("decor-start").click();
+    await screen.getByTestId("decor-preset-star").click();
+    await screen.getByTestId("decor-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Stickers added");
+    expect(db.report_decor).toHaveLength(0);
+
+    await screen.getByTestId(`report-send-${MAX.id}`).click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect.poll(() => (db.report_decor.find((r) => r.user_id === SITTER.id)?.items as unknown[] | undefined)?.length).toBe(1);
+    expect(db.report_decor[0].report_id).toBe(db.daily_reports[0].id);
   });
 
   test("generated text lands on the page as a draft; the sitter edits it there and only Send shares it", async ({ page }) => {

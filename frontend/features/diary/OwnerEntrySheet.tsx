@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
@@ -9,12 +9,14 @@ import { UploadError, uploadMedia } from "../../lib/cloudinary";
 import { FALLBACK_CAPTION, createFeedPost } from "../../lib/feed";
 import { PickedMedia, pickMedia } from "../../lib/media";
 import { useErrorDialog } from "../../providers/ErrorDialogProvider";
+import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
+import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport } from "../snap/DecoratedReport";
-import { REPORT_BODY_MAX, addOwnerEntry } from "./reportApi";
+import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhoto } from "./reportApi";
 
 type Props = {
   visible: boolean;
@@ -28,8 +30,9 @@ type Props = {
 
 /**
  * The owner's own diary page (014p, #186): write on the page, add a photo if you like, save. The page is sent to the
- * owner's book at once (no AI, no notice, the sitter never sees it). The photo is also kept in Feed, private.
- * Stickers go on afterwards, with Decorate on the saved page.
+ * owner's book at once (no AI, no notice, the sitter never sees it). The photo shows in the page's picture box and is
+ * also kept in Feed, private.
+ * Stickers can go on while writing; they are saved with the page.
  */
 export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -38,6 +41,9 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
   const [petId, setPetId] = useState<string | null>(null);
   const [body, setBody] = useState("");
   const [photo, setPhoto] = useState<PickedMedia | null>(null);
+  const [stickers, setStickers] = useState<DecorItem[]>([]);
+  const session = useSession();
+  const me = session.status === "signedIn" ? session.profile.id : null;
   const [saving, setSaving] = useState(false);
 
   // Each time it opens: an empty page for the pet the book is on.
@@ -46,9 +52,14 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
     setPetId(initialPetId && pets.some((p) => p.id === initialPetId) ? initialPetId : (pets[0]?.id ?? null));
     setBody("");
     setPhoto(null);
+    setStickers([]);
   }, [visible, initialPetId, pets]);
 
   const pet = pets.find((p) => p.id === petId) ?? null;
+
+  // The picked photo shows in the page's picture box at once.
+  const preview = useMemo(() => (photo && typeof URL !== "undefined" ? URL.createObjectURL(photo.file) : null), [photo]);
+  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
 
   const addPhoto = async () => {
     const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"] });
@@ -66,6 +77,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       const reportId = await addOwnerEntry(pet.id, body);
       if (uploaded) {
         try {
+          await setDiaryPagePhoto(reportId, uploaded.mediaId);
           await createFeedPost({
             petId: pet.id,
             mediaId: uploaded.mediaId,
@@ -76,6 +88,13 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           });
         } catch {
           toast.show("Page saved, but the photo wasn't added.");
+        }
+      }
+      if (stickers.length > 0 && me) {
+        try {
+          await saveDecor(reportId, me, stickers);
+        } catch {
+          toast.show("Page saved, but the stickers weren't.");
         }
       }
       toast.show("Page saved 📔");
@@ -96,6 +115,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       visible={visible}
       title="New page"
       onClose={onClose}
+      scrollbar
       testID="diary-write-sheet"
       footer={<Button label={saving ? "Saving…" : "Save page"} onPress={() => void save()} disabled={saving || body.trim().length === 0} testID="diary-write-save" />}
     >
@@ -115,6 +135,9 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           petName={pet.name}
           day={appToday()}
           body={body}
+          pictureUrl={preview}
+          testID="diary-write-page"
+          pending={{ items: stickers, onChange: setStickers }}
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
       ) : null}

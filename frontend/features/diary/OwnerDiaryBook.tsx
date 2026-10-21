@@ -1,17 +1,19 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingView } from "../../components/ui/LoadingView";
 import { Screen } from "../../components/ui/Screen";
+import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { useMyPets } from "../pets/useMyPets";
 import { DiaryBook } from "./DiaryBook";
 import { OwnerEntrySheet } from "./OwnerEntrySheet";
+import { PageActions } from "./PageActions";
 import { SentReport, listBookPages } from "./reportApi";
 
 /**
@@ -28,6 +30,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
   // A page just written: the book opens on it.
   const [written, setWritten] = useState<string | null>(null);
   const session = useSession();
+  const { diaryRevision } = useNotifications();
   const me = session.status === "signedIn" ? session.profile.id : null;
   const openId = written ?? initialId ?? null;
 
@@ -44,6 +47,10 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
       void load();
     }, [load]),
   );
+  // A sitter just sent a page: look again, no spinner (the reader keeps their place).
+  useEffect(() => {
+    if (diaryRevision > 0) void load();
+  }, [diaryRevision, load]);
 
   if (!pages && !error) return <LoadingView />;
   if (error && !pages) {
@@ -68,7 +75,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
   );
   if (!pages || pages.length === 0) {
     return (
-      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
+      <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
         <EmptyState
           emoji="📔"
           title="No diary yet"
@@ -81,7 +88,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
     );
   }
   return (
-    <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }}>
+    <Screen testID="owner-diary-screen" contentStyle={{ gap: 12 }} scrollbar>
       {write}
       <DiaryBook
         key={openId ?? "book"}
@@ -91,7 +98,10 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
         footer={(page) => (
           <View style={styles.footer}>
             {page.authorId === me ? (
-              <Text style={styles.meta}>Your page</Text>
+              <>
+                <Text style={styles.meta}>Your page</Text>
+                <PageActions reportId={page.id} action="delete" onDone={() => void load()} />
+              </>
             ) : (
               <>
                 <Text style={styles.meta}>{`From ${page.sitterName}`}</Text>
@@ -100,6 +110,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
                     {`${t.status === "done" ? "✓" : "⚠️"} ${t.title}${t.status === "done" ? "" : " · missed"}`}
                   </Text>
                 ))}
+                <PageActions reportId={page.id} action="hide" other={page.sitterName} onDone={() => void load()} />
               </>
             )}
           </View>

@@ -82,7 +82,9 @@ test.describe("diary decorating", () => {
     await expect(mine).toHaveCount(1);
     await expect(mine).toHaveAttribute("data-selected", "true");
 
-    // Drag by mouse: 60 px right, 30 px down.
+    // Drag by mouse: 60 px right, 30 px down. The sticker sits mid-page: bring it to the middle of the screen first, so
+    // the tab bar (or the phone's edge) is never under the pointer.
+    await mine.evaluate((el) => el.scrollIntoView({ block: "center" }));
     const p = await box(paper);
     const from = center(await box(mine));
     await drag(page, from, { x: from.x + 60, y: from.y + 30 });

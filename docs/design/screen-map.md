@@ -451,16 +451,16 @@ Shows: `QuickCheckIn`
 
 Sitter Diary (D47b · Diary book): **Today** — the page for each pet in care, written by hand or by Goldito from the day's chips, checked and sent (phase-07 7.3; with more than one pet the sitter picks the pet first, FB-19, and each composer keeps its page while switching). **Diary book** — every page this sitter sent, all pets they have cared for or one, oldest → newest.
 
-Shows: `ReportComposer` · `ReportStatus` · `DiaryBook`
+Shows: `ReportComposer` · `ReportStatus` · `DiaryBook` · `PageActions`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 72 |
-| SegmentedControl | — | `sitter-diary-view` | 84 |
-| EmptyState | Diary | — | 99 |
-| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 107 |
-| EmptyState | Couldn't load the diary | — | 135 |
-| EmptyState | No pages yet | — | 137 |
+| EmptyState | Couldn't load your pets | — | 75 |
+| SegmentedControl | — | `sitter-diary-view` | 87 |
+| EmptyState | Diary | — | 102 |
+| Pressable | ``${pet.name}${status ? `, ${STATUS_LABEL[status]}` : ""}`` | ``diary-pet-${pet.id}`` | 110 |
+| EmptyState | Couldn't load the diary | — | 138 |
+| EmptyState | No pages yet | — | 140 |
 
 ### `/sitter/feed` — [app/sitter/(tabs)/feed/index.tsx](../../frontend/app/sitter/(tabs)/feed/index.tsx)
 
@@ -1080,17 +1080,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 324 |
-| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 337 |
-| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 373 |
-| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 403 |
-| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 405 |
-| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 417 |
-| Button | Done | ``report-edit-done-${pet.id}`` | 437 |
-| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 444 |
-| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 448 |
-| Button | Add | ``report-custom-add-${pet.id}`` | 468 |
-| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 470 |
+| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 352 |
+| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 367 |
+| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 405 |
+| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 435 |
+| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 437 |
+| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 449 |
+| Button | Done | ``report-edit-done-${pet.id}`` | 469 |
+| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 476 |
+| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 480 |
+| Button | Add | ``report-custom-add-${pet.id}`` | 500 |
+| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 502 |
 
 ### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
 
@@ -1275,26 +1275,40 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| SegmentedControl | — | ``${testID}-pet`` | 176 |
-| Pressable | `hint` | `testID` | 246 |
+| TextButton | ‹ Diaries | ``${testID}-covers`` | 210 |
+| Pressable | `hint` | `testID` | 274 |
+
+### DiaryCover — [features/diary/DiaryCover.tsx](../../frontend/features/diary/DiaryCover.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``Open ${petName}'s diary`` | `testID` | 32 |
 
 ### OwnerDiaryBook — [features/diary/OwnerDiaryBook.tsx](../../frontend/features/diary/OwnerDiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load the diary | — | 52 |
-| Button | ✏️ Write a page | `diary-write` | 56 |
-| EmptyState | No diary yet | — | 72 |
+| EmptyState | Couldn't load the diary | — | 59 |
+| Button | ✏️ Write a page | `diary-write` | 63 |
+| EmptyState | No diary yet | — | 79 |
 
 ### OwnerEntrySheet — [features/diary/OwnerEntrySheet.tsx](../../frontend/features/diary/OwnerEntrySheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 95 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 100 |
-| SegmentedControl | — | `diary-write-pet` | 103 |
-| TextButton | Remove | `diary-write-photo-remove` | 127 |
-| TextButton | + Photo | `diary-write-photo` | 130 |
+| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 114 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 120 |
+| SegmentedControl | — | `diary-write-pet` | 123 |
+| TextButton | Remove | `diary-write-photo-remove` | 150 |
+| TextButton | + Photo | `diary-write-photo` | 153 |
+
+### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | hide ? "Hide page" : "Delete page" | `testID` | 51 |
+| Sheet | hide ? "Hide this page?" : "Delete this page?" | ``${testID}-sheet`` | 52 |
+| Button | busy ? "Please wait…" : hide ? "Hide" : "Delete" | ``${testID}-confirm`` | 63 |
 
 ### NotificationsCenter — [features/notifications/NotificationsCenter.tsx](../../frontend/features/notifications/NotificationsCenter.tsx)
 
@@ -1312,14 +1326,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 310 |
-| TextButton | Make a sticker | `decor-make` | 330 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 335 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 369 |
-| TextButton | Cancel | `decor-cancel` | 370 |
-| TextButton | ✨ Decorate | `decor-start` | 381 |
-| TextButton | ↗ Share | `decor-share` | 382 |
-| Pressable | `hint` | `testID` | 403 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 330 |
+| TextButton | Make a sticker | `decor-make` | 350 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 355 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 389 |
+| TextButton | Cancel | `decor-cancel` | 390 |
+| TextButton | ✨ Decorate | `decor-start` | 401 |
+| TextButton | ↗ Share | `decor-share` | 402 |
+| Pressable | `hint` | `testID` | 423 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 
@@ -1403,4 +1417,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-407 actions · 406 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+410 actions · 409 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
