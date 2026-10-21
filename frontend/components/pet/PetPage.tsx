@@ -6,6 +6,7 @@ import { Screen } from "../ui/Screen";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
+import { PetMedals } from "./PetMedals";
 import { PetRoom } from "./PetRoom";
 
 /** Owner Home, page two (11.12): the pet room of one pet, with a switch when there are several. Tap the pet: Diary. */
@@ -37,6 +38,7 @@ export function PetPage({ pets }: { pets: Pet[] }) {
         pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat }}
         onPress={() => router.push("/owner/diary")}
       />
+      <PetMedals petId={pet.id} />
     </Screen>
   );
 }

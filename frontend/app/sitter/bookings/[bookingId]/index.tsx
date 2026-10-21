@@ -51,6 +51,7 @@ import {
 } from "../../../../lib/bookings";
 import { PetGlance } from "../../../../components/PetGlance";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
+import { MedalButtons } from "../../../../components/pet/MedalButtons";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
 import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
@@ -437,6 +438,7 @@ export default function SitterBookingDetail() {
               <Text style={styles.muted} testID="stay-complete">
                 Stay complete 🐾
               </Text>
+              <MedalButtons bookingId={booking.id} pets={booking.pets} ownerName={owner} />
               <ReceivedReview bookingId={booking.id} ownerName={owner} />
               <OwnerNoteCard bookingId={booking.id} ownerName={owner} />
             </>

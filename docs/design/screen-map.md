@@ -417,28 +417,28 @@ Shows: `BookingCard` · `ChatList`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetGlance` · `PetRecordFold` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetGlance` · `PetRecordFold` · `MedalButtons` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 150 |
-| EmptyState | Couldn't load this booking | — | 157 |
-| Tag | `b.label` | — | 253 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 313 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 318 |
-| TextButton | Change time or place | `change-booking` | 326 |
-| Tag | `a` | — | 355 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 383 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 398 |
-| TextButton | Decline | `decline-booking` | 406 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 417 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 427 |
-| TextButton | Cancel booking | `cancel-booking` | 445 |
-| Sheet | Cancel booking | `cancel-sheet` | 464 |
-| Button | Cancel booking | `cancel-confirm` | 470 |
-| Sheet | Decline request | `decline-sheet` | 508 |
-| Button | Decline request | `decline-confirm` | 514 |
-| TextButton | Suggest another time instead | `decline-suggest` | 553 |
+| EmptyState | Booking not found | — | 151 |
+| EmptyState | Couldn't load this booking | — | 158 |
+| Tag | `b.label` | — | 254 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 314 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 319 |
+| TextButton | Change time or place | `change-booking` | 327 |
+| Tag | `a` | — | 356 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 384 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 399 |
+| TextButton | Decline | `decline-booking` | 407 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 418 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 428 |
+| TextButton | Cancel booking | `cancel-booking` | 447 |
+| Sheet | Cancel booking | `cancel-sheet` | 466 |
+| Button | Cancel booking | `cancel-confirm` | 472 |
+| Sheet | Decline request | `decline-sheet` | 510 |
+| Button | Decline request | `decline-confirm` | 516 |
+| TextButton | Suggest another time instead | `decline-suggest` | 555 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -1352,11 +1352,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Banner | `error` | `own-voice-error` | 135 |
 | Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
 
+### MedalButtons — [components/pet/MedalButtons.tsx](../../frontend/components/pet/MedalButtons.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | busy === pet.id ? "Saving…" : `🏅 Give ${pet.name} a medal` | ``medal-give-${pet.id}`` | 52 |
+
 ### PetPage — [components/pet/PetPage.tsx](../../frontend/components/pet/PetPage.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``pet-switch-${p.name}`` | 23 |
+| Pressable | — | ``pet-switch-${p.name}`` | 24 |
 
 ### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
 
@@ -1517,4 +1523,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-445 actions · 444 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+446 actions · 445 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
