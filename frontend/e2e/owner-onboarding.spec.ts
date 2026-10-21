@@ -87,6 +87,8 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-title")).toHaveText("What breed is Pip?");
     await screen.getByTestId("own-breed").fill("Maltese");
     await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("What color is Pip?");
+    await screen.getByTestId("own-coat-white").click();
     await expect(screen.getByTestId("own-title")).toHaveText("How old is Pip?");
     await screen.getByTestId("own-age-plus").click();
     await screen.getByTestId("own-next").click();
@@ -160,7 +162,7 @@ test.describe("owner onboarding", () => {
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
     expect(pet).toMatchObject({ species: "dog", name: "Pippa", breed: "Maltese", weight_kg: 6.5, notes: "Loves the sofa." });
     expect(String(pet.birthdate)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(pet.profile).toMatchObject({ v: 1, safety: { s1: "once", s2: "unsure", s6: "listed" } });
+    expect(pet.profile).toMatchObject({ v: 1, coat: "white", safety: { s1: "once", s2: "unsure", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toMatchObject({ d1: 4, d6: 4, d7: 2, d12: 2 });
     expect(db.pet_allergies.map((a) => a.allergen).sort()).toEqual(["chicken", "grapes"]);
     // The photos are added after the pet is saved, the cover first.
@@ -183,7 +185,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-species-cat").click();
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
-    for (const id of ["photos", "voice", "breed", "age", "weight", "petIntro"]) {
+    for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
@@ -265,7 +267,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-species-dog").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
-    for (const id of ["photos", "voice", "breed", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
+    for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
     await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
     for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
     await expect(screen.getByTestId("own-step-location")).toBeVisible();
@@ -354,6 +356,7 @@ test.describe("owner onboarding", () => {
     expect(asked!.questions.map((q) => q.key)).toEqual(expect.arrayContaining(["d1", "d12", "s1", "s5"]));
     await expect(screen.getByTestId("own-heard-breed")).toContainText("4 year old Maltese");
     await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click(); // color
     await expect(screen.getByTestId("own-age-value")).toHaveText("4 years");
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-weight")).toHaveValue("5.9");
@@ -432,5 +435,66 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-voice-error")).toContainText("answer the questions yourself");
     await screen.getByTestId("own-skip").click();
     await expect(screen.getByTestId("own-step-breed")).toBeVisible();
+  });
+
+  test("photo: the cover photo is looked at in the background and its breed and color guesses are offered, not chosen", async ({ page }) => {
+    await newOwner(page);
+    await mockPetPhotos(page);
+    let asked: { public_id: string; species: string } | null = null;
+    await page.route("**/api/ai/pet-photo", (route) => {
+      asked = route.request().postDataJSON();
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ species_match: true, breeds: ["Maltese", "Poodle mix"], coat_color: "white", model: "m", latency_ms: 900 }),
+      });
+    });
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    await addPhoto(page, "mood_tug");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click(); // voice
+
+    await expect(screen.getByTestId("own-breed-guess-1")).toContainText("Maltese?");
+    await expect(screen.getByTestId("own-breed-guess-1")).toContainText("✨ suggested");
+    await expect(screen.getByTestId("own-breed")).toHaveValue("");
+    expect(asked!.species).toBe("dog");
+    expect(asked!.public_id).toContain(`goldito/pet-profile/${OWNER.id}/`);
+    await screen.getByTestId("own-breed-guess-2").click();
+
+    await expect(screen.getByTestId("own-title")).toHaveText("What color is Pip?");
+    await expect(screen.getByTestId("own-coat-white")).toContainText("✨ suggested");
+    await expect(screen.getByTestId("own-coat-white")).not.toHaveAttribute("aria-selected", "true");
+    await screen.getByTestId("own-coat-cream").click();
+    for (const id of ["age", "weight", "petIntro"]) {
+      await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
+    await page.reload();
+    // Everything the owner picked survives a reload; the guess itself is not asked for again.
+    await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
+    for (let i = 0; i < 5; i++) await screen.getByTestId("own-back").click(); // about, weight, age, color, breed
+    await expect(screen.getByTestId("own-breed")).toHaveValue("Poodle mix");
+  });
+
+  test("photo: another animal or a failed guess offers nothing and the flow goes on", async ({ page }) => {
+    await newOwner(page);
+    await mockPetPhotos(page);
+    await page.route("**/api/ai/pet-photo", (route) => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "down" }) }));
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-name").fill("Mochi");
+    await screen.getByTestId("own-next").click();
+    await addPhoto(page, "mood_grass");
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-step-breed")).toBeVisible();
+    await expect(screen.getByTestId("own-breed-guesses")).toHaveCount(0);
+    await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-coat-white")).not.toContainText("suggested");
   });
 });

@@ -3,8 +3,10 @@ import {
   AXIS_LABEL,
   Axis,
   LEVEL_WORDS,
+  Coat,
   SAFETY_KEYS,
   Score,
+  isCoat,
   chartAxes,
   chartQuestions,
 } from "./questions";
@@ -16,6 +18,8 @@ export type PetProfile = {
   answers: Record<string, Score>;
   /** Safety question key to the picked value. "unsure" is a pick, a skipped question has no entry. */
   safety: Record<string, string>;
+  /** The coat color the owner picked (one of COATS), when they did. */
+  coat?: Coat;
 };
 
 export const EMPTY_PROFILE: PetProfile = { v: 1, answers: {}, safety: {} };
@@ -28,7 +32,8 @@ export type SafetyChip = { key: string; tone: "warning" | "info" | "unsure"; tex
 export function parseProfile(raw: unknown): PetProfile {
   const profile: PetProfile = { v: 1, answers: {}, safety: {} };
   if (!raw || typeof raw !== "object") return profile;
-  const { answers, safety } = raw as { answers?: unknown; safety?: unknown };
+  const { answers, safety, coat } = raw as { answers?: unknown; safety?: unknown; coat?: unknown };
+  if (isCoat(coat)) profile.coat = coat;
   if (answers && typeof answers === "object") {
     for (const [key, value] of Object.entries(answers)) {
       if (value === 1 || value === 2 || value === 3 || value === 4) profile.answers[key] = value;

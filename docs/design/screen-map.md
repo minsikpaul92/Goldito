@@ -66,18 +66,18 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 150 |
-| Button | Next | `own-next` | 152 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 182 |
-| Banner | `error` | — | 193 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 219 |
-| Stepper | Age | `own-age` | 276 |
-| Button | Next | `own-next` | 289 |
-| Button | Add | `own-food-other-add` | 467 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 523 |
-| Banner | `error` | `own-error` | 574 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 575 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 592 |
+| TextButton | Skip | `own-skip` | 154 |
+| Button | Next | `own-next` | 156 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 186 |
+| Banner | `error` | — | 197 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 235 |
+| Stepper | Age | `own-age` | 329 |
+| Button | Next | `own-next` | 342 |
+| Button | Add | `own-food-other-add` | 520 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 576 |
+| Banner | `error` | `own-error` | 628 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 629 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 646 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 

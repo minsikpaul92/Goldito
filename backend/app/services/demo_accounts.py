@@ -35,11 +35,13 @@ MAX_AND_MOCHI: tuple[Pet, ...] = (
 DEMO_PET_PROFILES: dict[str, dict] = {
     "Max": {
         "v": 1,
+        "coat": "white",
         "answers": {"d1": 4, "d2": 3, "d3": 4, "d4": 3, "d5": 2, "d6": 3, "d7": 2, "d8": 3, "d9": 3, "d10": 4, "d11": 3, "d12": 2},
         "safety": {"s1": "never", "s2": "all", "s3": "excited", "s4": "never", "s5": "nothing", "s6": "listed"},
     },
     "Mochi": {
         "v": 1,
+        "coat": "gray",
         "answers": {"c1": 2, "c2": 2, "c3": 3, "c4": 3, "c5": 3, "c6": 2, "c7": 3, "c8": 2, "c9": 2, "c10": 2},
         "safety": {"s1": "never", "s2": "picky", "s3": "never", "s4": "never", "s5": "nothing", "s6": "none"},
     },

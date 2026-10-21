@@ -27,9 +27,11 @@ import {
   weightFromDraft,
 } from "../features/ownerOnboarding/draft";
 import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
 import { NO_FACTS, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
+  COATS,
   FOOD_CHIPS,
   SAFETY_QUESTIONS,
   Score,
@@ -71,6 +73,8 @@ export default function OwnerOnboarding() {
   const [otherFood, setOtherFood] = useState("");
   const [showOtherFood, setShowOtherFood] = useState(false);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Cover photos a guess was already asked for, so a photo is looked at once.
+  const guessed = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!userId) return;
@@ -173,7 +177,7 @@ export default function OwnerOnboarding() {
   if (step === "species") {
     // The step list is built from the species, so the move to the name screen is explicit (`next` still sees the old list).
     const choose = (value: Species) =>
-      pick(value === draft.species ? {} : { species: value, answers: {}, safety: {}, voice: NO_FACTS, suggested: [] }, () => goTo("name"));
+      pick(value === draft.species ? {} : { species: value, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" }, () => goTo("name"));
     return (
       <StepFrame
         progress={0}
@@ -211,10 +215,22 @@ export default function OwnerOnboarding() {
     );
   }
 
+  // The cover photo is looked at in the background; the answer shows up on the breed and color screens when it comes.
+  const changePhotos = (photos: string[]) => {
+    update({ photos, ...(photos.length === 0 ? { photoGuess: null } : {}) });
+    const cover = photos[0];
+    if (!cover || !species || guessed.current.has(cover)) return;
+    guessed.current.add(cover);
+    void guessFromPhoto(cover, species).then((g) => {
+      if (g) update({ photoGuess: { for: cover, breeds: g.breeds, coat: g.coat } });
+    });
+  };
+  const guess = draft.photoGuess && draft.photoGuess.for === draft.photos[0] ? draft.photoGuess : null;
+
   if (step === "photos") {
     return frame(
       `Add photos of ${petName}`,
-      <PetPhotosStep photos={draft.photos} onChange={(photos) => update({ photos })} onBusy={setPhotoBusy} />,
+      <PetPhotosStep photos={draft.photos} onChange={changePhotos} onBusy={setPhotoBusy} />,
       <>
         <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />
         {skipLink}
@@ -250,6 +266,22 @@ export default function OwnerOnboarding() {
     return frame(
       `What breed is ${petName}?`,
       <>
+        {guess && guess.breeds.length > 0 ? (
+          <View style={styles.grid} testID="own-breed-guesses">
+            {guess.breeds.map((name, i) => (
+              <BigOption
+                key={name}
+                label={`${name}?`}
+                badge="✨ suggested"
+                selected={draft.breed === name}
+                onPress={() => pick({ breed: name })}
+                style={styles.half}
+                testID={`own-breed-guess-${i + 1}`}
+              />
+            ))}
+            <BigOption label="Not sure" onPress={() => pick({ breed: "" })} style={styles.half} testID="own-breed-unsure" />
+          </View>
+        ) : null}
         <BigInput
           value={draft.breed}
           onChangeText={(breed) => update({ breed })}
@@ -265,6 +297,27 @@ export default function OwnerOnboarding() {
         {skipLink}
       </>,
       "A mix is fine. Write what you think.",
+    );
+  }
+
+  if (step === "coat") {
+    return frame(
+      `What color is ${petName}?`,
+      <View style={styles.grid}>
+        {COATS.map((coat) => (
+          <BigOption
+            key={coat.value}
+            label={coat.label}
+            selected={draft.coat === coat.value}
+            badge={guess?.coat === coat.value && draft.coat === "" ? "✨ suggested" : undefined}
+            onPress={() => pick({ coat: coat.value })}
+            style={styles.half}
+            testID={`own-coat-${coat.value}`}
+          />
+        ))}
+      </View>,
+      skipLink,
+      "The main color of the coat.",
     );
   }
 
@@ -551,6 +604,7 @@ export default function OwnerOnboarding() {
     { id: "name", label: "Name", value: petName },
     { id: "photos", label: "Photos", value: draft.photos.length ? String(draft.photos.length) : "Not shared yet" },
     { id: "breed", label: "Breed", value: draft.breed.trim() || "Not shared yet" },
+    { id: "coat", label: "Color", value: COATS.find((c) => c.value === draft.coat)?.label ?? "Not shared yet" },
     {
       id: "age",
       label: "Age",

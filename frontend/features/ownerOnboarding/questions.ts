@@ -254,6 +254,24 @@ export const FOOD_CHIPS = ["Chicken", "Beef", "Dairy", "Wheat", "Fish"] as const
 /** s6 is the foods question: "none" or "listed" (the foods themselves are saved as the pet's allergies). */
 export const SAFETY_KEYS = [...SAFETY_QUESTIONS.map((q) => q.key), "s6"];
 
+/** The coat colors offered (and what the pet-photo guess may return). Saved as `pets.profile.coat`. */
+export const COATS = [
+  { value: "white", label: "White" },
+  { value: "cream", label: "Cream" },
+  { value: "golden", label: "Golden" },
+  { value: "orange", label: "Orange" },
+  { value: "brown", label: "Brown" },
+  { value: "black", label: "Black" },
+  { value: "gray", label: "Gray" },
+  { value: "mixed", label: "Mixed" },
+] as const;
+
+export type Coat = (typeof COATS)[number]["value"];
+
+export function isCoat(value: unknown): value is Coat {
+  return COATS.some((c) => c.value === value);
+}
+
 export function fill(text: string, name: string): string {
   return text.replace(/\{name\}/g, name.trim() || "your pet");
 }
