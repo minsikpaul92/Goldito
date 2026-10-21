@@ -169,7 +169,7 @@
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
 | **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) · 11.8 **Save image**(꾸민 그림일기 한 장 → PNG) 🟡(🤖 `decor.spec.ts` · 사람 확인 대기) | 12 (08 설계 포함) |
-| **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · 호스팅 DB 적용은 머지 때 (SEC-4 · SEC-5) | 10 |
+| **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 – SEC-6) | 10 |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -321,6 +321,7 @@
 | SEC-3 | 오너가 체크인 · 할 일 완료를 API로 직접 시도 | 거절 (돌봄 구간의 시터만 가능) | SQL `rls_smoke` | ➖ |
 | SEC-4 | 데모 계정으로 로그인 → 브라우저 콘솔에서 `supabase.auth.updateUser({ password: 'x12345' })`, 이메일 변경도 | 둘 다 오류(Database error). 로그아웃 뒤 원래 데모 비밀번호로 다시 로그인됨. 일반 계정은 비밀번호를 바꿀 수 있음 | SQL `rls_smoke`(014z) | 👤 호스팅 DB에 `014z` 적용 뒤 |
 | SEC-5 | `014z` 적용 뒤 `python -m scripts.seed_demo` | 모든 데모 계정 `updated ... ok`, 끝나면 다시 잠김(SEC-4가 여전히 오류) | pytest `test_seed_demo` | 👤 |
+| SEC-6 | 새로 가입한 계정으로 AI 기능(채팅 칩, Snap 등)을 하루에 100번 넘게 | 101번째부터 429 "Daily AI limit reached. Try again tomorrow."(code `rate_limited`). 업로드 서명도 따로 100번. 다음 날(UTC) 다시 됨 | pytest `test_limits`(모든 AI 라우트 · 서명 라우트) | ➖ |
 
 ### 3.8 예약 · 미팅 · 결제 (BOOK) — 이전 Phase, 자동 테스트가 촘촘함
 
@@ -961,6 +962,8 @@
 | DECL-5 | 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.
 
 - **데모 계정 비밀번호 · 이메일 (`014z`):** 시드(`scripts.seed_demo`)만 바꿀 수 있다. SQL Editor나 대시보드에서 바꿀 때는 먼저 `select set_demo_accounts_unlocked(true);`(5분).
 

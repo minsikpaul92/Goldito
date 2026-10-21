@@ -35,11 +35,12 @@ from app.ai.daily_report import (
 from app.ai.prompts import load_json, load_prompt
 from app.ai.report_chips import fallback_report_body
 from app.config import get_settings
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz, nebius
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 logger = logging.getLogger("goldito.ai")
 
 TIMEOUT_S = 60.0

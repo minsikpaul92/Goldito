@@ -22,11 +22,12 @@ from app.ai import life_record as lr
 from app.ai.daily_report import parse_ts
 from app.ai.prompts import load_prompt
 from app.config import get_settings
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import nebius, rag
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 log = logging.getLogger("goldito.ai")
 
 TIMEOUT_S = 60.0

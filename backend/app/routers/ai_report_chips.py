@@ -18,13 +18,14 @@ from app.ai.daily_report import after, build_snapshot, care_intervals, day_bound
 from app.ai.prompts import load_prompt
 from app.ai.report_chips import MAX_PHOTOS, PhotoRead, day_summary, photo_messages, record_chips
 from app.config import get_settings
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.routers.ai_daily_report import _now, _one, _sitter_bookings, last_sent_at, load_day_records
 from app.services import authz, nebius
 from app.services import cloudinary as cloudinary_service
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 logger = logging.getLogger("goldito.ai")
 
 PHOTO_TIMEOUT_S = 20.0  # phase-07 7.7: no photo chips after this, the day's record chips only

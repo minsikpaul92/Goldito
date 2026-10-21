@@ -7,6 +7,7 @@ import cloudinary.uploader
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.routers.media import SignResponse
@@ -50,7 +51,7 @@ def _photo(row: dict) -> PhotoResponse:
 
 
 @router.post("/sign", response_model=SignResponse)
-def sign_pet_photo(user: CurrentUser = Depends(get_current_user)) -> SignResponse:
+def sign_pet_photo(user: CurrentUser = Depends(limits.uploads)) -> SignResponse:
     """A signed-in person signs an upload into their own folder. Whose pet it joins is checked at `complete`."""
     try:
         params = cloudinary_service.sign_pet_photo(user.id)

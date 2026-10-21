@@ -83,6 +83,8 @@ async def http_exception_handler(_request: Request, exc: StarletteHTTPException)
         code = "not_found"
     elif exc.status_code == 409:
         code = "conflict"
+    elif exc.status_code == 429:
+        code = "rate_limited"
     elif exc.status_code == 503:
         code = "not_configured"
     elif exc.status_code == 502:

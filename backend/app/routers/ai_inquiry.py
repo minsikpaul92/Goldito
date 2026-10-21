@@ -19,11 +19,12 @@ from app.ai import inquiry as logic
 from app.ai import inquiry_agent, tone
 from app.ai.prompts import load_prompt
 from app.config import get_settings
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz, nebius, rag
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 log = logging.getLogger("goldito.ai")
 
 TIMEOUT_S = 45.0  # architecture §7: inquiry-reply 45 s

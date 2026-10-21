@@ -7,11 +7,12 @@ from pydantic import BaseModel, Field
 
 from app.ai.care_plan import RawPlan, add_known_cautions, normalize
 from app.ai.prompts import load_prompt
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz, nebius
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 
 TIMEOUT_S = 45.0  # architecture §7: care-plan 45 s
 

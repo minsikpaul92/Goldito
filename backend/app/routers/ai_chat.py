@@ -24,12 +24,13 @@ from app.ai import inquiry as inquiry_logic
 from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
 from app.config import get_settings
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.routers.ai_inquiry import _first_name, _gather, _now, _one
 from app.services import authz, nebius
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 log = logging.getLogger("goldito.ai")
 
 
