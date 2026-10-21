@@ -4,6 +4,7 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
+import { ChatDeclineSheet } from "../../components/ChatDeclineSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
 import { ChatCareCards } from "../../components/ChatCareCards";
@@ -66,6 +67,8 @@ type QuoteCard = Extract<ChatCard, { type: "quote" }>;
 const INPUT_MIN = 44;
 const INPUT_MAX = 150;
 const INPUT_PAD = 11;
+/** Footer steps that get a Decline next to them (#230): the owner's yes, the sitter's yes, the owner's final quote. */
+const DECLINABLE: Primary["kind"][] = ["agree", "accept", "confirm_quote"];
 
 /** "Oct 20 9:00 AM" for one handoff. */
 function short(iso: string): string {
@@ -95,6 +98,8 @@ export default function Chat() {
   const [requesting, setRequesting] = useState(false);
   const [quoting, setQuoting] = useState<"first" | "final" | null>(null);
   const [agreeing, setAgreeing] = useState(false);
+  /** Decline at the agreement step or on the final quote (#230); `quote` when it is the final quote. */
+  const [declining, setDeclining] = useState<{ quote: boolean } | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
   const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
   const [stepBusy, setStepBusy] = useState(false);
@@ -500,6 +505,7 @@ export default function Chat() {
                 onAddFee={() => setFeeFor(m.id)}
                 onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
+                onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
               />
             </View>
           ) : m.kind === "text" ? (
@@ -531,6 +537,15 @@ export default function Chat() {
           ) : null}
           {step.primary && step.quote ? (
             <TextButton label="Send quote" onPress={() => setQuoting("first")} testID="chat-send-quote" />
+          ) : null}
+          {step.primary && booking && DECLINABLE.includes(step.primary.kind) ? (
+            <TextButton
+              label="Decline"
+              danger
+              disabled={stepBusy}
+              onPress={() => setDeclining({ quote: step.primary?.kind === "confirm_quote" })}
+              testID="chat-decline"
+            />
           ) : null}
           {!step.primary && step.wait ? (
             <Text style={styles.waiting} testID="chat-waiting">
@@ -645,6 +660,20 @@ export default function Chat() {
       </View>
       {owner && booking ? (
         <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
+      ) : null}
+      {booking && declining ? (
+        <ChatDeclineSheet
+          visible
+          bookingId={booking.id}
+          role={header.myRole}
+          otherName={header.otherName}
+          quote={declining.quote}
+          onClose={() => setDeclining(null)}
+          onDone={() => {
+            setDeclining(null);
+            void load();
+          }}
+        />
       ) : null}
       {owner ? (
         <RequestBookingSheet

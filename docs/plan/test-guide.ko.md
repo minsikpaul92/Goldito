@@ -917,6 +917,15 @@
 | EARLY-2 | 약속한 픽업 시각이 지난 뒤 Returned | 아무 칸도 바뀌지 않음 | SQL `rls_smoke`(014u) | ➖ |
 | EARLY-3 | `014u` 적용 직후 호스팅 DB | 이미 일찍 반납된 예약(예: `c717fdcc…`)의 반납 뒤 칸도 한 번에 정리됨 | **👤** (읽기 전용 확인) | ➖ |
 
+### 3.41 합의와 최종 견적에서 거절 (DECL) · #230 (1, 2부)
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| DECL-1 | 오너 → 채팅 푸터 **I'd like to book** 옆 **Decline** → 사유 칩(선택) · 메모(선택) → **Decline and end the request** | "Not this sitter?" 시트, 확인하면 토스트 "Request ended", 예약은 Cancelled(사유 저장), 시터에게 알림, 날짜 홀드가 풀림. 푸터는 다시 **Request booking** | 🤖 `chat` | ➖ |
+| DECL-2 | 시터 → 채팅 푸터 **I accept** 옆 **Decline** | "Decline this booking?" 시트, 확인하면 "Request declined", 예약은 Declined(사유는 오너가 읽는 메모로) | 🤖 `chat` | ➖ |
+| DECL-3 | 오너 → **Final quote** 카드의 **Decline** 또는 푸터 **Confirm quote** 옆 **Decline** | "Decline the final quote?" 시트, 사유 칩 맨 앞에 "The price doesn't work". 확인하면 예약 Cancelled, Pay 버튼 없음. 시터 화면의 최종 견적 카드에는 Decline 없음 | 🤖 `chat` | ➖ |
+| DECL-4 | (3부, 아직) 금액이 바뀐 최종 견적에 **Suggest another price** | 아직 없음: #225(채팅 수수료) 머지 뒤 같은 PR에 추가 | ➖ | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **검색이 서비스 · 인계 방식을 아직 걸러내지 않는다 (CHAT-10):** 예약 요청 시트에는 서비스 선택이 없다(시터가 하는 서비스, 둘 다면 Boarding). 오너 · 시터의 온보딩 선택(서비스, 누가 데려다주는지)으로 검색을 거르는 일은 온보딩 데이터가 생긴 뒤에 한다. 둘 다 맞는 경우는 요청을 받은 시터가 수락 · 변경 · 거절한다.

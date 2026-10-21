@@ -27,6 +27,7 @@ import { formatDay, formatInstant, formatTime } from "../../../../features/sched
 import { SERVICE_LABEL } from "../../../../features/sitters/sitterApi";
 import { releaseVideoLink } from "../../../../lib/meetGreet";
 import {
+  SITTER_DECLINE_REASONS,
   BookingError,
   BookingSummary,
   awaitingFirstYes,
@@ -61,7 +62,7 @@ import { Theme } from "../../../../theme/themes";
 const KINDS: HandoffKind[] = ["drop_off", "pick_up"];
 
 /** Polite reasons for a "no" — the owner reads the ones picked, plus the optional note (FB-35). */
-const DECLINE_REASONS = ["Fully booked those dates", "Can't take this pet type", "Not a good fit", "Let's talk first"];
+const DECLINE_REASONS = SITTER_DECLINE_REASONS;
 const DECLINE_NOTE_MAX = 200;
 
 type State =

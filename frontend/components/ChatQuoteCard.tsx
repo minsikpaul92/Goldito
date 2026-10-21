@@ -19,6 +19,8 @@ type Props = {
   onAddFee: () => void;
   onAnswer: (extraId: string, accept: boolean) => void;
   onConfirm: () => void;
+  /** The owner's no to a final quote (#230); shown under Confirm only when given. */
+  onDecline?: () => void;
 };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -33,7 +35,7 @@ function short(iso: string): string {
  * The sitter's quote in the chat (3D.6): the server's breakdown, the extra fees with the owner's answer on each, and the
  * total. Every number is read from the card; the model never writes a price (D29).
  */
-export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm }: Props) {
+export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm, onDecline }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -99,6 +101,9 @@ export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onC
       {open && role === "sitter" ? <TextButton label="Add a fee" disabled={busy} onPress={onAddFee} testID="quote-add-fee" /> : null}
       {open && role === "owner" ? (
         <Button label="Confirm quote" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
+      ) : null}
+      {open && role === "owner" && final && onDecline ? (
+        <TextButton label="Decline" danger disabled={busy} onPress={onDecline} testID="quote-decline" />
       ) : null}
     </Card>
   );

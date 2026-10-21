@@ -20,21 +20,22 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 228 |
-| EmptyState | Chat not found | — | 236 |
-| Pressable | — | `chat-stage` | 468 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 523 |
-| Button | Send quote | `chat-send-quote` | 530 |
-| TextButton | Send quote | `chat-send-quote` | 533 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 554 |
-| Pressable | — | `chat-action-chip` | 575 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 586 |
-| Pressable | Send a card | `chat-plus` | 602 |
-| Pressable | Send | `chat-send` | 635 |
+| EmptyState | Couldn't load this chat | — | 233 |
+| EmptyState | Chat not found | — | 241 |
+| Pressable | — | `chat-stage` | 473 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 529 |
+| Button | Send quote | `chat-send-quote` | 536 |
+| TextButton | Send quote | `chat-send-quote` | 539 |
+| TextButton | Decline | `chat-decline` | 542 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 569 |
+| Pressable | — | `chat-action-chip` | 590 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 601 |
+| Pressable | Send a card | `chat-plus` | 617 |
+| Pressable | Send | `chat-send` | 650 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -398,24 +399,24 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 148 |
-| EmptyState | Couldn't load this booking | — | 155 |
-| Tag | `b.label` | — | 251 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 311 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 316 |
-| TextButton | Change time or place | `change-booking` | 324 |
-| Tag | `a` | — | 353 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 380 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 395 |
-| TextButton | Decline | `decline-booking` | 403 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 414 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 424 |
-| TextButton | Cancel booking | `cancel-booking` | 442 |
-| Sheet | Cancel booking | `cancel-sheet` | 461 |
-| Button | Cancel booking | `cancel-confirm` | 467 |
-| Sheet | Decline request | `decline-sheet` | 505 |
-| Button | Decline request | `decline-confirm` | 511 |
-| TextButton | Suggest another time instead | `decline-suggest` | 550 |
+| EmptyState | Booking not found | — | 149 |
+| EmptyState | Couldn't load this booking | — | 156 |
+| Tag | `b.label` | — | 252 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 312 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 317 |
+| TextButton | Change time or place | `change-booking` | 325 |
+| Tag | `a` | — | 354 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 381 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 396 |
+| TextButton | Decline | `decline-booking` | 404 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 415 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 425 |
+| TextButton | Cancel booking | `cancel-booking` | 443 |
+| Sheet | Cancel booking | `cancel-sheet` | 462 |
+| Button | Cancel booking | `cancel-confirm` | 468 |
+| Sheet | Decline request | `decline-sheet` | 506 |
+| Button | Decline request | `decline-confirm` | 512 |
+| TextButton | Suggest another time instead | `decline-suggest` | 551 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -673,6 +674,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Open diary | `chat-diary-open` | 87 |
 | Button | Ask for a photo | `chat-ask-photo` | 105 |
 
+### ChatDeclineSheet — [components/ChatDeclineSheet.tsx](../../frontend/components/ChatDeclineSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy ? "Declining…" : "Decline and end the request" | `chat-decline-sheet` | 74 |
+| Button | busy ? "Declining…" : "Decline and end the request" | `chat-decline-confirm` | 80 |
+
 ### ChatHandoffCard — [components/ChatHandoffCard.tsx](../../frontend/components/ChatHandoffCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -704,10 +712,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Decline | `quote-extra-decline` | 82 |
-| TextButton | Accept | `quote-extra-accept` | 83 |
-| TextButton | Add a fee | `quote-add-fee` | 99 |
-| Button | Confirm quote | `quote-confirm` | 101 |
+| TextButton | Decline | `quote-extra-decline` | 84 |
+| TextButton | Accept | `quote-extra-accept` | 85 |
+| TextButton | Add a fee | `quote-add-fee` | 101 |
+| Button | Confirm quote | `quote-confirm` | 103 |
+| TextButton | Decline | `quote-decline` | 106 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 
@@ -1417,4 +1426,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-410 actions · 409 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+413 actions · 412 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

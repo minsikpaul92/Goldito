@@ -922,6 +922,85 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-next-pay")).toHaveCount(0);
   });
 
+  test("the owner can say no at the agreement step: Decline next to I'd like to book ends the request with a reason (#230)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("chat-next-agree")).toBeVisible();
+    await screen.getByTestId("chat-decline").click();
+    const sheet = screen.getByTestId("chat-decline-sheet");
+    await expect(sheet).toContainText("Not this sitter?");
+    await expect(sheet).toContainText("Chloe gets a notice and the dates are free again.");
+    await screen.getByTestId("chat-decline-reason-1").click(); // Found another sitter
+    await screen.getByTestId("chat-decline-confirm").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Request ended");
+    expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancelled_by: OWNER.id, cancel_reason: "Found another sitter" });
+    // The request is over: the owner can ask again, and nothing asks for a yes any more.
+    await expect(screen.getByTestId("chat-request-booking")).toBeVisible();
+    await expect(screen.getByTestId("chat-decline")).toHaveCount(0);
+  });
+
+  test("the sitter can say no at the agreement step: Decline next to I accept declines the request (#230)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/chat/${THREAD}`);
+    const screen = app(page);
+    await expect(screen.getByTestId("chat-next-accept")).toBeVisible();
+    await screen.getByTestId("chat-decline").click();
+    await expect(screen.getByTestId("chat-decline-sheet")).toContainText("Decline this booking?");
+    await screen.getByTestId("chat-decline-reason-0").click(); // Fully booked those dates
+    await screen.getByTestId("chat-decline-confirm").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Request declined");
+    expect(db.bookings[0]).toMatchObject({ status: "declined", sitter_note: "Fully booked those dates" });
+    await expect(screen.getByTestId("chat-decline")).toHaveCount(0);
+  });
+
+  test("the owner can decline the final quote from the card or the footer (#230)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+
+    // Both say yes, then the sitter sends the final quote.
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/chat/${THREAD}`);
+    let screen = app(page);
+    await screen.getByTestId("chat-next-accept").click();
+    await expect(screen.getByTestId("chat-waiting")).toHaveText("Waiting for Robert");
+    screen = await openChatAs(page, OWNER);
+    await screen.getByTestId("chat-next-agree").click();
+    await screen.getByTestId("agree-submit").click();
+    await expect(screen.getByTestId("chat-agreement-card")).toContainText("Booked, you both agreed");
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("chat-next-final_quote").click();
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("quote-title")).toHaveText("Final quote");
+    // The sitter has no Decline on the final quote; that is the owner's answer.
+    await expect(screen.getByTestId("quote-decline")).toHaveCount(0);
+
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-next-confirm_quote")).toBeVisible();
+    await expect(screen.getByTestId("chat-decline")).toBeVisible();
+    await screen.getByTestId("quote-decline").click();
+    const sheet = screen.getByTestId("chat-decline-sheet");
+    await expect(sheet).toContainText("Decline the final quote?");
+    await expect(screen.getByTestId("chat-decline-reason-0")).toContainText("The price doesn't work");
+    await screen.getByTestId("chat-decline-reason-0").click();
+    await screen.getByTestId("chat-decline-confirm").click();
+
+    await expect(screen.getByTestId("toast")).toContainText("Request ended");
+    expect(db.bookings[0]).toMatchObject({ status: "cancelled", cancelled_by: OWNER.id, cancel_reason: "The price doesn't work" });
+    await expect(screen.getByTestId("chat-next-pay")).toHaveCount(0);
+  });
+
   test("a chat with no booking yet shows the circles on Request", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
