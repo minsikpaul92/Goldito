@@ -26,15 +26,15 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentC
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 228 |
 | EmptyState | Chat not found | — | 236 |
-| Pressable | — | `chat-stage` | 461 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 516 |
-| Button | Send quote | `chat-send-quote` | 523 |
-| TextButton | Send quote | `chat-send-quote` | 526 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 547 |
-| Pressable | — | `chat-action-chip` | 568 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 579 |
-| Pressable | Send a card | `chat-plus` | 595 |
-| Pressable | Send | `chat-send` | 628 |
+| Pressable | — | `chat-stage` | 468 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 523 |
+| Button | Send quote | `chat-send-quote` | 530 |
+| TextButton | Send quote | `chat-send-quote` | 533 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 554 |
+| Pressable | — | `chat-action-chip` | 575 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 586 |
+| Pressable | Send a card | `chat-plus` | 602 |
+| Pressable | Send | `chat-send` | 635 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -111,16 +111,15 @@ Shows: `ConsentCard` · `QuoteCard`
 
 "How was Max and Mochi's stay with Chloe?" — ★1–5 and an optional comment, once (phase-07C 7C.3).
 
-Shows: `ChipSuggestions` · `StarRating`
+Shows: `OwnerReviewForm`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Not ready yet | — | 73 |
-| EmptyState | Thanks, you already reviewed this stay | — | 86 |
-| Button | sending ? "Sending…" : "Send review" | `review-send` | 139 |
-| Sheet | ``Add ${booking.sitterName} to your favorites?`` | `favorite-sheet` | 146 |
-| Button | ⭐ Add to favorites | `favorite-add` | 153 |
-| TextButton | Not now | `favorite-skip` | 163 |
+| EmptyState | Not ready yet | — | 54 |
+| EmptyState | Thanks, you already reviewed this stay | — | 67 |
+| Sheet | ``Add ${booking.sitterName} to your favorites?`` | `favorite-sheet` | 95 |
+| Button | ⭐ Add to favorites | `favorite-add` | 102 |
+| TextButton | Not now | `favorite-skip` | 112 |
 
 ### `/owner/bookings/[bookingId]/trip` — [app/owner/bookings/[bookingId]/trip.tsx](../../frontend/app/owner/bookings/[bookingId]/trip.tsx)
 
@@ -725,8 +724,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 71 |
-| Button | Received | `chat-received` | 102 |
+| Button | Returned | `chat-returned` | 73 |
+| Button | Received | `chat-received` | 104 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
@@ -809,6 +808,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Show code | `entry-show-code` | 124 |
+
+### FavoriteHeart — [components/FavoriteHeart.tsx](../../frontend/components/FavoriteHeart.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | favorite ? "Remove from favorites" : "Add to favorites" | `favorite-heart` | 43 |
 
 ### FeedCard — [components/FeedCard.tsx](../../frontend/components/FeedCard.tsx)
 
@@ -985,6 +990,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | ``⭐ Rate ${ownerName}`` | `owner-note-start` | 95 |
 | Button | saving ? "Saving…" : "Save note" | `owner-note-save` | 122 |
 | TextButton | Cancel | `owner-note-cancel` | 123 |
+
+### OwnerReviewForm — [components/OwnerReviewForm.tsx](../../frontend/components/OwnerReviewForm.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | sending ? "Sending…" : "Send review" | `review-send` | 84 |
 
 ### PaidConfirmation — [components/PaidConfirmation.tsx](../../frontend/components/PaidConfirmation.tsx)
 
@@ -1406,4 +1417,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-409 actions · 408 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+410 actions · 409 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
