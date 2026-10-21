@@ -6488,4 +6488,56 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014w (11.15 S4, #185): the breed needs cache is for the backend only
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.breed_notes (species, breed_key, chips, sources, found)
+    values ('dog', 'maltese', '["Brush daily"]', '[{"title":"AKC","url":"https://www.akc.org/x"}]', true);
+  perform _t_ok((select b.found from public.breed_notes b where b.breed_key = 'maltese'), '014w: the backend writes and reads a breed note');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('dog', 'maltese', false);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%duplicate key%', '014w: one row per species and breed');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('bird', 'parrot', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: only dogs and cats');
+  begin
+    insert into public.breed_notes (species, breed_key, chips, found) values ('cat', 'x', '{}', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: chips are a list');
+
+  foreach v_err in array array['owner', 'sitter', 'anon'] loop
+    if v_err = 'owner' then perform _t_as(robert);
+    elsif v_err = 'sitter' then perform _t_as(chloe);
+    else perform _t_as(null, 'anon');
+    end if;
+    begin
+      perform count(*) from public.breed_notes;
+      perform _t_ok(false, '014w: ' || v_err || ' cannot read the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot read the cache');
+    end;
+    begin
+      insert into public.breed_notes (species, breed_key, found) values ('dog', 'poodle', true);
+      perform _t_ok(false, '014w: ' || v_err || ' cannot write the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot write the cache');
+    end;
+  end loop;
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
