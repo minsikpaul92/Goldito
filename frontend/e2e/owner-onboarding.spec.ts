@@ -5,6 +5,42 @@ import { OWNER, mockSupabase } from "./supabaseMock";
 
 // Owner sign-up questions (11.15 S1, #185): one question per screen, large text, every question skippable.
 
+let uploads = 0;
+
+/** The pet photo routes: sign, the Cloudinary upload, and complete (the ids it is asked to register, in order). */
+async function mockPetPhotos(page: import("@playwright/test").Page): Promise<string[]> {
+  const completed: string[] = [];
+  const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
+  await page.route("**/api/pet-photos/sign", (route) =>
+    route.fulfill(
+      json({
+        cloud_name: "goldito-test", api_key: "123", timestamp: 1_700_000_000, signature: "sig",
+        folder: `goldito/pet-profile/${OWNER.id}`,
+        upload_url: "http://127.0.0.1:4173/cloudinary-mock/image/upload",
+        transformation: "c_limit,w_2000/q_auto",
+      }),
+    ),
+  );
+  await page.route("**/cloudinary-mock/**", (route) => {
+    uploads += 1;
+    return route.fulfill(json({ public_id: `goldito/pet-profile/${OWNER.id}/pet-${uploads}`, width: 800, height: 800 }));
+  });
+  await page.route("**/api/pet-photos/complete", (route) => {
+    completed.push(route.request().postDataJSON().public_id);
+    return route.fulfill(json({ id: `p-${completed.length}`, pet_id: "x", public_id: "x", position: 0, url: "", thumb_url: "" }));
+  });
+  return completed;
+}
+
+async function addPhoto(page: import("@playwright/test").Page, sample: string) {
+  const screen = app(page);
+  await screen.getByTestId("own-photo-add").click();
+  await screen.getByTestId(`sample-${sample}`).click();
+  await expect(screen.getByTestId("crop-image")).toBeVisible();
+  await screen.getByTestId("crop-confirm").click();
+  await expect(screen.getByTestId("crop-sheet")).toHaveCount(0);
+}
+
 async function newOwner(page: import("@playwright/test").Page) {
   const { db } = await mockSupabase(page, [OWNER]);
   db.owner_profiles.push({ id: OWNER.id, home_address: null, home_lat: null, home_lng: null, onboarded_at: null });
@@ -14,6 +50,7 @@ async function newOwner(page: import("@playwright/test").Page) {
 test.describe("owner onboarding", () => {
   test("a new owner answers, checks the summary and saves their first pet", async ({ page }) => {
     const db = await newOwner(page);
+    const completed = await mockPetPhotos(page);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     const screen = app(page);
@@ -24,6 +61,16 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-title")).toHaveText("What's your pet's name?");
     await expect(screen.getByTestId("own-next")).toBeDisabled();
     await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+
+    // Photos: add two, make the second the cover. Next waits until something is added.
+    await expect(screen.getByTestId("own-title")).toHaveText("Add photos of Pip");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await addPhoto(page, "mood_tug");
+    await addPhoto(page, "mood_grass");
+    await expect(screen.getByTestId("own-photo-1")).toBeVisible();
+    await screen.getByTestId("own-photo-1").click();
+    await screen.getByTestId("own-photo-cover").click();
     await screen.getByTestId("own-next").click();
 
     await expect(screen.getByTestId("own-title")).toHaveText("What breed is Pip?");
@@ -62,6 +109,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
 
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
+    await expect(screen.getByTestId("own-row-photos")).toContainText("2");
     await expect(screen.getByTestId("own-row-personality")).toContainText("12 of 12 answered");
     await expect(screen.getByTestId("own-row-safety")).toContainText("2 of 5 answered");
     await expect(screen.getByTestId("own-row-foods-to-avoid")).toContainText("chicken, grapes");
@@ -83,6 +131,10 @@ test.describe("owner onboarding", () => {
     expect(pet.profile).toMatchObject({ v: 1, safety: { s1: "once", s2: "unsure", s6: "listed" } });
     expect((pet.profile as { answers: Record<string, number> }).answers).toMatchObject({ d1: 4, d6: 4, d7: 2, d12: 2 });
     expect(db.pet_allergies.map((a) => a.allergen).sort()).toEqual(["chicken", "grapes"]);
+    // The photos are added after the pet is saved, the cover first.
+    expect(completed).toHaveLength(2);
+    expect(completed[0]).toMatch(/pet-2$/);
+    expect(completed[1]).toMatch(/pet-1$/);
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
@@ -93,7 +145,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-species-cat").click();
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
-    for (const id of ["breed", "age", "weight", "petIntro"]) {
+    for (const id of ["photos", "breed", "age", "weight", "petIntro"]) {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
@@ -124,12 +176,12 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-species-dog").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
-    await expect(screen.getByTestId("own-step-breed")).toBeVisible();
+    await expect(screen.getByTestId("own-step-photos")).toBeVisible();
     await screen.getByTestId("own-back").click();
     await expect(screen.getByTestId("own-name")).toHaveValue("Pip");
     await screen.getByTestId("own-next").click();
     await page.reload();
-    await expect(screen.getByTestId("own-step-breed")).toBeVisible();
+    await expect(screen.getByTestId("own-step-photos")).toBeVisible();
   });
 
   test("Add a pet later marks the owner done and goes home without a pet", async ({ page }) => {

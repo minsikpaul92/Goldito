@@ -1,6 +1,7 @@
 import { randomUUID } from "expo-crypto";
 
 import { getSupabase } from "../../lib/supabase";
+import { completePetPhoto } from "./petPhotosApi";
 import {
   OwnerOnboardingDraft,
   birthdateFromAge,
@@ -33,7 +34,7 @@ export async function markOwnerOnboarded(userId: string): Promise<void> {
 
 /**
  * Saves the pet with its answers and allergies in one call (create_pet_with_profile, safe to retry with the same id),
- * then marks the owner done. Returns the pet id.
+ * then adds the photos and marks the owner done. Returns the pet id.
  */
 export async function saveOwnerOnboarding(userId: string, draft: OwnerOnboardingDraft, petId: string): Promise<string> {
   if (!draft.species || !draft.name.trim()) fail("save your pet");
@@ -50,6 +51,14 @@ export async function saveOwnerOnboarding(userId: string, draft: OwnerOnboarding
     p_allergens: foodsFromDraft(draft),
   });
   if (error) fail("save your pet");
+  // One after the other, so the first photo stays the cover. A retry sends the same photos again and adds nothing twice.
+  for (const publicId of draft.photos) {
+    try {
+      await completePetPhoto(petId, publicId);
+    } catch {
+      fail("save the photos");
+    }
+  }
   await markOwnerOnboarded(userId);
   return petId;
 }

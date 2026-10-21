@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
+import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
@@ -54,6 +55,7 @@ export default function OwnerOnboarding() {
   const [fromSummary, setFromSummary] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [otherFood, setOtherFood] = useState("");
   const [showOtherFood, setShowOtherFood] = useState(false);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,6 +189,18 @@ export default function OwnerOnboarding() {
         testID="own-name"
       />,
       nextButton(petName === ""),
+    );
+  }
+
+  if (step === "photos") {
+    return frame(
+      `Add photos of ${petName}`,
+      <PetPhotosStep photos={draft.photos} onChange={(photos) => update({ photos })} onBusy={setPhotoBusy} />,
+      <>
+        <Button label={photoBusy ? "Uploading…" : "Next"} onPress={next} disabled={photoBusy || draft.photos.length === 0} testID="own-next" />
+        {skipLink}
+      </>,
+      "The first one is the cover.",
     );
   }
 
@@ -385,6 +399,7 @@ export default function OwnerOnboarding() {
   const chips = safetyChips(profile.safety, foods);
   const rows: { id: string; label: string; value: string }[] = [
     { id: "name", label: "Name", value: petName },
+    { id: "photos", label: "Photos", value: draft.photos.length ? String(draft.photos.length) : "Not shared yet" },
     { id: "breed", label: "Breed", value: draft.breed.trim() || "Not shared yet" },
     {
       id: "age",
