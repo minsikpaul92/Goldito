@@ -1,0 +1,469 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Redirect, router } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
+import { BigInput } from "../components/ownerOnboarding/BigInput";
+import { BigOption } from "../components/ownerOnboarding/BigOption";
+import { StepFrame } from "../components/ownerOnboarding/StepFrame";
+import { Banner } from "../components/ui/Banner";
+import { Button } from "../components/ui/Button";
+import { Chip } from "../components/ui/Chip";
+import { LoadingView } from "../components/ui/LoadingView";
+import { Stepper } from "../components/ui/Stepper";
+import { TextButton } from "../components/ui/TextButton";
+import {
+  EMPTY_DRAFT,
+  OwnerOnboardingDraft,
+  clearDraft,
+  foodsFromDraft,
+  loadDraft,
+  profileFromDraft,
+  saveDraft,
+} from "../features/ownerOnboarding/draft";
+import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
+import {
+  FOOD_CHIPS,
+  SAFETY_QUESTIONS,
+  Score,
+  chartQuestions,
+  fill,
+} from "../features/ownerOnboarding/questions";
+import { safetyChips } from "../features/ownerOnboarding/scoring";
+import { progress, stepIds, stepIndex } from "../features/ownerOnboarding/steps";
+import { normalizeAllergen } from "../features/pets/petValidation";
+import { useSession } from "../providers/SessionProvider";
+import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
+import { useToast } from "../providers/ToastProvider";
+import { Theme } from "../theme/themes";
+import type { Species } from "../types/db";
+
+/** Shown once to a new owner (owner_profiles.onboarded_at is null, 014v): their first pet, one question per screen. */
+const PICK_DELAY_MS = 200;
+const MAX_NAME = 40;
+const MAX_PET_INTRO = 200;
+
+export default function OwnerOnboarding() {
+  const session = useSession();
+  const toast = useToast();
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const userId = session.status === "signedIn" ? session.profile.id : null;
+  const [draft, setDraft] = useState<OwnerOnboardingDraft | null>(null);
+  // Editing one answer from the summary returns to the summary instead of going on.
+  const [fromSummary, setFromSummary] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [otherFood, setOtherFood] = useState("");
+  const [showOtherFood, setShowOtherFood] = useState(false);
+  const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    void loadDraft(userId).then((d) => active && setDraft(d));
+    return () => {
+      active = false;
+      if (pickTimer.current) clearTimeout(pickTimer.current);
+    };
+  }, [userId]);
+
+  const update = useCallback(
+    (patch: Partial<OwnerOnboardingDraft>) => {
+      setDraft((current) => {
+        const next = { ...(current ?? EMPTY_DRAFT), ...patch };
+        if (userId) void saveDraft(userId, next);
+        return next;
+      });
+    },
+    [userId],
+  );
+
+  if (session.status === "loading") return <LoadingView />;
+  if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
+  if (!draft) return <LoadingView />;
+
+  const ids = stepIds(draft.species);
+  const index = stepIndex(ids, draft.step);
+  const step = ids[index];
+  const petName = draft.name.trim();
+  const species = draft.species;
+
+  const goTo = (id: string) => update({ step: id });
+  const next = () => {
+    if (fromSummary) {
+      setFromSummary(false);
+      goTo("summary");
+    } else {
+      goTo(ids[Math.min(ids.length - 1, index + 1)]);
+    }
+  };
+  const back = () => {
+    setError(null);
+    if (fromSummary) {
+      setFromSummary(false);
+      goTo("summary");
+    } else if (index > 0) goTo(ids[index - 1]);
+  };
+  const pick = (patch: Partial<OwnerOnboardingDraft>, then: () => void = next) => {
+    update(patch);
+    if (pickTimer.current) clearTimeout(pickTimer.current);
+    pickTimer.current = setTimeout(then, PICK_DELAY_MS);
+  };
+  const edit = (id: string) => {
+    setFromSummary(true);
+    goTo(id);
+  };
+
+  const finish = async (petId: string | null) => {
+    if (!userId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      if (petId) await saveOwnerOnboarding(userId, draft, petId);
+      else await markOwnerOnboarded(userId);
+      await clearDraft(userId);
+      if (petId) toast.show(`${petName} is added`);
+      router.replace("/owner");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const skipLink = (
+    <TextButton label="Skip" onPress={next} testID="own-skip" />
+  );
+  const nextButton = (disabled = false) => <Button label="Next" onPress={next} disabled={disabled} testID="own-next" />;
+  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string) => (
+    <StepFrame
+      progress={progress(ids, step)}
+      title={title}
+      hint={hint}
+      onBack={index > 0 || fromSummary ? back : undefined}
+      footer={footer}
+      testID={`own-step-${step}`}
+    >
+      {body}
+    </StepFrame>
+  );
+
+  if (step === "species") {
+    // The step list is built from the species, so the move to the name screen is explicit (`next` still sees the old list).
+    const choose = (value: Species) =>
+      pick(value === draft.species ? {} : { species: value, answers: {}, safety: {} }, () => goTo("name"));
+    return (
+      <StepFrame
+        progress={0}
+        title="What kind of pet do you have?"
+        footer={
+          <TextButton
+            label={saving ? "Saving…" : "Add a pet later"}
+            onPress={() => void finish(null)}
+            disabled={saving}
+            testID="own-later"
+          />
+        }
+        testID="own-step-species"
+      >
+        <BigOption label="Dog" selected={species === "dog"} onPress={() => choose("dog")} testID="own-species-dog" />
+        <BigOption label="Cat" selected={species === "cat"} onPress={() => choose("cat")} testID="own-species-cat" />
+        {error ? <Banner tone="error" body={error} /> : null}
+      </StepFrame>
+    );
+  }
+
+  if (step === "name") {
+    return frame(
+      "What's your pet's name?",
+      <BigInput
+        value={draft.name}
+        onChangeText={(name) => update({ name: name.slice(0, MAX_NAME) })}
+        onSubmitEditing={() => petName && next()}
+        returnKeyType="next"
+        autoFocus
+        accessibilityLabel="Pet name"
+        testID="own-name"
+      />,
+      nextButton(petName === ""),
+    );
+  }
+
+  if (step === "breed") {
+    return frame(
+      `What breed is ${petName}?`,
+      <BigInput
+        value={draft.breed}
+        onChangeText={(breed) => update({ breed })}
+        onSubmitEditing={next}
+        returnKeyType="next"
+        accessibilityLabel="Breed"
+        testID="own-breed"
+      />,
+      <>
+        {nextButton(draft.breed.trim() === "")}
+        {skipLink}
+      </>,
+      "A mix is fine. Write what you think.",
+    );
+  }
+
+  if (step === "age") {
+    const years = draft.ageYears ?? 3;
+    return frame(
+      `How old is ${petName}?`,
+      <View style={styles.center}>
+        <Stepper
+          label="Age"
+          value={`${years} ${years === 1 ? "year" : "years"}`}
+          onDecrease={() => update({ ageYears: Math.max(0, years - 1) })}
+          onIncrease={() => update({ ageYears: Math.min(30, years + 1) })}
+          canDecrease={years > 0}
+          canIncrease={years < 30}
+          actions={["younger", "older"]}
+          testID="own-age"
+        />
+      </View>,
+      <>
+        <Button
+          label="Next"
+          onPress={() => {
+            if (draft.ageYears === null) update({ ageYears: years });
+            next();
+          }}
+          testID="own-next"
+        />
+        {skipLink}
+      </>,
+    );
+  }
+
+  if (step === "weight") {
+    return frame(
+      `How much does ${petName} weigh?`,
+      <BigInput
+        value={draft.weightKg}
+        onChangeText={(weightKg) => update({ weightKg })}
+        onSubmitEditing={next}
+        keyboardType="decimal-pad"
+        placeholder="kg"
+        accessibilityLabel="Weight in kg"
+        testID="own-weight"
+      />,
+      <>
+        {nextButton(draft.weightKg.trim() === "")}
+        {skipLink}
+      </>,
+      "In kg.",
+    );
+  }
+
+  if (step === "petIntro") {
+    return frame(
+      `Tell us about ${petName}`,
+      <BigInput
+        value={draft.petIntro}
+        onChangeText={(petIntro) => update({ petIntro: petIntro.slice(0, MAX_PET_INTRO) })}
+        multiline
+        accessibilityLabel={`About ${petName}`}
+        testID="own-pet-intro"
+      />,
+      <>
+        {nextButton(draft.petIntro.trim() === "")}
+        {skipLink}
+      </>,
+    );
+  }
+
+  if (step.startsWith("q:") && species) {
+    const question = chartQuestions(species).find((q) => `q:${q.key}` === step);
+    if (!question) return <Redirect href="/owner" />;
+    return frame(
+      fill(question.prompt, petName),
+      question.options.map((label, i) => (
+        <BigOption
+          key={label}
+          label={label}
+          selected={draft.answers[question.key] === i + 1}
+          onPress={() => pick({ answers: { ...draft.answers, [question.key]: (i + 1) as Score } })}
+          testID={`own-opt-${i + 1}`}
+        />
+      )),
+      skipLink,
+    );
+  }
+
+  if (step.startsWith("s:")) {
+    const question = SAFETY_QUESTIONS.find((q) => `s:${q.key}` === step);
+    if (!question) return <Redirect href="/owner" />;
+    return frame(
+      fill(question.prompt, petName),
+      question.options.map((option) => (
+        <BigOption
+          key={option.value}
+          label={option.label}
+          selected={draft.safety[question.key] === option.value}
+          onPress={() => pick({ safety: { ...draft.safety, [question.key]: option.value } })}
+          testID={`own-safe-${option.value}`}
+        />
+      )),
+      skipLink,
+    );
+  }
+
+  if (step === "foods") {
+    const foods = foodsFromDraft(draft);
+    const toggle = (food: string) => {
+      const key = normalizeAllergen(food);
+      const on = foods.includes(key);
+      const nextFoods = on ? foods.filter((f) => f !== key) : [...foods, key];
+      update({ foods: nextFoods, safety: { ...draft.safety, s6: nextFoods.length > 0 ? "listed" : "" } });
+    };
+    const addOther = () => {
+      const key = normalizeAllergen(otherFood);
+      if (key && !foods.includes(key)) update({ foods: [...foods, key], safety: { ...draft.safety, s6: "listed" } });
+      setOtherFood("");
+      setShowOtherFood(false);
+    };
+    const typed = foods.filter((f) => !FOOD_CHIPS.some((c) => normalizeAllergen(c) === f));
+    return frame(
+      `Foods ${petName} must avoid?`,
+      <>
+        <View style={styles.grid}>
+          {FOOD_CHIPS.map((food) => (
+            <BigOption
+              key={food}
+              label={food}
+              selected={foods.includes(normalizeAllergen(food))}
+              onPress={() => toggle(food)}
+              style={styles.half}
+              testID={`own-food-${normalizeAllergen(food)}`}
+            />
+          ))}
+          {typed.map((food) => (
+            <BigOption key={food} label={food} selected onPress={() => toggle(food)} style={styles.half} testID={`own-food-${food}`} />
+          ))}
+          <BigOption
+            label="None"
+            selected={foods.length === 0 && draft.safety.s6 === "none"}
+            onPress={() => update({ foods: [], safety: { ...draft.safety, s6: "none" } })}
+            style={styles.half}
+            testID="own-food-none"
+          />
+          <BigOption label="Something else" onPress={() => setShowOtherFood(true)} style={styles.half} testID="own-food-else" />
+        </View>
+        {showOtherFood ? (
+          <View style={styles.row}>
+            <View style={styles.rowInput}>
+              <BigInput
+                value={otherFood}
+                onChangeText={setOtherFood}
+                onSubmitEditing={addOther}
+                autoFocus
+                accessibilityLabel="Another food"
+                testID="own-food-other-input"
+              />
+            </View>
+            <Button label="Add" onPress={addOther} disabled={otherFood.trim() === ""} testID="own-food-other-add" />
+          </View>
+        ) : null}
+      </>,
+      <>
+        {nextButton(foods.length === 0 && draft.safety.s6 !== "none")}
+        {skipLink}
+      </>,
+    );
+  }
+
+  // Summary: what will be saved. Tap a row to change it.
+  const foods = foodsFromDraft(draft);
+  const profile = profileFromDraft(draft);
+  const chartTotal = species ? chartQuestions(species).length : 0;
+  const answered = Object.keys(profile.answers).length;
+  const safeAnswered = SAFETY_QUESTIONS.filter((q) => profile.safety[q.key]).length;
+  const chips = safetyChips(profile.safety, foods);
+  const rows: { id: string; label: string; value: string }[] = [
+    { id: "name", label: "Name", value: petName },
+    { id: "breed", label: "Breed", value: draft.breed.trim() || "Not shared yet" },
+    {
+      id: "age",
+      label: "Age",
+      value: draft.ageYears === null ? "Not shared yet" : `${draft.ageYears} ${draft.ageYears === 1 ? "year" : "years"}`,
+    },
+    { id: "weight", label: "Weight", value: draft.weightKg.trim() ? `${draft.weightKg.trim()} kg` : "Not shared yet" },
+    { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
+    { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
+    { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
+    { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.safety.s6 === "none" ? "None" : "Not shared yet" },
+  ];
+  return (
+    <StepFrame
+      progress={1}
+      title={`Meet ${petName}`}
+      onBack={back}
+      footer={
+        <>
+          {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
+          <Button label={saving ? "Saving…" : `Save ${petName}`} onPress={() => void finish(draft.petId ?? ensurePetId())} disabled={saving} testID="own-save" />
+        </>
+      }
+      testID="own-step-summary"
+    >
+      {rows.map((row) => (
+        <Pressable
+          key={row.label}
+          accessibilityRole="button"
+          accessibilityLabel={`Change ${row.label}`}
+          onPress={() => edit(row.id)}
+          style={styles.summaryRow}
+          testID={`own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`}
+        >
+          <View style={styles.summaryText}>
+            <Text style={styles.summaryLabel}>{row.label}</Text>
+            <Text style={styles.summaryValue}>{row.value}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
+        </Pressable>
+      ))}
+      {chips.length > 0 ? (
+        <View style={styles.chips}>
+          {chips.map((chip) => (
+            <Chip key={chip.key} label={chip.text} />
+          ))}
+        </View>
+      ) : null}
+    </StepFrame>
+  );
+
+  function ensurePetId(): string {
+    const id = newPetId();
+    update({ petId: id });
+    return id;
+  }
+}
+
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    center: { alignItems: "center", paddingVertical: theme.spacing.lg },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
+    half: { flexBasis: "47%", flexGrow: 1 },
+    row: { flexDirection: "row", gap: theme.spacing.sm, alignItems: "center" },
+    rowInput: { flex: 1 },
+    summaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      minHeight: 64,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      backgroundColor: theme.color.surface,
+      borderRadius: theme.ui.radius.button,
+      borderWidth: 1,
+      borderColor: theme.color.border,
+    },
+    summaryText: { flex: 1, gap: 2 },
+    summaryLabel: { fontSize: 18, color: theme.color.textMuted },
+    summaryValue: { fontSize: 20, lineHeight: 26, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
+  });

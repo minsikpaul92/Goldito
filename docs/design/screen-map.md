@@ -60,6 +60,23 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 | EmptyState | No pets yet | — | 41 |
 | Button | Add pet | `add-pet` | 61 |
 
+### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
+
+Shows: `BigInput` · `BigOption` · `StepFrame`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | Skip | `own-skip` | 136 |
+| Button | Next | `own-next` | 138 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 161 |
+| Banner | `error` | — | 172 |
+| Stepper | Age | `own-age` | 217 |
+| Button | Next | `own-next` | 229 |
+| Button | Add | `own-food-other-add` | 368 |
+| Banner | `error` | `own-error` | 407 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 408 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 414 |
+
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
 Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3).
@@ -1271,6 +1288,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
 
+### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `testID` | 21 |
+
+### StepFrame — [components/ownerOnboarding/StepFrame.tsx](../../frontend/components/ownerOnboarding/StepFrame.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Back | `own-back` | 30 |
+
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1417,4 +1446,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-410 actions · 409 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+420 actions · 419 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

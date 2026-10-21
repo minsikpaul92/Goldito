@@ -199,6 +199,8 @@ export type MockDb = {
   proposals: Row[];
   /** Meet & Greet RPC calls: { fn, ...params }. */
   meetGreetCalls: Row[];
+  /** create_pet_with_profile calls (014v) with their parameters. */
+  createPetCalls: Row[];
   /** complete_handoff calls. */
   completions: Row[];
   /** Pet Transit (012): the trips of the two parties; the RPCs below follow the SQL rules. */
@@ -290,6 +292,7 @@ function createMockDb(): MockDb {
     proposals: [],
     stayChecks: [],
     meetGreetCalls: [],
+    createPetCalls: [],
     completions: [],
     trips: [],
     taskCompletions: [],
@@ -1079,6 +1082,30 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       if (p_finish) profile.onboarded_at = profile.onboarded_at ?? new Date(nowMs()).toISOString();
     }
     return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/create_pet_with_profile") {
+    const a = request.postDataJSON();
+    if (!me || !a.p_id || !String(a.p_name ?? "").trim()) return fail("invalid_pet");
+    db.createPetCalls.push(a);
+    const row = {
+      id: a.p_id,
+      owner_id: me,
+      species: a.p_species,
+      name: a.p_name,
+      breed: a.p_breed,
+      birthdate: a.p_birthdate,
+      weight_kg: a.p_weight_kg,
+      notes: a.p_notes,
+      profile: a.p_profile ?? {},
+      created_at: new Date(nowMs()).toISOString(),
+    };
+    const at = db.pets.findIndex((p) => p.id === a.p_id);
+    if (at >= 0) db.pets[at] = { ...db.pets[at], ...row };
+    else db.pets.push(row);
+    db.pet_allergies.splice(0, db.pet_allergies.length, ...db.pet_allergies.filter((x) => x.pet_id !== a.p_id));
+    for (const allergen of a.p_allergens ?? []) db.pet_allergies.push({ id: `al-${a.p_id}-${allergen}`, pet_id: a.p_id, allergen });
+    return json(route, 200, a.p_id);
   }
 
   if (path === "rpc/save_weekday_hours") {

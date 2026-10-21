@@ -21,6 +21,10 @@ export type OwnerOnboardingDraft = {
   /** Foods to avoid: chip names and typed ones, lowercase. */
   foods: string[];
   intro: string;
+  /** The step the owner is on (a step id from steps.ts), so a reload goes on from there. */
+  step: string;
+  /** Made at the first save attempt, so a retry updates the same pet instead of adding another. */
+  petId: string | null;
 };
 
 export const EMPTY_DRAFT: OwnerOnboardingDraft = {
@@ -35,6 +39,8 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   safety: {},
   foods: [],
   intro: "",
+  step: "species",
+  petId: null,
 };
 
 const key = (userId: string) => `goldito.ownerOnboarding.${userId}`;

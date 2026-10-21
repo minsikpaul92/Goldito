@@ -251,7 +251,8 @@ export const SAFETY_QUESTIONS: SafetyQuestion[] = [
 /** The last safety question: foods to avoid. Chips plus "Something else". Saved as pet allergies. */
 export const FOOD_CHIPS = ["Chicken", "Beef", "Dairy", "Wheat", "Fish"] as const;
 
-export const SAFETY_KEYS = SAFETY_QUESTIONS.map((q) => q.key);
+/** s6 is the foods question: "none" or "listed" (the foods themselves are saved as the pet's allergies). */
+export const SAFETY_KEYS = [...SAFETY_QUESTIONS.map((q) => q.key), "s6"];
 
 export function fill(text: string, name: string): string {
   return text.replace(/\{name\}/g, name.trim() || "your pet");
