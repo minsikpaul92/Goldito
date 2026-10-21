@@ -110,6 +110,13 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-pet-intro").fill("Loves the sofa.");
     await screen.getByTestId("own-next").click();
 
+    // Before the questions: where they come from, with links to the surveys they were inspired by.
+    await expect(screen.getByTestId("own-title")).toHaveText("Where these questions come from");
+    await expect(screen.getByTestId("own-sources")).toContainText("MCPQ-R");
+    await expect(screen.getByTestId("own-sources")).toContainText("C-BARQ");
+    await expect(screen.getByText("It is not a behavior test.")).toBeVisible();
+    await screen.getByTestId("own-next").click();
+
     // The 12 chart questions: the name is in every question, a tap goes on by itself.
     await expect(screen.getByTestId("own-title")).toHaveText("When a visitor comes in, Pip…");
     for (let i = 1; i <= 12; i++) {
@@ -202,6 +209,9 @@ test.describe("owner onboarding", () => {
       await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
+    await expect(screen.getByTestId("own-step-about")).toBeVisible();
+    await expect(screen.getByTestId("own-sources")).toContainText("Feline Five");
+    await screen.getByTestId("own-next").click();
     // Cat list: 10 chart questions, no dog-only wording.
     for (let i = 1; i <= 10; i++) {
       await expect(screen.getByTestId(`own-step-q:c${i}`)).toBeVisible();
@@ -236,7 +246,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-step-photos")).toBeVisible();
-    await screen.getByTestId("own-back").click();
+    await screen.getByTestId("own-back-bottom").click(); // the Back link under the answers does the same as the arrow
     await expect(screen.getByTestId("own-name")).toHaveValue("Pip");
     await screen.getByTestId("own-next").click();
     await page.reload();
@@ -281,6 +291,7 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
+    await screen.getByTestId("own-next").click(); // where the questions come from
     await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
     for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
     await expect(screen.getByTestId("own-step-location")).toBeVisible();
@@ -374,7 +385,8 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-weight")).toHaveValue("5.9");
     await screen.getByTestId("own-next").click();
-    await screen.getByTestId("own-skip").click(); // about
+    await screen.getByTestId("own-skip").click(); // about the pet
+    await screen.getByTestId("own-next").click(); // where the questions come from
 
     // A chart answer arrives chosen and marked, and Next keeps it.
     await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
@@ -488,8 +500,8 @@ test.describe("owner onboarding", () => {
     }
     await page.reload();
     // Everything the owner picked survives a reload; the guess itself is not asked for again.
-    await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
-    for (let i = 0; i < 5; i++) await screen.getByTestId("own-back").click(); // about, weight, age, color, breed
+    await expect(screen.getByTestId("own-step-about")).toBeVisible();
+    for (let i = 0; i < 5; i++) await screen.getByTestId("own-back").click(); // about the pet, weight, age, color, breed
     await expect(screen.getByTestId("own-breed")).toHaveValue("Poodle mix");
   });
 

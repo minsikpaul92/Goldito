@@ -184,6 +184,19 @@ export const CAT_QUESTIONS: ChartQuestion[] = [
   },
 ];
 
+/** Where the ideas for the questions come from (we wrote the questions ourselves; see docs/plan/pet-profile-onboarding.ko.md §4). */
+export const QUESTION_SOURCES: Record<Species, { label: string; url: string }[]> = {
+  dog: [
+    { label: "MCPQ-R, dog personality", url: "https://wellbeingintlstudiesrepository.org/person/9" },
+    { label: "C-BARQ, Penn Vet", url: "https://vetapps.vet.upenn.edu/cbarq/" },
+    { label: "DPQ, Gosling lab", url: "https://gosling.psy.utexas.edu/scales-weve-developed/dog-personality-questionnaire-dpq/" },
+  ],
+  cat: [
+    { label: "Feline Five", url: "https://kinship.com/cat-behavior/feline-five-study" },
+    { label: "Fe-BARQ, Penn Vet", url: "https://vetapps.vet.upenn.edu/febarq/about.cfm" },
+  ],
+};
+
 export function chartQuestions(species: Species): ChartQuestion[] {
   return species === "cat" ? CAT_QUESTIONS : DOG_QUESTIONS;
 }

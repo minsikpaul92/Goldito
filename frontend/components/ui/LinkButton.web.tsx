@@ -1,5 +1,8 @@
 import { useTheme } from "../../providers/ThemeProvider";
 
+// The page font does not reach a plain <a> inside the app frame (it came out serif), so the system stack is named.
+const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
 type Props = {
   label: string;
   href: string;
@@ -31,7 +34,7 @@ export function LinkButton({ label, href, look = "button", testID }: Props) {
           textDecoration: "none",
           cursor: "pointer",
           color: theme.color.primary,
-          fontFamily: "inherit",
+          fontFamily: FONT,
           fontSize: theme.fontSize.body,
           fontWeight: 600,
         }}
@@ -56,7 +59,7 @@ export function LinkButton({ label, href, look = "button", testID }: Props) {
         border: `1px solid ${theme.color.border}`,
         borderRadius: theme.radius.md,
         color: theme.color.primary,
-        fontFamily: "inherit",
+        fontFamily: FONT,
         fontSize: theme.fontSize.body,
         fontWeight: 600,
         padding: `${theme.spacing.sm + 4}px ${theme.spacing.md}px`,
