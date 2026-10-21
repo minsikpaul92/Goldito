@@ -17,7 +17,7 @@ import { Theme } from "../../../theme/themes";
 
 /**
  * Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets.
- * Pet: the 8-bit pet room of one pet.
+ * Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
  */
 export default function OwnerHome() {
   const styles = useThemedStyles(makeStyles);
@@ -60,6 +60,7 @@ export default function OwnerHome() {
       {pets.map((pet) => (
         <PetCard key={pet.id} pet={pet} inCare={inCare[pet.id]} onPress={() => router.push(`/owner/pets/${pet.id}`)} />
       ))}
+      <Button label="Add pet" onPress={addPet} testID="add-pet" />
     </Screen>
   );
 
@@ -72,9 +73,6 @@ export default function OwnerHome() {
           { label: "Pet", content: <PetPage pets={pets} onChanged={() => void reload()} /> },
         ]}
       />
-      <View style={styles.footer}>
-        <Button label="Add pet" onPress={addPet} testID="add-pet" />
-      </View>
     </View>
   );
 }
@@ -87,11 +85,5 @@ const makeStyles = (theme: Theme) =>
     },
     list: {
       gap: theme.spacing.md,
-    },
-    footer: {
-      padding: theme.spacing.md,
-      maxWidth: 480,
-      width: "100%",
-      alignSelf: "center",
     },
   });

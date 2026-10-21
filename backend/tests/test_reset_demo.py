@@ -345,6 +345,8 @@ def test_each_set_gets_its_own_pets():
     dog = next(p for p in db.tables["pets"] if p["name"] == "Biscuit")
     assert dog["species"] == "dog"
     assert [a["allergen"] for a in db.tables["pet_allergies"]] == ["chicken"]  # the Treat check demo still works
+    # No sign-up answers for these two, but the pixel pet still gets its coat.
+    assert {p["name"]: p["profile"].get("coat") for p in db.tables["pets"]} == {"Biscuit": "mixed", "Luna": "cream"}
 
 
 def test_all_pet_names_in_the_demo_sets_differ():
@@ -352,6 +354,15 @@ def test_all_pet_names_in_the_demo_sets_differ():
 
     names = [pet[0] for demo_set in DEMO_SETS for pet in demo_set.pets]
     assert len(names) == len(set(names))
+
+
+def test_every_demo_pet_has_a_coat_from_the_sign_up_colors():
+    from app.services.demo_accounts import DEMO_COATS, DEMO_SETS
+
+    coats = {"white", "cream", "golden", "orange", "brown", "black", "gray", "mixed"}
+    for demo_set in DEMO_SETS:
+        for pet in demo_set.pets:
+            assert DEMO_COATS[pet[0]] in coats
 
 
 
@@ -467,13 +478,23 @@ def test_the_demo_pets_get_their_answers_and_an_old_pet_gets_them_too():
     assert by_name["Mochi"]["profile"] == demo_accounts.DEMO_PET_PROFILES["Mochi"]
 
 
-def test_answers_an_owner_gave_are_kept():
+def test_answers_an_owner_gave_are_kept_and_a_missing_coat_is_filled_in():
     db = world()
     db.tables["pets"][0]["profile"] = {"v": 1, "answers": {"d1": 1}, "safety": {}}
 
     demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
 
-    assert db.tables["pets"][0]["profile"] == {"v": 1, "answers": {"d1": 1}, "safety": {}}
+    assert db.tables["pets"][0]["profile"] == {"v": 1, "answers": {"d1": 1}, "safety": {}, "coat": "white"}
+
+
+def test_a_coat_or_photo_colors_the_owner_picked_are_kept():
+    db = world()
+    picked = {"v": 1, "answers": {}, "safety": {}, "coat": "black", "pixel_colors": {"v": 1, "base": "#111111"}}
+    db.tables["pets"][0]["profile"] = dict(picked)
+
+    demo_reset.reset(db, OWNER, SITTER, TODAY, state="pets", apply=True)
+
+    assert db.tables["pets"][0]["profile"] == picked
 
 
 def test_the_demo_answers_use_real_question_keys():

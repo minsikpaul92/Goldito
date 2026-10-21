@@ -52,7 +52,7 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet.
+Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
 Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
@@ -60,7 +60,7 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your pets | — | 33 |
 | EmptyState | No pets yet | — | 46 |
-| Button | Add pet | `add-pet` | 76 |
+| Button | Add pet | `add-pet` | 63 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -383,13 +383,13 @@ Shows: `ActiveTripCard` · `SitterDashboard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 74 |
-| EmptyState | No bookings yet | — | 106 |
-| Pressable | — | `home-photo-request` | 126 |
-| Pressable | — | `today-requests` | 138 |
-| Pressable | — | `today-chats` | 149 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 169 |
-| Pressable | — | ``request-row-${b.id}`` | 189 |
+| EmptyState | Couldn't load today | — | 81 |
+| EmptyState | No bookings yet | — | 113 |
+| Pressable | — | `home-photo-request` | 134 |
+| Pressable | — | `today-requests` | 146 |
+| Pressable | — | `today-chats` | 157 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 177 |
+| Pressable | — | ``request-row-${b.id}`` | 197 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -1233,11 +1233,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Pressable | — | `id` | 79 |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 99 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 113 |
-| Tag | `tag` | — | 153 |
-| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 156 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 166 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 101 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 115 |
+| Tag | `tag` | — | 155 |
+| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 158 |
+| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 168 |
 | Sheet | Heads-up | `headsup-sheet` | 185 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
@@ -1379,14 +1379,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 70 |
-| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 101 |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 49 |
 
 ### SitterPetRoom — [components/pet/SitterPetRoom.tsx](../../frontend/components/pet/SitterPetRoom.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``caring-pet-${p.id}`` | 32 |
+| Pressable | — | ``caring-pet-${p.id}`` | 33 |
 | Pressable | ``${action.label} ${pet.name}`` | ``pet-action-${pet.id}-${action.key}`` | 86 |
 
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
@@ -1535,4 +1534,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-452 actions · 451 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+451 actions · 450 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

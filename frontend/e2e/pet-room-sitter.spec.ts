@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { caring } from "./careFixtures";
-import { NOON_TORONTO, app, signIn } from "./helpers";
+import { NOON_TORONTO, app, box, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // The pet room on the sitter's Home (11.12, #184): the pixel pet (its preset in the coat or the owner's photo colors)
@@ -37,6 +37,18 @@ test.describe("sitter pet room", () => {
     await expect(screen.getByTestId("pet-room-Max")).toHaveCount(0);
     for (const key of ["feed", "potty", "nap"]) await expect(screen.getByTestId(tap(MOCHI, key))).toBeVisible();
     await expect(screen.getByTestId(tap(MOCHI, "walk"))).toHaveCount(0);
+  });
+
+  test("the pet room comes first on Home and is the biggest thing on the first screen", async ({ page }) => {
+    await setup(page);
+    const screen = app(page);
+    const home = await box(screen.getByTestId("sitter-home"));
+    const room = await box(screen.getByTestId("pet-room-Max"));
+    const stats = await box(screen.getByTestId("stat-tasks"));
+    expect(room.y).toBeLessThan(stats.y);
+    expect(room.y + room.height).toBeLessThanOrEqual(home.y + home.height + 1);
+    expect(room.height).toBeGreaterThan(home.height * 0.45);
+    expect((await box(screen.getByTestId("pet-room-Max-sprite"))).height).toBeGreaterThan(home.height * 0.15);
   });
 
   test("a tap is a check-in: the owner is told and the pet reacts", async ({ page }) => {

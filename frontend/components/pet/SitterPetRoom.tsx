@@ -17,15 +17,16 @@ import { PetRoom } from "./PetRoom";
  * The pets in care on the sitter's Home (11.12): the same pixel pet the owner sees, one at a time (name chips switch
  * when there are several), and four taps under it (feed, walk, poop, nap). Each tap is a care check-in with a default
  * value, so the owner is told and the pet reacts right away. Tapping the pet opens the full check-in (memo, photo).
+ * `height` is the room's share of Home (chips included); the pet grows to fill it.
  */
-export function SitterPetRoom({ pets }: { pets: CaringPet[] }) {
+export function SitterPetRoom({ pets, height }: { pets: CaringPet[]; height: number }) {
   const styles = useThemedStyles(makeStyles);
   const [selected, setSelected] = useState(pets[0]?.id);
   const pet = pets.find((p) => p.id === selected) ?? pets[0];
   if (!pet) return null;
 
   return (
-    <View style={styles.root} testID="today-caring">
+    <View style={[styles.root, { height }]} testID="today-caring">
       {pets.length > 1 ? (
         <View style={styles.chips}>
           {pets.map((p) => (
@@ -79,7 +80,6 @@ function PetTaps({ pet }: { pet: CaringPet }) {
       pet={{ id: pet.id, name: pet.name, species: pet.species, coat, breed, weightKg, colors }}
       reloadKey={reloadKey}
       onPress={() => router.push(`/sitter/checkin/${pet.id}`)}
-      compact
     >
       <View style={styles.actions}>
         {petActionsFor(pet.species).map((action) => (

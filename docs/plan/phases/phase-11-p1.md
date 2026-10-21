@@ -55,7 +55,10 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 | **PS.1** ✅ | **머리 모양 프리셋** (`features/pets/sprites/sprites.ts`): 개 4개, 고양이 2개, 모두 16x16 역할 글자 + 같은 눈 · 입 자리라 기분 5개가 다 됨. 견종 글자(자유 입력)를 검토된 24종(`backend/app/data/breed_needs.json`)에 맞춰 모양으로: **floppy**(늘어진 귀: 래브라도 · 골든 · 비글 · 닥스훈트 · 캐벌리어 · 로트와일러 · 오스트레일리안 셰퍼드 · 보더콜리, 모르는 견종 기본값) · **pointy**(선 귀: 저먼 셰퍼드 · 허스키 · 웰시코기 · 치와와) · **fluffy**(복슬: 푸들 · 말티즈 · 시츄 · 포메라니안 · 요크셔테리어) · **flat**(납작 얼굴: 불독 · 보스턴테리어 · 퍼그). 고양이 **short**(기본 · 벵갈) · **long**(장모 · 메인쿤 · 랙돌). 키는 `species_shape_coat_mood`(묵의 PNG도 이 이름). dev 갤러리에 모양 × 털색 × 기분 | 🤖 `pet-sprite`(모양마다 16x16 · 기분 5개 · 견종 매핑) |
 | **PS.2** ✅ | **크기는 몸무게**: 개 S(10 kg 미만) · M(25 kg까지) · L(그 위), 몸무게가 없으면 M. 고양이는 하나. 오너 히어로와 시터 Home 펫 방에서 펫이 차지하는 크기(S 70% · M 85% · L 100%) | 🤖 `pet-room` · `pet-room-sitter` |
 | **PS.3** ✅ | **사진은 색만**: Pet 페이지 **🎨 Match colors from photo** → 오린 펫에서 주된 색 3개(가장 흔한 색 = 털, 흔한 색 중 더 어두운 것 = 그늘, 더 밝은 것 = 주둥이; `features/pets/sprites/photoColors.ts`) → 미리보기(그 펫의 프리셋 모양에 그 색) → Save → `pets.profile.pixel_colors`. **Use coat color**로 지우면 온보딩 털색. 사진 머리(`pixel_head`)는 더 그리지 않고, 저장된 것은 무시 | 🤖 `pet-room`(저장 · 다른 답 유지 · 되돌리기) · `pet-sprite`(색 뽑기) |
-| PS.4 | test-guide TAMA-10 · TAMA-11 다시 쓰기, 사람 확인(데모 펫: Max 말티즈 → fluffy S, Mochi 고양이), TODO 정리 | 사람 |
+| **PS.4** ✅ | **펫 방이 Home에서 가장 크게** (2026-10-21 Minsik 요청): 펫 방이 받은 공간을 다 채우고 픽셀 크기를 그 높이에 맞춤(`PetRoomCard`, 작은 compact 모드 없앰). 오너 Pet 페이지는 스크롤 없이 남은 높이 전부(Add pet은 Today 페이지로). 시터 Home은 펫 방이 맨 위, 첫 화면의 70%(그 아래 통계 · 할 일은 스크롤). **데모 펫 털색**: 8마리 모두 `DEMO_COATS`, 리셋이 답은 두고 빠진 털색만 채움(Max white) | 🤖 `pet-room` · `pet-room-sitter` · `sitter-home` · `heads-up` · `due-reminder` · `test_reset_demo` |
+| PS.5 | 사람 확인(TAMA-4, TAMA-6, TAMA-10 to TAMA-13), 머지 뒤 데모 리셋으로 Max가 흰색인지 | 사람 |
+
+몸통 · 걷기 · 뒤돌기 같은 움직임과 더 촘촘한 픽셀(16x16 → 32x32)은 다음 PR(11.12b)에서 한다.
 
 ### 11.12 사진 → 픽셀 머리 (PR #261, 2026-10-21, 위 결정으로 대체: 머리 코드는 PS.3에서 지움, 오리기 · 색 계산만 남음)
 

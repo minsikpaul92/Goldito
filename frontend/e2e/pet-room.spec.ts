@@ -149,6 +149,17 @@ test.describe("pet room", () => {
     expect((await box(screen.getByTestId("pet-room-Rex"))).height).toBeCloseTo(roomMax.height, -1);
   });
 
+  test("the room fills the Pet page without scrolling, and the pet is the biggest thing on it", async ({ page }) => {
+    await setup(page, (db) => db.pets.push(pet("pet-rex", "Rex", "dog", { breed: "German Shepherd", weight_kg: 32 })));
+    const screen = app(page);
+    await screen.getByTestId("home-pager-dot-1").click();
+    const page1 = await box(screen.getByTestId("home-pager-page-1"));
+    const room = await box(screen.getByTestId("pet-room-Rex"));
+    expect(room.y + room.height).toBeLessThanOrEqual(page1.y + page1.height + 1);
+    expect(room.height).toBeGreaterThan(page1.height * 0.5);
+    expect((await box(screen.getByTestId("pet-room-Rex-sprite"))).height).toBeGreaterThan(page1.height * 0.25);
+  });
+
   test("Match colors from photo: the colors are saved to the pet, and Use the coat color takes them back", async ({ page }) => {
     await fakePetPhoto(page);
     const db = await setup(page, (db) =>

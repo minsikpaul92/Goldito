@@ -48,6 +48,29 @@ DEMO_PET_PROFILES: dict[str, dict] = {
 }
 
 
+# Every demo pet's coat (one of COATS in frontend/features/ownerOnboarding/questions.ts), so each pixel pet (11.12) has
+# its real color: the pets without sign-up answers get a profile with only the coat.
+DEMO_COATS: dict[str, str] = {
+    "Max": "white",
+    "Mochi": "gray",
+    "Biscuit": "mixed",
+    "Luna": "cream",
+    "Cooper": "orange",
+    "Olive": "gray",
+    "Teddy": "white",
+    "Leo": "brown",
+}
+
+
+def demo_pet_profile(name: str) -> dict | None:
+    """The `pets.profile` a demo pet starts with: its sign-up answers and coat, or only the coat."""
+    if name in DEMO_PET_PROFILES:
+        return DEMO_PET_PROFILES[name]
+    if name in DEMO_COATS:
+        return {"v": 1, "answers": {}, "safety": {}, "coat": DEMO_COATS[name]}
+    return None
+
+
 @dataclass(frozen=True)
 class DemoSet:
     key: str

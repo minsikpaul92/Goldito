@@ -23,6 +23,13 @@ export async function box(locator: Locator): Promise<Box> {
   return result;
 }
 
+/** Sitter Home (11.12): the pet room comes first and is whole on the first screen; today's tasks may scroll below it. */
+export async function petRoomOnFirstScreen(screen: FrameLocator): Promise<boolean> {
+  const home = await box(screen.getByTestId("sitter-home"));
+  const room = await box(screen.getByTestId("today-caring"));
+  return room.y >= home.y && room.y + room.height <= home.y + home.height + 1;
+}
+
 export function center(b: Box): Point {
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 }

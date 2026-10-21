@@ -26,10 +26,10 @@ import { TextButton } from "./ui/TextButton";
 const TODAY_ROWS = 3;
 
 /**
- * The sitter's Home while a stay is on: one screen, no scrolling — today's numbers, the next task
- * with its Done button, the pets in care (tap → check-in), and buttons into the bigger screens.
+ * The sitter's Home while a stay is on: the pet room first and biggest (`roomHeight`, tap the pet: check-in), then today's
+ * numbers, the next task with its Done button, and buttons into the bigger screens.
  */
-export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
+export function SitterDashboard({ pets, roomHeight }: { pets: CaringPet[]; roomHeight: number }) {
   const styles = useThemedStyles(makeStyles);
   const taskPets = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name, ownerName: p.ownerName })), [pets]);
   const { state, reload } = useTodayTasks(taskPets);
@@ -88,6 +88,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
 
   return (
     <View style={styles.root} testID="sitter-dashboard">
+      <SitterPetRoom pets={pets} height={roomHeight} />
+
       <View style={styles.stats}>
         {stat("Tasks done", items.length > 0 ? `${done}/${items.length}` : "0", "stat-tasks")}
         {stat("Check-ins", checkins == null ? "-" : String(checkins), "stat-checkins")}
@@ -174,8 +176,6 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
           <Text style={styles.muted}>Loading…</Text>
         )}
       </Card>
-
-      <SitterPetRoom pets={pets} />
 
       <View style={styles.shortcuts}>
         {shortcut("✅ All tasks", () => router.push("/sitter/tasks"), "shortcut-tasks")}

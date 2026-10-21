@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 import { caring, task as fixtureTask } from "./careFixtures";
-import { app, signIn } from "./helpers";
+import { app, petRoomOnFirstScreen, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 import type { MockDb } from "./supabaseMock";
 
@@ -80,7 +80,7 @@ test.describe("what the sitter sees", () => {
     await expect(screen.getByTestId("heads-up-Mochi")).toHaveCount(0); // nothing for Mochi
   });
 
-  test("Home shows one line, the sheet lists them by pet with the owner's name, and Home still fits one screen", async ({ page }) => {
+  test("Home shows one line, the sheet lists them by pet with the owner's name, and the pet room stays on the first screen", async ({ page }) => {
     const now = Date.now();
     test.skip(day(now) !== day(now + 40 * MIN), "too close to midnight in Toronto");
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
@@ -98,7 +98,7 @@ test.describe("what the sitter sees", () => {
 
     await expect(screen.getByTestId("headsup-compact")).toContainText("Max: Text instead of knocking");
     await expect(screen.getByTestId("headsup-compact")).toContainText("+2");
-    expect(await screen.getByTestId("sitter-home").evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+    expect(await petRoomOnFirstScreen(screen)).toBe(true);
 
     await screen.getByTestId("headsup-compact").click();
     const sheet = screen.getByTestId("headsup-sheet");
