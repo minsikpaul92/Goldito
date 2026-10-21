@@ -779,8 +779,16 @@ begin
       like 'Chloe can''t take Max and Mochi on %. Find a new sitter.',
     'E: owner told to find a new sitter');
   perform _t_as(robert);
-  select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) limit 1;
-  perform _t_ok(r.sitter_id = allen and r.covered_slots = r.total_slots, 'E: fully available sitter ranks first');
+  -- Only the fixture sitters count: a hosted database has real sitters (the demo ones) who are just as available and
+  -- can rank first, so the ranking is read among the fixtures.
+  select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s where s.sitter_id = allen;
+  perform _t_ok(r.covered_slots = r.total_slots, 'E: fully available sitter is fully covered');
+  perform _t_ok(
+    (select count(*) from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s
+      where s.sitter_id in (allen, paul, chloe) and s.covered_slots = s.total_slots) = 1
+    and (select s.sitter_id from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s
+         where s.sitter_id in (allen, paul, chloe) limit 1) = allen,
+    'E: among the fixture sitters the fully available one ranks first');
   select * into r from search_sitters(local_ts(d, '09:30'), local_ts(d + 3, '19:30'), 2) s where s.sitter_id = paul;
   perform _t_ok(r.covered_slots < r.total_slots, 'E: sitter without overnights shows as partly available');
   v_b := request_booking(allen, array[max, mochi], local_ts(d, '09:30'), 'sitter_home', null,
