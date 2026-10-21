@@ -58,6 +58,18 @@ test.describe("owner onboarding", () => {
         body: JSON.stringify({ results: [{ label: "100 Queen St W, Toronto", lat: 43.6534, lng: -79.3841 }] }),
       }),
     );
+    await page.route("**/api/breed-needs", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          chips: [{ kind: "grooming", text: "Brush daily", source: 0 }],
+          sources: [{ title: "AKC", url: "https://www.akc.org/dog-breeds/maltese/" }],
+          origin: "list",
+          basis: null,
+        }),
+      }),
+    );
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     const screen = app(page);
@@ -143,6 +155,7 @@ test.describe("owner onboarding", () => {
     await expect(glance.getByTestId("own-glance-chart")).toContainText("Very sensitive");
     await expect(glance.getByTestId("own-glance-chart")).toContainText("Steady");
     await expect(glance).toContainText("No chicken");
+    await expect(glance.getByTestId("own-glance-needs")).toContainText("Grooming: Brush daily");
     await expect(screen.getByTestId("own-row-photos")).toContainText("2");
     await expect(screen.getByTestId("own-row-personality")).toContainText("12 of 12 answered");
     await expect(screen.getByTestId("own-row-safety")).toContainText("2 of 5 answered");

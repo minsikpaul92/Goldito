@@ -27,6 +27,7 @@ import {
   weightFromDraft,
 } from "../features/ownerOnboarding/draft";
 import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
+import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
 import { NO_FACTS, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
@@ -72,6 +73,8 @@ export default function OwnerOnboarding() {
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [otherFood, setOtherFood] = useState("");
   const [showOtherFood, setShowOtherFood] = useState(false);
+  // On the summary the card also shows what the typed breed needs (it fills in a moment after).
+  const needs = useBreedNeeds(draft?.species ?? null, draft && draft.step === "summary" ? draft.breed : null);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Cover photos a guess was already asked for, so a photo is looked at once.
   const guessed = useRef<Set<string>>(new Set());
@@ -639,6 +642,7 @@ export default function OwnerOnboarding() {
           coverPublicId={draft.photos[0] ?? null}
           profile={profile}
           allergens={foods}
+          needs={needs}
           testID="own-glance"
         />
       ) : null}

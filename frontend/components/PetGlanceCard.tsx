@@ -2,8 +2,10 @@ import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, G, Line, Polygon, Polyline, Text as SvgText } from "react-native-svg";
 
 import { Avatar } from "./ui/Avatar";
+import { LinkButton } from "./ui/LinkButton";
 import { Card } from "./ui/Card";
 import { Tag, TagTone } from "./ui/Tag";
+import { BreedNeeds, NEEDS_LABEL } from "../features/ownerOnboarding/breedNeedsApi";
 import { AXIS_LABEL, chartAxes } from "../features/ownerOnboarding/questions";
 import { PetProfile, glance } from "../features/ownerOnboarding/scoring";
 import { petPhotoThumb } from "../features/ownerOnboarding/petPhotosApi";
@@ -21,6 +23,8 @@ type Props = {
   profile: PetProfile;
   /** Foods to avoid (the pet's allergies), lowercase. */
   allergens: string[];
+  /** What the breed needs, with its sources, when the lookup has an answer. */
+  needs?: BreedNeeds | null;
   /** Drawn inside another card: no border or padding of its own. */
   bare?: boolean;
   testID?: string;
@@ -46,7 +50,7 @@ function point(index: number, share: number, count: number): [number, number] {
  * chart has no numbers and no "higher is better"; an axis the owner did not describe says "Not shared yet" and is
  * left out of the shape. It is the owner's description, not an assessment.
  */
-export function PetGlanceCard({ name, species, facts, coverPublicId, profile, allergens, bare, testID }: Props) {
+export function PetGlanceCard({ name, species, facts, coverPublicId, profile, allergens, needs, bare, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const Wrapper = bare ? View : Card;
@@ -135,6 +139,20 @@ export function PetGlanceCard({ name, species, facts, coverPublicId, profile, al
         </Text>
       )}
 
+      {needs && needs.chips.length > 0 ? (
+        <View style={styles.needs} testID={testID ? `${testID}-needs` : undefined}>
+          <Text style={styles.needsTitle}>{needs.basis ? `Needs (based on ${needs.basis})` : "Needs"}</Text>
+          {needs.chips.map((chip) => (
+            <Text key={`${chip.kind}-${chip.text}`} style={styles.needLine}>{`${NEEDS_LABEL[chip.kind]}: ${chip.text}`}</Text>
+          ))}
+          <View style={styles.sources}>
+            {needs.sources.slice(0, 3).map((source, i) => (
+              <LinkButton key={source.url} label={`Source: ${new URL(source.url).hostname.replace(/^www\./, "")}`} href={source.url} look="text" testID={testID ? `${testID}-source-${i + 1}` : `glance-source-${i + 1}`} />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       <Text style={styles.footnote}>Owner's description, not an assessment.</Text>
     </Wrapper>
   );
@@ -151,6 +169,10 @@ const makeStyles = (theme: Theme) =>
     facts: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
     chart: { alignItems: "center" },
+    needs: { gap: 2 },
+    needsTitle: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    needLine: { fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, color: theme.color.text },
+    sources: { flexDirection: "row", flexWrap: "wrap", columnGap: theme.spacing.sm },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     footnote: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

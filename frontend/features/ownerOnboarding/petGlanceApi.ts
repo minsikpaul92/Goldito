@@ -8,6 +8,7 @@ export type PetGlanceData = {
   id: string;
   name: string;
   species: Species;
+  breed: string | null;
   facts: string;
   coverPublicId: string | null;
   profile: PetProfile;
@@ -54,6 +55,7 @@ export async function loadPetGlance(petId: string): Promise<PetGlanceData | null
     id: row.id,
     name: row.name,
     species: row.species,
+    breed: row.breed,
     facts: glanceFacts(row.species, row.breed, row.birthdate, row.weight_kg),
     coverPublicId: photos[0]?.publicId ?? null,
     profile,

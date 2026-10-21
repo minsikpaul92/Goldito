@@ -22,6 +22,26 @@ test.describe("pet at a glance", () => {
     Object.assign(db.pets.find((p) => p.id === MAX.id)!, { breed: "Maltese", birthdate: "2020-01-01", weight_kg: 6, profile: PROFILE });
     db.pet_allergies.push({ id: "a1", pet_id: MAX.id, allergen: "chicken" });
     db.pet_photos.push({ id: "ph1", pet_id: MAX.id, public_id: "goldito/pet-profile/x/1", position: 0 });
+    let asked: { species: string; breed: string } | null = null;
+    await page.route("**/api/breed-needs", (route) => {
+      asked = route.request().postDataJSON();
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          chips: [
+            { kind: "grooming", text: "Brush daily", source: 0, quote: "brush the coat daily" },
+            { kind: "care", text: "Prone to hip problems", source: 1, quote: null },
+          ],
+          sources: [
+            { title: "Maltese | AKC", url: "https://www.akc.org/dog-breeds/maltese/" },
+            { title: "Maltese | VCA", url: "https://vcahospitals.com/know-your-pet/maltese" },
+          ],
+          origin: "list",
+          basis: null,
+        }),
+      });
+    });
     await signIn(page, SITTER);
     await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
     await page.goto("/sitter/bookings/b1");
@@ -40,6 +60,13 @@ test.describe("pet at a glance", () => {
     await expect(chart).toContainText("Social"); // (4 + 3 + 4) / 3 = 3.67, rounds to 4
     await expect(chart).toContainText("Unfazed"); // sensitivity (1 + 2 + 1) / 3
     await expect(chart).toContainText("Not shared yet"); // appetite and trainability were not answered
+    // What the breed needs, with where it comes from: a lookup by species and breed, shown a moment later.
+    const needs = card.getByTestId(`glance-${MAX.id}-needs`);
+    await expect(needs).toContainText("Grooming: Brush daily");
+    await expect(needs).toContainText("Watch for: Prone to hip problems");
+    await expect(needs).toContainText("Source: akc.org");
+    await expect(needs).toContainText("Source: vcahospitals.com");
+    expect(asked).toEqual({ species: "dog", breed: "Maltese" });
     await expect(card).toContainText("Owner's description, not an assessment.");
     await expect(card).not.toContainText("%");
     await expect(screen.getByTestId(`glance-${MOCHI.id}`)).toHaveCount(0);
@@ -55,5 +82,20 @@ test.describe("pet at a glance", () => {
     const card = app(page).getByTestId(`glance-${MAX.id}`);
     await expect(card).toContainText("Max at a glance");
     await expect(card).toContainText("Personality: not shared yet");
+  });
+
+  test("a breed that is not known shows no Needs lines and nothing else changes", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [MAX]);
+    Object.assign(db.pets[0], { breed: "Xoloitzcuintli", profile: PROFILE });
+    await page.route("**/api/breed-needs", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ chips: [], sources: [], origin: "none", basis: null }) }),
+    );
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto(`/owner/pets/${MAX.id}`);
+    const card = app(page).getByTestId(`glance-${MAX.id}`);
+    await expect(card).toContainText("Max at a glance");
+    await expect(card.getByTestId(`glance-${MAX.id}-needs`)).toHaveCount(0);
   });
 });

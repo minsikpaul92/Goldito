@@ -66,18 +66,18 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 154 |
-| Button | Next | `own-next` | 156 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 186 |
-| Banner | `error` | — | 197 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 235 |
-| Stepper | Age | `own-age` | 329 |
-| Button | Next | `own-next` | 342 |
-| Button | Add | `own-food-other-add` | 520 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 576 |
-| Banner | `error` | `own-error` | 628 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 629 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 646 |
+| TextButton | Skip | `own-skip` | 157 |
+| Button | Next | `own-next` | 159 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 189 |
+| Banner | `error` | — | 200 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 238 |
+| Stepper | Age | `own-age` | 332 |
+| Button | Next | `own-next` | 345 |
+| Button | Add | `own-food-other-add` | 523 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 579 |
+| Banner | `error` | `own-error` | 631 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 632 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 650 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1041,7 +1041,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | chip.tone === "warning" ? `⚠️ ${chip.text}` : chip.text | — | 79 |
+| Tag | chip.tone === "warning" ? `⚠️ ${chip.text}` : chip.text | — | 83 |
+| LinkButton | ``Source: ${new URL(source.url).hostname.replace(/^www\./, "")}`` | `testID ? `${testID}-source-${i + 1}` : `glance-source-${i + 1}`` | 150 |
 
 ### PetRecordFold — [components/PetRecordFold.tsx](../../frontend/components/PetRecordFold.tsx)
 
@@ -1474,4 +1475,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-429 actions · 428 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+430 actions · 429 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

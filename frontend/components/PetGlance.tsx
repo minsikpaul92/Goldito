@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { PetGlanceCard } from "./PetGlanceCard";
+import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { PetGlanceData, loadPetGlance } from "../features/ownerOnboarding/petGlanceApi";
 
 /**
@@ -18,6 +19,7 @@ export function PetGlance({ petId, bare, testID }: { petId: string; bare?: boole
     };
   }, [petId]);
 
+  const needs = useBreedNeeds(data?.species ?? null, data?.breed ?? null);
   if (!data || !data.hasContent) return null;
   return (
     <PetGlanceCard
@@ -27,6 +29,7 @@ export function PetGlance({ petId, bare, testID }: { petId: string; bare?: boole
       coverPublicId={data.coverPublicId}
       profile={data.profile}
       allergens={data.allergens}
+      needs={needs}
       bare={bare}
       testID={testID ?? `glance-${petId}`}
     />
