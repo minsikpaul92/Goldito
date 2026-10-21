@@ -6548,4 +6548,63 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014z (audit 2026-10-21): a demo account keeps its password and email unless the service role opens the window
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  demo constant uuid := '00000000-0000-4000-8000-0000000000d9';
+  other constant uuid := '00000000-0000-4000-8000-0000000000d8';
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into auth.users (id, email, encrypted_password, raw_user_meta_data) values
+    (demo, 'demo-lock@goldito.test', 'hash-1', '{"role":"owner","display_name":"Demo"}'),
+    (other, 'other-lock@example.test', 'hash-1', '{"role":"owner","display_name":"Other"}');
+  perform set_demo_accounts_unlocked(false);
+
+  begin
+    update auth.users set encrypted_password = 'hash-2' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: a demo account cannot change its password');
+  begin
+    update auth.users set email = 'mine@example.test' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: a demo account cannot change its email');
+
+  update auth.users set raw_user_meta_data = '{"role":"owner","display_name":"Demo 2"}' where id = demo;
+  perform _t_ok((select raw_user_meta_data ->> 'display_name' from auth.users where id = demo) = 'Demo 2', '014z: other demo account fields still change');
+  update auth.users set encrypted_password = 'hash-2' where id = other;
+  perform _t_ok((select encrypted_password from auth.users where id = other) = 'hash-2', '014z: a real account changes its password');
+
+  perform _t_as(demo);
+  begin
+    perform set_demo_accounts_unlocked(true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014z: a signed-in person cannot open the window');
+  begin
+    perform count(*) from public.demo_account_unlock;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014z: a signed-in person cannot read the window');
+
+  perform set_config('role', 'service_role', true);
+  perform set_demo_accounts_unlocked(true);
+  perform _t_as(null);
+  update auth.users set encrypted_password = 'hash-3' where id = demo;
+  perform _t_ok((select encrypted_password from auth.users where id = demo) = 'hash-3', '014z: the seed changes the password while the window is open');
+
+  perform set_demo_accounts_unlocked(false);
+  begin
+    update auth.users set encrypted_password = 'hash-4' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: closing the window locks it again');
+end;
+$$;
+
 rollback;
