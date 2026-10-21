@@ -799,7 +799,7 @@ test.describe("chat hub", () => {
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
     expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
-    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Yes, let's meet");
+    await expect(screen.getByTestId("chat-next-interest")).toHaveText("Next");
     await screen.getByTestId("chat-next-interest").click();
     await expect(screen.getByTestId("meet-greet")).toBeVisible();
     expect((await circles(screen)).label).toBe("Step 2 of 5");
@@ -811,15 +811,14 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-waiting")).toHaveText("Waiting for Robert");
     expect(db.meetGreetCalls.find((c) => c.fn === "propose_meet_greet")).toBeTruthy();
 
-    // Robert accepts from his footer; after the time has come he says they met. The card is now one line.
+    // Robert accepts from his footer; the footer offers Done right away and asks first while it is early (#229).
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-next-meet")).toHaveText("Accept");
     await screen.getByTestId("chat-next-meet").click();
     await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set");
-    db.bookings[0].meet_greet_at = new Date(Date.now() - 3_600_000).toISOString();
-    await page.reload();
     await expect(screen.getByTestId("chat-next-meet")).toHaveText("Done, we met");
     await screen.getByTestId("chat-next-meet").click();
+    await screen.getByTestId("meet-done-early-confirm").click();
     await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
     expect((await circles(screen)).label).toBe("Step 3 of 5");
 

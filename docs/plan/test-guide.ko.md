@@ -100,7 +100,7 @@
 | 시터 스케줄 열기 / 막기 | ✅ 🤖 | 03B.1 |
 | 내 시터 목록 · 시터 프로필 | ✅ 🤖 | 03B.2 |
 | 예약 요청 (펫 · 시간 · 장소 · 서비스) | ✅ 🤖 | 03B.3 · 03B.10 |
-| **예약 단계 (D60)** — 시터의 첫 동의 "Yes, let's meet" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) · 단계 조회(`get_booking_stages`)가 실패해도 앱이 같은 규칙으로 단계를 계산해 결제된 예약이 "Request"로 보이지 않음 (CR-8, 🤖 `negotiation.spec.ts`) | 03B Booking steps |
+| **예약 단계 (D60)**: 시터의 첫 동의 "Next" → 날짜 홀드 · 진행 막대 · 2일 알림 / 3일 뒤 자동 취소 · 한 번에 한 오너 설정 · 오너 "Not this sitter" | ✅ 🤖 (사람 확인 대기, 호스팅 DB에 `011l` + 백엔드 `CRON_SECRET` 필요) · 단계 조회(`get_booking_stages`)가 실패해도 앱이 같은 규칙으로 단계를 계산해 결제된 예약이 "Request"로 보이지 않음 (CR-8, 🤖 `negotiation.spec.ts`) | 03B Booking steps |
 | 시터 요청 함 (수락 · 시간 제안 · 거절 — 거절 시트에 사유 칩 · 짧은 메모 · Suggest another time instead, 오너 알림 · 예약 상세에 사유 표시) | ✅ 🤖 (FB-35 부분은 사람 확인 대기) | 03B.4 · FB-35 |
 | 협상 · 확정 후 변경 | ✅ 🤖 | 03B.5 |
 | 도착 / 인계 체크 (Received · Returned) | ✅ 🤖 | 03B.6 |
@@ -321,20 +321,20 @@
 
 | ID | 확인 내용 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- |
-| BOOK-1 | 예약 요청 → 시터 수락 → 확정. **이미 만난 사이(단골)** 는 버튼이 **Accept** 하나, **처음 만나는 사이**는 BOOK-8 ~ 9의 **Yes, let's meet → Meet & Greet → Confirm booking** (같은 동작, 이름만 다름) | 🤖 `booking` · `sitter-bookings` · `meet-greet` | 🟡 10/08 민식 — 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
+| BOOK-1 | 예약 요청 → 시터 수락 → 확정. **이미 만난 사이(단골)** 는 버튼이 **Accept** 하나, **처음 만나는 사이**는 BOOK-8 ~ 9의 **Next → Meet & Greet → Confirm booking** (같은 동작, 이름만 다름) | 🤖 `booking` · `sitter-bookings` · `meet-greet` | 🟡 10/08 민식: 요청 → 수락 → Confirmed까지 진행됨 (오너 화면이 실시간으로 안 바뀜 → FLOW-1) |
 | BOOK-2 | 시간 · 장소 협상, 확정 후 변경 | 🤖 `negotiation` | ❌ 10/08 민식 — 시간 변경 시트에서 값이 날아감 · "That handoff already happened." (FLOW-7~9) → 고침, 다시 확인 필요 |
-| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Yes, let's meet(BOOK-9)를 눌러 홀드가 걸려 있어야 함 — 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
+| BOOK-3 | 첫 만남 미팅 (제안 · 수락 · 건너뛰기). **사전 조건:** 시터가 먼저 Next(BOOK-9)를 눌러 홀드가 걸려 있어야 함. 그 전에는 오너 화면에 일정 · 건너뛰기 버튼이 없고, API로 시도하면 `interest_required` | 🤖 `meet-greet` | ➖ |
 | BOOK-4 | Received → Returned, 취소 · 새 시터 찾기 | 🤖 `handoff` · `rebook` | ❌ 10/08 민식 — Returned가 확인 없이 바로 처리됨 (FLOW-6) |
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서). 링크는 호스트(Goldito 계정) 승인 없이 **바로 입장**돼야 함 (다른 계정, 시크릿 창으로 확인). **Join Google Meet** 버튼은 Safari에서도 눌려 새 탭이 열려야 함 (진짜 `<a>` 링크) | 🤖 `test_meet_greet.py` (방 열기 호출 · 실패해도 링크 유지) · `meet-greet.spec.ts` (버튼이 `href` · `target=_blank` 링크) · Safari에서 실제 클릭과 입장은 **👤** | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음. 거절 · 취소된 예약에는 헤더 카드와 안내 줄 사이에 **빈 카드가 없음**(오너 · 시터 둘 다, 진행 중 예약은 단계 막대 그대로) | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
-| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Yes, let's meet / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
+| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
 | SCHED-1 | 시터 일정 · 오너가 보는 시터 프로필의 **달력** | 날짜 칸에 **M · A · N 글자가 없고** **날짜 칸 전체가 세 개의 가로 띠**(위부터 **Night · Afternoon · Morning** — 아래가 오전, 위가 밤, 날짜 숫자는 그 위). 예약할 수 없는 띠(막음 · 꽉 참 · 열지 않음)는 **연한 빗금**(세 띠가 같은 무늬로 이어짐), 열린 띠는 비어 있음. 지난 날은 흐리게(빗금 없음). 범례는 한 줄 **Available / Not available**. 날짜를 누르면 아래에 칸별 시간 · 상태("Morning: Open · 9:30 AM–1:00 PM", 막힌 이유 포함). 스크린리더 라벨에 세 칸 상태가 모두 있음. 네이티브는 빗금 대신 회색 칸(react-native-svg 없음) | 🤖 `schedule.spec.ts` (빗금 여부는 computed style) · 실제 폰 너비 👤 | 10/17 화면은 로컬 스크린샷으로만 확인 · 사람 확인 대기 |
 | SCHED-2 | 시터 Schedule에서 날짜 범위 고르기 | **하나씩 클릭**(첫 클릭 = 하루, 두 번째 클릭 = 범위, 다음 클릭 = 다시 시작)해도 되고, **날짜를 누른 채 끌어서** 한 번에 고를 수도 있음(뒤로 끌어도 됨, 선택이 끌리는 대로 바뀜, 끝나고 손을 떼면 그 범위 유지 · 요약에 "3 days"). 끌기가 끝날 때 생기는 클릭은 선택을 다시 시작하지 않음. 지난 날짜는 범위에 들어오지 않음. 폰에서는 **길게 눌렀다가** 끌어야 하고, 그냥 쓸어 넘기면 화면이 스크롤됨. 오너가 보는 시터 달력은 하루만 고름 | 🤖 `schedule.spec.ts` (마우스 끌기 · 클릭) · 폰 길게 누르기는 👤 | 사람 확인 대기 (터치 끌기는 아직 실제 기기에서 안 봄) |
 | SCHED-3 | 시터 Schedule **기본 열림** — 일정을 하나도 안 만든 시터 | 달력의 모든 날 · 세 시간대가 **열림**(프로필의 기본 시간 · 기본 마릿수), 오너 검색에도 나옴(이전엔 일정을 열어야만 나왔음). 날짜를 눌러 Open으로 저장하면 **그 날들만** 시간 · 마릿수가 바뀜. Open 시트에서 **일부 시간대만 체크하고 저장하면 체크를 끈 시간대는 그 날들에 닫힘**(예: 오전만 열면 그 날의 오후 · 야간은 Blocked, 이미 확정된 예약과 겹치면 취소 확인이 먼저 뜸). 날짜를 건드리지 않으면 전부 열림. 반복해서 닫으려면 아래 규칙 | 🤖 `schedule.spec.ts` · `sitters.spec.ts` · SQL `rls_smoke` (014d) | 사람 확인 대기 |
 | SCHED-4 | Schedule 오른쪽 위 **⚙️ → Closing rules** | **요일 × 시간대(Morning · Afternoon · Night)** 격자에서 칸을 눌러 닫음(✕), 아래 **Hours**에서 세 시간대의 기본 시간을 30분 단위로 고침. **Apply** → "Rules applied ✅", 달력에 그 요일마다 해당 띠가 **빗금**("Closed · weekly rule"), 규칙 + 달력에서 직접 닫은 날이 **합쳐서** 적용. 아무것도 고르지 않고 Apply(또는 Open everything)면 규칙이 사라져 다시 전부 열림. 다시 열면 저장된 규칙 · 시간으로 시작. 시간이 맞지 않으면(끝 ≤ 시작) Apply 비활성. **이미 확정된 예약은 규칙이 취소하지 않음**(그 칸은 Full로 보이고 새 예약만 막힘) | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014d: 규칙 · 기본 열림 · 확정 예약 유지 · 권한) | 사람 확인 대기 |
 | SCHED-5 | ⚙️ → Closing rules → **Hours**에서 **Every day · Sun … Sat** 칩 | **Every day**를 고르면 세 시간대의 기본 시간(전 요일 공통)을 고침. **요일 칩**을 누르면 그 요일만의 시간을 따로 고칠 수 있고(그 요일은 칩에 **•** 표시, "Mondays have their own hours."), 다른 요일은 Every day 시간 그대로. **Same as every day**로 그 요일의 개별 시간을 지움. Apply 후 달력에서 그 요일을 누르면 "Morning: Open · 9:30 AM–1:00 PM"처럼 요일별 시간이 보임. 우선순위: **날짜를 직접 연 행 > 요일별 시간 > Every day 시간**. 끝 ≤ 시작이면 "Morning on Wednesdays needs …"로 Apply 비활성. 요일 시간이 Every day와 같아지면 저장하지 않음 | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014e) | 사람 확인 대기 · 호스팅 DB에 `014e` 적용 후 |
-| BOOK-9 | 시터가 **Yes, let's meet** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
+| BOOK-9 | 시터가 **Next** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
 | BOOK-10 | 첫 동의 전에 일정 제안 · 건너뛰기를 API로 시도 / 단골에게 Yes 시도 | `interest_required` / `interest_not_needed` | SQL `rls_smoke` | ➖ |
 | BOOK-11 | **홀드와 한 번에 한 오너.** Chloe(기본 설정)에게 오너 A가 첫 동의를 받은 날짜에 오너 B가 요청 · 검색 · 문의 | B의 요청은 `sitter_unavailable`(날짜가 상세에), 시터 검색에 안 나옴, 문의 AI의 "can host"도 불가. 시터가 일정 막기로 덮으려 해도 거부. 시터 프로필에서 **Take pets from more than one owner at a time**을 켜면 정원(max pets) 안에서 허용. 오너에게는 시터 프로필 · 문의 시트 · 검색 결과에 "One owner at a time" / "Hosts several owners' pets" 배지 | 🤖 `profile` · SQL · pytest `test_inquiry` | ➖ |
 | BOOK-12 | 만난 뒤 **오너가 Not this sitter**(사유 칩 + 짧은 메모) / 취소 · 거절 · 타임아웃 | 오너 버튼 이름이 첫 동의 뒤에는 **Not this sitter**(그 전에는 Cancel booking), 사유가 취소 이유로 저장되고 시터 화면에 "Robert passed: …" 표시. 취소되면 홀드가 풀려 다음 오너가 요청 가능 | 🤖 `meet-greet` · SQL | ➖ |
@@ -852,10 +852,10 @@
 | CHAT-17 | (DB) `rls_smoke.sql`의 014o 블록 | 반복 쌍은 요청 직후 `confirm`(다음 차례 both) · 시터가 먼저 수락하면 요청 상태로 남고 오너 차례 · 오너가 먼저 동의하면 시터 차례 · 둘 다 있으면 `confirmed`와 두 핸드오프 agreed, 순서는 자유 · 시터가 제안한 새 시간은 양쪽 동의를 지움 · 처음 보는 쌍은 Meet & Greet이 끝나야 동의 가능 · 가격은 같은 일정의 확인된 최종 견적에서 수락한 수수료만 더함(미확인 · 다른 일정 견적 제외) · `pay_booking_demo`가 같은 총액을 얼림 · 채팅 카드: `meet_greet`(시터 첫 yes부터, 첫 만남 쌍만) · `agreement` · `payment`가 부킹당 한 번씩, booking id만 들고, 변경마다 `rev`가 올라 상대 화면이 따라옴, 쌍 밖은 못 읽음 · 낯선 사람 · anon 불가 | SQL `rls_smoke` | ➖ |
 | CHAT-18 | 예약 상세에서 합의: 오너 → 예약 상세(Meet & Greet 뒤 또는 이미 만난 쌍) → **I'd like to book** · 시터 → 같은 예약 → **I accept** | 오너 버튼은 시트에서 **펫 · 시간 · 장소 · 체크리스트 · 가격**을 한 번 더 보여 주고 한 번 더 누르면 오너의 yes. 시터의 **I accept**는 yes의 절반: 오너가 아직이면 "You accepted. Waiting for … to book."로 남고 부킹은 요청 상태 그대로, 오너도 눌러야 `confirmed`(순서 자유). 시터가 새 시간을 제안하면 둘의 yes가 지워짐 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-19 | 확인된 최종 견적에서 수락한 수수료가 있는 부킹의 Checkout → 총액 → Pay | Checkout 견적에 **수수료 줄**이 보이고 **Total = 기본 + 수락한 수수료**, 결제 버튼 금액도 같음. 낸 금액은 `price_snapshot`(`extras` 포함)에 얼어 있음. 수수료가 없으면 이전과 같음 | 🤖 `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Yes, let's meet** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 시간이 되면 **Done, we met** | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
+| CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 바로 **Done, we met**(시간 전이면 한 번 더 확인, #229) | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
 | CHAT-21 | Meet & Greet 뒤(반복 쌍은 요청 직후): 오너 푸터 **I'd like to book** → 시트(펫 · 시간 · 체크리스트 · 가격) → 확인 / 시터 푸터 **I accept** | **Agreement 카드**에 두 줄(오너 ✓ / 시터 ✓), 순서 자유, 둘 다 있으면 "Booked, you both agreed ✓" 한 줄로 접힘. 한쪽만 눌렀을 때 부킹은 요청 상태, **결제 버튼 없음** | 🤖 `chat` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-22 | 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Yes, let's meet**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-24 | 오너가 "How much would it be?"처럼 가격을 물은 뒤 시터가 채팅을 열기, 또는 시터가 "Shall we book it?"이라고 한 뒤 오너가 열기 | 말 칩 줄 맨 앞에 **번개 아이콘이 붙은 행동 칩**(시터 `Send quote`, 오너 `I'd like to book` 등)이 한 개 나온다. 누르면 푸터나 카드가 하는 것과 같은 시트가 **열릴 뿐** 아무것도 저장되지 않고, 칩은 사라진다(눌러서 확정하는 것은 시트 안). 서버가 가리켜도 **이 화면에서 지금 불가능한 행동**(예: 확정 전 `pay`)은 안 나오고, 행동이 없으면 말 칩만. 코드가 만든 가능한 행동 목록(`get_booking_stages`의 단계 + 카드 상태) 안에서만 고르고 확신도 0.7 미만 · 단계를 못 읽음 · 모델 장애면 없음 | 🤖 `chat` · pytest `test_ai_chat` | 사람 확인 대기 · 실제 모델 응답은 배포 앱에서 |
 | CHAT-25 | 오너와 시터의 AI가 따로: 시터가 오너의 첫 글(Stay 카드와 "Can you take Max?")에 칩 → 초안 / 오너가 시터 답 뒤에 칩 → 초안 | 두 쪽이 **각자의 프롬프트와 입력**을 씀. 시터의 **첫 답은 인사와 자기소개**("Hi Robert, I'm Chloe …")이고 **금액이 없음**. 금액(견적, 요금)은 오너가 돈을 물었거나 채팅에 견적 카드가 있을 때만 시터 쪽에 들어가고, **오너 쪽은 요금 · 정책 · 가용성을 못 보고** 채팅에 보이는 견적만 봄. 오너 초안은 "I can host" · "my place" 같은 호스트 말이 없고 **맡기고 찾는 쪽은 오너**(시터가 "I'll pick up"이라고 쓰거나 오너가 "you drop off"라고 쓴 초안은 거절되고 다시 씀). 직전 메시지(양쪽)와 거의 같은 초안도 거절. 펫에 없는 종의 이모지(개 둘에 고양이)도 거절. 쪽별 모델은 `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER`(비면 `MODEL_FAST`) | 🤖 pytest `test_ai_chat` · `test_nebius` | 사람 확인 대기 · 실제 모델로 오너와 시터를 나란히(`?view=split`) 4턴 이상 눌러서 말투 · 반복 · 역할을 읽어야 함 |
 | CHAT-26 | 칩 요청이 실패하거나 연결이 끊김, 로그 | Supabase 연결이 끊겨도 `chat-chips`는 200과 기본 칩(채팅 자체를 못 읽으면 한 번 다시 시도한 뒤 503). 칩 · 초안마다 서버 로그 한 줄 `chat_ai {...}`(쪽 · 상태 · source model/fallback · 버려진 이유 · 칩 문구 · 초안 문구): 이름은 `{NAME}`으로 가려지고 id는 없음 | 🤖 pytest `test_ai_chat` · 🤖 `chat` | 사람 확인 대기 |
@@ -877,6 +877,23 @@
 | PROP-1 | 확정 전 요청에서 시터가 새 시간을 제안 → 오너가 예약 화면을 엶 | 제안 카드에 **Accept**와 **Suggest another time**만 있고 Decline은 없음. 카드로는 예약이 끝나지 않음 | 🤖 `negotiation` | ➖ |
 | PROP-2 | 오너가 새 시간을 제안 → 시터가 예약 화면을 엶 (확정 뒤 함께 옮기는 두 시간 포함) | 카드에 Decline 없음. 짝 제안 안내는 "Accept answers both." | 🤖 `negotiation` | ➖ |
 | PROP-3 | 예약을 끝내고 싶을 때 | 화면 아래의 시터 **Decline** / 오너 **Cancel booking**(또는 Not this sitter)만 예약을 끝냄 | 🤖 `sitter-bookings` · `rebook` | ➖ |
+
+### 3.38 Meet & Greet가 선택임을 분명히 (MGOPT) · #170
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGOPT-1 | 시터가 처음 만나는 사이의 요청을 엶 (예약 화면, 채팅 푸터) | 앞으로 가는 버튼이 **Next** (예전 "Yes, let's meet"). 누르면 날짜가 잡히고, 다음 화면에서 시간 정하기 또는 건너뛰기 | 🤖 `sitter-bookings` · `meet-greet` · `chat` | ➖ |
+| MGOPT-2 | Next 뒤, 아직 만나지도 건너뛰지도 않았을 때 예약 화면 | **I accept**가 꺼져 있고 바로 위에 "Meet Robert first, or agree to skip the Meet & Greet." 기간이 지난 요청은 "The pick-up time has passed." | 🤖 `meet-greet` · `sitter-bookings` | ➖ |
+| MGOPT-3 | 시간이 정해진 Meet & Greet 카드에서 **Add to calendar** | 새 탭에 Google Calendar 일정 화면, 제목 · 30분 시간 · 장소(화상이면 Meet 링크)가 채워짐. `.ics` 파일은 더 이상 안 받음 | 🤖 `meet-greet` (링크 확인) · **👤** (실제 Google 화면) | ➖ |
+
+### 3.39 Meet & Greet 카드 손보기 (MGCARD) · #229 · *사전: 호스팅 DB에 `014s` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGCARD-1 | 정해진 화상 Meet & Greet에서 **Join Google Meet** | 새 탭으로 열리고 앱은 그대로 | 🤖 `meet-greet` (데스크톱 프레임) | **👤** 휴대폰(Meet 앱이 설치돼 있으면 앱이 링크를 가져갈 수 있음) |
+| MGCARD-2 | 화상으로 정해진 카드 | "Go over together" 체크리스트가 없음. 대면이면 그대로 있음 | 🤖 `meet-greet` | ➖ |
+| MGCARD-3 | 정해진 시간 **전**에 **Done, we met** (카드 또는 채팅 푸터) | "It is not time yet / Did you already meet …?" 확인. **Cancel**은 아무것도 안 바뀜, **Yes, we met**이면 Met ✓. "After you meet, tap Done here." 줄은 없음. 양쪽이 둘 다 눌러도 오류 없음 | 🤖 `meet-greet` · `chat` · SQL `rls_smoke`(014s) | ➖ |
+| MGCARD-4 | Schedule Meet & Greet 시트에서 날짜 · 시간 누르기 | 날짜는 **달력**, 시간은 **시계**(분 단위, 예: 3:07 PM). −/+는 빠른 조정용으로 남음 | 🤖 `meet-greet` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

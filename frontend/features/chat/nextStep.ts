@@ -107,7 +107,7 @@ export function nextStep(i: Input): NextStep {
     case "requested":
       // A first-time request waits for the sitter's first yes.
       return role === "sitter"
-        ? { primary: { kind: "interest", label: "Yes, let's meet" }, quote, wait: null }
+        ? { primary: { kind: "interest", label: "Next" }, quote, wait: null }
         : { primary: null, quote: false, wait: waiting };
 
     case "meet_greet": {

@@ -16,7 +16,8 @@ export type MeetGreetPrimary = { key: "schedule" | "accept" | "done" | "continue
  * What the footer offers for a first-time booking's Meet & Greet, or null when nothing is waiting for this person.
  * The card does the work; this only says which step it is.
  */
-export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", now: number = Date.now()): MeetGreetPrimary | null {
+/** `_now` is kept for callers that pass a clock; no step depends on the time since 014s. */
+export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", _now: number = Date.now()): MeetGreetPrimary | null {
   if (b.status !== "requested") return null;
   const me = viewer === "owner" ? b.ownerId : b.sitterId;
   const mg = b.meetGreet;
@@ -26,7 +27,8 @@ export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", 
     case "proposed":
       return mg.proposedBy !== me ? { key: "accept", label: "Accept" } : null;
     case "agreed":
-      return mg.at && Date.parse(mg.at) <= now ? { key: "done", label: "Done, we met" } : null;
+      // Any time once agreed; the card asks first when the agreed time has not come yet (014s, #229).
+      return { key: "done", label: "Done, we met" };
     case "skip_requested":
       return mg.skipRequestedBy !== me ? { key: "continue", label: "Continue without meeting" } : null;
     default:
@@ -38,7 +40,6 @@ const MESSAGES: Record<string, string> = {
   place_required: "Pick a place to meet.",
   place_too_long: "Keep the place to one short line.",
   invalid_window: "Pick a time in the future.",
-  meet_greet_not_yet: "You can mark it done once the meeting time has come.",
   invalid_status: "This Meet & Greet has already changed. Reopen the booking to see the latest.",
 };
 
@@ -111,7 +112,7 @@ async function backend(path: string, bookingId: string): Promise<{ link: string 
 
 /**
  * Ask FastAPI for the Google Meet link of an agreed video Meet & Greet (3B.11, D45). Safe to
- * call again; returns null while Google isn't set up — the card then keeps the time + .ics.
+ * call again; returns null while Google isn't set up; the card then keeps the time and Add to calendar.
  */
 export async function requestVideoLink(bookingId: string): Promise<string | null> {
   return (await backend("/api/meet-greet/video-link", bookingId))?.link ?? null;
@@ -122,39 +123,27 @@ export async function releaseVideoLink(bookingId: string): Promise<void> {
   await backend("/api/meet-greet/video-link/release", bookingId);
 }
 
-function icsStamp(date: Date): string {
+/** "20261005T140000Z", the UTC form Google Calendar's `dates` takes. */
+function calendarStamp(date: Date): string {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
 /**
- * A 30-minute calendar event for "Add to calendar" (3B.9 / 3B.11). On the web it downloads
- * an .ics file; elsewhere it is a no-op until native calendar support lands.
+ * "Add to calendar" (3B.9 / 3B.11, #170): a Google Calendar event page with the title, the 30-minute time and the
+ * place (or the Meet link) filled in. The card renders it as a real link so the new tab is never blocked.
  */
-export function addMeetGreetToCalendar(b: BookingSummary): void {
+export function meetGreetCalendarUrl(b: BookingSummary): string | null {
   const { at, mode, place, link } = b.meetGreet;
-  if (!at || typeof document === "undefined") return;
+  if (!at) return null;
   const start = new Date(at);
   const end = new Date(start.getTime() + 30 * 60_000);
   const pets = b.pets.map((p) => p.name).join(" & ");
-  const where = mode === "video" ? (link ?? "Google Meet") : (place ?? "");
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Goldito//Meet & Greet//EN",
-    "BEGIN:VEVENT",
-    `UID:meet-greet-${b.id}@goldito`,
-    `DTSTAMP:${icsStamp(new Date())}`,
-    `DTSTART:${icsStamp(start)}`,
-    `DTEND:${icsStamp(end)}`,
-    `SUMMARY:Goldito Meet & Greet: ${pets} with ${b.ownerName} & ${b.sitterName}`,
-    `LOCATION:${where.replace(/[,;]/g, " ")}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "goldito-meet-greet.ics";
-  a.click();
-  URL.revokeObjectURL(url);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Goldito Meet & Greet: ${pets} with ${b.ownerName} & ${b.sitterName}`,
+    dates: `${calendarStamp(start)}/${calendarStamp(end)}`,
+    location: mode === "video" ? (link ?? "Google Meet") : (place ?? ""),
+  });
+  if (mode === "video" && link) params.set("details", `Join: ${link}`);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
