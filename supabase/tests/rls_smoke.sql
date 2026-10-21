@@ -6342,4 +6342,202 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------
+-- 014v (11.15 S1, #185): pet answers, owner intro, pet photos, save a pet in one call
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  zed constant uuid := '00000000-0000-4000-8000-0000000000e1';
+  v_id uuid := gen_random_uuid();
+  v_tmp uuid := gen_random_uuid();
+  v_ids uuid[];
+  v_first uuid;
+  v_out text;
+  v_err text;
+begin
+  perform _t_as(robert);
+
+  -- One call saves the pet, its answers and its allergies
+  perform create_pet_with_profile(v_id, 'dog', 'Pip14v', 'Maltese', null, 6, null,
+    '{"answers":{"q1":3},"safety":{"s1":"never"}}', array[' Chicken ', 'chicken', 'Dairy', '']);
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '3', '014v: the answers are saved with the pet');
+  perform _t_ok((select count(*) from public.pet_allergies where pet_id = v_id) = 2,
+    '014v: allergies are trimmed, lowercased and unique');
+
+  -- A retry with the same id updates instead of failing, and replaces the allergies
+  perform create_pet_with_profile(v_id, 'dog', 'Pip14v', 'Maltese', null, 6, null, '{"answers":{"q1":4}}', array['dairy', 'fish']);
+  perform _t_ok((select count(*) from public.pets where id = v_id) = 1, '014v: a retry does not make a second pet');
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '4', '014v: …and updates the answers');
+  perform _t_ok((select array_agg(allergen order by allergen) from public.pet_allergies where pet_id = v_id) = array['dairy', 'fish'],
+    '014v: …and the allergies follow the new list');
+
+  -- The answers must be an object, and not huge
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Bad', null, null, null, null, '[1]', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%pets_profile_shape%', '014v: pets.profile must be an object');
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Big', null, null, null, null,
+    jsonb_build_object('x', repeat('a', 17000)), '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%pets_profile_shape%', '014v: pets.profile is capped at 16000 characters');
+
+  -- Another owner's pet id is not overwritten, a sitter cannot save a pet
+  perform _t_as(joy);
+  begin perform create_pet_with_profile(v_id, 'dog', 'Stolen', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '014v: another owner cannot reuse a pet id');
+  perform _t_as(robert);
+  perform _t_ok((select name from public.pets where id = v_id) = 'Pip14v', '014v: …and the pet is unchanged');
+  perform _t_as(chloe);
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Sitter', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err is not null, '014v: a sitter cannot save a pet');
+  perform _t_as(null, 'anon');
+  begin perform create_pet_with_profile(gen_random_uuid(), 'dog', 'Anon', null, null, null, null, '{}', '{}'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: anon cannot save a pet');
+
+  -- The owner edits the answers and the intro; nobody else can
+  perform _t_as(robert);
+  update public.pets set profile = '{"answers":{"q1":2}}' where id = v_id;
+  perform _t_ok((select profile->'answers'->>'q1' from public.pets where id = v_id) = '2', '014v: the owner edits their pet''s answers');
+  update public.owner_profiles set intro = 'Hello, I am Robert.' where id = robert;
+  perform _t_ok((select intro from public.owner_profiles where id = robert) = 'Hello, I am Robert.', '014v: the owner writes an intro');
+  begin update public.owner_profiles set intro = repeat('a', 501) where id = robert; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%owner_profiles_intro_length%', '014v: the intro is at most 500 characters');
+  perform _t_ok((select onboarded_at is null from public.owner_profiles where id = robert),
+    '014v: a new owner starts with onboarded_at null');
+  update public.owner_profiles set onboarded_at = now() where id = robert;
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: the owner marks themselves onboarded');
+  perform _t_as(joy);
+  update public.owner_profiles set onboarded_at = null where id = robert;
+  update public.pets set profile = '{"hacked":true}' where id = v_id;
+  perform _t_as(robert);
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: another owner cannot change the flag');
+  perform _t_ok((select profile ? 'hacked' from public.pets where id = v_id) = false, '014v: another owner cannot edit the answers');
+
+  -- Photos: added by the backend, the 9th is refused, a stranger's pet is refused
+  perform _t_as(null);
+  for i in 1..8 loop perform add_pet_photo(robert, v_id, 'pets/pip-' || i); end loop;
+  begin perform add_pet_photo(robert, v_id, 'pets/pip-9'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'too_many_photos', '014v: a pet keeps at most 8 photos');
+  begin perform add_pet_photo(joy, v_id, 'pets/joy-1'); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: photos are added only for the pet''s own owner');
+  perform _t_ok((select array_agg(position order by position) from public.pet_photos where pet_id = v_id) = array[0,1,2,3,4,5,6,7]::smallint[],
+    '014v: photos are added at the end, cover first');
+
+  -- Who reads them: the owner; not another owner, not an unrelated sitter, not anon; a booked sitter does
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 8, '014v: the owner reads their pet''s photos');
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 0, '014v: …and no other owner does');
+  perform _t_as(zed);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 0, '014v: a sitter with no booking or inquiry does not');
+  perform _t_as(null);
+  perform _t_booking(robert, chloe, array[v_id], now() - interval '1 hour', now() + interval '1 day', 'confirmed');
+  perform _t_as(chloe);
+  perform _t_ok((select count(*) from public.pet_photos where pet_id = v_id) = 8, '014v: a booked sitter reads the photos');
+  perform _t_as(null, 'anon');
+  begin perform count(*) from public.pet_photos; v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: anon cannot read pet photos');
+
+  -- Reorder: the owner only, exactly the pet's own ids
+  perform _t_as(robert);
+  select array_agg(id order by position desc) into v_ids from public.pet_photos where pet_id = v_id;
+  perform reorder_pet_photos(v_id, v_ids);
+  select id into v_first from public.pet_photos where pet_id = v_id and position = 0;
+  perform _t_ok(v_first = v_ids[1], '014v: the owner reorders, first = cover');
+  begin perform reorder_pet_photos(v_id, v_ids[1:7]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_photos', '014v: a partial order is refused');
+  perform _t_as(joy);
+  begin perform reorder_pet_photos(v_id, v_ids); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: another owner cannot reorder');
+  perform _t_as(robert);
+  begin perform remove_pet_photo(robert, v_id, v_ids[1]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014v: an owner cannot call remove_pet_photo directly');
+
+  -- Remove (backend): returns the file id and closes the gap
+  perform _t_as(null);
+  v_out := remove_pet_photo(robert, v_id, v_ids[1]);
+  perform _t_ok(v_out is not null, '014v: remove returns the Cloudinary public id');
+  perform _t_ok((select array_agg(position order by position) from public.pet_photos where pet_id = v_id) = array[0,1,2,3,4,5,6]::smallint[],
+    '014v: removing closes the gap');
+  begin perform remove_pet_photo(joy, v_id, v_ids[2]); v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_found', '014v: only the pet''s owner can remove a photo');
+
+  -- Photos go with the pet
+  perform _t_as(robert);
+  perform create_pet_with_profile(v_tmp, 'cat', 'Tmp14v', null, null, null, null, '{}', '{}');
+  perform _t_as(null);
+  perform add_pet_photo(robert, v_tmp, 'pets/tmp-1');
+  perform _t_as(robert);
+  delete from public.pets where id = v_tmp;
+  perform _t_as(null);
+  perform _t_ok(not exists (select 1 from public.pet_photos where pet_id = v_tmp), '014v: photos go with the pet');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014w (11.15 S4, #185): the breed needs cache is for the backend only
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.breed_notes (species, breed_key, chips, sources, found)
+    values ('dog', 'maltese', '["Brush daily"]', '[{"title":"AKC","url":"https://www.akc.org/x"}]', true);
+  perform _t_ok((select b.found from public.breed_notes b where b.breed_key = 'maltese'), '014w: the backend writes and reads a breed note');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('dog', 'maltese', false);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%duplicate key%', '014w: one row per species and breed');
+  begin
+    insert into public.breed_notes (species, breed_key, found) values ('bird', 'parrot', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: only dogs and cats');
+  begin
+    insert into public.breed_notes (species, breed_key, chips, found) values ('cat', 'x', '{}', true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like '%violates check constraint%', '014w: chips are a list');
+
+  foreach v_err in array array['owner', 'sitter', 'anon'] loop
+    if v_err = 'owner' then perform _t_as(robert);
+    elsif v_err = 'sitter' then perform _t_as(chloe);
+    else perform _t_as(null, 'anon');
+    end if;
+    begin
+      perform count(*) from public.breed_notes;
+      perform _t_ok(false, '014w: ' || v_err || ' cannot read the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot read the cache');
+    end;
+    begin
+      insert into public.breed_notes (species, breed_key, found) values ('dog', 'poodle', true);
+      perform _t_ok(false, '014w: ' || v_err || ' cannot write the cache');
+    exception when others then
+      perform _t_ok(sqlerrm like 'permission denied%', '014w: ' || v_err || ' cannot write the cache');
+    end;
+  end loop;
+  perform _t_as(null);
+end;
+$$;
+
 rollback;
