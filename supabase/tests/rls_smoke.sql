@@ -2039,7 +2039,7 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.9: no walk check-in for a cat');
-  -- 11.12 (014x): nap
+  -- 11.12 (015): nap
   perform log_care_checkin(max, 'nap');
   begin
     perform log_care_checkin(max, 'nap', 'long');
@@ -6565,7 +6565,7 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- 014y (11.12, #184): pet medals
+-- 015b (11.12, #184): pet medals
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -6587,54 +6587,54 @@ begin
     perform award_pet_medal(v_b, v_pet);
     v_err := null;
   exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'stay_not_finished', '014y: no medal before the pets are back');
+  perform _t_ok(v_err = 'stay_not_finished', '015b: no medal before the pets are back');
 
   perform complete_handoff(v_b, 'pick_up');
   perform award_pet_medal(v_b, v_pet);
   perform award_pet_medal(v_b, v_pet);
   perform _t_ok((select count(*) from public.pet_medals where booking_id = v_b and pet_id = v_pet and sitter_id = chloe
                    and stay_from is not null and stay_to is not null) = 1,
-    '014y: the sitter gives the medal, once per pet and stay');
+    '015b: the sitter gives the medal, once per pet and stay');
 
   perform _t_as(robert);
-  perform _t_ok((select count(*) from public.pet_medals where pet_id = v_pet) = 1, '014y: the owner reads their pet''s medal');
+  perform _t_ok((select count(*) from public.pet_medals where pet_id = v_pet) = 1, '015b: the owner reads their pet''s medal');
   begin
     perform award_pet_medal(v_b, v_pet);
     v_err := null;
   exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'not_your_booking', '014y: the owner cannot give one');
+  perform _t_ok(v_err = 'not_your_booking', '015b: the owner cannot give one');
   begin
     insert into public.pet_medals (pet_id, booking_id, sitter_id, stay_from, stay_to) values (v_pet, v_b, chloe, now(), now());
     v_err := null;
   exception when others then v_err := sqlstate; end;
-  perform _t_ok(v_err = '42501', '014y: clients never write medals directly');
+  perform _t_ok(v_err = '42501', '015b: clients never write medals directly');
   begin
     delete from public.pet_medals;
     v_err := null;
   exception when others then v_err := sqlstate; end;
-  perform _t_ok(v_err = '42501', '014y: nobody deletes a medal');
+  perform _t_ok(v_err = '42501', '015b: nobody deletes a medal');
 
   perform _t_as(joy);
-  perform _t_ok((select count(*) from public.pet_medals) = 0, '014y: a third party reads no medal');
+  perform _t_ok((select count(*) from public.pet_medals) = 0, '015b: a third party reads no medal');
   perform _t_as(paul);
   begin
     perform award_pet_medal(v_b, v_pet);
     v_err := null;
   exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'not_your_booking', '014y: another sitter cannot give one');
+  perform _t_ok(v_err = 'not_your_booking', '015b: another sitter cannot give one');
 
   perform _t_as(chloe);
   begin
     perform award_pet_medal(v_b, '00000000-0000-4000-8000-0000000000c3');
     v_err := null;
   exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'pet_not_in_booking', '014y: only a pet that was in the stay');
+  perform _t_ok(v_err = 'pet_not_in_booking', '015b: only a pet that was in the stay');
   perform _t_as(null, 'anon');
   begin
     perform award_pet_medal(v_b, v_pet);
     v_err := null;
   exception when others then v_err := sqlstate; end;
-  perform _t_ok(v_err = '42501', '014y: signed-out visitors cannot');
+  perform _t_ok(v_err = '42501', '015b: signed-out visitors cannot');
   perform _t_as(null);
 end;
 $$;

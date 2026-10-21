@@ -232,7 +232,7 @@ export type MockDb = {
   owner_favorite_sitters: Row[];
   /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
   pet_life_records: Row[];
-  /** Pet medals (014y): given by the sitter after a stay, read by the owner. */
+  /** Pet medals (015b): given by the sitter after a stay, read by the owner. */
   pet_medals: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
@@ -2161,7 +2161,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         // RLS (014j): a chat is for its two people.
         (path !== "chat_messages" || db.chat_threads.some((t) => t.id === row.thread_id && (t.owner_id === me || t.sitter_id === me))) &&
         (path !== "chat_threads" || row.owner_id === me || row.sitter_id === me) &&
-        // RLS (014y): the pet's owner and the sitter who gave the medal.
+        // RLS (015b): the pet's owner and the sitter who gave the medal.
         (path !== "pet_medals" || row.sitter_id === me || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).

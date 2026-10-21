@@ -1,4 +1,4 @@
--- 014y: pet medals (11.12 Tamagotchi, #184).
+-- 015b: pet medals (11.12 Tamagotchi, #184).
 --
 -- After a stay is over (the pets are Returned) the sitter can give each pet in it a medal: a keepsake the owner sees
 -- under the pet room. One medal per pet and booking, written only by award_pet_medal (a sitter of that booking, once

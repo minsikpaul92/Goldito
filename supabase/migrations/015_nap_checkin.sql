@@ -1,4 +1,4 @@
--- 014x: nap check-in (11.12 Tamagotchi, #184).
+-- 015: nap check-in (11.12 Tamagotchi, #184).
 --
 -- The sitter taps feed / walk / potty / nap on the pet room, and each tap is a care check-in. Nap is the new kind:
 -- no value, like a note without text. The owner gets the usual `care_checkin` notice ("Max is taking a nap 💤").
