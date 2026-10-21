@@ -77,6 +77,11 @@ class Settings(BaseSettings):
 
     tavily_api_key: str | None = Field(default=None, alias="TAVILY_API_KEY")
 
+    # Speech to text for voice sign-up (11.15 S3, #158). Token Factory has no STT, so this one call goes to Groq's
+    # free plan; the text it returns is read by Nemotron like any other text.
+    groq_api_key: str | None = Field(default=None, alias="GROQ_API_KEY")
+    groq_stt_model: str = Field(default="whisper-large-v3-turbo", alias="GROQ_STT_MODEL")
+
     demo_password: str | None = Field(default=None, alias="DEMO_PASSWORD")
     # Testing only: lets the demo accounts reset the demo (POST /api/demo/reset). Off unless set to 1/true.
     demo_reset_enabled: bool = Field(default=False, alias="DEMO_RESET_ENABLED")

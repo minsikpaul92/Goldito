@@ -14,8 +14,11 @@ from app.routers import (
     ai_inquiry,
     ai_life_record,
     ai_pet_mood,
+    ai_pet_photo,
+    ai_pet_voice,
     ai_report_chips,
     ai_safety_check,
+    breed_needs,
     demo,
     feed,
     geo,
@@ -23,6 +26,7 @@ from app.routers import (
     me,
     media,
     meet_greet,
+    pet_photos,
     profile_photos,
     rag,
     sweep,
@@ -47,6 +51,8 @@ app.include_router(meet_greet.router)
 app.include_router(demo.router)
 app.include_router(media.router)
 app.include_router(profile_photos.router)
+app.include_router(pet_photos.router)
+app.include_router(breed_needs.router)
 app.include_router(feed.router)
 app.include_router(geo.router)
 app.include_router(ai_care_plan.router)
@@ -57,6 +63,8 @@ app.include_router(ai_handoff_check.router)
 app.include_router(ai_inquiry.router)
 app.include_router(ai_life_record.router)
 app.include_router(ai_pet_mood.router)
+app.include_router(ai_pet_photo.router)
+app.include_router(ai_pet_voice.router)
 app.include_router(ai_report_chips.router)
 app.include_router(ai_safety_check.router)
 app.include_router(rag.router)

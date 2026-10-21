@@ -62,6 +62,25 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 | EmptyState | No pets yet | — | 41 |
 | Button | Add pet | `add-pet` | 61 |
 
+### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
+
+Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `VoiceStep` · `StepFrame` · `AddressInput`
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| TextButton | Skip | `own-skip` | 157 |
+| Button | Next | `own-next` | 159 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 189 |
+| Banner | `error` | — | 200 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 238 |
+| Stepper | Age | `own-age` | 332 |
+| Button | Next | `own-next` | 345 |
+| Button | Add | `own-food-other-add` | 523 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 579 |
+| Banner | `error` | `own-error` | 631 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 632 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 650 |
+
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
 Owner Bookings tab: a hotel-style search line on top (place, dates, pets), the favorite sitters free for those dates (everyone nearby after Search) as photo and name, a tap opens the sitter, then my bookings with status badges (3B.3).
@@ -206,12 +225,12 @@ Shows: `NotificationsCenter`
 
 ### `/owner/pets/[petId]` — [app/owner/pets/[petId].tsx](../../frontend/app/owner/pets/[petId].tsx)
 
-Shows: `CareTasksSection` · `HeadsUpSection` · `PetForm`
+Shows: `CareTasksSection` · `HeadsUpSection` · `PetForm` · `PetGlance`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | state.status === "missing" ? "Pet not found" : "Couldn't load this pet" | — | 43 |
-| TextButton | 📖 Life Record | `open-life-record` | 72 |
+| EmptyState | state.status === "missing" ? "Pet not found" : "Couldn't load this pet" | — | 44 |
+| TextButton | 📖 Life Record | `open-life-record` | 74 |
 
 ### `/owner/pets/[petId]/care-request` — [app/owner/pets/[petId]/care-request.tsx](../../frontend/app/owner/pets/[petId]/care-request.tsx)
 
@@ -396,28 +415,28 @@ Shows: `BookingCard` · `ChatList`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetRecordFold` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetGlance` · `PetRecordFold` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 149 |
-| EmptyState | Couldn't load this booking | — | 156 |
-| Tag | `b.label` | — | 252 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 312 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 317 |
-| TextButton | Change time or place | `change-booking` | 325 |
-| Tag | `a` | — | 354 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 381 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 396 |
-| TextButton | Decline | `decline-booking` | 404 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 415 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 425 |
-| TextButton | Cancel booking | `cancel-booking` | 443 |
-| Sheet | Cancel booking | `cancel-sheet` | 462 |
-| Button | Cancel booking | `cancel-confirm` | 468 |
-| Sheet | Decline request | `decline-sheet` | 506 |
-| Button | Decline request | `decline-confirm` | 512 |
-| TextButton | Suggest another time instead | `decline-suggest` | 551 |
+| EmptyState | Booking not found | — | 150 |
+| EmptyState | Couldn't load this booking | — | 157 |
+| Tag | `b.label` | — | 253 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 313 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 318 |
+| TextButton | Change time or place | `change-booking` | 326 |
+| Tag | `a` | — | 355 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 383 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 398 |
+| TextButton | Decline | `decline-booking` | 406 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 417 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 427 |
+| TextButton | Cancel booking | `cancel-booking` | 445 |
+| Sheet | Cancel booking | `cancel-sheet` | 464 |
+| Button | Cancel booking | `cancel-confirm` | 470 |
+| Sheet | Decline request | `decline-sheet` | 508 |
+| Button | Decline request | `decline-confirm` | 514 |
+| TextButton | Suggest another time instead | `decline-suggest` | 553 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -1036,6 +1055,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | TextButton | Add | `pet-allergy-add` | 157 |
 | Button | saving ? "Saving…" : submitLabel | `pet-save` | 175 |
 
+### PetGlanceCard — [components/PetGlanceCard.tsx](../../frontend/components/PetGlanceCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Tag | chip.tone === "warning" ? `⚠️ ${chip.text}` : chip.text | — | 83 |
+| LinkButton | ``Source: ${new URL(source.url).hostname.replace(/^www\./, "")}`` | `testID ? `${testID}-source-${i + 1}` : `glance-source-${i + 1}`` | 150 |
+
 ### PetRecordFold — [components/PetRecordFold.tsx](../../frontend/components/PetRecordFold.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1289,6 +1315,38 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
 
+### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `testID` | 23 |
+
+### PetPhotosStep — [components/ownerOnboarding/PetPhotosStep.tsx](../../frontend/components/ownerOnboarding/PetPhotosStep.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | i === 0 ? "Cover photo" : `Photo ${i + 1}` | ``own-photo-${i}`` | 79 |
+| Pressable | Add a photo | `own-photo-add` | 92 |
+| Sheet | selected === 0 ? "Cover photo" : "Photo" | `own-photo-actions` | 114 |
+| Button | Make cover | `own-photo-cover` | 117 |
+| TextButton | Remove photo | `own-photo-remove` | 119 |
+
+### StepFrame — [components/ownerOnboarding/StepFrame.tsx](../../frontend/components/ownerOnboarding/StepFrame.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | Back | `own-back` | 30 |
+
+### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | recordingNow ? "Stop recording" : "Start recording" | `own-mic` | 103 |
+| Banner | `problem` | `own-voice-problem` | 119 |
+| TextButton | Or type it | `own-voice-type` | 131 |
+| Banner | `error` | `own-voice-error` | 134 |
+| Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 136 |
+
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1435,4 +1493,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-416 actions · 415 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+436 actions · 435 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
