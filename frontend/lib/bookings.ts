@@ -551,6 +551,8 @@ export type BookingSummary = {
    * needs a new consent (009d); priceSnapshot then still holds the last paid quote.
    */
   paidAt: string | null;
+  /** Set when a paid booking was cancelled: the demo payment went back in full (015c, #266). paidAt stays. */
+  refundedAt: string | null;
   /** Quote frozen at demo pay, re-quoted when an agreed change moves the total (009d). */
   priceSnapshot: PriceQuote | null;
   pets: { id?: string; name: string; species: "dog" | "cat" }[];
@@ -660,7 +662,7 @@ function currentHandoff(rows: HandoffRow[], kind: HandoffRow["kind"], status: Bo
 const BOOKING_COLUMNS =
   "id, status, owner_id, sitter_id, service_type, meet_greet_status, meet_greet_mode, meet_greet_at, " +
   "meet_greet_place, meet_greet_link, meet_greet_proposed_by, meet_greet_skip_requested_by, cancelled_by, cancel_reason, sitter_note, " +
-  "paid_at, price_snapshot, sitter_interest_at, meet_greet_due_at, owner_agreed_at, sitter_accepted_at, created_at, " +
+  "paid_at, refunded_at, price_snapshot, sitter_interest_at, meet_greet_due_at, owner_agreed_at, sitter_accepted_at, created_at, " +
   "owner:profiles!bookings_owner_id_fkey(display_name), " +
   "sitter:profiles!bookings_sitter_id_fkey(display_name), " +
   "booking_handoffs(id, kind, scheduled_at, location_type, location_note, within_sitter_hours, status, proposed_by, " +
@@ -683,6 +685,7 @@ type BookingRow = {
   cancel_reason: string | null;
   sitter_note: string | null;
   paid_at: string | null;
+  refunded_at?: string | null;
   price_snapshot: PriceQuote | null;
   sitter_interest_at: string | null;
   meet_greet_due_at: string | null;
@@ -769,6 +772,7 @@ function toSummary(b: BookingRow, pets: BookingSummary["pets"]): BookingSummary 
     ownerAgreedAt: b.owner_agreed_at ?? null,
     sitterAcceptedAt: b.sitter_accepted_at ?? null,
     paidAt: b.paid_at ?? null,
+    refundedAt: b.refunded_at ?? null,
     priceSnapshot: b.price_snapshot ?? null,
     pets,
     dropOff: currentHandoff(handoffs, "drop_off", b.status),

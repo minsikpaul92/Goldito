@@ -393,6 +393,7 @@ Goldito/
 | `review_received` | sitter | `reviews` insert 트리거 (07C) | "Robert left you 5 stars ⭐" | `/sitter/bookings/[id]` |
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Chloe can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Chloe would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
+| `booking_refunded` | 견주 | 결제한 예약이 취소될 때(누가 취소하든) 트리거 `bookings_notify_refund` (015c, #266) | "Refunded in full" / "$268.13 CAD back for Max (demo)" | 예약 상세 (**Refunded** 칩) |
 | `feed_post` | owner (시터 게시) · 당직 sitter (오너 게시) | 트리거 on `feed_posts` insert (`task_log_id is null` · `visibility = 'shared'`) | "New photo of Max 📸" / "Robert shared a photo of Max 📸" | `/owner/feed` · `/sitter/feed/[petId]` |
 | `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
 | `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/diary` |

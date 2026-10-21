@@ -964,6 +964,16 @@
 | CHAT-38 | 채팅 수수료가 결제에 남는지 (014y): ① House sitting 부킹에서 시터 **Send final quote** ② 최종 견적이 열린 채(수수료 미응답) 오너가 예약 상세 → Checkout → Pay ③ 수수료 포함 결제 뒤 픽업 시간 변경을 둘이 합의 | ① 시트에 서비스 선택이 없고 부킹의 서비스(House sitting)로 가격이 나감 ② "Answer the sitter's new quote in the chat first." 결제 안 됨 ③ 새 총액 = 새 기본가 + 낸 수수료(수수료가 사라지지 않음) | 🤖 `chat`(①) · SQL `rls_smoke` 014q(②③) | 사람 확인 대기 · 호스팅 DB는 014q 적용 뒤 |
 | CHAT-39 | 채팅에 "door code 4821, call 416-555-0199"를 보내거나 예약 요청 메모에 쓰고, 다음 칩 · 초안을 부름 (R20-7) | 모델에 가는 대화 · 요약에는 `#`만 남고 코드 · 전화번호 · 이메일이 없음. "Oct 10-12" 같은 날짜와 가격은 그대로. 저장된 `chat_threads.ai_summary`에도 숫자 없음 | pytest `test_ai_chat`(scrub · 보낸 메시지 · 요청 메모 · 요약) | ➖ |
 
+### 3.43 결제한 예약을 취소하면 전액 환불 (REFUND) · #266 · *사전: 호스팅 DB에 `015c` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| REFUND-1 | 오너: 예약 → 데모 결제 → 예약 상세 **Cancel booking** | 토스트 "Cancelled. Refunded in full", 칩이 **Paid** 대신 **Refunded**, 알림 "Refunded in full / $… CAD back for Max (demo)". 결제 기록(`paid_at`)은 남고 `refunded_at`이 생김. "Booked and paid" 카드는 사라짐 | 🤖 `rebook` · SQL `rls_smoke`(015c) | ➖ |
+| REFUND-2 | 시터가 결제된 예약을 취소 | 오너도 환불되고 같은 알림, 오너 예약 상세는 **Refunded**. 시터에게는 환불 알림 없음 | 🤖 `rebook` · SQL `rls_smoke`(015c) | ➖ |
+| REFUND-3 | 결제 전 예약을 취소 | 환불 없음(`refunded_at` 비어 있음), 환불 알림 없음 | SQL `rls_smoke`(015c) | ➖ |
+| REFUND-4 | 맡긴 뒤(Received) 취소 시도 | 예전처럼 `booking_in_progress`로 막히고 환불도 없음 | SQL `rls_smoke`(015c) | ➖ |
+| REFUND-5 | 오너 채팅의 결제 카드(취소된 예약) | "Cancelled" 아래 "Refunded in full · $…". 시터 카드에는 금액이 안 보임 | **👤** | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
 - **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.

@@ -17,7 +17,8 @@ const key = (bookingId: string) => `goldito:paid-seen:${bookingId}`;
 export function PaidConfirmation({ booking }: { booking: BookingSummary }) {
   const styles = useThemedStyles(makeStyles);
   const [seen, setSeen] = useState(() => loadLocal(key(booking.id), false));
-  if (!booking.paidAt || seen) return null;
+  // A cancelled booking was refunded (015c): no "booked and paid" card for it.
+  if (!booking.paidAt || booking.status !== "confirmed" || seen) return null;
 
   const pets = booking.pets.map((p) => p.name).join(" & ") || "your pet";
   const total = booking.priceSnapshot?.total;
