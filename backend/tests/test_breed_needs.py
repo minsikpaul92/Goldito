@@ -13,6 +13,7 @@ from app.ai.breed_needs import (
     RawNeeds,
     base_breed,
     normalize_breed,
+    supported,
     valid_breed_text,
     validate_chips,
 )
@@ -63,11 +64,12 @@ def test_lines_with_a_real_quote_are_kept_and_only_their_pages_are_listed():
     chips, sources = validate_chips(
         raw(
             ("exercise", "About an hour of exercise a day", "needs about an hour of exercise every day", 1),
-            ("care", "Watch the hips as they age", "prone to hip problems in later life", 2),
+            ("care", "Prone to hip problems", "prone to hip problems in later life", 2),
         ),
         HITS,
     )
     assert [(c.kind, c.source) for c in chips] == [("exercise", 0), ("care", 1)]
+    assert chips[0].quote == "needs about an hour of exercise every day"
     assert [s.url for s in sources] == ["https://www.akc.org/poodle", "https://vcahospitals.com/poodle"]
 
 
@@ -86,12 +88,23 @@ def test_a_line_that_the_page_does_not_say_is_dropped():
     assert chips == [] and sources == []
 
 
+def test_a_real_quote_under_an_unrelated_line_is_dropped():
+    assert supported("daily walk and play sessions", "A daily walk around the block, coupled with several play sessions")
+    assert supported("Brush daily", "Brush the coat daily")
+    assert not supported("watch for heat sensitivity", "Its thick coat provides some protection against cold weather")
+    chips, _ = validate_chips(
+        raw(("care", "Hot weather is risky", "Brush the coat daily", 1)),
+        HITS,
+    )
+    assert chips == []
+
+
 def test_a_kind_is_used_once_and_there_are_at_most_three_lines():
     many = raw(
         ("exercise", "Daily exercise", "needs about an hour of exercise every day", 1),
         ("exercise", "More exercise", "needs about an hour of exercise every day", 1),
         ("grooming", "Brush daily", "Brush the coat daily", 1),
-        ("care", "Watch the hips", "prone to hip problems", 2),
+        ("care", "Prone to hip problems", "prone to hip problems", 2),
     )
     chips, _ = validate_chips(many, HITS)
     assert [c.kind for c in chips] == ["exercise", "grooming", "care"]
@@ -209,7 +222,7 @@ def key(monkeypatch):
 def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeypatch, key):
     sent = {}
 
-    def search(query, *, api_key, timeout, domains=None):
+    def search(query, *, api_key, timeout, domains=None, excerpt_chars=400):
         sent.update(query=query.text, domains=domains)
         return HITS
 
@@ -234,7 +247,7 @@ def test_the_search_uses_the_species_domains_and_keeps_only_quoted_lines(monkeyp
 
 def test_cats_use_cat_sites(monkeypatch, key):
     seen = {}
-    monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None: seen.update(d=domains) or [])
+    monkeypatch.setattr(tavily, "search", lambda q, *, api_key, timeout, domains=None, excerpt_chars=400: seen.update(d=domains) or [])
     assert breed_needs.search_needs("cat", "ragdoll") == ([], [])
     assert "icatcare.org" in seen["d"] and "akc.org" not in seen["d"]
 
@@ -276,7 +289,7 @@ def api(monkeypatch, listing):
 def test_owners_and_sitters_can_ask_and_a_listed_breed_needs_no_search(client, api) -> None:
     for token in (owner_token(), sitter_token()):
         out = client.post("/api/breed-needs", json={"species": "dog", "breed": "Maltese"}, headers=headers(token)).json()
-        assert out["origin"] == "list" and out["chips"][0] == {"kind": "grooming", "text": "Brush daily", "source": 0}
+        assert out["origin"] == "list" and out["chips"][0] == {"kind": "grooming", "text": "Brush daily", "source": 0, "quote": None}
     assert api["searches"] == 0
 
 

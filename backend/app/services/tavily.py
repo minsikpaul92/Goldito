@@ -29,7 +29,9 @@ def _domain(url: str) -> str:
     return host[4:] if host.startswith("www.") else host
 
 
-def search(query: Query, *, api_key: str, timeout: float, domains: list[str] | None = None) -> list[dict]:
+def search(
+    query: Query, *, api_key: str, timeout: float, domains: list[str] | None = None, excerpt_chars: int = EXCERPT_CHARS
+) -> list[dict]:
     """One basic search (1 credit) on the trusted domains (the treat check's, or `domains`): [{title, url, domain, content}]."""
     domains = domains or TRUSTED_DOMAINS
     payload: dict = {
@@ -54,7 +56,7 @@ def search(query: Query, *, api_key: str, timeout: float, domains: list[str] | N
             "title": str(item.get("title") or domain)[:200],
             "url": url,
             "domain": domain,
-            "content": " ".join(str(item.get("content") or "").split())[:EXCERPT_CHARS],
+            "content": " ".join(str(item.get("content") or "").split())[:excerpt_chars],
         })
     return hits
 

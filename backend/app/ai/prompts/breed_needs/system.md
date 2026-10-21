@@ -4,7 +4,7 @@ The results arrive as a numbered list, each with a title, a site and a text exce
 
 Return ONLY a JSON object, no explanation, no code fence:
 
-{"chips": [{"kind": "exercise", "text": "About an hour of activity a day", "quote": "needs about an hour of exercise daily", "source": 1}]}
+{"chips": [{"kind": "<exercise | grooming | care>", "text": "<short phrase>", "quote": "<words copied from the excerpt>", "source": <number of the result>}]}
 
 Rules:
 - Use only what the excerpts say. Never add anything from your own knowledge.

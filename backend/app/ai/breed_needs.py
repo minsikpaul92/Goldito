@@ -13,7 +13,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from app.ai.pet_voice import quote_in
+from app.ai.pet_voice import _tokens, quote_in
 
 KINDS = ("exercise", "grooming", "care")
 KIND_LABEL = {"exercise": "Exercise", "grooming": "Grooming", "care": "Watch for"}
@@ -33,6 +33,8 @@ class Chip(BaseModel):
     text: str
     # Index into the needs' `sources` of the page this came from.
     source: int
+    # The words on that page the line rests on, kept so a person can check the line against the page.
+    quote: str | None = None
 
 
 class Source(BaseModel):
@@ -84,6 +86,17 @@ def reviewed_list() -> dict[str, dict[str, dict]]:
     return out
 
 
+def supported(text: str, quote: str) -> bool:
+    """The short line is about what the quote says: at least half of its longer words appear in the quote (a spelling
+    ending is tolerated). A real quote under an unrelated line ("heat" over a sentence about cold) does not pass."""
+    words = [w for w in _tokens(text) if len(w) >= 4]
+    if not words:
+        return True
+    said = _tokens(quote)
+    hits = sum(any(s[:4] == w[:4] for s in said) for w in words)
+    return hits >= 1 and hits * 2 >= len(words)
+
+
 def validate_chips(raw: RawNeeds, hits: list[dict]) -> tuple[list[Chip], list[Source]]:
     """Keeps at most three needs: a known kind used once, a short text, and a quote found in the excerpt of its page.
 
@@ -101,13 +114,13 @@ def validate_chips(raw: RawNeeds, hits: list[dict]) -> tuple[list[Chip], list[So
         if not isinstance(n, int) or not 1 <= n <= len(hits):
             continue
         hit = hits[n - 1]
-        if not quote_in(item.quote, f"{hit.get('title', '')} {hit.get('content', '')}"):
+        if not quote_in(item.quote, f"{hit.get('title', '')} {hit.get('content', '')}") or not supported(text, item.quote):
             continue
         link = Source(title=str(hit.get("title") or hit.get("domain") or "Source")[:120], url=str(hit["url"]))
         if link not in sources:
             sources.append(link)
         used.add(kind)
-        chips.append(Chip(kind=kind, text=text, source=sources.index(link)))
+        chips.append(Chip(kind=kind, text=text, source=sources.index(link), quote=" ".join(item.quote.split())[:300]))
         if len(chips) == MAX_CHIPS:
             break
     return chips, sources

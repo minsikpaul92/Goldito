@@ -32,6 +32,8 @@ log = logging.getLogger("goldito.breed_needs")
 FOUND_TTL = timedelta(days=30)
 EMPTY_TTL = timedelta(days=3)
 SEARCH_TIMEOUT_S = 8.0
+# A breed page needs more room than a treat label: the needs are a few sentences in.
+EXCERPT_CHARS = 1500
 MODEL_TIMEOUT_S = 20.0
 
 
@@ -45,8 +47,8 @@ class Needs(BaseModel):
 
 
 def _query(species: str, breed: str) -> Query:
-    topic = "grooming exercise health" if species == "dog" else "grooming activity health"
-    return Query(f"{breed} {species} breed {topic}")
+    topic = "exercise needs grooming" if species == "dog" else "activity needs grooming"
+    return Query(f"{breed} {species} breed information {topic}")
 
 
 def _fresh(row: dict, now: datetime) -> bool:
@@ -72,7 +74,9 @@ def search_needs(species: str, breed: str) -> tuple[list[Chip], list[Source]] | 
     if not api_key:
         return None
     try:
-        hits = tavily.search(_query(species, breed), api_key=api_key, timeout=SEARCH_TIMEOUT_S, domains=DOMAINS[species])
+        hits = tavily.search(
+            _query(species, breed), api_key=api_key, timeout=SEARCH_TIMEOUT_S, domains=DOMAINS[species], excerpt_chars=EXCERPT_CHARS
+        )
     except (httpx.HTTPError, ValueError) as exc:
         log.info("breed-needs: search failed (%s)", exc.__class__.__name__)
         return None
