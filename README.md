@@ -263,6 +263,30 @@ Every reasoning and writing call runs on **Nebius Token Factory** through its Op
 
 ---
 
+## Where the AI can be wrong, and what we do
+
+We would rather show these than hide them.
+
+| Where | What can go wrong | What Goldito does |
+| :--- | :--- | :--- |
+| Chat replies and drafts | The model states a price, date or availability that isn't true | Facts come from the database; an amount or date that isn't in them is rejected (one rewrite, then the chip's own words). Nothing is sent until a person presses **Send** |
+| Treat check | The label photo is blurry, or an ingredient name hides an allergen | A fixed allergen rule table runs first and the model can never rate a treat safer than the rules; every result says *AI can be wrong, check the label and ask your vet*; DANGER needs **I understand** to close |
+| Daily note and Life Record | The model fills a gap with something that didn't happen | They are written only from that day's check-ins, tasks and photos; a field with no evidence stays empty. The sitter approves the note before it posts |
+| Pet profile from voice 🚧 | A heard fact is wrong | Each answer shows the sentence it came from and can be unticked; safety answers are never filled in for the owner |
+| No AI at all | Token Factory is slow or down, or the server is waking up | Typing always works: the chat shows no chips, the daily note falls back to a plain list, and no screen blocks on a model |
+| Vision models | NVIDIA's vision models are dedicated-endpoint only on Token Factory | Photos are read by MiniCPM-V on the shared API; reasoning and writing stay on Nemotron |
+
+## Accessibility
+
+- **Built for older owners and busy sitters:** one primary action per screen, one question per screen in the pet profile (28 px questions, 64 px answers 🚧), and no required typing for sitters.
+- **Contrast and targets:** text at 4.5 : 1 or better and controls at 3 : 1 in both looks; touch targets of at least 44 × 44 px.
+- **Not color alone:** status always has text or an icon too; the DANGER screen has a heading, an icon and a required button.
+- **Screen readers and mice:** buttons and icon-only controls have roles and labels, and on a computer the phone frame works with a mouse (click = tap, drag = swipe).
+
+The full rules are in [DESIGN.md §9](DESIGN.md#9-accessibility).
+
+---
+
 ## Architecture
 
 <details>
