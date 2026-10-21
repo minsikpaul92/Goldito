@@ -1001,6 +1001,62 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-next-pay")).toHaveCount(0);
   });
 
+  test("a final quote that asks for more than the first quote offers Suggest another price; the sitter answers with a new final quote (#230)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedBooking(db, false);
+
+    // The sitter prices the stay first ($268.13), then says yes; the owner says yes too.
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/chat/${THREAD}`);
+    let screen = app(page);
+    await screen.getByTestId("chat-send-quote").click();
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("chat-quote-card")).toContainText("$268.13");
+    await screen.getByTestId("chat-next-accept").click();
+    screen = await openChatAs(page, OWNER);
+    await screen.getByTestId("chat-next-agree").click();
+    await screen.getByTestId("agree-submit").click();
+    await expect(screen.getByTestId("chat-agreement-card")).toContainText("Booked, you both agreed");
+
+    // Same amount as the first quote: Confirm and Decline only.
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("chat-next-final_quote").click();
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("quote-title").last()).toHaveText("Final quote");
+    await expect(screen.getByTestId("chat-requote")).toBeVisible(); // an open final quote can be replaced
+    screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("quote-decline")).toBeVisible();
+    await expect(screen.getByTestId("quote-counter")).toHaveCount(0);
+
+    // The sitter adds a fee: the final quote now asks for more, and the owner may suggest another price.
+    screen = await openChatAs(page, SITTER);
+    await screen.getByTestId("quote-add-fee").last().click();
+    await screen.getByTestId("add-fee-labels").getByText("Medication").click();
+    await screen.getByTestId("add-fee-amount").fill("30");
+    await screen.getByTestId("add-fee-submit").click();
+    screen = await openChatAs(page, OWNER);
+    await screen.getByTestId("quote-counter").click();
+    await expect(screen.getByTestId("chat-counter-amount")).toHaveValue("298.13");
+    await screen.getByTestId("chat-counter-amount").fill("280");
+    await screen.getByTestId("chat-counter-note").fill("Could the fee be lower?");
+    await screen.getByTestId("chat-counter-send").click();
+    await expect(screen.getByTestId("toast")).toContainText("Sent to Chloe");
+    // Only a message: the price is still the server's, and nothing is cancelled.
+    expect(db.chat_messages.at(-1)).toMatchObject({ sender_id: OWNER.id, kind: "text", body: "Could you do $280.00 in total?\nCould the fee be lower?" });
+    expect(db.bookings[0].status).toBe("confirmed");
+
+    // The sitter reads it and sends a new final quote, which replaces the open one.
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-bubble-them").last()).toContainText("Could you do $280.00 in total?");
+    await screen.getByTestId("chat-requote").click();
+    await screen.getByTestId("send-quote-submit").click();
+    await expect(screen.getByTestId("quote-title").last()).toHaveText("Final quote");
+    const finals = db.chat_messages.filter((m) => (m.card as { type?: string } | null)?.type === "quote");
+    expect((finals.at(-2)?.card as { status: string }).status).toBe("replaced");
+    expect((finals.at(-1)?.card as { status: string }).status).toBe("sent");
+  });
+
   test("a chat with no booking yet shows the circles on Request", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);

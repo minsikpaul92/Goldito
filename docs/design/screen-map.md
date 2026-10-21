@@ -20,22 +20,23 @@
 
 One chat per owner and sitter (3D.4): the person and the stay pinned in the header, the booking progress, then everyone's messages and cards, and one thin line to write on. Request booking opens a sheet over the chat.
 
-Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
+Shows: `AgreeSheet` · `ChatCounterSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreementCard` · `ChatPaymentCard` · `ChatCareCards` · `ChatHandoffCard` · `ChatPlusMenu` · `ChatQuoteCard` · `ChatStayCard` · `ChatTripCard` · `AddFeeSheet` · `SendQuoteSheet` · `ChatHeaderTitle` · `MeetGreetCard` · `MeetGreetHandle` · `MessageBubble` · `PhotoViewerSheet` · `RequestBookingSheet`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 233 |
-| EmptyState | Chat not found | — | 241 |
-| Pressable | — | `chat-stage` | 473 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 529 |
-| Button | Send quote | `chat-send-quote` | 536 |
-| TextButton | Send quote | `chat-send-quote` | 539 |
-| TextButton | Decline | `chat-decline` | 542 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 569 |
-| Pressable | — | `chat-action-chip` | 590 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 601 |
-| Pressable | Send a card | `chat-plus` | 617 |
-| Pressable | Send | `chat-send` | 650 |
+| EmptyState | Couldn't load this chat | — | 236 |
+| EmptyState | Chat not found | — | 244 |
+| Pressable | — | `chat-stage` | 484 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 541 |
+| Button | Send quote | `chat-send-quote` | 548 |
+| TextButton | Send quote | `chat-send-quote` | 551 |
+| TextButton | Decline | `chat-decline` | 554 |
+| TextButton | Send a new final quote | `chat-requote` | 568 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 584 |
+| Pressable | — | `chat-action-chip` | 605 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 616 |
+| Pressable | Send a card | `chat-plus` | 632 |
+| Pressable | Send | `chat-send` | 665 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -674,6 +675,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Open diary | `chat-diary-open` | 87 |
 | Button | Ask for a photo | `chat-ask-photo` | 105 |
 
+### ChatCounterSheet — [components/ChatCounterSheet.tsx](../../frontend/components/ChatCounterSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy ? "Sending…" : `Send to ${sitterName}` | `chat-counter-sheet` | 66 |
+| Button | busy ? "Sending…" : `Send to ${sitterName}` | `chat-counter-send` | 72 |
+
 ### ChatDeclineSheet — [components/ChatDeclineSheet.tsx](../../frontend/components/ChatDeclineSheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -712,11 +720,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Decline | `quote-extra-decline` | 84 |
-| TextButton | Accept | `quote-extra-accept` | 85 |
-| TextButton | Add a fee | `quote-add-fee` | 101 |
-| Button | Confirm quote | `quote-confirm` | 103 |
-| TextButton | Decline | `quote-decline` | 106 |
+| TextButton | Decline | `quote-extra-decline` | 86 |
+| TextButton | Accept | `quote-extra-accept` | 87 |
+| TextButton | Add a fee | `quote-add-fee` | 103 |
+| Button | Confirm quote | `quote-confirm` | 105 |
+| TextButton | Suggest another price | `quote-counter` | 109 |
+| TextButton | Decline | `quote-decline` | 110 |
 
 ### ChatQuoteSheets — [components/ChatQuoteSheets.tsx](../../frontend/components/ChatQuoteSheets.tsx)
 
@@ -1426,4 +1435,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-413 actions · 412 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+416 actions · 415 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

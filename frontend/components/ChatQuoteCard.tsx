@@ -21,6 +21,8 @@ type Props = {
   onConfirm: () => void;
   /** The owner's no to a final quote (#230); shown under Confirm only when given. */
   onDecline?: () => void;
+  /** "Suggest another price" (#230): given only for a final quote whose total changed since the first quote. */
+  onCounter?: () => void;
 };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -35,7 +37,7 @@ function short(iso: string): string {
  * The sitter's quote in the chat (3D.6): the server's breakdown, the extra fees with the owner's answer on each, and the
  * total. Every number is read from the card; the model never writes a price (D29).
  */
-export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm, onDecline }: Props) {
+export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm, onDecline, onCounter }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -102,8 +104,11 @@ export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onC
       {open && role === "owner" ? (
         <Button label="Confirm quote" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
       ) : null}
-      {open && role === "owner" && final && onDecline ? (
-        <TextButton label="Decline" danger disabled={busy} onPress={onDecline} testID="quote-decline" />
+      {open && role === "owner" && final && (onDecline || onCounter) ? (
+        <View style={styles.links}>
+          {onCounter ? <TextButton label="Suggest another price" disabled={busy} onPress={onCounter} testID="quote-counter" /> : null}
+          {onDecline ? <TextButton label="Decline" danger disabled={busy} onPress={onDecline} testID="quote-decline" /> : null}
+        </View>
       ) : null}
     </Card>
   );
@@ -114,6 +119,7 @@ const makeStyles = (theme: Theme) =>
     card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%" },
     cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", opacity: 0.5 },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
+    links: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, flexShrink: 1 },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
