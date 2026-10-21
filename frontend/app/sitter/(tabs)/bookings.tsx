@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { BookingCard } from "../../../components/BookingCard";
@@ -59,6 +59,10 @@ export default function SitterBookings() {
   const [bucket, setBucket] = useState<Bucket>("requests");
   const userPicked = useRef(false);
   const chats = useMyChats();
+  // The newest chat with something new for me (#228): Bookings opens on Chats and points at it.
+  const newest = chats.items.filter((c) => c.unread > 0).sort((a, b) => b.lastAt.localeCompare(a.lastAt))[0] ?? null;
+  const hasUnread = useRef(false);
+  hasUnread.current = newest != null;
 
   // `open` = choose the tab to land on (when the sitter arrives); a refresh in place never moves them.
   const load = useCallback(
@@ -67,9 +71,9 @@ export default function SitterBookings() {
       try {
         const bookings = await listSitterBookings(sitterId);
         setState({ status: "ready", bookings });
-        // Open on what needs the sitter most: a stay on or about to start, else open requests.
-        // Never override a tab the sitter picked themselves.
-        if (open && !userPicked.current) setBucket(firstSitterBucket(bookings));
+        // Open on what needs the sitter most: a chat with something new (#228), else a stay on or about to start,
+        // else open requests. Never override a tab the sitter picked themselves.
+        if (open && !userPicked.current) setBucket(hasUnread.current ? "chats" : firstSitterBucket(bookings));
       } catch (error) {
         setState({ status: "error", message: (error as Error).message });
       }
@@ -79,9 +83,20 @@ export default function SitterBookings() {
 
   useOnBookingChange(() => void load());
 
+  // A chat that turns unread while the sitter is here (or arrives right after they land, the list loads on focus too)
+  // moves them to Chats, unless they picked a tab themselves. Nothing happens inside an open chat: this is the list.
+  const newestKey = newest ? `${newest.threadId}|${newest.lastAt}` : null;
+  useEffect(() => {
+    if (newestKey && !userPicked.current) setBucket("chats");
+  }, [newestKey]);
+
   useFocusEffect(
     useCallback(() => {
       void load(true);
+      // A tab picked by hand holds for this visit; the next visit lands on what needs the sitter again (#228).
+      return () => {
+        userPicked.current = false;
+      };
     }, [load]),
   );
 
@@ -126,7 +141,7 @@ export default function SitterBookings() {
       {empty ? (
         <EmptyState {...EMPTY[bucket]} />
       ) : bucket === "chats" ? (
-        <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
+        <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} highlightId={newest?.threadId ?? null} />
       ) : (
         <View style={styles.list}>
           {shown.map((booking) => (

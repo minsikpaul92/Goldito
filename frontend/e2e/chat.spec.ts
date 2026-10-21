@@ -145,6 +145,48 @@ test.describe("chat hub", () => {
     await expect(screen.getByTestId("chat-unread-Robert")).toHaveCount(0);
   });
 
+  test("a sitter with something new in a chat lands on Chats, pointed at the newest one; with nothing new the usual tab (#228)", async ({ page }) => {
+    const JOY: MockUser = { id: "00000000-0000-4000-8000-000000000005", email: "joy@goldito.test", password: "coco-and-toto", role: "owner", displayName: "Joy" };
+    const JOY_THREAD = "00000000-0000-4000-8000-0000000000f2";
+    const { db } = await mockSupabase(page, [OWNER, SITTER, JOY]);
+    seedThread(db); // Robert wrote twice, unread, at 10:03
+    db.chat_threads.push({ id: JOY_THREAD, owner_id: JOY.id, sitter_id: SITTER.id, owner_read_at: null, sitter_read_at: null, owner_left_at: null, sitter_left_at: null });
+    db.chat_messages.push({ id: "j1", thread_id: JOY_THREAD, sender_id: JOY.id, kind: "text", body: "Hi! Are you free in May?", card: null, created_at: "2026-10-10T10:05:00.000Z" });
+    const screen = await openBookings(page, SITTER, "sitter");
+
+    // Two owners wrote: Chats opens, and the newer chat (Joy) is the one pointed at.
+    await expect(screen.getByTestId("sitter-bookings-tabs-chats")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("chat-row-Joy-new")).toBeVisible();
+    await expect(screen.getByTestId("chat-row-Robert-new")).toHaveCount(0);
+
+    // A tab picked by hand holds while the sitter stays.
+    await screen.getByTestId("sitter-bookings-tabs-past").click();
+    await expect(screen.getByTestId("sitter-bookings-tabs-past")).toHaveAttribute("aria-checked", "true");
+
+    // Read both chats: back on Bookings there is nothing new, so the usual first tab (Requests) opens.
+    for (const thread of [THREAD, JOY_THREAD]) {
+      await page.goto(`/chat/${thread}`);
+      await expect(screen.getByTestId("chat-input")).toBeVisible();
+    }
+    await page.goto("/sitter");
+    await screen.getByRole("tab").getByText("Bookings", { exact: true }).click();
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId(/^chat-row-.*-new$/)).toHaveCount(0);
+  });
+
+  test("a chat that turns unread while the sitter is on Bookings moves them to Chats without a reload (#228)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seedThread(db);
+    db.chat_threads[0].sitter_read_at = "2026-10-10T10:09:00.000Z"; // everything read
+    const screen = await openBookings(page, SITTER, "sitter");
+    await expect(screen.getByTestId("sitter-bookings-tabs-requests")).toHaveAttribute("aria-checked", "true");
+
+    // Robert writes while Chloe is looking at Requests.
+    db.chat_messages.push({ id: "m9", thread_id: THREAD, sender_id: OWNER.id, kind: "text", body: "One more thing", card: null, created_at: new Date().toISOString() });
+    await expect(screen.getByTestId("sitter-bookings-tabs-chats")).toHaveAttribute("aria-checked", "true", { timeout: 15_000 });
+    await expect(screen.getByTestId("chat-row-Robert-new")).toBeVisible();
+  });
+
   test("leaving a chat hides it from my list only; a swipe does it and the chat has no Leave button", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);

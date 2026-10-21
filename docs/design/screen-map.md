@@ -409,9 +409,9 @@ Shows: `BookingCard` · `ChatList`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your bookings | — | 93 |
-| SegmentedControl | — | `sitter-bookings-tabs` | 110 |
-| EmptyState | — | — | 127 |
+| EmptyState | Couldn't load your bookings | — | 108 |
+| SegmentedControl | — | `sitter-bookings-tabs` | 125 |
+| EmptyState | — | — | 142 |
 
 ### `/sitter/bookings/[bookingId]` — [app/sitter/bookings/[bookingId]/index.tsx](../../frontend/app/sitter/bookings/[bookingId]/index.tsx)
 
@@ -721,7 +721,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 28 |
+| Pressable | ``${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`` | ``chat-row-${chat.otherName}`` | 30 |
 
 ### ChatPlusMenu — [components/ChatPlusMenu.tsx](../../frontend/components/ChatPlusMenu.tsx)
 
