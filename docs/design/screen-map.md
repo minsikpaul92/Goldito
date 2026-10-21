@@ -336,21 +336,21 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 202 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 404 |
-| TextButton | Edit entry info | `profile-home-access` | 421 |
-| SegmentedControl | — | `profile-ai-mode` | 437 |
-| Button | Edit your answers | `profile-answers-edit` | 466 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 474 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 476 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 493 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 503 |
-| TextButton | + Add a spot | `profile-add-spot` | 527 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 542 |
+| EmptyState | Couldn't load your profile | — | 203 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 406 |
+| TextButton | Edit entry info | `profile-home-access` | 423 |
+| SegmentedControl | — | `profile-ai-mode` | 439 |
+| Button | Edit your answers | `profile-answers-edit` | 468 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 476 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 478 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 495 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 505 |
+| TextButton | + Add a spot | `profile-add-spot` | 529 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 544 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 

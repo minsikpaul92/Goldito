@@ -57,6 +57,18 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 | **PH.3** ✅ | 시터 Home 펫 방도 저장된 머리로(`usePetLook` · `getPetLook`이 털색과 머리를 함께 읽음). 사진 머리에는 기분 얼굴을 그리지 않고 기분 글자 · 흔들림 그대로, sleepy만 Z(`withZzz`, 오너 쪽도 같음) | 🤖 `pet-room-sitter`(사진 머리 · 낮잠 Z) · `pet-sprite`(Z만 바뀜) |
 | PH.4 | test-guide TAMA-10 사람 확인(실제 사진 여러 장, 개 · 고양이), TODO 정리 | 사람 |
 
+### 11.12 시터 배지 (PR #261, 2026-10-21)
+
+펫 메달(`015b`)은 시터가 펫에게 주고 오너가 Pet 페이지에서 본다. 시터도 받는 배지가 따로 있다: **시터 Profile 맨 위 Badges**. 저장하지 않고 데이터에서 계산(`features/sitters/badgeApi.ts`), 마이그레이션 없음.
+
+| Badge | 언제 | 근거 |
+| :--- | :--- | :--- |
+| 🐾 First stay | 첫 스테이를 마친 날(첫 pick-up 완료) | `booking_handoffs` (시터 자기 예약) |
+| ⭐ First 5-star review | 첫 별 5개 리뷰를 받은 날 | `reviews` (시터 자기 리뷰) |
+| 그림자 4칸 "Soon" | 나중에 추가할 배지 자리 | - |
+
+아직 못 받은 배지는 회색 "Not yet". 오너가 보는 시터 공개 프로필에 배지를 보이는 것과 다른 배지(10번째 스테이 등)는 나중. 🤖 `sitter-badges.spec.ts`.
+
 한계: 옆모습 전신 사진은 몸까지 들어간다(머리 감지 없음). 얼굴 감지로 머리만 자르기는 나중.
 
 ## Definition of Done (DoD)
