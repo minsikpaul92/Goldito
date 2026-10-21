@@ -7,6 +7,7 @@ import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
+import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
 import { Chip } from "../components/ui/Chip";
@@ -33,6 +34,7 @@ import {
 import { safetyChips } from "../features/ownerOnboarding/scoring";
 import { progress, stepIds, stepIndex } from "../features/ownerOnboarding/steps";
 import { normalizeAllergen } from "../features/pets/petValidation";
+import { LocationError, getCurrentPosition } from "../lib/location";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -43,6 +45,7 @@ import type { Species } from "../types/db";
 const PICK_DELAY_MS = 200;
 const MAX_NAME = 40;
 const MAX_PET_INTRO = 200;
+const MAX_OWNER_INTRO = 500;
 
 export default function OwnerOnboarding() {
   const session = useSession();
@@ -56,6 +59,8 @@ export default function OwnerOnboarding() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationNote, setLocationNote] = useState<string | null>(null);
   const [otherFood, setOtherFood] = useState("");
   const [showOtherFood, setShowOtherFood] = useState(false);
   const pickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -390,6 +395,72 @@ export default function OwnerOnboarding() {
     );
   }
 
+  if (step === "ownerIntro") {
+    return frame(
+      "A few words about you",
+      <BigInput
+        value={draft.intro}
+        onChangeText={(intro) => update({ intro: intro.slice(0, MAX_OWNER_INTRO) })}
+        multiline
+        accessibilityLabel="About you"
+        testID="own-intro"
+      />,
+      <>
+        {nextButton(draft.intro.trim() === "")}
+        {skipLink}
+      </>,
+      "Your sitter reads this.",
+    );
+  }
+
+  if (step === "location") {
+    const useCurrentLocation = async () => {
+      setLocating(true);
+      setLocationNote(null);
+      try {
+        update({ home: await getCurrentPosition(), homeAddress: "" });
+      } catch (e) {
+        setLocationNote(
+          e instanceof LocationError && e.reason === "denied"
+            ? "Location is off for Goldito in this browser. Type your address instead."
+            : "We couldn't read your location. Type your address instead.",
+        );
+      } finally {
+        setLocating(false);
+      }
+    };
+    return frame(
+      "Where do you live?",
+      <>
+        <AddressInput
+          label="Home address"
+          value={draft.homeAddress}
+          onChangeText={(homeAddress) => update({ homeAddress, home: homeAddress.trim() === draft.homeAddress.trim() ? draft.home : null })}
+          placed={draft.home && draft.homeAddress ? draft.homeAddress : null}
+          onPick={(s) => update({ homeAddress: s.label, home: s.point })}
+          testID="own-address"
+        />
+        <TextButton
+          label={locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location"}
+          onPress={() => void useCurrentLocation()}
+          disabled={locating}
+          testID="own-use-location"
+        />
+        {draft.home && !draft.homeAddress ? (
+          <Text style={styles.note} testID="own-pin-ok">
+            Pin set
+          </Text>
+        ) : null}
+        {locationNote ? <Text style={styles.note}>{locationNote}</Text> : null}
+      </>,
+      <>
+        {nextButton(!draft.home)}
+        {skipLink}
+      </>,
+      "Sitters only see a rough distance.",
+    );
+  }
+
   // Summary: what will be saved. Tap a row to change it.
   const foods = foodsFromDraft(draft);
   const profile = profileFromDraft(draft);
@@ -411,6 +482,8 @@ export default function OwnerOnboarding() {
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
     { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
     { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.safety.s6 === "none" ? "None" : "Not shared yet" },
+    { id: "ownerIntro", label: "About you", value: draft.intro.trim() || "Not shared yet" },
+    { id: "location", label: "Home", value: draft.home ? draft.homeAddress.trim() || "Pin set" : "Not shared yet" },
   ];
   return (
     <StepFrame
@@ -480,5 +553,6 @@ const makeStyles = (theme: Theme) =>
     summaryText: { flex: 1, gap: 2 },
     summaryLabel: { fontSize: 18, color: theme.color.textMuted },
     summaryValue: { fontSize: 20, lineHeight: 26, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    note: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
   });

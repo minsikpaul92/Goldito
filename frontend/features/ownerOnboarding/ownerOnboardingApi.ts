@@ -23,13 +23,25 @@ export async function needsOwnerOnboarding(userId: string): Promise<boolean> {
   return !!data && (data as { onboarded_at: string | null }).onboarded_at === null;
 }
 
-/** "Add a pet later" and the end of the flow both land here. */
-export async function markOwnerOnboarded(userId: string): Promise<void> {
+/** "Add a pet later" and the end of the flow both land here. `fields` are the owner's own answers (intro, home). */
+export async function markOwnerOnboarded(userId: string, fields: Record<string, unknown> = {}): Promise<void> {
   const { error } = await getSupabase()
     .from("owner_profiles")
-    .update({ onboarded_at: new Date().toISOString() })
+    .update({ ...fields, onboarded_at: new Date().toISOString() })
     .eq("id", userId);
   if (error) fail("save your answers");
+}
+
+/** What the owner told about themselves in the flow: only what they filled in, so nothing saved before is wiped. */
+export function ownerFields(draft: OwnerOnboardingDraft): Record<string, unknown> {
+  const fields: Record<string, unknown> = {};
+  if (draft.intro.trim()) fields.intro = draft.intro.trim();
+  if (draft.home) {
+    fields.home_lat = draft.home.lat;
+    fields.home_lng = draft.home.lng;
+    if (draft.homeAddress.trim()) fields.home_address = draft.homeAddress.trim();
+  }
+  return fields;
 }
 
 /**
@@ -59,7 +71,7 @@ export async function saveOwnerOnboarding(userId: string, draft: OwnerOnboarding
       fail("save the photos");
     }
   }
-  await markOwnerOnboarded(userId);
+  await markOwnerOnboarded(userId, ownerFields(draft));
   return petId;
 }
 

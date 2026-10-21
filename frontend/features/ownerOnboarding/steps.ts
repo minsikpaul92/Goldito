@@ -3,7 +3,7 @@ import { SAFETY_QUESTIONS, chartQuestions } from "./questions";
 
 /**
  * The screens of the flow, one question each (11.15 §3). Ids are stored in the draft: "species", "name", "photos", "breed",
- * "age", "weight", "petIntro", "q:<chart key>", "s:<safety key>", "foods", "summary".
+ * "age", "weight", "petIntro", "q:<chart key>", "s:<safety key>", "foods", "ownerIntro", "location", "summary".
  */
 export function stepIds(species: Species | null): string[] {
   const ids = ["species"];
@@ -11,7 +11,7 @@ export function stepIds(species: Species | null): string[] {
   ids.push("name", "photos", "breed", "age", "weight", "petIntro");
   for (const q of chartQuestions(species)) ids.push(`q:${q.key}`);
   for (const q of SAFETY_QUESTIONS) ids.push(`s:${q.key}`);
-  ids.push("foods", "summary");
+  ids.push("foods", "ownerIntro", "location", "summary");
   return ids;
 }
 

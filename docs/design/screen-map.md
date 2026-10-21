@@ -62,20 +62,22 @@ Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
-Shows: `BigInput` · `BigOption` · `StepFrame`
+Shows: `BigInput` · `BigOption` · `PetPhotosStep` · `StepFrame` · `AddressInput`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 136 |
-| Button | Next | `own-next` | 138 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 161 |
-| Banner | `error` | — | 172 |
-| Stepper | Age | `own-age` | 217 |
-| Button | Next | `own-next` | 229 |
-| Button | Add | `own-food-other-add` | 368 |
-| Banner | `error` | `own-error` | 407 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 408 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 414 |
+| TextButton | Skip | `own-skip` | 143 |
+| Button | Next | `own-next` | 145 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 168 |
+| Banner | `error` | — | 179 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 205 |
+| Stepper | Age | `own-age` | 236 |
+| Button | Next | `own-next` | 248 |
+| Button | Add | `own-food-other-add` | 387 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 443 |
+| Banner | `error` | `own-error` | 495 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 496 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 502 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1294,6 +1296,16 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | — | `testID` | 21 |
 
+### PetPhotosStep — [components/ownerOnboarding/PetPhotosStep.tsx](../../frontend/components/ownerOnboarding/PetPhotosStep.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | i === 0 ? "Cover photo" : `Photo ${i + 1}` | ``own-photo-${i}`` | 79 |
+| Pressable | Add a photo | `own-photo-add` | 92 |
+| Sheet | selected === 0 ? "Cover photo" : "Photo" | `own-photo-actions` | 114 |
+| Button | Make cover | `own-photo-cover` | 117 |
+| TextButton | Remove photo | `own-photo-remove` | 119 |
+
 ### StepFrame — [components/ownerOnboarding/StepFrame.tsx](../../frontend/components/ownerOnboarding/StepFrame.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1446,4 +1458,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-420 actions · 419 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+426 actions · 425 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

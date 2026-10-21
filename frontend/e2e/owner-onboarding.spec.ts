@@ -51,6 +51,13 @@ test.describe("owner onboarding", () => {
   test("a new owner answers, checks the summary and saves their first pet", async ({ page }) => {
     const db = await newOwner(page);
     const completed = await mockPetPhotos(page);
+    await page.route("**/api/geo/suggest", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ results: [{ label: "100 Queen St W, Toronto", lat: 43.6534, lng: -79.3841 }] }),
+      }),
+    );
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     const screen = app(page);
@@ -108,7 +115,21 @@ test.describe("owner onboarding", () => {
     await screen.getByTestId("own-food-other-add").click();
     await screen.getByTestId("own-next").click();
 
+    // About the owner, then where they live (a real address picked from the check).
+    await expect(screen.getByTestId("own-title")).toHaveText("A few words about you");
+    await screen.getByTestId("own-intro").fill("Hi, I am Robert.");
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("Where do you live?");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-address").fill("100 Queen St W");
+    await screen.getByTestId("own-address-check-address").click();
+    await screen.getByTestId("own-address-suggestion-1").click();
+    await expect(screen.getByTestId("own-address-address-ok")).toBeVisible();
+    await screen.getByTestId("own-next").click();
+
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
+    await expect(screen.getByTestId("own-row-about-you")).toContainText("Hi, I am Robert.");
+    await expect(screen.getByTestId("own-row-home")).toContainText("100 Queen St W, Toronto");
     await expect(screen.getByTestId("own-row-photos")).toContainText("2");
     await expect(screen.getByTestId("own-row-personality")).toContainText("12 of 12 answered");
     await expect(screen.getByTestId("own-row-safety")).toContainText("2 of 5 answered");
@@ -135,6 +156,12 @@ test.describe("owner onboarding", () => {
     expect(completed).toHaveLength(2);
     expect(completed[0]).toMatch(/pet-2$/);
     expect(completed[1]).toMatch(/pet-1$/);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)).toMatchObject({
+      intro: "Hi, I am Robert.",
+      home_address: "100 Queen St W, Toronto",
+      home_lat: 43.6534,
+      home_lng: -79.3841,
+    });
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
@@ -158,8 +185,12 @@ test.describe("owner onboarding", () => {
       await expect(screen.getByTestId(`own-step-s:${key}`)).toBeVisible();
       await screen.getByTestId("own-skip").click();
     }
-    await screen.getByTestId("own-skip").click();
+    for (const id of ["foods", "ownerIntro", "location"]) {
+      await expect(screen.getByTestId(`own-step-${id}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
     await expect(screen.getByTestId("own-row-personality")).toContainText("0 of 10 answered");
+    await expect(screen.getByTestId("own-row-home")).toContainText("Not shared yet");
     await expect(screen.getByTestId("own-row-breed")).toContainText("Not shared yet");
     await expect(screen.getByText("Owner isn't sure")).toHaveCount(0);
     await screen.getByTestId("own-save").click();
@@ -167,6 +198,8 @@ test.describe("owner onboarding", () => {
     const pet = db.pets.find((p) => p.owner_id === OWNER.id)!;
     expect(pet).toMatchObject({ species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null });
     expect(pet.profile).toEqual({ v: 1, answers: {}, safety: {} });
+    // Nothing was written to the owner's own profile besides the done mark.
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)).not.toHaveProperty("intro");
   });
 
   test("Back goes to the last screen, and a reload goes on where the owner was", async ({ page }) => {
@@ -197,5 +230,43 @@ test.describe("owner onboarding", () => {
     await mockSupabase(page, [OWNER]);
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
+  });
+
+  test("the current location sets a pin without an address, and a denied browser says so", async ({ page }) => {
+    const db = await newOwner(page);
+    await page.addInitScript(() => {
+      let calls = 0;
+      Object.defineProperty(navigator, "geolocation", {
+        configurable: true,
+        value: {
+          getCurrentPosition(ok: (p: unknown) => void, fail: (e: unknown) => void) {
+            calls += 1;
+            if (calls === 1) fail({ code: 1 });
+            else ok({ coords: { latitude: 43.6477, longitude: -79.4194 } });
+          },
+          watchPosition: () => 1,
+          clearWatch: () => undefined,
+        },
+      });
+    });
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const id of ["photos", "breed", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-step-q:d1")).toBeVisible();
+    for (let i = 0; i < 12 + 5 + 2; i++) await screen.getByTestId("own-skip").click();
+    await expect(screen.getByTestId("own-step-location")).toBeVisible();
+    await screen.getByTestId("own-use-location").click();
+    await expect(screen.getByText("Location is off for Goldito in this browser")).toBeVisible();
+    await screen.getByTestId("own-use-location").click();
+    await expect(screen.getByTestId("own-pin-ok")).toBeVisible();
+    await screen.getByTestId("own-next").click();
+    await expect(screen.getByTestId("own-row-home")).toContainText("Pin set");
+    await screen.getByTestId("own-save").click();
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)).toMatchObject({ home_lat: 43.6477, home_lng: -79.4194 });
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.home_address).toBeNull();
   });
 });

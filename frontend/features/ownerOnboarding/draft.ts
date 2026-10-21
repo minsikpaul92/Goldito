@@ -21,6 +21,9 @@ export type OwnerOnboardingDraft = {
   /** Foods to avoid: chip names and typed ones, lowercase. */
   foods: string[];
   intro: string;
+  /** The home address as found on the map (a picked suggestion), or empty when only the pin is set. */
+  homeAddress: string;
+  home: { lat: number; lng: number } | null;
   /** The step the owner is on (a step id from steps.ts), so a reload goes on from there. */
   step: string;
   /** Made at the first save attempt, so a retry updates the same pet instead of adding another. */
@@ -39,6 +42,8 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   safety: {},
   foods: [],
   intro: "",
+  homeAddress: "",
+  home: null,
   step: "species",
   petId: null,
 };
