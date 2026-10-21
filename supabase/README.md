@@ -128,7 +128,7 @@ RPCs raise the error code as the message (`error.message` in supabase-js):
 | `forbidden` | `get_home_access` by anyone other than the booked sitter |
 | `meet_greet_required` | Accepting a first-time pair before the Meet & Greet is done or both agreed to skip it (D44) |
 | `invalid_mode`, `place_required`, `place_too_long` | Meet & Greet is not `in_person`/`video` / in person without a place / place over 120 characters |
-| `meet_greet_not_yet` | Marking the Meet & Greet done before its agreed time |
+| `meet_greet_not_yet` | No longer raised since `014s`: Done works any time after the Meet & Greet is agreed, and a second Done is a no-op (#229) |
 | `sitter_unavailable` | A slot is full or closed — detail = `YYYY-MM-DD slot, …`, or `no_open_slot` |
 | `pet_already_booked` | The pet already has a sitter (or a pending request) for overlapping hours |
 | `handoff_pending` | The sitter's own counter-offer is waiting for the owner |
