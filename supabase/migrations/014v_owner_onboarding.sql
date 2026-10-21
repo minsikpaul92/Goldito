@@ -1,7 +1,8 @@
 -- 014v: owner sign-up details (11.15 S1, #185).
 --
 --   * pets.profile       the owner's answers (personality, safety) as one jsonb object;
---   * owner_profiles.intro  a short note about the owner;
+--   * owner_profiles.intro  a short note about the owner; owner_profiles.onboarded_at  null until a new owner has
+--     been through the sign-up questions (everyone who exists now is marked done, like sitters in 014f);
 --   * pet_photos         up to 8 photos per pet, first = cover (same shape as profile_photos, 014g);
 --   * create_pet_with_profile  saves a pet, its allergies and its answers in one call, safe to retry.
 --
@@ -19,8 +20,11 @@ alter table public.pets
 alter table public.owner_profiles
   add column intro text constraint owner_profiles_intro_length check (char_length(intro) <= 500);
 
+alter table public.owner_profiles add column onboarded_at timestamptz;
+update public.owner_profiles set onboarded_at = created_at;
+
 grant update (profile) on public.pets to authenticated;
-grant update (intro) on public.owner_profiles to authenticated;
+grant update (intro, onboarded_at) on public.owner_profiles to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Pet photos

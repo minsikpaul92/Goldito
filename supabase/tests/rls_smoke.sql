@@ -6409,9 +6409,15 @@ begin
   begin update public.owner_profiles set intro = repeat('a', 501) where id = robert; v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like '%owner_profiles_intro_length%', '014v: the intro is at most 500 characters');
+  perform _t_ok((select onboarded_at is null from public.owner_profiles where id = robert),
+    '014v: a new owner starts with onboarded_at null');
+  update public.owner_profiles set onboarded_at = now() where id = robert;
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: the owner marks themselves onboarded');
   perform _t_as(joy);
+  update public.owner_profiles set onboarded_at = null where id = robert;
   update public.pets set profile = '{"hacked":true}' where id = v_id;
   perform _t_as(robert);
+  perform _t_ok((select onboarded_at is not null from public.owner_profiles where id = robert), '014v: another owner cannot change the flag');
   perform _t_ok((select profile ? 'hacked' from public.pets where id = v_id) = false, '014v: another owner cannot edit the answers');
 
   -- Photos: added by the backend, the 9th is refused, a stranger's pet is refused
