@@ -108,15 +108,16 @@ Shows: `AgreeSheet` · `BookingStageBar` · `ChipSuggestions` · `FinishedStay` 
 | EmptyState | Booking not found | — | 144 |
 | EmptyState | Couldn't load this booking | — | 151 |
 | Tag | `b.label` | — | 221 |
-| Tag | Paid | `paid-chip` | 224 |
-| Button | I'd like to book | `agree-booking` | 245 |
-| Button | Finish booking | `open-checkout` | 273 |
-| CheckRow | `item` | ``pack-${item}`` | 299 |
-| Button | Find a new sitter | `find-new-sitter` | 360 |
-| Button | Change time or place | `change-booking` | 367 |
-| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 375 |
-| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 387 |
-| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 393 |
+| Tag | Refunded | `refunded-chip` | 225 |
+| Tag | Paid | `paid-chip` | 227 |
+| Button | I'd like to book | `agree-booking` | 249 |
+| Button | Finish booking | `open-checkout` | 277 |
+| CheckRow | `item` | ``pack-${item}`` | 303 |
+| Button | Find a new sitter | `find-new-sitter` | 364 |
+| Button | Change time or place | `change-booking` | 371 |
+| TextButton | passing ? "Not this sitter" : "Cancel booking" | `cancel-booking` | 379 |
+| Sheet | passing ? "Release the dates" : "Cancel booking" | `cancel-sheet` | 391 |
+| Button | passing ? "Release the dates" : "Cancel booking" | `cancel-confirm` | 397 |
 
 ### `/owner/bookings/[bookingId]/checkout` — [app/owner/bookings/[bookingId]/checkout.tsx](../../frontend/app/owner/bookings/[bookingId]/checkout.tsx)
 
@@ -686,7 +687,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `chat-payment-open` | 84 |
+| Pressable | — | `chat-payment-open` | 89 |
 
 ### ChatCareCards — [components/ChatCareCards.tsx](../../frontend/components/ChatCareCards.tsx)
 
@@ -1040,7 +1041,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Booked and paid. Tap to dismiss | `paid-confirmation` | 25 |
+| Pressable | Booked and paid. Tap to dismiss | `paid-confirmation` | 26 |
 
 ### PetCard — [components/PetCard.tsx](../../frontend/components/PetCard.tsx)
 

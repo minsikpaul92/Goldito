@@ -169,6 +169,7 @@ export function hrefForNotification(
     case "booking_confirmed":
     case "booking_declined":
     case "booking_cancelled":
+    case "booking_refunded":
     case "booking_paid":
     case "access_unlocked":
     case "pet_dropped_off":

@@ -63,6 +63,11 @@ export function ChatPaymentCard({ booking, viewer, total, canPay, onPay }: Payme
   const body = (
     <Card style={styles.card} testID="chat-payment-card">
       <Text style={styles.title}>{ended ?? (paid ? "Paid" : "Payment")}</Text>
+      {ended && booking.refundedAt && viewer === "owner" ? (
+        <Text style={styles.line} testID="payment-refunded">
+          {`Refunded in full${booking.priceSnapshot?.total != null ? ` · ${money(booking.priceSnapshot.total)}` : ""}`}
+        </Text>
+      ) : null}
       {ended ? null : (
         <>
           {amount != null ? <Text style={styles.total} testID="payment-total">{money(amount)}</Text> : null}

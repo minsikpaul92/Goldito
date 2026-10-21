@@ -1555,6 +1555,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     );
     if (received) return json(route, 400, { code: "P0001", message: "booking_in_progress", details: null });
     Object.assign(booking, { status: "cancelled", cancelled_by: me, cancel_reason: p_reason });
+    // 015c: a paid booking is refunded in full and the owner is told.
+    if (booking.paid_at && !booking.refunded_at) {
+      booking.refunded_at = new Date(nowMs()).toISOString();
+      const snap = booking.price_snapshot as { total?: number } | null;
+      db.notifications.push({
+        id: `n-refund-${p_booking}`, user_id: booking.owner_id, type: "booking_refunded", title: "Refunded in full",
+        body: `$${snap?.total?.toFixed(2) ?? "?"} CAD back (demo)`, pet_id: null, booking_id: p_booking, ref_id: p_booking,
+        read_at: null, created_at: new Date(nowMs()).toISOString(),
+      });
+    }
     db.cancellations.push({ p_booking, p_reason });
     return route.fulfill({ status: 204 });
   }
