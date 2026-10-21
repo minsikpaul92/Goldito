@@ -14,7 +14,7 @@ import { BookingSummary, awaitingFirstYes, datesOnHold } from "../lib/bookings";
 import {
   MeetGreetMode,
   MeetSpots,
-  addMeetGreetToCalendar,
+  meetGreetCalendarUrl,
   completeMeetGreet,
   getMeetGreetOptions,
   meetGreetPrimary,
@@ -29,7 +29,7 @@ import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 
-/** Things to go over together at the Meet & Greet — a local checklist (3B.9). */
+/** Things to go over together at an in-person Meet & Greet, a local checklist (3B.9). A video call has none (#229). */
 const CHECKLIST = ["Care needs", "Quirks", "Route", "Handoff", "Heads-up"];
 
 type Props = {
@@ -65,7 +65,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ key: number; spots: MeetSpots } | null>(null);
-  const [confirm, setConfirm] = useState<"skip" | "decline-skip" | null>(null);
+  const [confirm, setConfirm] = useState<"skip" | "decline-skip" | "done-early" | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const primaryRef = useRef<() => void>(() => undefined);
   useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip") }), []);
@@ -78,6 +78,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const open = booking.status === "requested";
   const mg = booking.meetGreet;
   const summary = meetGreetSummary(booking);
+  const calendarUrl = meetGreetCalendarUrl(booking);
   const timeHasCome = !!mg.at && Date.parse(mg.at) <= Date.now();
 
   const run = async (action: () => Promise<void>, done: string) => {
@@ -108,6 +109,10 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     }, `Meet & Greet sent to ${other}`);
   };
 
+  const markDone = () => void run(() => completeMeetGreet(booking.id), "Meet & Greet done 🐾");
+  // Done works any time after it is agreed (014s, #229); before the agreed time it asks first.
+  const pressDone = () => (timeHasCome ? markDone() : setConfirm("done-early"));
+
   primaryRef.current = () => {
     const step = meetGreetPrimary(booking, viewer);
     if (!step || busy) return;
@@ -117,7 +122,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         await respondMeetGreet(booking.id, true);
         if (mg.mode === "video") await requestVideoLink(booking.id);
       }, `Meet & Greet set with ${other}`);
-    else if (step.key === "done") void run(() => completeMeetGreet(booking.id), "Meet & Greet done 🐾");
+    else if (step.key === "done") pressDone();
     else void run(() => respondSkipMeetGreet(booking.id, true), "Meet & Greet skipped");
   };
 
@@ -150,7 +155,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         <Text style={styles.title}>Meet before the first stay</Text>
         <Text style={styles.muted}>
           {viewer === "sitter"
-            ? `Say "Yes, let's meet" to hold these dates, then set a time with ${other}.`
+            ? `Tap Next to hold these dates, then meet ${other} or agree to skip.`
             : `Waiting for ${other} to say yes to meeting. Your dates are held once they do.`}
         </Text>
       </>
@@ -191,7 +196,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
             onPress={() =>
               void run(async () => {
                 await respondMeetGreet(booking.id, true);
-                // Video: the Google Meet link is made right away (3B.11); without Google it stays time + .ics.
+                // Video: the Google Meet link is made right away (3B.11); without Google it stays time + Add to calendar.
                 if (mg.mode === "video") await requestVideoLink(booking.id);
               }, `Meet & Greet set with ${other}`)
             }
@@ -220,7 +225,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
             <LinkButton label="Join Google Meet" href={mg.link} testID="meet-join" />
           ) : (
             <View style={styles.links}>
-              <Text style={styles.muted}>No Google Meet link yet. The time and calendar file still work.</Text>
+              <Text style={styles.muted}>No Google Meet link yet. The time and Add to calendar still work.</Text>
               <TextButton
                 label="Get the Meet link"
                 onPress={() =>
@@ -232,31 +237,23 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
               />
             </View>
           )
-        ) : null}
-        <Text style={styles.label}>Go over together</Text>
-        {CHECKLIST.map((item) => (
-          <CheckRow
-            key={item}
-            label={item}
-            checked={checked.includes(item)}
-            onChange={(on) => setChecked((c) => (on ? [...c, item] : c.filter((x) => x !== item)))}
-            testID={`meet-check-${item}`}
-          />
-        ))}
-        {timeHasCome ? (
-          hidePrimary ? null : (
-            <Button
-              label="Done, we met"
-              onPress={() => void run(() => completeMeetGreet(booking.id), "Meet & Greet done 🐾")}
-              disabled={busy}
-              testID="meet-done"
-            />
-          )
         ) : (
-          <Text style={styles.muted}>After you meet, tap Done here.</Text>
+          <>
+            <Text style={styles.label}>Go over together</Text>
+            {CHECKLIST.map((item) => (
+              <CheckRow
+                key={item}
+                label={item}
+                checked={checked.includes(item)}
+                onChange={(on) => setChecked((c) => (on ? [...c, item] : c.filter((x) => x !== item)))}
+                testID={`meet-check-${item}`}
+              />
+            ))}
+          </>
         )}
+        {hidePrimary ? null : <Button label="Done, we met" onPress={pressDone} disabled={busy} testID="meet-done" />}
         <View style={styles.links}>
-          <TextButton label="Add to calendar" onPress={() => addMeetGreetToCalendar(booking)} testID="meet-calendar" />
+          {calendarUrl ? <LinkButton label="Add to calendar" href={calendarUrl} look="text" testID="meet-calendar" /> : null}
           <TextButton label="Change" onPress={() => void openSheet()} testID="meet-change" />
         </View>
       </>
@@ -330,6 +327,28 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         }
       >
         <Text style={styles.body}>{`If ${other} says no, this booking will be cancelled.`}</Text>
+      </Sheet>
+
+      <Sheet
+        visible={confirm === "done-early"}
+        title="It is not time yet"
+        onClose={() => setConfirm(null)}
+        testID="meet-done-early-sheet"
+        footer={
+          <View style={styles.links}>
+            <TextButton label="Cancel" onPress={() => setConfirm(null)} testID="meet-done-early-cancel" />
+            <Button
+              label="Yes, we met"
+              onPress={() => {
+                setConfirm(null);
+                markDone();
+              }}
+              testID="meet-done-early-confirm"
+            />
+          </View>
+        }
+      >
+        <Text style={styles.body}>{`Did you already meet ${other}?`}</Text>
       </Sheet>
 
       <Sheet
