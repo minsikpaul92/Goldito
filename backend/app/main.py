@@ -23,6 +23,7 @@ from app.routers import (
     me,
     media,
     meet_greet,
+    pet_photos,
     profile_photos,
     rag,
     sweep,
@@ -47,6 +48,7 @@ app.include_router(meet_greet.router)
 app.include_router(demo.router)
 app.include_router(media.router)
 app.include_router(profile_photos.router)
+app.include_router(pet_photos.router)
 app.include_router(feed.router)
 app.include_router(geo.router)
 app.include_router(ai_care_plan.router)

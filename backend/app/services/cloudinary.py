@@ -86,6 +86,14 @@ def profile_folder(user_id: str) -> str:
     return f"goldito/profile/{user_id}"
 
 
+def pet_photo_folder(user_id: str) -> str:
+    """Where an owner's pet profile photos live: `goldito/pet-profile/<owner id>/<random>`.
+
+    Keyed by the owner, not the pet: the photos are uploaded before the pet is saved (11.15).
+    """
+    return f"goldito/pet-profile/{user_id}"
+
+
 def sign(
     *,
     pet_id: str,
@@ -113,6 +121,11 @@ def sign(
 def sign_profile(user_id: str) -> SignParams:
     """Sign a direct browser upload of one profile photo into the person's own folder."""
     return _sign_folder(profile_folder(user_id), "image", INCOMING_IMAGE)
+
+
+def sign_pet_photo(user_id: str) -> SignParams:
+    """Sign a direct browser upload of one pet profile photo into the owner's own folder."""
+    return _sign_folder(pet_photo_folder(user_id), "image", INCOMING_IMAGE)
 
 
 def _sign_folder(folder: str, resource_type: str, transformation: str) -> SignParams:
