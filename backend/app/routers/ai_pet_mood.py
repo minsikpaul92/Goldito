@@ -20,11 +20,12 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.ai import mood_rules
 from app.ai.prompts import load_prompt
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz, nebius
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 log = logging.getLogger("goldito.ai")
 
 MAX_CROPS = 8

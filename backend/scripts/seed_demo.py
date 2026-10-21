@@ -17,6 +17,7 @@ Reads SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_PASSWORD from backend/.env.
 
 import argparse
 import sys
+from contextlib import contextmanager
 
 from app.config import get_settings
 from app.deps.supabase import get_service_client
@@ -30,7 +31,25 @@ from app.services.demo_accounts import (
     ensure_sitter_rates,
     find_user_id,
 )
+from postgrest.exceptions import APIError
 from supabase import Client
+
+
+@contextmanager
+def demo_accounts_unlocked(client: Client):
+    """014z keeps the demo accounts' password and email; the seed opens the service-role window while it refreshes them."""
+    opened = True
+    try:
+        client.rpc("set_demo_accounts_unlocked", {"p_on": True}).execute()
+    except APIError as exc:
+        if exc.code != "PGRST202":  # PGRST202 = 014z not applied yet: nothing is locked
+            raise
+        opened = False
+    try:
+        yield
+    finally:
+        if opened:
+            client.rpc("set_demo_accounts_unlocked", {"p_on": False}).execute()
 
 
 def ensure_user(client: Client, demo: DemoUser, password: str) -> tuple[str, str]:
@@ -83,21 +102,30 @@ def main() -> int:
         return 1
 
     client = get_service_client()
+    if args.check:
+        return refresh(client, None)
+    with demo_accounts_unlocked(client):
+        return refresh(client, settings.demo_password)
+
+
+def refresh(client: Client, password: str | None) -> int:
+    """Create or refresh each demo account and print one line for it; None = read-only (--check)."""
+    check = password is None
     all_ok = True
     for demo in DEMO_USERS:
-        if args.check:
+        if check:
             user_id = find_user_id(client, demo.email)
             action = "exists" if user_id else "missing"
         else:
-            user_id, action = ensure_user(client, demo, settings.demo_password)
+            user_id, action = ensure_user(client, demo, password)
         problem = check_profile(client, user_id, demo) if user_id else "account not created yet"
         if user_id and demo.role == "sitter" and problem is None:
-            if args.check:
+            if check:
                 problem = check_sitter_rates(client, user_id)
             else:
                 action = f"{action}, rates {ensure_sitter_rates(client, user_id)}"
                 ensure_sitter_answers(client, user_id)
-        if user_id and problem is None and not args.check:
+        if user_id and problem is None and not check:
             ensure_home_point(client, demo.role, user_id, demo.email)
             if demo.role == "owner":
                 ensure_owner_onboarded(client, user_id)

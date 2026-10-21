@@ -170,6 +170,7 @@
 | **Pet Life Record** — AI 정리(근거 없는 문장은 버림 · 출입 정보 없음) · 오너 펫 화면 `📖 Life Record` · 끝난 예약 화면(자동 작성 · Retry) | ✅ 🤖 pytest + `completion.spec.ts` (실제 모델 확인, 실제 두 계정 👤) | 07C / 7C.4–7C.5 |
 | 다음 시터 요청 카드의 **From Max's Life Record** (접힘) · 문의 AI 근거 칩 · 케어 체크리스트 초안에 지난 Heads-up 자동 제안 | ✅ 🤖 `sitter-bookings.spec.ts` + pytest | 07C / 7C.6 |
 | **Snap 탭** (D61): Treat check(간식 성분표 → 알러지 · 독성 · Tavily 출처, DANGER 빨간 모달) · Mood(펫별 박스 + 감정 %) · Sticker(펫만 오리기 → 다이어리 꾸미기, 견주 + 시터) | 🟡 12.0 탭 · 카드 3개 ✅(🤖 `snap.spec.ts` · `auth.spec.ts`) · 12.1a Treat check **API만** ✅(🤖 pytest `test_ai_safety_check` · `test_safety_rules` · `test_tavily` + SQL `rls_smoke` 013 — `013` 호스팅 DB 적용 · smoke 통과 2026-10-14, 모델 직접 호출 확인 2026-10-14) · 12.1c Treat check **화면** ✅(🤖 `treat-check.spec.ts` — API는 목업, 사람 확인 · 실제 호출은 대기) · 12.2a Mood **API만** ✅(🤖 pytest `test_mood_rules` · `test_ai_pet_mood`; 비전 태그는 우리 사진 8장으로 직접 호출 확인 2026-10-14) · 12.2b Mood **화면** ✅(🤖 `mood.spec.ts` — MediaPipe는 테스트 훅, API 목업; 실제 브라우저 · 모델 확인은 대기) · 12.3a Sticker **만들기** ✅(🤖 `sticker.spec.ts` + SQL `rls_smoke` 013b — `013b` 호스팅 DB 적용 · smoke 통과 2026-10-14, 실제 Magic Touch는 머지 뒤) · 12.3b 다이어리 **꾸미기** ✅(🤖 `decor.spec.ts` — 견주 다이어리 상세 · 시터 보낸 알림장, 마우스 드래그 · 크기 · 회전; `013b` 적용 2026-10-14) · 12.4 **그림일기 · 글 위/아래 스티커 · 다운로드 · 기본 스티커 9장** ✅(🤖 `decor.spec.ts` · `sticker.spec.ts`; 기본 스티커는 임시 그림) · 12.5 **Snap 탭 Recent checks 3개 · README** ✅(🤖 `snap.spec.ts`) · 11.8 **Save image**(꾸민 그림일기 한 장 → PNG) 🟡(🤖 `decor.spec.ts` · 사람 확인 대기) | 12 (08 설계 포함) |
+| **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 to SEC-6) | 10 |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
@@ -319,6 +320,9 @@
 | SEC-1 | 다른 오너 계정으로 로그인 | Robert의 Max/Mochi 피드 · 알림 · 체크인이 **보이지 않음** | SQL `rls_smoke` | ➖ |
 | SEC-2 | 시터로 `/owner` 주소를 직접 입력 | 시터 화면으로 되돌아감 | 🤖 `auth` | ➖ |
 | SEC-3 | 오너가 체크인 · 할 일 완료를 API로 직접 시도 | 거절 (돌봄 구간의 시터만 가능) | SQL `rls_smoke` | ➖ |
+| SEC-4 | 데모 계정으로 로그인 → 브라우저 콘솔에서 `supabase.auth.updateUser({ password: 'x12345' })`, 이메일 변경도 | 둘 다 오류(Database error). 로그아웃 뒤 원래 데모 비밀번호로 다시 로그인됨. 일반 계정은 비밀번호를 바꿀 수 있음 | SQL `rls_smoke`(014z) | 👤 호스팅 DB에 `014z` 적용 뒤 |
+| SEC-5 | `014z` 적용 뒤 `python -m scripts.seed_demo` | 모든 데모 계정 `updated ... ok`, 끝나면 다시 잠김(SEC-4가 여전히 오류) | pytest `test_seed_demo` | 👤 |
+| SEC-6 | 새로 가입한 계정으로 AI 기능(채팅 칩, Snap 등)을 하루에 100번 넘게 | 101번째부터 429 "Daily AI limit reached. Try again tomorrow."(code `rate_limited`). 업로드 서명도 따로 100번. 다음 날(UTC) 다시 됨 | pytest `test_limits`(모든 AI 라우트 · 서명 라우트) | ➖ |
 
 ### 3.8 예약 · 미팅 · 결제 (BOOK) — 이전 Phase, 자동 테스트가 촘촘함
 
@@ -350,6 +354,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | BF-1 | 시터가 handoff 사진 업로드 (`purpose=handoff`) | 확정 예약의 시터만, 합의된 맡기기 2시간 전부터 찾기 2시간 뒤까지 서명 발급. 그 밖에는 403 (예전엔 없는 컬럼을 읽어 **항상 500**) | pytest `test_authz_handoff` | ➖ |
 | BF-2 | 사진을 붙인 체크인 → Feed에서 그 글을 🗑️ 삭제 | 피드 글만 지워지고 **Diary · History의 체크인 사진은 남음** (예전엔 Cloudinary 파일까지 지워짐) | pytest `test_feed_delete` | ➖ |
+| BF-2b | Diary 페이지 사진 칸에 넣은 피드 사진, 또는 Received(인계 사진 확인)에 쓴 사진 → Feed에서 그 글을 🗑️ 삭제 | 피드 글만 지워지고 **Diary 페이지 사진 · 인계 기록의 사진은 남음** (감사 2026-10-21 전엔 Cloudinary 파일까지 지워짐) | pytest `test_feed_delete` | ➖ |
 | BF-3 | 오너 · 시터가 거의 동시에 영상 미팅 링크를 받음 / 시터가 영상 미팅이 잡힌 요청을 Decline | 링크(캘린더 이벤트)는 **하나만** 남고 알림도 한 번. Decline하면 캘린더 이벤트도 지워짐 | pytest `test_meet_greet` (Decline 후 삭제는 👤 — Google 계정 필요) | ➖ |
 | BF-4 | 돌봄 중 오너가 보낸 요청에 시터가 답하기 전에 예약이 취소되거나 찾기(Returned)가 끝남 | 요청이 **closed** 로 닫혀 다음 요청을 막지 않고, 예전 시터는 더 이상 승인할 수 없음 (시터 화면: "The stay ended before this request was answered."). 돌봄 중에는 저장형 체크리스트(`save_care_request`)도 거절 | SQL `rls_smoke` (BF.4) | ➖ |
 | BF-5 | 오너가 찾기 시간 변경을 보낸 뒤 시터가 먼저 Returned · 지난 시간 제안 수락 · 하우스시팅 장소 변경 | Returned가 남은 제안을 닫아 **완료된 인수인계가 다시 열리지 않음**(출입 정보도 다시 안 열림). 지난 시간은 수락 불가, 픽업 시간이 지난 요청은 **Expired**로 Past에. 하우스시팅은 시간만 바꿀 수 있음 | SQL `rls_smoke` (BF.5) · 🤖 `sitter-bookings` · `negotiation` | ➖ |
@@ -957,6 +962,8 @@
 | DECL-3 | 오너 → **Final quote** 카드의 **Decline** 또는 푸터 **Confirm quote** 옆 **Decline** | "Decline the final quote?" 시트, 사유 칩 맨 앞에 "The price doesn't work". 확인하면 예약 Cancelled, Pay 버튼 없음. 시터 화면의 최종 견적 카드에는 Decline 없음 | 🤖 `chat` | ➖ |
 | DECL-4 | 최종 견적이 첫 견적(Meet & Greet 전)과 **같은 금액** | 오너 카드에 Confirm과 Decline만, **Suggest another price** 없음. 첫 견적이 없는 예약(채팅 밖에서 만든 예약)도 없음 | 🤖 `chat` | ➖ |
 | DECL-5 | 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
+| CHAT-38 | 채팅 수수료가 결제에 남는지 (014y): ① House sitting 부킹에서 시터 **Send final quote** ② 최종 견적이 열린 채(수수료 미응답) 오너가 예약 상세 → Checkout → Pay ③ 수수료 포함 결제 뒤 픽업 시간 변경을 둘이 합의 | ① 시트에 서비스 선택이 없고 부킹의 서비스(House sitting)로 가격이 나감 ② "Answer the sitter's new quote in the chat first." 결제 안 됨 ③ 새 총액 = 새 기본가 + 낸 수수료(수수료가 사라지지 않음) | 🤖 `chat`(①) · SQL `rls_smoke` 014q(②③) | 사람 확인 대기 · 호스팅 DB는 014q 적용 뒤 |
+| CHAT-39 | 채팅에 "door code 4821, call 416-555-0199"를 보내거나 예약 요청 메모에 쓰고, 다음 칩 · 초안을 부름 (R20-7) | 모델에 가는 대화 · 요약에는 `#`만 남고 코드 · 전화번호 · 이메일이 없음. "Oct 10-12" 같은 날짜와 가격은 그대로. 저장된 `chat_threads.ai_summary`에도 숫자 없음 | pytest `test_ai_chat`(scrub · 보낸 메시지 · 요청 메모 · 요약) | ➖ |
 
 ### 3.43 다마고치 (TAMA) · 11.12 · #184 · *파생 상태 · 스프라이트 · 오너 Home 펫 방 · 시터 탭 액션 · 메달까지, 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 
@@ -974,8 +981,12 @@
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
+- **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.
+
+- **데모 계정 비밀번호 · 이메일 (`014z`):** 시드(`scripts.seed_demo`)만 바꿀 수 있다. SQL Editor나 대시보드에서 바꿀 때는 먼저 `select set_demo_accounts_unlocked(true);`(5분).
+
 - **검색이 서비스 · 인계 방식을 아직 걸러내지 않는다 (CHAT-10):** 예약 요청 시트에는 서비스 선택이 없다(시터가 하는 서비스, 둘 다면 Boarding). 오너 · 시터의 온보딩 선택(서비스, 누가 데려다주는지)으로 검색을 거르는 일은 온보딩 데이터가 생긴 뒤에 한다. 둘 다 맞는 경우는 요청을 받은 시터가 수락 · 변경 · 거절한다.
-- **결제는 데모이고, 돈의 보관과 정산은 표시뿐이다 (CHAT-22):** "Held until the stay ends"는 문구이고 실제로 돈이 움직이지 않는다. 케어가 끝난 뒤 시터에게 지급되는 것은 #146(종료 · 리뷰)에서 다룬다. DB는 최종 견적 카드가 없어도 결제를 막지 않고(기존 예약 화면 · 데모 시드), 채팅 화면만 최종 견적이 확인되어야 Pay를 보여 준다. 견적 카드를 보내는 것은 시터의 버튼이며 AI가 자동으로 보내지 않는다(행동 칩은 #142 후반부).
+- **결제는 데모이고, 돈의 보관과 정산은 표시뿐이다 (CHAT-22):** "Held until the stay ends"는 문구이고 실제로 돈이 움직이지 않는다. 케어가 끝난 뒤 시터에게 지급되는 것은 #146(종료 · 리뷰)에서 다룬다. DB는 최종 견적 카드가 없어도 결제를 막지 않지만(기존 예약 화면 · 데모 시드), 보낸 최종 견적이 오너의 답을 기다리는 동안은 막는다(`quote_pending`, 014y). 채팅 화면은 최종 견적이 확인되어야 Pay를 보여 준다. 확정 뒤 시간이 바뀌어도 그 부킹의 최종 견적(결제 카드 뒤에 확인된 견적) 수수료는 가격에 남는다. 다만 채팅의 Pay 버튼은 견적 카드의 옛 기본가를 보여 주므로, Checkout의 새 총액과 다를 수 있다. 견적 카드를 보내는 것은 시터의 버튼이며 AI가 자동으로 보내지 않는다(행동 칩은 #142 후반부).
 - **채팅 AI는 제안만 한다 (CHAT-11 ~ 13, D62):** 자동 전송은 없다. 칩은 말 칩과 행동 칩(CHAT-24)이 있고, 행동 칩도 누르기 전에는 아무 일도 일어나지 않는다. 제안 채택률 로그(눌렀는지 닫았는지)는 아직 남기지 않는다(칩 · 초안이 만들어진 결과는 `chat_ai` 로그에 남는다, CHAT-26). 시터의 첫 답에는 금액이 없다: 가격은 **Send quote**로 보낸다(CHAT-25). Meet & Greet 카드가 채팅에 없는 부킹(옛 부킹)은 그 카드를 여는 행동 칩이 아무것도 못 연다. 옛 문의 화면과 그 AI 초안은 아직 남아 있다(채팅으로 합치는 정리는 다음 PR).
 - **채팅은 아직 알림을 보내지 않는다 (CHAT):** 새 메시지는 목록의 안 읽은 수와 열려 있는 채팅 갱신으로만 알 수 있다(알림 종은 울리지 않음). 기존 문의 화면과 시터의 AI 초안 흐름은 그대로이고, 새 문의의 메시지는 채팅으로 복사되지 않는다(#142에서 합침). 기존 문의는 `014j` 적용 때 한 번만 스레드로 옮겨진다.
 - **DB에서 만드는 문구에는 아직 대시가 남아 있다 (COPY, #173):** 알림 제목 · 본문(`005` · `006` · `009d` · `010` · `011l` · `012`), 할 일 완료 캡션(`008`), `fmt_date_range`(`003`). 앱 코드만 고쳤고, SQL은 새 마이그레이션이 필요해서 따로 다룬다.

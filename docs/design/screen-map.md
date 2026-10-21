@@ -26,17 +26,17 @@ Shows: `AgreeSheet` · `ChatCounterSheet` · `ChatDeclineSheet` · `BookingStage
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 236 |
 | EmptyState | Chat not found | — | 244 |
-| Pressable | — | `chat-stage` | 484 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 541 |
-| Button | Send quote | `chat-send-quote` | 548 |
-| TextButton | Send quote | `chat-send-quote` | 551 |
-| TextButton | Decline | `chat-decline` | 554 |
-| TextButton | Send a new final quote | `chat-requote` | 568 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 584 |
-| Pressable | — | `chat-action-chip` | 605 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 616 |
-| Pressable | Send a card | `chat-plus` | 632 |
-| Pressable | Send | `chat-send` | 665 |
+| Pressable | — | `chat-stage` | 485 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 542 |
+| Button | Send quote | `chat-send-quote` | 549 |
+| TextButton | Send quote | `chat-send-quote` | 552 |
+| TextButton | Decline | `chat-decline` | 555 |
+| TextButton | Send a new final quote | `chat-requote` | 569 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 585 |
+| Pressable | — | `chat-action-chip` | 606 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 617 |
+| Pressable | Send a card | `chat-plus` | 633 |
+| Pressable | Send | `chat-send` | 666 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -752,12 +752,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | final ? "Send final quote" : "Send quote" | `send-quote-sheet` | 129 |
-| Button | final ? "Send final quote" : "Send quote" | `send-quote-submit` | 135 |
-| TextButton | Remove | `draft-fee-remove` | 168 |
-| TextButton | Add fee | `draft-fee-add` | 190 |
-| Sheet | Add fee | `add-fee-sheet` | 231 |
-| Button | Add fee | `add-fee-submit` | 236 |
+| Sheet | final ? "Send final quote" : "Send quote" | `send-quote-sheet` | 132 |
+| Button | final ? "Send final quote" : "Send quote" | `send-quote-submit` | 138 |
+| TextButton | Remove | `draft-fee-remove` | 173 |
+| TextButton | Add fee | `draft-fee-add` | 195 |
+| Sheet | Add fee | `add-fee-sheet` | 236 |
+| Button | Add fee | `add-fee-submit` | 241 |
 
 ### ChatStayCard — [components/ChatStayCard.tsx](../../frontend/components/ChatStayCard.tsx)
 

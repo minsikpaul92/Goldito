@@ -285,6 +285,7 @@ export default function Chat() {
           dropOffAt: booking.dropOff.at,
           pickUpAt: booking.pickUp.at,
           pets: booking.pets.flatMap((p) => (p.id ? [{ id: p.id, name: p.name }] : [])),
+          service: booking.serviceType,
         }
       : null;
 

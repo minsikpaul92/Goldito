@@ -6565,6 +6565,143 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 014y (the fees agreed in the chat stay in the price): no payment over an open final quote, and a paid booking keeps
+-- its fees when its times change
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  max constant uuid := '00000000-0000-4000-8000-0000000000c1';
+  d constant date := app_today() + 340;
+  v1 uuid;
+  v_h uuid;
+  t1 public.chat_threads;
+  q public.chat_messages;
+  v_base numeric;
+  v_quote jsonb;
+  v_kind text;
+  v_err text;
+begin
+  perform _t_as(chloe);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (chloe, 'open', d - 1, d + 6, 'morning', '08:00', '12:00', 3),
+         (chloe, 'open', d - 1, d + 6, 'afternoon', '12:00', '18:00', 3),
+         (chloe, 'open', d - 1, d + 6, 'overnight', '18:00', '08:00', 3);
+
+  perform _t_as(robert);
+  t1 := open_chat_thread(chloe);
+  v1 := request_booking(chloe, array[max], local_ts(d, '09:00'), 'sitter_home', null,
+    local_ts(d + 2, '17:00'), 'sitter_home', null, null);
+  perform agree_to_book(v1);
+  perform _t_as(chloe);
+  perform respond_booking(v1, true);
+  perform _t_as(robert);
+  foreach v_kind in array required_consents(v1) loop
+    insert into public.booking_consents (booking_id, kind, version, signer_id, signer_name, details)
+    values (v1, v_kind, '1', robert, 'Robert',
+      case v_kind
+        when 'emergency_vet' then jsonb_build_object('limit_cad', 500, 'vet_clinic_name', 'Demo Vet')
+        when 'safe_return' then jsonb_build_object('receiver_name', 'Robert')
+        else '{}'::jsonb
+      end);
+  end loop;
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), 1) ->> 'total')::numeric;
+
+  -- The sitter's final quote with a fee: no payment until the owner answers it.
+  perform _t_as(chloe);
+  q := send_chat_quote(t1.id, 'boarding', local_ts(d, '09:00'), local_ts(d + 2, '17:00'), array[max]);
+  q := add_chat_quote_extra(q.id, 'Medication visits', 15);
+  perform _t_as(robert);
+  begin perform pay_booking_demo(v1); v_err := null; exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'quote_pending', '014y: no payment while the final quote waits for the owner');
+  perform _t_ok((select paid_at is null from public.bookings where id = v1), '014y: ...so nothing is paid');
+  q := answer_chat_quote_extra(q.id, (q.card -> 'extras' -> 0 ->> 'id')::uuid, true);
+  q := confirm_chat_quote(q.id);
+  v_quote := pay_booking_demo(v1);
+  perform _t_ok((v_quote ->> 'total')::numeric = v_base + 15, '014y: once confirmed, the fee is paid');
+  perform _t_as(null);
+  perform _t_ok(exists (select 1 from public.notifications where user_id = chloe and type = 'booking_paid' and booking_id = v1
+      and title not like '%' || chr(8212) || '%'),
+    '014y: the payment notice has no em dash');
+
+  -- A later pick-up, agreed after payment: re-quoted with the paid fee still in.
+  perform _t_as(robert);
+  v_h := propose_handoff(v1, 'pick_up', local_ts(d + 3, '17:00'));
+  perform _t_as(chloe);
+  perform respond_handoff(v_h, true);
+  perform _t_as(robert); -- quote_booking needs a signed-in user
+  v_base := (quote_booking(chloe, 'boarding', local_ts(d, '09:00'), local_ts(d + 3, '17:00'), 1) ->> 'total')::numeric;
+  perform _t_ok((select paid_at is not null and (price_snapshot ->> 'total')::numeric = v_base + 15
+        and jsonb_array_length(price_snapshot -> 'extras') = 1
+      from public.bookings where id = v1),
+    '014y: a paid booking keeps its fee when the times change');
+  perform _t_ok((quote_booking_for(v1) ->> 'total')::numeric = v_base + 15, '014y: Checkout shows the same total');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 014z (audit 2026-10-21): a demo account keeps its password and email unless the service role opens the window
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  demo constant uuid := '00000000-0000-4000-8000-0000000000d9';
+  other constant uuid := '00000000-0000-4000-8000-0000000000d8';
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into auth.users (id, email, encrypted_password, raw_user_meta_data) values
+    (demo, 'demo-lock@goldito.test', 'hash-1', '{"role":"owner","display_name":"Demo"}'),
+    (other, 'other-lock@example.test', 'hash-1', '{"role":"owner","display_name":"Other"}');
+  perform set_demo_accounts_unlocked(false);
+
+  begin
+    update auth.users set encrypted_password = 'hash-2' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: a demo account cannot change its password');
+  begin
+    update auth.users set email = 'mine@example.test' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: a demo account cannot change its email');
+
+  update auth.users set raw_user_meta_data = '{"role":"owner","display_name":"Demo 2"}' where id = demo;
+  perform _t_ok((select raw_user_meta_data ->> 'display_name' from auth.users where id = demo) = 'Demo 2', '014z: other demo account fields still change');
+  update auth.users set encrypted_password = 'hash-2' where id = other;
+  perform _t_ok((select encrypted_password from auth.users where id = other) = 'hash-2', '014z: a real account changes its password');
+
+  perform _t_as(demo);
+  begin
+    perform set_demo_accounts_unlocked(true);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014z: a signed-in person cannot open the window');
+  begin
+    perform count(*) from public.demo_account_unlock;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'permission denied%', '014z: a signed-in person cannot read the window');
+
+  perform set_config('role', 'service_role', true);
+  perform set_demo_accounts_unlocked(true);
+  perform _t_as(null);
+  update auth.users set encrypted_password = 'hash-3' where id = demo;
+  perform _t_ok((select encrypted_password from auth.users where id = demo) = 'hash-3', '014z: the seed changes the password while the window is open');
+
+  perform set_demo_accounts_unlocked(false);
+  begin
+    update auth.users set encrypted_password = 'hash-4' where id = demo;
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: closing the window locks it again');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 015b (11.12, #184): pet medals
 -- ---------------------------------------------------------------------------
 

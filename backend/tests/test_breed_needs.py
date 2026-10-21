@@ -18,6 +18,7 @@ from app.ai.breed_needs import (
     validate_chips,
 )
 from app.config import get_settings
+from app.deps import limits
 from app.routers import breed_needs as router
 from app.services import breed_needs, nebius, tavily
 
@@ -275,7 +276,7 @@ def headers(token: str) -> dict:
 def api(monkeypatch, listing):
     notes = Notes()
     monkeypatch.setattr(router, "get_service_client", lambda: notes)
-    router._searches.clear()
+    router._searches.reset()
     state = {"searches": 0}
 
     def search_needs(species, breed):
@@ -311,7 +312,7 @@ def test_bad_input_and_no_sign_in_are_refused(client, api) -> None:
 
 
 def test_a_person_has_a_daily_limit_on_new_breeds_but_not_on_known_ones(client, api, monkeypatch) -> None:
-    monkeypatch.setattr(router, "SEARCHES_PER_DAY", 2)
+    monkeypatch.setattr(router, "_searches", limits.DailyLimit(2, "Too many new breeds today."))
     owner = headers(owner_token())
     for breed in ("Poodle", "Beagle"):
         assert client.post("/api/breed-needs", json={"species": "dog", "breed": breed}, headers=owner).status_code == 200

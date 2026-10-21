@@ -7,6 +7,7 @@ import cloudinary.api
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import authz
@@ -97,7 +98,7 @@ def _authorize_media(
 @router.post("/sign", response_model=SignResponse)
 def sign_upload(
     body: SignRequest,
-    user: CurrentUser = Depends(get_current_user),
+    user: CurrentUser = Depends(limits.uploads),
 ) -> SignResponse:
     _authorize_media(
         user, pet_id=body.pet_id, purpose=body.purpose, booking_id=body.booking_id

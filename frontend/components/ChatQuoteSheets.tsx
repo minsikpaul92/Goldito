@@ -27,7 +27,8 @@ type SendProps = {
   onClose: () => void;
   threadId: string;
   sitterId: string;
-  stay: { dropOffAt: string; pickUpAt: string; pets: ChatPet[] } | null;
+  /** `service` set: the booking's own service (the final quote), so the price matches the booking. */
+  stay: { dropOffAt: string; pickUpAt: string; pets: ChatPet[]; service?: string } | null;
   /** The quote after the Meet & Greet and the agreement: the final one. */
   final?: boolean;
   onSent: () => void;
@@ -66,20 +67,22 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
       .catch(() => undefined);
   }, [visible, sitterId]);
 
+  const fixed = stay?.service;
+  const priced = fixed ?? service;
   const stayKey = stay ? `${stay.dropOffAt}|${stay.pickUpAt}|${stay.pets.length}` : "";
   useEffect(() => {
     if (!visible || !stay) return;
     let current = true;
     setQuote(null);
     setProblem(null);
-    quoteBooking({ sitterId, serviceType: service as ServiceType, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petCount: stay.pets.length })
+    quoteBooking({ sitterId, serviceType: priced as ServiceType, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petCount: stay.pets.length })
       .then((q) => current && setQuote(q))
       .catch((e: Error) => current && setProblem(e.message));
     return () => {
       current = false;
     };
     // the draft follows the service and the stay
-  }, [visible, sitterId, service, stayKey]);
+  }, [visible, sitterId, priced, stayKey]);
 
   if (!stay) return null;
 
@@ -96,7 +99,7 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
     setSending(true);
     let messageId = "";
     try {
-      messageId = await sendChatQuote(threadId, { service, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
+      messageId = await sendChatQuote(threadId, { service: priced, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
     } catch (e) {
       errorDialog.show({ title: "Quote not sent", message: (e as Error).message, onRetry: () => void send() });
       setSending(false);
@@ -140,7 +143,9 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
         />
       }
     >
-      {services.length > 1 ? (
+      {fixed ? (
+        <Text style={styles.line} testID="send-quote-fixed-service">{SERVICE[fixed] ?? fixed}</Text>
+      ) : services.length > 1 ? (
         <ChoiceChips
           options={services.map((s) => ({ value: s, label: SERVICE[s] ?? s }))}
           value={[service]}
