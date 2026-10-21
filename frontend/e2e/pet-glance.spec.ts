@@ -1,0 +1,59 @@
+import { expect, test } from "@playwright/test";
+
+import { caring } from "./careFixtures";
+import { app, signIn } from "./helpers";
+import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
+
+// The "at a glance" card (11.15 S1, #185): a sitter on the booking, the owner on the pet, nothing for an undescribed pet.
+
+const MAX = { id: "00000000-0000-4000-8000-0000000000aa", name: "Max", species: "dog" } as const;
+const MOCHI = { id: "00000000-0000-4000-8000-0000000000bb", name: "Mochi", species: "cat" } as const;
+
+const PROFILE = {
+  v: 1,
+  answers: { d1: 4, d2: 3, d3: 4, d4: 1, d5: 2, d6: 1, d7: 3, d8: 3 },
+  safety: { s1: "once", s2: "unsure", s5: "medication" },
+};
+
+test.describe("pet at a glance", () => {
+  test("the sitter sees the card on the booking: facts, warnings, levels, Not shared yet; an undescribed pet has none", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [MAX, MOCHI]);
+    Object.assign(db.pets.find((p) => p.id === MAX.id)!, { breed: "Maltese", birthdate: "2020-01-01", weight_kg: 6, profile: PROFILE });
+    db.pet_allergies.push({ id: "a1", pet_id: MAX.id, allergen: "chicken" });
+    db.pet_photos.push({ id: "ph1", pet_id: MAX.id, public_id: "goldito/pet-profile/x/1", position: 0 });
+    await signIn(page, SITTER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto("/sitter/bookings/b1");
+    const screen = app(page);
+
+    const card = screen.getByTestId(`glance-${MAX.id}`);
+    await expect(card).toContainText("Max at a glance");
+    await expect(card).toContainText("Dog · Maltese");
+    await expect(card).toContainText("6 kg");
+    await expect(card.getByTestId(`glance-${MAX.id}-chips`)).toContainText("Has snapped once");
+    await expect(card.getByTestId(`glance-${MAX.id}-chips`)).toContainText("Owner isn't sure (other animals)");
+    await expect(card.getByTestId(`glance-${MAX.id}-chips`)).toContainText("Daily medication");
+    await expect(card.getByTestId(`glance-${MAX.id}-chips`)).toContainText("No chicken");
+    const chart = card.getByTestId(`glance-${MAX.id}-chart`);
+    await expect(chart).toContainText("Sociability");
+    await expect(chart).toContainText("Social"); // (4 + 3 + 4) / 3 = 3.67, rounds to 4
+    await expect(chart).toContainText("Unfazed"); // sensitivity (1 + 2 + 1) / 3
+    await expect(chart).toContainText("Not shared yet"); // appetite and trainability were not answered
+    await expect(card).toContainText("Owner's description, not an assessment.");
+    await expect(card).not.toContainText("%");
+    await expect(screen.getByTestId(`glance-${MOCHI.id}`)).toHaveCount(0);
+  });
+
+  test("a pet with only a cover photo still gets a card, and the owner sees it on the pet", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    caring(db, [MAX]);
+    db.pet_photos.push({ id: "ph1", pet_id: MAX.id, public_id: "goldito/pet-profile/x/1", position: 0 });
+    await signIn(page, OWNER);
+    await app(page).getByRole("heading", { name: /^(Home|Today)$/ }).first().waitFor();
+    await page.goto(`/owner/pets/${MAX.id}`);
+    const card = app(page).getByTestId(`glance-${MAX.id}`);
+    await expect(card).toContainText("Max at a glance");
+    await expect(card).toContainText("Personality: not shared yet");
+  });
+});

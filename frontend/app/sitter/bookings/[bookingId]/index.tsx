@@ -48,6 +48,7 @@ import {
   respondHandoff,
   needsOwnerHomeAccess,
 } from "../../../../lib/bookings";
+import { PetGlance } from "../../../../components/PetGlance";
 import { PetRecordFold } from "../../../../components/PetRecordFold";
 import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
@@ -362,6 +363,7 @@ export default function SitterBookingDetail() {
               </Text>
             ))}
             {pet.notes ? <Text style={styles.muted}>{pet.notes}</Text> : null}
+            <PetGlance petId={pet.id} bare />
             <PetRecordFold petId={pet.id} petName={pet.name} />
           </Card>
         ))}

@@ -151,6 +151,8 @@ export type MockDb = {
   stayChecks: Row[];
   pets: Row[];
   pet_allergies: Row[];
+  /** 014v: public_id and position per pet. */
+  pet_photos: Row[];
   owner_profiles: Row[];
   sitter_profiles: Row[];
   sitter_availability: Row[];
@@ -260,6 +262,7 @@ function createMockDb(): MockDb {
   return {
     pets: [],
     pet_allergies: [],
+    pet_photos: [],
     owner_profiles: [],
     sitter_profiles: [],
     sitter_availability: [],

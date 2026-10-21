@@ -130,6 +130,13 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
     await expect(screen.getByTestId("own-row-about-you")).toContainText("Hi, I am Robert.");
     await expect(screen.getByTestId("own-row-home")).toContainText("100 Queen St W, Toronto");
+    // The card the sitter will see, from the answers so far.
+    const glance = screen.getByTestId("own-glance");
+    await expect(glance).toContainText("Pip at a glance");
+    await expect(glance).toContainText("Dog · Maltese");
+    await expect(glance.getByTestId("own-glance-chart")).toContainText("Very sensitive");
+    await expect(glance.getByTestId("own-glance-chart")).toContainText("Steady");
+    await expect(glance).toContainText("No chicken");
     await expect(screen.getByTestId("own-row-photos")).toContainText("2");
     await expect(screen.getByTestId("own-row-personality")).toContainText("12 of 12 answered");
     await expect(screen.getByTestId("own-row-safety")).toContainText("2 of 5 answered");

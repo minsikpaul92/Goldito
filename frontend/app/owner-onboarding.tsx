@@ -5,23 +5,25 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BigInput } from "../components/ownerOnboarding/BigInput";
 import { BigOption } from "../components/ownerOnboarding/BigOption";
+import { PetGlanceCard } from "../components/PetGlanceCard";
 import { PetPhotosStep } from "../components/ownerOnboarding/PetPhotosStep";
 import { StepFrame } from "../components/ownerOnboarding/StepFrame";
 import { AddressInput } from "../components/AddressInput";
 import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
-import { Chip } from "../components/ui/Chip";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Stepper } from "../components/ui/Stepper";
 import { TextButton } from "../components/ui/TextButton";
 import {
   EMPTY_DRAFT,
   OwnerOnboardingDraft,
+  birthdateFromAge,
   clearDraft,
   foodsFromDraft,
   loadDraft,
   profileFromDraft,
   saveDraft,
+  weightFromDraft,
 } from "../features/ownerOnboarding/draft";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
@@ -31,7 +33,7 @@ import {
   chartQuestions,
   fill,
 } from "../features/ownerOnboarding/questions";
-import { safetyChips } from "../features/ownerOnboarding/scoring";
+import { glanceFacts } from "../features/ownerOnboarding/petGlanceApi";
 import { progress, stepIds, stepIndex } from "../features/ownerOnboarding/steps";
 import { normalizeAllergen } from "../features/pets/petValidation";
 import { LocationError, getCurrentPosition } from "../lib/location";
@@ -467,7 +469,6 @@ export default function OwnerOnboarding() {
   const chartTotal = species ? chartQuestions(species).length : 0;
   const answered = Object.keys(profile.answers).length;
   const safeAnswered = SAFETY_QUESTIONS.filter((q) => profile.safety[q.key]).length;
-  const chips = safetyChips(profile.safety, foods);
   const rows: { id: string; label: string; value: string }[] = [
     { id: "name", label: "Name", value: petName },
     { id: "photos", label: "Photos", value: draft.photos.length ? String(draft.photos.length) : "Not shared yet" },
@@ -498,6 +499,17 @@ export default function OwnerOnboarding() {
       }
       testID="own-step-summary"
     >
+      {species ? (
+        <PetGlanceCard
+          name={petName}
+          species={species}
+          facts={glanceFacts(species, draft.breed.trim() || null, draft.ageYears === null ? null : birthdateFromAge(draft.ageYears), weightFromDraft(draft))}
+          coverPublicId={draft.photos[0] ?? null}
+          profile={profile}
+          allergens={foods}
+          testID="own-glance"
+        />
+      ) : null}
       {rows.map((row) => (
         <Pressable
           key={row.label}
@@ -514,13 +526,6 @@ export default function OwnerOnboarding() {
           <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
         </Pressable>
       ))}
-      {chips.length > 0 ? (
-        <View style={styles.chips}>
-          {chips.map((chip) => (
-            <Chip key={chip.key} label={chip.text} />
-          ))}
-        </View>
-      ) : null}
     </StepFrame>
   );
 
@@ -554,5 +559,4 @@ const makeStyles = (theme: Theme) =>
     summaryLabel: { fontSize: 18, color: theme.color.textMuted },
     summaryValue: { fontSize: 20, lineHeight: 26, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
     note: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
   });
