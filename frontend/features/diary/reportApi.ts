@@ -1,4 +1,5 @@
 import { ApiError, apiPost } from "../../lib/api";
+import { thumbUrl, videoPosterUrl } from "../../lib/cloudinary";
 import { getSupabase } from "../../lib/supabase";
 import { CHECKIN_GROUPS } from "../care/checkinOptions";
 import type { Species } from "../../types/db";
@@ -27,7 +28,7 @@ export const REPORT_MAX_HIGHLIGHTS = 8;
 export const CUSTOM_CHIP_MAX = 40;
 
 /** `fallback`: the writing model was down, so the draft is the plain list of the kept chips (RV-8). */
-export type ReportDraft = { id: string; body: string; status: "draft" | "sent"; fallback?: boolean };
+export type ReportDraft = { id: string; body: string; status: "draft" | "sent"; fallback?: boolean; /** The photo on a sent page (014t). */ photoUrl?: string | null };
 
 function explain(error: unknown, fallback: string): Error {
   // The server's 403 / 409 messages are already written for the sitter. (A model outage is no longer an error:
@@ -82,16 +83,19 @@ export async function getTodayReport(petId: string, sitterId: string): Promise<R
   // A day can hold several sent reports and at most one draft (011f, FB-22): the draft first, else the last sent.
   const { data, error } = await getSupabase()
     .from("daily_reports")
-    .select("id, body, status, sent_at")
+    .select("id, body, status, sent_at, media(cloudinary_public_id, resource_type)")
     .eq("pet_id", petId)
     .eq("sitter_id", sitterId)
     .eq("report_date", appToday());
   if (error) throw new Error("Couldn't load today's report.");
-  const rows = (data ?? []) as (ReportDraft & { sent_at: string | null })[];
+  const rows = ((data ?? []) as unknown as (Omit<ReportDraft, "photoUrl"> & { sent_at: string | null; media: Embed<PageMedia> })[]).map((r) => ({
+    ...r,
+    photoUrl: pageMediaUrl(first(r.media)),
+  }));
   const draft = rows.find((r) => r.status === "draft");
   const last = rows.filter((r) => r.status === "sent").sort((a, b) => (b.sent_at ?? "").localeCompare(a.sent_at ?? ""))[0];
   const pick = draft ?? last;
-  return pick ? { id: pick.id, body: pick.body, status: pick.status } : null;
+  return pick ? { id: pick.id, body: pick.body, status: pick.status, photoUrl: pick.photoUrl } : null;
 }
 
 /** Today's draft written by the sitter's own hand (014b) — the same one draft the AI writes; returns its id. */
@@ -124,6 +128,13 @@ export async function addOwnerEntry(petId: string, body: string): Promise<string
   throw new Error("Couldn't save the page. Check your connection and try again.");
 }
 
+/** Puts one of the writer's own images of the pet on their page, or takes it off (`null`) (014t). */
+export async function setDiaryPagePhoto(reportId: string, mediaId: string | null): Promise<void> {
+  const { error } = await getSupabase().rpc("set_diary_page_photo", { p_report: reportId, p_media: mediaId });
+  if (!error) return;
+  throw new Error("Couldn't put the photo on the page.");
+}
+
 /** The writer deletes their own page (014t): draft or sent. A sitter's sent page leaves the owner's book too. */
 export async function deleteDiaryPage(reportId: string): Promise<void> {
   const { error } = await getSupabase().rpc("delete_diary_page", { p_report: reportId });
@@ -152,9 +163,18 @@ export type SentReport = {
   body: string;
   sentAt: string | null;
   tasks: { title: string; status: string }[];
+  /** The photo the writer put on the page (014t); without one the page shows the day's first shared photo. */
+  photoUrl: string | null;
 };
 
 type Embed<T> = T | T[] | null;
+type PageMedia = { cloudinary_public_id: string; resource_type: "image" | "video" };
+
+/** The picture box's image for a page's own photo. */
+function pageMediaUrl(media: PageMedia | null): string | null {
+  if (!media) return null;
+  return (media.resource_type === "video" ? videoPosterUrl(media.cloudinary_public_id, 600) : thumbUrl(media.cloudinary_public_id, 600)) || null;
+}
 type ReportRow = {
   id: string;
   sitter_id: string;
@@ -165,10 +185,11 @@ type ReportRow = {
   source_snapshot: { tasks?: { title: string; status: string }[] } | null;
   pets: Embed<{ name: string; species: Species }>;
   sitter: Embed<{ display_name: string }>;
+  media: Embed<PageMedia>;
 };
 const first = <T,>(v: Embed<T>): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
 const COLUMNS =
-  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name, species), sitter:profiles!daily_reports_sitter_id_fkey(display_name)";
+  "id, sitter_id, pet_id, report_date, body, sent_at, source_snapshot, pets(name, species), sitter:profiles!daily_reports_sitter_id_fkey(display_name), media(cloudinary_public_id, resource_type)";
 
 function toSent(row: ReportRow): SentReport {
   return {
@@ -182,6 +203,7 @@ function toSent(row: ReportRow): SentReport {
     body: row.body,
     sentAt: row.sent_at,
     tasks: row.source_snapshot?.tasks ?? [],
+    photoUrl: pageMediaUrl(first(row.media)),
   };
 }
 

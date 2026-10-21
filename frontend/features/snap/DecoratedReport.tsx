@@ -66,6 +66,8 @@ type Props = {
   writing?: DiaryWriting;
   /** The owner's own page (014p): the picture may be one of the owner's private photos. */
   ownPage?: boolean;
+  /** The page's own photo (014t), or a photo just added to a page being written. Without one: the day's first shared photo. */
+  pictureUrl?: string | null;
   /**
    * Stickers put on a page that is still being written (no report row yet): kept by the parent and saved with the
    * page once it exists. Without it a page being written has no Decorate.
@@ -86,7 +88,7 @@ type Props = {
  *
  * Page layers, bottom to top: paper → picture + ruled lines → stickers behind the text → the text → stickers over it.
  */
-export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pending, onEditingChange, testID }: Props) {
+export function DecoratedReport({ reportId, petId, petName, day, body, writing, ownPage, pictureUrl, pending, onEditingChange, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [writtenHeight, setWrittenHeight] = useState(0);
@@ -132,8 +134,10 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     void load();
   }, [load]);
 
-  // The picture box: the day's first shared photo, if there is one.
+  // The picture box: the page's own photo; without one, the day's first shared photo, if there is one.
+  const shownPicture = pictureUrl || picture;
   useEffect(() => {
+    if (pictureUrl) return;
     let live = true;
     listReportPhotos(petId, day, ownPage && role === "owner")
       .then((photos) => {
@@ -145,7 +149,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
     return () => {
       live = false;
     };
-  }, [petId, day, ownPage, role]);
+  }, [petId, day, ownPage, role, pictureUrl]);
 
   const drafting = !reportId && !!pending;
   const mine = drafting ? pending.items : (layers.find((l) => l.userId === me)?.items ?? []);
@@ -234,7 +238,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
         layer: item.layer ?? "front",
       })),
     );
-    return renderDiaryPage({ paper, picture: pic, pictureUrl: picture, lines: rules, text: [header, text], stickers });
+    return renderDiaryPage({ paper, picture: pic, pictureUrl: shownPicture, lines: rules, text: [header, text], stickers });
   };
 
   const onTextLayout = (event: LayoutChangeEvent) => {
@@ -271,8 +275,8 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
           <Text style={styles.headerText}>{`${petName}'s day 🐾`}</Text>
         </View>
         <View ref={pictureRef} pointerEvents={passThrough} style={styles.picture} testID={id("picture")}>
-          {picture ? (
-            <Image source={{ uri: picture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          {shownPicture ? (
+            <Image source={{ uri: shownPicture }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           ) : (
             <Text style={styles.pictureEmpty}>🖍️</Text>
           )}

@@ -116,15 +116,31 @@ test.describe("owner diary page", () => {
     await screen.getByTestId("diary-write-photo").click();
     await screen.getByTestId("sample-walk").click();
     await expect(screen.getByTestId("diary-write-photo-added")).toBeVisible();
+    // The photo shows in the page's picture box at once.
+    await expect(screen.getByTestId("diary-write-page-picture").locator("img")).toHaveAttribute("src", /^blob:/);
     await screen.getByTestId("diary-write-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Page saved");
     await expect(screen.getByTestId("diary-entry-body")).toContainText("A walk in the sun.");
     expect(db.feed_posts).toHaveLength(1);
     expect(db.feed_posts[0]).toMatchObject({ pet_id: MAX.id, posted_by: OWNER.id, sitter_id: null, visibility: "private", media_id: "media-own" });
+    // The page points at the photo (014t); deleting the page later leaves the Feed post alone.
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)).toMatchObject({ media_id: "media-own" });
 
     await page.goto("/owner/feed");
     await expect(screen.locator("[data-testid^='feed-private-']")).toHaveCount(1);
+  });
+
+  test("a page with no photo saves as normal, without one", async ({ page }) => {
+    const db = await openOwnerDiary(page, oneStay);
+    const screen = app(page);
+    await screen.getByTestId("diary-write").click();
+    await screen.getByTestId("diary-write-body").fill("No photo today.");
+    await expect(screen.getByTestId("diary-write-page-picture").locator("img")).toHaveCount(0);
+    await screen.getByTestId("diary-write-save").click();
+    await expect(screen.getByTestId("toast")).toContainText("Page saved");
+    expect(db.daily_reports.find((r) => r.sitter_id === OWNER.id)?.media_id ?? null).toBeNull();
+    expect(db.feed_posts).toHaveLength(0);
   });
 
   test("the saved page takes a Goldito sticker and a sticker made in Snap", async ({ page }) => {

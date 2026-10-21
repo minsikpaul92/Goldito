@@ -253,6 +253,7 @@ export function DiaryBook({ pages, initialId, footer, testID = "diary-book" }: D
                   day={p.day}
                   body={p.body}
                   ownPage={me != null && p.authorId === me}
+                  pictureUrl={p.photoUrl}
                   onEditingChange={isCurrent ? setDecorating : undefined}
                   testID={isCurrent ? testID : undefined}
                 />

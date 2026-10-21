@@ -1069,17 +1069,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 337 |
-| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 351 |
-| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 388 |
-| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 418 |
-| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 420 |
-| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 432 |
-| Button | Done | ``report-edit-done-${pet.id}`` | 452 |
-| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 459 |
-| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 463 |
-| Button | Add | ``report-custom-add-${pet.id}`` | 483 |
-| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 485 |
+| Tag | ``Sent to ${pet.ownerName} ✓`` | ``report-sent-${pet.id}`` | 352 |
+| Button | ✏️ Write another report | ``report-another-${pet.id}`` | 367 |
+| Button | busy === "send" ? "Sending…" : `Send to ${pet.ownerName}` | ``report-send-${pet.id}`` | 405 |
+| TextButton | ✎ Fix a recorded value | ``report-edit-${pet.id}`` | 435 |
+| Sheet | Fix a recorded value | ``report-edit-sheet-${pet.id}`` | 437 |
+| Button | on ? `✓ ${o.label}` : o.label | ``report-edit-${pet.id}-${group.kind}-${o.value}`` | 449 |
+| Button | Done | ``report-edit-done-${pet.id}`` | 469 |
+| TextButton | Remove | ``report-photo-remove-${p.mediaId}`` | 476 |
+| Button | photos.length >= REPORT_MAX_PHOTOS ? "📷 2 photos added" : `📷 Add photo (${photos.length}/${REPORT_MAX_PHOTOS})` | ``report-add-photo-${pet.id}`` | 480 |
+| Button | Add | ``report-custom-add-${pet.id}`` | 500 |
+| Button | busy === "generate" ? "Writing…" : body.trim() ? "✨ Rewrite the page from the chips" : "✨ Write the page from the chips" | ``report-generate-${pet.id}`` | 502 |
 
 ### RequestBookingSheet — [components/RequestBookingSheet.tsx](../../frontend/components/RequestBookingSheet.tsx)
 
@@ -1265,7 +1265,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | TextButton | ‹ Diaries | ``${testID}-covers`` | 210 |
-| Pressable | `hint` | `testID` | 273 |
+| Pressable | `hint` | `testID` | 274 |
 
 ### DiaryCover — [features/diary/DiaryCover.tsx](../../frontend/features/diary/DiaryCover.tsx)
 
@@ -1285,11 +1285,11 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 108 |
-| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 114 |
-| SegmentedControl | — | `diary-write-pet` | 117 |
-| TextButton | Remove | `diary-write-photo-remove` | 142 |
-| TextButton | + Photo | `diary-write-photo` | 145 |
+| Sheet | saving ? "Saving…" : "Save page" | `diary-write-sheet` | 114 |
+| Button | saving ? "Saving…" : "Save page" | `diary-write-save` | 120 |
+| SegmentedControl | — | `diary-write-pet` | 123 |
+| TextButton | Remove | `diary-write-photo-remove` | 150 |
+| TextButton | + Photo | `diary-write-photo` | 153 |
 
 ### PageActions — [features/diary/PageActions.tsx](../../frontend/features/diary/PageActions.tsx)
 
@@ -1315,14 +1315,14 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 326 |
-| TextButton | Make a sticker | `decor-make` | 346 |
-| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 351 |
-| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 385 |
-| TextButton | Cancel | `decor-cancel` | 386 |
-| TextButton | ✨ Decorate | `decor-start` | 397 |
-| TextButton | ↗ Share | `decor-share` | 398 |
-| Pressable | `hint` | `testID` | 419 |
+| Pressable | ``Add the ${preset.label} sticker`` | ``decor-preset-${preset.id}`` | 330 |
+| TextButton | Make a sticker | `decor-make` | 350 |
+| Pressable | ``Add this sticker of ${petName}`` | `decor-add` | 355 |
+| Button | saving ? "Saving…" : "Save stickers" | `decor-save` | 389 |
+| TextButton | Cancel | `decor-cancel` | 390 |
+| TextButton | ✨ Decorate | `decor-start` | 401 |
+| TextButton | ↗ Share | `decor-share` | 402 |
+| Pressable | `hint` | `testID` | 423 |
 
 ### MoodScreen — [features/snap/MoodScreen.tsx](../../frontend/features/snap/MoodScreen.tsx)
 

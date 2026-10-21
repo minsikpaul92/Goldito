@@ -16,6 +16,7 @@ import {
   getTodayReport,
   sendReport,
   suggestChips,
+  setDiaryPagePhoto,
   summaryLine,
   type DaySummary,
 } from "../features/diary/reportApi";
@@ -82,6 +83,8 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const [stickers, setStickers] = useState<DecorItem[]>([]);
   /** The sent report shown on the card — the paper the sitter can decorate (12.3b). */
   const [sentId, setSentId] = useState<string | null>(null);
+  /** The photo on the sent page (the first one added), if any. */
+  const [sentPhoto, setSentPhoto] = useState<string | null>(null);
 
   const refreshChips = useCallback(
     async (mediaIds: string[]) => {
@@ -109,6 +112,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         if (existing?.status === "sent") {
           setSent(true);
           setSentId(existing.id);
+          setSentPhoto(existing.photoUrl ?? null);
           setBody(existing.body);
         } else if (existing) {
           setDraft(existing);
@@ -295,8 +299,18 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         }
         setStickers([]);
       }
+      // The first photo added shows on the page the owner reads.
+      const pagePhoto = photos[0];
+      if (pagePhoto) {
+        try {
+          await setDiaryPagePhoto(id, pagePhoto.mediaId);
+        } catch {
+          toast.show("Sent, but the photo wasn't added to the page.");
+        }
+      }
       setSent(true);
       setSentId(id);
+      setSentPhoto(pagePhoto?.thumbUrl || null);
       setDraft(null);
       toast.show(`Sent ✅ ${pet.ownerName} was told`);
     } catch (e) {
@@ -319,6 +333,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
   const writeAnother = () => {
     setSent(false);
     setSentId(null);
+    setSentPhoto(null);
     setBody("");
     setStickers([]);
     setOff(new Set());
@@ -342,6 +357,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
             petName={pet.name}
             day={day.current}
             body={body}
+            pictureUrl={sentPhoto}
             testID={`report-sent-paper-${pet.id}`}
           />
         ) : (
@@ -375,6 +391,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
         petName={pet.name}
         day={day.current}
         body={body}
+        pictureUrl={photos[0]?.thumbUrl || null}
         pending={{ items: stickers, onChange: setStickers }}
         writing={{
           onChangeText: setBody,

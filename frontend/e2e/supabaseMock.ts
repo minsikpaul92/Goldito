@@ -1835,6 +1835,18 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return route.fulfill({ status: 204 });
   }
 
+  if (path === "rpc/set_diary_page_photo") {
+    // 014t: the author puts one of their own images of that pet on the page.
+    const { p_report, p_media } = request.postDataJSON();
+    const report = db.daily_reports.find((r) => r.id === p_report);
+    if (!report) return json(route, 400, { code: "P0001", message: "not_found" });
+    if (report.sitter_id !== me) return json(route, 400, { code: "P0001", message: "not_author" });
+    const media = p_media ? db.media.find((m) => m.id === p_media) : null;
+    if (p_media && (!media || media.pet_id !== report.pet_id || media.resource_type !== "image")) return json(route, 400, { code: "P0001", message: "bad_photo" });
+    report.media_id = p_media ?? null;
+    return route.fulfill({ status: 204 });
+  }
+
   if (path === "rpc/send_daily_report") {
     const { p_report, p_body } = request.postDataJSON();
     const report = db.daily_reports.find((r) => r.id === p_report);
@@ -2177,6 +2189,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
+    if (path === "daily_reports" && select.includes("media(")) {
+      rows = rows.map((r) => ({ ...r, media: mediaOf(r.media_id) }));
     }
     if (path === "daily_reports" && select.includes("pets(")) {
       rows = rows.map((r) => ({

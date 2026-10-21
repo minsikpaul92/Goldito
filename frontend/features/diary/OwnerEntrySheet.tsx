@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../../components/ui/Button";
@@ -16,7 +16,7 @@ import { Theme } from "../../theme/themes";
 import { appToday } from "../schedule/dates";
 import { type DecorItem, saveDecor } from "../snap/decorApi";
 import { DecoratedReport } from "../snap/DecoratedReport";
-import { REPORT_BODY_MAX, addOwnerEntry } from "./reportApi";
+import { REPORT_BODY_MAX, addOwnerEntry, setDiaryPagePhoto } from "./reportApi";
 
 type Props = {
   visible: boolean;
@@ -30,7 +30,8 @@ type Props = {
 
 /**
  * The owner's own diary page (014p, #186): write on the page, add a photo if you like, save. The page is sent to the
- * owner's book at once (no AI, no notice, the sitter never sees it). The photo is also kept in Feed, private.
+ * owner's book at once (no AI, no notice, the sitter never sees it). The photo shows in the page's picture box and is
+ * also kept in Feed, private.
  * Stickers can go on while writing; they are saved with the page.
  */
 export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved }: Props) {
@@ -56,6 +57,10 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
 
   const pet = pets.find((p) => p.id === petId) ?? null;
 
+  // The picked photo shows in the page's picture box at once.
+  const preview = useMemo(() => (photo && typeof URL !== "undefined" ? URL.createObjectURL(photo.file) : null), [photo]);
+  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+
   const addPhoto = async () => {
     const picked = await pickMedia({ purpose: "feed", mediaTypes: ["image"] });
     if (picked) setPhoto(picked);
@@ -72,6 +77,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
       const reportId = await addOwnerEntry(pet.id, body);
       if (uploaded) {
         try {
+          await setDiaryPagePhoto(reportId, uploaded.mediaId);
           await createFeedPost({
             petId: pet.id,
             mediaId: uploaded.mediaId,
@@ -129,6 +135,8 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           petName={pet.name}
           day={appToday()}
           body={body}
+          pictureUrl={preview}
+          testID="diary-write-page"
           pending={{ items: stickers, onChange: setStickers }}
           writing={{ onChangeText: setBody, placeholder: "Dear diary, today…", maxLength: REPORT_BODY_MAX, disabled: saving, testID: "diary-write-body" }}
         />
