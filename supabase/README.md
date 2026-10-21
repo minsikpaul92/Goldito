@@ -54,6 +54,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `014p_owner_diary_entry.sql` | Diary (#186) | `add_owner_diary_entry(pet, body)`: the owner writes a diary page of their own. No new table: it is a sent `daily_reports` row whose author column (`sitter_id`) is the owner, so the owner reads it in their book and can decorate it, while sitters (who read only rows they wrote) and the Life Record (which filters by the booking's sitter) never see it. No draft, no AI, no notice |
 | `014r_handoff_pair_and_trip_near.sql` | 03D (3D.8, #145 · #169) | A drop-off + pick-up suggestion is one pair: `booking_handoffs.pair_id` (two rows, one key), `propose_handoff_pair` (both rows, one notice) and `respond_handoff` answering both together, before or after confirm (a replaced row turns its partner into a single one: trigger `clear_pair_on_supersede`; rows with no key work as in 012c). `owner_profiles.default_handoff` (the owner's usual handoff place; the sitter's default is the onboarding answer `handoff`). `trips.near_notified_at` + `update_trip_position`: one `trip_near` notice ("is about 5 minutes away") per trip |
 | `014t_diary_delete_hide_photo.sql` | Diary (#243) | `delete_diary_page(report)`: the author deletes a page (draft or sent, sitter or owner); its stickers and its "report sent" notice go with it, Feed photos are never touched. `hide_diary_page(report)` + table `diary_page_hidden`: the owner takes a sitter's page out of their own book only (the owner's read policy on `daily_reports` skips hidden pages; the sitter's copy and the Life Record are unchanged; no way back yet). `daily_reports.media_id` + `set_diary_page_photo(report, media)`: the photo in the page's picture box, the author's own image of that pet (feed or report upload) |
+| `014v_owner_onboarding.sql` | 11.15 S1 (#185) | `pets.profile jsonb` (the owner's answers, an object up to 16000 characters), `owner_profiles.intro` (up to 500). Table `pet_photos` (up to 8 per pet, first = cover, same shape as `profile_photos`): read by whoever reads the pet; `add_pet_photo` and `remove_pet_photo` are backend only, `reorder_pet_photos` is the owner's. `create_pet_with_profile(...)` saves a pet, its answers and its allergies in one call and is safe to retry with the same id |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 
@@ -71,7 +72,7 @@ CI and a fresh local DB apply the files in **name order**; the hosted DB has the
 auth.users 1─1 profiles (role owner|sitter) ─┬─1 owner_profiles
                                              └─1 sitter_profiles
 profiles(sitter) 1─* sitter_availability (day range × slot, hours, max_pets, open|blocked)
-profiles(owner)  1─* pets (dog|cat) 1─* pet_allergies
+profiles(owner)  1─* pets (dog|cat) 1─* pet_allergies · 1─* pet_photos
 bookings (owner, sitter, status) 1─* booking_pets (pet, care_range — no overlap per pet) *─1 pets
 bookings 1─* booking_slots (pet × day × slot, capacity) · 1─* booking_handoffs (drop_off|pick_up)
 pets 1─* care_tasks 1─* task_logs ─0..1 media
