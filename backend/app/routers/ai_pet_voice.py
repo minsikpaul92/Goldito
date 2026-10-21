@@ -14,10 +14,11 @@ from starlette.concurrency import run_in_threadpool
 from app.ai.pet_voice import Facts, RawFacts, validate_facts
 from app.ai.prompts import load_prompt
 from app.ai.sitter_voice import Pick, RawPicks, validate_picks
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.services import nebius, stt
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 
 # 60 seconds of browser audio is well under 1 MB; this leaves room for a high bit rate and still refuses a file upload.
 MAX_AUDIO_BYTES = 5 * 1024 * 1024

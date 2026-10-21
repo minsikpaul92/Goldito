@@ -11,11 +11,12 @@ from pydantic import BaseModel, Field
 
 from app.ai.pet_photo import PhotoGuess, RawGuess, clean
 from app.ai.prompts import load_prompt
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.services import cloudinary as cloudinary_service
 from app.services import nebius
 
-router = APIRouter(prefix="/api/ai", tags=["ai"])
+router = APIRouter(prefix="/api/ai", tags=["ai"], dependencies=[Depends(limits.ai_calls)])
 
 TIMEOUT_S = 20.0  # the app stops waiting after 15 s (docs/plan/pet-profile-onboarding.ko.md §7)
 

@@ -1,5 +1,9 @@
 """The demo seed gives the sitter her services and prices (FB-7): without them checkout cannot quote."""
 
+from types import SimpleNamespace
+
+import pytest
+from postgrest.exceptions import APIError
 from scripts import seed_demo
 
 from tests.fakes import FakeDB
@@ -69,3 +73,35 @@ def test_every_demo_account_has_a_home_and_the_spread_is_wide():
     from app.services.demo_accounts import DEMO_HOMES, DEMO_USERS
 
     assert {u.email for u in DEMO_USERS} == set(DEMO_HOMES)
+
+
+class _RpcClient:
+    """Records the 014z window calls; `missing` = the function is not on the database yet."""
+
+    def __init__(self, missing: bool = False) -> None:
+        self.calls: list[bool] = []
+        self.missing = missing
+
+    def rpc(self, name: str, params: dict):
+        assert name == "set_demo_accounts_unlocked"
+        if self.missing:
+            raise APIError({"code": "PGRST202", "message": "not found"})
+        self.calls.append(params["p_on"])
+        return SimpleNamespace(execute=lambda: None)
+
+
+def test_the_seed_opens_the_demo_account_window_and_always_closes_it():
+    client = _RpcClient()
+    with seed_demo.demo_accounts_unlocked(client):
+        assert client.calls == [True]
+    assert client.calls == [True, False]
+
+    client = _RpcClient()
+    with pytest.raises(RuntimeError), seed_demo.demo_accounts_unlocked(client):
+        raise RuntimeError("update failed")
+    assert client.calls == [True, False]
+
+
+def test_the_seed_still_runs_before_014z_is_applied():
+    with seed_demo.demo_accounts_unlocked(_RpcClient(missing=True)):
+        pass

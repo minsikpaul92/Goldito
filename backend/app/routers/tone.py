@@ -13,11 +13,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from app.ai import tone
+from app.deps import limits
 from app.deps.auth import CurrentUser, get_current_user
 from app.deps.supabase import get_service_client
 from app.services import nebius
 
-router = APIRouter(prefix="/api/tone", tags=["tone"])
+router = APIRouter(prefix="/api/tone", tags=["tone"], dependencies=[Depends(limits.ai_calls)])
 log = logging.getLogger("goldito.ai")
 
 

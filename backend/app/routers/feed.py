@@ -19,7 +19,7 @@ class DeleteFeedPostResponse(BaseModel):
 
 
 def _media_in_use(db, media_id: str, *, except_post: str) -> bool:
-    """Is the media still referenced by another feed post, task log, check-in or safety check?"""
+    """Is the media still referenced by another feed post, task log, check-in, safety check, Diary page or handoff check?"""
     other_posts = (
         db.table("feed_posts")
         .select("id")
@@ -30,8 +30,9 @@ def _media_in_use(db, media_id: str, *, except_post: str) -> bool:
     )
     if other_posts.data:
         return True
-    # A task or check-in photo also shows in the Diary / History: deleting its feed post keeps the file.
-    for table in ("task_logs", "care_checkins", "safety_checks"):
+    # A task or check-in photo also shows in the Diary / History, a Diary page's picture box (014t) and a handoff check
+    # (Received) point at it too: deleting its feed post keeps the file.
+    for table in ("task_logs", "care_checkins", "safety_checks", "daily_reports", "handoff_checks"):
         used = db.table(table).select("id").eq("media_id", media_id).limit(1).execute()
         if used.data:
             return True
