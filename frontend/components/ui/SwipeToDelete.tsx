@@ -36,6 +36,8 @@ export function SwipeToDelete({ children, onDelete, radius = 0, label = "Delete"
       PanResponder.create({
         // Only a mostly horizontal drag takes over, so scrolling and taps keep working.
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        // Once a swipe has started it is the row's: a pager around it (Home) must not take the drag over.
+        onPanResponderTerminationRequest: () => false,
         onPanResponderMove: (_e, g) => x.setValue(Math.min(0, g.dx)),
         onPanResponderRelease: (_e, g) => {
           const w = widthRef.current;

@@ -4,7 +4,7 @@ import { getSupabase } from "../../lib/supabase";
 import { Pet, Species } from "../../types/db";
 
 const PET_COLUMNS =
-  "id, owner_id, species, name, breed, birthdate, weight_kg, notes, created_at, pet_allergies(id, allergen)";
+  "id, owner_id, species, name, breed, birthdate, weight_kg, notes, profile, created_at, pet_allergies(id, allergen)";
 
 export type PetInput = {
   species: Species;

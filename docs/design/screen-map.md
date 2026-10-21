@@ -52,15 +52,15 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: live updates from the sitter (swipe to dismiss) and my pets. The pet room arrives later.
+Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet.
 
-Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
+Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 28 |
-| EmptyState | No pets yet | — | 41 |
-| Button | Add pet | `add-pet` | 61 |
+| EmptyState | Couldn't load your pets | — | 33 |
+| EmptyState | No pets yet | — | 46 |
+| Button | Add pet | `add-pet` | 76 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -1353,6 +1353,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Banner | `error` | `own-voice-error` | 135 |
 | Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
 
+### PetPage — [components/pet/PetPage.tsx](../../frontend/components/pet/PetPage.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``pet-switch-${p.name}`` | 23 |
+
+### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 44 |
+
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1499,4 +1511,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-439 actions · 438 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+444 actions · 443 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

@@ -16,6 +16,8 @@ export type Pet = {
   birthdate: string | null;
   weight_kg: number | null;
   notes: string | null;
+  /** The owner's answers (014v); only `coat` is read here, to color the pet room sprite. */
+  profile?: { coat?: unknown } | null;
   created_at: string;
   pet_allergies: PetAllergy[];
 };
