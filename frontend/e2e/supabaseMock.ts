@@ -501,8 +501,9 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
       return done();
     }
     case "complete_meet_greet": {
+      // 014s: any time after it is agreed, and a second press is a no-op.
+      if (status === "done") return done();
       if (status !== "agreed") return fail("invalid_status");
-      if (nowMs() < Date.parse(String(b.meet_greet_at))) return fail("meet_greet_not_yet");
       b.meet_greet_status = "done";
       return done();
     }

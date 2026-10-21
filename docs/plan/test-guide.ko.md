@@ -847,7 +847,7 @@
 | CHAT-17 | (DB) `rls_smoke.sql`의 014o 블록 | 반복 쌍은 요청 직후 `confirm`(다음 차례 both) · 시터가 먼저 수락하면 요청 상태로 남고 오너 차례 · 오너가 먼저 동의하면 시터 차례 · 둘 다 있으면 `confirmed`와 두 핸드오프 agreed, 순서는 자유 · 시터가 제안한 새 시간은 양쪽 동의를 지움 · 처음 보는 쌍은 Meet & Greet이 끝나야 동의 가능 · 가격은 같은 일정의 확인된 최종 견적에서 수락한 수수료만 더함(미확인 · 다른 일정 견적 제외) · `pay_booking_demo`가 같은 총액을 얼림 · 채팅 카드: `meet_greet`(시터 첫 yes부터, 첫 만남 쌍만) · `agreement` · `payment`가 부킹당 한 번씩, booking id만 들고, 변경마다 `rev`가 올라 상대 화면이 따라옴, 쌍 밖은 못 읽음 · 낯선 사람 · anon 불가 | SQL `rls_smoke` | ➖ |
 | CHAT-18 | 예약 상세에서 합의: 오너 → 예약 상세(Meet & Greet 뒤 또는 이미 만난 쌍) → **I'd like to book** · 시터 → 같은 예약 → **I accept** | 오너 버튼은 시트에서 **펫 · 시간 · 장소 · 체크리스트 · 가격**을 한 번 더 보여 주고 한 번 더 누르면 오너의 yes. 시터의 **I accept**는 yes의 절반: 오너가 아직이면 "You accepted. Waiting for … to book."로 남고 부킹은 요청 상태 그대로, 오너도 눌러야 `confirmed`(순서 자유). 시터가 새 시간을 제안하면 둘의 yes가 지워짐 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-19 | 확인된 최종 견적에서 수락한 수수료가 있는 부킹의 Checkout → 총액 → Pay | Checkout 견적에 **수수료 줄**이 보이고 **Total = 기본 + 수락한 수수료**, 결제 버튼 금액도 같음. 낸 금액은 `price_snapshot`(`extras` 포함)에 얼어 있음. 수수료가 없으면 이전과 같음 | 🤖 `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 시간이 되면 **Done, we met** | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
+| CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 바로 **Done, we met**(시간 전이면 한 번 더 확인, #229) | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
 | CHAT-21 | Meet & Greet 뒤(반복 쌍은 요청 직후): 오너 푸터 **I'd like to book** → 시트(펫 · 시간 · 체크리스트 · 가격) → 확인 / 시터 푸터 **I accept** | **Agreement 카드**에 두 줄(오너 ✓ / 시터 ✓), 순서 자유, 둘 다 있으면 "Booked, you both agreed ✓" 한 줄로 접힘. 한쪽만 눌렀을 때 부킹은 요청 상태, **결제 버튼 없음** | 🤖 `chat` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-22 | 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
@@ -870,6 +870,15 @@
 | MGOPT-1 | 시터가 처음 만나는 사이의 요청을 엶 (예약 화면, 채팅 푸터) | 앞으로 가는 버튼이 **Next** (예전 "Yes, let's meet"). 누르면 날짜가 잡히고, 다음 화면에서 시간 정하기 또는 건너뛰기 | 🤖 `sitter-bookings` · `meet-greet` · `chat` | ➖ |
 | MGOPT-2 | Next 뒤, 아직 만나지도 건너뛰지도 않았을 때 예약 화면 | **I accept**가 꺼져 있고 바로 위에 "Meet Robert first, or agree to skip the Meet & Greet." 기간이 지난 요청은 "The pick-up time has passed." | 🤖 `meet-greet` · `sitter-bookings` | ➖ |
 | MGOPT-3 | 시간이 정해진 Meet & Greet 카드에서 **Add to calendar** | 새 탭에 Google Calendar 일정 화면, 제목 · 30분 시간 · 장소(화상이면 Meet 링크)가 채워짐. `.ics` 파일은 더 이상 안 받음 | 🤖 `meet-greet` (링크 확인) · **👤** (실제 Google 화면) | ➖ |
+
+### 3.39 Meet & Greet 카드 손보기 (MGCARD) · #229 · *사전: 호스팅 DB에 `014s` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGCARD-1 | 정해진 화상 Meet & Greet에서 **Join Google Meet** | 새 탭으로 열리고 앱은 그대로 | 🤖 `meet-greet` (데스크톱 프레임) | **👤** 휴대폰(Meet 앱이 설치돼 있으면 앱이 링크를 가져갈 수 있음) |
+| MGCARD-2 | 화상으로 정해진 카드 | "Go over together" 체크리스트가 없음. 대면이면 그대로 있음 | 🤖 `meet-greet` | ➖ |
+| MGCARD-3 | 정해진 시간 **전**에 **Done, we met** (카드 또는 채팅 푸터) | "It is not time yet / Did you already meet …?" 확인. **Cancel**은 아무것도 안 바뀜, **Yes, we met**이면 Met ✓. "After you meet, tap Done here." 줄은 없음. 양쪽이 둘 다 눌러도 오류 없음 | 🤖 `meet-greet` · `chat` · SQL `rls_smoke`(014s) | ➖ |
+| MGCARD-4 | Schedule Meet & Greet 시트에서 날짜 · 시간 누르기 | 날짜는 **달력**, 시간은 **시계**(분 단위, 예: 3:07 PM). −/+는 빠른 조정용으로 남음 | 🤖 `meet-greet` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

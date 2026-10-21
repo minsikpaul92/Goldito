@@ -874,37 +874,40 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 169 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 170 |
-| TextButton | Change | `meet-change` | 179 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 180 |
-| Button | Accept | `meet-accept` | 190 |
-| TextButton | Suggest another time | `meet-counter` | 204 |
-| TextButton | Decline | `meet-decline` | 205 |
-| LinkButton | Join Google Meet | `meet-join` | 221 |
-| TextButton | Get the Meet link | `meet-link-retry` | 225 |
-| CheckRow | `item` | ``meet-check-${item}`` | 239 |
-| Button | Done, we met | `meet-done` | 249 |
-| LinkButton | Add to calendar | `meet-calendar` | 260 |
-| TextButton | Change | `meet-change` | 261 |
-| Button | Continue without meeting | `meet-skip-accept` | 278 |
-| TextButton | Decline and cancel booking | `meet-skip-decline` | 285 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 317 |
-| Button | Ask to skip | `meet-skip-confirm` | 323 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 336 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 342 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 173 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 174 |
+| TextButton | Change | `meet-change` | 183 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 184 |
+| Button | Accept | `meet-accept` | 194 |
+| TextButton | Suggest another time | `meet-counter` | 208 |
+| TextButton | Decline | `meet-decline` | 209 |
+| LinkButton | Join Google Meet | `meet-join` | 225 |
+| TextButton | Get the Meet link | `meet-link-retry` | 229 |
+| CheckRow | `item` | ``meet-check-${item}`` | 244 |
+| Button | Done, we met | `meet-done` | 254 |
+| LinkButton | Add to calendar | `meet-calendar` | 256 |
+| TextButton | Change | `meet-change` | 257 |
+| Button | Continue without meeting | `meet-skip-accept` | 274 |
+| TextButton | Decline and cancel booking | `meet-skip-decline` | 281 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 313 |
+| Button | Ask to skip | `meet-skip-confirm` | 319 |
+| Sheet | Cancel | `meet-done-early-sheet` | 332 |
+| TextButton | Cancel | `meet-done-early-cancel` | 339 |
+| Button | Yes, we met | `meet-done-early-confirm` | 340 |
+| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 354 |
+| Button | Decline and cancel the booking | `meet-decline-confirm` | 360 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `label` | ``meet-spot-${label}`` | 58 |
-| Sheet | ``Send to ${otherName}`` | `meet-sheet` | 70 |
-| Button | ``Send to ${otherName}`` | `meet-send` | 76 |
-| SegmentedControl | — | `meet-mode` | 84 |
-| CheckRow | 📍 Somewhere else | `meet-spot-other` | 97 |
-| Stepper | Meet & Greet day | `meet-day` | 119 |
-| Stepper | Meet & Greet time | `meet-time` | 127 |
+| CheckRow | `label` | ``meet-spot-${label}`` | 62 |
+| Sheet | ``Send to ${otherName}`` | `meet-sheet` | 74 |
+| Button | ``Send to ${otherName}`` | `meet-send` | 80 |
+| SegmentedControl | — | `meet-mode` | 88 |
+| CheckRow | 📍 Somewhere else | `meet-spot-other` | 101 |
+| Stepper | Meet & Greet day | `meet-day` | 123 |
+| Stepper | Meet & Greet time | `meet-time` | 132 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -1342,4 +1345,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-388 actions · 387 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+390 actions · 389 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

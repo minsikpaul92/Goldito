@@ -1059,7 +1059,7 @@ begin
   perform _t_ok(exists (select 1 from public.notifications where user_id = robert and type = 'meet_greet_declined'),
     '3B.9: the proposer hears about the decline');
 
-  -- Video: Nora proposes, Robert agrees, done only once the time has come, then Accept works
+  -- Video: Nora proposes, Robert agrees, done even before the time (014s, #229), then Accept works
   perform _t_as(nora);
   perform propose_meet_greet(v_a, 'video', now() + interval '2 days');
   perform _t_as(robert);
@@ -1078,16 +1078,17 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'meet_greet_required', '3B.9: Accept still waits while the Meet & Greet is only agreed');
+  -- 014s: Done works before the agreed time, and a second press (the other side) is a no-op.
+  perform _t_as(robert);
+  perform complete_meet_greet(v_a);
+  perform _t_as(nora);
   begin
     perform complete_meet_greet(v_a);
     v_err := null;
   exception when others then v_err := sqlerrm;
   end;
-  perform _t_ok(v_err = 'meet_greet_not_yet', '3B.9: Done only after the meeting time');
-  perform _t_as(null);
-  update public.bookings set meet_greet_at = now() - interval '1 hour' where id = v_a;
-  perform _t_as(robert);
-  perform complete_meet_greet(v_a);
+  perform _t_ok(v_err is null and (select meet_greet_status = 'done' from public.bookings where id = v_a),
+    '014s: Done before the meeting time, and again from the other side, leaves it done');
   perform _t_as(chloe);
   begin
     select * into r from get_meet_greet_options(v_a);

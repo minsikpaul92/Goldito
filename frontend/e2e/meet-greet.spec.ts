@@ -67,16 +67,35 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("meet-time-value")).toHaveText("7:00 PM");
     await expect(screen.getByTestId("meet-spot-Trinity Bellwoods — north gate")).toContainText("Robert's spot");
     await screen.getByTestId("meet-spot-Christie Pits — east entrance").click();
+
+    // #229: the day from the calendar, the time to the minute from the clock (no 15 minute steps).
+    await screen.getByTestId("meet-day-open").click();
+    await expect(screen.getByTestId("meet-calendar-sheet")).toBeVisible();
+    await screen.getByTestId("meet-calendar-sheet-next").click();
+    const firstNextMonth = await screen.locator('[data-testid^="meet-calendar-sheet-20"]').first().getAttribute("data-testid");
+    const day = firstNextMonth!.replace("meet-calendar-sheet-", "");
+    await screen.getByTestId(`meet-calendar-sheet-${day}`).click();
+    await screen.getByTestId("meet-time-open").click();
+    await screen.getByTestId("time-hour-3").click();
+    await screen.getByTestId("time-min-07").click();
+    await screen.getByTestId("time-ampm-pm").click();
+    await expect(screen.getByTestId("meet-clock-set")).toHaveText("Set 3:07 PM");
+    await screen.getByTestId("meet-clock-set").click();
+    await expect(screen.getByTestId("meet-time-value")).toHaveText("3:07 PM");
     await screen.getByTestId("meet-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet sent to Chloe");
     const call = db.meetGreetCalls.find((c) => c.fn === "propose_meet_greet");
     expect(call).toMatchObject({ p_mode: "in_person", p_place: "Christie Pits — east entrance" });
+    // 3:07 PM in Toronto on the picked day (EDT in the fall, UTC-4; EST from November, UTC-5).
+    const at = new Date(String(call!.p_at));
+    expect(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" }).format(at)).toBe(day);
+    expect(new Intl.DateTimeFormat("en-US", { timeZone: "America/Toronto", hour: "numeric", minute: "2-digit" }).format(at)).toBe("3:07 PM");
     await expect(screen.getByTestId("meet-greet")).toContainText("Waiting for Chloe");
     await expect(screen.getByTestId("meet-greet")).toContainText("In person · Christie Pits — east entrance");
   });
 
-  test("the sitter accepts, marks it done after meeting, and can then accept; the booking waits for the owner's yes", async ({ page }) => {
+  test("the sitter accepts, marks it done (before the time it asks first), and can then accept; the booking waits for the owner's yes", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, {
       meet_greet_status: "proposed",
@@ -93,14 +112,17 @@ test.describe("meet & greet", () => {
     await screen.getByTestId("meet-accept").click();
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet set with Robert");
     await expect(screen.getByTestId("meet-greet")).toContainText("Meet & Greet set ✅");
-    await expect(screen.getByTestId("meet-greet")).toContainText("After you meet, tap Done here.");
+    await expect(screen.getByTestId("meet-greet")).not.toContainText("After you meet");
     await screen.getByTestId("meet-check-Care needs").click();
     await expect(screen.getByTestId("meet-check-Care needs")).toHaveAttribute("aria-checked", "true");
 
-    // The meeting time passes.
-    db.bookings[0].meet_greet_at = new Date(Date.now() - 3_600_000).toISOString();
-    await page.reload();
+    // #229: Done shows before the agreed time; pressed early it asks first, and Cancel changes nothing.
     await screen.getByTestId("meet-done").click();
+    await expect(screen.getByTestId("meet-done-early-sheet")).toContainText("Did you already meet Robert?");
+    await screen.getByTestId("meet-done-early-cancel").click();
+    expect(db.bookings[0].meet_greet_status).toBe("agreed");
+    await screen.getByTestId("meet-done").click();
+    await screen.getByTestId("meet-done-early-confirm").click();
     await expect(screen.getByTestId("toast")).toContainText("Meet & Greet done");
     await expect(screen.getByTestId("meet-greet")).toContainText("Met ✓");
     await expect(screen.getByTestId("accept-booking")).toBeEnabled();
@@ -122,6 +144,9 @@ test.describe("meet & greet", () => {
     const screen = await openDetail(page, OWNER);
     await expect(screen.getByTestId("meet-greet")).toContainText("Video · Oct 4, 7:00 PM");
     await expect(screen.getByTestId("meet-greet")).toContainText("No Google Meet link yet");
+    // #229: a video call has nothing to go over together.
+    await expect(screen.getByTestId("meet-greet")).not.toContainText("Go over together");
+    await expect(screen.getByTestId(/^meet-check-/)).toHaveCount(0);
     await expect(screen.getByTestId("meet-join")).toHaveCount(0);
 
     db.bookings[0].meet_greet_link = "https://meet.google.com/abc-defg-hij";
@@ -131,6 +156,13 @@ test.describe("meet & greet", () => {
     await expect(screen.getByTestId("meet-join")).toHaveAttribute("href", "https://meet.google.com/abc-defg-hij");
     await expect(screen.getByTestId("meet-join")).toHaveAttribute("target", "_blank");
     await expect(screen.getByTestId("meet-join")).toHaveAttribute("rel", /noopener/);
+    // #229: a click opens a new tab and the app stays where it was.
+    await page.context().route("https://meet.google.com/**", (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<html>meet</html>" }));
+    const [meet] = await Promise.all([page.context().waitForEvent("page"), screen.getByTestId("meet-join").click()]);
+    expect(meet.url()).toBe("https://meet.google.com/abc-defg-hij");
+    await meet.close();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByTestId("meet-greet")).toBeVisible();
     await expect(screen.getByTestId("meet-calendar")).toBeVisible();
     // #170: a Google Calendar event page in a new tab, as a real link (no .ics download).
     const calendar = screen.getByTestId("meet-calendar");
