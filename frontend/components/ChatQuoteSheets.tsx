@@ -4,9 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "./ui/Button";
 import { ChoiceChips } from "./ui/ChoiceChips";
 import { Sheet } from "./ui/Sheet";
-import { TextButton } from "./ui/TextButton";
-import { TextField } from "./ui/TextField";
-import { ChatPet, addQuoteExtra, sendChatQuote } from "../features/chat/chatApi";
+import { ChatPet, sendChatQuote } from "../features/chat/chatApi";
 import { formatDay, formatTime, isoToZoned } from "../features/schedule/dates";
 import { ServiceType, getSitterProfile } from "../features/sitters/sitterApi";
 import { PriceQuote, quoteBooking } from "../lib/bookings";
@@ -15,7 +13,6 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const SERVICE: Record<string, string> = { boarding: "Boarding", house_sitting: "House sitting", daycare: "Daycare" };
-const FEE_LABELS = ["Medication", "Extra walks", "Late pick-up", "Grooming"];
 
 function short(iso: string): string {
   const z = isoToZoned(iso);
@@ -34,12 +31,11 @@ type SendProps = {
   onSent: () => void;
 };
 
-const MAX_DRAFT_FEES = 5;
 const money = (n: number) => `$${n.toFixed(2)}`;
 
 /**
  * The sitter reviews the quote before it goes out (#235): the server's breakdown from their saved rates (never typed),
- * fees they add as lines, then Send. The fees go with the quote as offers the owner answers one by one.
+ * then Send. One all-inclusive price, no extra fees (#265).
  */
 export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, final, onSent }: SendProps) {
   const styles = useThemedStyles(makeStyles);
@@ -48,16 +44,10 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
   const [service, setService] = useState("boarding");
   const [quote, setQuote] = useState<PriceQuote | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [fees, setFees] = useState<{ label: string; amount: number }[]>([]);
-  const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
-    setFees([]);
-    setLabel("");
-    setAmount("");
     getSitterProfile(sitterId)
       .then((p) => {
         const list: string[] = p?.services?.length ? p.services : ["boarding"];
@@ -86,29 +76,14 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
 
   if (!stay) return null;
 
-  const value = Number(amount.replace(",", "."));
-  const feeOk = label.trim().length > 0 && Number.isFinite(value) && value > 0 && value <= 500 && fees.length < MAX_DRAFT_FEES;
-  const addFee = () => {
-    if (!feeOk) return;
-    setFees((f) => [...f, { label: label.trim(), amount: Math.round(value * 100) / 100 }]);
-    setLabel("");
-    setAmount("");
-  };
-
   const send = async () => {
     setSending(true);
-    let messageId = "";
     try {
-      messageId = await sendChatQuote(threadId, { service: priced, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
+      await sendChatQuote(threadId, { service: priced, dropOffAt: stay.dropOffAt, pickUpAt: stay.pickUpAt, petIds: stay.pets.map((p) => p.id) });
     } catch (e) {
       errorDialog.show({ title: "Quote not sent", message: (e as Error).message, onRetry: () => void send() });
       setSending(false);
       return;
-    }
-    try {
-      for (const f of fees) await addQuoteExtra(messageId, f.label, f.amount);
-    } catch (e) {
-      errorDialog.show({ title: "Quote sent, a fee was not added", message: (e as Error).message });
     }
     setSending(false);
     onClose();
@@ -165,89 +140,14 @@ export function SendQuoteSheet({ visible, onClose, threadId, sitterId, stay, fin
           {row(unit, money(quote.base))}
           {quote.extra_pets > 0 ? row("Extra pet", money(quote.extra_pets)) : null}
           {quote.holiday_surcharge > 0 ? row("Holiday", money(quote.holiday_surcharge)) : null}
-          {fees.map((f, i) => (
-            <View style={styles.row} key={`${f.label}-${i}`} testID="draft-fee">
-              <Text style={styles.line}>{f.label}</Text>
-              <View style={styles.feeEnd}>
-                <Text style={styles.line}>{money(f.amount)}</Text>
-                <TextButton label="Remove" onPress={() => setFees((list) => list.filter((_, j) => j !== i))} testID="draft-fee-remove" />
-              </View>
-            </View>
-          ))}
           <View style={[styles.row, styles.totalRow]}>
-            <Text style={styles.total}>{fees.length > 0 ? "Total with your fees" : "Total"}</Text>
+            <Text style={styles.total}>Total</Text>
             <Text style={styles.total} testID="draft-total">
-              {`${money(quote.total + fees.reduce((n, f) => n + f.amount, 0))} ${quote.currency}`}
+              {`${money(quote.total)} ${quote.currency}`}
             </Text>
           </View>
         </View>
       ) : null}
-      {quote && fees.length < MAX_DRAFT_FEES ? (
-        <View style={styles.feeForm}>
-          <ChoiceChips
-            options={FEE_LABELS.map((l) => ({ value: l, label: l }))}
-            value={FEE_LABELS.includes(label) ? [label] : []}
-            onChange={(v) => setLabel(v[0] ?? "")}
-            testID="draft-fee-labels"
-          />
-          <TextField label="Fee" value={label} onChangeText={setLabel} maxLength={40} testID="draft-fee-label" />
-          <TextField label="Amount (CAD)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" testID="draft-fee-amount" />
-          <TextButton label="Add fee" disabled={!feeOk} onPress={addFee} testID="draft-fee-add" />
-        </View>
-      ) : null}
-    </Sheet>
-  );
-}
-
-type FeeProps = { visible: boolean; onClose: () => void; messageId: string | null; onAdded: () => void };
-
-/** An extra fee line on an open quote. The owner accepts or declines it on the card. */
-export function AddFeeSheet({ visible, onClose, messageId, onAdded }: FeeProps) {
-  const errorDialog = useErrorDialog();
-  const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState("");
-  const [sending, setSending] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setLabel("");
-      setAmount("");
-    }
-  }, [visible]);
-
-  const value = Number(amount.replace(",", "."));
-  const ok = label.trim().length > 0 && Number.isFinite(value) && value > 0 && value <= 500;
-
-  const add = async () => {
-    if (!messageId || !ok) return;
-    setSending(true);
-    try {
-      await addQuoteExtra(messageId, label.trim(), value);
-      onClose();
-      onAdded();
-    } catch (e) {
-      errorDialog.show({ title: "Fee not added", message: (e as Error).message, onRetry: () => void add() });
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <Sheet
-      visible={visible}
-      title="Add a fee"
-      onClose={onClose}
-      testID="add-fee-sheet"
-      footer={<Button label="Add fee" disabled={!ok || sending} onPress={() => void add()} testID="add-fee-submit" />}
-    >
-      <ChoiceChips
-        options={FEE_LABELS.map((l) => ({ value: l, label: l }))}
-        value={FEE_LABELS.includes(label) ? [label] : []}
-        onChange={(v) => setLabel(v[0] ?? "")}
-        testID="add-fee-labels"
-      />
-      <TextField label="Label" value={label} onChangeText={setLabel} maxLength={40} testID="add-fee-label" />
-      <TextField label="Amount (CAD)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" testID="add-fee-amount" />
     </Sheet>
   );
 }
@@ -258,8 +158,6 @@ const makeStyles = (theme: Theme) =>
     problem: { fontSize: theme.fontSize.small, color: theme.color.error },
     draft: { gap: theme.spacing.xs },
     row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: theme.spacing.md },
-    feeEnd: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.border },
     total: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    feeForm: { gap: theme.spacing.xs },
   });

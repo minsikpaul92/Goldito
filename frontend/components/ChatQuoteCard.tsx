@@ -16,13 +16,9 @@ type Props = {
   /** Sent after the booking's payment card: the price the owner pays (3D.8, #235). */
   final?: boolean;
   busy?: boolean;
-  onAddFee: () => void;
-  onAnswer: (extraId: string, accept: boolean) => void;
   onConfirm: () => void;
   /** The owner's no to a final quote (#230); shown under Confirm only when given. */
   onDecline?: () => void;
-  /** "Suggest another price" (#230): given only for a final quote whose total changed since the first quote. */
-  onCounter?: () => void;
 };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
@@ -34,10 +30,12 @@ function short(iso: string): string {
 }
 
 /**
- * The sitter's quote in the chat (3D.6): the server's breakdown, the extra fees with the owner's answer on each, and the
- * total. Every number is read from the card; the model never writes a price (D29).
+ * The sitter's quote in the chat (3D.6): the server's breakdown and one all-inclusive total (#265: no extra fees).
+ * Every number is read from the card; the model never writes a price (D29). A quote sent before #265 may still hold
+ * fee lines: an accepted one is part of its total and shows as a plain line; an unanswered one can't be answered any
+ * more, so the card says a new quote replaces it.
  */
-export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onConfirm, onDecline, onCounter }: Props) {
+export function ChatQuoteCard({ card, role, final, busy, onConfirm, onDecline }: Props) {
   const styles = useThemedStyles(makeStyles);
   const q = card.quote;
   const open = card.status === "sent";
@@ -74,41 +72,30 @@ export function ChatQuoteCard({ card, role, final, busy, onAddFee, onAnswer, onC
         </View>
       ) : null}
 
-      {card.extras.map((e) => (
-        <View key={e.id} testID={`quote-extra-${e.status}`}>
-          <View style={styles.row}>
-            <Text style={[styles.body, e.status === "declined" && styles.struck]}>{e.label}</Text>
-            <Text style={[styles.body, e.status === "declined" && styles.struck]}>{money(e.amount)}</Text>
+      {card.extras
+        .filter((e) => e.status === "accepted")
+        .map((e) => (
+          <View key={e.id} style={styles.row} testID="quote-extra-accepted">
+            <Text style={styles.body}>{e.label}</Text>
+            <Text style={styles.body}>{money(e.amount)}</Text>
           </View>
-          {e.status === "offered" && open ? (
-            role === "owner" ? (
-              <View style={styles.answers}>
-                <TextButton label="Decline" disabled={busy} onPress={() => onAnswer(e.id, false)} testID="quote-extra-decline" />
-                <TextButton label="Accept" disabled={busy} onPress={() => onAnswer(e.id, true)} testID="quote-extra-accept" />
-              </View>
-            ) : (
-              <Text style={styles.muted}>Waiting for an answer</Text>
-            )
-          ) : e.status === "declined" ? (
-            <Text style={styles.muted}>Declined</Text>
-          ) : null}
-        </View>
-      ))}
+        ))}
 
       <View style={[styles.row, styles.totalRow]}>
         <Text style={styles.total}>Total</Text>
         <Text style={styles.total} testID="quote-total">{`${money(card.total)} ${q.currency}`}</Text>
       </View>
 
-      {open && role === "sitter" ? <TextButton label="Add a fee" disabled={busy} onPress={onAddFee} testID="quote-add-fee" /> : null}
+      {open && pending ? (
+        <Text style={styles.muted} testID="quote-legacy-fee">
+          This older quote has a fee no one can answer now. A new quote replaces it.
+        </Text>
+      ) : null}
       {open && role === "owner" ? (
         <Button label="Confirm quote" disabled={busy || pending} onPress={onConfirm} testID="quote-confirm" />
       ) : null}
-      {open && role === "owner" && final && (onDecline || onCounter) ? (
-        <View style={styles.links}>
-          {onCounter ? <TextButton label="Suggest another price" disabled={busy} onPress={onCounter} testID="quote-counter" /> : null}
-          {onDecline ? <TextButton label="Decline" danger disabled={busy} onPress={onDecline} testID="quote-decline" /> : null}
-        </View>
+      {open && role === "owner" && final && onDecline ? (
+        <TextButton label="Decline" danger disabled={busy} onPress={onDecline} style={styles.left} testID="quote-decline" />
       ) : null}
     </Card>
   );
@@ -119,13 +106,11 @@ const makeStyles = (theme: Theme) =>
     card: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%" },
     cardFaded: { gap: theme.spacing.xs, maxWidth: "92%", width: "92%", opacity: 0.5 },
     row: { flexDirection: "row", justifyContent: "space-between", gap: theme.spacing.md },
-    links: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+    left: { alignSelf: "flex-start", paddingHorizontal: 0 },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, flexShrink: 1 },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     ok: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
-    struck: { textDecorationLine: "line-through", color: theme.color.textMuted },
-    answers: { flexDirection: "row", justifyContent: "flex-end", gap: theme.spacing.md },
     totalRow: { marginTop: theme.spacing.xs, paddingTop: theme.spacing.sm, borderTopWidth: 1, borderTopColor: theme.color.border },
     total: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
   });
