@@ -4,13 +4,15 @@ import { Animated, Easing, Image, StyleSheet, View } from "react-native";
 import type { PetMood } from "../../lib/petStatus";
 import { PIXEL_PNGS } from "../../features/pets/sprites/pngs";
 import { headPixels, type PixelHead } from "../../features/pets/sprites/pixelize";
-import { SPRITE_SIZE, spriteKey, spritePixels, withZzz } from "../../features/pets/sprites/sprites";
+import { SPRITE_SIZE, petShape, spriteKey, spritePixels, withZzz } from "../../features/pets/sprites/sprites";
 import type { Species } from "../../types/db";
 
 type Props = {
   species: Species;
   /** `pets.profile.coat`; anything unknown falls back to a generic dog or cat. */
   coat?: unknown;
+  /** `pets.breed` as typed; picks the head shape (floppy, pointy, fluffy, flat; short or long for cats). */
+  breed?: string | null;
   mood: PetMood;
   /** A head made from the pet's photo (`pixelize.ts`); drawn instead of the preset. No mood face, only the sleepy Z. */
   head?: PixelHead | null;
@@ -22,12 +24,13 @@ type Props = {
 };
 
 /**
- * The 8-bit pet (11.12). One look = `species_coat_mood`: a PNG from `pngs.ts` when there is one (Muk's art), else the
+ * The 8-bit pet (11.12). One look = `species_shape_coat_mood`: a PNG from `pngs.ts` when there is one (Muk's art), else the
  * pixel grid drawn in code. Pixels of one color in a row are merged into one View, so a sprite is ~100 Views, not 256.
  */
-export function PetSprite({ species, coat, mood, head, pixel = 8, sway = true, testID }: Props) {
+export function PetSprite({ species, coat, breed, mood, head, pixel = 8, sway = true, testID }: Props) {
   const size = SPRITE_SIZE * pixel;
-  const key = spriteKey(species, coat, mood);
+  const shape = petShape(species, breed);
+  const key = spriteKey(species, coat, mood, shape);
   const shift = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -44,10 +47,10 @@ export function PetSprite({ species, coat, mood, head, pixel = 8, sway = true, t
   }, [shift, sway, pixel]);
 
   const rows = useMemo(() => {
-    if (!head) return runs(spritePixels(species, coat, mood));
+    if (!head) return runs(spritePixels(species, coat, mood, shape));
     const pixels = headPixels(head);
     return runs(mood === "sleepy" ? withZzz(pixels) : pixels);
-  }, [head, species, coat, mood]);
+  }, [head, species, coat, mood, shape]);
   const png = head ? undefined : PIXEL_PNGS[key];
 
   return (

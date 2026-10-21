@@ -7,18 +7,27 @@ import { Button } from "../../components/ui/Button";
 import { Screen } from "../../components/ui/Screen";
 import { headFromPhoto } from "../../features/pets/sprites/headFromPhoto";
 import type { PixelHead } from "../../features/pets/sprites/pixelize";
-import { COAT_PALETTES } from "../../features/pets/sprites/sprites";
+import { COAT_PALETTES, SHAPES, type Shape } from "../../features/pets/sprites/sprites";
 import { pickMedia } from "../../lib/media";
 import type { PetMood } from "../../lib/petStatus";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Species } from "../../types/db";
 
-/** Every placeholder sprite: species x coat x mood (11.12). Only with EXPO_PUBLIC_DEV_ROUTES=1. */
+/** Every placeholder sprite: species x head shape x mood, and each shape in every coat (11.12). Only with EXPO_PUBLIC_DEV_ROUTES=1. */
 const devRoutesEnabled = process.env.EXPO_PUBLIC_DEV_ROUTES === "1";
 
 const MOODS: PetMood[] = ["excited", "calm", "tired", "hungry", "sleepy"];
 const SPECIES: Species[] = ["dog", "cat"];
+/** One breed per head shape, so the gallery also shows the breed mapping. */
+const SAMPLE_BREED: Record<Shape, string> = {
+  floppy: "Golden Retriever",
+  pointy: "Siberian Husky",
+  fluffy: "Maltese",
+  flat: "Pug",
+  short: "Domestic Shorthair",
+  long: "Maine Coon",
+};
 
 export default function SpriteGallery() {
   if (!devRoutesEnabled) return <Redirect href="/" />;
@@ -31,14 +40,22 @@ function Gallery() {
     <Screen contentStyle={styles.page}>
       <FromPhoto />
       {SPECIES.map((species) =>
-        Object.keys(COAT_PALETTES).map((coat) => (
-          <View key={`${species}-${coat}`} style={styles.block}>
-            <Text style={styles.label}>{`${species} ${coat}`}</Text>
+        SHAPES[species].map((shape) => (
+          <View key={`${species}-${shape}`} style={styles.block}>
+            <Text style={styles.label}>{`${species} ${shape} (${SAMPLE_BREED[shape]})`}</Text>
             <View style={styles.row}>
               {MOODS.map((mood) => (
                 <View key={mood} style={styles.cell}>
-                  <PetSprite species={species} coat={coat} mood={mood} pixel={3} sway={false} testID={`sprite-${species}-${coat}-${mood}`} />
+                  <PetSprite species={species} breed={SAMPLE_BREED[shape]} mood={mood} pixel={3} sway={false} testID={`sprite-${species}-${shape}-${mood}`} />
                   <Text style={styles.mood}>{mood}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.row}>
+              {Object.keys(COAT_PALETTES).map((coat) => (
+                <View key={coat} style={styles.cell}>
+                  <PetSprite species={species} breed={SAMPLE_BREED[shape]} coat={coat} mood="calm" pixel={2} sway={false} />
+                  <Text style={styles.mood}>{coat}</Text>
                 </View>
               ))}
             </View>

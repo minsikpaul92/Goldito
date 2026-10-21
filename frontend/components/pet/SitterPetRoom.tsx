@@ -52,7 +52,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
-  const { coat, head } = usePetLook(pet.id);
+  const { coat, breed, head } = usePetLook(pet.id);
   const [reloadKey, setReloadKey] = useState(0);
   const [sending, setSending] = useState<string | null>(null);
 
@@ -76,7 +76,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
 
   return (
     <PetRoom
-      pet={{ id: pet.id, name: pet.name, species: pet.species, coat, head }}
+      pet={{ id: pet.id, name: pet.name, species: pet.species, coat, breed, head }}
       reloadKey={reloadKey}
       onPress={() => router.push(`/sitter/checkin/${pet.id}`)}
       compact

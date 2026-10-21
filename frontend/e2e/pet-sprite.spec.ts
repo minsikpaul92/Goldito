@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { asPixelHead, headPixels } from "../features/pets/sprites/pixelize";
-import { COAT_PALETTES, SPRITE_SIZE, resolveCoat, spriteKey, spritePixels, withZzz } from "../features/pets/sprites/sprites";
+import { COAT_PALETTES, SHAPES, SPRITE_SIZE, petShape, resolveCoat, spriteKey, spritePixels, withZzz } from "../features/pets/sprites/sprites";
 import type { PetMood } from "../lib/petStatus";
 import { app } from "./helpers";
 import { fakePetPhoto } from "./pixelHooks";
@@ -13,17 +13,49 @@ const MOODS: PetMood[] = ["excited", "calm", "tired", "hungry", "sleepy"];
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 test.describe("pet sprites", () => {
-  test("every species x coat x mood is a 16x16 grid with something drawn", () => {
+  test("every species x shape x coat x mood is a 16x16 grid with something drawn", () => {
     for (const species of ["dog", "cat"] as const) {
-      for (const coat of Object.keys(COAT_PALETTES)) {
-        for (const mood of MOODS) {
-          const px = spritePixels(species, coat, mood);
-          expect(px).toHaveLength(SPRITE_SIZE);
-          for (const row of px) expect(row).toHaveLength(SPRITE_SIZE);
-          expect(px.flat().some((c) => c !== null)).toBe(true);
+      for (const shape of SHAPES[species]) {
+        for (const coat of Object.keys(COAT_PALETTES)) {
+          for (const mood of MOODS) {
+            const px = spritePixels(species, coat, mood, shape);
+            expect(px).toHaveLength(SPRITE_SIZE);
+            for (const row of px) expect(row).toHaveLength(SPRITE_SIZE);
+            expect(px.flat().some((c) => c !== null)).toBe(true);
+          }
         }
       }
     }
+  });
+
+  test("every shape keeps the face on the head: a mood only recolors pixels, it never draws in the air", () => {
+    for (const species of ["dog", "cat"] as const) {
+      for (const shape of SHAPES[species]) {
+        const empty = spritePixels(species, "golden", "calm", shape).flat().map((c) => c === null);
+        for (const mood of MOODS.filter((m) => m !== "sleepy")) {
+          const px = spritePixels(species, "golden", mood, shape).flat();
+          expect(px.map((c) => c === null), `${species} ${shape} ${mood}`).toEqual(empty);
+        }
+      }
+    }
+    const shapes = SHAPES.dog.map((shape) => JSON.stringify(spritePixels("dog", "golden", "calm", shape)));
+    expect(new Set(shapes).size).toBe(4);
+  });
+
+  test("the breed the owner typed picks the head shape", () => {
+    expect(petShape("dog", "Golden Retriever")).toBe("floppy");
+    expect(petShape("dog", "Maltese")).toBe("fluffy");
+    expect(petShape("dog", "toy poodle mix")).toBe("fluffy");
+    expect(petShape("dog", "Siberian Husky")).toBe("pointy");
+    expect(petShape("dog", "German Shepherd")).toBe("pointy");
+    expect(petShape("dog", "Australian Shepherd")).toBe("floppy");
+    expect(petShape("dog", "French Bulldog")).toBe("flat");
+    expect(petShape("dog", "Pug")).toBe("flat");
+    expect(petShape("dog", "mutt")).toBe("floppy");
+    expect(petShape("dog", null)).toBe("floppy");
+    expect(petShape("cat", "Maine Coon")).toBe("long");
+    expect(petShape("cat", "Domestic Shorthair")).toBe("short");
+    expect(petShape("cat", "Pug")).toBe("short"); // a dog word never gives a cat a dog's head
   });
 
   test("the five moods look different, and a cat is not a dog", () => {
@@ -42,8 +74,9 @@ test.describe("pet sprites", () => {
     expect(resolveCoat("dog", undefined)).toBe("golden");
     expect(resolveCoat("cat", "rainbow")).toBe("orange");
     expect(resolveCoat("cat", "gray")).toBe("gray");
-    expect(spriteKey("dog", "", "sleepy")).toBe("dog_golden_sleepy");
-    expect(spriteKey("cat", "black", "calm")).toBe("cat_black_calm");
+    expect(spriteKey("dog", "", "sleepy")).toBe("dog_floppy_golden_sleepy");
+    expect(spriteKey("cat", "black", "calm")).toBe("cat_short_black_calm");
+    expect(spriteKey("dog", "white", "calm", "fluffy")).toBe("dog_fluffy_white_calm");
   });
 
   test("a saved pixel head is checked before it is drawn", () => {

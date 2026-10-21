@@ -4,8 +4,8 @@ import type { Species } from "../../../types/db";
 
 /**
  * Placeholder pixel pets drawn in code (11.12). A sprite is a 16x16 grid of role letters; a coat colors the roles and
- * a mood adds a face on top, so any body (these, Muk's art, a photo later) gets all five moods. Bodies are written as
- * their left half and mirrored.
+ * a mood adds a face on top, so every head shape gets all five moods. Shapes are written as their left half and
+ * mirrored; the eyes sit on rows 7-8 and the mouth on each shape's `mouthRow`.
  *
  * Roles: o outline · b coat · d shade (ears) · l light (muzzle) · n nose · e eye · w eye shine · m mouth · t tongue · z sleep
  */
@@ -13,48 +13,168 @@ export const SPRITE_SIZE = 16;
 
 const mirror = (half: string) => half + [...half].reverse().join("");
 
-const DOG_HALF = [
-  "........",
-  "........",
-  ".....ooo",
-  "..ooobbb",
-  ".oddobbb",
-  ".oddbbbb",
-  ".oddbbbb",
-  ".oddbbbb",
-  ".oddbbbb",
-  "..oobbbb",
-  "...obbbb",
-  "...obbln",
-  "...oblll",
-  "....olll",
-  ".....ooo",
-  "........",
-];
+/** Head shapes (2026-10-21): the look follows the breed, the size follows the weight, the color follows the coat. */
+export type DogShape = "floppy" | "pointy" | "fluffy" | "flat";
+export type CatShape = "short" | "long";
+export type Shape = DogShape | CatShape;
 
-const CAT_HALF = [
-  "........",
-  ".o......",
-  ".oo.....",
-  ".odoo...",
-  ".oddboo.",
-  ".odbbbbo",
-  ".obbbbbb",
-  ".obbbbbb",
-  ".obbbbbb",
-  ".obbbbbb",
-  "..obbbbb",
-  "..obbbln",
-  "...obbll",
-  "....oooo",
-  "........",
-  "........",
-];
-
-const BODY: Record<Species, { rows: string[]; mouthRow: number }> = {
-  dog: { rows: DOG_HALF.map(mirror), mouthRow: 13 },
-  cat: { rows: CAT_HALF.map(mirror), mouthRow: 12 },
+const SHAPE_HALVES: Record<Shape, { rows: string[]; mouthRow: number }> = {
+  // Long ears hanging along the face (retrievers, beagles), and any dog we can't place.
+  floppy: {
+    mouthRow: 13,
+    rows: [
+      "........",
+      "........",
+      ".....ooo",
+      "..ooobbb",
+      ".oddobbb",
+      ".oddbbbb",
+      ".oddbbbb",
+      ".oddbbbb",
+      ".oddbbbb",
+      "..oobbbb",
+      "...obbbb",
+      "...obbln",
+      "...oblll",
+      "....olll",
+      ".....ooo",
+      "........",
+    ],
+  },
+  // Ears standing up (shepherds, huskies, corgis, chihuahuas).
+  pointy: {
+    mouthRow: 13,
+    rows: [
+      "........",
+      ".o......",
+      ".oo.....",
+      ".odo....",
+      ".oddoooo",
+      ".obbbbbb",
+      ".obbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      ".obbbbbb",
+      "..obbbln",
+      "...oblll",
+      "....olll",
+      ".....ooo",
+      "........",
+    ],
+  },
+  // A round puff with curls, no ears showing (poodles, maltese, shih tzus).
+  fluffy: {
+    mouthRow: 13,
+    rows: [
+      "........",
+      "....oooo",
+      "..oobbbb",
+      ".obbbbbb",
+      "obbdbbbb",
+      "obdbbbbb",
+      "obbbbbbb",
+      "odbbbbbb",
+      "obbbbbbb",
+      "odbbbbbb",
+      "obbbbbbb",
+      ".obbbbln",
+      ".obbblll",
+      "..obblll",
+      "...ooooo",
+      "........",
+    ],
+  },
+  // A wide face, small ears and a short muzzle (bulldogs, pugs).
+  flat: {
+    mouthRow: 12,
+    rows: [
+      "........",
+      "........",
+      "........",
+      ".oo.....",
+      "oddooooo",
+      "odbbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      "obbbbbln",
+      "obbbllll",
+      ".obbllll",
+      "..oollll",
+      "....oooo",
+      "........",
+    ],
+  },
+  short: {
+    mouthRow: 12,
+    rows: [
+      "........",
+      ".o......",
+      ".oo.....",
+      ".odoo...",
+      ".oddboo.",
+      ".odbbbbo",
+      ".obbbbbb",
+      ".obbbbbb",
+      ".obbbbbb",
+      ".obbbbbb",
+      "..obbbbb",
+      "..obbbln",
+      "...obbll",
+      "....oooo",
+      "........",
+      "........",
+    ],
+  },
+  // Ear tufts and a fur ruff (maine coons, ragdolls, long hair).
+  long: {
+    mouthRow: 12,
+    rows: [
+      "o.......",
+      ".o......",
+      ".oo.....",
+      ".odoo...",
+      ".oddboo.",
+      ".odbbbbo",
+      ".obbbbbb",
+      "obbbbbbb",
+      "obbbbbbb",
+      "odbbbbbb",
+      "obdbbbbb",
+      "odbbbbln",
+      ".obdbbll",
+      "..odbooo",
+      "...oo...",
+      "........",
+    ],
+  },
 };
+
+export const SHAPES: Record<Species, Shape[]> = { dog: ["floppy", "pointy", "fluffy", "flat"], cat: ["short", "long"] };
+const DEFAULT_SHAPE: Record<Species, Shape> = { dog: "floppy", cat: "short" };
+
+/** Breed words (the reviewed breeds in backend/app/data/breed_needs.json and a few more) to a head shape. */
+const BREED_SHAPES: { shape: Shape; words: string[] }[] = [
+  { shape: "pointy", words: ["shepherd", "husky", "corgi", "chihuahua", "malamute", "shiba", "akita", "samoyed", "spitz"] },
+  { shape: "fluffy", words: ["poodle", "maltese", "shih tzu", "pomeranian", "yorkshire", "yorkie", "bichon", "doodle", "havanese"] },
+  { shape: "flat", words: ["bulldog", "boston terrier", "pug", "boxer"] },
+  { shape: "long", words: ["longhair", "long hair", "maine coon", "ragdoll", "persian", "norwegian", "siberian cat"] },
+];
+
+/** The head shape for a breed as the owner typed it; an unknown or missing breed is a plain dog or cat. */
+export function petShape(species: Species, breed: string | null | undefined): Shape {
+  const text = (breed ?? "").toLowerCase();
+  // "Australian Shepherd" hangs its ears: checked before the "shepherd" word.
+  if (species === "dog" && text.includes("australian shepherd")) return "floppy";
+  const found = BREED_SHAPES.find((b) => SHAPES[species].includes(b.shape) && b.words.some((w) => text.includes(w)));
+  return found?.shape ?? DEFAULT_SHAPE[species];
+}
+
+const BODY: Record<Shape, { rows: string[]; mouthRow: number }> = Object.fromEntries(
+  Object.entries(SHAPE_HALVES).map(([shape, { rows, mouthRow }]) => [shape, { rows: rows.map(mirror), mouthRow }]),
+) as Record<Shape, { rows: string[]; mouthRow: number }>;
 
 const EYE_ROWS = [7, 8];
 const BLANK_HALF = "........";
@@ -90,9 +210,9 @@ export function resolveCoat(species: Species, coat: unknown): Coat {
   return isCoat(coat) ? coat : DEFAULT_COAT[species];
 }
 
-/** The key of one look, e.g. `dog_golden_calm`; Muk's PNGs are named the same way. */
-export function spriteKey(species: Species, coat: unknown, mood: PetMood): string {
-  return `${species}_${resolveCoat(species, coat)}_${mood}`;
+/** The key of one look, e.g. `dog_floppy_golden_calm`; Muk's PNGs are named the same way. */
+export function spriteKey(species: Species, coat: unknown, mood: PetMood, shape: Shape = DEFAULT_SHAPE[species]): string {
+  return `${species}_${shape}_${resolveCoat(species, coat)}_${mood}`;
 }
 
 /** The sleepy "Z" drawn over any sprite rows (a photo head has no face to change, so this is its only mood). */
@@ -101,9 +221,14 @@ export function withZzz(pixels: (string | null)[][]): (string | null)[][] {
 }
 
 /** The sprite as rows of CSS colors, `null` = transparent. */
-export function spritePixels(species: Species, coat: unknown, mood: PetMood): (string | null)[][] {
+export function spritePixels(
+  species: Species,
+  coat: unknown,
+  mood: PetMood,
+  shape: Shape = DEFAULT_SHAPE[species],
+): (string | null)[][] {
   const palette = COAT_PALETTES[resolveCoat(species, coat)];
-  const { rows, mouthRow } = BODY[species];
+  const { rows, mouthRow } = BODY[SHAPES[species].includes(shape) ? shape : DEFAULT_SHAPE[species]];
   const face = FACE[mood];
   const overlay: Record<number, string> = {
     [EYE_ROWS[0]]: mirror(face.eyes[0]),

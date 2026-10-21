@@ -19,6 +19,7 @@ type Props = {
   name: string;
   species: Species;
   coat?: unknown;
+  breed?: string | null;
   /** A saved photo head (`pets.profile.pixel_head`), drawn instead of the preset. */
   head?: PixelHead | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */

@@ -43,7 +43,7 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
         </View>
       ) : null}
       <PetRoom
-        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, head }}
+        pet={{ id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, head }}
         onPress={() => router.push("/owner/diary")}
       />
       <TextButton label="🎨 Make from photo" onPress={() => setMaking(true)} style={styles.make} testID="pixel-head-open" />
