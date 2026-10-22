@@ -20,6 +20,8 @@
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed + the 5-second check (report photos described by `MODEL_VISION` first). |
 | **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
 | **Pet Life Record** (Stage 5) | 07C | `POST /api/ai/life-record` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Long-context summary of a whole stay; only recorded facts, null when no evidence. |
+| **Booking chat chips** | 03D | `POST /api/ai/chat-chips` | `MODEL_CHAT_CHIPS` (blank = `MODEL_FAST`) | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 2 to 3 labels of at most 5 words, so a small fast model. Super wrote full sentences that the chip rules dropped (2026-10-22 run). |
+| **Booking chat draft** | 03D | `POST /api/ai/chat-draft` | `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` | `nvidia/nemotron-3-super-120b-a12b` | One short message in the person's voice. Nano and Lightning looped on repeats in a 20 message run, Super did not. |
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 

@@ -8,14 +8,19 @@ from app.config import get_settings
 
 class ChatAgent:
     role = ""
-    # The name of the optional per-side model setting; unset = the fast model.
+    # The name of the per-side draft model setting; blank = the fast model.
     model_setting = ""
 
     def prompt(self, name: str) -> str:
         return load_prompt(f"chat/{self.role}/{name}.md")
 
     def model(self) -> str | None:
+        """The draft's model."""
         return (getattr(get_settings(), self.model_setting, None) or "").strip() or None
+
+    def chips_model(self) -> str | None:
+        """The chips' model, shared by both sides; blank = the fast model."""
+        return (getattr(get_settings(), "model_chat_chips", None) or "").strip() or None
 
     def state(self, messages: list[dict], me_id: str) -> str:
         """opening: nobody has written. reply: the other person spoke last, so even an owner answers instead of introducing

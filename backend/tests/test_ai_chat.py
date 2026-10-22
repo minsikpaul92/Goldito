@@ -522,13 +522,20 @@ def test_the_owner_reads_the_quote_the_chat_shows_and_only_that(client, setup):
     assert ctx.model.payload()["facts"]["quote"]["total"] == 268.13
 
 
-def test_each_side_can_run_on_its_own_model_and_blank_means_the_fast_model(client, setup, monkeypatch):
-    ctx = setup({"chips": ["Thanks!", "A question"]}, {"chips": ["Thanks!", "A question"]}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST))
+def test_drafts_run_on_their_own_model_per_side_the_chips_on_a_third_and_blank_means_the_fast_model(client, setup, monkeypatch):
+    ctx = setup(
+        {"chips": ["Thanks!", "A question"]}, {"chips": ["Thanks!", "A question"]},
+        {"reply": "Thanks, Chloe!"}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST),
+    )
     chips(client, owner_token())
-    monkeypatch.setattr(agents_base, "get_settings", lambda: SimpleNamespace(model_chat_owner="nvidia/owner-model", model_chat_sitter="  "))
+    monkeypatch.setattr(
+        agents_base, "get_settings",
+        lambda: SimpleNamespace(model_chat_owner="nvidia/owner-model", model_chat_sitter="  ", model_chat_chips="nvidia/chips-model"),
+    )
     chips(client, owner_token())
+    draft(client, "Thanks", owner_token())
     draft(client, "Yes, I can host", sitter_token())
-    assert [c["model"] for c in ctx.model.calls] == [None, "nvidia/owner-model", None]
+    assert [c["model"] for c in ctx.model.calls] == [None, "nvidia/chips-model", "nvidia/owner-model", None]
 
 
 def test_an_owner_draft_that_talks_like_a_host_is_rewritten(client, setup):

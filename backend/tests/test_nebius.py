@@ -104,13 +104,17 @@ def test_a_model_name_replaces_the_role_model_and_blank_means_the_role_model(mon
     assert [c["model"] for c in completions.calls] == ["nvidia/owner-model", "nvidia/fast-model", "nvidia/fast-model"]
 
 
-def test_the_chat_agents_models_are_optional_settings(monkeypatch):
-    assert get_settings().model_chat_owner is None and get_settings().model_chat_sitter is None
+def test_the_chat_ai_models_drafts_on_super_chips_on_the_fast_model_unless_set(monkeypatch):
+    super_model = "nvidia/nemotron-3-super-120b-a12b"
+    assert get_settings().model_chat_owner == super_model and get_settings().model_chat_sitter == super_model
+    assert get_settings().model_chat_chips is None
     monkeypatch.setenv("MODEL_CHAT_OWNER", "nvidia/owner-model")
     monkeypatch.setenv("MODEL_CHAT_SITTER", "")
+    monkeypatch.setenv("MODEL_CHAT_CHIPS", "nvidia/chips-model")
     get_settings.cache_clear()
     assert get_settings().model_chat_owner == "nvidia/owner-model"
     assert not get_settings().model_chat_sitter
+    assert get_settings().model_chat_chips == "nvidia/chips-model"
 
 
 def test_reasoning_can_be_kept_on_and_vision_gets_no_flag(monkeypatch):

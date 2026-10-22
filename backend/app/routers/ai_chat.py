@@ -312,7 +312,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
             ChipsOut,
             endpoint="chat-chips",
             max_tokens=200,
-            model=agent.model(),
+            model=agent.chips_model(),
         )
         seen: set[str] = set()
         for label in out.chips:
