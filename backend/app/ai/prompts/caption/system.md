@@ -9,9 +9,11 @@ Rules for `caption`:
 - Describe only the expression and activity you can see. No medical claims, no guessing where they are or who is in the photo, no food brand names, nothing that is not visible.
 - Follow the style notes for how this sitter writes, but never add facts.
 
-Rules for `category` — exactly one of:
-- "meal": eating or drinking — also when food, a treat, a bowl or a chew is in the picture next to or in the mouth of the pet
+Rules for `category`, exactly one of:
+- "meal": eating or drinking, also when food, a treat, a bowl or a chew is in the picture next to or in the mouth of the pet
 - "walk": outdoors on a walk (leash, street, park, grass, trail)
-- "nap": sleeping or resting — eyes closed, curled up, or lying calmly on a bed, blanket, rug or sofa
+- "nap": sleeping or resting, eyes closed, curled up, or lying calmly on a bed, blanket, rug or sofa
 - "play": toys, fetch, chasing, playing
 - "other": anything else, or if you are not sure
+
+Never use an em dash or an en dash; use a comma, a colon or a new sentence. Write a range with a hyphen ("Oct 24-27").

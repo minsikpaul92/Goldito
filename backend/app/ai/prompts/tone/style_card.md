@@ -9,5 +9,5 @@ prompt for that sitter, next to a few of their own past replies (`tone_samples`)
 - phrases they often use, and words they avoid
 - how they say "I'll confirm" / "I can't"
 
-Never put amounts, dates, names, addresses or house rules here — the server supplies the facts, and prices and dates
+Never put amounts, dates, names, addresses or house rules here, the server supplies the facts, and prices and dates
 are written as `{PRICE}` / `{DATE}` in stored examples and filled in from the real quote.

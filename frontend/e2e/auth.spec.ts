@@ -64,7 +64,7 @@ test.describe("auth and role routing", () => {
 
     await page.goto("/owner/diary");
     await expect(page).toHaveURL(/\/sitter$/);
-    await expect(app(page).getByText("No bookings yet")).toBeVisible();
+    await expect(app(page).getByText("No pets in your care today")).toBeVisible();
   });
 
   test("tabs switch with a mouse click", async ({ page }) => {

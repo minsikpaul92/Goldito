@@ -14,7 +14,7 @@
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | error ?? "Something went wrong." | — | 27 |
-| TextButton | Log out | `gate-logout` | 33 |
+| TextButton | Sign out | `gate-logout` | 33 |
 
 ### `/chat/[threadId]` — [app/chat/[threadId].tsx](../../frontend/app/chat/[threadId].tsx)
 
@@ -26,16 +26,16 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 237 |
 | EmptyState | Chat not found | — | 245 |
-| Pressable | — | `chat-stage` | 500 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 553 |
-| Button | Send quote | `chat-send-quote` | 560 |
-| TextButton | Send quote | `chat-send-quote` | 563 |
-| TextButton | Decline | `chat-decline` | 566 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 593 |
-| Pressable | — | `chat-action-chip` | 614 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 625 |
-| Pressable | Send a card | `chat-plus` | 641 |
-| Pressable | Send | `chat-send` | 674 |
+| Pressable | — | `chat-stage` | 535 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 588 |
+| Button | Send quote | `chat-send-quote` | 595 |
+| TextButton | Send quote | `chat-send-quote` | 598 |
+| TextButton | Decline | `chat-decline` | 601 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 628 |
+| Pressable | — | `chat-action-chip` | 649 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 660 |
+| Pressable | Send a card | `chat-plus` | 676 |
+| Pressable | Send | `chat-send` | 709 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -95,6 +95,7 @@ Shows: `BookingCard` · `ChatList` · `PhotoViewerSheet` · `SitterSearchBar`
 | Pressable | ``${sitter.displayName}, ${sitter.distanceKm} km away`` | ``sitter-tile-${sitter.displayName}`` | 119 |
 | TextButton | Open Profile | `search-open-profile` | 146 |
 | TextButton | Try again | `search-retry` | 154 |
+| EmptyState | No bookings yet | — | 193 |
 
 ### `/owner/bookings/[bookingId]` — [app/owner/bookings/[bookingId]/index.tsx](../../frontend/app/owner/bookings/[bookingId]/index.tsx)
 
@@ -141,7 +142,7 @@ Shows: `OwnerReviewForm`
 | EmptyState | Not ready yet | — | 54 |
 | EmptyState | Thanks, you already reviewed this stay | — | 67 |
 | Sheet | ``Add ${booking.sitterName} to your favorites?`` | `favorite-sheet` | 95 |
-| Button | ⭐ Add to favorites | `favorite-add` | 102 |
+| Button | Add to favorites | `favorite-add` | 102 |
 | TextButton | Not now | `favorite-skip` | 112 |
 
 ### `/owner/bookings/[bookingId]/trip` — [app/owner/bookings/[bookingId]/trip.tsx](../../frontend/app/owner/bookings/[bookingId]/trip.tsx)
@@ -217,7 +218,7 @@ Owner entry codes form (03C). Shown to the booked sitter only from 2 h before ar
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load entry info | — | 64 |
-| Button | Save | `home-access-save` | 136 |
+| Button | Save | `home-access-save` | 135 |
 
 ### `/owner/notifications` — [app/owner/notifications.tsx](../../frontend/app/owner/notifications.tsx)
 
@@ -232,7 +233,7 @@ Shows: `CareTasksSection` · `HeadsUpSection` · `PetForm` · `PetGlance`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | state.status === "missing" ? "Pet not found" : "Couldn't load this pet" | — | 44 |
-| TextButton | 📖 Life Record | `open-life-record` | 74 |
+| TextButton | Life Record | `open-life-record` | 74 |
 
 ### `/owner/pets/[petId]/care-request` — [app/owner/pets/[petId]/care-request.tsx](../../frontend/app/owner/pets/[petId]/care-request.tsx)
 
@@ -354,15 +355,15 @@ Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · 
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
-Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Log out.
+Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Sign out.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | TextButton | Edit profile | `settings-edit-profile` | 36 |
 | TextButton | Privacy | `settings-privacy` | 53 |
-| Button | Log out | `settings-log-out` | 58 |
-| Sheet | Log out? | `settings-log-out-sheet` | 59 |
-| Button | Log out | `settings-log-out-confirm` | 61 |
+| Button | Sign out | `settings-log-out` | 58 |
+| Sheet | Sign out? | `settings-log-out-sheet` | 59 |
+| Button | Sign out | `settings-log-out-confirm` | 61 |
 | Button | Cancel | **none** | 62 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
@@ -384,7 +385,7 @@ Shows: `ActiveTripCard` · `SitterDashboard`
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load today | — | 81 |
-| EmptyState | No bookings yet | — | 113 |
+| EmptyState | No pets in your care today | — | 113 |
 | Pressable | — | `home-photo-request` | 134 |
 | Pressable | — | `today-requests` | 146 |
 | Pressable | — | `today-chats` | 157 |
@@ -585,11 +586,11 @@ Shows: `BrandLogo`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `welcome-choose-owner` | 31 |
-| Pressable | — | `welcome-choose-sitter` | 48 |
-| TextButton | Sign in | `welcome-sign-in` | 67 |
-| TextButton | Create account | `welcome-sign-up` | 68 |
-| TextButton | Privacy | `welcome-privacy` | 73 |
+| Pressable | — | `welcome-choose-owner` | 30 |
+| Pressable | — | `welcome-choose-sitter` | 47 |
+| TextButton | Sign in | `welcome-sign-in` | 66 |
+| TextButton | Create account | `welcome-sign-up` | 67 |
+| TextButton | Privacy | `welcome-privacy` | 72 |
 
 ### `/welcome/owner` — [app/(public)/welcome/owner.tsx](../../frontend/app/(public)/welcome/owner.tsx)
 
@@ -666,7 +667,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add task | `care-add` | 139 |
-| Button | stay ? "✍️ Write a care request" : "✍️ Write a care checklist" | `care-request-open` | 146 |
+| Button | stay ? "Write a care request" : "Write a care checklist" | `care-request-open` | 146 |
 | Button | Accept | `counter-accept` | 178 |
 | Button | Decline | `counter-decline` | 184 |
 | TextButton | Try again | `care-retry` | 192 |
@@ -728,7 +729,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | Send a card | `chat-plus-menu` | 27 |
-| Pressable | — | ``chat-plus-${item.id}`` | 29 |
+| Pressable | — | ``chat-plus-${item.id}`` | 30 |
 
 ### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
 
@@ -748,7 +749,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 70 |
+| Button | Returned | `chat-returned` | 89 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
@@ -782,19 +783,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Sheet | saving ? "Applying…" : "Apply" | `rules-sheet` | 117 |
 | Button | saving ? "Applying…" : "Apply" | `rules-apply` | 123 |
-| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 151 |
-| TextButton | Open everything | `rules-clear` | 167 |
-| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 179 |
-| TextButton | Same as every day | `rules-hours-reset` | 201 |
-| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 217 |
-| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 227 |
+| Pressable | ``Close ${label.toLowerCase()} on ${WEEKDAY_NAMES[weekday]}s`` | ``rule-${slot}-${weekday}`` | 150 |
+| TextButton | Open everything | `rules-clear` | 166 |
+| Pressable | day === "all" ? "Hours for every day" : `Hours for ${WEEKDAY_NAMES[day]}s` | ``rules-hours-day-${day}`` | 177 |
+| TextButton | Same as every day | `rules-hours-reset` | 199 |
+| Stepper | ``${label} start`` | ``rules-${slot}-start`` | 215 |
+| Stepper | ``${label} end`` | ``rules-${slot}-end`` | 225 |
 
 ### ConsentCard — [components/ConsentCard.tsx](../../frontend/components/ConsentCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `testID ? `${testID}-toggle` : undefined` | 36 |
-| CheckRow | I agree | `testID ? `${testID}-check` : undefined` | 55 |
+| Pressable | — | `testID ? `${testID}-toggle` : undefined` | 37 |
+| CheckRow | I agree | `testID ? `${testID}-check` : undefined` | 56 |
 
 ### DemoTools — [components/DemoTools.tsx](../../frontend/components/DemoTools.tsx)
 
@@ -899,7 +900,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Pressable | Menu | `open-menu` | 66 |
 | Pressable | Close menu | `header-menu-close` | 87 |
 | Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
-| Button | Log out | `log-out-confirm` | 116 |
+| Button | Sign out | `log-out-confirm` | 116 |
 | Button | Cancel | `log-out-cancel` | 117 |
 | Pressable | — | `log-out` | 137 |
 
@@ -913,7 +914,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | 🕘 History | `open-history` | 176 |
+| TextButton | History | `open-history` | 176 |
 | TextButton | Clear all | `live-clear-all` | 187 |
 | TextButton | Cancel | `live-clear-cancel` | 188 |
 | Pressable | — | ``live-${n.id}`` | 195 |
@@ -1229,20 +1230,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `text` | `id` | 54 |
-| Sheet | Done | `place-done` | 84 |
-| Button | Done | `place-done` | 88 |
-| Button | Use this place | `place-use-address` | 102 |
-| CheckRow | 🏠 My home | `place-home` | 109 |
-| CheckRow | 📍 Current location | `place-here` | 110 |
-| TextButton | Open Profile | `place-open-profile` | 131 |
-| Sheet | Done | `stay-done` | 136 |
-| Button | Done | `stay-done` | 140 |
-| Stepper | Drop-off time | `search-drop_off-time` | 155 |
-| Stepper | Pick-up time | `search-pick_up-time` | 164 |
-| Sheet | Done | `pets-done` | 196 |
-| Button | Done | `pets-done` | 200 |
-| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 204 |
+| Pressable | `text` | `id` | 45 |
+| Sheet | Done | `place-done` | 75 |
+| Button | Done | `place-done` | 79 |
+| Button | Use this place | `place-use-address` | 93 |
+| CheckRow | 🏠 My home | `place-home` | 100 |
+| CheckRow | 📍 Current location | `place-here` | 101 |
+| TextButton | Open Profile | `place-open-profile` | 122 |
+| Sheet | Done | `stay-done` | 127 |
+| Button | Done | `stay-done` | 131 |
+| Stepper | Drop-off time | `search-drop_off-time` | 146 |
+| Stepper | Pick-up time | `search-pick_up-time` | 155 |
+| Sheet | Done | `pets-done` | 187 |
+| Button | Done | `pets-done` | 191 |
+| CheckRow | ``${SPECIES_EMOJI[pet.species]} ${pet.name}`` | ``search-pet-${pet.name}`` | 195 |
 
 ### SlotCalendar — [components/SlotCalendar.tsx](../../frontend/components/SlotCalendar.tsx)
 
@@ -1392,7 +1393,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load the diary | — | 59 |
-| Button | ✏️ Write a page | `diary-write` | 63 |
+| Button | Write a page | `diary-write` | 63 |
 | EmptyState | No diary yet | — | 79 |
 
 ### OwnerEntrySheet — [features/diary/OwnerEntrySheet.tsx](../../frontend/features/diary/OwnerEntrySheet.tsx)
@@ -1466,7 +1467,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `snap-recent-row` | 60 |
+| Pressable | — | `snap-recent-row` | 61 |
 
 ### SnapToolCard — [features/snap/SnapToolCard.tsx](../../frontend/features/snap/SnapToolCard.tsx)
 
@@ -1495,15 +1496,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 156 |
-| EmptyState | No pet in your care right now | — | 165 |
-| EmptyState | Add a pet first | — | 171 |
-| Button | !pet ? "Pick a pet first" : unreadable \|\| result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label" | `treat-snap` | 231 |
-| Pressable | — | `treat-recent-row` | 242 |
-| AlertModal | ``Don't give this to ${name}`` | `treat-danger` | 268 |
-| Tag | `status` | — | 283 |
-| Pressable | ``${s.title} (${s.domain})`` | `treat-source` | 367 |
-| TextButton | showIngredients ? "Hide ingredients" : `Ingredients we read (${result.detected_ingredients.length})` | `treat-ingredients-toggle` | 392 |
+| EmptyState | Couldn't load your pets | — | 157 |
+| EmptyState | No pet in your care right now | — | 166 |
+| EmptyState | Add a pet first | — | 172 |
+| Button | !pet ? "Pick a pet first" : unreadable \|\| result?.partial_label ? "Retake photo" : result ? "Check another treat" : "Snap a label" | `treat-snap` | 232 |
+| Pressable | — | `treat-recent-row` | 243 |
+| AlertModal | ``Don't give this to ${name}`` | `treat-danger` | 269 |
+| Tag | `status` | — | 284 |
+| Pressable | ``${s.title} (${s.domain})`` | `treat-source` | 368 |
+| TextButton | showIngredients ? "Hide ingredients" : `Ingredients we read (${result.detected_ingredients.length})` | `treat-ingredients-toggle` | 393 |
 
 ### TripScreen — [features/transit/TripScreen.tsx](../../frontend/features/transit/TripScreen.tsx)
 

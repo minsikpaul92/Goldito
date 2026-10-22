@@ -1,5 +1,5 @@
 {
-  "_comment": "Treat check rules (Phase 12.1, D23). Ingredient names and where they come from only — no copied article text. Matching is whole-word and case-insensitive; `not` lists ingredients that merely contain the word.",
+  "_comment": "Treat check rules (Phase 12.1, D23). Ingredient names and where they come from only, no copied article text. Matching is whole-word and case-insensitive; `not` lists ingredients that merely contain the word.",
   "toxic": [
     {"name": "xylitol", "aliases": ["xylitol", "birch sugar"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},
     {"name": "chocolate", "aliases": ["chocolate", "cocoa", "cacao", "theobromine"], "not": ["cocoa butter"], "species": ["dog", "cat"], "source": "https://www.aspca.org/pet-care/animal-poison-control/people-foods-avoid-feeding-your-pets"},

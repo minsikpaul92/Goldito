@@ -1,0 +1,13 @@
+#!/bin/sh
+# Keeps docs/design/screen-map.md in step with the screens (CI fails when it is stale, DESIGN.md section 0).
+# Runs only when a staged .tsx under frontend/app, components or features is part of the commit.
+# Installed by `npm install` in frontend/ (the "prepare" script sets core.hooksPath).
+cd "$(git rev-parse --show-toplevel)" || exit 0
+git diff --cached --name-only --diff-filter=ACMRD | grep -Eq '^frontend/(app|components|features)/.*\.tsx$' || exit 0
+command -v node >/dev/null 2>&1 || { echo "pre-commit: node not found, screen map not updated (run: node frontend/scripts/screen-map.mjs)"; exit 0; }
+if node frontend/scripts/screen-map.mjs >/dev/null; then
+  git add docs/design/screen-map.md
+else
+  echo "pre-commit: screen-map.mjs failed, commit goes on (run: node frontend/scripts/screen-map.mjs)"
+fi
+exit 0

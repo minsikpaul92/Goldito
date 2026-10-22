@@ -372,6 +372,11 @@ test.describe("the pets changing hands in the chat", () => {
     let screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("chat-bubble-them")).toBeVisible();
     await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+    // The + menu's Received follows the same rule and says why it is off.
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-received")).toBeDisabled();
+    await expect(screen.getByTestId("chat-plus-received-hint")).toHaveText("After the arrival");
+    await screen.getByTestId("chat-plus-menu-close").click();
 
     // On the way is not there yet.
     db.trips.push(runningTrip());
@@ -410,6 +415,10 @@ test.describe("the pets changing hands in the chat", () => {
 
     screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived ✓");
+    // Now the + menu's Received is on too.
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-received")).toBeEnabled();
+    await screen.getByTestId("chat-plus-menu-close").click();
     await screen.getByTestId("chat-received").click();
     await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
     expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();

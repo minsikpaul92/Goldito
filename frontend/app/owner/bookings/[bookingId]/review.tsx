@@ -100,10 +100,10 @@ export default function ReviewScreen() {
       >
         <Text style={styles.hint}>{`Favorites show first when you book. ${booking.sitterName} isn't told.`}</Text>
         <Button
-          label="⭐ Add to favorites"
+          label="Add to favorites"
           onPress={() => {
             void setFavoriteSitter(booking.sitterId, true)
-              .then(() => toast.show(`${booking.sitterName} is a favorite ⭐`))
+              .then(() => toast.show(`${booking.sitterName} is a favorite`))
               .catch((e: Error) => toast.show(e.message))
               .finally(() => leave(booking.id));
           }}

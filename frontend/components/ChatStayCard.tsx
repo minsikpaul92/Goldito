@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ChatReviewCard } from "./ChatReviewCard";
@@ -13,14 +13,21 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
 import { Theme } from "../theme/themes";
 
-type Props = { booking: BookingSummary; viewer: "owner" | "sitter"; onChanged: () => void };
+type Props = {
+  booking: BookingSummary;
+  viewer: "owner" | "sitter";
+  onChanged: () => void;
+  /** The + menu's Received and Returned (sitter): each time one of these numbers goes up, the same action runs. */
+  receiveSignal?: number;
+  returnSignal?: number;
+};
 
 /**
  * The pets changing hands, in the chat (3D.8): "with {sitter}" for the owner while they are in care, the sitter's
  * Returned (the same sheet as the booking page), then "Home safe". Received is on the trip card, after the arrival
  * (#250). Reads the booking; the trip card above it brings them to the door.
  */
-export function ChatStayCard({ booking, viewer, onChanged }: Props) {
+export function ChatStayCard({ booking, viewer, onChanged, receiveSignal = 0, returnSignal = 0 }: Props) {
   const styles = useThemedStyles(makeStyles);
   const errorDialog = useErrorDialog();
   const toast = useToast();
@@ -29,8 +36,6 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
   const sitter = viewer === "sitter";
   const pets = booking.pets.map((p) => p.name).join(" & ") || "The pets";
   const are = booking.pets.length > 1 ? "are" : "is";
-
-  if (booking.status !== "confirmed" || !booking.paidAt) return null;
 
   const run = async (action: () => Promise<void>, done: string) => {
     setBusy(true);
@@ -44,6 +49,20 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
       setBusy(false);
     }
   };
+
+  // What the + menu asks for: the same actions as the buttons below, set once the card knows its state.
+  const onReceive = useRef<() => void>(() => undefined);
+  const onReturn = useRef<() => void>(() => undefined);
+  onReceive.current = () => void run(() => completeHandoff(booking.id, "drop_off"), `${pets} checked in. ${booking.ownerName} gets a notice`);
+  onReturn.current = () => setReturning(true);
+  useEffect(() => {
+    if (receiveSignal > 0) onReceive.current();
+  }, [receiveSignal]);
+  useEffect(() => {
+    if (returnSignal > 0) onReturn.current();
+  }, [returnSignal]);
+
+  if (booking.status !== "confirmed" || !booking.paidAt) return null;
 
   const received = booking.dropOff?.completedAt;
   const returned = booking.pickUp?.completedAt;

@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ai import chat as logic
+from app.ai import chat_profile, chat_state
 from app.ai import inquiry as inquiry_logic
 from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
@@ -188,37 +189,77 @@ def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today
         }
     rates = _best_effort(lambda: _one(db.table("sitter_rates").select("boarding_nightly, house_sitting_nightly, daycare_daily").eq("sitter_id", thread["sitter_id"]).limit(1).execute())) or {}
     facts["rates"] = {k: float(rates[k]) for k in ("boarding_nightly", "house_sitting_nightly", "daycare_daily") if rates.get(k) is not None}
+    _add_profiles(db, ctx, stay, facts)
     inquiry_logic.assert_no_secrets(facts)
     return facts
 
 
-def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
-    """The actions that are possible for me right now. The booking's stage is the database's own (booking_stage through
-    get_booking_stages, D60), never worked out here; when it can't be read there are no actions."""
-    thread, messages = ctx["thread"], ctx["messages"]
+def _add_profiles(db, ctx: dict, stay: dict | None, facts: dict) -> None:
+    """What sign-up told us (chat_profile): each stay pet's answers and care checklist, the sitter's onboarding answers, and the
+    owner's pets for "who I am". A read that fails leaves its part out; a part that is missing is never claimed."""
+    thread = ctx["thread"]
+    pet_ids = [p["id"] for p in (stay or {}).get("pets", [])]
+    if pet_ids and facts.get("pets"):
+        rows = _best_effort(lambda: db.table("pets").select("id, name, species, profile").in_("id", pet_ids).execute().data) or []
+        tasks = _best_effort(lambda: db.table("care_tasks").select("pet_id, type, title, dose, scheduled_time, notes, active").in_("pet_id", pet_ids).execute().data) or []
+        by_name = {r["name"]: r for r in rows}
+        for pet in facts["pets"]:
+            row = by_name.get(pet.get("name"))
+            if row is None:
+                continue
+            pet["profile"] = chat_profile.pet_profile(row.get("profile"), pet.get("allergies", []))
+            todo = chat_profile.checklist([t for t in tasks if t["pet_id"] == row["id"]])
+            if todo:
+                pet["checklist"] = todo
+    answers = _best_effort(lambda: db.table("sitter_profile_answers").select("question_key, question_text, answer, choice, position").eq("sitter_id", thread["sitter_id"]).execute().data) or []
+    lines = chat_profile.sitter_answers(answers)
+    if lines:
+        facts["sitter"]["answers"] = lines
+    if ctx["role"] == "owner":
+        ctx["owner_pets"] = _best_effort(lambda: db.table("pets").select("name, species, breed").eq("owner_id", thread["owner_id"]).execute().data) or []
+
+
+def _booking_state(db, user: CurrentUser, ctx: dict) -> dict:
+    """This pair's live booking and where it is, as the database computes it (booking_stage and booking_next_actor through
+    get_booking_stages, D60), never worked out here. `readable` is False when it could not be read: no actions then."""
+    thread = ctx["thread"]
     rows = _best_effort(
         lambda: db.table("bookings")
-        .select("id, status, created_at, owner_id, sitter_id, meet_greet_status, meet_greet_proposed_by, sitter_interest_at, owner_agreed_at, sitter_accepted_at")
+        .select("id, status, created_at, owner_id, sitter_id, meet_greet_status, meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_proposed_by, meet_greet_skip_requested_by, sitter_interest_at, owner_agreed_at, sitter_accepted_at, paid_at")
         .eq("owner_id", thread["owner_id"])
         .eq("sitter_id", thread["sitter_id"])
         .execute()
         .data
     )
     if rows is None:
-        return []
+        return {"booking": None, "stage": None, "next_actor": None, "readable": False}
     booking = next(iter(sorted((r for r in rows if r.get("status") in ("requested", "confirmed")), key=lambda r: str(r.get("created_at", "")), reverse=True)), None)
-    stage = None
+    stage = next_actor = None
     if booking:
         try:
             stages = authz.rpc_json(user.access_token, "get_booking_stages", {"p_ids": [booking["id"]]})
-            stage = next((r["stage"] for r in stages or [] if r.get("booking_id") == booking["id"]), None)
+            found = next((r for r in stages or [] if r.get("booking_id") == booking["id"]), None)
         except (authz.RpcError, HTTPException) as exc:
             log.warning("chat: could not read the booking stage (%s)", exc)
-            return []
-        if stage is None:
-            return []
+            return {"booking": booking, "stage": None, "next_actor": None, "readable": False}
+        if found is None:
+            return {"booking": booking, "stage": None, "next_actor": None, "readable": False}
+        stage, next_actor = found["stage"], found.get("next_actor")
+    returned_at = None
+    if stage == "completed":  # when the pets came home: what the talk after the stay is measured from
+        done = _best_effort(lambda: db.table("booking_handoffs").select("kind, completed_at").eq("booking_id", booking["id"]).eq("kind", "pick_up").execute().data) or []
+        returned_at = next((h["completed_at"] for h in done if h.get("completed_at")), None)
+    return {"booking": booking, "stage": stage, "next_actor": next_actor, "readable": True, "returned_at": returned_at}
+
+
+def _actions(ctx: dict) -> list[str]:
+    """The actions that are possible for me right now, from the booking state."""
+    state = ctx["booking_state"]
+    if not state["readable"]:
+        return []
+    messages = ctx["messages"]
     stay = logic.latest_stay(messages)
-    return logic.available_actions(ctx["role"], booking, stage, has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
+    return logic.available_actions(ctx["role"], state["booking"], state["stage"], has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
 
 
 def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
@@ -255,16 +296,22 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     """(the model input without the task, the facts this side may read, the other person's latest text message)."""
     messages = ctx["messages"]
     agent = agent_for(ctx["role"])
-    texts_them = [m for m in messages if m.get("kind") == "text" and m.get("sender_id") != user.id]
-    last_them = texts_them[-1] if texts_them else None
+    # What the chips answer: their newest text or card (a quote they sent is something to react to).
+    events_them = [m for m in messages if logic.is_event(m) and m.get("sender_id") != user.id]
+    last_them = events_them[-1] if events_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
+    ctx["booking_state"] = _booking_state(db, user, ctx)
     state = agent.state(messages, user.id)
+    booking_state = ctx["booking_state"]
+    raw = _facts(db, user, ctx, (last_them or {}).get("body") or "", tz, today, with_sources=with_sources)
+    # The owner's care checklist goes to the sitter once there is a live booking.
+    raw["booking_live"] = booking_state["stage"] not in (None, "declined", "cancelled")
     facts = agent.facts(
-        _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources),
+        raw,
         messages,
         state=state,
-        last_them=(last_them or {}).get("body", ""),
+        last_them=(last_them or {}).get("body") or "",
     )
     inquiry_logic.assert_no_secrets(facts)
     me = ctx["owner_name"] if ctx["role"] == "owner" else ctx["sitter_name"]
@@ -274,10 +321,26 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
         "state": state,
         "me": me,
         "them": them,
+        "greeted": any(m.get("kind") == "text" and m.get("sender_id") == user.id for m in messages),
+        "i_am": chat_profile.i_am(ctx["role"], me, them, pets=ctx.get("owner_pets") or facts.get("pets", []), service_area=(facts.get("sitter") or {}).get("service_area")),
         **({"summary": summary} if summary else {}),
-        "recent": logic.transcript(recent, user.id, tz),
+        "recent": logic.transcript(recent, user.id, tz, booking_state["booking"]),
         "facts": facts,
     }
+    if booking_state["readable"]:
+        stay = logic.latest_stay(messages)
+        pet_names = [p["name"] for p in facts.get("pets", []) if p.get("name")]
+        phase = None
+        if booking_state["stage"] == "completed":
+            phase = chat_state.done_phase(messages, user.id, booking_state.get("returned_at"), pet_names)
+            ctx["done_phase"], ctx["pet_names"] = phase, pet_names
+        base["progress"] = chat_state.progress(
+            ctx["role"], messages, user.id, booking_state["booking"], booking_state["stage"], booking_state["next_actor"], _actions(ctx),
+            has_stay=bool(stay), priced=logic.is_priced(messages, stay), done_phase=phase,
+        )
+    left = chat_state.topics(messages, user.id, facts, base.get("progress", {}).get("step", "decide"))
+    if left:
+        base["topics"] = left
     return base, facts, last_them
 
 
@@ -297,7 +360,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         base["typing"] = typed
 
     # What the person could do next, if the other person's last message leads to it (not while they are typing their own).
-    available = _actions(db, user, ctx) if last_them and not typed else []
+    available = _actions(ctx) if last_them and not typed else []
     if available:
         base["actions"] = {a: logic.ACTIONS[a]["meaning"] for a in available}
 
@@ -312,22 +375,31 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
             ChipsOut,
             endpoint="chat-chips",
             max_tokens=200,
-            model=agent.model(),
+            model=agent.chips_model(),
         )
         seen: set[str] = set()
         for label in out.chips:
             label = " ".join(label.split())
             problems = logic.chip_problems(label) if label else ["empty"]
+            if base["greeted"] and logic.greets(label):
+                problems = [*problems, "a greeting after I already greeted"]
             if not problems and label.lower() not in seen:
                 seen.add(label.lower())
                 labels.append(label)
             else:
                 dropped.append(f"{_redact(label, ctx, facts)}: {', '.join(problems) or 'duplicate'}")
+        candidates = list(labels)  # everything usable the model gave, before the cut to three
         labels = labels[: logic.MAX_CHIPS]
         action = logic.chosen_action(out.action, out.confidence, available)
         kept = agent.keep_chips(labels, facts)
         dropped += [f"{_redact(c, ctx, facts)}: not allowed for these dates" for c in labels if c not in kept]
         labels = kept
+        react = logic.reaction_chips(ctx["role"], last_them) if not typed else []
+        if react and len(labels) >= 2:
+            labels = [*react, *(c for c in labels if c not in react)][: logic.MAX_CHIPS]
+        # The stay is over (the sitter pressed Returned): closing words, then a check-in, then the talk that follows (no new plans).
+        if not typed and base.get("progress", {}).get("step") == "done":
+            labels = chat_state.done_chips(ctx["role"], ctx["done_phase"], candidates, ctx["pet_names"])
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.warning("chat-chips: model failed (%s)", exc)
         reason = "model_failed"
@@ -365,6 +437,11 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
     style = agent.style(db, ctx, chip, last_them)
     typed = scrub_typed(body.typed)
     payload = {**base, "chip": chip, "style_notes": style, **({"typing": typed} if typed else {})}
+    pet_names = [p["name"] for p in facts.get("pets", []) if p.get("name")]
+    if base.get("progress", {}).get("step") == "done" and chat_state.is_checkin(chip, pet_names):
+        # A check-in is a question to ask, not news to report (the model kept answering it itself).
+        who = "how the sitter has been" if ctx["role"] == "owner" else "how the owner and the pets have been"
+        payload["task"] = f"Ask {who} as one short, warm question. Do not answer it, do not report any news."
     messages = [{"role": "system", "content": agent.prompt("draft")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None
     previous = [m.get("body") or "" for m in ctx["messages"] if m.get("kind") == "text"][-logic.REPEAT_WINDOW :]
@@ -379,7 +456,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
             break
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
-        problems = agent.problems(text, facts, known, sitter_first, previous)
+        problems = agent.problems(text, facts, known, sitter_first, previous, base["greeted"])
         if not problems:
             _log_ai("chat-draft", ctx, state=base["state"], source="model", attempts=attempt + 1, rejected=rejected, text=_redact(text, ctx, facts))
             return ChatDraftResponse(text=text, source="model")

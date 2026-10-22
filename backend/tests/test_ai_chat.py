@@ -477,6 +477,247 @@ def test_a_finished_booking_does_not_block_a_new_request(client, setup):
     assert action_of(chips(client, owner_token())) == "request_booking"
 
 
+def test_the_model_reads_every_card_the_quote_and_the_booking_steps_not_only_the_stay(client, setup):
+    held = booking(
+        meet_greet_status="proposed", meet_greet_proposed_by=SITTER_ID, meet_greet_mode="in_person", meet_greet_place="Cafe on King",
+        meet_greet_at="2026-10-20T19:00:00+00:00", owner_agreed_at=at(5), sitter_interest_at=at(4),
+    )
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=QUOTE_CARD, n=1), card_msg(3, "meet_greet"),
+        card_msg(4, "agreement"), card_msg(5, "payment"), message(6, SITTER_ID, "Does Tuesday work?"), bookings=[held],
+    )
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=db, stage="meet_greet")
+    chips(client, owner_token())
+    recent = ctx.model.payload()["recent"]
+    texts = [m["text"] for m in recent]
+    assert any(t.startswith("[Quote CAD 268.13 for boarding, sent, waiting for the owner]") for t in texts)
+    assert "[Meet & Greet proposed by them for Oct 20 3:00 PM, in person at Cafe on King, waiting for the other person's answer]" in texts
+    assert "[Agreement to book: the owner agreed, the sitter not yet]" in texts
+    assert "[Payment: waiting for the owner to pay]" in texts
+    assert {m["who"] for m in recent if m["text"].startswith(("[Meet", "[Agree", "[Payment"))} == {"app"}
+
+
+def test_a_step_card_of_another_booking_or_with_no_booking_is_left_out(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), card_msg(2, "payment"), message(3, SITTER_ID, "Hi!"))
+    ctx = setup({"chips": ["Hi", "Thanks"]}, db=db)
+    chips(client, owner_token())
+    assert [m["text"] for m in ctx.model.payload()["recent"]][-1] == "Hi!" and not any("Payment" in m["text"] for m in ctx.model.payload()["recent"])
+
+
+@pytest.mark.parametrize(
+    ("fields", "want"),
+    [
+        ({"meet_greet_status": "required"}, "Meet & Greet: the sitter said yes to meeting first, no time chosen yet"),
+        ({"meet_greet_status": "done"}, "Meet & Greet done"),
+        ({"meet_greet_status": "skip_requested", "meet_greet_skip_requested_by": OWNER_ID}, "Skipping the Meet & Greet was asked by me, waiting for the other person's answer"),
+        ({"meet_greet_status": "skipped"}, "Meet & Greet skipped"),
+        ({"meet_greet_status": "agreed", "meet_greet_mode": "video", "meet_greet_at": "2026-10-20T19:00:00+00:00"}, "Meet & Greet agreed for Oct 20 3:00 PM, by video"),
+    ],
+)
+def test_the_meet_and_greet_card_says_where_it_stands(fields, want):
+    from zoneinfo import ZoneInfo
+
+    out = logic.describe(card_msg(1, "meet_greet"), OWNER_ID, ZoneInfo("America/Toronto"), booking(**fields))
+    assert out == {"who": "app", "text": f"[{want}]"}
+
+
+def test_the_payment_card_says_paid_once_it_is():
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo("America/Toronto")
+    assert logic.describe(card_msg(1, "payment"), OWNER_ID, tz, booking(paid_at=at(9)))["text"] == "[Payment: paid]"
+    assert logic.describe(card_msg(1, "payment"), OWNER_ID, tz, booking(id="other")) is None
+
+
+def test_the_model_reads_where_the_booking_is_and_the_sitter_gets_the_checklist_with_a_live_booking(client, setup):
+    tasks = [{"pet_id": PET_ID, "type": "medication", "title": "Apoquel", "scheduled_time": "08:00:00", "active": True}]
+    live = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Shall we meet first?"), care_tasks=tasks, bookings=[booking(meet_greet_status="required", sitter_interest_at=at(3))])
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=live, stage="requested")
+    chips(client, sitter_token())
+    payload = ctx.model.payload()
+    assert payload["progress"]["step"] == "decide" and payload["progress"]["turn"] == "both"  # the fake stage RPC answers "both"
+    assert payload["facts"]["pets"][0]["checklist"][0]["task"] == "Apoquel"
+    none = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"), care_tasks=tasks)
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=none)
+    chips(client, sitter_token())
+    assert "checklist" not in ctx.model.payload()["facts"]["pets"][0]
+    assert ctx.model.payload()["progress"]["step"] == "hello" and ctx.model.payload()["progress"]["now"] == ["Say hello and who I am"]
+
+
+def test_a_booking_that_cannot_be_read_gives_no_progress_and_no_actions(client, setup):
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi"), bookings=[booking()]), stage="fail")
+    chips(client, sitter_token())
+    assert "progress" not in ctx.model.payload() and "actions" not in ctx.model.payload()
+
+
+def test_the_draft_reads_the_progress_too(client, setup):
+    ctx = setup({"reply": "Thanks, Chloe!"}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Hi Robert"), bookings=[booking(meet_greet_status="done")]), stage="confirm")
+    draft(client, "Thanks!", owner_token())
+    assert ctx.model.payload()["progress"]["step"] == "agree"
+
+
+PETS_WITH_ALLERGY = [
+    {"name": "Max", "species": "dog", "allergies": ["chicken", "wheat"], "profile": {"allergies": "allergic to chicken, wheat"}},
+    {"name": "Luna", "species": "cat", "profile": {"allergies": "none, the owner says"}},
+    {"name": "Bo", "species": "dog", "profile": {"allergies": "not answered yet: do not say there are none"}},
+]
+
+
+@pytest.mark.parametrize(
+    ("text", "bad"),
+    [
+        ("Max has no allergies, just his pill.", True),
+        ("Max isn't allergic to anything, don't worry.", False),  # not a phrase we catch: it is the model's wording, not a denial pattern
+        ("He doesn't have any allergies.", True),  # no pet named: Max's allergy makes it wrong
+        ("Max is allergy-free.", True),
+        ("Max has no allergies beyond chicken and wheat.", False),
+        ("Luna has no allergies. Max is allergic to chicken.", False),  # Luna's own answer was none
+        ("Bo has no allergies.", True),  # never answered
+        ("Max is allergic to chicken and wheat.", False),
+    ],
+)
+def test_a_sentence_that_denies_allergies_the_facts_list_or_nobody_answered_is_caught(text, bad):
+    assert bool(logic.allergy_denial(text, PETS_WITH_ALLERGY)) is bad
+
+
+def test_a_pet_whose_owner_said_none_may_be_called_allergy_free():
+    assert logic.allergy_denial("Luna has no allergies.", PETS_WITH_ALLERGY[1:2]) is None
+
+
+def test_a_draft_that_denies_the_pets_allergy_is_rewritten_and_the_model_reads_the_topics(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi Chloe, can you take Max?"), message(3, SITTER_ID, "Hi Robert, does Max have any allergies?"),
+        pet_allergies=[{"pet_id": PET_ID, "allergen": "chicken"}],
+    )
+    ctx = setup({"reply": "Max has no allergies, thanks for asking!"}, {"reply": "Max is allergic to chicken, so no chicken treats please."}, db=db)
+    body = draft(client, "Answer about allergies", owner_token()).json()
+    assert body == {"text": "Max is allergic to chicken, so no chicken treats please.", "source": "model"}
+    assert "chicken" in ctx.model.calls[1]["messages"][-1]["content"]  # the problem was told to the model
+    assert ctx.model.payload(0)["topics"]["open"][0] == "food allergies"  # asked once, not settled
+
+
+def test_only_the_first_message_greets(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"), message(3, SITTER_ID, "Hi Robert, I'm Chloe!"), message(4, OWNER_ID, "Great, thanks!"))
+    ctx = setup({"reply": "Hi Robert, yes I can host Max."}, {"reply": "Yes, I can host Max on those days."}, db=db)
+    body = draft(client, "Yes, I can host", sitter_token()).json()
+    assert body == {"text": "Yes, I can host Max on those days.", "source": "model"}
+    assert ctx.model.payload(0)["greeted"] is True  # the sitter already wrote
+    assert "already greeted" in ctx.model.calls[1]["messages"][-1]["content"]
+
+
+def test_the_first_reply_may_greet_and_a_chip_greeting_is_dropped_once_greeted(client, setup):
+    first = setup({"reply": "Hi Robert, I'm Chloe! Happy to help."}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?")))
+    assert draft(client, "Hi, nice to meet you", sitter_token()).json()["text"] == "Hi Robert, I'm Chloe! Happy to help."
+    assert first.model.payload(0)["greeted"] is False
+    later = setup({"chips": ["Hi again", "Hey there", "Happy to help", "Let me check"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, "Hi Robert!"), message(4, OWNER_ID, "Can you take Max?")))
+    labels = [c["label"] for c in chips(client, sitter_token()).json()["chips"]]
+    assert labels == ["Happy to help", "Let me check"]
+    assert later.model.payload(0)["greeted"] is True
+
+
+@pytest.mark.parametrize(("text", "greets"), [("Hi Robert, yes!", True), ("Hey!", True), ("Good morning, Robert.", True), ("Hello there", True), ("Yes, hi to Max too", False), ("Highly recommended", False), ("Happy to help", False)])
+def test_what_counts_as_a_greeting(text, greets):
+    assert logic.greets(text) is greets
+
+
+def test_a_quote_card_from_the_sitter_is_something_the_owner_reacts_to(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, "Hi Robert!"), message(4, SITTER_ID, card=QUOTE_CARD, n=4))
+    ctx = setup({"chips": ["Looks good", "Can we adjust it?"]}, db=db)
+    body = chips(client, owner_token()).json()
+    payload = ctx.model.payload()
+    assert payload["state"] == "reply"  # the quote is the newest thing and it is theirs, so there is something to answer
+    assert payload["recent"][-1]["text"].startswith("[Quote CAD 268.13 for boarding")
+    assert payload["facts"]["quote"]["total"] == 268.13
+    assert body["for_message_id"] == "m4"  # the chips belong to the card
+
+
+def test_the_owner_gets_quote_reaction_chips_first_and_the_model_fills_the_rest(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, card=QUOTE_CARD, n=3))
+    setup({"chips": ["Request booking", "Ask about routine", "Confirm dates"]}, db=db)
+    assert [c["label"] for c in chips(client, owner_token()).json()["chips"]] == ["Looks good", "Can we adjust it?", "Request booking"]
+    done = {**QUOTE_CARD, "status": "confirmed"}
+    setup({"chips": ["Pay now", "A question"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=done, n=2)))
+    assert [c["label"] for c in chips(client, owner_token()).json()["chips"]] == ["Pay now", "A question"]  # an answered quote asks for no reaction
+
+
+def test_the_sitter_who_sent_the_quote_follows_up_instead_of_answering(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, card=QUOTE_CARD, n=3))
+    ctx = setup({"chips": ["Any questions?", "Happy to adjust"]}, db=db)
+    chips(client, sitter_token())
+    assert ctx.model.payload()["state"] == "follow_up"
+
+
+def test_a_booking_step_card_counts_for_the_state_and_a_stay_card_does_not(client, setup):
+    held = booking(meet_greet_status="proposed", meet_greet_proposed_by=SITTER_ID, meet_greet_at="2026-10-20T19:00:00+00:00", sitter_interest_at=at(2))
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, card={"type": "meet_greet", "booking_id": "b1"}), bookings=[held])
+    ctx = setup({"chips": ["Sounds good", "Another time?"]}, db=db, stage="meet_greet")
+    chips(client, owner_token())
+    assert ctx.model.payload()["state"] == "reply"  # the Meet & Greet card is newer than my "Hi!"
+    only_stay = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0)))
+    chips(client, sitter_token())
+    assert only_stay.model.payload()["state"] == "opening"
+
+
+def returned_db(*texts):
+    """A paid stay whose pets came home at at(20); `texts` are (sender, body, minute) written around it."""
+    done = booking(status="confirmed", meet_greet_status="done", owner_agreed_at=at(5), sitter_accepted_at=at(5), paid_at=at(9))
+    return make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!", n=1), message(3, SITTER_ID, "Hi Robert", n=2),
+        *(message(10 + k, who, body, n=n) for k, (who, body, n) in enumerate(texts)),
+        bookings=[done], booking_handoffs=[{"booking_id": "b1", "kind": "pick_up", "completed_at": at(20)}],
+    )
+
+
+def labels(client, token):
+    return [c["label"] for c in chips(client, token()).json()["chips"]]
+
+
+@pytest.mark.parametrize(("token", "want"), [(owner_token, ["Thanks for everything!", "I'll book again", "How have you been?"]), (sitter_token, ["It was a pleasure!", "Welcome back anytime!", "How is Max doing?"])])
+def test_just_after_returned_the_chips_are_the_closing_words_and_one_check_in(client, setup, token, want):
+    ctx = setup({"chips": ["Plan another stay", "Ask about the vet", "Send a quote"]}, db=returned_db((SITTER_ID, "Max is home safe!", 21)), stage="completed")
+    assert labels(client, token) == want  # the model's planning chips are replaced
+    progress = ctx.model.payload()["progress"]
+    assert progress["step"] == "done" and progress["phase"] == "closing" and progress["guide"]["avoid"].startswith("new plans")
+    assert "topics" not in ctx.model.payload()  # nothing is left to steer after the stay
+
+
+def test_after_my_closing_the_check_in_comes_and_a_look_back_at_the_stay_stays_allowed(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure having Max!", 21))
+    ctx = setup({"chips": ["Thanks again", "Any photos of Max?", "Send a quote"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["How is Max doing?", "How have you been?", "Any photos of Max?"]
+    assert ctx.model.payload()["progress"]["phase"] == "after_closing"
+    owner_ctx = setup({"chips": ["Thank you so much", "Any photos of Max?"]}, db=returned_db((OWNER_ID, "Thanks for everything, Chloe!", 21)), stage="completed")
+    assert labels(client, owner_token) == ["How have you been?", "Any photos of Max?"]  # thanks is not offered twice
+    assert owner_ctx.model.payload()["progress"]["phase"] == "after_closing"
+
+
+def test_once_either_side_checked_in_there_are_no_more_closings_or_check_ins_only_the_talk_after(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure!", 21), (SITTER_ID, "How is Max doing these days?", 22), (OWNER_ID, "He is great, thanks for asking!", 23))
+    ctx = setup({"chips": ["Thank you so much", "How have you been?", "Any trips coming up?", "He loves the park now"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["Any trips coming up?", "He loves the park now"]
+    progress = ctx.model.payload()["progress"]
+    assert progress["phase"] == "chat" and "remembers me" in progress["guide"]["talk_about"]
+    thin = setup({"chips": ["Thank you!", "How are you?"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["Any trips coming up?", "Happy to help again"]  # not enough free chips: the safe pair
+    assert thin.model.payload()["progress"]["phase"] == "chat"
+
+
+def test_what_was_written_before_the_pets_came_home_does_not_count_for_the_phase(client, setup):
+    db = returned_db((SITTER_ID, "Thank you, see you at pick-up! How are you?", 15))
+    ctx = setup({"chips": ["Plan another stay", "Send a quote"]}, db=db, stage="completed")
+    assert labels(client, sitter_token)[0] == "It was a pleasure!"
+    assert ctx.model.payload()["progress"]["phase"] == "closing"
+
+
+def test_a_check_in_chip_after_the_stay_is_drafted_as_a_question_not_an_answer(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure having Max!", 21))
+    ctx = setup({"reply": "How is Max doing these days?"}, {"reply": "Thanks for everything!"}, db=db, stage="completed")
+    draft(client, "How is Max doing?", sitter_token())
+    assert "how the owner and the pets have been" in ctx.model.payload(0)["task"]
+    draft(client, "Welcome back anytime!", sitter_token())
+    assert "task" not in ctx.model.payload(1)  # only a check-in gets the instruction
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 
@@ -515,6 +756,44 @@ def test_the_owner_never_reads_the_sitters_rates_policy_or_availability(client, 
     assert "policy_conflicts" in sitter and "sources" in sitter
 
 
+def test_each_side_knows_who_it_is_and_what_sign_up_told_the_app(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0),
+        message(2, OWNER_ID, "Can you take Max?"),
+        pets=[{
+            "id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01", "weight_kg": 5, "notes": "Pill in a treat",
+            "profile": {"v": 1, "answers": {"d1": 4, "d2": 4}, "safety": {"s1": "never", "s5": "medication"}},
+        }],
+        care_tasks=[{"pet_id": PET_ID, "type": "medication", "title": "Apoquel", "dose": "1 tablet", "scheduled_time": "08:00:00", "active": True}],
+        sitter_profile_answers=[{"sitter_id": SITTER_ID, "question_key": "park_nearby", "choice": "yes", "position": 1}],
+    )
+    ctx = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, {"chips": ["Thanks!", "A question"]}, db=db)
+    chips(client, sitter_token())
+    chips(client, owner_token())
+    sitter, owner = ctx.model.payload(0), ctx.model.payload(1)
+    assert sitter["i_am"].startswith("I am Chloe, a pet sitter") and owner["i_am"].startswith("I am Robert, a pet owner with Max (Maltese)")
+    for who in (sitter, owner):
+        pet = who["facts"]["pets"][0]
+        assert pet["profile"] == {
+            "personality": {"Sociability": "Social"},
+            "safety": ["never bitten or snapped at a person", "daily medication"],
+            "allergies": "allergic to chicken",
+        }
+    assert owner["facts"]["pets"][0]["checklist"][0]["task"] == "Apoquel"  # the owner's own tasks
+    assert "checklist" not in sitter["facts"]["pets"][0]  # the sitter gets them with a booking, not before
+    assert sitter["facts"]["sitter"]["answers"] == ["a park near home: yes"] and owner["facts"]["sitter"]["answers"] == ["a park near home: yes"]
+
+
+def test_a_pet_with_no_sign_up_answers_is_not_answered_never_none(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"),
+        pet_allergies=[],
+    )
+    ctx = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, db=db)
+    chips(client, sitter_token())
+    assert ctx.model.payload()["facts"]["pets"][0]["profile"] == {"allergies": "not answered yet: do not say there are none"}
+
+
 def test_the_owner_reads_the_quote_the_chat_shows_and_only_that(client, setup):
     db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=QUOTE_CARD, n=1), message(3, SITTER_ID, "That is the total."))
     ctx = setup({"chips": ["Looks good", "A question"]}, db=db)
@@ -522,13 +801,20 @@ def test_the_owner_reads_the_quote_the_chat_shows_and_only_that(client, setup):
     assert ctx.model.payload()["facts"]["quote"]["total"] == 268.13
 
 
-def test_each_side_can_run_on_its_own_model_and_blank_means_the_fast_model(client, setup, monkeypatch):
-    ctx = setup({"chips": ["Thanks!", "A question"]}, {"chips": ["Thanks!", "A question"]}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST))
+def test_drafts_run_on_their_own_model_per_side_the_chips_on_a_third_and_blank_means_the_fast_model(client, setup, monkeypatch):
+    ctx = setup(
+        {"chips": ["Thanks!", "A question"]}, {"chips": ["Thanks!", "A question"]},
+        {"reply": "Thanks, Chloe!"}, {"reply": "Yes, I can host Max."}, db=make_db(*SITTER_LAST),
+    )
     chips(client, owner_token())
-    monkeypatch.setattr(agents_base, "get_settings", lambda: SimpleNamespace(model_chat_owner="nvidia/owner-model", model_chat_sitter="  "))
+    monkeypatch.setattr(
+        agents_base, "get_settings",
+        lambda: SimpleNamespace(model_chat_owner="nvidia/owner-model", model_chat_sitter="  ", model_chat_chips="nvidia/chips-model"),
+    )
     chips(client, owner_token())
+    draft(client, "Thanks", owner_token())
     draft(client, "Yes, I can host", sitter_token())
-    assert [c["model"] for c in ctx.model.calls] == [None, "nvidia/owner-model", None]
+    assert [c["model"] for c in ctx.model.calls] == ["nvidia/nemotron-3-super-120b-a12b", "nvidia/chips-model", "nvidia/owner-model", None]
 
 
 def test_an_owner_draft_that_talks_like_a_host_is_rewritten(client, setup):
