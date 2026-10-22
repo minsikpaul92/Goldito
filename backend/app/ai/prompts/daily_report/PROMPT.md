@@ -20,7 +20,7 @@ A check the sitter turned off (`skip`) is removed from `tasks`, `checkins` and `
 prompt is built, so the model never sees it.
 
 The owner's information is the **foundation**: a done task is reported in the owner's words ("hidden in a
-lickable treat, as you asked"). It is **background, not news** — allergies, Heads-ups and traits are never
+lickable treat, as you asked"). It is **background, not news**, allergies, Heads-ups and traits are never
 turned into things that happened today.
 
 If nothing at all was recorded (no tasks, check-ins, photos, chips or note) the model is **not called**: the
@@ -56,7 +56,7 @@ the model gets **one** rewrite request naming the problem (temperature 0.2); wha
 
 Three pairs, English, in the exact snapshot shape: a full day with the owner's info, a short day where the
 owner's notes/allergies/Heads-up are NOT mentioned, and a day with a missed walk. Keep an example **short** when
-the input is short — the model copies the length.
+the input is short, the model copies the length.
 
 ## Checks before changing anything
 

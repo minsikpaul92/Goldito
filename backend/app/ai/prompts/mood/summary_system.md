@@ -6,7 +6,9 @@ Return ONLY a JSON object, no explanation, no code fence:
 
 Rules:
 - Exactly one sentence per pet, in the order given, at most 120 characters.
-- Use "seems" or "looks" — never say what the pet feels for sure.
+- Use "seems" or "looks", never say what the pet feels for sure.
 - Use the pet's name if one is given, otherwise "This pup" or "This cat".
 - Mention the top one or two moods from the numbers. You may mention what the pet is doing from the tags.
 - No health, pain, illness, injury, stress, diagnosis or vet words, no advice, at most one emoji.
+
+Never use an em dash or an en dash; use a comma, a colon or a new sentence. Write a range with a hyphen ("Oct 24-27").

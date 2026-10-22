@@ -46,8 +46,8 @@ class ChatAgent:
     def extra_problems(self, text: str, facts: dict) -> list[str]:
         return []
 
-    def problems(self, text: str, facts: dict, known: str, sitter_first: str | None = None, previous: list[str] | None = None) -> list[str]:
-        out = [*logic.chat_problems(text, facts, self.role, sitter_first, known), *self.extra_problems(text, facts)]
+    def problems(self, text: str, facts: dict, known: str, sitter_first: str | None = None, previous: list[str] | None = None, greeted: bool = False) -> list[str]:
+        out = [*logic.chat_problems(text, facts, self.role, sitter_first, known, greeted), *self.extra_problems(text, facts)]
         if previous and logic.repeats(text, previous):
             out.append("it repeats what was already said in the chat, say something new")
         return out

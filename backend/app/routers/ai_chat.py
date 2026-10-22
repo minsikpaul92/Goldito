@@ -316,6 +316,7 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
         "state": state,
         "me": me,
         "them": them,
+        "greeted": any(m.get("kind") == "text" and m.get("sender_id") == user.id for m in messages),
         "i_am": chat_profile.i_am(ctx["role"], me, them, pets=ctx.get("owner_pets") or facts.get("pets", []), service_area=(facts.get("sitter") or {}).get("service_area")),
         **({"summary": summary} if summary else {}),
         "recent": logic.transcript(recent, user.id, tz, booking_state["booking"]),
@@ -370,6 +371,8 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         for label in out.chips:
             label = " ".join(label.split())
             problems = logic.chip_problems(label) if label else ["empty"]
+            if base["greeted"] and logic.greets(label):
+                problems = [*problems, "a greeting after I already greeted"]
             if not problems and label.lower() not in seen:
                 seen.add(label.lower())
                 labels.append(label)
@@ -431,7 +434,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
             break
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
-        problems = agent.problems(text, facts, known, sitter_first, previous)
+        problems = agent.problems(text, facts, known, sitter_first, previous, base["greeted"])
         if not problems:
             _log_ai("chat-draft", ctx, state=base["state"], source="model", attempts=attempt + 1, rejected=rejected, text=_redact(text, ctx, facts))
             return ChatDraftResponse(text=text, source="model")

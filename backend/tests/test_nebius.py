@@ -194,3 +194,28 @@ def test_load_prompt_stays_inside_the_prompts_folder():
 
     with pytest.raises(ValueError):
         load_prompt("../../config.py")
+
+
+@pytest.mark.parametrize(
+    ("raw", "clean"),
+    [
+        ("Absolutely — I will check.", "Absolutely, I will check."),
+        ("Absolutely—Max’s allergy is noted.", "Absolutely, Max’s allergy is noted."),
+        ("I am free Oct 24–27 or 2 – 3 days.", "I am free Oct 24-27 or 2-3 days."),
+        ("Oct 24‑27", "Oct 24-27"),
+        ("Thanks! —", "Thanks!"),
+        ("— Hello there", "Hello there"),
+        ("Wait —. Done", "Wait. Done"),
+        ('{"reply": "Yes — sure", "n": 1}', '{"reply": "Yes, sure", "n": 1}'),
+        ("No dashes here - a hyphen stays.", "No dashes here - a hyphen stays."),
+    ],
+)
+def test_no_em_or_en_dash_survives_in_model_text(raw, clean):
+    assert nebius.plain_dashes(raw) == clean
+    assert nebius.strip_think(f"<think>x</think>{raw}") == clean.strip()
+
+
+def test_every_model_answer_comes_back_without_dashes(monkeypatch):
+    install(monkeypatch, "Sure — I can host Max for Oct 24–27.")
+    result = nebius.chat("fast", [{"role": "user", "content": "hi"}])
+    assert result.text == "Sure, I can host Max for Oct 24-27."

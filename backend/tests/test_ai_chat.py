@@ -596,6 +596,30 @@ def test_a_draft_that_denies_the_pets_allergy_is_rewritten_and_the_model_reads_t
     assert ctx.model.payload(0)["topics"]["open"][0] == "food allergies"  # asked once, not settled
 
 
+def test_only_the_first_message_greets(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"), message(3, SITTER_ID, "Hi Robert, I'm Chloe!"), message(4, OWNER_ID, "Great, thanks!"))
+    ctx = setup({"reply": "Hi Robert, yes I can host Max."}, {"reply": "Yes, I can host Max on those days."}, db=db)
+    body = draft(client, "Yes, I can host", sitter_token()).json()
+    assert body == {"text": "Yes, I can host Max on those days.", "source": "model"}
+    assert ctx.model.payload(0)["greeted"] is True  # the sitter already wrote
+    assert "already greeted" in ctx.model.calls[1]["messages"][-1]["content"]
+
+
+def test_the_first_reply_may_greet_and_a_chip_greeting_is_dropped_once_greeted(client, setup):
+    first = setup({"reply": "Hi Robert, I'm Chloe! Happy to help."}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?")))
+    assert draft(client, "Hi, nice to meet you", sitter_token()).json()["text"] == "Hi Robert, I'm Chloe! Happy to help."
+    assert first.model.payload(0)["greeted"] is False
+    later = setup({"chips": ["Hi again", "Hey there", "Happy to help", "Let me check"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, "Hi Robert!"), message(4, OWNER_ID, "Can you take Max?")))
+    labels = [c["label"] for c in chips(client, sitter_token()).json()["chips"]]
+    assert labels == ["Happy to help", "Let me check"]
+    assert later.model.payload(0)["greeted"] is True
+
+
+@pytest.mark.parametrize(("text", "greets"), [("Hi Robert, yes!", True), ("Hey!", True), ("Good morning, Robert.", True), ("Hello there", True), ("Yes, hi to Max too", False), ("Highly recommended", False), ("Happy to help", False)])
+def test_what_counts_as_a_greeting(text, greets):
+    assert logic.greets(text) is greets
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

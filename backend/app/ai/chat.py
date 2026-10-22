@@ -39,6 +39,7 @@ ACTIONS: dict[str, dict[str, str]] = {
 
 _NUMBER = re.compile(r"\d")
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
+_GREETING = re.compile(r"^\W*(?:hi|hey|hello|hiya|howdy|dear|good (?:morning|afternoon|evening))\b", re.IGNORECASE)
 _NAME_FIRST = re.compile(r"^\s*[A-Z][a-z]+:\s")
 # The other side asked about money: a price, a rate, a quote, a fee or "how much".
 _MONEY_TALK = re.compile(r"\b(price|prices|pricing|cost|costs|how much|rate|rates|quote|fee|fees|charge|charges|total|pay|payment|deposit)\b|\$", re.IGNORECASE)
@@ -185,6 +186,11 @@ def chip_problems(label: str) -> list[str]:
     return problems
 
 
+def greets(text: str | None) -> bool:
+    """Whether a message opens with a greeting (Hi, Hey, Hello, Good morning ...). Only a first message greets."""
+    return bool(text and _GREETING.search(text))
+
+
 def asks_about_money(text: str | None) -> bool:
     return bool(text and _MONEY_TALK.search(text))
 
@@ -257,9 +263,11 @@ def fixed_draft(label: str) -> str:
     return (text[:1].upper() + text[1:] + ".") if text else ""
 
 
-def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None, known: str = "") -> list[str]:
-    """What is wrong with a draft, in words the model can act on. Empty = it passes."""
+def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None, known: str = "", greeted: bool = False) -> list[str]:
+    """What is wrong with a draft, in words the model can act on. Empty = it passes. `greeted`: I already wrote in this chat."""
     problems: list[str] = []
+    if greeted and greets(text):
+        problems.append("it greets again, but I already greeted: start with the answer, no Hi or Hey")
     availability = grounding.get("availability") or {}
     can_host = availability.get("can_host", True)
     allowed = logic._money_values(grounding.get("quote")) if can_host else set()
