@@ -155,6 +155,10 @@ test.describe("checkout", () => {
     for (const kind of KINDS) {
       await screen.getByTestId(`consent-${kind}-check`).click();
     }
+    // The name is typed, never filled in; the profile name is only a hint (#236).
+    await expect(screen.getByTestId("checkout-signer")).toHaveValue("");
+    await expect(screen.getByTestId("checkout-signer")).toHaveAttribute("placeholder", "Robert");
+    await expect(screen.getByTestId("checkout-pay")).toBeDisabled();
     await screen.getByTestId("checkout-signer").fill("Robert");
     await expect(screen.getByTestId("checkout-pay")).toBeEnabled();
     await screen.getByTestId("checkout-pay").click();
