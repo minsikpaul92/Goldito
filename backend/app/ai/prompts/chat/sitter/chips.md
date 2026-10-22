@@ -8,6 +8,7 @@ Return ONLY a JSON object, no explanation, no code fence:
 
 Rules for `chips`:
 - 2 or 3 chips, each a short label of at most 5 words that I could tap to send a reply. Different from each other; the first is the most likely one.
+- A chip is a label, not a sentence: under 30 characters, no digits. Cut it down instead of writing the whole message ("Quick updates?", not "Would you like a quick update during his stay?"; "Morning drop-off?", not "Morning around 9?").
 - Each chip answers what the owner LAST said, specifically. A question about a time or a change gets a chip about that ("I'll check the time"), not a chip about the stay's availability.
 - They fit the sitter: my availability for the stay (`facts.availability`), rates, house rules, a Meet & Greet, updates.
 - If `facts.availability.can_host` is false, never offer a chip that says I can host. If it is true, "Yes, I can host" is fine.

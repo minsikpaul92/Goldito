@@ -1,11 +1,11 @@
 """A 20 message booking chat between a fake owner and a fake sitter, to compare chat AI settings (03D, #249 · #238).
 
-    .venv/bin/python scripts/simulate_chat.py [--turns 20] [--repeat 2] label=chips_model,draft_model,judge ...
+    .venv/bin/python scripts/simulate_chat.py [--turns 20] [--repeat 2] label=chips_model,draft_model ...
 
-Example: before=fast,fast,off  after=fast,nvidia/nemotron-3-super-120b-a12b,on  ("fast" = MODEL_FAST, judge on|off).
+Example: before=fast,fast  super=nvidia/nemotron-3-super-120b-a12b,nvidia/nemotron-3-super-120b-a12b  ("fast" = MODEL_FAST).
 
 Each turn is what the app does: the real chips prompt, a tap on one chip (like a person), the real draft prompt, the
-real rule checks, one rewrite, and (judge on) the real judge. Fake data, no database, nothing saved. Both sides only tap
+real rule checks and one rewrite. Fake data, no database, nothing saved. Both sides only tap
 chips, so it is a harder test than a real chat. Ultra then rates the whole chat. One run per setting is a hint, not a proof.
 """
 
@@ -20,7 +20,6 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.ai import chat as logic  # noqa: E402
-from app.ai import chat_judge  # noqa: E402
 from app.ai import inquiry as inquiry_logic  # noqa: E402
 from app.ai.chat_agents import agent_for  # noqa: E402
 from app.ai.chat_agents.owner import OWNER_STYLE  # noqa: E402
@@ -70,7 +69,7 @@ def turn(cfg: dict, role: str, messages: list[dict], summary: str | None = None)
         "recent": logic.transcript(messages[-logic.WINDOW:], me, TZ), "facts": facts,
         **({"summary": summary} if summary else {}),
     }
-    timing = {"chips_s": 0.0, "draft_s": 0.0, "judge_s": 0.0}
+    timing = {"chips_s": 0.0, "draft_s": 0.0}
     started = time.perf_counter()
     chip_fallback = False
     try:
@@ -92,8 +91,6 @@ def turn(cfg: dict, role: str, messages: list[dict], summary: str | None = None)
     previous = [m["body"] for m in messages if m["kind"] == "text"][-logic.REPEAT_WINDOW:]
     known = json.dumps({"recent": base["recent"], "facts": facts})
     rejected: list[str] = []
-    judge_stops = 0
-    judge_skips = 0
     result = {"role": role, "chip": chip, "chip_fallback": chip_fallback}
     for attempt in range(2):
         began = time.perf_counter()
@@ -106,21 +103,12 @@ def turn(cfg: dict, role: str, messages: list[dict], summary: str | None = None)
         timing["draft_s"] += time.perf_counter() - began
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "pets": facts.get("pets", [])})
         problems = agent.problems(text, facts, known, sitter_first, previous)
-        if not problems and cfg["judge"] and attempt == 0:
-            began = time.perf_counter()
-            judged = chat_judge.check(payload, text)
-            timing["judge_s"] += time.perf_counter() - began
-            if judged is None:
-                judge_skips += 1
-            elif judged:
-                judge_stops += 1
-            problems = judged or []
         if not problems:
-            return {**result, "text": text, "source": "model", "attempts": attempt + 1, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips, **timing}
+            return {**result, "text": text, "source": "model", "attempts": attempt + 1, "rejected": rejected, **timing}
         rejected += problems
         msgs = [*msgs, {"role": "assistant", "content": json.dumps({"reply": out.reply})},
                 {"role": "user", "content": "Rewrite it. Problems: " + "; ".join(problems) + ". Return only the JSON."}]
-    return {**result, "text": logic.fixed_draft(chip), "source": "fallback", "attempts": 2, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips, **timing}
+    return {**result, "text": logic.fixed_draft(chip), "source": "fallback", "attempts": 2, "rejected": rejected, **timing}
 
 
 def refresh_summary(messages: list[dict], summary: str | None, upto: str | None) -> tuple[str | None, str | None]:
@@ -195,26 +183,26 @@ def main() -> None:
     jobs = []
     for spec in args:
         label, value = spec.split("=", 1)
-        chips, draft, judge = value.split(",")
-        cfg = {"chips": None if chips == "fast" else chips, "draft": None if draft == "fast" else draft, "judge": judge == "on"}
+        chips, draft = value.split(",")
+        cfg = {"chips": None if chips == "fast" else chips, "draft": None if draft == "fast" else draft}
         jobs += [(f"{label}#{n + 1}", cfg, opts["--turns"]) for n in range(opts["--repeat"])]
     with ThreadPoolExecutor(len(jobs)) as pool:
         results = list(pool.map(run, jobs))
-    print(f"{'run':<22}{'score':>6}{'draft fallback':>16}{'chip fallback':>15}{'rewrites':>10}{'judge stops':>13}{'judge skips':>13}  " + "  ".join(KINDS))
+    print(f"{'run':<22}{'score':>6}{'draft fallback':>16}{'chip fallback':>15}{'rewrites':>10}  " + "  ".join(KINDS))
     for label, log, rated in results:
         kinds = [sum(1 for b in (rated.bad if rated else []) if b.get("kind") == k) for k in KINDS]
         print(
             f"{label:<22}{(rated.score if rated else '-'):>6}{sum(t['source'] == 'fallback' for t in log):>16}"
             f"{sum(t['chip_fallback'] for t in log):>15}{sum(t['attempts'] == 2 and t['source'] == 'model' for t in log):>10}"
-            f"{sum(t['judge_stops'] for t in log):>13}{sum(t['judge_skips'] for t in log):>13}  " + "  ".join(f"{k:>{len(n)}}" for k, n in zip(kinds, KINDS))
+            f"  " + "  ".join(f"{k:>{len(n)}}" for k, n in zip(kinds, KINDS))
         )
-    print("\nseconds per turn (median / worst): chips, draft with rewrites, judge, and the three together")
+    print("\nseconds per turn (median / worst): chips, draft with rewrites, and both together")
     for label, log, _ in results:
         def span(key: str) -> str:
             values = [t[key] for t in log]
             return f"{statistics.median(values):.2f} / {max(values):.2f}"
-        totals = [t["chips_s"] + t["draft_s"] + t["judge_s"] for t in log]
-        print(f"{label:<22} chips {span('chips_s')}   draft {span('draft_s')}   judge {span('judge_s')}   all {statistics.median(totals):.2f} / {max(totals):.2f}")
+        totals = [t["chips_s"] + t["draft_s"] for t in log]
+        print(f"{label:<22} chips {span('chips_s')}   draft {span('draft_s')}   all {statistics.median(totals):.2f} / {max(totals):.2f}")
     print("\nbad messages by position (1-20 / 21-35 / 36+)")
     for label, log, rated in results:
         bad = [int(b.get("n", 0)) for b in (rated.bad if rated else [])]

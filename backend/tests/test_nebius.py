@@ -104,10 +104,10 @@ def test_a_model_name_replaces_the_role_model_and_blank_means_the_role_model(mon
     assert [c["model"] for c in completions.calls] == ["nvidia/owner-model", "nvidia/fast-model", "nvidia/fast-model"]
 
 
-def test_the_chat_ai_models_drafts_on_super_chips_on_the_fast_model_unless_set(monkeypatch):
+def test_the_chat_ai_models_are_super_for_drafts_and_chips_unless_set(monkeypatch):
     super_model = "nvidia/nemotron-3-super-120b-a12b"
     assert get_settings().model_chat_owner == super_model and get_settings().model_chat_sitter == super_model
-    assert get_settings().model_chat_chips is None
+    assert get_settings().model_chat_chips == super_model
     monkeypatch.setenv("MODEL_CHAT_OWNER", "nvidia/owner-model")
     monkeypatch.setenv("MODEL_CHAT_SITTER", "")
     monkeypatch.setenv("MODEL_CHAT_CHIPS", "nvidia/chips-model")

@@ -20,9 +20,8 @@
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed + the 5-second check (report photos described by `MODEL_VISION` first). |
 | **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
 | **Pet Life Record** (Stage 5) | 07C | `POST /api/ai/life-record` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Long-context summary of a whole stay; only recorded facts, null when no evidence. |
-| **Booking chat chips** | 03D | `POST /api/ai/chat-chips` | `MODEL_CHAT_CHIPS` (blank = `MODEL_FAST`) | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | 2 to 3 labels of at most 5 words, so a small fast model. Super wrote full sentences that the chip rules dropped (2026-10-22 run). |
-| **Booking chat draft** | 03D | `POST /api/ai/chat-draft` | `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` | `nvidia/nemotron-3-super-120b-a12b` | One short message in the person's voice. Nano and Lightning looped on repeats in a 20 message run, Super did not. |
-| **Booking chat judge** | 03D | inside `POST /api/ai/chat-draft` | `MODEL_REPORT` (reasoning off) | `nvidia/nemotron-3-super-120b-a12b` | Reads the draft after the rule checks and says whether it fits the chat, with the writer's facts. It reads the first draft only (its reasons buy one rewrite). `CHAT_JUDGE=off` removes it; a call that fails or takes over 6 s is skipped. |
+| **Booking chat chips** | 03D | `POST /api/ai/chat-chips` | `MODEL_CHAT_CHIPS` | `nvidia/nemotron-3-super-120b-a12b` | 2 to 3 short labels. Nano and Lightning chips were fine but the drafts and the chat they fed were not; Super chips needed the prompt line "under 30 characters, no digits" (4 of 20 turns fell back to the generic chips before it, 0 after). |
+| **Booking chat draft** | 03D | `POST /api/ai/chat-draft` | `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` | `nvidia/nemotron-3-super-120b-a12b` | One short message in the person's voice. Nano and Lightning looped on repeats and fell back to bare chip words in a 20 message run, Super did not. The chat AI does not use Nano. |
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 
@@ -147,33 +146,20 @@ Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a 
 
 ## Booking chat simulation (2026-10-22)
 
-`backend/scripts/simulate_chat.py` - a fake owner (Robert) and sitter (Chloe) chat 20 messages about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks, one rewrite and the real judge; Ultra then rates the whole chat 1 to 10 and tags each bad message. Two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft,judge`; "fast" is Nano.
+`backend/scripts/simulate_chat.py` - a fake owner (Robert) and sitter (Chloe) chat about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks and one rewrite (past 40 messages the app's rolling summary too); Ultra then rates the whole chat 1 to 10 and tags each bad message. One or two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft`; "fast" is Nano.
 
-| Setting | Score (2 runs) | Draft fallback / chat | Rewrites / chat | Judge rejects / chat | Repeat tags / chat | Invented tags / chat |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| before: `fast,fast,off` | 2, 2 | 4.5 | 6.5 | 0 | 8.5 | 1 |
-| Super drafts: `fast,super,off` | 4, 3 | 0 | 1.5 | 0 | 11 | 0.5 |
-| after: `fast,super,on` | 4, 4 | 1 | 1.5 | 3 | 11 | 1 |
-| Lightning chips: `lightning,super,on` | 3, 4 | 1 | 4.5 | 5 | 7.5 | 4.5 |
-
-- **Super for drafts is the clear win:** no more one or two word messages from the fixed fallback, and the chat reads as a conversation.
-- **The judge's effect is small in this test.** After vs Super without it is within the noise of two runs. Alone on hand-made drafts it works: it flags a made-up "Maple Park", a second self-introduction and a bare "Sure." and passes a good draft, in a median 0.41 s per call (max 0.89 s, 6 calls, 2026-10-22).
-- **Repeats stay high everywhere** (7 to 15 tags per chat): both sides keep tapping the same chips (confirm pickup, send photo), and each draft is new text, so neither the rule check nor the judge sees a repeat. A person who types breaks that loop; not fixed here.
-- **Lightning chips** wrote fewer fallbacks than Nano chips but the run had the most invented details; no reason to switch yet. `MODEL_CHAT_CHIPS` stays blank (Nano).
-
-### 50 messages and speed (2026-10-22)
-
-Same script with `--turns 50`; past 40 messages it keeps the app's rolling summary. First judge version: it also read the rewrite, so two rejects fell back to the chip's bare words (9 fallbacks, 9 fragments, no better than Super alone). Fixed: the judge reads the first draft only and its reasons buy one rewrite; only the rule checks can fall back.
-
-| Setting (50 messages) | Score | Draft fallback | Fragments | Repeat tags | Runs |
+| Setting | Messages | Score | Draft fallback | Fragments | Repeat tags |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| before: Nano, no judge | 2 | 15 | 15 | 26 | 1 |
-| Super, no judge | 3 | 5 | 3 | 11 | 1 |
-| Super + judge, first version | 3 | 9 | 9 | 29 | 1 |
-| Super + judge, fixed | 3, 3 | 1, 0 | 1, 0 | 22, 46 | 2 |
+| Nano chips, Nano drafts | 20 | 2, 2 | 4.5 | 4.5 | 8.5 |
+| Nano chips, Super drafts | 20 | 4, 3 | 0 | 0 | 11 |
+| Super chips, Super drafts | 20 | 3, 3 | 0 | 0.5 | 8.5 |
+| Nano chips, Nano drafts | 50 | 2 | 15 | 15 | 26 |
+| Nano chips, Super drafts | 50 | 3 | 5 | 3 | 11 |
 
-- Every setting loops after about 20 messages (the same pickup time, pill and photo confirmations), because both sides only tap chips. Super holds the chat together better than Nano, the judge does not stop the loop. A person who types would break it; a simulation with a typing person is not built.
-- **Seconds per turn** (median / worst, 50 message runs): chips (Nano) 1.5 / 3.5, draft with rewrites 1.1 to 1.7 / 2.6 to 4.6 (Super is as fast as Nano: 1.66 vs 1.72 s without the judge), judge 0.38 / 1.25. What a person waits for after tapping a chip is the draft plus the judge, about 1.5 s median.
+- **Super for drafts and chips is the choice (2026-10-22).** Nano drafts looped on repeats, fell back to the chip's bare words ("Photo update.") and made up details; Lightning did the same and failed more calls.
+- **A judge was tried and removed.** A second Super call that read each draft with the same facts caught a made-up "Maple Park", a second self-introduction and a bare "Sure." on hand-made drafts (0.38 s median), but in 20 and 50 message chats the score did not move (3 to 4 of 10 with or without it), repeats did not drop, and the first version cut drafts down to the chip's bare words more often (9 fallbacks in 50 messages vs 5 without it).
+- **Every setting loops after about 20 messages** (the same pickup time, pill and photo confirmations): both sides only tap chips, nothing tells the model which topics are already settled, and the repeat check compares text, not meaning. It is not the context size (20 to 50 short messages are a few thousand tokens). Topic suggestions per conversation are the next idea.
+- **Seconds per turn** (median / worst): Super chips 1.0 to 1.1 / 2.4 (Nano chips 1.5 / 3.5), Super draft with rewrites 1.0 / 2.5 (Nano 1.7 / 3.6); a person waits about 1 s after tapping a chip.
 
 ## Open questions (Phase 07.1 / 08 spike)
 

@@ -8,6 +8,7 @@ Return ONLY a JSON object, no explanation, no code fence:
 
 Rules for `chips`:
 - 2 or 3 chips, each a short label of at most 5 words that I could tap to send. Different from each other; the first is the most likely one.
+- A chip is a label, not a sentence: under 30 characters, no digits. Cut it down instead of writing the whole message ("Quick updates?", not "Would you like a quick update during his stay?"; "Morning drop-off?", not "Morning around 9?").
 - `state` is "opening": nobody has written yet. Suggest short openers that say who needs care ("Hi, I need care for my pets").
 - `state` is "reply": answer what the sitter LAST said, specifically. No greetings or introductions.
 - `state` is "follow_up": I spoke last. Suggest a next thing I could add or ask: a practical question (routine, pick-up time, a photo update), a worry, or asking to book. Never repeat my last message.
