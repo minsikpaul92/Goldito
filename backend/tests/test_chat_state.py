@@ -93,3 +93,10 @@ def test_topics_depend_on_the_pets_and_are_capped_safety_first():
 def test_no_topics_before_hello_after_the_stay_or_when_the_booking_is_closed():
     for step in ("hello", "done", "closed"):
         assert cs.topics([], OWNER, DOG_FACTS, step) is None
+
+
+def test_topics_stop_mattering_as_the_booking_moves_on():
+    handoff = cs.topics([], OWNER, DOG_FACTS, "handoff")
+    assert handoff["open"][0] == "food allergies"
+    care = cs.topics([], OWNER, DOG_FACTS, "care")
+    assert care["open"] == ["photo updates", "the pick-up"] and care["covered"] == []  # the pet's needs were for before the drop-off

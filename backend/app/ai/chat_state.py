@@ -135,32 +135,34 @@ def _is_sensitive(facts: dict) -> bool:
     )
 
 
-# id, label the model reads, what a message must say to cover it, whether it matters for these pets. Safety first.
+# id, label the model reads, what a message must say to cover it, whether it matters for these pets, and the last step it is
+# still worth raising in. Safety first.
 TOPICS = (
-    ("allergies", "food allergies", r"allerg", lambda f: True),
-    ("medication", "medication", r"\b(pills?|medic\w*|doses?|tablets?|apoquel)\b", _has_medication),
-    ("feeding", "meals and treats", r"\b(feed\w*|food|meals?|breakfast|dinner|treats?|kibble)\b", lambda f: True),
-    ("walks", "walks and play", r"\b(walks?|walking|park|exercise|play\w*)\b", lambda f: any(p.get("species") == "dog" for p in _pets(f))),
-    ("litter", "the litter box", r"\blitter\b", lambda f: any(p.get("species") == "cat" for p in _pets(f))),
-    ("stress", "what stresses them", r"\b(noises?|nervous|anxious|scared|stress\w*|thunder|fireworks)\b", _is_sensitive),
-    ("updates", "photo updates", r"\b(photos?|pics?|pictures?|updates?)\b", lambda f: True),
-    ("emergency", "the vet and emergencies", r"\b(vets?|emergenc\w*|clinic)\b", lambda f: True),
-    ("drop_off", "the drop-off", r"\bdrop[- ]?off\b", lambda f: True),
-    ("pick_up", "the pick-up", r"\bpick[- ]?up\b", lambda f: True),
+    ("allergies", "food allergies", r"allerg", lambda f: True, "handoff"),
+    ("medication", "medication", r"\b(pills?|medic\w*|doses?|tablets?|apoquel)\b", _has_medication, "handoff"),
+    ("feeding", "meals and treats", r"\b(feed\w*|food|meals?|breakfast|dinner|treats?|kibble)\b", lambda f: True, "handoff"),
+    ("walks", "walks and play", r"\b(walks?|walking|park|exercise|play\w*)\b", lambda f: any(p.get("species") == "dog" for p in _pets(f)), "handoff"),
+    ("litter", "the litter box", r"\blitter\b", lambda f: any(p.get("species") == "cat" for p in _pets(f)), "handoff"),
+    ("stress", "what stresses them", r"\b(noises?|nervous|anxious|scared|stress\w*|thunder|fireworks)\b", _is_sensitive, "handoff"),
+    ("updates", "photo updates", r"\b(photos?|pics?|pictures?|updates?)\b", lambda f: True, "care"),
+    ("emergency", "the vet and emergencies", r"\b(vets?|emergenc\w*|clinic)\b", lambda f: True, "handoff"),
+    ("drop_off", "the drop-off", r"\bdrop[- ]?off\b", lambda f: True, "handoff"),
+    ("pick_up", "the pick-up", r"\bpick[- ]?up\b", lambda f: True, "care"),
 )
 MAX_OPEN = 5
 
 
 def topics(messages: list[dict], me_id: str, facts: dict, step: str) -> dict | None:
     """What has and has not come up yet, from what was typed (cards do not count). A topic is covered once two texts or one
-    text from each side mention it. None before hello and after the stay: nothing is left to steer."""
+    text from each side mention it, and it is only raised while it still matters (the pet's needs before the drop-off, the
+    updates and the pick-up until the stay is over). None before hello and after the stay: nothing is left to steer."""
     if step in ("hello", "done", "closed"):
         return None
     texts = [(m.get("sender_id") == me_id, str(m.get("body") or "")) for m in messages if m.get("kind") == "text"]
     open_: list[str] = []
     covered: list[str] = []
-    for _id, label, pattern, relevant in TOPICS:
-        if not relevant(facts):
+    for _id, label, pattern, relevant, until in TOPICS:
+        if STEPS.index(step) > STEPS.index(until) or not relevant(facts):
             continue
         hits = [mine for mine, body in texts if re.search(pattern, body, re.IGNORECASE)]
         (covered if len(hits) >= 2 or {True, False} <= set(hits) else open_).append(label)
