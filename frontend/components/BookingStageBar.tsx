@@ -1,12 +1,16 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { Viewer } from "./BookingCard";
+import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { BookingStage, BookingSummary } from "../lib/bookings";
+import type { Trip } from "../types/db";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-const FIRST_TIME = ["Request", "Meet & Greet", "Confirm", "Pay", "Stay"];
-const REPEAT = ["Request", "Confirm", "Pay", "Stay"];
+const FIRST_TIME = ["Request", "Meet & Greet", "Confirm", "Pay", "Care"];
+/** "Meet & Greet" does not fit a fifth of a 360 px phone (#237); screen readers still hear the full name. */
+const short = (label: string) => (label === "Meet & Greet" ? "M&G" : label);
+const REPEAT = ["Request", "Confirm", "Pay", "Care"];
 
 /** Which step is current (D60); `steps.length` = everything done. Ended bookings have no bar. */
 function currentStep(stage: BookingStage, firstTime: boolean): number | null {
@@ -34,6 +38,21 @@ export function stageCaption(b: BookingSummary, viewer: Viewer, now: number = Da
   return [wait, turn].filter(Boolean).join(" · ") || null;
 }
 
+/**
+ * The small word under a step (#237): Scheduled once the Meet & Greet time or the drop-off is set, Trip while the
+ * drop-off trip is on the way (a Meet & Greet has no trip), Skipped for a Meet & Greet both agreed to skip.
+ */
+export function stepNotes(b: BookingSummary, firstTime: boolean, trips: Trip[] | null | undefined): Record<number, string> {
+  const notes: Record<number, string> = {};
+  const care = firstTime ? 4 : 3;
+  if (firstTime && b.meetGreetStatus === "skipped") notes[1] = "Skipped";
+  else if (firstTime && b.stage === "meet_greet" && b.meetGreetStatus === "agreed") notes[1] = "Scheduled";
+  if (b.stage === "paid" && b.dropOff) {
+    notes[care] = trips?.some((t) => t.handoff_kind === "drop_off" && (t.status === "en_route" || t.status === "arrived")) ? "Trip" : "Scheduled";
+  }
+  return notes;
+}
+
 /** Whether the bar draws anything — lets a screen skip the card around it for ended bookings. */
 export function hasStageBar(booking: BookingSummary): boolean {
   return currentStep(booking.stage, booking.meetGreetStatus !== "not_needed") !== null;
@@ -44,14 +63,35 @@ export function hasStageBar(booking: BookingSummary): boolean {
  * `chat` is the small row of five connected circles pinned on top of the chat: it always has the five steps (a pair that
  * has met shows Meet as done) and, with no booking yet, sits on Request.
  */
-export function BookingStageBar({ booking, viewer, chat }: { booking: BookingSummary | null; viewer: Viewer; chat?: boolean }) {
+export function BookingStageBar({
+  booking,
+  viewer,
+  chat,
+  trips,
+}: {
+  booking: BookingSummary | null;
+  viewer: Viewer;
+  chat?: boolean;
+  /** The booking's trips when the screen already has them; otherwise the bar watches them while a drop-off is ahead. */
+  trips?: Trip[] | null;
+}) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const own = useLiveTrips(booking?.id, trips === undefined && !!booking && booking.stage === "paid");
   const firstTime = chat || !booking || booking.meetGreetStatus !== "not_needed";
   const steps = firstTime ? FIRST_TIME : REPEAT;
   const current = booking ? currentStep(booking.stage, firstTime) : 0;
   if (current === null) return null;
   const caption = booking ? stageCaption(booking, viewer) : null;
+  const notes = booking ? stepNotes(booking, firstTime, trips === undefined ? own.trips : trips) : {};
+  const note = (i: number) =>
+    notes[i] ? (
+      <Text style={styles.note} numberOfLines={1} testID={`stage-note-${i}`}>
+        {notes[i]}
+      </Text>
+    ) : null;
+  // A skipped Meet & Greet is passed, but without a check.
+  const mark = (i: number, done: boolean) => (done && notes[i] === "Skipped" ? "–" : done ? "✓" : i + 1);
 
   if (chat) {
     return (
@@ -64,11 +104,12 @@ export function BookingStageBar({ booking, viewer, chat }: { booking: BookingSum
               <View key={label} style={[styles.miniStep, { zIndex: steps.length - i }]}>
                 {i > 0 ? <View style={[styles.miniLink, (done || now) && styles.linkDone]} /> : null}
                 <View style={[styles.miniDot, done && styles.dotDone, now && styles.dotNow]}>
-                  <Text style={[styles.miniText, done && styles.dotTextDone, now && styles.dotTextNow]}>{done ? "✓" : i + 1}</Text>
+                  <Text style={[styles.miniText, done && styles.dotTextDone, now && styles.dotTextNow]}>{mark(i, done)}</Text>
                 </View>
-                <Text style={[styles.miniLabel, now && styles.dotLabelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
-                  {label === "Meet & Greet" ? "Meet" : label}
+                <Text style={[styles.miniLabel, now && styles.dotLabelNow]} numberOfLines={1} accessibilityLabel={label} testID={`stage-step-${i}`}>
+                  {short(label)}
                 </Text>
+                {note(i)}
               </View>
             );
           })}
@@ -93,11 +134,12 @@ export function BookingStageBar({ booking, viewer, chat }: { booking: BookingSum
               <View key={label} style={[styles.dotStep, { zIndex: steps.length - i }]}>
                 {i > 0 ? <View style={[styles.link, (done || now) && styles.linkDone]} /> : null}
                 <View style={[styles.dot, done && styles.dotDone, now && styles.dotNow]}>
-                  <Text style={[styles.dotText, done && styles.dotTextDone, now && styles.dotTextNow]}>{done ? "✓" : i + 1}</Text>
+                  <Text style={[styles.dotText, done && styles.dotTextDone, now && styles.dotTextNow]}>{mark(i, done)}</Text>
                 </View>
-                <Text style={[styles.dotLabel, now && styles.dotLabelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
-                  {label === "Meet & Greet" ? "Meet" : label}
+                <Text style={[styles.dotLabel, now && styles.dotLabelNow]} numberOfLines={1} accessibilityLabel={label} testID={`stage-step-${i}`}>
+                  {short(label)}
                 </Text>
+                {note(i)}
               </View>
             );
           })}
@@ -117,9 +159,10 @@ export function BookingStageBar({ booking, viewer, chat }: { booking: BookingSum
         {steps.map((label, i) => (
           <View key={label} style={styles.step}>
             <View style={[styles.bar, i < current && styles.barDone, i === current && styles.barNow]} />
-            <Text style={[styles.label, i === current && styles.labelNow]} numberOfLines={1} testID={`stage-step-${i}`}>
-              {label}
+            <Text style={[styles.label, i === current && styles.labelNow]} numberOfLines={1} accessibilityLabel={label} testID={`stage-step-${i}`}>
+              {short(label)}
             </Text>
+            {note(i)}
           </View>
         ))}
       </View>
@@ -143,6 +186,7 @@ const makeStyles = (theme: Theme) =>
     label: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     labelNow: { color: theme.color.primary, fontWeight: theme.fontWeight.bold },
     caption: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    note: { fontSize: 10, color: theme.color.primary, fontWeight: theme.fontWeight.semibold },
     // Numbered dots (skins with color blocks).
     dotStep: { flex: 1, alignItems: "center", gap: 5, paddingTop: 6 },
     link: { position: "absolute", top: 20.5, left: "-50%", right: "50%", height: 3, borderRadius: 2, backgroundColor: theme.color.track },
