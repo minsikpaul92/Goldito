@@ -147,6 +147,7 @@ test.describe("pet room", () => {
     });
     const screen = app(page);
     await screen.getByTestId("home-pager-flip").click();
+    await page.waitForTimeout(600); // the flip changes the box size until it ends
     const small = await box(screen.getByTestId("pet-room-Max-sprite"));
     const roomMax = await box(screen.getByTestId("pet-room-Max"));
     await screen.getByTestId("pet-switch-Rex").click();
