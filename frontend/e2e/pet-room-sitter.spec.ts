@@ -113,8 +113,8 @@ test.describe("sitter pet room", () => {
     await setup(page);
     const screen = app(page);
     // Stop the clock so every tick of the pet is one we run ourselves.
-    // (A new check-in is "just now" for 20 seconds, so stay close to noon.)
-    await page.clock.pauseAt(new Date(NOON_TORONTO.getTime() + 2000));
+    // (A new check-in is "just now" for 20 seconds, so pause only a moment from now.)
+    await page.clock.pauseAt(new Date((await page.evaluate(() => Date.now())) + 1000));
     const sprite = screen.getByTestId("pet-room-Max-sprite");
     const bowl = () => sprite.evaluate((el) => [...el.querySelectorAll("div")].filter((d) => getComputedStyle(d).backgroundColor === "rgb(214, 69, 69)").length);
     expect(await bowl()).toBe(0);
