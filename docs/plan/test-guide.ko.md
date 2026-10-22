@@ -234,7 +234,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | TASK-1 | Demo sitter → Home → **All tasks** | 오늘 시각의 태스크가 시간순, 위에 "N left · M done"과 **Next up**. 일시중지한 태스크는 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-2 | 할 일의 **Done** | **팝업**이 뜸(메모 칸 · 📷 Add photo · Done). 이 시점엔 아무것도 전송되지 않음 | 🤖 `sitter-tasks` | ➖ |
-| TASK-3 | 팝업에서 메모 없이 **Done** | "… done ✅ Robert was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
+| TASK-3 | 팝업에서 메모 없이 **Done** | "… done. Robert was told" 토스트, **할 일이 목록에서 사라짐**, "Done today (N)"에 나타남. 오너 알림 제목은 **한 일**(예: "Max had breakfast on time 🍽️"), Feed 새 글 없음 | 🤖 `sitter-tasks` | ➖ |
 | TASK-4 | 팝업에 **메모를 쓰고 Done** | 오너 알림에 **한 일(제목) + 메모(본문)** 이 같이 감 — 무엇에 대한 메모인지 알 수 있음 | 🤖 `sitter-tasks` · SQL | ➖ |
 | TASK-5 | 팝업 **📷 Add photo** → 찍기/고르기/샘플 → 미리보기 → Use this photo → Done | 업로드 + 완료. 오너 Feed에 사진 글. 알림은 `task_done` 하나 | 🤖 `sitter-tasks` · **실제 업로드 👤** | ➖ |
 | TASK-6 | 미리보기에서 **Retake** | 선택 화면으로 복귀, 아무것도 올라가지 않음 | 🤖 `sitter-tasks` | ➖ |
@@ -269,14 +269,14 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Robert 🐾", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
+| FEED-1 | 시터: Feed 탭 → Max → **+ Photo** → 샘플 | "Shared with Robert", 그리드에 새 사진 | 🤖 `media-picker` | ➖ |
 | FEED-2 | **두 브라우저**: 일반 창 = 오너, 시크릿 창 = 시터. 시터가 올림 | 오너 화면에 **새로고침 없이** 토스트 + 벨 숫자 + Home 카드 + Feed 카드 (≤ 3초) | **👤만** (실시간) | ➖ |
 | FEED-3 | 오너: 사진 탭 | **탭한 그 사진**이 전체화면. ‹ › 버튼, 스와이프, ←/→ 키 이동 | 🤖 `feed` | ➖ |
 | FEED-4 | 영상 샘플 (Fetch play) 재생 | 오너 전체화면에서 재생 | 👤 | ➖ |
 | FEED-5 | 시터가 **자기 사진** 열기 → 🗑️ → 확인 | "Photo deleted", 오너 Feed에서도 사라짐. 오너 화면에는 시터 글의 🗑️ **없음** | 🤖 `feed` · 파일 삭제는 pytest | ➖ |
 | FEED-6 | 사진 업로드가 **실패**하면 | 빨간 팝업이 남고 Try again | 🤖 `media-picker` | ➖ |
-| VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you 🔒", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
-| VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you 🔒". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
+| VIS-1 | 시터: **Share with Robert** 칩 끄기("Only you") → 사진 올리기 | "Saved just for you", 🔒 배지. **오너는 못 봄**, 알림 없음 | 🤖 `media-picker` · SQL | ➖ |
+| VIS-2 | 오너: Feed → **+ Photo** (기본 "Only you") | "Saved just for you". 시터는 못 봄 | 🤖 `media-picker` · SQL | ➖ |
 | VIS-3 | 오너: "Visible to sitter" 켜고 올림 | 당직 시터가 알림 "Robert shared a photo of Max 📸" → 탭 → 시터 Feed → Max, 사진 보임 | 🤖 SQL · e2e (알림 이동) | ➖ |
 
 ### 3.5 알림 (NOTIF)
@@ -290,7 +290,7 @@
 | NOTIF-4 | 알림 한 줄을 **왼쪽으로 60% 넘게 밀기** | 카드와 같은 **둥근 모양의 빨간 Delete**가 드러나고, 놓으면 사라지며 삭제됨(가만히 있을 땐 빨간 부분이 안 보임). 벨 숫자 갱신 | 🤖 `feed` | ➖ |
 | NOTIF-5 | 알림 한 줄을 **덜 밀다 놓기** | 제자리로 돌아오고 유지됨. 탭은 여전히 열림 | 🤖 `feed` | ➖ |
 | NOTIF-6 | **Clear all** → 확인 | 확인 시트("Clear 2 notifications") 후 전부 삭제, "You're all caught up." | 🤖 `feed` | ➖ |
-| NOTIF-7 | 한꺼번에 사진 여러 장 | 토스트는 "3 new photos 📸" 하나로 합쳐짐 | 👤 | ➖ |
+| NOTIF-7 | 한꺼번에 사진 여러 장 | 토스트는 "3 new photos" 하나로 합쳐짐 | 👤 | ➖ |
 
 ### 3.6 오너 Home · History · Diary (LIVE / HIST)
 
@@ -563,7 +563,7 @@
 | TRIP-5 | 인수인계 장소 = 견주 집 / 다른 곳 | 시터가 이동(목적지 = 견주 집 좌표) / 둘 다 이동 가능하지만 목적지 없음 → 지도 · ETA 없음, 거리로 도착 판정 안 함 | SQL `rls_smoke` L | ➖ |
 | TRIP-6 | 시터가 인수인계 사진을 올리고 사진 체크를 요청 (강아지 사진 / 동물 없는 방 / 차 안 크레이트 없음) | 강아지가 보이고 종이 맞으면 `ok`, 동물이 없거나 종이 다르면 `warning`, 차 사진은 크레이트나 안전벨트가 보여야 `ok`(모델이 "안전해 보임"이라고 해도 서버 규칙이 우선). 모델이 실패·20초 초과여도 200 `unchecked`로 저장. 예약의 시터가 아니거나 남의 사진이면 403 | 🤖 pytest `test_ai_handoff_check` · SQL `rls_smoke` L(행 읽기·쓰기 권한) · **차 안 크레이트 감지는 진짜 사진으로 확인 대기 👤** | ➖ |
 | TRIP-7 | Profile → Map pin for trips → **Use my current location** | 버튼을 누르기 전에는 위치를 읽지 않고, **화면에는 "Use my current location" 버튼과 한 줄 안내만 보임(이미 저장된 핀의 상태 · 동네 · 지도 링크 · 용도는 숨김 — 데모 계정의 옛 핀 같은 엉뚱한 장소가 먼저 보이지 않게)**. 한 번 누르면 브라우저 권한 창(이미 허용이면 바로). 읽는 동안 상태 줄이 **"📡 Reading your location…"**, 읽으면 **초록 강조 "✅ Pin set from your location. Tap Save to keep it."** + 토스트 **"Location found 📍 Tap Save to keep it"** + 버튼이 **"Read my location again"**으로 바뀜(같은 화면, 모순되는 두 줄 없음). Save하면 저장. 위치를 읽은 뒤에만 **"📍 Near {동네, 도시} · {우편번호 앞 3자리}"**(예: Trinity Bellwoods, Toronto · M6J — 역지오코딩, 번지수 없음, 우편번호는 뭉갠 좌표라 뒤 3자리는 안 보여 줌), **Open in Google Maps** 링크로 핀 위치를 직접 확인, **"What it's for: …"** 한 줄로 핀의 용도(오너: 트립 지도 · ETA · 내 주변 시터 찾기 / 시터: 오너 집으로 가는 트립 · 오너가 가까운 시터를 찾음, 오너는 반올림한 거리만 보고 핀 · 주소는 안 봄)를 보여 줌. 저장하면 토스트가 **"Pin saved near {동네}"**. 이름을 못 찾으면 "We couldn't name this spot — check it on the map" 브라우저가 거절하면 "Location is off for Goldito…" 안내, 핀은 그대로 위치를 읽으면 **Home address**에도 "거리명, 도시, 우편 앞 3자리"가 자동으로 채워짐(집 번호는 사람이 덧붙임, 예: Dundas St W, Toronto, M6J) | 🤖 `home-location.spec.ts` + pytest `test_geo` (reverse) · 실제 폰 👤 | ➖ |
-| TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved ✅ · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
+| TRIP-8 | 주소를 새로 쓰거나 고치고 Save | 토스트에 한 줄 "Profile saved · Pin placed near {동네, 도시}". 주소를 못 찾거나 조회가 안 되면 "We couldn't place that address on the map — use your current location for the pin"이고 옛 핀은 지워짐. 주소를 안 건드리면 조회하지 않고 핀 유지. 같은 방문에 현재 위치로 찍은 핀은 주소 조회로 덮어쓰지 않음 | 🤖 `home-location.spec.ts` + pytest `test_geo` | ➖ |
 | TRIP-9 | 가상 운전(Simulate the drive)의 경로 | 출발 = 이동하는 쪽 집, 매 단계 목적지에 가까워지고, 마지막 점은 목적지 약 60 m 앞(150 m 도착 규칙 안) | 🤖 `location.spec.ts` | ➖ |
 | TRIP-10 | 견주가 인수인계 2시간 전부터 예약 상세 **Start trip** → 동의 화면 → **Simulate the drive (demo)** | 동의 화면이 먼저 뜨고 그 전에는 trip이 만들어지지 않음. 시작하면 Trip 화면: "Sharing your location with Chloe until you arrive" 배너, "ETA 7:42 AM · 3.2 km", 지도(🚗 · 📍, ± 버튼, © OpenStreetMap contributors). 약 30초 뒤 "You've arrived 🚗", 배너가 사라지고 **Chloe's place**(주소 · Visitor parking · 로비 안내) | 🤖 `transit.spec.ts` | ➖ |
 | TRIP-11 | 동의 화면에서 **Cancel** (또는 Close) | 위치도 trip도 시작되지 않고 예약 상세에 머묾 | 🤖 `transit.spec.ts` | ➖ |
@@ -635,7 +635,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | PHOTO-1 | (DB) 견주가 돌봄 중인 펫에 `request_photo` → 다시 한 번 | 열린 요청 1개(같은 예약 · 펫에 하나만, 두 번째는 같은 요청을 돌려줌), 시터에게 `photo_request` 알림 1개 "{견주} asked for a photo of {펫} 📷". 돌봄 중이 아닌 펫은 `not_in_care`, 남의 펫은 `not_allowed`, 표에 직접 쓰기 · 시터가 손으로 닫기는 막힘 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
 | PHOTO-2 | (DB) 시터가 그 펫의 **나만 보기** 사진 → **공유** 사진 | 나만 보기는 요청을 그대로 둠. 공유 사진이 요청을 `fulfilled`로(`fulfilled_post_id`), 견주에게 "Here's the photo of {펫} you asked for 📷" **하나만**(같은 사진의 `feed_post` 알림은 안 감). 그 뒤 견주는 다시 요청 가능 | SQL `rls_smoke` 014 | 자동 통과 대기(CI) |
-| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo 📷", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
+| PHOTO-3 | 견주 → Feed → 돌봄 중인 펫(Max) → **📷 Request photo** → 새로고침 → 집에 있는 펫(Mochi) | 토스트 "Asked {시터} for a photo", 버튼이 **Requested · waiting for a photo**(비활성)로 바뀌고 새로고침해도 그대로. 집에 있는 펫에는 버튼 없음. 요청이 답을 받으면(`photo_request_fulfilled` 알림) 피드가 새 사진을 다시 불러오고 버튼이 돌아옴 | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 | PHOTO-4 | 시터 → Home (견주가 Max 사진을 요청한 상태) → 배너 **📷 {견주} asked for a photo of Max — tap to share** → Max 피드 → **+ Photo** 로 공유 → Home | 배너 탭(또는 벨의 `photo_request` 알림)이 `/sitter/feed/{펫}`를 연다. 공유 사진이 요청을 끝내고 견주에게는 `photo_request_fulfilled` 알림 하나만, Home에 돌아오면 배너 없음. 새 요청은 Home을 떠나지 않아도 배너로 보인다(알림 수신 때 다시 읽음) | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 | PHOTO-5 | 견주 → Home (요청이 답을 받은 뒤) | `photo_request_fulfilled` 알림이 `feed_post`처럼 Home 라이브 카드(📷)·Diary Live 새로고침·벨 상세(사진이 있으면 **See in Feed**)로 보이고, 누르면 그 펫의 Feed | 🤖 `photo-request.spec.ts` | ✅ 2026-10-15 Minsik (두 브라우저 · 로컬 앱 + 호스팅 DB, 새로고침 없이) |
 

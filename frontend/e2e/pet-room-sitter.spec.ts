@@ -56,7 +56,7 @@ test.describe("sitter pet room", () => {
     const screen = app(page);
 
     await screen.getByTestId(tap(MAX, "feed")).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent. Robert was told");
     await expect(screen.getByTestId("pet-room-Max")).toContainText("🍽️ Fed");
     expect(db.care_checkins).toHaveLength(1);
     expect(db.care_checkins[0]).toMatchObject({ pet_id: MAX.id, kind: "meal", value: "all", note_text: null, media_id: null });
@@ -152,7 +152,7 @@ test.describe("sitter pet room", () => {
     await expect(screen.getByText("Not sent")).toBeVisible();
     expect(db.care_checkins).toHaveLength(0);
     await screen.getByRole("button", { name: "Try again" }).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(db.care_checkins).toHaveLength(1);
   });
 });

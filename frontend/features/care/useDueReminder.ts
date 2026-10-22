@@ -112,7 +112,7 @@ export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => 
     for (const item of dueNow) {
       if (announced.current.has(item.log.id)) continue;
       announced.current.add(item.log.id);
-      toast.show(`⏰ Time for ${item.task.title} · ${item.pet.name}`);
+      toast.show(`Time for ${item.task.title} · ${item.pet.name}`);
     }
     // dueKey changes exactly when the set of due tasks changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,7 +126,7 @@ export function useDueReminder(items: TaskItem[], ready: boolean, reload: () => 
     for (const [id] of expired) {
       delete next[id];
       const item = items.find((i) => i.log.id === id && i.log.status === "pending");
-      if (item && focused.current) toast.show(`⏰ Still waiting: ${item.task.title} · ${item.pet.name}`);
+      if (item && focused.current) toast.show(`Still waiting: ${item.task.title} · ${item.pet.name}`);
     }
     saveSnoozes(next);
     setSnoozes(next);

@@ -154,7 +154,7 @@ export default function SitterSchedule() {
       }
       await saveWeekdayHours(own);
       setRulesOpen(false);
-      toast.show("Rules applied ✅");
+      toast.show("Rules applied");
       await Promise.all([loadRules(), loadDefaults(), load()]);
     } catch (error) {
       setRulesError((error as Error).message);

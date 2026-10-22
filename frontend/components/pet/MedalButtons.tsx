@@ -29,7 +29,7 @@ export function MedalButtons({ bookingId, pets, ownerName }: Props) {
     try {
       await awardPetMedal(bookingId, petId);
       setGiven((prev) => [...prev, petId]);
-      toast.show(`🏅 ${name} got a medal. ${ownerName} can see it`);
+      toast.show(`${name} got a medal. ${ownerName} can see it`);
     } catch (e) {
       errorDialog.show({
         title: "Not given",

@@ -97,7 +97,7 @@ export function OwnerEntrySheet({ visible, pets, initialPetId, onClose, onSaved 
           toast.show("Page saved, but the stickers weren't.");
         }
       }
-      toast.show("Page saved 📔");
+      toast.show("Page saved");
       onSaved(reportId, pet.id);
     } catch (error) {
       errorDialog.show({

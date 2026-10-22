@@ -1,8 +1,10 @@
-import { ReactNode, forwardRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { ReactNode, forwardRef, useCallback, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { useToast } from "../../providers/ToastProvider";
 import { Theme } from "../../theme/themes";
 
 type Props = {
@@ -19,6 +21,16 @@ export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, 
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [footerHeight, setFooterHeight] = useState(0);
+  const { setBottomInset } = useToast();
+  const hasFooter = Boolean(footer);
+  // Toasts rise above the pinned footer while this screen is the one in view.
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFooter) return;
+      setBottomInset(footerHeight);
+      return () => setBottomInset(0);
+    }, [hasFooter, footerHeight, setBottomInset]),
+  );
   // Content fades out behind the floating button instead of ending on a hard box edge.
   const gradient = `linear-gradient(to bottom, transparent, ${theme.color.background} 70%)`;
   const fadeStyle = (Platform.OS === "web" ? { backgroundImage: gradient } : { experimental_backgroundImage: gradient }) as ViewStyle;

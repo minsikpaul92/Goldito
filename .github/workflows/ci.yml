@@ -146,6 +146,8 @@ jobs:
       - name: Playwright (desktop phone frame + mouse)
         if: env.RUN_E2E == 'true'
         env:
+          # Firefox will not start unless HOME is root's own folder (set here, not on the job: the runner's own steps break).
+          HOME: /root
           # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
           PW_FRAME_VIEWPORTS: ${{ github.event_name == 'push' && 'all' || '1366' }}
         run: npx playwright test --shard=${{ matrix.shard }}/2

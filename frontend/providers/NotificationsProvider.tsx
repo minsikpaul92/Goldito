@@ -107,7 +107,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
                   const done = feedBurst.current;
                   feedBurst.current = null;
                   if (!done) return;
-                  toast.show(done.count === 1 ? done.title : `${done.count} new photos 📸`);
+                  toast.show(done.count === 1 ? done.title : `${done.count} new photos`);
                 }, FEED_TOAST_WINDOW_MS),
               };
               feedBurst.current = burst;

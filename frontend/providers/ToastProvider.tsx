@@ -1,21 +1,26 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { useThemedStyles } from "./ThemeProvider";
+import { useTheme, useThemedStyles } from "./ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const TOAST_MS = 3000;
 
 type ToastValue = {
-  /** Short success message (DESIGN.md §7.3). Never the only signal for DANGER. */
-  show: (message: string) => void;
+  /** Short message (DESIGN.md §7.3). Never the only signal for DANGER. */
+  show: (message: string, tone?: "success" | "warning") => void;
+  /** A pinned footer reports its height so the toast sits above it, not on it. Pass 0 to clear. */
+  setBottomInset: (height: number) => void;
 };
 
-const ToastContext = createContext<ToastValue>({ show: () => {} });
+const ToastContext = createContext<ToastValue>({ show: () => {}, setBottomInset: () => {} });
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
-  const [toast, setToast] = useState<{ id: number; message: string } | null>(null);
+  const theme = useTheme();
+  const [bottomInset, setBottomInset] = useState(0);
+  const [toast, setToast] = useState<{ id: number; message: string; tone: "success" | "warning" } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -23,15 +28,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const show = useCallback((message: string) => setToast({ id: Date.now(), message }), []);
-  const value = useMemo(() => ({ show }), [show]);
+  const show = useCallback(
+    (message: string, tone: "success" | "warning" = "success") => setToast({ id: Date.now(), message, tone }),
+    [],
+  );
+  const value = useMemo(() => ({ show, setBottomInset }), [show]);
 
   return (
     <ToastContext.Provider value={value}>
       <View style={styles.root}>
         {children}
         {toast ? (
-          <View accessibilityRole="alert" pointerEvents="none" style={styles.toast} testID="toast">
+          <View
+            accessibilityRole="alert"
+            pointerEvents="none"
+            style={[styles.toast, toast.tone === "warning" && styles.toastWarning, { bottom: theme.layout.tabBarHeight + theme.spacing.md + bottomInset }]}
+            testID="toast"
+          >
+            <Ionicons
+              name={toast.tone === "warning" ? "alert-circle" : "checkmark-circle"}
+              size={theme.icon.sm}
+              color={toast.tone === "warning" ? theme.color.warning : theme.color.success}
+            />
             <Text style={styles.text}>{toast.message}</Text>
           </View>
         ) : null}
@@ -53,15 +71,24 @@ const makeStyles = (theme: Theme) =>
       position: "absolute",
       left: theme.spacing.md,
       right: theme.spacing.md,
-      // Above the bottom tab bar.
-      bottom: theme.layout.tabBarHeight + theme.spacing.md,
+      // Above the tab bar and any pinned footer (bottom is set at render).
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
       padding: theme.spacing.md,
       borderRadius: theme.radius.md,
-      backgroundColor: theme.color.text,
+      borderWidth: 1,
+      borderColor: theme.color.success,
+      // Hex + "D9" = 85% opacity: the page shows through a little.
+      backgroundColor: `${theme.color.successSurface}D9`,
+    },
+    toastWarning: {
+      borderColor: theme.color.warning,
+      backgroundColor: `${theme.color.warningSurface}D9`,
     },
     text: {
+      flex: 1,
       fontSize: theme.fontSize.body,
-      color: theme.color.primaryText,
-      textAlign: "center",
+      color: theme.color.text,
     },
   });

@@ -203,7 +203,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       pending.onChange(draft);
       setEditing(false);
       setSelected(null);
-      toast.show("Stickers added ✨");
+      toast.show("Stickers added");
       return;
     }
     if (!me || !reportId || saving) return;
@@ -213,7 +213,7 @@ export function DecoratedReport({ reportId, petId, petName, day, body, writing, 
       setLayers((now) => [...now.filter((l) => l.userId !== me), { userId: me, items: draft }]);
       setEditing(false);
       setSelected(null);
-      toast.show("Stickers saved ✨");
+      toast.show("Stickers saved");
     } catch (error) {
       errorDialog.show({ title: "Stickers not saved", message: (error as Error).message, onRetry: () => void save() });
     } finally {

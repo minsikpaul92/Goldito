@@ -61,7 +61,7 @@ test.describe("pet medals", () => {
 
     await expect(screen.getByTestId("stay-complete")).toBeVisible();
     await screen.getByTestId(`medal-give-${MAX}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("🏅 Max got a medal. Robert can see it");
+    await expect(screen.getByTestId("toast")).toContainText("Max got a medal. Robert can see it");
     await expect(screen.getByTestId(`medal-given-${MAX}`)).toBeVisible();
     await expect(screen.getByTestId(`medal-give-${MAX}`)).toHaveCount(0);
     // Mochi still waits for hers.
