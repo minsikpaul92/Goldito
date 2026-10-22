@@ -1524,4 +1524,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-449 actions · 448 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+448 actions · 447 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
