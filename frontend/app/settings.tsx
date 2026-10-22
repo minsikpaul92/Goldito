@@ -13,7 +13,7 @@ import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Log out. */
+/** Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Sign out. */
 export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
@@ -55,10 +55,10 @@ export default function SettingsScreen() {
           Goldito {version}
         </Text>
       </Card>
-      <Button label="Log out" variant="secondary" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
-      <Sheet visible={confirmLogOut} title="Log out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
+      <Button label="Sign out" variant="secondary" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
+      <Sheet visible={confirmLogOut} title="Sign out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
         <View style={styles.confirm}>
-          <Button label="Log out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
+          <Button label="Sign out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
           <Button label="Cancel" variant="secondary" onPress={() => setConfirmLogOut(false)} />
         </View>
       </Sheet>

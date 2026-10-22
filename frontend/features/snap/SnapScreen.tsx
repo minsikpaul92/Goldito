@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../../components/ui/Screen";
 import { useThemedStyles } from "../../providers/ThemeProvider";
+import { formatDay, isoToZoned } from "../schedule/dates";
 import { Theme } from "../../theme/themes";
 import { PetOption, Role, SnapPets } from "./SnapPets";
 import { SnapToolCard } from "./SnapToolCard";
@@ -69,7 +70,7 @@ function RecentChecks({ role, pets }: { role: Role; pets: PetOption[] }) {
             {c.product_name || "Treat label"}
             {pets.length > 1 ? ` · ${pets.find((p) => p.id === c.petId)?.name ?? ""}` : ""}
           </Text>
-          <Text style={styles.date}>{new Date(c.createdAt).toLocaleDateString()}</Text>
+          <Text style={styles.date}>{formatDay(isoToZoned(c.createdAt).day)}</Text>
         </Pressable>
       ))}
     </View>
