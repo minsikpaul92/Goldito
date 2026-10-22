@@ -4,7 +4,7 @@ import { findDemoAccount } from "./demo";
 /**
  * Temporary testing reset (backend `POST /api/demo/reset`): puts the caller's own demo account back into
  * a known state. Shown only while `EXPO_PUBLIC_DEMO_TOOLS=1`; remove with the backend route before
- * judging (GitHub issue #306, fixed demo accounts).
+ * judging (fixed demo accounts, see the GitHub issues).
  */
 export type DemoState = "empty" | "pets" | "confirmed" | "ready" | "in_care";
 
