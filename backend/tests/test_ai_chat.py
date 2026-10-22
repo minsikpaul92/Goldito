@@ -515,6 +515,44 @@ def test_the_owner_never_reads_the_sitters_rates_policy_or_availability(client, 
     assert "policy_conflicts" in sitter and "sources" in sitter
 
 
+def test_each_side_knows_who_it_is_and_what_sign_up_told_the_app(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0),
+        message(2, OWNER_ID, "Can you take Max?"),
+        pets=[{
+            "id": PET_ID, "name": "Max", "species": "dog", "breed": "Maltese", "birthdate": "2022-03-01", "weight_kg": 5, "notes": "Pill in a treat",
+            "profile": {"v": 1, "answers": {"d1": 4, "d2": 4}, "safety": {"s1": "never", "s5": "medication"}},
+        }],
+        care_tasks=[{"pet_id": PET_ID, "type": "medication", "title": "Apoquel", "dose": "1 tablet", "scheduled_time": "08:00:00", "active": True}],
+        sitter_profile_answers=[{"sitter_id": SITTER_ID, "question_key": "park_nearby", "choice": "yes", "position": 1}],
+    )
+    ctx = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, {"chips": ["Thanks!", "A question"]}, db=db)
+    chips(client, sitter_token())
+    chips(client, owner_token())
+    sitter, owner = ctx.model.payload(0), ctx.model.payload(1)
+    assert sitter["i_am"].startswith("I am Chloe, a pet sitter") and owner["i_am"].startswith("I am Robert, a pet owner with Max (Maltese)")
+    for who in (sitter, owner):
+        pet = who["facts"]["pets"][0]
+        assert pet["profile"] == {
+            "personality": {"Sociability": "Social"},
+            "safety": ["never bitten or snapped at a person", "daily medication"],
+            "allergies": "allergic to chicken",
+        }
+    assert owner["facts"]["pets"][0]["checklist"][0]["task"] == "Apoquel"  # the owner's own tasks
+    assert "checklist" not in sitter["facts"]["pets"][0]  # the sitter gets them with a booking, not before
+    assert sitter["facts"]["sitter"]["answers"] == ["a park near home: yes"] and owner["facts"]["sitter"]["answers"] == ["a park near home: yes"]
+
+
+def test_a_pet_with_no_sign_up_answers_is_not_answered_never_none(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"),
+        pet_allergies=[],
+    )
+    ctx = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, db=db)
+    chips(client, sitter_token())
+    assert ctx.model.payload()["facts"]["pets"][0]["profile"] == {"allergies": "not answered yet: do not say there are none"}
+
+
 def test_the_owner_reads_the_quote_the_chat_shows_and_only_that(client, setup):
     db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=QUOTE_CARD, n=1), message(3, SITTER_ID, "That is the total."))
     ctx = setup({"chips": ["Looks good", "A question"]}, db=db)

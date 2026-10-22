@@ -34,7 +34,7 @@ class OwnerAgent(ChatAgent):
         card = logic.shown_quote(messages)
         return {
             "owner": raw["owner"],
-            "sitter": {"name": raw["sitter"]["name"]},
+            "sitter": {"name": raw["sitter"]["name"], **({"answers": raw["sitter"]["answers"]} if raw["sitter"].get("answers") else {})},
             **({"inquiry": raw["inquiry"]} if raw.get("inquiry") else {}),
             "availability": {"can_host": True, "unavailable_days": []},
             # What the chat shows: the quote card's own numbers, never a price worked out from the sitter's rates.

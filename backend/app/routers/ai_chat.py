@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ai import chat as logic
+from app.ai import chat_profile
 from app.ai import inquiry as inquiry_logic
 from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
@@ -188,8 +189,34 @@ def _facts(db, user: CurrentUser, ctx: dict, last_them: str, tz: ZoneInfo, today
         }
     rates = _best_effort(lambda: _one(db.table("sitter_rates").select("boarding_nightly, house_sitting_nightly, daycare_daily").eq("sitter_id", thread["sitter_id"]).limit(1).execute())) or {}
     facts["rates"] = {k: float(rates[k]) for k in ("boarding_nightly", "house_sitting_nightly", "daycare_daily") if rates.get(k) is not None}
+    _add_profiles(db, ctx, stay, facts)
     inquiry_logic.assert_no_secrets(facts)
     return facts
+
+
+def _add_profiles(db, ctx: dict, stay: dict | None, facts: dict) -> None:
+    """What sign-up told us (chat_profile): each stay pet's answers and care checklist, the sitter's onboarding answers, and the
+    owner's pets for "who I am". A read that fails leaves its part out; a part that is missing is never claimed."""
+    thread = ctx["thread"]
+    pet_ids = [p["id"] for p in (stay or {}).get("pets", [])]
+    if pet_ids and facts.get("pets"):
+        rows = _best_effort(lambda: db.table("pets").select("id, name, species, profile").in_("id", pet_ids).execute().data) or []
+        tasks = _best_effort(lambda: db.table("care_tasks").select("pet_id, type, title, dose, scheduled_time, notes, active").in_("pet_id", pet_ids).execute().data) or []
+        by_name = {r["name"]: r for r in rows}
+        for pet in facts["pets"]:
+            row = by_name.get(pet.get("name"))
+            if row is None:
+                continue
+            pet["profile"] = chat_profile.pet_profile(row.get("profile"), pet.get("allergies", []))
+            todo = chat_profile.checklist([t for t in tasks if t["pet_id"] == row["id"]])
+            if todo:
+                pet["checklist"] = todo
+    answers = _best_effort(lambda: db.table("sitter_profile_answers").select("question_key, question_text, answer, choice, position").eq("sitter_id", thread["sitter_id"]).execute().data) or []
+    lines = chat_profile.sitter_answers(answers)
+    if lines:
+        facts["sitter"]["answers"] = lines
+    if ctx["role"] == "owner":
+        ctx["owner_pets"] = _best_effort(lambda: db.table("pets").select("name, species, breed").eq("owner_id", thread["owner_id"]).execute().data) or []
 
 
 def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
@@ -274,6 +301,7 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
         "state": state,
         "me": me,
         "them": them,
+        "i_am": chat_profile.i_am(ctx["role"], me, them, pets=ctx.get("owner_pets") or facts.get("pets", []), service_area=(facts.get("sitter") or {}).get("service_area")),
         **({"summary": summary} if summary else {}),
         "recent": logic.transcript(recent, user.id, tz),
         "facts": facts,
