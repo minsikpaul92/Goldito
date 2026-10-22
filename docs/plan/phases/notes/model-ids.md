@@ -176,7 +176,7 @@ Same local simulation, now with a booking that moves along (request at message 6
 | + chips prompt fix (Meet & Greet) | 4, 4 | 19, 19 | 5, 7 | 7, 3 | 5, 3 | 2, 4 | 0, 2 |
 | final (no vet topic) | 4, 4 | 20, 16 | 8, 4 | 8, 7 | 0, 4 | 3, 1 | 1, 0 |
 
-- **Flagged messages went from 44 to 16 to 24** and the one or two word fragments (10) are gone. The score barely moves (3 to 4 of 10): Ultra is strict and the chats still loop a little after the stay.
+- **Flagged messages went from 44 to between 10 and 24** and the one or two word fragments (10) are gone. The score barely moves (3 to 4 of 10): Ultra is strict and the chats still loop a little after the stay.
 - **The profile block removed the fragments, the cards cut repeats** (19 to 4), progress made the booking state consistent, topics cut repeats further but the first version pushed topics after the stay began (18 off-topic) until each topic got a last step.
 - **Not solved: made-up details.** Final runs still get 7 to 8 "invented" flags (a park name, a litter type, a quote amount, times). The vet topic made the model invent clinics, so it was removed (the app knows no vet).
 - **Runs vary a lot** (the same code gave 10 and 19 flagged messages in two rounds). Do not read a one-message difference as an effect. The real check is the app with an owner and a sitter side by side (test-guide CHAT-41 to CHAT-44).
