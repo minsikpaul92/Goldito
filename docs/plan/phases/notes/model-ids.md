@@ -146,7 +146,7 @@ Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a 
 
 ## Booking chat simulation (2026-10-22)
 
-`backend/scripts/simulate_chat.py` - a fake owner (Robert) and sitter (Chloe) chat about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks and one rewrite (past 40 messages the app's rolling summary too); Ultra then rates the whole chat 1 to 10 and tags each bad message. One or two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft`; "fast" is Nano.
+A local simulation (not in the repo, the real check is the app with an owner and a sitter side by side) - a fake owner (Robert) and sitter (Chloe) chat about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks and one rewrite (past 40 messages the app's rolling summary too); Ultra then rates the whole chat 1 to 10 and tags each bad message. One or two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft`; "fast" is Nano.
 
 | Setting | Messages | Score | Draft fallback | Fragments | Repeat tags |
 | :--- | :--- | :--- | :--- | :--- | :--- |
