@@ -12,6 +12,8 @@ export type PlusItem = {
   icon: ComponentProps<typeof Ionicons>["name"];
   /** Off = shown dimmed: it cannot be sent right now. */
   enabled: boolean;
+  /** Why it is off, in a few words ("From 8:00 PM"), shown under a dimmed entry (#250). */
+  hint?: string;
   onPress: () => void;
 };
 
@@ -39,6 +41,11 @@ export function ChatPlusMenu({ visible, items, onClose }: Props) {
           >
             <Ionicons name={item.icon} size={20} color={theme.color.primary} />
             <Text style={styles.label}>{item.label}</Text>
+            {!item.enabled && item.hint ? (
+              <Text style={styles.hint} testID={`chat-plus-${item.id}-hint`}>
+                {item.hint}
+              </Text>
+            ) : null}
           </Pressable>
         ))}
       </View>
@@ -53,4 +60,5 @@ const makeStyles = (theme: Theme) =>
     row: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
     off: { opacity: 0.4 },
     label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted, marginLeft: "auto" },
   });
