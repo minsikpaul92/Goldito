@@ -11,6 +11,8 @@ import { SwipeToDelete } from "./ui/SwipeToDelete";
 type Props = {
   items: ChatListItem[];
   onLeave: (threadId: string) => void;
+  /** The chat to point at (the newest one with something new for me, #228): an accent bar and a tinted row. */
+  highlightId?: string | null;
 };
 
 /** "Oct 20" or the time of day: a short stamp for the list. */
@@ -19,7 +21,7 @@ function shortStamp(iso: string): string {
 }
 
 /** The chats, WhatsApp style: initial, name, last message, day and unread count. Swipe a row to leave the chat. */
-export function ChatList({ items, onLeave }: Props) {
+export function ChatList({ items, onLeave, highlightId }: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.list} testID="chat-list">
@@ -29,9 +31,10 @@ export function ChatList({ items, onLeave }: Props) {
             accessibilityRole="button"
             accessibilityLabel={`${chat.otherName}${chat.unread > 0 ? `, ${chat.unread} unread` : ""}`}
             onPress={() => router.push(`/chat/${chat.threadId}`)}
-            style={styles.row}
+            style={[styles.row, chat.threadId === highlightId && styles.highlight]}
             testID={`chat-row-${chat.otherName}`}
           >
+            {chat.threadId === highlightId ? <View style={styles.bar} testID={`chat-row-${chat.otherName}-new`} /> : null}
             <Avatar kind="initial" name={chat.otherName} size={48} />
             <View style={styles.body}>
               <Text style={[styles.name, chat.unread > 0 && styles.bold]} numberOfLines={1}>
@@ -66,6 +69,8 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: theme.spacing.sm,
       backgroundColor: theme.color.background,
     },
+    highlight: { backgroundColor: theme.color.accent, borderRadius: theme.radius.md, paddingRight: theme.spacing.sm },
+    bar: { width: 4, alignSelf: "stretch", borderRadius: 2, backgroundColor: theme.color.primary },
     body: { flex: 1, gap: 2 },
     name: { fontSize: theme.fontSize.body, color: theme.color.text },
     preview: { fontSize: theme.fontSize.small, color: theme.color.textMuted },

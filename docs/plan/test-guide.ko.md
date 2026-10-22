@@ -464,7 +464,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | UX-1 | 오너 → 예약 새로 만들기 → Drop-off / Pick-up **날짜를 탭** | **달력 시트**가 뜸. 오늘 이전 날은 비활성(Pick-up은 Drop-off 이전), 월 이동 가능, 날짜를 누르면 그 날로 선택. −/+ 는 여전히 하루씩 | 🤖 `booking` | ➖ |
 | UX-2 | 시터 Home (돌보는 중) | **All tasks / My history**가 숫자 타일과 **달라 보임** (색 테두리 · 연한 배경 · `›`), 누르면 이동 | **👤** (모양) | ➖ |
-| UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
+| UX-3 | 시터 → Bookings 탭 | **안 읽은 채팅이 있으면 Chats가 먼저(#228, CHATNEW-1)**. 그다음 **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 | UX-5 | 시터 Bookings에 대기 요청 · 답할 문의가 있을 때 (폰 너비 402) | Requests · Questions · Upcoming · Past가 **한 줄**, 숫자는 칸 오른쪽 위 **작은 배지**(괄호 "(1)" 없음) (FB-30) | 🤖 `sitter-bookings` · `inquiry` | ➖ |
 | UX-6 | `pets`로 리셋한 오너(예약 · 문의 · 시터 이력 없음) → Bookings 탭 | 빈 화면 대신 **Sitters on Goldito** — 시터 카드(→ 프로필), 아래 Book care. Book care의 시터 목록에도 각 시터 옆 **Profile** (FB-32) | 🤖 `sitters` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
@@ -990,6 +990,16 @@
 | NOFEE-2 | 보낸 견적 카드 (시터 · 오너) | **Add a fee** 없음, 수수료마다 Accept / Decline 없음, 줄 그어진 Declined 줄 없음. 오너가 보는 Total = 시터가 보낸 금액 | 🤖 `chat` | ➖ |
 | NOFEE-3 | 최종 견적 → 오너 Confirm → Pay → Checkout | 결제 금액 = 견적 Total(예: $268.13), Checkout에 수수료 줄 없음 | 🤖 `chat` · `checkout` | ➖ |
 | NOFEE-4 | #265 전에 보낸 견적(DB에 수수료 줄이 남은 것) | 수락된 수수료는 일반 줄로 보이고 Total에 포함, 아직 답 안 한 수수료는 버튼 없이 "This older quote has a fee no one can answer now. A new quote replaces it."와 Confirm 비활성(시터가 + 메뉴로 새 견적을 보내면 됨). 거절된 수수료는 안 보임 | 🤖 `chat` | ➖ |
+
+### 3.46 시터 Bookings가 새 채팅을 먼저 보여 줌 (CHATNEW) · #228
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| CHATNEW-1 | 오너가 채팅을 보냄 → 시터가 Home에서 **Bookings** 탭 | 새로고침 없이 **Chats** 탭으로 열리고, 그 채팅 줄 왼쪽에 색 막대 · 옅은 배경(가장 최근의 새 채팅 하나만). 채팅방으로 바로 들어가지는 않음 | 🤖 `chat` | ➖ |
+| CHATNEW-2 | 두 오너가 각각 씀 | 더 최근에 쓴 오너의 채팅이 강조됨 | 🤖 `chat` | ➖ |
+| CHATNEW-3 | 시터가 Bookings(Requests)를 보고 있는데 새 채팅이 옴 | 몇 초 안에 Chats로 바뀌고 그 채팅이 강조됨. 단, 이번 방문에서 시터가 탭을 직접 골랐으면 그대로 둠 | 🤖 `chat` | ➖ |
+| CHATNEW-4 | 새 채팅이 없을 때 Bookings | 예전처럼 진행 중 · 곧 시작하는 예약이면 Upcoming, 아니면 Requests | 🤖 `chat` · `sitter-bookings` | ➖ |
+| CHATNEW-5 | 채팅방 안에서 글을 쓰는 중에 다른 오너가 씀 | 채팅방은 그대로(목록 화면에서만 탭이 바뀜), 입력이 끊기지 않음 | **👤** | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
