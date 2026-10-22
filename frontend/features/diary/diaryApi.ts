@@ -84,6 +84,8 @@ export function checkinLabel(kind: CareCheckinKind, value: string | null): { emo
     }
     case "nap":
       return { emoji: "💤", label: "Nap" };
+    case "wake":
+      return { emoji: "☀️", label: "Awake" };
     default:
       return { emoji: "📝", label: "Note" };
   }

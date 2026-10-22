@@ -60,6 +60,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `014z_demo_account_lock.sql` | Audit 2026-10-21 | Trigger `guard_demo_account` on `auth.users`: a `@goldito.test` account's password and email cannot change (the Try demo password is in the web bundle, so a visitor could lock the judges out). `set_demo_accounts_unlocked(bool)` (service role only) opens a 5-minute window; `scripts.seed_demo` opens it, refreshes the accounts and closes it. In the SQL Editor: `select set_demo_accounts_unlocked(true);` first |
 | `015_nap_checkin.sql` | 11.12 (#184) | `care_checkins.kind` gains `nap` (no value); `log_care_checkin` tells the owner "Max is taking a nap 💤" |
 | `015b_pet_medals.sql` | 11.12 (#184) | `pet_medals` (pet, booking, sitter, stay dates; one per pet and stay), read by the pet's owner and the sitter who gave it; written only by `award_pet_medal` (the booking's sitter, after the pick-up is done) |
+| `015d_wake_checkin.sql` | 11.12b (#184) | `care_checkins.kind` gains `wake` (no value): the sitter taps Awake when a napping pet wakes; `log_care_checkin` tells the owner "Max woke up ☀️" |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

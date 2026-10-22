@@ -3,6 +3,8 @@ import { randomUUID } from "expo-crypto";
 import { getSupabase } from "../../lib/supabase";
 import { Pet, Species } from "../../types/db";
 import { Coat, isCoat } from "../ownerOnboarding/questions";
+import { asHat } from "./items";
+import type { HatId } from "./sprites/hats";
 import { asPixelColors, type PixelColors } from "./sprites/photoColors";
 
 const PET_COLUMNS =
@@ -33,15 +35,15 @@ export async function listMyPets(ownerId: string): Promise<Pet[]> {
   return (data ?? []) as Pet[];
 }
 
-export type PetLook = { coat: Coat | null; breed: string | null; weightKg: number | null; colors: PixelColors | null };
+export type PetLook = { coat: Coat | null; breed: string | null; weightKg: number | null; colors: PixelColors | null; hat: HatId | null };
 
-/** How the pet room draws the pet: the breed (head shape), the weight (size), the coat color and the colors picked from a photo. */
+/** How the pet room draws the pet: the breed (head shape), the weight (size), the coat color, the colors picked from a photo and the hat it wears. */
 export async function getPetLook(petId: string): Promise<PetLook> {
   const { data, error } = await getSupabase().from("pets").select("breed, weight_kg, profile").eq("id", petId).maybeSingle();
-  if (error || !data) return { coat: null, breed: null, weightKg: null, colors: null };
-  const row = data as { breed?: string | null; weight_kg?: number | string | null; profile?: { coat?: unknown; pixel_colors?: unknown } | null };
+  if (error || !data) return { coat: null, breed: null, weightKg: null, colors: null, hat: null };
+  const row = data as { breed?: string | null; weight_kg?: number | string | null; profile?: { coat?: unknown; pixel_colors?: unknown; hat?: unknown } | null };
   const profile = row.profile;
-  return { coat: isCoat(profile?.coat) ? profile.coat : null, breed: row.breed ?? null, weightKg: row.weight_kg == null ? null : Number(row.weight_kg), colors: asPixelColors(profile?.pixel_colors) };
+  return { coat: isCoat(profile?.coat) ? profile.coat : null, breed: row.breed ?? null, weightKg: row.weight_kg == null ? null : Number(row.weight_kg), colors: asPixelColors(profile?.pixel_colors), hat: asHat(profile?.hat) };
 }
 
 /**
@@ -57,6 +59,16 @@ export async function savePixelColors(petId: string, colors: PixelColors | null)
   const profile = colors ? { ...rest, pixel_colors: colors } : rest;
   const { error: saveError } = await supabase.from("pets").update({ profile }).eq("id", petId);
   if (saveError) fail("save the colors");
+}
+
+/** Put a hat on the pet (`pets.profile.hat`) or take it off (`null`); the rest of the profile is kept. */
+export async function savePetHat(petId: string, hat: HatId | null): Promise<void> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("pets").select("profile").eq("id", petId).maybeSingle();
+  if (error || !data) fail("change the hat");
+  const { hat: _old, ...rest } = ((data as { profile?: Record<string, unknown> | null }).profile ?? {}) as Record<string, unknown>;
+  const { error: saveError } = await supabase.from("pets").update({ profile: hat ? { ...rest, hat } : rest }).eq("id", petId);
+  if (saveError) fail("change the hat");
 }
 
 export async function getPet(petId: string): Promise<Pet | null> {

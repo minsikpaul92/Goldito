@@ -4,11 +4,14 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 import { PetStatus } from "../../lib/petStatus";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
-import { SIZE_SCALE, SPRITE_SIZE, petSize } from "../../features/pets/sprites/sprites";
+import { SCENE_SIZE } from "../../features/pets/sprites/scene";
+import { SIZE_SCALE, petSize } from "../../features/pets/sprites/sprites";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Species } from "../../types/db";
-import { PetSprite } from "./PetSprite";
+import type { HatId } from "../../features/pets/sprites/hats";
+import type { PetEvent } from "../../features/pets/usePetBehavior";
+import { RoamingPet } from "./RoamingPet";
 
 type Props = {
   name: string;
@@ -20,8 +23,12 @@ type Props = {
   weightKg?: number | null;
   /** Colors picked from a photo (`pets.profile.pixel_colors`), instead of the coat. */
   colors?: PixelColors | null;
+  /** A hat on its head (the pumpkin hat during the Halloween event). */
+  hat?: HatId | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */
   status: PetStatus | null;
+  /** What the pet just did (ate, went potty): the room shows it once. */
+  event?: PetEvent | null;
   /** Tapping the pet. */
   onPress?: () => void;
   /** Under the HUD, e.g. the sitter's feed / walk / potty / nap buttons. */
@@ -36,13 +43,17 @@ const MOOD_LABEL = { excited: "Happy", calm: "Calm", tired: "Tired", hungry: "Hu
  * worked out from today's check-ins. Pure display: `PetRoom` loads the data. The room fills the space its parent gives
  * it (the owner's Pet page, the top of the sitter's Home) and the pet grows to fit, so it is the biggest thing on Home.
  */
-export function PetRoomCard({ name, species, coat, breed, weightKg, colors, status, onPress, children, testID }: Props) {
+export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat, status, event, onPress, children, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const mood = status?.mood ?? "calm";
   const hud = status ? hudItems(status, species) : [];
   const scale = SIZE_SCALE[petSize(species, weightKg)];
   const [pixel, setPixel] = useState(PIXEL_MIN);
-  const fit = (e: LayoutChangeEvent) => setPixel(stagePixel(e.nativeEvent.layout.width, e.nativeEvent.layout.height));
+  const [roomWidth, setRoomWidth] = useState(0);
+  const fit = (e: LayoutChangeEvent) => {
+    setPixel(stagePixel(e.nativeEvent.layout.width, e.nativeEvent.layout.height));
+    setRoomWidth(e.nativeEvent.layout.width);
+  };
 
   return (
     <View style={styles.device} testID={testID}>
@@ -62,13 +73,16 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, stat
         </View>
         {/* The stage takes the room that is left and is sized for the biggest dog, so switching pets never moves the page. */}
         <View style={styles.stage} onLayout={fit}>
-          <PetSprite
+          <RoamingPet
             species={species}
             coat={coat}
             breed={breed}
             colors={colors}
+            hat={hat}
             mood={mood}
-            pixel={Math.max(3, Math.floor(pixel * scale))}
+            pixel={Math.max(2, Math.floor(pixel * scale))}
+            roomWidth={roomWidth}
+            event={event}
             testID={testID ? `${testID}-sprite` : undefined}
           />
         </View>
@@ -92,11 +106,11 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, stat
   );
 }
 
-/** Whole sprite pixels: a big dog takes up to 80% of the stage's width and all of its height. */
-const PIXEL_MIN = 4;
-const PIXEL_MAX = 24;
+/** Whole sprite pixels: a big dog takes up to 62% of the stage's width and all of its height. */
+const PIXEL_MIN = 2;
+const PIXEL_MAX = 12;
 function stagePixel(width: number, height: number): number {
-  return Math.max(PIXEL_MIN, Math.min(PIXEL_MAX, Math.floor(Math.min(width * 0.8, height) / SPRITE_SIZE)));
+  return Math.max(PIXEL_MIN, Math.min(PIXEL_MAX, Math.floor(Math.min(width * 0.62, height) / SCENE_SIZE)));
 }
 
 function hudItems(status: PetStatus, species: Species) {
@@ -115,7 +129,8 @@ const makeStyles = (theme: Theme) =>
     device: { flex: 1, alignSelf: "stretch", gap: theme.spacing.sm, padding: theme.spacing.sm, borderRadius: theme.radius.xl, backgroundColor: theme.color.text },
     lcd: { flex: 1, alignItems: "center", gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radius.lg, backgroundColor: theme.color.blockButter },
     lcdTop: { alignSelf: "stretch", flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-    stage: { flex: 1, alignSelf: "stretch", minHeight: SPRITE_SIZE * PIXEL_MIN, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    // The pet walks on the floor: a strip along the bottom of the stage.
+    stage: { flex: 1, alignSelf: "stretch", minHeight: SCENE_SIZE * PIXEL_MIN, overflow: "hidden", borderBottomWidth: 6, borderBottomColor: theme.color.blockPeach },
     name: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     mood: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     hud: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
