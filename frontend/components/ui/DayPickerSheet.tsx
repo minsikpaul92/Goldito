@@ -21,6 +21,8 @@ type Props = {
   value: string;
   /** Earlier days are disabled. */
   minDay: string;
+  /** Later days are disabled too, when given. */
+  maxDay?: string;
   onPick: (day: string) => void;
   onClose: () => void;
   /** The sitter's days, when known: a dot under each day and a legend. Any day can still be picked. */
@@ -29,7 +31,7 @@ type Props = {
 };
 
 /** A month grid in a sheet: tap a day to pick it. The − / + buttons stay for one-day nudges. */
-export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose, marks, testID }: Props) {
+export function DayPickerSheet({ visible, title, value, minDay, maxDay, onPick, onClose, marks, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [month, setMonth] = useState(monthStart(value));
@@ -76,7 +78,7 @@ export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose,
         <View key={wi} style={styles.week}>
           {week.map((day, di) => {
             if (!day) return <View key={di} style={styles.cell} />;
-            const disabled = day < minDay;
+            const disabled = day < minDay || (!!maxDay && day > maxDay);
             const selected = day === value;
             const mark = disabled ? undefined : marks?.get(day);
             return (
