@@ -54,10 +54,13 @@ export default function OwnerBookings() {
 
   useOnBookingChange(() => void load());
 
+  const { refreshFavorites } = search;
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load]),
+      // A heart toggled on a sitter's page shows here at once (#267).
+      refreshFavorites();
+    }, [load, refreshFavorites]),
   );
 
   const found: NearbySitter[] = search.results.status === "ready" ? search.results.sitters : [];

@@ -46,6 +46,48 @@ function seed(db: MockDb, booking: Record<string, unknown>, received = false) {
 }
 
 test.describe("cancel and rebook", () => {
+  const PAID = { paid_at: "2026-10-03T12:00:00Z", price_snapshot: { total: 268.13, currency: "CAD" } };
+
+  test("the owner cancels a paid booking: Refunded instead of Paid, and a refund notice (#266)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, PAID);
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const owner = app(page);
+    await expect(owner.getByTestId("paid-chip")).toBeVisible();
+
+    await owner.getByTestId("cancel-booking").click();
+    await owner.getByTestId("cancel-confirm").click();
+    await expect(owner.getByTestId("toast")).toContainText("Cancelled. Refunded in full");
+    expect(db.bookings[0]).toMatchObject({ status: "cancelled", paid_at: PAID.paid_at });
+    expect(db.bookings[0].refunded_at).toBeTruthy();
+    await expect(owner.getByTestId("refunded-chip")).toHaveText("Refunded");
+    await expect(owner.getByTestId("paid-chip")).toHaveCount(0);
+    expect(db.notifications.find((n) => n.type === "booking_refunded")).toMatchObject({ user_id: OWNER.id, title: "Refunded in full" });
+  });
+
+  test("the sitter cancels a paid booking: the owner sees Refunded too (#266)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db, PAID);
+    await signIn(page, SITTER);
+    await expect(page).toHaveURL(/\/sitter$/);
+    await page.goto(`/sitter/bookings/${BOOKING}`);
+    const sitter = app(page);
+    await sitter.getByTestId("cancel-booking").click();
+    await sitter.getByTestId("cancel-confirm").click();
+    await expect(sitter.getByTestId("toast")).toContainText("Booking cancelled");
+    expect(db.bookings[0].refunded_at).toBeTruthy();
+
+    await page.evaluate(() => localStorage.clear());
+    await signIn(page, OWNER);
+    await expect(page).toHaveURL(/\/owner$/);
+    await page.goto(`/owner/bookings/${BOOKING}`);
+    const owner = app(page);
+    await expect(owner.getByTestId("refunded-chip")).toHaveText("Refunded");
+    await expect(owner.getByTestId("paid-chip")).toHaveCount(0);
+  });
+
   test("the sitter cancels; the owner finds a new sitter with the same pets, times and places", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db, {});

@@ -4,7 +4,6 @@ import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AgreeSheet } from "../../components/AgreeSheet";
-import { ChatCounterSheet } from "../../components/ChatCounterSheet";
 import { ChatDeclineSheet } from "../../components/ChatDeclineSheet";
 import { BookingStageBar, hasStageBar, stageCaption } from "../../components/BookingStageBar";
 import { ChatAgreementCard, ChatPaymentCard } from "../../components/ChatBookingCards";
@@ -14,7 +13,7 @@ import { ChatPlusMenu, PlusItem } from "../../components/ChatPlusMenu";
 import { ChatQuoteCard } from "../../components/ChatQuoteCard";
 import { ChatStayCard } from "../../components/ChatStayCard";
 import { ChatTripCard } from "../../components/ChatTripCard";
-import { AddFeeSheet, SendQuoteSheet } from "../../components/ChatQuoteSheets";
+import { SendQuoteSheet } from "../../components/ChatQuoteSheets";
 import { ChatHeaderTitle, HeaderStay } from "../../components/ChatHeaderTitle";
 import { MeetGreetCard, MeetGreetHandle } from "../../components/MeetGreetCard";
 import { MessageBubble } from "../../components/MessageBubble";
@@ -30,7 +29,6 @@ import {
   ChatCard,
   ChatHeader,
   ChatMessage,
-  answerQuoteExtra,
   confirmQuote,
   getChatHeader,
   loadChatMessages,
@@ -43,6 +41,8 @@ import { inCare } from "../../features/chat/careCards";
 import { canStartTripNow } from "../../features/transit/tripLogic";
 import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
+import { SPECIES_EMOJI } from "../../features/pets/petFormat";
+import type { Species } from "../../types/db";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
 import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
@@ -101,13 +101,10 @@ export default function Chat() {
   const [agreeing, setAgreeing] = useState(false);
   /** Decline at the agreement step or on the final quote (#230); `quote` when it is the final quote. */
   const [declining, setDeclining] = useState<{ quote: boolean } | null>(null);
-  /** The final quote's total the owner counters (#230 part 3). */
-  const [countering, setCountering] = useState<number | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
   const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
-  const [feeFor, setFeeFor] = useState<string | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [chips, setChips] = useState<ChatChip[]>([]);
   const [action, setAction] = useState<ChatAction | null>(null);
@@ -265,6 +262,22 @@ export default function Chat() {
   );
   // A stay that is over has nothing left to press (no Send quote, no Request booking), unless a newer stay card was started.
   const returnedStay = pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt && !!b.pickUp?.completedAt);
+
+  // The stay card in one line (#227): "Oct 21 9:00 AM to Oct 24 5:00 PM · 2 pets: 🐶 Max, 🐱 Mochi". The card holds
+  // names only, so the species comes from what this screen already has: the owner's own pets and the pets on this
+  // pair's bookings (both sides). A pet with no known species shows its name alone, never a guessed emoji.
+  const speciesById = new Map<string, Species>();
+  for (const p of pets) speciesById.set(p.id, p.species);
+  for (const b of pairBookings) for (const p of b.pets) if (p.id) speciesById.set(p.id, p.species);
+  const stayLine = (c: StayCard) => {
+    const names = c.pets
+      .map((p) => {
+        const species = speciesById.get(p.id);
+        return species ? `${SPECIES_EMOJI[species]} ${p.name}` : p.name;
+      })
+      .join(", ");
+    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)} · ${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
+  };
   const newerBooking = !!booking && booking.id !== returnedStay?.id;
   const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;
   const finished = !!returnedStay && !newerBooking && (!latestCardAt || Date.parse(latestCardAt) < Date.parse(returnedStay.pickUp?.completedAt ?? ""));
@@ -292,14 +305,6 @@ export default function Chat() {
   // A quote sent after a booking's payment card is that booking's final quote.
   const payAt = messages.findIndex((m) => m.card?.type === "payment");
   const isFinal = (id: string) => payAt >= 0 && messages.findIndex((m) => m.id === id) > payAt;
-  // What a quote asks for: the server's price plus every fee the owner has not declined (a fee still waiting counts,
-  // because that is when the owner wants to answer it). A final quote is compared with the quote before the payment
-  // card (the one before the Meet & Greet and the agreement). No such quote (a booking made outside the chat) means
-  // nothing to compare, so no counter.
-  const asked = (c: QuoteCard) =>
-    Math.round((c.quote.total + c.extras.filter((e) => e.status !== "declined").reduce((sum, e) => sum + e.amount, 0)) * 100) / 100;
-  const firstQuote = payAt >= 0 ? (messages.slice(0, payAt).filter((m) => m.card?.type === "quote").at(-1)?.card as QuoteCard | undefined) : undefined;
-  const totalChanged = (c: QuoteCard) => firstQuote != null && Math.abs(asked(c) - asked(firstQuote)) >= 0.005;
 
   /** One owner action on a quote card; the cards come back from the server. */
   const quoteAction = async (run: () => Promise<void>) => {
@@ -497,10 +502,9 @@ export default function Chat() {
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <Card style={styles.stay} testID="chat-stay-card">
-                <Text style={styles.requestTitle}>Stay</Text>
-                <Text style={styles.requestLine}>{`Drop-off ${short(m.card.dropOffAt)}`}</Text>
-                <Text style={styles.requestLine}>{`Pick-up ${short(m.card.pickUpAt)}`}</Text>
-                <Text style={styles.requestLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
+                <Text style={styles.requestLine} testID="chat-stay-line">
+                  {stayLine(m.card)}
+                </Text>
               </Card>
             </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
@@ -514,11 +518,8 @@ export default function Chat() {
                 role={header.myRole}
                 final={isFinal(m.id)}
                 busy={quoteBusy}
-                onAddFee={() => setFeeFor(m.id)}
-                onAnswer={(extraId, accept) => void quoteAction(() => answerQuoteExtra(m.id, extraId, accept))}
                 onConfirm={() => void quoteAction(() => confirmQuote(m.id))}
                 onDecline={isFinal(m.id) && booking ? () => setDeclining({ quote: true }) : undefined}
-                onCounter={isFinal(m.id) && totalChanged(m.card as QuoteCard) ? () => setCountering(asked(m.card as QuoteCard)) : undefined}
               />
             </View>
           ) : m.kind === "text" ? (
@@ -564,9 +565,6 @@ export default function Chat() {
             <Text style={styles.waiting} testID="chat-waiting">
               {step.wait}
             </Text>
-          ) : null}
-          {!owner && booking && finalQuote(messages, booking.id)?.card.status === "sent" ? (
-            <TextButton label="Send a new final quote" onPress={() => setQuoting("final")} testID="chat-requote" />
           ) : null}
         </View>
       ) : null}
@@ -677,19 +675,6 @@ export default function Chat() {
       {owner && booking ? (
         <AgreeSheet visible={agreeing} booking={booking} onClose={() => setAgreeing(false)} onAgreed={() => void load()} />
       ) : null}
-      {owner && countering != null ? (
-        <ChatCounterSheet
-          visible
-          threadId={threadId}
-          sitterName={header.otherName}
-          total={countering}
-          onClose={() => setCountering(null)}
-          onSent={() => {
-            setCountering(null);
-            void load();
-          }}
-        />
-      ) : null}
       {booking && declining ? (
         <ChatDeclineSheet
           visible
@@ -726,7 +711,6 @@ export default function Chat() {
             final={quoting === "final"}
             onSent={() => void load()}
           />
-          <AddFeeSheet visible={feeFor !== null} onClose={() => setFeeFor(null)} messageId={feeFor} onAdded={() => void load()} />
         </>
       ) : null}
       <ChatPlusMenu visible={plusOpen} items={plusItems} onClose={() => setPlusOpen(false)} />

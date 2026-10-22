@@ -113,8 +113,8 @@
 | **채팅 안의 케어 카드 (3D.8, #145 2단계)** — 사진 요청(Ask for a photo)과 사진 답장 + 한 줄 캡션, 저녁 알림장 카드가 Diary로 연결. 마이그레이션 없음 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
 | **채팅 안의 인계 (3D.8, #145 3단계 · #169)** — 기본 방식(오너 마지막 요청 · 시터 온보딩 답), 드롭오프 + 픽업을 한 쌍으로 제안 · 한 번에 수락, 5분 전 트립 알림(`014r` 호스팅 적용 2026-10-20), 펫 Received · Returned를 채팅 카드로 | `014r` (호스팅 적용) | 🤖 `chat-handoff` · `chat-trip` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **채팅 안의 종료 · 리뷰 (3D.9, #146)** — Home safe 아래 오너의 리뷰 폼 · 하트, 시터가 읽는 오너 리뷰 + 비공개 노트, 끝난 스테이의 푸터 정리. 리뷰 폼은 예약 화면과 공유 | 없음 | 🤖 `chat-trip` e2e | 사람 확인 대기 |
-| **채팅 컨트롤 (#235)** — 견적 초안 검토(수수료 줄), Final quote 이름, 한 줄 칩, + 메뉴(카드 직접 보내기), 오너 동의가 시터 채팅에 바로 표시, 입력에 맞는 칩(1.5초 멈춤) | 없음 | 🤖 `chat` · `chat-trip` e2e · pytest | 사람 확인 대기 |
-| **채팅 안 견적 (3D.6, #143)** — 시터가 한 번 눌러 견적 카드(서버 계산), 추가 수수료 줄(시터 추가 → 오너 Accept/Decline), 오너 Confirm, 새 견적은 이전 것을 Replaced로. 합계는 DB 함수가 계산하고 모델은 가격을 쓰지 않음. 예약 · 결제 연결은 #144 | `014n` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
+| **채팅 컨트롤 (#235)** — 견적 초안 검토(수수료 줄), Final quote 이름, 한 줄 칩, + 메뉴(카드 직접 보내기), 오너 동의가 시터 채팅에 바로 표시, 입력에 맞는 칩(1.5초 멈춤) · **수수료는 #265로 제거** | 없음 | 🤖 `chat` · `chat-trip` e2e · pytest | 사람 확인 대기 |
+| **채팅 안 견적 (3D.6, #143)** — 시터가 한 번 눌러 견적 카드(서버 계산), 추가 수수료 줄(시터 추가 → 오너 Accept/Decline), 오너 Confirm, 새 견적은 이전 것을 Replaced로. 합계는 DB 함수가 계산하고 모델은 가격을 쓰지 않음. 예약 · 결제 연결은 #144 · **수수료는 #265로 제거** | `014n` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
 | **오너 가입 상세 (11.15 S1, #185)**: 한 화면 한 질문, 펫 사진 여러 장, 5축 "at a glance" 카드 | 🟡 DB(`014v`) 🤖 SQL smoke ✅ · 펫 사진 백엔드 라우트 🤖 pytest ✅ · 질문 화면(종 · 이름 · 사진 · 품종 · 나이 · 몸무게 · 소개 · 성격 · 안전 · 음식 · 요약 · 저장) 오너 소개 · 위치 · 음성 입력(녹음 → 글 → 제안, 가짜 마이크) · 사진 추측(품종 칩 · 털색 단계) 🤖 e2e ✅ · at a glance 카드(시터 예약 상세 · 오너 펫 상세 · 가입 요약, 품종 Needs 줄) 🤖 e2e ✅ · 시터 요청 카드(문의 스레드)와 Life Record 위는 아직 · 사람 확인 대기 | 11 / #185 |
 | **다마고치 (11.12, #184)**: Home의 8-bit 펫, 오늘 체크인에서 계산한 기분 · HUD, 시터 탭 액션 | 🟡 파생 상태 `lib/petStatus.ts` 🤖 e2e ✅ · 임시 스프라이트(코드로 그린 픽셀 헤드, 종 2 × 털색 8 × 기분 5) 🤖 e2e ✅ · 오너 Home 페이저와 펫 방(스프라이트 · 기분 · HUD) 🤖 e2e ✅ · 시터 Home의 펫 방과 탭 액션(밥 · 산책 · 응가 · 낮잠, `015`) 🤖 e2e ✅ · SQL smoke ✅ · 아카이브 메달(`015b`, 시터가 Returned 뒤에 펫마다 한 번 수여, 오너 Pet 페이지 아래에 표시) 🤖 e2e ✅ · SQL smoke ✅ · 사람 확인 대기 · 견종별 머리 모양(개 4 · 고양이 2) · 몸무게별 크기 · 사진은 색만(Match colors from photo, `pixel_colors`) 🤖 e2e ✅ · 시터 배지(Profile: First stay · First 5-star review, 그림자 4칸) 🤖 e2e ✅ | 11 / #184 |
@@ -465,7 +465,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | UX-1 | 오너 → 예약 새로 만들기 → Drop-off / Pick-up **날짜를 탭** | **달력 시트**가 뜸. 오늘 이전 날은 비활성(Pick-up은 Drop-off 이전), 월 이동 가능, 날짜를 누르면 그 날로 선택. −/+ 는 여전히 하루씩 | 🤖 `booking` | ➖ |
 | UX-2 | 시터 Home (돌보는 중) | **All tasks / My history**가 숫자 타일과 **달라 보임** (색 테두리 · 연한 배경 · `›`), 누르면 이동 | **👤** (모양) | ➖ |
-| UX-3 | 시터 → Bookings 탭 | **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
+| UX-3 | 시터 → Bookings 탭 | **안 읽은 채팅이 있으면 Chats가 먼저(#228, CHATNEW-1)**. 그다음 **진행 중이거나 48시간 안에 시작하는 확정 예약**이 있으면 **Upcoming**으로 열림, 그게 없고 요청이 있으면 **Requests**, 둘 다 없으면 Requests. Requests 개수는 탭에 계속 표시. 직접 고른 탭은 안 덮어씀 | 🤖 `sitter-bookings` | ➖ |
 | UX-4 | 오너 → Bookings → **Your questions** | 내 문의가 최신순으로, "Waiting for …" / "💬 Reply ready" / "Booking requested" (= INQ-19) | 🤖 `inquiry` | ➖ |
 | UX-5 | 시터 Bookings에 대기 요청 · 답할 문의가 있을 때 (폰 너비 402) | Requests · Questions · Upcoming · Past가 **한 줄**, 숫자는 칸 오른쪽 위 **작은 배지**(괄호 "(1)" 없음) (FB-30) | 🤖 `sitter-bookings` · `inquiry` | ➖ |
 | UX-6 | `pets`로 리셋한 오너(예약 · 문의 · 시터 이력 없음) → Bookings 탭 | 빈 화면 대신 **Sitters on Goldito** — 시터 카드(→ 프로필), 아래 Book care. Book care의 시터 목록에도 각 시터 옆 **Profile** (FB-32) | 🤖 `sitters` | 로컬 ✅ 10/09 민식 · Vercel ➖ |
@@ -868,14 +868,14 @@
 | CHAT-12 | 칩을 누름 | 잠깐 "작성 중" 뒤 **입력창에 내 말투의 짧은 초안**이 채워지고 칩이 사라짐. **아무것도 보내지지 않음**: 고치고 **Send**를 눌러야 전송. 긴 초안은 **여러 줄 입력창이 커져서 보임**(약 6줄까지, 그 위는 같은 높이로 두고 스크롤바가 보이며 스크롤), 웹에서 Enter는 전송 · Shift+Enter는 줄바꿈. 시터가 가격을 말하면 숫자는 그 시터의 실제 요금 · 견적과 같음(다른 숫자는 거절되고 다시 씀) | 🤖 `chat` · pytest `test_ai_chat` | 사람 확인 대기 |
 | CHAT-13 | 50개 넘는 긴 대화에서 칩 | 최근 20개와 스레드에 저장된 요약(`ai_summary`)으로 답함. 요약은 오래된 메시지 10개 이상이 쌓였을 때만 새로 씀. 요약은 클라이언트가 읽을 수 없음(`014m`) | pytest `test_ai_chat` | ➖ |
 | CHAT-14 | 시터 → 채팅(오너의 Stay 카드가 있음) → **Send quote** → 시트에서 서비스(여러 개일 때) 확인 → **Send quote** | 채팅에 **Quote 카드**: 박 수 × 단가, 추가 펫, 공휴일, **Total은 서버 계산값**(Checkout과 같은 `quote_booking`). 같은 일정에는 Send quote 버튼이 다시 안 나옴. 요금 미설정이면 "This sitter hasn't set a Boarding price yet." | 🤖 `chat` · SQL `rls_smoke` 014n | ➖ |
-| CHAT-15 | 시터가 열린 견적에서 **Add a fee**(라벨 칩 또는 직접 입력 + 금액 $0 초과 500 이하, 최대 5개) | 카드에 수수료 줄 + 시터에게는 "Waiting for an answer". **Total은 아직 그대로**. 오너는 줄마다 **Accept / Decline** | 🤖 `chat` · SQL | ➖ |
-| CHAT-16 | 오너가 수수료 하나 Accept, 하나 Decline → **Confirm quote** | Accept한 금액만 Total에 더해짐, Decline은 취소선 + "Declined"로 Total에 없음. 답 안 한 수수료가 있으면 Confirm 비활성. 확인하면 카드 **Confirmed**, 이후 수수료 추가 불가. 새 견적을 보내면 열려 있던 이전 견적은 Replaced (확인된 것은 그대로). 채팅 목록 미리보기는 "Quote" | 🤖 `chat` · SQL | ➖ |
+| CHAT-15 | **(#265로 없어짐: 수수료 제거)** 시터가 열린 견적에서 **Add a fee**(라벨 칩 또는 직접 입력 + 금액 $0 초과 500 이하, 최대 5개) | 카드에 수수료 줄 + 시터에게는 "Waiting for an answer". **Total은 아직 그대로**. 오너는 줄마다 **Accept / Decline** | 🤖 `chat` · SQL | ➖ |
+| CHAT-16 | **(#265로 없어짐: 수수료 제거)** 오너가 수수료 하나 Accept, 하나 Decline → **Confirm quote** | Accept한 금액만 Total에 더해짐, Decline은 취소선 + "Declined"로 Total에 없음. 답 안 한 수수료가 있으면 Confirm 비활성. 확인하면 카드 **Confirmed**, 이후 수수료 추가 불가. 새 견적을 보내면 열려 있던 이전 견적은 Replaced (확인된 것은 그대로). 채팅 목록 미리보기는 "Quote" | 🤖 `chat` · SQL | ➖ |
 | CHAT-17 | (DB) `rls_smoke.sql`의 014o 블록 | 반복 쌍은 요청 직후 `confirm`(다음 차례 both) · 시터가 먼저 수락하면 요청 상태로 남고 오너 차례 · 오너가 먼저 동의하면 시터 차례 · 둘 다 있으면 `confirmed`와 두 핸드오프 agreed, 순서는 자유 · 시터가 제안한 새 시간은 양쪽 동의를 지움 · 처음 보는 쌍은 Meet & Greet이 끝나야 동의 가능 · 가격은 같은 일정의 확인된 최종 견적에서 수락한 수수료만 더함(미확인 · 다른 일정 견적 제외) · `pay_booking_demo`가 같은 총액을 얼림 · 채팅 카드: `meet_greet`(시터 첫 yes부터, 첫 만남 쌍만) · `agreement` · `payment`가 부킹당 한 번씩, booking id만 들고, 변경마다 `rev`가 올라 상대 화면이 따라옴, 쌍 밖은 못 읽음 · 낯선 사람 · anon 불가 | SQL `rls_smoke` | ➖ |
 | CHAT-18 | 예약 상세에서 합의: 오너 → 예약 상세(Meet & Greet 뒤 또는 이미 만난 쌍) → **I'd like to book** · 시터 → 같은 예약 → **I accept** | 오너 버튼은 시트에서 **펫 · 시간 · 장소 · 체크리스트 · 가격**을 한 번 더 보여 주고 한 번 더 누르면 오너의 yes. 시터의 **I accept**는 yes의 절반: 오너가 아직이면 "You accepted. Waiting for … to book."로 남고 부킹은 요청 상태 그대로, 오너도 눌러야 `confirmed`(순서 자유). 시터가 새 시간을 제안하면 둘의 yes가 지워짐 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-19 | 확인된 최종 견적에서 수락한 수수료가 있는 부킹의 Checkout → 총액 → Pay | Checkout 견적에 **수수료 줄**이 보이고 **Total = 기본 + 수락한 수수료**, 결제 버튼 금액도 같음. 낸 금액은 `price_snapshot`(`extras` 포함)에 얼어 있음. 수수료가 없으면 이전과 같음 | 🤖 `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
+| CHAT-19 | **(#265로 없어짐: 수수료 제거)** 확인된 최종 견적에서 수락한 수수료가 있는 부킹의 Checkout → 총액 → Pay | Checkout 견적에 **수수료 줄**이 보이고 **Total = 기본 + 수락한 수수료**, 결제 버튼 금액도 같음. 낸 금액은 `price_snapshot`(`extras` 포함)에 얼어 있음. 수수료가 없으면 이전과 같음 | 🤖 `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 바로 **Done, we met**(시간 전이면 한 번 더 확인, #229) | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
 | CHAT-21 | Meet & Greet 뒤(반복 쌍은 요청 직후): 오너 푸터 **I'd like to book** → 시트(펫 · 시간 · 체크리스트 · 가격) → 확인 / 시터 푸터 **I accept** | **Agreement 카드**에 두 줄(오너 ✓ / 시터 ✓), 순서 자유, 둘 다 있으면 "Booked, you both agreed ✓" 한 줄로 접힘. 한쪽만 눌렀을 때 부킹은 요청 상태, **결제 버튼 없음** | 🤖 `chat` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-22 | 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
+| CHAT-22 | **(수수료 부분은 #265로 없어짐)** 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-24 | 오너가 "How much would it be?"처럼 가격을 물은 뒤 시터가 채팅을 열기, 또는 시터가 "Shall we book it?"이라고 한 뒤 오너가 열기 | 말 칩 줄 맨 앞에 **번개 아이콘이 붙은 행동 칩**(시터 `Send quote`, 오너 `I'd like to book` 등)이 한 개 나온다. 누르면 푸터나 카드가 하는 것과 같은 시트가 **열릴 뿐** 아무것도 저장되지 않고, 칩은 사라진다(눌러서 확정하는 것은 시트 안). 서버가 가리켜도 **이 화면에서 지금 불가능한 행동**(예: 확정 전 `pay`)은 안 나오고, 행동이 없으면 말 칩만. 코드가 만든 가능한 행동 목록(`get_booking_stages`의 단계 + 카드 상태) 안에서만 고르고 확신도 0.7 미만 · 단계를 못 읽음 · 모델 장애면 없음 | 🤖 `chat` · pytest `test_ai_chat` | 사람 확인 대기 · 실제 모델 응답은 배포 앱에서 |
 | CHAT-25 | 오너와 시터의 AI가 따로: 시터가 오너의 첫 글(Stay 카드와 "Can you take Max?")에 칩 → 초안 / 오너가 시터 답 뒤에 칩 → 초안 | 두 쪽이 **각자의 프롬프트와 입력**을 씀. 시터의 **첫 답은 인사와 자기소개**("Hi Robert, I'm Chloe …")이고 **금액이 없음**. 금액(견적, 요금)은 오너가 돈을 물었거나 채팅에 견적 카드가 있을 때만 시터 쪽에 들어가고, **오너 쪽은 요금 · 정책 · 가용성을 못 보고** 채팅에 보이는 견적만 봄. 오너 초안은 "I can host" · "my place" 같은 호스트 말이 없고 **맡기고 찾는 쪽은 오너**(시터가 "I'll pick up"이라고 쓰거나 오너가 "you drop off"라고 쓴 초안은 거절되고 다시 씀). 직전 메시지(양쪽)와 거의 같은 초안도 거절. 펫에 없는 종의 이모지(개 둘에 고양이)도 거절. 쪽별 모델은 `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER`(비면 `MODEL_FAST`) | 🤖 pytest `test_ai_chat` · `test_nebius` | 사람 확인 대기 · 실제 모델로 오너와 시터를 나란히(`?view=split`) 4턴 이상 눌러서 말투 · 반복 · 역할을 읽어야 함 |
@@ -884,7 +884,7 @@
 | CHAT-28 | 케어 중(드롭오프 완료, 픽업 전) 채팅의 케어 카드 (3D.8, #145): 오너에게 **Ask for a photo**(펫마다 열린 요청이 없을 때만) → "You asked for a photo of Max · Waiting for Chloe", 시터에게는 "Robert asked for a photo of Max 📷" + **Send photo**(피드 올리기 화면으로). 시터가 공유 사진을 올리면(DB가 요청을 채움) 양쪽에 사진 카드(오너 "Chloe sent a photo of Max", 시터 "You sent a photo of Max") + 사진 아래 **한 줄 캡션**. 저녁에 시터가 알림장을 보내면 "Diary written 📖 · Max · Oct 21" + **Open diary**(오너는 그 페이지, 시터는 Diary 탭). 드롭오프 전에는 버튼도 카드도 없음. 카드는 `photo_requests` · `feed_posts` · `daily_reports`를 읽어 그릴 뿐 채팅에 저장하지 않으며 열려 있는 동안 10초마다 갱신 | 🤖 `chat-trip` | 사람 확인 대기 (두 계정 · 실제 사진 👤) |
 | CHAT-29 | (DB, `014r`) 드롭오프 + 픽업을 한 쌍으로 제안 (#145 · #169) | `propose_handoff_pair`는 두 행을 같은 `pair_id`로 쓰고 알림은 한 번("… suggested a new drop-off and pick-up"). 한 행에 응답하면 시각이 따로 맞아도 두 행이 함께 수락 · 거절(확정 전에도), 확정 뒤 수락하면 스테이가 새 구간으로 다시 만들어지고 알림은 한 번. 한 행만 새로 제안하면 짝은 단일 제안이 됨(`pair_id` 해제). 제안자는 응답 불가, 제3자 · anon 불가, 픽업이 드롭오프보다 빠르면 `invalid_window`. 오너 `default_handoff`는 세 장소 중 하나만, 남은 못 바꿈 | SQL `rls_smoke` 014r | ➖ |
 | CHAT-30 | 채팅 안의 인계 카드 (3D.8, #145 · #169; 앱은 `014r` 없이도 단일 제안은 그대로 동작, 쌍 제안은 `014r` 필요): (a) 시터 기본 방식(온보딩 handoff 답)과 요청의 장소가 다르면 시터에게 **Handoff differs from your default** + 두 줄(Drop-off / Pick-up과 장소) + **Suggest another**, 맞으면(`owner_brings` ↔ 시터 집, `sitter_picks_up` ↔ 오너 집, 둘 다 가능 · 답 없음은 모두 맞음) 카드 없음. (b) **Suggest another**는 시간 · 장소 시트를 열고 둘 다 바꾸면 **한 번에 한 쌍**으로 가며(알림 한 번) 보낸 쪽엔 "Waiting for Robert", 받는 쪽엔 "Chloe suggested a new drop-off and pick-up" 한 장 + **Accept** 한 번이 두 인계를 함께 수락(확정 전에도 후에도). 한 인계만 바꾸면 단일 제안. (c) 오너가 요청 시트를 열면 장소는 오너의 마지막 요청(`default_handoff`), 없으면 시터가 한 가지만 원할 때 그 장소, 아니면 시터 집으로 열리고, 보내면 오너 기본값이 저장됨. 예약 화면의 시간 변경 시트도 같은 쌍 호출 | 🤖 `chat-handoff` · `negotiation` · SQL `rls_smoke` 014r | 사람 확인 대기 (두 계정) |
-| CHAT-31 | 시터가 견적을 보내기 전 초안 (#235): 채팅의 **Send quote**를 누르면 시트에 서버가 계산한 내역(단가 × 박수 · 추가 펫 · 공휴일)과 합계가 먼저 보이고 아직 아무것도 안 보내짐. 요금이 없으면 시트 안에 이유가 나오고 Send는 꺼짐. 같은 시트에서 **수수료 줄**(Medication · Extra walks 같은 칩 또는 직접, 금액 0 초과 500 이하, 최대 5개)을 붙이고 **Remove**로 뺄 수 있고 합계("Total with your fees")가 따라감. Send하면 견적 카드가 가고 수수료는 오너가 하나씩 답하는 제안으로 붙음(합계는 수락 전엔 그대로). 숫자는 늘 서버 것이고 모델이 쓰지 않음 | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-31 | **(수수료 부분은 #265로 없어짐)** 시터가 견적을 보내기 전 초안 (#235): 채팅의 **Send quote**를 누르면 시트에 서버가 계산한 내역(단가 × 박수 · 추가 펫 · 공휴일)과 합계가 먼저 보이고 아직 아무것도 안 보내짐. 요금이 없으면 시트 안에 이유가 나오고 Send는 꺼짐. 같은 시트에서 **수수료 줄**(Medication · Extra walks 같은 칩 또는 직접, 금액 0 초과 500 이하, 최대 5개)을 붙이고 **Remove**로 뺄 수 있고 합계("Total with your fees")가 따라감. Send하면 견적 카드가 가고 수수료는 오너가 하나씩 답하는 제안으로 붙음(합계는 수락 전엔 그대로). 숫자는 늘 서버 것이고 모델이 쓰지 않음 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-32 | Final quote 이름 (#235): Meet & Greet · 동의 · 결제 카드 뒤에 시터가 보내는 견적은 카드 제목과 시트 제목 · 버튼이 **Final quote** / **Send final quote**, 그 전의 견적은 **Quote**. 채팅의 칩은 **한 줄, 작은 칩, 옆으로 스크롤**(둘째 줄 없음) | 🤖 `chat` | 사람 확인 대기 (두 계정) |
 | CHAT-33 | 메시지창 왼쪽 **+** (#235): 누르면 **Send a card** 시트에 Meet & Greet request · Quote(시터만, 결제 카드 뒤에는 Final quote) · Date change · Start trip · Photo request(오너만, 케어 중일 때만). 지금 할 수 없는 항목은 흐리게(예약이 없으면 Meet · Date · Trip이 꺼짐, 시터 집이 장소면 시터의 Start trip은 꺼짐, 2시간 창 전엔 Start trip 꺼짐). 항목마다 흐름이 여는 것과 같은 것을 엶: Quote → 견적 초안 시트, Date change → 시간 · 장소 시트, Start trip → 위치 공유 동의 화면, Photo request → 사진 요청 카드, Meet & Greet → 카드의 Pick a time / Accept | 🤖 `chat` · `chat-trip` | 사람 확인 대기 |
 | CHAT-34 | 오너의 "I'd like to book" (#235): 시터의 채팅이 열려 있는 동안 오너가 동의하면 새로고침 없이(폴링 5초 안, Realtime) 동의 카드가 "Booked, you both agreed"로 바뀜. 오너 쪽도 같은 카드에 "✓ Robert would like to book" | 🤖 `chat` | 사람 확인 대기 (두 폰) |
@@ -960,12 +960,56 @@
 | DECL-1 | 오너 → 채팅 푸터 **I'd like to book** 옆 **Decline** → 사유 칩(선택) · 메모(선택) → **Decline and end the request** | "Not this sitter?" 시트, 확인하면 토스트 "Request ended", 예약은 Cancelled(사유 저장), 시터에게 알림, 날짜 홀드가 풀림. 푸터는 다시 **Request booking** | 🤖 `chat` | ➖ |
 | DECL-2 | 시터 → 채팅 푸터 **I accept** 옆 **Decline** | "Decline this booking?" 시트, 확인하면 "Request declined", 예약은 Declined(사유는 오너가 읽는 메모로) | 🤖 `chat` | ➖ |
 | DECL-3 | 오너 → **Final quote** 카드의 **Decline** 또는 푸터 **Confirm quote** 옆 **Decline** | "Decline the final quote?" 시트, 사유 칩 맨 앞에 "The price doesn't work". 확인하면 예약 Cancelled, Pay 버튼 없음. 시터 화면의 최종 견적 카드에는 Decline 없음 | 🤖 `chat` | ➖ |
-| DECL-4 | 최종 견적이 첫 견적(Meet & Greet 전)과 **같은 금액** | 오너 카드에 Confirm과 Decline만, **Suggest another price** 없음. 첫 견적이 없는 예약(채팅 밖에서 만든 예약)도 없음 | 🤖 `chat` | ➖ |
-| DECL-5 | 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
-| CHAT-38 | 채팅 수수료가 결제에 남는지 (014y): ① House sitting 부킹에서 시터 **Send final quote** ② 최종 견적이 열린 채(수수료 미응답) 오너가 예약 상세 → Checkout → Pay ③ 수수료 포함 결제 뒤 픽업 시간 변경을 둘이 합의 | ① 시트에 서비스 선택이 없고 부킹의 서비스(House sitting)로 가격이 나감 ② "Answer the sitter's new quote in the chat first." 결제 안 됨 ③ 새 총액 = 새 기본가 + 낸 수수료(수수료가 사라지지 않음) | 🤖 `chat`(①) · SQL `rls_smoke` 014q(②③) | 사람 확인 대기 · 호스팅 DB는 014q 적용 뒤 |
+| DECL-4 | 오너의 **Final quote** 카드 | **Confirm quote**와 **Decline**만. 금액이 바뀌어도 **Suggest another price**는 없음(#265: 수수료가 없어 시터가 가격을 바꿀 수 없으므로 역제안도 뺌) | 🤖 `chat` | ➖ |
+| DECL-5 | **(#265로 없어짐: 수수료 제거)** 시터가 최종 견적에 수수료를 더해 **금액이 달라짐** → 오너 카드 **Suggest another price** → 금액(시터가 요구하는 금액이 미리 채워짐) · 메모(선택) → Send | 채팅에 오너의 일반 메시지 "Could you do $280.00 in total?"(+ 메모)만 감. 가격 · 예약 상태는 그대로(가격은 서버 계산). 시터 푸터 **Send a new final quote** → 새 최종 견적, 이전 것은 Replaced | 🤖 `chat` | ➖ |
+| CHAT-38 | **(#265로 없어짐: 수수료 제거)** 채팅 수수료가 결제에 남는지 (014y): ① House sitting 부킹에서 시터 **Send final quote** ② 최종 견적이 열린 채(수수료 미응답) 오너가 예약 상세 → Checkout → Pay ③ 수수료 포함 결제 뒤 픽업 시간 변경을 둘이 합의 | ① 시트에 서비스 선택이 없고 부킹의 서비스(House sitting)로 가격이 나감 ② "Answer the sitter's new quote in the chat first." 결제 안 됨 ③ 새 총액 = 새 기본가 + 낸 수수료(수수료가 사라지지 않음) | 🤖 `chat`(①) · SQL `rls_smoke` 014q(②③) | 사람 확인 대기 · 호스팅 DB는 014q 적용 뒤 |
 | CHAT-39 | 채팅에 "door code 4821, call 416-555-0199"를 보내거나 예약 요청 메모에 쓰고, 다음 칩 · 초안을 부름 (R20-7) | 모델에 가는 대화 · 요약에는 `#`만 남고 코드 · 전화번호 · 이메일이 없음. "Oct 10-12" 같은 날짜와 가격은 그대로. 저장된 `chat_threads.ai_summary`에도 숫자 없음 | pytest `test_ai_chat`(scrub · 보낸 메시지 · 요청 메모 · 요약) | ➖ |
 
-### 3.43 다마고치 (TAMA) · 11.12 · #184 · *파생 상태 · 스프라이트 · 오너 Home 펫 방 · 시터 탭 액션 · 메달까지, 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
+### 3.43 결제한 예약을 취소하면 전액 환불 (REFUND) · #266 · *사전: 호스팅 DB에 `015c` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| REFUND-1 | 오너: 예약 → 데모 결제 → 예약 상세 **Cancel booking** | 토스트 "Cancelled. Refunded in full", 칩이 **Paid** 대신 **Refunded**, 알림 "Refunded in full / $… CAD back for Max (demo)". 결제 기록(`paid_at`)은 남고 `refunded_at`이 생김. "Booked and paid" 카드는 사라짐 | 🤖 `rebook` · SQL `rls_smoke`(015c) | ➖ |
+| REFUND-2 | 시터가 결제된 예약을 취소 | 오너도 환불되고 같은 알림, 오너 예약 상세는 **Refunded**. 시터에게는 환불 알림 없음 | 🤖 `rebook` · SQL `rls_smoke`(015c) | ➖ |
+| REFUND-3 | 결제 전 예약을 취소 | 환불 없음(`refunded_at` 비어 있음), 환불 알림 없음 | SQL `rls_smoke`(015c) | ➖ |
+| REFUND-4 | 맡긴 뒤(Received) 취소 시도 | 예전처럼 `booking_in_progress`로 막히고 환불도 없음 | SQL `rls_smoke`(015c) | ➖ |
+| REFUND-5 | 오너 채팅의 결제 카드(취소된 예약) | "Cancelled" 아래 "Refunded in full · $…". 시터 카드에는 금액이 안 보임 | **👤** | ➖ |
+
+### 3.44 하트를 누르면 즐겨찾기에 바로 (FAV) · #267
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| FAV-1 | 오너 → Bookings → Sitters nearby의 시터 → 시터 페이지에서 하트 → 뒤로 | 새로고침 없이 그 시터가 **Favorites** 아래로 올라감, Sitters nearby에서는 빠짐 | 🤖 `sitter-search` | ➖ |
+| FAV-2 | Favorites의 시터 → 하트 해제 → 뒤로 | 바로 **Sitters nearby**로 내려감(반경 밖이면 목록에서 빠짐) | 🤖 `sitter-search` | ➖ |
+| FAV-3 | 반경 밖에 있는 시터를 즐겨찾기 | 반경과 상관없이 Favorites에 보임(014i). 하트를 누른 뒤 검색을 다시 해서 반영됨 | 🤖 `sitter-search` | ➖ |
+
+### 3.45 최종 견적은 하나의 가격 (NOFEE) · #265
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| NOFEE-1 | 시터 → 채팅 **Send quote** / **Send final quote** | 시트에 서버가 계산한 내역과 **Total**만. 수수료 칩(Medication 등), Fee · Amount 칸, Add fee, "Total with your fees" 없음 | 🤖 `chat` | ➖ |
+| NOFEE-2 | 보낸 견적 카드 (시터 · 오너) | **Add a fee** 없음, 수수료마다 Accept / Decline 없음, 줄 그어진 Declined 줄 없음. 오너가 보는 Total = 시터가 보낸 금액 | 🤖 `chat` | ➖ |
+| NOFEE-3 | 최종 견적 → 오너 Confirm → Pay → Checkout | 결제 금액 = 견적 Total(예: $268.13), Checkout에 수수료 줄 없음 | 🤖 `chat` · `checkout` | ➖ |
+| NOFEE-4 | #265 전에 보낸 견적(DB에 수수료 줄이 남은 것) | 수락된 수수료는 일반 줄로 보이고 Total에 포함, 아직 답 안 한 수수료는 버튼 없이 "This older quote has a fee no one can answer now. A new quote replaces it."와 Confirm 비활성(시터가 + 메뉴로 새 견적을 보내면 됨). 거절된 수수료는 안 보임 | 🤖 `chat` | ➖ |
+
+### 3.46 시터 Bookings가 새 채팅을 먼저 보여 줌 (CHATNEW) · #228
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| CHATNEW-1 | 오너가 채팅을 보냄 → 시터가 Home에서 **Bookings** 탭 | 새로고침 없이 **Chats** 탭으로 열리고, 그 채팅 줄 왼쪽에 색 막대 · 옅은 배경(가장 최근의 새 채팅 하나만). 채팅방으로 바로 들어가지는 않음 | 🤖 `chat` | ➖ |
+| CHATNEW-2 | 두 오너가 각각 씀 | 더 최근에 쓴 오너의 채팅이 강조됨 | 🤖 `chat` | ➖ |
+| CHATNEW-3 | 시터가 Bookings(Requests)를 보고 있는데 새 채팅이 옴 | 몇 초 안에 Chats로 바뀌고 그 채팅이 강조됨. 단, 이번 방문에서 시터가 탭을 직접 골랐으면 그대로 둠 | 🤖 `chat` | ➖ |
+| CHATNEW-4 | 새 채팅이 없을 때 Bookings | 예전처럼 진행 중 · 곧 시작하는 예약이면 Upcoming, 아니면 Requests | 🤖 `chat` · `sitter-bookings` | ➖ |
+| CHATNEW-5 | 채팅방 안에서 글을 쓰는 중에 다른 오너가 씀 | 채팅방은 그대로(목록 화면에서만 탭이 바뀜), 입력이 끊기지 않음 | **👤** | ➖ |
+
+### 3.47 채팅 첫 카드는 한 줄 요약 (STAYLINE) · #227
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| STAYLINE-1 | 오너: 개 한 마리와 고양이 한 마리로 시터 프로필 → **Start chat** | 첫 카드가 한 줄: "Oct 21 9:00 AM to Oct 24 5:00 PM · 2 pets: 🐶 Max, 🐱 Mochi". "Stay" 제목, Drop-off · Pick-up 문구 없음. 펫이 하나면 "· 🐶 Max"(개수 없음). 402 px에서는 줄바꿈될 수 있음 | 🤖 `chat` | ➖ |
+| STAYLINE-2 | 시터가 같은 채팅을 엶 (아직 예약 없음) | 같은 한 줄이지만 펫은 **이름만**(시터는 예약 전에는 펫 정보를 못 읽음, 틀린 이모지는 넣지 않음). 예약이 생기면 이모지도 보임 | 🤖 `chat` | ➖ |
+
+### 3.48 다마고치 (TAMA) · 11.12 · #184 · *파생 상태 · 스프라이트 · 오너 Home 펫 방 · 시터 탭 액션 · 메달까지, 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
 
 | ID | 해보기 | 기대 결과 | 자동 | 사람 |
 | --- | --- | --- | --- | --- |

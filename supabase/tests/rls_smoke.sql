@@ -6702,6 +6702,80 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- 015c (#266): cancelling a paid booking refunds it in full, whoever cancels
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_pet uuid;
+  v_pet2 uuid;
+  v_pet3 uuid;
+  v_pet4 uuid;
+  v_owner_cancel uuid;
+  v_sitter_cancel uuid;
+  v_unpaid uuid;
+  v_started uuid;
+  v_err text;
+  v_paid timestamptz := now() - interval '1 day';
+  v_snapshot jsonb := '{"total": 210.00, "currency": "CAD"}';
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Waffle') returning id into v_pet;
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Noodle') returning id into v_pet2;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Olive') returning id into v_pet3;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Pickle') returning id into v_pet4;
+  v_owner_cancel := _t_booking(joy, paul, array[v_pet], now() + interval '400 days', now() + interval '402 days', 'confirmed');
+  v_sitter_cancel := _t_booking(joy, paul, array[v_pet2], now() + interval '410 days', now() + interval '412 days', 'confirmed');
+  v_unpaid := _t_booking(joy, paul, array[v_pet3], now() + interval '420 days', now() + interval '422 days', 'confirmed');
+  v_started := _t_booking(joy, paul, array[v_pet4], now() - interval '1 hour', now() + interval '2 days', 'confirmed', true);
+  update public.bookings set paid_at = v_paid, price_snapshot = v_snapshot
+  where id in (v_owner_cancel, v_sitter_cancel, v_started);
+
+  -- The owner cancels a paid booking.
+  perform _t_as(joy);
+  perform cancel_booking(v_owner_cancel, 'Plans changed');
+  perform _t_as(null);
+  perform _t_ok((select status = 'cancelled' and refunded_at is not null and paid_at = v_paid
+      from public.bookings where id = v_owner_cancel),
+    '015c: the owner cancels a paid booking: refunded, the payment stays on record');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = joy and type = 'booking_refunded'
+      and booking_id = v_owner_cancel and title = 'Refunded in full' and body = '$210.00 CAD back for Waffle (demo)'),
+    '015c: …and the owner is told "Refunded in full" with the amount');
+
+  -- The sitter cancels a paid booking: the owner is refunded too.
+  perform _t_as(paul);
+  perform cancel_booking(v_sitter_cancel, 'Sitter cancelled');
+  perform _t_as(null);
+  perform _t_ok((select refunded_at is not null from public.bookings where id = v_sitter_cancel)
+      and exists (select 1 from public.notifications where user_id = joy and type = 'booking_refunded' and booking_id = v_sitter_cancel),
+    '015c: the sitter cancels a paid booking: the owner is refunded and told');
+  perform _t_ok(not exists (select 1 from public.notifications where user_id = paul and type = 'booking_refunded'),
+    '015c: …the sitter gets no refund notice');
+
+  -- Nothing paid, nothing refunded.
+  perform _t_as(joy);
+  perform cancel_booking(v_unpaid, null);
+  perform _t_as(null);
+  perform _t_ok((select refunded_at is null from public.bookings where id = v_unpaid)
+      and not exists (select 1 from public.notifications where type = 'booking_refunded' and booking_id = v_unpaid),
+    '015c: an unpaid booking is cancelled with no refund');
+
+  -- A stay in progress still cannot be cancelled, so it is never refunded.
+  perform _t_as(joy);
+  begin
+    perform cancel_booking(v_started, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_as(null);
+  perform _t_ok(v_err = 'booking_in_progress' and (select refunded_at is null and status = 'confirmed' from public.bookings where id = v_started),
+    '015c: a stay in progress cannot be cancelled or refunded');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- 015b (11.12, #184): pet medals
 -- ---------------------------------------------------------------------------
 
