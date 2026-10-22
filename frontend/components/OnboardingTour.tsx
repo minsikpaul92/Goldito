@@ -6,8 +6,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MediaPlaceholder } from "./MediaPlaceholder";
 import { BackLink } from "./ui/BackLink";
 import { Button } from "./ui/Button";
-import { TextButton } from "./ui/TextButton";
-import { isDemoEnabled } from "../lib/demo";
 import { Role } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -34,7 +32,6 @@ export function OnboardingTour({ role, steps, testID }: Props) {
   const [index, setIndex] = useState(0);
   const step = steps[index];
   const last = index === steps.length - 1;
-  const demoLabel = role === "owner" ? "Try demo as Owner" : "Try demo as Sitter";
 
   return (
     <SafeAreaView style={styles.root} testID={testID}>
@@ -76,26 +73,7 @@ export function OnboardingTour({ role, steps, testID }: Props) {
         {!last ? (
           <Button label="Next" onPress={() => setIndex((i) => i + 1)} testID={`${testID}-next`} />
         ) : (
-          <>
-            {isDemoEnabled ? (
-              <Button
-                label={demoLabel}
-                onPress={() => router.push(`/login?demo=${role}`)}
-                testID={`${testID}-demo`}
-              />
-            ) : null}
-            <Button
-              label="Sign in"
-              variant={isDemoEnabled ? "secondary" : "primary"}
-              onPress={() => router.push("/login")}
-              testID={`${testID}-sign-in`}
-            />
-            <TextButton
-              label="Create account"
-              onPress={() => router.push("/signup")}
-              testID={`${testID}-sign-up`}
-            />
-          </>
+          <Button label="Get started" onPress={() => router.push("/login")} testID={`${testID}-sign-in`} />
         )}
         <View style={styles.dots}>
           {steps.map((_, i) => (

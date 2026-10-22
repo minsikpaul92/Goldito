@@ -1,6 +1,7 @@
 import type { BookingSummary, Handoff, HandoffKind, LocationType } from "../../lib/bookings";
 import type { LatLng } from "../../lib/location";
 import type { PlaceQuery } from "../../lib/maps";
+import type { Trip } from "../../types/db";
 
 /** The Start trip button opens this long before the agreed time (start_trip, 012) — same window as Received. */
 export const START_WINDOW_MS = 2 * 60 * 60 * 1000;
@@ -45,7 +46,29 @@ export function minutesAway(etaAt: string | null, now: number): number | null {
   return mins <= NEAR_MINUTES ? mins : null;
 }
 
-/** The one-tap hello after an arrival: the owner leaves the pets, the sitter answers; the same pair again at pick-up. */
+/**
+ * The trip got there (#250): arrived on the way (by distance), or ended by the traveller ("I've arrived", end_trip 012).
+ * A cancelled trip never counts.
+ */
+export function tripArrived(trip: Trip): boolean {
+  return !!trip.arrived_at || trip.status === "arrived" || trip.status === "completed";
+}
+
+/** The trip for the handoff that is still open already got there: no new trip for it (#250). */
+export function arrivedForNext(booking: BookingSummary, trips: Trip[] | null): boolean {
+  const next = nextHandoff(booking);
+  return !!next && !!trips?.some((t) => t.handoff_kind === next.kind && tripArrived(t));
+}
+
+/** When the trip got there: the arrival, else when it was ended. */
+export function arrivedTime(trip: Trip): string {
+  return trip.arrived_at ?? trip.ended_at ?? trip.started_at;
+}
+
+/**
+ * The one-tap hello after an arrival: the owner leaves the pets, the sitter answers; the same pair again at pick-up.
+ * The owner speaks first; the sitter's answer only shows once the owner's hello is in the chat (#250).
+ */
 export function greetingFor(kind: HandoffKind, role: Role): string {
   if (kind === "drop_off") return role === "owner" ? "Please take care of them" : "We will";
   return role === "owner" ? "Thank you for everything" : "It was a pleasure";

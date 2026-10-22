@@ -24,18 +24,18 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 234 |
-| EmptyState | Chat not found | — | 242 |
-| Pressable | — | `chat-stage` | 523 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 576 |
-| Button | Send quote | `chat-send-quote` | 583 |
-| TextButton | Send quote | `chat-send-quote` | 586 |
-| TextButton | Decline | `chat-decline` | 589 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 616 |
-| Pressable | — | `chat-action-chip` | 637 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 648 |
-| Pressable | Send a card | `chat-plus` | 664 |
-| Pressable | Send | `chat-send` | 697 |
+| EmptyState | Couldn't load this chat | — | 238 |
+| EmptyState | Chat not found | — | 246 |
+| Pressable | — | `chat-stage` | 536 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 589 |
+| Button | Send quote | `chat-send-quote` | 596 |
+| TextButton | Send quote | `chat-send-quote` | 599 |
+| TextButton | Decline | `chat-decline` | 602 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 629 |
+| Pressable | — | `chat-action-chip` | 650 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 661 |
+| Pressable | Send a card | `chat-plus` | 677 |
+| Pressable | Send | `chat-send` | 710 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -67,20 +67,22 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 159 |
-| Button | Next | `own-next` | 161 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 191 |
-| Banner | `error` | — | 202 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 240 |
-| Stepper | Age | `own-age` | 334 |
-| Button | Next | `own-next` | 347 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 408 |
-| Button | Start | `own-next` | 412 |
-| Button | Add | `own-food-other-add` | 541 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 597 |
-| Banner | `error` | `own-error` | 649 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 650 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 668 |
+| TextButton | Skip | `own-skip` | 173 |
+| Button | Next | `own-next` | 175 |
+| Button | Next | `own-next` | 210 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 211 |
+| Banner | `error` | — | 223 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 263 |
+| Stepper | Age | `own-age` | 357 |
+| Button | Next | `own-next` | 370 |
+| SegmentedControl | — | `own-weight-unit` | 389 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 441 |
+| Button | Start | `own-next` | 445 |
+| Button | Add | `own-food-other-add` | 574 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 630 |
+| Banner | `error` | `own-error` | 687 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 688 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 706 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -367,9 +369,9 @@ Shows: `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 83 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 165 |
-| TextButton | Already have an account? Sign in | `go-login` | 173 |
+| BackLink | — | `signup-back` | 86 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 175 |
+| TextButton | Already have an account? Sign in | `go-login` | 183 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -723,8 +725,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Send a card | `chat-plus-menu` | 25 |
-| Pressable | — | ``chat-plus-${item.id}`` | 28 |
+| Sheet | Send a card | `chat-plus-menu` | 27 |
+| Pressable | — | ``chat-plus-${item.id}`` | 30 |
 
 ### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
 
@@ -744,17 +746,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 92 |
-| Button | Received | `chat-received` | 123 |
+| Button | Returned | `chat-returned` | 89 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | `greeting` | `trip-greet` | 109 |
-| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 133 |
-| Button | Received | `chat-received` | 135 |
-| Button | Start trip | `chat-trip-start-button` | 162 |
+| Pressable | ``Send: ${greeting}`` | `trip-greet` | 134 |
+| Button | Received | `chat-received` | 146 |
+| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 171 |
+| Button | I've arrived | `chat-trip-arrive` | 178 |
+| Button | Start trip | `chat-trip-start-button` | 214 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
@@ -989,11 +991,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 42 |
-| Button | Next | ``${testID}-next`` | 77 |
-| Button | `demoLabel` | ``${testID}-demo`` | 81 |
-| Button | Sign in | ``${testID}-sign-in`` | 87 |
-| TextButton | Create account | ``${testID}-sign-up`` | 93 |
+| BackLink | — | ``${testID}-back`` | 39 |
+| Button | Next | ``${testID}-next`` | 74 |
+| Button | Get started | ``${testID}-sign-in`` | 76 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 

@@ -22,7 +22,7 @@ test.describe("welcome", () => {
     await expect(screen.getByTestId("login-email")).toBeVisible();
   });
 
-  test("owner tour steps through placeholders and Sign in", async ({ page }) => {
+  test("owner tour steps through placeholders and Get started", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await page.goto("/welcome");
     const screen = app(page);
@@ -35,11 +35,14 @@ test.describe("welcome", () => {
     await screen.getByTestId("onboarding-owner-next").click();
     await expect(screen.getByTestId("onboarding-owner-progress")).toHaveText("2 / 3");
     await screen.getByTestId("onboarding-owner-next").click();
+    await expect(screen.getByTestId("onboarding-owner-demo")).toHaveCount(0);
+    await expect(screen.getByTestId("onboarding-owner-sign-up")).toHaveCount(0);
+    await expect(screen.getByTestId("onboarding-owner-sign-in")).toHaveText("Get started");
     await screen.getByTestId("onboarding-owner-sign-in").click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test("sitter tour Try demo lands on Home", async ({ page }) => {
+  test("sitter tour ends on sign-in with one button, and the demo starts from there", async ({ page }) => {
     const demoSitter = { ...SITTER, email: "demo-sitter@goldito.test", password: "e2e-demo-password" };
     await mockSupabase(page, [OWNER, demoSitter]);
     await page.goto("/welcome/sitter");
@@ -47,7 +50,11 @@ test.describe("welcome", () => {
 
     await screen.getByTestId("onboarding-sitter-next").click();
     await screen.getByTestId("onboarding-sitter-next").click();
-    await screen.getByTestId("onboarding-sitter-demo").click();
+    await expect(screen.getByTestId("onboarding-sitter-demo")).toHaveCount(0);
+    await expect(screen.getByTestId("onboarding-sitter-sign-up")).toHaveCount(0);
+    await screen.getByTestId("onboarding-sitter-sign-in").click();
+    await expect(page).toHaveURL(/\/login$/);
+    await screen.getByTestId("demo-sitter").click();
     await expect(page).toHaveURL(/\/sitter$/);
     await expect(screen.getByText("No pets in your care today")).toBeVisible();
   });
