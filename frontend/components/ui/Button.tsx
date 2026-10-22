@@ -1,6 +1,6 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from "react-native";
 
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type Props = {
@@ -12,12 +12,15 @@ type Props = {
   variant?: "primary" | "secondary" | "danger";
   /** `large` = the full-width 60 px Next of one-question screens (design site: steps.html). */
   size?: "default" | "large";
+  /** Working (saving, sending): keeps its colour with a spinner, never the gray disabled look (audit F46). Taps are ignored. */
+  loading?: boolean;
   style?: ViewStyle;
   testID?: string;
 };
 
 /** Figma: Goldito-Design → Components → Button (Style × State). */
-export function Button({ label, onPress, disabled, variant = "primary", size = "default", style, testID }: Props) {
+export function Button({ label, onPress, disabled, variant = "primary", size = "default", loading, style, testID }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const secondary = variant === "secondary";
   const danger = variant === "danger";
@@ -25,7 +28,8 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => [
@@ -34,11 +38,14 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
         secondary && styles.secondary,
         danger && styles.danger,
         disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
+        pressed && !disabled && !loading && styles.pressed,
         style,
       ]}
     >
-      <Text style={[styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, disabled && styles.disabledLabel]}>{label}</Text>
+      <View style={styles.row}>
+        {loading ? <ActivityIndicator size="small" color={secondary ? theme.color.primary : theme.color.primaryText} /> : null}
+        <Text style={[styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, disabled && styles.disabledLabel]}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -61,6 +68,7 @@ const makeStyles = (theme: Theme) =>
       borderColor: theme.color.error,
     },
     large: { minHeight: 60, alignSelf: "stretch" },
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: theme.spacing.sm },
     secondary: {
       backgroundColor: theme.color.surface,
       borderWidth: theme.ui.button.secondaryBorder,

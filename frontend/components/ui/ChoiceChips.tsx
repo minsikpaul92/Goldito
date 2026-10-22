@@ -5,7 +5,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { selectable } from "./selectable";
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; /** Can't be picked right now. */ disabled?: boolean };
 
 type Props = {
   options: Option[];
@@ -40,8 +40,10 @@ export function ChoiceChips({ options, value, onChange, multi, trailing, testID 
             aria-checked={on}
             accessibilityLabel={o.label}
             onPress={() => toggle(o.value)}
+            disabled={o.disabled}
+            aria-disabled={o.disabled || undefined}
             testID={testID ? `${testID}-${o.value}` : undefined}
-            style={[styles.chip, on && styles.on]}
+            style={({ pressed }) => [styles.chip, on && styles.on, o.disabled && styles.disabled, pressed && !o.disabled && styles.pressed]}
           >
             <Text style={[styles.label, on && styles.onLabel]}>{o.label}</Text>
           </Pressable>
@@ -57,6 +59,8 @@ const makeStyles = (theme: Theme) =>
     row: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
     chip: selectable(theme).chip,
     on: selectable(theme).chipOn,
+    disabled: { opacity: theme.opacity.disabled, borderStyle: "dashed" },
+    pressed: { opacity: theme.motion.pressOpacity, transform: [{ scale: theme.motion.pressScale }] },
     label: selectable(theme).label,
     onLabel: selectable(theme).labelOn,
   });

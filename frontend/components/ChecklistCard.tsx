@@ -11,6 +11,7 @@ import { Chip } from "./ui/Chip";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 
 type Props = {
   tasks: DraftTask[];
@@ -157,7 +158,7 @@ export function ChecklistCard({ tasks, onTasks, cautions, onCautions, skipped }:
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     table: { borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.color.border, overflow: "hidden", backgroundColor: theme.color.surface },
     tHead: { flexDirection: "row", gap: theme.spacing.sm, padding: theme.spacing.sm, backgroundColor: theme.color.accent },

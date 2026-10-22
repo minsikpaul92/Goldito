@@ -4,16 +4,16 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
+import { ListGroup, ListRow } from "../components/ui/ListRow";
 import { LoadingView } from "../components/ui/LoadingView";
 import { Screen } from "../components/ui/Screen";
+import { SectionTitle } from "../components/ui/SectionTitle";
 import { Sheet } from "../components/ui/Sheet";
-import { TextButton } from "../components/ui/TextButton";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Log out. */
+/** Menu → Settings (Phase 11.11, D47; Figma List Row 1673:31755): the account (opens Profile), notifications, Privacy, Sign out and the version. */
 export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const session = useSession();
@@ -25,40 +25,36 @@ export default function SettingsScreen() {
 
   return (
     <Screen contentStyle={styles.content} testID="settings">
-      <Text accessibilityRole="header" style={styles.heading}>
-        Account
-      </Text>
-      <Card testID="settings-account">
-        <Text style={styles.body}>{profile.displayName}</Text>
-        <Text style={styles.muted}>
-          {session.session?.user.email ?? ""} · {profile.role === "owner" ? "Pet owner" : "Pet sitter"}
-        </Text>
-        <TextButton label="Edit profile" onPress={() => router.push("/profile")} style={styles.left} testID="settings-edit-profile" />
-      </Card>
+      <SectionTitle>Account</SectionTitle>
+      <ListGroup testID="settings-account">
+        <ListRow
+          title={profile.displayName}
+          detail={`${session.session?.user.email ?? ""} · ${profile.role === "owner" ? "Pet owner" : "Pet sitter"}`}
+          onPress={() => router.push("/profile")}
+          testID="settings-edit-profile"
+        />
+      </ListGroup>
 
-      <Text accessibilityRole="header" style={styles.heading}>
-        Notifications
-      </Text>
-      <Card testID="settings-notifications">
-        <Text style={styles.body}>
-          Updates arrive in the app (the bell and a short message) while Goldito is open.
-        </Text>
-        <Text style={styles.muted}>Phone notifications and quiet hours are not available yet.</Text>
-      </Card>
+      <SectionTitle>Notifications</SectionTitle>
+      <ListGroup testID="settings-notifications">
+        <ListRow title="In the app" detail="The bell and a short message while Goldito is open" trailing={{ kind: "none" }} />
+        <ListRow title="Phone notifications and quiet hours" detail="These are not available yet" trailing={{ kind: "none" }} disabled />
+      </ListGroup>
 
-      <Text accessibilityRole="header" style={styles.heading}>
-        About
+      <SectionTitle>About</SectionTitle>
+      <ListGroup>
+        <ListRow title="Privacy" onPress={() => router.push("/privacy")} testID="settings-privacy" />
+      </ListGroup>
+
+      <ListGroup>
+        <ListRow title="Sign out" danger onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
+      </ListGroup>
+      <Text style={styles.version} testID="settings-version">
+        Goldito {version}
       </Text>
-      <Card>
-        <TextButton label="Privacy" onPress={() => router.push("/privacy")} style={styles.left} testID="settings-privacy" />
-        <Text style={styles.muted} testID="settings-version">
-          Goldito {version}
-        </Text>
-      </Card>
-      <Button label="Log out" variant="secondary" onPress={() => setConfirmLogOut(true)} testID="settings-log-out" />
-      <Sheet visible={confirmLogOut} title="Log out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
+      <Sheet visible={confirmLogOut} title="Sign out?" onClose={() => setConfirmLogOut(false)} testID="settings-log-out-sheet">
         <View style={styles.confirm}>
-          <Button label="Log out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
+          <Button label="Sign out" variant="danger" onPress={() => void session.signOut()} testID="settings-log-out-confirm" />
           <Button label="Cancel" variant="secondary" onPress={() => setConfirmLogOut(false)} />
         </View>
       </Sheet>
@@ -70,8 +66,5 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     confirm: { gap: theme.spacing.sm },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: 22 },
-    muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    left: { alignSelf: "flex-start", paddingHorizontal: 0 },
+    version: { fontSize: theme.fontSize.small, color: theme.color.textMuted, textAlign: "center" },
   });

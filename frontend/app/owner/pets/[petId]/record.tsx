@@ -10,6 +10,7 @@ import { LifeRecord, listLifeRecords } from "../../../../features/completion/com
 import { getPet } from "../../../../features/pets/petApi";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { Theme } from "../../../../theme/themes";
+import { sectionTitleStyle } from "../../../../components/ui/SectionTitle";
 
 type State =
   | { status: "loading" }
@@ -79,5 +80,5 @@ export default function PetLifeRecord() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
   });

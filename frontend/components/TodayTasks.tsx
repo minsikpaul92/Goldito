@@ -11,6 +11,7 @@ import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { Tag } from "./ui/Tag";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 
 /**
  * Sitter's tasks for today (phase-06 6.3): what is left, one **Done** per task. Done opens a small
@@ -122,7 +123,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { gap: theme.spacing.sm },
     headRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     gap: { gap: theme.spacing.xs },
     next: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.primary },
     allDone: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },

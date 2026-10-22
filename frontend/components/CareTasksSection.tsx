@@ -34,6 +34,7 @@ import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
 import { selectable } from "./ui/selectable";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 
 type Props = {
   pet: Pick<Pet, "id" | "name" | "species">;
@@ -467,7 +468,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     body: { fontSize: theme.fontSize.body, color: theme.color.text, lineHeight: theme.fontSize.body * 1.4 },

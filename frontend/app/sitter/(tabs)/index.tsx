@@ -19,6 +19,7 @@ import { useSession } from "../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { useNotifications, useOnBookingChange } from "../../../providers/NotificationsProvider";
 import { Theme } from "../../../theme/themes";
+import { sectionTitleStyle } from "../../../components/ui/SectionTitle";
 
 type State =
   | { status: "loading" }
@@ -219,11 +220,7 @@ const makeStyles = (theme: Theme) =>
     section: {
       gap: theme.spacing.sm,
     },
-    heading: {
-      fontSize: theme.fontSize.body,
-      fontWeight: theme.fontWeight.semibold,
-      color: theme.color.text,
-    },
+    heading: sectionTitleStyle(theme),
     card: {
       gap: theme.spacing.xs,
     },

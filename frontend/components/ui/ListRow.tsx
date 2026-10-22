@@ -16,6 +16,7 @@ type Props = {
   /** Destructive action (Sign out, Delete): red title, no chevron. */
   danger?: boolean;
   onPress?: () => void;
+  disabled?: boolean;
   testID?: string;
 };
 
@@ -23,7 +24,7 @@ type Props = {
  * Figma Expressive List Row (1673:31755): settings and menus. A row that goes somewhere has a chevron; a switch row
  * toggles in place; a danger row is red. Rows sit in a white group card with hairlines between them (ListGroup).
  */
-export function ListRow({ title, detail, leading, trailing = { kind: "chevron" }, danger, onPress, testID }: Props) {
+export function ListRow({ title, detail, leading, trailing = { kind: "chevron" }, danger, onPress, disabled, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const body = (
@@ -61,8 +62,9 @@ export function ListRow({ title, detail, leading, trailing = { kind: "chevron" }
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
+      disabled={disabled}
       testID={testID}
-      style={({ pressed }) => [styles.row, detail ? styles.two : null, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.row, detail ? styles.two : null, disabled && styles.disabled, pressed && !disabled && styles.pressed]}
     >
       {body}
     </Pressable>
@@ -91,6 +93,7 @@ const makeStyles = (theme: Theme) =>
     row: { minHeight: 54, flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingHorizontal: theme.spacing.md },
     two: { minHeight: 64, paddingVertical: theme.spacing.sm },
     pressed: { backgroundColor: theme.color.background },
+    disabled: { opacity: theme.opacity.disabled },
     leading: { width: 32, alignItems: "center" },
     body: { flex: 1, gap: 2 },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
