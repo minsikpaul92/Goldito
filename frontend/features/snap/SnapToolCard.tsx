@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { Avatar } from "../../components/ui/Avatar";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -31,7 +31,7 @@ export function SnapToolCard({ emoji, title, blurb, onPress, testID }: Props) {
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.blurb}>{blurb}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
+      <Icon name="forward" size={theme.icon.sm} color={theme.color.textMuted} />
     </Pressable>
   );
 }

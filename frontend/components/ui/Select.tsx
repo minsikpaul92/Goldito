@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { CheckRow } from "./CheckRow";
@@ -36,7 +36,7 @@ export function Select({ value, options, onChange, label, testID }: Props) {
         testID={testID}
       >
         <Text style={styles.value}>{chosen.label}</Text>
-        <Ionicons name="chevron-down" size={theme.icon.sm} color={theme.color.textMuted} />
+        <Icon name="expand" size={theme.icon.sm} color={theme.color.textMuted} />
       </Pressable>
       <Sheet visible={open} title={label} onClose={() => setOpen(false)} testID={testID ? `${testID}-sheet` : undefined}>
         {options.map((option) => (

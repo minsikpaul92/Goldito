@@ -1,0 +1,115 @@
+import type { LucideIcon } from "lucide-react-native";
+import ArrowUp from "lucide-react-native/icons/arrow-up";
+import Bell from "lucide-react-native/icons/bell";
+import BookOpen from "lucide-react-native/icons/book-open";
+import Calendar from "lucide-react-native/icons/calendar";
+import Camera from "lucide-react-native/icons/camera";
+import Car from "lucide-react-native/icons/car";
+import ChevronDown from "lucide-react-native/icons/chevron-down";
+import ChevronLeft from "lucide-react-native/icons/chevron-left";
+import ChevronRight from "lucide-react-native/icons/chevron-right";
+import Circle from "lucide-react-native/icons/circle";
+import CircleCheck from "lucide-react-native/icons/circle-check";
+import CircleDot from "lucide-react-native/icons/circle-dot";
+import Heart from "lucide-react-native/icons/heart";
+import House from "lucide-react-native/icons/house";
+import Image from "lucide-react-native/icons/image";
+import Images from "lucide-react-native/icons/images";
+import LogIn from "lucide-react-native/icons/log-in";
+import LogOut from "lucide-react-native/icons/log-out";
+import MapPin from "lucide-react-native/icons/map-pin";
+import Menu from "lucide-react-native/icons/menu";
+import MessageCircleMore from "lucide-react-native/icons/message-circle-more";
+import Mic from "lucide-react-native/icons/mic";
+import Minus from "lucide-react-native/icons/minus";
+import PawPrint from "lucide-react-native/icons/paw-print";
+import Plus from "lucide-react-native/icons/plus";
+import Settings from "lucide-react-native/icons/settings";
+import Sparkles from "lucide-react-native/icons/sparkles";
+import Square from "lucide-react-native/icons/square";
+import SquareCheck from "lucide-react-native/icons/square-check";
+import Tag from "lucide-react-native/icons/tag";
+import User from "lucide-react-native/icons/user";
+import Users from "lucide-react-native/icons/users";
+import Video from "lucide-react-native/icons/video";
+import X from "lucide-react-native/icons/x";
+import Zap from "lucide-react-native/icons/zap";
+
+// One file per icon: the package root would pull all of Lucide into the bundle.
+
+/**
+ * The app's line icons, named by meaning (Lucide, picked Oct 22). Screens ask for `home` or `bell`, never a Lucide
+ * name, so moving to another set (the Goldito illustrations, say) means changing this table only.
+ */
+const ICONS = {
+  // tabs
+  home: House,
+  calendar: Calendar,
+  feed: Images,
+  diary: BookOpen,
+  camera: Camera,
+  // header and menu
+  bell: Bell,
+  menu: Menu,
+  settings: Settings,
+  whatsNew: Sparkles,
+  logOut: LogOut,
+  // moving around
+  back: ChevronLeft,
+  forward: ChevronRight,
+  expand: ChevronDown,
+  close: X,
+  // actions
+  add: Plus,
+  remove: Minus,
+  send: ArrowUp,
+  quick: Zap,
+  mic: Mic,
+  stop: Square,
+  // choices
+  selected: CircleCheck,
+  radioOn: CircleDot,
+  radioOff: Circle,
+  checkboxOn: SquareCheck,
+  checkboxOff: Square,
+  heart: Heart,
+  // things
+  person: User,
+  people: Users,
+  paw: PawPrint,
+  place: MapPin,
+  price: Tag,
+  chat: MessageCircleMore,
+  car: Car,
+  received: LogIn,
+  returned: LogOut,
+  photo: Image,
+  video: Video,
+} satisfies Record<string, LucideIcon>;
+
+export type IconName = keyof typeof ICONS;
+
+type Props = {
+  name: IconName;
+  size?: number;
+  color: string;
+  /** Solid shape, e.g. a saved favourite heart. */
+  filled?: boolean;
+  strokeWidth?: number;
+  testID?: string;
+};
+
+/** A line icon, decorative: the control around it carries the label. */
+export function Icon({ name, size = 24, color, filled, strokeWidth = 2, testID }: Props) {
+  const Glyph = ICONS[name];
+  return (
+    <Glyph
+      size={size}
+      color={color}
+      fill={filled ? color : "none"}
+      strokeWidth={strokeWidth}
+      aria-hidden
+      testID={testID}
+    />
+  );
+}

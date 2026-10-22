@@ -95,7 +95,7 @@ export default function SignupScreen() {
 
       <View accessibilityRole="radiogroup" style={styles.roles}>
         <RoleCard
-          icon="home-outline"
+          icon="home"
           title="I'm a pet owner"
           description="Updates and photos arrive while you're away."
           selected={role === "owner"}
@@ -103,7 +103,7 @@ export default function SignupScreen() {
           testID="role-owner"
         />
         <RoleCard
-          icon="heart-outline"
+          icon="heart"
           title="I'm a pet sitter"
           description="Care, snap, tap. No reports to type."
           selected={role === "sitter"}

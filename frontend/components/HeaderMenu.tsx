@@ -1,17 +1,15 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { ComponentProps, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Icon, IconName } from "./ui/Icon";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
-
-type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const DURATION = 260;
 
@@ -55,9 +53,9 @@ export function HeaderMenu() {
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       testID={testID}
     >
-      <Ionicons name={icon} size={24} color={theme.color.primary} />
+      <Icon name={icon} size={24} color={theme.color.primary} />
       <Text style={styles.rowLabel}>{label}</Text>
-      {right ?? <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />}
+      {right ?? <Icon name="forward" size={18} color={theme.color.textMuted} />}
     </Pressable>
   );
 
@@ -70,7 +68,7 @@ export function HeaderMenu() {
         style={styles.iconButton}
         testID="open-menu"
       >
-        <Ionicons name="menu-outline" size={24} color={theme.color.text} />
+        <Icon name="menu" size={24} color={theme.color.text} />
       </Pressable>
       <Modal visible={open} transparent animationType="none" onRequestClose={() => close()}>
         <Animated.View style={[styles.scrim, { opacity: slide }]} />
@@ -91,7 +89,7 @@ export function HeaderMenu() {
               style={styles.iconButton}
               testID="header-menu-close"
             >
-              <Ionicons name="close" size={26} color={theme.color.text} />
+              <Icon name="close" size={26} color={theme.color.text} />
             </Pressable>
           </View>
 
@@ -107,7 +105,7 @@ export function HeaderMenu() {
               <Text style={styles.name} numberOfLines={1}>{name}</Text>
               <Text style={styles.muted}>{role}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />
+            <Icon name="forward" size={18} color={theme.color.textMuted} />
           </Pressable>
 
           {confirming ? (
@@ -120,7 +118,7 @@ export function HeaderMenu() {
             <>
               <View style={styles.list}>
                 {row(
-                  "notifications-outline",
+                  "bell",
                   "Notifications",
                   () => go(notificationsHref),
                   "menu-notifications",
@@ -130,9 +128,9 @@ export function HeaderMenu() {
                     </View>
                   ) : undefined,
                 )}
-                {profile?.role === "sitter" ? row("calendar-outline", "Schedule", () => go("/sitter/schedule"), "open-schedule") : null}
-                {row("sparkles-outline", "What's new", () => go("/whats-new"), "menu-whats-new")}
-                {row("settings-outline", "Settings", () => go("/settings"), "open-settings")}
+                {profile?.role === "sitter" ? row("calendar", "Schedule", () => go("/sitter/schedule"), "open-schedule") : null}
+                {row("whatsNew", "What's new", () => go("/whats-new"), "menu-whats-new")}
+                {row("settings", "Settings", () => go("/settings"), "open-settings")}
               </View>
               <Pressable
                 accessibilityRole="button"
@@ -140,7 +138,7 @@ export function HeaderMenu() {
                 style={({ pressed }) => [styles.row, pressed && styles.pressed]}
                 testID="log-out"
               >
-                <Ionicons name="log-out-outline" size={24} color={theme.color.textMuted} />
+                <Icon name="logOut" size={24} color={theme.color.textMuted} />
                 <Text style={[styles.rowLabel, styles.mutedLabel]}>Log out</Text>
               </Pressable>
             </>

@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { Screen } from "../ui/Screen";
 import { TextButton } from "../ui/TextButton";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -29,7 +29,7 @@ export function StepFrame({ progress, title, hint, onBack, children, footer, tes
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back} testID="own-back">
-            <Ionicons name="chevron-back" size={theme.icon.md} color={theme.color.text} />
+            <Icon name="back" size={theme.icon.md} color={theme.color.text} />
           </Pressable>
         ) : (
           <View style={styles.back} />

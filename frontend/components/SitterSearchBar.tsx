@@ -1,8 +1,8 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { ComponentProps, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon, IconName } from "./ui/Icon";
 import { SPECIES_EMOJI } from "../features/pets/petFormat";
 import { formatDay, formatTime, shiftTime } from "../features/schedule/dates";
 import { SitterSearch } from "../features/sitters/useSitterSearch";
@@ -19,8 +19,6 @@ import { TextField } from "./ui/TextField";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 
 type Open = "place" | "stay" | "pets" | null;
-type IconName = ComponentProps<typeof Ionicons>["name"];
-
 const TIME_STEP = 15;
 
 /** "Oct 20" from "Tue, Oct 20". */
@@ -58,7 +56,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
       style={[styles.segment, { flexShrink: grow }]}
       testID={id}
     >
-      <Ionicons name={icon} size={theme.icon.sm} color={theme.color.text} />
+      <Icon name={icon} size={theme.icon.sm} color={theme.color.text} />
       <Text style={styles.segmentText} numberOfLines={1}>
         {text}
       </Text>
@@ -75,11 +73,11 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
   return (
     <View style={styles.wrap}>
     <View style={styles.bar} testID="sitter-search-bar">
-      {segment("location-outline", placeText, () => setOpen("place"), "bar-place", 1)}
+      {segment("place", placeText, () => setOpen("place"), "bar-place", 1)}
       <View style={styles.divider} />
-      {segment("calendar-outline", dateText, () => setOpen("stay"), "bar-dates", 0)}
+      {segment("calendar", dateText, () => setOpen("stay"), "bar-dates", 0)}
       <View style={styles.divider} />
-      {segment("paw-outline", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
+      {segment("paw", petText, () => (pets.length === 0 ? router.push("/owner/pets/new") : setOpen("pets")), "bar-pets", 0)}
 
       <Sheet
         visible={open === "place"}

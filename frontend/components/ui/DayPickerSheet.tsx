@@ -1,7 +1,7 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { addMonths, dayOfMonth, formatMonth, monthGrid, monthStart } from "../../features/schedule/dates";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
@@ -50,7 +50,7 @@ export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose,
           style={[styles.nav, !canGoPrev && styles.disabled]}
           testID={testID ? `${testID}-prev` : undefined}
         >
-          <Ionicons name="chevron-back" size={theme.icon.sm} color={theme.color.primary} />
+          <Icon name="back" size={theme.icon.sm} color={theme.color.primary} />
         </Pressable>
         <Text accessibilityRole="header" style={styles.month}>
           {formatMonth(month)}
@@ -62,7 +62,7 @@ export function DayPickerSheet({ visible, title, value, minDay, onPick, onClose,
           style={styles.nav}
           testID={testID ? `${testID}-next` : undefined}
         >
-          <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.primary} />
+          <Icon name="forward" size={theme.icon.sm} color={theme.color.primary} />
         </Pressable>
       </View>
       <View style={styles.week}>

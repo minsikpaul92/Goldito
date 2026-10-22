@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
@@ -30,8 +30,8 @@ export function MediaPlaceholder({ kind, title, brief, testID }: Props) {
       testID={testID}
     >
       <View style={styles.center}>
-        <Ionicons
-          name={kind === "video" ? "videocam-outline" : "image-outline"}
+        <Icon
+          name={kind === "video" ? "video" : "photo"}
           size={theme.icon.md}
           color={theme.color.primary}
         />

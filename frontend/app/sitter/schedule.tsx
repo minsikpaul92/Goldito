@@ -1,8 +1,8 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "../../components/ui/Icon";
 import { ClosingRulesSheet, SlotHours } from "../../components/ClosingRulesSheet";
 import { ScheduleDraft, ScheduleSheet, initialDraft } from "../../components/ScheduleSheet";
 import { STATE_LABEL, SlotCalendar } from "../../components/SlotCalendar";
@@ -276,7 +276,7 @@ export default function SitterSchedule() {
               style={styles.gear}
               testID="schedule-rules"
             >
-              <Ionicons name="settings-outline" size={theme.icon.md} color={theme.color.primary} />
+              <Icon name="settings" size={theme.icon.md} color={theme.color.primary} />
               <Text style={styles.gearLabel}>Weekly rules</Text>
             </Pressable>
           ),

@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./Icon";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
@@ -32,8 +32,8 @@ export function CheckRow({ label, hint, checked, onChange, radio, disabled, test
       style={[styles.row, disabled && styles.disabled]}
       testID={testID}
     >
-      <Ionicons
-        name={radio ? (checked ? "radio-button-on" : "radio-button-off") : checked ? "checkbox" : "square-outline"}
+      <Icon
+        name={radio ? (checked ? "radioOn" : "radioOff") : checked ? "checkboxOn" : "checkboxOff"}
         size={theme.icon.sm}
         color={checked ? theme.color.primary : theme.color.textMuted}
       />

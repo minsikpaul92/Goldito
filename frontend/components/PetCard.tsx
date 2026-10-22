@@ -1,6 +1,6 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { Icon } from "./ui/Icon";
 import { Avatar } from "./ui/Avatar";
 import { Tag } from "./ui/Tag";
 import type { InCare } from "../features/care/useInCare";
@@ -53,7 +53,7 @@ export function PetCard({ pet, onPress, inCare }: Props) {
           </View>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={theme.icon.sm} color={theme.color.textMuted} />
+      <Icon name="forward" size={theme.icon.sm} color={theme.color.textMuted} />
     </Pressable>
   );
 }
