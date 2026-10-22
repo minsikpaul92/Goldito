@@ -1,4 +1,4 @@
-import { ReactNode, forwardRef } from "react";
+import { ReactNode, forwardRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,26 +10,33 @@ type Props = {
   contentStyle?: ViewStyle;
   /** Keep a thin visible scrollbar on the desktop frame (long pages, the diary). */
   scrollbar?: boolean;
-  /** Pinned under the scroll area, always visible (a primary action on a long form). */
+  /** Floats over the bottom of the scroll area, always visible (a primary action on a long form); the content shows around it. */
   footer?: ReactNode;
   testID?: string;
 };
 
 export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, scrollbar, footer, testID }, ref) {
   const styles = useThemedStyles(makeStyles);
+  const [footerHeight, setFooterHeight] = useState(0);
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
         ref={ref}
-        contentContainerStyle={[styles.content, contentStyle]}
+        contentContainerStyle={[styles.content, contentStyle, footer ? { paddingBottom: footerHeight } : null]}
         keyboardShouldPersistTaps="handled"
         {...(scrollbar && Platform.OS === "web" ? ({ dataSet: { scrollbar: "true" } } as object) : null)}
         testID={testID}
       >
         {children}
       </ScrollView>
-      {footer ? <View style={styles.footer}>{footer}</View> : null}
+      {footer ? (
+        <View style={styles.footerWrap} pointerEvents="box-none">
+          <View style={styles.footer} onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}>
+            {footer}
+          </View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 });
@@ -47,12 +54,17 @@ const makeStyles = (theme: Theme) =>
       width: "100%",
       alignSelf: "center",
     },
+    footerWrap: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
     footer: {
       gap: theme.spacing.sm,
       padding: theme.spacing.md,
       maxWidth: 480,
       width: "100%",
       alignSelf: "center",
-      backgroundColor: theme.color.background,
     },
   });

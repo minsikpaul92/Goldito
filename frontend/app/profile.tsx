@@ -323,7 +323,7 @@ export default function ProfileScreen() {
       footer={
         <>
           {saveError ? (
-            <Text accessibilityRole="alert" style={styles.error}>
+            <Text accessibilityRole="alert" style={styles.footerError}>
               {saveError}
             </Text>
           ) : null}
@@ -612,5 +612,12 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    footerError: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.error,
+      backgroundColor: theme.color.background,
+      borderRadius: theme.radius.sm,
+      padding: theme.spacing.sm,
     },
   });
