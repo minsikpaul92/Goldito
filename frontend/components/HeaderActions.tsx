@@ -2,25 +2,17 @@ import { StyleSheet, View } from "react-native";
 
 import { HeaderMenu } from "./HeaderMenu";
 import { NotificationBell } from "./NotificationBell";
-import { Tag } from "./ui/Tag";
-import { useHeaderStyle } from "../features/header/headerStyle";
-import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 
-/** Header right side for both roles (#147): role chip, bell, menu (Profile, Schedule, Settings, Log out). Header trial: see headerStyle. */
+/** Header right side for both roles (#147): bell, then your avatar, which opens the menu (Profile, Schedule, Settings, Log out). */
 export function HeaderActions() {
   const styles = useThemedStyles(makeStyles);
-  const { profile } = useSession();
-  const style = useHeaderStyle();
 
   return (
     <View style={styles.row}>
-      {profile && style !== "c" ? (
-        <Tag label={profile.role === "owner" ? "Owner" : "Sitter"} tone="brand" style={styles.chip} testID="role-chip" />
-      ) : null}
       <NotificationBell />
-      <HeaderMenu trigger={style === "now" ? "menu" : "avatar"} />
+      <HeaderMenu />
     </View>
   );
 }
@@ -33,5 +25,4 @@ const makeStyles = (theme: Theme) =>
       gap: theme.spacing.xs,
       paddingRight: theme.spacing.sm,
     },
-    chip: { alignSelf: "center", marginRight: theme.spacing.xs },
   });

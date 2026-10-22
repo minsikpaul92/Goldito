@@ -1,7 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
-import { HEADER_STYLES, setHeaderStyle, useHeaderStyle } from "../../features/header/headerStyle";
 import { tokens } from "../../theme/tokens";
 
 const BEZEL = 12;
@@ -70,31 +69,6 @@ export function FrameLink({ label, href, testID }: { label: string; href: string
   );
 }
 
-/** Header trial switch for the team (features/header/headerStyle): flips the header inside the phone live. */
-export function HeaderSwitch() {
-  const current = useHeaderStyle();
-  return (
-    <View style={styles.switchRow} accessibilityRole="radiogroup" aria-label="Header to try" testID="header-switch">
-      <Text style={styles.switchLabel}>Header</Text>
-      {HEADER_STYLES.map(({ value, label }) => {
-        const on = value === current;
-        return (
-          <Pressable
-            key={value}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: on }}
-            onPress={() => setHeaderStyle(value)}
-            style={[styles.switchOption, on && styles.switchOn]}
-            testID={`header-switch-${value}`}
-          >
-            <Text style={[styles.switchText, on && styles.switchTextOn]}>{label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 function StatusBar() {
   const time = useClock();
 
@@ -154,20 +128,6 @@ const styles = StyleSheet.create({
     height: FOOTER_HEIGHT,
     justifyContent: "center",
   },
-  switchRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  switchLabel: { fontSize: tokens.fontSize.small, fontWeight: "600", color: tokens.color.textMuted, marginRight: 2 },
-  switchOption: {
-    minHeight: 32,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: tokens.color.borderStrong,
-    backgroundColor: tokens.color.surface,
-    justifyContent: "center",
-  },
-  switchOn: { borderWidth: 2, borderColor: tokens.color.primary, backgroundColor: tokens.color.accent },
-  switchText: { fontSize: tokens.fontSize.small, fontWeight: "600", color: tokens.color.text },
-  switchTextOn: { color: tokens.color.primary },
   link: {
     fontSize: tokens.fontSize.body,
     fontWeight: "600",

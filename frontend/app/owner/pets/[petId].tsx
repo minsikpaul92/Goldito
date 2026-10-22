@@ -71,7 +71,7 @@ export default function PetProfileScreen() {
           router.back();
         }}
       />
-      <TextButton label="📖 Life Record" onPress={() => router.push(`/owner/pets/${pet.id}/record`)} testID="open-life-record" />
+      <TextButton label="Life Record" onPress={() => router.push(`/owner/pets/${pet.id}/record`)} testID="open-life-record" />
       {session.status === "signedIn" ? <CareTasksSection pet={pet} userId={session.profile.id} /> : null}
       {session.status === "signedIn" ? <HeadsUpSection pet={pet} userId={session.profile.id} /> : null}
     </Screen>

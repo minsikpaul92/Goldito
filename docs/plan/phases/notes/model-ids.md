@@ -20,6 +20,8 @@
 | **Daily report draft** | 07 | `POST /api/ai/daily-report` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | **Long-form text:** warm end-of-day report from today’s logs + feed + the 5-second check (report photos described by `MODEL_VISION` first). |
 | **Report chips** (Stage 4) | 07 | `POST /api/ai/report-chips` | `MODEL_VISION` | `openbmb/MiniCPM-V-4_5` | **Vision:** 1–2 short episode chips per report photo. The day-record chips (meal, potty, walk, meds) come from the database with no model call; the sitter keeps or turns off each chip (D38). |
 | **Pet Life Record** (Stage 5) | 07C | `POST /api/ai/life-record` | `MODEL_REPORT` | `nvidia/nemotron-3-super-120b-a12b` | Long-context summary of a whole stay; only recorded facts, null when no evidence. |
+| **Booking chat chips** | 03D | `POST /api/ai/chat-chips` | `MODEL_CHAT_CHIPS` | `nvidia/nemotron-3-super-120b-a12b` | 2 to 3 short labels. Nano and Lightning chips were fine but the drafts and the chat they fed were not; Super chips needed the prompt line "under 30 characters, no digits" (4 of 20 turns fell back to the generic chips before it, 0 after). |
+| **Booking chat draft** | 03D | `POST /api/ai/chat-draft` | `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` | `nvidia/nemotron-3-super-120b-a12b` | One short message in the person's voice. Nano and Lightning looped on repeats and fell back to bare chip words in a 20 message run, Super did not. The chat AI does not use Nano. |
 | **Dev smoke / cheap tests** | 07.1 | `scripts/test_nebius.py` | `MODEL_FAST` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Fast, low-cost Nemotron for “hello world” and JSON/format checks before wiring Super/Ultra. |
 | **Optional: fast text** | — | (stretch) | — | `nvidia/Nemotron-3_5-Lightning` | Cheaper/faster text if we split caption **wording polish** from vision (P1 only if needed). |
 
@@ -141,6 +143,44 @@ Estimated route total ≈ vision 1.4 s + Tavily ≤ 3 s (parallel, 8 s cap) + Ul
 | **Estimated draft total** (embedding + tone + draft + ~120 ms for the four parallel gathers) | **3.2 s** | **6.1 s** |
 
 Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a few tens of ms per query, so a cache in front of it (e.g. Redis) would save about 1 % — not worth the stale-data risk for allergies and Heads-ups. The human-paced auto-send delay (15–40 s) is separate and deliberate (7B.10). The gathering that needs a signed-in session (schedule and quote RPCs) is not in this script: it is timed in the app run on the hosted DB once `010` is applied there.
+
+## Booking chat simulation (2026-10-22)
+
+A local simulation (not in the repo, the real check is the app with an owner and a sitter side by side) - a fake owner (Robert) and sitter (Chloe) chat about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks and one rewrite (past 40 messages the app's rolling summary too); Ultra then rates the whole chat 1 to 10 and tags each bad message. One or two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft`; "fast" is Nano.
+
+| Setting | Messages | Score | Draft fallback | Fragments | Repeat tags |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Nano chips, Nano drafts | 20 | 2, 2 | 4.5 | 4.5 | 8.5 |
+| Nano chips, Super drafts | 20 | 4, 3 | 0 | 0 | 11 |
+| Super chips, Super drafts | 20 | 3, 3 | 0 | 0.5 | 8.5 |
+| Nano chips, Nano drafts | 50 | 2 | 15 | 15 | 26 |
+| Nano chips, Super drafts | 50 | 3 | 5 | 3 | 11 |
+
+- **Super for drafts and chips is the choice (2026-10-22).** Nano drafts looped on repeats, fell back to the chip's bare words ("Photo update.") and made up details; Lightning did the same and failed more calls.
+- **A judge was tried and removed.** A second Super call that read each draft with the same facts caught a made-up "Maple Park", a second self-introduction and a bare "Sure." on hand-made drafts (0.38 s median), but in 20 and 50 message chats the score did not move (3 to 4 of 10 with or without it), repeats did not drop, and the first version cut drafts down to the chip's bare words more often (9 fallbacks in 50 messages vs 5 without it).
+- **Every setting loops after about 20 messages** (the same pickup time, pill and photo confirmations): both sides only tap chips, nothing tells the model which topics are already settled, and the repeat check compares text, not meaning. It is not the context size (20 to 50 short messages are a few thousand tokens). The chat AI inputs below (profile, cards, progress, topics) were built to attack this.
+- **Seconds per turn** (median / worst): Super chips 1.0 to 1.1 / 2.4 (Nano chips 1.5 / 3.5), Super draft with rewrites 1.0 / 2.5 (Nano 1.7 / 3.6); a person waits about 1 s after tapping a chip.
+
+### What the chat AI reads: 50 message runs per step (2026-10-22)
+
+Same local simulation, now with a booking that moves along (request at message 6, Meet & Greet, agreement, quote and payment, drop-off at 36, pick-up at 46), Max (allergic to chicken, daily pill) and Luna, and Ultra rating the whole chat with the booking events in front of it. Super for chips and drafts everywhere. Each row is the code at that step's commit; one run each, the last two rows two runs. "Flagged" is the number of messages Ultra marked.
+
+| Step | Score | Flagged | Repeat | Invented | Contradiction | Off topic | Fragment |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| before (Super, no new inputs) | 4 | 44 | 19 | 4 | 4 | 7 | 10 |
+| 1 profile block, allergies, checklist | 3 | 23 | 16 | 3 | 2 | 1 | 0 |
+| 2 + every card | 4 | 18 | 4 | 0 | 12 | 0 | 0 |
+| 3 + progress | 4 | 23 | 12 | 6 | 3 | 2 | 0 |
+| 4 + topics (first version) | 3 | 24 | 2 | 1 | 3 | 18 | 0 |
+| 4 + topics only while they matter | 4, 4 | 10, 10 | 1, 5 | 2, 1 | 7, 1 | 0, 2 | 0, 0 |
+| + chips prompt fix (Meet & Greet) | 4, 4 | 19, 19 | 5, 7 | 7, 3 | 5, 3 | 2, 4 | 0, 2 |
+| final (no vet topic) | 4, 4 | 20, 16 | 8, 4 | 8, 7 | 0, 4 | 3, 1 | 1, 0 |
+
+- **Flagged messages went from 44 to between 10 and 24** and the one or two word fragments (10) are gone. The score barely moves (3 to 4 of 10): Ultra is strict and the chats still loop a little after the stay.
+- **The profile block removed the fragments, the cards cut repeats** (19 to 4), progress made the booking state consistent, topics cut repeats further but the first version pushed topics after the stay began (18 off-topic) until each topic got a last step.
+- **Not solved: made-up details.** Final runs still get 7 to 8 "invented" flags (a park name, a litter type, a quote amount, times). The vet topic made the model invent clinics, so it was removed (the app knows no vet).
+- **Runs vary a lot** (the same code gave 10 and 19 flagged messages in two rounds). Do not read a one-message difference as an effect. The real check is the app with an owner and a sitter side by side (test-guide CHAT-41 to CHAT-44).
+- **Speed:** median about 1.0 to 1.2 s for chips and 1.0 to 1.2 s for a draft in the five-way run, the same for every step (the extra input costs no measurable time). The last runs were slower (medians 1.3 to 2.5 s, worst 14 to 44 s) while the model API was slow; the inputs did not change between them.
 
 ## Open questions (Phase 07.1 / 08 spike)
 

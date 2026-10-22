@@ -16,10 +16,10 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 const DURATION = 260;
 
 /**
- * Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Log out.
- * `trigger="avatar"` opens it from your avatar instead of ≡, so the header shows who is signed in (header trial A and C).
+ * Header menu (#147): your avatar opens a full-width drawer from the right, so the header shows who is signed in
+ * (team pick, Oct 22). You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out.
  */
-export function HeaderMenu({ trigger = "menu" }: { trigger?: "menu" | "avatar" }) {
+export function HeaderMenu() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -68,18 +68,14 @@ export function HeaderMenu({ trigger = "menu" }: { trigger?: "menu" | "avatar" }
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={trigger === "avatar" ? `${name}, ${role.toLowerCase()} account. Menu` : "Menu"}
+        accessibilityLabel={`${name}, ${role.toLowerCase()} account. Menu`}
         onPress={() => setOpen(true)}
         style={styles.iconButton}
         testID="open-menu"
       >
-        {trigger === "avatar" ? (
-          <View style={styles.avatarRing}>
-            <Avatar kind="initial" name={name} size={32} testID="header-avatar" />
-          </View>
-        ) : (
-          <Ionicons name="menu-outline" size={24} color={theme.color.text} />
-        )}
+        <View style={styles.avatarRing}>
+          <Avatar kind="initial" name={name} size={32} testID="header-avatar" />
+        </View>
       </Pressable>
       <Modal visible={open} transparent animationType="none" onRequestClose={() => close()}>
         <Animated.View style={[styles.scrim, { opacity: slide }]} />
@@ -121,8 +117,8 @@ export function HeaderMenu({ trigger = "menu" }: { trigger?: "menu" | "avatar" }
 
           {confirming ? (
             <View style={styles.confirm}>
-              <Text style={styles.name}>Log out?</Text>
-              <Button label="Log out" variant="danger" onPress={() => close(() => void signOut())} testID="log-out-confirm" />
+              <Text style={styles.name}>Sign out?</Text>
+              <Button label="Sign out" variant="danger" onPress={() => close(() => void signOut())} testID="log-out-confirm" />
               <Button label="Cancel" variant="secondary" onPress={() => setConfirming(false)} testID="log-out-cancel" />
             </View>
           ) : (
@@ -150,7 +146,7 @@ export function HeaderMenu({ trigger = "menu" }: { trigger?: "menu" | "avatar" }
                 testID="log-out"
               >
                 <Ionicons name="log-out-outline" size={24} color={theme.color.textMuted} />
-                <Text style={[styles.rowLabel, styles.mutedLabel]}>Log out</Text>
+                <Text style={[styles.rowLabel, styles.mutedLabel]}>Sign out</Text>
               </Pressable>
             </>
           )}

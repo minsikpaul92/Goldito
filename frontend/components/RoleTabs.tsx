@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HeaderActions } from "./HeaderActions";
 import { LoadingView } from "./ui/LoadingView";
-import { useHeaderStyle } from "../features/header/headerStyle";
 import { Role, homeFor, useSession } from "../providers/SessionProvider";
 import { useTheme } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -92,18 +91,17 @@ export function headerOptions(theme: Theme) {
   };
 }
 
-/** A tab's header title; header trial C adds "Name · Role" under it, so the header says who is signed in. */
+/** A tab's header title with "Name · Role" under it, so the header says who is signed in (team pick, Oct 22). */
 function HeaderTitle({ children }: { children: string }) {
   const theme = useTheme();
   const { profile } = useSession();
-  const style = useHeaderStyle();
   const who = profile ? `${profile.displayName || "You"} · ${profile.role === "owner" ? "Owner" : "Sitter"}` : null;
   return (
     <View>
       <Text accessibilityRole="header" style={headerOptions(theme).headerTitleStyle} numberOfLines={1}>
         {children}
       </Text>
-      {style === "c" && who ? (
+      {who ? (
         <Text
           style={{ fontSize: theme.fontSize.small, lineHeight: theme.lineHeight.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted }}
           numberOfLines={1}

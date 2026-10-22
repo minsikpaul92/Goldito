@@ -64,7 +64,7 @@ test.describe("auth and role routing", () => {
 
     await page.goto("/owner/diary");
     await expect(page).toHaveURL(/\/sitter$/);
-    await expect(app(page).getByText("No bookings yet")).toBeVisible();
+    await expect(app(page).getByText("No pets in your care today")).toBeVisible();
   });
 
   test("tabs switch with a mouse click", async ({ page }) => {
@@ -92,14 +92,29 @@ test.describe("auth and role routing", () => {
     await signup.getByTestId("role-sitter").click();
     await expect(signup.getByTestId("role-sitter")).toHaveAttribute("aria-checked", "true");
     await expect(signup.getByTestId("role-owner")).toHaveAttribute("aria-checked", "false");
-    await signup.getByTestId("signup-name").fill("Chloe");
+    await signup.getByTestId("signup-first-name").fill("Chloe");
+    await signup.getByTestId("signup-last-name").fill("Park");
     await signup.getByTestId("signup-email").fill("chloe@goldito.test");
     await signup.getByTestId("signup-password").fill("care-snap-tap");
     await signup.getByTestId("signup-confirm").fill("care-snap-tap");
     await signup.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/\/sitter$/);
-    expect(signups).toEqual([{ email: "chloe@goldito.test", role: "sitter", display_name: "Chloe" }]);
+    expect(signups).toEqual([{ email: "chloe@goldito.test", role: "sitter", display_name: "Chloe Park" }]);
+  });
+
+  test("sign up asks for a first and a last name", async ({ page }) => {
+    await mockSupabase(page, []);
+    await page.goto("/signup");
+    const signup = app(page);
+    await signup.getByTestId("role-owner").click();
+    await signup.getByTestId("signup-first-name").fill("Robert");
+    await signup.getByTestId("signup-email").fill("robert@goldito.test");
+    await signup.getByTestId("signup-password").fill("max-and-mochi");
+    await signup.getByTestId("signup-confirm").fill("max-and-mochi");
+    await expect(signup.getByRole("button", { name: "Create account" })).toBeDisabled();
+    await signup.getByTestId("signup-last-name").fill("Kim");
+    await expect(signup.getByRole("button", { name: "Create account" })).toBeEnabled();
   });
 
   test("sign up checks the email shape and that both passwords match, and Back returns", async ({ page }) => {
@@ -110,7 +125,8 @@ test.describe("auth and role routing", () => {
     await expect(page).toHaveURL(/\/signup$/);
 
     await screen.getByTestId("role-owner").click();
-    await screen.getByTestId("signup-name").fill("Robert");
+    await screen.getByTestId("signup-first-name").fill("Robert");
+    await screen.getByTestId("signup-last-name").fill("Kim");
     await screen.getByTestId("signup-email").fill("robert@goldito");
     await screen.getByTestId("signup-password").fill("max-and-mochi");
     await screen.getByTestId("signup-confirm").fill("max-and-moch");
