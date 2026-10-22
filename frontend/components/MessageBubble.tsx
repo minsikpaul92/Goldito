@@ -33,10 +33,11 @@ const makeStyles = (theme: Theme) =>
     row: { gap: 2, maxWidth: "88%" },
     rowMe: { alignSelf: "flex-end", alignItems: "flex-end" },
     rowThem: { alignSelf: "flex-start", alignItems: "flex-start" },
-    bubble: { padding: theme.spacing.sm, borderRadius: theme.radius.lg, gap: theme.spacing.xs },
-    bubbleMe: { backgroundColor: theme.color.primary },
-    bubbleThem: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border },
-    body: { fontSize: theme.fontSize.body, color: theme.color.text },
+    // Figma Message Bubble: 12 × 14 padding, 16 corners with a 4 px tail corner on the speaker's side, 1.45 line height.
+    bubble: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: theme.radius.lg, gap: theme.spacing.xs },
+    bubbleMe: { backgroundColor: theme.color.primary, borderBottomRightRadius: 4 },
+    bubbleThem: { backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border, borderBottomLeftRadius: 4 },
+    body: { fontSize: theme.fontSize.body, lineHeight: Math.round(theme.fontSize.body * 1.45), color: theme.color.text },
     bodyMe: { color: theme.color.primaryText },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });

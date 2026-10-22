@@ -504,7 +504,7 @@ export default function ProfileScreen() {
           {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
           <CheckRow
             label="Take pets from more than one owner at a time"
-            hint="Off: one owner's pets at a time, so other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
+            hint="One owner at a time, or several within your max."
             checked={multiOwner}
             onChange={setMultiOwner}
             testID="profile-multi-owner"

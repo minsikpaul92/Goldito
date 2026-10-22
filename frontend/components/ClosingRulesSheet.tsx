@@ -116,7 +116,7 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
   return (
     <Sheet
       visible={visible}
-      title="Closing rules"
+      title="Weekly rules"
       onClose={onClose}
       testID="rules-sheet"
       footer={
@@ -129,8 +129,7 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
       }
     >
       <Text style={styles.hint}>
-        Tap the days and times you never take. Closed slots can't be booked, every week. With nothing picked you are
-        open, and owners can find you. Days you close by hand on the calendar stay closed too.
+        Tap the slots you never take.
       </Text>
 
       <View style={styles.grid} testID="rules-grid">
@@ -168,8 +167,7 @@ export function ClosingRulesSheet({ visible, rules, hours, weekdayHours, saving,
 
       <Text style={styles.heading}>Hours</Text>
       <Text style={styles.hint}>
-        The hours of each slot on days you haven't set by hand. Pick a weekday to give it its own hours; the others keep
-        the every-day hours. A day you opened by hand keeps its own hours.
+        Pick a weekday to give it its own hours.
       </Text>
       <View style={styles.dayChips} testID="rules-hours-days">
         {(["all", 0, 1, 2, 3, 4, 5, 6] as const).map((day) => {
