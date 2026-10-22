@@ -161,6 +161,8 @@ export type MockDb = {
   sitter_profile_answers: Row[];
   /** 014g: { id, profile_id, public_id }, in the person's order (first = cover). */
   profile_photos: Row[];
+  /** 015e: one row per person who changed a switch ({ id, prefs }); no row = the defaults. */
+  notification_prefs: Row[];
   /** 014j: one thread per owner and sitter, and its messages (text or card). */
   chat_threads: Row[];
   chat_messages: Row[];
@@ -272,6 +274,7 @@ function createMockDb(): MockDb {
     sitter_weekday_hours: [],
     sitter_profile_answers: [],
     profile_photos: [],
+    notification_prefs: [],
     chat_threads: [],
     chat_messages: [],
     cardSigs: {},
@@ -1055,6 +1058,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     const kept = db.sitter_closing_rules.filter((r) => r.sitter_id !== me);
     const added = (p_rules as Row[]).map((r) => ({ sitter_id: me, weekday: r.weekday, slot: r.slot }));
     db.sitter_closing_rules.splice(0, db.sitter_closing_rules.length, ...kept, ...added);
+    return route.fulfill({ status: 204 });
+  }
+
+  if (path === "rpc/set_notification_pref") {
+    const { p_key, p_on } = request.postDataJSON();
+    if (!["trip", "daily", "tips"].includes(p_key) || typeof p_on !== "boolean") return fail("invalid_pref");
+    const row = db.notification_prefs.find((r) => r.id === me);
+    const prefs = { ...((row?.prefs as Row | undefined) ?? { trip: true, daily: true, tips: false }), [p_key]: p_on };
+    if (row) row.prefs = prefs;
+    else db.notification_prefs.push({ id: me, prefs });
     return route.fulfill({ status: 204 });
   }
 
@@ -2141,7 +2154,15 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       return route.fulfill({ status: 204 });
     }
     const rows = users
-      .map((u) => ({ id: u.id, role: u.role, display_name: u.displayName }) as Row)
+      .map(
+        (u) =>
+          ({
+            id: u.id,
+            role: u.role,
+            display_name: u.displayName,
+            notification_prefs: db.notification_prefs.find((r) => r.id === u.id)?.prefs ?? { trip: true, daily: true, tips: false },
+          }) as Row,
+      )
       .filter((row) => matches(row, params));
     return respond(route, rows, wantsObject);
   }

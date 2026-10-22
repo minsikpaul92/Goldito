@@ -1,9 +1,10 @@
 import Constants from "expo-constants";
 import { Redirect, router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { Button } from "../components/ui/Button";
+import { Avatar } from "../components/ui/Avatar";
 import { BackLink } from "../components/ui/BackLink";
 import { List, ListRow } from "../components/ui/ListRow";
 import { LoadingView } from "../components/ui/LoadingView";
@@ -11,14 +12,28 @@ import { Screen } from "../components/ui/Screen";
 import { ScreenHeader } from "../components/ui/ScreenHeader";
 import { Sheet } from "../components/ui/Sheet";
 import { useMyPets } from "../features/pets/useMyPets";
+import { loadCoverPhoto, photoThumb } from "../features/profile/profilePhotosApi";
+import { useNotificationPrefs } from "../features/settings/notificationPrefs";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
 import { tokens } from "../theme/tokens";
 
-/** The first letter of a name on a round ground (Figma: the top right and the green block). */
-function Initial({ name, background, color }: { name: string; background: string; color: string }) {
+/** The person's cover photo on a round ground, or their first letter when they have none (Figma: top right and the green block). */
+function Face({ profileId, name, background, color }: { profileId: string; name: string; background: string; color: string }) {
   const styles = useThemedStyles(makeStyles);
+  const [uri, setUri] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    loadCoverPhoto(profileId)
+      .then((cover) => active && cover && setUri(photoThumb(cover, 120)))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [profileId]);
+
+  if (uri) return <Avatar kind="photo" uri={uri} size={40} />;
   return (
     <View style={[styles.initial, { backgroundColor: background }]}>
       <Text style={[styles.initialText, { color }]}>{name.slice(0, 1).toUpperCase()}</Text>
@@ -45,10 +60,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const session = useSession();
   const [confirmLogOut, setConfirmLogOut] = useState(false);
-  // Figma shows these three switches; there is nothing behind them yet, so they only change on this screen.
-  const [tripUpdates, setTripUpdates] = useState(true);
-  const [dailyNotes, setDailyNotes] = useState(true);
-  const [tips, setTips] = useState(false);
+  const { prefs, setPref } = useNotificationPrefs();
   if (session.status === "loading") return <LoadingView />;
   if (session.status !== "signedIn") return <Redirect href="/welcome" />;
   const { profile } = session;
@@ -61,11 +73,11 @@ export default function SettingsScreen() {
       <BackLink onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} testID="settings-back" />
       <ScreenHeader
         title="Settings"
-        right={<Initial name={profile.displayName} background={theme.color.accent} color={theme.color.text} />}
+        right={<Face profileId={profile.id} name={profile.displayName} background={theme.color.accent} color={theme.color.text} />}
       />
 
       <View style={styles.me} testID="settings-account">
-        <Initial name={profile.displayName} background={tokens.color.gold} color={theme.color.text} />
+        <Face profileId={profile.id} name={profile.displayName} background={tokens.color.gold} color={theme.color.text} />
         <View style={styles.meText}>
           <Text style={styles.meName}>{profile.displayName}</Text>
           <Text style={styles.meMeta}>
@@ -96,9 +108,9 @@ export default function SettingsScreen() {
         Notifications
       </Text>
       <List testID="settings-notifications">
-        <ListRow title="Trip updates" subtitle="On the way, arrived" switchValue={tripUpdates} onSwitchChange={setTripUpdates} />
-        <ListRow title="Daily notes and photos" switchValue={dailyNotes} onSwitchChange={setDailyNotes} />
-        <ListRow title="Tips and news" switchValue={tips} onSwitchChange={setTips} />
+        <ListRow title="Trip updates" subtitle="On the way, arrived" switchValue={prefs.trip} onSwitchChange={(on) => void setPref("trip", on)} />
+        <ListRow title="Daily notes and photos" switchValue={prefs.daily} onSwitchChange={(on) => void setPref("daily", on)} />
+        <ListRow title="Tips and news" switchValue={prefs.tips} onSwitchChange={(on) => void setPref("tips", on)} />
       </List>
 
       <List>

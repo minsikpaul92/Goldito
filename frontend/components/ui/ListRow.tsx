@@ -78,7 +78,7 @@ export function ListRow({ title, subtitle, badge, tone, chevron, switchValue, on
   return (
     <Pressable
       accessibilityRole={isSwitch ? "switch" : "button"}
-      accessibilityState={isSwitch ? { checked: switchValue } : undefined}
+      aria-checked={isSwitch ? switchValue : undefined}
       accessibilityLabel={title}
       onPress={handlePress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}

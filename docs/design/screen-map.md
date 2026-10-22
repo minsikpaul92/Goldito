@@ -359,10 +359,10 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `settings-back` | 61 |
-| Sheet | Sign out? | `settings-log-out-sheet` | 112 |
-| Button | Sign out | `settings-log-out-confirm` | 114 |
-| Button | Cancel | **none** | 115 |
+| BackLink | — | `settings-back` | 73 |
+| Sheet | Sign out? | `settings-log-out-sheet` | 124 |
+| Button | Sign out | `settings-log-out-confirm` | 126 |
+| Button | Cancel | **none** | 127 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -608,8 +608,8 @@ What's new: small updates in plain words. docs/CHANGELOG.md, turned into JSON by
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `whats-new-back` | 45 |
-| EmptyState | Nothing new yet | — | 48 |
+| BackLink | — | `whats-new-back` | 46 |
+| EmptyState | Nothing new yet | — | 49 |
 
 ## Components
 

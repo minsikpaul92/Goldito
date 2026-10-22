@@ -40,11 +40,34 @@ for (const user of [OWNER, SITTER]) {
     await screen.getByTestId("open-menu").click();
     await screen.getByTestId("menu-whats-new").click();
     await expect(page).toHaveURL(/\/whats-new$/);
-    if (changelog.length === 0) {
+    const dated = changelog.filter((release) => release.title && /^\d{4}-\d{2}-\d{2}$/.test(release.title));
+    if (dated.length === 0) {
       await expect(screen.getByText("Nothing new yet")).toBeVisible();
     } else {
-      await expect(screen.getByTestId(`release-${changelog[0].version}`)).toContainText(changelog[0].sections[0].items[0]);
+      await expect(screen.getByTestId("release-0")).toContainText(dated[0].sections[0].items[0]);
     }
     await expect(screen.getByText(/Planned/)).toHaveCount(0);
+  });
+
+  test(`${user.role}: Settings → Notifications switches save at once and stay after a reload`, async ({ page }) => {
+    await mockSupabase(page, [OWNER, SITTER]);
+    await signIn(page, user);
+    const screen = app(page);
+    await screen.getByTestId("open-menu").click();
+    await screen.getByTestId("open-settings").click();
+    const trip = screen.getByRole("switch", { name: "Trip updates" });
+    const tips = screen.getByRole("switch", { name: "Tips and news" });
+    await expect(trip).toHaveAttribute("aria-checked", "true");
+    await expect(tips).toHaveAttribute("aria-checked", "false");
+
+    await trip.click();
+    await tips.click();
+    await expect(trip).toHaveAttribute("aria-checked", "false");
+    await expect(tips).toHaveAttribute("aria-checked", "true");
+
+    await page.reload();
+    await expect(screen.getByRole("switch", { name: "Trip updates" })).toHaveAttribute("aria-checked", "false");
+    await expect(screen.getByRole("switch", { name: "Tips and news" })).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByRole("switch", { name: "Daily notes and photos" })).toHaveAttribute("aria-checked", "true");
   });
 }

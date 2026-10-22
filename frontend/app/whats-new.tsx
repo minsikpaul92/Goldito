@@ -14,15 +14,16 @@ import { Theme } from "../theme/themes";
 
 type Release = { version: string; title: string | null; sections: { heading: string; items: string[] }[] };
 
-const RELEASES = changelog as Release[];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "2026-10-15" → "Oct 15"; anything else (Unreleased, a build name) as written. */
-function releaseLabel(release: Release): string {
+/** "2026-10-15" → "Oct 15". Null when the heading has no date. */
+function releaseDate(release: Release): string | null {
   const date = release.title?.match(/^\d{4}-(\d{2})-(\d{2})$/);
-  if (date) return `${MONTHS[Number(date[1]) - 1]} ${Number(date[2])}`;
-  return release.title ?? release.version;
+  return date ? `${MONTHS[Number(date[1]) - 1]} ${Number(date[2])}` : null;
 }
+
+// One card per dated heading in docs/CHANGELOG.md; a heading with no date (the hackathon scaffold) stays out.
+const RELEASES = (changelog as Release[]).filter((release) => releaseDate(release) !== null);
 
 /** "Photo request: an owner asks…" → the lead in bold, the rest regular. No colon early on = all regular. */
 function splitLead(item: string): { lead: string; rest: string } {
@@ -48,8 +49,8 @@ export default function WhatsNewScreen() {
         <EmptyState emoji="✨" title="Nothing new yet" message="New features show here." />
       ) : (
         RELEASES.map((release, i) => (
-          <Card key={release.version} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${release.version}`}>
-            <Text style={styles.label}>{i === 0 ? `${releaseLabel(release)} · New` : releaseLabel(release)}</Text>
+          <Card key={`${release.version}-${release.title}`} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${i}`}>
+            <Text style={styles.label}>{i === 0 ? `${releaseDate(release)} · New` : releaseDate(release)}</Text>
             <View style={styles.items}>
               {release.sections
                 .flatMap((section) => section.items)
