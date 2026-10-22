@@ -232,10 +232,17 @@ def test_a_draft_the_judge_rejects_is_rewritten_with_its_reasons(client, setup, 
     assert payload["facts"] and payload["recent"]  # what the writer read (the judge drops the voice notes itself)
 
 
-def test_a_draft_that_the_judge_keeps_rejecting_falls_back_to_the_chips_own_words(client, setup, monkeypatch):
+def test_the_judge_reads_only_the_first_draft_and_its_rewrite_is_never_swapped_for_the_chips_words(client, setup, monkeypatch):
     setup({"reply": "Sure, Riverside Park!"}, {"reply": "Sure, the dog park!"}, db=asked_price_db())
-    judged(monkeypatch, ["remove the place"], ["remove the place"])
-    assert draft(client, "Let me check").json() == {"text": "Let me check.", "source": "fallback"}
+    calls = judged(monkeypatch, ["remove the place"])
+    assert draft(client, "Let me check").json() == {"text": "Sure, the dog park!", "source": "model"}
+    assert len(calls) == 1  # a second verdict would only be able to cut the draft down to two bare words
+
+
+def test_a_rewrite_that_breaks_a_rule_after_the_judge_still_falls_back(client, setup, monkeypatch):
+    setup({"reply": "Sure, Riverside Park!"}, {"reply": "Sure, $40 a night!"}, db=asked_price_db())
+    judged(monkeypatch, ["remove the place"])
+    assert draft(client, "Let me check").json() == {"text": "Let me check.", "source": "fallback"}  # the rules still decide
 
 
 def test_a_judge_that_cannot_answer_is_skipped_and_the_draft_stands(client, setup, monkeypatch, caplog):
@@ -247,11 +254,11 @@ def test_a_judge_that_cannot_answer_is_skipped_and_the_draft_stands(client, setu
     assert '"judge":"skipped"' in caplog.text
 
 
-def test_the_judge_only_reads_a_draft_that_passed_the_rule_checks(client, setup, monkeypatch):
+def test_the_judge_only_reads_a_first_draft_that_passed_the_rule_checks(client, setup, monkeypatch):
     setup({"reply": "Sure, $40 a night!"}, {"reply": "Sure, it is $55 a night."}, db=asked_price_db())
     calls = judged(monkeypatch, [])
     assert draft(client, "Tell the price").json()["source"] == "model"
-    assert [text for _, text in calls] == ["Sure, it is $55 a night."]  # the invented price never reached the judge
+    assert calls == []  # the invented price never reached the judge, and the rewrite has no rewrite left to buy
 
 
 def test_with_the_judge_off_it_is_never_called(client, setup, monkeypatch):

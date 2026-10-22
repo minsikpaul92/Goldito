@@ -383,7 +383,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
         problems = agent.problems(text, facts, known, sitter_first, previous)
         judge = "off"
-        if not problems and judging:
+        if not problems and judging and attempt == 0:  # one look: its reasons buy one rewrite, it never swaps a draft for the bare chip
             judged = chat_judge.check(payload, text)  # None: it could not answer in time, the draft stands as before
             judge = "skipped" if judged is None else "on"
             problems = judged or []

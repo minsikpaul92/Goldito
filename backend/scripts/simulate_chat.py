@@ -10,23 +10,25 @@ chips, so it is a harder test than a real chat. Ultra then rates the whole chat.
 """
 
 import json
+import statistics
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from pydantic import BaseModel  # noqa: E402
-
 from app.ai import chat as logic  # noqa: E402
 from app.ai import chat_judge  # noqa: E402
 from app.ai import inquiry as inquiry_logic  # noqa: E402
 from app.ai.chat_agents import agent_for  # noqa: E402
 from app.ai.chat_agents.owner import OWNER_STYLE  # noqa: E402
+from app.ai.prompts import load_prompt  # noqa: E402
 from app.config import get_settings  # noqa: E402
-from app.routers.ai_chat import ChipsOut, DraftOut  # noqa: E402
+from app.routers.ai_chat import ChipsOut, DraftOut, SummaryOut  # noqa: E402
 from app.services import nebius  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
 
 OWNER, SITTER = "owner-id", "sitter-id"
 TZ = ZoneInfo(get_settings().app_timezone)
@@ -56,7 +58,7 @@ class Rated(BaseModel):
     bad: list[dict]
 
 
-def turn(cfg: dict, role: str, messages: list[dict]) -> dict:
+def turn(cfg: dict, role: str, messages: list[dict], summary: str | None = None) -> dict:
     agent = agent_for(role)
     me = OWNER if role == "owner" else SITTER
     state = agent.state(messages, me)
@@ -66,7 +68,10 @@ def turn(cfg: dict, role: str, messages: list[dict]) -> dict:
         "role": role, "state": state,
         "me": "Robert" if role == "owner" else "Chloe", "them": "Chloe" if role == "owner" else "Robert",
         "recent": logic.transcript(messages[-logic.WINDOW:], me, TZ), "facts": facts,
+        **({"summary": summary} if summary else {}),
     }
+    timing = {"chips_s": 0.0, "draft_s": 0.0, "judge_s": 0.0}
+    started = time.perf_counter()
     chip_fallback = False
     try:
         out, _ = nebius.chat_json(
@@ -76,6 +81,7 @@ def turn(cfg: dict, role: str, messages: list[dict]) -> dict:
         chips = [c for c in (" ".join(c.split()) for c in out.chips) if c and not logic.chip_problems(c)][:3]
     except (nebius.AIUnavailable, nebius.AIInvalidOutput):
         chips = []
+    timing["chips_s"] = time.perf_counter() - started
     if len(chips) < 2:
         chip_fallback = True
         chips = agent.fallback_chips(started=True, state=state, facts=facts)
@@ -90,36 +96,61 @@ def turn(cfg: dict, role: str, messages: list[dict]) -> dict:
     judge_skips = 0
     result = {"role": role, "chip": chip, "chip_fallback": chip_fallback}
     for attempt in range(2):
+        began = time.perf_counter()
         try:
             out, _ = nebius.chat_json("fast", msgs, DraftOut, endpoint="sim-draft", max_tokens=300, temperature=0.4, model=cfg["draft"])
         except (nebius.AIUnavailable, nebius.AIInvalidOutput):
+            timing["draft_s"] += time.perf_counter() - began
             rejected.append("model_failed")
             break
+        timing["draft_s"] += time.perf_counter() - began
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "pets": facts.get("pets", [])})
         problems = agent.problems(text, facts, known, sitter_first, previous)
-        if not problems and cfg["judge"]:
+        if not problems and cfg["judge"] and attempt == 0:
+            began = time.perf_counter()
             judged = chat_judge.check(payload, text)
+            timing["judge_s"] += time.perf_counter() - began
             if judged is None:
                 judge_skips += 1
             elif judged:
                 judge_stops += 1
             problems = judged or []
         if not problems:
-            return {**result, "text": text, "source": "model", "attempts": attempt + 1, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips}
+            return {**result, "text": text, "source": "model", "attempts": attempt + 1, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips, **timing}
         rejected += problems
         msgs = [*msgs, {"role": "assistant", "content": json.dumps({"reply": out.reply})},
                 {"role": "user", "content": "Rewrite it. Problems: " + "; ".join(problems) + ". Return only the JSON."}]
-    return {**result, "text": logic.fixed_draft(chip), "source": "fallback", "attempts": 2, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips}
+    return {**result, "text": logic.fixed_draft(chip), "source": "fallback", "attempts": 2, "rejected": rejected, "judge_stops": judge_stops, "judge_skips": judge_skips, **timing}
+
+
+def refresh_summary(messages: list[dict], summary: str | None, upto: str | None) -> tuple[str | None, str | None]:
+    """The rolling summary of a long chat, as the app keeps it (ai_chat._ensure_summary): older messages the summary does
+    not cover yet are folded in by the fast model once enough have piled up."""
+    fresh = logic.summary_due(messages, upto)
+    if not fresh:
+        return summary, upto
+    payload = {
+        "previous": logic.scrub(summary),
+        "messages": [{"who": "owner" if m["sender_id"] == OWNER else "sitter", "text": d["text"]} for m in fresh if (d := logic.describe(m, OWNER, TZ))],
+    }
+    try:
+        out, _ = nebius.chat_json("fast", [{"role": "system", "content": load_prompt("chat/summary.md")}, {"role": "user", "content": json.dumps(payload)}],
+                                  SummaryOut, endpoint="sim-summary", max_tokens=300)
+        return logic.scrub(out.summary)[:2000], fresh[-1]["created_at"]
+    except (nebius.AIUnavailable, nebius.AIInvalidOutput):
+        return summary, upto
 
 
 def converse(cfg: dict, turns: int) -> list[dict]:
-    messages = [{"kind": "card", "sender_id": OWNER, "card": STAY, "body": None}]
+    messages = [{"kind": "card", "sender_id": OWNER, "card": STAY, "body": None, "created_at": "000000"}]
     log: list[dict] = []
+    summary = upto = None
     role = "sitter"  # the stay card opened the chat, so the sitter answers first like in the app
     for _ in range(turns):
-        res = turn(cfg, role, messages)
+        summary, upto = refresh_summary(messages, summary, upto)
+        res = turn(cfg, role, messages, summary)
         log.append(res)
-        messages.append({"kind": "text", "sender_id": OWNER if role == "owner" else SITTER, "body": res["text"]})
+        messages.append({"kind": "text", "sender_id": OWNER if role == "owner" else SITTER, "body": res["text"], "created_at": f"{len(messages):06d}"})
         role = "owner" if role == "sitter" else "sitter"
     return log
 
@@ -140,7 +171,7 @@ def rate(log: list[dict]) -> Rated | None:
     lines = [f"{i + 1}. {'Owner' if t['role'] == 'owner' else 'Sitter'} (tapped option: {t['chip']}): {t['text']}" for i, t in enumerate(log)]
     try:
         out, _ = nebius.chat_json("safety", [{"role": "system", "content": RATER}, {"role": "user", "content": "\n".join(lines)}],
-                                  Rated, endpoint="sim-rate", max_tokens=1500)
+                                  Rated, endpoint="sim-rate", max_tokens=3000)
         return out
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         print("rating failed:", exc)
@@ -177,6 +208,17 @@ def main() -> None:
             f"{sum(t['chip_fallback'] for t in log):>15}{sum(t['attempts'] == 2 and t['source'] == 'model' for t in log):>10}"
             f"{sum(t['judge_stops'] for t in log):>13}{sum(t['judge_skips'] for t in log):>13}  " + "  ".join(f"{k:>{len(n)}}" for k, n in zip(kinds, KINDS))
         )
+    print("\nseconds per turn (median / worst): chips, draft with rewrites, judge, and the three together")
+    for label, log, _ in results:
+        def span(key: str) -> str:
+            values = [t[key] for t in log]
+            return f"{statistics.median(values):.2f} / {max(values):.2f}"
+        totals = [t["chips_s"] + t["draft_s"] + t["judge_s"] for t in log]
+        print(f"{label:<22} chips {span('chips_s')}   draft {span('draft_s')}   judge {span('judge_s')}   all {statistics.median(totals):.2f} / {max(totals):.2f}")
+    print("\nbad messages by position (1-20 / 21-35 / 36+)")
+    for label, log, rated in results:
+        bad = [int(b.get("n", 0)) for b in (rated.bad if rated else [])]
+        print(f"{label:<22} {sum(n <= 20 for n in bad)} / {sum(20 < n <= 35 for n in bad)} / {sum(n > 35 for n in bad)}")
     for label, log, rated in results:
         print(f"\n=== {label}: {rated.summary if rated else ''}")
         for i, t in enumerate(log):
