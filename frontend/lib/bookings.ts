@@ -719,9 +719,10 @@ export function localStage(b: Omit<BookingSummary, "stage" | "nextActor">): Pick
   let stage: BookingStage;
   if (b.status === "declined" || b.status === "cancelled") stage = b.status;
   else if (b.status === "requested") {
-    // Over or never needed: both still say yes (014o). Otherwise it waits for the sitter's first yes, then the Meet & Greet.
+    // Over or never needed: both still say yes (014o). Untouched, it waits for the sitter's first yes; once anyone moved
+    // the Meet & Greet (the owner may ask first, 015f) it is the Meet & Greet stage.
     if (["not_needed", "done", "skipped"].includes(b.meetGreetStatus)) stage = "confirm";
-    else stage = b.sitterInterestAt ? "meet_greet" : "requested";
+    else stage = !b.sitterInterestAt && b.meetGreetStatus === "required" ? "requested" : "meet_greet";
   } else if (b.pickUp?.completedAt) stage = "completed";
   else if (b.dropOff?.completedAt) stage = "in_care";
   else stage = b.paidAt ? "paid" : "awaiting_payment";
