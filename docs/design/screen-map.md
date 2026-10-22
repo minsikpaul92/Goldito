@@ -1357,8 +1357,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``pet-switch-${p.name}`` | 34 |
-| TextButton | 🎨 Match colors from photo | `pet-colors-open` | 51 |
+| Pressable | — | ``pet-switch-${p.name}`` | 54 |
+| Pressable | ``${itemName(item)} ${hat === item.id ? "on" : "off"}`` | ``pet-hat-${item.id}`` | 73 |
+| TextButton | 🎨 Match colors from photo | `pet-colors-open` | 86 |
 
 ### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
 
@@ -1519,4 +1520,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-442 actions · 441 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+443 actions · 442 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
