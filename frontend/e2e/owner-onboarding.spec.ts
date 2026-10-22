@@ -592,6 +592,41 @@ test.describe("owner onboarding", () => {
     expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
   });
 
+  test("the weight can be typed in kg or lbs, the switch converts it and the pet is saved in kg", async ({ page }) => {
+    const db = await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const step of ["photos", "voice", "breed", "coat", "age"]) {
+      await expect(screen.getByTestId(`own-step-${step}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
+
+    await expect(screen.getByTestId("own-title")).toHaveText("How much does Pip weigh?");
+    await expect(screen.getByTestId("own-weight-unit-kg")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("own-weight")).toHaveAttribute("placeholder", "kg");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-weight").fill("6,8");
+    await screen.getByTestId("own-weight-unit-lbs").click();
+    await expect(screen.getByTestId("own-weight-unit-lbs")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("own-weight")).toHaveValue("15");
+    await screen.getByTestId("own-weight-unit-kg").click();
+    await expect(screen.getByTestId("own-weight")).toHaveValue("6.8");
+    await screen.getByTestId("own-weight-unit-lbs").click();
+    await screen.getByTestId("own-weight").fill("22.5");
+    await screen.getByTestId("own-next").click();
+    await skipToSummary(page);
+
+    await expect(screen.getByTestId("own-row-weight")).toContainText("22.5 lbs");
+    await expect(screen.getByTestId("own-glance")).toContainText("10.21 kg");
+    await screen.getByTestId("own-save").click();
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.pets.find((p) => p.name === "Pip")).toMatchObject({ weight_kg: 10.21 });
+  });
+
   test("a reload while the second pet is open goes on with that pet", async ({ page }) => {
     const db = await newOwner(page);
     await signIn(page, OWNER);

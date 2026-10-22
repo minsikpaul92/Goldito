@@ -14,6 +14,7 @@ import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
 import { LoadingView } from "../components/ui/LoadingView";
 import { LinkButton } from "../components/ui/LinkButton";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { Stepper } from "../components/ui/Stepper";
 import { TextButton } from "../components/ui/TextButton";
 import {
@@ -21,6 +22,7 @@ import {
   OwnerOnboardingDraft,
   birthdateFromAge,
   clearDraft,
+  convertWeight,
   draftForNextPet,
   foodsFromDraft,
   loadDraft,
@@ -379,25 +381,35 @@ export default function OwnerOnboarding() {
   }
 
   if (step === "weight") {
+    const kg = weightFromDraft(draft);
+    const heardKg = draft.voice.weight_kg;
     return frame(
       `How much does ${petName} weigh?`,
       <>
+        <SegmentedControl
+          options={[
+            { value: "kg", label: "kg" },
+            { value: "lbs", label: "lbs" },
+          ]}
+          value={draft.weightUnit}
+          onChange={(weightUnit) => update({ weightUnit, weight: convertWeight(draft.weight, draft.weightUnit, weightUnit) })}
+          testID="own-weight-unit"
+        />
         <BigInput
-          value={draft.weightKg}
-          onChangeText={(weightKg) => update({ weightKg })}
+          value={draft.weight}
+          onChangeText={(weight) => update({ weight })}
           onSubmitEditing={next}
           keyboardType="decimal-pad"
-          placeholder="kg"
-          accessibilityLabel="Weight in kg"
+          placeholder={draft.weightUnit}
+          accessibilityLabel={`Weight in ${draft.weightUnit}`}
           testID="own-weight"
         />
-        {heard(draft.voice.weight_kg, draft.weightKg.trim() === String(draft.voice.weight_kg?.value), "weight")}
+        {heard(heardKg, kg !== null && heardKg !== null && Math.abs(kg - heardKg.value) < 0.06, "weight")}
       </>,
       <>
-        {nextButton(draft.weightKg.trim() === "")}
+        {nextButton(draft.weight.trim() === "")}
         {skipLink}
       </>,
-      "In kg.",
     );
   }
 
@@ -652,7 +664,7 @@ export default function OwnerOnboarding() {
       label: "Age",
       value: draft.ageYears === null ? "Not shared yet" : `${draft.ageYears} ${draft.ageYears === 1 ? "year" : "years"}`,
     },
-    { id: "weight", label: "Weight", value: draft.weightKg.trim() ? `${draft.weightKg.trim()} kg` : "Not shared yet" },
+    { id: "weight", label: "Weight", value: draft.weight.trim() ? `${draft.weight.trim()} ${draft.weightUnit}` : "Not shared yet" },
     { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
     { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
