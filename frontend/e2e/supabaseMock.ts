@@ -480,13 +480,23 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
   if (b.status !== "requested") return fail("invalid_status");
   const status = String(b.meet_greet_status ?? "not_needed");
   const done = () => route.fulfill({ status: 204 });
+  // 015f: the sitter's answer is the first yes (hold_booking_dates, no capacity check here).
+  const hold = () => {
+    if (me === b.sitter_id && !b.sitter_interest_at) {
+      b.sitter_interest_at = new Date(nowMs()).toISOString();
+      b.meet_greet_due_at = new Date(nowMs() + 2 * 86_400_000).toISOString();
+    }
+  };
+  const decline = () => Object.assign(b, { status: "cancelled", cancel_reason: "meet_greet_declined", cancelled_by: me });
 
   switch (fn) {
     case "propose_meet_greet": {
-      if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
-      if (status === "required" && !b.sitter_interest_at) return fail("interest_required"); // 011l guard
-      if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
+      if (!["required", "proposed", "agreed", "skip_requested"].includes(status)) return fail("invalid_status");
       if (Date.parse(String(args.p_at)) <= nowMs()) return fail("invalid_window");
+      const drop = currentHandoffRow(db, b, "drop_off");
+      if (drop && Date.parse(String(args.p_at)) >= Date.parse(String(drop.scheduled_at))) return fail("meet_greet_too_late");
+      if (args.p_mode === "in_person" && !String(args.p_place ?? "").trim()) return fail("place_required");
+      hold();
       Object.assign(b, {
         meet_greet_status: "proposed",
         meet_greet_mode: args.p_mode,
@@ -501,8 +511,10 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     case "respond_meet_greet": {
       if (status !== "proposed") return fail("invalid_status");
       if (b.meet_greet_proposed_by === me) return fail("not_allowed");
-      if (args.p_accept) b.meet_greet_status = "agreed";
-      else
+      if (args.p_accept) {
+        hold();
+        b.meet_greet_status = "agreed";
+      } else
         Object.assign(b, {
           meet_greet_status: "required",
           meet_greet_mode: null,
@@ -521,14 +533,22 @@ function handleMeetGreet(route: Route, fn: string, args: Row, me: string | null,
     }
     case "request_skip_meet_greet": {
       if (!["required", "proposed", "agreed"].includes(status)) return fail("invalid_status");
+      hold();
       Object.assign(b, { meet_greet_status: "skip_requested", meet_greet_skip_requested_by: me });
       return done();
     }
     case "respond_skip_meet_greet": {
       if (status !== "skip_requested") return fail("invalid_status");
       if (b.meet_greet_skip_requested_by === me) return fail("not_allowed");
-      if (args.p_accept) b.meet_greet_status = "skipped";
-      else Object.assign(b, { status: "cancelled", cancel_reason: "meet_greet_declined", cancelled_by: me });
+      if (args.p_accept) {
+        hold();
+        b.meet_greet_status = "skipped";
+      } else decline();
+      return done();
+    }
+    case "decline_meet_greet": {
+      if (!["required", "proposed", "agreed", "skip_requested"].includes(status)) return fail("invalid_status");
+      decline();
       return done();
     }
   }
@@ -810,7 +830,12 @@ function handleChat(route: Route, fn: string, users: MockUser[], db: MockDb, me:
       pick_up_place: place("pick_up"),
       pets: petRows.map((p) => ({ id: p.id, name: p.name })),
     };
-    return json(route, 200, post(thread, me, "card", null, card));
+    const row = post(thread, me, "card", null, card);
+    // 015f: a first-time pair's Meet & Greet card follows right away.
+    const mg = String(booking.meet_greet_status ?? "not_needed");
+    const hasMeet = messagesOf(thread).some((m) => m.kind === "card" && (m.card as Row).type === "meet_greet" && (m.card as Row).booking_id === booking.id);
+    if (mg !== "not_needed" && !hasMeet) post(thread, me, "card", null, { type: "meet_greet", booking_id: booking.id, rev: 0 });
+    return json(route, 200, row);
   }
 
   // 014n quotes: the card holds the negotiation; totals are recomputed here as in SQL.
@@ -993,7 +1018,7 @@ function syncBookingCards(db: MockDb) {
     if (!thread) continue;
     const mg = String(b.meet_greet_status ?? "not_needed");
     const wanted = [
-      b.sitter_interest_at && mg !== "not_needed" ? "meet_greet" : null,
+      mg !== "not_needed" && (b.sitter_interest_at || mg !== "required") ? "meet_greet" : null,
       ["requested", "confirmed"].includes(String(b.status)) && ["not_needed", "done", "skipped"].includes(mg) ? "agreement" : null,
       b.status === "confirmed" ? "payment" : null,
     ].filter((x): x is string => !!x);
@@ -1434,7 +1459,7 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         let stage: string;
         if (b.status === "declined" || b.status === "cancelled") stage = String(b.status);
         else if (b.status === "requested") {
-          stage = ["not_needed", "done", "skipped"].includes(mg) ? "confirm" : b.sitter_interest_at ? "meet_greet" : "requested";
+          stage = ["not_needed", "done", "skipped"].includes(mg) ? "confirm" : !b.sitter_interest_at && mg === "required" ? "requested" : "meet_greet";
         } else if (done("pick_up")) stage = "completed";
         else if (done("drop_off")) stage = "in_care";
         else stage = b.paid_at ? "paid" : "awaiting_payment";

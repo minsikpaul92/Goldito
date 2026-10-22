@@ -24,6 +24,7 @@ import {
   requestVideoLink,
   respondMeetGreet,
   respondSkipMeetGreet,
+  declineMeetGreet,
 } from "../lib/meetGreet";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -52,8 +53,9 @@ export function meetGreetSummary(b: BookingSummary): string | null {
 
 /**
  * Meet & Greet on a first-time booking (DESIGN.md MeetGreetCard, phase-03b 3B.9, D44):
- * to schedule → proposed → agreed (Join Google Meet / Add to calendar) → Done; a skip
- * request asks the other side to Continue without meeting or Decline (cancels).
+ * to schedule → proposed → agreed (Join Google Meet / Add to calendar) → Done. The owner may
+ * ask first: Request or Skip Meet & Greet (015f, #236). A time or a skip request is answered
+ * with Accept, the other choice, or Decline (ends the request).
  */
 export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGreetCard(
   { booking, viewer, onChanged, hidePrimary },
@@ -65,7 +67,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ key: number; spots: MeetSpots } | null>(null);
-  const [confirm, setConfirm] = useState<"skip" | "decline-skip" | "done-early" | null>(null);
+  const [confirm, setConfirm] = useState<"skip" | "decline" | "done-early" | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const primaryRef = useRef<() => void>(() => undefined);
   useImperativeHandle(ref, () => ({ primary: () => primaryRef.current(), skip: () => setConfirm("skip") }), []);
@@ -148,7 +150,18 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     : null;
 
   let body: ReactNode = null;
-  if (status === "required" && awaitingFirstYes(booking)) {
+  if (status === "required" && awaitingFirstYes(booking) && viewer === "owner") {
+    // The owner's choice right after Request booking (015f, #236). Both buttons stay on the card, also in the chat.
+    body = (
+      <>
+        <Text style={styles.title}>Meet before the first stay?</Text>
+        <View style={styles.pair}>
+          <Button label="Request Meet & Greet" onPress={() => void openSheet()} disabled={busy} style={styles.half} testID="meet-request" />
+          <Button label="Skip Meet & Greet" variant="secondary" onPress={() => setConfirm("skip")} disabled={busy} style={styles.half} testID="meet-skip" />
+        </View>
+      </>
+    );
+  } else if (status === "required" && awaitingFirstYes(booking)) {
     // Nothing can be planned until the sitter says yes to meeting (D60) — the sitter's button is in the footer.
     body = (
       <>
@@ -206,12 +219,8 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
         )}
         <View style={styles.links}>
           <TextButton label="Suggest another time" onPress={() => void openSheet()} testID="meet-counter" />
-          <TextButton
-            label="Decline"
-            danger
-            onPress={() => void run(() => respondMeetGreet(booking.id, false), `${other} can suggest another time`)}
-            testID="meet-decline"
-          />
+          <TextButton label="Request skip" onPress={() => setConfirm("skip")} testID="meet-skip" />
+          <TextButton label="Decline" danger onPress={() => setConfirm("decline")} testID="meet-decline" />
         </View>
       </>
     );
@@ -262,29 +271,25 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
     body = (
       <>
         <Text style={styles.title}>{`Waiting for ${other}`}</Text>
-        <Text style={styles.muted}>{`You asked to skip the Meet & Greet. If ${other} says no, this booking is cancelled.`}</Text>
+        <Text style={styles.muted}>You asked to skip the Meet & Greet.</Text>
       </>
     );
   } else if (status === "skip_requested") {
     body = (
       <>
         <Text style={styles.title}>{`${other} would like to skip the Meet & Greet`}</Text>
-        <Text style={styles.body}>Continue the booking without meeting first?</Text>
         {hidePrimary ? null : (
           <Button
-            label="Continue without meeting"
+            label="Accept skip"
             onPress={() => void run(() => respondSkipMeetGreet(booking.id, true), "Meet & Greet skipped")}
             disabled={busy}
             testID="meet-skip-accept"
           />
         )}
-        <TextButton
-          label="Decline and cancel booking"
-          danger
-          onPress={() => setConfirm("decline-skip")}
-          style={styles.left}
-          testID="meet-skip-decline"
-        />
+        <View style={styles.links}>
+          <TextButton label="Request Meet & Greet" onPress={() => void openSheet()} testID="meet-skip-counter" />
+          <TextButton label="Decline" danger onPress={() => setConfirm("decline")} testID="meet-skip-decline" />
+        </View>
       </>
     );
   }
@@ -326,7 +331,7 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
           />
         }
       >
-        <Text style={styles.body}>{`If ${other} says no, this booking will be cancelled.`}</Text>
+        <Text style={styles.body}>{`${other} can accept, ask to meet, or decline.`}</Text>
       </Sheet>
 
       <Sheet
@@ -352,28 +357,28 @@ export const MeetGreetCard = forwardRef<MeetGreetHandle, Props>(function MeetGre
       </Sheet>
 
       <Sheet
-        visible={confirm === "decline-skip"}
-        title="Meet first instead?"
+        visible={confirm === "decline"}
+        title="Decline this request?"
         onClose={() => setConfirm(null)}
         testID="meet-decline-sheet"
         footer={
           <Button
-            label="Decline and cancel the booking"
+            label="Decline request"
+            variant="danger"
             onPress={() => {
               setConfirm(null);
               void run(async () => {
-                await respondSkipMeetGreet(booking.id, false);
+                if (status === "skip_requested") await respondSkipMeetGreet(booking.id, false);
+                else await declineMeetGreet(booking.id);
                 await releaseVideoLink(booking.id);
-              }, "Booking cancelled");
+              }, "Request declined");
             }}
             testID="meet-decline-confirm"
           />
         }
       >
         <Text style={styles.body}>
-          {viewer === "owner"
-            ? "This cancels the booking request. You can book another sitter."
-            : `This cancels the booking. ${other} gets a notice and can find another sitter.`}
+          {viewer === "owner" ? "This ends the booking request. You can book another sitter." : `This ends ${other}'s booking request.`}
         </Text>
       </Sheet>
     </Card>
@@ -415,5 +420,12 @@ const makeStyles = (theme: Theme) =>
     left: {
       alignSelf: "flex-start",
       paddingHorizontal: 0,
+    },
+    pair: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+    },
+    half: {
+      flex: 1,
     },
   });

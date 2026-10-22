@@ -127,9 +127,9 @@ Shows: `ConsentCard` · `QuoteCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Can't open checkout | — | 149 |
-| Button | Add entry info | `checkout-entry-add` | 177 |
-| Button | `totalLabel` | `checkout-pay` | 219 |
+| EmptyState | Can't open checkout | — | 148 |
+| Button | Add entry info | `checkout-entry-add` | 176 |
+| Button | `totalLabel` | `checkout-pay` | 222 |
 
 ### `/owner/bookings/[bookingId]/review` — [app/owner/bookings/[bookingId]/review.tsx](../../frontend/app/owner/bookings/[bookingId]/review.tsx)
 
@@ -421,22 +421,22 @@ Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChange
 | --- | --- | --- | --- |
 | EmptyState | Booking not found | — | 151 |
 | EmptyState | Couldn't load this booking | — | 158 |
-| Tag | `b.label` | — | 254 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 314 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 319 |
-| TextButton | Change time or place | `change-booking` | 327 |
-| Tag | `a` | — | 356 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 384 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 399 |
-| TextButton | Decline | `decline-booking` | 407 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 418 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 428 |
-| TextButton | Cancel booking | `cancel-booking` | 447 |
-| Sheet | Cancel booking | `cancel-sheet` | 466 |
-| Button | Cancel booking | `cancel-confirm` | 472 |
-| Sheet | Decline request | `decline-sheet` | 510 |
-| Button | Decline request | `decline-confirm` | 516 |
-| TextButton | Suggest another time instead | `decline-suggest` | 555 |
+| Tag | `b.label` | — | 256 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 316 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 321 |
+| TextButton | Change time or place | `change-booking` | 329 |
+| Tag | `a` | — | 358 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 386 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 401 |
+| TextButton | Decline | `decline-booking` | 409 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 420 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 430 |
+| TextButton | Cancel booking | `cancel-booking` | 449 |
+| Sheet | Cancel booking | `cancel-sheet` | 468 |
+| Button | Cancel booking | `cancel-confirm` | 474 |
+| Sheet | Decline request | `decline-sheet` | 512 |
+| Button | Decline request | `decline-confirm` | 518 |
+| TextButton | Suggest another time instead | `decline-suggest` | 557 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -939,40 +939,44 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Schedule Meet & Greet | `meet-schedule` | 173 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 174 |
-| TextButton | Change | `meet-change` | 183 |
-| TextButton | Skip Meet & Greet | `meet-skip` | 184 |
-| Button | Accept | `meet-accept` | 194 |
-| TextButton | Suggest another time | `meet-counter` | 208 |
-| TextButton | Decline | `meet-decline` | 209 |
-| LinkButton | Join Google Meet | `meet-join` | 225 |
-| TextButton | Get the Meet link | `meet-link-retry` | 229 |
-| CheckRow | `item` | ``meet-check-${item}`` | 244 |
-| Button | Done, we met | `meet-done` | 254 |
-| LinkButton | Add to calendar | `meet-calendar` | 256 |
-| TextButton | Change | `meet-change` | 257 |
-| Button | Continue without meeting | `meet-skip-accept` | 274 |
-| TextButton | Decline and cancel booking | `meet-skip-decline` | 281 |
-| Sheet | Ask to skip | `meet-skip-sheet` | 313 |
-| Button | Ask to skip | `meet-skip-confirm` | 319 |
-| Sheet | Cancel | `meet-done-early-sheet` | 332 |
-| TextButton | Cancel | `meet-done-early-cancel` | 339 |
-| Button | Yes, we met | `meet-done-early-confirm` | 340 |
-| Sheet | Decline and cancel the booking | `meet-decline-sheet` | 354 |
-| Button | Decline and cancel the booking | `meet-decline-confirm` | 360 |
+| Button | Request Meet & Greet | `meet-request` | 159 |
+| Button | Skip Meet & Greet | `meet-skip` | 160 |
+| Button | Schedule Meet & Greet | `meet-schedule` | 186 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 187 |
+| TextButton | Change | `meet-change` | 196 |
+| TextButton | Skip Meet & Greet | `meet-skip` | 197 |
+| Button | Accept | `meet-accept` | 207 |
+| TextButton | Suggest another time | `meet-counter` | 221 |
+| TextButton | Request skip | `meet-skip` | 222 |
+| TextButton | Decline | `meet-decline` | 223 |
+| LinkButton | Join Google Meet | `meet-join` | 234 |
+| TextButton | Get the Meet link | `meet-link-retry` | 238 |
+| CheckRow | `item` | ``meet-check-${item}`` | 253 |
+| Button | Done, we met | `meet-done` | 263 |
+| LinkButton | Add to calendar | `meet-calendar` | 265 |
+| TextButton | Change | `meet-change` | 266 |
+| Button | Accept skip | `meet-skip-accept` | 282 |
+| TextButton | Request Meet & Greet | `meet-skip-counter` | 290 |
+| TextButton | Decline | `meet-skip-decline` | 291 |
+| Sheet | Ask to skip | `meet-skip-sheet` | 318 |
+| Button | Ask to skip | `meet-skip-confirm` | 324 |
+| Sheet | Cancel | `meet-done-early-sheet` | 337 |
+| TextButton | Cancel | `meet-done-early-cancel` | 344 |
+| Button | Yes, we met | `meet-done-early-confirm` | 345 |
+| Sheet | Decline request | `meet-decline-sheet` | 359 |
+| Button | Decline request | `meet-decline-confirm` | 365 |
 
 ### MeetGreetSheet — [components/MeetGreetSheet.tsx](../../frontend/components/MeetGreetSheet.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| CheckRow | `label` | ``meet-spot-${label}`` | 62 |
-| Sheet | ``Send to ${otherName}`` | `meet-sheet` | 74 |
-| Button | ``Send to ${otherName}`` | `meet-send` | 80 |
-| SegmentedControl | — | `meet-mode` | 88 |
-| CheckRow | 📍 Somewhere else | `meet-spot-other` | 101 |
-| Stepper | Meet & Greet day | `meet-day` | 123 |
-| Stepper | Meet & Greet time | `meet-time` | 132 |
+| CheckRow | `label` | ``meet-spot-${label}`` | 67 |
+| Sheet | ``Send to ${otherName}`` | `meet-sheet` | 79 |
+| Button | ``Send to ${otherName}`` | `meet-send` | 85 |
+| SegmentedControl | — | `meet-mode` | 93 |
+| CheckRow | 📍 Somewhere else | `meet-spot-other` | 106 |
+| Stepper | Meet & Greet day | `meet-day` | 128 |
+| Stepper | Meet & Greet time | `meet-time` | 138 |
 
 ### NoticeDetail — [components/NoticeDetail.tsx](../../frontend/components/NoticeDetail.tsx)
 
@@ -1523,4 +1527,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-440 actions · 439 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+444 actions · 443 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

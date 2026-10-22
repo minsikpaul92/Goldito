@@ -78,7 +78,7 @@ function endedNote(b: BookingSummary): string | null {
   if (b.status === "declined") return `${b.sitterName} can't take this one.`;
   if (b.status !== "cancelled") return null;
   if (b.cancelReason === "meet_greet_timeout") return `No time to meet ${b.sitterName} was set, so this booking was cancelled.`;
-  if (b.cancelReason === "meet_greet_declined") return `${b.sitterName} would like to meet first, so this booking was cancelled.`;
+  if (b.cancelReason === "meet_greet_declined") return b.cancelledBy === b.sitterId ? `${b.sitterName} declined this request.` : "You declined this request.";
   if (b.cancelledBy === b.sitterId) return `${b.sitterName} cancelled this booking.`;
   return "You cancelled this booking.";
 }

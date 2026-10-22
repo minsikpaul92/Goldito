@@ -88,7 +88,7 @@
 
 | 기능 | 상태 | Phase |
 | :--- | :--- | :--- |
-| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 시터의 첫 동의 뒤에만 가능, BOOK-8 ~ 13) | ✅ 🤖 | 03B.9 · Booking steps |
+| 첫 만남 미팅 (직접 / 영상, 제안 · 수락 · 건너뛰기 — 오너는 요청 직후 **Request / Skip Meet & Greet**, 시터의 답이 첫 동의, BOOK-8 ~ 13 · MGCHOICE) | ✅ 🤖 (`015f` 호스팅 적용 전) | 03B.9 · Booking steps · #236 |
 | Google Meet 링크 자동 생성 (방은 링크 누구나 입장으로 열림 — 새 범위로 token 재발급 후 사람 확인 필요) | 🟡 서버 완료, **앱 e2e 미확인** | 03B.11 |
 | 오너가 돌봄 할 일 등록 (약 · 식사 · 산책 …) | ✅ 🤖 | 06 / 6.1 |
 | AI 케어 요청서 → 체크리스트 (칩 · 한 줄씩 · 표 · 자동 저장) | ✅ 🤖 (실제 AI 응답은 👤) | 06 / 6.12–6.13 · 6.20 |
@@ -335,14 +335,14 @@
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서). 링크는 호스트(Goldito 계정) 승인 없이 **바로 입장**돼야 함 (다른 계정, 시크릿 창으로 확인). **Join Google Meet** 버튼은 Safari에서도 눌려 새 탭이 열려야 함 (진짜 `<a>` 링크) | 🤖 `test_meet_greet.py` (방 열기 호출 · 실패해도 링크 유지) · `meet-greet.spec.ts` (버튼이 `href` · `target=_blank` 링크) · Safari에서 실제 클릭과 입장은 **👤** | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음. 거절 · 취소된 예약에는 헤더 카드와 안내 줄 사이에 **빈 카드가 없음**(오너 · 시터 둘 다, 진행 중 예약은 단계 막대 그대로) | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
-| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 "Waiting for Chloe to say yes to meeting", 일정 잡기 · 건너뛰기 버튼 없음, 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
+| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 **Request Meet & Greet / Skip Meet & Greet** 두 버튼(#236, MGCHOICE-1), 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
 | SCHED-1 | 시터 일정 · 오너가 보는 시터 프로필의 **달력** | 날짜 칸에 **M · A · N 글자가 없고** **날짜 칸 전체가 세 개의 가로 띠**(위부터 **Night · Afternoon · Morning** — 아래가 오전, 위가 밤, 날짜 숫자는 그 위). 예약할 수 없는 띠(막음 · 꽉 참 · 열지 않음)는 **연한 빗금**(세 띠가 같은 무늬로 이어짐), 열린 띠는 비어 있음. 지난 날은 흐리게(빗금 없음). 범례는 한 줄 **Available / Not available**. 날짜를 누르면 아래에 칸별 시간 · 상태("Morning: Open · 9:30 AM–1:00 PM", 막힌 이유 포함). 스크린리더 라벨에 세 칸 상태가 모두 있음. 네이티브는 빗금 대신 회색 칸(react-native-svg 없음) | 🤖 `schedule.spec.ts` (빗금 여부는 computed style) · 실제 폰 너비 👤 | 10/17 화면은 로컬 스크린샷으로만 확인 · 사람 확인 대기 |
 | SCHED-2 | 시터 Schedule에서 날짜 범위 고르기 | **하나씩 클릭**(첫 클릭 = 하루, 두 번째 클릭 = 범위, 다음 클릭 = 다시 시작)해도 되고, **날짜를 누른 채 끌어서** 한 번에 고를 수도 있음(뒤로 끌어도 됨, 선택이 끌리는 대로 바뀜, 끝나고 손을 떼면 그 범위 유지 · 요약에 "3 days"). 끌기가 끝날 때 생기는 클릭은 선택을 다시 시작하지 않음. 지난 날짜는 범위에 들어오지 않음. 폰에서는 **길게 눌렀다가** 끌어야 하고, 그냥 쓸어 넘기면 화면이 스크롤됨. 오너가 보는 시터 달력은 하루만 고름 | 🤖 `schedule.spec.ts` (마우스 끌기 · 클릭) · 폰 길게 누르기는 👤 | 사람 확인 대기 (터치 끌기는 아직 실제 기기에서 안 봄) |
 | SCHED-3 | 시터 Schedule **기본 열림** — 일정을 하나도 안 만든 시터 | 달력의 모든 날 · 세 시간대가 **열림**(프로필의 기본 시간 · 기본 마릿수), 오너 검색에도 나옴(이전엔 일정을 열어야만 나왔음). 날짜를 눌러 Open으로 저장하면 **그 날들만** 시간 · 마릿수가 바뀜. Open 시트에서 **일부 시간대만 체크하고 저장하면 체크를 끈 시간대는 그 날들에 닫힘**(예: 오전만 열면 그 날의 오후 · 야간은 Blocked, 이미 확정된 예약과 겹치면 취소 확인이 먼저 뜸). 날짜를 건드리지 않으면 전부 열림. 반복해서 닫으려면 아래 규칙 | 🤖 `schedule.spec.ts` · `sitters.spec.ts` · SQL `rls_smoke` (014d) | 사람 확인 대기 |
 | SCHED-4 | Schedule 오른쪽 위 **⚙️ → Closing rules** | **요일 × 시간대(Morning · Afternoon · Night)** 격자에서 칸을 눌러 닫음(✕), 아래 **Hours**에서 세 시간대의 기본 시간을 30분 단위로 고침. **Apply** → "Rules applied ✅", 달력에 그 요일마다 해당 띠가 **빗금**("Closed · weekly rule"), 규칙 + 달력에서 직접 닫은 날이 **합쳐서** 적용. 아무것도 고르지 않고 Apply(또는 Open everything)면 규칙이 사라져 다시 전부 열림. 다시 열면 저장된 규칙 · 시간으로 시작. 시간이 맞지 않으면(끝 ≤ 시작) Apply 비활성. **이미 확정된 예약은 규칙이 취소하지 않음**(그 칸은 Full로 보이고 새 예약만 막힘) | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014d: 규칙 · 기본 열림 · 확정 예약 유지 · 권한) | 사람 확인 대기 |
 | SCHED-5 | ⚙️ → Closing rules → **Hours**에서 **Every day · Sun … Sat** 칩 | **Every day**를 고르면 세 시간대의 기본 시간(전 요일 공통)을 고침. **요일 칩**을 누르면 그 요일만의 시간을 따로 고칠 수 있고(그 요일은 칩에 **•** 표시, "Mondays have their own hours."), 다른 요일은 Every day 시간 그대로. **Same as every day**로 그 요일의 개별 시간을 지움. Apply 후 달력에서 그 요일을 누르면 "Morning: Open · 9:30 AM–1:00 PM"처럼 요일별 시간이 보임. 우선순위: **날짜를 직접 연 행 > 요일별 시간 > Every day 시간**. 끝 ≤ 시작이면 "Morning on Wednesdays needs …"로 Apply 비활성. 요일 시간이 Every day와 같아지면 저장하지 않음 | 🤖 `schedule.spec.ts` · SQL `rls_smoke` (014e) | 사람 확인 대기 · 호스팅 DB에 `014e` 적용 후 |
 | BOOK-9 | 시터가 **Next** | 토스트 "Dates held …", 오너에게 "Chloe would like to meet first" 알림. 막대 아래 "Day 1", 카드는 "These dates are on hold for Robert" / 오너는 "Chloe is holding your dates …"와 **Schedule Meet & Greet**. 시터 버튼은 **Confirm booking**(만나기 전까지 비활성). 두 번 눌러도 알림은 한 번 | 🤖 `meet-greet` · SQL | ➖ |
-| BOOK-10 | 첫 동의 전에 일정 제안 · 건너뛰기를 API로 시도 / 단골에게 Yes 시도 | `interest_required` / `interest_not_needed` | SQL `rls_smoke` | ➖ |
+| BOOK-10 | 단골에게 Yes(첫 동의)를 API로 시도 | `interest_not_needed`. 첫 동의 전 오너의 일정 제안 · 건너뛰기는 이제 허용(#236, `015f`), 시터의 제안 · 답은 그 자리에서 첫 동의가 됨 | SQL `rls_smoke` | ➖ |
 | BOOK-11 | **홀드와 한 번에 한 오너.** Chloe(기본 설정)에게 오너 A가 첫 동의를 받은 날짜에 오너 B가 요청 · 검색 · 문의 | B의 요청은 `sitter_unavailable`(날짜가 상세에), 시터 검색에 안 나옴, 문의 AI의 "can host"도 불가. 시터가 일정 막기로 덮으려 해도 거부. 시터 프로필에서 **Take pets from more than one owner at a time**을 켜면 정원(max pets) 안에서 허용. 오너에게는 시터 프로필 · 문의 시트 · 검색 결과에 "One owner at a time" / "Hosts several owners' pets" 배지 | 🤖 `profile` · SQL · pytest `test_inquiry` | ➖ |
 | BOOK-12 | 만난 뒤 **오너가 Not this sitter**(사유 칩 + 짧은 메모) / 취소 · 거절 · 타임아웃 | 오너 버튼 이름이 첫 동의 뒤에는 **Not this sitter**(그 전에는 Cancel booking), 사유가 취소 이유로 저장되고 시터 화면에 "Robert passed: …" 표시. 취소되면 홀드가 풀려 다음 오너가 요청 가능 | 🤖 `meet-greet` · SQL | ➖ |
 | BOOK-13 | **2일 · 3일 규칙.** 첫 동의 2일 뒤에도 만남 시간이 없음 → 알림 → 3일 더 무응답 | 양쪽에 "Still no time to meet …"(시간 잡기 · 건너뛰기 · 거절), 카드에 같은 문구. 3일 뒤 자동 취소(`meet_greet_timeout`), 홀드 해제, 양쪽 알림. 시간이 **agreed**가 되면 시계가 멈춤 | SQL `rls_smoke` (스윕) · pytest `test_sweep` · 실제 15분 cron은 👤 | ➖ |
@@ -1054,7 +1054,21 @@
 | ARRIVE-5 | 2시간 전, 여행자의 + 메뉴 | 꺼진 **Start trip** 옆에 "From 8:00 PM"(열리는 시각). 카드와 예약 화면에는 원래대로 "You can start the trip from …" | 🤖 `chat-trip` | ➖ |
 | ARRIVE-6 | 트립 없이 맡김 | 채팅에는 Received가 없고, **예약 화면의 Received**(2시간 전부터, 서버 규칙 그대로)로 처리 | **👤** | ➖ |
 
+### 3.50 Meet & Greet 요청 · 건너뛰기를 오너가 먼저, 양쪽이 답하기 (MGCHOICE) · #236 · *사전: 호스팅 DB에 `015f` 적용 뒤*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| MGCHOICE-1 | 처음 만나는 시터에게 채팅에서 **Request booking** → Send request | 요청 카드 바로 아래 Meet & Greet 카드에 **Request Meet & Greet** · **Skip Meet & Greet** 두 버튼이 나란히. 오너 푸터에는 "Waiting for …" 없음. 예약 화면의 카드도 같은 두 버튼. 날짜는 아직 홀드 안 됨 | 🤖 `chat` · `meet-greet` · SQL `rls_smoke` (015f) | 사람 확인 대기 |
+| MGCHOICE-2 | **Request Meet & Greet** → 시간 시트 | 맡기기 날 다음 날짜는 달력에서 못 고르고 +도 꺼짐. 맡기기 시각 이후면 "Pick a time before the drop-off." 와 Send 꺼짐(서버도 `meet_greet_too_late`) | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-3 | 오너가 시간을 보낸 뒤 시터 | 카드에 **Accept**(채팅은 푸터) · Suggest another time · **Request skip** · 빨간 **Decline**. Accept나 Request skip을 누르면 그 자리에서 날짜 홀드(따로 Next 없음) | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-4 | 아무 쪽이나 **Decline** | "Decline this request?" 시트 → 빨간 **Decline request** → 요청이 끝남(취소, `meet_greet_declined`), 상대에게 "… declined the booking request" 알림. 예약 화면에는 "Chloe declined this request." / "You declined this request." 시트를 닫으면 아무 일도 없음 | 🤖 `meet-greet` · SQL | ➖ |
+| MGCHOICE-5 | 한쪽이 건너뛰기를 요청한 뒤 다른 쪽 | **Accept skip**(채팅은 푸터) · **Request Meet & Greet**(새 시간) · 빨간 **Decline**. Accept skip이면 Meet & Greet 없이 Confirm 단계로, Request Meet & Greet이면 새 시간 제안으로 바뀜. 시터의 Accept skip도 첫 동의 | 🤖 `chat` · `meet-greet` · SQL | ➖ |
+| MGCHOICE-6 | 오너가 아무것도 안 고른 요청 | 시터는 예전처럼 **Next**로 먼저 날짜를 홀드할 수 있음(BOOK-9) | 🤖 `meet-greet` | ➖ |
+| MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. 이름을 쳐야 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
+
+- **오너가 먼저 고른 Meet & Greet에는 시간 제한이 없다 (MGCHOICE):** 2일 · 3일 알림과 자동 취소(011l)는 시터의 첫 동의부터 센다. 오너가 시간을 보내거나 건너뛰기를 요청하고 시터가 답하지 않으면 그 요청은 시터가 답하거나 둘 중 하나가 취소할 때까지 그대로 남는다.
 
 - **하루 한도 (감사 2026-10-21):** AI 호출과 업로드 서명은 한 사람당 하루(UTC) 100번, 공유 데모 계정은 1000번. 숫자는 백엔드 메모리에만 있어서 Render가 다시 시작하면 0부터 센다. 테스트로 한도에 걸리면 다음 날까지 기다리거나 Render를 다시 시작한다.
 
