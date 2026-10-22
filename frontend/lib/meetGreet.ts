@@ -23,14 +23,16 @@ export function meetGreetPrimary(b: BookingSummary, viewer: "owner" | "sitter", 
   const mg = b.meetGreet;
   switch (b.meetGreetStatus) {
     case "required":
-      return b.sitterInterestAt ? { key: "schedule", label: "Pick a time" } : null;
+      // The owner may ask first (015f, #236); the sitter plans after their first yes.
+      if (b.sitterInterestAt) return { key: "schedule", label: "Pick a time" };
+      return viewer === "owner" ? { key: "schedule", label: "Request Meet & Greet" } : null;
     case "proposed":
       return mg.proposedBy !== me ? { key: "accept", label: "Accept" } : null;
     case "agreed":
       // Any time once agreed; the card asks first when the agreed time has not come yet (014s, #229).
       return { key: "done", label: "Done, we met" };
     case "skip_requested":
-      return mg.skipRequestedBy !== me ? { key: "continue", label: "Continue without meeting" } : null;
+      return mg.skipRequestedBy !== me ? { key: "continue", label: "Accept skip" } : null;
     default:
       return null;
   }
@@ -40,6 +42,7 @@ const MESSAGES: Record<string, string> = {
   place_required: "Pick a place to meet.",
   place_too_long: "Keep the place to one short line.",
   invalid_window: "Pick a time in the future.",
+  meet_greet_too_late: "Pick a time before the drop-off.",
   invalid_status: "This Meet & Greet has already changed. Reopen the booking to see the latest.",
 };
 
@@ -70,9 +73,14 @@ export function requestSkipMeetGreet(bookingId: string) {
   return call("request_skip_meet_greet", { p_booking: bookingId }, "Couldn't send the request. Try again.");
 }
 
-/** Accept = continue without meeting; decline = the booking is cancelled (D44). */
+/** Accept = continue without meeting; decline = the request ends (D44, 015f). */
 export function respondSkipMeetGreet(bookingId: string, accept: boolean) {
   return call("respond_skip_meet_greet", { p_booking: bookingId, p_accept: accept }, "Couldn't answer. Try again.");
+}
+
+/** Decline (015f, #236): either side ends the request while the Meet & Greet is open. */
+export function declineMeetGreet(bookingId: string) {
+  return call("decline_meet_greet", { p_booking: bookingId }, "Couldn't decline. Try again.");
 }
 
 export type MeetSpots = { ownerName: string; ownerSpots: string[]; sitterName: string; sitterSpots: string[] };

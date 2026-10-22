@@ -178,7 +178,9 @@ export default function SitterBookingDetail() {
       ? null
       : booking.cancelReason === "meet_greet_timeout"
         ? `No time to meet ${owner} was set, so this booking was cancelled.`
-        : booking.cancelledBy === booking.ownerId && booking.cancelReason && booking.cancelReason !== "Owner cancelled"
+        : booking.cancelReason === "meet_greet_declined"
+          ? booking.cancelledBy === booking.ownerId ? `${owner} declined this request.` : "You declined this request."
+          : booking.cancelledBy === booking.ownerId && booking.cancelReason && booking.cancelReason !== "Owner cancelled"
           ? `${owner} passed: “${booking.cancelReason}”`
           : null;
   const firstYes = isRequest && awaitingFirstYes(booking);

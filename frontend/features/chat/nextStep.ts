@@ -76,7 +76,12 @@ export function actionPossible(id: string, step: NextStep, booking: BookingSumma
     case "meet_accept":
       return meet === "accept";
     case "meet_skip":
-      return !!booking && booking.stage === "meet_greet" && !!booking.sitterInterestAt && ["required", "proposed", "agreed"].includes(booking.meetGreetStatus);
+      // The owner may ask before the sitter's first yes (015f).
+      return (
+        !!booking &&
+        (booking.stage === "meet_greet" || (booking.stage === "requested" && role === "owner")) &&
+        ["required", "proposed", "agreed"].includes(booking.meetGreetStatus)
+      );
     case "agree":
       return kind === "agree";
     case "accept":
@@ -105,10 +110,9 @@ export function nextStep(i: Input): NextStep {
 
   switch (booking.stage) {
     case "requested":
-      // A first-time request waits for the sitter's first yes.
-      return role === "sitter"
-        ? { primary: { kind: "interest", label: "Next" }, quote, wait: null }
-        : { primary: null, quote: false, wait: waiting };
+      // A first-time request: the owner picks Request or Skip Meet & Greet on the card (015f, #236); the sitter can
+      // still give the first yes before that.
+      return role === "sitter" ? { primary: { kind: "interest", label: "Next" }, quote, wait: null } : none;
 
     case "meet_greet": {
       const step = meetGreetPrimary(booking, role, i.now);
