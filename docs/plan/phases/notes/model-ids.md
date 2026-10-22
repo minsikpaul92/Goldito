@@ -158,8 +158,29 @@ A local simulation (not in the repo, the real check is the app with an owner and
 
 - **Super for drafts and chips is the choice (2026-10-22).** Nano drafts looped on repeats, fell back to the chip's bare words ("Photo update.") and made up details; Lightning did the same and failed more calls.
 - **A judge was tried and removed.** A second Super call that read each draft with the same facts caught a made-up "Maple Park", a second self-introduction and a bare "Sure." on hand-made drafts (0.38 s median), but in 20 and 50 message chats the score did not move (3 to 4 of 10 with or without it), repeats did not drop, and the first version cut drafts down to the chip's bare words more often (9 fallbacks in 50 messages vs 5 without it).
-- **Every setting loops after about 20 messages** (the same pickup time, pill and photo confirmations): both sides only tap chips, nothing tells the model which topics are already settled, and the repeat check compares text, not meaning. It is not the context size (20 to 50 short messages are a few thousand tokens). Topic suggestions per conversation are the next idea.
+- **Every setting loops after about 20 messages** (the same pickup time, pill and photo confirmations): both sides only tap chips, nothing tells the model which topics are already settled, and the repeat check compares text, not meaning. It is not the context size (20 to 50 short messages are a few thousand tokens). The chat AI inputs below (profile, cards, progress, topics) were built to attack this.
 - **Seconds per turn** (median / worst): Super chips 1.0 to 1.1 / 2.4 (Nano chips 1.5 / 3.5), Super draft with rewrites 1.0 / 2.5 (Nano 1.7 / 3.6); a person waits about 1 s after tapping a chip.
+
+### What the chat AI reads: 50 message runs per step (2026-10-22)
+
+Same local simulation, now with a booking that moves along (request at message 6, Meet & Greet, agreement, quote and payment, drop-off at 36, pick-up at 46), Max (allergic to chicken, daily pill) and Luna, and Ultra rating the whole chat with the booking events in front of it. Super for chips and drafts everywhere. Each row is the code at that step's commit; one run each, the last two rows two runs. "Flagged" is the number of messages Ultra marked.
+
+| Step | Score | Flagged | Repeat | Invented | Contradiction | Off topic | Fragment |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| before (Super, no new inputs) | 4 | 44 | 19 | 4 | 4 | 7 | 10 |
+| 1 profile block, allergies, checklist | 3 | 23 | 16 | 3 | 2 | 1 | 0 |
+| 2 + every card | 4 | 18 | 4 | 0 | 12 | 0 | 0 |
+| 3 + progress | 4 | 23 | 12 | 6 | 3 | 2 | 0 |
+| 4 + topics (first version) | 3 | 24 | 2 | 1 | 3 | 18 | 0 |
+| 4 + topics only while they matter | 4, 4 | 10, 10 | 1, 5 | 2, 1 | 7, 1 | 0, 2 | 0, 0 |
+| + chips prompt fix (Meet & Greet) | 4, 4 | 19, 19 | 5, 7 | 7, 3 | 5, 3 | 2, 4 | 0, 2 |
+| final (no vet topic) | 4, 4 | 20, 16 | 8, 4 | 8, 7 | 0, 4 | 3, 1 | 1, 0 |
+
+- **Flagged messages went from 44 to 16 to 24** and the one or two word fragments (10) are gone. The score barely moves (3 to 4 of 10): Ultra is strict and the chats still loop a little after the stay.
+- **The profile block removed the fragments, the cards cut repeats** (19 to 4), progress made the booking state consistent, topics cut repeats further but the first version pushed topics after the stay began (18 off-topic) until each topic got a last step.
+- **Not solved: made-up details.** Final runs still get 7 to 8 "invented" flags (a park name, a litter type, a quote amount, times). The vet topic made the model invent clinics, so it was removed (the app knows no vet).
+- **Runs vary a lot** (the same code gave 10 and 19 flagged messages in two rounds). Do not read a one-message difference as an effect. The real check is the app with an owner and a sitter side by side (test-guide CHAT-41 to CHAT-44).
+- **Speed:** median about 1.0 to 1.2 s for chips and 1.0 to 1.2 s for a draft in the five-way run, the same for every step (the extra input costs no measurable time). The last runs were slower (medians 1.3 to 2.5 s, worst 14 to 44 s) while the model API was slow; the inputs did not change between them.
 
 ## Open questions (Phase 07.1 / 08 spike)
 
