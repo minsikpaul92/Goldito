@@ -370,13 +370,13 @@ Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications,
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
-Shows: `RoleCard`
+Shows: `BrandLogo` · `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 86 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 175 |
-| TextButton | Already have an account? Sign in | `go-login` | 183 |
+| BackLink | — | `signup-back` | 87 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 177 |
+| TextButton | Already have an account? Sign in | `go-login` | 185 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -892,19 +892,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 18 |
+| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 20 |
+| Pressable | ``${profile.displayName \|\| "You"}, Profile`` | `header-profile-avatar` | 24 |
 
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 51 |
-| Pressable | Menu | `open-menu` | 66 |
-| Pressable | Close menu | `header-menu-close` | 87 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
-| Button | Sign out | `log-out-confirm` | 116 |
-| Button | Cancel | `log-out-cancel` | 117 |
-| Pressable | — | `log-out` | 137 |
+| Pressable | `label` | `testID` | 52 |
+| Pressable | Menu | `open-menu` | 67 |
+| Pressable | Close menu | `header-menu-close` | 88 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 99 |
+| Button | Sign out | `log-out-confirm` | 121 |
+| Button | Cancel | `log-out-cancel` | 122 |
+| Pressable | — | `log-out` | 142 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -996,9 +997,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 39 |
-| Button | Next | ``${testID}-next`` | 74 |
-| Button | Get started | ``${testID}-sign-in`` | 76 |
+| BackLink | — | ``${testID}-back`` | 40 |
+| Button | Next | ``${testID}-next`` | 76 |
+| Button | Get started | ``${testID}-sign-in`` | 78 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
@@ -1521,4 +1522,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-443 actions · 442 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+444 actions · 443 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
