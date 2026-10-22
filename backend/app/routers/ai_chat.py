@@ -219,33 +219,43 @@ def _add_profiles(db, ctx: dict, stay: dict | None, facts: dict) -> None:
         ctx["owner_pets"] = _best_effort(lambda: db.table("pets").select("name, species, breed").eq("owner_id", thread["owner_id"]).execute().data) or []
 
 
-def _actions(db, user: CurrentUser, ctx: dict) -> list[str]:
-    """The actions that are possible for me right now. The booking's stage is the database's own (booking_stage through
-    get_booking_stages, D60), never worked out here; when it can't be read there are no actions."""
-    thread, messages = ctx["thread"], ctx["messages"]
+def _booking_state(db, user: CurrentUser, ctx: dict) -> dict:
+    """This pair's live booking and where it is, as the database computes it (booking_stage and booking_next_actor through
+    get_booking_stages, D60), never worked out here. `readable` is False when it could not be read: no actions then."""
+    thread = ctx["thread"]
     rows = _best_effort(
         lambda: db.table("bookings")
-        .select("id, status, created_at, owner_id, sitter_id, meet_greet_status, meet_greet_proposed_by, sitter_interest_at, owner_agreed_at, sitter_accepted_at")
+        .select("id, status, created_at, owner_id, sitter_id, meet_greet_status, meet_greet_mode, meet_greet_at, meet_greet_place, meet_greet_proposed_by, meet_greet_skip_requested_by, sitter_interest_at, owner_agreed_at, sitter_accepted_at, paid_at")
         .eq("owner_id", thread["owner_id"])
         .eq("sitter_id", thread["sitter_id"])
         .execute()
         .data
     )
     if rows is None:
-        return []
+        return {"booking": None, "stage": None, "next_actor": None, "readable": False}
     booking = next(iter(sorted((r for r in rows if r.get("status") in ("requested", "confirmed")), key=lambda r: str(r.get("created_at", "")), reverse=True)), None)
-    stage = None
+    stage = next_actor = None
     if booking:
         try:
             stages = authz.rpc_json(user.access_token, "get_booking_stages", {"p_ids": [booking["id"]]})
-            stage = next((r["stage"] for r in stages or [] if r.get("booking_id") == booking["id"]), None)
+            found = next((r for r in stages or [] if r.get("booking_id") == booking["id"]), None)
         except (authz.RpcError, HTTPException) as exc:
             log.warning("chat: could not read the booking stage (%s)", exc)
-            return []
-        if stage is None:
-            return []
+            return {"booking": booking, "stage": None, "next_actor": None, "readable": False}
+        if found is None:
+            return {"booking": booking, "stage": None, "next_actor": None, "readable": False}
+        stage, next_actor = found["stage"], found.get("next_actor")
+    return {"booking": booking, "stage": stage, "next_actor": next_actor, "readable": True}
+
+
+def _actions(ctx: dict) -> list[str]:
+    """The actions that are possible for me right now, from the booking state."""
+    state = ctx["booking_state"]
+    if not state["readable"]:
+        return []
+    messages = ctx["messages"]
     stay = logic.latest_stay(messages)
-    return logic.available_actions(ctx["role"], booking, stage, has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
+    return logic.available_actions(ctx["role"], state["booking"], state["stage"], has_stay=bool(stay), priced=logic.is_priced(messages, stay), messages=messages)
 
 
 def _ensure_summary(db, ctx: dict, tz: ZoneInfo) -> str | None:
@@ -286,6 +296,7 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     last_them = texts_them[-1] if texts_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
+    ctx["booking_state"] = _booking_state(db, user, ctx)
     state = agent.state(messages, user.id)
     facts = agent.facts(
         _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources),
@@ -303,7 +314,7 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
         "them": them,
         "i_am": chat_profile.i_am(ctx["role"], me, them, pets=ctx.get("owner_pets") or facts.get("pets", []), service_area=(facts.get("sitter") or {}).get("service_area")),
         **({"summary": summary} if summary else {}),
-        "recent": logic.transcript(recent, user.id, tz),
+        "recent": logic.transcript(recent, user.id, tz, ctx["booking_state"]["booking"]),
         "facts": facts,
     }
     return base, facts, last_them
@@ -325,7 +336,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         base["typing"] = typed
 
     # What the person could do next, if the other person's last message leads to it (not while they are typing their own).
-    available = _actions(db, user, ctx) if last_them and not typed else []
+    available = _actions(ctx) if last_them and not typed else []
     if available:
         base["actions"] = {a: logic.ACTIONS[a]["meaning"] for a in available}
 

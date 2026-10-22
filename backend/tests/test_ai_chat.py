@@ -477,6 +477,58 @@ def test_a_finished_booking_does_not_block_a_new_request(client, setup):
     assert action_of(chips(client, owner_token())) == "request_booking"
 
 
+def test_the_model_reads_every_card_the_quote_and_the_booking_steps_not_only_the_stay(client, setup):
+    held = booking(
+        meet_greet_status="proposed", meet_greet_proposed_by=SITTER_ID, meet_greet_mode="in_person", meet_greet_place="Cafe on King",
+        meet_greet_at="2026-10-20T19:00:00+00:00", owner_agreed_at=at(5), sitter_interest_at=at(4),
+    )
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=QUOTE_CARD, n=1), card_msg(3, "meet_greet"),
+        card_msg(4, "agreement"), card_msg(5, "payment"), message(6, SITTER_ID, "Does Tuesday work?"), bookings=[held],
+    )
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=db, stage="meet_greet")
+    chips(client, owner_token())
+    recent = ctx.model.payload()["recent"]
+    texts = [m["text"] for m in recent]
+    assert any(t.startswith("[Quote CAD 268.13 for boarding, sent, waiting for the owner]") for t in texts)
+    assert "[Meet & Greet proposed by them for Oct 20 3:00 PM, in person at Cafe on King, waiting for the other person's answer]" in texts
+    assert "[Agreement to book: the owner agreed, the sitter not yet]" in texts
+    assert "[Payment: waiting for the owner to pay]" in texts
+    assert {m["who"] for m in recent if m["text"].startswith(("[Meet", "[Agree", "[Payment"))} == {"app"}
+
+
+def test_a_step_card_of_another_booking_or_with_no_booking_is_left_out(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), card_msg(2, "payment"), message(3, SITTER_ID, "Hi!"))
+    ctx = setup({"chips": ["Hi", "Thanks"]}, db=db)
+    chips(client, owner_token())
+    assert [m["text"] for m in ctx.model.payload()["recent"]][-1] == "Hi!" and not any("Payment" in m["text"] for m in ctx.model.payload()["recent"])
+
+
+@pytest.mark.parametrize(
+    ("fields", "want"),
+    [
+        ({"meet_greet_status": "required"}, "Meet & Greet: the sitter said yes to meeting first, no time chosen yet"),
+        ({"meet_greet_status": "done"}, "Meet & Greet done"),
+        ({"meet_greet_status": "skip_requested", "meet_greet_skip_requested_by": OWNER_ID}, "Skipping the Meet & Greet was asked by me, waiting for the other person's answer"),
+        ({"meet_greet_status": "skipped"}, "Meet & Greet skipped"),
+        ({"meet_greet_status": "agreed", "meet_greet_mode": "video", "meet_greet_at": "2026-10-20T19:00:00+00:00"}, "Meet & Greet agreed for Oct 20 3:00 PM, by video"),
+    ],
+)
+def test_the_meet_and_greet_card_says_where_it_stands(fields, want):
+    from zoneinfo import ZoneInfo
+
+    out = logic.describe(card_msg(1, "meet_greet"), OWNER_ID, ZoneInfo("America/Toronto"), booking(**fields))
+    assert out == {"who": "app", "text": f"[{want}]"}
+
+
+def test_the_payment_card_says_paid_once_it_is():
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo("America/Toronto")
+    assert logic.describe(card_msg(1, "payment"), OWNER_ID, tz, booking(paid_at=at(9)))["text"] == "[Payment: paid]"
+    assert logic.describe(card_msg(1, "payment"), OWNER_ID, tz, booking(id="other")) is None
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

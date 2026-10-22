@@ -82,13 +82,68 @@ def _when(iso: str, tz) -> str:
     return f"{logic.MONTHS[moment.month - 1]} {moment.day} {moment.strftime('%-I:%M %p')}"
 
 
-def describe(message: dict, me_id: str, tz) -> dict | None:
+_QUOTE_STATUS = {
+    "sent": "sent, waiting for the owner",
+    "confirmed": "confirmed by the owner",
+    "replaced": "replaced by a newer quote",
+    "declined": "declined by the owner",
+}
+
+
+def _meet_greet_text(booking: dict, me_id: str, tz) -> str | None:
+    """The Meet & Greet card in words, from the booking's own columns (the card only holds the booking's id)."""
+    status = booking.get("meet_greet_status")
+    mine = lambda who: "me" if who == me_id else "them"  # noqa: E731
+    plan = ""
+    if booking.get("meet_greet_at"):
+        place = scrub(booking.get("meet_greet_place"))
+        plan = f" for {_when(booking['meet_greet_at'], tz)}, " + ("by video" if booking.get("meet_greet_mode") == "video" else f"in person{' at ' + place if place else ''}")
+    if status == "required":
+        return "Meet & Greet: the sitter said yes to meeting first, no time chosen yet"
+    if status == "proposed":
+        return f"Meet & Greet proposed by {mine(booking.get('meet_greet_proposed_by'))}{plan}, waiting for the other person's answer"
+    if status == "agreed":
+        return f"Meet & Greet agreed{plan}"
+    if status == "done":
+        return "Meet & Greet done"
+    if status == "skip_requested":
+        return f"Skipping the Meet & Greet was asked by {mine(booking.get('meet_greet_skip_requested_by'))}, waiting for the other person's answer"
+    if status == "skipped":
+        return "Meet & Greet skipped"
+    return None
+
+
+def _step_card_text(card_type: str, booking: dict, me_id: str, tz) -> str | None:
+    """What a booking step card says right now (meet_greet, agreement, payment). Cards are updated in place, so this is the
+    booking's current state, not a log."""
+    if card_type == "meet_greet":
+        return _meet_greet_text(booking, me_id, tz)
+    if card_type == "agreement":
+        owner = "agreed" if booking.get("owner_agreed_at") else "not yet"
+        sitter = "accepted" if booking.get("sitter_accepted_at") else "not yet"
+        return f"Agreement to book: the owner {owner}, the sitter {sitter}"
+    if card_type == "payment":
+        return "Payment: paid" if booking.get("paid_at") else "Payment: waiting for the owner to pay"
+    return None
+
+
+def describe(message: dict, me_id: str, tz, booking: dict | None = None) -> dict | None:
     """One message for the prompt and the summary: who said it and what (cards in square brackets), scrubbed like the
-    typed text. Empty cards are left out."""
+    typed text. Empty cards are left out. `booking` is the pair's live booking: the step cards (Meet & Greet, agreement,
+    payment) say what the booking says, from "app"."""
     who = "me" if message.get("sender_id") == me_id else "them"
     if message.get("kind") == "text":
         return {"who": who, "text": _clip(scrub(message.get("body")))}
     card = message.get("card") or {}
+    if card.get("type") in ("meet_greet", "agreement", "payment"):
+        if not booking or str(booking.get("id")) != str(card.get("booking_id")):
+            return None
+        text = _step_card_text(card["type"], booking, me_id, tz)
+        return {"who": "app", "text": f"[{text}]"} if text else None
+    if card.get("type") == "quote" and isinstance(card.get("quote"), dict):
+        total = card.get("total") if card.get("total") is not None else card["quote"].get("total")
+        status = _QUOTE_STATUS.get(card.get("status"), "sent")
+        return {"who": who, "text": f"[Quote {card['quote'].get('currency', '')} {total} for {card['quote'].get('service', 'the stay')}, {status}]".replace("  ", " ")}
     pets = ", ".join(p.get("name", "") for p in card.get("pets", []))
     if card.get("type") == "stay" and card.get("drop_off_at") and card.get("pick_up_at"):
         return {"who": who, "text": f"[Stay {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}]"}
@@ -98,8 +153,8 @@ def describe(message: dict, me_id: str, tz) -> dict | None:
     return None
 
 
-def transcript(messages: list[dict], me_id: str, tz) -> list[dict]:
-    return [d for d in (describe(m, me_id, tz) for m in messages) if d]
+def transcript(messages: list[dict], me_id: str, tz, booking: dict | None = None) -> list[dict]:
+    return [d for d in (describe(m, me_id, tz, booking) for m in messages) if d]
 
 
 def split_window(messages: list[dict]) -> tuple[list[dict], list[dict]]:
