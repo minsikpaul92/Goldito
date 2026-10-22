@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BookingCard } from "../../../components/BookingCard";
 import { ChatList } from "../../../components/ChatList";
 import { PhotoViewerSheet } from "../../../components/PhotoViewerSheet";
+import { SitterResultCard } from "../../../components/SitterResultCard";
 import { SitterSearchBar } from "../../../components/SitterSearchBar";
 import { Avatar } from "../../../components/ui/Avatar";
 import { TextButton } from "../../../components/ui/TextButton";
@@ -106,29 +107,20 @@ export default function OwnerBookings() {
 
   const sitterRow = (sitter: NearbySitter) => {
     const cover = covers.get(sitter.sitterId);
+    const years = sitter.experienceYears ? `${sitter.experienceYears} yrs experience` : null;
     return (
-      <View key={sitter.sitterId} style={styles.row}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${sitter.displayName}'s photos`}
-          onPress={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
-          testID={`sitter-avatar-${sitter.displayName}`}
-        >
-          {cover ? <Avatar kind="photo" uri={photoThumb(cover, 120)} size={48} /> : <Avatar kind="initial" name={sitter.displayName} size={48} />}
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${sitter.displayName}, ${sitter.distanceKm} km away`}
-          onPress={() => openSitter(sitter.sitterId)}
-          style={styles.rowMain}
-          testID={`sitter-tile-${sitter.displayName}`}
-        >
-          <Text style={styles.rowName} numberOfLines={1}>
-            {search.favorites.has(sitter.sitterId) ? `★ ${sitter.displayName}` : sitter.displayName}
-          </Text>
-          <Text style={styles.rowKm} testID={`sitter-km-${sitter.displayName}`}>{`${sitter.distanceKm} km`}</Text>
-        </Pressable>
-      </View>
+      <SitterResultCard
+        key={sitter.sitterId}
+        name={sitter.displayName}
+        photo={cover ? photoThumb(cover, 156) : null}
+        meta={years}
+        km={`${sitter.distanceKm} km`}
+        nightly={sitter.boardingNightly ?? sitter.houseSittingNightly}
+        favorite={search.favorites.has(sitter.sitterId)}
+        onOpen={() => openSitter(sitter.sitterId)}
+        onPhoto={() => void viewPhotos(sitter.sitterId, sitter.displayName)}
+        testID={`sitter-tile-${sitter.displayName}`}
+      />
     );
   };
 

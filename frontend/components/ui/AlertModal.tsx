@@ -1,6 +1,7 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type Props = {
@@ -22,19 +23,23 @@ type Props = {
  * status color, so no pet skin can soften it. Inside the desktop frame it stays in the phone (iframe).
  */
 export function AlertModal({ visible, title, message, chips = [], actionLabel, onAcknowledge, busy, testID }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const id = (suffix: string) => (testID ? `${testID}-${suffix}` : undefined);
 
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={() => undefined}>
       <View accessibilityRole="alert" accessibilityViewIsModal style={styles.root} testID={testID}>
-        <ScrollView contentContainerStyle={styles.body}>
-          <Text style={styles.icon} accessibilityElementsHidden importantForAccessibility="no">
-            ⚠️
-          </Text>
+        {/* Figma 1673:44181: a red band says DANGER at a glance; the cream body keeps the details readable (audit F26). */}
+        <View style={styles.band}>
+          <View style={styles.badge}>
+            <Ionicons name="warning" size={34} color={theme.color.error} />
+          </View>
           <Text accessibilityRole="header" style={styles.title}>
             {title}
           </Text>
+        </View>
+        <ScrollView contentContainerStyle={styles.body}>
           <Text style={styles.message} testID={id("message")}>
             {message}
           </Text>
@@ -49,7 +54,6 @@ export function AlertModal({ visible, title, message, chips = [], actionLabel, o
           ) : null}
         </ScrollView>
         <View style={styles.footer}>
-          {/* White on red: the shared Button's skin colors would not read here. */}
           <Pressable
             accessibilityRole="button"
             disabled={busy}
@@ -67,33 +71,39 @@ export function AlertModal({ visible, title, message, chips = [], actionLabel, o
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    root: { flex: 1, backgroundColor: theme.color.error },
-    body: {
-      flexGrow: 1,
-      justifyContent: "center",
+    root: { flex: 1, backgroundColor: theme.color.background },
+    band: {
       alignItems: "center",
       gap: theme.spacing.md,
-      padding: theme.spacing.lg,
+      paddingTop: theme.spacing.xl * 2,
+      paddingBottom: theme.spacing.xl,
+      paddingHorizontal: theme.spacing.lg,
+      backgroundColor: theme.color.error,
     },
-    icon: { fontSize: theme.icon.hero * 1.5 },
-    title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.surface, textAlign: "center" },
-    message: { fontSize: theme.fontSize.body, color: theme.color.surface, textAlign: "center", lineHeight: theme.lineHeight.body },
+    badge: { width: 72, height: 72, borderRadius: 36, backgroundColor: theme.color.surface, alignItems: "center", justifyContent: "center" },
+    title: { fontSize: theme.fontSize.title, lineHeight: theme.lineHeight.title, fontWeight: theme.fontWeight.bold, color: theme.color.surface, textAlign: "center" },
+    body: { flexGrow: 1, alignItems: "center", gap: theme.spacing.md, padding: theme.spacing.lg },
+    message: { fontSize: theme.fontSize.body, color: theme.color.text, textAlign: "center", lineHeight: theme.lineHeight.body },
     chips: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     chip: {
-      paddingVertical: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.sm + 4,
-      borderRadius: theme.radius.lg,
-      backgroundColor: theme.color.surface,
+      minHeight: 32,
+      justifyContent: "center",
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1.5,
+      borderColor: theme.color.error,
+      backgroundColor: theme.color.errorSurface,
     },
-    chipLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.error },
+    chipLabel: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.bold, color: theme.color.error },
     footer: { padding: theme.spacing.lg },
     button: {
+      minHeight: 60,
       alignItems: "center",
-      paddingVertical: theme.spacing.sm + 4,
+      justifyContent: "center",
       paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.md,
-      backgroundColor: theme.color.surface,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.color.error,
     },
-    pressed: { opacity: 0.8 },
-    buttonLabel: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.error },
+    pressed: { opacity: theme.motion.pressOpacity },
+    buttonLabel: { fontSize: theme.fontSize.lead, fontWeight: theme.fontWeight.bold, color: theme.color.surface },
   });

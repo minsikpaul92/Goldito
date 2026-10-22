@@ -9,6 +9,7 @@ import { formatTime, shiftTime, timeToMinutes } from "../features/schedule/dates
 import { CareSlot, ClosingRule, SLOTS, WeekdayHour } from "../features/schedule/scheduleApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { selectable } from "./ui/selectable";
 
 const TIME_STEP = 30;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -305,27 +306,10 @@ const makeStyles = (theme: Theme) =>
       flexWrap: "wrap",
       gap: theme.spacing.xs,
     },
-    dayChip: {
-      minHeight: 36,
-      paddingHorizontal: theme.spacing.sm,
-      alignItems: "center",
-      justifyContent: "center",
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.color.borderStrong,
-      backgroundColor: theme.color.surface,
-    },
-    dayChipOn: {
-      borderColor: theme.color.primary,
-      backgroundColor: theme.color.primary,
-    },
-    dayChipText: {
-      fontSize: theme.fontSize.small,
-      color: theme.color.text,
-    },
-    dayChipTextOn: {
-      color: theme.color.primaryText,
-    },
+    dayChip: { ...selectable(theme).chip, paddingHorizontal: theme.spacing.sm },
+    dayChipOn: selectable(theme).chipOn,
+    dayChipText: selectable(theme).label,
+    dayChipTextOn: selectable(theme).labelOn,
     dayNote: {
       flexDirection: "row",
       alignItems: "center",

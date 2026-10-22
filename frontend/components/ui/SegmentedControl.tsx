@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { HorizontalList } from "./HorizontalList";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { selectable } from "./selectable";
 
 /** `count` > 0 shows a small number badge after the label (FB-30: "Requests (1)" wrapped to two lines). */
 type Option<T extends string> = { value: T; label: string; count?: number; /** This one can't be picked. */ disabled?: boolean };
@@ -92,7 +93,7 @@ const makeStyles = (theme: Theme) =>
       justifyContent: "center",
       paddingHorizontal: theme.spacing.xs,
       borderRadius: theme.ui.radius.segment,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: theme.color.borderStrong,
       backgroundColor: theme.color.surface,
     },
@@ -104,10 +105,7 @@ const makeStyles = (theme: Theme) =>
       minWidth: undefined,
       paddingHorizontal: theme.spacing.md,
     },
-    selected: {
-      borderColor: theme.color.primary,
-      backgroundColor: theme.color.accent,
-    },
+    selected: selectable(theme).chipOn,
     dimmed: {
       opacity: theme.opacity.disabled,
     },

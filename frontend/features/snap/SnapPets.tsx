@@ -6,6 +6,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { useCaringPets } from "../care/useCaringPets";
 import { listMyPets } from "../pets/petApi";
+import { selectable } from "../../components/ui/selectable";
 
 /** The pets a Snap tool may name (D61): the owner's own, or the ones in the sitter's care right now. */
 export type Role = "owner" | "sitter";
@@ -88,14 +89,7 @@ export function PetChips({
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     pets: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
-    pet: {
-      paddingVertical: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.lg,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-    },
-    petSelected: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
-    petLabel: { fontSize: theme.fontSize.body, color: theme.color.text },
+    pet: selectable(theme).chip,
+    petSelected: selectable(theme).chipOn,
+    petLabel: selectable(theme).label,
   });

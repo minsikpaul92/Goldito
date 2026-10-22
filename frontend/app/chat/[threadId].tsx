@@ -52,6 +52,7 @@ import { useErrorDialog } from "../../providers/ErrorDialogProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { selectable } from "../../components/ui/selectable";
 
 type Loaded = {
   header: ChatHeader;
@@ -739,12 +740,13 @@ const makeStyles = (theme: Theme) =>
     next: { paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.sm, maxWidth: 480, width: "100%", alignSelf: "center" },
     chipsScroll: { flexGrow: 0, maxWidth: 480, width: "100%", alignSelf: "center" },
     chips: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.xs },
-    chip: { height: 30, justifyContent: "center", paddingHorizontal: theme.spacing.sm, borderRadius: 15, borderWidth: 1, borderColor: theme.color.primary, backgroundColor: theme.color.surface },
-    actionChip: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: theme.color.primary },
+    // Reply chips share the picker look (selectable); the action chip stays ink because it does something (F06: 44 px).
+    chip: selectable(theme).chip,
+    actionChip: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
     actionChipText: { color: theme.color.primaryText },
     chipsBusy: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs, minHeight: 36 },
     chipsBusyText: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
-    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    chipText: { ...selectable(theme).label, fontSize: theme.fontSize.small },
     compose: {
       flexDirection: "row",
       alignItems: "flex-end",

@@ -35,6 +35,7 @@ export default function RootLayout() {
                       <Stack.Screen name="privacy" options={{ headerShown: true, title: "Privacy" }} />
                       <Stack.Screen name="dev/gestures" options={{ headerShown: true, title: "Gesture lab" }} />
                       <Stack.Screen name="dev/health" options={{ headerShown: true, title: "API health" }} />
+                      <Stack.Screen name="dev/kit" options={{ headerShown: true, title: "Design kit" }} />
                     </Stack>
                   </MediaPickerProvider>
                 </TripProvider>

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ReportChip } from "../features/diary/reportApi";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { selectable } from "./ui/selectable";
 
 type Props = {
   chips: ReportChip[];
@@ -56,21 +57,13 @@ export function ChipSuggestions({ chips, off, onToggle, onRemove, testIDPrefix }
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     wrap: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    chip: {
-      minHeight: 44,
-      flexDirection: "row",
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-      alignItems: "center",
-    },
-    chipOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
+    chip: { ...selectable(theme).chip, paddingHorizontal: 0 },
+    chipOn: selectable(theme).chipOn,
     chipRemovable: { paddingRight: 0 },
     toggle: { minHeight: 44, paddingHorizontal: theme.spacing.md, alignItems: "center", justifyContent: "center" },
     remove: { minWidth: 36, minHeight: 44, alignItems: "center", justifyContent: "center", marginLeft: -theme.spacing.sm },
     removeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },
     pressed: { opacity: 0.6 },
-    text: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.textMuted },
-    textOn: { color: theme.color.primary },
+    text: selectable(theme).label,
+    textOn: selectable(theme).labelOn,
   });

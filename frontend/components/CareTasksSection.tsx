@@ -33,6 +33,7 @@ import { Tag } from "./ui/Tag";
 import { TimePickerSheet } from "./ui/TimePickerSheet";
 import { TextButton } from "./ui/TextButton";
 import { TextField } from "./ui/TextField";
+import { selectable } from "./ui/selectable";
 
 type Props = {
   pet: Pick<Pet, "id" | "name" | "species">;
@@ -491,15 +492,7 @@ const makeStyles = (theme: Theme) =>
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     actions: { flexDirection: "row", justifyContent: "flex-end" },
     pills: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    pill: {
-      minHeight: 40,
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.color.border,
-      backgroundColor: theme.color.surface,
-      justifyContent: "center",
-    },
+    pill: selectable(theme).chip,
     pillLocked: { alignSelf: "flex-start" },
     pressed: { opacity: 0.8 },
     chevron: { fontSize: 22, color: theme.color.textMuted, alignSelf: "center" },
@@ -515,7 +508,7 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.color.surface,
     },
     timeText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    pillOn: { borderColor: theme.color.primary, backgroundColor: theme.color.accent },
-    pillText: { fontSize: theme.fontSize.small, color: theme.color.textMuted, fontWeight: theme.fontWeight.semibold },
-    pillTextOn: { color: theme.color.text },
+    pillOn: selectable(theme).chipOn,
+    pillText: selectable(theme).label,
+    pillTextOn: selectable(theme).labelOn,
   });

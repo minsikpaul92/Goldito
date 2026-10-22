@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
+import { selectable } from "./selectable";
 
 type Option = { value: string; label: string };
 
@@ -54,16 +55,8 @@ export function ChoiceChips({ options, value, onChange, multi, trailing, testID 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     row: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm },
-    chip: {
-      minHeight: theme.layout.touchTarget,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.color.borderStrong,
-      backgroundColor: theme.color.surface,
-    },
-    on: { backgroundColor: theme.color.primary, borderColor: theme.color.primary },
-    label: { fontSize: theme.fontSize.body, color: theme.color.text },
-    onLabel: { color: theme.color.primaryText, fontWeight: theme.fontWeight.semibold },
+    chip: selectable(theme).chip,
+    on: selectable(theme).chipOn,
+    label: selectable(theme).label,
+    onLabel: selectable(theme).labelOn,
   });
