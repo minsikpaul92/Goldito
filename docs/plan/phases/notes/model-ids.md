@@ -145,6 +145,22 @@ Estimated route total ≈ vision 1.4 s + Tavily ≤ 3 s (parallel, 8 s cap) + Ul
 
 Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a few tens of ms per query, so a cache in front of it (e.g. Redis) would save about 1 % — not worth the stale-data risk for allergies and Heads-ups. The human-paced auto-send delay (15–40 s) is separate and deliberate (7B.10). The gathering that needs a signed-in session (schedule and quote RPCs) is not in this script: it is timed in the app run on the hosted DB once `010` is applied there.
 
+## Booking chat simulation (2026-10-22)
+
+`backend/scripts/simulate_chat.py` - a fake owner (Robert) and sitter (Chloe) chat 20 messages about one stay for Max, both only tapping chips. It runs the real chips prompt, draft prompt, rule checks, one rewrite and the real judge; Ultra then rates the whole chat 1 to 10 and tags each bad message. Two runs per setting, so the numbers are a hint, not a proof. A setting is `chips,draft,judge`; "fast" is Nano.
+
+| Setting | Score (2 runs) | Draft fallback / chat | Rewrites / chat | Judge rejects / chat | Repeat tags / chat | Invented tags / chat |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| before: `fast,fast,off` | 2, 2 | 4.5 | 6.5 | 0 | 8.5 | 1 |
+| Super drafts: `fast,super,off` | 4, 3 | 0 | 1.5 | 0 | 11 | 0.5 |
+| after: `fast,super,on` | 4, 4 | 1 | 1.5 | 3 | 11 | 1 |
+| Lightning chips: `lightning,super,on` | 3, 4 | 1 | 4.5 | 5 | 7.5 | 4.5 |
+
+- **Super for drafts is the clear win:** no more one or two word messages from the fixed fallback, and the chat reads as a conversation.
+- **The judge's effect is small in this test.** After vs Super without it is within the noise of two runs. Alone on hand-made drafts it works: it flags a made-up "Maple Park", a second self-introduction and a bare "Sure." and passes a good draft, in a median 0.41 s per call (max 0.89 s, 6 calls, 2026-10-22).
+- **Repeats stay high everywhere** (7 to 15 tags per chat): both sides keep tapping the same chips (confirm pickup, send photo), and each draft is new text, so neither the rule check nor the judge sees a repeat. A person who types breaks that loop; not fixed here.
+- **Lightning chips** wrote fewer fallbacks than Nano chips but the run had the most invented details; no reason to switch yet. `MODEL_CHAT_CHIPS` stays blank (Nano).
+
 ## Open questions (Phase 07.1 / 08 spike)
 
 - [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
