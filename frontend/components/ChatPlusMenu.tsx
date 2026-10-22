@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { ComponentProps } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Sheet } from "./ui/Sheet";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -23,30 +23,34 @@ export function ChatPlusMenu({ visible, items, onClose }: Props) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Sheet visible={visible} title="Send a card" onClose={onClose} testID="chat-plus-menu">
-      {items.map((item) => (
-        <Pressable
-          key={item.id}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !item.enabled }}
-          disabled={!item.enabled}
-          onPress={() => {
-            onClose();
-            item.onPress();
-          }}
-          style={[styles.row, !item.enabled && styles.off]}
-          testID={`chat-plus-${item.id}`}
-        >
-          <Ionicons name={item.icon} size={20} color={theme.color.primary} />
-          <Text style={styles.label}>{item.label}</Text>
-        </Pressable>
-      ))}
+      <View style={styles.list}>
+        {items.map((item) => (
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !item.enabled }}
+            disabled={!item.enabled}
+            onPress={() => {
+              onClose();
+              item.onPress();
+            }}
+            style={[styles.row, !item.enabled && styles.off]}
+            testID={`chat-plus-${item.id}`}
+          >
+            <Ionicons name={item.icon} size={20} color={theme.color.primary} />
+            <Text style={styles.label}>{item.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </Sheet>
   );
 }
 
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
-    row: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
+    // Rows sit closer than the sheet's own spacing: five or six entries still fit without scrolling.
+    list: { gap: theme.spacing.xs },
+    row: { minHeight: 44, flexDirection: "row", alignItems: "center", gap: theme.spacing.md },
     off: { opacity: 0.4 },
     label: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.text },
   });
