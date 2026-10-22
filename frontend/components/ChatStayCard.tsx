@@ -6,10 +6,8 @@ import { ReturnSheet } from "./ReturnSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { requestLifeRecord } from "../features/completion/completionApi";
-import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { formatInstant } from "../features/schedule/dates";
-import { BookingSummary, CHECK_IN_WINDOW_MS, completeHandoff } from "../lib/bookings";
-import { isLive } from "../lib/transit";
+import { BookingSummary, completeHandoff } from "../lib/bookings";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -18,9 +16,9 @@ import { Theme } from "../theme/themes";
 type Props = { booking: BookingSummary; viewer: "owner" | "sitter"; onChanged: () => void };
 
 /**
- * The pets changing hands, in the chat (3D.8): the sitter's Received once the check-in window is open, "with {sitter}"
- * for the owner while they are in care, the sitter's Returned (the same sheet as the booking page), then "Home safe".
- * Reads the booking; the trip card above it brings them to the door.
+ * The pets changing hands, in the chat (3D.8): "with {sitter}" for the owner while they are in care, the sitter's
+ * Returned (the same sheet as the booking page), then "Home safe". Received is on the trip card, after the arrival
+ * (#250). Reads the booking; the trip card above it brings them to the door.
  */
 export function ChatStayCard({ booking, viewer, onChanged }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -31,7 +29,6 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
   const sitter = viewer === "sitter";
   const pets = booking.pets.map((p) => p.name).join(" & ") || "The pets";
   const are = booking.pets.length > 1 ? "are" : "is";
-  const { trips } = useLiveTrips(booking.id, booking.status === "confirmed" && !!booking.paidAt);
 
   if (booking.status !== "confirmed" || !booking.paidAt) return null;
 
@@ -92,24 +89,9 @@ export function ChatStayCard({ booking, viewer, onChanged }: Props) {
     );
   }
 
-  // Not received yet: only the sitter has something to press, from 2 hours before the drop-off.
-  const opens = booking.dropOff ? Date.parse(booking.dropOff.at) - CHECK_IN_WINDOW_MS : null;
-  if (!sitter || opens === null || Date.now() < opens) return null;
-  // The owner has arrived: the trip card above carries Received, one card instead of two.
-  if (trips?.some((t) => isLive(t) && t.status === "arrived" && t.handoff_kind === "drop_off")) return null;
-  return (
-    <View style={styles.wrap}>
-      <Card style={styles.card} testID="chat-stay-receive">
-        <Text style={styles.title}>{`${pets} arrived?`}</Text>
-        <Button
-          label="Received"
-          onPress={() => void run(() => completeHandoff(booking.id, "drop_off"), `${pets} checked in. ${booking.ownerName} gets a notice`)}
-          disabled={busy}
-          testID="chat-received"
-        />
-      </Card>
-    </View>
-  );
+  // Not received yet: nothing here. Received is on the trip card once the drop-off trip got there (#250); with no trip
+  // at all the booking page keeps its Received (from 2 hours before, the server's rule).
+  return null;
 }
 
 const makeStyles = (theme: Theme) =>

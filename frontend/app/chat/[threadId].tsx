@@ -38,7 +38,8 @@ import {
 import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
 import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
-import { canStartTripNow } from "../../features/transit/tripLogic";
+import { arrivedForNext, canStartTripNow, canTravel, nextHandoff, startOpensAt } from "../../features/transit/tripLogic";
+import { useLiveTrips } from "../../features/transit/useLiveTrips";
 import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
@@ -227,6 +228,9 @@ export default function Chat() {
     }
   }, [count]);
 
+  // The pair's trips, for the + menu's Start trip (#250): none once the open handoff's trip got there.
+  const { trips: pairTrips } = useLiveTrips(loaded?.booking?.id, !!loaded?.booking?.paidAt);
+
   if (error && loaded === undefined) {
     return (
       <Screen>
@@ -357,6 +361,11 @@ export default function Chat() {
   // The + menu (#235): each entry opens what the flow opens. Entries that cannot work right now are dimmed.
   const bump = (key: "handoff" | "trip" | "photo") => setSignals((n) => ({ ...n, [key]: n[key] + 1 }));
   const quoteKind = booking && hasPaymentCard(messages, booking.id) ? "final" : "first";
+  // Why Start trip is dimmed for the person who travels: it opens 2 hours before the handoff (#250).
+  const tripNext = booking?.paidAt ? nextHandoff(booking) : null;
+  const tripOpens = tripNext && canTravel(header.myRole, tripNext.handoff.locationType) ? startOpensAt(tripNext.handoff) : null;
+  const tripOpensHint =
+    tripOpens !== null && Date.now() < tripOpens ? `From ${formatTime(isoToZoned(new Date(tripOpens).toISOString()).time)}` : undefined;
   const plusItems: PlusItem[] = [
     {
       id: "meet",
@@ -387,7 +396,8 @@ export default function Chat() {
       id: "trip",
       label: "Start trip",
       icon: "car-outline",
-      enabled: !!booking && canStartTripNow(booking, header.myRole),
+      enabled: !!booking && canStartTripNow(booking, header.myRole) && !arrivedForNext(booking, pairTrips),
+      hint: tripOpensHint,
       onPress: () => bump("trip"),
     },
     ...(owner

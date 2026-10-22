@@ -113,20 +113,27 @@ test.describe("trip in the chat", () => {
 
     Object.assign(db.trips[0], { status: "arrived", arrived_at: new Date().toISOString(), distance_m: 60 });
     await expect(screen.getByTestId("chat-trip-live")).toContainText("Robert has arrived", { timeout: 12_000 });
-
-    // The sitter's hello is one tap and goes into the chat as her message; the button is then gone.
-    await screen.getByTestId("trip-greet").click();
-    await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "We will" })).toBeVisible();
+    // #250: the sitter answers the owner's hello, so hers waits until Robert has said his.
     await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
-    expect(db.chat_messages.filter((m) => m.body === "We will")).toHaveLength(1);
 
-    // Robert's own hello is "Please take care of them".
+    // Robert's hello is a small quick reply, "Please take care of them".
     await page.evaluate(() => localStorage.clear());
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-trip-live")).toContainText("You've arrived");
     await expect(screen.getByTestId("trip-greet")).toHaveText("Please take care of them");
     await screen.getByTestId("trip-greet").click();
     await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "Please take care of them" })).toBeVisible();
+    await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
+
+    // Now Chloe's answer is there, one tap, and it goes into the chat as her message.
+    await page.evaluate(() => localStorage.clear());
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("trip-greet")).toHaveText("We will");
+    await screen.getByTestId("trip-greet").click();
+    await expect(screen.getByTestId("chat-bubble-me").filter({ hasText: "We will" })).toBeVisible();
+    await expect(screen.getByTestId("trip-greet")).toHaveCount(0);
+    expect(db.chat_messages.filter((m) => m.body === "We will")).toHaveLength(1);
+    screen = await openChatAs(page, OWNER);
 
     // The drop-off is done: the trip is over, the hello stays a message, and the pick-up waits for its window.
     Object.assign(db.trips[0], { status: "completed", ended_at: new Date().toISOString() });
@@ -143,6 +150,11 @@ test.describe("trip in the chat", () => {
     let screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-trip-waiting")).toContainText("You can start the trip from");
     await expect(screen.getByTestId("chat-trip-start-button")).toHaveCount(0);
+    // #250: the + menu's dimmed Start trip says when it opens.
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-trip")).toBeDisabled();
+    await expect(screen.getByTestId("chat-plus-trip-hint")).toHaveText(/^From \d{1,2}:\d{2} (AM|PM)$/);
+    await screen.getByTestId("chat-plus-menu-close").click();
 
     await page.evaluate(() => localStorage.clear());
     screen = await openChatAs(page, SITTER);
@@ -296,9 +308,11 @@ test.describe("the pets changing hands in the chat", () => {
     await page.route("**/api/ai/life-record", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({}) }));
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db); // the drop-off is 30 minutes away: the check-in window is open
+    // Robert drove over and ended his trip ("I've arrived"): the arrival card carries Received (#250).
+    db.trips.push(runningTrip({ status: "completed", ended_at: new Date(Date.now() - 60_000).toISOString(), last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null }));
 
     let screen = await openChatAs(page, SITTER);
-    await expect(screen.getByTestId("chat-stay-receive")).toContainText("Max arrived?");
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived ✓");
     await screen.getByTestId("chat-received").click();
     await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
     expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
@@ -352,17 +366,53 @@ test.describe("the pets changing hands in the chat", () => {
     expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
   });
 
-  test("before the check-in window the sitter has no Received, and the owner has none ever", async ({ page }) => {
+  test("no Received in the chat before the drop-off trip got there, even inside the 2-hour window; the owner never has one (#250)", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
-    seed(db, 5 * HOUR);
+    seed(db); // 30 minutes away: the window is open, but nobody is on the way
     let screen = await openChatAs(page, SITTER);
     await expect(screen.getByTestId("chat-bubble-them")).toBeVisible();
-    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
 
-    db.booking_handoffs[0].scheduled_at = new Date(Date.now() + 30 * 60_000).toISOString();
+    // On the way is not there yet.
+    db.trips.push(runningTrip());
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-trip-live")).toContainText("Robert is on the way");
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+
+    // A cancelled trip does not count as an arrival.
+    Object.assign(db.trips[0], { status: "cancelled", ended_at: new Date().toISOString() });
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-bubble-them")).toBeVisible();
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+
     screen = await openChatAs(page, OWNER);
     await expect(screen.getByTestId("chat-bubble-me")).toBeVisible();
-    await expect(screen.getByTestId("chat-stay-receive")).toHaveCount(0);
+    await expect(screen.getByTestId("chat-received")).toHaveCount(0);
+  });
+
+  test("a trip without a live location ends with I've arrived; then the sitter gets Received (#250)", async ({ page }) => {
+    const { db } = await mockSupabase(page, [OWNER, SITTER]);
+    seed(db);
+    db.trips.push(runningTrip({ sharing: false, last_lat: null, last_lng: null, last_at: null, eta_at: null, distance_m: null }));
+
+    let screen = await openChatAs(page, OWNER);
+    await expect(screen.getByTestId("chat-trip-live")).toContainText("You're on the way");
+    await screen.getByTestId("chat-trip-arrive").click();
+    await expect.poll(() => db.trips[0].status).toBe("completed");
+    // The owner's card says they are there, with no Start trip again and the hello to send.
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("You've arrived ✓");
+    await expect(screen.getByTestId("chat-trip-start")).toHaveCount(0);
+    await expect(screen.getByTestId("trip-greet")).toHaveText("Please take care of them");
+    // …and the + menu has no Start trip for it either (no second trip to the same handoff).
+    await screen.getByTestId("chat-plus").click();
+    await expect(screen.getByTestId("chat-plus-trip")).toBeDisabled();
+    await screen.getByTestId("chat-plus-menu-close").click();
+
+    screen = await openChatAs(page, SITTER);
+    await expect(screen.getByTestId("chat-trip-arrived")).toContainText("Robert arrived ✓");
+    await screen.getByTestId("chat-received").click();
+    await expect(screen.getByTestId("chat-stay-incare")).toContainText("Max is with you");
+    expect(db.booking_handoffs.find((h) => h.kind === "drop_off")?.completed_at).toBeTruthy();
   });
 });
 
