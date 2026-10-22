@@ -61,6 +61,7 @@ Apply `001 → 002 → 003 → …` in one go. Do not stop after `001`: tables a
 | `015_nap_checkin.sql` | 11.12 (#184) | `care_checkins.kind` gains `nap` (no value); `log_care_checkin` tells the owner "Max is taking a nap 💤" |
 | `015b_pet_medals.sql` | 11.12 (#184) | `pet_medals` (pet, booking, sitter, stay dates; one per pet and stay), read by the pet's owner and the sitter who gave it; written only by `award_pet_medal` (the booking's sitter, after the pick-up is done) |
 | `015d_wake_checkin.sql` | 11.12b (#184) | `care_checkins.kind` gains `wake` (no value): the sitter taps Awake when a napping pet wakes; `log_care_checkin` tells the owner "Max woke up ☀️" |
+| `015e_notification_prefs.sql` | Settings (#292) | `profiles.notification_prefs` (Trip updates · Daily notes and photos on, Tips and news off) set by `set_notification_pref(key, on)`; a `notifications` BEFORE INSERT trigger drops a notice whose family the person turned off (`trip_*`, `report_sent` · `feed_post` · `photo_request_fulfilled`, `tip` · `news`). Everything else, safety DANGER included, is never muted |
 
 Files after `003` are planned — numbers follow the work order in [phases/README.ko.md](../docs/plan/phases/README.ko.md) (product flow: [full-process.ko.md](../docs/plan/full-process.ko.md)). If the order changes, take the next free number.
 

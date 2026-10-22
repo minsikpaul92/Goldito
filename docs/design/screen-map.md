@@ -342,29 +342,27 @@ Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 203 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 406 |
-| TextButton | Edit entry info | `profile-home-access` | 423 |
-| SegmentedControl | — | `profile-ai-mode` | 439 |
-| Button | Edit your answers | `profile-answers-edit` | 468 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 476 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 478 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 495 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 505 |
-| TextButton | + Add a spot | `profile-add-spot` | 529 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 544 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 330 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 418 |
+| TextButton | Edit entry info | `profile-home-access` | 435 |
+| SegmentedControl | — | `profile-ai-mode` | 451 |
+| Button | Edit your answers | `profile-answers-edit` | 480 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 488 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 490 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 507 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 517 |
+| TextButton | + Add a spot | `profile-add-spot` | 541 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
-Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Sign out.
+Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Privacy, the app version and Sign out.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Edit profile | `settings-edit-profile` | 36 |
-| TextButton | Privacy | `settings-privacy` | 53 |
-| Button | Sign out | `settings-log-out` | 58 |
-| Sheet | Sign out? | `settings-log-out-sheet` | 59 |
-| Button | Sign out | `settings-log-out-confirm` | 61 |
-| Button | Cancel | **none** | 62 |
+| BackLink | — | `settings-back` | 73 |
+| Sheet | Sign out? | `settings-log-out-sheet` | 124 |
+| Button | Sign out | `settings-log-out-confirm` | 126 |
+| Button | Cancel | **none** | 127 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -606,11 +604,12 @@ Shows: `OnboardingTour`
 
 ### `/whats-new` — [app/whats-new.tsx](../../frontend/app/whats-new.tsx)
 
-What's new: what people can now do that they could not at launch. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match); only releases from 1.0.0 on are shown, never the build-up to launch.
+What's new: small updates in plain words. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match). The newest entry sits on a butter block.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Nothing new yet | — | 30 |
+| BackLink | — | `whats-new-back` | 47 |
+| EmptyState | Nothing new yet | — | 50 |
 
 ## Components
 
