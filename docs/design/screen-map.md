@@ -26,16 +26,16 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load this chat | — | 233 |
 | EmptyState | Chat not found | — | 241 |
-| Pressable | — | `chat-stage` | 490 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 543 |
-| Button | Send quote | `chat-send-quote` | 550 |
-| TextButton | Send quote | `chat-send-quote` | 553 |
-| TextButton | Decline | `chat-decline` | 556 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 583 |
-| Pressable | — | `chat-action-chip` | 604 |
+| Pressable | — | `chat-stage` | 522 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 575 |
+| Button | Send quote | `chat-send-quote` | 582 |
+| TextButton | Send quote | `chat-send-quote` | 585 |
+| TextButton | Decline | `chat-decline` | 588 |
 | Pressable | — | ``chat-chip-${i + 1}`` | 615 |
-| Pressable | Send a card | `chat-plus` | 631 |
-| Pressable | Send | `chat-send` | 664 |
+| Pressable | — | `chat-action-chip` | 636 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 647 |
+| Pressable | Send a card | `chat-plus` | 663 |
+| Pressable | Send | `chat-send` | 696 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -728,7 +728,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Sheet | Send a card | `chat-plus-menu` | 25 |
-| Pressable | — | ``chat-plus-${item.id}`` | 27 |
+| Pressable | — | ``chat-plus-${item.id}`` | 28 |
 
 ### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
 
@@ -748,8 +748,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 73 |
-| Button | Received | `chat-received` | 104 |
+| Button | Returned | `chat-returned` | 92 |
+| Button | Received | `chat-received` | 123 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
