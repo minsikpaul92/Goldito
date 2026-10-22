@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ai import chat as logic
+from app.ai import chat_judge
 from app.ai import inquiry as inquiry_logic
 from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
@@ -370,6 +371,7 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
     previous = [m.get("body") or "" for m in ctx["messages"] if m.get("kind") == "text"][-logic.REPEAT_WINDOW :]
 
     rejected: list[str] = []
+    judging = get_settings().chat_judge
     for attempt in range(2):
         try:
             out, _ = nebius.chat_json("fast", messages, DraftOut, endpoint="chat-draft", max_tokens=300, temperature=0.4, model=agent.model())
@@ -380,8 +382,13 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
         text = inquiry_logic.fill_placeholders(out.reply.strip(), {**facts, "owner": facts["owner"], "pets": facts.get("pets", [])})
         known = json.dumps({"recent": base["recent"], "facts": facts, "summary": base.get("summary", "")})
         problems = agent.problems(text, facts, known, sitter_first, previous)
+        judge = "off"
+        if not problems and judging:
+            judged = chat_judge.check(payload, text)  # None: it could not answer in time, the draft stands as before
+            judge = "skipped" if judged is None else "on"
+            problems = judged or []
         if not problems:
-            _log_ai("chat-draft", ctx, state=base["state"], source="model", attempts=attempt + 1, rejected=rejected, text=_redact(text, ctx, facts))
+            _log_ai("chat-draft", ctx, state=base["state"], source="model", attempts=attempt + 1, rejected=rejected, judge=judge, text=_redact(text, ctx, facts))
             return ChatDraftResponse(text=text, source="model")
         rejected += [_redact(p, ctx, facts) for p in problems]
         log.info("chat-draft: attempt %s rejected (%s)", attempt + 1, "; ".join(problems))

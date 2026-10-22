@@ -11,7 +11,7 @@ import httpx
 import jwt
 import pytest
 from app.ai import chat as logic
-from app.ai import tone
+from app.ai import chat_judge, tone
 from app.ai.chat_agents import OWNER_STYLE
 from app.ai.chat_agents import base as agents_base
 from app.routers import ai_chat
@@ -98,7 +98,7 @@ def setup(monkeypatch):
 
         monkeypatch.setattr(ai_chat, "get_service_client", lambda: db)
         monkeypatch.setattr(ai_chat, "_now", lambda: daily.NOW)
-        monkeypatch.setattr(ai_chat, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto"))
+        monkeypatch.setattr(ai_chat, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", chat_judge=False))
         monkeypatch.setattr(authz, "rpc_json", rpc)
         searches: list = []
         monkeypatch.setattr(rag, "search", lambda *_a, **_k: searches.append(1) or [])
@@ -206,6 +206,58 @@ def test_a_chip_becomes_a_draft_and_nothing_is_saved(client, setup):
     assert ctx.db.tables["chat_messages"] == before  # the person presses Send, the model never writes a message
     payload = ctx.model.payload()
     assert payload["chip"] == "Yes, I can host" and payload["style_notes"]  # the sitter's own voice, or the default
+
+
+def judged(monkeypatch, *verdicts):
+    """The judge is on and answers with these verdicts in turn (a list of issues, [] = it fits, None = it could not answer)."""
+    monkeypatch.setattr(ai_chat, "get_settings", lambda: SimpleNamespace(app_timezone="America/Toronto", chat_judge=True))
+    calls: list[tuple[dict, str]] = []
+
+    def check(payload, text):
+        calls.append((payload, text))
+        return verdicts[len(calls) - 1]
+
+    monkeypatch.setattr(chat_judge, "check", check)
+    return calls
+
+
+def test_a_draft_the_judge_rejects_is_rewritten_with_its_reasons(client, setup, monkeypatch):
+    ctx = setup({"reply": "Sure! We walk at Riverside Park."}, {"reply": "Sure, I will check the details."}, db=asked_price_db())
+    calls = judged(monkeypatch, ["remove the park name, it is not in the facts"], [])
+    body = draft(client, "Let me check").json()
+    assert body == {"text": "Sure, I will check the details.", "source": "model"}
+    assert "remove the park name" in ctx.model.calls[1]["messages"][-1]["content"]  # the writer is told what to change
+    payload, text = calls[0]
+    assert text == "Sure! We walk at Riverside Park." and payload["chip"] == "Let me check"
+    assert payload["facts"] and payload["recent"]  # what the writer read (the judge drops the voice notes itself)
+
+
+def test_a_draft_that_the_judge_keeps_rejecting_falls_back_to_the_chips_own_words(client, setup, monkeypatch):
+    setup({"reply": "Sure, Riverside Park!"}, {"reply": "Sure, the dog park!"}, db=asked_price_db())
+    judged(monkeypatch, ["remove the place"], ["remove the place"])
+    assert draft(client, "Let me check").json() == {"text": "Let me check.", "source": "fallback"}
+
+
+def test_a_judge_that_cannot_answer_is_skipped_and_the_draft_stands(client, setup, monkeypatch, caplog):
+    setup({"reply": "Sure, I will check the details."}, db=asked_price_db())
+    calls = judged(monkeypatch, None)
+    with caplog.at_level(logging.INFO, logger="goldito.ai"):
+        body = draft(client, "Let me check").json()
+    assert body == {"text": "Sure, I will check the details.", "source": "model"} and len(calls) == 1
+    assert '"judge":"skipped"' in caplog.text
+
+
+def test_the_judge_only_reads_a_draft_that_passed_the_rule_checks(client, setup, monkeypatch):
+    setup({"reply": "Sure, $40 a night!"}, {"reply": "Sure, it is $55 a night."}, db=asked_price_db())
+    calls = judged(monkeypatch, [])
+    assert draft(client, "Tell the price").json()["source"] == "model"
+    assert [text for _, text in calls] == ["Sure, it is $55 a night."]  # the invented price never reached the judge
+
+
+def test_with_the_judge_off_it_is_never_called(client, setup, monkeypatch):
+    setup({"reply": "Sure, I will check the details."}, db=asked_price_db())
+    monkeypatch.setattr(chat_judge, "check", lambda *_: pytest.fail("the judge is off"))
+    assert draft(client, "Let me check").json()["source"] == "model"
 
 
 def test_an_invented_price_is_rejected_and_the_retry_is_used(client, setup):
