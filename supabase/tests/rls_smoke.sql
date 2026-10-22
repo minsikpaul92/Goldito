@@ -1157,7 +1157,7 @@ begin
     '3B.9: the cancelled booking frees the pet');
   perform _t_ok(exists (select 1 from public.notifications where user_id = joy and type = 'booking_cancelled'
       -- The Nora fixture has no display_name, so the signup trigger used the email prefix.
-      and title = 'nora would like to meet first, so this booking was cancelled'),
+      and title = 'nora declined the booking request'),
     '3B.9: the owner is told the sitter wants to meet first');
   perform _t_as(joy);
   begin
@@ -3633,16 +3633,7 @@ begin
     local_ts(e + 2, '17:00'), 'sitter_home', null, null);
   select * into r from get_booking_stages(array[v1]);
   perform _t_ok(r.stage = 'requested' and r.next_actor = 'sitter', '011l: a first request waits for the sitter');
-  v_err := null;
-  begin
-    perform propose_meet_greet(v1, 'video', now() + interval '1 day');
-  exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'interest_required', '011l: no Meet & Greet proposal before the sitter''s first yes');
-  v_err := null;
-  begin
-    perform request_skip_meet_greet(v1);
-  exception when others then v_err := sqlerrm; end;
-  perform _t_ok(v_err = 'interest_required', '011l: no skip request before the sitter''s first yes');
+  -- (015f: the owner may now propose a time or ask to skip before the first yes; tested there.)
   v_err := null;
   begin
     perform express_interest(v1);
@@ -6863,6 +6854,136 @@ begin
     v_err := null;
   exception when others then v_err := sqlstate; end;
   perform _t_ok(v_err = '42501', '015b: signed-out visitors cannot');
+  perform _t_as(null);
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 015f (#236): the owner asks for a Meet & Greet or to skip it first, the sitter's answer is the first yes
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  nora constant uuid := '00000000-0000-4000-8000-0000000000b4';
+  e constant date := app_today() + 500;
+  v_pet uuid;
+  v_a uuid;
+  v_b uuid;
+  v_c uuid;
+  v_d uuid;
+  v_e uuid;
+  v_thread uuid;
+  v_err text;
+  r record;
+begin
+  perform _t_as(nora);
+  insert into public.sitter_availability (sitter_id, kind, start_date, end_date, slot, starts_at, ends_at, max_pets)
+  values (nora, 'open', e - 1, e + 40, 'morning', '08:00', '12:00', 3),
+         (nora, 'open', e - 1, e + 40, 'afternoon', '12:00', '18:00', 3),
+         (nora, 'open', e - 1, e + 40, 'overnight', '18:00', '08:00', 3);
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Biscuit') returning id into v_pet;
+  insert into public.chat_threads (owner_id, sitter_id) values (joy, nora) on conflict do nothing;
+  select id into v_thread from public.chat_threads where owner_id = joy and sitter_id = nora;
+  v_a := _t_booking(joy, nora, array[v_pet], local_ts(e, '09:00'), local_ts(e + 2, '17:00'), 'requested');
+  v_b := _t_booking(joy, nora, array[v_pet], local_ts(e + 10, '09:00'), local_ts(e + 12, '17:00'), 'requested');
+  v_c := _t_booking(joy, nora, array[v_pet], local_ts(e + 20, '09:00'), local_ts(e + 22, '17:00'), 'requested');
+  v_d := _t_booking(joy, nora, array[v_pet], local_ts(e + 30, '09:00'), local_ts(e + 32, '17:00'), 'requested');
+  perform _t_meet(v_a, 'required');
+  perform _t_meet(v_b, 'required');
+  perform _t_meet(v_c, 'required');
+  perform _t_meet(v_d, 'required');
+
+  -- The owner proposes a time before the sitter's first yes.
+  perform _t_as(joy);
+  v_err := null;
+  begin
+    perform propose_meet_greet(v_a, 'video', local_ts(e, '09:00'));
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'meet_greet_too_late', '015f: a Meet & Greet at the drop-off time or later is refused');
+  perform propose_meet_greet(v_a, 'video', local_ts(e - 1, '19:00'));
+  select * into r from get_booking_stages(array[v_a]);
+  perform _t_ok(r.stage = 'meet_greet' and r.next_actor = 'sitter', '015f: the owner can propose a time first; the sitter answers');
+  perform _t_as(null);
+  perform _t_ok((select sitter_interest_at is null from public.bookings where id = v_a),
+    '015f: …and nothing is held before the sitter answers');
+  perform _t_ok(exists (select 1 from public.chat_messages where thread_id = v_thread and kind = 'card'
+      and card ->> 'type' = 'meet_greet' and card ->> 'booking_id' = v_a::text),
+    '015f: the owner''s proposal posts the Meet & Greet card in the chat');
+
+  -- The sitter's Accept is the first yes.
+  perform _t_as(nora);
+  perform respond_meet_greet(v_a, true);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'agreed' and sitter_interest_at is not null and meet_greet_due_at is not null
+      from public.bookings where id = v_a),
+    '015f: the sitter accepts the owner''s time: agreed and the dates are held');
+
+  -- The owner asks to skip first; the sitter answers with a time instead.
+  perform _t_as(joy);
+  perform request_skip_meet_greet(v_b);
+  perform _t_as(nora);
+  perform propose_meet_greet(v_b, 'video', local_ts(e + 9, '19:00'));
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'proposed' and meet_greet_proposed_by = nora and sitter_interest_at is not null
+      and meet_greet_skip_requested_by is null from public.bookings where id = v_b),
+    '015f: a skip request can be answered with a time, which holds the dates');
+
+  -- The owner asks to skip; the sitter accepts.
+  perform _t_as(joy);
+  perform request_skip_meet_greet(v_c);
+  perform _t_as(nora);
+  perform respond_skip_meet_greet(v_c, true);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'skipped' and status = 'requested' and sitter_interest_at is not null
+      from public.bookings where id = v_c),
+    '015f: the sitter accepts the owner''s skip: skipped and held');
+  perform _t_as(joy);
+  select * into r from get_booking_stages(array[v_c]);
+  perform _t_ok(r.stage = 'confirm', '015f: …and the booking moves on without a Meet & Greet');
+
+  -- The owner proposes; the sitter asks to skip instead; the owner declines.
+  perform _t_as(joy);
+  perform propose_meet_greet(v_d, 'video', local_ts(e + 29, '19:00'));
+  perform _t_as(nora);
+  perform request_skip_meet_greet(v_d);
+  perform _t_as(null);
+  perform _t_ok((select meet_greet_status = 'skip_requested' and meet_greet_skip_requested_by = nora
+      and sitter_interest_at is not null from public.bookings where id = v_d),
+    '015f: the sitter''s Request skip is the first yes too');
+  perform _t_as(joy);
+  perform decline_meet_greet(v_d);
+  perform _t_as(null);
+  perform _t_ok((select status = 'cancelled' and cancel_reason = 'meet_greet_declined' and cancelled_by = joy
+      from public.bookings where id = v_d)
+      and exists (select 1 from public.notifications where user_id = nora and type = 'booking_cancelled'
+        and booking_id = v_d and title like '%declined, so the request was cancelled'),
+    '015f: Decline ends the request and tells the other side');
+
+  -- A first-time request in the chat comes with its Meet & Greet card, right under the request card.
+  v_e := _t_booking(joy, nora, array[v_pet], local_ts(e + 36, '09:00'), local_ts(e + 37, '17:00'), 'requested');
+  perform _t_meet(v_e, 'required');
+  perform _t_as(joy);
+  perform post_booking_request_card(v_thread, v_e);
+  perform _t_as(null);
+  perform _t_ok((select array_agg(card ->> 'type' order by created_at) from public.chat_messages
+      where thread_id = v_thread and card ->> 'booking_id' = v_e::text) = array['request', 'meet_greet'],
+    '015f: the request card is followed by the Meet & Greet card');
+
+  -- Decline only while the Meet & Greet is open, and only the two parties.
+  perform _t_as(nora);
+  v_err := null;
+  begin
+    perform decline_meet_greet(v_c);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'invalid_status', '015f: no Decline once the Meet & Greet is settled');
+  perform _t_as('00000000-0000-4000-8000-0000000000b2');
+  v_err := null;
+  begin
+    perform decline_meet_greet(v_a);
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_allowed', '015f: another sitter cannot decline it');
   perform _t_as(null);
 end;
 $$;
