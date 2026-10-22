@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { DemoTools } from "../components/DemoTools";
 import { AddressInput } from "../components/AddressInput";
 import { OpenInMapsButton } from "../components/OpenInMapsButton";
+import { SitterBadges } from "../components/SitterBadges";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
 import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
 import { Button } from "../components/ui/Button";
@@ -319,6 +320,7 @@ export default function ProfileScreen() {
   return (
     <Screen contentStyle={styles.content}>
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
+      {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
       <View style={styles.group} testID="profile-photos-group">
         <Text style={styles.groupTitle}>Your photos</Text>
         <Text style={styles.muted}>

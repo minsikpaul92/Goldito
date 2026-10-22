@@ -51,15 +51,15 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: live updates from the sitter (swipe to dismiss) and my pets. The pet room arrives later.
+Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard`
+Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 28 |
-| EmptyState | No pets yet | — | 41 |
-| Button | Add pet | `add-pet` | 61 |
+| EmptyState | Couldn't load your pets | — | 33 |
+| EmptyState | No pets yet | — | 46 |
+| Button | Add pet | `add-pet` | 63 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -336,21 +336,21 @@ Public privacy page (10.11): reachable signed out — the Google OAuth consent s
 
 Role profile (phase-03 3.8): edit only. Settings, What's new and Privacy are reached from the menu.
 
-Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `ProfilePhotoGallery` · `SitterAnswersSummary`
+Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · `ProfilePhotoGallery` · `SitterAnswersSummary`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your profile | — | 202 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 404 |
-| TextButton | Edit entry info | `profile-home-access` | 421 |
-| SegmentedControl | — | `profile-ai-mode` | 437 |
-| Button | Edit your answers | `profile-answers-edit` | 466 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 474 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 476 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 493 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 503 |
-| TextButton | + Add a spot | `profile-add-spot` | 527 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 542 |
+| EmptyState | Couldn't load your profile | — | 203 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 406 |
+| TextButton | Edit entry info | `profile-home-access` | 423 |
+| SegmentedControl | — | `profile-ai-mode` | 439 |
+| Button | Edit your answers | `profile-answers-edit` | 468 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 476 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 478 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 495 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 505 |
+| TextButton | + Add a spot | `profile-add-spot` | 529 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 544 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
@@ -377,19 +377,19 @@ Shows: `RoleCard`
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
-Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Tamagotchi / 8bit status joins later (11.12). Check-ins in Phase 06.
+Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
 Shows: `ActiveTripCard` · `SitterDashboard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 74 |
-| EmptyState | No bookings yet | — | 106 |
-| Pressable | — | `home-photo-request` | 126 |
-| Pressable | — | `today-requests` | 138 |
-| Pressable | — | `today-chats` | 149 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 169 |
-| Pressable | — | ``request-row-${b.id}`` | 189 |
+| EmptyState | Couldn't load today | — | 81 |
+| EmptyState | No bookings yet | — | 113 |
+| Pressable | — | `home-photo-request` | 134 |
+| Pressable | — | `today-requests` | 146 |
+| Pressable | — | `today-chats` | 157 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 177 |
+| Pressable | — | ``request-row-${b.id}`` | 197 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -417,28 +417,28 @@ Shows: `BookingCard` · `ChatList`
 
 Sitter booking detail (phase-03b 3B.4–3B.5): owner, pets with allergies and care tasks, the two handoffs (addresses once confirmed). A request: **Accept** / Suggest a time / Decline. The owner's offers: Accept / Suggest another time (#169: no Decline on the card). Confirmed: **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
 
-Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetGlance` · `PetRecordFold` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
+Shows: `BookingStageBar` · `EntryInfoCard` · `ProfileAvatar` · `HandoffChangeSheet` · `MeetGreetCard` · `ProposalCard` · `TripEntry` · `ChipSuggestions` · `PetGlance` · `PetRecordFold` · `MedalButtons` · `ReceivedReview` · `ReturnSheet` · `OwnerNoteCard` · `PastOwnerNotes`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Booking not found | — | 150 |
-| EmptyState | Couldn't load this booking | — | 157 |
-| Tag | `b.label` | — | 253 |
-| TextButton | Suggest drop-off time | `suggest-drop_off` | 313 |
-| TextButton | Suggest pick-up time | `suggest-pick_up` | 318 |
-| TextButton | Change time or place | `change-booking` | 326 |
-| Tag | `a` | — | 355 |
-| Button | busy ? "Saving…" : "Next" | `interest-booking` | 383 |
-| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 398 |
-| TextButton | Decline | `decline-booking` | 406 |
-| Button | busy ? "Saving…" : "Received" | `handoff-received` | 417 |
-| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 427 |
-| TextButton | Cancel booking | `cancel-booking` | 445 |
-| Sheet | Cancel booking | `cancel-sheet` | 464 |
-| Button | Cancel booking | `cancel-confirm` | 470 |
-| Sheet | Decline request | `decline-sheet` | 508 |
-| Button | Decline request | `decline-confirm` | 514 |
-| TextButton | Suggest another time instead | `decline-suggest` | 553 |
+| EmptyState | Booking not found | — | 151 |
+| EmptyState | Couldn't load this booking | — | 158 |
+| Tag | `b.label` | — | 254 |
+| TextButton | Suggest drop-off time | `suggest-drop_off` | 314 |
+| TextButton | Suggest pick-up time | `suggest-pick_up` | 319 |
+| TextButton | Change time or place | `change-booking` | 327 |
+| Tag | `a` | — | 356 |
+| Button | busy ? "Saving…" : "Next" | `interest-booking` | 384 |
+| Button | busy ? "Saving…" : "I accept" | `accept-booking` | 399 |
+| TextButton | Decline | `decline-booking` | 407 |
+| Button | busy ? "Saving…" : "Received" | `handoff-received` | 418 |
+| Button | busy ? "Saving…" : "Returned" | `handoff-returned` | 428 |
+| TextButton | Cancel booking | `cancel-booking` | 447 |
+| Sheet | Cancel booking | `cancel-sheet` | 466 |
+| Button | Cancel booking | `cancel-confirm` | 472 |
+| Sheet | Decline request | `decline-sheet` | 510 |
+| Button | Decline request | `decline-confirm` | 516 |
+| TextButton | Suggest another time instead | `decline-suggest` | 555 |
 
 ### `/sitter/bookings/[bookingId]/trip` — [app/sitter/bookings/[bookingId]/trip.tsx](../../frontend/app/sitter/bookings/[bookingId]/trip.tsx)
 
@@ -1217,14 +1217,13 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | `id` | 84 |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 104 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 118 |
-| Tag | `tag` | — | 158 |
-| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 161 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 171 |
-| Pressable | ``Check in on ${p.name}`` | ``caring-pet-${p.id}`` | 190 |
-| Sheet | Heads-up | `headsup-sheet` | 211 |
+| Pressable | — | `id` | 79 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 101 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 115 |
+| Tag | `tag` | — | 155 |
+| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 158 |
+| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 168 |
+| Sheet | Heads-up | `headsup-sheet` | 185 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
 
@@ -1337,6 +1336,42 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | TextButton | Or type it | `own-voice-type` | 132 |
 | Banner | `error` | `own-voice-error` | 135 |
 | Button | busy ? "Looking…" : "Use this" | `own-voice-use` | 137 |
+
+### MedalButtons — [components/pet/MedalButtons.tsx](../../frontend/components/pet/MedalButtons.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Button | busy === pet.id ? "Saving…" : `🏅 Give ${pet.name} a medal` | ``medal-give-${pet.id}`` | 52 |
+
+### PetColorsSheet — [components/pet/PetColorsSheet.tsx](../../frontend/components/pet/PetColorsSheet.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Sheet | busy === "saving" ? "Saving..." : "Save" | `pet-colors-sheet` | 69 |
+| Button | busy === "saving" ? "Saving..." : "Save" | `pet-colors-save` | 76 |
+| Button | busy === "making" ? "Reading colors..." : "Pick a photo" | `pet-colors-pick` | 78 |
+| TextButton | Try another photo | `pet-colors-again` | 90 |
+| TextButton | Use the coat color | `pet-colors-reset` | 92 |
+
+### PetPage — [components/pet/PetPage.tsx](../../frontend/components/pet/PetPage.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``pet-switch-${p.name}`` | 34 |
+| TextButton | 🎨 Match colors from photo | `pet-colors-open` | 51 |
+
+### PetRoomCard — [components/pet/PetRoomCard.tsx](../../frontend/components/pet/PetRoomCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${name}, ${MOOD_LABEL[mood]}`` | `testID ? `${testID}-open` : undefined` | 49 |
+
+### SitterPetRoom — [components/pet/SitterPetRoom.tsx](../../frontend/components/pet/SitterPetRoom.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``caring-pet-${p.id}`` | 33 |
+| Pressable | ``${action.label} ${pet.name}`` | ``pet-action-${pet.id}-${action.key}`` | 86 |
 
 ### DiaryBook — [features/diary/DiaryBook.tsx](../../frontend/features/diary/DiaryBook.tsx)
 
@@ -1484,4 +1519,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-433 actions · 432 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+442 actions · 441 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

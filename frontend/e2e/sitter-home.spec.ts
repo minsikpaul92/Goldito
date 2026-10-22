@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { caring, task as fixtureTask } from "./careFixtures";
-import { app, signIn } from "./helpers";
+import { app, petRoomOnFirstScreen, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // Sitter Home as a one-screen dashboard (phase 06 follow-up): numbers, next task, pets, shortcuts.
@@ -38,23 +38,22 @@ async function home(page: import("@playwright/test").Page) {
 }
 
 test.describe("sitter home dashboard", () => {
-  test("shows today's numbers, the next task and the pets in care — and fits one screen", async ({ page }) => {
+  test("shows today's numbers, the next task and the pets in care, the pet room whole on the first screen", async ({ page }) => {
     await home(page);
     const screen = app(page);
 
     await expect(screen.getByTestId("stat-tasks")).toContainText("0/4");
     await expect(screen.getByTestId("stat-checkins")).toContainText("0");
     await expect(screen.getByTestId("tasks-next")).toBeVisible();
-    await expect(screen.getByTestId("today-caring")).toContainText("Robert's pets");
+    await expect(screen.getByTestId("today-caring")).toContainText("Max");
     // The Feed and Bookings tabs already cover those; Home keeps only the two extra shortcuts.
     await expect(screen.getByTestId("shortcut-photos")).toHaveCount(0);
     await expect(screen.getByTestId("shortcut-bookings")).toHaveCount(0);
     await expect(screen.getByTestId(`caring-pet-${MAX.id}`)).toBeVisible();
     await expect(screen.getByTestId(`caring-pet-${MOCHI.id}`)).toBeVisible();
 
-    // No scrolling: everything is on one screen.
-    const fits = await screen.getByTestId("sitter-home").evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
-    expect(fits).toBe(true);
+    // The pet room is the biggest thing on Home, whole without scrolling; the rest may scroll below it.
+    expect(await petRoomOnFirstScreen(screen)).toBe(true);
   });
 
   test("today's tasks are listed before they are due, and one can be marked Done early", async ({ page }) => {
@@ -99,6 +98,7 @@ test.describe("sitter home dashboard", () => {
     await screen.getByTestId("sitter-dashboard").waitFor();
 
     await screen.getByTestId(`caring-pet-${MOCHI.id}`).click();
+    await screen.getByTestId("pet-room-Mochi-open").click();
     await expect(page).toHaveURL(new RegExp(`/sitter/checkin/${MOCHI.id}$`));
     await expect(screen.getByTestId(`checkin-${MOCHI.id}`)).toBeVisible();
     await expect(screen.getByTestId("checkin-photos")).toBeVisible();

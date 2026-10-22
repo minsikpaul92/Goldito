@@ -14,6 +14,7 @@ import { useThemedStyles } from "../providers/ThemeProvider";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { Theme } from "../theme/themes";
 import { DueAlert } from "./DueAlert";
+import { SitterPetRoom } from "./pet/SitterPetRoom";
 import { TaskDoneSheet } from "./TaskDoneSheet";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
@@ -25,10 +26,10 @@ import { TextButton } from "./ui/TextButton";
 const TODAY_ROWS = 3;
 
 /**
- * The sitter's Home while a stay is on: one screen, no scrolling — today's numbers, the next task
- * with its Done button, the pets in care (tap → check-in), and buttons into the bigger screens.
+ * The sitter's Home while a stay is on: the pet room first and biggest (`roomHeight`, tap the pet: check-in), then today's
+ * numbers, the next task with its Done button, and buttons into the bigger screens.
  */
-export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
+export function SitterDashboard({ pets, roomHeight }: { pets: CaringPet[]; roomHeight: number }) {
   const styles = useThemedStyles(makeStyles);
   const taskPets = useMemo(() => pets.map((p) => ({ id: p.id, name: p.name, ownerName: p.ownerName })), [pets]);
   const { state, reload } = useTodayTasks(taskPets);
@@ -65,12 +66,6 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
   const open = items.filter((i) => i.log.status === "pending");
   const done = items.length - open.length;
 
-  const owners = useMemo(() => {
-    const groups = new Map<string, CaringPet[]>();
-    for (const p of pets) groups.set(p.ownerName, [...(groups.get(p.ownerName) ?? []), p]);
-    return [...groups.entries()];
-  }, [pets]);
-
   const petName = (id: string) => pets.find((p) => p.id === id)?.name ?? "";
 
   const stat = (label: string, value: string, id: string) => (
@@ -93,6 +88,8 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
 
   return (
     <View style={styles.root} testID="sitter-dashboard">
+      <SitterPetRoom pets={pets} height={roomHeight} />
+
       <View style={styles.stats}>
         {stat("Tasks done", items.length > 0 ? `${done}/${items.length}` : "0", "stat-tasks")}
         {stat("Check-ins", checkins == null ? "-" : String(checkins), "stat-checkins")}
@@ -180,29 +177,6 @@ export function SitterDashboard({ pets }: { pets: CaringPet[] }) {
         )}
       </Card>
 
-      <Card style={styles.caring} testID="today-caring">
-        <Text style={styles.nextLabel}>Now caring · tap a pet to check in</Text>
-        {owners.map(([owner, list]) => (
-          <View key={owner} style={styles.ownerRow}>
-            <Text style={styles.muted}>{`${owner}'s ${list.length > 1 ? "pets" : "pet"}`}</Text>
-            <View style={styles.chips}>
-              {list.map((p) => (
-                <Pressable
-                  key={p.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Check in on ${p.name}`}
-                  onPress={() => router.push(`/sitter/checkin/${p.id}`)}
-                  style={({ pressed }) => [styles.petChip, pressed && styles.pressed]}
-                  testID={`caring-pet-${p.id}`}
-                >
-                  <Text style={styles.petChipText}>{`${SPECIES_EMOJI[p.species]} ${p.name}`}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        ))}
-      </Card>
-
       <View style={styles.shortcuts}>
         {shortcut("✅ All tasks", () => router.push("/sitter/tasks"), "shortcut-tasks")}
         {shortcut("🕘 My history", () => router.push("/sitter/history"), "shortcut-history")}
@@ -252,19 +226,6 @@ const makeStyles = (theme: Theme) =>
     nextTitle: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     error: { fontSize: theme.fontSize.small, color: theme.color.error },
-    caring: { gap: theme.spacing.xs },
-    ownerRow: { gap: 2 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
-    petChip: {
-      minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: theme.spacing.md,
-      borderRadius: 22,
-      backgroundColor: theme.color.accent,
-      borderWidth: 1,
-      borderColor: theme.color.primary,
-    },
-    petChipText: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
     headsUp: {
       minHeight: 44,
       flexDirection: "row",

@@ -117,6 +117,7 @@
 | **채팅 안 견적 (3D.6, #143)** — 시터가 한 번 눌러 견적 카드(서버 계산), 추가 수수료 줄(시터 추가 → 오너 Accept/Decline), 오너 Confirm, 새 견적은 이전 것을 Replaced로. 합계는 DB 함수가 계산하고 모델은 가격을 쓰지 않음. 예약 · 결제 연결은 #144 · **수수료는 #265로 제거** | `014n` (호스팅 미적용) | 🤖 `chat` e2e · SQL `rls_smoke` | 사람 확인 대기 |
 | **시터 온보딩 답변 (3D.2)** — 번호 질문 · 칩 · 자기소개 · 직접 추가 Q&A, 건너뛰기 가능, 오너는 읽기만 | 🟡 DB(`014f`) · 번호 질문 화면 · 검토 · 완료 · Profile 편집 ✅ 🤖 SQL smoke + `sitter-onboarding.spec.ts` · 가능한 날 등록(주간 규칙 · 시간)도 ✅ · Profile의 답변 목록 · 메모 "+" · "4+" 칩 · 쉬는 날 제거(#161) ✅ · 사진(PR B) · 시드 · 오너 상세 표시는 아직 · 음성은 문서만(보류) · 사람 확인 대기 | 03D / #139 |
 | **오너 가입 상세 (11.15 S1, #185)**: 한 화면 한 질문, 펫 사진 여러 장, 5축 "at a glance" 카드 | 🟡 DB(`014v`) 🤖 SQL smoke ✅ · 펫 사진 백엔드 라우트 🤖 pytest ✅ · 질문 화면(종 · 이름 · 사진 · 품종 · 나이 · 몸무게 · 소개 · 성격 · 안전 · 음식 · 요약 · 저장) 오너 소개 · 위치 · 음성 입력(녹음 → 글 → 제안, 가짜 마이크) · 사진 추측(품종 칩 · 털색 단계) 🤖 e2e ✅ · at a glance 카드(시터 예약 상세 · 오너 펫 상세 · 가입 요약, 품종 Needs 줄) 🤖 e2e ✅ · 시터 요청 카드(문의 스레드)와 Life Record 위는 아직 · 사람 확인 대기 | 11 / #185 |
+| **다마고치 (11.12, #184)**: Home의 8-bit 펫, 오늘 체크인에서 계산한 기분 · HUD, 시터 탭 액션 | 🟡 파생 상태 `lib/petStatus.ts` 🤖 e2e ✅ · 임시 스프라이트(코드로 그린 픽셀 헤드, 종 2 × 털색 8 × 기분 5) 🤖 e2e ✅ · 오너 Home 페이저와 펫 방(스프라이트 · 기분 · HUD) 🤖 e2e ✅ · 시터 Home의 펫 방과 탭 액션(밥 · 산책 · 응가 · 낮잠, `015`) 🤖 e2e ✅ · SQL smoke ✅ · 아카이브 메달(`015b`, 시터가 Returned 뒤에 펫마다 한 번 수여, 오너 Pet 페이지 아래에 표시) 🤖 e2e ✅ · SQL smoke ✅ · 사람 확인 대기 · 견종별 머리 모양(개 4 · 고양이 2) · 몸무게별 크기 · 사진은 색만(Match colors from photo, `pixel_colors`) 🤖 e2e ✅ · 시터 배지(Profile: First stay · First 5-star review, 그림자 4칸) 🤖 e2e ✅ | 11 / #184 |
 | **프로필 사진 (#135 – #137)** — 시터 · 오너 사진 최대 8장, 첫 장이 대표, 라운드 크롭 · 순서 · 삭제, 시터 사진은 오너에게 · 오너 사진은 예약 · 문의가 있는 시터에게만 | 🟡 DB(`014g`) · 업로드 API ✅ · 시터 Profile의 갤러리(추가 · 라운드 크롭 · 대표로 · 앞뒤 이동 · 삭제 · 최대 8장 · 빈 실루엣) ✅ 🤖 SQL smoke + `test_profile_photos.py` + `profile-photos.spec.ts` · 오너 Profile의 같은 갤러리와 시터가 예약 · 문의 화면에서 보는 오너 대표 사진(#137) ✅ · 시터 상세 한 줄과 뷰어(#136) · Privacy 페이지의 Profile photos 문구 ✅ · 사람 확인 대기(`014g`는 호스팅 DB에 적용됨) | #135 – #137 |
 
 ### Stage 4 — 돌봄 · 알림장
@@ -243,7 +244,7 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩 · **Today 카드(오늘 남은 할 일 최대 3줄, 시간 전에도 보임; 나머지는 "+ N more")** · Now caring 펫 칩 · 바로가기 2개 | 🤖 `sitter-home` | ➖ |
+| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩 · **Today 카드(오늘 남은 할 일 최대 3줄, 시간 전에도 보임; 나머지는 "+ N more")** · **펫 방(작은 픽셀 펫 + 밥 · 산책 · 응가 · 낮잠 버튼, 펫이 여럿이면 이름 칩으로 하나씩, 펫을 누르면 체크인 화면)** · 바로가기 2개 | 🤖 `sitter-home` | ➖ |
 | HOME-2 | Today 카드 줄의 **Done** (시간 전이어도 가능) | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일이 올라옴. 지난 건 ⚠️ Overdue, 시간이 된 건 ⏰ Due now 표시 | 🤖 `sitter-home` | ➖ |
 | HOME-3 | 바로가기 **All tasks · My history** (Photos · Bookings는 탭과 중복이라 뺌), 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
@@ -1007,6 +1008,24 @@
 | --- | --- | --- | --- | --- |
 | STAYLINE-1 | 오너: 개 한 마리와 고양이 한 마리로 시터 프로필 → **Start chat** | 첫 카드가 한 줄: "Oct 21 9:00 AM to Oct 24 5:00 PM · 2 pets: 🐶 Max, 🐱 Mochi". "Stay" 제목, Drop-off · Pick-up 문구 없음. 펫이 하나면 "· 🐶 Max"(개수 없음). 402 px에서는 줄바꿈될 수 있음 | 🤖 `chat` | ➖ |
 | STAYLINE-2 | 시터가 같은 채팅을 엶 (아직 예약 없음) | 같은 한 줄이지만 펫은 **이름만**(시터는 예약 전에는 펫 정보를 못 읽음, 틀린 이모지는 넣지 않음). 예약이 생기면 이모지도 보임 | 🤖 `chat` | ➖ |
+
+### 3.48 다마고치 (TAMA) · 11.12 · #184 · *파생 상태 · 스프라이트 · 오너 Home 펫 방 · 시터 탭 액션 · 메달까지, 나머지 화면 시나리오는 단계가 끝날 때마다 아래에 추가*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| TAMA-1 | 오늘의 체크인으로 펫 상태 계산 (`lib/petStatus.ts`) | 오늘 기록이 없으면 calm이고 밥 · 응가는 unknown. 6시간 안의 좋은 밥(all · most)은 fed, 적게 · 안 먹음이거나 6시간 넘게 밥이 없으면 hungry(기분보다 우선). 2시간 안의 낮잠은 sleepy(가장 우선). mood 체크인 happy · calm · tired는 excited · calm · tired. 1시간 안의 산책은 mood가 없을 때 excited. 응가는 기록되면 done, 없고 18시(앱 시간대) 이후면 due. 목록 순서와 상관없이 같은 결과 | 🤖 `pet-status` | ➖ |
+| TAMA-2 | 임시 스프라이트: dev 빌드(`EXPO_PUBLIC_DEV_ROUTES=1`)에서 `/dev/sprites` | 머리 모양(개 floppy · pointy · fluffy · flat, 고양이 short · long, 괄호 안은 그 모양의 견종 예) × 기분 5종이 한 줄씩, 그 아래 털색 8종. 견종 글자로 모양이 정해짐(말티즈 → fluffy, 허스키 → pointy, 퍼그 → flat, 메인쿤 → long, 모르는 견종 → floppy · short). 기분마다 눈 · 입이 다르고(sleepy는 오른쪽 아래에 Z), 털색은 색만 바뀌고 모양은 같음. 검정 털에서도 눈이 보임. 모르는 털색 · 비어 있는 털색은 개 golden · 고양이 orange. Muk의 PNG는 `pngs.ts`에 한 줄 추가하면 같은 key(`species_shape_coat_mood`)의 코드 스프라이트를 대신함 | 🤖 `pet-sprite` (격자 · 기분 · 폴백) | 사람이 갤러리를 한 번 봄 (모양이 개 · 고양이로 읽히는지) |
+| TAMA-3 | 오너 Home 상단 점 두 개(Today · Pet)를 누르거나, 마우스로 좌우 드래그, 가로 휠, 휴대폰은 스와이프 | 페이지가 한 장씩 넘어가고 점이 따라감. 펫 페이지는 **처음 열 때** 만들어짐(Home만 보면 체크인을 불러오지 않음). 알림 카드를 옆으로 밀어 지우는 동작은 그대로(페이저가 가로채지 않음). 세로 스크롤도 그대로 | 🤖 `pet-room` · `live-updates` | 사람이 휴대폰 터치로 한 번, 모바일 Safari 포함 |
+| TAMA-4 | Pet 페이지: 펫 이름 칩(여러 마리일 때), 히어로 전체가 다마고치 화면(이름 · 기분 · 큰 스프라이트 · HUD가 한 화면 안). 스크롤 없이 펫 방이 페이지의 남은 높이를 다 채우고 펫이 그 안에서 가장 크게(화면 높이에 맞춰 픽셀 크기가 정해짐). 머리 모양은 견종(말티즈 → 복슬), 크기는 몸무게(개 10 kg 미만 작게 · 25 kg 넘으면 크게), 펫을 바꿔도 화면 높이는 같음 | 오늘 기록이 없으면 Calm에 HUD 없음. 좋은 밥 + 기분 happy면 "Happy · 🍽️ Fed", 30분 산책이면 "🦮 30 min"(고양이는 산책 칩 없음). 밥을 안 먹었거나 6시간 넘게 없으면 "Hungry"(경고색). 털색은 가입 때 고른 색(`pets.profile.coat`), 없으면 개 golden · 고양이 orange. 남은 할 일이 있으면 "Next: 제목 · 시각". 펫을 누르면 Diary 탭으로 | 🤖 `pet-room` | 사람이 데모 계정(Max · Mochi)으로 한 번 |
+| TAMA-5 | 시터가 체크인을 보낸 뒤 오너 Pet 페이지 | 알림이 오면 새로고침 없이 스프라이트와 HUD가 바뀜(알림을 받을 때 다시 읽음). 1분마다 시계가 움직여 시간이 지나면 hungry로 바뀜 | 🤖 일부(로직 `pet-status`) | 두 브라우저로 사람이 확인 (시터 탭 액션이 들어간 뒤 함께) |
+| TAMA-6 | 시터 Home(Today): 맨 위에 케어 중인 펫의 큰 픽셀 펫(오너와 같은 다마고치 화면, 첫 화면 높이의 약 60%, 그 아래 통계 · 할 일. 여럿이면 이름 칩으로 하나씩)과 **Feed · Walk · Poop · Nap** 네 버튼(고양이는 Walk 없음), 펫을 누르면 전체 체크인 화면 | 버튼 하나가 체크인 하나: Feed = 밥 all, Walk = 20분, Poop = 응가 normal, Nap = 낮잠. 누르면 토스트 "Sent ✅ {오너} was told", 펫이 바로 반응(Fed · 🦮 20 min · Done 칩, 낮잠이면 Sleepy). 오너는 "Max is taking a nap 💤" 같은 알림을 받음. 실패하면 "Not sent"와 Try again. 보내는 동안 버튼은 잠깐 비활성 | 🤖 `pet-room-sitter` · SQL smoke `11.12` | 사람이 두 브라우저로(시터 탭 → 오너 Pet 페이지가 새로고침 없이 바뀜, TAMA-5), 호스팅 DB에 `015` 적용 뒤 |
+| TAMA-7 | 낮잠 체크인 (`015`) | `care_checkins.kind = nap`은 값이 없어야 함(값을 주면 거부). 오너 History · Diary에는 💤 Nap으로 보임. 돌봄 시간 밖에서는 기존처럼 거부 | 🤖 SQL smoke `11.12` · `pet-room-sitter` | 호스팅 DB에 `015` 적용 뒤 한 번 |
+| TAMA-8 | 시터: 끝난 예약(Returned 뒤 "Stay complete 🐾") 상세에서 펫마다 **🏅 Give {펫} a medal** | 누르면 토스트 "🏅 Max got a medal. Robert can see it", 그 펫은 "🏅 Max has a medal"로 바뀌고 버튼이 사라짐(다시 열어도 유지). 다른 펫은 그대로 버튼. 한 스테이 · 한 펫에 메달 하나(두 번 불러도 하나). Returned 전에는 버튼 자체가 없음(DB도 `stay_not_finished`로 거부). 다른 시터 · 오너는 줄 수 없음 | 🤖 `pet-medal` · SQL smoke `015b` | 호스팅 DB에 `015b` 적용 뒤 한 번 |
+| TAMA-9 | 오너: Home → Pet 페이지, 펫 방 아래 | 받은 메달이 새것부터 한 줄씩("🏅 시터 이름 · Oct 6 to Oct 9", 하루짜리 스테이는 날짜 하나). 메달이 없으면 아무것도 안 보임. 펫을 바꾸면 그 펫의 메달만. 오너는 읽기만 가능(수정 · 삭제 없음). 메달로 할 수 있는 일은 아직 없음(범위 밖) | 🤖 `pet-medal` · SQL smoke `015b` | 호스팅 DB에 `015b` 적용 뒤 한 번 |
+| TAMA-10 | 사진 색 (PS.3): dev 빌드(`EXPO_PUBLIC_DEV_ROUTES=1`)의 `/dev/sprites` 맨 위 **Colors from a photo** → Pick a photo → 샘플이나 내 사진 | 몇 초 뒤 사진 옆에 말티즈 프리셋이 그 사진의 색으로(주된 털색 · 더 어두운 그늘 · 더 밝은 주둥이). 배경색은 안 들어감. 털이 어두우면 눈이 밝게. 펫을 못 찾으면 "We couldn't find a pet there" | 🤖 `pet-sprite`(테스트 훅) | 실제 사진 여러 장(밝은 털 · 어두운 털 · 얼룩)으로 사람이 한 번 |
+| TAMA-11 | 오너: Home → Pet 페이지 → 펫 방 아래 **🎨 Match colors from photo** → Pick a photo → 샘플이나 내 사진 → **Save** | 미리보기는 그 펫의 프리셋(견종 모양)에 사진 색. Save 뒤 토스트 "Max's colors saved", 펫 방이 그 색으로(새로고침해도 유지). 다시 열면 **Use the coat color** → "Back to the coat color", 온보딩 털색으로. 가입 때 답은 그대로, 예전 사진 머리(`pixel_head`)는 지워짐. 그 펫을 돌보는 시터 Home에도 같은 색, 기분 얼굴(Nap이면 Sleepy와 Z)은 그대로 | 🤖 `pet-room` · `pet-room-sitter` | 데모 오너로 실제 사진 한 번(호스팅 DB, 마이그레이션 없음) |
+| TAMA-12 | 시터: 메뉴 → Profile 맨 위 **Badges** | 🐾 First stay(첫 픽업을 마친 날짜) · ⭐ First 5-star review(첫 별 5개 리뷰 날짜). 아직이면 회색 "Not yet". 그 뒤에 그림자 4칸 "Soon". 진행 중인 스테이 · 별 4개 이하는 세지 않음. 오너 Profile에는 없음 | 🤖 `sitter-badges` | 데모 시터로 한 번(스테이를 마치고 리뷰 5개 받은 뒤 배지가 켜지는지) |
+| TAMA-13 | 데모 펫의 털색: Profile → Demo tools 리셋 뒤 데모 오너 Home → Pet 페이지 | 모든 데모 펫에 털색이 있음(Max · Teddy white, Mochi · Olive gray, Biscuit mixed, Luna cream, Cooper orange, Leo brown). 가입 답이 이미 있는 펫은 답을 그대로 두고 털색만 채움. 오너가 고른 털색이나 사진 색(`pixel_colors`)은 덮어쓰지 않음 | 🤖 `test_reset_demo` | 머지 · 백엔드 배포 뒤 데모 리셋 한 번(Max가 흰색으로) |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

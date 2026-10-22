@@ -32,9 +32,10 @@ from app.config import get_settings
 from app.services import authz
 from app.services.demo_accounts import (
     DEFAULT_SET,
-    DEMO_PET_PROFILES,
+    DEMO_COATS,
     MAX_AND_MOCHI,
     DemoSet,
+    demo_pet_profile,
     ensure_home_point,
     ensure_owner_onboarded,
     ensure_sitter_answers,
@@ -180,9 +181,13 @@ def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[s
     added = []
     for name, species, breed, years, kg, allergens in pets:
         if name in existing:
-            # A pet from before the sign-up questions (014v) gets its answers; one with answers keeps them.
-            if name in DEMO_PET_PROFILES and not existing[name].get("profile"):
-                client.table("pets").update({"profile": DEMO_PET_PROFILES[name]}).eq("id", existing[name]["id"]).execute()
+            # A pet from before the sign-up questions (014v) gets its answers; one with answers keeps them and only
+            # gets its coat when it has none (the pixel pet's color, 11.12).
+            profile = existing[name].get("profile") or {}
+            if not profile and (start := demo_pet_profile(name)):
+                client.table("pets").update({"profile": start}).eq("id", existing[name]["id"]).execute()
+            elif not profile.get("coat") and name in DEMO_COATS:
+                client.table("pets").update({"profile": {**profile, "coat": DEMO_COATS[name]}}).eq("id", existing[name]["id"]).execute()
             continue
         birthdate = today.replace(year=today.year - years, day=min(today.day, 28))
         pet = (
@@ -195,7 +200,7 @@ def ensure_pets(client: Client, owner_id: str, today: date, pets=PETS) -> list[s
                     "breed": breed,
                     "birthdate": birthdate.isoformat(),
                     "weight_kg": kg,
-                    **({"profile": DEMO_PET_PROFILES[name]} if name in DEMO_PET_PROFILES else {}),
+                    **({"profile": start} if (start := demo_pet_profile(name)) else {}),
                 }
             )
             .execute()

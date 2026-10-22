@@ -46,6 +46,45 @@ Stage 4 돌봄 중 견주가 원할 때 **사진 요청**을 보내고, 알림�
 
 ---
 
+### 11.12 견종 × 사이즈 프리셋, 사진은 색만 (PR #261, 2026-10-21 결정)
+
+사진 → 16x16 머리(아래 PH.1 to PH.3)는 눈 · 코가 털색에 묻혀 얼굴이 안 나오고, 기분 얼굴 5개도 못 그린다. 그래서 바꾼다: **모양은 견종, 크기는 몸무게, 색은 온보딩 털색**으로 고른 프리셋, 사진은 **색만** 뽑는다. 온보딩에서 이미 받는 값(`pets.breed` · `pets.weight_kg` · `pets.profile.coat`)만 쓰고, 프리셋이라 기분 얼굴 5개가 그대로 된다. 마이그레이션 없음.
+
+| Step | 내용 | 확인 |
+| :--- | :--- | :--- |
+| **PS.1** ✅ | **머리 모양 프리셋** (`features/pets/sprites/sprites.ts`): 개 4개, 고양이 2개, 모두 16x16 역할 글자 + 같은 눈 · 입 자리라 기분 5개가 다 됨. 견종 글자(자유 입력)를 검토된 24종(`backend/app/data/breed_needs.json`)에 맞춰 모양으로: **floppy**(늘어진 귀: 래브라도 · 골든 · 비글 · 닥스훈트 · 캐벌리어 · 로트와일러 · 오스트레일리안 셰퍼드 · 보더콜리, 모르는 견종 기본값) · **pointy**(선 귀: 저먼 셰퍼드 · 허스키 · 웰시코기 · 치와와) · **fluffy**(복슬: 푸들 · 말티즈 · 시츄 · 포메라니안 · 요크셔테리어) · **flat**(납작 얼굴: 불독 · 보스턴테리어 · 퍼그). 고양이 **short**(기본 · 벵갈) · **long**(장모 · 메인쿤 · 랙돌). 키는 `species_shape_coat_mood`(묵의 PNG도 이 이름). dev 갤러리에 모양 × 털색 × 기분 | 🤖 `pet-sprite`(모양마다 16x16 · 기분 5개 · 견종 매핑) |
+| **PS.2** ✅ | **크기는 몸무게**: 개 S(10 kg 미만) · M(25 kg까지) · L(그 위), 몸무게가 없으면 M. 고양이는 하나. 오너 히어로와 시터 Home 펫 방에서 펫이 차지하는 크기(S 70% · M 85% · L 100%) | 🤖 `pet-room` · `pet-room-sitter` |
+| **PS.3** ✅ | **사진은 색만**: Pet 페이지 **🎨 Match colors from photo** → 오린 펫에서 주된 색 3개(가장 흔한 색 = 털, 흔한 색 중 더 어두운 것 = 그늘, 더 밝은 것 = 주둥이; `features/pets/sprites/photoColors.ts`) → 미리보기(그 펫의 프리셋 모양에 그 색) → Save → `pets.profile.pixel_colors`. **Use coat color**로 지우면 온보딩 털색. 사진 머리(`pixel_head`)는 더 그리지 않고, 저장된 것은 무시 | 🤖 `pet-room`(저장 · 다른 답 유지 · 되돌리기) · `pet-sprite`(색 뽑기) |
+| **PS.4** ✅ | **펫 방이 Home에서 가장 크게** (2026-10-21 Minsik 요청): 펫 방이 받은 공간을 다 채우고 픽셀 크기를 그 높이에 맞춤(`PetRoomCard`, 작은 compact 모드 없앰). 오너 Pet 페이지는 스크롤 없이 남은 높이 전부(Add pet은 Today 페이지로). 시터 Home은 펫 방이 맨 위, 첫 화면의 70%(그 아래 통계 · 할 일은 스크롤). **데모 펫 털색**: 8마리 모두 `DEMO_COATS`, 리셋이 답은 두고 빠진 털색만 채움(Max white) | 🤖 `pet-room` · `pet-room-sitter` · `sitter-home` · `heads-up` · `due-reminder` · `test_reset_demo` |
+| PS.5 | 사람 확인(TAMA-4, TAMA-6, TAMA-10 to TAMA-13), 머지 뒤 데모 리셋으로 Max가 흰색인지 | 사람 |
+
+몸통 · 걷기 · 뒤돌기 같은 움직임과 더 촘촘한 픽셀(16x16 → 32x32)은 다음 PR(11.12b)에서 한다.
+
+### 11.12 사진 → 픽셀 머리 (PR #261, 2026-10-21, 위 결정으로 대체: 머리 코드는 PS.3에서 지움, 오리기 · 색 계산만 남음)
+
+오너의 펫 사진에서 16x16 픽셀 펫을 만든다. 프리셋(종 × 털색)이 그 펫처럼 안 보일 때를 위한 것. AI 생성은 하지 않는다(브라우저에서 MediaPipe 오리기 + 계산만).
+
+| Step | 내용 | 확인 |
+| :--- | :--- | :--- |
+| **PH.1** ✅ | `features/pets/sprites/pixelize.ts`: 오린 펫(`features/snap/cutout.ts`의 `segmentAt` 마스크) → 위쪽 정사각형으로 자르기(머리 쪽) → 14x14 칸 평균색 → median cut으로 6색 → 1칸 어두운 외곽선 → `{ v: 1, palette, rows }`(약 350자, `pets.profile`에 들어갈 크기). `PetSprite`의 `head` 프롭이 프리셋 대신 그린다. dev 갤러리 `/dev/sprites` 맨 위 **From a photo**(샘플 사진이나 내 사진) | 🤖 `pet-sprite.spec.ts`(저장 모양 검사, 테스트 훅으로 사진 → 머리) · 실제 MediaPipe로 샘플 사진 확인 |
+| **PH.2** ✅ | 오너 Pet 페이지 펫 방 아래 **🎨 Make from photo** → 시트(`components/pet/PixelHeadSheet.tsx`): Pick a photo(샘플 · 내 사진) → 미리보기 → **Save** → `pets.profile.pixel_head`(`savePixelHead`, 다른 답은 그대로). **Try another photo** · 저장된 머리가 있으면 **Use the preset**(지우기). 오너 Pet 페이지 펫 방이 바로 그 머리로 그려짐. 오너가 `profile`을 직접 고칠 수 있어(014v grant + `pets_update`) 마이그레이션 없음 | 🤖 `pet-room.spec.ts`(저장 · 다른 답 유지 · 되돌리기) |
+| **PH.3** ✅ | 시터 Home 펫 방도 저장된 머리로(`usePetLook` · `getPetLook`이 털색과 머리를 함께 읽음). 사진 머리에는 기분 얼굴을 그리지 않고 기분 글자 · 흔들림 그대로, sleepy만 Z(`withZzz`, 오너 쪽도 같음) | 🤖 `pet-room-sitter`(사진 머리 · 낮잠 Z) · `pet-sprite`(Z만 바뀜) |
+| PH.4 | test-guide TAMA-10 사람 확인(실제 사진 여러 장, 개 · 고양이), TODO 정리 | 사람 |
+
+### 11.12 시터 배지 (PR #261, 2026-10-21)
+
+펫 메달(`015b`)은 시터가 펫에게 주고 오너가 Pet 페이지에서 본다. 시터도 받는 배지가 따로 있다: **시터 Profile 맨 위 Badges**. 저장하지 않고 데이터에서 계산(`features/sitters/badgeApi.ts`), 마이그레이션 없음.
+
+| Badge | 언제 | 근거 |
+| :--- | :--- | :--- |
+| 🐾 First stay | 첫 스테이를 마친 날(첫 pick-up 완료) | `booking_handoffs` (시터 자기 예약) |
+| ⭐ First 5-star review | 첫 별 5개 리뷰를 받은 날 | `reviews` (시터 자기 리뷰) |
+| 그림자 4칸 "Soon" | 나중에 추가할 배지 자리 | - |
+
+아직 못 받은 배지는 회색 "Not yet". 오너가 보는 시터 공개 프로필에 배지를 보이는 것과 다른 배지(10번째 스테이 등)는 나중. 🤖 `sitter-badges.spec.ts`.
+
+한계: 옆모습 전신 사진은 몸까지 들어간다(머리 감지 없음). 얼굴 감지로 머리만 자르기는 나중.
+
 ## Definition of Done (DoD)
 
 1. 11.1 ✅: 두 브라우저에서 요청 → 게시 → 자동 완료까지 새로고침 없이 (사람 확인은 test-guide PHOTO)
