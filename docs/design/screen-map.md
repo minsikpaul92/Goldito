@@ -994,11 +994,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 42 |
-| Button | Next | ``${testID}-next`` | 77 |
-| Button | `demoLabel` | ``${testID}-demo`` | 81 |
-| Button | Sign in | ``${testID}-sign-in`` | 87 |
-| TextButton | Create account | ``${testID}-sign-up`` | 93 |
+| BackLink | — | ``${testID}-back`` | 39 |
+| Button | Next | ``${testID}-next`` | 74 |
+| Button | Sign in | ``${testID}-sign-in`` | 76 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
@@ -1521,4 +1519,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-443 actions · 442 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+441 actions · 440 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

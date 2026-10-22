@@ -84,6 +84,7 @@
 6. **Demo accounts for judges** — fixed accounts per starting point; the "two judges, one account" problem.
 7. **Demo video** — who records and who edits (proposed: Minsik records, Muk edits), the recording slot around 10/27.
 8. **Archive timing** — when the old `feedback-*` / `review-*` documents move to `docs/archive/` (after Seulgi's Q.1).
+9. **Tour pictures** ([#296](https://github.com/minsikpaul92/Goldito/issues/296), Common-004; meeting Thu 2026-10-22, 8 PM; assigned to all) — what the six tour pages show instead of the "Photo placeholder" boxes: real screenshots, short clips, or no picture; who makes them and by when.
 
 ---
 
