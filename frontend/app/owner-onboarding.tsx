@@ -14,6 +14,7 @@ import { Banner } from "../components/ui/Banner";
 import { Button } from "../components/ui/Button";
 import { LoadingView } from "../components/ui/LoadingView";
 import { LinkButton } from "../components/ui/LinkButton";
+import { SegmentedControl } from "../components/ui/SegmentedControl";
 import { Stepper } from "../components/ui/Stepper";
 import { TextButton } from "../components/ui/TextButton";
 import {
@@ -21,16 +22,20 @@ import {
   OwnerOnboardingDraft,
   birthdateFromAge,
   clearDraft,
+  convertWeight,
+  draftForNextPet,
   foodsFromDraft,
   loadDraft,
+  pickedSpecies,
   profileFromDraft,
   saveDraft,
   weightFromDraft,
+  withPickedSpecies,
 } from "../features/ownerOnboarding/draft";
 import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
 import { useBreedNeeds } from "../features/ownerOnboarding/breedNeedsApi";
 import { guessFromPhoto } from "../features/ownerOnboarding/photoGuessApi";
-import { NO_FACTS, extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
+import { extractFacts, openQuestions } from "../features/ownerOnboarding/voiceApi";
 import { markOwnerOnboarded, newPetId, saveOwnerOnboarding } from "../features/ownerOnboarding/ownerOnboardingApi";
 import {
   COATS,
@@ -106,7 +111,7 @@ export default function OwnerOnboarding() {
   if (session.status !== "signedIn" || session.profile.role !== "owner") return <Redirect href="/" />;
   if (!draft) return <LoadingView />;
 
-  const ids = stepIds(draft.species);
+  const ids = stepIds(draft.species, draft.ownerDone);
   const index = stepIndex(ids, draft.step);
   const step = ids[index];
   const petName = draft.name.trim();
@@ -143,10 +148,19 @@ export default function OwnerOnboarding() {
     setSaving(true);
     setError(null);
     try {
-      if (petId) await saveOwnerOnboarding(userId, draft, petId);
+      const last = draft.pending.length === 0;
+      if (petId) await saveOwnerOnboarding(userId, draft, petId, last);
       else await markOwnerOnboarded(userId);
-      await clearDraft(userId);
       if (petId) toast.show(`${petName} is added`);
+      if (petId && !last) {
+        // The next pet starts from its first question; the owner is not done until the last one is saved.
+        const nextDraft = draftForNextPet(draft);
+        await saveDraft(userId, nextDraft);
+        setFromSummary(false);
+        setDraft(nextDraft);
+        return;
+      }
+      await clearDraft(userId);
       router.replace("/owner");
     } catch (e) {
       setError((e as Error).message);
@@ -180,33 +194,42 @@ export default function OwnerOnboarding() {
   );
 
   if (step === "species") {
-    // The step list is built from the species, so the move to the name screen is explicit (`next` still sees the old list).
-    const choose = (value: Species) =>
-      pick(value === draft.species ? {} : { species: value, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" }, () => goTo("name"));
+    // Both kinds can be ticked: the questions then run once per pet, the first kind first.
+    const picked = pickedSpecies(draft);
+    const toggleSpecies = (value: Species) => {
+      const on = picked.includes(value);
+      const nextDraft = withPickedSpecies(draft, on ? picked.filter((s) => s !== value) : [...picked, value]);
+      update(nextDraft);
+    };
     return (
       <StepFrame
         progress={0}
         title="What kind of pet do you have?"
         footer={
-          <TextButton
-            label={saving ? "Saving…" : "Add a pet later"}
-            onPress={() => void finish(null)}
-            disabled={saving}
-            testID="own-later"
-          />
+          <>
+            <Button label="Next" onPress={() => goTo("name")} disabled={picked.length === 0} testID="own-next" />
+            <TextButton
+              label={saving ? "Saving…" : "Add a pet later"}
+              onPress={() => void finish(null)}
+              disabled={saving}
+              testID="own-later"
+            />
+          </>
         }
         testID="own-step-species"
       >
-        <BigOption label="Dog" selected={species === "dog"} onPress={() => choose("dog")} testID="own-species-dog" />
-        <BigOption label="Cat" selected={species === "cat"} onPress={() => choose("cat")} testID="own-species-cat" />
+        <BigOption label="Dog" selected={picked.includes("dog")} onPress={() => toggleSpecies("dog")} testID="own-species-dog" />
+        <BigOption label="Cat" selected={picked.includes("cat")} onPress={() => toggleSpecies("cat")} testID="own-species-cat" />
         {error ? <Banner tone="error" body={error} /> : null}
       </StepFrame>
     );
   }
 
   if (step === "name") {
+    // With a dog and a cat the question says which one it is about.
+    const several = draft.ownerDone || draft.pending.length > 0;
     return frame(
-      "What's your pet's name?",
+      several && species ? `What's your ${species}'s name?` : "What's your pet's name?",
       <BigInput
         value={draft.name}
         onChangeText={(name) => update({ name: name.slice(0, MAX_NAME) })}
@@ -358,25 +381,35 @@ export default function OwnerOnboarding() {
   }
 
   if (step === "weight") {
+    const kg = weightFromDraft(draft);
+    const heardKg = draft.voice.weight_kg;
     return frame(
       `How much does ${petName} weigh?`,
       <>
+        <SegmentedControl
+          options={[
+            { value: "kg", label: "kg" },
+            { value: "lbs", label: "lbs" },
+          ]}
+          value={draft.weightUnit}
+          onChange={(weightUnit) => update({ weightUnit, weight: convertWeight(draft.weight, draft.weightUnit, weightUnit) })}
+          testID="own-weight-unit"
+        />
         <BigInput
-          value={draft.weightKg}
-          onChangeText={(weightKg) => update({ weightKg })}
+          value={draft.weight}
+          onChangeText={(weight) => update({ weight })}
           onSubmitEditing={next}
           keyboardType="decimal-pad"
-          placeholder="kg"
-          accessibilityLabel="Weight in kg"
+          placeholder={draft.weightUnit}
+          accessibilityLabel={`Weight in ${draft.weightUnit}`}
           testID="own-weight"
         />
-        {heard(draft.voice.weight_kg, draft.weightKg.trim() === String(draft.voice.weight_kg?.value), "weight")}
+        {heard(heardKg, kg !== null && heardKg !== null && Math.abs(kg - heardKg.value) < 0.06, "weight")}
       </>,
       <>
-        {nextButton(draft.weightKg.trim() === "")}
+        {nextButton(draft.weight.trim() === "")}
         {skipLink}
       </>,
-      "In kg.",
     );
   }
 
@@ -631,13 +664,18 @@ export default function OwnerOnboarding() {
       label: "Age",
       value: draft.ageYears === null ? "Not shared yet" : `${draft.ageYears} ${draft.ageYears === 1 ? "year" : "years"}`,
     },
-    { id: "weight", label: "Weight", value: draft.weightKg.trim() ? `${draft.weightKg.trim()} kg` : "Not shared yet" },
+    { id: "weight", label: "Weight", value: draft.weight.trim() ? `${draft.weight.trim()} ${draft.weightUnit}` : "Not shared yet" },
     { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
     { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
     { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.safety.s6 === "none" ? "None" : "Not shared yet" },
-    { id: "ownerIntro", label: "About you", value: draft.intro.trim() || "Not shared yet" },
-    { id: "location", label: "Home", value: draft.home ? draft.homeAddress.trim() || "Pin set" : "Not shared yet" },
+    // The owner's own answers are asked with the first pet only.
+    ...(draft.ownerDone
+      ? []
+      : [
+          { id: "ownerIntro", label: "About you", value: draft.intro.trim() || "Not shared yet" },
+          { id: "location", label: "Home", value: draft.home ? draft.homeAddress.trim() || "Pin set" : "Not shared yet" },
+        ]),
   ];
   return (
     <StepFrame

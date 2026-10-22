@@ -24,8 +24,7 @@ export default function WelcomeLanding() {
           Care updates without the back-and-forth
         </Text>
         <Text style={styles.lead}>
-          Choose how you use Goldito. We'll show you what matters for that role. Sign in stays on the
-          next screen, same as before.
+          Choose how you use Goldito.
         </Text>
 
         <Pressable

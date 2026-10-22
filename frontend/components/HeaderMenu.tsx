@@ -13,7 +13,7 @@ import { Theme } from "../theme/themes";
 
 const DURATION = 260;
 
-/** Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Log out. */
+/** Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Sign out. */
 export function HeaderMenu() {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -110,8 +110,8 @@ export function HeaderMenu() {
 
           {confirming ? (
             <View style={styles.confirm}>
-              <Text style={styles.name}>Log out?</Text>
-              <Button label="Log out" variant="danger" onPress={() => close(() => void signOut())} testID="log-out-confirm" />
+              <Text style={styles.name}>Sign out?</Text>
+              <Button label="Sign out" variant="danger" onPress={() => close(() => void signOut())} testID="log-out-confirm" />
               <Button label="Cancel" variant="secondary" onPress={() => setConfirming(false)} testID="log-out-cancel" />
             </View>
           ) : (
@@ -139,7 +139,7 @@ export function HeaderMenu() {
                 testID="log-out"
               >
                 <Icon name="logOut" size={24} color={theme.color.textMuted} />
-                <Text style={[styles.rowLabel, styles.mutedLabel]}>Log out</Text>
+                <Text style={[styles.rowLabel, styles.mutedLabel]}>Sign out</Text>
               </Pressable>
             </>
           )}

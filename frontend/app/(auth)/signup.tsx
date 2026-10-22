@@ -28,7 +28,8 @@ function goBack() {
 export default function SignupScreen() {
   const styles = useThemedStyles(makeStyles);
   const [role, setRole] = useState<Role | null>(null);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -42,7 +43,8 @@ export default function SignupScreen() {
   const canSubmit =
     isSupabaseConfigured &&
     role !== null &&
-    name.trim() !== "" &&
+    firstName.trim() !== "" &&
+    lastName.trim() !== "" &&
     email.trim() !== "" &&
     password !== "" &&
     confirm === password &&
@@ -65,7 +67,8 @@ export default function SignupScreen() {
     const { data, error: authError } = await getSupabase().auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { role, display_name: name.trim() } },
+      // One display name for everything that shows or reads a name (the AI takes the first word as the first name).
+      options: { data: { role, display_name: `${firstName.trim()} ${lastName.trim()}` } },
     });
     setSubmitting(false);
     if (authError) {
@@ -114,13 +117,20 @@ export default function SignupScreen() {
 
       <View style={styles.form}>
         <TextField
-          label="Your name"
-          value={name}
-          onChangeText={setName}
-          placeholder="Shown to owners and sitters"
-          autoComplete="name"
-          textContentType="name"
-          testID="signup-name"
+          label="First name"
+          value={firstName}
+          onChangeText={setFirstName}
+          autoComplete="given-name"
+          textContentType="givenName"
+          testID="signup-first-name"
+        />
+        <TextField
+          label="Last name"
+          value={lastName}
+          onChangeText={setLastName}
+          autoComplete="family-name"
+          textContentType="familyName"
+          testID="signup-last-name"
         />
         <TextField
           label="Email"

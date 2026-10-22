@@ -27,7 +27,7 @@ export function ShareToggle({ label, on, onToggle, disabled, testID }: Props) {
       testID={testID}
     >
       <Text style={[styles.label, on && styles.labelOn]}>
-        {on ? "✓ " : "🔒 "}
+        {on ? "✓ " : ""}
         {on ? label : "Only you"}
       </Text>
     </Pressable>

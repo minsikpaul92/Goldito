@@ -1,14 +1,14 @@
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ChatMessage, sendChatMessage } from "../features/chat/chatApi";
 import { formatTime, isoToZoned } from "../features/schedule/dates";
-import { Role, canTravel, greetingFor, minutesAway, nextHandoff, startOpensAt } from "../features/transit/tripLogic";
+import { Role, arrivedForNext, arrivedTime, canTravel, greetingFor, minutesAway, nextHandoff, startOpensAt, tripArrived } from "../features/transit/tripLogic";
 import { useLiveTrips } from "../features/transit/useLiveTrips";
 import { useStartTrip } from "../features/transit/useStartTrip";
 import { BookingSummary, completeHandoff } from "../lib/bookings";
-import { isLive } from "../lib/transit";
+import { endTrip, isLive } from "../lib/transit";
 import { useErrorDialog } from "../providers/ErrorDialogProvider";
 import { useSession } from "../providers/SessionProvider";
 import { useToast } from "../providers/ToastProvider";
@@ -32,6 +32,10 @@ type Props = {
  * The trip, in the chat (3D.8): Start trip for the person who travels, then "on the way", "N min away" and "arrived"
  * for both, and a one-tap hello once they are there. It reads the booking's trips like the booking page does and
  * opens the same Trip screen; nothing is stored in the chat.
+ *
+ * #250: the sitter's Received for the drop-off lives on this card and shows only once the trip got there (arrived on the
+ * way, or ended with "I've arrived"), never just because the 2-hour window opened. The hello is a small quick reply:
+ * the owner's first, the sitter's answer only after the owner's is in the chat.
  */
 export function ChatTripCard({ booking, viewer, threadId, messages, onSent, startSignal = 0 }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -63,13 +67,19 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
   const tripHref = `/${viewer}/bookings/${booking.id}/trip` as const;
   const nameOf = (id: string) => (id === booking.ownerId ? booking.ownerName : booking.sitterName);
 
-  // The newest trip that got there, live or done: the hello belongs to it.
-  const arrivedTrip = trips.find((t) => !!t.arrived_at || t.status === "arrived");
+  // The newest trip that got there, live or done: the hello and Received belong to it.
+  const arrivedTrip = trips.find(tripArrived);
   const greeting = arrivedTrip ? greetingFor(arrivedTrip.handoff_kind, viewer) : null;
-  const arrivedAt = arrivedTrip?.arrived_at ?? arrivedTrip?.started_at ?? "";
-  const greeted =
-    !!greeting &&
-    messages.some((m) => m.kind === "text" && m.senderId === profile?.id && m.body === greeting && Date.parse(m.at) >= Date.parse(arrivedAt));
+  const arrivedAt = arrivedTrip ? arrivedTime(arrivedTrip) : "";
+  const said = (text: string | null, by: string | undefined) =>
+    !!text && messages.some((m) => m.kind === "text" && m.senderId === by && m.body === text && Date.parse(m.at) >= Date.parse(arrivedAt));
+  const greeted = said(greeting, profile?.id);
+  // The sitter answers the owner's hello: their quick reply waits for it.
+  const ownerSpoke = !!arrivedTrip && said(greetingFor(arrivedTrip.handoff_kind, "owner"), booking.ownerId);
+  const mayGreet = !!greeting && !greeted && (viewer === "owner" || ownerSpoke);
+  // Received is the sitter's, for the drop-off, once that trip got there and only until it is done.
+  const receivable =
+    viewer === "sitter" && arrivedTrip?.handoff_kind === "drop_off" && !booking.dropOff?.completedAt;
   const greet = async () => {
     if (!greeting || sending) return;
     setSending(true);
@@ -87,6 +97,7 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
       router.push(tripHref);
       return;
     }
+    if (arrivedForNext(booking, trips)) return; // they are there already: no second trip
     const upcoming = nextHandoff(booking);
     if (!upcoming || !canTravel(viewer, upcoming.handoff.locationType) || Date.now() < startOpensAt(upcoming.handoff)) return;
     void start(upcoming.kind).then((result) => {
@@ -106,7 +117,34 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
       setSending(false);
     }
   };
-  const hello = greeting && !greeted ? <Button label={greeting} onPress={() => void greet()} disabled={sending} testID="trip-greet" /> : null;
+  // "I've arrived" (#250): a trip without a live position never arrives by distance, so the traveller says so.
+  const arrive = async (tripId: string) => {
+    setSending(true);
+    try {
+      await endTrip(tripId);
+      onSent();
+    } catch (e) {
+      errorDialog.show({ title: "Not saved", message: (e as Error).message });
+    } finally {
+      setSending(false);
+    }
+  };
+  const hello =
+    mayGreet && greeting ? (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Send: ${greeting}`}
+        onPress={() => void greet()}
+        disabled={sending}
+        style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+        testID="trip-greet"
+      >
+        <Text style={styles.chipText}>{greeting}</Text>
+      </Pressable>
+    ) : null;
+  const receiveButton = receivable ? (
+    <Button label="Received" onPress={() => void receive()} disabled={sending} testID="chat-received" />
+  ) : null;
 
   if (live) {
     const mine = live.traveler_id === profile?.id;
@@ -130,11 +168,17 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
       <View style={styles.wrap}>
         <Card style={styles.card} testID="chat-trip-live">
           <Text style={styles.title}>{line}</Text>
-          <Button label={mine ? "Open trip" : `Track ${traveler}`} onPress={() => router.push(tripHref)} testID="chat-trip-open" />
-          {viewer === "sitter" && live.status === "arrived" && live.handoff_kind === "drop_off" && !booking.dropOff?.completedAt ? (
-            <Button label="Received" onPress={() => void receive()} disabled={sending} testID="chat-received" />
+          <Button
+            label={mine ? "Open trip" : `Track ${traveler}`}
+            variant={receivable ? "secondary" : "primary"}
+            onPress={() => router.push(tripHref)}
+            testID="chat-trip-open"
+          />
+          {mine && live.status === "en_route" ? (
+            <Button label="I've arrived" variant="secondary" onPress={() => void arrive(live.id)} disabled={sending} testID="chat-trip-arrive" />
           ) : null}
-          {hello}
+          {live.status === "arrived" ? receiveButton : null}
+          {live.status === "arrived" ? hello : null}
         </Card>
       </View>
     );
@@ -142,17 +186,25 @@ export function ChatTripCard({ booking, viewer, threadId, messages, onSent, star
 
   const next = nextHandoff(booking);
   const canStart = !!next && canTravel(viewer, next.handoff.locationType);
-  if (!hello && !canStart) return null;
+  // The trip for the handoff that is still open got there: say so instead of offering Start trip again.
+  const there = !!arrivedTrip && next?.kind === arrivedTrip.handoff_kind;
+  if (!hello && !receivable && !there && !canStart) return null;
   const opens = next ? startOpensAt(next.handoff) : 0;
+  const arrivedClock = arrivedAt ? ` · ${formatTime(isoToZoned(arrivedAt).time)}` : "";
   return (
     <View style={styles.wrap}>
-      {hello ? (
+      {hello || receivable || there ? (
         <Card style={styles.card} testID="chat-trip-arrived">
-          <Text style={styles.title}>{`${nameOf(arrivedTrip?.traveler_id ?? "")} arrived ✓`}</Text>
+          <Text style={styles.title}>
+            {arrivedTrip?.traveler_id === profile?.id
+              ? `You've arrived ✓${arrivedClock}`
+              : `${nameOf(arrivedTrip?.traveler_id ?? "")} arrived ✓${arrivedClock}`}
+          </Text>
+          {receiveButton}
           {hello}
         </Card>
       ) : null}
-      {next && canStart && Date.now() < opens ? (
+      {there ? null : next && canStart && Date.now() < opens ? (
         <Card style={styles.card} testID="chat-trip-waiting">
           <Text style={styles.muted}>{`You can start the trip from ${formatTime(isoToZoned(new Date(opens).toISOString()).time)}.`}</Text>
         </Card>
@@ -180,4 +232,16 @@ const makeStyles = (theme: Theme) =>
     card: { gap: theme.spacing.sm, maxWidth: "92%", width: "92%" },
     title: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     muted: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
+    // A quick reply, not a main button (#250): Track and Received stay the actions.
+    chip: {
+      alignSelf: "flex-start",
+      paddingVertical: theme.spacing.xs,
+      paddingHorizontal: theme.spacing.md,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: theme.color.primary,
+      backgroundColor: theme.color.surface,
+    },
+    chipText: { fontSize: theme.fontSize.small, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },
+    pressed: { opacity: 0.7 },
   });

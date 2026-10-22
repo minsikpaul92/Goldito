@@ -208,7 +208,7 @@ def test_load_prompt_stays_inside_the_prompts_folder():
         ("Wait —. Done", "Wait. Done"),
         ('{"reply": "Yes — sure", "n": 1}', '{"reply": "Yes, sure", "n": 1}'),
         ("No dashes here - a hyphen stays.", "No dashes here - a hyphen stays."),
-    ],
+        ('{\n  "a": 1,\n  "b": "x — y",\n  "c": [\n    "p",\n    "q"\n  ]\n}', '{\n  "a": 1,\n  "b": "x, y",\n  "c": [\n    "p",\n    "q"\n  ]\n}'),    ],
 )
 def test_no_em_or_en_dash_survives_in_model_text(raw, clean):
     assert nebius.plain_dashes(raw) == clean
@@ -219,3 +219,14 @@ def test_every_model_answer_comes_back_without_dashes(monkeypatch):
     install(monkeypatch, "Sure — I can host Max for Oct 24–27.")
     result = nebius.chat("fast", [{"role": "user", "content": "hi"}])
     assert result.text == "Sure, I can host Max for Oct 24-27."
+
+
+def test_a_pretty_printed_json_answer_keeps_its_commas(monkeypatch):
+    install(monkeypatch, '{\n  "reply": "Yes",\n  "n": 1\n}')
+
+    class Out(BaseModel):
+        reply: str
+        n: int
+
+    out, _ = nebius.chat_json("fast", [{"role": "user", "content": "hi"}], Out)
+    assert (out.reply, out.n) == ("Yes", 1)
