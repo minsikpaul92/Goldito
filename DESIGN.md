@@ -405,7 +405,7 @@ Flat by default: cards are separated by `border`, not shadow. Only things that f
 | `Avatar` | Round (Figma Avatar): `initial` (`primary` + `primaryText` letter, people), `photo` (pet photo), `emoji` (species / tool emoji on `accent`). Default 40; cards use 56 |
 | `Banner` | Inline notice for an edge state (Figma Banner): icon + title in the tone color + one line on what happens next + optional action. `info` (accent) · `warning` · `error` · `offline`. **Never for DANGER** — that is `AlertModal` (§7.4) |
 | `SegmentedControl` | 2–4 options as 44-tall segments (radio); unselected = `borderStrong` border; selected = `primary` border + `accent` fill; `disabled` for locked values (pet species, D22) |
-| `Toast` (`useToast()`) | Bottom, above the tab bar, auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
+| `Toast` (`useToast()`) | Top, below the status bar, light green with a check icon (red tint with an alert icon for errors), auto-hide 3 s. Success after actions ("Max is added 🐶", "Profile saved ✅"). **Never** used alone for DANGER |
 | `PetCard` (`components/`) | Owner Home: round species avatar (🐶 / 🐱 on `accent`) + name + "Dog · Maltese · 4 yrs · 3.2 kg" + allergy chips; tap → pet profile |
 | `PetForm` (`components/`) | Add pet / Pet profile: species (locked after creation), name, breed, birthday (`YYYY-MM-DD`), weight (kg), allergies (chip input, stored lowercase), notes |
 | `Sheet` | Bottom sheet (RN `Modal`, stays in the phone frame): title + **Close**, backdrop click closes (never use a sheet for DANGER — §7.4), scrolling body, pinned footer for the one primary action. No drag |
@@ -472,7 +472,7 @@ Sizes in px, from the Figma components (every value is a token). Heights are min
 | `Check-in Tile` | ¼ width, min 64 | 8 × 4 | `md` | Icon over label (Small Strong) | Default (`borderStrong`) · Logged (`successSurface` + ✓) |
 | `Card` | full width | 16 | `lg` | Title Body Strong, body Small | — |
 | Task row | full width; icon 40 | 16 | `lg` | Time Caption, title Body Strong | Pending · Next (2 px `primary` border + the one filled action) · Done (time + ✓ in `success`) |
-| `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Above the tab bar and pinned footer |
+| `Toast` | width − 32 | 16 | `md` | Body on `text` fill | Shows 3 s; with **Undo** 5 s. Top of the screen, never over the tab bar or pinned footer |
 | `Sheet` | full width | 16, footer 24 | 16 top | Title Body Strong + **Close** | — |
 | Top bar | 56 tall (onboarding 52) | 0 × 16 | — | Title Body Strong (Expressive: 24 display face) | App: title (owner "Home", sitter "Today", else the tab name) + role `Tag` + 🔔 (24, count badge with a 2 px ring) + ≡ menu (#147) · Detail (Back + title) · Onboarding (Back + step dots) |
 | Tab bar | 60 tall (`layout.tabBarHeight`) | 0 × 8 | — | Caption | Active tab: `accent` pill behind the icon + `primary` label |

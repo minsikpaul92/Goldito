@@ -1,21 +1,25 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useThemedStyles } from "./ThemeProvider";
+import { useTheme, useThemedStyles } from "./ThemeProvider";
 import { Theme } from "../theme/themes";
 
 const TOAST_MS = 3000;
 
 type ToastValue = {
-  /** Short success message (DESIGN.md §7.3). Never the only signal for DANGER. */
-  show: (message: string) => void;
+  /** Short message (DESIGN.md §7.3). Never the only signal for DANGER. */
+  show: (message: string, tone?: "success" | "error") => void;
 };
 
 const ToastContext = createContext<ToastValue>({ show: () => {} });
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
-  const [toast, setToast] = useState<{ id: number; message: string } | null>(null);
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const [toast, setToast] = useState<{ id: number; message: string; tone: "success" | "error" } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -23,7 +27,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const show = useCallback((message: string) => setToast({ id: Date.now(), message }), []);
+  const show = useCallback(
+    (message: string, tone: "success" | "error" = "success") => setToast({ id: Date.now(), message, tone }),
+    [],
+  );
   const value = useMemo(() => ({ show }), [show]);
 
   return (
@@ -31,7 +38,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <View style={styles.root}>
         {children}
         {toast ? (
-          <View accessibilityRole="alert" pointerEvents="none" style={styles.toast} testID="toast">
+          <View
+            accessibilityRole="alert"
+            pointerEvents="none"
+            style={[styles.toast, toast.tone === "error" && styles.toastError, { top: insets.top + theme.spacing.sm }]}
+            testID="toast"
+          >
+            <Ionicons
+              name={toast.tone === "error" ? "alert-circle" : "checkmark-circle"}
+              size={theme.icon.sm}
+              color={toast.tone === "error" ? theme.color.error : theme.color.success}
+            />
             <Text style={styles.text}>{toast.message}</Text>
           </View>
         ) : null}
@@ -53,15 +70,23 @@ const makeStyles = (theme: Theme) =>
       position: "absolute",
       left: theme.spacing.md,
       right: theme.spacing.md,
-      // Above the bottom tab bar.
-      bottom: theme.layout.tabBarHeight + theme.spacing.md,
+      // Top, so it never covers the bottom actions or the tab bar.
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
       padding: theme.spacing.md,
       borderRadius: theme.radius.md,
-      backgroundColor: theme.color.text,
+      borderWidth: 1,
+      borderColor: theme.color.success,
+      backgroundColor: theme.color.successSurface,
+    },
+    toastError: {
+      borderColor: theme.color.error,
+      backgroundColor: theme.color.errorSurface,
     },
     text: {
+      flex: 1,
       fontSize: theme.fontSize.body,
-      color: theme.color.primaryText,
-      textAlign: "center",
+      color: theme.color.text,
     },
   });
