@@ -1224,8 +1224,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${name}'s photos`` | ``sitter-avatar-${name}`` | 39 |
-| Pressable | [name, facts, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 45 |
+| Pressable | ``${name}'s photos`` | ``sitter-avatar-${name}`` | 42 |
+| Pressable | [name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ") | `testID` | 48 |
 
 ### SitterSearchBar — [components/SitterSearchBar.tsx](../../frontend/components/SitterSearchBar.tsx)
 
