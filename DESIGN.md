@@ -45,7 +45,7 @@ Every Figma variable carries its code name as **code syntax** (Figma uses kebab-
 3. Update `tokens.ts` / `themes.ts` (values only — keep the keys; a new key gets added to both Figma and code in the same change).
 4. Update the matching file in `components/ui/` (§0.4) — never restyle a screen to fake a component change.
 5. Screens last, one at a time, against the Figma frame (§0.5).
-6. `cd frontend && npx tsc --noEmit && node scripts/screen-map.mjs` — commit the regenerated map with the change.
+6. `cd frontend && npx tsc --noEmit && node scripts/screen-map.mjs`: commit the regenerated map with the change. A pre-commit hook (`.githooks/pre-commit`, installed by `npm install` in `frontend/`) does the map step for you when a staged screen file changes.
 7. Check on the running app (`npx expo start --web`, sign in with **Demo owner** / **Demo sitter**; `/?view=split` shows both phones).
 
 ### 0.4 Components (Figma → code)
