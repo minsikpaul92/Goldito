@@ -15,6 +15,11 @@ type Props = {
   /** Whole dollars per night for the searched service, or null when the sitter hasn't set a rate. */
   nightly: number | null;
   favorite?: boolean;
+  /** Average review (1–5) and finished stays, once the search returns them (backend request in the design site's 10-22 doc). */
+  rating?: number | null;
+  stays?: number | null;
+  /** "Free on your dates" (free) or "Full on Oct 24" (not free), from the slot calendar. */
+  availability?: { free: boolean; label: string } | null;
   onOpen: () => void;
   onPhoto?: () => void;
   testID: string;
@@ -24,8 +29,12 @@ type Props = {
  * A sitter in search results (design site master: qa-sitter-card.html). Photo, name, one line of facts, price big on the right.
  * The whole card opens the profile; no chevron. Rating, stays and availability join the facts line once the search returns them.
  */
-export function SitterResultCard({ name, photo, meta, km, nightly, favorite, onOpen, onPhoto, testID }: Props) {
+export function SitterResultCard({ name, photo, meta, km, nightly, favorite, rating, stays, availability, onOpen, onPhoto, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
+  // Rating and stays say "trusted" in a few characters; experience is the fallback for new sitters (one short line, no ellipsis).
+  const facts = rating != null || stays != null
+    ? [rating != null ? `★ ${rating.toFixed(1)}` : null, stays != null ? `${stays} ${stays === 1 ? "stay" : "stays"}` : null].filter(Boolean).join(" · ")
+    : meta ?? "";
   const avatar = photo ? <Avatar kind="photo" uri={photo} size={52} /> : <Avatar kind="initial" name={name} size={52} />;
   return (
     <View style={styles.card}>
@@ -38,7 +47,7 @@ export function SitterResultCard({ name, photo, meta, km, nightly, favorite, onO
       )}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={[name, meta, km, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
+        accessibilityLabel={[name, facts, meta && facts !== meta ? meta : null, km, availability?.label, nightly != null ? `$${nightly} per night` : null].filter(Boolean).join(", ")}
         onPress={onOpen}
         style={({ pressed }) => [styles.main, pressed && styles.pressed]}
         testID={testID}
@@ -48,9 +57,14 @@ export function SitterResultCard({ name, photo, meta, km, nightly, favorite, onO
             {favorite ? `★ ${name}` : name}
           </Text>
           <Text style={styles.meta} numberOfLines={1}>
-            {meta ? `${meta} · ` : ""}
+            {facts ? `${facts} · ` : ""}
             <Text testID={`sitter-km-${name}`}>{km}</Text>
           </Text>
+          {availability ? (
+            <View style={[styles.avail, availability.free ? styles.free : styles.full]}>
+              <Text style={[styles.availText, availability.free ? styles.freeText : styles.fullText]}>{availability.label}</Text>
+            </View>
+          ) : null}
         </View>
         {nightly != null ? (
           <View style={styles.price}>
@@ -79,6 +93,12 @@ const makeStyles = (theme: Theme) =>
     name: { fontSize: theme.fontSize.body, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     meta: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     price: { alignItems: "flex-end" },
+    avail: { alignSelf: "flex-start", marginTop: 2, borderRadius: theme.radius.pill, paddingHorizontal: theme.spacing.sm, paddingVertical: 2 },
+    free: { backgroundColor: theme.color.successSurface },
+    full: { backgroundColor: theme.color.warningSurface },
+    availText: { fontSize: theme.fontSize.caption, fontWeight: theme.fontWeight.bold },
+    freeText: { color: theme.color.success },
+    fullText: { color: theme.color.warning },
     amount: {
       fontFamily: theme.fontFamily.display,
       fontSize: theme.fontSize.option,

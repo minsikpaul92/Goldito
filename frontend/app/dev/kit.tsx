@@ -1,4 +1,4 @@
-import { Redirect } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { ReactNode, useState } from "react";
 import { LayoutChangeEvent, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -16,6 +16,7 @@ import { SectionTabs, useSectionSpy } from "../../components/ui/SectionTabs";
 import { SectionTitle } from "../../components/ui/SectionTitle";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { Sheet } from "../../components/ui/Sheet";
+import { Skeleton } from "../../components/ui/Skeleton";
 import { Slider } from "../../components/ui/Slider";
 import { StepHeader } from "../../components/ui/StepHeader";
 import { SummaryRow } from "../../components/ui/SummaryRow";
@@ -159,8 +160,8 @@ function KitScreen() {
 
       <Section id="cards" title="CARDS" onLayout={spy.onSectionLayout("cards")}>
         <SectionTitle>Sitter results</SectionTitle>
-        <SitterResultCard name="Chloe" meta="5 yrs experience" km="2 km" nightly={55} favorite onOpen={() => undefined} testID="kit-sitter-chloe" />
-        <SitterResultCard name="Jun" meta="3 yrs experience" km="3 km" nightly={60} onOpen={() => undefined} testID="kit-sitter-jun" />
+        <SitterResultCard name="Chloe" meta="5 yrs experience" km="2 km" nightly={55} favorite rating={4.9} stays={38} availability={{ free: true, label: "Free on your dates" }} onOpen={() => undefined} testID="kit-sitter-chloe" />
+        <SitterResultCard name="Jun" meta="3 yrs experience" km="3 km" nightly={60} rating={4.8} stays={21} availability={{ free: false, label: "Full on Oct 24" }} onOpen={() => undefined} testID="kit-sitter-jun" />
         <SitterResultCard name="Ari" km="4 km" nightly={null} onOpen={() => undefined} testID="kit-sitter-ari" />
         <SectionTitle>Price</SectionTitle>
         <PriceBreakdown
@@ -202,6 +203,11 @@ function KitScreen() {
         <View style={styles.card}>
           <ResultState title="Request sent" message="Chloe usually replies within an hour. We'll tell you when she does." action={{ label: "Tell Chloe how to care for them", onPress: () => undefined }} testID="kit-result" />
         </View>
+        <SectionTitle>Loading</SectionTitle>
+        <Skeleton kind="lines" />
+        <Skeleton kind="card" />
+        <Skeleton kind="block" />
+        <Button label="Play the booking flow" variant="secondary" onPress={() => router.push("/dev/booking-flow")} testID="kit-flow" />
         <View style={styles.card}>
           <EmptyState emoji="📸" title="No posts yet" message="Your sitter will share photos here." action={{ label: "Open History", onPress: () => undefined }} />
         </View>
