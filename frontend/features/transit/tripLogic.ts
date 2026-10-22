@@ -51,6 +51,17 @@ export function greetingFor(kind: HandoffKind, role: Role): string {
   return role === "owner" ? "Thank you for everything" : "It was a pleasure";
 }
 
+/** Received (sitter) is possible now: paid, not received yet, and the check-in window (2 h before the drop-off) is open. */
+export function canReceiveNow(booking: BookingSummary | null, now: number = Date.now()): boolean {
+  if (!booking || booking.status !== "confirmed" || !booking.paidAt || !booking.dropOff || booking.dropOff.completedAt) return false;
+  return now >= Date.parse(booking.dropOff.at) - START_WINDOW_MS;
+}
+
+/** Returned (sitter) is possible now: the pets were received and not returned yet. */
+export function canReturnNow(booking: BookingSummary | null): boolean {
+  return !!booking && booking.status === "confirmed" && !!booking.paidAt && !!booking.dropOff?.completedAt && !booking.pickUp?.completedAt;
+}
+
 /** Start trip is possible now: paid, the next handoff is mine to travel to, and the 2-hour window is open. */
 export function canStartTripNow(booking: BookingSummary, role: Role, now: number = Date.now()): boolean {
   const next = nextHandoff(booking);

@@ -11,7 +11,7 @@
           "chicken"
         ],
         "heads_up": [
-          "No knocking or doorbell — text me instead"
+          "No knocking or doorbell, text me instead"
         ]
       },
       "date": "2026-10-15",
@@ -71,7 +71,7 @@
       ],
       "sitter_note": "Max got so excited"
     },
-    "output": "Hi Max's family! Max took the skin pill this morning, hidden in a lickable treat just as you asked, and finished every bit of their meal. On our 20-minute walk Max sniffed through the autumn leaves with a wagging tail, and later spotted a squirrel up a tree and got so excited — it was adorable! Potty was perfectly normal, too. 🐶🍂"
+    "output": "Hi Max's family! Max took the skin pill this morning, hidden in a lickable treat just as you asked, and finished every bit of their meal. On our 20-minute walk Max sniffed through the autumn leaves with a wagging tail, and later spotted a squirrel up a tree and got so excited, it was adorable! Potty was perfectly normal, too. 🐶🍂"
   },
   {
     "input": {
@@ -112,7 +112,7 @@
       "chips": [],
       "sitter_note": null
     },
-    "output": "Hi Mochi's family! Mochi had dinner at 6 — half a can of wet food, as you asked — and ate most of it. That's all I have to report today. 🐱"
+    "output": "Hi Mochi's family! Mochi had dinner at 6, half a can of wet food, as you asked, and ate most of it. That's all I have to report today. 🐱"
   },
   {
     "input": {

@@ -75,12 +75,31 @@ def _client(base_url: str) -> OpenAI:
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
+_RANGE_DASH = re.compile(r"(?<=\d)\s*[\u2013\u2014\u2015]\s*(?=\d)")
+_DASH = re.compile(r"\s*[\u2013\u2014\u2015]\s*")
+_HYPHENS = str.maketrans({"\u2010": "-", "\u2011": "-", "\u2012": "-"})
+
+
+def plain_dashes(text: str) -> str:
+    """No em or en dashes in anything the app shows (product rule): a range keeps a hyphen ("Oct 24-27"), any other dash
+    becomes a comma, and the odd hyphen characters models like become a plain one. Safe on JSON: a dash is never structure."""
+    text = _RANGE_DASH.sub("-", text)
+    text = _DASH.sub(", ", text).translate(_HYPHENS)
+    text = re.sub(r"(^|\n)[ \t]*,[ \t]*", r"\1", text)  # a dash that opened a line leaves no comma
+    text = re.sub(r"[ \t]+,", ",", text)
+    text = re.sub(r",[ \t]*,", ",", text)
+    text = re.sub(r",[ \t]*(?=[.!?;:])", "", text)
+    text = re.sub(r",[ \t]*$", "", text, flags=re.MULTILINE)
+    return text
+
+
 def strip_think(text: str) -> str:
-    """Drop `<think>…</think>` blocks (and an unclosed leading one) some models put in the answer."""
+    """The model's text made safe to show: `<think>…</think>` blocks (and an unclosed leading one) some models put in the
+    answer are dropped, and em and en dashes are taken out (`plain_dashes`). Every model text goes through here."""
     text = _THINK.sub("", text)
     if "<think>" in text:
         text = text.split("<think>", 1)[0]
-    return text.strip()
+    return plain_dashes(text).strip()
 
 
 def _log_call(**fields: Any) -> None:

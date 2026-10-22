@@ -9,8 +9,8 @@ Return ONLY a JSON object, no explanation, no code fence:
 Fields:
 - `pet_visible`: true only if a dog or a cat is clearly in the photo.
 - `species_match`: true only if the animal you see is the same species as the pet named in the message (dog or cat). false if it is the other species or you cannot tell.
-- `crate_visible`: true / false — only for `vehicle_safety`, otherwise null.
-- `restraint_visible`: true / false — only for `vehicle_safety`, otherwise null.
+- `crate_visible`: true / false, only for `vehicle_safety`, otherwise null.
+- `restraint_visible`: true / false, only for `vehicle_safety`, otherwise null.
 - `concerns`: at most 3 short factual observations in plain English (each under 100 characters), for example "Photo is dark" or "Only the pet's tail is visible". Empty list when there is nothing to note.
 
 ## pet_checkin
@@ -23,6 +23,6 @@ The pet is back with its owner (usually at a door or inside a home). Report `pet
 The pet is inside a car. Report `pet_visible` and `species_match`, then:
 - `crate_visible`: true if the pet is inside, or next to, a travel crate or carrier in the vehicle.
 - `restraint_visible`: true if you can see a seatbelt, harness or tether attached to the pet.
-Say false when you cannot see one — do not guess.
+Say false when you cannot see one, do not guess.
 
 Never write anything about the pet's health, mood, weight, age or breed, and never identify or describe people, plates, addresses or brands. If a person is in the photo, ignore them.
