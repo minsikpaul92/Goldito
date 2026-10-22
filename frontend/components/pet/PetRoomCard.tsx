@@ -10,6 +10,7 @@ import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Species } from "../../types/db";
 import type { HatId } from "../../features/pets/sprites/hats";
+import type { PetEvent } from "../../features/pets/usePetBehavior";
 import { RoamingPet } from "./RoamingPet";
 
 type Props = {
@@ -26,6 +27,8 @@ type Props = {
   hat?: HatId | null;
   /** Null while it loads: the pet shows calm and the HUD stays empty. */
   status: PetStatus | null;
+  /** What the pet just did (ate, went potty): the room shows it once. */
+  event?: PetEvent | null;
   /** Tapping the pet. */
   onPress?: () => void;
   /** Under the HUD, e.g. the sitter's feed / walk / potty / nap buttons. */
@@ -40,7 +43,7 @@ const MOOD_LABEL = { excited: "Happy", calm: "Calm", tired: "Tired", hungry: "Hu
  * worked out from today's check-ins. Pure display: `PetRoom` loads the data. The room fills the space its parent gives
  * it (the owner's Pet page, the top of the sitter's Home) and the pet grows to fit, so it is the biggest thing on Home.
  */
-export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat, status, onPress, children, testID }: Props) {
+export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat, status, event, onPress, children, testID }: Props) {
   const styles = useThemedStyles(makeStyles);
   const mood = status?.mood ?? "calm";
   const hud = status ? hudItems(status, species) : [];
@@ -79,6 +82,7 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, hat,
             mood={mood}
             pixel={Math.max(2, Math.floor(pixel * scale))}
             roomWidth={roomWidth}
+            event={event}
             testID={testID ? `${testID}-sprite` : undefined}
           />
         </View>

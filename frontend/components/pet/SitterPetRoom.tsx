@@ -81,22 +81,24 @@ function PetTaps({ pet }: { pet: CaringPet }) {
       reloadKey={reloadKey}
       onPress={() => router.push(`/sitter/checkin/${pet.id}`)}
     >
-      <View style={styles.actions}>
-        {petActionsFor(pet.species).map((action) => (
-          <Pressable
-            key={action.key}
-            accessibilityRole="button"
-            accessibilityLabel={`${action.label} ${pet.name}`}
-            disabled={sending !== null}
-            onPress={() => void send(action)}
-            style={({ pressed }) => [styles.action, pressed && styles.pressed, sending !== null && styles.disabled]}
-            testID={`pet-action-${pet.id}-${action.key}`}
-          >
-            <Text style={styles.emoji}>{action.emoji}</Text>
-            <Text style={styles.label}>{action.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {(status) => (
+        <View style={styles.actions}>
+          {petActionsFor(pet.species, status?.sleeping).map((action) => (
+            <Pressable
+              key={action.key}
+              accessibilityRole="button"
+              accessibilityLabel={`${action.label} ${pet.name}`}
+              disabled={sending !== null}
+              onPress={() => void send(action)}
+              style={({ pressed }) => [styles.action, pressed && styles.pressed, sending !== null && styles.disabled]}
+              testID={`pet-action-${pet.id}-${action.key}`}
+            >
+              <Text style={styles.emoji}>{action.emoji}</Text>
+              <Text style={styles.label}>{action.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </PetRoom>
   );
 }

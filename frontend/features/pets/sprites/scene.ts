@@ -2,7 +2,7 @@ import type { PetMood } from "../../../lib/petStatus";
 import type { Species } from "../../../types/db";
 import { colorsPalette, type PixelColors } from "./photoColors";
 import { HATS, type HatId } from "./hats";
-import { sideFace, SIDE_HEADS } from "./sideHeads";
+import { sideEyeRow, sideFace, SIDE_HEADS } from "./sideHeads";
 import { COAT_PALETTES, DEFAULT_SHAPE_OF, FRONT_HEAD_HALVES, FRONT_FACE, mirrorHalf, resolveCoat, SHAPES, type Shape } from "./sprites";
 
 /**
@@ -11,13 +11,15 @@ import { COAT_PALETTES, DEFAULT_SHAPE_OF, FRONT_HEAD_HALVES, FRONT_FACE, mirrorH
  * Every layer is role letters; the coat colors the roles, so the pet keeps its coat or photo colors in every pose.
  *
  * Views: `front` looks at you, `side` faces right (left is the picture mirrored), `back` shows the pet from behind.
- * Actions: `idle` (2 frames), `walk` (4 frames, side only), `lie` (2 frames, side only, asleep).
+ * Actions: `idle` (2 frames), `walk` (4 frames, side only), `lie` (2 frames, side only, asleep), `eat` (2 frames, side
+ * only, with a bowl in front of it) and `poop` (2 frames, side only, squatting).
  */
 export const SCENE_SIZE = 32;
 
 export type View = "front" | "side" | "back";
-export type Action = "idle" | "walk" | "lie";
-export type Pose = { view: View; action: Action; frame: number };
+export type Action = "idle" | "walk" | "lie" | "eat" | "poop";
+/** `progress` (0 to 1) is how far into an eat or poop the pet is: the bowl empties as it goes. */
+export type Pose = { view: View; action: Action; frame: number; progress?: number };
 
 /** How many frames a pose has; a pose that does not exist falls back to idle. */
 export function frameCount(view: View, action: Action): number {
@@ -28,10 +30,10 @@ export function frameCount(view: View, action: Action): number {
 
 /** The pose as it will be drawn: unknown combinations become idle, the frame wraps. */
 export function normalizePose(p: Pose): Pose {
-  const ok = (p.action === "walk" || p.action === "lie") && p.view === "side";
+  const ok = p.action !== "idle" && p.view === "side";
   const action: Action = ok ? p.action : "idle";
   const n = frameCount(p.view, action);
-  return { view: p.view, action, frame: ((p.frame % n) + n) % n };
+  return { view: p.view, action, frame: ((p.frame % n) + n) % n, progress: p.progress ?? 0 };
 }
 
 type Grid = string[][];
@@ -98,6 +100,16 @@ function drawBody(g: Grid, species: Species, shape: Shape, pose: Pose): Parts {
     return { head: SIDE_HEADS[shape], headX: 14, headY: 14 - breath, faceKind: "side" };
   }
 
+  if (view === "side" && action === "poop") {
+    // Squatting: the tail up, the back end low, the hind paws flat on the ground.
+    const strain = frame % 2;
+    stamp(g, dog ? DOG_TAIL : CAT_TAIL, 2, 11 - strain);
+    box(g, 5, 19 + strain, 18, 9, "b");
+    box(g, 17, 26, 4, 5, "b", false);
+    box(g, 6, 27, 8, 4, "b", false);
+    return { head: SIDE_HEADS[shape], headX: 15, headY: 8 + strain, faceKind: "side" };
+  }
+
   if (view === "side") {
     const walking = action === "walk";
     // A trot: the near front leg and the far hind leg go together (pair A), the other two opposite (pair B). Each pair
@@ -115,7 +127,8 @@ function drawBody(g: Grid, species: Species, shape: Shape, pose: Pose): Parts {
     // Near legs: front is pair A, hind is pair B.
     leg(17 + swing, liftA, "b");
     leg(6 - swing, liftB, "b");
-    return { head: SIDE_HEADS[shape], headX: 15, headY: 6 + bob, faceKind: "side" };
+    // Eating: the head goes down into the bowl and bobs.
+    return { head: SIDE_HEADS[shape], headX: action === "eat" ? 10 : 15, headY: action === "eat" ? 15 + (frame % 2) : 6 + bob, faceKind: "side" };
   }
 
   // Front and back: a torso and two chunky legs, the same from both sides except for the tail and the paws.
@@ -131,6 +144,17 @@ function drawBody(g: Grid, species: Species, shape: Shape, pose: Pose): Parts {
   }
   return { head: front ? frontHead(shape) : backHead(shape), headX: 8, headY: 5 + bob, faceKind: front ? "front" : "none" };
 }
+
+// The bowl in front of an eating pet, with less food as it goes (10 wide, 5 tall).
+const BOWL_BODY = ["kRRRRRRRRk", ".kRRRRRRk.", "..kRRRRk..", "...kkkk..."];
+function bowl(progress: number): string[] {
+  const food = progress < 0.34 ? "..fFfFfF.." : progress < 0.67 ? "....fF...." : "..........";
+  return [food, ...BOWL_BODY];
+}
+
+// What a pet leaves behind (7 wide, 6 tall), drawn on the floor by the room, not as part of the pet.
+const POOP = ["...kk..", "..kuuk.", ".kuuUk.", "kuuuuUk", "kUuuUUk", ".kkkkk."];
+export const POOP_SIZE = { w: 7, h: 6 };
 
 type PaintFace = (g: Grid, x: number, y: number) => void;
 
@@ -154,8 +178,8 @@ export function sceneRoles(species: Species, shape: Shape, mood: PetMood, rawPos
   const parts = drawBody(g, species, safeShape, pose);
   stamp(g, parts.head, parts.headX, parts.headY);
 
-  // The face: a lying pet is always asleep.
-  const faceMood: PetMood = pose.action === "lie" ? "sleepy" : mood;
+  // The face: a lying pet is always asleep, one that is eating looks content, one that is pooping strains.
+  const faceMood: PetMood = pose.action === "lie" ? "sleepy" : pose.action === "eat" ? "calm" : pose.action === "poop" ? "tired" : mood;
   if (parts.faceKind === "front") frontFace(faceMood, safeShape)(g, parts.headX, parts.headY);
   if (parts.faceKind === "side") {
     for (const [x, y, role] of sideFace(safeShape, faceMood)) put(g, parts.headX + x, parts.headY + y, role);
@@ -165,12 +189,15 @@ export function sceneRoles(species: Species, shape: Shape, mood: PetMood, rawPos
     stamp(g, ["zzz", ".z.", "zzz"], 26, 3);
   }
 
+  if (pose.action === "eat") stamp(g, bowl(pose.progress ?? 0), 21, 26);
+
   if (hat) {
     const art = HATS[hat].views[pose.view];
-    const { row, center } = crown(parts.head);
+    const { center } = crown(parts.head);
+    // The hat covers the top of the head and ends on the row above the eyes (front and back: row 6).
+    const bottom = pose.view === "side" ? sideEyeRow(safeShape) - 1 : 6;
     const x = Math.round(parts.headX + center - art[0].length / 2);
-    const y = parts.headY + row + 1 - art.length;
-    stamp(g, art, x, y);
+    stamp(g, art, x, parts.headY + bottom + 1 - art.length);
   }
   return g;
 }
@@ -182,9 +209,13 @@ const FIXED: Record<string, string> = {
   z: "#7C83B8",
   P: "#F28C28",
   p: "#C2611A",
-  G: "#4C8C2B",
-  K: "#3A1D0A",
-  Y: "#FFD24A",
+  K: "#2B1A0E",
+  R: "#D64545",
+  F: "#7A4A20",
+  f: "#B5763A",
+  u: "#8B5A2B",
+  U: "#6B4226",
+  k: "#3E2410",
   W: "#2B2338",
   V: "#4B3A6B",
   B: "#C9A227",
@@ -216,4 +247,9 @@ export function spriteScene(opts: {
     const out = row.map((role) => (role === "." ? null : coatColors[role] ?? FIXED[role] ?? null));
     return facing === "left" ? out.reverse() : out;
   });
+}
+
+/** The poop on the floor as rows of CSS colors. */
+export function spritePoop(): (string | null)[][] {
+  return POOP.map((row) => [...row].map((role) => (role === "." ? null : FIXED[role] ?? null)));
 }

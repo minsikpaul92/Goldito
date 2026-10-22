@@ -73,6 +73,18 @@ test.describe("sitter pet room", () => {
     await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Sleepy");
     expect(db.care_checkins.at(-1)).toMatchObject({ pet_id: MAX.id, kind: "nap", value: null });
     expect(db.notifications.filter((n) => n.type === "care_checkin" && n.user_id === OWNER.id)).toHaveLength(4);
+
+    // The Nap tap is Awake now, and the pet sleeps until it is tapped.
+    await expect(screen.getByTestId(tap(MAX, "nap"))).toHaveCount(0);
+    await expect(screen.getByTestId(tap(MAX, "wake"))).toContainText("Awake");
+    await page.waitForTimeout(1500);
+    await expect(screen.getByTestId("pet-room-Max-mood")).toHaveText("Sleepy");
+    await screen.getByTestId(tap(MAX, "wake")).click();
+    await expect(screen.getByTestId("pet-room-Max-mood")).not.toHaveText("Sleepy");
+    await expect(screen.getByTestId(tap(MAX, "nap"))).toBeVisible();
+    await expect(screen.getByTestId(tap(MAX, "wake"))).toHaveCount(0);
+    expect(db.care_checkins.at(-1)).toMatchObject({ pet_id: MAX.id, kind: "wake", value: null });
+    expect(db.notifications.filter((n) => n.type === "care_checkin" && n.user_id === OWNER.id)).toHaveLength(5);
     // Mochi was not touched.
     expect(db.care_checkins.every((c) => c.pet_id === MAX.id)).toBe(true);
   });
@@ -95,6 +107,32 @@ test.describe("sitter pet room", () => {
     await setup(page);
     await app(page).getByTestId("pet-room-Max-open").click();
     await expect(page).toHaveURL(new RegExp(`/sitter/checkin/${MAX.id}$`));
+  });
+
+  test("feeding shows a bowl the pet eats from, then it goes; going potty leaves a poop the room clears", async ({ page }) => {
+    await setup(page);
+    const screen = app(page);
+    // Stop the clock so every tick of the pet is one we run ourselves.
+    // (A new check-in is "just now" for 20 seconds, so stay close to noon.)
+    await page.clock.pauseAt(new Date(NOON_TORONTO.getTime() + 2000));
+    const sprite = screen.getByTestId("pet-room-Max-sprite");
+    const bowl = () => sprite.evaluate((el) => [...el.querySelectorAll("div")].filter((d) => getComputedStyle(d).backgroundColor === "rgb(214, 69, 69)").length);
+    expect(await bowl()).toBe(0);
+
+    await screen.getByTestId(tap(MAX, "feed")).click();
+    // Let the request and the reload finish (app timers need the clock to move), then the bowl is there.
+    await page.clock.runFor(500);
+    await expect.poll(bowl).toBeGreaterThan(0);
+    await page.clock.runFor(6000);
+    await expect.poll(bowl).toBe(0);
+
+    const poops = screen.getByTestId("pet-room-Max-sprite-poop");
+    await expect(poops).toHaveCount(0);
+    await screen.getByTestId(tap(MAX, "potty")).click();
+    await page.clock.runFor(2000);
+    await expect(poops).toHaveCount(1);
+    await page.clock.runFor(9000);
+    await expect(poops).toHaveCount(0);
   });
 
   test("a failed tap says so and can be retried", async ({ page }) => {

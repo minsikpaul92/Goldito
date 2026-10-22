@@ -1,11 +1,14 @@
 import type { PetMood } from "../../lib/petStatus";
-import type { Action, View } from "./sprites/scene";
+import { POOP_SIZE, SCENE_SIZE, type Action, type Pose, type View } from "./sprites/scene";
 
 /**
  * What the pet does in its room (11.12b): it walks left and right, stops, looks at you or away, turns around at the
  * walls and lies down to rest. The mood leans the choices: a sleepy pet lies down, a hungry or happy one keeps moving.
  * A pure step function, one tick at a time; `usePetBehavior` calls it on a timer.
  */
+/** A poop on the floor: where (sprite pixels from the left wall) and how many ticks it has been there. */
+export type Poop = { id: number; x: number; age: number };
+
 export type Behavior = {
   view: View;
   action: Action;
@@ -17,6 +20,10 @@ export type Behavior = {
   age: number;
   /** Ticks left in this action. */
   hold: number;
+  /** How many ticks the action was given in all (an eat or poop shows its progress). */
+  span: number;
+  /** What the pet left on the floor; the room clears each after a while. */
+  poops: Poop[];
 };
 
 export const TICK_MS = 180;
@@ -24,6 +31,15 @@ export const TICK_MS = 180;
 const SPEED = 1;
 /** Ticks per animation frame while standing or lying (walking changes frame every tick). */
 const SLOW_FRAME = 3;
+/** An eat or a poop changes frame a little quicker. */
+const BUSY_FRAME = 2;
+/** How long an eat and a poop last, in ticks (about 3.6 and 2.5 seconds). */
+const EAT_TICKS = 20;
+const POOP_TICKS = 14;
+/** The tick of a poop on which it drops, how long it stays (about 6 seconds), and the last ticks it blinks. */
+const POOP_DROP_AT = 5;
+const POOP_STAYS = 34;
+const POOP_BLINK = 6;
 
 type Rand = () => number;
 type Choice = { view: View; action: Action; weight: number; ticks: [number, number] };
@@ -59,12 +75,24 @@ const CHOICES: Record<PetMood, Choice[]> = {
 };
 
 export function initialBehavior(): Behavior {
-  return { view: "front", action: "idle", facing: "right", x: 0, age: 0, hold: 8 };
+  return { view: "front", action: "idle", facing: "right", x: 0, age: 0, hold: 8, span: 8, poops: [] };
 }
 
 /** The animation frame of the current action. */
 export function behaviorFrame(b: Behavior): number {
-  return b.action === "walk" ? b.age : Math.floor(b.age / SLOW_FRAME);
+  if (b.action === "walk") return b.age;
+  return Math.floor(b.age / (b.action === "eat" || b.action === "poop" ? BUSY_FRAME : SLOW_FRAME));
+}
+
+/** The pose to draw: the view, the action, its frame and how far into an eat the pet is (the bowl empties). */
+export function behaviorPose(b: Behavior): Pose {
+  return { view: b.view, action: b.action, frame: behaviorFrame(b), progress: b.span > 0 ? Math.min(1, b.age / b.span) : 0 };
+}
+
+/** A poop is drawn blinking for its last ticks: this says whether it shows now. */
+export function poopVisible(p: Poop): boolean {
+  const left = POOP_STAYS - p.age;
+  return left > POOP_BLINK || left % 2 === 0;
 }
 
 function pick(mood: PetMood, rand: Rand): Choice {
@@ -82,15 +110,41 @@ function pick(mood: PetMood, rand: Rand): Choice {
  * leaves [0, maxX] and turns around at a wall by looking at you for a moment first.
  */
 export function stepBehavior(b: Behavior, mood: PetMood, rand: Rand, maxX: number): Behavior {
+  const next = stepActions(b, mood, rand, maxX);
+  // The floor: each poop gets older and is cleared after a while; a poop that was just dropped is added.
+  const poops = b.poops.map((p) => ({ ...p, age: p.age + 1 })).filter((p) => p.age <= POOP_STAYS);
+  if (next.action === "poop" && b.action === "poop" && next.age === POOP_DROP_AT) {
+    // Behind the pet: its tail end is at the left when it faces right, at the right when it faces left.
+    poops.push({ id: poops.reduce((m, p) => Math.max(m, p.id), 0) + 1, x: Math.max(0, Math.min(Math.max(0, maxX) + SCENE_SIZE - POOP_SIZE.w, next.x + (next.facing === "right" ? 0 : SCENE_SIZE - 7))), age: 0 });
+  }
+  return { ...next, poops };
+}
+
+/** The pet shows an eat or a poop at once, e.g. when the sitter just tapped Feed or Poop. A sleeping pet is left alone. */
+export function triggerBehavior(b: Behavior, kind: "eat" | "poop", mood: PetMood): Behavior {
+  if (mood === "sleepy" || b.action === "lie") return b;
+  const span = kind === "eat" ? EAT_TICKS : POOP_TICKS;
+  return { ...b, view: "side", action: kind, age: 0, hold: span, span };
+}
+
+/** The pet wakes up (the sitter tapped Awake): it gets up and looks at you before it carries on. */
+export function wakeBehavior(b: Behavior): Behavior {
+  if (b.action !== "lie") return b;
+  return { ...b, view: "front", action: "idle", age: 0, hold: 5, span: 5 };
+}
+
+function stepActions(b: Behavior, mood: PetMood, rand: Rand, maxX: number): Behavior {
   const wall = Math.max(0, maxX);
   const age = b.age + 1;
 
   // A sleepy pet lies down at once; an excited or hungry one gets up.
   if (mood === "sleepy" && b.action !== "lie") {
-    return { ...b, view: "side", action: "lie", age: 0, hold: range([60, 120], rand), x: Math.min(b.x, wall) };
+    const hold = range([60, 120], rand);
+    return { ...b, view: "side", action: "lie", age: 0, hold, span: hold, x: Math.min(b.x, wall) };
   }
   if (b.action === "lie" && (mood === "excited" || mood === "hungry")) {
-    return { ...b, view: "front", action: "idle", age: 0, hold: range([4, 8], rand) };
+    const hold = range([4, 8], rand);
+    return { ...b, view: "front", action: "idle", age: 0, hold, span: hold };
   }
 
   if (b.action === "walk") {
@@ -98,7 +152,8 @@ export function stepBehavior(b: Behavior, mood: PetMood, rand: Rand, maxX: numbe
     if (x <= 0 || x >= wall) {
       // At a wall: look at you, then walk back the other way.
       const turned = x <= 0 ? "right" : "left";
-      return { view: "front", action: "idle", facing: turned, x: Math.min(wall, Math.max(0, x)), age: 0, hold: range([3, 6], rand) };
+      const hold = range([3, 6], rand);
+      return { ...b, view: "front", action: "idle", facing: turned, x: Math.min(wall, Math.max(0, x)), age: 0, hold, span: hold };
     }
     if (b.hold > 1) return { ...b, x, age, hold: b.hold - 1 };
     return choose({ ...b, x }, mood, rand, wall);
@@ -114,5 +169,6 @@ function choose(b: Behavior, mood: PetMood, rand: Rand, wall: number): Behavior 
   let facing = b.facing;
   // Walking starts away from a wall the pet is near, otherwise either way.
   if (next.action === "walk") facing = b.x <= 2 ? "right" : b.x >= wall - 2 ? "left" : rand() < 0.5 ? "left" : "right";
-  return { view: next.view, action: next.action, facing, x: Math.min(b.x, wall), age: 0, hold: range(next.ticks, rand) };
+  const hold = range(next.ticks, rand);
+  return { ...b, view: next.view, action: next.action, facing, x: Math.min(b.x, wall), age: 0, hold, span: hold };
 }

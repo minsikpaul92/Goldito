@@ -133,6 +133,9 @@ const POS: Record<Shape, { eye: [number, number]; mouth: [number, number] }> = {
   long: { eye: [9, 7], mouth: [10, 10] },
 };
 
+/** The row of the eye on a side head: a hat ends just above it. */
+export const sideEyeRow = (shape: Shape): number => POS[shape].eye[1];
+
 /** The face in profile for one mood: pixels (x, y, role) on top of a side head. A "Z" for sleepy is added by the scene. */
 export function sideFace(shape: Shape, mood: PetMood): Pt[] {
   const { eye: [ex, ey], mouth: [mx, my] } = POS[shape];

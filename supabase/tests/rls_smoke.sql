@@ -2054,6 +2054,23 @@ begin
          where n.user_id = robert and n.type = 'care_checkin' and c.kind = 'nap'
            and n.title like 'Max is taking a nap%') = 1,
     '11.12: a nap check-in has no value and tells the owner "Max is taking a nap 💤"');
+  -- 11.12b (015d): wake
+  perform _t_as(chloe);
+  perform log_care_checkin(max, 'wake');
+  begin
+    perform log_care_checkin(max, 'wake', 'now');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '11.12b: a wake takes no value');
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = max and kind = 'wake' and value is null and created_by = chloe) = 1
+    and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+         where n.user_id = robert and n.type = 'care_checkin' and c.kind = 'wake'
+           and n.title like 'Max woke up%') = 1,
+    '11.12b: a wake check-in has no value and tells the owner "Max woke up ☀️"');
+  perform _t_as(chloe);
   perform _t_as(chloe);
   begin
     perform log_care_checkin(max, 'meal', 'all', null, _t_get('media_bori'));

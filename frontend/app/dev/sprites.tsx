@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { PetSprite } from "../../components/pet/PetSprite";
+import { PixelGrid } from "../../components/pet/PixelGrid";
+import { spritePoop } from "../../features/pets/sprites/scene";
 import { Button } from "../../components/ui/Button";
 import { Screen } from "../../components/ui/Screen";
 import { colorsFromPhoto } from "../../features/pets/sprites/colorsFromPhoto";
@@ -47,6 +49,11 @@ const POSES: { label: string; pose: Pose; facing?: "left" | "right" }[] = [
   { label: "lie 1", pose: { view: "side", action: "lie", frame: 0 } },
   { label: "lie 2", pose: { view: "side", action: "lie", frame: 1 } },
   { label: "back", pose: { view: "back", action: "idle", frame: 0 } },
+  { label: "eat 1", pose: { view: "side", action: "eat", frame: 0, progress: 0.1 } },
+  { label: "eat 2", pose: { view: "side", action: "eat", frame: 1, progress: 0.5 } },
+  { label: "eat 3", pose: { view: "side", action: "eat", frame: 0, progress: 0.9 } },
+  { label: "poop 1", pose: { view: "side", action: "poop", frame: 0 } },
+  { label: "poop 2", pose: { view: "side", action: "poop", frame: 1 } },
 ];
 
 function Gallery() {
@@ -64,6 +71,29 @@ function Gallery() {
           </Pressable>
         ))}
       </View>
+      {only ? null : (
+        <>
+      <View style={styles.block}>
+        <Text style={styles.label}>Poop (the room clears it after a while)</Text>
+        <PixelGrid pixels={spritePoop()} pixel={6 * z} testID="sprite-poop" />
+      </View>
+      <View style={styles.block}>
+        <Text style={styles.label}>Pumpkin hat</Text>
+        <View style={styles.row}>
+          {SPECIES.flatMap((species) =>
+            SHAPES[species].flatMap((shape) =>
+              (["front", "side", "back"] as const).map((view) => (
+                <View key={`${species}-${shape}-${view}`} style={styles.cell}>
+                  <PetSprite species={species} breed={SAMPLE_BREED[shape]} mood="calm" pose={{ view, action: "idle", frame: 0 }} hat="pumpkin" pixel={2 * z} testID={`sprite-hat-${species}-${shape}-${view}`} />
+                  <Text style={styles.mood}>{`${shape} ${view}`}</Text>
+                </View>
+              )),
+            ),
+          )}
+        </View>
+      </View>
+        </>
+      )}
       <FromPhoto />
       {SPECIES.map((species) =>
         SHAPES[species].filter((shape) => !only || only === `${species}-${shape}`).map((shape) => (

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { behaviorFrame, initialBehavior, stepBehavior, type Behavior } from "../features/pets/petBehavior";
+import { behaviorFrame, behaviorPose, initialBehavior, poopVisible, stepBehavior, triggerBehavior, wakeBehavior, type Behavior } from "../features/pets/petBehavior";
 import { normalizePose } from "../features/pets/sprites/scene";
 import type { PetMood } from "../lib/petStatus";
 
@@ -71,7 +71,7 @@ test.describe("pet behavior", () => {
 
   test("at a wall the pet looks at you, then walks back the other way", () => {
     const rand = seeded(2);
-    let b: Behavior = { view: "side", action: "walk", facing: "right", x: 38, age: 0, hold: 30 };
+    let b: Behavior = { ...initialBehavior(), view: "side", action: "walk", facing: "right", x: 38, age: 0, hold: 30 };
     for (let i = 0; i < 4; i++) b = stepBehavior(b, "calm", rand, 40);
     expect(b.view).toBe("front");
     expect(b.facing).toBe("left");
@@ -93,5 +93,75 @@ test.describe("pet behavior", () => {
     expect(behaviorFrame({ ...initialBehavior(), action: "walk", age: 3 })).toBe(3);
     expect(behaviorFrame({ ...initialBehavior(), action: "idle", age: 3 })).toBe(1);
     expect(behaviorFrame({ ...initialBehavior(), action: "idle", age: 2 })).toBe(0);
+  });
+
+  test("an eat shows the pet at its bowl for a few seconds, the bowl empties, then it carries on", () => {
+    const rand = seeded(3);
+    let b = triggerBehavior({ ...initialBehavior(), x: 10, facing: "left" }, "eat", "calm");
+    expect(b).toMatchObject({ view: "side", action: "eat", facing: "left", age: 0 });
+    expect(behaviorPose(b).progress).toBe(0);
+    const progress: number[] = [];
+    let ticks = 0;
+    while (b.action === "eat" && ticks < 100) {
+      b = stepBehavior(b, "calm", rand, 40);
+      ticks++;
+      if (b.action === "eat") progress.push(behaviorPose(b).progress ?? 0);
+    }
+    expect(ticks).toBe(20);
+    expect(progress.every((p, i) => i === 0 || p >= progress[i - 1])).toBe(true);
+    expect(progress[progress.length - 1]).toBeGreaterThan(0.9);
+    // It stood still while it ate.
+    expect(b.x).toBe(10);
+  });
+
+  test("a pet that is asleep or lying down is not woken by a feeding or a potty", () => {
+    const lying: Behavior = { ...initialBehavior(), view: "side", action: "lie", hold: 50 };
+    expect(triggerBehavior(lying, "eat", "tired")).toBe(lying);
+    expect(triggerBehavior(initialBehavior(), "poop", "sleepy").action).toBe("idle");
+  });
+
+  test("a poop drops behind the pet once, stays a few seconds, blinks and is cleared", () => {
+    for (const facing of ["right", "left"] as const) {
+      const rand = seeded(5);
+      let b = triggerBehavior({ ...initialBehavior(), x: 12, facing }, "poop", "calm");
+      expect(b.poops).toEqual([]);
+      const seen: { id: number; x: number }[] = [];
+      for (let i = 0; i < 80; i++) {
+        b = stepBehavior(b, "calm", rand, 40);
+        for (const p of b.poops) if (!seen.some((q) => q.id === p.id)) seen.push({ id: p.id, x: p.x });
+      }
+      expect(seen).toHaveLength(1);
+      // Behind: toward the left wall when facing right, the right when facing left; always inside the room.
+      expect(seen[0].x).toBeGreaterThanOrEqual(0);
+      expect(seen[0].x).toBeLessThanOrEqual(40 + 32 - 7);
+      if (facing === "right") expect(seen[0].x).toBeLessThan(22);
+      else expect(seen[0].x).toBeGreaterThan(30);
+      // Cleared after a while.
+      expect(b.poops).toEqual([]);
+    }
+  });
+
+  test("a poop blinks for its last moments and a second one does not replace the first", () => {
+    const rand = seeded(8);
+    let b = triggerBehavior(initialBehavior(), "poop", "calm");
+    const timeline: { count: number; visible: boolean[] }[] = [];
+    for (let i = 0; i < 20; i++) b = stepBehavior(b, "calm", rand, 40);
+    b = triggerBehavior({ ...b, view: "front", action: "idle", hold: 3 }, "poop", "calm");
+    for (let i = 0; i < 80; i++) {
+      b = stepBehavior(b, "calm", rand, 40);
+      timeline.push({ count: b.poops.length, visible: b.poops.map(poopVisible) });
+    }
+    expect(Math.max(...timeline.map((t) => t.count))).toBe(2);
+    expect(new Set(timeline.flatMap((t) => t.visible)).size).toBe(2);
+    expect(timeline[timeline.length - 1].count).toBe(0);
+  });
+
+  test("when the pet is told it is awake it gets up and looks at you; one that was not lying is left alone", () => {
+    const lying: Behavior = { ...initialBehavior(), view: "side", action: "lie", hold: 90, x: 12 };
+    const up = wakeBehavior(lying);
+    expect(up).toMatchObject({ view: "front", action: "idle", x: 12 });
+    expect(up.hold).toBeLessThan(10);
+    const walking: Behavior = { ...initialBehavior(), view: "side", action: "walk", hold: 9 };
+    expect(wakeBehavior(walking)).toBe(walking);
   });
 });

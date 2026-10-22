@@ -40,10 +40,21 @@ test.describe("pet status", () => {
     expect(derivePetStatus([c("walk", "20", ago(5))], [], NOON).mood).toBe("hungry");
   });
 
-  test("a nap in the last two hours is sleepy and beats everything; an old nap does not", () => {
+  test("a nap lasts until Awake: the pet stays asleep, wakes with the Awake after it, and a nap nobody ended is over after four hours", () => {
     const fed = c("meal", "all", ago(1));
-    expect(derivePetStatus([fed, c("nap", null, ago(1))], [], NOON).mood).toBe("sleepy");
-    expect(derivePetStatus([fed, c("nap", null, ago(3)), c("mood", "calm", ago(0.5))], [], NOON).mood).toBe("calm");
+    const asleep = derivePetStatus([fed, c("nap", null, ago(1))], [], NOON);
+    expect(asleep).toMatchObject({ mood: "sleepy", sleeping: true });
+    // Still asleep long after, as long as nobody tapped Awake.
+    expect(derivePetStatus([c("meal", "all", ago(1)), c("nap", null, ago(3.5))], [], NOON).sleeping).toBe(true);
+    // Awake after the nap ends it, and the mood goes back to what the day says.
+    const woke = derivePetStatus([fed, c("nap", null, ago(1)), c("wake", null, ago(0.5)), c("mood", "calm", ago(0.4))], [], NOON);
+    expect(woke).toMatchObject({ mood: "calm", sleeping: false });
+    // An Awake from before the nap does not end it.
+    expect(derivePetStatus([fed, c("wake", null, ago(2)), c("nap", null, ago(1))], [], NOON).sleeping).toBe(true);
+    // A new nap after an Awake sleeps again.
+    expect(derivePetStatus([fed, c("nap", null, ago(3)), c("wake", null, ago(2)), c("nap", null, ago(1))], [], NOON).sleeping).toBe(true);
+    // Four hours is the limit.
+    expect(derivePetStatus([c("meal", "all", ago(4.5)), c("nap", null, ago(4.5))], [], NOON).sleeping).toBe(false);
   });
 
   test("a walk in the last hour is excited when no mood was logged; walk minutes add up", () => {
