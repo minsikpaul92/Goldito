@@ -67,20 +67,21 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 159 |
-| Button | Next | `own-next` | 161 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 191 |
-| Banner | `error` | — | 202 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 240 |
-| Stepper | Age | `own-age` | 334 |
-| Button | Next | `own-next` | 347 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 408 |
-| Button | Start | `own-next` | 412 |
-| Button | Add | `own-food-other-add` | 541 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 597 |
-| Banner | `error` | `own-error` | 649 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 650 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 668 |
+| TextButton | Skip | `own-skip` | 171 |
+| Button | Next | `own-next` | 173 |
+| Button | Next | `own-next` | 208 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 209 |
+| Banner | `error` | — | 221 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 261 |
+| Stepper | Age | `own-age` | 355 |
+| Button | Next | `own-next` | 368 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 429 |
+| Button | Start | `own-next` | 433 |
+| Button | Add | `own-food-other-add` | 562 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 618 |
+| Banner | `error` | `own-error` | 675 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 676 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 694 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1519,4 +1520,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-441 actions · 440 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+442 actions · 441 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

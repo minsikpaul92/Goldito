@@ -8,7 +8,12 @@ import type { Coat, Score } from "./questions";
 
 /** Everything the owner has typed or picked so far. Kept on the device after every answer, so a reload goes on. */
 export type OwnerOnboardingDraft = {
+  /** The kind of the pet being filled in now. */
   species: Species | null;
+  /** The kinds still to come after this pet (an owner with a dog and a cat goes through the questions twice). */
+  pending: Species[];
+  /** True from the second pet on: the owner's own questions and the kind question were already answered. */
+  ownerDone: boolean;
   name: string;
   breed: string;
   /** Whole years, or null when skipped. Saved as an approximate birthday. */
@@ -41,6 +46,8 @@ export type OwnerOnboardingDraft = {
 
 export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   species: null,
+  pending: [],
+  ownerDone: false,
   name: "",
   breed: "",
   ageYears: null,
@@ -87,6 +94,35 @@ export async function clearDraft(userId: string): Promise<void> {
   } catch {
     // Nothing to clean up.
   }
+}
+
+const SPECIES_ORDER: Species[] = ["dog", "cat"];
+
+/** The kinds picked so far, in a fixed order (the first one is the pet filled in first). */
+export function pickedSpecies(draft: OwnerOnboardingDraft): Species[] {
+  return SPECIES_ORDER.filter((s) => s === draft.species || draft.pending.includes(s));
+}
+
+/** The draft after a kind was ticked or unticked. Changing the first kind clears what was answered for the old one. */
+export function withPickedSpecies(draft: OwnerOnboardingDraft, picked: Species[]): OwnerOnboardingDraft {
+  const [species = null, ...pending] = SPECIES_ORDER.filter((s) => picked.includes(s));
+  if (species === draft.species) return { ...draft, pending };
+  return { ...draft, species, pending, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
+}
+
+/** The draft for the next pet once one is saved: only what the owner said about themselves carries over. */
+export function draftForNextPet(draft: OwnerOnboardingDraft): OwnerOnboardingDraft {
+  const [species = null, ...pending] = draft.pending;
+  return {
+    ...EMPTY_DRAFT,
+    species,
+    pending,
+    ownerDone: true,
+    intro: draft.intro,
+    homeAddress: draft.homeAddress,
+    home: draft.home,
+    step: "name",
+  };
 }
 
 /** An approximate birthday for a whole number of years: the same day and month, that many years back. */
