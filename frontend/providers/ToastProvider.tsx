@@ -79,11 +79,12 @@ const makeStyles = (theme: Theme) =>
       borderRadius: theme.radius.md,
       borderWidth: 1,
       borderColor: theme.color.success,
-      backgroundColor: theme.color.successSurface,
+      // Hex + "EB" = 92% opacity: the page shows through a little.
+      backgroundColor: `${theme.color.successSurface}EB`,
     },
     toastError: {
       borderColor: theme.color.error,
-      backgroundColor: theme.color.errorSurface,
+      backgroundColor: `${theme.color.errorSurface}EB`,
     },
     text: {
       flex: 1,

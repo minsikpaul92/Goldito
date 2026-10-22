@@ -20,7 +20,7 @@ export default function AddPetScreen() {
         onSubmit={async (input) => {
           if (!profile) return;
           await createPet(profile.id, input);
-          toast.show(`${input.name} is added ${input.species === "dog" ? "🐶" : "🐱"}`);
+          toast.show(`${input.name} is added`);
           router.back();
         }}
       />
