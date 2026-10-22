@@ -620,6 +620,44 @@ def test_what_counts_as_a_greeting(text, greets):
     assert logic.greets(text) is greets
 
 
+def test_a_quote_card_from_the_sitter_is_something_the_owner_reacts_to(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, "Hi Robert!"), message(4, SITTER_ID, card=QUOTE_CARD, n=4))
+    ctx = setup({"chips": ["Looks good", "Can we adjust it?"]}, db=db)
+    body = chips(client, owner_token()).json()
+    payload = ctx.model.payload()
+    assert payload["state"] == "reply"  # the quote is the newest thing and it is theirs, so there is something to answer
+    assert payload["recent"][-1]["text"].startswith("[Quote CAD 268.13 for boarding")
+    assert payload["facts"]["quote"]["total"] == 268.13
+    assert body["for_message_id"] == "m4"  # the chips belong to the card
+
+
+def test_the_owner_gets_quote_reaction_chips_first_and_the_model_fills_the_rest(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, card=QUOTE_CARD, n=3))
+    setup({"chips": ["Request booking", "Ask about routine", "Confirm dates"]}, db=db)
+    assert [c["label"] for c in chips(client, owner_token()).json()["chips"]] == ["Looks good", "Can we adjust it?", "Request booking"]
+    done = {**QUOTE_CARD, "status": "confirmed"}
+    setup({"chips": ["Pay now", "A question"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, card=done, n=2)))
+    assert [c["label"] for c in chips(client, owner_token()).json()["chips"]] == ["Pay now", "A question"]  # an answered quote asks for no reaction
+
+
+def test_the_sitter_who_sent_the_quote_follows_up_instead_of_answering(client, setup):
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "How much would it be?"), message(3, SITTER_ID, card=QUOTE_CARD, n=3))
+    ctx = setup({"chips": ["Any questions?", "Happy to adjust"]}, db=db)
+    chips(client, sitter_token())
+    assert ctx.model.payload()["state"] == "follow_up"
+
+
+def test_a_booking_step_card_counts_for_the_state_and_a_stay_card_does_not(client, setup):
+    held = booking(meet_greet_status="proposed", meet_greet_proposed_by=SITTER_ID, meet_greet_at="2026-10-20T19:00:00+00:00", sitter_interest_at=at(2))
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, card={"type": "meet_greet", "booking_id": "b1"}), bookings=[held])
+    ctx = setup({"chips": ["Sounds good", "Another time?"]}, db=db, stage="meet_greet")
+    chips(client, owner_token())
+    assert ctx.model.payload()["state"] == "reply"  # the Meet & Greet card is newer than my "Hi!"
+    only_stay = setup({"chips": ["Hi, nice to meet you", "Happy to help"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0)))
+    chips(client, sitter_token())
+    assert only_stay.model.payload()["state"] == "opening"
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

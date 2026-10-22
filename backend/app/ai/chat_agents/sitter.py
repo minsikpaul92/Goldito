@@ -38,7 +38,7 @@ class SitterAgent(ChatAgent):
 
     def style(self, db, ctx: dict, chip: str, last_them: dict | None) -> str:
         # The sitter's own anonymized replies to owners ("inquiry" samples) are the closest voice for a chat reply too.
-        return tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body', '')}").style_notes
+        return tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body') or ''}").style_notes
 
     def keep_chips(self, labels: list[str], facts: dict) -> list[str]:
         if facts["availability"].get("can_host") is False:

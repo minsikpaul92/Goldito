@@ -191,6 +191,29 @@ def greets(text: str | None) -> bool:
     return bool(text and _GREETING.search(text))
 
 
+# The cards a person answers to: a quote, a booking request, a Meet & Greet, the agreement, the payment. The Stay card is the
+# start of the chat, not something to react to.
+REACT_CARDS = ("request", "quote", "meet_greet", "agreement", "payment")
+
+
+def is_event(message: dict) -> bool:
+    """Something in the chat the other person may react to: a text, or one of the cards above."""
+    return message.get("kind") == "text" or (message.get("kind") == "card" and (message.get("card") or {}).get("type") in REACT_CARDS)
+
+
+# What the owner can say to a quote that was just sent (labels only: the draft reads the quote and says the numbers).
+QUOTE_REACTIONS = ["Looks good", "Can we adjust it?"]
+
+
+def reaction_chips(role: str, last_them: dict | None) -> list[str]:
+    """Chips the code puts first when the other person's newest item is a card that wants an answer. Today: a quote the sitter
+    sent and the owner has not answered. The model kept offering the next booking step instead (it still does for the rest)."""
+    card = (last_them or {}).get("card") or {}
+    if role == "owner" and card.get("type") == "quote" and card.get("status", "sent") == "sent":
+        return list(QUOTE_REACTIONS)
+    return []
+
+
 def asks_about_money(text: str | None) -> bool:
     return bool(text and _MONEY_TALK.search(text))
 

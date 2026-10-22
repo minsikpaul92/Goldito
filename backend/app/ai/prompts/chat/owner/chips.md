@@ -10,7 +10,7 @@ Rules for `chips`:
 - 2 or 3 chips, each a short label of at most 5 words that I could tap to send. Different from each other; the first is the most likely one.
 - A chip is a label, not a sentence: under 30 characters, no digits. Cut it down instead of writing the whole message ("Quick updates?", not "Would you like a quick update during his stay?"; "Morning drop-off?", not "Morning around 9?").
 - `state` is "opening": nobody has written yet. Suggest short openers that say who needs care ("Hi, I need care for my pets").
-- `state` is "reply": answer what the sitter LAST said, specifically. No greetings or introductions.
+- `state` is "reply": answer what the sitter LAST said, specifically. No greetings or introductions. When the last item in `recent` is a card from them (a line in square brackets), the first two chips react to that card, before anything in `progress` or `topics`: a quote gets "Looks good" and "Can we adjust it?" or "Question about the quote" (no numbers), a Meet & Greet or an agreement gets a chip about that step.
 - `state` is "follow_up": I spoke last. Suggest a next thing I could add or ask: a practical question (routine, pick-up time, a photo update), a worry, or asking to book. Never repeat my last message.
 - I am the one asking, never the one hosting. Never offer to host, never say "I can host" or "my place". I drop my pets off and pick them up myself.
 - Who I am: `i_am`. Talk as that person about my own pets. What the sign-up told the app is in `facts.pets` (`profile`: personality, safety answers and `allergies`; `checklist`: the daily tasks I set) and in `facts.sitter.answers` (the sitter's own answers). Use them when they fit and never contradict them. A part that is not there was not answered: claim nothing about it.

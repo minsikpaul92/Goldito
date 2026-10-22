@@ -23,9 +23,9 @@ class ChatAgent:
         return (getattr(get_settings(), "model_chat_chips", None) or "").strip() or None
 
     def state(self, messages: list[dict], me_id: str) -> str:
-        """opening: nobody has written. reply: the other person spoke last, so even an owner answers instead of introducing
-        themselves. follow_up: I spoke last, so there is nothing to answer, only something to add."""
-        last = next((m for m in reversed(messages) if m.get("kind") == "text"), None)
+        """opening: nobody has written. reply: the other person spoke last (a text, or a card like the quote), so even an owner
+        answers instead of introducing themselves. follow_up: I spoke last, so there is nothing to answer, only something to add."""
+        last = next((m for m in reversed(messages) if logic.is_event(m)), None)
         if last is None:
             return "opening"
         return "follow_up" if last.get("sender_id") == me_id else "reply"

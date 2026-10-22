@@ -292,21 +292,22 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     """(the model input without the task, the facts this side may read, the other person's latest text message)."""
     messages = ctx["messages"]
     agent = agent_for(ctx["role"])
-    texts_them = [m for m in messages if m.get("kind") == "text" and m.get("sender_id") != user.id]
-    last_them = texts_them[-1] if texts_them else None
+    # What the chips answer: their newest text or card (a quote they sent is something to react to).
+    events_them = [m for m in messages if logic.is_event(m) and m.get("sender_id") != user.id]
+    last_them = events_them[-1] if events_them else None
     summary = _ensure_summary(db, ctx, tz) if len(messages) > logic.SUMMARY_OVER else None
     _, recent = logic.split_window(messages)
     ctx["booking_state"] = _booking_state(db, user, ctx)
     state = agent.state(messages, user.id)
     booking_state = ctx["booking_state"]
-    raw = _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources)
+    raw = _facts(db, user, ctx, (last_them or {}).get("body") or "", tz, today, with_sources=with_sources)
     # The owner's care checklist goes to the sitter once there is a live booking.
     raw["booking_live"] = booking_state["stage"] not in (None, "declined", "cancelled")
     facts = agent.facts(
         raw,
         messages,
         state=state,
-        last_them=(last_them or {}).get("body", ""),
+        last_them=(last_them or {}).get("body") or "",
     )
     inquiry_logic.assert_no_secrets(facts)
     me = ctx["owner_name"] if ctx["role"] == "owner" else ctx["sitter_name"]
@@ -383,6 +384,9 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         kept = agent.keep_chips(labels, facts)
         dropped += [f"{_redact(c, ctx, facts)}: not allowed for these dates" for c in labels if c not in kept]
         labels = kept
+        react = logic.reaction_chips(ctx["role"], last_them) if not typed else []
+        if react and len(labels) >= 2:
+            labels = [*react, *(c for c in labels if c not in react)][: logic.MAX_CHIPS]
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.warning("chat-chips: model failed (%s)", exc)
         reason = "model_failed"
