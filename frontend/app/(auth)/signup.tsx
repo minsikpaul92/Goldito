@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { BrandLogo } from "../../components/BrandLogo";
 import { RoleCard } from "../../components/RoleCard";
 import { BackLink } from "../../components/ui/BackLink";
 import { Button } from "../../components/ui/Button";
@@ -86,6 +87,7 @@ export default function SignupScreen() {
       <BackLink onPress={goBack} testID="signup-back" />
 
       <View style={styles.header}>
+        <BrandLogo height={32} testID="signup-brand" />
         <Text style={styles.title}>Create your account</Text>
         <Text style={styles.subtitle}>First, how will you use Goldito?</Text>
       </View>

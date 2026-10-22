@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { BrandLogo } from "../BrandLogo";
 import { Screen } from "../ui/Screen";
 import { TextButton } from "../ui/TextButton";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -13,19 +14,24 @@ type Props = {
   title: string;
   hint?: string;
   onBack?: () => void;
+  onSkipAll?: () => void;
   children: ReactNode;
   /** Below the answers: the primary button and the Skip link. */
   footer?: ReactNode;
   testID?: string;
 };
 
-/** One question per screen, large text (11.15 §7.1): progress bar, Back, a 28 px question, the answers, the footer. */
-export function StepFrame({ progress, title, hint, onBack, children, footer, testID }: Props) {
+/** One question per screen, large text (11.15 §7.1): logo, progress bar, Back, a 28 px question, the answers, the footer. */
+export function StepFrame({ progress, title, hint, onBack, onSkipAll, children, footer, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
   return (
     <Screen contentStyle={styles.content} testID={testID}>
+      <View style={styles.header}>
+        <BrandLogo height={28} testID="step-brand" />
+        {onSkipAll ? <TextButton label="Skip all" onPress={onSkipAll} testID="own-skip-all" /> : null}
+      </View>
       <View style={styles.top}>
         {onBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={onBack} style={styles.back} testID="own-back">
@@ -56,6 +62,7 @@ export function StepFrame({ progress, title, hint, onBack, children, footer, tes
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
+    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: theme.layout.touchTarget },
     top: { flexDirection: "row", alignItems: "center", gap: theme.spacing.sm },
     back: { width: theme.layout.touchTarget, height: theme.layout.touchTarget, justifyContent: "center" },
     track: { flex: 1, height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.track, overflow: "hidden" },

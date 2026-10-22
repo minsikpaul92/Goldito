@@ -69,20 +69,21 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | --- | --- | --- | --- |
 | TextButton | Skip | `own-skip` | 173 |
 | Button | Next | `own-next` | 175 |
-| Button | Next | `own-next` | 210 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 211 |
-| Banner | `error` | — | 223 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 263 |
-| Stepper | Age | `own-age` | 357 |
-| Button | Next | `own-next` | 370 |
-| SegmentedControl | — | `own-weight-unit` | 389 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 441 |
-| Button | Start | `own-next` | 445 |
-| Button | Add | `own-food-other-add` | 574 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 630 |
-| Banner | `error` | `own-error` | 687 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 688 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 706 |
+| Button | Next | `own-next` | 225 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
+| Banner | `error` | — | 238 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 278 |
+| Stepper | Age | `own-age` | 372 |
+| Button | Next | `own-next` | 385 |
+| SegmentedControl | — | `own-weight-unit` | 404 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 456 |
+| Button | Start | `own-next` | 461 |
+| TextButton | Skip questions | `own-skip-questions` | 462 |
+| Button | Add | `own-food-other-add` | 592 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 648 |
+| Banner | `error` | `own-error` | 705 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 706 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 724 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -368,13 +369,13 @@ Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Pr
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
-Shows: `RoleCard`
+Shows: `BrandLogo` · `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 86 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 175 |
-| TextButton | Already have an account? Sign in | `go-login` | 183 |
+| BackLink | — | `signup-back` | 87 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 177 |
+| TextButton | Already have an account? Sign in | `go-login` | 185 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -891,19 +892,20 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 18 |
+| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 20 |
+| Pressable | ``${profile.displayName \|\| "You"}, Profile`` | `header-profile-avatar` | 24 |
 
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 51 |
-| Pressable | Menu | `open-menu` | 66 |
-| Pressable | Close menu | `header-menu-close` | 87 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
-| Button | Sign out | `log-out-confirm` | 116 |
-| Button | Cancel | `log-out-cancel` | 117 |
-| Pressable | — | `log-out` | 137 |
+| Pressable | `label` | `testID` | 52 |
+| Pressable | Menu | `open-menu` | 67 |
+| Pressable | Close menu | `header-menu-close` | 88 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 99 |
+| Button | Sign out | `log-out-confirm` | 121 |
+| Button | Cancel | `log-out-cancel` | 122 |
+| Pressable | — | `log-out` | 142 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -999,9 +1001,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 39 |
-| Button | Next | ``${testID}-next`` | 74 |
-| Button | Get started | ``${testID}-sign-in`` | 76 |
+| BackLink | — | ``${testID}-back`` | 40 |
+| Button | Next | ``${testID}-next`` | 76 |
+| Button | Get started | ``${testID}-sign-in`` | 78 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
@@ -1328,8 +1330,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Back | `own-back` | 31 |
-| TextButton | Back | `own-back-bottom` | 49 |
+| TextButton | Skip all | `own-skip-all` | 33 |
+| Pressable | Back | `own-back` | 37 |
+| TextButton | Back | `own-back-bottom` | 55 |
 
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 
@@ -1524,4 +1527,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-446 actions · 445 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+449 actions · 448 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
