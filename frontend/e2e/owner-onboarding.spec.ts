@@ -88,6 +88,7 @@ test.describe("owner onboarding", () => {
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     const screen = app(page);
 
+    await expect(screen.getByTestId("step-brand")).toBeVisible();
     await expect(screen.getByTestId("own-title")).toHaveText("What kind of pet do you have?");
     await screen.getByTestId("own-species-dog").click();
     await screen.getByTestId("own-next").click();
@@ -644,5 +645,44 @@ test.describe("owner onboarding", () => {
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     await expect(app(page).getByTestId("own-title")).toHaveText("What's your cat's name?");
     expect(db.pets).toHaveLength(1);
+  });
+
+  test("skipping all questions from the about screen jumps straight to summary", async ({ page }) => {
+    await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const step of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) {
+      await expect(screen.getByTestId(`own-step-${step}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
+    await expect(screen.getByTestId("own-step-about")).toBeVisible();
+    await expect(screen.getByTestId("own-skip-all")).toBeVisible();
+    await expect(screen.getByTestId("own-skip-questions")).toBeVisible();
+    await screen.getByTestId("own-skip-questions").click();
+    await expect(screen.getByTestId("own-step-summary")).toBeVisible();
+  });
+
+  test("skip all button in the header corner skips remaining questions to summary", async ({ page }) => {
+    await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const step of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) {
+      await expect(screen.getByTestId(`own-step-${step}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
+    await expect(screen.getByTestId("own-step-about")).toBeVisible();
+    await screen.getByTestId("own-next").click();
+    // Now on first question step
+    await expect(screen.getByTestId("own-skip-all")).toBeVisible();
+    await screen.getByTestId("own-skip-all").click();
+    await expect(screen.getByTestId("own-step-summary")).toBeVisible();
   });
 });

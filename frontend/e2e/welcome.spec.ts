@@ -29,6 +29,7 @@ test.describe("welcome", () => {
 
     await screen.getByTestId("welcome-choose-owner").click();
     await expect(page).toHaveURL(/\/welcome\/owner$/);
+    await expect(screen.getByTestId("onboarding-owner-brand")).toBeVisible();
     await expect(screen.getByTestId("onboarding-owner-title")).toContainText("already know you");
     await expect(screen.getByTestId("onboarding-owner-media-0")).toContainText("Photo placeholder");
 
@@ -47,6 +48,7 @@ test.describe("welcome", () => {
     await mockSupabase(page, [OWNER, demoSitter]);
     await page.goto("/welcome/sitter");
     const screen = app(page);
+    await expect(screen.getByTestId("onboarding-sitter-brand")).toBeVisible();
 
     await screen.getByTestId("onboarding-sitter-next").click();
     await screen.getByTestId("onboarding-sitter-next").click();
