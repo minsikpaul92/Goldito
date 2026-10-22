@@ -839,7 +839,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
-    expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(screen)).toEqual({ label: "Step 1 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(screen.getByTestId("chat-next-interest")).toHaveText("Next");
     await screen.getByTestId("chat-next-interest").click();
     await expect(screen.getByTestId("meet-greet")).toBeVisible();
@@ -943,7 +943,7 @@ test.describe("chat hub", () => {
     await expect(page).toHaveURL(/\/sitter$/);
     await page.goto(`/chat/${THREAD}`);
     let screen = app(page);
-    expect(await circles(screen)).toEqual({ label: "Step 3 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(screen)).toEqual({ label: "Step 3 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(screen.getByTestId("chat-next-interest")).toHaveCount(0);
     await expect(screen.getByTestId("meet-greet")).toHaveCount(0);
     await screen.getByTestId("chat-next-accept").click();
@@ -1048,7 +1048,7 @@ test.describe("chat hub", () => {
     await signIn(page, OWNER);
     await expect(page).toHaveURL(/\/owner$/);
     await page.goto(`/chat/${THREAD}`);
-    expect(await circles(app(page))).toEqual({ label: "Step 1 of 5", labels: ["Request", "Meet", "Confirm", "Pay", "Stay"] });
+    expect(await circles(app(page))).toEqual({ label: "Step 1 of 5", labels: ["Request", "M&G", "Confirm", "Pay", "Care"] });
     await expect(app(page).getByTestId("chat-request-booking")).toBeVisible();
   });
 
