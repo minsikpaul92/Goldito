@@ -138,15 +138,12 @@ Shows: `ConsentCard` · `QuoteCard`
 
 "How was Max and Mochi's stay with Chloe?" — ★1–5 and an optional comment, once (phase-07C 7C.3).
 
-Shows: `OwnerReviewForm`
+Shows: `FavoriteHeart` · `OwnerReviewForm`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Not ready yet | — | 54 |
-| EmptyState | Thanks, you already reviewed this stay | — | 67 |
-| Sheet | ``Add ${booking.sitterName} to your favorites?`` | `favorite-sheet` | 95 |
-| Button | Add to favorites | `favorite-add` | 102 |
-| TextButton | Not now | `favorite-skip` | 112 |
+| EmptyState | Not ready yet | — | 43 |
+| Button | Back to the booking | `review-back` | 63 |
 
 ### `/owner/bookings/[bookingId]/trip` — [app/owner/bookings/[bookingId]/trip.tsx](../../frontend/app/owner/bookings/[bookingId]/trip.tsx)
 
@@ -1528,4 +1525,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-450 actions · 449 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+449 actions · 448 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

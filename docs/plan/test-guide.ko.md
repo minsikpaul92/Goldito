@@ -507,7 +507,7 @@
 | FLOW-20 | 오너 리뷰 화면에서 별 5 → 프리셋 칩 / 별 2로 바꿈 | 별점마다 다른 프리셋 3개, 별을 바꾸면 이전 선택이 빠짐. 고른 문구 + 직접 쓴 글이 코멘트로 저장 (FB-27) | 🤖 `completion` | ➖ |
 | FLOW-21 | 시터 Returned 뒤 그 예약(또는 Past) → **⭐ Rate Robert** → 별 · 프리셋 · 한마디 → Save | "Your note about Robert" 읽기 전용 + Edit. "🔒 Only you can see this — Robert is never told." 오너에게 알림 **없음**, 오너는 읽을 수 없음 (FB-25) | 🤖 `handoff` · SQL O | ➖ |
 | FLOW-22 | 같은 오너가 다시 예약 요청 → 시터가 그 요청 열기 | 맨 위에 "Your notes from earlier stays with Robert"(별 · 메모 · 날짜, 본인만 보임) (FB-29) | 🤖 `handoff` | ➖ |
-| FLOW-23 | 오너 리뷰 Send → "Add Chloe to your favorites?" → ⭐ Add | 예약으로 돌아감. Bookings의 Your sitters에 "★ Favorite"·맨 위, Book care 검색에서 ★ 시터가 먼저. 시터 프로필의 ☆/★로 끄고 켬. 이미 즐겨찾기면 묻지 않음 (FB-28) | 🤖 `completion` · SQL P | ➖ |
+| FLOW-23 | 오너 리뷰 Send → 같은 화면의 **♡ Add Chloe to favorites** 한 번 누르기 → **Back to the booking** (#251) | 질문 시트 없음, 별 없음. 하트가 채워지고 "Chloe is a favorite" 토스트(시터에게는 알림 없음). 채팅 · 시터 프로필과 같은 하트. Book care 검색에서 즐겨찾기 시터가 먼저. 이미 즐겨찾기면 묻지 않고 채워진 하트 "Favorite"만 보임. 이미 리뷰한 예약의 리뷰 화면에도 같은 하트 (FB-28) | 🤖 `completion` · SQL P | ➖ |
 
 ---
 

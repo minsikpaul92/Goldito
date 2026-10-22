@@ -73,8 +73,11 @@ test.describe("finished stay", () => {
     await screen.getByTestId("review-send").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Chloe was told");
-    await expect(screen.getByTestId("favorite-sheet")).toContainText("Add Chloe to your favorites?");
-    await screen.getByTestId("favorite-skip").click();
+    // No question sheet: the same heart as everywhere else, outlined until tapped (#251).
+    await expect(screen.getByTestId("favorite-sheet")).toHaveCount(0);
+    await expect(screen.getByTestId("favorite-heart")).toHaveAttribute("aria-label", "Add to favorites");
+    await expect(screen.getByTestId("favorite-heart")).toContainText("Add Chloe to favorites");
+    await screen.getByTestId("review-back").click();
     expect(db.reviews).toHaveLength(1);
     expect(db.reviews[0]).toMatchObject({ booking_id: BOOKING, rating: 4, comment: "Max came home happy and tired!", sitter_id: SITTER.id });
     expect(db.notifications.find((n) => n.type === "review_received")?.user_id).toBe(SITTER.id);
@@ -85,6 +88,7 @@ test.describe("finished stay", () => {
     await expect(screen.getByTestId("leave-review")).toHaveCount(0);
     await page.goto(`/owner/bookings/${BOOKING}/review`);
     await expect(screen.getByText("you already reviewed this stay", { exact: false })).toBeVisible();
+    await expect(screen.getByTestId("favorite-heart")).toBeVisible();
   });
 
   test("each star rating offers its own three phrases; picked ones and your words make the comment (FB-27)", async ({ page }) => {
@@ -110,15 +114,19 @@ test.describe("finished stay", () => {
     expect(db.reviews[0]).toMatchObject({ rating: 5, comment: "Amazing care! · Would book again\nMax came home happy." });
   });
 
-  test("after the review, Chloe can be added to favorites; she is marked and comes first (FB-28)", async ({ page }) => {
+  test("after the review, one tap on the heart adds Chloe to favorites; she is marked and comes first (FB-28, #251)", async ({ page }) => {
     const db = await open(page);
     const screen = app(page);
     await screen.getByTestId("leave-review").click();
     await screen.getByTestId("review-rating-5").click();
     await screen.getByTestId("review-send").click();
-    await screen.getByTestId("favorite-add").click();
-    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await screen.getByTestId("favorite-heart").click();
+    await expect(screen.getByTestId("toast")).toContainText("Chloe is a favorite");
+    await expect(screen.getByTestId("favorite-heart")).toHaveAttribute("aria-label", "Remove from favorites");
     expect(db.owner_favorite_sitters).toMatchObject([{ owner_id: OWNER.id, sitter_id: SITTER.id }]);
+    expect(db.notifications.filter((n) => n.user_id === SITTER.id && /favorite/i.test(String(n.title)))).toHaveLength(0); // not told
+    await screen.getByTestId("review-back").click();
+    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
 
     await page.goto(`/owner/sitters/${SITTER.id}`);
     await expect(screen.getByTestId("sitter-favorite")).toHaveAttribute("aria-label", "Remove from favorites");
@@ -127,7 +135,7 @@ test.describe("finished stay", () => {
     await expect.poll(() => db.owner_favorite_sitters.length).toBe(0);
   });
 
-  test("a sitter who is already a favorite is not asked about again", async ({ page }) => {
+  test("a sitter who is already a favorite shows the filled heart and nothing is asked", async ({ page }) => {
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     db.owner_favorite_sitters.push({ owner_id: OWNER.id, sitter_id: SITTER.id, created_at: "2026-10-01T10:00:00Z" });
@@ -138,7 +146,8 @@ test.describe("finished stay", () => {
     await screen.getByTestId("leave-review").click();
     await screen.getByTestId("review-rating-4").click();
     await screen.getByTestId("review-send").click();
-    await expect(page).toHaveURL(new RegExp(`/owner/bookings/${BOOKING}$`));
+    await expect(screen.getByTestId("favorite-heart")).toHaveAttribute("aria-label", "Remove from favorites");
+    await expect(screen.getByTestId("favorite-heart")).toContainText("Favorite");
     await expect(screen.getByTestId("favorite-sheet")).toHaveCount(0);
   });
 
