@@ -64,8 +64,13 @@ export function Pager({ pages, testID }: Props) {
     flipRef.current();
   };
 
-  const face = (from: string, to: string) => ({
-    transform: [{ perspective: 1200 }, { rotateY: turn.interpolate({ inputRange: [0, 1], outputRange: [from, to] }) }],
+  // Each face is shown on its own half of the turn (backfaceVisibility alone let the front show through on web).
+  const face = (back: boolean) => ({
+    opacity: turn.interpolate({ inputRange: [0, 0.49, 0.51, 1], outputRange: back ? [0, 0, 1, 1] : [1, 1, 0, 0] }),
+    transform: [
+      { perspective: 1200 },
+      { rotateY: turn.interpolate({ inputRange: [0, 1], outputRange: back ? ["180deg", "360deg"] : ["0deg", "180deg"] }) },
+    ],
   });
 
   return (
@@ -90,7 +95,7 @@ export function Pager({ pages, testID }: Props) {
         {pages.map((page, i) => (
           <Animated.View
             key={page.label}
-            style={[styles.face, face(i === 0 ? "0deg" : "180deg", i === 0 ? "180deg" : "360deg")]}
+            style={[styles.face, face(i === 1)]}
             pointerEvents={i === index ? "auto" : "none"}
             {...(i === index ? null : ({ "aria-hidden": true, inert: true } as object))}
             testID={testID ? `${testID}-page-${i}` : undefined}
