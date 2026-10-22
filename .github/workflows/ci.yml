@@ -29,6 +29,7 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docs/CHANGELOG.md'
+              - '.github/workflows/ci.yml'
             # What a browser can see. The Playwright run (export, browsers, specs) needs it; a change that only touches
             # frontend docs, scripts or Vercel config does not. Keep this list in step with the folders in frontend/:
             # main always runs everything, so a miss shows up there.
