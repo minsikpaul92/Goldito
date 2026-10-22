@@ -608,8 +608,8 @@ What's new: small updates in plain words. docs/CHANGELOG.md, turned into JSON by
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `whats-new-back` | 46 |
-| EmptyState | Nothing new yet | — | 49 |
+| BackLink | — | `whats-new-back` | 47 |
+| EmptyState | Nothing new yet | — | 50 |
 
 ## Components
 

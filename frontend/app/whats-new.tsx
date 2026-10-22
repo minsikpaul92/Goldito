@@ -11,6 +11,7 @@ import changelog from "../features/settings/changelog.json";
 import { useSession } from "../providers/SessionProvider";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
+import { tokens } from "../theme/tokens";
 
 type Release = { version: string; title: string | null; sections: { heading: string; items: string[] }[] };
 
@@ -50,7 +51,12 @@ export default function WhatsNewScreen() {
       ) : (
         RELEASES.map((release, i) => (
           <Card key={`${release.version}-${release.title}`} tone={i === 0 ? "butter" : undefined} style={styles.release} testID={`release-${i}`}>
-            <Text style={styles.label}>{i === 0 ? `${releaseDate(release)} · New` : releaseDate(release)}</Text>
+            {i === 0 ? (
+              <View style={styles.newPill}>
+                <Text style={styles.newPillLabel}>New</Text>
+              </View>
+            ) : null}
+            <Text style={styles.label}>{releaseDate(release)}</Text>
             <View style={styles.items}>
               {release.sections
                 .flatMap((section) => section.items)
@@ -83,6 +89,8 @@ const makeStyles = (theme: Theme) =>
       textTransform: "uppercase",
       color: theme.color.textMuted,
     },
+    newPill: { alignSelf: "flex-start", backgroundColor: tokens.color.gold, borderRadius: theme.ui.radius.tag, paddingHorizontal: 9, paddingVertical: 2 },
+    newPillLabel: { fontSize: 11.5, lineHeight: 16, fontWeight: "800", color: theme.color.text },
     items: { gap: 6, paddingLeft: 18 },
     item: { fontSize: theme.fontSize.small, lineHeight: 20.3, color: theme.color.text },
     lead: { fontWeight: "800" },
