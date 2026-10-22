@@ -658,16 +658,64 @@ def test_a_booking_step_card_counts_for_the_state_and_a_stay_card_does_not(clien
     assert only_stay.model.payload()["state"] == "opening"
 
 
-@pytest.mark.parametrize(("who", "token", "want"), [("owner", owner_token, ["Thanks for everything!", "I'll book again"]), ("sitter", sitter_token, ["It was a pleasure!", "Welcome back anytime!"])])
-def test_after_returned_both_sides_get_closing_chips_and_the_guidance(client, setup, who, token, want):
+def returned_db(*texts):
+    """A paid stay whose pets came home at at(20); `texts` are (sender, body, minute) written around it."""
     done = booking(status="confirmed", meet_greet_status="done", owner_agreed_at=at(5), sitter_accepted_at=at(5), paid_at=at(9))
-    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, "Hi Robert"), message(4, SITTER_ID, "Max is home safe, thank you!"), bookings=[done])
-    ctx = setup({"chips": ["Plan another stay", "Ask about the vet", "Send a quote"]}, db=db, stage="completed")
-    body = chips(client, token()).json()
-    assert [c["label"] for c in body["chips"]] == want  # the model's planning chips are replaced
+    return make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!", n=1), message(3, SITTER_ID, "Hi Robert", n=2),
+        *(message(10 + k, who, body, n=n) for k, (who, body, n) in enumerate(texts)),
+        bookings=[done], booking_handoffs=[{"booking_id": "b1", "kind": "pick_up", "completed_at": at(20)}],
+    )
+
+
+def labels(client, token):
+    return [c["label"] for c in chips(client, token()).json()["chips"]]
+
+
+@pytest.mark.parametrize(("token", "want"), [(owner_token, ["Thanks for everything!", "I'll book again", "How have you been?"]), (sitter_token, ["It was a pleasure!", "Welcome back anytime!", "How is Max doing?"])])
+def test_just_after_returned_the_chips_are_the_closing_words_and_one_check_in(client, setup, token, want):
+    ctx = setup({"chips": ["Plan another stay", "Ask about the vet", "Send a quote"]}, db=returned_db((SITTER_ID, "Max is home safe!", 21)), stage="completed")
+    assert labels(client, token) == want  # the model's planning chips are replaced
     progress = ctx.model.payload()["progress"]
-    assert progress["step"] == "done" and progress["guide"]["avoid"].startswith("new plans")
+    assert progress["step"] == "done" and progress["phase"] == "closing" and progress["guide"]["avoid"].startswith("new plans")
     assert "topics" not in ctx.model.payload()  # nothing is left to steer after the stay
+
+
+def test_after_my_closing_the_check_in_comes_and_a_look_back_at_the_stay_stays_allowed(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure having Max!", 21))
+    ctx = setup({"chips": ["Thanks again", "Any photos of Max?", "Send a quote"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["How is Max doing?", "How have you been?", "Any photos of Max?"]
+    assert ctx.model.payload()["progress"]["phase"] == "after_closing"
+    owner_ctx = setup({"chips": ["Thank you so much", "Any photos of Max?"]}, db=returned_db((OWNER_ID, "Thanks for everything, Chloe!", 21)), stage="completed")
+    assert labels(client, owner_token) == ["How have you been?", "Any photos of Max?"]  # thanks is not offered twice
+    assert owner_ctx.model.payload()["progress"]["phase"] == "after_closing"
+
+
+def test_once_either_side_checked_in_there_are_no_more_closings_or_check_ins_only_the_talk_after(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure!", 21), (SITTER_ID, "How is Max doing these days?", 22), (OWNER_ID, "He is great, thanks for asking!", 23))
+    ctx = setup({"chips": ["Thank you so much", "How have you been?", "Any trips coming up?", "He loves the park now"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["Any trips coming up?", "He loves the park now"]
+    progress = ctx.model.payload()["progress"]
+    assert progress["phase"] == "chat" and "remembers me" in progress["guide"]["talk_about"]
+    thin = setup({"chips": ["Thank you!", "How are you?"]}, db=db, stage="completed")
+    assert labels(client, sitter_token) == ["Any trips coming up?", "Happy to help again"]  # not enough free chips: the safe pair
+    assert thin.model.payload()["progress"]["phase"] == "chat"
+
+
+def test_what_was_written_before_the_pets_came_home_does_not_count_for_the_phase(client, setup):
+    db = returned_db((SITTER_ID, "Thank you, see you at pick-up! How are you?", 15))
+    ctx = setup({"chips": ["Plan another stay", "Send a quote"]}, db=db, stage="completed")
+    assert labels(client, sitter_token)[0] == "It was a pleasure!"
+    assert ctx.model.payload()["progress"]["phase"] == "closing"
+
+
+def test_a_check_in_chip_after_the_stay_is_drafted_as_a_question_not_an_answer(client, setup):
+    db = returned_db((SITTER_ID, "It was a pleasure having Max!", 21))
+    ctx = setup({"reply": "How is Max doing these days?"}, {"reply": "Thanks for everything!"}, db=db, stage="completed")
+    draft(client, "How is Max doing?", sitter_token())
+    assert "how the owner and the pets have been" in ctx.model.payload(0)["task"]
+    draft(client, "Welcome back anytime!", sitter_token())
+    assert "task" not in ctx.model.payload(1)  # only a check-in gets the instruction
 
 
 # --- two agents --------------------------------------------------------------------------------------------------

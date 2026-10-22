@@ -118,3 +118,44 @@ def test_progress_carries_the_guidance_and_the_done_step_says_thanks_and_nothing
     assert "book again" in owner["guide"]["talk_about"] and "welcome back" in sitter["guide"]["talk_about"]
     assert "new plans" in owner["guide"]["avoid"]
     assert run("owner", booking={}, stage="cancelled")["guide"]["talk_about"] == "a polite goodbye"
+
+
+# --- after the stay ---------------------------------------------------------------------------------------------------
+
+
+def after(*pairs, minute=30):
+    return [{"kind": "text", "sender_id": who, "body": body, "created_at": f"2026-10-07T10:{minute + k:02d}:00+00:00"} for k, (who, body) in enumerate(pairs)]
+
+
+RETURNED = "2026-10-07T10:20:00+00:00"
+PETS = ["Max", "Luna"]
+
+
+def test_check_in_and_closing_lines_are_told_apart():
+    for text in ("How have you been?", "How are you?", "Hope you are well!", "How is Max doing?", "How are Max and Luna?", "How has Luna been?"):
+        assert cs.is_checkin(text, PETS), text
+    for text in ("Thanks for everything!", "Max loved the walks", "Welcome back anytime!"):
+        assert not cs.is_checkin(text, PETS), text
+    for text in ("Thanks for everything!", "It was a pleasure!", "Welcome back anytime!", "I'll book you again"):
+        assert cs.is_closing(text), text
+    assert not cs.is_closing("How have you been?")
+
+
+def test_the_done_phase_goes_closing_after_closing_chat_and_only_counts_texts_after_the_return():
+    assert cs.done_phase([], OWNER, RETURNED, PETS) == "closing"
+    assert cs.done_phase(after((OWNER, "Thanks for everything!")), OWNER, RETURNED, PETS) == "after_closing"
+    assert cs.done_phase(after((SITTER, "It was a pleasure!")), OWNER, RETURNED, PETS) == "closing"  # their thanks is not mine
+    assert cs.done_phase(after((SITTER, "It was a pleasure!"), (SITTER, "How is Max doing?")), OWNER, RETURNED, PETS) == "chat"
+    before = after((OWNER, "Thanks! How have you been?"), minute=10)
+    assert cs.done_phase(before, OWNER, RETURNED, PETS) == "closing"
+    assert cs.done_phase(before, OWNER, None, PETS) == "chat"  # no return time known: everything counts
+
+
+def test_the_chips_after_the_stay_per_phase():
+    sitter_pets = ["Max"]
+    assert cs.done_chips("sitter", "closing", ["x", "y"], sitter_pets) == ["It was a pleasure!", "Welcome back anytime!", "How is Max doing?"]
+    assert cs.done_chips("sitter", "after_closing", ["Thanks again", "Any photos?", "Next week?"], sitter_pets) == ["How is Max doing?", "How have you been?", "Any photos?"]
+    assert cs.done_chips("owner", "after_closing", ["Any photos?", "A memory"], sitter_pets) == ["How have you been?", "Any photos?", "A memory"]
+    assert cs.done_chips("sitter", "chat", ["How are you?", "Any trips coming up?", "Thanks!", "Max loves it"], sitter_pets) == ["Any trips coming up?", "Max loves it"]
+    assert cs.done_chips("owner", "chat", ["Thanks!"], sitter_pets) == ["Good to hear!", "We'll be in touch"]
+    assert cs.checkin_chips("sitter", ["Max", "Luna"])[0] == "How are Max and Luna?" and cs.checkin_chips("sitter", [])[0] == "How are the pets?"

@@ -245,7 +245,11 @@ def _booking_state(db, user: CurrentUser, ctx: dict) -> dict:
         if found is None:
             return {"booking": booking, "stage": None, "next_actor": None, "readable": False}
         stage, next_actor = found["stage"], found.get("next_actor")
-    return {"booking": booking, "stage": stage, "next_actor": next_actor, "readable": True}
+    returned_at = None
+    if stage == "completed":  # when the pets came home: what the talk after the stay is measured from
+        done = _best_effort(lambda: db.table("booking_handoffs").select("kind, completed_at").eq("booking_id", booking["id"]).eq("kind", "pick_up").execute().data) or []
+        returned_at = next((h["completed_at"] for h in done if h.get("completed_at")), None)
+    return {"booking": booking, "stage": stage, "next_actor": next_actor, "readable": True, "returned_at": returned_at}
 
 
 def _actions(ctx: dict) -> list[str]:
@@ -325,9 +329,14 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     }
     if booking_state["readable"]:
         stay = logic.latest_stay(messages)
+        pet_names = [p["name"] for p in facts.get("pets", []) if p.get("name")]
+        phase = None
+        if booking_state["stage"] == "completed":
+            phase = chat_state.done_phase(messages, user.id, booking_state.get("returned_at"), pet_names)
+            ctx["done_phase"], ctx["pet_names"] = phase, pet_names
         base["progress"] = chat_state.progress(
             ctx["role"], messages, user.id, booking_state["booking"], booking_state["stage"], booking_state["next_actor"], _actions(ctx),
-            has_stay=bool(stay), priced=logic.is_priced(messages, stay),
+            has_stay=bool(stay), priced=logic.is_priced(messages, stay), done_phase=phase,
         )
     left = chat_state.topics(messages, user.id, facts, base.get("progress", {}).get("step", "decide"))
     if left:
@@ -379,6 +388,7 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
                 labels.append(label)
             else:
                 dropped.append(f"{_redact(label, ctx, facts)}: {', '.join(problems) or 'duplicate'}")
+        candidates = list(labels)  # everything usable the model gave, before the cut to three
         labels = labels[: logic.MAX_CHIPS]
         action = logic.chosen_action(out.action, out.confidence, available)
         kept = agent.keep_chips(labels, facts)
@@ -387,9 +397,9 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         react = logic.reaction_chips(ctx["role"], last_them) if not typed else []
         if react and len(labels) >= 2:
             labels = [*react, *(c for c in labels if c not in react)][: logic.MAX_CHIPS]
-        # The stay is over (the sitter pressed Returned): only warm closing lines, never new plans.
-        if not typed and base.get("progress", {}).get("step") == "done" and len(labels) >= 2:
-            labels = list(chat_state.CLOSING_CHIPS[ctx["role"]])
+        # The stay is over (the sitter pressed Returned): closing words, then a check-in, then the talk that follows (no new plans).
+        if not typed and base.get("progress", {}).get("step") == "done":
+            labels = chat_state.done_chips(ctx["role"], ctx["done_phase"], candidates, ctx["pet_names"])
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.warning("chat-chips: model failed (%s)", exc)
         reason = "model_failed"
@@ -427,6 +437,11 @@ def chat_draft(body: ChatDraftRequest, user: CurrentUser = Depends(get_current_u
     style = agent.style(db, ctx, chip, last_them)
     typed = scrub_typed(body.typed)
     payload = {**base, "chip": chip, "style_notes": style, **({"typing": typed} if typed else {})}
+    pet_names = [p["name"] for p in facts.get("pets", []) if p.get("name")]
+    if base.get("progress", {}).get("step") == "done" and chat_state.is_checkin(chip, pet_names):
+        # A check-in is a question to ask, not news to report (the model kept answering it itself).
+        who = "how the sitter has been" if ctx["role"] == "owner" else "how the owner and the pets have been"
+        payload["task"] = f"Ask {who} as one short, warm question. Do not answer it, do not report any news."
     messages = [{"role": "system", "content": agent.prompt("draft")}, {"role": "user", "content": json.dumps(payload)}]
     sitter_first = ctx["sitter_name"] if ctx["role"] == "sitter" else None
     previous = [m.get("body") or "" for m in ctx["messages"] if m.get("kind") == "text"][-logic.REPEAT_WINDOW :]

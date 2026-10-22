@@ -6,6 +6,7 @@ what is settled and picks what comes next. It never decides anything: a person s
 """
 
 import re
+from datetime import UTC, datetime
 
 from app.ai.chat import ACTIONS
 
@@ -89,20 +90,106 @@ GUIDE: dict[tuple[str, str], dict[str, str]] = {
         "avoid": "the drop-off, payment, thanking again and again",
     },
     ("care", "sitter"): {"talk_about": "how the pets are doing, a photo, the pick-up time near the end", "avoid": "booking steps, the drop-off, payment"},
-    ("done", "owner"): {
-        "talk_about": "thank the sitter for looking after the pets and say I will book again",
-        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
-    },
-    ("done", "sitter"): {
-        "talk_about": "thank them, say it was a pleasure having the pets and they are welcome back anytime",
-        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
-    },
     ("closed", "both"): {"talk_about": "a polite goodbye", "avoid": "booking steps"},
 }
+# After the stay (the sitter pressed Returned) the talk has three phases, told apart from what was typed since the return:
+#   closing:       nobody on my side has said the closing words yet (thanks for the stay, a pleasure, welcome back)
+#   after_closing: I closed; now a check-in (how have you been, how is Max) or a look back at the stay
+#   chat:          a check-in was made by either side; no more closings or check-ins, only the talk that follows (for the
+#                  sitter it leads to the next booking, so the owner remembers me)
+DONE_GUIDE: dict[tuple[str, str], dict[str, str]] = {
+    ("closing", "owner"): {
+        "talk_about": "thank the sitter for looking after the pets and say I will book again, or ask how they have been",
+        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
+    },
+    ("closing", "sitter"): {
+        "talk_about": "thank them, say it was a pleasure having the pets and they are welcome back, or ask how the pets are doing",
+        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
+    },
+    ("after_closing", "owner"): {
+        "talk_about": "ask how the sitter has been, share how the pets are doing, a memory of the stay or a photo",
+        "avoid": "thanking for the stay again, booking logistics",
+    },
+    ("after_closing", "sitter"): {
+        "talk_about": "ask how the pets and the owner have been, a happy memory of the stay (only from the facts), a gentle hint that I would love to host again",
+        "avoid": "thanking again, prices, dates",
+    },
+    ("chat", "owner"): {
+        "talk_about": "keep chatting: answer, share news about the pets, mention plans when it fits",
+        "avoid": "closing thanks, asking how they are again, quotes unless I have a trip",
+    },
+    ("chat", "sitter"): {
+        "talk_about": "keep chatting about the pets and the owner's news; when it fits ask about upcoming trips and say I would love to look after the pets again, so the owner remembers me",
+        "avoid": "closing thanks, asking how they are again, pushing prices or dates",
+    },
+}
 CLOSING_CHIPS = {"owner": ["Thanks for everything!", "I'll book again"], "sitter": ["It was a pleasure!", "Welcome back anytime!"]}
+# The fallback chips when a chat after the check-in has no good model chips.
+CHAT_FALLBACK_CHIPS = {"owner": ["Good to hear!", "We'll be in touch"], "sitter": ["Any trips coming up?", "Happy to help again"]}
+
+_CLOSING_WORDS = re.compile(r"\b(thank(?:s| you)|pleasure|welcome back|book (?:you )?again|grateful|loved having|had a great time)\b", re.IGNORECASE)
+_CHECKIN = re.compile(
+    r"\bhow (?:are|have) you\b|\bhow (?:have )?things\b|\bhow(?:'s| is| are) (?:everything|it going|things)\b|\bhope you(?:'re| are)\b"
+    r"|\bhow(?:'s| is| are| was| were| has| have) [^.?!]{0,30}\b(?:doing|been)\b",
+    re.IGNORECASE,
+)
 
 
-def guide(step: str, role: str) -> dict[str, str]:
+def _instant(value) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def is_checkin(text: str, pet_names: list[str]) -> bool:
+    """A "how have you been" or "how is Max doing" line."""
+    names = "|".join(re.escape(n) for n in pet_names if n)
+    return bool(_CHECKIN.search(text) or (names and re.search(rf"\bhow(?:'s| is| are| was| were) (?:{names}|he|she|they)\b", text, re.IGNORECASE)))
+
+
+def is_closing(text: str) -> bool:
+    return bool(_CLOSING_WORDS.search(text))
+
+
+def done_phase(messages: list[dict], me_id: str, returned_at: str | None, pet_names: list[str]) -> str:
+    """closing, after_closing or chat, from the texts written since the pets came home (all texts when that time is unknown)."""
+    since = _instant(returned_at) if returned_at else None
+    after = [
+        m for m in messages
+        if m.get("kind") == "text" and (since is None or ((at := _instant(m.get("created_at"))) is not None and at > since))
+    ]
+    if any(is_checkin(str(m.get("body") or ""), pet_names) for m in after):
+        return "chat"
+    if any(m.get("sender_id") == me_id and is_closing(str(m.get("body") or "")) for m in after):
+        return "after_closing"
+    return "closing"
+
+
+def checkin_chips(role: str, pet_names: list[str]) -> list[str]:
+    """The check-in chips (labels only; the draft words them). The sitter asks after the pets by name."""
+    if role == "owner":
+        return ["How have you been?"]
+    names = [n for n in pet_names if n][:2]
+    pets = (f"How is {names[0]} doing?" if len(names) == 1 else f"How are {names[0]} and {names[1]}?") if names else "How are the pets?"
+    return [pets if len(pets) <= 36 else "How are the pets?", "How have you been?"]
+
+
+def done_chips(role: str, phase: str, model_labels: list[str], pet_names: list[str]) -> list[str]:
+    """The chips after the stay. closing: the closing words and one check-in. after_closing: the check-in and a look back at
+    the stay (the model's). chat: the model's chips minus any closing or check-in, so it never closes or checks in twice."""
+    if phase == "closing":
+        return [*CLOSING_CHIPS[role], checkin_chips(role, pet_names)[0]]
+    free = [c for c in model_labels if not is_closing(c) and not is_checkin(c, pet_names)]
+    if phase == "after_closing":
+        return [*checkin_chips(role, pet_names), *free][:3]
+    return free[:3] if len(free) >= 2 else list(CHAT_FALLBACK_CHIPS[role])
+
+
+def guide(step: str, role: str, phase: str | None = None) -> dict[str, str]:
+    if step == "done":
+        return DONE_GUIDE[(phase or "closing", role)]
     return GUIDE.get((step, role)) or GUIDE.get((step, "both")) or {}
 
 
@@ -117,8 +204,9 @@ def progress(
     *,
     has_stay: bool,
     priced: bool,
+    done_phase: str | None = None,
 ) -> dict:
-    """`{step, step_label, turn, now, waiting_for, done, later}`. `turn` is who has to act next in the booking ("me",
+    """`{step, step_label, turn, now, waiting_for, done, later, guide}`. `turn` is who has to act next in the booking ("me",
     "them", "both" or "nobody"), `now` what I can do right now (first person, the same words as the chips' actions), `done`
     and `later` the steps either side of this one. A closed booking (declined or cancelled) is `{step: "closed"}`."""
     mine = any(m.get("kind") == "text" and m.get("sender_id") == me_id for m in messages)
@@ -156,7 +244,7 @@ def progress(
         now.append(_HANDOFF_NOW[role])
     elif step == "care":
         now.append(_CARE_NOW[role])
-    return {"step": step, "step_label": LABEL[step], "turn": turn, "now": now, "waiting_for": waiting, "done": done, "later": later, "guide": guide(step, role)}
+    return {"step": step, "step_label": LABEL[step], "turn": turn, "now": now, "waiting_for": waiting, "done": done, "later": later, "guide": guide(step, role, done_phase), **({"phase": done_phase or "closing"} if step == "done" else {})}
 
 
 # --- what is left to talk about --------------------------------------------------------------------------------------
