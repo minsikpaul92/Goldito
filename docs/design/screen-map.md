@@ -24,18 +24,18 @@ Shows: `AgreeSheet` · `ChatDeclineSheet` · `BookingStageBar` · `ChatAgreement
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load this chat | — | 233 |
-| EmptyState | Chat not found | — | 241 |
-| Pressable | — | `chat-stage` | 522 |
-| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 575 |
-| Button | Send quote | `chat-send-quote` | 582 |
-| TextButton | Send quote | `chat-send-quote` | 585 |
-| TextButton | Decline | `chat-decline` | 588 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 615 |
-| Pressable | — | `chat-action-chip` | 636 |
-| Pressable | — | ``chat-chip-${i + 1}`` | 647 |
-| Pressable | Send a card | `chat-plus` | 663 |
-| Pressable | Send | `chat-send` | 696 |
+| EmptyState | Couldn't load this chat | — | 237 |
+| EmptyState | Chat not found | — | 245 |
+| Pressable | — | `chat-stage` | 535 |
+| Button | `step.primary.label` | `step.primary.kind === "request" ? "chat-request-booking" : `chat-next-${step.primary.kind}`` | 588 |
+| Button | Send quote | `chat-send-quote` | 595 |
+| TextButton | Send quote | `chat-send-quote` | 598 |
+| TextButton | Decline | `chat-decline` | 601 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 628 |
+| Pressable | — | `chat-action-chip` | 649 |
+| Pressable | — | ``chat-chip-${i + 1}`` | 660 |
+| Pressable | Send a card | `chat-plus` | 676 |
+| Pressable | Send | `chat-send` | 709 |
 
 ### `/login` — [app/(auth)/login.tsx](../../frontend/app/(auth)/login.tsx)
 
@@ -731,8 +731,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | Send a card | `chat-plus-menu` | 25 |
-| Pressable | — | ``chat-plus-${item.id}`` | 28 |
+| Sheet | Send a card | `chat-plus-menu` | 27 |
+| Pressable | — | ``chat-plus-${item.id}`` | 30 |
 
 ### ChatQuoteCard — [components/ChatQuoteCard.tsx](../../frontend/components/ChatQuoteCard.tsx)
 
@@ -752,17 +752,17 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | Returned | `chat-returned` | 92 |
-| Button | Received | `chat-received` | 123 |
+| Button | Returned | `chat-returned` | 89 |
 
 ### ChatTripCard — [components/ChatTripCard.tsx](../../frontend/components/ChatTripCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Button | `greeting` | `trip-greet` | 109 |
-| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 133 |
-| Button | Received | `chat-received` | 135 |
-| Button | Start trip | `chat-trip-start-button` | 162 |
+| Pressable | ``Send: ${greeting}`` | `trip-greet` | 134 |
+| Button | Received | `chat-received` | 146 |
+| Button | mine ? "Open trip" : `Track ${traveler}` | `chat-trip-open` | 171 |
+| Button | I've arrived | `chat-trip-arrive` | 178 |
+| Button | Start trip | `chat-trip-start-button` | 214 |
 
 ### ChecklistCard — [components/ChecklistCard.tsx](../../frontend/components/ChecklistCard.tsx)
 
