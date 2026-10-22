@@ -161,6 +161,20 @@ Target met (p50 < 10 s, max < 60 s). The model is most of it; the database is a 
 - **Repeats stay high everywhere** (7 to 15 tags per chat): both sides keep tapping the same chips (confirm pickup, send photo), and each draft is new text, so neither the rule check nor the judge sees a repeat. A person who types breaks that loop; not fixed here.
 - **Lightning chips** wrote fewer fallbacks than Nano chips but the run had the most invented details; no reason to switch yet. `MODEL_CHAT_CHIPS` stays blank (Nano).
 
+### 50 messages and speed (2026-10-22)
+
+Same script with `--turns 50`; past 40 messages it keeps the app's rolling summary. First judge version: it also read the rewrite, so two rejects fell back to the chip's bare words (9 fallbacks, 9 fragments, no better than Super alone). Fixed: the judge reads the first draft only and its reasons buy one rewrite; only the rule checks can fall back.
+
+| Setting (50 messages) | Score | Draft fallback | Fragments | Repeat tags | Runs |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| before: Nano, no judge | 2 | 15 | 15 | 26 | 1 |
+| Super, no judge | 3 | 5 | 3 | 11 | 1 |
+| Super + judge, first version | 3 | 9 | 9 | 29 | 1 |
+| Super + judge, fixed | 3, 3 | 1, 0 | 1, 0 | 22, 46 | 2 |
+
+- Every setting loops after about 20 messages (the same pickup time, pill and photo confirmations), because both sides only tap chips. Super holds the chat together better than Nano, the judge does not stop the loop. A person who types would break it; a simulation with a typing person is not built.
+- **Seconds per turn** (median / worst, 50 message runs): chips (Nano) 1.5 / 3.5, draft with rewrites 1.1 to 1.7 / 2.6 to 4.6 (Super is as fast as Nano: 1.66 vs 1.72 s without the judge), judge 0.38 / 1.25. What a person waits for after tapping a chip is the draft plus the judge, about 1.5 s median.
+
 ## Open questions (Phase 07.1 / 08 spike)
 
 - [x] NVIDIA vision models (Nemotron-Nano-V2-12b, Cosmos3-Super-Reasoner, Nemotron-3-Nano-Omni): Dedicated Endpoint only, not callable on the shared API → MiniCPM-V stays (2026-10-02)
