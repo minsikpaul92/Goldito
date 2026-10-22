@@ -136,7 +136,8 @@ def _is_sensitive(facts: dict) -> bool:
 
 
 # id, label the model reads, what a message must say to cover it, whether it matters for these pets, and the last step it is
-# still worth raising in. Safety first.
+# still worth raising in. Safety first. Only subjects the facts can answer: the app knows no vet, so there is no vet topic
+# (the model made up clinics for it).
 TOPICS = (
     ("allergies", "food allergies", r"allerg", lambda f: True, "handoff"),
     ("medication", "medication", r"\b(pills?|medic\w*|doses?|tablets?|apoquel)\b", _has_medication, "handoff"),
@@ -145,7 +146,6 @@ TOPICS = (
     ("litter", "the litter box", r"\blitter\b", lambda f: any(p.get("species") == "cat" for p in _pets(f)), "handoff"),
     ("stress", "what stresses them", r"\b(noises?|nervous|anxious|scared|stress\w*|thunder|fireworks)\b", _is_sensitive, "handoff"),
     ("updates", "photo updates", r"\b(photos?|pics?|pictures?|updates?)\b", lambda f: True, "care"),
-    ("emergency", "the vet and emergencies", r"\b(vets?|emergenc\w*|clinic)\b", lambda f: True, "handoff"),
     ("drop_off", "the drop-off", r"\bdrop[- ]?off\b", lambda f: True, "handoff"),
     ("pick_up", "the pick-up", r"\bpick[- ]?up\b", lambda f: True, "care"),
 )
