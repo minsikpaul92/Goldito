@@ -25,6 +25,8 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
   const secondary = variant === "secondary";
   const danger = variant === "danger";
 
+  const labelStyle = [styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, disabled && styles.disabledLabel];
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,10 +44,15 @@ export function Button({ label, onPress, disabled, variant = "primary", size = "
         style,
       ]}
     >
-      <View style={styles.row}>
-        {loading ? <ActivityIndicator size="small" color={secondary ? theme.color.primary : theme.color.primaryText} /> : null}
-        <Text style={[styles.label, size === "large" && styles.largeLabel, secondary && styles.secondaryLabel, disabled && styles.disabledLabel]}>{label}</Text>
-      </View>
+      {loading ? (
+        <View style={styles.row}>
+          <ActivityIndicator size="small" color={secondary ? theme.color.primary : theme.color.primaryText} />
+          <Text style={labelStyle}>{label}</Text>
+        </View>
+      ) : (
+        // The label stays the button's direct child when idle (layout and tests rely on it).
+        <Text style={labelStyle}>{label}</Text>
+      )}
     </Pressable>
   );
 }
