@@ -1,6 +1,6 @@
 # Phase 03B — 시터 스케줄 · 서비스·이동 방식 · 예약 · Meet & Greet · 인수인계 (Bookings)
 
-> **상태 (2026-10-10):** 완료 (2026-10-02; 3B.11 Google Meet는 서버만 끝나고 앱 e2e는 대기). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-02; 3B.11 Google Meet는 서버만 끝나고 앱 e2e는 대기). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D24, **D28 서비스·이동 방식**, 라우트 맵 §3, 알림 §7
 > 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2 (Meet & Greet · 이동 방식) · Stage 3 (예약). 문의 AI(Stage 1)는 [07B](phase-07b-inquiry.md), 견적·동의서·결제·보안 해제는 [03C](phase-03c-payment.md), 실시간 이동은 [06B](phase-06b-transit.md)
@@ -120,7 +120,7 @@
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
 | ID | 내용 | 담당 |
 | :--- | :--- | :--- |

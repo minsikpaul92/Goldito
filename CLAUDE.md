@@ -1,4 +1,4 @@
-> **Before starting any work, update `main` first:** `git checkout main && git pull origin main`. Only then read the TODO, create the phase branch (from that updated `main`, §4.1) and begin.
+> **Before starting any work, update `main` first:** `git checkout main && git pull origin main`. Only then read the assigned GitHub issue, create the phase branch (from that updated `main`, §4.1) and begin.
 
 # CLAUDE.md — Goldito agent instructions
 
@@ -46,7 +46,7 @@ Every feature must pass:
 - **Feature status + test scenarios:** `docs/plan/test-guide.ko.md`
 - **Product flow (5 stages, demo path):** `docs/plan/full-process.ko.md`
 - Plan & data model: `docs/plan/README.ko.md`
-- **Active task queue:** `docs/plan/TODO.md` ← update every session
+- **Active task queue:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues): milestone = priority (P0 hackathon, P1, P2 after hackathon), assignee = owner. There is no TODO file.
 - **Blueprint (decisions, repo layout, routes, env, API contract):** `docs/plan/phases/architecture.ko.md`
 - **Design guide (tokens, components, UI patterns):** `DESIGN.md` — §0 maps Muk's Figma (source of truth) to the code; every screen and button: `docs/design/screen-map.md` (generated)
 - Phase goals & DoD: `docs/plan/phases/` (see `README.ko.md` index)
@@ -109,20 +109,20 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 
 ## 4. How work progresses (mandatory loop)
 
-**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update TODO. **One PR per bundle of work** (a phase, or everything one person does in one stretch on one track, such as several issues of the booking chat) — it stays the same PR until the bundle is done; never one PR per task, per issue or per step, and never a stack of PRs on each other. Every PR costs a full CI wait, so fewer and bigger is the rule.
+**Never jump ahead of the queue.** One task → implement in **steps** → verify → commit each step on the phase branch → update the issue. **One PR per bundle of work** (a phase, or everything one person does in one stretch on one track, such as several issues of the booking chat) — it stays the same PR until the bundle is done; never one PR per task, per issue or per step, and never a stack of PRs on each other. Every PR costs a full CI wait, so fewer and bigger is the rule.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ 1. Read docs/plan/TODO.md → "Current focus" (one item)        │
+│ 1. Read the assigned GitHub issue (one item)                  │
 │ 2. Read matching docs/plan/phases/phase-XX.md (Goal+DoD)      │
 │ 3. Git: on the phase branch (create it from latest main at    │
 │    the phase's first task — see §4.1)                         │
 │ 4. Implement ONLY that task (minimal diff)                    │
 │ 5. Verify DoD (commands, manual steps)                        │
 │ 6. Commit (one commit per STEP, §4.1a) → push                 │
-│ 7. Update TODO.md + test-guide in the step's commit (§5)      │
+│ 7. Update test-guide in the step's commit (§5)                │
 │ 8. More steps in this phase? → back to 4, same branch, same PR│
-│    Phase / chunk done? → tidy TODO, update the PR (§4.2)      │
+│    Phase / chunk done? → update the PR body (§4.2)            │
 │ 9. Report to user: commits + next step (PR link at end)       │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -145,7 +145,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 
 - A **step** is one coherent, verifiable slice of a task that could be reviewed alone, in the order the work depends on itself — typically *database* → *backend* → *app* → *tests / e2e* → *docs*, or one numbered task of the phase doc (e.g. `6B.1`). A step never mixes tasks of different IDs.
 - **One commit per step**, made when that step's checks pass (typecheck, the tests that touch it, `ruff` / smoke for backend / SQL), then pushed. No "wip" commits, no squashing steps together afterwards, no step left uncommitted at the end of a session.
-- Each commit updates `docs/plan/TODO.md` and `docs/plan/test-guide.ko.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
+- Each commit updates `docs/plan/test-guide.ko.md` for what *that step* changed (§5); the closing commit of the phase does the final tidy.
 - A step that needs a person (a photo, a key, a hosted-DB apply) is committed as far as it can go, and the phase doc's "Before you start" list says what the person does.
 
 ### 4.2 Pull request (per phase)
@@ -153,7 +153,7 @@ Build the app minimal. A screen should be understandable at a glance, without ex
 - Open the phase PR **after the first step's commit, as ready for review** (`gh pr create`, no `--draft`) unless there is a reason to keep it a draft (work that cannot be reviewed yet, a human step it is blocked on) — then say why in the PR body. CI runs on every push to it. Keep the PR body's step table up to date after each step; **keep pushing to this same PR** for every later step.
 - **PR title:** same style as commit message (see §4.3), e.g. `feat: phase 03 auth, roles, and pet profiles`. Describe *what* and *why* for reviewers (Minsik / Seulgi / Muk).
 - **PR body:** Summary bullets / task table, test plan checklist, link to phase doc.
-- **TODO tidy on every PR (required):** before opening a PR, and again before marking it ready, re-read `docs/plan/TODO.md` and tidy it in that PR — delete lines the PR finished, fix anything it made stale (statuses, migration letters, hosted-DB notes, "Current focus"), move new findings to the right section (P0 path vs Later), and archive documents it closed (§5.1). A PR that leaves TODO.md out of date is not ready.
+- **Issues on every PR (required):** the PR body says `Closes #N` (or `Refs #N`) for each issue it finishes. New findings become new issues with a milestone and an assignee, not lines in a file. Documents the PR closed are archived (§5.1).
 - Before the phase is done, report after each step with: the commit, how it was verified, and the next step. When the phase DoD passes, update the PR title / body for the whole phase and tell the user it is complete.
 - **Do not merge** unless the user explicitly asks (squash merge, delete branch). A migration that has to reach the hosted DB is applied only when the user asks, at the merge of its PR.
 
@@ -179,7 +179,7 @@ English only for commit messages and GitHub PR content.
 ### Phase order
 
 `00 prep → 01 repo → 02 db → 03 auth → 03B booking → 03C payment → 04 upload → 05 feed → 06 checks → 07 report → 07B inquiry → 09 caption → 07C completion → 06B transit → 12 Snap (treat check = the 08 design, mood, stickers; D61) → 10 deploy → 11 P1` — 06B is the last scenario phase, right after 07C; 12 runs 10/14–10/22, before the rest of 10 and the 11.15 onboarding (D61). Dates in `docs/plan/phases/README.ko.md`.  
-After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and TODO must list **one** "Current focus" per agent session. Since 2026-10-09 TODO has **one Current focus row per person** (Minsik, Seulgi); an agent works only on its person's row. Seulgi's Phase Q runs in parallel (migration names: next free name, `supabase/README.md` § Naming).
+After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-plan → 7.2/7.4 report → 9.1 caption → 7C.4 life-record → 6B.5 photo-check — Seulgi's before 2026-10-04, now Minsik's) is interleaved with the app queue, and each agent session works on **one** assigned issue. An agent works only on issues assigned to its person (Minsik, Seulgi, Muk, JeonBeomGu-S). Seulgi's Phase Q runs in parallel (migration names: next free name, `supabase/README.md` § Naming).
 
 ### Coding discipline
 
@@ -190,40 +190,39 @@ After **07.1** (Nebius client), the AI backend track (07B inquiry → 6.12 care-
 
 ---
 
-## 5. TODO list ritual (required after every task)
+## 5. Issue ritual (required after every task)
 
-**File:** `docs/plan/TODO.md`
+**Where:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues). Before creating one, read `~/.claude/github-issue-template.md`; issues are written in English.
 
 When a task is **done** (DoD met):
 
-1. **Delete** its line from **Current focus** / the queue (TODO lists only open work). The record of finished work is the commit, the PR and `test-guide.ko.md`; closed docs move to `docs/archive/` (frozen — read only when asked, never a source of truth).
-2. Set **Current focus** to exactly **one** next task ID (e.g. `1.2 FastAPI health`).
-3. If the whole phase is done, update its row in the TODO **Phase status** table and set focus to the first task of phase N+1.
-4. If you discovered new work, add it with a short ID to **P0 demo path** (only if it blocks the demo or makes the app say something untrue) or to **Later** — do not silently expand scope in the same task.
-5. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3 — new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
+1. The PR body closes the issue (`Closes #N`). The record of finished work is the commit, the PR and `test-guide.ko.md`; closed docs move to `docs/archive/` (frozen, read only when asked, never a source of truth).
+2. If the whole phase is done, update its row in `docs/plan/phases/README.ko.md` (status column).
+3. If you discovered new work, open an issue with a milestone (P0 hackathon only if it blocks the demo or makes the app say something untrue; otherwise P1 or P2 after hackathon) and an assignee. Do not silently expand scope in the same task.
+4. Update [`docs/plan/test-guide.ko.md`](docs/plan/test-guide.ko.md) **in the same commit**: the feature's row in the status table (§2) and its scenarios (§3: new ID, expected result, which Playwright spec or SQL smoke covers it, what stays manual). Add new limits to §4. Never mark a scenario ✅ unless a person actually ran it (date + name).
 
-If TODO.md and phase docs disagree, **phase Goal/DoD wins**; fix TODO to match.
+If an issue and a phase doc disagree, **phase Goal/DoD wins**; fix the issue to match.
 
 ### 5.1 Docs hygiene — open work in the queue, finished work in the archive
 
 - **One question, one document.** If two docs answer the same question, merge them and delete one — do not archive a duplicate.
-- **TODO.md lists only open work.** No "Completed" section. Finished work is recorded by the commit, the PR and `test-guide.ko.md`; never add finished items to an archive file.
-- **`docs/archive/` is for whole documents that are closed** (every item in a `feedback-*` / `review-*` / `status-*` file is done or moved to TODO). Move them with `git mv` — do not delete — and add a first line: `Frozen record — not the plan. The queue is docs/plan/TODO.md.` `docs/archive/todo-completed-2026-10.md` is the lookup for everything finished before 2026-10-10.
+- **Open work lives in GitHub issues.** Finished work is recorded by the commit, the PR and `test-guide.ko.md`; never add finished items to an archive file.
+- **`docs/archive/` is for whole documents that are closed** (every item in a `feedback-*` / `review-*` / `status-*` file is done or moved to an issue). Move them with `git mv` — do not delete — and add a first line: `Frozen record — not the plan. The queue is GitHub issues.` `docs/archive/todo-completed-2026-10.md` is the lookup for everything finished before 2026-10-10.
 - **Archive = read only when asked** ("did we do X?"). Never use it as a source of truth, never edit it, never follow a plan or decision from it without checking the current docs.
 - When you archive or merge a doc, fix the links that pointed to it in the same commit (`grep -rn <filename> .`).
-- **Weekly sweep** (Mon · Thu sync): TODO has only open items, "Current focus" is real, closed feedback / review docs are archived.
+- **Weekly sweep** (Mon · Thu sync): every open issue has a milestone and an assignee, closed feedback / review docs are archived.
 
 ---
 
 ## 6. Task prompt template (copy for each session)
 
 ```text
-Read CLAUDE.md and docs/plan/TODO.md.
-Work ONLY on the "Current focus" task.
+Read CLAUDE.md and the assigned GitHub issue (gh issue view <N>).
+Work ONLY on that issue.
 Read the linked docs/plan/phases/phase-XX.md for Goal and DoD.
 Work on the phase branch (CLAUDE.md §4.1 — create it from main at the phase's first task; no claude/cursor/ai prefixes).
-Work in steps (§4.1a): when a step's checks pass, update TODO.md + test-guide (§5), make ONE commit (§4.3), push. The first push opens the phase PR (ready for review, §4.2); every later step goes into the same PR.
-Before opening the PR and again when the phase is done: tidy TODO.md (§4.2, §5.1). Report after each step: the commit, how it was verified, and the next step.
+Work in steps (§4.1a): when a step's checks pass, update test-guide (§5), make ONE commit (§4.3), push. The first push opens the phase PR (ready for review, §4.2); every later step goes into the same PR.
+Before opening the PR and again when the phase is done: update the PR body and `Closes #N` (§4.2, §5). Report after each step: the commit, how it was verified, and the next step.
 ```
 
 Detailed Nebius/OpenAI-style header: `docs/plan/P0-ai-prompt-playbook.ko.md` §1.
@@ -280,4 +279,4 @@ Model IDs and regions: `docs/plan/phases/notes/model-ids.md` (source of truth; c
 
 ---
 
-*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61** both roles Home · Bookings · Feed · Diary · Snap. If you change process, update this file and `docs/plan/TODO.md` together.*
+*Last aligned with repo docs: phases 00–12 (incl. 03C · 06B · 07B · 07C · 12 Snap), full-process.ko.md, P0 playbook, **D47 / D47b · D61** both roles Home · Bookings · Feed · Diary · Snap. If you change process, update this file together with the docs it names.*

@@ -258,17 +258,17 @@ Snap 탭
 ### 새 세션에서 붙여 넣을 프롬프트
 
 ```text
-Read CLAUDE.md, docs/plan/TODO.md and docs/plan/phases/phase-12-snap.md (§ 다음에 이어서).
+Read CLAUDE.md, the assigned GitHub issue and docs/plan/phases/phase-12-snap.md (§ 다음에 이어서).
 Branch feat/phase-12-snap, PR #90. Continue from the first unfinished item there:
 the 12.1 real-model check if keys are in backend/.env, otherwise 12.S2 (the MediaPipe spike).
-One commit per step with TODO.md + test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
+One commit per step with test-guide.ko.md updated (CLAUDE.md §4.1a), push to the same PR.
 ```
 
 ---
 
 ## Open items — 리뷰 2026-10-15 (#90 · #91)
 
-상세(현상 → 원인 → 수정 → 테스트)는 [review-2026-10-15.ko.md](../review-2026-10-15.ko.md), 순서 · 담당은 [TODO.md](../TODO.md).
+상세(현상 → 원인 → 수정 → 테스트)는 [review-2026-10-15.ko.md](../review-2026-10-15.ko.md), 순서 · 담당은 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
 
 - **P0:** SR-1 – SR-4 고침 (PR `fix/snap-review-p0`).
 - **Later:** SR-5 – SR-21 (꾸미기 저장이 기존 스티커를 지움 · Mood 클립 펫 짝짓기 · 시터 꾸미기 기간 · Add pet 뒤 새로고침 · 그 밖의 낮음).

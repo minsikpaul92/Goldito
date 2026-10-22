@@ -31,7 +31,7 @@
 3. 업로드 · AI · 데모 리셋은 Render에 배포된 백엔드로 Vercel에서 다 됩니다 (U0, 2026-10-09). 무료 플랜이라 **15분 동안 아무도 안 쓰면 잠들고, 첫 요청이 30~50초** 걸립니다 — 고장이 아닙니다.
 4. 상태 되돌리기: 앱의 Profile → **Demo tools**(테스트 기간에만 켜 둠) → `empty` · `pets` · `confirmed` · `ready` · `in_care` 중 선택. (`011i`가 호스팅 DB에 적용되기 전에는 `in_care` 직후 3분 동안 체크인이 막힙니다 — CW-1.)
 5. **코드를 고칠 때만(Q.2부터) 로컬 환경:** 저장소 받기 → `main`에서 작은 브랜치(아래 §3). `backend/.env`, `frontend/.env`는 **민식에게 따로(메신저 · 비밀번호 관리자) 받는다** — 절대 커밋 · 채팅 공개 금지, 형식은 각 `.env.example`. 백엔드 `cd backend && python -m venv .venv && .venv/bin/pip install -r requirements.txt ruff` (Windows는 `.venv\Scripts\python`) → `uvicorn app.main:app --port 8000`, 프론트 `cd frontend && npm ci && npx expo start --web --port 8081` → `http://localhost:8081`. 로컬은 고치는 중 확인용이고, PR이 머지된 뒤 Vercel에서 다시 확인해 기록합니다.
-6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, docs/plan/TODO.md (Seulgi's Current focus), docs/plan/phases/phase-q-quality.md. Work only on that task."*
+6. 코딩 에이전트(Claude Code · Cursor)를 쓰면 시작할 때 항상: *"Read CLAUDE.md, the assigned GitHub issue, docs/plan/phases/phase-q-quality.md. Work only on that task."*
 
 ---
 
@@ -51,7 +51,7 @@
 
 ---
 
-## 1. 작업 목록 (순서대로 — TODO의 "Current focus (Seulgi)"에 하나씩)
+## 1. 작업 목록 (순서대로 — GitHub 이슈 #99 ~ #110에 하나씩)
 
 | # | 작업 | 출력물 | 완료 기준 | 예상 |
 | :--- | :--- | :--- | :--- | :--- |
@@ -91,6 +91,6 @@
 2. **민식이 바꾸는 중인 파일은 건드리지 않는다** (work-split §4 표). 프롬프트 파일(`backend/app/ai/prompts/**`)은 언제든 가능.
 3. **마이그레이션:** 사람별 글자 범위 없음 (2026-10-13, CR-6) — `main`과 열린 PR에서 가장 뒤 이름의 다음 빈 이름을 쓴다([supabase/README.md](../../../supabase/README.md) § Naming). 이미 적용된 파일은 절대 수정하지 않는다. 새 RPC는 `security definer` + `set search_path = public` + `auth.uid()` 검사 + `revoke … from public, anon`, `supabase/tests/rls_smoke.sql`에 체크 추가.
 4. **테스트:** 백엔드 `pytest -q` + `ruff check .`, 프론트 `npx tsc --noEmit` + 해당 Playwright spec. CI가 초록이어야 PR ready.
-5. **매 작업 끝 (CLAUDE.md §5):** TODO의 내 Current focus 줄 삭제(완료 기록은 커밋 · PR · test-guide), 다음 Q 항목을 Current focus로, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
+5. **매 작업 끝 (CLAUDE.md §5):** PR 본문에 `Closes #N`(완료 기록은 커밋 · PR · test-guide), 다음 Q 이슈로 넘어가고, test-guide 갱신. **✅는 사람이 실제로 해 본 것만.**
 6. **데이터:** 원본은 리포 · 프롬프트 · 영상 · 스크린샷에 넣지 않는다. 익명화 샘플만 커밋. 실제 사람 · 장소 이름이 보이면 바로 멈추고 민식에게.
 7. **급한 문제를 찾으면:** 데모 경로가 막히거나 틀린 약속을 하는 것 → FB에 "급함"으로 적고 민식에게 바로 알린다(민식 큐로 감).

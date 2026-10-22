@@ -4,7 +4,7 @@ Puts the caller's own demo account (an owner or a sitter) back into one of a few
 sheet, so a manual test can start from "before any booking" without a terminal. It deletes
 data, so it is off unless `DEMO_RESET_ENABLED=1` (answers 404 as if it did not exist) and only
 the demo accounts may call it, each resetting only itself. Remove it before judging: unset the variable, then delete
-this file, `app/services/demo_reset.py` and the Demo tools sheet (docs/plan/TODO.md, "Demo reset").
+this file, `app/services/demo_reset.py` and the Demo tools sheet (GitHub issue #306, fixed demo accounts).
 """
 
 import logging
