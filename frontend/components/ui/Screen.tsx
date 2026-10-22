@@ -2,7 +2,7 @@ import { ReactNode, forwardRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
 type Props = {
@@ -17,7 +17,11 @@ type Props = {
 
 export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, contentStyle, scrollbar, footer, testID }, ref) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const [footerHeight, setFooterHeight] = useState(0);
+  // Content fades out behind the floating button instead of ending on a hard box edge.
+  const gradient = `linear-gradient(to bottom, transparent, ${theme.color.background} 70%)`;
+  const fadeStyle = (Platform.OS === "web" ? { backgroundImage: gradient } : { experimental_backgroundImage: gradient }) as ViewStyle;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -32,6 +36,7 @@ export const Screen = forwardRef<ScrollView, Props>(function Screen({ children, 
       </ScrollView>
       {footer ? (
         <View style={styles.footerWrap} pointerEvents="box-none">
+          <View style={[styles.fade, fadeStyle]} pointerEvents="none" />
           <View style={styles.footer} onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}>
             {footer}
           </View>
@@ -56,6 +61,13 @@ const makeStyles = (theme: Theme) =>
     },
     footerWrap: {
       position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    fade: {
+      position: "absolute",
+      top: 0,
       left: 0,
       right: 0,
       bottom: 0,
