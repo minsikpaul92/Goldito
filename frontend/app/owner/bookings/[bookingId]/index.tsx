@@ -221,7 +221,11 @@ export default function OwnerBookingDetail() {
               <Tag key={b.label} label={b.label} tone={b.tone} />
             ))}
             <Chip label={SERVICE_LABEL[booking.serviceType]} />
-            {booking.paidAt ? <Tag label="Paid" tone="success" testID="paid-chip" /> : null}
+            {booking.refundedAt ? (
+              <Tag label="Refunded" tone="neutral" testID="refunded-chip" />
+            ) : booking.paidAt ? (
+              <Tag label="Paid" tone="success" testID="paid-chip" />
+            ) : null}
           </View>
           <Text style={styles.body}>{booking.pets.map((p) => `${SPECIES_EMOJI[p.species]} ${p.name}`).join("  ")}</Text>
         </Card>
@@ -401,7 +405,7 @@ export default function OwnerBookingDetail() {
                 await cancelBooking(booking.id, reason || "Owner cancelled");
                 // A video Meet & Greet's Calendar event goes with the booking (3B.11).
                 await releaseVideoLink(booking.id);
-              }, "Booking cancelled");
+              }, booking.paidAt ? "Cancelled. Refunded in full" : "Booking cancelled");
             }}
             testID="cancel-confirm"
           />

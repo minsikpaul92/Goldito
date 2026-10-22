@@ -54,10 +54,13 @@ export default function OwnerBookings() {
 
   useOnBookingChange(() => void load());
 
+  const { refreshFavorites } = search;
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load]),
+      // A heart toggled on a sitter's page shows here at once (#267).
+      refreshFavorites();
+    }, [load, refreshFavorites]),
   );
 
   const found: NearbySitter[] = search.results.status === "ready" ? search.results.sitters : [];
@@ -186,7 +189,9 @@ export default function OwnerBookings() {
             <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
           </View>
         ) : null}
-        {state.bookings.length === 0 ? <Text style={styles.hint}>No bookings yet</Text> : null}
+        {state.bookings.length === 0 ? (
+          <EmptyState emoji="🗓️" title="No bookings yet" message="Your stays show up here once a sitter says yes." />
+        ) : null}
         {state.bookings.length > 0 ? (
           <View style={styles.section}>
             <Text accessibilityRole="header" style={styles.heading}>

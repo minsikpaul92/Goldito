@@ -16,6 +16,8 @@ export type Pet = {
   birthdate: string | null;
   weight_kg: number | null;
   notes: string | null;
+  /** The owner's answers (014v); only `coat` is read here, to color the pet room sprite. */
+  profile?: { coat?: unknown; pixel_colors?: unknown; hat?: unknown } | null;
   created_at: string;
   pet_allergies: PetAllergy[];
 };
@@ -57,7 +59,7 @@ export type SitterProfile = {
 
 export type CareTaskType = "medication" | "walk" | "feeding" | "litter" | "play" | "sleep";
 
-export type CareCheckinKind = "meal" | "potty" | "walk" | "mood" | "note";
+export type CareCheckinKind = "meal" | "potty" | "walk" | "mood" | "note" | "nap" | "wake";
 
 /** One repeating task the owner asks the sitter to do (care_tasks, phase-06). */
 export type CareTaskRow = {

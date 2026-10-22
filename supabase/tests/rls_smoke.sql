@@ -2039,6 +2039,39 @@ begin
   exception when others then v_err := sqlerrm;
   end;
   perform _t_ok(v_err = 'checkin_not_allowed_for_species', '6.9: no walk check-in for a cat');
+  -- 11.12 (015): nap
+  perform log_care_checkin(max, 'nap');
+  begin
+    perform log_care_checkin(max, 'nap', 'long');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '11.12: a nap takes no value');
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = max and kind = 'nap' and value is null and created_by = chloe) = 1
+    and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+         where n.user_id = robert and n.type = 'care_checkin' and c.kind = 'nap'
+           and n.title like 'Max is taking a nap%') = 1,
+    '11.12: a nap check-in has no value and tells the owner "Max is taking a nap 💤"');
+  -- 11.12b (015d): wake
+  perform _t_as(chloe);
+  perform log_care_checkin(max, 'wake');
+  begin
+    perform log_care_checkin(max, 'wake', 'now');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '11.12b: a wake takes no value');
+  perform _t_as(null);
+  perform _t_ok(
+    (select count(*) from public.care_checkins where pet_id = max and kind = 'wake' and value is null and created_by = chloe) = 1
+    and (select count(*) from public.notifications n join public.care_checkins c on c.id = n.ref_id
+         where n.user_id = robert and n.type = 'care_checkin' and c.kind = 'wake'
+           and n.title like 'Max woke up%') = 1,
+    '11.12b: a wake check-in has no value and tells the owner "Max woke up ☀️"');
+  perform _t_as(chloe);
+  perform _t_as(chloe);
   begin
     perform log_care_checkin(max, 'meal', 'all', null, _t_get('media_bori'));
     v_err := null;
@@ -6682,6 +6715,155 @@ begin
     v_err := null;
   exception when others then v_err := sqlerrm; end;
   perform _t_ok(v_err like 'Demo accounts cannot change%', '014z: closing the window locks it again');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 015c (#266): cancelling a paid booking refunds it in full, whoever cancels
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_pet uuid;
+  v_pet2 uuid;
+  v_pet3 uuid;
+  v_pet4 uuid;
+  v_owner_cancel uuid;
+  v_sitter_cancel uuid;
+  v_unpaid uuid;
+  v_started uuid;
+  v_err text;
+  v_paid timestamptz := now() - interval '1 day';
+  v_snapshot jsonb := '{"total": 210.00, "currency": "CAD"}';
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Waffle') returning id into v_pet;
+  insert into public.pets (owner_id, species, name) values (joy, 'dog', 'Noodle') returning id into v_pet2;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Olive') returning id into v_pet3;
+  insert into public.pets (owner_id, species, name) values (joy, 'cat', 'Pickle') returning id into v_pet4;
+  v_owner_cancel := _t_booking(joy, paul, array[v_pet], now() + interval '400 days', now() + interval '402 days', 'confirmed');
+  v_sitter_cancel := _t_booking(joy, paul, array[v_pet2], now() + interval '410 days', now() + interval '412 days', 'confirmed');
+  v_unpaid := _t_booking(joy, paul, array[v_pet3], now() + interval '420 days', now() + interval '422 days', 'confirmed');
+  v_started := _t_booking(joy, paul, array[v_pet4], now() - interval '1 hour', now() + interval '2 days', 'confirmed', true);
+  update public.bookings set paid_at = v_paid, price_snapshot = v_snapshot
+  where id in (v_owner_cancel, v_sitter_cancel, v_started);
+
+  -- The owner cancels a paid booking.
+  perform _t_as(joy);
+  perform cancel_booking(v_owner_cancel, 'Plans changed');
+  perform _t_as(null);
+  perform _t_ok((select status = 'cancelled' and refunded_at is not null and paid_at = v_paid
+      from public.bookings where id = v_owner_cancel),
+    '015c: the owner cancels a paid booking: refunded, the payment stays on record');
+  perform _t_ok(exists (select 1 from public.notifications where user_id = joy and type = 'booking_refunded'
+      and booking_id = v_owner_cancel and title = 'Refunded in full' and body = '$210.00 CAD back for Waffle (demo)'),
+    '015c: …and the owner is told "Refunded in full" with the amount');
+
+  -- The sitter cancels a paid booking: the owner is refunded too.
+  perform _t_as(paul);
+  perform cancel_booking(v_sitter_cancel, 'Sitter cancelled');
+  perform _t_as(null);
+  perform _t_ok((select refunded_at is not null from public.bookings where id = v_sitter_cancel)
+      and exists (select 1 from public.notifications where user_id = joy and type = 'booking_refunded' and booking_id = v_sitter_cancel),
+    '015c: the sitter cancels a paid booking: the owner is refunded and told');
+  perform _t_ok(not exists (select 1 from public.notifications where user_id = paul and type = 'booking_refunded'),
+    '015c: …the sitter gets no refund notice');
+
+  -- Nothing paid, nothing refunded.
+  perform _t_as(joy);
+  perform cancel_booking(v_unpaid, null);
+  perform _t_as(null);
+  perform _t_ok((select refunded_at is null from public.bookings where id = v_unpaid)
+      and not exists (select 1 from public.notifications where type = 'booking_refunded' and booking_id = v_unpaid),
+    '015c: an unpaid booking is cancelled with no refund');
+
+  -- A stay in progress still cannot be cancelled, so it is never refunded.
+  perform _t_as(joy);
+  begin
+    perform cancel_booking(v_started, null);
+    v_err := null;
+  exception when others then v_err := sqlerrm;
+  end;
+  perform _t_as(null);
+  perform _t_ok(v_err = 'booking_in_progress' and (select refunded_at is null and status = 'confirmed' from public.bookings where id = v_started),
+    '015c: a stay in progress cannot be cancelled or refunded');
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- 015b (11.12, #184): pet medals
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  robert constant uuid := '00000000-0000-4000-8000-0000000000a1';
+  joy constant uuid := '00000000-0000-4000-8000-0000000000a2';
+  chloe constant uuid := '00000000-0000-4000-8000-0000000000b1';
+  paul constant uuid := '00000000-0000-4000-8000-0000000000b2';
+  v_pet uuid;
+  v_b uuid;
+  v_err text;
+begin
+  perform _t_as(null);
+  insert into public.pets (owner_id, species, name) values (robert, 'dog', 'Medal') returning id into v_pet;
+  v_b := _t_booking(robert, chloe, array[v_pet], now() + interval '400 days', now() + interval '402 days', 'confirmed', true);
+
+  perform _t_as(chloe);
+  begin
+    perform award_pet_medal(v_b, v_pet);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'stay_not_finished', '015b: no medal before the pets are back');
+
+  perform complete_handoff(v_b, 'pick_up');
+  perform award_pet_medal(v_b, v_pet);
+  perform award_pet_medal(v_b, v_pet);
+  perform _t_ok((select count(*) from public.pet_medals where booking_id = v_b and pet_id = v_pet and sitter_id = chloe
+                   and stay_from is not null and stay_to is not null) = 1,
+    '015b: the sitter gives the medal, once per pet and stay');
+
+  perform _t_as(robert);
+  perform _t_ok((select count(*) from public.pet_medals where pet_id = v_pet) = 1, '015b: the owner reads their pet''s medal');
+  begin
+    perform award_pet_medal(v_b, v_pet);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_your_booking', '015b: the owner cannot give one');
+  begin
+    insert into public.pet_medals (pet_id, booking_id, sitter_id, stay_from, stay_to) values (v_pet, v_b, chloe, now(), now());
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015b: clients never write medals directly');
+  begin
+    delete from public.pet_medals;
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015b: nobody deletes a medal');
+
+  perform _t_as(joy);
+  perform _t_ok((select count(*) from public.pet_medals) = 0, '015b: a third party reads no medal');
+  perform _t_as(paul);
+  begin
+    perform award_pet_medal(v_b, v_pet);
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'not_your_booking', '015b: another sitter cannot give one');
+
+  perform _t_as(chloe);
+  begin
+    perform award_pet_medal(v_b, '00000000-0000-4000-8000-0000000000c3');
+    v_err := null;
+  exception when others then v_err := sqlerrm; end;
+  perform _t_ok(v_err = 'pet_not_in_booking', '015b: only a pet that was in the stay');
+  perform _t_as(null, 'anon');
+  begin
+    perform award_pet_medal(v_b, v_pet);
+    v_err := null;
+  exception when others then v_err := sqlstate; end;
+  perform _t_ok(v_err = '42501', '015b: signed-out visitors cannot');
+  perform _t_as(null);
 end;
 $$;
 

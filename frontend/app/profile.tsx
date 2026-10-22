@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { DemoTools } from "../components/DemoTools";
 import { AddressInput } from "../components/AddressInput";
 import { OpenInMapsButton } from "../components/OpenInMapsButton";
+import { SitterBadges } from "../components/SitterBadges";
 import { ProfilePhotoGallery } from "../components/ProfilePhotoGallery";
 import { SitterAnswersSummary } from "../components/SitterAnswersSummary";
 import { Button } from "../components/ui/Button";
@@ -319,6 +320,7 @@ export default function ProfileScreen() {
   return (
     <Screen contentStyle={styles.content}>
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
+      {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
       <View style={styles.group} testID="profile-photos-group">
         <Text style={styles.groupTitle}>Your photos</Text>
         <Text style={styles.muted}>
@@ -502,7 +504,7 @@ export default function ProfileScreen() {
           {errors.services ? <Text style={styles.error}>{errors.services}</Text> : null}
           <CheckRow
             label="Take pets from more than one owner at a time"
-            hint="Off: one owner's pets at a time, so other owners can't book dates that are on hold or booked. On: several owners, within your max pets."
+            hint="One owner at a time, or several within your max."
             checked={multiOwner}
             onChange={setMultiOwner}
             testID="profile-multi-owner"

@@ -282,16 +282,6 @@ export async function sendChatQuote(threadId: string, input: { service: string; 
   return String((data as { id?: string } | null)?.id ?? "");
 }
 
-export async function addQuoteExtra(messageId: string, label: string, amount: number): Promise<void> {
-  const { error } = await getSupabase().rpc("add_chat_quote_extra", { p_message: messageId, p_label: label, p_amount: amount });
-  if (error) fail(error, "Couldn't add the fee. Try again.");
-}
-
-export async function answerQuoteExtra(messageId: string, extraId: string, accept: boolean): Promise<void> {
-  const { error } = await getSupabase().rpc("answer_chat_quote_extra", { p_message: messageId, p_extra: extraId, p_accept: accept });
-  if (error) fail(error, "Couldn't save your answer. Try again.");
-}
-
 export async function confirmQuote(messageId: string): Promise<void> {
   const { error } = await getSupabase().rpc("confirm_chat_quote", { p_message: messageId });
   if (error) fail(error, "Couldn't confirm the quote. Try again.");

@@ -52,6 +52,28 @@ export const CHECKIN_GROUPS: {
 
 export const MEMO_MAX = 120;
 
+/** The four taps on the sitter's pet room (11.12): one tap = one check-in with a sensible default. */
+export const PET_ACTIONS: {
+  key: "feed" | "walk" | "potty" | "nap" | "wake";
+  emoji: string;
+  label: string;
+  kind: CareCheckinKind;
+  value: string | null;
+  dogsOnly?: boolean;
+}[] = [
+  { key: "feed", emoji: "🍽️", label: "Feed", kind: "meal", value: "all" },
+  { key: "walk", emoji: "🦮", label: "Walk", kind: "walk", value: "20", dogsOnly: true },
+  { key: "potty", emoji: "💩", label: "Poop", kind: "potty", value: "normal" },
+  { key: "nap", emoji: "💤", label: "Nap", kind: "nap", value: null },
+];
+
+/** Once a nap has started the Nap tap becomes Awake: the pet sleeps until the sitter says it woke up. */
+const AWAKE: (typeof PET_ACTIONS)[number] = { key: "wake", emoji: "☀️", label: "Awake", kind: "wake", value: null };
+
+export function petActionsFor(species: Species, sleeping = false) {
+  return PET_ACTIONS.filter((a) => !(a.dogsOnly && species === "cat")).map((a) => (a.key === "nap" && sleeping ? AWAKE : a));
+}
+
 /** Walks are for dogs (D23); everything else suits both. */
 export function groupsFor(species: Species) {
   return CHECKIN_GROUPS.filter((g) => !(g.dogsOnly && species === "cat"));

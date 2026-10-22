@@ -266,7 +266,7 @@ Goldito/
 | `MODEL_SAFETY` / `MODEL_SAFETY_BASE_URL` | `nvidia/Nemotron-3-Ultra-550b-a55b` / us-central1 | 08 |
 | `MODEL_REPORT` / `MODEL_REPORT_BASE_URL` | `nvidia/nemotron-3-super-120b-a12b` / us-central1 | 07 |
 | `MODEL_FAST` / `MODEL_FAST_BASE_URL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` / eu-north1 | 07.1 테스트, 07B 문의 답변 |
-| `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` (선택) | 비면 `MODEL_FAST` | 채팅 칩과 초안, 오너 쪽과 시터 쪽 모델 이름 (#226, base URL은 `MODEL_FAST_BASE_URL`) |
+| `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER` / `MODEL_CHAT_CHIPS` | 기본 `nvidia/nemotron-3-super-120b-a12b` (비우면 `MODEL_FAST`) | 채팅 **초안**(오너 쪽 · 시터 쪽)과 **칩**(두 쪽 공통) 모델. 채팅 AI는 Nano를 쓰지 않음 (#226, base URL은 `MODEL_FAST_BASE_URL`) |
 | `MODEL_EMBED` / `MODEL_EMBED_BASE_URL` / `MODEL_EMBED_DIM` | `Qwen/Qwen3-Embedding-8B` / eu-north1 / `1024` (D33 — `dimensions` 파라미터 동작 확인 2026-10-01) | 07B RAG, 07C Life Record |
 | `TAVILY_API_KEY` | Tavily 대시보드 (Builders & Brews 등). **backend만** | 08.7 stretch (세이프티 웹 검색, 못 하면 11.3). [tavily.ko.md](../tavily.ko.md) |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` / `GOOGLE_OAUTH_REFRESH_TOKEN` | Goldito Google 계정의 OAuth 클라이언트 + 그 계정이 한 번 동의해 받은 refresh token (scope `https://www.googleapis.com/auth/calendar.events` + `https://www.googleapis.com/auth/meetings.space.settings` — 후자는 방을 링크 누구나 입장으로 여는 Meet REST 호출용, 없어도 링크는 만들어지지만 입장 요청이 필요, OAuth 앱 게시 상태 **In production** — Testing이면 7일 만료). **backend만** | 3B.11 (영상 Meet & Greet, D45) |
@@ -393,6 +393,7 @@ Goldito/
 | `review_received` | sitter | `reviews` insert 트리거 (07C) | "Robert left you 5 stars ⭐" | `/sitter/bookings/[id]` |
 | `life_record_updated` | owner | `/api/ai/life-record` (07C) | "Max's Life Record was updated 📒" | `/owner/pets/[id]/record` |
 | `booking_cancelled` | 상대방 | `cancel_booking` RPC · 확정 전 협의에서 견주가 거절할 때 `respond_handoff`도 · Meet & Greet 건너뛰기를 거부할 때 `respond_skip_meet_greet`도 | "Chloe can't take Max and Mochi on Oct 5–8. Find a new sitter." / 건너뛰기 거부: "Chloe would like to meet first, so this booking was cancelled. Find a new sitter." | 예약 상세 (**Find a new sitter**) |
+| `booking_refunded` | 견주 | 결제한 예약이 취소될 때(누가 취소하든) 트리거 `bookings_notify_refund` (015c, #266) | "Refunded in full" / "$268.13 CAD back for Max (demo)" | 예약 상세 (**Refunded** 칩) |
 | `feed_post` | owner (시터 게시) · 당직 sitter (오너 게시) | 트리거 on `feed_posts` insert (`task_log_id is null` · `visibility = 'shared'`) | "New photo of Max 📸" / "Robert shared a photo of Max 📸" | `/owner/feed` · `/sitter/feed/[petId]` |
 | `task_done` | owner | `complete_task_log` RPC | type별: "Max had breakfast on time 🍽️" / "Max is asleep 😴" / "Max's medication is done 💊" | `/owner/diary` (Live / history) |
 | `care_checkin` | owner | `log_care_checkin` RPC | kind별: meal / potty / mood / note (Plan B — [sitter-care-loop.ko.md](../sitter-care-loop.ko.md)) | `/owner/diary` |

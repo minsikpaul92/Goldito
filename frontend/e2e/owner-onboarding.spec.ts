@@ -47,6 +47,20 @@ async function newOwner(page: import("@playwright/test").Page) {
   return db;
 }
 
+/** Skips every optional screen after the name until the summary (the question screens all have a Skip). */
+async function skipToSummary(page: import("@playwright/test").Page) {
+  const screen = app(page);
+  const skip = screen.getByTestId("own-skip");
+  const summary = screen.getByTestId("own-step-summary");
+  const about = screen.getByTestId("own-step-about");
+  for (let i = 0; i < 80; i++) {
+    await expect(skip.or(summary).or(about)).toBeVisible();
+    if (await summary.isVisible()) return;
+    if (await about.isVisible()) await screen.getByTestId("own-next").click();
+    else await skip.click();
+  }
+}
+
 test.describe("owner onboarding", () => {
   test("a new owner answers, checks the summary and saves their first pet", async ({ page }) => {
     const db = await newOwner(page);
@@ -76,6 +90,7 @@ test.describe("owner onboarding", () => {
 
     await expect(screen.getByTestId("own-title")).toHaveText("What kind of pet do you have?");
     await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-step-name")).toBeVisible();
     await expect(screen.getByTestId("own-title")).toHaveText("What's your pet's name?");
     await expect(screen.getByTestId("own-next")).toBeDisabled();
@@ -203,6 +218,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
     for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) {
@@ -243,6 +259,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await expect(screen.getByTestId("own-step-photos")).toBeVisible();
@@ -288,6 +305,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     for (const id of ["photos", "voice", "breed", "coat", "age", "weight", "petIntro"]) await screen.getByTestId("own-skip").click();
@@ -357,6 +375,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click(); // photos
@@ -450,6 +469,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-skip").click();
@@ -477,6 +497,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Pip");
     await screen.getByTestId("own-next").click();
     await addPhoto(page, "mood_tug");
@@ -512,6 +533,7 @@ test.describe("owner onboarding", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-next").click();
     await screen.getByTestId("own-name").fill("Mochi");
     await screen.getByTestId("own-next").click();
     await addPhoto(page, "mood_grass");
@@ -521,5 +543,106 @@ test.describe("owner onboarding", () => {
     await expect(screen.getByTestId("own-breed-guesses")).toHaveCount(0);
     await screen.getByTestId("own-skip").click();
     await expect(screen.getByTestId("own-coat-white")).not.toContainText("suggested");
+  });
+
+  test("a dog and a cat: the questions run once per pet and the owner is done after the last", async ({ page }) => {
+    const db = await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    const next = screen.getByTestId("own-next");
+
+    // Both kinds can be ticked; Next waits for one, and a second tap unticks.
+    await expect(next).toBeDisabled();
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-species-cat").click();
+    await expect(next).toBeDisabled();
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-species-dog").click();
+    await expect(screen.getByTestId("own-species-dog")).toHaveAttribute("aria-pressed", "true");
+    await expect(screen.getByTestId("own-species-cat")).toHaveAttribute("aria-pressed", "true");
+    await next.click();
+
+    // The dog goes first and the question says which pet it is about. Everything else is skipped.
+    await expect(screen.getByTestId("own-title")).toHaveText("What's your dog's name?");
+    await screen.getByTestId("own-name").fill("Pip");
+    await next.click();
+    await skipToSummary(page);
+    await expect(screen.getByTestId("own-title")).toHaveText("Meet Pip");
+    await expect(screen.getByTestId("own-row-about-you")).toBeVisible();
+    await expect(screen.getByTestId("own-row-home")).toBeVisible();
+    await screen.getByTestId("own-save").click();
+
+    // The cat starts from its name: no kind question, nothing about the owner again, and the owner is not done yet.
+    await expect(screen.getByTestId("own-title")).toHaveText("What's your cat's name?");
+    await expect(screen.getByTestId("own-back")).toHaveCount(0);
+    await expect(screen.getByTestId("own-back-bottom")).toHaveCount(0);
+    expect(db.pets.map((p) => p.name)).toEqual(["Pip"]);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).toBeNull();
+    await screen.getByTestId("own-name").fill("Mochi");
+    await next.click();
+    await skipToSummary(page);
+    await expect(screen.getByTestId("own-title")).toHaveText("Meet Mochi");
+    await expect(screen.getByTestId("own-row-about-you")).toHaveCount(0);
+    await expect(screen.getByTestId("own-row-home")).toHaveCount(0);
+    await expect(screen.getByTestId("own-row-personality")).toContainText("0 of 10 answered");
+    await screen.getByTestId("own-save").click();
+
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.pets.map((p) => [p.name, p.species])).toEqual([["Pip", "dog"], ["Mochi", "cat"]]);
+    expect(db.owner_profiles.find((p) => p.id === OWNER.id)?.onboarded_at).not.toBeNull();
+  });
+
+  test("the weight can be typed in kg or lbs, the switch converts it and the pet is saved in kg", async ({ page }) => {
+    const db = await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    for (const step of ["photos", "voice", "breed", "coat", "age"]) {
+      await expect(screen.getByTestId(`own-step-${step}`)).toBeVisible();
+      await screen.getByTestId("own-skip").click();
+    }
+
+    await expect(screen.getByTestId("own-title")).toHaveText("How much does Pip weigh?");
+    await expect(screen.getByTestId("own-weight-unit-kg")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("own-weight")).toHaveAttribute("placeholder", "kg");
+    await expect(screen.getByTestId("own-next")).toBeDisabled();
+    await screen.getByTestId("own-weight").fill("6,8");
+    await screen.getByTestId("own-weight-unit-lbs").click();
+    await expect(screen.getByTestId("own-weight-unit-lbs")).toHaveAttribute("aria-checked", "true");
+    await expect(screen.getByTestId("own-weight")).toHaveValue("15");
+    await screen.getByTestId("own-weight-unit-kg").click();
+    await expect(screen.getByTestId("own-weight")).toHaveValue("6.8");
+    await screen.getByTestId("own-weight-unit-lbs").click();
+    await screen.getByTestId("own-weight").fill("22.5");
+    await screen.getByTestId("own-next").click();
+    await skipToSummary(page);
+
+    await expect(screen.getByTestId("own-row-weight")).toContainText("22.5 lbs");
+    await expect(screen.getByTestId("own-glance")).toContainText("10.21 kg");
+    await screen.getByTestId("own-save").click();
+    await expect(page).toHaveURL(/\/owner$/);
+    expect(db.pets.find((p) => p.name === "Pip")).toMatchObject({ weight_kg: 10.21 });
+  });
+
+  test("a reload while the second pet is open goes on with that pet", async ({ page }) => {
+    const db = await newOwner(page);
+    await signIn(page, OWNER);
+    const screen = app(page);
+    await screen.getByTestId("own-species-dog").click();
+    await screen.getByTestId("own-species-cat").click();
+    await screen.getByTestId("own-next").click();
+    await screen.getByTestId("own-name").fill("Pip");
+    await screen.getByTestId("own-next").click();
+    await skipToSummary(page);
+    await screen.getByTestId("own-save").click();
+    await expect(screen.getByTestId("own-title")).toHaveText("What's your cat's name?");
+
+    await page.reload();
+    await expect(page).toHaveURL(/\/owner-onboarding$/);
+    await expect(app(page).getByTestId("own-title")).toHaveText("What's your cat's name?");
+    expect(db.pets).toHaveLength(1);
   });
 });

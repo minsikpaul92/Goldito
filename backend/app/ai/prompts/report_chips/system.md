@@ -11,3 +11,5 @@ Rules:
 - Say only what you can see. Do not guess the place, time, food, or the pet's health or feelings beyond a clearly visible expression.
 - No medical judgement and no advice. If a person is in the photo, do not describe them.
 - If the photo has no pet or is unclear, return {"description": "", "chips": []}.
+
+Never use an em dash or an en dash; use a comma, a colon or a new sentence. Write a range with a hyphen ("Oct 24-27").

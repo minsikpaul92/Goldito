@@ -8,19 +8,24 @@ from app.config import get_settings
 
 class ChatAgent:
     role = ""
-    # The name of the optional per-side model setting; unset = the fast model.
+    # The name of the per-side draft model setting; blank = the fast model.
     model_setting = ""
 
     def prompt(self, name: str) -> str:
         return load_prompt(f"chat/{self.role}/{name}.md")
 
     def model(self) -> str | None:
+        """The draft's model."""
         return (getattr(get_settings(), self.model_setting, None) or "").strip() or None
 
+    def chips_model(self) -> str | None:
+        """The chips' model, shared by both sides; blank = the fast model."""
+        return (getattr(get_settings(), "model_chat_chips", None) or "").strip() or None
+
     def state(self, messages: list[dict], me_id: str) -> str:
-        """opening: nobody has written. reply: the other person spoke last, so even an owner answers instead of introducing
-        themselves. follow_up: I spoke last, so there is nothing to answer, only something to add."""
-        last = next((m for m in reversed(messages) if m.get("kind") == "text"), None)
+        """opening: nobody has written. reply: the other person spoke last (a text, or a card like the quote), so even an owner
+        answers instead of introducing themselves. follow_up: I spoke last, so there is nothing to answer, only something to add."""
+        last = next((m for m in reversed(messages) if logic.is_event(m)), None)
         if last is None:
             return "opening"
         return "follow_up" if last.get("sender_id") == me_id else "reply"
@@ -41,8 +46,8 @@ class ChatAgent:
     def extra_problems(self, text: str, facts: dict) -> list[str]:
         return []
 
-    def problems(self, text: str, facts: dict, known: str, sitter_first: str | None = None, previous: list[str] | None = None) -> list[str]:
-        out = [*logic.chat_problems(text, facts, self.role, sitter_first, known), *self.extra_problems(text, facts)]
+    def problems(self, text: str, facts: dict, known: str, sitter_first: str | None = None, previous: list[str] | None = None, greeted: bool = False) -> list[str]:
+        out = [*logic.chat_problems(text, facts, self.role, sitter_first, known, greeted), *self.extra_problems(text, facts)]
         if previous and logic.repeats(text, previous):
             out.append("it repeats what was already said in the chat, say something new")
         return out

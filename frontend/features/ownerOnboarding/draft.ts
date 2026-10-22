@@ -6,14 +6,23 @@ import { EMPTY_PROFILE, PetProfile } from "./scoring";
 import { NO_FACTS, VoiceFacts } from "./voiceApi";
 import type { Coat, Score } from "./questions";
 
+export type WeightUnit = "kg" | "lbs";
+
 /** Everything the owner has typed or picked so far. Kept on the device after every answer, so a reload goes on. */
 export type OwnerOnboardingDraft = {
+  /** The kind of the pet being filled in now. */
   species: Species | null;
+  /** The kinds still to come after this pet (an owner with a dog and a cat goes through the questions twice). */
+  pending: Species[];
+  /** True from the second pet on: the owner's own questions and the kind question were already answered. */
+  ownerDone: boolean;
   name: string;
   breed: string;
   /** Whole years, or null when skipped. Saved as an approximate birthday. */
   ageYears: number | null;
-  weightKg: string;
+  /** The weight as typed, in `weightUnit`. Saved as kg (`weightFromDraft`). */
+  weight: string;
+  weightUnit: WeightUnit;
   petIntro: string;
   /** Cloudinary public ids of uploaded pet photos, cover first. */
   photos: string[];
@@ -41,10 +50,13 @@ export type OwnerOnboardingDraft = {
 
 export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   species: null,
+  pending: [],
+  ownerDone: false,
   name: "",
   breed: "",
   ageYears: null,
-  weightKg: "",
+  weight: "",
+  weightUnit: "kg",
   petIntro: "",
   photos: [],
   answers: {},
@@ -89,6 +101,35 @@ export async function clearDraft(userId: string): Promise<void> {
   }
 }
 
+const SPECIES_ORDER: Species[] = ["dog", "cat"];
+
+/** The kinds picked so far, in a fixed order (the first one is the pet filled in first). */
+export function pickedSpecies(draft: OwnerOnboardingDraft): Species[] {
+  return SPECIES_ORDER.filter((s) => s === draft.species || draft.pending.includes(s));
+}
+
+/** The draft after a kind was ticked or unticked. Changing the first kind clears what was answered for the old one. */
+export function withPickedSpecies(draft: OwnerOnboardingDraft, picked: Species[]): OwnerOnboardingDraft {
+  const [species = null, ...pending] = SPECIES_ORDER.filter((s) => picked.includes(s));
+  if (species === draft.species) return { ...draft, pending };
+  return { ...draft, species, pending, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
+}
+
+/** The draft for the next pet once one is saved: only what the owner said about themselves carries over. */
+export function draftForNextPet(draft: OwnerOnboardingDraft): OwnerOnboardingDraft {
+  const [species = null, ...pending] = draft.pending;
+  return {
+    ...EMPTY_DRAFT,
+    species,
+    pending,
+    ownerDone: true,
+    intro: draft.intro,
+    homeAddress: draft.homeAddress,
+    home: draft.home,
+    step: "name",
+  };
+}
+
 /** An approximate birthday for a whole number of years: the same day and month, that many years back. */
 export function birthdateFromAge(ageYears: number, today = new Date()): string {
   const date = new Date(today.getFullYear() - ageYears, today.getMonth(), today.getDate());
@@ -105,7 +146,29 @@ export function foodsFromDraft(draft: OwnerOnboardingDraft): string[] {
   return [...new Set(draft.foods.map(normalizeAllergen).filter((f) => f !== ""))];
 }
 
+const KG_PER_LB = 0.45359237;
+
+function parseWeight(text: string): number | null {
+  const n = Number(text.trim().replace(",", "."));
+  return text.trim() !== "" && Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** The weight in kg as stored (two decimals, like the column), or null when it is empty, not a number or out of range. */
 export function weightFromDraft(draft: OwnerOnboardingDraft): number | null {
-  const n = Number(draft.weightKg.trim().replace(",", "."));
-  return draft.weightKg.trim() !== "" && Number.isFinite(n) && n > 0 && n < 1000 ? n : null;
+  const n = parseWeight(draft.weight);
+  if (n === null) return null;
+  const kg = draft.weightUnit === "lbs" ? Math.round(n * KG_PER_LB * 100) / 100 : n;
+  return kg > 0 && kg < 1000 ? kg : null;
+}
+
+/** The text of a weight in kg, shown in `unit` (kg to two decimals, lbs to one). */
+export function weightText(kg: number, unit: WeightUnit): string {
+  return unit === "lbs" ? String(Math.round((kg / KG_PER_LB) * 10) / 10) : String(Math.round(kg * 100) / 100);
+}
+
+/** What the box shows after the unit is switched: the typed number in the new unit (a text that is not a number stays). */
+export function convertWeight(text: string, from: WeightUnit, to: WeightUnit): string {
+  const n = parseWeight(text);
+  if (n === null || from === to) return text;
+  return weightText(from === "lbs" ? n * KG_PER_LB : n, to);
 }

@@ -6,9 +6,9 @@ The in-app **Menu → What's new** screen (Phase 11.11) shows the released entri
 
 ## [Unreleased]
 
-### Planned (documented, not shipped)
+### Added
 
-- 8-bit Pet status room on Owner Home — Tamagotchi-style fed/mood/potty (11.12)
+- Pet room: an 8-bit pet on your Home (and the sitter's) that walks around its room, eats from a bowl, naps and wakes, and shows today's care (fed, potty, mood). Put a Halloween pumpkin hat on it, or match its colors to a photo. Sitters tap Feed, Walk, Poop and Nap on it, give a medal after a stay and collect badges.
 
 ## [0.2.0] — 2026-10-15
 

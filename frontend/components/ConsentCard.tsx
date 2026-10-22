@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { formatInstant } from "../features/schedule/dates";
 import { DEMO_CONSENT_FOOTER, type ConsentTemplate } from "../features/agreements/templates";
 import { useThemedStyles } from "../providers/ThemeProvider";
 import { Theme } from "../theme/themes";
@@ -49,7 +50,7 @@ export function ConsentCard({ template, checked, onCheckedChange, signedAt, disa
       ) : null}
       {signed ? (
         <Text style={styles.signed} testID={testID ? `${testID}-signed` : undefined}>
-          {`Signed ${new Date(signedAt!).toLocaleString()}`}
+          {`Signed ${formatInstant(signedAt!)}`}
         </Text>
       ) : (
         <CheckRow

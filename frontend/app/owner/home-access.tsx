@@ -92,8 +92,7 @@ export default function HomeAccessScreen() {
     <View style={styles.root}>
       <Screen contentStyle={styles.content}>
         <Text style={styles.note} testID="home-access-note">
-          Only shown to your booked sitter, starting 2 hours before they arrive. You'll be notified when
-          it opens. Use obviously fake codes in this demo.
+          Your sitter sees this 2 hours before arriving. Use fake codes in the demo.
         </Text>
         <TextField
           label="Entry steps"

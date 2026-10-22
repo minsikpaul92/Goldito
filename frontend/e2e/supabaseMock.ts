@@ -232,6 +232,8 @@ export type MockDb = {
   owner_favorite_sitters: Row[];
   /** Pet Life Records (Phase 07C): written by the backend, read by the owner. */
   pet_life_records: Row[];
+  /** Pet medals (015b): given by the sitter after a stay, read by the owner. */
+  pet_medals: Row[];
   /** Prices a sitter set (006). Empty = nobody has any, like a fresh sitter. */
   sitter_rates: Row[];
   /** Treat checks (12.1, 013): written by the backend (tests push the row the API would insert); clients set acknowledged_at. */
@@ -312,6 +314,7 @@ function createMockDb(): MockDb {
     sitter_owner_notes: [],
     owner_favorite_sitters: [],
     pet_life_records: [],
+    pet_medals: [],
     sitter_rates: [],
     safety_checks: [],
     photo_requests: [],
@@ -1160,7 +1163,12 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
       route,
       200,
       db.nearby_sitters
-        .filter((row) => Number(row.distance_km) <= radius)
+        // 014i: my favorites are listed even beyond the radius.
+        .filter(
+          (row) =>
+            Number(row.distance_km) <= radius ||
+            db.owner_favorite_sitters.some((f) => f.owner_id === me && f.sitter_id === row.sitter_id),
+        )
         .sort((a, b) => Number(a.distance_km) - Number(b.distance_km))
         .map((row) => ({ ...row, distance_km: Math.max(1, Math.round(Number(row.distance_km))) })),
     );
@@ -1555,6 +1563,16 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     );
     if (received) return json(route, 400, { code: "P0001", message: "booking_in_progress", details: null });
     Object.assign(booking, { status: "cancelled", cancelled_by: me, cancel_reason: p_reason });
+    // 015c: a paid booking is refunded in full and the owner is told.
+    if (booking.paid_at && !booking.refunded_at) {
+      booking.refunded_at = new Date(nowMs()).toISOString();
+      const snap = booking.price_snapshot as { total?: number } | null;
+      db.notifications.push({
+        id: `n-refund-${p_booking}`, user_id: booking.owner_id, type: "booking_refunded", title: "Refunded in full",
+        body: `$${snap?.total?.toFixed(2) ?? "?"} CAD back (demo)`, pet_id: null, booking_id: p_booking, ref_id: p_booking,
+        read_at: null, created_at: new Date(nowMs()).toISOString(),
+      });
+    }
     db.cancellations.push({ p_booking, p_reason });
     return route.fulfill({ status: 204 });
   }
@@ -1973,6 +1991,32 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     return json(route, 200, { mode: profile.ai_reply_mode ?? "manual", consented: !!profile.ai_consent_at });
   }
 
+  if (path === "rpc/award_pet_medal") {
+    const { p_booking, p_pet } = request.postDataJSON();
+    const booking = db.bookings.find((b) => b.id === p_booking && b.sitter_id === me && b.status === "confirmed");
+    if (!booking) return json(route, 400, { code: "P0001", message: "not_your_booking" });
+    if (!db.booking_pets.some((bp) => bp.booking_id === p_booking && bp.pet_id === p_pet)) {
+      return json(route, 400, { code: "P0001", message: "pet_not_in_booking" });
+    }
+    const pickUp = db.booking_handoffs.find((h) => h.booking_id === p_booking && h.kind === "pick_up" && h.completed_at);
+    if (!pickUp) return json(route, 400, { code: "P0001", message: "stay_not_finished" });
+    const dropOff = db.booking_handoffs.find((h) => h.booking_id === p_booking && h.kind === "drop_off");
+    let row = db.pet_medals.find((r) => r.booking_id === p_booking && r.pet_id === p_pet);
+    if (!row) {
+      row = {
+        id: crypto.randomUUID(),
+        pet_id: p_pet,
+        booking_id: p_booking,
+        sitter_id: me,
+        stay_from: dropOff?.completed_at ?? dropOff?.scheduled_at,
+        stay_to: pickUp.completed_at,
+        awarded_at: new Date(nowMs()).toISOString(),
+      };
+      db.pet_medals.push(row);
+    }
+    return json(route, 200, row);
+  }
+
   if (path === "rpc/log_care_checkin") {
     const { p_pet, p_kind, p_value, p_note_text, p_media_id } = request.postDataJSON();
     const note = typeof p_note_text === "string" && p_note_text.trim() ? p_note_text.trim() : null;
@@ -2132,6 +2176,8 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
         // RLS (014j): a chat is for its two people.
         (path !== "chat_messages" || db.chat_threads.some((t) => t.id === row.thread_id && (t.owner_id === me || t.sitter_id === me))) &&
         (path !== "chat_threads" || row.owner_id === me || row.sitter_id === me) &&
+        // RLS (015b): the pet's owner and the sitter who gave the medal.
+        (path !== "pet_medals" || row.sitter_id === me || db.pets.some((p) => p.id === row.pet_id && p.owner_id === me)) &&
         // RLS (011): an owner reads their pets' records; the raw source_snapshot is never selectable.
         // …and a sitter with a pending / confirmed booking that includes the pet (can_view_pet_profile).
         (path !== "pet_life_records" ||
@@ -2220,6 +2266,9 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     if (path === "pet_life_records" && select.includes("sitter:profiles")) {
       rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
     }
+    if (path === "pet_medals" && select.includes("sitter:profiles")) {
+      rows = rows.map((r) => ({ ...r, sitter: { display_name: users.find((u) => u.id === r.sitter_id)?.displayName ?? null } }));
+    }
     if (path === "daily_reports" && select.includes("media(")) {
       rows = rows.map((r) => ({ ...r, media: mediaOf(r.media_id) }));
     }
@@ -2271,6 +2320,10 @@ async function handleRest(route: Route, users: MockUser[], db: MockDb) {
     }
     if ((params.get("order") ?? "").startsWith("started_at")) {
       rows = [...rows].sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+      if (params.get("order")!.endsWith(".desc")) rows.reverse();
+    }
+    if ((params.get("order") ?? "").startsWith("awarded_at")) {
+      rows = [...rows].sort((a, b) => String(a.awarded_at).localeCompare(String(b.awarded_at)));
       if (params.get("order")!.endsWith(".desc")) rows.reverse();
     }
     // Reads ordered by a report's sent time (Stay summary).
