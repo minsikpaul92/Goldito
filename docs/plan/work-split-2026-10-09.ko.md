@@ -2,7 +2,7 @@
 
 > **왜:** 제출 마감은 **2026-10-30 10:00 AM PT (토론토 오후 1시)** — 21일 남음. P0 코드는 15개 phase 중 13개 완료(약 75%). 남은 일을 **데모 경로를 막는 급한 일(민식)** 과 **급하지 않은 일 · 익명화 데이터가 필요한 일 · QA/UX(슬기)** 로 나눈다.
 > **슬기는 여기서 시작:** [phases/phase-q-quality.md](phases/phase-q-quality.md) (슬기 트랙 Phase Q — 목표 · 읽을 문서 순서 · 규칙 · 작업 목록).
-> **기준 문서:** [TODO.md](TODO.md) (큐) · [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (RV · M · L 항목 상세) · [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) (FB 항목) · [test-guide.ko.md](test-guide.ko.md) (시나리오).
+> **기준 문서:** [GitHub issues](https://github.com/minsikpaul92/Goldito/issues) (큐) · [review-2026-10-08.ko.md](review-2026-10-08.ko.md) (RV · M · L 항목 상세) · [feedback-2026-10-08.ko.md](feedback-2026-10-08.ko.md) (FB 항목) · [test-guide.ko.md](test-guide.ko.md) (시나리오).
 
 ---
 

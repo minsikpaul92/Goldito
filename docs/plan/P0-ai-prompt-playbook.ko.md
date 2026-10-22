@@ -33,7 +33,7 @@ Rules:
 - Do not commit unless I ask.
 
 Read before coding:
-- CLAUDE.md, docs/plan/TODO.md (current focus)
+- CLAUDE.md, the assigned GitHub issue (current focus)
 - docs/plan/phases/architecture.ko.md + the phase doc for this task (source of truth)
 
 Task:
@@ -664,5 +664,5 @@ DoD: fresh DB can demo the 5-stage stay in 15 minutes.
 ## 16. 지금 당장 첫 Cursor 채팅에 넣을 한 줄
 
 ```text
-Read CLAUDE.md and docs/plan/TODO.md. Work ONLY on the "Current focus" task (now 3B.0). Read docs/plan/full-process.ko.md and the linked phase doc for Goal and DoD. Use the common prompt header from section 1.
+Read CLAUDE.md and the assigned GitHub issue. Work ONLY on the assigned issue. Read docs/plan/full-process.ko.md and the linked phase doc for Goal and DoD. Use the common prompt header from section 1.
 ```

@@ -1,6 +1,6 @@
 # Phase 03 — 인증 & 역할 & Pet 프로필 (Auth)
 
-> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-01). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D14–D15, D21–D24, 라우트 맵 §3
 
@@ -83,7 +83,7 @@ Playbook §5 — (3.1–3.3) / (3.4) / (3.5–3.8) 세 번
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
 - **11.15 오너 가입 직후의 첫 반려동물 등록** ([pet-profile-onboarding.ko.md](../pet-profile-onboarding.ko.md)): 오너로 가입하면 곧바로 한 화면 한 질문 · 큰 글씨 흐름으로 펫을 등록한다(사진 · 음성 · 성격 질문). 가입 화면은 그대로, 이미 있는 펫을 고칠 때는 `PetForm`을 계속 쓴다. 시터 · Try demo 계정에는 나오지 않고, **구현은 P0 큐의 맨 마지막**.
 
