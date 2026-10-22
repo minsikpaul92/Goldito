@@ -16,7 +16,7 @@ import { useThemedStyles } from "../../../providers/ThemeProvider";
 import { Theme } from "../../../theme/themes";
 
 /**
- * Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets.
+ * Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets.
  * Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
  */
 export default function OwnerHome() {

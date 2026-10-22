@@ -1,79 +1,59 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { ReactNode, useMemo, useRef, useState } from "react";
 import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, View } from "react-native";
 
-import { useThemedStyles } from "../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 
-/** Dragging this far (a share of the width) or flicking this fast turns the page. */
-const TURN_RATIO = 0.2;
+/** A sideways drag this far (px) or flick this fast flips the card. */
+const TURN_DISTANCE = 60;
 const TURN_VELOCITY = 0.4;
-/** Mouse wheel / trackpad: a sideways scroll this big turns the page, then waits so one flick turns one page. */
+/** Mouse wheel / trackpad: a sideways scroll this big flips the card, then waits so one flick flips once. */
 const WHEEL_STEP = 30;
-const WHEEL_PAUSE_MS = 450;
+const WHEEL_PAUSE_MS = 600;
+const FLIP_MS = 420;
 
 type Props = {
+  /** Exactly two pages: the front and the back of the card. */
   pages: { label: string; content: ReactNode }[];
   testID?: string;
 };
 
 /**
- * Swipe pages with dots (Home hero, 11.12). Touch, mouse drag and sideways wheel all turn the page; the dots are
- * buttons too. A page is built only once it is shown (or being dragged to), so Home does not load the pet room until
- * someone looks at it, and a child that swipes on its own (a row you swipe away) keeps its drag.
+ * A two-sided card (Home hero, #286): the flip button turns it 180 degrees to the other page. A sideways drag or wheel
+ * flips it too. The back is built only once it is shown, so Home does not load the pet room until someone looks at it.
  */
 export function Pager({ pages, testID }: Props) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
-  const x = useRef(new Animated.Value(0)).current;
+  const turn = useRef(new Animated.Value(0)).current;
   const indexRef = useRef(0);
-  const widthRef = useRef(0);
   const lastWheel = useRef(0);
   indexRef.current = index;
-  widthRef.current = width;
-  const last = pages.length - 1;
 
   const show = (target: number) => {
-    const next = Math.max(0, Math.min(last, target));
+    const next = Math.max(0, Math.min(pages.length - 1, target));
+    if (next === indexRef.current) return;
     setSeen((prev) => (prev.has(next) ? prev : new Set(prev).add(next)));
     setIndex(next);
-    Animated.timing(x, {
-      toValue: -next * widthRef.current,
-      duration: 220,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
+    Animated.timing(turn, { toValue: next, duration: FLIP_MS, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
   };
-  const showRef = useRef(show);
-  showRef.current = show;
-
-  // Keep the current page in place when the width changes (rotation, the desktop frame).
-  useEffect(() => {
-    x.setValue(-indexRef.current * width);
-  }, [width, x]);
+  const flip = () => show(indexRef.current === 0 ? 1 : 0);
+  const flipRef = useRef(flip);
+  flipRef.current = flip;
 
   const pan = useMemo(
     () =>
       PanResponder.create({
         // Only a mostly horizontal drag takes over, so scrolling and taps keep working.
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
-        onPanResponderGrant: () => {
-          const neighbours = [indexRef.current - 1, indexRef.current + 1].filter((i) => i >= 0 && i <= last);
-          setSeen((prev) => (neighbours.every((i) => prev.has(i)) ? prev : new Set([...prev, ...neighbours])));
-        },
-        onPanResponderMove: (_e, g) => {
-          const base = -indexRef.current * widthRef.current;
-          const lo = -last * widthRef.current;
-          x.setValue(Math.max(lo, Math.min(0, base + g.dx)));
-        },
         onPanResponderRelease: (_e, g) => {
-          const turn = Math.abs(g.dx) > widthRef.current * TURN_RATIO || Math.abs(g.vx) > TURN_VELOCITY;
-          showRef.current(indexRef.current + (turn ? (g.dx < 0 ? 1 : -1) : 0));
+          if (Math.abs(g.dx) > TURN_DISTANCE || Math.abs(g.vx) > TURN_VELOCITY) flipRef.current();
         },
-        onPanResponderTerminate: () => showRef.current(indexRef.current),
       }),
-    [x, last],
+    [],
   );
 
   const onWheel = (e: { deltaX: number; deltaY: number; shiftKey?: boolean }) => {
@@ -81,43 +61,43 @@ export function Pager({ pages, testID }: Props) {
     const now = Date.now();
     if (Math.abs(dx) < WHEEL_STEP || now - lastWheel.current < WHEEL_PAUSE_MS) return;
     lastWheel.current = now;
-    showRef.current(indexRef.current + (dx > 0 ? 1 : -1));
+    flipRef.current();
   };
+
+  const face = (from: string, to: string) => ({
+    transform: [{ perspective: 1200 }, { rotateY: turn.interpolate({ inputRange: [0, 1], outputRange: [from, to] }) }],
+  });
 
   return (
     <View style={styles.root} testID={testID}>
-      <View style={styles.dots} accessibilityRole="tablist">
-        {pages.map((page, i) => (
-          <Pressable
-            key={page.label}
-            accessibilityLabel={page.label}
-            accessibilityRole="tab"
-            aria-selected={i === index}
-            hitSlop={12}
-            onPress={() => show(i)}
-            style={[styles.dot, i === index && styles.dotOn]}
-            testID={testID ? `${testID}-dot-${i}` : undefined}
-          />
-        ))}
+      <View style={styles.bar}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Flip to ${pages[index === 0 ? 1 : 0].label}`}
+          hitSlop={8}
+          onPress={flip}
+          style={({ pressed }) => [styles.flip, pressed && styles.pressed]}
+          testID={testID ? `${testID}-flip` : undefined}
+        >
+          <Ionicons name="sync-outline" size={theme.icon.sm} color={theme.color.primary} />
+        </Pressable>
       </View>
       <View
         style={styles.clip}
-        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         {...(Platform.OS === "web" ? ({ onWheel } as object) : null)}
         {...pan.panHandlers}
       >
-        <Animated.View style={[styles.track, { width: width * pages.length, transform: [{ translateX: x }] }]}>
-          {pages.map((page, i) => (
-            <View
-              key={page.label}
-              style={{ width }}
-              {...(i === index ? null : ({ "aria-hidden": true, inert: true } as object))}
-              testID={testID ? `${testID}-page-${i}` : undefined}
-            >
-              {seen.has(i) ? page.content : null}
-            </View>
-          ))}
-        </Animated.View>
+        {pages.map((page, i) => (
+          <Animated.View
+            key={page.label}
+            style={[styles.face, face(i === 0 ? "0deg" : "180deg", i === 0 ? "180deg" : "360deg")]}
+            pointerEvents={i === index ? "auto" : "none"}
+            {...(i === index ? null : ({ "aria-hidden": true, inert: true } as object))}
+            testID={testID ? `${testID}-page-${i}` : undefined}
+          >
+            {seen.has(i) ? page.content : null}
+          </Animated.View>
+        ))}
       </View>
     </View>
   );
@@ -126,15 +106,22 @@ export function Pager({ pages, testID }: Props) {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
-    dots: {
+    bar: {
       flexDirection: "row",
-      justifyContent: "center",
-      gap: theme.spacing.sm,
-      paddingVertical: theme.spacing.sm,
+      justifyContent: "flex-end",
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.xs,
       backgroundColor: theme.color.background,
     },
-    dot: { width: 8, height: 8, borderRadius: theme.radius.pill, backgroundColor: theme.color.track },
-    dotOn: { backgroundColor: theme.color.primary },
-    clip: { flex: 1, overflow: "hidden" },
-    track: { flex: 1, flexDirection: "row" },
+    flip: {
+      width: 32,
+      height: 32,
+      borderRadius: theme.radius.pill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.color.accent,
+    },
+    pressed: { opacity: 0.8 },
+    clip: { flex: 1 },
+    face: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backfaceVisibility: "hidden" },
   });

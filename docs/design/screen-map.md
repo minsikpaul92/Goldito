@@ -51,7 +51,7 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two swipe pages (11.12). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
 Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
 
@@ -1034,8 +1034,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 26 |
-| Tag | `allergy.allergen` | — | 51 |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 39 |
+| Tag | `allergy.allergen` | — | 68 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
@@ -1524,4 +1524,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-449 actions · 448 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+448 actions · 447 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

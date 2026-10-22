@@ -100,7 +100,7 @@ test.describe("pet medals", () => {
     await signIn(page, OWNER);
     const screen = app(page);
     await screen.getByTestId("home-pager").waitFor();
-    await screen.getByTestId("home-pager-dot-1").click();
+    await screen.getByTestId("home-pager-flip").click();
     await expect(screen.getByTestId("pet-room-Max")).toBeVisible();
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Chloe");
     await expect(screen.getByTestId("medal-medal-1")).toContainText("Oct 6 to Oct 9");
