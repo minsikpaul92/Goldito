@@ -24,10 +24,10 @@ export async function needsOwnerOnboarding(userId: string): Promise<boolean> {
 }
 
 /** "Add a pet later" and the end of the flow both land here. `fields` are the owner's own answers (intro, home). */
-export async function markOwnerOnboarded(userId: string, fields: Record<string, unknown> = {}): Promise<void> {
+export async function markOwnerOnboarded(userId: string, fields: Record<string, unknown> = {}, done = true): Promise<void> {
   const { error } = await getSupabase()
     .from("owner_profiles")
-    .update({ ...fields, onboarded_at: new Date().toISOString() })
+    .update({ ...fields, ...(done ? { onboarded_at: new Date().toISOString() } : {}) })
     .eq("id", userId);
   if (error) fail("save your answers");
 }
@@ -46,9 +46,15 @@ export function ownerFields(draft: OwnerOnboardingDraft): Record<string, unknown
 
 /**
  * Saves the pet with its answers and allergies in one call (create_pet_with_profile, safe to retry with the same id),
- * then adds the photos and marks the owner done. Returns the pet id.
+ * then adds the photos and marks the owner done. Returns the pet id. With more pets to come (`last` is false) the owner
+ * is not done yet: only what they said about themselves is saved, so a reload goes on with the next pet.
  */
-export async function saveOwnerOnboarding(userId: string, draft: OwnerOnboardingDraft, petId: string): Promise<string> {
+export async function saveOwnerOnboarding(
+  userId: string,
+  draft: OwnerOnboardingDraft,
+  petId: string,
+  last = true,
+): Promise<string> {
   if (!draft.species || !draft.name.trim()) fail("save your pet");
   const supabase = getSupabase();
   const { error } = await supabase.rpc("create_pet_with_profile", {
@@ -71,7 +77,9 @@ export async function saveOwnerOnboarding(userId: string, draft: OwnerOnboarding
       fail("save the photos");
     }
   }
-  await markOwnerOnboarded(userId, ownerFields(draft));
+  const fields = ownerFields(draft);
+  if (last) await markOwnerOnboarded(userId, fields);
+  else if (Object.keys(fields).length > 0) await markOwnerOnboarded(userId, fields, false);
   return petId;
 }
 

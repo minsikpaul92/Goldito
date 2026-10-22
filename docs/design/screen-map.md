@@ -67,20 +67,22 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Skip | `own-skip` | 159 |
-| Button | Next | `own-next` | 161 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 191 |
-| Banner | `error` | — | 202 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 240 |
-| Stepper | Age | `own-age` | 334 |
-| Button | Next | `own-next` | 347 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 408 |
-| Button | Start | `own-next` | 412 |
-| Button | Add | `own-food-other-add` | 541 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 597 |
-| Banner | `error` | `own-error` | 649 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 650 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 668 |
+| TextButton | Skip | `own-skip` | 173 |
+| Button | Next | `own-next` | 175 |
+| Button | Next | `own-next` | 210 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 211 |
+| Banner | `error` | — | 223 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 263 |
+| Stepper | Age | `own-age` | 357 |
+| Button | Next | `own-next` | 370 |
+| SegmentedControl | — | `own-weight-unit` | 389 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 441 |
+| Button | Start | `own-next` | 445 |
+| Button | Add | `own-food-other-add` | 574 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 630 |
+| Banner | `error` | `own-error` | 687 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 688 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 706 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -372,9 +374,9 @@ Shows: `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 83 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 165 |
-| TextButton | Already have an account? Sign in | `go-login` | 173 |
+| BackLink | — | `signup-back` | 86 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 175 |
+| TextButton | Already have an account? Sign in | `go-login` | 183 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
@@ -994,11 +996,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | ``${testID}-back`` | 42 |
-| Button | Next | ``${testID}-next`` | 77 |
-| Button | `demoLabel` | ``${testID}-demo`` | 81 |
-| Button | Sign in | ``${testID}-sign-in`` | 87 |
-| TextButton | Create account | ``${testID}-sign-up`` | 93 |
+| BackLink | — | ``${testID}-back`` | 39 |
+| Button | Next | ``${testID}-next`` | 74 |
+| Button | Get started | ``${testID}-sign-in`` | 76 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 
