@@ -889,19 +889,19 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 18 |
+| Tag | profile.role === "owner" ? "Owner" : "Sitter" | `role-chip` | 20 |
 
 ### HeaderMenu — [components/HeaderMenu.tsx](../../frontend/components/HeaderMenu.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | `label` | `testID` | 51 |
-| Pressable | Menu | `open-menu` | 66 |
-| Pressable | Close menu | `header-menu-close` | 87 |
-| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 98 |
-| Button | Log out | `log-out-confirm` | 116 |
-| Button | Cancel | `log-out-cancel` | 117 |
-| Pressable | — | `log-out` | 137 |
+| Pressable | `label` | `testID` | 54 |
+| Pressable | trigger === "avatar" ? `${name}, ${role.toLowerCase()} account. Menu` : "Menu" | `open-menu` | 69 |
+| Pressable | Close menu | `header-menu-close` | 96 |
+| Pressable | ``${name}, ${role}. Profile`` | `open-profile` | 107 |
+| Button | Log out | `log-out-confirm` | 125 |
+| Button | Cancel | `log-out-cancel` | 126 |
+| Pressable | — | `log-out` | 146 |
 
 ### HeadsUpSection — [components/HeadsUpSection.tsx](../../frontend/components/HeadsUpSection.tsx)
 
@@ -1154,7 +1154,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | aria["aria-label"] | `testID` | 63 |
+| Pressable | aria["aria-label"] | `testID` | 64 |
 
 ### ScheduleSheet — [components/ScheduleSheet.tsx](../../frontend/components/ScheduleSheet.tsx)
 

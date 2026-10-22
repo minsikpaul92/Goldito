@@ -15,8 +15,11 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const DURATION = 260;
 
-/** Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Log out. */
-export function HeaderMenu() {
+/**
+ * Header ≡ (#147): a full-width drawer from the right. You → Profile, Notifications, Schedule (sitters), What's new, Settings, Log out.
+ * `trigger="avatar"` opens it from your avatar instead of ≡, so the header shows who is signed in (header trial A and C).
+ */
+export function HeaderMenu({ trigger = "menu" }: { trigger?: "menu" | "avatar" }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
@@ -65,12 +68,18 @@ export function HeaderMenu() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Menu"
+        accessibilityLabel={trigger === "avatar" ? `${name}, ${role.toLowerCase()} account. Menu` : "Menu"}
         onPress={() => setOpen(true)}
         style={styles.iconButton}
         testID="open-menu"
       >
-        <Ionicons name="menu-outline" size={24} color={theme.color.text} />
+        {trigger === "avatar" ? (
+          <View style={styles.avatarRing}>
+            <Avatar kind="initial" name={name} size={32} testID="header-avatar" />
+          </View>
+        ) : (
+          <Ionicons name="menu-outline" size={24} color={theme.color.text} />
+        )}
       </Pressable>
       <Modal visible={open} transparent animationType="none" onRequestClose={() => close()}>
         <Animated.View style={[styles.scrim, { opacity: slide }]} />
@@ -105,7 +114,7 @@ export function HeaderMenu() {
             <Avatar kind="initial" name={name} size={56} />
             <View style={styles.youText}>
               <Text style={styles.name} numberOfLines={1}>{name}</Text>
-              <Text style={styles.muted}>{role}</Text>
+              <Text style={styles.muted}>{role} account</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.color.textMuted} />
           </Pressable>
@@ -154,6 +163,8 @@ export function HeaderMenu() {
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     iconButton: { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+    // A thin ring keeps the avatar reading as a button on the cream header.
+    avatarRing: { padding: 2, borderRadius: 20, borderWidth: 1.5, borderColor: theme.color.primary },
     scrim: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: theme.color.overlay },
     drawer: {
       position: "absolute", top: 0, right: 0, bottom: 0, left: 0,

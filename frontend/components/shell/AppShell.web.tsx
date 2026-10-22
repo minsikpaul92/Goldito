@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { View, useWindowDimensions } from "react-native";
 
 import { tokens } from "../../theme/tokens";
-import { DeviceFrame, FrameLink } from "./DeviceFrame.web";
+import { DeviceFrame, FrameLink, HeaderSwitch } from "./DeviceFrame.web";
 import {
   SPLIT_MIN_WIDTH,
   TOUCH_PRIMARY_QUERY,
@@ -107,7 +107,7 @@ export function AppShell({ children }: Props) {
               columns={2}
               label={accountLabel(accounts[`pane-${side}`])}
               // Both phones keep the same height; the link sits under the left one.
-              footer={side === "left" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <View />}
+              footer={side === "left" ? <FrameLink label="Show one phone" href="/" testID="show-one-phone" /> : <HeaderSwitch />}
             >
               <AppFrame src="/login" name={`pane-${side}`} title={`Goldito app (${side} phone)`} />
             </DeviceFrame>
@@ -122,9 +122,12 @@ export function AppShell({ children }: Props) {
       <DeviceFrame
         label={accountLabel(accounts[""])}
         footer={
-          windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
-            <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
-          ) : undefined
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
+            <HeaderSwitch />
+            {windowWidth >= SPLIT_MIN_WIDTH && !touchPrimary ? (
+              <FrameLink label="Show both phones" href="/?view=split" testID="show-both-phones" />
+            ) : null}
+          </View>
         }
       >
         <AppFrame />
