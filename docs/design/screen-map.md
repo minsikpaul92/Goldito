@@ -1326,8 +1326,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Back | `own-back` | 31 |
-| TextButton | Back | `own-back-bottom` | 49 |
+| Pressable | Back | `own-back` | 35 |
+| TextButton | Back | `own-back-bottom` | 53 |
 
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 

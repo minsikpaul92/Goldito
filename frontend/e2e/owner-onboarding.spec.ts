@@ -88,6 +88,7 @@ test.describe("owner onboarding", () => {
     await expect(page).toHaveURL(/\/owner-onboarding$/);
     const screen = app(page);
 
+    await expect(screen.getByTestId("step-brand")).toBeVisible();
     await expect(screen.getByTestId("own-title")).toHaveText("What kind of pet do you have?");
     await screen.getByTestId("own-species-dog").click();
     await screen.getByTestId("own-next").click();
