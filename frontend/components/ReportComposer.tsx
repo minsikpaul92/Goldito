@@ -312,7 +312,7 @@ export function ReportComposer({ pet, onStatus }: { pet: CaringPet; onStatus?: (
       setSentId(id);
       setSentPhoto(pagePhoto?.thumbUrl || null);
       setDraft(null);
-      toast.show(`Sent ✅ ${pet.ownerName} was told`);
+      toast.show(`Sent. ${pet.ownerName} was told`);
     } catch (e) {
       errorDialog.show({ title: "Not sent", message: (e as Error).message, onRetry: () => void send() });
     } finally {

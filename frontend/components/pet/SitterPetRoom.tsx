@@ -62,7 +62,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
     setSending(action.key);
     try {
       await logCareCheckin({ petId: pet.id, kind: action.kind, value: action.value, note: null, mediaId: null });
-      toast.show(`Sent ✅ ${pet.ownerName} was told`);
+      toast.show(`Sent. ${pet.ownerName} was told`);
       setReloadKey((k) => k + 1);
     } catch (e) {
       errorDialog.show({

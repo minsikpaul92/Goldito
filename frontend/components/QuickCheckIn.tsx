@@ -71,7 +71,7 @@ export function QuickCheckIn({ pet }: Props) {
         mediaId = uploaded.mediaId;
       }
       await logCareCheckin({ petId: pet.id, kind, value, note, mediaId });
-      toast.show(`Sent ✅ ${pet.ownerName} was told`);
+      toast.show(`Sent. ${pet.ownerName} was told`);
       setMemo("");
       setPhoto(null);
       setPicked(null);

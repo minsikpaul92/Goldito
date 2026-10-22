@@ -280,7 +280,7 @@ export default function ProfileScreen() {
       session.patchProfile({ displayName: name });
       setLoaded(next);
       setHome(pin);
-      toast.show(pinNote ? `Profile saved ✅ · ${pinNote}` : "Profile saved ✅");
+      toast.show(pinNote ? `Profile saved · ${pinNote}` : "Profile saved");
       if (router.canGoBack()) router.back();
       else router.replace(homeFor(profile.role));
     } catch (error) {
@@ -305,7 +305,7 @@ export default function ProfileScreen() {
     try {
       setHome(await getCurrentPosition());
       setPinFromGps(true);
-      toast.show("Location found 📍 Tap Save to keep it");
+      toast.show("Location found. Tap Save to keep it");
     } catch (error) {
       setHomeNote(
         error instanceof LocationError && error.reason === "denied"

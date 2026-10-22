@@ -228,7 +228,7 @@ export default function BookCare() {
         serviceType: service,
         rebookedFrom,
       });
-      toast.show(`Request sent to ${chosen.displayName} 📨`);
+      toast.show(`Request sent to ${chosen.displayName}`);
       router.replace("/owner/bookings");
     } catch (error) {
       const code = error instanceof BookingError ? error.code : "";

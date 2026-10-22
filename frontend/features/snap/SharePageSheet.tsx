@@ -94,7 +94,7 @@ export function SharePageSheet({ visible, onClose, petId, petName, day, render, 
       setLink(url);
       try {
         await navigator.clipboard.writeText(url);
-        toast.show("Link copied 🔗");
+        toast.show("Link copied");
       } catch {
         toast.show("Copy the link from the box");
       }

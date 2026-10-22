@@ -173,7 +173,7 @@ function StickerMaker({ role, pets }: { role: Role; pets: PetsState }) {
       const file = new File([sticker.blob], "sticker.png", { type: "image/png" });
       const uploaded = await uploadMedia({ petId, purpose: "sticker", file, resourceType: "image" });
       await saveSticker(petId, uploaded.mediaId, me);
-      toast.show("Sticker saved ✂️");
+      toast.show("Sticker saved");
       setSticker(null);
       setPhoto(null);
       setPoint(null);
