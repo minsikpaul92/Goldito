@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, Image, StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import { StyleSheet, View } from "react-native";
 
 import type { PetMood } from "../../lib/petStatus";
-import { PIXEL_PNGS } from "../../features/pets/sprites/pngs";
+import type { HatId } from "../../features/pets/sprites/hats";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
-import { SPRITE_SIZE, petShape, spriteKey, spritePixels } from "../../features/pets/sprites/sprites";
+import { SCENE_SIZE, spriteScene, type Pose } from "../../features/pets/sprites/scene";
+import { petShape } from "../../features/pets/sprites/sprites";
 import type { Species } from "../../types/db";
 
 type Props = {
@@ -16,59 +17,42 @@ type Props = {
   mood: PetMood;
   /** Colors picked from the pet's photo (`pets.profile.pixel_colors`); they win over the coat. */
   colors?: PixelColors | null;
-  /** Screen px of one sprite pixel (the pet is 16 of them wide). */
+  /** Which way the pet looks and what it is doing; the default is looking at you. */
+  pose?: Pose;
+  /** Side poses face this way (the picture is mirrored for left). */
+  facing?: "left" | "right";
+  /** A hat on its head. */
+  hat?: HatId | null;
+  /** Screen px of one sprite pixel (the pet is 32 of them wide). */
   pixel?: number;
-  /** The idle sway left and right; off in lists and tests. */
-  sway?: boolean;
   testID?: string;
 };
 
+const FRONT: Pose = { view: "front", action: "idle", frame: 0 };
+
 /**
- * The 8-bit pet (11.12). One look = `species_shape_coat_mood`: a PNG from `pngs.ts` when there is one (Muk's art), else the
- * pixel grid drawn in code. Pixels of one color in a row are merged into one View, so a sprite is ~100 Views, not 256.
+ * The 8-bit pet (11.12): the whole animal in one pose, drawn from role-letter layers (`scene.ts`). Pixels of one color
+ * in a row are merged into one View, so a pose is a couple of hundred Views, not 1024.
  */
-export function PetSprite({ species, coat, breed, mood, colors, pixel = 8, sway = true, testID }: Props) {
-  const size = SPRITE_SIZE * pixel;
+export function PetSprite({ species, coat, breed, mood, colors, pose = FRONT, facing = "right", hat = null, pixel = 8, testID }: Props) {
+  const size = SCENE_SIZE * pixel;
   const shape = petShape(species, breed);
-  const key = spriteKey(species, coat, mood, shape);
-  const shift = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (!sway) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shift, { toValue: pixel, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(shift, { toValue: -pixel, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(shift, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [shift, sway, pixel]);
-
-  const rows = useMemo(() => runs(spritePixels(species, coat, mood, shape, colors)), [species, coat, mood, shape, colors]);
-  // Muk's PNGs come in the preset coats only, so photo colors are always drawn in code.
-  const png = colors ? undefined : PIXEL_PNGS[key];
+  const { view, action, frame } = pose;
+  const rows = useMemo(
+    () => runs(spriteScene({ species, coat, shape, mood, colors, pose: { view, action, frame }, facing, hat })),
+    [species, coat, shape, mood, colors, view, action, frame, facing, hat],
+  );
 
   return (
-    <Animated.View
-      accessibilityLabel={`${species} feeling ${mood}`}
-      accessibilityRole="image"
-      style={{ width: size, height: size, transform: [{ translateX: shift }] }}
-      testID={testID}
-    >
-      {png ? (
-        <Image source={png} style={[{ width: size, height: size }, styles.crisp]} />
-      ) : (
-        rows.map((row, y) => (
-          <View key={y} style={styles.row}>
-            {row.map((run, i) => (
-              <View key={i} style={{ width: run.length * pixel, height: pixel, backgroundColor: run.color ?? "transparent" }} />
-            ))}
-          </View>
-        ))
-      )}
-    </Animated.View>
+    <View accessibilityLabel={`${species} feeling ${mood}`} accessibilityRole="image" style={{ width: size, height: size }} testID={testID}>
+      {rows.map((row, y) => (
+        <View key={y} style={styles.row}>
+          {row.map((run, i) => (
+            <View key={i} style={{ width: run.length * pixel, height: pixel, backgroundColor: run.color ?? "transparent" }} />
+          ))}
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -89,6 +73,4 @@ function runs(pixels: (string | null)[][]): Run[][] {
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row" },
-  // Keeps a small PNG blocky instead of blurred (web; native ignores it).
-  crisp: { imageRendering: "pixelated" } as object,
 });

@@ -4,7 +4,8 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 import { PetStatus } from "../../lib/petStatus";
 import { formatTime, isoToZoned } from "../../features/schedule/dates";
 import type { PixelColors } from "../../features/pets/sprites/photoColors";
-import { SIZE_SCALE, SPRITE_SIZE, petSize } from "../../features/pets/sprites/sprites";
+import { SCENE_SIZE } from "../../features/pets/sprites/scene";
+import { SIZE_SCALE, petSize } from "../../features/pets/sprites/sprites";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Species } from "../../types/db";
@@ -68,7 +69,7 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, stat
             breed={breed}
             colors={colors}
             mood={mood}
-            pixel={Math.max(3, Math.floor(pixel * scale))}
+            pixel={Math.max(2, Math.floor(pixel * scale))}
             testID={testID ? `${testID}-sprite` : undefined}
           />
         </View>
@@ -92,11 +93,11 @@ export function PetRoomCard({ name, species, coat, breed, weightKg, colors, stat
   );
 }
 
-/** Whole sprite pixels: a big dog takes up to 80% of the stage's width and all of its height. */
-const PIXEL_MIN = 4;
-const PIXEL_MAX = 24;
+/** Whole sprite pixels: a big dog takes up to 55% of the stage's width and all of its height. */
+const PIXEL_MIN = 2;
+const PIXEL_MAX = 12;
 function stagePixel(width: number, height: number): number {
-  return Math.max(PIXEL_MIN, Math.min(PIXEL_MAX, Math.floor(Math.min(width * 0.8, height) / SPRITE_SIZE)));
+  return Math.max(PIXEL_MIN, Math.min(PIXEL_MAX, Math.floor(Math.min(width * 0.55, height) / SCENE_SIZE)));
 }
 
 function hudItems(status: PetStatus, species: Species) {
@@ -115,7 +116,7 @@ const makeStyles = (theme: Theme) =>
     device: { flex: 1, alignSelf: "stretch", gap: theme.spacing.sm, padding: theme.spacing.sm, borderRadius: theme.radius.xl, backgroundColor: theme.color.text },
     lcd: { flex: 1, alignItems: "center", gap: theme.spacing.sm, padding: theme.spacing.md, borderRadius: theme.radius.lg, backgroundColor: theme.color.blockButter },
     lcdTop: { alignSelf: "stretch", flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-    stage: { flex: 1, alignSelf: "stretch", minHeight: SPRITE_SIZE * PIXEL_MIN, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    stage: { flex: 1, alignSelf: "stretch", minHeight: SCENE_SIZE * PIXEL_MIN, alignItems: "center", justifyContent: "center", overflow: "hidden" },
     name: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
     mood: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     hud: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },

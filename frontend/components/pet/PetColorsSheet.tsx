@@ -80,7 +80,7 @@ export function PetColorsSheet({ visible, onClose, pet, onSaved }: Props) {
       }
     >
       <View style={styles.preview}>
-        <PetSprite species={pet.species} coat={pet.coat} breed={pet.breed} colors={picked ?? pet.colors} mood="calm" pixel={10} testID="pet-colors-preview" />
+        <PetSprite species={pet.species} coat={pet.coat} breed={pet.breed} colors={picked ?? pet.colors} mood="calm" pixel={5} testID="pet-colors-preview" />
       </View>
       {error ? (
         <Text style={styles.error} testID="pet-colors-error">
