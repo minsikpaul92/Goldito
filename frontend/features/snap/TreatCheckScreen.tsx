@@ -17,6 +17,7 @@ import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { PetChips, PetOption, PetsState, Role, SnapPets } from "./SnapPets";
 import { SafetyCheck, acknowledgeCheck, checkTreat, getCheck, listRecentChecks } from "./treatApi";
+import { formatDay, isoToZoned } from "../schedule/dates";
 
 type Step = "uploading" | "reading" | "checking";
 
@@ -255,7 +256,7 @@ function TreatCheck({ role, pets }: { role: Role; pets: PetsState }) {
               <Text style={styles.recentName} numberOfLines={1}>
                 {c.product_name || "Treat label"}
               </Text>
-              <Text style={styles.recentDate}>{new Date(c.createdAt).toLocaleDateString()}</Text>
+              <Text style={styles.recentDate}>{formatDay(isoToZoned(c.createdAt).day)}</Text>
             </Pressable>
           ))}
         </View>

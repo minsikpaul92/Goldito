@@ -144,7 +144,7 @@ export function CareTasksSection({ pet, userId }: Props) {
           : `What ${pet.name}'s sitter should do each day.`}
       </Text>
       <Button
-        label={stay ? "✍️ Write a care request" : "✍️ Write a care checklist"}
+        label={stay ? "Write a care request" : "Write a care checklist"}
         variant="secondary"
         onPress={() => router.push(`/owner/pets/${pet.id}/care-request`)}
         testID="care-request-open"

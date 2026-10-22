@@ -5,7 +5,7 @@ import changelog from "../features/settings/changelog.json";
 import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
-// Menu → Settings (11.11): the account with Edit profile, a notifications note, Privacy, the app version and Log out.
+// Menu → Settings (11.11): the account with Edit profile, a notifications note, Privacy, the app version and Sign out.
 // Menu → What's new: what shipped after launch (CHANGELOG 1.0.0 and later), never the build-up or the planned ones.
 
 for (const user of [OWNER, SITTER]) {
