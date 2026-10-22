@@ -1,7 +1,7 @@
 # Goldito 전체 서비스 흐름 (Full Process) — 제품 흐름 정본
 
 > **Status:** 2026-10-01 확정 (architecture **D27–D34**), 2026-10-02 보강 (**D35–D46**: 시터 말투 레이어 · 시터 승인 · 사람 속도 전달 · 모델 정책 · 변경 요청 · 위치 동의 · mood meter · SFT는 보여주기용 · Meet & Greet 규칙 · Google Meet · 에이전트 설명). 팀 시나리오 "Pawddy Full Process"(PDF·Markdown, 리포에 넣지 않음)를 앱 설계로 옮긴 문서입니다. 원문의 "PetNote"·"PawNote"(옛 이름)는 Pawddy입니다. **2026-10-02 원문 대조 최종 점검:** 원문의 모든 항목이 반영되어 있고(바꾼 부분은 §5에 이유와 함께 기록), 문서 사이 불일치를 정리했으며, 점검 뒤 결정(§9 #2·#3·#11·#12 — 자동 발송·읽음 표시·06B 순서·에이전트 설명)과 Meet & Greet 규칙(D44·D45), 알림장 글쓰기 거의 제로(D38 개정)를 반영했습니다.
-> **이 문서가 제품 흐름의 정본입니다.** 루트 README(심사위원용), 데모 영상, Phase 순서([phases/README.ko.md](phases/README.ko.md)), [TODO.md](TODO.md)가 이 흐름을 따릅니다. 스키마·API 세부는 phase 문서와 [architecture.ko.md](phases/architecture.ko.md)가 정본입니다.
+> **이 문서가 제품 흐름의 정본입니다.** 루트 README(심사위원용), 데모 영상, Phase 순서([phases/README.ko.md](phases/README.ko.md)), [GitHub issues](https://github.com/minsikpaul92/Goldito/issues)가 이 흐름을 따릅니다. 스키마·API 세부는 phase 문서와 [architecture.ko.md](phases/architecture.ko.md)가 정본입니다.
 > **UI·AI 출력은 영어** (D1). 아래 영어 문구는 화면 카피 초안입니다.
 
 ---

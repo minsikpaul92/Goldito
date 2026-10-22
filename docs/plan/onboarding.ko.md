@@ -174,7 +174,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 - Owner 가입 후 forced pet setup wizard (시드 데모가 우선)
 - 한국어 UI (D1: EN only)
 
-**Deferred / P1 polish:** OB.4 `intro_seen`, Welcome 일러스트, Intro에 “Request photo” 한 줄 등 — [Phase 11](phases/phase-11-p1.md) 또는 시간 남을 때. **다음 앱 큐는 Phase 04** ([TODO.md](TODO.md), [phase-04-upload.md](phases/phase-04-upload.md)).
+**Deferred / P1 polish:** OB.4 `intro_seen`, Welcome 일러스트, Intro에 “Request photo” 한 줄 등 — [Phase 11](phases/phase-11-p1.md) 또는 시간 남을 때. **다음 앱 큐는 Phase 04** ([GitHub issues](https://github.com/minsikpaul92/Goldito/issues), [phase-04-upload.md](phases/phase-04-upload.md)).
 
 ---
 

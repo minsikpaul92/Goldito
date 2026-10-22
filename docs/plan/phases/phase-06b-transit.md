@@ -153,8 +153,8 @@
 ### 새 세션에서 붙여 넣을 프롬프트
 
 ```text
-Read CLAUDE.md and docs/plan/TODO.md.
-Work ONLY on the "Current focus" task: Phase 06B Pet Transit.
+Read CLAUDE.md and the assigned GitHub issue.
+Work ONLY on the assigned issue: Phase 06B Pet Transit.
 Read docs/plan/phases/phase-06b-transit.md — the Goal, DoD, 작업 순서 (steps S1–S8) and 시작 전에 사람이 준비할 것.
 Update main, create feat/phase-06b-transit, work step by step: one commit per step, one PR (ready for review) for the whole phase, same PR until it is done.
 Before S1, tell me which of the "blocking" items in the 준비 list are still open. After each step report the commit, how you verified it, and the next step.
