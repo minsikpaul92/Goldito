@@ -3,7 +3,7 @@
 > **누구를 위한 문서?** 개발에 같이 참여하는 사람(민식 · 슬기 · 묵)과 테스트하는 사람.
 > **무엇을 알 수 있나?** ① 지금 무엇이 만들어졌고 무엇이 아직인지 ② 어떻게 확인하는지 ③ 확인 결과.
 > **언제 갱신하나?** 작업(Task) 하나가 끝날 때마다 **같은 커밋에서** 현황표와 시나리오를 고친다 ([CLAUDE.md](../../CLAUDE.md) §5).
-> 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [TODO.md](TODO.md).
+> 제품 흐름은 [full-process.ko.md](full-process.ko.md), 할 일 큐는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues).
 
 **마지막 갱신:** 2026-10-09 · #60 머지(FLOW-13~23 · REPORT-11~12 · RV-6~10 수정) · 테스트는 **main = Vercel** (§1.1) · 슬기 QA 트랙 [Phase Q](phases/phase-q-quality.md) · 이전: 첫 수동 테스트 결과 (§3.0), 코드 리뷰 시나리오 (§3.17)
 
@@ -336,7 +336,7 @@
 | BOOK-5 | 견적 → 동의서 → 데모 결제 → 출입 정보 잠금 해제 | 🤖 `checkout` · SQL | ❌ 10/08 민식 — Finish booking → "This sitter doesn't offer that service." (`sitter_rates` 비어 있음, FLOW-3) |
 | BOOK-6 | **영상 미팅 Google Meet 링크** (앱에서). 링크는 호스트(Goldito 계정) 승인 없이 **바로 입장**돼야 함 (다른 계정, 시크릿 창으로 확인). **Join Google Meet** 버튼은 Safari에서도 눌려 새 탭이 열려야 함 (진짜 `<a>` 링크) | 🤖 `test_meet_greet.py` (방 열기 호출 · 실패해도 링크 유지) · `meet-greet.spec.ts` (버튼이 `href` · `target=_blank` 링크) · Safari에서 실제 클릭과 입장은 **👤** | ➖ |
 | BOOK-7 | 시터가 요청의 **Decline** → 시트에서 사유 칩(여러 개 가능) + 짧은 메모(≤ 200자, 선택)를 입력 → **Decline request**. 칩 · 메모 없이도 거절됨. 시트의 **Suggest another time instead**는 거절하지 않고 시간 제안 시트를 연다 (FB-35) | 요청이 Declined로 Past에 가고, 오너에게 "Chloe declined your booking request" 알림(본문 = 사유 · 메모)이 오며, 오너의 예약 상세에 **"Chloe can't take this one."** 아래 인용으로 사유가 보임. 사유 · 메모가 없으면 인용 줄이 없음. 거절 · 취소된 예약에는 헤더 카드와 안내 줄 사이에 **빈 카드가 없음**(오너 · 시터 둘 다, 진행 중 예약은 단계 막대 그대로) | 🤖 `sitter-bookings` · SQL `rls_smoke` | ➖ |
-| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · Meet & Greet · Confirm · Pay · Stay)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 **Request Meet & Greet / Skip Meet & Greet** 두 버튼(#236, MGCHOICE-1), 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
+| BOOK-8 | **첫 만남 쌍의 첫 동의.** 오너가 처음 만나는 시터에게 요청 → 시터 상세 | 시터 화면 맨 위에 **단계 막대**(Request · M&G · Confirm · Pay · Care, #237)와 "Your turn", 버튼은 **Next / Decline**(Accept 없음). 오너 화면은 **Request Meet & Greet / Skip Meet & Greet** 두 버튼(#236, MGCHOICE-1), 날짜는 아직 홀드 안 됨 | 🤖 `meet-greet` · `sitter-bookings` · SQL `rls_smoke` (011l) | ➖ |
 | SCHED-1 | 시터 일정 · 오너가 보는 시터 프로필의 **달력** | 날짜 칸에 **M · A · N 글자가 없고** **날짜 칸 전체가 세 개의 가로 띠**(위부터 **Night · Afternoon · Morning** — 아래가 오전, 위가 밤, 날짜 숫자는 그 위). 예약할 수 없는 띠(막음 · 꽉 참 · 열지 않음)는 **연한 빗금**(세 띠가 같은 무늬로 이어짐), 열린 띠는 비어 있음. 지난 날은 흐리게(빗금 없음). 범례는 한 줄 **Available / Not available**. 날짜를 누르면 아래에 칸별 시간 · 상태("Morning: Open · 9:30 AM–1:00 PM", 막힌 이유 포함). 스크린리더 라벨에 세 칸 상태가 모두 있음. 네이티브는 빗금 대신 회색 칸(react-native-svg 없음) | 🤖 `schedule.spec.ts` (빗금 여부는 computed style) · 실제 폰 너비 👤 | 10/17 화면은 로컬 스크린샷으로만 확인 · 사람 확인 대기 |
 | SCHED-2 | 시터 Schedule에서 날짜 범위 고르기 | **하나씩 클릭**(첫 클릭 = 하루, 두 번째 클릭 = 범위, 다음 클릭 = 다시 시작)해도 되고, **날짜를 누른 채 끌어서** 한 번에 고를 수도 있음(뒤로 끌어도 됨, 선택이 끌리는 대로 바뀜, 끝나고 손을 떼면 그 범위 유지 · 요약에 "3 days"). 끌기가 끝날 때 생기는 클릭은 선택을 다시 시작하지 않음. 지난 날짜는 범위에 들어오지 않음. 폰에서는 **길게 눌렀다가** 끌어야 하고, 그냥 쓸어 넘기면 화면이 스크롤됨. 오너가 보는 시터 달력은 하루만 고름 | 🤖 `schedule.spec.ts` (마우스 끌기 · 클릭) · 폰 길게 누르기는 👤 | 사람 확인 대기 (터치 끌기는 아직 실제 기기에서 안 봄) |
 | SCHED-3 | 시터 Schedule **기본 열림** — 일정을 하나도 안 만든 시터 | 달력의 모든 날 · 세 시간대가 **열림**(프로필의 기본 시간 · 기본 마릿수), 오너 검색에도 나옴(이전엔 일정을 열어야만 나왔음). 날짜를 눌러 Open으로 저장하면 **그 날들만** 시간 · 마릿수가 바뀜. Open 시트에서 **일부 시간대만 체크하고 저장하면 체크를 끈 시간대는 그 날들에 닫힘**(예: 오전만 열면 그 날의 오후 · 야간은 Blocked, 이미 확정된 예약과 겹치면 취소 확인이 먼저 뜸). 날짜를 건드리지 않으면 전부 열림. 반복해서 닫으려면 아래 규칙 | 🤖 `schedule.spec.ts` · `sitters.spec.ts` · SQL `rls_smoke` (014d) | 사람 확인 대기 |
@@ -877,7 +877,7 @@
 | CHAT-20 | 첫 만남 쌍: 시터 → 채팅(오너의 요청 카드) → 푸터 **Next** → **Pick a time** → 장소 · 시간 → Send / 오너 → 푸터 **Accept** → 바로 **Done, we met**(시간 전이면 한 번 더 확인, #229) | 푸터는 **지금 내 차례의 한 가지**만(아니면 "Waiting for …"). **Meet & Greet 카드**가 날짜 홀드 · 제안 · 수락 · Done을 DB에서 읽어 그리고, 한 줄로 접힘("Met ✓"). 건너뛰기 · 시간 바꾸기 · 거절 · 캘린더 · Google Meet 링크는 카드 안에서(기존 RPC) | 🤖 `chat` | 사람 확인 대기 · 실제 Google Meet 링크는 3B.11 변수가 있는 호스팅 DB에서 |
 | CHAT-21 | Meet & Greet 뒤(반복 쌍은 요청 직후): 오너 푸터 **I'd like to book** → 시트(펫 · 시간 · 체크리스트 · 가격) → 확인 / 시터 푸터 **I accept** | **Agreement 카드**에 두 줄(오너 ✓ / 시터 ✓), 순서 자유, 둘 다 있으면 "Booked, you both agreed ✓" 한 줄로 접힘. 한쪽만 눌렀을 때 부킹은 요청 상태, **결제 버튼 없음** | 🤖 `chat` · SQL `rls_smoke` 014o | 사람 확인 대기 |
 | CHAT-22 | **(수수료 부분은 #265로 없어짐)** 둘 다 동의한 뒤: 시터 푸터 **Send final quote** (수수료는 카드에서 추가) → 오너 수수료 Accept/Decline → 푸터 **Confirm quote** → **Pay $…** → Checkout(서명 · 데모 결제) | 최종 견적이 **확인되어야** 오너에게 Pay가 나옴(그 전에는 "Waiting for …"). **Payment 카드**는 총액과 "Held until the stay ends"(결제 뒤 "Paid"), 카드를 눌러도 Checkout으로. Checkout 총액 = 카드 총액(수락한 수수료 포함) = 낸 금액. 카드 정보 없음 | 🤖 `chat` · `checkout` · SQL `rls_smoke` 014o | 사람 확인 대기 |
-| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 Meet은 체크됨 | 🤖 `chat` | 사람 확인 대기 |
+| CHAT-23 | 이미 만난 쌍의 채팅 | 푸터에 **Next**가 없고 Meet & Greet 카드도 없음, 진행 원은 3번째(Confirm)에서 시작하며 M&G는 체크됨 | 🤖 `chat` | 사람 확인 대기 |
 | CHAT-24 | 오너가 "How much would it be?"처럼 가격을 물은 뒤 시터가 채팅을 열기, 또는 시터가 "Shall we book it?"이라고 한 뒤 오너가 열기 | 말 칩 줄 맨 앞에 **번개 아이콘이 붙은 행동 칩**(시터 `Send quote`, 오너 `I'd like to book` 등)이 한 개 나온다. 누르면 푸터나 카드가 하는 것과 같은 시트가 **열릴 뿐** 아무것도 저장되지 않고, 칩은 사라진다(눌러서 확정하는 것은 시트 안). 서버가 가리켜도 **이 화면에서 지금 불가능한 행동**(예: 확정 전 `pay`)은 안 나오고, 행동이 없으면 말 칩만. 코드가 만든 가능한 행동 목록(`get_booking_stages`의 단계 + 카드 상태) 안에서만 고르고 확신도 0.7 미만 · 단계를 못 읽음 · 모델 장애면 없음 | 🤖 `chat` · pytest `test_ai_chat` | 사람 확인 대기 · 실제 모델 응답은 배포 앱에서 |
 | CHAT-25 | 오너와 시터의 AI가 따로: 시터가 오너의 첫 글(Stay 카드와 "Can you take Max?")에 칩 → 초안 / 오너가 시터 답 뒤에 칩 → 초안 | 두 쪽이 **각자의 프롬프트와 입력**을 씀. 시터의 **첫 답은 인사와 자기소개**("Hi Robert, I'm Chloe …")이고 **금액이 없음**. 금액(견적, 요금)은 오너가 돈을 물었거나 채팅에 견적 카드가 있을 때만 시터 쪽에 들어가고, **오너 쪽은 요금 · 정책 · 가용성을 못 보고** 채팅에 보이는 견적만 봄. 오너 초안은 "I can host" · "my place" 같은 호스트 말이 없고 **맡기고 찾는 쪽은 오너**(시터가 "I'll pick up"이라고 쓰거나 오너가 "you drop off"라고 쓴 초안은 거절되고 다시 씀). 직전 메시지(양쪽)와 거의 같은 초안도 거절. 펫에 없는 종의 이모지(개 둘에 고양이)도 거절. 모델은 `MODEL_CHAT_OWNER` / `MODEL_CHAT_SITTER`(초안)와 `MODEL_CHAT_CHIPS`(칩), 모두 기본 Super(비면 `MODEL_FAST`) | 🤖 pytest `test_ai_chat` · `test_nebius` | 사람 확인 대기 · 실제 모델로 오너와 시터를 나란히(`?view=split`) 4턴 이상 눌러서 말투 · 반복 · 역할을 읽어야 함 |
 | CHAT-26 | 칩 요청이 실패하거나 연결이 끊김, 로그 | Supabase 연결이 끊겨도 `chat-chips`는 200과 기본 칩(채팅 자체를 못 읽으면 한 번 다시 시도한 뒤 503). 칩 · 초안마다 서버 로그 한 줄 `chat_ai {...}`(쪽 · 상태 · source model/fallback · 버려진 이유 · 칩 문구 · 초안 문구): 이름은 `{NAME}`으로 가려지고 id는 없음 | 🤖 pytest `test_ai_chat` · 🤖 `chat` | 사람 확인 대기 |
@@ -1066,6 +1066,15 @@
 | MGCHOICE-5 | 한쪽이 건너뛰기를 요청한 뒤 다른 쪽 | **Accept skip**(채팅은 푸터) · **Request Meet & Greet**(새 시간) · 빨간 **Decline**. Accept skip이면 Meet & Greet 없이 Confirm 단계로, Request Meet & Greet이면 새 시간 제안으로 바뀜. 시터의 Accept skip도 첫 동의 | 🤖 `chat` · `meet-greet` · SQL | ➖ |
 | MGCHOICE-6 | 오너가 아무것도 안 고른 요청 | 시터는 예전처럼 **Next**로 먼저 날짜를 홀드할 수 있음(BOOK-9) | 🤖 `meet-greet` | ➖ |
 | MGCHOICE-7 | Checkout의 **Type your name to sign** | 처음엔 비어 있고 프로필 이름이 연한 힌트로만 보임, 자동완성 꺼짐. 이름을 쳐야 Pay가 켜짐 | 🤖 `checkout` | ➖ |
+
+### 3.51 단계 막대: M&G · Care, Scheduled · Trip · Skipped (STAGEBAR) · #237
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| STAGEBAR-1 | 채팅 위 · 예약 화면의 단계 막대 | 다섯 단계 **Request · M&G · Confirm · Pay · Care**(예전 Meet · Stay). 360 px 폭에서도 잘리지 않음. 스크린리더는 "Meet & Greet"로 읽음 | 🤖 `chat` · `meet-greet` | ➖ |
+| STAGEBAR-2 | Meet & Greet 시간이 합의됨(Meet & Greet set) | M&G 아래 작은 글씨 **Scheduled**. 화상이든 직접이든 같음(Meet & Greet에는 트립이 없음) | 🤖 `meet-greet` | ➖ |
+| STAGEBAR-3 | 둘 다 건너뛰기에 동의 | M&G 원에 ✓ 대신 **–**, 아래 **Skipped** | 🤖 `meet-greet` | ➖ |
+| STAGEBAR-4 | 결제 뒤 맡기기 전 / 맡기기 트립이 가는 중 | Care 아래 **Scheduled**, 트립이 출발해 끝날 때까지(도착 포함) **Trip**, 맡기면 사라짐. 채팅과 예약 화면 모두 | 🤖 `chat-trip` | 실제 트립 👤 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
