@@ -5,6 +5,8 @@ buttons are possible (`chat.available_actions`). This only turns them into one s
 what is settled and picks what comes next. It never decides anything: a person still presses every button.
 """
 
+import re
+
 from app.ai.chat import ACTIONS
 
 STEPS = ("hello", "decide", "meet_greet", "agree", "pay", "handoff", "care", "done")
@@ -108,3 +110,58 @@ def progress(
     elif step == "care":
         now.append(_CARE_NOW[role])
     return {"step": step, "step_label": LABEL[step], "turn": turn, "now": now, "waiting_for": waiting, "done": done, "later": later}
+
+
+# --- what is left to talk about --------------------------------------------------------------------------------------
+
+
+def _pets(facts: dict) -> list[dict]:
+    return facts.get("pets") or []
+
+
+def _has_medication(facts: dict) -> bool:
+    for pet in _pets(facts):
+        if any(t.get("type") == "medication" for t in pet.get("checklist", [])):
+            return True
+        if "daily medication" in " ".join((pet.get("profile") or {}).get("safety", [])) or re.search(r"\b(pill|medic)", str(pet.get("owner_notes", "")), re.I):
+            return True
+    return False
+
+
+def _is_sensitive(facts: dict) -> bool:
+    return any(
+        pet.get("heads_up") or (pet.get("profile") or {}).get("personality", {}).get("Sensitivity") in ("Sensitive", "Very sensitive")
+        for pet in _pets(facts)
+    )
+
+
+# id, label the model reads, what a message must say to cover it, whether it matters for these pets. Safety first.
+TOPICS = (
+    ("allergies", "food allergies", r"allerg", lambda f: True),
+    ("medication", "medication", r"\b(pills?|medic\w*|doses?|tablets?|apoquel)\b", _has_medication),
+    ("feeding", "meals and treats", r"\b(feed\w*|food|meals?|breakfast|dinner|treats?|kibble)\b", lambda f: True),
+    ("walks", "walks and play", r"\b(walks?|walking|park|exercise|play\w*)\b", lambda f: any(p.get("species") == "dog" for p in _pets(f))),
+    ("litter", "the litter box", r"\blitter\b", lambda f: any(p.get("species") == "cat" for p in _pets(f))),
+    ("stress", "what stresses them", r"\b(noises?|nervous|anxious|scared|stress\w*|thunder|fireworks)\b", _is_sensitive),
+    ("updates", "photo updates", r"\b(photos?|pics?|pictures?|updates?)\b", lambda f: True),
+    ("emergency", "the vet and emergencies", r"\b(vets?|emergenc\w*|clinic)\b", lambda f: True),
+    ("drop_off", "the drop-off", r"\bdrop[- ]?off\b", lambda f: True),
+    ("pick_up", "the pick-up", r"\bpick[- ]?up\b", lambda f: True),
+)
+MAX_OPEN = 5
+
+
+def topics(messages: list[dict], me_id: str, facts: dict, step: str) -> dict | None:
+    """What has and has not come up yet, from what was typed (cards do not count). A topic is covered once two texts or one
+    text from each side mention it. None before hello and after the stay: nothing is left to steer."""
+    if step in ("hello", "done", "closed"):
+        return None
+    texts = [(m.get("sender_id") == me_id, str(m.get("body") or "")) for m in messages if m.get("kind") == "text"]
+    open_: list[str] = []
+    covered: list[str] = []
+    for _id, label, pattern, relevant in TOPICS:
+        if not relevant(facts):
+            continue
+        hits = [mine for mine, body in texts if re.search(pattern, body, re.IGNORECASE)]
+        (covered if len(hits) >= 2 or {True, False} <= set(hits) else open_).append(label)
+    return {"open": open_[:MAX_OPEN], "covered": covered}

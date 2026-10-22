@@ -556,6 +556,46 @@ def test_the_draft_reads_the_progress_too(client, setup):
     assert ctx.model.payload()["progress"]["step"] == "agree"
 
 
+PETS_WITH_ALLERGY = [
+    {"name": "Max", "species": "dog", "allergies": ["chicken", "wheat"], "profile": {"allergies": "allergic to chicken, wheat"}},
+    {"name": "Luna", "species": "cat", "profile": {"allergies": "none, the owner says"}},
+    {"name": "Bo", "species": "dog", "profile": {"allergies": "not answered yet: do not say there are none"}},
+]
+
+
+@pytest.mark.parametrize(
+    ("text", "bad"),
+    [
+        ("Max has no allergies, just his pill.", True),
+        ("Max isn't allergic to anything, don't worry.", False),  # not a phrase we catch: it is the model's wording, not a denial pattern
+        ("He doesn't have any allergies.", True),  # no pet named: Max's allergy makes it wrong
+        ("Max is allergy-free.", True),
+        ("Max has no allergies beyond chicken and wheat.", False),
+        ("Luna has no allergies. Max is allergic to chicken.", False),  # Luna's own answer was none
+        ("Bo has no allergies.", True),  # never answered
+        ("Max is allergic to chicken and wheat.", False),
+    ],
+)
+def test_a_sentence_that_denies_allergies_the_facts_list_or_nobody_answered_is_caught(text, bad):
+    assert bool(logic.allergy_denial(text, PETS_WITH_ALLERGY)) is bad
+
+
+def test_a_pet_whose_owner_said_none_may_be_called_allergy_free():
+    assert logic.allergy_denial("Luna has no allergies.", PETS_WITH_ALLERGY[1:2]) is None
+
+
+def test_a_draft_that_denies_the_pets_allergy_is_rewritten_and_the_model_reads_the_topics(client, setup):
+    db = make_db(
+        message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi Chloe, can you take Max?"), message(3, SITTER_ID, "Hi Robert, does Max have any allergies?"),
+        pet_allergies=[{"pet_id": PET_ID, "allergen": "chicken"}],
+    )
+    ctx = setup({"reply": "Max has no allergies, thanks for asking!"}, {"reply": "Max is allergic to chicken, so no chicken treats please."}, db=db)
+    body = draft(client, "Answer about allergies", owner_token()).json()
+    assert body == {"text": "Max is allergic to chicken, so no chicken treats please.", "source": "model"}
+    assert "chicken" in ctx.model.calls[1]["messages"][-1]["content"]  # the problem was told to the model
+    assert ctx.model.payload(0)["topics"]["open"][0] == "food allergies"  # asked once, not settled
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

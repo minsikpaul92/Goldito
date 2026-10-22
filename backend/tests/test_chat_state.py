@@ -64,3 +64,32 @@ def test_in_care_and_a_closed_booking():
     assert run("owner", booking={}, stage="in_care")["step"] == "care"
     closed = run("owner", booking={}, stage="cancelled")
     assert closed["step"] == "closed" and closed["now"] == [] and closed["later"] == []
+
+
+# --- topics ----------------------------------------------------------------------------------------------------------
+
+DOG_FACTS = {"pets": [{"name": "Max", "species": "dog", "allergies": ["chicken"], "profile": {"safety": ["daily medication"]}, "checklist": [{"type": "medication"}]}]}
+CAT_FACTS = {"pets": [{"name": "Luna", "species": "cat"}]}
+
+
+def said(*pairs):
+    return [{"kind": "text", "sender_id": who, "body": body} for who, body in pairs]
+
+
+def test_topics_are_open_until_two_texts_or_both_sides_mention_them():
+    messages = said((OWNER, "Max is allergic to chicken."), (SITTER, "Thanks, I will note the allergy."), (OWNER, "He takes a pill at 8."))
+    out = cs.topics(messages, OWNER, DOG_FACTS, "decide")
+    assert "food allergies" in out["covered"] and "medication" not in out["covered"]  # one mention is not settled
+    assert out["open"][0] == "medication" and "walks and play" in out["open"]
+    assert "the litter box" not in out["open"] + out["covered"]  # a dog has none
+
+
+def test_topics_depend_on_the_pets_and_are_capped_safety_first():
+    out = cs.topics([], OWNER, CAT_FACTS, "decide")
+    assert out["open"][:2] == ["food allergies", "meals and treats"] and "the litter box" in out["open"] and len(out["open"]) == cs.MAX_OPEN
+    assert "medication" not in out["open"] and "walks and play" not in out["open"]
+
+
+def test_no_topics_before_hello_after_the_stay_or_when_the_booking_is_closed():
+    for step in ("hello", "done", "closed"):
+        assert cs.topics([], OWNER, DOG_FACTS, step) is None

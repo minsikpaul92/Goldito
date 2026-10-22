@@ -200,6 +200,28 @@ def wrong_species_emoji(text: str, pets: list[dict]) -> str | None:
     return None
 
 
+_NO_ALLERGY = re.compile(
+    r"\b(?:no (?:known |food )?allerg(?:y|ies)|not allergic|(?:doesn't|does not|don't|do not|has no|have no) (?:have )?(?:any )?(?:known )?(?:food )?allerg(?:y|ies)|allergy[- ]free)\b"
+    r"(?!\s+(?:beyond|other than|besides|except|apart))",
+    re.IGNORECASE,
+)
+
+
+def allergy_denial(text: str, pets: list[dict]) -> str | None:
+    """A sentence that says there are no allergies when the facts list some, or when the owner never answered. A sentence
+    that names a pet is judged by that pet; one that names none, by every pet. Why it is wrong, or None."""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if not _NO_ALLERGY.search(sentence):
+            continue
+        named = [p for p in pets if p.get("name") and re.search(rf"\b{re.escape(p['name'])}\b", sentence)]
+        for pet in named or pets:
+            if pet.get("allergies"):
+                return f"it says {pet.get('name', 'the pet')} has no allergies, but the facts list {', '.join(pet['allergies'])}"
+            if str((pet.get("profile") or {}).get("allergies", "")).startswith("not answered"):
+                return "it says there are no allergies, but the owner has not answered that yet"
+    return None
+
+
 def _plain(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9 ]+", " ", text.lower()).split())
 
@@ -272,6 +294,9 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
         role == "sitter" and sitter_first and re.search(rf"\b{re.escape(sitter_first)}(?:'s)? (is|has|will|can|would|may)\b", text)
     ):
         problems.append("it talks about me in the third person or mentions an assistant, write in the first person")
+    denial = allergy_denial(text, grounding.get("pets") or [])
+    if denial:
+        problems.append(denial)
     wrong = wrong_species_emoji(text, grounding.get("pets") or [])
     if wrong:
         problems.append(f"it has a {wrong} emoji, but the pets are not a {wrong}")

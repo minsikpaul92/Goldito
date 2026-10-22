@@ -327,6 +327,9 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
             ctx["role"], messages, user.id, booking_state["booking"], booking_state["stage"], booking_state["next_actor"], _actions(ctx),
             has_stay=bool(stay), priced=logic.is_priced(messages, stay),
         )
+    left = chat_state.topics(messages, user.id, facts, base.get("progress", {}).get("step", "decide"))
+    if left:
+        base["topics"] = left
     return base, facts, last_them
 
 
