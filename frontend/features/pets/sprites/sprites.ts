@@ -265,3 +265,9 @@ export function spritePixels(
     });
   });
 }
+
+// The pieces the whole-pet scene (`scene.ts`) draws its front head and face from.
+export const mirrorHalf = mirror;
+export const FRONT_HEAD_HALVES = SHAPE_HALVES;
+export const FRONT_FACE = FACE;
+export const DEFAULT_SHAPE_OF = DEFAULT_SHAPE;

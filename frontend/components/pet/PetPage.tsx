@@ -4,7 +4,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Screen } from "../ui/Screen";
 import { TextButton } from "../ui/TextButton";
+import { asHat, itemName, ownedItems } from "../../features/pets/items";
+import { savePetHat } from "../../features/pets/petApi";
+import type { HatId } from "../../features/pets/sprites/hats";
 import { asPixelColors } from "../../features/pets/sprites/photoColors";
+import { useToast } from "../../providers/ToastProvider";
 import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import type { Pet } from "../../types/db";
@@ -21,10 +25,26 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
   const styles = useThemedStyles(makeStyles);
   const [selected, setSelected] = useState(pets[0]?.id);
   const [making, setMaking] = useState(false);
+  const toast = useToast();
+  // The hat just put on or taken off, until the pets are reloaded.
+  const [hats, setHats] = useState<Record<string, HatId | null>>({});
   const pet = pets.find((p) => p.id === selected) ?? pets[0];
   if (!pet) return null;
   const colors = asPixelColors(pet.profile?.pixel_colors);
-  const look = { id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, colors };
+  const hat = pet.id in hats ? hats[pet.id] : asHat(pet.profile?.hat);
+  const look = { id: pet.id, name: pet.name, species: pet.species, coat: pet.profile?.coat, breed: pet.breed, weightKg: pet.weight_kg, colors, hat };
+
+  const toggleHat = async (id: HatId) => {
+    const next = hat === id ? null : id;
+    setHats((prev) => ({ ...prev, [pet.id]: next }));
+    try {
+      await savePetHat(pet.id, next);
+      onChanged?.();
+    } catch (e) {
+      setHats((prev) => ({ ...prev, [pet.id]: hat }));
+      toast.show((e as Error).message);
+    }
+  };
 
   return (
     <Screen contentStyle={styles.page} testID="pet-page">
@@ -48,6 +68,21 @@ export function PetPage({ pets, onChanged }: { pets: Pet[]; onChanged?: () => vo
         pet={look}
         onPress={() => router.push("/owner/diary")}
       />
+      <View style={styles.wardrobe}>
+        {ownedItems(pets.length).map((item) => (
+          <Pressable
+            key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={`${itemName(item)} ${hat === item.id ? "on" : "off"}`}
+            aria-pressed={hat === item.id}
+            onPress={() => void toggleHat(item.id)}
+            style={[styles.pill, hat === item.id && styles.pillOn]}
+            testID={`pet-hat-${item.id}`}
+          >
+            <Text style={[styles.pillText, hat === item.id && styles.pillTextOn]}>{`${item.emoji} ${itemName(item)}`}</Text>
+          </Pressable>
+        ))}
+      </View>
       <TextButton label="🎨 Match colors from photo" onPress={() => setMaking(true)} style={styles.make} testID="pet-colors-open" />
       <PetColorsSheet
         visible={making}
@@ -64,6 +99,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     page: { gap: theme.spacing.md },
     make: { alignSelf: "center" },
+    wardrobe: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     switcher: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: theme.spacing.sm },
     pill: {
       minHeight: theme.layout.touchTarget,

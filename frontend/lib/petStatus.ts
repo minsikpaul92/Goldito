@@ -17,14 +17,16 @@ export type PetStatus = {
   potty: "done" | "due" | "unknown";
   /** Walk minutes logged today. */
   walkMinutes: number;
+  /** A nap with no Awake after it yet (the sitter taps Awake when the pet wakes). */
+  sleeping: boolean;
   nextTask: PendingTask | null;
 };
 
 const HOUR = 3_600_000;
 /** No meal for this long (or a light one) reads as hungry. */
 const HUNGRY_AFTER = 6 * HOUR;
-/** A nap this recent keeps the pet sleepy. */
-const SLEEPY_FOR = 2 * HOUR;
+/** A nap lasts until the sitter taps Awake; one nobody ended is over after this long. */
+const NAP_MAX = 4 * HOUR;
 /** A walk this recent makes the pet excited when no mood was logged. */
 const WALK_GLOW = HOUR;
 /** Minutes after midnight (app timezone) from which a missing potty is flagged. */
@@ -43,7 +45,7 @@ export function derivePetStatus(
 ): PetStatus {
   const nextTask = [...pending].sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt))[0] ?? null;
   if (checkins.length === 0) {
-    return { mood: "calm", meal: "unknown", potty: "unknown", walkMinutes: 0, nextTask };
+    return { mood: "calm", meal: "unknown", potty: "unknown", walkMinutes: 0, sleeping: false, nextTask };
   }
 
   const newestFirst = [...checkins].sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
@@ -61,13 +63,16 @@ export function derivePetStatus(
   const walkMinutes = checkins.filter((c) => c.kind === "walk").reduce((sum, c) => sum + (Number(c.value) || 0), 0);
 
   const nap = latest("nap");
+  const wake = latest("wake");
+  // Asleep from a nap until the Awake after it (or until the nap is too old to be true).
+  const sleeping = !!nap && age(nap) <= NAP_MAX && (!wake || Date.parse(wake.at) < Date.parse(nap.at));
   const walk = latest("walk");
   const mood = latest("mood");
   let face: PetMood = "calm";
-  if (nap && age(nap) <= SLEEPY_FOR) face = "sleepy";
+  if (sleeping) face = "sleepy";
   else if (mealState === "hungry") face = "hungry";
   else if (mood && MOOD_OF[mood.value ?? ""]) face = MOOD_OF[mood.value ?? ""];
   else if (walk && age(walk) <= WALK_GLOW) face = "excited";
 
-  return { mood: face, meal: mealState, potty: pottyState, walkMinutes, nextTask };
+  return { mood: face, meal: mealState, potty: pottyState, walkMinutes, sleeping, nextTask };
 }

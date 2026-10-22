@@ -53,7 +53,7 @@ function PetTaps({ pet }: { pet: CaringPet }) {
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const errorDialog = useErrorDialog();
-  const { coat, breed, weightKg, colors } = usePetLook(pet.id);
+  const { coat, breed, weightKg, colors, hat } = usePetLook(pet.id);
   const [reloadKey, setReloadKey] = useState(0);
   const [sending, setSending] = useState<string | null>(null);
 
@@ -77,26 +77,28 @@ function PetTaps({ pet }: { pet: CaringPet }) {
 
   return (
     <PetRoom
-      pet={{ id: pet.id, name: pet.name, species: pet.species, coat, breed, weightKg, colors }}
+      pet={{ id: pet.id, name: pet.name, species: pet.species, coat, breed, weightKg, colors, hat }}
       reloadKey={reloadKey}
       onPress={() => router.push(`/sitter/checkin/${pet.id}`)}
     >
-      <View style={styles.actions}>
-        {petActionsFor(pet.species).map((action) => (
-          <Pressable
-            key={action.key}
-            accessibilityRole="button"
-            accessibilityLabel={`${action.label} ${pet.name}`}
-            disabled={sending !== null}
-            onPress={() => void send(action)}
-            style={({ pressed }) => [styles.action, pressed && styles.pressed, sending !== null && styles.disabled]}
-            testID={`pet-action-${pet.id}-${action.key}`}
-          >
-            <Text style={styles.emoji}>{action.emoji}</Text>
-            <Text style={styles.label}>{action.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      {(status) => (
+        <View style={styles.actions}>
+          {petActionsFor(pet.species, status?.sleeping).map((action) => (
+            <Pressable
+              key={action.key}
+              accessibilityRole="button"
+              accessibilityLabel={`${action.label} ${pet.name}`}
+              disabled={sending !== null}
+              onPress={() => void send(action)}
+              style={({ pressed }) => [styles.action, pressed && styles.pressed, sending !== null && styles.disabled]}
+              testID={`pet-action-${pet.id}-${action.key}`}
+            >
+              <Text style={styles.emoji}>{action.emoji}</Text>
+              <Text style={styles.label}>{action.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </PetRoom>
   );
 }
