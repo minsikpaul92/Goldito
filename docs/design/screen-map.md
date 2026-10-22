@@ -372,9 +372,9 @@ Shows: `RoleCard`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| BackLink | — | `signup-back` | 83 |
-| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 165 |
-| TextButton | Already have an account? Sign in | `go-login` | 173 |
+| BackLink | — | `signup-back` | 86 |
+| Button | submitting ? "Creating account…" : "Create account" | `create-account` | 175 |
+| TextButton | Already have an account? Sign in | `go-login` | 183 |
 
 ### `/sitter` — [app/sitter/(tabs)/index.tsx](../../frontend/app/sitter/(tabs)/index.tsx)
 
