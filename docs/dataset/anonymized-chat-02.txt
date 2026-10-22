@@ -1,0 +1,5058 @@
+{SITTER}: Hi {OWNER},
+I made this group chat for convenient communication
+
+{SITTER}: So I think {SITTER} might go to your place for the daycare
+
+{SITTER}: Hi {OWNER} ☺️
+
+{OWNER}: Hi {SITTER} 😊
+
+{SITTER}: Could you share the detail plan for the day like what time you will leave and what time you will come back
+
+{OWNER}: Yes of course! Can I confirm on {DATE}?
+
+{SITTER}: Of course :) Take your time!
+
+{OWNER}: Also just sent you {PRICE}! [Photo]
+
+{SITTER}: Got it thanks :)
+
+{OWNER}: Good morning {SITTER}! For {DATE}, could you please come around {TIME}? I plan to be back around {TIME} 😊
+
+{OWNER}: Also, for {PET}’s boarding, could I extend it to start on {DATE} (instead of {DATE})?
+
+{SITTER}: Hi {OWNER}. I will come at {TIME} on {DATE}. Please let me know your address, and I will be there at that time!☺️
+
+{SITTER}: Of course! We can available {PET}'s boarding to start on {DATE} instead of {DATE}. Please let us know the drop-off and pick-up times, and {SITTER} will inform you if there's anything else that needs to be arranged. :)
+
+{OWNER}: Thank you so much!
+My address is:
+{ADDRESS}Unit {ADDRESS}My Buzzer {CODE}
+
+{OWNER}: That’s amazing! I also just sent another {PRICE} to {SITTER} 😊 [Photo]
+
+{OWNER}: For {DATE}, I’m planning on dropping off {PET} between {TIME}.
+For {DATE} pickup, it should also be around {TIME}.
+
+{SITTER}: Would I need to receive the key from you in advance?
+
+{OWNER}: I’ll probably be here when you arrive and I’ll leave a second set of keys for you 😊
+
+{SITTER}: That sounds great! Thank you :)
+
+{OWNER}: Good morning {SITTER}!
+Here’s some notes for today -
+1. Could you please take {PET} on her walk at {TIME} today? The weather is really nice, so it would be great if you could bring her to the park.
+2. ⁠It would be great if you could feed her dinner around {TIME}. 
+3. ⁠{PET}’s dinner is in the fridge. It’s labeled with “{PET}’s dinner”. Add some filtered water to her food bowl for dinner. 
+3. ⁠She didn’t finish all her breakfast yet. If she doesn’t finish her breakfast, then no need to feed her dinner.
+4. ⁠Could you take her in her Night walk between {TIME}. ⁠If I’m not back by {TIME}, feel free to leave. Please make sure to lock the door and you can leave the keys on the ground outside my door 😊
+➡️Wifi: {WIFI}
+➡️Keys will be on the kitchen counter.
+➡️I brought some pineapple cakes from {LOCATION} for you and {SITTER} to try which is also on the kitchen counter.
+Please make yourself at home! Feel free to watch tv and use anything you need. If you have any questions, just let me know!
+Thank you 🙏🏻😊
+
+{OWNER}: I will be here when you arrive and leave shortly after 😊
+
+{OWNER}: See you soon!
+
+{SITTER}: Good morning {OWNER}, thank you for detailed notes :) I’ll make sure of everything! I’m so excited to try the cakes, thank you so much!🫶🏻
+
+{SITTER}: Also, I’ll leaving soon. I’ll text you before {TIME}. See you soon ☺️
+
+{OWNER}: Great!! {PET} will be so excited to see you 😊
+
+{SITTER}: On the way! Will be there {TIME}
+
+{OWNER}: Ok! Could you please try the buzzer? {CODE}
+➡️Unit {ADDRESS}{SITTER}: Sure
+
+{SITTER}: Hey {OWNER}, we just got back home. The weather was so nice that we took {PET} for a walk in {ADDRESS}, went to the dog park, enjoyed the sunshine, and had a pleasant walk back home :) As soon as we got home, {PET} finished her leftover breakfast. It seems like she might take a nap now. 😊✌️ [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you!! She looks like she enjoyed the {DATE} 😊
+
+{SITTER}: Yeah, she really enjoyed the sunshine. If there’s anything else you need, just let me know!
+
+{SITTER}: Hi {OWNER}, the Wifi password isn’t correct, could you please check it for me?
+
+{OWNER}: {WIFI}
+This isn’t correct?
+
+{SITTER}: No it isn’t. 🥲
+
+{OWNER}: Oh! I’m so sorry. That’s weird.
+Can you try {WIFI}?
+
+{SITTER}: Oh now i got it. It’s my mistake. Thank you for checking!
+
+{OWNER}: That’s great! 😃
+
+{OWNER}: Hi {SITTER}, did {PET} eat her dinner?
+
+{SITTER}: She ate her dinner little bit
+
+{OWNER}: Ok thanks! 😊
+
+{SITTER}: I’ll take her in her Night walk soon :))
+
+{OWNER}: Great, thank you!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: I send the photos of today’s {PET} (all of photo are cuddling😂) Have a good night :)) [Photo]
+
+{SITTER}: Good morning, {OWNER}😊 Just reminder that is our home address ({ADDRESS}). We’ll be all set! Looking forward to seeing you and {PET} this {DATE} at {TIME}! 🐶
+
+{OWNER}: Thank you {SITTER}! We look forward to seeing you again 😊 {PET} and I will be there between {TIME}. I will send a message when we're walking over!
+
+{SITTER}: Sounds great! Thank you so much. We’ll see you then
+
+{OWNER}: Good morning! {PET} and I  are about heading out shortly. We should be there around {TIME}!
+
+{SITTER}: Good morning 🫶🏻 See you soon!
+
+{OWNER}: We are in the lobby now :)
+
+{SITTER}: Okay!
+
+{SITTER}: Coming down
+
+{SITTER}: It was nice to meet you :) {PET} is cuddling with me once and cuddling with {SITTER}. She seems to remember our house. We’ll take good care of her. Have a good trip to {LOCATION}.🫶🏻 [Photo]
+
+{OWNER}: Haha she’s getting double the love. Thank you for taking care of her 😊
+
+{OWNER}: This is the tutorial for the wrap - {URL}
+
+{OWNER}: I forgot some notes -
+1. The toppers & pumpkin powder will likely run out. Just feed her up until it’s all gone.
+2. ⁠I left my house key in the front pocket of the backpack, just in case you need anything you can get in my home 😊
+3. Please store the chicken feet and cartilage in the fridge.
+4. ⁠Sometimes {PET} doesn’t feel like eating the chicken feet because it takes too much effort 😂 If you break the fingers a little bit, then she will usually take it. Please watch her while she is eating it because they’re small bones. 🦴
+
+{SITTER}: I'll keep in mind for anything. Oh I understand now why she didn't eat the chicken feet last time!!🤣🤣 Okay i’ll break it and watch her. Thank you!
+
+{OWNER}: Thank you!!
+
+{OWNER}: Oh I also forgot to mention she hasn’t eaten breakfast yet
+
+{SITTER}: Oh i see, i’ll give her breakfash now
+
+{OWNER}: Hi! Did {PET} poop today?
+
+{SITTER}: Yes
+
+{OWNER}: Great thanks! I was afraid she was constipated haha
+
+{SITTER}: [Photo]
+
+{SITTER}: She is so cute with this outfit
+
+{OWNER}: Haha I love that rain jacket 🧥
+
+{SITTER}: She pooped a lot and it was healty lol
+
+{SITTER}: And I saw {LOCATION} on the jacket 복숭아 peach 🍑
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: 🤣
+
+{SITTER}: Baby {PET}👶🏻
+
+{OWNER}: 👶🏻🐥🐣 so cute!
+
+{SITTER}: Baby pink color good match with {PET}🩵
+
+{SITTER}: Hi {OWNER}. Have you arrived in {LOCATION} Or..? It’s a bit windy in {LOCATION}. As usual, we are going out three times with {PET}. 😊 I took a picture because her beauty is really shining.💎 Hope you enjoy our picture! [Photo]
+
+{OWNER}: Hi! I’m on my way! Thanks for sharing pics with me! I love seeing them all 💕enjoy the sunshine with {PET}! ☀️
+
+{SITTER}: Great to hear you’re on your way🩵 Here's a video of {PET} excited because the weather is nice today. Feel free to ask me anything if you have questions about {LOCATION} and her. Have a great trip! 🫶🏻 [Photo]
+
+{OWNER}: Thank you! She's walking so fast haha! and she looks great in her spring sweaters ☀️
+
+{SITTER}: Yeah!! Her spring sweater is so pretty and it suits her so well. {PET} looks like an angel 😇💎 love it [Photo]
+
+{SITTER}: Hello {OWNER}! Have you adjusted to the jet lag? The weather here in {LOCATION} is lovely, so we are taking many long walks with {PET} 😍. We're also doing some training (sit, wait) in between, and her eyes shining when she sits and looks up at me. (Soooo lovely!🫶🏻) She is spending her days walking a lot, sleeping, eating well, and cuddling with us :-)! We hope you have a wonderful day. [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww these are great photos of {PET}! I love her on the rainbow chair
+
+{SITTER}: The rainbow chair is a place where we often take a break during our walks :) Thank you for enjoying the photo🫶🏻
+
+{SITTER}: Good Morning, {OWNER}. {PET} enjoys the sunshine even at home. She looks like an angel😇🩵 [Photo]
+
+{OWNER}: Awww!! What a sweetie. She loves tanning so much!!
+She looks super cozy in the chair ❤️
+
+{SITTER}: She's quietly tanning in a sunny spot in the room. When I found her, she was glowing, so I took a video! 🤣
+
+{OWNER}: Haha she's looking for belly rubs
+
+{SITTER}: Yeahh her paws were already waiting for. After turned off the video, i gave her belly rubs right away. I love her pink belly! 😭💖 [Photo]
+
+{SITTER}: Good evening, {OWNER},
+{PET} goes outside three times a day, eats well, enjoys her snacks, and even brushes her teeth well (she seems to like the toothpaste)👍🏻!! She's sleeping well and doing fine. Feel free to contact me anytime if you're curious about how {PET} is doing. Have a good night🩵 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Looks nice and warm outside!! Thank you for the update 🎀
+
+{OWNER}: She loves chasing squirrels
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: {OWNER}! Are you doing well in {LOCATION}? {PET} is doing great with us, very healthy and happy 🫶🏻 She roams freely in our fenced yard, goes wherever I go, enjoys walks, sunbathes at her favorite tanning spot, sleeps well, and gets good morning belly rubs ☺️ The more we see her, the more adorable she becomes.💖💖Thank you for entrusting her to us! [Photo]
+
+{OWNER}: Hi {SITTER}! Yes, {LOCATION} is a beautiful city! 👍🏻 {PET} looks really comfortable. Thanks for sharing the photos!
+
+{SITTER}: Enjoy {LOCATION} 🫶🏻
+
+{SITTER}: [Photo]
+
+{OWNER}: Hi! How has {PET} been the past couple days?
+
+{SITTER}: Hi {OWNER}, thank you for asking. {PET}'s been quite busy🤣 She's been asking for the baby wrap hug at home and falling asleep in it. We also went to {ADDRESS}on a sunny day 💖 She was pretty interested in meeting other dogs there!🐕 We visited a dog-friendly café and enjoyed the sunshine together. She's still going out three times a day, eating her meals and treats well, sleeping soundly overall, doing great! :) [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: {LOCATION}'s cherry blossoms are in full bloom, so I'm planning to take {PET} to see them. 🌸
+
+{OWNER}: Aww!! that’s so funny that she wants to sleep in the baby wrap 😂 I like the way that you tied it. Is it a new method?
+
+{SITTER}: Haha, I actually watched a video tutorial and tried my best to follow it! Still a bit clumsy at it though 😂🤣
+
+{OWNER}: It looks much cooler the way you tied it!!
+
+{OWNER}: Which cafe did you go to?
+
+{SITTER}: {URL}
+
+{SITTER}: This café is perfect for a simple brunch. It's great to start the day with a morning walk and then enjoy croissants and coffee there. The patio is warm even in winter, making it even better! :)
+
+{OWNER}: Wow! Do they have a heated patio now?
+
+{SITTER}: No, they don't seem to have heating on now since the weather is warm. It's heated during colder times!
+
+{OWNER}: Oh! That’s so nice. Thanks for sharing!
+
+{SITTER}: You’re welcome☺️
+
+{SITTER}: Good morning, {OWNER}. I have a question. Is this place a vet clinic that {PET} likes? When we walk together, she stands firmly in front of this door as if she knows someone inside! 🤣(I'm confident this is a place she frequents often.) We are enjoying various flower viewings and spending peaceful days together. We hope you have a great day🌸 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha yes! This is {PET}’s vet! She also likes going into {ADDRESS}😂
+
+{OWNER}: Haha she loves the baby wrap!
+
+{OWNER}: Thank you for spoiling her!
+
+{SITTER}: Hahah {PET} enjoys Pet Value too??!!🤣 She's such a smart and sweet dog. She loves in the sunshine in that spot. 💖 Our priority is {PET}'s happiness during boarding :)) Thank you
+
+{OWNER}: I will be traveling back to {LOCATION} today and will see you and {PET} on {DATE} morning!
+
+{SITTER}: Oh time is so fast😯😯 Come back to {LOCATION} safely! See you on {DATE} morning :)
+
+{OWNER}: Good evening! I plan to come pick up {PET} around {TIME} tomorrow. Does that work for you?
+
+{SITTER}: Welcome back {LOCATION}!🫶🏻 Yes, I'll be ready for you to pick up {PET} tomorrow between {TIME}.
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: See you then!
+
+{SITTER}: Good morning {OWNER}!
+I'm glad you back safe to home. I might not see you when you pick up {PET} as i will be at work. I said goodbye to {PET} this morning before I left home 😭. She seems not knowing that it is her last day with us haha. Me and {SITTER} had great time with {PET} and I believe she had more comfortable time with us than the last stay💕. I hope you have a good reunion with {PET} today and see again next time🥰
+
+{SITTER}: [Photo]
+
+{OWNER}: No problem {SITTER}! Thank you for the message. I’m glad {PET} had a great time. It looks like she has been really happy under both of your care! 😊 Have a good day at work!
+
+{OWNER}: Hi {SITTER}, is it okay if I come earlier?
+
+{SITTER}: Yes
+
+{SITTER}: What time you thinking of?
+
+{OWNER}: Around {TIME}!
+
+{SITTER}: No problem:) See you soon
+
+{OWNER}: There is a bit of traffic so I’ll be arriving closer to {TIME}
+
+{SITTER}: No worries!
+
+{OWNER}: I’m in the lobby :)
+
+{SITTER}: Yes going down!! 😊
+
+{SITTER}: Good morning {OWNER},
+Thank you for the gift 🙂 I love this almond. How's {PET} doing?
+
+{OWNER}: Good morning! Glad you enjoy the almonds 😊 {PET} is doing great! She misses you both!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: I enjoyed all flavour of almond  😂 Thank you so much! {PET} is always adorable💖🩵😍
+
+{SITTER}: Haha she looks so relaxed
+
+{OWNER}: Hi ladies! I’ll be away the week of {DATE} and wondering if you would be free to take care of {PET}?
+
+{SITTER}: Hi {OWNER}! How have you been?
+
+{SITTER}: I've been thinking about {PET} a lot because this {DATE}, there's a Chihuahua meet and greet, and we're planning to meet at {ADDRESS}, where we first met {PET}. What a coincidence that you reached out!! 💖☺️
+Of course, we are available then.
+
+{OWNER}: Haha that’s awesome!! 🩷
+
+{OWNER}: The dates may be a day earlier or later, I just have to get my travels approved by work 😊 please save those dates for me!
+
+{OWNER}: Thank you so much!
+
+{SITTER}: For sure! We’ll save those date for you💖 Thank you so much too
+
+{OWNER}: Hi {SITTER}! I confirmed my trip for September and {PET} will need boarding from {DATE} ({AMOUNT}). Are you still available for the new dates? Is your rate still {PRICE} per night?
+
+{SITTER}: Hi {OWNER} :) That’s great to hear! Yes, we’re available to boarding {PET}🥰 at that time. And our rate is {PRICE} per night for her.
+
+{SITTER}: What time would you like to drop-off and pick-up?
+
+{OWNER}: Awesome! She’ll be so happy😊I’ll e-transfer {SITTER} now!
+
+{SITTER}: We’re more than happy🫶🏻
+
+{OWNER}: {DATE} - between {TIME}
+{DATE} or {TIME}
+
+{OWNER}: [Photo]
+
+{SITTER}: So fast! Thank you so much🫶🏻 i’ll keep your schedule and looking forward to see you and {PET}🥰❤️
+
+{SITTER}: Hi Chirstina!
+im so happy to hear {PET} is coming back! i received the money. thank you so much
+
+{OWNER}: Hi {SITTER}! Just wondering if you are available to board {PET} {DATE}?
+
+{SITTER}: Hi {OWNER},
+unfortunately we are booked for {DATE}😭😭
+
+{OWNER}: No worries. Thank you!
+
+{OWNER}: So nice to see you today {SITTER}! {PET} was so happy!!
+
+{OWNER}: Here’s some pics from our cottage trip last week 😊
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: I’m soo happy to meet you by chance too!!
+
+{SITTER}: OMG
+
+{SITTER}: {PET} looks sooo happy and the scenery is so beautiful! And {PET} and you look so good together 🐕🌷 Thank you so much for sharing picutres
+
+{SITTER}: Can i save those pictures 😉?
+
+{OWNER}: Of course!!
+
+{SITTER}: Thank you so much🥰 {PET} made my day!
+
+{OWNER}: Hi {SITTER}! Just wondering if you would be free to come for daycare on {DATE} with {PET}? It’ll be around {TIME} to {TIME}
+
+{SITTER}: Hi {OWNER}!
+{SITTER} is on a plane from {LOCATION} to {LOCATION} right now, so she'll be arriving tomorrow. Is it okay if I respond to you when she gets here? :D
+
+{OWNER}: Sure no problem!
+
+{SITTER}: Hi {OWNER},
+Sorry for late. I won't be able to do daycare this {DATE} as we have a dog at home, and there's no one available to look after him during that time. I apologize for any inconvenience and hope you understand.
+I’m so sorry that I couldn’t see {PET} and thank you for understanding.
+
+{OWNER}: No worries, thanks for getting back!
+
+{SITTER}: Thank you for understanding :)
+
+{OWNER}: Hi {SITTER}! Hope you’re having a good weekend 😊 I might be traveling in {DATE}. Would you be available to take care of {PET}?
+
+{SITTER}: Hi {OWNER},
+we are having a good summer.! It is such a hot day today. I hope you stay cool. Unfortunately, we've got a long-term staying from October mid to November mid. We can't board her this time 😭 However, if there's any daycare you need in the meantime, we will always here to help you. thank you
+
+{OWNER}: Ohh no worries! Will you be available end of November? I haven’t booked my trips, so it’s easy to adjust the dates 😊
+
+{SITTER}: I'm so glad to hear that you can adjust the dates🩵 We really miss {PET} so much. We're available from {DATE} onwards! Looking forward to your response 🥰
+
+{SITTER}: [Photo]
+
+{OWNER}: Okay! I’ll take a look at the trip today and let you know more specific dates 😊 thank you!!
+
+{OWNER}: Hi! I did a quick search, and I think I can change the dates from {DATE} (or {DATE}). Could you please save the date for me? ☺️
+
+{SITTER}: For sure💖❤️
+
+{OWNER}: Thank you!!
+
+{SITTER}: Thank you too!
+
+{OWNER}: Hello! I booked my trip, so I'd like to confirm {DATE} (morning) to {DATE} (evening). {AMOUNT}! I will send you the e-transfer tomorrow. Thank you! 😊
+
+{SITTER}: Thank you for confirmation :) We’re so excited to see {PET} again🌷Thanks again!
+
+{OWNER}: Thank you!! [Photo]
+
+{SITTER}: received! thank you
+
+{OWNER}: Hi {SITTER}! Hope you’re well!
+I remember you telling me about {ADDRESS}Espresso. 
+We were walking around the area and {PET} took me here and don’t want to leave! She’s so funny! [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Hi {OWNER}! I hope you are doing well!
+LMAO {PET} soooo funny and she is so cute and smart about remeber the place!!! We used to spend time with her often there, i’m pretty sure she had a great time.😂🤣
+Thank you for sharing her photos❤️🥰
+
+{OWNER}: Hello {SITTER}! {PET} is excited to see you both soon 😍🥰 I initially booked boarding starting {DATE}, but I was wondering if you were free start on {DATE} or {DATE}?
+
+{SITTER}: Hello {OWNER}. We’re soooo excited too!!!🥰 and we’re free start on {DATE}. Before that time, we take care of cat who is not familiar with dog!
+
+{OWNER}: That's great! What is the time earliest that I can drop {PET} off on {DATE}?
+
+{SITTER}: I don’t have any schedule on {DATE} right now, let me know what time you prefer 😊
+
+{OWNER}: Okay! Can I drop her off on {DATE} between {TIME}?
+
+{SITTER}: Okay :) Sounds great
+
+{OWNER}: Thank you!! Just sent to {SITTER} :) [Photo]
+
+{SITTER}: Thank you so much 🫶🏻🫶🏻
+
+{SITTER}: Hi, {OWNER}😊 Just reminder that is our home address ({ADDRESS}). Looking forward to seeing you and {PET} this {DATE}! 🐶
+
+{OWNER}: Thank you!!
+
+{OWNER}: We walked past your home the other day after going to {ADDRESS}Espresso. {PET} didn’t want to leave haha
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: OMG she did another day as well?
+
+{OWNER}: Haha yes! Last week
+
+{SITTER}: How can’t we not love her?🥰😊☺️
+
+{OWNER}: She knows the way to your home from Espresso😂
+
+{SITTER}: We’re sooo looking forward to see her so much.
+
+{SITTER}: Yeah she’s so smart!
+
+{OWNER}: She will be so excited to see you!
+
+{SITTER}: Sooo sweet☺️🥰😊 Thank you so much for sharing the photos
+
+{OWNER}: I have a meeting that came up on {DATE} morning so I’ll drop {PET} off a little bit later than expected.
+I’m thinking sometime between {TIME}!
+
+{SITTER}: No problem! I’m available at that time as well :)
+
+{OWNER}: Thank you!
+
+{OWNER}: Good morning! {PET} and I will make our way over soon 😊
+
+{SITTER}: Good morning! :)
+
+{SITTER}: What time would you like to come?
+
+{OWNER}: We’re close by! So around {TIME}
+
+{OWNER}: Is that okay?
+
+{SITTER}: Sounds great!
+
+{SITTER}: See you soon😆😆
+
+{SITTER}: It's great to see you again, {OWNER}☺️ {PET} had her breakfast, gave me a warm greeting, and now she's resting in bed. She seems to have become even more cuter🫶🏻 We'll make sure to have a wonderful time together. Thank you for entrusting her to us! [Photo]
+
+{OWNER}: Aww perfect! {PET} needs more beauty sleep haha. I dragged her out this morning 😂
+
+{OWNER}: As usual, I left my key in the front pocket of the backpack. If you ever need anything in the coming week, feel free to come by and get it.
+{ADDRESS}{SITTER}: Hahaha she’s almost asleep now. What a beauty {PET}🥰
+
+{OWNER}: Her yellow hoodie is from {LOCATION} 😃
+
+{SITTER}: Ohhhh really?
+
+{OWNER}: [Photo]
+
+{SITTER}: Omg
+
+{SITTER}: That’s sooooo cute
+
+{OWNER}: hahah yes! I'm not sure if the weather will become colder, but she will be ready for sweater weather 👚
+
+{OWNER}: Enjoy your time!! Thank you for taking great care of {PET}!!
+
+{SITTER}: Yeah for sure! This weekend’s weather will become colder so we need them. Thank you for getting everything ready :))
+
+{SITTER}: You too!
+
+{OWNER}: Hi {SITTER}, I forgot to put {PET}’s heartworm medication in the bag.
+She needs to take it on {DATE}.
+Can I come later {TIME} to give it to you?
+
+{SITTER}: Hi {OWNER}!
+{SITTER} is working on that time but i will be at home.
+
+{OWNER}: Great! I'll let you know when I'm on the way 😊
+
+{SITTER}: Sounds good ;) See you later
+
+{OWNER}: Hi {SITTER}! I’ll be heading over now. I’ll be there in around {TIME}!
+
+{OWNER}: I’m here!
+
+{SITTER}: Hi {OWNER}!
+I hope you made it to {LOCATION} safely. {PET} is doing sooo well. she’s been eating well, sleeping soundly, going on walks, and of course, getting plenty of cuddles. :) I’ve also included a peaceful video of {PET} napping for you to enjoy! Today, we went on an outing to the farmer’s market together, and I hope it was a wonderful experience for both of us. ❤️
+I’ll be back with more updates soon! 
+Take care! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww so cute! 🥰
+
+{OWNER}: Wow! You went all the way to {ADDRESS}? She must’ve enjoyed that and in the baby wrap 😂😂
+
+{OWNER}: Good morning! Would you also be available for boarding {DATE}?
+
+{SITTER}: She loves there so much! But we didn’t walk the whole way. There were a lot of dogs at the market! :) So she was in the baby wrap for half of the time. ☺️ Also, {PET} really loves the baby wrap!
+
+{SITTER}: Of course❤️🫶🏻💖 We’re so happy to see her again!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: This morning, after our walk, we came to our favorite cafe🍀  It’s a new dog-friendly cafe whic called Nablu. {PET} is super comfortable and relaxed here. You should stop by next time you’re out for a walk 🥰 [Photo]
+
+{SITTER}: {ADDRESS}({ADDRESS}): {URL}
+
+{OWNER}: Wow! Is the inside of the cafe also dog friendly?
+
+{OWNER}: Thank you! Please save the dates for me. I’ll finalize the travels in the next {DURATION}!
+
+{SITTER}: Yes they are!
+
+{SITTER}: No prob🥰 Thank you so much
+
+{SITTER}: Hello {OWNER}, I hope you’re having a great day. {PET} ate her meal well, {FREQUENCY}.  I’m sending you a video of her resting comfortably.
+However, I wanted to share something with you. While we were at the park today, I noticed a bee on {PET}’s paw. Then she started licking her paw, so I wasn’t sure if she had been stung. I took her to a nearby vat right away to check if there was a sting. The doctor said she was fine and didn’t find anything. {PET} is walking well and seems fine. 
+But if you’d like, I can take her to her vet for further confirmation.
+It’s not a big issue, but I just wanted to keep you informed. I apologize for the delay in reaching out, but taking her to the clinic was my priority at the time.
+I’m so sorry again that this happened. And let us know what would you like to do. [Photo]
+
+{OWNER}: Hi {SITTER}! Aww she's so cute and chill. She looks so funny; I love it!
+
+{OWNER}: Thanks for letting me know about the paw! If you see her licking the paw tonight or tomorrow, could you please take her to her usual vet?
+
+{OWNER}: {URL}
+
+{OWNER}: {ADDRESS}{PHONE}
+
+{SITTER}: Yes for sure! But she doesn’t licking her paw now.
+
+{OWNER}: Did the vet today cost anything? Please let me know so I can reimburse you.
+
+{SITTER}: Yes I will keep a close eye on her tonight and tomorrow. And I’ll talk to {SITTER} about this and let you know. I just feel sorry for not noticing the bee and for what happened to {PET} and you.🥲
+
+{OWNER}: Sounds good! I trust that if the vet says it's okay, then everything should be good.
+
+{SITTER}: I also trust vet saying and everything should be fine. Thank you for understanding. I’ll keep post on {PET}’s everything!
+
+{OWNER}: Thank you!!
+
+{OWNER}: I also booked my trip in December. Is it possible to board {PET} from *evening of {DATE} to evening {DATE}* ?
+
+{OWNER}: {AMOUNT} :)
+
+{OWNER}: Hello! How’s {PET} today? 😊
+
+{SITTER}: Yes we’re available at that time! :)
+
+{SITTER}: {PET} is doing great as usual! Since yesterday, she hasn’t been licking her paw, she's eating well, going for potty breaks, and walking normally, so I’m not worried anymore. When I attend my online classes, she wants to be on my lap, so I sometimes use a baby wrap. It’s so adorable🥰❤️🥰 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww 🥰 she’s such a baby
+
+{OWNER}: Great thank you for the update!
+
+{OWNER}: Also, just curious why you’re using a slip leash? Is there something wrong with her harness or collar?
+
+{SITTER}: No, noting wrong at all! I’m just used comfortable leash for me because it was just potty break.
+
+{SITTER}: We have a separate leash. Because {PET} walks well, doesn’t pull, and we have good communication and trust, so she doesn’t need to them. But sometimes, other dogs may need a double leash for safety.
+
+{OWNER}: Okay thanks! I used to use that kind of leash in the beginning when I was training her but I found that it sometimes chokes her.
+As long as the walks are short using that slip leash then all is good 😊 !!
+
+{SITTER}: Ohh That makes sense. I totally understand. I’ll make sure to keep the walks when using her leash. Thanks for letting me know🍀
+
+{OWNER}: Thanks for understanding! 🩷
+
+{SITTER}: Thank you for understanding too🫶🏻
+
+{OWNER}: Also, just sent to {SITTER} for December! Thanks again! 🙏 [Photo]
+
+{SITTER}: Thank you so much :)
+
+{OWNER}: Good morning {SITTER}, a kind reminder to feed {PET}’s heartworm medication today 💊 thank you!!
+
+{SITTER}: Thank you for reminding us :) No problem!
+
+{SITTER}: And I’ve talked with {SITTER} about the vet cost, and the medical check came to {PRICE}. We do feel responsible also, so we’re want to cover half of the cost. Would you be able to cover the other half? I would really appreciate it if you could. Let us know what you prefer :)
+
+{SITTER}: [Photo]
+
+{SITTER}: Those are invoice and receipt. If you have an insurance for {PET}, you can used them! [Photo]
+
+{OWNER}: Sure no problem! I'll send {SITTER} the other half 😊
+
+{OWNER}: [Photo]
+
+{SITTER}: Thank you for understanding so much :D
+
+{SITTER}: Sorry that i wasn't really replying
+
+{SITTER}: but i've received all and always watching the chat and enjoying 😊 message coming from {SITTER} is also from me too 😉
+
+{OWNER}: No problem! Thanks for your reply!
+
+{SITTER}: Good morning,
+{PET} is staying good as like any other days. yesterday {PET} was so focused chasing squirrels. I tried to took her cute photos but ended up with many of her back photos 😂 {PET} took a medicine on {DATE}. She is eating well, poo and pee well, and doing great job to be cute 🥰
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha great! She's obsessed with squirrels 🐿️
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}, how are you?🐶{PET}'s doing great and receiving all the love! She's eating great, been going on up to {FREQUENCY} a day, and always sleeps right next to my arm🥰🥰 I took a picture of her sleeping beside me so cute and cozy, facing my side. Recently, it was very windy and cold in {LOCATION}, but since the other day, it's been warming up, and I had a good time with {PET} enjoying the {DATE} together! Hope you have a nice day too🫶🏻 [Photo]
+
+{OWNER}: Haha I love that sleeping photo! So cute! 🥰
+
+{OWNER}: I also want to let you know I'll be getting back to {LOCATION} around {TIME} this evening. I can probably come to pick up {PET} around {TIME}or {TIME} today!
+
+{SITTER}: Welcome back! I'm getting sad to leave {PET} today. But she definetly might be happy to see you so much❤️ Then, we'll see you around {TIME} [Photo]
+
+{OWNER}: Thank you! She will miss you and {SITTER} also!
+
+{SITTER}: Is she angel? 👼 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: it looks like a beauty commercial
+
+{SITTER}: ✨✨
+
+{OWNER}: So cute!! 🥰
+
+{OWNER}: Is it okay if I come a little earlier? Around {TIME}
+
+{SITTER}: Yes!
+
+{OWNER}: Great! I’m going to head over soon. I’ll be there around {TIME}!
+
+{SITTER}: We just finished her dinner walk and ready to see you :)! See you soon
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: We love every moments with {PET}❤️ [Photo]
+
+{OWNER}: So cute!! I’m here :)
+
+{SITTER}: Going down!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: When I was in {LOCATION}. I bought {PET} these new boots. They’re like crocs haha 😆
+
+{OWNER}: We are also getting ready for our flight this weekend! Here’s {PET} in her carrier!
+
+{SITTER}: OMG!!!🥰☺️😘 Those new boots are sooooo good with her.
+
+{SITTER}: The carrier looks enough space for her so {PET} will go well🥰🥰
+
+{SITTER}: How’s {PET}??
+
+{OWNER}: She missed you both yesterday!! She didn’t eat until the end of the day 🥲
+
+{SITTER}: [Photo]
+
+{SITTER}: boots lady {PET}💕haha
+
+{SITTER}: so cutr
+
+{SITTER}: We missed {PET} so much as well! She knows how can express her emotions🥺🥹❤️
+
+{OWNER}: Hi {SITTER}! {PET} and I have been in {LOCATION} for a week! {PET} has been anxious for a few days, but she’s finally settling in. Here’s some photos so far!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Omggggg
+
+{SITTER}: Did you come back safely? :) {PET} is soooooooo adorable🥰🥰🥰🥰
+
+{SITTER}: What a bright smile! [Photo]
+
+{SITTER}: LMAO🤣🤣🤣 [Photo]
+
+{OWNER}: We are here for two more weeks!
+
+{OWNER}: {PET} was chasing {LOCATION} squirrels today haha 😆 [Photo]
+
+{SITTER}: Hahaha she chase Mexcian squirrels as well
+
+{OWNER}: Hi {SITTER}! {PET} and I made it back to {LOCATION} last night. Here’s some more pictures from the rest of our trip! Hope you enjoy them!!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Happy thanksgiving {OWNER}
+
+{OWNER}: {PET} getting ready for Halloween 🎃😂 [Photo]
+
+{SITTER}: Omggggg
+
+{SITTER}: She is sooo super adorable🥰❤️❤️💖💖❤️❤️
+
+{SITTER}: Happy thanksgiving day {OWNER}! Welcome back
+
+{OWNER}: Thank you! Happy Thanksgiving! 🦃 Enjoy your weekend!
+
+{SITTER}: We’re taking care of our friends dogs🐶☺️ [Photo]
+
+{SITTER}: Enjoy your weekend!🎉
+
+{OWNER}: Aww they look like they’re having a great time!
+
+{SITTER}: The toy died…🫠 R.I.P
+
+{OWNER}: Who won?
+
+{OWNER}: or did it snap in half? haha!
+
+{SITTER}: The black dog (Ululu) always loses lol
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: Hello {SITTER}! It was {PET}’s {DATE} birthday a few days ago and I made her a little cake 😊 hope you enjoy the pictures!
+
+{SITTER}: 🌸Happy {DATE} birthday our little angel {PET}🌸
+OMG the cake looks so good and Birthday hat and bib suit her soo well. You deserve all the love in the world!💖
+
+{SITTER}: And we’re so glad to share those photos as well.
+
+{SITTER}: BTW, when is her birthday?🥹
+
+{OWNER}: It’s {DATE}!
+
+{OWNER}: I don’t know her exact birthday so I gave her a random one 😂
+
+{SITTER}: Oh okay! I’ll keep in mind🥰❤️ Happy birthday {PET} again and thank you for letting us know💖
+
+{OWNER}: Thank you! She will see you in a couple weeks. She’ll be so excited!
+
+{SITTER}: The date you made is her birthday because you’re her mother☺️
+
+{SITTER}: See you then!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Happy Birthday {PET}
+
+{SITTER}: she like the outfit
+
+{SITTER}: hahaha
+
+{SITTER}: thanks for sharing {OWNER} 💕
+
+{SITTER}: it is really delightful and brighten up our day
+
+{OWNER}: That’s great to hear!!
+
+{SITTER}: excited to see her soon too 😘😘😘
+
+{SITTER}: Good morning {OWNER} :) We’re sooo looking forward to see {PET} sooon!💖 We just wondering what time would you like to drop her off this {DATE}?
+
+{OWNER}: Good morning {SITTER}! Thank you for checking in! I think I will drop {PET} off on {DATE} morning between {TIME}. Is that okay with you?
+
+{SITTER}: Hi {OWNER} time flies and excited to have {PET} again
+
+{SITTER}: the drop off time works
+
+{SITTER}: see you on {DATE} morning
+
+{OWNER}: Thank you!!
+
+{OWNER}: {PET} Resume (2).pdf • 2 pages [Photo]
+
+{SITTER}: OMG, yeah there’s little changes which are {PET}’s princess personality from last time 🥰🥰🥰 She is the princess in the world! Love the picture of her pink muffler with pink outfit💖🌸  Whoever gets to take care of this little princess is the luckiest person. And it’s meeeee hahaha
+
+{SITTER}: So lovely
+
+{SITTER}: We’ll definitely follow the guidelines ;) Thank you
+
+{OWNER}: Thank you!! Haha yes, especially now that {PET} has the baby wrap. She definitely became more like a princess! 👑
+
+{SITTER}: Our little baby princess {PET}💎 I can’t wait to see her tmrw!
+
+{OWNER}: Good morning! We are heading over soon. We will probably get there a little bit past {TIME} 🕘
+
+{SITTER}: good mormong 💕
+
+{SITTER}: no problem see you soon
+
+{OWNER}: We are in the lobby!
+
+{SITTER}: coming
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hey {OWNER}, {PET} is being well. she ate all her meals well and poo and pee well too
+
+{SITTER}: I've got a new bean bag in my room and i think she loves it
+
+{SITTER}: now it is her favourite spot ☺️
+
+{SITTER}: I hope you have a safe flight and we will keep you posted more about {PET} 🥰🥰
+
+{OWNER}: Haha looks so cozy! Thank you! 😊
+
+{OWNER}: Hope you all have a good night!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}! How is your trip going? Its been raining a little on and off here in {LOCATION}, so {PET} has been staying warm and cozy with us at home. Thankfully the ground was dry last evening since it stopped raining, so {PET} got to walk as much as she wanted. She's become even cuter, so affectionate, and so well-trained that there's absolutely nothing to worry about. She's eating fine and enjoying all the love and care she's getting🫶🏻  I'll stay in touch and let you know how she's doing again soon! [Photo]
+
+{OWNER}: Hi {SITTER}! Thank you for the update. Awww I love the cuddle pictures, {PET} looks so cozy! 🩷
+
+{OWNER}: Have you tried giving her the dehydrated treats yet? I haven’t gave it to her and wonder if she is ok eating the big pieces?
+
+{OWNER}: The one that was in the black container
+
+{SITTER}: The bone?
+
+{SITTER}: Thank you for enjoying the picture. Haha i gave her all of treats as a guide and she enjoyed everything :)
+
+{OWNER}: Great!! Yes they’re duck wings 🦆 haha
+
+{SITTER}: Oh wings! {PET} can eat the wings , but she prefers to break it into small pieces cuz she’s the princess 👑
+
+{OWNER}: Yes haha 🤣
+
+{SITTER}: And she really loves the homemade treats you made. I’m sure they make {PET} so happy.
+
+{OWNER}: The frozen ones are actually chicken heart. She likes all meats!
+
+{OWNER}: Thanks for taking great care of her!
+
+{SITTER}: Ohhh that’s so interesting to know! Whenever I give her a meal, she always picks the chicken heart first.
+
+{SITTER}: Thank you for entrusting us :) ❤️
+
+{OWNER}: Hi {SITTER}! How’s {PET} doing over the weekend? 😊
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}! {PET} has been doing well with us all day. it was raining in {LOCATION} for a while, so we put little shoes on her. It was soooo cute to see her walking, it made us smile☺️ Now, The weather is getting better, it’s nice to walk with her. She’s been sleeping comfortably, eating well, getting lots of love, going on walks here and there, and visiting the cafes we go to. She’s such an adorable and affectionate little one❤️🥰💖👑 [Photo]
+
+{OWNER}: Hahah!! Thanks for sharing!! She looks so funny with the shoes. Super fashionable 👠👠
+
+{SITTER}: 😂😭 Also, Her shoes are size XXS, which makes her even more adorable…❤️ She is a super little fashionista👠
+
+{SITTER}: Hi {OWNER}! Did you know that {PET} loves exploring {ADDRESS}? :-) ❤️ {LOCATION} is already full of holiday vibes. it’s getting windy and cold, so {PET} doesn’t want to walk much outside. We decided to go {ADDRESS}which is one of our favorite indoor places to take dogs, especially on rainy or snowy days. She was busy looking around everywhere😉
+She’s truly the most lovable dog. The way she walks, how she express when she wants something, and the way she looks at us🥰 All of it is just so adorable. I might be biased, but she’s the cutest! :) [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Also, she’s doing well at home 🏠 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha thank you for the update!! {PET} loves shopping. I take her to {LOCATION} a lot, especially in the winter. Lots to sniff!! 🩷🩷🎄
+
+{OWNER}: How are you finding her reactivity to other dogs?
+
+{SITTER}: Oh it’s true she really does love shopping, our little princess!👑 {LOCATION} is a great idea. Yeah lots to sniff☺️
+
+{SITTER}: Ummm She seems to react to other dogs, but we don’t let her meet them, so she’s fine when passing by.
+
+{OWNER}: Great!
+
+{OWNER}: How about her teeth brushing?
+
+{SITTER}: Oh oh
+
+{SITTER}: Yeah i’m doing her teeth brushing often
+
+{SITTER}: I brush her teeth {FREQUENCY}, but should I be doing it daily?
+
+{OWNER}: Awesome! {DURATION} is good 👍
+
+{SITTER}: Also, her back teeth are very small(🥰cutere) so I’m wondering how to clean them properly. We use dental wipes to clean her back teeth.
+
+{OWNER}: Haha yes! I’m still trying to find the right toothbrush for her
+
+{SITTER}: Sooo small mouth🥹🥹🥹
+
+{SITTER}: Okay! We use dental wipes for cleaning her back teeth
+
+{OWNER}: Thank you!
+
+{OWNER}: Have she finished all the chicken hearts?
+
+{SITTER}: Yeah it’s running out {DURATION} ago
+
+{OWNER}: Okay great!
+
+{SITTER}: Ohoh And I feel like I’m saying so much, sorry! 😅 About her meals, {PET} loves both of us so much, but she loves {SITTER} more than me. However, she definitely prefers the meals I make. We follow the exact same recipe, so I’m just curious why do you think that is? 😂🤣
+
+{SITTER}: She’s a fun, curious, and adorable dog. 🐶
+
+{OWNER}: Haha that’s so funny!! I’m not sure!! Usually she eats more at night, do you feed her more during the night?
+
+{SITTER}: That’s sooo funny yeah 😂🤣
+Actually, we’ve  noticed this for a long time. We even tried switching things around because we thought it might be a day vs. night thing, but the results were the same. She prefer my meal whenever we feed her. LMAO I wish I could just ask {PET}! 😂😂
+
+{OWNER}: Haha she thinks you’re a better cook 😂😂
+
+{OWNER}: I will pick {PET} up on {DATE}, but I’m not sure the time yet, likely around {TIME}, but I’ll message you in the morning on {DATE}!
+
+{SITTER}: Okay thank you :)💖
+
+{SITTER}: I am wounded...
+
+{OWNER}: Good morning {SITTER}! 🌻 My flight is expected to arrive back at {TIME} today. I think I can pick up {PET} earlier between {TIME}! I’ll send another message closer to the time 😊
+
+{SITTER}: Perfert 😊 See you around {TIME}?
+
+{OWNER}: Yes! I think it’ll be around {TIME} 😊
+
+{OWNER}: Since {PET} is coming back in a week, do you want to keep the treats in your home for now?
+
+{SITTER}: Sounds great☺️😊
+
+{SITTER}: Sure thing! Just keep the duck wings or toppers as well?
+
+{OWNER}: Both!
+
+{OWNER}: Can you show me how much of the topper is remaining?
+
+{OWNER}: Please return the pumpkin powder 😊
+
+{SITTER}: [Photo]
+
+{OWNER}: Ok great! Yes please keep that.
+
+{SITTER}: And the kibble remains one scoop :)
+
+{OWNER}: Can you put the pink puffer jacket on {PET} please?
+
+{OWNER}: Ok sounds good! Please just keep the duck wings and Toppers 😊
+
+{SITTER}: Okay sure! The weather is freezing cold 🥶
+
+{OWNER}: Thank you!! Yes it’s so cold 🥶
+
+{SITTER}: BTW, welcome back! ☺️
+
+{OWNER}: Thank you!!
+
+{OWNER}: See you soon 😊
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Hahaha!! The second picture is so cute
+
+{SITTER}: she is so relaxed 😌
+
+{SITTER}: See you soon! I want to share the {PET}’s photos ☺️
+
+{SITTER}: it is! she enjoys being loved and not shy to hide haha
+
+{SITTER}: You know, sometimes, I even dress her up while she’s lying down.
+
+{SITTER}: She’s doing well, sleep well, what a perfect lapdog, and enjoy a coffee ☕️
+
+{SITTER}: See you then! 🐶
+
+{OWNER}: Hi! Sorry, I would like to have dinner first then pick up {PET} is that okay?
+
+{SITTER}: No problem! What time you thinking of?
+
+{OWNER}: Actually no worries
+
+{OWNER}: I’m coming now!
+
+{OWNER}: Will be there in around {TIME}!
+
+{SITTER}: Oh okay :)
+
+{OWNER}: We are here :)
+
+{SITTER}: okay
+
+{SITTER}: we are coming soon
+
+{OWNER}: Hi {SITTER}! Would you be available for day care on {DATE}?
+
+{SITTER}: Hi {OWNER}☺️🥰 We already miss {PET} haha
+
+{SITTER}: ❤️
+
+{SITTER}: Yes, we’re available on {DATE}❤️
+
+{SITTER}: yes for {PET}
+
+{SITTER}: [Photo]
+
+{OWNER}: Yay! Should I drop {PET} off at your place on {DATE}?
+
+{SITTER}: Sure thing! What time would you like to drop her off?
+
+{OWNER}: Hmm probably around {TIME} and pick up later in the evening {TIME}?
+
+{SITTER}: Sounds great 😊 We’ll keep the date for {PET} ❤️
+
+{OWNER}: Thank you!
+
+{SITTER}: Our pleasure!
+
+{OWNER}: [Photo]
+
+{SITTER}: All good :) I’m always impressed by how quickly you send the payment. Love it 🥰 And I noticed a little extra, thank you so much for your kindness.
+
+{OWNER}: No problem!! I will forget if I don’t send it right away haha
+
+{SITTER}: That’s make sense. Same here Haha. Thanks again💖
+
+{OWNER}: Hello {SITTER}! I think I booked {PET} from {DATE} right? Is it okay if I drop her off in the morning? Between {TIME}.
+
+{SITTER}: Hello {OWNER} :) ❤️ yes, you booked {PET} from {DATE}. {TIME} is perfect!
+
+{OWNER}: Great! Thank you!!
+
+{OWNER}: On {DATE}, I’ll probably pick up {PET} in the morning, before {TIME}!
+
+{SITTER}: Perfect ;) How's {PET}? Please tell her we miss her so much haha ❤️
+
+{OWNER}: Of course!! She’s gonna be so excited to see you again (she just doesn’t know it haha 😆)
+
+{SITTER}: Thank youu! Not knowing and then seeing us will make the surprise even more exciting and special for her haha
+
+{OWNER}: Good morning! ☀️⛅️ Sorry, I calculated the time wrong, we will be there a little later between {TIME}! Is that okay?
+
+{SITTER}: Good morning💖 No problem at all. We’ll see you then!
+
+{OWNER}: We are on the way! Will be ther in about {TIME}
+
+{SITTER}: See you soooon
+
+{OWNER}: We’re downstairs now!
+
+{SITTER}: coming
+
+{SITTER}: [Photo]
+
+{SITTER}: this is so lovely gifts 🥺
+
+{SITTER}: Thank you so much {OWNER}
+
+{SITTER}: the art is funny but we like them
+
+{OWNER}: Glad you like them!!
+
+{OWNER}: He’s one of my favourite artists. It’s funny 😂
+
+{SITTER}: [Photo]
+
+{SITTER}: we feel here and there {PET} vibe in the art lol
+
+{SITTER}: 🤣🤣🤣🤣🤣
+
+{SITTER}: quirky but cute 💝
+
+{SITTER}: Thank you so much🥰 You’re the sweetest person…❤️
+
+{SITTER}: Hi {OWNER}, we finally found out why {PET} eats my meal so well!😂
+
+{SITTER}: [Photo]
+
+{SITTER}: When {PET} is dissatisfied with her food, she takes a few bites and then looks at {SITTER} like that!! Did you see her eyes? Lol [Photo]
+
+{SITTER}: I usually break the topper into smaller pieces for her (since she prefers smaller pieces), but before that, I just grind it up a bit, like in the video. That’s why she eats the food I prepare so well! [Photo]
+
+{SITTER}: When we serve it this way, she doesn’t stop and eats it all! We’re so happy to have finally figured it out🥰🥰🥰
+
+{OWNER}: Hahaha I’m glad you figured it out!
+
+{OWNER}: {PET} giving the judging look
+
+{SITTER}: i can do better now
+
+{SITTER}: 😣
+
+{OWNER}: Hahaha all good! Don’t worry
+
+{OWNER}: Sometimes {PET} is mad at me and only eats the good stuff too
+
+{SITTER}: [Photo]
+
+{SITTER}: really haha but i like that she has strong opinions and let me know what she wants 🐾
+
+{SITTER}: BTW, Her fur has become incredibly soft. What’s going on?
+
+{SITTER}: And her beauty has become shiny ✨✨
+
+{OWNER}: I think it’s the salmon oil!
+
+{SITTER}: [Photo]
+
+{SITTER}: Yeah i think too! That’s awesome
+
+{SITTER}: true!
+
+{SITTER}: she is prettier than last week!!
+
+{SITTER}: She was always beautiful, but I never thought she could become even more beautiful. But now yesss
+
+{OWNER}: Hahaha she looks chubbier too 😂
+
+{SITTER}: What a chubby cheeks💋💋💋
+
+{OWNER}: Hi {SITTER}! Would you be available for Daycare on {DATE} for {PET}?
+
+{SITTER}: Hey {OWNER}
+
+{SITTER}: i am afraid we can't we have a dog on {DATE}
+
+{OWNER}: Would you be able to take care of {PET} in my home?
+
+{SITTER}: i can't but i don't {SITTER} is available
+
+{OWNER}: Okay no worries! Thank you ☺️
+
+{SITTER}: *i don't know
+
+{SITTER}: haha my typo
+
+{SITTER}: i will ask her she can
+
+{OWNER}: If {SITTER} is available that would be great. Thank you!
+
+{SITTER}: I’m available at that time :)❤️
+
+{OWNER}: That’s perfect! Thank you so much {SITTER} 🩷 I will confirm the time closer to the date!
+
+{SITTER}: Sure! It’s my pleasure 😊
+
+{OWNER}: Okay! I’ll let you know in the next few days . Thank you {SITTER}!!
+
+{SITTER}: [Photo]
+
+{SITTER}: I just came back home from work. And i know we don’t greet her util she came down. BUT How can i resist not greeting her….?🥹🥲💖 Soooo lovely
+
+{OWNER}: Haha it’s okay to pet her when you come back! As long as you’re not too excited, it’s all good ☺️☺️
+
+{OWNER}: [Photo]
+
+{OWNER}: Sorry for the delay, there were some issues with E-transfer yesterday!
+
+{SITTER}: Thank you😊😊
+
+{OWNER}: Hi! How’s {PET} doing? 🙂
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}! {PET} is doing really well. She’s been brushing her teeth regularly, enjoying her treats, and in the evenings, I’ve been applying paw cream after our walks to keep her paws healthy and soft. {PET} is happy and well taken care of here! 🥰 [Photo]
+
+{SITTER}: It’s freezing outside so please stay warm and take care🙏🏻
+
+{OWNER}: Thank you for the update!
+
+{OWNER}: You too!
+
+{OWNER}: {PET}’s paws must be so cold when she’s going out
+
+{OWNER}: Does she also hide when you ask her to go out in the morning? Haha
+
+{SITTER}: What a cute! Does She hide?  Actually she doesn’t hide, but she lies down, saying she doesn’t want to go out. 🤣 But once she’s outside, she’ll quickly take her potty break and then ask to go back inside.
+
+{OWNER}: Haha in the morning, {PET} always stays in bed or runs to the couch when I ask her to go outside!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}! Yesterday, {PET} and I went on a lovely date. We took a walk, relaxed at a cafe, went shopping at Indigo, and then came home to eat and take a nice nap together. It’s an absolutely perfect date! 🥰 It makes us feel even closer, and I’m so happy we had such a great day together. Enjoy her cutie photos and see you tomorrow!❤️ [Photo]
+
+{SITTER}: cute😘
+
+{OWNER}: Thank you for the update!!
+
+{OWNER}: I will send you a message tomorrow morning when I’m on the way to pick up {PET}!
+
+{OWNER}: Pickup should be between {TIME}
+
+{SITTER}: Sure! No problem:)
+
+{OWNER}: Actually sorry, I have a few meetings in the morning. Can I pick up {PET} tomorrow afternoon around {TIME}?
+
+{SITTER}: Sorry about that, but we have plans afterward, so pickup would need to be before {TIME} 😭. If it’s possible for you to come earlier, we’d be happy to accommodate. Would that work for you?
+
+{OWNER}: Okay no worries! I’ll come between {TIME}!
+
+{SITTER}: Thank you so much for understanding, and I’m really sorry for not being able to make it. We’ll see you tomorrow☺️😊
+
+{OWNER}: Good morning! I’m on my way to pick up {PET} :)
+
+{OWNER}: Will be there around {TIME}
+
+{SITTER}: Good morning! See you soon
+
+{OWNER}: I’m here in the lobby!
+
+{SITTER}: good morning
+
+{SITTER}: im going to the office today so can't s see you and say goodbye to {PET} 🥺
+
+{SITTER}: but we will see you soon and wish you and {PET} like our present 💝
+
+{SITTER}: happy holidays
+
+{OWNER}: Thank you!! The clothes are so super for {PET} but she has to lose a little bit a weight haha 😆
+
+{OWNER}: Thank you for the card also!
+
+{SITTER}: [Photo]
+
+{SITTER}: this lady was cooking herslef in my beanbag all days and didn't move!!
+
+{OWNER}: Hahaha she’s too comfortable
+
+{SITTER}: [Photo]
+
+{SITTER}: not moving lol 😂
+
+{OWNER}: Hi {SITTER}, for {DATE}, my plan is to drop {PET} off around {TIME} and pick her up between {TIME}. Is that okay?
+If that’s too late for you, you could also come to my place instead, and leave earlier like {TIME}. 
+Which would you prefer?
+
+{SITTER}: We are available {TIME} to {TIME} :) We don’t have any schedule at that time!
+
+{OWNER}: Ok perfect! Thanks so much!
+
+{SITTER}: No worries and if you want, you can drop her off before {TIME} :)
+
+{OWNER}: Sounds good!
+
+{SITTER}: It’s good if we can take care of her for a long time haha! Just let us know if your plan changed. We’re very flexible for {DATE} :)
+
+{OWNER}: If it's earlier, it would have to be around {TIME}, would you prefer that?
+
+{SITTER}: Yeah, it sounds great ☺️😉 We already miss her so much
+
+{OWNER}: ok! I will drop her off around that time!
+
+{SITTER}: Sure :)
+
+{SITTER}: We’ll see you then🥰
+
+{OWNER}: Hello! Sorry, I have a change of plans on {DATE} and don’t need to drop {PET} that early anymore.
+Let’s stick with {TIME} for now. If anything changes I’ll update you again! Thank you!! 😊😊
+
+{SITTER}: Sure! Thank you for letting us know. So we’re looking forward to see you & {PET} on {DATE} ☺️
+
+{OWNER}: Good morning {SITTER}! I will be dropping {PET} off today around {TIME} ☺️ I’ll pack her dinner and she just needs {AMOUNT} walk today between {TIME}. Thank you!
+
+{OWNER}: See you soon! 🔜
+
+{SITTER}: Thank you for your kindness ☺️ We’ll see you soon❤️
+
+{OWNER}: We’re making our way over now! Will be around {TIME}!
+
+{SITTER}: Sure :) See you soon
+
+{SITTER}: Hi {OWNER}💖 {PET} is doing well and she looks so relaxed ☺️ She just finished her dinner. I took a picture that {PET} was cuddling with {SITTER} while checking on me. She is sooo sweet and tooo adorable😍 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Hahha {PET} is so funny!
+
+{SITTER}: Yeahh {PET} is soo funny🤣😂🤣
+
+{OWNER}: Has she finished her night walk? Pee and pooped?
+
+{SITTER}: yes
+
+{SITTER}: she did
+
+{SITTER}: ate all her dinner as well
+
+{SITTER}: [Photo]
+
+{OWNER}: Great!!
+
+{SITTER}: It snows outside a lot so she just pee and pooped
+
+{SITTER}: [Photo]
+
+{SITTER}: And she wanted to go home lol
+
+{SITTER}: 😂
+
+{SITTER}: 😭😅
+
+{SITTER}: she finished her business
+
+{OWNER}: Hahha yes! She just needs a quick pee outside
+
+{OWNER}: She will run back inside
+
+{SITTER}: That’s turee
+
+{OWNER}: We are heading back now and expected to arrive around {TIME}!
+
+{SITTER}: Okay! See you then
+
+{OWNER}: Google says {TIME}! But I’ll text you once I’m here :)
+
+{OWNER}: We are outside now!
+
+{SITTER}: okay
+
+{SITTER}: we will go down soon
+
+{OWNER}: Merry Christmas {SITTER}! 🎄🎄 Hope you’re having a great one!! 🤗 [Photo]
+
+{SITTER}: {PET} is so adorable 🥰 Merry Christmas {OWNER}!🎄  We always wish you & {PET} joyful and blessed Christmas 🤶
+
+{SITTER}: Merry Christmas to you too!
+
+{SITTER}: Hi {OWNER},
+I’m so excited to see {PET} tomorrow!🥰 What time would you like to visit / leave your place? Also, please share the address with me again? Thank you❤️
+
+{OWNER}: Hi {SITTER}! {PET} is excited to hang out with you tomorrow!
+Could you please come at {TIME} and leave around {TIME} tomorrow? 
+The address is {ADDRESS}. Buzzer {CODE}.
+
+{OWNER}: My landlord has a showing for the unit between *{TIME} tomorrow*, can you take {PET} on her afternoon walk during that time?
+
+{SITTER}: Okay no problem
+
+{OWNER}: Thank you!
+
+{SITTER}: I’m on the way :) See you soon
+
+{OWNER}: Thank you! See you!
+
+{OWNER}: Wifi: {WIFI}
+Password: {WIFI}
+Mailbox to put the 🔑 {ADDRESS}{SITTER}: Thank you :)❤️
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Happy New Year, {OWNER} :)
+Thank you so much for the cake. It was absolutely delicious!💖 {PET} and I had plenty of cuddles today. She finished the rest of her breakfast after walk and also ate all of her dinner. We just got back from an evening walk. Since it was raining a bit, she quickly did her pee and poo, and then I carried her while we enjoyed some fresh air☺️
+Wishing you a wonderful start to the new year, and we’ll see you soon!
+
+{OWNER}: Thank you {SITTER} for staying over with {PET}! Happy new year to you and {SITTER} 🥳
+
+{OWNER}: Sorry I missed your call, is everything good?
+
+{SITTER}: No problem!
+
+{SITTER}: [Photo]
+
+{SITTER}: Just let you know that i put a key in the mail box. But one thing i worry about is the mail box is open.
+
+{OWNER}: Thank you!! Yes it’s okay that it’s open. I’ll grab it when I’m home ☺️
+
+{OWNER}: Hi {SITTER}! I think I will be traveling again at the end of Feb, tentative dates are *{DATE}* . Would you be free to take care of {PET}?
+
+{SITTER}: Good morning, {OWNER}☺️
+Sorry for the delayed reply. My phone was broken.😨
+We’re available {DATE}, but we’re currently scheduled to take care of another dog starting on {DATE}. Let me double check the schedule for the other dog and get back to you!
+
+{OWNER}: Oh no, hope your phone is ok! Thank you!
+
+{SITTER}: I bought a new phone…🥹 hahaha
+
+{SITTER}: Hi {OWNER},
+I’ve double checked the schedule, and unfortunately, we won’t be available starting {DATE}.🥹 I’m so sorry about that. Is there any other way I could help you?
+
+{SITTER}: However, we can available from {DATE}. Let me know what you prefer :)
+
+{OWNER}: Thanks for getting back to me!
+How long will the dog stay until? I haven’t booked anything so I can probably move the trip to beginning of March.
+
+{SITTER}: Oh that would be nice if you can🥰 He’ll stay on {DATE}. And we’re available begining of March now.
+
+{OWNER}: Ok! Let me double check the dates and get back to you
+
+{SITTER}: Sure thing!
+
+{OWNER}: Just curious what other days you’re free in Feb?
+
+{OWNER}: Other than {DATE}?
+
+{SITTER}: We’re available on {DATE} :)
+
+{OWNER}: Are you available {DATE} or {DATE}?
+
+{SITTER}: Yes, we’re available both :)
+
+{OWNER}: Hi! Can you please reserve the dates for me {DATE}?
+If the other dog leaves earlier, could I drop off {PET} at night on {DATE}?
+
+{SITTER}: Hi {OWNER}, we can hold the dates for you and yes of course you can come earlier. We don't have their pick up schedule for {DATE} yet. Once we have it, we will let you know 🤗
+
+{OWNER}: Thank you!!! ☺️
+
+{OWNER}: Good evening {SITTER}! I booked my trip, and {PET} will need boarding from {DATE} (morning) to {DATE} (morning) 😊 - {AMOUNT}!
+
+{SITTER}: Good evening, {OWNER} :) No worries at all, we keep those dates for {PET}🧚‍♂️
+
+{OWNER}: Thank you so much!!! ☺️ [Photo]
+
+{SITTER}: received thank you!
+
+{OWNER}: Hi {SITTER}! 🌻Are you available any day from *{DATE}* for a couple hours to watch {PET}? I'm planning to move that week, and preferably not have {PET} during the process.
+
+{SITTER}: Yes we’re available at that time🥰
+
+{OWNER}: That's great! I'm planning to move on {DATE}. I can drop off {PET} for overnight stay on {DATE} or morning of {DATE}. Which would you prefer?
+
+{SITTER}: {DATE} would be preferred 🥰
+
+{SITTER}: And What time would you like to pick her up on {DATE}?
+
+{OWNER}: Great! I’ll drop her off on {DATE}. Do you have a preferred time? I’m flexible.
+For {DATE}, I’ll probably pick her up in the evening around {TIME}.
+
+{SITTER}: We’re also flexible too☺️ I just would like to know approximate time. Haha
+If you have any changes, let us know we can available any time on {DATE}!
+
+{SITTER}: Finally, you’re moving!🎊🎊
+
+{OWNER}: Ok! Can I let you know next week about the drop off time for {DATE}?
+
+{SITTER}: Sure🥰😊
+
+{OWNER}: Thank you!!
+
+{OWNER}: Just paid {SITTER} [Photo]
+
+{SITTER}: Good 😊 Thank you very much
+
+{SITTER}: good morning {OWNER}!
+it is received and thank u ☺️
+
+{OWNER}: Hi {SITTER}! Are you available on {DATE} as well?
+
+{SITTER}: Hiiii {OWNER}😊 Do you mean {DATE}?
+
+{OWNER}: Yes!
+
+{SITTER}: What time would you like to drop {PET} off? We’re available after {TIME}.
+
+{OWNER}: Oh that’s perfect! I think around noon on {DATE}?
+
+{SITTER}: Ohhh yeah that’s perfect :)
+
+{SITTER}: I’m so excited to see {PET} in advance haha
+
+{OWNER}: Haha thank you!! The weekend is really busy as I prepare for the move & other plans, so it’s easier if I drop off {PET} on {DATE} ☺️
+
+{SITTER}: That sounds great. Yeah Moving is really really big job lol
+
+{SITTER}: Okay! We’ll see you on {DATE}
+
+{OWNER}: [Photo]
+
+{OWNER}: Hi {SITTER}! I will be traveling for work in March. Can I extend {PET}'s stay to {DATE} for now?  It would be {DATE}. Please let me know if you have time ☺️ thank you!!
+
+{SITTER}: Hi {OWNER} :) Thank you for letting us know! Absolutely, we would like to❤️ {PET}’s stay to {DATE} works perfectly for us, and we’d be happy to take care of her. haha
+By the way, where will work be taking you this time? It sounds exciting!
+
+{OWNER}: Awesome, I’m so glad to hear you are available! ☺️ {PET} loves staying with you both!
+
+{OWNER}: I’ll be going to {LOCATION}, UK 🙂
+
+{OWNER}: I may come back earlier a few days before {DATE}, and I can confirm with you the exact dates in a few weeks, if that’s okay!
+
+{SITTER}: {LOCATION} is a great place haha. You really have such a cool job.
+
+{SITTER}: No prob at all. :)
+
+{OWNER}: Thank you!! 😊
+
+{OWNER}: Good morning! {PET} & I will be there around {TIME} today ☀️
+A couple updates on her schedule….
+Because it’s so cold lately, {PET} doesn’t like going out early anymore. 😆
+Our usual schedule now is:
+- {TIME} {DATE} walk
+- ⁠lunch
+- ⁠{TIME} {DATE} walk
+- ⁠dinner 
+- ⁠{TIME} {DATE} walk
+
+{SITTER}: Good morning! {PET} is getting through the winter😂 Thank you for letting us know. We’re looking forward to see {PET} soon
+
+{SITTER}: And we’re available from now on. You can drop her off earlier. ☺️
+
+{OWNER}: The vet said {PET} is looking a little round, so I’m limiting her food intake now 😆🤣
+I’ll pre-pack all the food, so you just have to feed her. 
+Also, no need to put water in her food anymore.
+
+{SITTER}: Oh okay! Little round {PET}! 😂🤣 That’s so funny and adorable. 😂
+
+{OWNER}: If {PET} doesn’t finish her lunch, then no need to feed her more for dinner. She’s being picky now haha!!
+She will sometimes eat it for dinner. If she doesn’t eat it, then you can just throw it out the next day and give her a new portion.
+Usually, the next day she will be too hungry and eat it all.
+
+{SITTER}: Of course! It’s as usual:)
+
+{SITTER}: It feels like she’scomplaining, asking for something delicious. 😂
+
+{OWNER}: We will be there around {TIME}!
+
+{OWNER}: We are {TIME}!
+
+{SITTER}: Sure!
+
+{SITTER}: Going down
+
+{OWNER}: please put the food in the freezer for now, because there’s some fresh items!
+
+{SITTER}: Okay!
+
+{SITTER}: I felt like {PET} was saying goodbye to you in the elevator, like, “I’ll have a good time at my aunt’s house!” 😂😅😂
+
+{OWNER}: Hahaha yes! She’s totally excited for the sleepover
+
+{SITTER}: Hahah what a cute😍🥰
+
+{SITTER}: Hi {OWNER}! Here’s a quick update on {PET} with some photos and a video. First of all, {PET} has lost her weight compared to before, and her fur seems thicker now! 😊 She didn’t have much fur on her belly before, but now it’s grown in! Also, she’s not moving around as much and spends most of her time staying in the beanbag chair. {PET} had a good dinner, enjoyed her walk, and slept well too 😄
+In the video, how excited she gets when we ALL go out for a walk together. it’s her favorite thing! I’ll make sure to share even more photos and videos next time. Take care😍🥰 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww she's so cute haha
+
+{OWNER}: Thank you for the update!
+
+{OWNER}: Where did you get the bean bag chair? I want to get one for {PET} too!
+
+{OWNER}: I had one from Muji before, and {PET} liked it hahah. She must miss sleeping in it!
+
+{SITTER}: N&V Bean Bag Chair High-Density... {URL}
+
+{SITTER}: i bought for me and now it is for all dogs lol
+
+{SITTER}: every dog loves it
+
+{OWNER}: Ohhh so cute!!!
+
+{OWNER}: It’s the perfect dog bed haha
+
+{SITTER}: Some dogs suggest that we sit there together lol
+
+{SITTER}: And they really like it when we sit together and pet them
+
+{SITTER}: Good morning, {OWNER}! {PET} seems to be glowing her beauty with your care. It must be the winter season because she spends the all day on her beanbag😂 But once we go outside, she walks perfectly fine. She sleeps by my side, eats well in the morning and evening, and gets plenty of cuddles. Looking forward to seeing you this evening!🧚‍♂️🧚‍♂️ [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update!!
+
+{OWNER}: She's so lazy at home haha
+
+{SITTER}: Hahah She only moves at home when {SITTER} or me came back home😂🤣 She’s done her job. What a lovely dog😍🥰
+
+{OWNER}: Hi {SITTER}! I finished earlier, so I think I can pick up {PET} around {TIME} today. Please let me know if you’ll be available! 😊
+
+{SITTER}: Hi {OWNER}, I'll be at home so possible
+
+{OWNER}: Great! I’ll send you a message when I’m heading over
+
+{SITTER}: sounds good
+
+{SITTER}: [Photo]
+
+{SITTER}: see you soon !
+
+{OWNER}: I'm heading out soon! will be there {TIME}!
+
+{SITTER}: I will wait you at the lobby
+
+{OWNER}: Good morning {SITTER}! ❄️I’ve confirmed my trip in March.
+{PET} would need boarding from {DATE} (morning) to {DATE} (morning/afternoon).
+Please let me know if that works for you! 🫶🏻
+
+{SITTER}: Good morning {OWNER}!🎊 Of course, we’re available at that time. :)
+
+{SITTER}: You know, we recently met a new Chihuahua friend😍 Ever since meeting {PET}, we’ve been getting more inquiries about Chihuahuas❤️
+This is Scotty and he doesn’t like going outside in the winter because it’s too cold same with {PET}.🤣😂 That reminded me of {PET}, wondering if she still also doesn’t want to go out in this colder weather recently.
+Hope you taking care well and stay warm! ❄️ [Photo]
+
+{OWNER}: Thank you!! 😊
+Awww this is a lovely photo! All chihuahuas hate the cold hahaha 😆
+
+{SITTER}: They have such a lovely personality haha🥰
+
+{OWNER}: Do you mind confirming which day I already paid boarding until? I think it’s {DATE}?
+
+{OWNER}: I think I need to pay additional {AMOUNT}?
+
+{SITTER}: we’ll check with @⁨{SITTER}⁩ then
+
+{OWNER}: Thank you!!
+
+{SITTER}: Hi {OWNER}! Thank you for waiting. You’re right just need to pay additional {DURATION} more :)
+
+{SITTER}: Thank you so much
+
+{OWNER}: Thanks for confirming! Here you go! [Photo]
+
+{SITTER}: thank you 😊 received
+
+{OWNER}: Hello {SITTER}! {PET} is looking forward to seeing you on {DATE}!
+
+{OWNER}: For April, would you be available {DATE} for boarding?
+
+{SITTER}: I can’t wait till {DATE}!🤣❤️
+
+{SITTER}: Sure! We’re available at that time.
+
+{OWNER}: Awesome!
+
+{SITTER}: [Photo]
+
+{SITTER}: I’ll keep on those dates for princess {PET} 👸
+
+{OWNER}: [Photo]
+
+{OWNER}: Thank you so much!!
+
+{SITTER}: Thank you so much
+
+{SITTER}: Hi {OWNER}, we’re free from now so {PET} can come. If you want, you can drop her off early.☺️❤️ We miss her so much.
+
+{OWNER}: oh yay!!
+
+{OWNER}: Thank you so much for letting me know!
+
+{OWNER}: I still have to pack {PET}'s items. Would you be free in the evening around {TIME}/{TIME}?
+
+{SITTER}: Yeah we’ll be free at that time.
+
+{OWNER}: Great!! See you soon 😊
+
+{OWNER}: Hello {SITTER}!
+There’s some new notes about {PET}! 
+- she’s still on her diet 🥲 so please be mindful of the treats that you give! 
+- ⁠for food, I’ll label everything like before!
+- ⁠she needs to be fed her **heartworm medication on {DATE}. ** I’ll label it as well! 
+- ⁠I noticed that, when wearing her boots 🥾, her *front right paw*  will become sore and she will start to limp after the walk. 
+Please try to -
+1️⃣limit the time that she walks in the boots to maximum {TIME} (she is usually super slow 🤣)
+2️⃣Keep the boot on the front right paw loose. 
+- my new address is {ADDRESS}. I will leave a set of keys in the backpack 🎒, like before, just in case! 
+- I noticed that {PET} sometimes doesn’t poop in the night walk (too cold!) This is fine as long as her poops are solid 😊
+Thank you!!!
+
+{OWNER}: [Photo]
+
+{SITTER}: Thank you for the update {OWNER}! 🥰
+
+{SITTER}: Thank you for update on {PET}☺️❤️ She’s still on a diet! How much more does she need to lose? Hope her paw feels better soon!
+
+{OWNER}: Haha I feel like she gained more weight 🤣 I’ll be putting her on a diet until the weather becomes warmer! It’s hard for her to get exercise, because it’s so cold.
+
+{SITTER}: Oh i see☺️ No worries about everything! See you soon
+
+{OWNER}: We’re slowly making our way over! Is it okay if we come a little bit early?
+
+{SITTER}: yes 👍 no problem :)
+
+{OWNER}: Okay! See you soon!
+
+{SITTER}: Cya~
+
+{OWNER}: We are here :)
+
+{SITTER}: okay me coming down!
+
+{OWNER}: Thank you for taking {PET} early! Have a good night! 😴 [Photo]
+
+{SITTER}: Oh you don’t need to pay for it! It is just our pleasure🥹
+
+{SITTER}: Hi {OWNER} :)
+{PET} is doing well as usual. She’s sleeping and eating well. Since it’s definitely winter now, she doesn’t seem to prefer walking much, but she still loves going outside, so we went to her favorite {ADDRESS}Bar💖 I think she really enjoys getting some fresh air, so I’ll probably carry her around to let her feel the breeze here and there. ☺️
+Wishing you a warm and wonderful day. Take care💕 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww what a baby 😍 so cute. Thank you!!
+
+{OWNER}: Btw, You don’t have to use the slip leash (the leather one) if you don’t want to :)
+
+{SITTER}: I wanna use the slip leash for her potty break :) Thanks
+
+{SITTER}: Hi {OWNER}! How’s everything? {PET} is still as beautiful as ever. She’s been extra cuddly lately, she sticks to us all day long!😂 And I absolutely love it❤️
+Also, during our walks, I’ve noticed the types of people {PET} likes and dislikes. She loves all women, but when we come across men dressed in all black, she barks at them… 😂😂😂 She has her preference!
+We hope you’re doing. I’ll keep on update😊 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update! The weather looks sunny! ☀️
+Haha yes, she has a lot of annoyances 😆 
+She doesn’t like people who dress up dark and cover up too much. Especially when She can’t see their face well! 
+She also doesn’t like it when people are dragging their feet 😂
+
+{SITTER}: Ohhh I didn’t know about the dragging feet thing! 😂That’s so funny.
+{PET} has her own opinions, and that just makes her even more lovable!🥰
+
+{OWNER}: Good morning! How was {PET} yesterday? I saw that it was raining a lot!
+
+{SITTER}: Good morning {OWNER}! yea It was raining yesterday. I went out with {PET} when the rain stopped but unluckily we caught up in the rain 😭 me and {PET} were soaked.. 🥺 We stayed in the cafe near by until the rain stopped and came back safely. what a day😵‍💫
+
+{SITTER}: What she's doing now. lol She stay with {SITTER} all day [Photo]
+
+{SITTER}: lol!! i think because I stay more at home these days and she is like my shadow.
+
+{OWNER}: Oh no! Sorry to hear that you got soaked!! Glad you made it home safely!!
+
+{SITTER}: Winking {PET}😉 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: {PET} loves all the cuddles she can get!!
+
+{OWNER}: {PET} is more like a cat than a dog sometimes haha 😆
+
+{SITTER}: Yeah she definitely has cat personality. That’s why she’s more attractive🥰
+
+{OWNER}: Your winking photo reminds me of this picture I took a couple weeks ago!! 🤣 [Photo]
+
+{SITTER}: Soooo cute
+
+{SITTER}: Why are you only winking on one side🥹 Than’s so adorable
+
+{SITTER}: Hi {OWNER},
+Yesterday, we took {PET} to see a beautiful night view! ☺️ I’m not sure if she enjoyed the view, but she had a great time running around on the grass nearby. Also, since it was International Women’s Day, I received a small flower as a gift but {PET} seemed a little scared of it…😂 She’s so cute! 
+She’s been getting plenty of cuddles, eating well, sleeping perfectly, and doing great with us. Wishing you a wonderful day!💖 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Hello! Thank you for the update and happy international women’s day! 🌸 that’s a beautiful night view of {LOCATION}!!
+
+{SITTER}: Happy international women’s day too :)
+
+{OWNER}: Hi {SITTER}!
+Would you be available for boarding {DATE}?
+
+{SITTER}: Hi {OWNER} :) Yes, we’re available at that time haha
+
+{OWNER}: Yay!  Could you please save the dates for me?
+I’ll confirm everything once I book my trip 😊 which is probably sometime next week!
+
+{OWNER}: Thank you!!
+
+{SITTER}: No problem☺️
+
+{OWNER}: Good morning {SITTER}!
+Just a reminder to feed {PET}’s heartworm medication today ☺️ thank you! 
+Hope you’re all enjoyed the warmer weather these couple days!
+
+{SITTER}: Good morning!
+Thanks for the reminder. We’ll make sure to give {PET} her heartworm medication today.
+{PET} is doing well. Hope you’re enjoying the weather too! 😊 [Photo]
+
+{OWNER}: Thank you!!
+
+{SITTER}: Hi {OWNER}, just want to inform you that {PET} took her medicine this morning:)
+
+{OWNER}: Thank you so much!
+
+{SITTER}: Hi {OWNER}:)
+{LOCATION}'s weather is warmer. Now most of the snow melt and streets are not much wet which means good condition for {PET}'s paws. She loves to go out these days. Since she saw squirrels 🐿️ on the other day, she has been looking forward to going out to chase them. the warmer the weather is, the more energetic she is😎. She is eating well, pee and poo well, and cute and lovely as like usual 🥰 Wish you have a good day
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Yay!! So glad that the weather is better. She is definitely happier!!
+Thank you for the update!!
+
+{OWNER}: Good morning! I've confirmed my trip in May, so {PET} would need boarding from {DATE}. Thank you! 😊
+
+{OWNER}: [Photo]
+
+{SITTER}: thank you {OWNER}
+
+{SITTER}: money received:)
+
+{SITTER}: Hi {OWNER}! {PET} is doing very well. I really love her little nap moments when she wakes up and looks at me, I wonder what she’s thinking. It’s so cute! ☺️ She’s been walking well, sleeping well, and eating well. Hope you have a wonderful day!💖 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww love her big ears. They're so cute!
+
+{OWNER}: Thank you for the update :)
+
+{SITTER}: No worries!
+
+{OWNER}: Hi {SITTER}!
+Tomorrow I’ll be arriving back in {LOCATION} around {TIME}. 
+If all goes well, I can probably pick up {PET} tomorrow evening instead of {DATE}. 
+I’ll update you tomorrow! 😊
+
+{SITTER}: Sounds great! See you then ☺️
+
+{SITTER}: Hi {OWNER}, {PET} had a good sleep last night. we are at the espresso bar right now. she loves here so much. Today is a cold day but she didn't lose her energy: ) another cheerful day! She must be excited to see you soon. I am planning to stay home this evening but let me know if you have more details on time. Wish you have a safe flight and see you then 🐾☺️
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you {SITTER}! I’ll connect again once landing 😊
+
+{OWNER}: Hi again! Can I pick up {PET} around {TIME} today?
+
+{SITTER}: sure. See you soon!
+
+{OWNER}: I’ll be heading out soon and be there at {TIME}!
+
+{OWNER}: Here now :)
+
+{SITTER}: we are having a short walk and will wait you at the entrance
+
+{OWNER}: Hi! Do you still have the container with the treats?
+
+{OWNER}: I think it was on a glass container
+
+{SITTER}: [Photo]
+
+{SITTER}: opps it is in our kitchen
+
+{SITTER}: sorry😱if you need I can bring to your place tmrw!
+
+{OWNER}: No worries! You can keep it for now.
+Can you show me how much is left? 
+I’ll bring more for the next boarding 😊
+
+{SITTER}: [Photo]
+
+{SITTER}: good morning {OWNER}, there's bit of treats left
+
+{OWNER}: Thanks!
+
+{OWNER}: Hi {SITTER}, would it be possible for {PET} to stay one extra night and I pick her up on {DATE}?
+
+{SITTER}: Hi {OWNER}! Yes, we’re possible for {PET}🐶❤️
+
+{OWNER}: That's great! Thank you for the prompt response!
+
+{SITTER}: How is {PET}? We miss her whenever we see a Chihuahua😍 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha what a cute guy! He seems timid
+
+{OWNER}: {PET} is good! She didn’t like the rain but glad it’s better today 😊 she’s been acting funny these days [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: {PET} and her bed goes so well together🥰
+
+{SITTER}: Hopefully the weather will be better
+
+{OWNER}: ChatGPT has a new feature and I created some funny images with {PET} 🤣
+This image is based on the tv show “severance” [Photo]
+
+{OWNER}: Here’s another one [Photo]
+
+{SITTER}: {PET} the  boss
+
+{SITTER}: LMAO!! {PET} looks like she’s struggling with office life🤣🤣
+
+{SITTER}: Hahaha that’s so funny🤣🤣
+
+{OWNER}: Good morning {SITTER}! Could I drop off {PET} tomorrow at {TIME}?
+
+{SITTER}: Good Morning! That sounds good
+
+{OWNER}: Good morning! ☀️ we’re on the way!
+
+{OWNER}: We’re here! {PET} knows the way to your home haha
+
+{SITTER}: Omg
+
+{SITTER}: I’m going down rn!
+
+{SITTER}: Sorry about that
+
+{OWNER}: No worries! 😌
+
+{SITTER}: Hi {OWNER}!
+Lately, {PET} has been spending her first day at our place just cuddling and sleeping all day long. Then, the next day, she becomes lively and full of energy. Of course, she’s still our sleepy little beauty in the mornings.. 😂 She’s been eating well, walking well, and sleeping well as usual, so overall perfect.
+Every time I look at her, I can’t help but fall in love all over again. {PET} is just the sweetest!🐶❤️🌸 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update! It sounds like {PET} slept well last night 😇
+
+{SITTER}: She slept very well every single time😂💖
+
+{SITTER}: Sleep in beauty
+
+{OWNER}: Good morning ☀️! I’m planning to pick up {PET} this evening around {TIME}. Would that be okay with you?
+
+{SITTER}: Good morning! Yes, we’re available at that time
+
+{SITTER}: {PET} is doing well. When we go for walks, she has her own path she likes to take. If I follow her route, it usually leads to her favorite espresso bar. This time, she really wanted to go in, but unfortunately, they changed to a no-pet policy due to complaints. So we couldn’t go inside, but she just wouldn’t move!😂🤣 What a cute {PET} [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Hahaha she’s so stubborn!
+
+{OWNER}: Oh no, that’s so sad they don’t allow dogs anymore 😔😔
+
+{SITTER}: Yeah that’s so sad🥹😭
+
+{OWNER}: Hello! I’m on my way for {PET}. I’ll be there about {TIME} :)
+
+{SITTER}: okay see you soon!
+
+{OWNER}: Hi {SITTER}! Would it be possible for me to drop off {PET} on next {DATE} ({DATE}) evening instead of {DATE} morning?
+
+{SITTER}: Hi {OWNER}, Sure you can come on {DATE} evening. what time will you drop her off?
+
+{OWNER}: Awesome, thank you!
+I’m thinking to drop her off around {TIME}. Is that okay?
+
+{SITTER}: {TIME} sounds good :)
+
+{OWNER}: Thank you!! 😊
+
+{OWNER}: Hello! We will head out soon. See you around {TIME} 😊
+
+{OWNER}: We’re here in the lobby!
+
+{SITTER}: oh
+
+{SITTER}: okay we are coming down
+
+{SITTER}: Hi {OWNER}!
+Did you arrive safely in Portugal? {PET} is doing really well🥰 She’s been eating well and looking as beautiful as ever.
+Until this evening, the weather was nice, so we had a walk and lots of cuddles. In the evening, it started to rain, so we tried her new shoes and she definitely seems more comfortable in them!
+However, I’m not quite sure how to attach the tape properly, it keeps coming off a bit. 🥲😭
+Wishing you a wonderful day! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update!!
+For the shoes, I usually fold it in half so that it’s shorter, and if the tape isn’t sticking well, then you can tie it in a bow around her foot instead of wrapping it!
+
+{SITTER}: That’s good idea! Okay i’ll do it for next time :)
+
+{SITTER}: Hi {OWNER}🥰 {LOCATION}’s weather has been absolutely beautiful. {PET} has been walking so well, and even her shadow looked happy💃🏻 She’s been eating well, sleeping well, and enjoying her walks every day. {PET} absolutely loves having her belly rubbed haha❤️Interestingly, we find ourselves taking more naps than usual when she’s around, because cuddling with her makes us feel so relaxed and sleepy. She’s a sweet and lovable girl💖❤️ [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she looks so pretty in this photo 🥰
+
+{OWNER}: Thank you!!!
+
+{SITTER}: Thank you🥰 {PET} is always so pretty❤️ Honestly, I don't think the camera captures all her beauty. Haha
+
+{SITTER}: Hi {OWNER} - just popping in to say that {PET} is doing well.
+The weather has been lovely these days,so we've been going a lot of walking to the parks. {PET} is fully on squirrel chase mission mode 🐿️💨 it is adorable and keep us entertained. 
+Also, I have to tell you every morning around {TIME}she comes over to my room with sweet look asking nap together. It is honestly so cute and interesting that she is so punctual. 
+Sending you some photos :)
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww haha yes! She’s really good at keep to a schedule!!
+
+{OWNER}: So glad to see that she’s tanning in the {DATE}! ☀️ {PET} loves that
+
+{SITTER}: does she normally sleep on that time?
+
+{OWNER}: Yes! She likes sleeping in 😆
+
+{SITTER}: She's so rutinery. She's better than me.😂
+
+{SITTER}: The weather in {LOCATION} has been absolutely sunny and perfect these days❤️ So I went on a date with {PET}! We walked around the flowers, got some tanning, and spent some time together at a cafe. I’ve noticed that {PET} usually enjoys sniffing things, but she especially seems to love the smell at cafes! (Is she enjoy coffee smells?) She stayed so calm beside me, and a few people came up to say how cute she was, she absolutely loved the attention! 🥰 I hope you’re having a good weather day too! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww I love this photo!!! She looks so pretty with the flowers 🌺
+
+{OWNER}: Hahaha I actually don’t drink coffee, so I’m not too sure if she likes the smell.
+I think she just likes experiencing something new! 
+She loves going to cafes 🤭🤭
+Was this at {ADDRESS}?
+
+{OWNER}: I’m glad she’s been calm! I think the weather helps. She’s in a better mood compared to winter 😂😂
+
+{OWNER}: I arrive in {LOCATION} tomorrow afternoon, so I may be able to pick up {PET} tomorrow night after ~{TIME}!
+I’ll send you a message tomorrow 😊
+
+{SITTER}: I love this photo too. Flowers and Evee's facial expressions are all so lovely!!💖
+
+{SITTER}: Yes it was at {ADDRESS}! They are dog-friendly 💖
+
+{SITTER}: Sounds great. See you tomorrow.
+
+{SITTER}: [Photo]
+
+{SITTER}: Omg she didn’t move at this point, it should be at her new home, is correct? It is {ADDRESS}!
+
+{OWNER}: Haha yes!! That’s our new home. Awww she remembers!!
+She also walks a lot to your apartment and stays there hahaha 😂
+
+{OWNER}: Smart girl!!
+
+{SITTER}: Awwww she’s so smart girl💖🥰 Today, she walked very well and enjoyed it! In the middle, she walked slowly, so I held her😂 Probably she’s going to sleep very well
+
+{OWNER}: She always purposely walks slowly so she will be carried 🤭🤭
+
+{SITTER}: Omg!!!😂 WHAT A SMART GIRL
+
+{OWNER}: Hello {SITTER}! I’m back in {LOCATION} but there’s a lot of traffic getting into the city. I can still pick up {PET} today but it’ll be a little bit later, between {TIME}! Would you be home? 😊
+
+{SITTER}: Hi {OWNER} no problem
+
+{SITTER}: i will be at hime
+
+{OWNER}: Oki great! I’ll probably be around {TIME}!
+
+{OWNER}: Im here!
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}, it’s been a while! I sent you message because {PET} suddenly came to mind🫶🏻❤️
+
+{SITTER}: I’m wondering how she’s been doing.☺️ I settled down in Yonge & Eglinton, and one of our most regular pups like {PET}, Moseby came over, which made me think of her even more. I hope you’re both enjoying the beautiful summer weather in {LOCATION}. Has she been enjoying a lots of sunshine lately? ☀️ [Photo]
+
+{OWNER}: Hi {SITTER}! Nice to hear from you and glad you’re settled in! ☺️ haha yes, {PET} has been tanning everyday!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: I take her with me to some restaurants, and she’s living life like a princess 👑
+
+{SITTER}: Haha glad to hear that. Thos e photos are soooo adorable ❤️🫶🏻🫶🏻 I’m sure she has a princess vibe lol
+
+{SITTER}: So cute her new cloth too
+
+{OWNER}: Do you have some availability in the next couple weeks? {PET} can come for a sleepover ☺️
+
+{SITTER}: I’m always available for {PET} :) Let me know when she come for a sleepover🫶🏻🙌🏻
+
+{OWNER}: Good morning! Would you be available this coming weekend {DATE}?
+
+{SITTER}: Good morning :) Yes, I’m available on {DATE}.
+
+{OWNER}: Great! {PET} will be so excited! Should I still send the payment to {SITTER}?
+
+{SITTER}: You can send the payment to me :)
+
+{SITTER}: {EMAIL}
+
+{SITTER}: This is my e-transfer. I’m already sooo excited to see {PET} and you! 🥹 Thank you so much
+
+{OWNER}: Thank you!! Just sent to you ☺️☺️
+
+{SITTER}: Thank you :) We’ll see you then
+
+{OWNER}: Could you please send me your new address?
+
+{SITTER}: Yes! This is our new address {ADDRESS}.
+
+{OWNER}: Great thank you!
+
+{OWNER}: Good morning {SITTER}! I’m thinking to drop {PET} off around {TIME} tomorrow. Would that work for you?
+
+{OWNER}: Also, {PET} hurt her back 😞
+She will come with some medication, and you would have to add it to her food. 
+She looks normal, and happy but we are limiting her walking time, I usually let her sniff more in the grass area rather than going on actual walks.
+Try to avoid stairs/jumping on furniture to protect her back.
+
+{SITTER}: Hi {OWNER}! {TIME} works for me :)
+
+{SITTER}: Oh nooo, I’m sorry to hear that. 🥲 Okay i will keep in mind to avoid something for protect her back.
+
+{OWNER}: Thank you!
+
+{OWNER}: [Photo]
+
+{OWNER}: She is still on a diet haha
+She needs to lose {AMOUNT}
+
+{SITTER}: Haha okay. 🤣😂 By the way, is it okay for her back when she meets me like welcoming?
+
+{SITTER}: 🥲
+
+{OWNER}: Haha yes that’s okay!
+
+{OWNER}: Good morning {SITTER}! {PET} is excited to come over this weekend ☺️
+Her routine is still pretty much the same.
+- meals {FREQUENCY}, around {TIME} and {TIME}
+- ⁠walks {FREQUENCY}, {TIME}
+
+{OWNER}: [Photo]
+
+{OWNER}: Here’s the details to {PET}’s medication and supplements
+
+{SITTER}: Good morning {OWNER} :) I’m so excited to see you and {PET}. Don’t worry about her routine and will make sure to follow your guidance 🫶🏻 Thank you so much!
+
+{OWNER}: Sorry! We will be a bit late because the subway is really full
+
+{SITTER}: No problem.
+
+{SITTER}: What time would you like to come here?
+
+{OWNER}: I think around {TIME}
+
+{SITTER}: Sure! See you soon
+
+{OWNER}: We’re here now :)
+
+{SITTER}: Going down !
+
+{OWNER}: Hi {SITTER}!
+How’s {PET} doing? 
+Tomorrow I’ll pick up {PET} around {TIME} :)
+
+{SITTER}: Hi {OWNER}! {PET} is sunbathing right now. She’s been eating well, taking her medicine, and enjoying lots of love🫶🏻 From the photos, I can see she’s lost a bit of weight in her face. She was always calm, but she seems even more calmed now. She’s still the same shining, lovely {PET}🥰 I can’t believe she’s already leaving tomorrow! it is so soon. 😭 but we’ll see you around {TIME}tomorrow then. [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww 😍 haha yes, she first loses weight in her face
+
+{OWNER}: Is she still calm around other dogs?
+
+{SITTER}: No. She only did that when I was in front of the elevator with you 😂
+
+{SITTER}: So I was wondering if there were other dogs in front of you if she is calm
+
+{OWNER}: Haha oh no
+
+{OWNER}: Usually we stay far away from other dogs, we always walk around them, or I carry her if there are other dogs in the elevator
+
+{SITTER}: I do the same as well. I just haven’t carried her in the elevator before, haha. I’ll start doing that from now on. ☺️
+
+{OWNER}: Sounds good! Hopefully that will help 🙂
+
+{SITTER}: Hi {OWNER} :) {PET} had her breakfast and a nice walk this morning ❤️ We’ll see you in a little while! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she looks so pretty 😍
+
+{OWNER}: I’m on my way! Will be there around {TIME}
+
+{SITTER}: She just finished her cucumbers 🥒 See you soon :) [Photo]
+
+{OWNER}: I’m here now!
+
+{OWNER}: Hi {SITTER}, would you be available for {PET} from {DATE}?
+
+{SITTER}: Yes, i’m available for {PET} at that time ☺️
+
+{SITTER}: Would you like to keep me those dates for {PET}?
+
+{OWNER}: Awesome! Yes please
+
+{OWNER}: Just sent you the money ☺️
+
+{SITTER}: I checked it! Thank you so much ☺️
+
+{SITTER}: I’m happy to see you n {PET} again this month too
+
+{OWNER}: Yes! Us too!
+
+{OWNER}: Good morning {SITTER} 🤗
+We are looking forward to seeing you tomorrow! 
+I’m thinking to come around {TIME}. Is that okay?
+
+{SITTER}: Good morning {OWNER}! Yes, {TIME} souds good :) See you tmrw
+
+{SITTER}: Hi {OWNER}, I’m suddenly invited to a farewell lunch for my last week. So would it be possible to see {PET} after {TIME}?
+
+{OWNER}: Sure, no problem! What time do you think is best?
+
+{SITTER}: {TIME}would be nice :) Thank you so much
+
+{OWNER}: Ok sounds good! We’ll be there around that time
+
+{SITTER}: Hi {OWNER}. I might be arrive home at {TIME}. Should we meet at that time? :) I’m so excited to see you and {PET}❤️
+
+{OWNER}: Sure no problem!
+
+{SITTER}: Thank you, see you then!
+
+{OWNER}: We are in the lobby :) no rush
+
+{SITTER}: I’ll be there {TIME}
+
+{SITTER}: Hi {OWNER} :) I’m having such a wonderful time with {PET}. This time how cute her little hands and even her back view are! 🥰 We’ve been napping together in the sunshine, dressing her up a bit when she doesn’t feel like walking, enjoying her good appetite, and going to the park to get some fresh air. I’m really loving my time with her, she makes every day so happy.🫶🏻 Thank you for entrusting me again, hope you wonderful day too [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww thanks for the update!
+I’m glad that you both are enjoying the time together!
+She looks so pretty under the {DATE} 😍
+
+{OWNER}: Thanks for taking care of her well!
+
+{SITTER}: Exactly! {PET} has a beautiful color, she looks absolutely pretty under the {DATE}🥰🫶🏻
+
+{SITTER}: It’s my pleasure!
+
+{OWNER}: Hi {SITTER}!
+Tomorrow, I’m thinking of picking up {PET} around {TIME}, is that okay?
+
+{SITTER}: Hi {OWNER}.  I think i’m available at {TIME} {ADDRESS}or after {TIME} since I have to stop a place by from {TIME}to {TIME}. What time would you prefer?
+
+{OWNER}: Sure! I can come meet you at {TIME} at {ADDRESS}{SITTER}: Sounds great! See you at {TIME}then. Thank you for understanding :)
+
+{OWNER}: No problem at all 😊 thanks!
+
+{OWNER}: Hi {SITTER}!
+Where should I meet you at {ADDRESS}? By the gates?
+
+{SITTER}: What would you prefer? I’m okay with both
+
+{OWNER}: Ok let’s meet by the gates!
+
+{SITTER}: Okay sure
+
+{SITTER}: {PET} had all her breakfast and we finished our morning walk. ☺️ We’ve been going to the park every day, just walking around and sniffing the grass. She gets so happy when I say “let’s go out,” She looked so peaceful napping in the sunshine. See you a little later :)❤️ [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Is she eating the green beans well?
+
+{SITTER}: Yes, she’s eating the green beans well! Whenever I give her food, she finishes it all right away and I always praise her for it.
+
+{OWNER}: I’m waiting inside the gate :)
+
+{OWNER}: Hi {SITTER}! Are you free to take care of {PET} next weekend? {DATE}?
+
+{SITTER}: Hi {OWNER} :) Of course, I’m available at that time!
+
+{OWNER}: Amazing! 🤩 thank you!
+
+{OWNER}: Just sent you the money!
+
+{SITTER}: Thank you so much! I’m so happy to see {PET}🥰☺️❤️ She’s angel 👼
+
+{OWNER}: Good morning {SITTER}! Hope you had a good weekend!☺️
+Could I please change {PET}’s boarding to only {AMOUNT}? 
+I’ll drop her off on {DATE} morning, and pick her up on {DATE} afternoon.
+No worries about the extra payment 😊
+
+{SITTER}: Good morning {OWNER}!
+Of course, that works perfectly! 
+As for the extra payment, you’re welcome to either have it refunded or just pay one less day next time ☺️ 
+Thank you so much for letting me know.
+
+{OWNER}: Hi {SITTER}! can I drop off {PET} around {TIME} tomorrow?
+
+{SITTER}: {TIME} works for me! :)
+
+{SITTER}: See you tomorrow🙌🏻
+
+{OWNER}: Hi {SITTER}! We’re running a little late by {TIME}. We’ll be around {TIME}!
+
+{SITTER}: No problem:) See you soon
+
+{OWNER}: ETA {TIME} :)
+
+{OWNER}: Hi {SITTER}! Could I actually come earlier tomorrow around {TIME} for {PET}?
+
+{SITTER}: Sure! :)
+
+{OWNER}: Thank you!
+
+{OWNER}: Good morning! I’m headed over for {PET} now. Will be there just a little bit before {TIME} :)
+
+{SITTER}: Good morning {OWNER}! [Photo]
+
+{SITTER}: {PET} and I had a lovely day together 🥰 She walked well, ate well, and got lots of cuddles. This morning she went pee and poo, and she finished both her breakfast and cucumber. After tanning, she smells so fresh and clean🫶🏻 We’ll see you soon! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: See you! I’ll arrive {TIME} :)
+
+{OWNER}: Hi {SITTER}, would be available for {PET} {DATE}?  :)
+I’ll be traveling this time
+
+{SITTER}: Yes! I’m available at that time. But i’ll be at school on {DATE} {TIME} to {TIME}. What time would you like to drop her off? If you drop her off during that time, my friend can taking care of her at that time at my home.
+
+{OWNER}: Great! No worries at all. I can drop her off on {DATE} at night after you’re home :)
+
+{SITTER}: That’s perfect!
+
+{SITTER}: See you then :) Thank you so much
+
+{OWNER}: Thank you too!!
+
+{OWNER}: Hi {SITTER}! Would {TIME} be possible for me to drop {PET} on {DATE}?
+
+{SITTER}: Hi {OWNER}. {TIME} works for me! ☺️
+
+{OWNER}: Thank you!
+
+{OWNER}: Hi {SITTER}! Is it possible to change tomorrow’s drop off time to {TIME}?
+I think the traffic would be better if it’s later
+
+{SITTER}: Good morning {OWNER} :) Yes {TIME} would be better for me too!
+
+{OWNER}: Hi {SITTER}! We’re on the way! ETA {TIME}
+
+{SITTER}: Okay I’m looking forward to see you and {PET} soon🥰🥰
+
+{OWNER}: This is {PET}’s meal ⬇️
+(Per day)
+1x pack kibble
+{AMOUNT} green beans
+{AMOUNT} yogurt 
+{AMOUNT} of salmon oil
+{AMOUNT} pumpkin 
+{AMOUNT} chicken
+{AMOUNT} hip and joint
+—-
+Cucumber 🥒 for snacks
+
+{OWNER}: Thank you!
+
+{SITTER}: Hi {OWNER}! {PET} is doing really well. Yesterday I had to visit a friend’s place, so I brought {PET} along. She loved looking out the window in the car :-) ❤️She’s eating well, sleeping well, and in the mornings she’s right in front of me when I wake up, which is just the cutest thing. I hope you arrived safely in Halifax and are having a wonderful time there. I’ll keep you posted again soon🫶🏻 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww thanks for the update! I can see her waistline from the back now!
+Yes, she loves car rides! I heard that looking out the window is like a dog’s form of rollercoaster 🎢 ride! So she’s getting lots of adrenaline everytime. 
+Did she do well at your friend’s place?
+
+{SITTER}: [Photo]
+
+{SITTER}: Yes, her waist definitely looks slimmer compared to the last walk video! I felt she was lighter the moment I picked her up👍🏻
+Yeah, she did well at my friend’s place too. it’s actually just another floor of my prev apartment, so I think she felt comfortable and familiar there😂
+
+{SITTER}: But sometimes, during walks, {PET} does growl a little at people.
+
+{SITTER}: Awwww that’s so funny about the rollercoaster. {PET} must be a brave little girl who enjoys the thrill 💕
+
+{OWNER}: Ohh no! what kind of people does she growl at?
+
+{OWNER}: Hi {SITTER}! Tomorrow I’m thinking of picking up {PET} around {TIME}. Is that okay with you?
+
+{SITTER}: Sure! I will be at home
+
+{SITTER}: It was actually a white middle-aged man! He seemed so happy to see {PET}, but I guess she just wasn’t into it haha.
+
+{OWNER}: Interesting! I wonder why… haha typical chihuahua 😆
+
+{SITTER}: {PET} has been doing so well with me. Day by day, she’s becoming even more affectionate!!! It honestly melts my heart. 🥰❤️💖❤️ She’s just so so so so lovable! We go to the park together, where she loves stepping on the grass and enjoying herself, and after our walks we sometimes sit on the bench beside my condo to rest for a little while. She’s eating well, napping peacefully, and even though she starts off sleeping on her own, when I wake up, she’s right next to me. It’s the sweetest thing. [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: 😆 She has her own preference for sure
+
+{OWNER}: Aww you always make her look so pretty 😍
+
+{OWNER}: By the way, this is a photo of {PET} when I first got her. She looks a lot different now! [Photo]
+
+{OWNER}: The left photo
+and right photo is now :)
+
+{SITTER}: YeahI was actually wondering when you first got her. She looks so much happier now.💖 her coat is shinier, her eyes are brighter, and she just seems so healthy. I can really see how much love and care you’ve given her🥰🥰
+
+{OWNER}: Hi {SITTER}! I just got back to {LOCATION}, so the time is still good.
+I’m thinking to be there around {TIME} :)
+
+{SITTER}: Sure
+
+{SITTER}: See you at that time
+
+{OWNER}: On my way! {TIME}
+
+{OWNER}: Just arrived!
+
+{OWNER}: Hi {SITTER}! Did you give {PET} a bath? She feels really soft and smells good, so I was wondering 😃😃
+
+{SITTER}: No i didn’t give her a bath. I think she didn’t smell and clean.
+
+{SITTER}: I guess why she really soft as I pet her a lot. Hahaha 😂 Or tanning a lot
+
+{OWNER}: Hahah she also smells really good!
+
+{SITTER}: I just clean her teeth haha
+
+{SITTER}: I thought that too! It smells like warm sunshine😂😂
+
+{SITTER}: 🫶🏻Happy {PET}’s Birthday!🫶🏻
+I hope {PET} feels like the happiest dog in the world today.
+Again, happy birthday to our little angel, wishing her endless health, {SITTER}, and love every single day. 💖🐾
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww thank you!! What a sweet message! 💗💗
+
+{OWNER}: {PET} got a new ride 🚗🚗 haha [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: She really likes it!
+
+{SITTER}: That’s good idea!!
+
+{SITTER}: What a cutie 🥰🥰🥰💖
+
+{SITTER}: It’s freezing outside, hope you stay warm with {PET}!
+
+{OWNER}: Yes! It’s cold and rainy. She hates it haha! 😆 Hope you’re staying warm too!
+
+{OWNER}: {PET}’s birthday cake this year! [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: so creative cake 🍰
+
+{SITTER}: and she is loving it!! 🥰
+
+{SITTER}: What a lovely💖❤️💖 The cake looks so yummy and {PET} looks soooooo adorable! I saved those photos🫶🏻🫶🏻🫶🏻
+
+{OWNER}: Hello {SITTER}! Wanted to share some photos with you of {PET}. We’re in {LOCATION} now! ✈️ [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: {PET} and her cousin Daisy (my sister’s dog) ☺️ [Photo]
+
+{SITTER}: Omg!! Thank you for sharing photos. We miss {PET} so much💖❤️💖 All of photos are so adorable! Especially sleeping on the your laps
+
+{SITTER}: She looks so cozy and sweet sleeping haha
+
+{SITTER}: ohhh she looks so cute in the photos! Does she get along well with Daisy?
+
+{OWNER}: Haha {PET} was anxious at first to meet Daisy, but Daisy is old and really calm, so she got used to it!
+
+{OWNER}: {PET} got a new Tim Hortons sweater as well ☺️ [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: What a cuteeeee🥰
+
+{SITTER}: can't miss {LOCATION} identity
+
+{SITTER}: looks good on her 🍁🇨🇦🐕🐾
+
+{OWNER}: Happy new year {SITTER}! Wanted to share some photos of what’s going on with {PET} these couple months 🐶
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Happy New Year {OWNER} and {PET}💖🎉{PET} seems lost weight! She can check off diet from new year resolutions:) Thank you for sharing the photos. I miss her a lot 😭🩷
+
+{OWNER}: Yes! She’s finished her diet haha. The vet says she’s at a healthy weight now 😄
+
+{SITTER}: Healthy~~~ that's good
+
+{OWNER}: Hi {SITTER}!
+{PET} and I are back in {LOCATION} 😌✨She’s not adjusting well to the cold haha 🥶 
+It’s still far away, but {PET} will need boarding from {DATE} (end date to be confirmed, but it will likely be around {DATE}). 
+Will you be available?
+
+{SITTER}: Omg
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: We’re miss {PET} so much
+
+{SITTER}: 😭
+
+{SITTER}: Hello {PET} and {OWNER}!
+
+{SITTER}: We've missed you guys
+
+{SITTER}: Welcome back to {LOCATION}! 🙌🏻
+
+{SITTER}: Was you stayed in {LOCATION} till now?
+
+{OWNER}: Yes! Just in {LOCATION}
+
+{OWNER}: We came back on {DATE}
+
+{SITTER}: Awwww i think it’s a quiet long time
+
+{SITTER}: The weather will getting better soon ;D
+
+{SITTER}: We’ll for sure, we’re always available {PET}💖💖
+
+{OWNER}: {PET} celebrated Lunar new year with her cousin (my sister’s dog) 🐕 [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Is she Daisy? Haha
+
+{SITTER}: They’re pretty get along now
+
+{OWNER}: Great great 😊 thank you!!
+
+{OWNER}: Yes Daisy! 🌼
+
+{SITTER}: haha, She enjoyed the Lunar new year well! Dasiy and {PET} seem get closer for sure!
+
+{OWNER}: Hi {SITTER}!
+Would you be available for {PET} on {DATE}? 
+She would need {AMOUNT}, from {DATE} {TIME} to {DATE} {TIME}.
+This would likely to be every week.
+
+{SITTER}: Omg
+
+{SITTER}: What a perfect schedule! Yes, i’m available every {DATE} {TIME} to {DATE} {TIME}.
+
+{SITTER}: Those dates, I don’t have any schedule and my bf also doesn’t have any schedules too
+
+{OWNER}: Great! Thanks for replying! {PET} will see you on {DATE}!
+
+{OWNER}: Is your e-transfer still a {EMAIL}?
+
+{SITTER}: Yes! Wait a second
+
+{SITTER}: If you plan to have {PET} stay with us weekly, we’d be happy to offer pickup service as a small convenience for you.
+There would just be a {PRICE} fee for the pickup. (about transit fee) 
+Of course, you’re also very welcome you drop her off as usual.
+Please feel free to let us know if that would be helpful for you 😊
+
+{OWNER}: Oh really? That's so so nice!! We moved to {ADDRESS}, so it's a little bit further from the subway station. Is that okay for you?
+
+{OWNER}: We can also meet you at {ADDRESS}:)
+
+{SITTER}: Oh I see, you moved!
+I thought it was still around {ADDRESS}. Meeting at {ADDRESS}sounds great 😊
+
+{OWNER}: Would you be able to do both pick up and and drop off at {ADDRESS}?
+
+{OWNER}: or only pick up on {DATE}?
+
+{SITTER}: I’m very happy to see you & {PET}. Also it is my pleasure if picking up will helps
+
+{SITTER}: I thought only pick up on {DATE} but i can do pick up and drop off
+
+{OWNER}: yes that'll be super helpful!
+
+{SITTER}: So if you wanna pick up & drop off, it’s gonna be {PRICE}.
+Or pick up only is {PRICE}. Letting me know which ever you would like to
+
+{OWNER}: Yes, it would be great if you could do both pick up and drop off. I'm good with {PRICE}!
+Since you are traveling a lot, and it's a huge favour for me!
+
+{SITTER}: Omg It’s a huge favour for me too
+
+{OWNER}: My time is quite flexible on {DATE}, so you can pick up {PET} anytime. For {DATE}'s drop off, it would have to be after {TIME}.
+
+{SITTER}: No problem :) We’ll discuss about pick up and drop off time each week. It would be better option for you.
+
+{OWNER}: ok thank you!!
+
+{SITTER}: So would you like to board {PET} this {DATE} at {TIME}?
+
+{OWNER}: Yep please
+
+{SITTER}: Sure. See you at {TIME} @{ADDRESS}:) this {DATE}❤️
+
+{OWNER}: [Photo]
+
+{OWNER}: See you!
+
+{SITTER}: Thank you! :)
+
+{SITTER}: Hi {OWNER}! Would it be possible to pick {PET} up at {TIME} tomorrow?
+
+{OWNER}: Hi {SITTER}! Yep no problem!
+
+{SITTER}: I have an online meeting at {TIME} so i would like to pick her up before haha
+
+{OWNER}: We will see you at {TIME} at {ADDRESS}!
+
+{SITTER}: ;) Thank you for understanding! And @⁨{SITTER}⁩ might be go together with me because she miss {PET} so much 😂😂😂
+
+{OWNER}: Yay! We’d love that!
+
+{SITTER}: See you tomorrow 👏💖
+
+{OWNER}: Hi {SITTER}! We’re looking forward to seeing you soon.
+
+{OWNER}: This is {PET}’s meal for {DATE}.
+{FREQUENCY}.
+I usually feed her based on my schedule:
+{DATE} meal: Between {TIME}
+{DATE} meal: between {TIME} [Photo]
+
+{OWNER}: After {DURATION}, {PET} has learned “paw” haha.
+Please practice this before allowing her to eat! 
+Thank you! [Photo]
+
+{SITTER}: Omg
+
+{SITTER}: I will definitely to do that! So lovely tiny paw 🐾
+
+{SITTER}: Awwwwwwwwww
+
+{SITTER}: 😭😭😭😭😭😭😭😭
+
+{SITTER}: tiny paw
+
+{SITTER}: she is still small but so tiny in the video
+
+{SITTER}: We might go there at {TIME}
+
+{OWNER}: Oh ok! Then we’ll leave now :)
+
+{SITTER}: It’s so earlier than we expected 😂😅
+
+{OWNER}: It takes us around {TIME}
+
+{SITTER}: Oh thank yoy! Take your time
+
+{OWNER}: We arrived at {ADDRESS}{OWNER}: We will wait near the gates
+
+{OWNER}: {PET} already ate dinner, no need to feed her again tonight!
+Because of her new diet, she usually poops every time we go outside, unless it’s too cold or rainy!
+
+{OWNER}: Thank you!! The donuts are really yummy 😋
+
+{SITTER}: [Photo]
+
+{SITTER}: It’s our pleasure {OWNER}!
+We’ve just got home :)❤️🫶🏻 
+I’m very happy to see you & {PET} again.
+
+{SITTER}: Thank you for letting me know!
+She had a poop on the way home :)
+We arrived home, and she remembers my place since she went straight to the sofa and lay down. (No looking around 👀)❤️
+
+{OWNER}: Ohh she pooped again? She just pooped before we met haha 😂 good digestion!
+
+{OWNER}: She loves the sofa!
+
+{SITTER}: Hi {OWNER},
+{PET} and I are doing really well together :) She is soooo sweet and lovely dog. She waits so patiently (when i give her meal) and always listens so carefully.
+She finished her morning and lunch walks. Since it’s quite cold and the ground is wet, she preferred to just take care of her business and come back inside. She did both pee and little poo twice.
+She also had her breakfast and just finished her lunch as well. I tried asking her for “paw,” and she did it so well!🙌🏻👏❤️
+I’ll go out to drop {PET} off at King at {TIME} today. I’ll text you when I leave.
+See you later! 🐶 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you!
+Aww she’s looks so comfortable! See you at {TIME} 🕖
+
+{SITTER}: We’re on the way! Our ETA is at {TIME}
+
+{OWNER}: Ok! See you!
+
+{SITTER}: It’s snowing! She doesn’t want to walk haha. See you soon [Photo]
+
+{OWNER}: Yes! It’s snowing a lot haha
+
+{OWNER}: Im at the station now! Same place we met
+
+{SITTER}: Oh! Okay we’re on the subway
+
+{SITTER}: We have {AMOUNT} stops left, sorry for delay!
+
+{OWNER}: No problem! No rush
+
+{OWNER}: Hi {SITTER}, could you share your address with me, again? Thanks!
+
+{SITTER}: My address is {ADDRESS}! :)
+
+{OWNER}: Thank you!
+
+{OWNER}: Hi {SITTER}, I was wondering if you would prefer this way -
+Instead of {PET} staying over night on {DATE}…you can come to my place on {DATE} during the day? I’m thinking {TIME}/{TIME}?
+If some days you’re not free, your boyfriend can also come instead.
+This may be easier, so we don’t have to transport {PET} in the ttc every week.
+We can still keep {PRICE}!
+Let me know if this is easier!
+
+{SITTER}: Hi {OWNER}!
+That sounds like a great idea😊
+The only thing is that this semester I do need to go to school in between(only one and half hours) and since my school is uptown, it might be a bit difficult for me to go back and forth from your place on Moday :(
+While I’m at school, {SITTER} would be with {PET} and take care of her, so she wouldn’t be alone at all!
+Because of that, I think coming on {DATE} evening would work a little better for me. 
+I’d be more than happy to pick {PET} up from your place as well if that makes things easier for you 💛
+
+{SITTER}: If you would prefer care at your home, I can try my best to adjust my schedule next semester to make that work 😊
+
+{OWNER}: I understand, no problem! When does your semester end?
+
+{SITTER}: This semester ends on {DATE} :)
+
+{SITTER}: And next semester stars {DATE}
+
+{SITTER}: Thank you for understanding!!💖
+
+{OWNER}: Ok no worries!
+Let’s keep it as {DATE} for now ☺️
+
+{OWNER}: This {DATE} I’ll drop off {PET} at your place around {TIME}!
+
+{SITTER}: Sounds great :) I’m very looking forward to see {PET} 👀👀👀
+
+{OWNER}: If next semester you’re able to come on {DATE} instead that would be great!
+
+{SITTER}: Sure! I’ll do my best for {PET} 😊 I can let you know in mid-April once my semester schedule is finalized.
+
+{OWNER}: Thank you!!
+
+{OWNER}: [Photo]
+
+{SITTER}: Thank you :) See you on {DATE} 🙌🏻
+
+{OWNER}: Hi {SITTER}, on {DATE}, are you able to drop {PET} off before {TIME}?
+
+{OWNER}: I’ll drop off {PET} a little later today! Around {TIME} 🕖
+
+{SITTER}: Hi {OWNER}! What time would you like to drop her off?
+
+{SITTER}: No problem :))❤️
+
+{OWNER}: {DATE} between {TIME} would be great!
+
+{SITTER}: Sure! I’ll let you know exact time on Moday :))
+
+{OWNER}: Thanks! See you later!
+
+{SITTER}: See you later 🥰🥰
+
+{OWNER}: We’re heading out soon! I think there’s a ttc delay, so we might be a little late
+
+{SITTER}: No problem :) Do you want me to meet at the {ADDRESS}if it helps
+
+{OWNER}: Sure, that would be great! I’ll send a message when I’m close
+
+{SITTER}: Sure! It’s gonna be take {TIME}so please let me know before then
+
+{OWNER}: We just passed Rosedale! So maybe another {TIME}
+
+{SITTER}: Okay see you in the gate
+
+{SITTER}: We’re here!
+
+{OWNER}: Hi {SITTER}, no worries about the earlier drop off tomorrow. Let’s keep {TIME}!
+
+{OWNER}: We can meet at {ADDRESS}{SITTER}: Sure! See you tomorrow at {ADDRESS}:)
+
+{SITTER}: I’m happy to stay longer with {PET}
+
+{SITTER}: Hi {OWNER}! 💕
+{PET} is doing great! 😊
+I really like her stroller. It's comfortable and easy to use. She looks relaxed and happy in it!
+She likes {SITTER} a lot, but I think she likes being with me most 😉
+We had a nice, calm walk this morning! She did both pee and poop and has been eating well. She seems very comfortable and happy.
+I'll keep you updated, but everything is going really well so far 🤍 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww thanks for the pics! I'm glad {PET} is enjoying her time. She loves the stroller haha! She's so lazy 😅
+
+{SITTER}: hahaha that makes so much sense! Honestly, she is a little princess… 👑
+
+{OWNER}: Hi {SITTER}, could you please let me know when you’re heading over?
+
+{SITTER}: Okay! I will leave soon
+
+{SITTER}: I will let you know when i take a {ADDRESS}! It’s gonna be taking around {TIME}
+
+{OWNER}: Ok!
+
+{SITTER}: We’re on the way :)
+
+{SITTER}: See you at {ADDRESS}{SITTER}: [Photo]
+
+{SITTER}: We’re infront of the gate but i think there’s many gates at {ADDRESS}{SITTER}: Do you want me to go upstairs?
+
+{OWNER}: Im entering the station now. Could you come to the northbound platform?
+
+{SITTER}: Sure
+
+{OWNER}: [Photo]
+
+{OWNER}: Hi {SITTER}, for this weekend, would {PET} be able to stay over from {DATE} night to {DATE} evening?
+{AMOUNT}
+
+{SITTER}: Sure! I can available at that time :))
+
+{SITTER}: Would you like to pick her up at {TIME} as well on {DATE}?
+
+{OWNER}: Great great! On {DATE}, it would have to be between {TIME} or after {TIME}
+
+{SITTER}: Sure! I can get there at {TIME}. Is that okay with you?
+
+{OWNER}: Sorry, can we set {TIME}? If I can make it earlier then I’ll send you a message :)
+
+{OWNER}: We can meet at {ADDRESS}again
+
+{SITTER}: Sure! See you at {ADDRESS}infront of Northbound Elevator {TIME} :))
+
+{OWNER}: Thank you!
+
+{SITTER}: Haha It’s my pleasure :))
+I just wanted to share the photo with you how adorable {PET}’s tiny rice-like little teeth are 🥹💕 [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: See you tonight! [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: I love the photo❤️ See you tonight
+
+{OWNER}: We are heading out soon! See you!
+
+{SITTER}: I’m on my way! It’s gonna be take {TIME} :) See you
+
+{SITTER}: Would you like to meet at Queen or {ADDRESS}?
+
+{OWNER}: {ADDRESS}, northbound platform like last time :)
+
+{SITTER}: Sure
+
+{SITTER}: Hi {OWNER}! Hope you’re having a nice {DATE} 😊
+Thanks to you, I’m having such a happy time with {PET} 👼❤️ She’s getting prettier every day for sure.
+I took a video on our usual walk today.She does her pee/poo, walks a bit, then suddenly runs off… and when I follow her, she’s already right at the front our door 🤣🤣 ( I assume she wants go home)
+She’s seriously soo smart and cuteee. I will update how’s {PET} doing again! :)) [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha she’s so funny! She wanna be back in the warm as fast as possible 💨
+
+{OWNER}: See you at {TIME} today - {ADDRESS}Northbound platform!
+
+{SITTER}: Good morning, {OWNER} 🫶🏻
+I was just texting to you too!
+When we go for {FREQUENCY}, {PET} poops all three times 🤣 It looks very healthy, so I just wanted to share with you.
+She is doing very well. She likes to walk longer in the evening when it’s quiet and not many people are around. 
+BTW, I had to take photos when the {DATE} is shining and she looks at me, her eyes look like little gems 💎 (And she seems like smile 😃)
+Also, yesterday we went to Shoppers, and she was very busy looking around, even more than me. 🤣
+See you at {TIME} today! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Awww!! She always looks so pretty in the {DATE}!! I love it when her teeth is like that 😂
+
+{OWNER}: She loves shopping hehe 👛🛍️
+
+{SITTER}: Me too!!!🤣
+
+{SITTER}: Hi {OWNER}! We’ll arrive at {ADDRESS}in {TIME} :)
+
+{OWNER}: ok! i'm heading over too now
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: The weather is so nice! {PET} asked me for a walk and to tan, so we’ll spend more time outside in the sunshine ;) See you soon 😊
+
+{OWNER}: Haha she must be so happy today with the {DATE} and warm weather! ☀️
+
+{OWNER}: Hi {SITTER}, my schedule changed  and {PET} would need sitting on Fridays instead of Mondays, starting on {DATE}.
+Would you and {SITTER} still available? 
+Can you come to my place on Fridays?
+
+{SITTER}: Hi {OWNER}!
+I’m so sorry for the sudden inform you to update my schedule. I need to visit to my country for family reasons from {DATE}.
+During the two weeks I’m away, @⁨{SITTER}⁩ will be available instead. 
+She would be able to take care of {PET} at your place on {DATE} as well.
+Would that be okay for you? 🥺
+
+{OWNER}: No problem {SITTER}! Hope everything is okay with your family.
+
+{OWNER}: Sounds good! Looking forward to {PET} hanging out with {SITTER}!
+
+{SITTER}: Im excited for time with {PET}! i missed her so much haha
+
+{OWNER}: [Photo]
+
+{SITTER}: {SITTER} changed their phone number to a new number. Tap to message or add the new number.
+
+{OWNER}: Hi {SITTER}, I’ll be going on vacation from {DATE}. Would you be available for {PET}? ☺️
+
+{OWNER}: [Photo]
+
+{SITTER}: Yes! I’m available at that time :))❤️
+
+{SITTER}: And I’ve settled up my next semester schedule, i can stay your place at {TIME} to {TIME}
+
+{OWNER}: That sounds great thank you!
+
+{SITTER}: Hi {OWNER}! What time would you like to pick {PET} up tomorrow?
+
+{OWNER}: Hi {SITTER}! {PET} doesn’t require boarding this weekend.
+I believe {SITTER} will come on {DATE} ({DATE}). 
+We changed to every {DATE} now, not Mondays anymore :)
+The boarding request is for {DATE}
+
+{SITTER}: Ohhh i see!!
+
+{SITTER}: Okay :) Thank you for checking it
+
+{OWNER}: Hi @⁨{SITTER}⁩, should I pay you for this {DATE}?
+{EMAIL}
+
+{SITTER}: Hi {OWNER},
+yes! it is correct ({EMAIL} )
+what time should I get to your place?
+
+{OWNER}: Thanks! Just sent to you
+
+{OWNER}: Can you come here by {TIME}?
+I’ll already be gone, but I’ll leave the key for you. It’ll be in a lockbox attached to the door handle.
+I’ll send more info on {DATE}!
+
+{SITTER}: Sure no problem
+
+{SITTER}: received
+
+{OWNER}: Hi @⁨{SITTER}⁩, see you tomorrow!
+📍My address is:
+Unit {ADDRESS}({DATE} floor)
+The unit is directly across from the elevator.
+I will leave a lockbox on the door so you can get into the unit. There will be a fob and key inside. 
+🔒Lockbox code: {CODE}
+Input the code -> Pull down the lever -> and pull towards you to open the box.
+🏠to access the building, you can use a temp key (see the code in the third image). If you can’t get in with the temp key, please find my name “{OWNER} Y” in the system and I can let you in.
+🚠The elevator is locked and requires to be buzzed in, so you can’t come in with someone. [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: {PET} is having some unstable poops this past week 💩 if you could take her out when you arrive, and around {TIME} that would be great! Now that it’s warmer, she likes to walk more. Hopefully it won’t rain ☔️ !
+Her harness and leash will be in the stroller.
+You can feed her at {TIME}. The food will be in the fridge. 
+{PET} will see you at {TIME} tmr! ☀️ I’ll probably be back home between {TIME} tomorrow, but will send a message when I’m on the way back!
+
+{OWNER}: {PET}’s harness is a no pull one. It goes over her head and loops under her belly.
+I usually clip the leash on the front buckle because she’s more obedient haha 😂 [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Awww good to know
+
+{SITTER}: In the picture, {PET} is so cute🥰🥰🥰
+
+{SITTER}: certainly !
+
+{SITTER}: thank you {OWNER} for the detailed instructions
+
+{SITTER}: Im so excited to cuddle with her tomorrow 🥰❤️🥰
+
+{SITTER}: It has been a long time! I will take care of her well
+
+{OWNER}: {PET}’s dinner will be like this in the fridge 🍱 [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: I just got it yesterday! She always eats too fast... and I think she needs to use her brain more 😂
+
+{OWNER}: @⁨{SITTER}⁩ you can come a bit later tomorrow around {TIME} instead!
+
+{SITTER}: hahaha all the food is hidden
+
+{SITTER}: She definitely needs to use her brain more
+
+{SITTER}: yes no problem
+
+{OWNER}: thank you!
+
+{OWNER}: Good morning!
+I forgot to send the Wifi information:
+Name: {WIFI}
+Password: {WIFI}
+
+{OWNER}: There is a couple pet friendly cafes nearby that you can go to with {PET} if you're bored! It's called *Buvette Pacey*. {URL}
+Also, *Roozamoon* {URL} The owner has a cat, that's really cute and chill but {PET} always gets mad when the cat gets close 😂
+
+{SITTER}: good morning thank you
+
+{SITTER}: im on the way now
+
+{SITTER}: lol
+
+{SITTER}: I should check it out
+
+{OWNER}: Yes! Both cafes have really nice drinks!
+
+{SITTER}: [Photo]
+
+{SITTER}: I got in successfully
+
+{OWNER}: Yay! 🎉 hehe
+
+{OWNER}: She’s so funny
+
+{OWNER}: Was she really excited?
+
+{SITTER}: lol super!!
+
+{SITTER}: She didn't let me stand up until she is satisfied
+
+{SITTER}: ATTACHED!
+
+{SITTER}: lol
+
+{OWNER}: Hahaha Velcro dog for sure!
+
+{OWNER}: I took her out around {TIME} already, so I think you can take her out at {TIME}!
+
+{SITTER}: oh Im going out with her now and grab some coffee for the day
+
+{OWNER}: Ok cool, sounds good!
+
+{OWNER}: Enjoy!
+
+{SITTER}: Thanks again for the recommendation
+
+{OWNER}: I might be coming back a little earlier than expected around {TIME}/{TIME}. I'll send a message when I'm heading back :)
+
+{SITTER}: no problem
+
+{SITTER}: Do you want me to leave before you arrive?
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: {PET} has had glowed up after her vacation
+
+{SITTER}: She is so beautiful ✨✨
+
+{SITTER}: napping time [Photo]
+
+{OWNER}: awww sleepy baby
+
+{OWNER}: did she poop this afternoon?
+
+{OWNER}: up to you! you can leave when I'm on the way back :)
+
+{SITTER}: she didnt want to walk a lot and didnt pee or poo during the walk
+
+{SITTER}: I will go out again around {TIME} before her dinner time
+
+{OWNER}: so lazy
+
+{OWNER}: great, thank you!
+
+{SITTER}: she walked like tap tap
+
+{SITTER}: and asked me to hold her lol
+
+{OWNER}: can you double check the harness? it looks kinda funny in the picture
+
+{SITTER}: sure. It's bit big so when i hugged her one of her feet came out. I will make sure it don't fall off when I go out again 👍
+
+{OWNER}: Thank you!
+
+{SITTER}: oh i put it upside down! that's why it was big
+
+{SITTER}: {PET} did pee and poo
+
+{SITTER}: her poo is bit wet today
+
+{SITTER}: but this time she was willing to walk 👍✨
+
+{OWNER}: Was it formed?
+
+{SITTER}: the first one yes
+
+{SITTER}: and the last one was not
+
+{OWNER}: Ok! thanks for letting me know
+
+{OWNER}: I’ll be back around {TIME}, but you can head out at {TIME}!
+
+{OWNER}: Just hang the lockbox back on the handle please 🙏
+
+{SITTER}: okay! ✅
+
+{OWNER}: Heading back now {SITTER}! Feel free to head out :)
+
+{OWNER}: I’ll be back in about {TIME}
+
+{OWNER}: Did {PET} have her dinner?
+
+{SITTER}: I gave her dinner
+
+{OWNER}: Great!
+
+{SITTER}: haha i will slowly wrap up my stuff and head out after watching {PET} finishs her food
+
+{OWNER}: Sounds good! I’m coming up now
+
+{SITTER}: okay
+
+{SITTER}: btw
+
+{SITTER}: what is ?
+
+{OWNER}: {URL}
+It’s my new side project! My team does dog walking and boarding in downtown east end and annex!
+
+{SITTER}: wow when did you start this cool business? 👏👏👏
+
+{SITTER}: What a cool! That’s our future
+
+{SITTER}: We always think about how can we grow up this business. We’re very happy to take care of furry friends 🥰
+
+{OWNER}: This company has been around for over {DURATION}. I worked with the owner for {DURATION} already. He's getting old (like {DURATION} old), and want to focus more on his health, so I bought the business from him. I officially took it over on {DATE}, so it's been around {DURATION} 😃
+
+{SITTER}: That sounds great
+
+{SITTER}: And name is so cute 🥰 ❤️
+
+{OWNER}: yeah totally! very cute and suitable!
+
+{SITTER}: Congrats {OWNER} 🎉😁 haha
+
+{SITTER}: If you are interested in, do you want to have a coffee chat or lunch/dinner after {SITTER} is back? We may have lot of things to learn from each other 🤔
+
+{OWNER}: Yeah of course! I’m happy to share and answer any questions! 💗
+
+{SITTER}: yay 😀
+
+{SITTER}: thank you for sharing your happy news! I think you will be great on this business
+
+{SITTER}: 🥰👍✨
+
+{OWNER}: Thank you! That means a lot! 🥹
+
+{SITTER}: as we know you love furry friends like us!
+
+{SITTER}: haha
+
+{SITTER}: [Photo]
+
+{OWNER}: Yes I do! More than humans that’s for sure 😆😆
+
+{SITTER}: lmao 🤣
+
+{OWNER}: I would like to open a dog rescue one day, so hopefully this will lead me to that direction!
+
+{SITTER}: Me too!
+
+{OWNER}: Hi {SITTER}, this week, {PET} would need someone to hangout with her on {DATE}. Would you be available? Similar time {TIME}.
+
+{SITTER}: Hi {OWNER}, I will be available for this {DATE}!
+
+{OWNER}: Thank you {SITTER}!
+
+{SITTER}: ofc
+
+{SITTER}: see you on {DATE}
+
+{OWNER}: This is {PET}’s new trick haha! I’m not sure what to call it 😆 [Photo]
+
+{OWNER}: She’s getting really smart because she knows she has to do it before eating!
+
+{SITTER}: What a smart girl 🥰
+
+{SITTER}: She can do “down” as well!!
+
+{SITTER}: haha i will try on {DATE}
+
+{SITTER}: she is so cute
+
+{SITTER}: [Photo]
+
+{SITTER}: This message was deleted.
+
+{OWNER}: Hi @⁨{SITTER}⁩ ! I just sent you the payment for tomorrow :)
+
+{OWNER}: Press the "Tempkey" button on the Akuvox Doorphone and enter the Key {CODE}.
+Same routine as last week. Thank you! 😊 [Photo]
+
+{SITTER}: received! thank you
+
+{SITTER}: I will text you when I arrive
+
+{SITTER}: arrived
+
+{SITTER}: q [Photo]
+
+{OWNER}: hahaha thank you! I love how she always flops
+
+{SITTER}: haha right
+
+{SITTER}: very attractive lol
+
+{SITTER}: [Photo]
+
+{SITTER}: heart attack 💘
+
+{OWNER}: aww she looks so relaxed and pretty
+
+{OWNER}: there is a heater under there haha, she loves it 🔥❤️‍🔥
+
+{SITTER}: aha that's why she immediately goes to that spot after saying hi
+
+{SITTER}: {PET} peed and pooed in the afternoon walk
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: we went to the second cafe you recommended. Very cozy cafe
+
+{SITTER}: and have a good coffee
+
+{SITTER}: i liked there too
+
+{OWNER}: Lovely! How was {PET} with the cat? Haha 😂
+
+{SITTER}: [Photo]
+
+{SITTER}: cat was hidden but {PET} wanted to find her
+
+{SITTER}: sniffing a lot around her bed
+
+{SITTER}: looking for her
+
+{SITTER}: lol
+
+{SITTER}: she is lazy to give her other paw
+
+{SITTER}: cute
+
+{OWNER}: Hahaha need food payment first before other paw
+
+{SITTER}: haha yess and when i asked another time to give her paw, i can see her judgement face lol
+
+{SITTER}: 😂😂😂😂😂
+
+{OWNER}: How’s her poop this walk?
+
+{SITTER}: small and formed but mushy
+
+{OWNER}: Got it thank you!
+
+{OWNER}: Hi {SITTER}! I’m headed back home now :)
+
+{SITTER}: oh i see
+
+{SITTER}: we went to walk
+
+{OWNER}: Haha no problem. Take your time!
+
+{SITTER}: do you want me to give her dinner?
+
+{SITTER}: [Photo]
+
+{OWNER}: No worries I can give it to her
+
+{SITTER}: when she finished her walk, she lead me to her home lol
+
+{SITTER}: she pooped too
+
+{SITTER}: this time it was good
+
+{OWNER}: Great!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: I will leave around {TIME}then!
+
+{OWNER}: Haha she loves running in the hallway
+
+{SITTER}: today she is very playful and cheerful
+
+{SITTER}: she walked well today
+
+{OWNER}: Nice! Really glad to hear that
+
+{OWNER}: Her mood is better now that it’s starting to get warmer
+
+{SITTER}: [Photo]
+
+{SITTER}: power of the heating pad
+
+{OWNER}: Coming up now :)
+
+{SITTER}: okay 👍
+
+{OWNER}: Hi {SITTER}, this week, {PET} would need someone to hangout with her on {DATE}. Would you be available? Similar time {TIME} or {TIME}.
+
+{SITTER}: Hi {OWNER},
+I am available for this {DATE}
+
+{OWNER}: thank you!
+
+{OWNER}: Hi {SITTER}! I just sent you the money for tomorrow. Same routine! Thank you! ☺️ [Photo]
+
+{SITTER}: got it
+
+{SITTER}: ofc! see you tomorrow:)
+
+{SITTER}: [Photo]
+
+{SITTER}: Arrived !
+
+{OWNER}: hehe happy {PET}!
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: She've always asking to go to the parking lot, yet i didn't go and asked her to go on different direction. Today i followed and found her potty spots! 😂 She knows and she is right like always
+
+{OWNER}: Haha yes! Usually she pees at the back, and then walk across the street to poop 💩
+
+{OWNER}: It’s convenient for us!
+
+{SITTER}: aha
+
+{SITTER}: we went to second walk for day
+
+{SITTER}: today she doesn't poo 💩
+
+{SITTER}: [Photo]
+
+{SITTER}: lol her down is so cute
+
+{SITTER}: surrendered
+
+{OWNER}: hahaha she’s getting confused with all the new tricks!
+
+{SITTER}: after down she wants her snack into her mouth. she doesnt want to get up
+
+{SITTER}: me: Yes majesty 👸🏻
+
+{OWNER}: No payment, no movement!
+
+{SITTER}: right 😂
+
+{OWNER}: Hi {SITTER}! I’m on the way back now :) no need to feed {PET}
+
+{OWNER}: Be back {TIME}
+
+{OWNER}: Hi {SITTER}! {PET} will need someone to hangout with her again on {DATE}. Would you be available?
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Let me check @⁨{SITTER}⁩  schedule! I can available from next week ;)
+
+{SITTER}: She've got a yellow shirt
+
+{SITTER}: Very cute
+
+{SITTER}: I am available this {DATE}. I will come!
+
+{OWNER}: Haha it’s our bandana, but too big on her 😆 [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: Thank you!!
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: my pleasure 🥰
+
+{SITTER}: has many goods
+
+{SITTER}: nice
+
+{OWNER}: Hi {SITTER}, can you board {PET}, this {DATE} for {AMOUNT}?
+
+{OWNER}: Or if it’s easier, you could come pick her up on {DATE}, and drop her back home on {DATE}?
+
+{SITTER}: It sounds easier! What time would you like to pick her up and drop her back home?
+
+{OWNER}: Pick up {DATE} {TIME} and drop off {DATE} after {TIME}
+
+{SITTER}: Okay let me check the schedule and get back to you soon
+
+{OWNER}: Thank you!
+
+{SITTER}: [Photo]
+
+{SITTER}: np
+
+{SITTER}: We’ll pick her up on {DATE} at {TIME} and drop her off on {DATE} after {TIME}! Thank you ;D
+
+{OWNER}: Sorry {SITTER}, I was able to figure out another option instead of the weekend boarding.
+{PET} just needs someone to hangout with her on {DATE} - the usual {TIME}!
+
+{OWNER}: Will it still be {SITTER} for {DATE}?
+
+{SITTER}: Yes! then i will go on {DATE}
+
+{OWNER}: Thank you!
+
+{SITTER}: No problem :)
+
+{OWNER}: {PET} has to work for her food now haha 😂 [Photo]
+
+{SITTER}: Omg
+
+{SITTER}: She need to work hard for food 😂😭❤️
+
+{OWNER}: Hi {SITTER}, {PET} will likely need boarding *{DATE}*. I’ll confirm the exact dates closer to this time. Thank you!!
+
+{SITTER}: Sure! I will hold those dates for {PET} 🥰
+
+{OWNER}: Hi {SITTER}! I just sent you the money for today.
+
+{OWNER}: [Photo]
+
+{OWNER}: This is {PET}’s dinner. It’s on the kitchen counter [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Good morning!
+
+{SITTER}: thank you. received
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: {PET} peeped but didn't poo during the walk. She enjoyed the sunlight today and was very cheerful 😀
+
+{OWNER}: yay! nice and tanning
+
+{OWNER}: On my way back!
+
+{SITTER}: we had an afternoon walk and she pooped 🎉
+
+{SITTER}: okay
+
+{SITTER}: I left the key within the locker and hung at door
+
+{OWNER}: Thanks!
+
+{SITTER}: have a nice weekend:)
+
+{OWNER}: You too!!
+
+{OWNER}: Hello! {PET} will need someone on {DATE} again! Would you be available?
+
+{SITTER}: I’m available! We’ll see you on  {DATE}🥰
+
+{OWNER}: Great! Thank you!
+
+{OWNER}: Hi {SITTER}! I just sent you the payment for tomorrow.
+Here’s the buzzer to come in the building :) 
+Lockbox code: {CODE}
+{PET} will see you at {TIME} tomorrow! 
+Thank you ☺️ [Photo]
+
+{OWNER}: {PET} is going on a diet again 😆 she’s been eating too well back in {LOCATION}. Please don’t feed her more than {AMOUNT} of treats!
+
+{OWNER}: Tomorrow is looking really sunny and nice! Hope you can take {PET} out to do some tanning ☀️
+
+{OWNER}: Hi @⁨{SITTER}⁩ , is everything ok? I haven’t heard a response from you
+
+{SITTER}: Hi {OWNER}!
+
+{SITTER}: Yes everything is okay :) We will see you at {TIME} soon
+
+{SITTER}: I’m so excited to see you & {PET} 🥰
+
+{OWNER}: Thanks! I’ll be gone already but {PET} will be waiting for you ☺️
+
+{OWNER}: I guess I’ll be back between {TIME} again today! But I’ll update you when I’m coming back
+
+{SITTER}: Sounds great! I will go asap 😆
+
+{OWNER}: {PET} will also need boarding from {DATE} ({AMOUNT}). Would you be able to take care of her?
+
+{SITTER}: Yes i would love to :)🥰❤️❤️
+
+{OWNER}: Thank you!!
+
+{SITTER}: [Photo]
+
+{SITTER}: Hi {OWNER}! I’m home now :) {PET} gave me such an excited welcome 🥹 I waited until she calmed down a little before saying hi with bunch of love 😭 She’s still so beautiful and absolutely adorable ❤️❤️❤️
+
+{OWNER}: Great!
+
+{OWNER}: Enjoy your day!
+
+{SITTER}: Omg she knows this place!! [Photo]
+
+{SITTER}: We already went to other pet friendly cafe. We’re on the way to go back home but she doesn’t move infront this cafe😭😂
+
+{OWNER}: Haha she loves Pacey! We go there a lot
+
+{SITTER}: What a lovely 🥰 I definitely will go there next time with {PET}
+
+{OWNER}: I’ll be back soon! In about {TIME}
+
+{OWNER}: No need to feed {PET}
+
+{SITTER}: [Photo]
+
+{SITTER}: I didn’t feed her :)
+
+{SITTER}: She just ate her leftover after we came back from walking
+
+{SITTER}: She didn’t poo yet. I will leave soon! Thank you so much 😊
+
+{OWNER}: Thank you!
+
+{SITTER}: Do i need to set up lockbox? Or leave the key in the home?
+
+{OWNER}: Please put the key back in the lockbox and lock the door :)
+
+{SITTER}: Sure :)
+
+{OWNER}: Tell {PET} “I’ll be Back” and she will know you’re leaving
+
+{SITTER}: She is so smart!! I just leave :-)
+
+{OWNER}: Thank you!
+
+{SITTER}: Hi {OWNER}! Just a gentle reminder to double-check if {PET} will be staying with me from {DATE}–{DATE} :) If yes, what time are you planning for drop-off and pick-up? Thank you 💛
+
+{OWNER}: Hi {SITTER}! Yes, confirming {DATE}. Would you be able to pick her up on {DATE}?
+
+{SITTER}: What time would you like to ?
+
+{OWNER}: Before {TIME}, or after {TIME} :)
+
+{SITTER}: @⁨{SITTER}⁩ can pick her up at {TIME} :)! Is it okay with you?
+
+{OWNER}: Yes, that’s perfect!
+
+{SITTER}: Perfect! The weather is so nice, I’m very excited to see {PET} 🥰😆 I will go on a date with her at park which is so nice I recently found it❤️
+
+{OWNER}: Yes! Today we went to a really big park in New Market! She enjoyed it a lot
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: She got all muddy haha 😂 but now she’s showered and clean to see you! 🧼
+
+{SITTER}: Sounds great! Thank you for sharing your happy moments with {PET} 🥰 I could only see her back, but I could still tell she was so excited and happy XD 💛
+
+{OWNER}: Hi @⁨{SITTER}⁩ could you please tell me how much to pay for this boarding? I remember I overpaid a little bit from last time as well. {PET} will also need drop off on {DATE}.
+
+{SITTER}: Hi {OWNER}! If I remember correctly, I think you may have paid {PRICE} extra for those dates 😊 {PET}’s regular rate is {PRICE} but the pick-up and drop-off rate is {PRICE} which includes the transportation fee, etc.
+
+{SITTER}: No worries! We’ll see you at King for pick up & drop off. @⁨{SITTER}⁩ will go to pick her up on {DATE}, i will go to drop her off on {DATE} :)
+
+{OWNER}: Oh you can’t come to my apartment?
+
+{SITTER}: I can! :D Would you prefer to do that?
+
+{OWNER}: Yes, that would be great!
+
+{OWNER}: Is the total {PRICE}?
+
+{SITTER}: What time would you like me to drop her off on {DATE}?
+
+{OWNER}: I’m not sure about my schedule during the day on {DATE} yet. Can I confirm with you on {DATE}?
+
+{SITTER}: Yes sure!!
+
+{OWNER}: I’ll send some information about her feeding schedule this evening :) thank you!
+
+{SITTER}: Here is {PET}’s boarding price! :D
+* {DATE} (pick-up): {PRICE}
+* {DATE}–25 ({AMOUNT}): {PRICE}/day = {PRICE}
+* {DATE} (drop-off): {PRICE}
+Total: {PRICE}
+Minus the {PRICE} overpayment from last time = {PRICE} 😊
+
+{SITTER}: Hi {OWNER},
+I will pick up {PET} at {TIME} tomorrow at your apartment. I will text you when I get there. See you tomorrow 🥰
+
+{OWNER}: Hi {SITTER}, I just sent you the money {PRICE} ☺️
+
+{OWNER}: Yes, see you tomorrow {SITTER}! {PET} and I will meet you in the lobby
+
+{OWNER}: Here is {PET}’s feeding guide!
+For the wet food, I’ll give you {AMOUNT}. Please put in the fridge/freezer right away.
+{AMOUNT} needs to be in the freezer ❄️ , and {AMOUNT} in the fridge. The open package should go in the fridge. 
+Please keep it the glass container, or else it’ll go bad. [Photo]
+
+{SITTER}: Hi {OWNER},
+I am on my way, but ttc went down at my station and there's long line for shuttle bus:( 
+I detoured to take another path to get to your place which takes little longer than original path.
+
+{SITTER}: I might arrive little later than {TIME}. I will text you again when I am almost there. Let me know if there's anything
+
+{SITTER}: your feed guide looks like a commercial 👍 great job!
+
+{OWNER}: No rush! Take your time. Thanks for letting me know. See you soon!
+
+{OWNER}: What is your ETA?
+
+{SITTER}: based on goolge map {TIME}
+
+{OWNER}: Ok sounds good
+
+{SITTER}: I'll be there {TIME}
+
+{OWNER}: Ok!
+
+{SITTER}: im here
+
+{OWNER}: Oh no I just realized I forgot to give {PET} her yogurt!
+
+{OWNER}: Can you please split her wet foot in {AMOUNT} portions? Feed her {AMOUNT} in the morning and {AMOUNT} after her afternoon walk?
+
+{OWNER}: Starting tomorrow
+
+{SITTER}: Do you want me to buy one at the store?
+
+{OWNER}: No need, it’s ok
+
+{OWNER}: How is she settling in?
+
+{SITTER}: okay. I will spilt her wet food from tomorrow.
+
+{SITTER}: She settled well. I think it is her first time coming to my place so she looked around a bit and took a nap at my sofa
+
+{SITTER}: Awwwww
+
+{SITTER}: It is so cute and easy to understand! And I didn’t know she gives kisses 🥰 So lovely❤️
+And her photo looks so much like Scotty! He is also a Chihuahua. He has some stomach problems, and his food is very similar to {PET}’s haha.
+BTW, I really love this feeding guide! 💛 [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: So cute 🥰
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: she is zzzz after the walk.
+She ate her dinner well and ready for the night ✅✅
+
+{OWNER}: Great! And you’ll take her out before bed too?
+
+{SITTER}: Sure!
+
+{OWNER}: {PET} {FREQUENCY}.
+- Morning between {TIME}
+- ⁠Afternoon between {TIME}
+- ⁠Evening between {TIME}
+
+{OWNER}: {FREQUENCY}, sometimes I take her out more often if the weather is nice and I have time
+
+{SITTER}: got it. I will bring her out before I go to bed tonight
+
+{OWNER}: How’s {PET} doing?
+
+{SITTER}: Hi {OWNER}! I thought my message had been sent earlier, but it looks like it wasn’t!! Sorry about that 🥹
+
+{SITTER}: {PET} had a great day with no issues at all :) She ate all {FREQUENCY} meals well, enjoyed all walks and happily ate her treats too! Her poo looks much better so healthy! , which is great 😊 She’s been doing really well, relaxed, and as cute as always 🥰
+I also tried her “kiss” trick, but she was just being adorable and didn’t actually give me a lick 😂💕 It was a little chilly today, so we couldn’t really enjoy the park much, but I’ll try again with her tomorrow 😊
+We’re lying down and getting ready to sleep now 🥰💤
+Have a good night [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you!! ☺️
+
+{SITTER}: Hi {OWNER}!
+{PET} had a really great day today! She ate very well, had poo twice, and I put some treats in the mat you gave her. I didn’t know she could get them all out, she’s so smart :) 💖 Also, the weather was a little cold again today, so {PET} didn’t want to walk far :( We did lots of tanning at home instead ☀️🥰
+We also finished our walk before bed, so now all that’s left is sleep. She is happy, cozy, and doing very well 💕 Hope you’re having a nice night too! 🫶🏻 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update!!
+
+{SITTER}: Hi {OWNER}! The weather in {LOCATION} is so bad. We have heavy rain! It’s a little less now, but it’s still raining 🥲 {PET} really hates this weather, but she still needs potty breaks at least, so I put on an umbrella, carry her outside, and place her at her poo spot. She does her business below my umbrella  😂 and then wants to come back inside right away.  On days with really heavy rain, she doesn’t want to go at all, so this is the only way that i found it. Thankfully, we’re staying cozy at home together like little homebodies! :) 💖
+If you’re curious what she doing, feel free to text me👼 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you for the update!! I heard the rain was really bad!’ Poor baby {PET} 🥲 I’m glad she still did her business!
+
+{SITTER}: [Photo]
+
+{SITTER}: Night weather is pretty good though! We’re walking rn before go to bed :)) She walks very well🫶🏻
+
+{OWNER}: Haha it’s so funny {PET} loves staying under the covers 🛌!
+
+{OWNER}: On {DATE}, my schedule is flexible, so you can drop off {PET} anytime that works for you!
+
+{SITTER}: Haha yess! It was so funny 🤣  I opened the covers, and {PET} looked at me like, “Close it please 👀” so I covered her up again 😂🥹
+
+{SITTER}: How about {TIME} then?
+
+{OWNER}: {TIME} works well!
+
+{OWNER}: Hi @⁨{SITTER}⁩, {PET} will need pickup and drop off at my home for this boarding as well.
+For {DATE}, can you pick her up in the morning? Time is flexible. 
+I’ll confirm {DATE} drop off time the day before. 
+Is it {PRICE} for this boarding? 
+Thank you!
+
+{SITTER}: Sure! Yes it is {PRICE} for this boarding. Thank you :)
+
+{OWNER}: Is {PET} eating the new wet food pack? The chicken one?
+
+{SITTER}: Yes! She ate {FREQUENCY} for the new wet food pack :)
+
+{OWNER}: Great! Please keep it in the glass container so it stays fresh!
+In the original plastic wrap
+
+{OWNER}: I’ve just transferred you!
+
+{SITTER}: Thank u! For {DATE}, i can pick her up at {TIME}. Is it works for you?
+
+{OWNER}: Oh yes, that’s great! {TIME} works.
+
+{SITTER}: Perfectt! See u tmrw at {TIME} then :D
+
+{OWNER}: See you!
+
+{OWNER}: Looking forward to seeing you soon! Let me know when you’re close by and I’ll come down!
+
+{SITTER}: Sure :)
+
+{SITTER}: Hi {OWNER}! I might be a little late. The elevator at King isn’t working, so I’ll probably need to get off at Queen and walk or take a bus. I should arrive around {TIME}. Is that okay?
+
+{OWNER}: Yep, no problem
+
+{OWNER}: I don’t think there’s an elevator at King. I usually get off at Queen and walk on Richmond
+
+{OWNER}: {ADDRESS}isn’t accessible
+
+{SITTER}: Thank you! :-) will be text you when i almost arrive
+
+{SITTER}: {PET} has been doing very well!
+I brushed her teeth, put paw balm on her paws, brushed her fur, and because the weather is nicer, we have been going on longer walks. Sometimes we sit outside together and enjoy the sunshine too :) She is eating very well, and her poo and pee are perfect!
+One thing I’m so sorry, but the lid for the poo bag holder is missing, and I couldn’t find it 😭
+See you soon 💛 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: {TIME}left! I got confused to find exit haha
+
+{OWNER}: No rush! See you soon
+
+{OWNER}: Hi @⁨{SITTER}⁩ , see you tomorrow at {TIME}!
+
+{SITTER}: See you tmrw :D
+
+{OWNER}: Good morning @⁨{SITTER}⁩ ! Let me know when you’re close
+
+{SITTER}: Good morning!
+
+{SITTER}: I’m at {ADDRESS}, we will see you soon
+
+{OWNER}: Great! See you
+
+{OWNER}: [Photo]
+
+{SITTER}: Almost there
+
+{OWNER}: Coming down!
+
+{SITTER}: Ohhh her meal plan changed!
+
+{SITTER}: New bowl💖
+
+{OWNER}: Yes a little bit!
+
+{SITTER}: Sooo good idea to put cucumber in a water😆😆
+
+{OWNER}: Yes! She doesn’t drink enough water 💧
+
+{SITTER}: Yeah i think last time too
+
+{SITTER}: [Photo]
+
+{SITTER}: I don't know when the wheels like thats, but they do roll
+
+{SITTER}: Just let you know! I will try to fix when i get home
+
+{OWNER}: Were you able to fix it?
+
+{SITTER}: Yes!
+
+{SITTER}: The screw that holds the wheel is trying to out, so i fixed it but it could become loose again
+
+{OWNER}: Ohh I see! Ok I’ll take a look at it when {PET} returns on {DATE}. Thanks for letting me know!
+
+{OWNER}: Hi @⁨{SITTER}⁩ ,
+I have a few more boarding requests coming up, please let me know if you or {SITTER} available:
+- {DATE} (tentative), I'll confirm the exact dates soon.
+- ⁠{DATE} (confirmed)
+Both will require pick up and drop off at my home!
+
+{OWNER}: Hi @⁨all⁩ , could you please confirm if you could take care of {PET} for the dates above?
+
+{SITTER}: We’re available at that time of course
+
+{SITTER}: No worries! We’ll hold those dates for {PET}😇
+
+{OWNER}: Great. Thanks for confirming!
+
+{OWNER}: Could you also give me daily updates of {PET} during boarding?
+
+{SITTER}: No problem :) What time would you like to get an updates?
+
+{OWNER}: Anytime before you head to bed is fine! No particular time
+
+{SITTER}: I will updates every evening before i go to bed :)
+
+{OWNER}: Great thanks!
+
+{SITTER}: Anytime if you’re curious about {PET}, feel free to text us!
+
+{SITTER}: [Photo]
+
+{SITTER}: She enjoyed sunshine ☀️
+
+{SITTER}: Good morning, {OWNER}! ☀️
+{PET} is doing well. The cucumber water is working well! She is drinking more water 💧 
+I’m thinking about taking {PET} to {LOCATION} Island today. (The wearher is soooo good) Is that okay with you? We will bring lots of water and take breaks. 💕
+Hope you have a great morning! [Photo]
+
+{OWNER}: That sounds super nice! Yes of course! Enjoy!!
+
+{SITTER}: Thank you :) I will take care of her very safely. She might be enjoy 😊
+
+{OWNER}: This is last year when we went to the island! 🏝️ she enjoyed it a lot [Photo]
+
+{SITTER}: What a lovely 🥰💖 Isn’t she not scared to take a ferry?
+
+{OWNER}: Nope she likes it! Especially when it’s fast and windy. She can get lots of sniffs in!
+
+{SITTER}: Awwww she is so brave 😆 Okay I will update when I get there haha
+
+{OWNER}: Tomorrow you can drop off {PET} anytime after {TIME}! 🕑
+
+{SITTER}: Hi {OWNER}! We’ll see you tomorrow :) I can drop her off at {TIME} or late night. [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: Just letting you know that we’re heading home, but {PET} rolled around on the grass, so I think she needs a bath. Would it be okay if I bathed her?
+
+{SITTER}: 😂
+
+{OWNER}: {TIME} is good! You could even come at {TIME} as well
+
+{OWNER}: Yeah sure! Did I give you the shampoo?
+
+{SITTER}: Yeah i think i saw little shampoo in the bag
+
+{OWNER}: Great!
+
+{SITTER}: Thank you for checking it! I will send all of adorable photos by this night
+
+{SITTER}: I will drop her off at {TIME} then!
+
+{OWNER}: Sounds good!
+
+{OWNER}: Hi @⁨{SITTER}⁩ , I'll see you at {TIME} today. I didn't receive any update for {PET} yesterday. Is there an issue?
+
+{SITTER}: Hi {OWNER}!
+No problem at all! After her bath, I dried her fur, brushed her, brushed her teeth, put some lotion on her paws, gave her a few treats, took her for a bedtime walk, and then she went to sleep. 😆
+{PET} was so happy yesterday! I’ve never seen her roll around on the grass like that before. I think she really loved the grass. She walked so well on it, didn’t bark at any other dogs, and got lots of sunshine. Whenever she looked tired, I carried her for a while. ❤️
+She slept so well afterward and had a really good night’s sleep. 🥰
+See you at {TIME}! 😊💕 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: And the last video is {PET} trying to copy a siren sound. I thought it was so cute and adorable! 😆❤️🥰
+
+{OWNER}: Is there any issue with sending daily updates? I understand if it’s difficult for you, but would need to find a new sitter for {PET} that can meet these expectations. Timely communication is importante to me.
+
+{SITTER}: First of all, thank you for letting me know. I totally understand about it
+
+{SITTER}: To be honest, I usually take a little extra time to pick nice photos and videos and write a detailed update, so sometimes it takes me longer to send. {PET} was doing great, and there were no problems at all.
+
+{SITTER}: I can send shorter updates more often during the day instead of sending one longer update it
+
+{SITTER}: Thank you for your feedback. I really appreciate it.
+
+{OWNER}: Sounds good.
+I don’t mind if you send shorter updates, or even just photos throughout the day with little text. 
+No need for a long report, as I know not much goes on most of the day.
+Let me know if that works for you?
+
+{SITTER}: Of course!! It works for us
+
+{SITTER}: I completely understand.
+My priority is making sure you feel comfortable while {PET} is with me and {PET}’s happiness as well.
+I’ll send shorter updates and photos throughout the day.
+I’ll do my best to keep you updated in the way that works best for you. 🥰 
+And we’re on the way, will be there at {TIME}
+
+{OWNER}: Thanks for your understanding! I’ll see you soon 😊
+
+{SITTER}: See you soon ❤️
+
+{SITTER}: We’re here
+
+{OWNER}: Coming!
+
+{OWNER}: Hi @⁨{SITTER}⁩ @⁨{SITTER}⁩, for July, {PET} will need boarding starting from {DATE}...until probably {DATE}. I haven't finalized the return date yet, but it won't be later than {DATE}. Are you still good with these dates?
+
+{SITTER}: {DATE} is good too! :) I will update my calendar for those dates
+
+{SITTER}: Let us know when you’re finalized the return date 😊
+
+{OWNER}: Thank you!
+
+{SITTER}: No problem!
+
+{OWNER}: {PET} and I visited a new conservation park in {ADDRESS}today called {ADDRESS}!
+It’s really nice 😍 
+We took the {ADDRESS}from {ADDRESS}. Very convenient! [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: Awww
+The view is so beautiful, and {PET} looks so happy! 🥰 
+Thank you for sharing {PET}’s day. I love seeing {PET} having fun too 💕
+
+{OWNER}: Good morning @⁨{SITTER}⁩! I booked my return flight and for July, {PET} would need boarding from *{DATE}*. Thank you!
+
+{SITTER}: Good morning 😊
+Thank you for confirming!
+
+{SITTER}: Hi {OWNER}! Just want to confirm it. Would you like to take care of {PET} this {DATE}?
+
+{OWNER}: Hi {SITTER}! Thanks for checking. No need this {DATE}!
+
+{SITTER}: No problem :) Have a good night!
+
+{OWNER}: Thank you! You too!
+
+{OWNER}: Hi @⁨{SITTER}⁩ ! Could I actually extend one day for boarding? From {DATE}, instead of {DATE}?
+
+{SITTER}: Hi {OWNER} 😊 Yes I’m available on {DATE} as well
+
+{OWNER}: Great! Thanks!
+
+{OWNER}: Hi @⁨{SITTER}⁩ ! What time would you be available to pick up {PET} tomorrow? After {TIME} would be great!
+
+{SITTER}: I can pick her up anytime! Let us know when you prefer
+
+{OWNER}: Could you come at {TIME}? 🕑
+
+{SITTER}: Sure :) See you tmrw at {TIME}
+
+{OWNER}: Please let me know how much the total for boarding will be for {DATE}! With pick up and drop off. Thank you!
+
+{SITTER}: Here is {PET}’s boarding price! :D
+* {DATE} (pick-up): {PRICE}
+* {DATE} ({AMOUNT}): {PRICE}/day = {PRICE}
+* {DATE} (drop-off): {PRICE}
+Total: {PRICE}
+
+{OWNER}: Just sent you!
+
+{OWNER}: [Photo]
+
+{OWNER}: {PET} also has a new sling. It’s very nice! [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{SITTER}: So lovely the video🥰😆
+
+{SITTER}: It look stable and safe
+
+{OWNER}: Haha yes! It has a zipper so can’t jump out. I think she likes it
+
+{SITTER}: Ohhh it’s good though 😆
+
+{SITTER}: I’m on my way! See you soon
+
+{SITTER}: I’m still waiting for street car but it’s out of service. I might be little late. Sorry about that!
+
+{OWNER}: No rush :)
+
+{SITTER}: Will be there {TIME}
+
+{OWNER}: Great, we’ll prepare to come down!
+
+{OWNER}: How’s {PET}? is she still sad?
+
+{SITTER}: Hi {OWNER}! {PET} is feeling sleepy right now.
+I think she miss you yeah. But she’s been cuddling with me a lot, she’s settled in well as usual. We’re about to head out for her nighttime walk before bed. :) [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she knew that I’m leaving, because I was packing her food haha
+
+{OWNER}: Did she eat her dinner?
+
+{SITTER}: Yes she did at {TIME} :)
+
+{SITTER}: Just a little update from us today! {PET} had a nice walk this morning and another walk this afternoon, and her potty breaks went perfectly. She finished her breakfast, treats, and dinner, and has been drinking water well. She’s having a cozy nap right now, and we just have one more evening walk left. ❤️ [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha she’s so pampered with the belly rubs. Thanks for the update!
+
+{SITTER}: Yes she is! I would like to 😊
+
+{SITTER}: Good evening! Just a little update on {PET}❤️
+{PET} had a good day today! We finished {FREQUENCY}, and her potty breaks went perfectly. She finished her breakfast, cucumber, and dinner, and has been doing great all day.
+Now she’s getting ready for bed. 🥰 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: She’s really like cucumber and have a fun dinner.
+
+{SITTER}: [Photo]
+
+{SITTER}: Have a good night 💤
+
+{OWNER}: Thanks!
+
+{OWNER}: How many times is she pooping per day?
+
+{SITTER}: {FREQUENCY}.
+
+{SITTER}: Yesterday, she pooped in the morning and night time. but today only in the morning but it's a lot
+
+{OWNER}: Ok thank you!
+
+{SITTER}: Oh i have an quick question
+
+{SITTER}: Would it be okay if I bought the cucumber for her using the money in the bag?
+
+{OWNER}: Yea that money is for the cucumber!
+
+{SITTER}: Okay just wanted to confirm :)
+
+{SITTER}: Do you prefer organic cucumbers, or is any kind okay?
+
+{SITTER}: 😆
+
+{OWNER}: Haha any kind is ok. I usually buy the longer ones, it’s around {PRICE} for {AMOUNT} cucumber
+
+{SITTER}: Okay! Sounds good :)
+
+{OWNER}: Thank you!
+
+{SITTER}: Good evening! Just a little update before {PET} goes to bed. 😊
+We had a really nice day together! The weather was cool today, so {PET} enjoyed her walks and walked really well. She ate all of her meals, I bought her some cucumber, and I brushed her teeth too. 🥒🪥
+She was following me around the home all day, and it was so sweet. ❤️ 
+We just have one last potty walk before bed, and then it’ll be time to sleep. She’s just being adorable 🥰 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww sleepy baby ❤️
+
+{SITTER}: So lovely 🥰
+
+{OWNER}: Does she follow you to the bathroom too? Haha
+
+{SITTER}: Yes! She follow me anywhere
+
+{SITTER}: When i go to the bathroom, she sit on the mat as usual and look at me 👀
+
+{OWNER}: Haha yeah she likes to do that
+
+{SITTER}: Sometimes she needs her own time when she's tanned 😂
+
+{OWNER}: Haha she’s super relaxed when she’s tanning
+
+{SITTER}: It is so cute too!! She’s so affectionate
+
+{SITTER}: Truee
+
+{SITTER}: Just a little update before bed!
+{PET} gave me the biggest smile today, and it absolutely made my day. 😊 
+We had nice walks, and pee and poo were both perfect. She finished all of her meals and drank water well. We only have one more bedtime walk left💕
+I hope you had a nice day today :) [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you! Glad to hear you both are having a good time!
+
+{OWNER}: I love it when she opens her mouth like that
+
+{SITTER}: Definitely, she’s happy and smile 😊😊
+
+{OWNER}: [Photo]
+
+{SITTER}: I love her teeth 🦷 it is so tiny and bright
+
+{SITTER}: [Photo]
+
+{OWNER}: Hi {SITTER}, one thing I noticed when {PET} comes home is that she is doesn’t follow commands as well, so I have to take some time to retrain her.
+Could you please make sure that the training is being implemented?
+1. On walks, she must always walk beside you, and not infront of you. You can hold a tighter leash in the beginning if she’s not following. The only time she can be infront is when she is in a larger grass area and sniffing around. 
+2. ⁠On walks, when you see other dogs approaching, ask her to sit and wait, and focus on the treat. Once the dog passes, you can give her a small treat or praise her. 
+3. ⁠OR if there is space in the sidewalk or road, walk her in a “C” around the dog, instead of straight forward. 
+4. ⁠If she is not obeying, please tell her “no”. You don’t need to be nice to her.
+5. ⁠When leaving the house, tell her “I’ll be back”. She will know you’re leaving and she shouldn’t be following you to the door. 
+6. ⁠When returning home, don’t greet her until she is calm. 
+7. ⁠She should never jump up when greeting people.
+Thank you!
+
+{OWNER}: For treats on walks, you can also give her cucumber, instead of the dog treats.
+
+{SITTER}: Okay, I understand. Thank you for letting us know. will do consistent with {PET}’s training. I’ll keep you updated if I have any questions.
+
+{OWNER}: Thank you! ☺️
+
+{SITTER}: Quick update today.
+We got lots of sunshine today! ☀️ {PET} enjoyed a nice long walk, and now all of her walks for the day are done. 😊 Potty breaks went perfectly. She finished all of her meals and has been drinking water well. She asked for lots of pets and cuddles today. ❤️ [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Tanning {PET} 😌☀️
+
+{OWNER}: Thank you!
+
+{SITTER}: Sending today’s {PET} update!
+She has been sitting on her mat like photos 😆 watching me, can’t pet her. 💕
+We had {FREQUENCY} today, and pee and poo were both perfect. She ate all of her meals. She loved exploring a different route today and enjoyed sniffing around. 🐾 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha bathroom mat
+
+{SITTER}: Good afternoon, {OWNER}! 😊
+I just wanted to check that I understood correctly. You gave me the lick mats and one extra frozen wet food, right?
+{PET} has finished all of the food that was prepared in the lick mats, so I made her a new one today. It looks like there’s only about 7–{DURATION} of wet food left, but she’ll be staying longer than that.
+Would you like me to buy some extra wet food for her?
+
+{SITTER}: Yes her favorite spot🤪🤣
+
+{OWNER}: Hi {SITTER}, thanks for checking!
+No, don’t buy new wet food. 
+You can change it to: 
+{AMOUNT} of wet food and 
+{AMOUNT} of kibble per day
+
+{SITTER}: Oh okay! So only change
+Morning
+- {AMOUNT} wet food -> {AMOUNT} wet food + {AMOUNT} kibble
+
+{OWNER}: *Morning:*
+{AMOUNT} wet food
+{AMOUNT} of kibble
+*Dinner*:
+{AMOUNT} of kibble 
+With supplement.
+
+{SITTER}: Got it! :) Thanks
+
+{OWNER}: Thank you!
+
+{SITTER}: No problem 😊
+
+{SITTER}: Hope you’re having a wonderful day! ☀️
+We had a big rainstorm this afternoon(she didn’t want to walk at that time), but it cleared up and turned into a beautiful sunny day. 🌦️
+{PET} had another nice walk, potty breaks went well, and she finished all of her meals. She’s drinking water well and seems more comfortable here every day. 😊 [Photo]
+
+{OWNER}: Great thanks! 😊
+
+{OWNER}: Please give {PET}’s flea & tick medication today - {DATE}!
+
+{SITTER}: No problem :) Already i gave her with breakfast
+
+{OWNER}: Great thank you!
+
+{OWNER}: Sometimes she gets upset stomach after taking it, but the probiotic has been helping
+
+{SITTER}: Oh okay! Thank u for letting me know. I will keep an eyes on her
+
+{OWNER}: Hi {SITTER}, I have a couple more dates that I’ll be away this year:
+- {DATE}
+Exact dates tbd, but those are the tentative dates! 
+Let me know if you’re free for {PET}. Thank you!
+
+{SITTER}: Let me check the schedule and let you know soon!
+
+{SITTER}: Today, {PET} met Vincent and {SITTER}, and she was so happy to see them! She had the biggest smile, and it was so sweet. 😊
+We had a nice walk this morning, and pee and poo were both perfect. She ate all of her meals, took her medication without any issues, and drank plenty of water. [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: aww she looks so hot lol was the temperature really warm today?
+
+{SITTER}: About this, i still check it
+
+{SITTER}: Oh really? I think it’s because we walked more than usual while the {DATE} was out. 😊
+
+{OWNER}: Her face usually looks like that when she is hot and tired haha
+
+{SITTER}: Yeah, we definitely walked more than usual today. I carried her for part of the way so she could take a little break.
+
+{OWNER}: It’s good. I always force her to walk more until she is tired. Just make sure that she is hydrated!
+
+{SITTER}: For sure 👍🏻
+
+{OWNER}: When can you get back to me about the boarding?
+
+{SITTER}: For the September dates, I can confirm now that we won’t be available because we’ll be away from {DATE}–{DATE}.
+For the October dates, would you mind asking me again closer to the mid-end of August? I should have a definite answer by then.
+
+{OWNER}: Is {SITTER} also not available?
+
+{SITTER}: We’re away together on September 🥲
+
+{OWNER}: Okay no worries! I’ll find another sitter for these {AMOUNT} trips
+
+{SITTER}: Thanks for understanding!
+I hope you find a safe and caring sitter for {PET}.
+
+{SITTER}: Good Evening {OWNER}😊
+{PET} looks so adorable when she sits in the elevator and looks up at me. 🥹❤️ 
+I also saw a cute little dog doll while I was out today, and it reminded me of {PET}! 
+As usual, we had a nice {FREQUENCY} today, and pee and poo were both perfect. {PET} ate all of her meals and keep hydrated. [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww good girl 💗
+
+{SITTER}: She’s really, really good at sitting ❤️
+
+{SITTER}: Another happy day with {PET}! ❤️
+We enjoyed some cuddles in the sunshine. 
+She pooped twice today, and potty breaks went perfectly. She finished all of her meals and is doing great. 😊 
+We’ve finished our evening walk, and she’s all ready for bed now. 🌙 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you! Have a good night 💤
+
+{SITTER}: Have a good night too 👼
+
+{SITTER}: Good Evening!
+{PET} is still doing really well with all the commands you told me! (Especially, kiss and sit!) We’re also slowly making progress with “both paws.” 😊 Her tiny paws are so cute every time I hold them.
+Everything went well as usual, and we’ve finished our evening walk. She’s all ready for bed now. 
+Hope you also have a night 🙏🏻 [Photo]
+
+{OWNER}: Aww good girl 💗Did she learn how to give you a kiss too?
+
+{SITTER}: She’s perfectly master kiss 🥰 It’s hard to record that.
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: Here is “both paws” haha
+
+{SITTER}: Hahaha
+
+{SITTER}: So cuteee, she can do “both paws” but not every single time
+
+{OWNER}: [Photo]
+
+{OWNER}: You may have to hold out both of your hands like this
+
+{SITTER}: Ohhh
+
+{OWNER}: Yes! So she knows to use {AMOUNT} paws 🐾
+
+{SITTER}: That’s why she gave me only one paw!!!
+
+{SITTER}: I got ya
+
+{OWNER}: Haha you can try tomorrow and see if it works
+
+{SITTER}: Yes I definitely will!
+
+{OWNER}: Great! ☺️ good night! 💤
+
+{SITTER}: Thank you :D Good night too!
+
+{SITTER}: Hi {OWNER}!
+{PET} got lots of sunshine at home today☀️ 
+We enjoyed our walk, and potty breaks went well. She finished all of her meals. 
+She took a long afternoon nap after our walk. 😴 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha she looks so cute!
+
+{OWNER}: I love it when she is tanning
+
+{OWNER}: Thank you!
+
+{SITTER}: She knows how to enjoy sunshine
+
+{SITTER}: No prob! XD
+
+{SITTER}: She’s getting more and more beautiful every day! ✨
+A little update from us today! Because of the large wildfire, the air quality was very poor, so we kept most of our walk indoors to keep her safe. 
+Everything went smoothly as usual. She’s been doing great and was relaxed and happy throughout the day. 😊 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Great, thank you!
+
+{SITTER}: Hope you’re having a great day! ❤️
+{PET} and I went to pick up {SITTER} today, and while we were waiting, she kept looking up at me so sweetly. Sooo lovely 🥰 
+{PET} also had a bath today! Since the air quality hasn’t been great and she’s been scratching herself sometimes, I thought a nice bath would help her.
+Everything is doing great. 
+We’re all set after our evening walk and ready to relax for the rest of the night. 🥰 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she looks so pretty 😍
+
+{SITTER}: Yes she is 🪩✨
+
+{OWNER}: Hi {SITTER}, how much of the wet food as {PET} have left?
+If there’s a lot, you can switch back to : {AMOUNT} per day
+I would like her to finish  all the wet food
+
+{SITTER}: She only have left {AMOUNT}
+
+{SITTER}: Would you like to switch back to {AMOUNT} per day?
+
+{OWNER}: No, she still has {DURATION} more days, so you can keep at {AMOUNT}
+
+{SITTER}: Okay! Sounds great :)
+
+{SITTER}: Hope your day’s going well! ❤️
+Just a quick note that {PET} ran out of poo bags today, so I used some of my own.
+We had another lovely day together. {PET} enjoyed her walk, and both potty breaks went perfectly. She finished all of her meals and has been drinking water well. 
+She was calm, happy, and such enjoy to spend time with sunshine. 🌞 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: I think there may be a poop bag in the pocket of the stroller
+
+{SITTER}: Oh i got it! Ty
+
+{SITTER}: Hi {OWNER} :) Just want to confirm it what time would you like to drop her off on {DATE}?
+
+{OWNER}: Hi {SITTER}, my time is flexible on {DATE}. What works for you?
+
+{SITTER}: Sounds great! {TIME} is okay for you?
+
+{OWNER}: {TIME} is good! thank you!
+
+{SITTER}: Hope you have a good night! We’re going to sleep now 🐾
+Since the weather was cooler and {PET} was full of energy today! We had a great time together, and she seemed extra playful and happy. She finished all of her meals, drank plenty of water, and is now all settled in for the evening. 💕 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww I love it when {PET} sleeps like a human
+
+{OWNER}: I hope she’s not taking all the bed 😂
+
+{SITTER}: It’s okay I bought king size for a dog and human haha
+
+{SITTER}: I love it too🥰
+
+{SITTER}: Good Evening {OWNER} :)
+Today was a quiet day with {PET}! The only thing is she surprised me by {FREQUENCY} today 😂 They were all pretty small, though so makes sense.
+She enjoyed her walk, ate all of her meals, and drank lots of water. We had a calm, cozy day together, and she’s doing great. 💕 [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Haha great!
+
+{SITTER}: 😂
+
+{SITTER}: Ty!
+
+{SITTER}: Hi {OWNER} :)
+We went shopping together today! 🛍️ I also got to use the bag you gave me, and it worked great! (She looks so comfortable and no reaction with dog when she is in the bag!) 
+{PET} always gets tired a little earlier on days when we spend a long time outside. She’s introvert for sure. 😂❤️
+We enjoyed our {FREQUENCY}, and potty breaks went perfectly. She finished all of her meals and is doing great. 😊 [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she’s so cute in the bag!
+
+{OWNER}: She likes it haha
+
+{SITTER}: Sooo cute 🥰 It is perfect size for {PET}
+
+{SITTER}: Yeah, she likes it.
+when we were in a quieter area and I tried to let her walk, she didn’t want to come out of the bag. 😂
+
+{OWNER}: Haha she’s so lazy
+
+{SITTER}: Haha she’s the queen 👸
+
+{SITTER}: Here’s one last update from us today! 🥹
+We had a lovely walk, and she had perfect pee and poo breaks. She ate all of her meals and has been relaxing for the rest of the day. We’ve had such a wonderful time together. 
+I’m going to miss her so much❤️ See you tomorrow! [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Thank you! See you tomorrow! Please check and return all her items ☺️
+
+{OWNER}: Hello! Please let me know when you’re {TIME} away. Thanks!
+
+{SITTER}: Sure
+
+{SITTER}: Hi {OWNER}! I’ll be arrive there at {TIME}
+
+{SITTER}: While we’re on the way, she pooped and pee as well.
+
+{OWNER}: Great! see you soon
+
+{SITTER}: See you soon :)
+
+{SITTER}: Hi {OWNER}! Sorry, I forgot to leave the oil, the money, and the probiotics. Is it okay if I drop them off tomorrow? If you’re not available, I can leave them with the concierge instead. Sorry about that! [Photo]
+
+{OWNER}: Hi {SITTER}, sure! I’ll be home before {TIME} today :)
+
+{SITTER}: I’ll visit your place at {TIME} then ! Thank you
+
+{OWNER}: Great! See you at {TIME}!
+
+{SITTER}: We’re on the way :)
+
+{SITTER}: Will be there {TIME}
+
+{OWNER}: Ok! We’ll probably beoutside
+
+{OWNER}: The front door
+
+{SITTER}: I would like to share a photo with you. {SITTER} took this photo 😂 It’s hilarious for me!
+Hope you n {PET} have a great day :) [Photo]
+
+{OWNER}: haha obsessed with her cucumbers
+
+{SITTER}: Trueee
+
+{SITTER}: She looks sea lion 🦭
+
+{OWNER}: This is {PET}’s new summer outfit from {LOCATION}! [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: [Photo]
+
+{OWNER}: She looks so pretty 😍
+
+{SITTER}: Awww it’s good on her
+
+{SITTER}: Another {PET} in the back 🐶
+
+{OWNER}: Haha that’s right! [Photo]
+
+{OWNER}: Good morning @⁨{SITTER}⁩, I want to double check if you are still available to take care of {PET} for {DATE}?
+
+{SITTER}: Hi {OWNER}. Yes I’m available! What time would you like to pick her up and drop her off?
+
+{SITTER}: And I just wanted to confirm that {DATE}–{DATE} rather than {DATE}–{DATE}, is that correct?
+
+{OWNER}: Yes it’s {DATE}!
+{DATE} - {TIME}
+{DATE} - {TIME}
+
+{SITTER}: Okay i will get back to you soon :)
+
+{SITTER}: Thank you for waiting! We’ll see you on {DATE} :D❤️
+
+{OWNER}: At {TIME}?
+
+{SITTER}: Yes! At {TIME} both
+
+{OWNER}: Great!
+
+{SITTER}: Hi {OWNER}! 😊
+I’ll come pick up {PET} tomorrow at {TIME}.
+I was wondering if it would be okay to bring {PET} home in the dog bag I used last time instead of the stroller?
+I’ll bring my large bag and put all of her other items in there :) 
+Thank you so much, and see you tomorrow!
+
+{OWNER}: Thank you! See you tomorrow at {TIME}.
+Sure! Sounds good. I’ll pack her food in the Lunchbox :)
+
+{SITTER}: Thank you 😊 See you tomorrow
+
+{OWNER}: No longer using the sniffle map for dinner :) [Photo]
+
+{SITTER}: No problem! I will let you know when I’m on the way
+
+{SITTER}: I’m on my way. Will be there at {TIME}!
+
+{OWNER}: See you!
+
+{SITTER}: I’m still waiting for a bus🥲 Let you know when i take a bus!
+
+{SITTER}: See you at {TIME}!
+
+{OWNER}: Okay we’re waiting outside :)
+
+{SITTER}: Hi {OWNER}! {PET} got home safely and we just finished our evening walk. 🥰
+Before we got home, she seemed to be missing you, but after our walk, she’s feeling much happier again! ❤️ [Photo]
+
+{OWNER}: Great! Did she poop?
+
+{SITTER}: Yes! She pooped and pee :)
+
+{OWNER}: Thank you! ☺️
+
+{SITTER}: Have a good night 🌙 [Photo]
+
+{SITTER}: Hi, {OWNER}! :)
+{PET} had {FREQUENCY} today and did all her pee and poo. She also ate all her meals really well! 😊 
+Nothing special today, and she’s just been so happy and comfortable lying on the bed 😂
+See you tomorrow! Have a good night! ❤️ [Photo]
+
+{SITTER}: [Photo]
+
+{OWNER}: Aww she’s so cute!
+
+{OWNER}: Good night ☺️
+
+{SITTER}: She’s sooo cute so i had no choice to rub her belly 🥰
+
+{SITTER}: Hi {OWNER}!
+{PET} had a good pee & poo this morning and ate all her breakfast. 
+She’s enjoying sunshine right now. ☀️
+Oh I wonder if {SITTER} dropped {PET} off today? Feel free to let me know 😊 Thank you!! [Photo]
+
+{OWNER}: Yay! Yep no worries, {SITTER} can drop off {PET}
+
+{SITTER}: Okay sure! I will share his phone number just in case :) Thank you for understanding.
+
+{SITTER}: [Photo]
+
+{OWNER}: Hi {SITTER}! I’ll be home now. If you or {SITTER} want to drop {PET} off earlier, feel free to do that :)
+
+{SITTER}: Sure! We’ll try to drop her off earlier but i think it’s around {TIME}
+
+{SITTER}: I will let you know when {SITTER} leaves
+
+{OWNER}: Sounds good 👍
+
+{SITTER}: He’s on the way! Let you know when he rides a bus
+
+{OWNER}: Great!!
+
+{SITTER}: He still waits for a bus 🥲
+
+{OWNER}: No worries
+
+{SITTER}: See you soon! Will be there {TIME}

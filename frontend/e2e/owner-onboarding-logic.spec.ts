@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
 import { openQuestions } from "../features/ownerOnboarding/voiceApi";
-import { birthdateFromAge, foodsFromDraft, EMPTY_DRAFT, weightFromDraft } from "../features/ownerOnboarding/draft";
+import { birthdateFromAge, convertWeight, foodsFromDraft, EMPTY_DRAFT, weightFromDraft, weightText } from "../features/ownerOnboarding/draft";
 import { CAT_QUESTIONS, DOG_QUESTIONS, SAFETY_QUESTIONS, chartAxes, fill } from "../features/ownerOnboarding/questions";
 import { axisLevels, glance, missingAxes, parseProfile, safetyChips } from "../features/ownerOnboarding/scoring";
 
@@ -74,11 +74,27 @@ test.describe("owner onboarding logic", () => {
     expect(parseProfile("nope")).toEqual({ v: 1, answers: {}, safety: {} });
   });
 
+  test("a weight in lbs is saved as kg with two decimals, and the unit switch converts what was typed", () => {
+    const lbs = { ...EMPTY_DRAFT, weightUnit: "lbs" as const };
+    expect(weightFromDraft({ ...lbs, weight: "15" })).toBe(6.8);
+    expect(weightFromDraft({ ...lbs, weight: "13,5" })).toBe(6.12);
+    expect(weightFromDraft({ ...lbs, weight: "0" })).toBeNull();
+    expect(weightFromDraft({ ...lbs, weight: "2300" })).toBeNull(); // over 1000 kg
+    expect(weightFromDraft({ ...EMPTY_DRAFT, weight: "1000" })).toBeNull();
+    expect(weightText(5.9, "lbs")).toBe("13");
+    expect(weightText(6.8, "kg")).toBe("6.8");
+    expect(convertWeight("15", "lbs", "kg")).toBe("6.8");
+    expect(convertWeight("6.8", "kg", "lbs")).toBe("15");
+    expect(convertWeight("", "kg", "lbs")).toBe("");
+    expect(convertWeight("abc", "kg", "lbs")).toBe("abc");
+    expect(convertWeight("6.8", "kg", "kg")).toBe("6.8");
+  });
+
   test("age, weight and foods are cleaned up for saving", () => {
     expect(birthdateFromAge(4, new Date(2026, 9, 21))).toBe("2022-10-21");
-    expect(weightFromDraft({ ...EMPTY_DRAFT, weightKg: "6,5" })).toBe(6.5);
-    expect(weightFromDraft({ ...EMPTY_DRAFT, weightKg: "" })).toBeNull();
-    expect(weightFromDraft({ ...EMPTY_DRAFT, weightKg: "abc" })).toBeNull();
+    expect(weightFromDraft({ ...EMPTY_DRAFT, weight: "6,5" })).toBe(6.5);
+    expect(weightFromDraft({ ...EMPTY_DRAFT, weight: "" })).toBeNull();
+    expect(weightFromDraft({ ...EMPTY_DRAFT, weight: "abc" })).toBeNull();
     expect(foodsFromDraft({ ...EMPTY_DRAFT, foods: [" Chicken ", "chicken", "Dairy", ""] })).toEqual(["chicken", "dairy"]);
   });
 });
@@ -98,17 +114,21 @@ test.describe("voice facts in the draft", () => {
 
   test("empty fields are filled, chart answers are marked suggested, safety and foods are never filled", () => {
     const patch = applyVoiceFacts(EMPTY_DRAFT, facts);
-    expect(patch).toMatchObject({ breed: "Maltese", ageYears: 4, weightKg: "5.9", answers: { d4: 3 }, suggested: ["d4"] });
+    expect(patch).toMatchObject({ breed: "Maltese", ageYears: 4, weight: "5.9", answers: { d4: 3 }, suggested: ["d4"] });
     expect(patch.safety).toBeUndefined();
     expect(patch.foods).toBeUndefined();
     expect(patch.voice).toBe(facts);
   });
 
+  test("a heard weight is written in the unit the owner picked", () => {
+    expect(applyVoiceFacts({ ...EMPTY_DRAFT, weightUnit: "lbs" }, facts).weight).toBe("13");
+  });
+
   test("what the owner already picked is kept", () => {
-    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weightKg: "3", answers: { d4: 1 } }, facts);
+    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weight: "3", answers: { d4: 1 } }, facts);
     expect(patch.breed).toBeUndefined();
     expect(patch.ageYears).toBeUndefined();
-    expect(patch.weightKg).toBeUndefined();
+    expect(patch.weight).toBeUndefined();
     expect(patch.answers).toEqual({ d4: 1 });
     expect(patch.suggested).toEqual([]);
   });

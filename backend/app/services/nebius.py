@@ -78,18 +78,20 @@ _THINK = re.compile(r"<think>.*?</think>", re.DOTALL)
 _RANGE_DASH = re.compile(r"(?<=\d)\s*[\u2013\u2014\u2015]\s*(?=\d)")
 _DASH = re.compile(r"\s*[\u2013\u2014\u2015]\s*")
 _HYPHENS = str.maketrans({"\u2010": "-", "\u2011": "-", "\u2012": "-"})
+_MARK = "\ue000"  # stands for a removed dash while the commas around it are tidied
 
 
 def plain_dashes(text: str) -> str:
     """No em or en dashes in anything the app shows (product rule): a range keeps a hyphen ("Oct 24-27"), any other dash
     becomes a comma, and the odd hyphen characters models like become a plain one. Safe on JSON: a dash is never structure."""
+    # Only the commas a dash leaves are tidied (marked first), never a comma the model wrote: the commas that end the
+    # lines of a pretty-printed JSON answer are structure.
     text = _RANGE_DASH.sub("-", text)
-    text = _DASH.sub(", ", text).translate(_HYPHENS)
-    text = re.sub(r"(^|\n)[ \t]*,[ \t]*", r"\1", text)  # a dash that opened a line leaves no comma
-    text = re.sub(r"[ \t]+,", ",", text)
-    text = re.sub(r",[ \t]*,", ",", text)
-    text = re.sub(r",[ \t]*(?=[.!?;:])", "", text)
-    text = re.sub(r",[ \t]*$", "", text, flags=re.MULTILINE)
+    text = _DASH.sub(_MARK, text).translate(_HYPHENS)
+    text = re.sub(rf"(^|\n)[ \t]*{_MARK}[ \t]*", r"\1", text)  # a dash that opened a line leaves no comma
+    text = re.sub(rf"[ \t]*{_MARK}[ \t]*(?=[.!?;:,]|\n|$)", "", text)  # one that ended a line or sat before punctuation
+    text = re.sub(rf",[ \t]*{_MARK}", _MARK, text)
+    text = re.sub(rf"{_MARK}+", ", ", text)
     return text
 
 

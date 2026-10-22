@@ -1,4 +1,4 @@
-import type { OwnerOnboardingDraft } from "./draft";
+import { type OwnerOnboardingDraft, weightText } from "./draft";
 import type { Score } from "./questions";
 import type { VoiceFacts } from "./voiceApi";
 
@@ -11,7 +11,7 @@ export function applyVoiceFacts(draft: OwnerOnboardingDraft, facts: VoiceFacts):
   const patch: Partial<OwnerOnboardingDraft> = { voice: facts };
   if (facts.breed && draft.breed.trim() === "") patch.breed = facts.breed.value;
   if (facts.age_years && draft.ageYears === null) patch.ageYears = facts.age_years.value;
-  if (facts.weight_kg && draft.weightKg.trim() === "") patch.weightKg = String(facts.weight_kg.value);
+  if (facts.weight_kg && draft.weight.trim() === "") patch.weight = weightText(facts.weight_kg.value, draft.weightUnit);
 
   const answers = { ...draft.answers };
   const suggested = [...draft.suggested];

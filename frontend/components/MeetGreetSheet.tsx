@@ -36,7 +36,10 @@ type Props = {
 export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, onClose }: Props) {
   const styles = useThemedStyles(makeStyles);
   const current = booking.meetGreet;
-  const start = current.at ? isoToZoned(current.at) : { day: addDays(appToday(), 1), time: "19:00" };
+  // The Meet & Greet comes before the drop-off (015f, #236).
+  const dropAt = booking.dropOff ? Date.parse(booking.dropOff.at) : null;
+  const lastDay = booking.dropOff ? isoToZoned(booking.dropOff.at).day : undefined;
+  const start = current.at ? isoToZoned(current.at) : firstGuess(dropAt);
   const known = [...spots.ownerSpots, ...spots.sitterSpots];
 
   const [mode, setMode] = useState<MeetGreetMode>(current.mode ?? "in_person");
@@ -54,7 +57,9 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
   const problem =
     Date.parse(at) <= Date.now()
       ? "Pick a time in the future."
-      : mode === "in_person" && !place
+      : dropAt !== null && Date.parse(at) >= dropAt
+        ? "Pick a time before the drop-off."
+        : mode === "in_person" && !place
         ? "Pick a place to meet."
         : null;
 
@@ -126,6 +131,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
           onDecrease={() => setDay(addDays(day, -1))}
           onIncrease={() => setDay(addDays(day, 1))}
           canDecrease={day > appToday()}
+          canIncrease={!lastDay || day < lastDay}
           onPressValue={() => setPicker("day")}
           testID="meet-day"
         />
@@ -145,6 +151,7 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
         title="Meet & Greet day"
         value={day}
         minDay={appToday()}
+        maxDay={lastDay}
         onPick={(d) => {
           setDay(d);
           setPicker(null);
@@ -165,6 +172,16 @@ export function MeetGreetSheet({ visible, booking, spots, otherName, onSubmit, o
       />
     </Sheet>
   );
+}
+
+/** Tomorrow evening, or the evening before the drop-off when that is sooner (else an hour before it). */
+function firstGuess(dropAt: number | null): { day: string; time: string } {
+  const tomorrow = { day: addDays(appToday(), 1), time: "19:00" };
+  if (dropAt === null || Date.parse(zonedToIso(tomorrow.day, tomorrow.time)) < dropAt) return tomorrow;
+  const drop = isoToZoned(new Date(dropAt).toISOString());
+  const eve = { day: addDays(drop.day, -1), time: "19:00" };
+  if (Date.parse(zonedToIso(eve.day, eve.time)) > Date.now()) return eve;
+  return isoToZoned(new Date(dropAt - 60 * 60_000).toISOString());
 }
 
 const makeStyles = (theme: Theme) =>
