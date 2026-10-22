@@ -996,7 +996,7 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | BackLink | — | ``${testID}-back`` | 39 |
 | Button | Next | ``${testID}-next`` | 74 |
-| Button | Sign in | ``${testID}-sign-in`` | 76 |
+| Button | Get started | ``${testID}-sign-in`` | 76 |
 
 ### OpenInMapsButton — [components/OpenInMapsButton.tsx](../../frontend/components/OpenInMapsButton.tsx)
 

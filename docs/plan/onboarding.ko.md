@@ -60,7 +60,7 @@ Nebius 피드백 표의 “Onboarding”은 **플랫폼( Token Factory 등 )** �
 | 1 · Problem | Owner anxiety vs sitter DM fatigue (README Problem 1문장씩) | Illustration 또는 아이콘 |
 | 2 · Two roles | **Learn without asking** (Owner) / **Care, snap, tap** (Sitter) | north-star 표와 동일 |
 | 3 · One stay | ① Ask → ② Care request → ③ Book & sign → ④ Live trip + daily note → ⑤ Home safe + Life Record (README 5단계) | 데모·영상과 동일 스토리 |
-| Footer CTA | 마지막 페이지에는 **Sign in** 하나(#288). 데모 로그인과 Create account는 로그인 화면에 있음 | 모바일 단일 컬럼, CTA 1개 primary |
+| Footer CTA | 마지막 페이지에는 **Get started** 하나(#288, 로그인 화면으로 감). 데모 로그인과 Create account는 로그인 화면에 있음 | 모바일 단일 컬럼, CTA 1개 primary |
 
 - **Skip:** Welcome footer **Sign in** (재방문·개발용). 별도 “Skip intro” 링크는 필수는 아님.
 - **Persist (OB.4, deferred):** `localStorage` `goldito_intro_seen=1` → 다음부터 `/` → login 직행. **해커톤 P0에서는 하지 않음** — 심사·데모는 Welcome을 매번(또는 로그아웃 후) 보여주는 편이 낫고, Phase 04+ 큐를 막지 않음. 여유 있을 때 또는 Phase 11 polish.

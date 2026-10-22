@@ -73,7 +73,7 @@ export function OnboardingTour({ role, steps, testID }: Props) {
         {!last ? (
           <Button label="Next" onPress={() => setIndex((i) => i + 1)} testID={`${testID}-next`} />
         ) : (
-          <Button label="Sign in" onPress={() => router.push("/login")} testID={`${testID}-sign-in`} />
+          <Button label="Get started" onPress={() => router.push("/login")} testID={`${testID}-sign-in`} />
         )}
         <View style={styles.dots}>
           {steps.map((_, i) => (

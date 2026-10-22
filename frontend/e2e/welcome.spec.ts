@@ -22,7 +22,7 @@ test.describe("welcome", () => {
     await expect(screen.getByTestId("login-email")).toBeVisible();
   });
 
-  test("owner tour steps through placeholders and Sign in", async ({ page }) => {
+  test("owner tour steps through placeholders and Get started", async ({ page }) => {
     await mockSupabase(page, [OWNER, SITTER]);
     await page.goto("/welcome");
     const screen = app(page);
@@ -37,6 +37,7 @@ test.describe("welcome", () => {
     await screen.getByTestId("onboarding-owner-next").click();
     await expect(screen.getByTestId("onboarding-owner-demo")).toHaveCount(0);
     await expect(screen.getByTestId("onboarding-owner-sign-up")).toHaveCount(0);
+    await expect(screen.getByTestId("onboarding-owner-sign-in")).toHaveText("Get started");
     await screen.getByTestId("onboarding-owner-sign-in").click();
     await expect(page).toHaveURL(/\/login$/);
   });
