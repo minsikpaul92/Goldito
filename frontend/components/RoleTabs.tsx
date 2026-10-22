@@ -136,7 +136,6 @@ export function RoleTabs({ children }: { children: ReactNode }) {
     <Tabs
       screenOptions={{
         ...headerOptions(theme),
-        headerLeft: () => null,
         headerRight: () => <HeaderActions />,
         tabBarActiveTintColor: theme.color.primary,
         tabBarInactiveTintColor: theme.color.textMuted,
