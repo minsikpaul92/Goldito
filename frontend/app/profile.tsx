@@ -318,9 +318,20 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen contentStyle={styles.content}>
+    <Screen
+      contentStyle={styles.content}
+      footer={
+        <>
+          {saveError ? (
+            <Text accessibilityRole="alert" style={styles.footerError}>
+              {saveError}
+            </Text>
+          ) : null}
+          <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
+        </>
+      }
+    >
       <Text style={styles.role}>{profile.role === "owner" ? "Pet owner" : "Pet sitter"}</Text>
-      {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
       <View style={styles.group} testID="profile-photos-group">
         <Text style={styles.groupTitle}>Your photos</Text>
         <Text style={styles.muted}>
@@ -330,6 +341,7 @@ export default function ProfileScreen() {
         </Text>
         <ProfilePhotoGallery profileId={profile.id} />
       </View>
+      {profile.role === "sitter" ? <SitterBadges sitterId={profile.id} /> : null}
       <TextField
         label="Your name"
         value={displayName}
@@ -536,12 +548,6 @@ export default function ProfileScreen() {
             : "Your home address and place notes are shared only with owners who have paid for a booking with you."}
         </Text>
       </View>
-      {saveError ? (
-        <Text accessibilityRole="alert" style={styles.error}>
-          {saveError}
-        </Text>
-      ) : null}
-      <Button label={saving ? "Saving…" : "Save"} onPress={() => void save()} disabled={saving} testID="profile-save" />
       {isDemoToolsEnabled && isDemoAccount(session.session?.user.email) ? <DemoTools /> : null}
     </Screen>
   );
@@ -606,5 +612,12 @@ const makeStyles = (theme: Theme) =>
     error: {
       fontSize: theme.fontSize.small,
       color: theme.color.error,
+    },
+    footerError: {
+      fontSize: theme.fontSize.small,
+      color: theme.color.error,
+      backgroundColor: theme.color.background,
+      borderRadius: theme.radius.sm,
+      padding: theme.spacing.sm,
     },
   });

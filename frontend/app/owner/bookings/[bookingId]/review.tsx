@@ -2,31 +2,25 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 
+import { FavoriteHeart } from "../../../../components/FavoriteHeart";
 import { OwnerReviewForm } from "../../../../components/OwnerReviewForm";
 import { Button } from "../../../../components/ui/Button";
 import { Card } from "../../../../components/ui/Card";
 import { EmptyState } from "../../../../components/ui/EmptyState";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
-import { Sheet } from "../../../../components/ui/Sheet";
-import { TextButton } from "../../../../components/ui/TextButton";
-import { listFavoriteSitterIds, setFavoriteSitter } from "../../../../features/sitters/sitterApi";
 import { getReview } from "../../../../features/completion/completionApi";
 import { BookingSummary, getBooking } from "../../../../lib/bookings";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
-import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
 
 /** "How was Max and Mochi's stay with Chloe?" — ★1–5 and an optional comment, once (phase-07C 7C.3). */
 export default function ReviewScreen() {
   const styles = useThemedStyles(makeStyles);
-  const toast = useToast();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const [booking, setBooking] = useState<BookingSummary | null | undefined>(undefined);
-  const [done, setDone] = useState(false);
-  /** After the review: offer to add the sitter to favorites unless they already are (FB-28). */
-  const [askFavorite, setAskFavorite] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(true);
+  /** "earlier": reviewed before this visit; "now": just sent. Either way the favorites heart follows (FB-28, #251). */
+  const [done, setDone] = useState<"earlier" | "now" | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -34,12 +28,7 @@ export default function ReviewScreen() {
       .then(([b, review]) => {
         if (!live) return;
         setBooking(b);
-        setDone(!!review);
-        if (b) {
-          listFavoriteSitterIds()
-            .then((ids) => live && setIsFavorite(ids.includes(b.sitterId)))
-            .catch(() => undefined);
-        }
+        setDone(review ? "earlier" : null);
       })
       .catch(() => live && setBooking(null));
     return () => {
@@ -56,20 +45,22 @@ export default function ReviewScreen() {
     );
   }
   // Back to the booking underneath (it refreshes on focus); a direct link has nothing to go back to.
-  const leave = (id: string) => {
+  const leave = () => {
     if (router.canGoBack()) router.back();
-    else router.replace(`/owner/bookings/${id}`);
+    else router.replace(`/owner/bookings/${booking.id}`);
   };
 
-  if (done && !askFavorite) {
+  if (done) {
+    // The same heart as the chat and the sitter's page; a favorite already shows it filled, nothing is asked.
     return (
-      <Screen>
-        <EmptyState
-          emoji="⭐"
-          title="Thanks, you already reviewed this stay"
-          message="Your review is on the booking."
-          action={{ label: "Back to the booking", onPress: () => router.replace(`/owner/bookings/${booking.id}`) }}
-        />
+      <Screen testID="review-screen" contentStyle={styles.content}>
+        <Card style={styles.card}>
+          <Text accessibilityRole="header" style={styles.title}>
+            {done === "now" ? "Thanks for your review" : "Thanks, you already reviewed this stay"}
+          </Text>
+          <FavoriteHeart sitterId={booking.sitterId} sitterName={booking.sitterName} />
+        </Card>
+        <Button label="Back to the booking" onPress={leave} testID="review-back" />
       </Screen>
     );
   }
@@ -79,38 +70,8 @@ export default function ReviewScreen() {
     <Screen testID="review-screen" contentStyle={styles.content}>
       <Card style={styles.card}>
         <Text accessibilityRole="header" style={styles.title}>{`How was ${names}'s stay with ${booking.sitterName}?`}</Text>
-        <OwnerReviewForm
-          bookingId={booking.id}
-          sitterName={booking.sitterName}
-          locked={done}
-          onSent={() => {
-            if (isFavorite) leave(booking.id);
-            else {
-              setDone(true);
-              setAskFavorite(true);
-            }
-          }}
-        />
+        <OwnerReviewForm bookingId={booking.id} sitterName={booking.sitterName} onSent={() => setDone("now")} />
       </Card>
-      <Sheet
-        visible={askFavorite}
-        title={`Add ${booking.sitterName} to your favorites?`}
-        onClose={() => leave(booking.id)}
-        testID="favorite-sheet"
-      >
-        <Text style={styles.hint}>{`Favorites show first when you book. ${booking.sitterName} isn't told.`}</Text>
-        <Button
-          label="Add to favorites"
-          onPress={() => {
-            void setFavoriteSitter(booking.sitterId, true)
-              .then(() => toast.show(`${booking.sitterName} is a favorite`))
-              .catch((e: Error) => toast.show(e.message))
-              .finally(() => leave(booking.id));
-          }}
-          testID="favorite-add"
-        />
-        <TextButton label="Not now" onPress={() => leave(booking.id)} testID="favorite-skip" />
-      </Sheet>
     </Screen>
   );
 }
@@ -120,5 +81,4 @@ const makeStyles = (theme: Theme) =>
     content: { gap: theme.spacing.md },
     card: { gap: theme.spacing.md },
     title: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
-    hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
   });
