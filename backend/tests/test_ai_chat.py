@@ -529,6 +529,33 @@ def test_the_payment_card_says_paid_once_it_is():
     assert logic.describe(card_msg(1, "payment"), OWNER_ID, tz, booking(id="other")) is None
 
 
+def test_the_model_reads_where_the_booking_is_and_the_sitter_gets_the_checklist_with_a_live_booking(client, setup):
+    tasks = [{"pet_id": PET_ID, "type": "medication", "title": "Apoquel", "scheduled_time": "08:00:00", "active": True}]
+    live = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Shall we meet first?"), care_tasks=tasks, bookings=[booking(meet_greet_status="required", sitter_interest_at=at(3))])
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=live, stage="requested")
+    chips(client, sitter_token())
+    payload = ctx.model.payload()
+    assert payload["progress"]["step"] == "decide" and payload["progress"]["turn"] == "both"  # the fake stage RPC answers "both"
+    assert payload["facts"]["pets"][0]["checklist"][0]["task"] == "Apoquel"
+    none = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Can you take Max?"), care_tasks=tasks)
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=none)
+    chips(client, sitter_token())
+    assert "checklist" not in ctx.model.payload()["facts"]["pets"][0]
+    assert ctx.model.payload()["progress"]["step"] == "hello" and ctx.model.payload()["progress"]["now"] == ["Say hello and who I am"]
+
+
+def test_a_booking_that_cannot_be_read_gives_no_progress_and_no_actions(client, setup):
+    ctx = setup({"chips": ["Yes", "Let me check"]}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi"), bookings=[booking()]), stage="fail")
+    chips(client, sitter_token())
+    assert "progress" not in ctx.model.payload() and "actions" not in ctx.model.payload()
+
+
+def test_the_draft_reads_the_progress_too(client, setup):
+    ctx = setup({"reply": "Thanks, Chloe!"}, db=make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, SITTER_ID, "Hi Robert"), bookings=[booking(meet_greet_status="done")]), stage="confirm")
+    draft(client, "Thanks!", owner_token())
+    assert ctx.model.payload()["progress"]["step"] == "agree"
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

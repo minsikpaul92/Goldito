@@ -27,8 +27,11 @@ class SitterAgent(ChatAgent):
         """Money (the quote and my rates) is in the facts only when the owner asked about it or a quote card is in the
         chat, and never in my first reply: that one introduces me, the price comes with the Send quote step."""
         asked = state != "first_reply" and (logic.asks_about_money(last_them) or logic.shown_quote(messages) is not None)
-        # The owner's care checklist is for the sitter once there is a booking, not before.
-        raw = {**raw, "pets": [{k: v for k, v in p.items() if k != "checklist"} for p in raw.get("pets", [])]}
+        # The owner's care checklist is for the sitter once there is a live booking, not before.
+        live = raw.get("booking_live")
+        raw = {k: v for k, v in raw.items() if k != "booking_live"}
+        if not live:
+            raw = {**raw, "pets": [{k: v for k, v in p.items() if k != "checklist"} for p in raw.get("pets", [])]}
         if asked:
             return raw
         return {**raw, "quote": None, "rates": {}}

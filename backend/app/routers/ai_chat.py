@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.ai import chat as logic
-from app.ai import chat_profile
+from app.ai import chat_profile, chat_state
 from app.ai import inquiry as inquiry_logic
 from app.ai.chat_agents import agent_for
 from app.ai.prompts import load_prompt
@@ -298,8 +298,12 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
     _, recent = logic.split_window(messages)
     ctx["booking_state"] = _booking_state(db, user, ctx)
     state = agent.state(messages, user.id)
+    booking_state = ctx["booking_state"]
+    raw = _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources)
+    # The owner's care checklist goes to the sitter once there is a live booking.
+    raw["booking_live"] = booking_state["stage"] not in (None, "declined", "cancelled")
     facts = agent.facts(
-        _facts(db, user, ctx, (last_them or {}).get("body", ""), tz, today, with_sources=with_sources),
+        raw,
         messages,
         state=state,
         last_them=(last_them or {}).get("body", ""),
@@ -314,9 +318,15 @@ def _prompt_input(db, user: CurrentUser, ctx: dict, tz: ZoneInfo, today: date, *
         "them": them,
         "i_am": chat_profile.i_am(ctx["role"], me, them, pets=ctx.get("owner_pets") or facts.get("pets", []), service_area=(facts.get("sitter") or {}).get("service_area")),
         **({"summary": summary} if summary else {}),
-        "recent": logic.transcript(recent, user.id, tz, ctx["booking_state"]["booking"]),
+        "recent": logic.transcript(recent, user.id, tz, booking_state["booking"]),
         "facts": facts,
     }
+    if booking_state["readable"]:
+        stay = logic.latest_stay(messages)
+        base["progress"] = chat_state.progress(
+            ctx["role"], messages, user.id, booking_state["booking"], booking_state["stage"], booking_state["next_actor"], _actions(ctx),
+            has_stay=bool(stay), priced=logic.is_priced(messages, stay),
+        )
     return base, facts, last_them
 
 
