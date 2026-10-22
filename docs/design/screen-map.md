@@ -355,16 +355,14 @@ Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · 
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
-Menu → Settings (Phase 11.11, D47): the account (Edit profile), notifications, Privacy, the app version and Sign out.
+Menu → Settings (Phase 11.11, D47): the account, What's New, notifications, Privacy, the app version and Sign out.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| TextButton | Edit profile | `settings-edit-profile` | 36 |
-| TextButton | Privacy | `settings-privacy` | 53 |
-| Button | Sign out | `settings-log-out` | 58 |
-| Sheet | Sign out? | `settings-log-out-sheet` | 59 |
-| Button | Sign out | `settings-log-out-confirm` | 61 |
-| Button | Cancel | **none** | 62 |
+| BackLink | — | `settings-back` | 61 |
+| Sheet | Sign out? | `settings-log-out-sheet` | 112 |
+| Button | Sign out | `settings-log-out-confirm` | 114 |
+| Button | Cancel | **none** | 115 |
 
 ### `/signup` — [app/(auth)/signup.tsx](../../frontend/app/(auth)/signup.tsx)
 
@@ -606,11 +604,12 @@ Shows: `OnboardingTour`
 
 ### `/whats-new` — [app/whats-new.tsx](../../frontend/app/whats-new.tsx)
 
-What's new: what people can now do that they could not at launch. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match); only releases from 1.0.0 on are shown, never the build-up to launch.
+What's new: small updates in plain words. docs/CHANGELOG.md, turned into JSON by `node scripts/changelog.mjs` (CI checks they match). The newest entry sits on a butter block.
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Nothing new yet | — | 30 |
+| BackLink | — | `whats-new-back` | 45 |
+| EmptyState | Nothing new yet | — | 48 |
 
 ## Components
 
@@ -1521,4 +1520,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-443 actions · 442 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+442 actions · 441 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

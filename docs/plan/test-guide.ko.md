@@ -157,7 +157,7 @@
 | Pet Transit **Returned 확인 시트 · 이른 Returned 경고** (FB-9) | ✅ 🤖 `handoff.spec.ts` (실제 사람 확인은 FLOW-6) | 06B / 6B.6 |
 | Pet Transit **Open in Google Maps(양쪽) · 공유 없이 시작 · 공유 안 하는 상대 화면 · 오래된 위치 안내** | ✅ 🤖 `transit.spec.ts` + SQL `rls_smoke` L (실제 폰은 👤) | 06B / 6B.8 |
 | **사진 요청** (견주 Feed **Request photo** → 시터 Home 배너 → 시터의 다음 공유 사진이 요청을 완료, 알림 하나만) | ✅ 11.1 S1 DB ✅ SQL `rls_smoke` 014 (`014` 호스팅 DB 적용 2026-10-15) · S2 견주 Feed 버튼 · S3 시터 Home 배너 · S4 답 알림이 feed_post처럼 🤖 `photo-request.spec.ts` · 두 브라우저 DoD ✅ 2026-10-15 Minsik | 11 / 11.1 |
-| **Settings · What's new** (메뉴 → Settings: 계정 · Edit profile · 알림 안내 · Privacy · 앱 버전 · Log out / 메뉴 → What's new: `docs/CHANGELOG.md`의 **1.0.0 이후**만, 없으면 "Nothing new yet") | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 |
+| **Settings · What's new** (Figma `D · Profile → Settings`: 메뉴 → Settings: 초록 계정 블록 · What's New 행 · Account(Name → Profile, Email, Pets는 오너만) · Notifications 스위치 3개(**화면에서만 바뀜, 서버에 저장 안 함**) · Privacy · Sign out · 앱 버전 / `D · Settings → What's New`: `docs/CHANGELOG.md`의 **모든 릴리스**(해커톤 기간 변경도 임시로 보임, `SHOW_BEFORE_LAUNCH`로 다시 숨김), 없으면 "Nothing new yet") | 🟡 🤖 `settings.spec.ts` · 사람 확인 대기 |
 
 ### Stage 5 — Completion · 기타
 
