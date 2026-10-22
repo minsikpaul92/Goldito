@@ -658,6 +658,18 @@ def test_a_booking_step_card_counts_for_the_state_and_a_stay_card_does_not(clien
     assert only_stay.model.payload()["state"] == "opening"
 
 
+@pytest.mark.parametrize(("who", "token", "want"), [("owner", owner_token, ["Thanks for everything!", "I'll book again"]), ("sitter", sitter_token, ["It was a pleasure!", "Welcome back anytime!"])])
+def test_after_returned_both_sides_get_closing_chips_and_the_guidance(client, setup, who, token, want):
+    done = booking(status="confirmed", meet_greet_status="done", owner_agreed_at=at(5), sitter_accepted_at=at(5), paid_at=at(9))
+    db = make_db(message(1, OWNER_ID, card=STAY, n=0), message(2, OWNER_ID, "Hi!"), message(3, SITTER_ID, "Hi Robert"), message(4, SITTER_ID, "Max is home safe, thank you!"), bookings=[done])
+    ctx = setup({"chips": ["Plan another stay", "Ask about the vet", "Send a quote"]}, db=db, stage="completed")
+    body = chips(client, token()).json()
+    assert [c["label"] for c in body["chips"]] == want  # the model's planning chips are replaced
+    progress = ctx.model.payload()["progress"]
+    assert progress["step"] == "done" and progress["guide"]["avoid"].startswith("new plans")
+    assert "topics" not in ctx.model.payload()  # nothing is left to steer after the stay
+
+
 # --- two agents --------------------------------------------------------------------------------------------------
 
 

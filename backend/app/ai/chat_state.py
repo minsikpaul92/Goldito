@@ -59,6 +59,53 @@ _CARE_NOW = {
 }
 
 
+# What to talk about at each step and what not to, by step and side (a missing side falls back to "both"). The model reads it as
+# `progress.guide`: the steer a good sitter or owner would give themselves ("now we plan the drop-off, not the price").
+GUIDE: dict[tuple[str, str], dict[str, str]] = {
+    ("hello", "owner"): {"talk_about": "say hello, which pets need care and when", "avoid": "prices, long lists of needs"},
+    ("hello", "sitter"): {"talk_about": "greet them by name, say who I am, say if I can host these dates", "avoid": "prices before they ask"},
+    ("decide", "owner"): {
+        "talk_about": "what I still want to know: routine, allergies, medication; when I am ready, request the booking or ask for a quote",
+        "avoid": "drop-off details, thanking again",
+    },
+    ("decide", "sitter"): {
+        "talk_about": "answer from the facts, ask about the pets' routine, offer a quote or to meet first",
+        "avoid": "holding dates before I say yes to meeting",
+    },
+    ("meet_greet", "both"): {
+        "talk_about": "a time and place for the Meet & Greet, what to bring, what to ask in person",
+        "avoid": "the price and the dates again, the drop-off",
+    },
+    ("agree", "both"): {"talk_about": "last questions, then yes to the booking", "avoid": "planning the Meet & Greet again"},
+    ("pay", "owner"): {"talk_about": "the final quote and paying it", "avoid": "new prices, the dates again"},
+    ("pay", "sitter"): {"talk_about": "the final quote and any question about it", "avoid": "new prices, the dates again"},
+    ("handoff", "owner"): {
+        "talk_about": "when and where I bring the pets, what I pack (food, medication, the checklist)",
+        "avoid": "payment, quotes, the Meet & Greet",
+    },
+    ("handoff", "sitter"): {"talk_about": "the drop-off time and place, what to bring", "avoid": "payment, quotes, the Meet & Greet"},
+    ("care", "owner"): {
+        "talk_about": "a short thanks, a photo or how the pets are; the pick-up time near the end",
+        "avoid": "the drop-off, payment, thanking again and again",
+    },
+    ("care", "sitter"): {"talk_about": "how the pets are doing, a photo, the pick-up time near the end", "avoid": "booking steps, the drop-off, payment"},
+    ("done", "owner"): {
+        "talk_about": "thank the sitter for looking after the pets and say I will book again",
+        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
+    },
+    ("done", "sitter"): {
+        "talk_about": "thank them, say it was a pleasure having the pets and they are welcome back anytime",
+        "avoid": "new plans, logistics, care questions, greetings, asking for a quote",
+    },
+    ("closed", "both"): {"talk_about": "a polite goodbye", "avoid": "booking steps"},
+}
+CLOSING_CHIPS = {"owner": ["Thanks for everything!", "I'll book again"], "sitter": ["It was a pleasure!", "Welcome back anytime!"]}
+
+
+def guide(step: str, role: str) -> dict[str, str]:
+    return GUIDE.get((step, role)) or GUIDE.get((step, "both")) or {}
+
+
 def progress(
     role: str,
     messages: list[dict],
@@ -81,7 +128,7 @@ def progress(
     else:
         step = _STAGE_STEP.get(stage or "", "closed")
     if step == "closed":
-        return {"step": "closed", "step_label": "The booking is closed", "turn": "nobody", "now": [], "waiting_for": None, "done": [], "later": []}
+        return {"step": "closed", "step_label": "The booking is closed", "turn": "nobody", "now": [], "waiting_for": None, "done": [], "later": [], "guide": guide("closed", role)}
 
     no_meet = booking is not None and booking.get("meet_greet_status") == "not_needed"
     order = [s for s in STEPS if not (s == "meet_greet" and no_meet)]
@@ -109,7 +156,7 @@ def progress(
         now.append(_HANDOFF_NOW[role])
     elif step == "care":
         now.append(_CARE_NOW[role])
-    return {"step": step, "step_label": LABEL[step], "turn": turn, "now": now, "waiting_for": waiting, "done": done, "later": later}
+    return {"step": step, "step_label": LABEL[step], "turn": turn, "now": now, "waiting_for": waiting, "done": done, "later": later, "guide": guide(step, role)}
 
 
 # --- what is left to talk about --------------------------------------------------------------------------------------

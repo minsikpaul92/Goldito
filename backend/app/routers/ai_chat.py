@@ -387,6 +387,9 @@ def chat_chips(body: ChatChipsRequest, user: CurrentUser = Depends(get_current_u
         react = logic.reaction_chips(ctx["role"], last_them) if not typed else []
         if react and len(labels) >= 2:
             labels = [*react, *(c for c in labels if c not in react)][: logic.MAX_CHIPS]
+        # The stay is over (the sitter pressed Returned): only warm closing lines, never new plans.
+        if not typed and base.get("progress", {}).get("step") == "done" and len(labels) >= 2:
+            labels = list(chat_state.CLOSING_CHIPS[ctx["role"]])
     except (nebius.AIUnavailable, nebius.AIInvalidOutput) as exc:
         log.warning("chat-chips: model failed (%s)", exc)
         reason = "model_failed"

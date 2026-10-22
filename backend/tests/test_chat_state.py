@@ -100,3 +100,21 @@ def test_topics_stop_mattering_as_the_booking_moves_on():
     assert handoff["open"][0] == "food allergies"
     care = cs.topics([], OWNER, DOG_FACTS, "care")
     assert care["open"] == ["photo updates", "the pick-up"] and care["covered"] == []  # the pet's needs were for before the drop-off
+
+
+# --- guidance ---------------------------------------------------------------------------------------------------------
+
+
+def test_every_step_has_guidance_for_both_sides():
+    for step in (*cs.STEPS, "closed"):
+        for role in ("owner", "sitter"):
+            assert set(cs.guide(step, role)) == {"talk_about", "avoid"}, (step, role)
+
+
+def test_progress_carries_the_guidance_and_the_done_step_says_thanks_and_nothing_new():
+    owner = run("owner", booking={"meet_greet_status": "done"}, stage="completed")
+    sitter = run("sitter", booking={"meet_greet_status": "done"}, stage="completed")
+    assert owner["step"] == sitter["step"] == "done"
+    assert "book again" in owner["guide"]["talk_about"] and "welcome back" in sitter["guide"]["talk_about"]
+    assert "new plans" in owner["guide"]["avoid"]
+    assert run("owner", booking={}, stage="cancelled")["guide"]["talk_about"] == "a polite goodbye"
