@@ -342,16 +342,16 @@ Shows: `DemoTools` · `AddressInput` · `OpenInMapsButton` · `SitterBadges` · 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 203 |
-| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 406 |
-| TextButton | Edit entry info | `profile-home-access` | 423 |
-| SegmentedControl | — | `profile-ai-mode` | 439 |
-| Button | Edit your answers | `profile-answers-edit` | 468 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 476 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 478 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 495 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 505 |
-| TextButton | + Add a spot | `profile-add-spot` | 529 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 544 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 330 |
+| TextButton | locating ? "Locating…" : pinFromGps ? "Read my location again" : "Use my current location" | `profile-use-location` | 418 |
+| TextButton | Edit entry info | `profile-home-access` | 435 |
+| SegmentedControl | — | `profile-ai-mode` | 451 |
+| Button | Edit your answers | `profile-answers-edit` | 480 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 488 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 490 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 507 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 517 |
+| TextButton | + Add a spot | `profile-add-spot` | 541 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 

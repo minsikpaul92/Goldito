@@ -173,6 +173,7 @@
 | **공개 데모 보호** (감사 2026-10-21): 데모 계정(`@goldito.test`)의 비밀번호 · 이메일은 시드만 바꿈(`014z`) · AI 호출(`/api/ai/*` · `/api/rag/*` · `/api/tone/*`)과 업로드 서명(`/api/media/sign` · 펫 · 프로필 사진)은 한 사람당 하루 100번(공유 데모 계정 1000번), 넘으면 429 | 🟡 🤖 SQL `rls_smoke`(014z) · pytest `test_seed_demo` · `test_limits` · 호스팅 DB 적용은 머지 때 (SEC-4 to SEC-6) | 10 |
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
+| **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
 | 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
