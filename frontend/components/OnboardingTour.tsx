@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { BrandLogo } from "./BrandLogo";
 import { MediaPlaceholder } from "./MediaPlaceholder";
 import { BackLink } from "./ui/BackLink";
 import { Button } from "./ui/Button";
@@ -43,6 +44,7 @@ export function OnboardingTour({ role, steps, testID }: Props) {
           }}
           testID={`${testID}-back`}
         />
+        <BrandLogo height={28} testID={`${testID}-brand`} />
         <Text style={styles.progress} testID={`${testID}-progress`}>
           {`${index + 1} / ${steps.length}`}
         </Text>
