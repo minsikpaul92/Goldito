@@ -1051,6 +1051,7 @@
 | HDR-2 | 프로필 사진이 있는 계정으로 로그인 (Sitter-007) | 헤더 아바타 및 햄버거 메뉴 상단 프로필 영역에 이니셜 대신 실제 사진 노출 | 🤖 `auth` | ➖ |
 | HDR-3 | 로그인 · 회원가입 · 투어 화면 헤더 비교 (Common-006) | 로그인, 회원가입(`/signup`), 온보딩 투어(`/welcome/owner`, `/welcome/sitter`) 상단에 `BrandLogo` 일관되게 표시 | 🤖 `auth` · `welcome` | ➖ |
 | HDR-4 | 시터 피드 탭(`/sitter/feed`) 진입 (Muk) | 탭 루트 화면에 뒤로가기 화살표가 없음 | 🤖 `auth` | ➖ |
+| HDR-5 | 오너 온보딩 질문 스킵 (About 및 각 질문 화면) | About 화면 하단 "Skip questions" 및 우측 상단 "Skip all" 버튼으로 남은 모든 질문을 건너뛰고 요약(Summary)으로 바로 이동. 이후 질문 화면에서도 우측 상단 "Skip all" 제공 | 🤖 `owner-onboarding` | ➖ |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 

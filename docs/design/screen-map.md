@@ -69,20 +69,21 @@ Shows: `BigInput` · `BigOption` · `PetGlanceCard` · `PetPhotosStep` · `Voice
 | --- | --- | --- | --- |
 | TextButton | Skip | `own-skip` | 173 |
 | Button | Next | `own-next` | 175 |
-| Button | Next | `own-next` | 210 |
-| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 211 |
-| Banner | `error` | — | 223 |
-| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 263 |
-| Stepper | Age | `own-age` | 357 |
-| Button | Next | `own-next` | 370 |
-| SegmentedControl | — | `own-weight-unit` | 389 |
-| LinkButton | `source.label` | ``own-source-${i + 1}`` | 441 |
-| Button | Start | `own-next` | 445 |
-| Button | Add | `own-food-other-add` | 574 |
-| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 630 |
-| Banner | `error` | `own-error` | 687 |
-| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 688 |
-| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 706 |
+| Button | Next | `own-next` | 225 |
+| TextButton | saving ? "Saving…" : "Add a pet later" | `own-later` | 226 |
+| Banner | `error` | — | 238 |
+| Button | photoBusy ? "Uploading…" : "Next" | `own-next` | 278 |
+| Stepper | Age | `own-age` | 372 |
+| Button | Next | `own-next` | 385 |
+| SegmentedControl | — | `own-weight-unit` | 404 |
+| LinkButton | `source.label` | ``own-source-${i + 1}`` | 456 |
+| Button | Start | `own-next` | 461 |
+| TextButton | Skip questions | `own-skip-questions` | 462 |
+| Button | Add | `own-food-other-add` | 592 |
+| TextButton | locating ? "Locating…" : draft.home && !draft.homeAddress ? "Read my location again" : "Use my current location" | `own-use-location` | 648 |
+| Banner | `error` | `own-error` | 705 |
+| Button | saving ? "Saving…" : `Save ${petName}` | `own-save` | 706 |
+| Pressable | ``Change ${row.label}`` | ``own-row-${row.label.toLowerCase().replace(/\s+/g, "-")}`` | 724 |
 
 ### `/owner/bookings` — [app/owner/(tabs)/bookings.tsx](../../frontend/app/owner/(tabs)/bookings.tsx)
 
@@ -1326,8 +1327,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Back | `own-back` | 35 |
-| TextButton | Back | `own-back-bottom` | 53 |
+| TextButton | Skip all | `own-skip-all` | 33 |
+| Pressable | Back | `own-back` | 37 |
+| TextButton | Back | `own-back-bottom` | 55 |
 
 ### VoiceStep — [components/ownerOnboarding/VoiceStep.tsx](../../frontend/components/ownerOnboarding/VoiceStep.tsx)
 
@@ -1522,4 +1524,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-444 actions · 443 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+446 actions · 445 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
