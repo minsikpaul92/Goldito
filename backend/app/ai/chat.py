@@ -39,6 +39,7 @@ ACTIONS: dict[str, dict[str, str]] = {
 
 _NUMBER = re.compile(r"\d")
 _CLOCK = re.compile(r"\b(\d{1,2})(?::(\d{2}))?\s?([AP]M)\b", re.IGNORECASE)
+_GREETING = re.compile(r"^\W*(?:hi|hey|hello|hiya|howdy|dear|good (?:morning|afternoon|evening))\b", re.IGNORECASE)
 _NAME_FIRST = re.compile(r"^\s*[A-Z][a-z]+:\s")
 # The other side asked about money: a price, a rate, a quote, a fee or "how much".
 _MONEY_TALK = re.compile(r"\b(price|prices|pricing|cost|costs|how much|rate|rates|quote|fee|fees|charge|charges|total|pay|payment|deposit)\b|\$", re.IGNORECASE)
@@ -82,13 +83,68 @@ def _when(iso: str, tz) -> str:
     return f"{logic.MONTHS[moment.month - 1]} {moment.day} {moment.strftime('%-I:%M %p')}"
 
 
-def describe(message: dict, me_id: str, tz) -> dict | None:
+_QUOTE_STATUS = {
+    "sent": "sent, waiting for the owner",
+    "confirmed": "confirmed by the owner",
+    "replaced": "replaced by a newer quote",
+    "declined": "declined by the owner",
+}
+
+
+def _meet_greet_text(booking: dict, me_id: str, tz) -> str | None:
+    """The Meet & Greet card in words, from the booking's own columns (the card only holds the booking's id)."""
+    status = booking.get("meet_greet_status")
+    mine = lambda who: "me" if who == me_id else "them"  # noqa: E731
+    plan = ""
+    if booking.get("meet_greet_at"):
+        place = scrub(booking.get("meet_greet_place"))
+        plan = f" for {_when(booking['meet_greet_at'], tz)}, " + ("by video" if booking.get("meet_greet_mode") == "video" else f"in person{' at ' + place if place else ''}")
+    if status == "required":
+        return "Meet & Greet: the sitter said yes to meeting first, no time chosen yet"
+    if status == "proposed":
+        return f"Meet & Greet proposed by {mine(booking.get('meet_greet_proposed_by'))}{plan}, waiting for the other person's answer"
+    if status == "agreed":
+        return f"Meet & Greet agreed{plan}"
+    if status == "done":
+        return "Meet & Greet done"
+    if status == "skip_requested":
+        return f"Skipping the Meet & Greet was asked by {mine(booking.get('meet_greet_skip_requested_by'))}, waiting for the other person's answer"
+    if status == "skipped":
+        return "Meet & Greet skipped"
+    return None
+
+
+def _step_card_text(card_type: str, booking: dict, me_id: str, tz) -> str | None:
+    """What a booking step card says right now (meet_greet, agreement, payment). Cards are updated in place, so this is the
+    booking's current state, not a log."""
+    if card_type == "meet_greet":
+        return _meet_greet_text(booking, me_id, tz)
+    if card_type == "agreement":
+        owner = "agreed" if booking.get("owner_agreed_at") else "not yet"
+        sitter = "accepted" if booking.get("sitter_accepted_at") else "not yet"
+        return f"Agreement to book: the owner {owner}, the sitter {sitter}"
+    if card_type == "payment":
+        return "Payment: paid" if booking.get("paid_at") else "Payment: waiting for the owner to pay"
+    return None
+
+
+def describe(message: dict, me_id: str, tz, booking: dict | None = None) -> dict | None:
     """One message for the prompt and the summary: who said it and what (cards in square brackets), scrubbed like the
-    typed text. Empty cards are left out."""
+    typed text. Empty cards are left out. `booking` is the pair's live booking: the step cards (Meet & Greet, agreement,
+    payment) say what the booking says, from "app"."""
     who = "me" if message.get("sender_id") == me_id else "them"
     if message.get("kind") == "text":
         return {"who": who, "text": _clip(scrub(message.get("body")))}
     card = message.get("card") or {}
+    if card.get("type") in ("meet_greet", "agreement", "payment"):
+        if not booking or str(booking.get("id")) != str(card.get("booking_id")):
+            return None
+        text = _step_card_text(card["type"], booking, me_id, tz)
+        return {"who": "app", "text": f"[{text}]"} if text else None
+    if card.get("type") == "quote" and isinstance(card.get("quote"), dict):
+        total = card.get("total") if card.get("total") is not None else card["quote"].get("total")
+        status = _QUOTE_STATUS.get(card.get("status"), "sent")
+        return {"who": who, "text": f"[Quote {card['quote'].get('currency', '')} {total} for {card['quote'].get('service', 'the stay')}, {status}]".replace("  ", " ")}
     pets = ", ".join(p.get("name", "") for p in card.get("pets", []))
     if card.get("type") == "stay" and card.get("drop_off_at") and card.get("pick_up_at"):
         return {"who": who, "text": f"[Stay {_when(card['drop_off_at'], tz)} to {_when(card['pick_up_at'], tz)}, {pets}. {HANDOFF}]"}
@@ -98,8 +154,8 @@ def describe(message: dict, me_id: str, tz) -> dict | None:
     return None
 
 
-def transcript(messages: list[dict], me_id: str, tz) -> list[dict]:
-    return [d for d in (describe(m, me_id, tz) for m in messages) if d]
+def transcript(messages: list[dict], me_id: str, tz, booking: dict | None = None) -> list[dict]:
+    return [d for d in (describe(m, me_id, tz, booking) for m in messages) if d]
 
 
 def split_window(messages: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -130,6 +186,34 @@ def chip_problems(label: str) -> list[str]:
     return problems
 
 
+def greets(text: str | None) -> bool:
+    """Whether a message opens with a greeting (Hi, Hey, Hello, Good morning ...). Only a first message greets."""
+    return bool(text and _GREETING.search(text))
+
+
+# The cards a person answers to: a quote, a booking request, a Meet & Greet, the agreement, the payment. The Stay card is the
+# start of the chat, not something to react to.
+REACT_CARDS = ("request", "quote", "meet_greet", "agreement", "payment")
+
+
+def is_event(message: dict) -> bool:
+    """Something in the chat the other person may react to: a text, or one of the cards above."""
+    return message.get("kind") == "text" or (message.get("kind") == "card" and (message.get("card") or {}).get("type") in REACT_CARDS)
+
+
+# What the owner can say to a quote that was just sent (labels only: the draft reads the quote and says the numbers).
+QUOTE_REACTIONS = ["Looks good", "Can we adjust it?"]
+
+
+def reaction_chips(role: str, last_them: dict | None) -> list[str]:
+    """Chips the code puts first when the other person's newest item is a card that wants an answer. Today: a quote the sitter
+    sent and the owner has not answered. The model kept offering the next booking step instead (it still does for the rest)."""
+    card = (last_them or {}).get("card") or {}
+    if role == "owner" and card.get("type") == "quote" and card.get("status", "sent") == "sent":
+        return list(QUOTE_REACTIONS)
+    return []
+
+
 def asks_about_money(text: str | None) -> bool:
     return bool(text and _MONEY_TALK.search(text))
 
@@ -142,6 +226,28 @@ def wrong_species_emoji(text: str, pets: list[dict]) -> str | None:
     for name, pattern in _EMOJI_SPECIES.items():
         if pattern.search(text) and name not in species:
             return name
+    return None
+
+
+_NO_ALLERGY = re.compile(
+    r"\b(?:no (?:known |food )?allerg(?:y|ies)|not allergic|(?:doesn't|does not|don't|do not|has no|have no) (?:have )?(?:any )?(?:known )?(?:food )?allerg(?:y|ies)|allergy[- ]free)\b"
+    r"(?!\s+(?:beyond|other than|besides|except|apart))",
+    re.IGNORECASE,
+)
+
+
+def allergy_denial(text: str, pets: list[dict]) -> str | None:
+    """A sentence that says there are no allergies when the facts list some, or when the owner never answered. A sentence
+    that names a pet is judged by that pet; one that names none, by every pet. Why it is wrong, or None."""
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        if not _NO_ALLERGY.search(sentence):
+            continue
+        named = [p for p in pets if p.get("name") and re.search(rf"\b{re.escape(p['name'])}\b", sentence)]
+        for pet in named or pets:
+            if pet.get("allergies"):
+                return f"it says {pet.get('name', 'the pet')} has no allergies, but the facts list {', '.join(pet['allergies'])}"
+            if str((pet.get("profile") or {}).get("allergies", "")).startswith("not answered"):
+                return "it says there are no allergies, but the owner has not answered that yet"
     return None
 
 
@@ -180,9 +286,11 @@ def fixed_draft(label: str) -> str:
     return (text[:1].upper() + text[1:] + ".") if text else ""
 
 
-def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None, known: str = "") -> list[str]:
-    """What is wrong with a draft, in words the model can act on. Empty = it passes."""
+def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | None = None, known: str = "", greeted: bool = False) -> list[str]:
+    """What is wrong with a draft, in words the model can act on. Empty = it passes. `greeted`: I already wrote in this chat."""
     problems: list[str] = []
+    if greeted and greets(text):
+        problems.append("it greets again, but I already greeted: start with the answer, no Hi or Hey")
     availability = grounding.get("availability") or {}
     can_host = availability.get("can_host", True)
     allowed = logic._money_values(grounding.get("quote")) if can_host else set()
@@ -217,6 +325,9 @@ def chat_problems(text: str, grounding: dict, role: str, sitter_first: str | Non
         role == "sitter" and sitter_first and re.search(rf"\b{re.escape(sitter_first)}(?:'s)? (is|has|will|can|would|may)\b", text)
     ):
         problems.append("it talks about me in the third person or mentions an assistant, write in the first person")
+    denial = allergy_denial(text, grounding.get("pets") or [])
+    if denial:
+        problems.append(denial)
     wrong = wrong_species_emoji(text, grounding.get("pets") or [])
     if wrong:
         problems.append(f"it has a {wrong} emoji, but the pets are not a {wrong}")

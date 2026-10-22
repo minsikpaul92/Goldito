@@ -182,7 +182,9 @@ export default function OwnerBookings() {
             <ChatList items={chats.items} onLeave={(id) => void chats.leave(id)} />
           </View>
         ) : null}
-        {state.bookings.length === 0 ? <Text style={styles.hint}>No bookings yet</Text> : null}
+        {state.bookings.length === 0 ? (
+          <EmptyState emoji="🗓️" title="No bookings yet" message="Your stays show up here once a sitter says yes." />
+        ) : null}
         {state.bookings.length > 0 ? (
           <View style={styles.section}>
             <Text accessibilityRole="header" style={styles.heading}>

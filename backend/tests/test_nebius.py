@@ -104,13 +104,17 @@ def test_a_model_name_replaces_the_role_model_and_blank_means_the_role_model(mon
     assert [c["model"] for c in completions.calls] == ["nvidia/owner-model", "nvidia/fast-model", "nvidia/fast-model"]
 
 
-def test_the_chat_agents_models_are_optional_settings(monkeypatch):
-    assert get_settings().model_chat_owner is None and get_settings().model_chat_sitter is None
+def test_the_chat_ai_models_are_super_for_drafts_and_chips_unless_set(monkeypatch):
+    super_model = "nvidia/nemotron-3-super-120b-a12b"
+    assert get_settings().model_chat_owner == super_model and get_settings().model_chat_sitter == super_model
+    assert get_settings().model_chat_chips == super_model
     monkeypatch.setenv("MODEL_CHAT_OWNER", "nvidia/owner-model")
     monkeypatch.setenv("MODEL_CHAT_SITTER", "")
+    monkeypatch.setenv("MODEL_CHAT_CHIPS", "nvidia/chips-model")
     get_settings.cache_clear()
     assert get_settings().model_chat_owner == "nvidia/owner-model"
     assert not get_settings().model_chat_sitter
+    assert get_settings().model_chat_chips == "nvidia/chips-model"
 
 
 def test_reasoning_can_be_kept_on_and_vision_gets_no_flag(monkeypatch):
@@ -190,3 +194,28 @@ def test_load_prompt_stays_inside_the_prompts_folder():
 
     with pytest.raises(ValueError):
         load_prompt("../../config.py")
+
+
+@pytest.mark.parametrize(
+    ("raw", "clean"),
+    [
+        ("Absolutely — I will check.", "Absolutely, I will check."),
+        ("Absolutely—Max’s allergy is noted.", "Absolutely, Max’s allergy is noted."),
+        ("I am free Oct 24–27 or 2 – 3 days.", "I am free Oct 24-27 or 2-3 days."),
+        ("Oct 24‑27", "Oct 24-27"),
+        ("Thanks! —", "Thanks!"),
+        ("— Hello there", "Hello there"),
+        ("Wait —. Done", "Wait. Done"),
+        ('{"reply": "Yes — sure", "n": 1}', '{"reply": "Yes, sure", "n": 1}'),
+        ("No dashes here - a hyphen stays.", "No dashes here - a hyphen stays."),
+    ],
+)
+def test_no_em_or_en_dash_survives_in_model_text(raw, clean):
+    assert nebius.plain_dashes(raw) == clean
+    assert nebius.strip_think(f"<think>x</think>{raw}") == clean.strip()
+
+
+def test_every_model_answer_comes_back_without_dashes(monkeypatch):
+    install(monkeypatch, "Sure — I can host Max for Oct 24–27.")
+    result = nebius.chat("fast", [{"role": "user", "content": "hi"}])
+    assert result.text == "Sure, I can host Max for Oct 24-27."

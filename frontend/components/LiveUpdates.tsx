@@ -174,7 +174,7 @@ export function LiveUpdates() {
         <Text accessibilityRole="header" style={styles.heading}>
           Live updates
         </Text>
-        <TextButton label="🕘 History" onPress={() => router.push("/owner/history")} testID="open-history" />
+        <TextButton label="History" onPress={() => router.push("/owner/history")} testID="open-history" />
       </View>
 
       {items != null && shown.length === 0 ? (

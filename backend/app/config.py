@@ -60,9 +60,11 @@ class Settings(BaseSettings):
         alias="MODEL_FAST_BASE_URL",
     )
 
-    # The chat AI's two agents (#226) can run on their own model; unset = the fast model, on the fast model's base URL.
-    model_chat_owner: str | None = Field(default=None, alias="MODEL_CHAT_OWNER")
-    model_chat_sitter: str | None = Field(default=None, alias="MODEL_CHAT_SITTER")
+    # The chat AI (#226) runs on Super: each side's draft and the chips (Nano and Lightning looped on repeats and fell back to
+    # bare chip words in a 20 message run); blank = the fast model. All on the fast model's base URL.
+    model_chat_owner: str | None = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="MODEL_CHAT_OWNER")
+    model_chat_sitter: str | None = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="MODEL_CHAT_SITTER")
+    model_chat_chips: str | None = Field(default="nvidia/nemotron-3-super-120b-a12b", alias="MODEL_CHAT_CHIPS")
 
     # Embeddings for RAG (D33): Qwen3-Embedding, 1024 dimensions → pgvector vector(1024).
     model_embed: str = Field(default="Qwen/Qwen3-Embedding-8B", alias="MODEL_EMBED")

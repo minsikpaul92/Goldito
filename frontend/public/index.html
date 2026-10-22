@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Goldito</title>
     <meta name="theme-color" content="#FFF6E3" />
+    <meta name="description" content="Leave your pet, keep your peace of mind. The whole pet-sitting stay for dogs and cats in one app, with an AI that does the typing." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Goldito" />
+    <meta property="og:title" content="Goldito" />
+    <meta property="og:description" content="Leave your pet, keep your peace of mind. The whole stay for dogs and cats in one app." />
+    <meta property="og:url" content="https://goldito-petcare.vercel.app/" />
+    <meta property="og:image" content="https://goldito-petcare.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The Goldito pixel gold coin logo with the line: Leave your pet, keep your peace of mind." />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -23,10 +34,42 @@
         height: 100%;
         flex: 1;
       }
+      /* Cream ground and the coin while the app loads, so the first paint isn't a blank white page. React replaces #root's children on mount. */
+      body {
+        background: #fbf6ea;
+      }
+      .boot {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        font: 700 28px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #1b4332;
+      }
+      .boot img {
+        /* The coin fills about 60% of its square canvas (as in BrandLogo), so draw it larger and pull the gap in. */
+        width: 140px;
+        height: 140px;
+        margin: -26px;
+        image-rendering: pixelated;
+        animation: boot-bob 1.4s ease-in-out infinite;
+      }
+      @keyframes boot-bob {
+        50% {
+          transform: translateY(-6px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot img {
+          animation: none;
+        }
+      }
     </style>
   </head>
   <body>
     <noscript>Goldito needs JavaScript to run.</noscript>
-    <div id="root"></div>
+    <div id="root"><div class="boot" role="status" aria-label="Loading Goldito"><img src="/coin.svg" alt="" />Goldito</div></div>
   </body>
 </html>

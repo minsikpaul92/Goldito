@@ -113,8 +113,8 @@ export default function SitterHome() {
       <Screen>
         <EmptyState
           emoji="🌤️"
-          title="No bookings yet"
-          message="Open your schedule so owners can find you."
+          title="No pets in your care today"
+          message="Open your schedule to take bookings."
           action={{ label: "Open your schedule", onPress: () => router.push("/sitter/schedule") }}
         />
       </Screen>

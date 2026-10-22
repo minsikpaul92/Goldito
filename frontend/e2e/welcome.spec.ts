@@ -49,7 +49,7 @@ test.describe("welcome", () => {
     await screen.getByTestId("onboarding-sitter-next").click();
     await screen.getByTestId("onboarding-sitter-demo").click();
     await expect(page).toHaveURL(/\/sitter$/);
-    await expect(screen.getByText("No bookings yet")).toBeVisible();
+    await expect(screen.getByText("No pets in your care today")).toBeVisible();
   });
 
   test("signed-in users skip Welcome", async ({ page }) => {

@@ -27,13 +27,18 @@ class SitterAgent(ChatAgent):
         """Money (the quote and my rates) is in the facts only when the owner asked about it or a quote card is in the
         chat, and never in my first reply: that one introduces me, the price comes with the Send quote step."""
         asked = state != "first_reply" and (logic.asks_about_money(last_them) or logic.shown_quote(messages) is not None)
+        # The owner's care checklist is for the sitter once there is a live booking, not before.
+        live = raw.get("booking_live")
+        raw = {k: v for k, v in raw.items() if k != "booking_live"}
+        if not live:
+            raw = {**raw, "pets": [{k: v for k, v in p.items() if k != "checklist"} for p in raw.get("pets", [])]}
         if asked:
             return raw
         return {**raw, "quote": None, "rates": {}}
 
     def style(self, db, ctx: dict, chip: str, last_them: dict | None) -> str:
         # The sitter's own anonymized replies to owners ("inquiry" samples) are the closest voice for a chat reply too.
-        return tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body', '')}").style_notes
+        return tone.compose(db, ctx["thread"]["sitter_id"], kind="inquiry", query=f"{chip}: {(last_them or {}).get('body') or ''}").style_notes
 
     def keep_chips(self, labels: list[str], facts: dict) -> list[str]:
         if facts["availability"].get("can_host") is False:

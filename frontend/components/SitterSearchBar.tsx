@@ -24,15 +24,6 @@ type IconName = ComponentProps<typeof Ionicons>["name"];
 
 const TIME_STEP = 15;
 
-/** "Oct 20" from "Tue, Oct 20". */
-const shortDay = (day: string) => formatDay(day).replace(/^\w+,\s*/, "");
-
-/** "Oct 20 - 22", or "Oct 30 - Nov 2" across months. */
-function stayText(from: string, to: string): string {
-  const a = shortDay(from);
-  const b = shortDay(to);
-  return a.split(" ")[0] === b.split(" ")[0] ? `${a} - ${b.split(" ")[1]}` : `${a} - ${b}`;
-}
 
 /**
  * One hotel-style line: a place (my home, here, an address or postal code), the stay (dates and times) and the
@@ -63,7 +54,7 @@ export function SitterSearchBar({ search }: { search: SitterSearch }) {
   const { place, dropOff, pickUp, pets, petIds } = search;
   const datePicks = quickStays(search.today);
   const placeText = place.kind === "home" ? "My home" : place.kind === "here" ? "Current location" : place.label;
-  const dateText = stayText(dropOff.day, pickUp.day);
+  const dateText = formatDayRange(dropOff.day, pickUp.day);
   const petText = petIds.length === 1 ? pets.find((p) => p.id === petIds[0])?.name ?? "1 pet" : `${petIds.length} pets`;
 
   const segment = (icon: IconName, text: string, onPress: () => void, id: string, grow: number) => (

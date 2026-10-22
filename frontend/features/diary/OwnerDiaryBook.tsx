@@ -60,7 +60,7 @@ export function OwnerDiaryBook({ initialId }: { initialId?: string | null }) {
       </Screen>
     );
   }
-  const write = pets.length > 0 ? <Button label="✏️ Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
+  const write = pets.length > 0 ? <Button label="Write a page" variant="secondary" onPress={() => setWriting(true)} testID="diary-write" /> : null;
   const sheet = (
     <OwnerEntrySheet
       visible={writing}

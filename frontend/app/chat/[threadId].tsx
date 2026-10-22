@@ -38,7 +38,7 @@ import {
 import { ChatAction, ChatChip, TYPED_PAUSE_MS, chipsFor, fetchChatDraft, fetchTypedChips } from "../../features/chat/chatAi";
 import { NextStep, Primary, actionPossible, finalQuote, hasPaymentCard, nextStep } from "../../features/chat/nextStep";
 import { inCare } from "../../features/chat/careCards";
-import { canStartTripNow } from "../../features/transit/tripLogic";
+import { canReceiveNow, canReturnNow, canStartTripNow } from "../../features/transit/tripLogic";
 import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
 import { SPECIES_EMOJI } from "../../features/pets/petFormat";
@@ -103,7 +103,7 @@ export default function Chat() {
   /** Decline at the agreement step or on the final quote (#230); `quote` when it is the final quote. */
   const [declining, setDeclining] = useState<{ quote: boolean } | null>(null);
   const [plusOpen, setPlusOpen] = useState(false);
-  const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0 });
+  const [signals, setSignals] = useState({ handoff: 0, trip: 0, photo: 0, receive: 0, returned: 0 });
   const [stepBusy, setStepBusy] = useState(false);
   const meetCard = useRef<MeetGreetHandle>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
@@ -355,8 +355,11 @@ export default function Chat() {
   const typingChips = typing && (typedBusy || Array.isArray(typedChips));
   const shownAction = action && actionPossible(action.id, step, booking, header.myRole) ? action : null;
 
+  // The stay itself (Received, in care, Returned) follows the pair's paid booking even after the progress bar is done.
+  const stayBooking = booking ?? pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt) ?? null;
+
   // The + menu (#235): each entry opens what the flow opens. Entries that cannot work right now are dimmed.
-  const bump = (key: "handoff" | "trip" | "photo") => setSignals((n) => ({ ...n, [key]: n[key] + 1 }));
+  const bump = (key: "handoff" | "trip" | "photo" | "receive" | "returned") => setSignals((n) => ({ ...n, [key]: n[key] + 1 }));
   const quoteKind = booking && hasPaymentCard(messages, booking.id) ? "final" : "first";
   const plusItems: PlusItem[] = [
     {
@@ -377,6 +380,20 @@ export default function Chat() {
           },
         ]
       : []),
+    ...(owner
+      ? [
+          {
+            id: "quote-request",
+            label: "Quote request",
+            icon: "chatbox-ellipses-outline" as const,
+            enabled: !finished && !!stay && !priced,
+            onPress: () => {
+              setText("Could you send me a quote for these dates?");
+              input.current?.focus();
+            },
+          },
+        ]
+      : []),
     {
       id: "date",
       label: "Date change",
@@ -391,6 +408,24 @@ export default function Chat() {
       enabled: !!booking && canStartTripNow(booking, header.myRole),
       onPress: () => bump("trip"),
     },
+    ...(!owner
+      ? [
+          {
+            id: "received",
+            label: "Received",
+            icon: "enter-outline" as const,
+            enabled: canReceiveNow(stayBooking),
+            onPress: () => bump("receive"),
+          },
+          {
+            id: "returned",
+            label: "Returned",
+            icon: "exit-outline" as const,
+            enabled: canReturnNow(stayBooking),
+            onPress: () => bump("returned"),
+          },
+        ]
+      : []),
     ...(owner
       ? [
           {
@@ -438,9 +473,6 @@ export default function Chat() {
       </View>
     );
   };
-
-  // The stay itself (Received, in care, Returned) follows the pair's paid booking even after the progress bar is done.
-  const stayBooking = booking ?? pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt) ?? null;
 
   const bookingPath = booking ? `/${header.myRole}/bookings/${booking.id}` : null;
 
@@ -535,7 +567,7 @@ export default function Chat() {
         )}
         {booking ? <ChatHandoffCard booking={booking} viewer={header.myRole} onChanged={() => void load()} openSignal={signals.handoff} /> : null}
         {booking ? <ChatCareCards booking={booking} viewer={header.myRole} askSignal={signals.photo} /> : null}
-        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} /> : null}
+        {stayBooking ? <ChatStayCard booking={stayBooking} viewer={header.myRole} onChanged={() => void load()} receiveSignal={signals.receive} returnSignal={signals.returned} /> : null}
         {booking ? <ChatTripCard booking={booking} viewer={header.myRole} threadId={threadId} messages={messages} onSent={() => void load()} startSignal={signals.trip} /> : null}
       </Screen>
       {step.primary || step.quote || step.wait ? (

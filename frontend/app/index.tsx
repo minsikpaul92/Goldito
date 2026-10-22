@@ -30,7 +30,7 @@ function ProfileError() {
         message="Check your connection and try again, or log out and sign in again."
         action={{ label: "Try again", onPress: reload }}
       />
-      <TextButton label="Log out" onPress={() => void signOut()} testID="gate-logout" />
+      <TextButton label="Sign out" onPress={() => void signOut()} testID="gate-logout" />
     </View>
   );
 }
