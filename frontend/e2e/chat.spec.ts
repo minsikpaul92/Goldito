@@ -85,7 +85,9 @@ test.describe("chat hub", () => {
     await startChatFromRow(page, "Chloe");
     await expect(page).toHaveURL(/\/chat\//);
     const url = page.url();
-    await expect(screen.getByTestId("chat-stay-card")).toContainText("Max, Mochi");
+    // #227: one line, the dates and the pets with their species, no "Stay" title, no drop-off or pick-up wording.
+    await expect(screen.getByTestId("chat-stay-line")).toHaveText(/^\w{3} \d{1,2} \d{1,2}:\d{2} [AP]M to \w{3} \d{1,2} \d{1,2}:\d{2} [AP]M · 2 pets: 🐶 Max, 🐱 Mochi$/);
+    for (const word of ["Stay", "Drop-off", "Pick-up"]) await expect(screen.getByTestId("chat-stay-card")).not.toContainText(word);
     // The header has the pets only (no dates, they are on the card); my stay card sits on the right like my messages.
     await expect(screen.getByTestId("chat-header-stay")).not.toContainText(" to ");
     await expect(screen.getByTestId("chat-header-pet-Max")).toBeVisible();
@@ -631,6 +633,7 @@ test.describe("chat hub", () => {
   });
 
   test("the sitter prices the stay with one tap: one all-inclusive total and no fee control (#265)", async ({ page }) => {
+    // (#227) Before any booking the sitter can't read the owner's pets, so the stay card shows the name with no guessed emoji.
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     seed(db);
     db.sitter_profiles.push({ id: SITTER.id, service_area: "Toronto M4W", services: ["boarding", "house_sitting"] });
@@ -640,6 +643,7 @@ test.describe("chat hub", () => {
     await screen.getByTestId("sitter-bookings-tabs-chats").click();
     await screen.getByTestId("chat-row-Robert").click();
 
+    await expect(screen.getByTestId("chat-stay-line")).toHaveText(/ · Max$/);
     await expect(screen.getByTestId("chat-request-booking")).toHaveCount(0);
     await screen.getByTestId("chat-send-quote").click();
     await expect(screen.getByTestId("send-quote-sheet")).toContainText("Max");

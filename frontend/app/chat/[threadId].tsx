@@ -41,6 +41,8 @@ import { inCare } from "../../features/chat/careCards";
 import { canStartTripNow } from "../../features/transit/tripLogic";
 import { meetGreetPrimary } from "../../lib/meetGreet";
 import { useLiveChat } from "../../features/chat/useLiveChat";
+import { SPECIES_EMOJI } from "../../features/pets/petFormat";
+import type { Species } from "../../types/db";
 import { useMyPets } from "../../features/pets/useMyPets";
 import { ProfilePhoto, loadProfilePhotos } from "../../features/profile/profilePhotosApi";
 import { formatDay, formatStamp, formatTime, isoToZoned } from "../../features/schedule/dates";
@@ -260,6 +262,22 @@ export default function Chat() {
   );
   // A stay that is over has nothing left to press (no Send quote, no Request booking), unless a newer stay card was started.
   const returnedStay = pairBookings.find((b) => b.status === "confirmed" && !!b.paidAt && !!b.pickUp?.completedAt);
+
+  // The stay card in one line (#227): "Oct 21 9:00 AM to Oct 24 5:00 PM · 2 pets: 🐶 Max, 🐱 Mochi". The card holds
+  // names only, so the species comes from what this screen already has: the owner's own pets and the pets on this
+  // pair's bookings (both sides). A pet with no known species shows its name alone, never a guessed emoji.
+  const speciesById = new Map<string, Species>();
+  for (const p of pets) speciesById.set(p.id, p.species);
+  for (const b of pairBookings) for (const p of b.pets) if (p.id) speciesById.set(p.id, p.species);
+  const stayLine = (c: StayCard) => {
+    const names = c.pets
+      .map((p) => {
+        const species = speciesById.get(p.id);
+        return species ? `${SPECIES_EMOJI[species]} ${p.name}` : p.name;
+      })
+      .join(", ");
+    return `${short(c.dropOffAt)} to ${short(c.pickUpAt)} · ${c.pets.length > 1 ? `${c.pets.length} pets: ` : ""}${names}`;
+  };
   const newerBooking = !!booking && booking.id !== returnedStay?.id;
   const latestCardAt = [...messages].reverse().find((m) => m.card?.type === "stay" || m.card?.type === "request")?.at;
   const finished = !!returnedStay && !newerBooking && (!latestCardAt || Date.parse(latestCardAt) < Date.parse(returnedStay.pickUp?.completedAt ?? ""));
@@ -484,10 +502,9 @@ export default function Chat() {
           m.kind === "card" && m.card?.type === "stay" ? (
             <View key={m.id} style={[styles.cardRow, m.senderId === me ? styles.cardMine : styles.cardTheirs]}>
               <Card style={styles.stay} testID="chat-stay-card">
-                <Text style={styles.requestTitle}>Stay</Text>
-                <Text style={styles.requestLine}>{`Drop-off ${short(m.card.dropOffAt)}`}</Text>
-                <Text style={styles.requestLine}>{`Pick-up ${short(m.card.pickUpAt)}`}</Text>
-                <Text style={styles.requestLine}>{m.card.pets.map((p) => p.name).join(", ")}</Text>
+                <Text style={styles.requestLine} testID="chat-stay-line">
+                  {stayLine(m.card)}
+                </Text>
               </Card>
             </View>
           ) : m.kind === "card" && m.card?.type === "request" ? (
