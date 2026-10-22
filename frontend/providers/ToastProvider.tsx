@@ -9,7 +9,7 @@ const TOAST_MS = 3000;
 
 type ToastValue = {
   /** Short message (DESIGN.md §7.3). Never the only signal for DANGER. */
-  show: (message: string, tone?: "success" | "error") => void;
+  show: (message: string, tone?: "success" | "warning") => void;
   /** A pinned footer reports its height so the toast sits above it, not on it. Pass 0 to clear. */
   setBottomInset: (height: number) => void;
 };
@@ -20,7 +20,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [bottomInset, setBottomInset] = useState(0);
-  const [toast, setToast] = useState<{ id: number; message: string; tone: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{ id: number; message: string; tone: "success" | "warning" } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -29,7 +29,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const show = useCallback(
-    (message: string, tone: "success" | "error" = "success") => setToast({ id: Date.now(), message, tone }),
+    (message: string, tone: "success" | "warning" = "success") => setToast({ id: Date.now(), message, tone }),
     [],
   );
   const value = useMemo(() => ({ show, setBottomInset }), [show]);
@@ -42,13 +42,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <View
             accessibilityRole="alert"
             pointerEvents="none"
-            style={[styles.toast, toast.tone === "error" && styles.toastError, { bottom: theme.layout.tabBarHeight + theme.spacing.md + bottomInset }]}
+            style={[styles.toast, toast.tone === "warning" && styles.toastWarning, { bottom: theme.layout.tabBarHeight + theme.spacing.md + bottomInset }]}
             testID="toast"
           >
             <Ionicons
-              name={toast.tone === "error" ? "alert-circle" : "checkmark-circle"}
+              name={toast.tone === "warning" ? "alert-circle" : "checkmark-circle"}
               size={theme.icon.sm}
-              color={toast.tone === "error" ? theme.color.error : theme.color.success}
+              color={toast.tone === "warning" ? theme.color.warning : theme.color.success}
             />
             <Text style={styles.text}>{toast.message}</Text>
           </View>
@@ -82,9 +82,9 @@ const makeStyles = (theme: Theme) =>
       // Hex + "D9" = 85% opacity: the page shows through a little.
       backgroundColor: `${theme.color.successSurface}D9`,
     },
-    toastError: {
-      borderColor: theme.color.error,
-      backgroundColor: `${theme.color.errorSurface}D9`,
+    toastWarning: {
+      borderColor: theme.color.warning,
+      backgroundColor: `${theme.color.warningSurface}D9`,
     },
     text: {
       flex: 1,
