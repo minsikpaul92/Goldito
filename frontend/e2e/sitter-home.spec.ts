@@ -167,6 +167,17 @@ test.describe("sitter home dashboard", () => {
     await expect(litter.locator("[data-testid^='check-box-']")).toBeDisabled(); // checked
   });
 
+  test("the checklist folds and opens", async ({ page }) => {
+    await home(page);
+    const screen = app(page);
+    await expect(screen.locator("[data-testid^='check-row-']")).toHaveCount(4);
+    await screen.getByTestId("checklist-toggle").click();
+    await expect(screen.locator("[data-testid^='check-row-']")).toHaveCount(0);
+    await expect(screen.getByTestId("checklist")).toContainText("Today's checklist · 0 of 4"); // the count stays
+    await screen.getByTestId("checklist-toggle").click();
+    await expect(screen.locator("[data-testid^='check-row-']")).toHaveCount(4);
+  });
+
   test("the action cards and links open the bigger screens", async ({ page }) => {
     await home(page);
     const screen = app(page);

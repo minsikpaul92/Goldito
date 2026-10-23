@@ -50,6 +50,7 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   const toast = useToast();
   const errorDialog = useErrorDialog();
   const [ticking, setTicking] = useState<string | null>(null);
+  const [listOpen, setListOpen] = useState(true);
 
   // One tap on the box finishes a task with no memo and no photo; tapping the row opens the sheet for those.
   const tick = async (item: TaskItem) => {
@@ -228,10 +229,22 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
 
         {total > 0 ? (
           <View style={styles.checklist} testID="checklist">
-            <Text accessibilityRole="header" style={styles.heading}>
-              {`Today's checklist · ${done} of ${total}`}
-            </Text>
-            {rows.map((row) => {
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: listOpen }}
+              accessibilityLabel={`Today's checklist, ${done} of ${total}`}
+              onPress={() => setListOpen((v) => !v)}
+              style={styles.checklistHead}
+              testID="checklist-toggle"
+            >
+              <Text accessibilityRole="header" style={[styles.heading, styles.checklistTitle]}>
+                {`Today's checklist · ${done} of ${total}`}
+              </Text>
+              <View style={listOpen ? styles.chevronOpen : null}>
+                <Icon name="expand" size={22} color={tokens.color.text} />
+              </View>
+            </Pressable>
+            {(listOpen ? rows : []).map((row) => {
               if (row.outside) {
                 const { task, pet: owner } = row.outside;
                 return (
@@ -390,6 +403,10 @@ const makeStyles = (theme: Theme) =>
     allergyName: { fontWeight: theme.fontWeight.bold },
     heading: sectionTitleStyle(theme),
     checklist: { gap: 8 },
+    checklistHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 32 },
+    checklistTitle: { flex: 1 },
+    // Pointing down when closed (open it), up when open (fold it).
+    chevronOpen: { transform: [{ rotate: "180deg" }] },
     checkRow: {
       flexDirection: "row",
       alignItems: "center",

@@ -1331,17 +1331,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 125 |
-| Pressable | — | `dashboard-next-done` | 156 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 192 |
-| Pressable | — | ``caring-pet-${p.id}`` | 213 |
-| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 253 |
-| Pressable | — | ``check-open-${item.log.id}`` | 265 |
-| Pressable | — | `action-five-second` | 286 |
-| Pressable | — | `action-treat-check` | 299 |
-| TextButton | All tasks | `shortcut-tasks` | 315 |
-| TextButton | My history | `shortcut-history` | 316 |
-| Sheet | Heads-up | `headsup-sheet` | 321 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 126 |
+| Pressable | — | `dashboard-next-done` | 157 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 193 |
+| Pressable | — | ``caring-pet-${p.id}`` | 214 |
+| Pressable | ``Today's checklist, ${done} of ${total}`` | `checklist-toggle` | 232 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 266 |
+| Pressable | — | ``check-open-${item.log.id}`` | 278 |
+| Pressable | — | `action-five-second` | 299 |
+| Pressable | — | `action-treat-check` | 312 |
+| TextButton | All tasks | `shortcut-tasks` | 328 |
+| TextButton | My history | `shortcut-history` | 329 |
+| Sheet | Heads-up | `headsup-sheet` | 334 |
 
 ### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
 
@@ -1581,4 +1582,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-474 actions · 472 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
+475 actions · 473 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).
