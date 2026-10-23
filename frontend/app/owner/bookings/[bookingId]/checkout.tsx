@@ -34,6 +34,7 @@ import { useSession } from "../../../../providers/SessionProvider";
 import { useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
+import { sectionTitleStyle } from "../../../../components/ui/SectionTitle";
 
 type Ready = {
   booking: BookingSummary;
@@ -233,7 +234,7 @@ const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     root: { flex: 1 },
     content: { gap: theme.spacing.md, paddingBottom: theme.spacing.xl },
-    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     footer: { fontSize: theme.fontSize.caption, color: theme.color.textMuted, fontStyle: "italic" },
     footerBar: {
       padding: theme.spacing.md,

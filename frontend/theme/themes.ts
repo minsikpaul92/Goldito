@@ -88,6 +88,8 @@ export type SkinUi = {
   tabs: "pushed" | "pill";
   /** Booking screens use tinted color blocks and the numbered stage dots. */
   blocks: boolean;
+  /** Button height and the secondary outline (Figma Expressive Button: 52 tall, 2 px ink outline). */
+  button: { height: number; secondaryBorder: number; secondaryInk: boolean };
 };
 
 const r = tokens.radius;
@@ -99,6 +101,7 @@ const skinUi: Record<ThemeName, SkinUi> = {
     stepperPressed: tokens.color.accent,
     tabs: "pushed",
     blocks: false,
+    button: { height: 44, secondaryBorder: 1, secondaryInk: false },
   },
   balanced: {
     radius: { button: r.md, card: r.lg, block: r.lg, chip: r.sm, segment: r.md, tag: r.sm, stepper: r.md },
@@ -107,6 +110,7 @@ const skinUi: Record<ThemeName, SkinUi> = {
     stepperPressed: themes.balanced.accent,
     tabs: "pushed",
     blocks: false,
+    button: { height: 44, secondaryBorder: 1, secondaryInk: false },
   },
   expressive: {
     radius: { button: r.pill, card: r.lg, block: r.xl, chip: r.pill, segment: r.pill, tag: r.pill, stepper: r.pill },
@@ -115,6 +119,7 @@ const skinUi: Record<ThemeName, SkinUi> = {
     stepperPressed: tokens.color.blockButter,
     tabs: "pill",
     blocks: true,
+    button: { height: 52, secondaryBorder: 2, secondaryInk: true },
   },
 };
 

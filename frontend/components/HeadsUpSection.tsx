@@ -11,6 +11,7 @@ import type { Pet } from "../types/db";
 import { Button } from "./ui/Button";
 import { Chip } from "./ui/Chip";
 import { TextField } from "./ui/TextField";
+import { sectionTitleStyle } from "./ui/SectionTitle";
 
 const MAX = 100;
 
@@ -111,7 +112,7 @@ export function HeadsUpSection({ pet, userId }: { pet: Pick<Pet, "id" | "name">;
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     section: { marginTop: theme.spacing.lg, gap: theme.spacing.sm },
-    heading: { fontSize: theme.fontSize.title, fontWeight: theme.fontWeight.bold, color: theme.color.text },
+    heading: sectionTitleStyle(theme),
     hint: { fontSize: theme.fontSize.small, color: theme.color.textMuted },
     muted: { fontSize: theme.fontSize.body, color: theme.color.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.xs },
