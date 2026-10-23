@@ -51,15 +51,16 @@ Shows: `BrandLogo`
 
 ### `/owner` — [app/owner/(tabs)/index.tsx](../../frontend/app/owner/(tabs)/index.tsx)
 
-Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
+Owner Home: two sides of a card, flipped with a button (#286). Today: the stay in progress (hero, today's numbers, the latest update) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
+Shows: `ActiveTripCard` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 33 |
-| EmptyState | No pets yet | — | 46 |
-| Button | Add pet | `add-pet` | 63 |
+| EmptyState | Couldn't load your pets | — | 38 |
+| EmptyState | No pets yet | — | 51 |
+| TextButton | + Add pet | `add-pet` | 78 |
+| Button | See today's updates | `see-updates` | 90 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -399,17 +400,17 @@ Shows: `BrandLogo` · `RoleCard`
 
 Sitter Home dashboard (D47b; was Today / 3B.8): **Now caring** when on duty, else **Requests** · **Today** (drop/pick due today) · **Upcoming** by time. Pets in care show as pixel pets with feed / walk / poop / nap taps (11.12).
 
-Shows: `ActiveTripCard` · `SitterDashboard`
+Shows: `ActiveTripCard` · `SitterToday` · `SitterPetRoom`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load today | — | 82 |
-| EmptyState | No pets in your care today | — | 114 |
-| Pressable | — | `home-photo-request` | 135 |
-| Pressable | — | `today-requests` | 147 |
+| EmptyState | Couldn't load today | — | 84 |
+| EmptyState | No pets in your care today | — | 116 |
+| Pressable | — | `home-photo-request` | 136 |
+| Pressable | — | `today-requests` | 148 |
 | Pressable | — | `today-chats` | 158 |
-| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 178 |
-| Pressable | — | ``request-row-${b.id}`` | 198 |
+| Pressable | — | ``handoff-row-${b.id}-${kind}`` | 181 |
+| Pressable | — | ``request-row-${b.id}`` | 201 |
 
 ### `/sitter-onboarding` — [app/sitter-onboarding.tsx](../../frontend/app/sitter-onboarding.tsx)
 
@@ -671,14 +672,15 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | Remove this line | ``line-remove-${line.key}`` | 90 |
-| Pressable | — | ``line-kind-${k.kind}`` | 110 |
-| Pressable | — | ``line-mode-${m}`` | 143 |
-| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 156 |
-| Stepper | Times | `line-count` | 168 |
-| Pressable | — | ``line-span-${s}`` | 183 |
-| Button | Add line | `line-add` | 198 |
-| TextButton | Cancel | `line-cancel` | 199 |
+| Pressable | Remove this line | ``line-remove-${line.key}`` | 94 |
+| Pressable | — | ``line-preset-${p.id}`` | 114 |
+| Pressable | — | ``line-kind-${k.kind}`` | 134 |
+| Pressable | — | ``line-mode-${m}`` | 167 |
+| Pressable | ``Time ${formatTime(time)}, tap to change`` | `line-time` | 180 |
+| Stepper | Times | `line-count` | 192 |
+| Pressable | — | ``line-span-${s}`` | 207 |
+| Button | Add line | `line-add` | 222 |
+| TextButton | Cancel | `line-cancel` | 223 |
 
 ### CareTasksSection — [components/CareTasksSection.tsx](../../frontend/components/CareTasksSection.tsx)
 
@@ -834,8 +836,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | — | ``diary-entry-${entry.id}`` | 54 |
-| Sheet | open?.label ?? "" | `diary-detail` | 80 |
+| Pressable | — | ``diary-entry-${entry.id}`` | 63 |
+| Sheet | open?.label ?? "" | `diary-detail` | 89 |
 
 ### DueAlert — [components/DueAlert.tsx](../../frontend/components/DueAlert.tsx)
 
@@ -927,17 +929,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | Button | Add Heads-up | `heads-up-add` | 105 |
-
-### LiveUpdates — [components/LiveUpdates.tsx](../../frontend/components/LiveUpdates.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| TextButton | History | `open-history` | 177 |
-| TextButton | Clear all | `live-clear-all` | 188 |
-| TextButton | Cancel | `live-clear-cancel` | 189 |
-| Pressable | — | ``live-${n.id}`` | 196 |
-| Pressable | Clear updates | `live-x` | 233 |
-| TextButton | ``${more} more in notifications`` | `live-more` | 249 |
 
 ### MediaConfirm — [components/MediaConfirm.tsx](../../frontend/components/MediaConfirm.tsx)
 
@@ -1052,14 +1043,9 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | cover ? "Change photo" : "Add photo" | `pet-avatar` | 70 |
-
-### PetCard — [components/PetCard.tsx](../../frontend/components/PetCard.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 39 |
-| Tag | `allergy.allergen` | — | 68 |
+| Pressable | Add photo | `pet-avatar` | 85 |
+| Pressable | ``Delete photo ${i + 1}`` | ``pet-photo-delete-${i + 1}`` | 106 |
+| Pressable | Add photo | `pet-photo-add` | 119 |
 
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
@@ -1101,7 +1087,8 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Sheet | `title` | `testID` | 23 |
+| Sheet | `title` | `testID` | 88 |
+| Pressable | ``Photo ${i + 1} of ${photos.length}`` | **none** | 112 |
 
 ### ProfilePhotoGallery — [components/ProfilePhotoGallery.tsx](../../frontend/components/ProfilePhotoGallery.tsx)
 
@@ -1239,18 +1226,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | [sitter.displayName, meta, note].filter(Boolean).join(", ") | ``sitter-card-${sitter.displayName}`` | 24 |
 
-### SitterDashboard — [components/SitterDashboard.tsx](../../frontend/components/SitterDashboard.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | — | `id` | 79 |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 101 |
-| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 115 |
-| Tag | `tag` | — | 155 |
-| Button | Done | `index === 0 ? "dashboard-next-done" : `today-done-${item.log.id}`` | 158 |
-| TextButton | ``+ ${open.length - TODAY_ROWS} more`` | `today-more` | 168 |
-| Sheet | Heads-up | `headsup-sheet` | 185 |
-
 ### SitterResultCard — [components/SitterResultCard.tsx](../../frontend/components/SitterResultCard.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1336,6 +1311,51 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Sheet | Use this part | `trim-sheet` | 191 |
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
+
+### CheckinTiles — [components/home/CheckinTiles.tsx](../../frontend/components/home/CheckinTiles.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | ``tile-option-${open}-${option.value ?? option.kind}`` | 112 |
+| Pressable | ``${HOME_TILES[key].label} ${pet.name}`` | ``tile-${key}`` | 128 |
+| Sheet | Send | `tile-memo-send` | 145 |
+| Button | Send | `tile-memo-send` | 150 |
+
+### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `latest-update` | 54 |
+
+### PetTile — [components/home/PetTile.tsx](../../frontend/components/home/PetTile.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 47 |
+| Pressable | ``${pet.name}'s photos`` | ``pet-card-face-${pet.name}`` | 55 |
+
+### SitterToday — [components/home/SitterToday.tsx](../../frontend/components/home/SitterToday.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 126 |
+| Pressable | — | `dashboard-next-done` | 157 |
+| Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 193 |
+| Pressable | — | ``caring-pet-${p.id}`` | 214 |
+| Pressable | ``Today's checklist, ${done} of ${total}`` | `checklist-toggle` | 232 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 266 |
+| Pressable | — | ``check-open-${item.log.id}`` | 278 |
+| Pressable | — | `action-five-second` | 299 |
+| Pressable | — | `action-treat-check` | 312 |
+| TextButton | All tasks | `shortcut-tasks` | 328 |
+| TextButton | My history | `shortcut-history` | 329 |
+| Sheet | Heads-up | `headsup-sheet` | 334 |
+
+### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 53 |
 
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
@@ -1484,11 +1504,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load notifications | — | 172 |
 | EmptyState | You're all caught up. | — | 183 |
-| TextButton | markingAll ? "Marking…" : "Mark all as read" | `mark-all-read` | 191 |
-| TextButton | Clear all | `clear-all` | 198 |
-| Pressable | — | ``notification-${item.id}`` | 210 |
-| Sheet | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-sheet` | 236 |
-| Button | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-confirm` | 244 |
+| TextButton | markingAll ? "Marking…" : "Mark all as read" | `mark-all-read` | 196 |
+| TextButton | History | `open-history` | 203 |
+| TextButton | Clear all | `clear-all` | 204 |
+| Pressable | — | ``notification-${item.id}`` | 216 |
+| Sheet | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-sheet` | 242 |
+| Button | clearing ? "Clearing…" : `Clear ${items.length} notification${items.length === 1 ? "" : "s"}` | `clear-all-confirm` | 250 |
 
 ### DecoratedReport — [features/snap/DecoratedReport.tsx](../../frontend/features/snap/DecoratedReport.tsx)
 
@@ -1585,4 +1606,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-464 actions · 463 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+476 actions · 474 with an ID · 2 without (**none** above — add a `testID` when you touch that screen).

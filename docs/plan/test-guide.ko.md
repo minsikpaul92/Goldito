@@ -140,6 +140,12 @@
 | 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
 | 시터 **Home 대시보드** (한 화면) · 할 일 / 체크인 / 내 기록 화면 | ✅ 🤖 | 06 후속 |
 | 오너 **Home 실시간 업데이트 카드** (밀어서 지우기) | ✅ 🤖 | 06 후속 |
+| 오너 **Home Today 면 Figma 정렬** (돌보는 중이면 초록 히어로 "Max is with Chloe" · Day N of M · 오늘 케어 진행바 · 통계 타일(care done · photos today · of walks) · Latest from 시터 · See today's updates → History, 아닐 때는 Your pets만, 펫 타일 2열 · + Add pet). 숫자는 시터가 기록한 값만, 없으면 숨김 · 아이콘은 Lucide 임시(SVG 오면 `components/home/HomeArt.tsx`) | 🟡 타입체크 · 토큰 체크 ✅ · e2e 기대값 수정(`pets` · `live-updates`)은 아직 안 돌림 · 사람 확인 대기 | 오너 Home Figma |
+| **시트 핸들 드래그 · 사진 넘기기**: 모든 Sheet의 핸들/제목줄을 아래로 끌면 닫힘(전체화면이면 먼저 원래 높이), 위로 끌면 전체화면. 사진 보기(시터 · 펫)는 좌우 드래그 · 가로 휠 · 점으로 넘김. Home 펫 타일은 사진이 있으면 얼굴 자리에 표시, 누르면 사진 크게(여러 장 넘김), Home에 돌아올 때마다 다시 읽음 | 🟡 타입체크 ✅ · 사람 확인 대기 (마우스 드래그와 터치 모두) | 오너 Home Figma |
+| **Home 카드 회전 방향**: 마우스로 옆으로 끌면 카드가 손가락을 따라 돌고(오른쪽으로 끌면 오른쪽으로, 왼쪽이면 왼쪽으로), 조금만 끌면 제자리로 돌아오고 많이 끌면 반대 면이 됨. 가로 휠 · 터치 스와이프도 같은 방향. 회전 버튼은 지금처럼 앞→뒤, 뒤→앞으로 되돌려 돎 | 🤖 `pet-room`(버튼 · 끌기 · 휠로 면이 바뀜) · 회전 방향 자체는 사람 확인 대기 | 오너 · 시터 Home |
+| **펫 사진 여러 장 (Pet 화면)**: 동그란 대표 사진 아래에 전체 사진 줄(최대 8장) + 더하기. 카메라 배지와 더하기는 사진을 **추가**(대표를 바꾸지 않음), 사진 모서리의 **빨간 원 − 를 누르면 바로 삭제**. 시트는 손가락을 따라 움직이고 조금만 끌면 제자리, 어느 정도 끌면 닫힘/전체화면 | 🟡 타입체크 ✅ · 사람 확인 대기 | 오너 Home Figma |
+| **Care request Quick add**: 케어 요청서 맨 위 **Quick add** 칩 5개(개: Breakfast 8 AM · Dinner 6 PM · Walk 8:30 AM · Walk 5 PM · No knocking / 고양이: Breakfast · Dinner · Pill 8 AM · No knocking · Door closed). 누르면 완성된 줄이 바로 추가되고 그 칩은 사라짐, 줄 옆 ✕로 지울 수 있음 | 🟡 타입체크 ✅ · 사람 확인 대기 | 오너 Home Figma |
+| **체크인 선택지 확장 (`015i`)**: 무드 8개(happy · playful · excited · calm · tired · missing · sad · anxious), Ate / Potty **기타(메모 필수)**, 산책 5 · 15분 값. 기존 값은 그대로 유효 | 🟡 SQL smoke 추가(`rls_smoke` 015i, CI에서 처음 실행) · 호스팅 DB 미적용(머지 때 요청 시) | 시터 Home Figma |
 | 오너 **History** (오늘 + 최근 7일 기록, 알림을 지워도 남음) | ✅ 🤖 | 06 / 6.11 |
 | 오너 **Diary 탭** = 시터가 보낸 알림장 목록(첫 문장) → 항목 화면(본문 · 그날 사진 · 할 일), 초안은 안 보임, 알림 탭하면 해당 항목 | ✅ 🤖 `report.spec.ts` (실제 두 계정은 👤) | 07 / 7.3 |
 | 시터 **리마인더 배너** (할 일 시간이 되면 Home 맨 위 배너 + 토스트) | ✅ 🤖 | 06 / 6.6 |
@@ -247,11 +253,19 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| HOME-1 | 돌보는 중에 시터 Home | **스크롤 없이 한 화면**: 숫자 칩 · **Today 카드(오늘 남은 할 일 최대 3줄, 시간 전에도 보임; 나머지는 "+ N more")** · **펫 방(작은 픽셀 펫 + 밥 · 산책 · 응가 · 낮잠 버튼, 펫이 여럿이면 이름 칩으로 하나씩, 펫을 누르면 체크인 화면)** · 바로가기 2개 | 🤖 `sitter-home` | ➖ |
-| HOME-2 | Today 카드 줄의 **Done** (시간 전이어도 가능) | 팝업 → Done → 숫자(예: 1/4)가 바로 올라가고 다음 할 일이 올라옴. 지난 건 ⚠️ Overdue, 시간이 된 건 ⏰ Due now 표시 | 🤖 `sitter-home` | ➖ |
-| HOME-3 | 바로가기 **All tasks · My history** (Photos · Bookings는 탭과 중복이라 뺌), 펫 칩 | 각각 해당 화면으로. 펫 칩 → 그 펫의 체크인 화면 + 📸 Photos 버튼 | 🤖 `sitter-home` | ➖ |
+| HOME-1 | 돌보는 중에 시터 Home | 앞면이 **Today**(기본): 초록 히어로(**Next · 시각** · "Max · Breakfast" · N of M done today · **Complete with photo**) · Heads-up 알약 한 줄(펫이 여럿이면 "Max: …", "+N") · **Quick check-in · 펫 이름** 타일 4개(Ate · Potty · Walk · Mood, 고양이는 Walk 대신 Nap) · **5-second check** · **Treat check** 카드 · All tasks / My history 링크. 펫이 여럿이면 이름 칩으로 대상 선택. 회전 버튼으로 뒷면 **픽셀 펫 방**(밥 · 산책 · 응가 · 낮잠). 돌보는 중이 아니면 Pager 없이 요청 · 오늘 인계 · 다가오는 예약 | 🤖 `sitter-home` · `pet-room-sitter` | 사람 확인 대기 |
+| HOME-2 | 히어로의 **Complete with photo** | 완료 시트(메모 · 사진) → Done → "1 of 4 done today"로 오르고 다음 할 일이 히어로로. 시간이 된 건 "Due now" · 알람 팝업 | 🤖 `sitter-home` · `due-reminder` | ➖ |
+| HOME-3 | 링크 **All tasks · My history**, 카드 **5-second check · Treat check** | 각각 해당 화면으로(5-second check는 고른 펫의 체크인 화면 + 📸 Photos, Treat check는 Snap의 Treat check) | 🤖 `sitter-home` | ➖ |
 | HOME-4 | **My history** | 내가 끝낸 할 일 · 보낸 체크인(펫 이름 포함)이 최신순. 시간이 지난 미완료는 ⚠️ Missed로 | 🤖 `sitter-home` | ➖ |
-| HOME-6 | 할 일 💤 스누즈 중에 Home | Next up 카드에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
+| HOME-6 | 할 일 💤 스누즈 중에 Home | 히어로에 **"💤 Snoozed until 11:43 AM"** (할 일의 예정 시각은 그대로) | 🤖 `due-reminder` | ➖ |
+| HOME-7 | Quick check-in 타일을 **한 번 탭** | 타일 위에 선택지가 뜸(첫 번째가 강조). Ate: Ate everything · Left a little · Didn't eat · Other / Potty: All done · Soft stool · Other / Walk: Short ~5분 · Mid ~15분 · Long 30분+ / Nap: Nap · Awake / Mood: 8개(Happy · Playful · Excited · Calm · Tired · Missing you · Sad · Anxious). 하나 누르면 바로 전송 + "Sent. Robert was told" | 🤖 `sitter-home` | 사람 확인 대기 |
+| HOME-8 | 같은 타일을 **빠르게 두 번 탭** (0.4초 안) | 첫 번째 선택지가 바로 전송됨(Ate = Ate everything, Potty = All done, Walk = Short, Mood = Happy). 느리게 두 번째를 누르면 선택지만 닫힘 | 🤖 `sitter-home` | 사람 확인 대기 (터치 · 마우스) |
+| HOME-9 | **Other** 선택 | 메모 시트(최대 120자). 비어 있으면 Send 비활성. 보낸 글이 보호자 알림 본문이 됨 | 🤖 `sitter-home` · SQL smoke `015i` | ➖ |
+| HOME-10 | 산책 시작/종료로 거리 · 장소 기록 | **아직 없음** (#339). 지금 Walk는 Short / Mid / Long 기록만 | ➖ | ➖ |
+| HOME-11 | 돌보는 중에 시터 Home, 히어로(Next 카드) 바로 아래 | **알러지 배너**(경고색): 맡은 모든 펫의 알러지가 펫별 한 줄씩(\"Max: No chicken\"). 체크인 대상 펫을 바꿔도 그대로 보임. 알러지가 없는 펫은 줄 없음, 아무도 없으면 배너 없음 | 🤖 `sitter-home` | 사람 확인 대기 |
+| HOME-12 | Ate · Walk · Potty 체크인을 보냄 | 그 펫의 오늘 **가장 이른 미완료** 같은 종류 할 일(밥 · 산책 · 화장실)이 시간 전이어도 완료 처리, 히어로의 다음 할 일이 넘어가고 N of M이 오름. **Didn't eat은 완료 안 함**. 보호자에게는 체크인 알림 하나만(할 일 알림 따로 안 감) | 🤖 `sitter-home` · DB `015i` 호스팅 미적용 | 사람 확인 대기 |
+| HOME-13 | 타일에 보낸 기록 | 오늘 보낸 타일에 **✓ 시각**. 전체 목록은 My history | 🤖 `sitter-home` | ➖ |
+| HOME-14 | Quick check-in 타일 아래 **Today's checklist · N of M** | 오늘 할 일 전부(펫 이름 · 시각 · 용량), 동그란 칸을 **한 번 누르면** 메모 · 사진 없이 완료, 줄을 누르면 완료 시트(사진 · 메모). 제목 줄(▾)을 누르면 목록이 **접히고 펴짐**(개수는 제목에 그대로). 끝난 건 체크 + 흐리게. **맡은 시간 밖의 할 일**(첫날 맡기기 전 아침 등)도 흐린 줄 \"Outside the stay hours\"로 함께 나오고 N of M에 들어감 → 보호자 Today's care와 같은 총 개수 | 🤖 `sitter-home` | 사람 확인 대기 |
 | REM-1 | 시터 Home을 연 상태에서, 시간이 된(지난 지 1시간 안) 할 일이 있음 | **"⏰ Due now" 알람 팝업**이 화면 가운데 뜸(소리 · 진동 시도). **Done**으로 바로 완료, 팝업 뒤 Home엔 Today 목록이 그대로 | 🤖 `due-reminder` · 소리/진동 **👤** | ➖ |
 | REM-2 | 앱을 켜 둔 채로 다음 할 일 시간이 됨 (30초마다 확인) | **"⏰ Time for Dinner · Max"** 토스트가 한 번 뜸. 이미 시간이 지난 할 일들 때문에 앱을 켤 때 토스트가 쏟아지지는 않음 | 🤖 `due-reminder` · **실제 시계 👤** | ➖ |
 | REM-3 | 팝업의 **Dismiss** | 다음 할 일 팝업으로 넘어감. 1시간 넘게 지난 것은 **"⚠️ Overdue"**. 모두 닫으면 팝업 사라짐 | 🤖 `due-reminder` | ➖ |
@@ -299,16 +313,14 @@
 
 | ID | 단계 | 기대 결과 | 자동 | 상태 |
 | :--- | :--- | :--- | :--- | :--- |
-| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home | 맨 위 **Live updates**에 최신 3개 카드(할 일 완료 · 체크인 · 새 사진만; 메모가 있으면 제목 아래에 같이). 예약 알림 등은 안 나옴. **눌러서 확인한(읽은) 카드는 Home에서 사라짐**(알림 목록과 History엔 남음 — 안 읽은 것만 Home에 남음). 3개 넘으면 "N more in notifications" | 🤖 `live-updates` | ➖ |
-| LIVE-2 | 카드를 **왼쪽으로 60% 넘게 밀기** | 카드가 사라지고 알림도 삭제. 다음 카드가 올라옴. **History에는 그대로 남음** | 🤖 `live-updates` | ➖ |
-| LIVE-3 | 카드를 덜 밀기 / 탭 | 덜 밀면 유지. 체크인 · 할 일 카드 탭 → History, 새 사진 카드 → Feed | 🤖 `live-updates` | ➖ |
-| LIVE-6 | 맨 위 카드 오른쪽 **✕** → **Clear all** (Cancel도 있음) | 보이는 Live updates(할 일 · 체크인 · 사진 알림)만 전부 삭제, 예약 알림 등은 남음 | 🤖 `live-updates` | ➖ |
-| LIVE-7 | 오너 Home 펫 카드 | 지금 시터가 맡은 펫은 **카드 배경이 연한 초록 + 굵은 테두리 + 왼쪽 위 테두리에 "In care" 태그**, 이름 아래 "with Chloe · until Oct 7, 1:37 AM". 집에 있는 펫은 평범한 카드 | 🤖 `live-updates` | ➖ |
-| LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 Home 맨 위에 **주황 테두리 카드가 고정**("Tap to read and answer"): 밀어서 못 지움 · Clear all에도 남음 · 새로고침해도 남음. 탭 → 노트 시트(**Close는 그냥 닫힘**) → **읽으면 Home에서 사라짐**(답은 펫 화면 빨간 상자에 남음) | 🤖 `care-request` | ➖ |
-| LIVE-9 | 시터가 **Counter-request** 를 보냄 | 같은 고정 카드. 읽어도 **오너가 Accept/Decline 하기 전까지 Home에 남음**, 답하면 사라짐 | 🤖 `care-request` | ➖ |
-| LIVE-4 | 새 업데이트가 없을 때 | "Nothing new. During a stay, …" 안내 | 🤖 `live-updates` | ➖ |
+| LIVE-1 | 시터가 할 일 · 체크인 · 사진을 남긴 뒤 오너 Home (돌보는 중) | 초록 히어로 아래 **Latest from 시터** 카드 한 장(최신 1건). 탭하면 그 항목이 **History에서 바로 열림**(사진이면 큰 사진 시트), 알림장이면 그 알림장. Home에 Live updates 목록은 없음(벨 → Notifications) | 🤖 `live-updates` | ➖ |
+| LIVE-2 | 벨 → Notifications | 읽지 않은 알림은 굵게, 밀어서 삭제 · Mark all as read · Clear all, **History** 링크(알림이 없을 때도 있음) | 🤖 `live-updates` | ➖ |
+| LIVE-6 | 시터가 아무것도 기록하지 않은 날 오너 Home (돌보는 중) | 타일이 **0/0 care done · 0 photos today · 0m of walks** | 🤖 `live-updates` | ➖ |
+| LIVE-7 | 오너 Home (돌보는 중) | 초록 히어로 "Max is with Chloe" · Day N of M · 오른쪽 **시터 사진**(없으면 이니셜), 탭하면 시터가 올린 사진 전부(여러 장은 옆으로 넘김) · **Today's care N of M done** 진행바(할 일 개수만큼 칸, 개수에 따라 칸 너비가 늘고 줄어듦; 할 일이 없으면 0 of 0. 총 개수 = 맡은 모든 펫의 오늘 할 일 합계(맡기기 전 시각 포함), Heads-up은 할 일이 아니라 안 셈). 집에 있는 펫은 히어로에 안 나옴. 돌봄 중이 아니면 히어로 · 타일 · Latest 없이 Your pets만 | 🤖 `live-updates` | ➖ |
+| LIVE-8 | 시터가 요청을 **Decline** 함 | 오너 **Notifications**에 읽지 않은 알림. 탭 → 노트 시트(**Close는 그냥 닫힘**). 답은 펫 화면 빨간 상자에 남음. (Home에 고정되던 카드는 없어짐) | 🤖 `care-request` | ➖ |
+| LIVE-9 | 시터가 **Counter-request** 를 보냄 | Notifications에 알림. 탭 → 노트 시트 → 펫 화면에서 Accept/Decline | 🤖 `care-request` | ➖ |
 | LIVE-5 | **두 브라우저**: 오너가 Home을 연 채 시터가 체크인 | 오너 Home에 **새로고침 없이** 카드 추가 | **👤만** (실시간) | ➖ |
-| HIST-1 | Home의 **🕘 History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |
+| HIST-1 | Home의 **See today's updates** 또는 Notifications의 **History** | 오늘 · 어제 · 날짜별 **최신순**, 줄마다 이모지 · 문구 · 시각 · 사람 · 썸네일 | 🤖 `diary` | ➖ |
 | HIST-2 | 사진과 함께 완료/체크인 | 같은 사진이 **한 줄로만** (Feed 사진과 중복 안 됨) | 🤖 `diary` | ➖ |
 | HIST-3 | 메모가 있는 체크인 / 7일보다 오래된 기록 | 메모가 줄 아래에 보임 / 오래된 건 안 보임 | 🤖 `diary` | ➖ |
 | HIST-4 | 시간이 지난 미완료 할 일 | ⚠️ "… · Missed" | 🤖 `diary` | ➖ |
@@ -503,7 +515,7 @@
 | FLOW-12 | Max → Care tasks → Add → 입력칸 라벨 | 굵은 라벨 + 같은 줄에 **작은 연한 회색 힌트**, 엠대시 없음 (FB-1) | 새로 필요 | ❌ 10/08 민식 |
 | FLOW-13 | 오너가 체크아웃에서 Pay 한 직후 예약 화면 | 맨 위에 **확인 카드**: 결제 금액 · 드롭오프 시각 · "Nothing else to do"; **누르면 사라지고** 새로 고침해도 그대로, 상단 칩 줄에 `Paid` (FB-12) | 🤖 `checkout` (Pay 후 카드 · 닫기 · 새로 고침) | ❌ 10/09 민식 (Paid 칩만 있어 저장됐는지 모름) → 코드 수정됨, 다시 확인 |
 | FLOW-14 | 예약 화면의 준비물(Pack for …) | 준비물에 체크하고 나갔다 와도(새로 고침) 체크가 남음. "saved on this device" 안내 (FB-13, 이 기기에만 저장 · 시터는 못 봄) | 🤖 `checkout` (체크 → 새로 고침) | ❌ 10/09 민식 (체크가 저장 안 됨) → 코드 수정됨, 다시 확인 |
-| FLOW-15 | 시터가 알림장 Send → 오너 Home | **Live updates**에 📓 알림장 카드, 누르면 그 알림장 (FB-21) | 🤖 `live-updates` | ➖ |
+| FLOW-15 | 시터가 알림장 Send → 오너 | 벨 → Notifications에 📓 알림장 알림, 누르면 그 알림장 (FB-21) | 👤 (Home 카드 e2e는 없어짐) | ➖ |
 | FLOW-16 | 시터 Home → **My history** | 보낸 알림장이 📓 "Daily report · Sent"(본문 두 줄, 누르면 전체)로 보임. 초안은 안 보임 (FB-23) | 🤖 `sitter-home` | ➖ |
 | FLOW-17 | Received 뒤 / Returned 뒤 예약 목록 · 상세 (오너 · 시터) | Received 뒤 **In care**, Returned 뒤 **Completed — pets home** (더는 "Confirmed" 아님) (FB-26) | 🤖 `handoff` | ➖ |
 | FLOW-18 | Returned 뒤 오너 Home | ⭐ "How was …'s stay?" 카드가 **리뷰를 남길 때까지** 고정(열어 봐도 남음), 리뷰 후 사라짐 (FB-24) | 🤖 `live-updates` | ➖ |

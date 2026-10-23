@@ -70,7 +70,7 @@ test.describe("sitter today", () => {
     const screen = app(page);
 
     await expect(screen.getByTestId("today-requests")).toContainText("Requests (1)");
-    await expect(screen.getByTestId("today-caring")).toContainText("Coco");
+    await expect(screen.getByTestId("quick-heading")).toContainText("Coco");
     await expect(screen.getByTestId("today-due")).toContainText("Drop-off");
     await expect(screen.getByTestId("today-due")).toContainText("Max · Robert");
     await expect(screen.getByTestId("today-due")).toContainText("Your place");

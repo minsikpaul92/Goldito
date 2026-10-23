@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { DiaryEntry } from "../features/diary/diaryApi";
@@ -26,9 +26,18 @@ function thumbOf(entry: DiaryEntry, size: number): string | null {
  * What happened, newest first, grouped Today / Yesterday / date. A row with a photo or memo opens a
  * detail sheet. Shared by the owner's History and the sitter's "what I sent".
  */
-export function DiaryTimeline({ entries }: { entries: DiaryEntry[] }) {
+export function DiaryTimeline({ entries, openId }: { entries: DiaryEntry[]; openId?: string | null }) {
   const styles = useThemedStyles(makeStyles);
   const [open, setOpen] = useState<DiaryEntry | null>(null);
+  // `openId` (a link from Home) opens that entry once, as soon as it is in the list.
+  const opened = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openId || opened.current === openId) return;
+    const entry = entries.find((e) => e.id === openId);
+    if (!entry) return;
+    opened.current = openId;
+    setOpen(entry);
+  }, [openId, entries]);
 
   const days = useMemo(() => {
     const groups = new Map<string, DiaryEntry[]>();

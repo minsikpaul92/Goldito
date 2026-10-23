@@ -21,39 +21,58 @@ type Props = {
 
 /**
  * A two-sided card (Home hero, #286): the flip button turns it 180 degrees to the other page. A sideways drag or wheel
- * flips it too. The back is built only once it is shown, so Home does not load the pet room until someone looks at it.
+ * flips it too, and the card turns the way the finger or the wheel goes (it follows the drag, a short drag springs back).
+ * The back is built only once it is shown, so Home does not load the pet room until someone looks at it.
  */
 export function Pager({ pages, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [index, setIndex] = useState(0);
   const [seen, setSeen] = useState<ReadonlySet<number>>(() => new Set([0]));
-  const turn = useRef(new Animated.Value(0)).current;
+  // The card's angle in degrees: 0 shows the front, 180 the back. It moves within -180..360 and is folded back to 0 or
+  // 180 after each turn, so a turn to either side lands on the same page.
+  const angle = useRef(new Animated.Value(0)).current;
+  const base = useRef(0);
+  const width = useRef(300);
   const indexRef = useRef(0);
   const lastWheel = useRef(0);
   indexRef.current = index;
 
-  const show = (target: number) => {
-    const next = Math.max(0, Math.min(pages.length - 1, target));
-    if (next === indexRef.current) return;
+  /** Turn the card half a turn: `dir` 1 spins it to the right, -1 to the left. */
+  const turnTo = (dir: 1 | -1) => {
+    const target = base.current + dir * 180;
+    const next = (((target % 360) + 360) % 360) / 180; // 0 front, 1 back
     setSeen((prev) => (prev.has(next) ? prev : new Set(prev).add(next)));
     setIndex(next);
-    Animated.timing(turn, { toValue: next, duration: FLIP_MS, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start();
+    base.current = next * 180;
+    Animated.timing(angle, { toValue: target, duration: FLIP_MS, easing: Easing.inOut(Easing.cubic), useNativeDriver: false }).start(
+      ({ finished }) => {
+        if (finished) angle.setValue(base.current);
+      },
+    );
   };
-  const flip = () => show(indexRef.current === 0 ? 1 : 0);
-  const flipRef = useRef(flip);
-  flipRef.current = flip;
+  const settle = () => Animated.spring(angle, { toValue: base.current, useNativeDriver: false, bounciness: 0 }).start();
+  const flip = () => turnTo(indexRef.current === 0 ? 1 : -1);
+  const turnRef = useRef(turnTo);
+  turnRef.current = turnTo;
+  const settleRef = useRef(settle);
+  settleRef.current = settle;
 
   const pan = useMemo(
     () =>
       PanResponder.create({
         // Only a mostly horizontal drag takes over, so scrolling and taps keep working.
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+        onPanResponderGrant: () => angle.stopAnimation(),
+        // The face follows the finger: a drag across the card's width is half a turn.
+        onPanResponderMove: (_e, g) => angle.setValue(base.current + Math.max(-1, Math.min(1, g.dx / width.current)) * 180),
         onPanResponderRelease: (_e, g) => {
-          if (Math.abs(g.dx) > TURN_DISTANCE || Math.abs(g.vx) > TURN_VELOCITY) flipRef.current();
+          if (Math.abs(g.dx) > TURN_DISTANCE || Math.abs(g.vx) > TURN_VELOCITY) turnRef.current((g.dx || g.vx) > 0 ? 1 : -1);
+          else settleRef.current();
         },
+        onPanResponderTerminate: () => settleRef.current(),
       }),
-    [],
+    [angle],
   );
 
   const onWheel = (e: { deltaX: number; deltaY: number; shiftKey?: boolean }) => {
@@ -61,15 +80,24 @@ export function Pager({ pages, testID }: Props) {
     const now = Date.now();
     if (Math.abs(dx) < WHEEL_STEP || now - lastWheel.current < WHEEL_PAUSE_MS) return;
     lastWheel.current = now;
-    flipRef.current();
+    // Scrolling sideways to the right (deltaX > 0) is a swipe to the left.
+    turnRef.current(dx > 0 ? -1 : 1);
   };
 
   // Each face is shown on its own half of the turn (backfaceVisibility alone let the front show through on web).
   const face = (back: boolean) => ({
-    opacity: turn.interpolate({ inputRange: [0, 0.49, 0.51, 1], outputRange: back ? [0, 0, 1, 1] : [1, 1, 0, 0] }),
+    opacity: angle.interpolate({
+      inputRange: [-180, -90, -89.99, 89.99, 90, 270, 270.01, 360],
+      outputRange: back ? [1, 1, 0, 0, 1, 1, 0, 0] : [0, 0, 1, 1, 0, 0, 1, 1],
+    }),
     transform: [
       { perspective: 1200 },
-      { rotateY: turn.interpolate({ inputRange: [0, 1], outputRange: back ? ["180deg", "360deg"] : ["0deg", "180deg"] }) },
+      {
+        rotateY: angle.interpolate({
+          inputRange: [-180, 360],
+          outputRange: back ? ["0deg", "540deg"] : ["-180deg", "360deg"],
+        }),
+      },
     ],
   });
 
@@ -89,6 +117,9 @@ export function Pager({ pages, testID }: Props) {
       </View>
       <View
         style={styles.clip}
+        onLayout={(e) => {
+          width.current = e.nativeEvent.layout.width || 300;
+        }}
         {...(Platform.OS === "web" ? ({ onWheel } as object) : null)}
         {...pan.panHandlers}
       >

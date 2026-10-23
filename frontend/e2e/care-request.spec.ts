@@ -408,27 +408,14 @@ test.describe("care request (a stay is on)", () => {
       read_at: null,
       created_at: new Date().toISOString(),
     });
-    await page.goto("/owner");
+    await page.goto("/owner/notifications");
     const screen = app(page);
-    await expect(screen.getByTestId("live-pinned-n-decl")).toBeVisible();
-    await expect(screen.getByTestId("live-swipe-n-decl")).toHaveCount(0); // no swiping it away unread
-    await screen.getByTestId("live-x").click();
-    await screen.getByTestId("live-clear-all").click();
-    await expect(screen.getByTestId("live-pinned-n-decl")).toBeVisible(); // Clear all leaves it too
-
-    await page.reload();
-    await expect(app(page).getByTestId("live-pinned-n-decl")).toBeVisible(); // still there after a refresh
-
-    await screen.getByTestId("live-n-decl").click();
+    await screen.getByTestId("notification-n-decl").click();
     await expect(screen.getByTestId("notice-detail-memo")).toContainText("Could we do 5 PM?");
-    // Read it and close: it is gone from Home (the answer stays on the pet screen).
+    // Read it and close: Close just closes (the answer stays on the pet screen).
     await screen.getByTestId("notice-detail-close").click();
     await expect(screen.getByTestId("notice-detail")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/owner$/); // Close just closes
-    await expect(screen.getByTestId("live-n-decl")).toHaveCount(0);
-    await page.reload();
-    await screen.getByTestId("live-updates").waitFor();
-    await expect(screen.getByTestId("live-n-decl")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/owner\/notifications$/);
     await page.goto(`/owner/pets/${MAX}`);
     await expect(page).toHaveURL(new RegExp(`/owner/pets/${MAX}$`));
     await expect(screen.getByTestId("request-status")).toContainText("Could we do 5 PM?");
@@ -496,17 +483,13 @@ test.describe("care request (a stay is on)", () => {
       read_at: null,
       created_at: new Date().toISOString(),
     });
-    await page.goto("/owner");
+    await page.goto("/owner/notifications");
     const screen = app(page);
-    await screen.getByTestId("live-n-ctr").click();
+    await screen.getByTestId("notification-n-ctr").click();
     await screen.getByTestId("notice-detail-close").click();
-    await expect(screen.getByTestId("live-pinned-n-ctr")).toBeVisible(); // read, but not answered yet
 
     await page.goto(`/owner/pets/${MAX}`);
     await screen.getByTestId("counter-accept").click();
     await expect(screen.getByTestId("toast")).toContainText("Accepted");
-    await page.goto("/owner");
-    await screen.getByTestId("live-updates").waitFor();
-    await expect(screen.getByTestId("live-n-ctr")).toHaveCount(0); // answered → gone
   });
 });

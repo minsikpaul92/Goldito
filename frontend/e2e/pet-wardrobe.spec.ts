@@ -100,6 +100,7 @@ test.describe("wardrobe", () => {
       SITTER,
     );
     const screen = app(page);
+    await screen.getByTestId("home-pager-flip").click();
     await screen.getByTestId("pet-room-Max-sprite").waitFor();
     await expect.poll(() => pumpkinPixels(screen, "Max")).toBeGreaterThan(0);
   });

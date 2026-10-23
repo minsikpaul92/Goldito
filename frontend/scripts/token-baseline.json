@@ -44,8 +44,6 @@
  "fontSize components/FeedViewer.tsx :: fontSize: 22,",
  "fontSize components/HeaderMenu.tsx :: name: { fontSize: 20, fontWeight: theme.fontWeight.bold, color: theme.color.text },",
  "fontSize components/HeaderMenu.tsx :: rowLabel: { flex: 1, fontSize: 18, fontWeight: theme.fontWeight.semibold, color: theme.color.primary },",
- "fontSize components/LiveUpdates.tsx :: emoji: { fontSize: 22 },",
- "fontSize components/LiveUpdates.tsx :: xText: { fontSize: 12, fontWeight: theme.fontWeight.bold, color: theme.color.textMuted },",
  "fontSize components/NotificationBell.tsx :: fontSize: 10,",
  "fontSize components/PetGlanceCard.tsx :: title: { fontSize: 18, lineHeight: 24, fontWeight: theme.fontWeight.bold, color: theme.color.text },",
  "fontSize components/PhotoViewer.tsx :: fontSize: 18,",

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { caring, task as fixtureTask } from "./careFixtures";
-import { app, petRoomOnFirstScreen, signIn } from "./helpers";
+import { app, signIn } from "./helpers";
 import { OWNER, SITTER, mockSupabase } from "./supabaseMock";
 
 // In-app due reminder on sitter Home (phase-06 6.6, D17): banner + one toast per newly due task.
@@ -42,8 +42,7 @@ test("an alarm popup for what is due now, a toast when the next one becomes due,
   await expect(screen.getByTestId("due-alert-title")).toContainText("Lunch");
   await expect(screen.getByText("+ 1 more waiting", { exact: false })).toBeVisible();
   await expect(screen.getByTestId("toast")).toHaveCount(0);
-  // Home keeps the pet room on the first screen and lists today's tasks under the popup, even with two pets.
-  expect(await petRoomOnFirstScreen(screen)).toBe(true);
+  // Home shows the next task under the popup, even with two pets.
   await expect(screen.getByTestId("dashboard-next")).toBeVisible();
 
   // Four minutes pass with the app open: Snack becomes due → one toast.

@@ -1927,11 +1927,11 @@ begin
   end;
   perform _t_ok(v_err = '23514', '6.8: value must fit the kind');
   begin
-    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '15');
+    insert into public.care_checkins (pet_id, kind, value) values (v_id, 'walk', '25');
     v_err := null;
   exception when others then v_err := sqlstate;
   end;
-  perform _t_ok(v_err = '23514', '6.8: walk minutes are 10 / 20 / 30 / 45 / 60');
+  perform _t_ok(v_err = '23514', '6.8: walk minutes are 5 / 10 / 15 / 20 / 30 / 45 / 60');
   begin
     insert into public.care_checkins (pet_id, kind) values (v_id, 'note');
     v_err := null;
@@ -1940,6 +1940,28 @@ begin
   perform _t_ok(v_err = '23514', '6.8: a note needs its line');
   insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', 'Hid under the bed');
   perform _t_ok(true, '6.8: any check-in may carry a short memo');
+  -- 015i: the Home tile choices.
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (max, 'mood', 'missing');
+    insert into public.care_checkins (pet_id, kind, value) values (max, 'mood', 'anxious');
+    insert into public.care_checkins (pet_id, kind, value) values (max, 'walk', '5');
+    insert into public.care_checkins (pet_id, kind, value, note_text) values (max, 'meal', 'other', 'Only ate the chicken bits');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err is null, '015i: new moods, a 5-minute walk and an "other" meal with its memo insert');
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (max, 'potty', 'other');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '015i: "other" never goes without a memo');
+  begin
+    insert into public.care_checkins (pet_id, kind, value) values (max, 'mood', 'grumpy');
+    v_err := null;
+  exception when others then v_err := sqlstate;
+  end;
+  perform _t_ok(v_err = '23514', '015i: a mood outside the list is refused');
   begin
     insert into public.care_checkins (pet_id, kind, value, note_text) values (v_id, 'mood', 'calm', '   ');
     v_err := null;

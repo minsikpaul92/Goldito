@@ -30,7 +30,7 @@ export default function OwnerHistory() {
   const { diaryRevision } = useNotifications();
   const { status: petsStatus, pets, error: petsError, reload: reloadPets } = useMyPets();
   // A notice opens this screen on the pet it is about (`?pet=`).
-  const { pet: petParam } = useLocalSearchParams<{ pet?: string }>();
+  const { pet: petParam, entry: entryParam } = useLocalSearchParams<{ pet?: string; entry?: string }>();
   const [petId, setPetId] = useState<string | null>(null);
   const [state, setState] = useState<State>({ status: "loading" });
 
@@ -113,7 +113,7 @@ export default function OwnerHistory() {
         />
       ) : null}
 
-      {state.status === "ready" ? <DiaryTimeline entries={state.entries} /> : null}
+      {state.status === "ready" ? <DiaryTimeline entries={state.entries} openId={entryParam} /> : null}
     </Screen>
   );
 }

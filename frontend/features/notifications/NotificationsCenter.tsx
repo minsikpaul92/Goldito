@@ -180,7 +180,12 @@ export function NotificationsCenter({ role }: { role: Role }) {
 
   if (items.length === 0) {
     return (
-      <EmptyState emoji="✅" title="You're all caught up." message="New updates from your stay will show up here." />
+      <EmptyState
+        emoji="✅"
+        title="You're all caught up."
+        message="New updates from your stay will show up here."
+        action={role === "owner" ? { label: "History", onPress: () => router.push("/owner/history") } : undefined}
+      />
     );
   }
 
@@ -195,6 +200,7 @@ export function NotificationsCenter({ role }: { role: Role }) {
             testID="mark-all-read"
           />
         ) : null}
+        {role === "owner" ? <TextButton label="History" onPress={() => router.push("/owner/history")} testID="open-history" /> : null}
         <TextButton label="Clear all" danger onPress={() => setConfirmClear(true)} testID="clear-all" />
       </View>
       <FlatList
