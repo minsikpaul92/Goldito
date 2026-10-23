@@ -53,13 +53,14 @@ Shows: `BrandLogo`
 
 Owner Home: two sides of a card, flipped with a button (#286). Today: live updates from the sitter (swipe to dismiss) and my pets. Pet: the 8-bit pet room of one pet, with the whole page for it (Add pet is on Today).
 
-Shows: `ActiveTripCard` · `LiveUpdates` · `PetCard` · `PetPage`
+Shows: `ActiveTripCard` · `LiveUpdates` · `LatestCard` · `PetTile` · `StatTiles` · `StayHero` · `PetPage`
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| EmptyState | Couldn't load your pets | — | 33 |
-| EmptyState | No pets yet | — | 46 |
-| Button | Add pet | `add-pet` | 63 |
+| EmptyState | Couldn't load your pets | — | 39 |
+| EmptyState | No pets yet | — | 52 |
+| Button | See today's updates | `see-updates` | 71 |
+| TextButton | + Add pet | `add-pet` | 93 |
 
 ### `/owner-onboarding` — [app/owner-onboarding.tsx](../../frontend/app/owner-onboarding.tsx)
 
@@ -1047,13 +1048,6 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | cover ? "Change photo" : "Add photo" | `pet-avatar` | 70 |
 
-### PetCard — [components/PetCard.tsx](../../frontend/components/PetCard.tsx)
-
-| Kind | Label | ID (`testID`) | Line |
-| --- | --- | --- | --- |
-| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 39 |
-| Tag | `allergy.allergen` | — | 68 |
-
 ### PetForm — [components/PetForm.tsx](../../frontend/components/PetForm.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1330,6 +1324,18 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | Button | Use this part | `trim-confirm` | 197 |
 | Button | playing ? "Pause" : "Play selection" | `trim-play` | 223 |
 
+### LatestCard — [components/home/LatestCard.tsx](../../frontend/components/home/LatestCard.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | — | `latest-update` | 45 |
+
+### PetTile — [components/home/PetTile.tsx](../../frontend/components/home/PetTile.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 40 |
+
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1561,4 +1567,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-463 actions · 462 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+465 actions · 464 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

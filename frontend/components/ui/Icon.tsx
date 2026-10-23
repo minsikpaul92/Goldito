@@ -33,7 +33,9 @@ import SquareCheck from "lucide-react-native/icons/square-check";
 import Tag from "lucide-react-native/icons/tag";
 import TriangleAlert from "lucide-react-native/icons/triangle-alert";
 import User from "lucide-react-native/icons/user";
+import TreePine from "lucide-react-native/icons/tree-pine";
 import Users from "lucide-react-native/icons/users";
+import Utensils from "lucide-react-native/icons/utensils";
 import Video from "lucide-react-native/icons/video";
 import X from "lucide-react-native/icons/x";
 import Zap from "lucide-react-native/icons/zap";
@@ -91,6 +93,8 @@ const ICONS = {
   photo: Image,
   video: Video,
   warning: TriangleAlert,
+  meal: Utensils,
+  walk: TreePine,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

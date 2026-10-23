@@ -145,16 +145,15 @@ test.describe("owner live updates", () => {
     await expect(screen.getByTestId("diary-pet").getByRole("radio", { name: "Mochi" })).toHaveAttribute("aria-checked", "true");
   });
 
-  test("Home says which pets are in care right now, with whom and until when", async ({ page }) => {
+  test("Home says which pets are in care right now, and with whom", async ({ page }) => {
     const MOCHI = "00000000-0000-4000-8000-0000000000bb";
     const { db } = await mockSupabase(page, [OWNER, SITTER]);
     caring(db, [{ id: MAX, name: "Max", species: "dog" }]);
     db.pets.push({ id: MOCHI, owner_id: OWNER.id, species: "cat", name: "Mochi", breed: null, birthdate: null, weight_kg: null, notes: null, created_at: "2026-10-01T09:05:00Z" });
     await signIn(page, OWNER);
     const screen = app(page);
-    await expect(screen.getByTestId("in-care-Max")).toContainText("with ");
-    await expect(screen.getByTestId("in-care-Max")).toContainText("until");
-    await expect(screen.getByTestId("in-care-Mochi")).toHaveCount(0); // Mochi is home
+    await expect(screen.getByTestId("stay-hero")).toContainText("Max is with ");
+    await expect(screen.getByTestId("stay-hero")).not.toContainText("Mochi"); // Mochi is home
   });
 
   test("a sent daily report is a live update too, and opens the report (FB-21)", async ({ page }) => {

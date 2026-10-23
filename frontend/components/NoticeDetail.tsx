@@ -21,13 +21,13 @@ type Props = {
 };
 
 /** Small photo on a notice card/row, so you can tell a photo came before opening it. */
-export function NoticeThumb({ media }: { media: DiaryMedia }) {
+export function NoticeThumb({ media, size }: { media: DiaryMedia; size?: number }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Image
       accessibilityLabel="Photo attached"
       source={{ uri: media.resourceType === "video" ? videoPosterUrl(media.publicId, 120) : thumbUrl(media.publicId, 120) }}
-      style={styles.thumb}
+      style={[styles.thumb, size ? { width: size, height: size, borderRadius: size * 0.28 } : null]}
       testID="notice-thumb"
     />
   );

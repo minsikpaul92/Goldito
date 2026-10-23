@@ -140,6 +140,7 @@
 | 시터 **빠른 체크인** (식사 · 배변 · 산책 · 기분 · 메모 · 사진), 보냄 표시 · 연타 잠금 · 오늘 보낸 것 목록 | ✅ 🤖 | 06 / 6.8–6.10 + 후속 |
 | 시터 **Home 대시보드** (한 화면) · 할 일 / 체크인 / 내 기록 화면 | ✅ 🤖 | 06 후속 |
 | 오너 **Home 실시간 업데이트 카드** (밀어서 지우기) | ✅ 🤖 | 06 후속 |
+| 오너 **Home Today 면 Figma 정렬** (돌보는 중이면 초록 히어로 "Max is with Chloe" · Day N of M · 오늘 케어 진행바 · 통계 타일(care done · photos today · of walks) · Latest from 시터 · See today's updates → History, 아닐 때는 Your pets만, 펫 타일 2열 · + Add pet). 숫자는 시터가 기록한 값만, 없으면 숨김 · 아이콘은 Lucide 임시(SVG 오면 `components/home/HomeArt.tsx`) | 🟡 타입체크 · 토큰 체크 ✅ · e2e 기대값 수정(`pets` · `live-updates`)은 아직 안 돌림 · 사람 확인 대기 | 오너 Home Figma |
 | 오너 **History** (오늘 + 최근 7일 기록, 알림을 지워도 남음) | ✅ 🤖 | 06 / 6.11 |
 | 오너 **Diary 탭** = 시터가 보낸 알림장 목록(첫 문장) → 항목 화면(본문 · 그날 사진 · 할 일), 초안은 안 보임, 알림 탭하면 해당 항목 | ✅ 🤖 `report.spec.ts` (실제 두 계정은 👤) | 07 / 7.3 |
 | 시터 **리마인더 배너** (할 일 시간이 되면 Home 맨 위 배너 + 토스트) | ✅ 🤖 | 06 / 6.6 |
