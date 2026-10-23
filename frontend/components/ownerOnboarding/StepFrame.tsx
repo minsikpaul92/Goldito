@@ -22,16 +22,36 @@ type Props = {
   children: ReactNode;
   /** Below the answers: the primary button (and anything else that goes above the Back and Skip row). */
   footer?: ReactNode;
+  /** Sits in the right half of the Back row, in place of Skip. */
+  rowNext?: ReactNode;
   testID?: string;
 };
 
 /** One question per screen, large text (11.15 §7.1): logo, progress bar, Back, a 28 px question, the answers, the footer. */
-export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, skipTestID = "own-skip", children, footer, testID }: Props) {
+export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, skipTestID = "own-skip", children, footer, rowNext, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
+  // Pinned to the bottom of the screen, so Back and Skip sit in the same place on every question.
+  const pinned =
+    footer || onBack || onSkip || rowNext ? (
+      <View style={styles.footer}>
+        {footer}
+        {onBack || onSkip || rowNext ? (
+          <View style={styles.navRow}>
+            <View style={styles.navSlot}>
+              {onBack ? <Button label="Back" variant="secondary" onPress={onBack} testID="own-back-bottom" /> : null}
+            </View>
+            <View style={styles.navSlot}>
+              {rowNext ?? (onSkip ? <Button label="Skip" variant="secondary" onPress={onSkip} testID={skipTestID} /> : null)}
+            </View>
+          </View>
+        ) : null}
+      </View>
+    ) : undefined;
+
   return (
-    <Screen contentStyle={styles.content} testID={testID}>
+    <Screen contentStyle={styles.content} footer={pinned} testID={testID}>
       <View style={styles.header}>
         <BrandLogo height={28} testID="step-brand" />
         {onSkipAll ? <TextButton label="Skip all" onPress={onSkipAll} testID="own-skip-all" /> : null}
@@ -53,21 +73,6 @@ export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, sk
       </Text>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <View style={styles.body}>{children}</View>
-      {footer || onBack || onSkip ? (
-        <View style={styles.footer}>
-          {footer}
-          {onBack || onSkip ? (
-            <View style={styles.navRow}>
-              <View style={styles.navSlot}>
-                {onBack ? <Button label="Back" variant="secondary" onPress={onBack} testID="own-back-bottom" /> : null}
-              </View>
-              <View style={styles.navSlot}>
-                {onSkip ? <Button label="Skip" variant="secondary" onPress={onSkip} testID={skipTestID} /> : null}
-              </View>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
     </Screen>
   );
 }
@@ -90,7 +95,7 @@ const makeStyles = (theme: Theme) =>
     },
     hint: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
     body: { gap: theme.spacing.sm + theme.spacing.xs },
-    footer: { gap: theme.spacing.sm, marginTop: theme.spacing.sm, alignItems: "stretch" },
+    footer: { gap: theme.spacing.sm, alignItems: "stretch" },
     navRow: { flexDirection: "row", gap: theme.spacing.sm },
     navSlot: { flex: 1 },
   });

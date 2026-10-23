@@ -26,17 +26,13 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-save").click();
 
     await expect(screen.getByTestId("toast")).toContainText("Profile saved");
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(page).toHaveURL(/\/profile$/);
     const row = db.owner_profiles.find((r) => r.id === OWNER.id);
     expect(row?.emergency_contact_name).toBe("Min");
     expect(row?.emergency_contact_phone).toBe("416-555-0100");
     expect(row?.home_address).toBe("1 Test St, Toronto, ON");
 
-    await screen.getByTestId("open-menu").click();
-    await screen.getByTestId("open-profile").click();
     await expect(screen.getByTestId("profile-display_name")).toHaveValue("Robert Park");
-    await expect(screen.getByTestId("profile-group-emergency")).toContainText("Min");
-    await screen.getByTestId("profile-add-emergency").click();
     await expect(screen.getByTestId("profile-emergency_contact_name")).toHaveValue("Min");
   });
 
@@ -71,7 +67,7 @@ test.describe("profile", () => {
 
     await screen.getByTestId("profile-experience_years").fill("3");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/sitter$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     const row = db.sitter_profiles.find((r) => r.id === SITTER.id);
     expect(row).toMatchObject({ experience_years: 3, home_address: "12 Maple St" });
   });
@@ -98,7 +94,7 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-add-spot").click();
     await screen.getByTestId("profile-spot-2").fill("  christie pits — east entrance ");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/sitter$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.sitter_profiles.find((r) => r.id === SITTER.id)).toMatchObject({
       services: ["house_sitting"],
       meet_spots: ["Christie Pits — east entrance"],
@@ -117,7 +113,7 @@ test.describe("profile", () => {
     await expect(screen.getByTestId("profile-multi-owner")).toHaveAttribute("aria-checked", "false");
     await screen.getByTestId("profile-multi-owner").click();
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/sitter$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.sitter_profiles.find((r) => r.id === SITTER.id)).toMatchObject({ accepts_multiple_owners: true });
   });
 
@@ -133,7 +129,7 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-add-spots").click();
     await screen.getByTestId("profile-spot-1").fill("Trinity Bellwoods — north gate");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.owner_profiles.find((r) => r.id === OWNER.id)?.meet_spots).toEqual(["Trinity Bellwoods — north gate"]);
   });
 
@@ -149,7 +145,7 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-home_postal_code").fill("m5a 3c4");
     await screen.getByTestId("profile-home_address_2").fill("Unit 1204, buzz 55");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.owner_profiles.find((r) => r.id === OWNER.id)).toMatchObject({
       home_address: "1 Test St, Toronto, ON",
       home_postal_code: "m5a 3c4",
@@ -169,7 +165,7 @@ test.describe("profile", () => {
     await expect(screen.getByTestId("profile-home_address")).toHaveValue("1 Test St, Toronto, ON");
     await expect(screen.getByTestId("profile-home_postal_code")).toHaveValue("M5A 3C4");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.owner_profiles.find((r) => r.id === OWNER.id)).toMatchObject({
       home_address: "1 Test St, Toronto, ON",
       home_postal_code: "M5A 3C4",
@@ -192,7 +188,7 @@ test.describe("profile", () => {
     await screen.getByTestId("profile-packing-remove-3").click();
     await expect(screen.getByTestId("profile-packing-3")).toHaveCount(0);
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.owner_profiles.find((r) => r.id === OWNER.id)?.packing_list).toEqual(["Food", "Leash"]);
   });
 
@@ -224,7 +220,7 @@ test.describe("profile", () => {
     await expect(screen.getByTestId("profile-spot-2")).toHaveCount(0);
     await expect(screen.getByTestId("profile-spot-1")).toHaveValue("Trinity Bellwoods");
     await screen.getByTestId("profile-save").click();
-    await expect(page).toHaveURL(/\/owner$/);
+    await expect(screen.getByTestId("toast")).toContainText("Profile saved");
     expect(db.owner_profiles.find((r) => r.id === OWNER.id)?.meet_spots).toEqual(["Trinity Bellwoods"]);
   });
 

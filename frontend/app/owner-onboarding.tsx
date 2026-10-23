@@ -190,18 +190,20 @@ export default function OwnerOnboarding() {
     step === "ownerIntro" ||
     step === "location";
 
+  // Skipping the personality questions stops at the health question; later steps jump to the summary.
   const skipAll = () => {
     setFromSummary(false);
-    goTo("summary");
+    goTo(step === "about" || step.startsWith("q:") ? "s:s5" : "summary");
   };
 
-  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string, skippable = false) => (
+  const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string, skippable = false, rowNext?: React.ReactNode) => (
     <StepFrame
       progress={progress(ids, step)}
       title={title}
       hint={hint}
       onBack={index > 0 || fromSummary ? back : undefined}
       onSkip={skippable ? next : undefined}
+      rowNext={rowNext}
       onSkipAll={canSkipAll ? skipAll : undefined}
       footer={footer}
       testID={`own-step-${step}`}
@@ -619,9 +621,10 @@ export default function OwnerOnboarding() {
           </View>
         ) : null}
       </>,
-      nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none")),
       undefined,
-      true,
+      "If there are none, tap None.",
+      false,
+      nextButton(!draft.foodsChecked || (foods.length === 0 && draft.safety.s6 !== "none")),
     );
   }
 
@@ -712,7 +715,7 @@ export default function OwnerOnboarding() {
     { id: "weight", label: "Weight", value: draft.weight.trim() ? `${draft.weight.trim()} ${draft.weightUnit}` : "Not shared yet" },
     { id: "petIntro", label: "About", value: draft.petIntro.trim() || "Not shared yet" },
     { id: species ? `q:${chartQuestions(species)[0].key}` : "name", label: "Personality", value: `${answered} of ${chartTotal} answered` },
-    { id: `s:${SAFETY_QUESTIONS[0].key}`, label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
+    { id: "s:s5", label: "Safety", value: `${safeAnswered} of ${SAFETY_QUESTIONS.length} answered` },
     { id: "foods", label: "Foods to avoid", value: foods.length ? foods.join(", ") : draft.foodsChecked && draft.safety.s6 === "none" ? "None" : "Not shared yet" },
     // The owner's own answers are asked with the first pet only.
     ...(draft.ownerDone
@@ -730,12 +733,6 @@ export default function OwnerOnboarding() {
       footer={
         <>
           {error ? <Banner tone="error" body={error} testID="own-error" /> : null}
-          <Button
-            label={saving ? "Saving…" : draft.pending.length > 0 ? `Save ${petName} and add the next pet` : `Save ${petName}`}
-            onPress={() => void finish(draft.petId ?? ensurePetId())}
-            disabled={saving}
-            testID="own-save"
-          />
           {draft.pending.length > 0 ? (
             <Button
               label="Save and finish later"
@@ -746,6 +743,14 @@ export default function OwnerOnboarding() {
             />
           ) : null}
         </>
+      }
+      rowNext={
+        <Button
+          label={saving ? "Saving…" : draft.pending.length > 0 ? "Save, add next" : `Save ${petName}`}
+          onPress={() => void finish(draft.petId ?? ensurePetId())}
+          disabled={saving}
+          testID="own-save"
+        />
       }
       testID="own-step-summary"
     >
