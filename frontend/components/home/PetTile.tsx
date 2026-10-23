@@ -61,7 +61,7 @@ export function PetTile({ pet, index, onPress }: { pet: Pet; index: number; onPr
         {pet.pet_allergies.length > 0 ? (
           <View style={styles.allergy}>
             <Icon name="warning" size={13} color={theme.color.warning} />
-            <Text style={styles.allergyText} numberOfLines={1}>{`Allergy: ${pet.pet_allergies[0].allergen}`}</Text>
+            <Text style={styles.allergyText} numberOfLines={1}>{`No ${pet.pet_allergies[0].allergen}`}</Text>
           </View>
         ) : null}
       </View>
