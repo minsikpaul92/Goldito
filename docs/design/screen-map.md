@@ -354,19 +354,19 @@ Shows: `DemoTools` · `AddressInput` · `SitterBadges` · `ProfilePhotoGallery` 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
 | EmptyState | Couldn't load your profile | — | 277 |
-| Button | saving ? "Saving…" : "Save" | `profile-save` | 426 |
-| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 457 |
-| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 504 |
-| TextButton | + Add item | `profile-packing-add` | 517 |
-| Pressable | — | `profile-home-access` | 560 |
-| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 593 |
-| TextButton | + Add another spot | `profile-add-spot` | 609 |
-| CheckRow | `s.label` | ``profile-service-${s.value}`` | 616 |
-| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 626 |
-| SegmentedControl | — | `profile-ai-mode` | 637 |
-| Button | Edit your answers | `profile-answers-edit` | 669 |
-| Sheet | Turn on auto-send? | `ai-consent-sheet` | 677 |
-| Button | Turn on auto-send | `ai-consent-confirm` | 679 |
+| Button | saving ? "Saving…" : "Save" | `profile-save` | 424 |
+| Button | locating ? "Locating…" : "📍 Use my current location" | `profile-use-location` | 455 |
+| Pressable | Remove item | ``profile-packing-remove-${i + 1}`` | 502 |
+| TextButton | + Add item | `profile-packing-add` | 515 |
+| Pressable | — | `profile-home-access` | 558 |
+| Pressable | ``Remove spot ${i + 1}`` | ``profile-spot-remove-${i + 1}`` | 591 |
+| TextButton | + Add another spot | `profile-add-spot` | 607 |
+| CheckRow | `s.label` | ``profile-service-${s.value}`` | 614 |
+| CheckRow | Take pets from more than one owner at a time | `profile-multi-owner` | 624 |
+| SegmentedControl | — | `profile-ai-mode` | 635 |
+| Button | Edit your answers | `profile-answers-edit` | 667 |
+| Sheet | Turn on auto-send? | `ai-consent-sheet` | 675 |
+| Button | Turn on auto-send | `ai-consent-confirm` | 677 |
 
 ### `/settings` — [app/settings.tsx](../../frontend/app/settings.tsx)
 
