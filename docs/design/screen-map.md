@@ -1325,6 +1325,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 | --- | --- | --- | --- |
 | Pressable | ``${pet.name}, ${describePet(pet)}`` | ``pet-card-${pet.name}`` | 40 |
 
+### StayHero — [components/home/StayHero.tsx](../../frontend/components/home/StayHero.tsx)
+
+| Kind | Label | ID (`testID`) | Line |
+| --- | --- | --- | --- |
+| Pressable | ``${stay.sitterName}'s photos`` | `stay-sitter-photo` | 50 |
+
 ### BigOption — [components/ownerOnboarding/BigOption.tsx](../../frontend/components/ownerOnboarding/BigOption.tsx)
 
 | Kind | Label | ID (`testID`) | Line |
@@ -1557,4 +1563,4 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 ---
 
-460 actions · 459 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).
+461 actions · 460 with an ID · 1 without (**none** above — add a `testID` when you touch that screen).

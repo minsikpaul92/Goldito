@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { StayToday } from "../../features/care/useStayToday";
-import { loadPetPhotos, petPhotoThumb } from "../../features/ownerOnboarding/petPhotosApi";
-import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
+import { ProfilePhoto, loadProfilePhotos, photoThumb } from "../../features/profile/profilePhotosApi";
+import { useThemedStyles } from "../../providers/ThemeProvider";
 import { Theme } from "../../theme/themes";
 import { tokens } from "../../theme/tokens";
-import { HomeArt } from "./HomeArt";
+import { PhotoViewerSheet } from "../PhotoViewerSheet";
+import { Avatar } from "../ui/Avatar";
 import { HOME_TEXT, LIVE_DOT } from "./homeType";
 
 /** "Max is with Chloe", "Max & Mochi are with Chloe", "Max, Mochi & Bo are with Chloe". */
@@ -17,21 +18,20 @@ export function stayTitle(names: string[], sitter: string): string {
 
 /** Owner Home: the pets that are with a sitter right now (Figma "block.g"). Brand green, not the skin's ink. */
 export function StayHero({ stay }: { stay: StayToday }) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const [cover, setCover] = useState<string | null>(null);
-  const firstPetId = stay.pets[0]?.id;
+  const [photos, setPhotos] = useState<ProfilePhoto[]>([]);
+  const [viewing, setViewing] = useState(false);
+  const sitterId = stay.sitterId;
 
   useEffect(() => {
-    if (!firstPetId) return;
     let live = true;
-    loadPetPhotos(firstPetId)
-      .then((photos) => live && setCover(photos[0]?.publicId ?? null))
+    loadProfilePhotos(sitterId)
+      .then((list) => live && setPhotos(list))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [firstPetId]);
+  }, [sitterId]);
 
   return (
     <View style={styles.card} testID="stay-hero">
@@ -47,27 +47,34 @@ export function StayHero({ stay }: { stay: StayToday }) {
           <Text style={styles.title}>{stayTitle(stay.pets.map((p) => p.name), stay.sitterName)}</Text>
           {stay.receivedLine ? <Text style={styles.sub}>{stay.receivedLine}</Text> : null}
         </View>
-        <View style={styles.photo}>
-          {cover ? (
-            <Image source={{ uri: petPhotoThumb(cover, 192) }} style={styles.photoImage} accessibilityIgnoresInvertColors />
+        <Pressable
+          accessibilityRole={photos.length > 0 ? "button" : undefined}
+          accessibilityLabel={`${stay.sitterName}'s photos`}
+          disabled={photos.length === 0}
+          onPress={() => setViewing(true)}
+          style={styles.photo}
+          testID="stay-sitter-photo"
+        >
+          {photos.length > 0 ? (
+            <Image source={{ uri: photoThumb(photos[0], 192) }} style={styles.photoImage} accessibilityIgnoresInvertColors />
           ) : (
-            <HomeArt name="paw" size={40} color={tokens.color.onMedia} />
+            <Avatar kind="initial" name={stay.sitterName} size={72} />
           )}
+        </Pressable>
+      </View>
+      <View style={styles.care}>
+        <View style={styles.careHead}>
+          <Text style={styles.careText}>Today's care</Text>
+          <Text style={styles.careText}>{`${stay.care.done} of ${stay.care.total} done`}</Text>
+        </View>
+        {/* One step per task: they share the bar's width, so more tasks mean thinner steps. */}
+        <View style={[styles.bar, stay.care.total > 8 && styles.barDense]} accessibilityLabel={`${stay.care.done} of ${stay.care.total} care tasks done`}>
+          {Array.from({ length: Math.max(1, stay.care.total) }, (_, i) => (
+            <View key={i} style={[styles.seg, i < stay.care.done ? styles.segOn : styles.segOff]} />
+          ))}
         </View>
       </View>
-      {stay.care.total > 0 ? (
-        <View style={styles.care}>
-          <View style={styles.careHead}>
-            <Text style={styles.careText}>Today's care</Text>
-            <Text style={styles.careText}>{`${stay.care.done} of ${stay.care.total} done`}</Text>
-          </View>
-          <View style={styles.bar} accessibilityLabel={`${stay.care.done} of ${stay.care.total} care tasks done`}>
-            {Array.from({ length: stay.care.total }, (_, i) => (
-              <View key={i} style={[styles.seg, i < stay.care.done ? styles.segOn : styles.segOff]} />
-            ))}
-          </View>
-        </View>
-      ) : null}
+      <PhotoViewerSheet visible={viewing} title={stay.sitterName} photos={photos} onClose={() => setViewing(false)} testID="stay-sitter-photos" />
     </View>
   );
 }
@@ -113,6 +120,7 @@ const makeStyles = (theme: Theme) =>
     careHead: { flexDirection: "row", justifyContent: "space-between" },
     careText: { fontSize: HOME_TEXT.body, lineHeight: 17.5, fontWeight: theme.fontWeight.bold, color: tokens.color.onMedia },
     bar: { flexDirection: "row", gap: 6 },
+    barDense: { gap: 3 },
     seg: { flex: 1, height: 8, borderRadius: 4 },
     segOn: { backgroundColor: tokens.color.gold },
     segOff: { backgroundColor: "rgba(255,255,255,0.22)" },

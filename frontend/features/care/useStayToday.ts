@@ -5,12 +5,13 @@ import { listOwnerBookings } from "../../lib/bookings";
 import { listFeedPosts } from "../../lib/feed";
 import { useNotifications } from "../../providers/NotificationsProvider";
 import { useSession } from "../../providers/SessionProvider";
-import { APP_TIMEZONE, appToday, daySpan, formatTime, isoToZoned } from "../schedule/dates";
+import { APP_TIMEZONE, appToday, daySpan, formatTime, isoToZoned, zonedToIso } from "../schedule/dates";
 import { isCaring } from "../feed/caringPets";
-import { listTodayCheckins, listTodayTaskLogs } from "./careApi";
+import { listCareTasks, listTodayCheckins, listTodayTaskLogs } from "./careApi";
 
 export type StayToday = {
   bookingId: string;
+  sitterId: string;
   sitterName: string;
   pets: { id: string; name: string }[];
   /** Day N of M of the stay (app timezone). */
@@ -18,7 +19,11 @@ export type StayToday = {
   days: number;
   /** "Picked up Fri 7:30 AM": null until the sitter has received the pets. */
   receivedLine: string | null;
-  /** 0 of 0 when there are no tasks today (or they could not be read). */
+  /**
+   * Today's care: the checklist tasks (medication, meals, walks, litter, play, sleep) the sitter ticks off with a tap.
+   * Total = tasks that fall inside this stay today (every daily one, plus any one-off already opened); done = the
+   * ones the sitter completed. 0 of 0 when there are none (or they could not be read).
+   */
   care: { done: number; total: number };
   /** Zero when nothing was logged (or it could not be read). */
   photos: number;
@@ -54,21 +59,36 @@ export function useStayToday(): StayToday | null {
         ? `${booking.dropOff.locationType === "owner_home" ? "Picked up" : "Dropped off"} ${weekday.format(new Date(received))} ${formatTime(isoToZoned(received).time)}`
         : null;
 
-      const [logs, checkins, posts] = await Promise.all([
-        Promise.all(pets.map((p) => listTodayTaskLogs(p.id))).catch(() => null),
+      const [care, checkins, posts] = await Promise.all([
+        Promise.all(
+          pets.map(async (p) => {
+            const [logs, tasks] = await Promise.all([listTodayTaskLogs(p.id), listCareTasks(p.id)]);
+            // The sitter's day is opened (logs written) only when they open Home, so daily tasks count before that too.
+            const logged = new Set(logs.map((l) => l.task_id));
+            const from = Date.parse(booking.dropOff!.at);
+            const to = Date.parse(booking.pickUp!.at);
+            const planned = tasks.filter((t) => {
+              if (!t.active || (!t.repeat_daily && !logged.has(t.id))) return false;
+              const due = Date.parse(zonedToIso(today, t.scheduled_time.slice(0, 5)));
+              return due >= from && due <= to;
+            });
+            const ids = new Set([...planned.map((t) => t.id), ...logged]);
+            return { total: ids.size, done: logs.filter((l) => l.status === "done").length };
+          }),
+        ).catch(() => null),
         Promise.all(pets.map((p) => listTodayCheckins(p.id))).catch(() => null),
         Promise.all(pets.map((p) => listFeedPosts(p.id))).catch(() => null),
       ]);
-      const allLogs = logs?.flat() ?? [];
       const walks = (checkins?.flat() ?? []).filter((c) => c.kind === "walk").reduce((sum, c) => sum + (Number(c.value) || 0), 0);
       setStay({
         bookingId: booking.id,
+        sitterId: booking.sitterId,
         sitterName: booking.sitterName,
         pets,
         day,
         days,
         receivedLine,
-        care: { done: allLogs.filter((l) => l.status === "done").length, total: allLogs.length },
+        care: { done: care?.reduce((n, c) => n + c.done, 0) ?? 0, total: care?.reduce((n, c) => n + c.total, 0) ?? 0 },
         photos: posts ? posts.flat().filter((p) => p.media.resourceType === "image" && isoToZoned(p.createdAt).day === today).length : 0,
         walkMinutes: walks,
       });
