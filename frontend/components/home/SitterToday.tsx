@@ -100,22 +100,6 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
   return (
     <Screen contentStyle={styles.page} testID="sitter-home">
       <View style={styles.page} testID="sitter-dashboard">
-        {/* Allergies of every pet in care, always on top: they are checked all day, not only at meals. */}
-        {pets.some((p) => allergies[p.id]) ? (
-          <View style={styles.allergies} accessibilityRole="alert" testID="allergy-banner">
-            {pets
-              .filter((p) => allergies[p.id])
-              .map((p) => (
-                <View key={p.id} style={styles.allergyRow} testID={`allergy-${p.id}`}>
-                  <Icon name="warning" size={16} color={tokens.color.warning} />
-                  <Text style={styles.allergyText}>
-                    <Text style={styles.allergyName}>{`${p.name}: `}</Text>
-                    {`No ${allergies[p.id].join(", ")}`}
-                  </Text>
-                </View>
-              ))}
-          </View>
-        ) : null}
         {top}
 
         {/* An owner's care request is waiting for an answer: one line, the whole request one tap away. */}
@@ -169,6 +153,22 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
           </View>
         ) : null}
 
+        {/* Allergies of every pet in care, right under the next task, in view all day, not only at meals. */}
+        {pets.some((p) => allergies[p.id]) ? (
+          <View style={styles.allergies} accessibilityRole="alert" testID="allergy-banner">
+            {pets
+              .filter((p) => allergies[p.id])
+              .map((p) => (
+                <View key={p.id} style={styles.allergyRow} testID={`allergy-${p.id}`}>
+                  <Icon name="warning" size={16} color={tokens.color.warning} />
+                  <Text style={styles.allergyText}>
+                    <Text style={styles.allergyName}>{`${p.name}: `}</Text>
+                    {`No ${allergies[p.id].join(", ")}`}
+                  </Text>
+                </View>
+              ))}
+          </View>
+        ) : null}
         {/* The owner's Heads-ups for the pets in care: one line here, all of them one tap away. */}
         {cautions.length > 0 ? (
           <Pressable
@@ -185,6 +185,28 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             {cautions.length > 1 ? <Text style={styles.headsUpText}>{`+${cautions.length - 1}`}</Text> : null}
           </Pressable>
         ) : null}
+
+        <Text accessibilityRole="header" style={styles.heading} testID="quick-heading">
+          {`Quick check-in · ${pet.name}`}
+        </Text>
+        {manyPets ? (
+          <View style={styles.chips}>
+            {pets.map((p) => (
+              <Pressable
+                key={p.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: p.id === pet.id }}
+                hitSlop={4}
+                onPress={() => setSelected(p.id)}
+                style={({ pressed }) => [styles.chip, p.id === pet.id && styles.chipOn, pressed && styles.pressed]}
+                testID={`caring-pet-${p.id}`}
+              >
+                <Text style={[styles.chipText, p.id === pet.id && styles.chipTextOn]}>{`${SPECIES_EMOJI[p.species]} ${p.name}`}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        <CheckinTiles key={pet.id} pet={pet} onSent={reload} />
 
         {items.length > 0 ? (
           <View style={styles.checklist} testID="checklist">
@@ -226,28 +248,6 @@ export function SitterToday({ pets, top, bottom }: { pets: CaringPet[]; top?: Re
             })}
           </View>
         ) : null}
-
-        <Text accessibilityRole="header" style={styles.heading} testID="quick-heading">
-          {`Quick check-in · ${pet.name}`}
-        </Text>
-        {manyPets ? (
-          <View style={styles.chips}>
-            {pets.map((p) => (
-              <Pressable
-                key={p.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: p.id === pet.id }}
-                hitSlop={4}
-                onPress={() => setSelected(p.id)}
-                style={({ pressed }) => [styles.chip, p.id === pet.id && styles.chipOn, pressed && styles.pressed]}
-                testID={`caring-pet-${p.id}`}
-              >
-                <Text style={[styles.chipText, p.id === pet.id && styles.chipTextOn]}>{`${SPECIES_EMOJI[p.species]} ${p.name}`}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-        <CheckinTiles key={pet.id} pet={pet} onSent={reload} />
 
         <View style={styles.acts}>
           <Pressable

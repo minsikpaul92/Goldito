@@ -1331,12 +1331,12 @@ Screen-level components (`frontend/components/`, `frontend/features/`). Base com
 
 | Kind | Label | ID (`testID`) | Line |
 | --- | --- | --- | --- |
-| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 123 |
-| Pressable | — | `dashboard-next-done` | 154 |
+| Pressable | ``Care request for ${requests[0].petName} is waiting`` | `request-line` | 107 |
+| Pressable | — | `dashboard-next-done` | 138 |
 | Pressable | ``Heads-up: ${cautions.length} things to watch out for`` | `headsup-compact` | 174 |
-| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 198 |
-| Pressable | — | ``check-open-${item.log.id}`` | 210 |
-| Pressable | — | ``caring-pet-${p.id}`` | 236 |
+| Pressable | — | ``caring-pet-${p.id}`` | 195 |
+| Pressable | ``${item.task.title} ${item.pet.name}`` | ``check-box-${item.log.id}`` | 220 |
+| Pressable | — | ``check-open-${item.log.id}`` | 232 |
 | Pressable | — | `action-five-second` | 253 |
 | Pressable | — | `action-treat-check` | 266 |
 | TextButton | All tasks | `shortcut-tasks` | 282 |
