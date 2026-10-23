@@ -5,7 +5,7 @@ import { completePetPhoto } from "./petPhotosApi";
 import {
   OwnerOnboardingDraft,
   birthdateFromAge,
-  foodsFromDraft,
+  confirmedFoods,
   profileFromDraft,
   weightFromDraft,
 } from "./draft";
@@ -66,7 +66,7 @@ export async function saveOwnerOnboarding(
     p_weight_kg: weightFromDraft(draft),
     p_notes: draft.petIntro.trim() || null,
     p_profile: profileFromDraft(draft),
-    p_allergens: foodsFromDraft(draft),
+    p_allergens: confirmedFoods(draft),
   });
   if (error) fail("save your pet");
   // One after the other, so the first photo stays the cover. A retry sends the same photos again and adds nothing twice.

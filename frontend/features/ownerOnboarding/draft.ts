@@ -30,6 +30,8 @@ export type OwnerOnboardingDraft = {
   safety: Record<string, string>;
   /** Foods to avoid: chip names and typed ones, lowercase. */
   foods: string[];
+  /** The owner checked the foods list and said it is right. Any change to the list takes it back. Nothing about foods is saved without it. */
+  foodsChecked: boolean;
   intro: string;
   /** What the owner said about the pet (voice sign-up): suggestions with their quotes, kept so a reload still shows them. */
   voice: VoiceFacts;
@@ -62,6 +64,7 @@ export const EMPTY_DRAFT: OwnerOnboardingDraft = {
   answers: {},
   safety: {},
   foods: [],
+  foodsChecked: false,
   intro: "",
   voice: NO_FACTS,
   coat: "",
@@ -123,7 +126,7 @@ export function withPetCounts(draft: OwnerOnboardingDraft, counts: PetCounts): O
   ];
   const [species = null, ...pending] = list;
   if (species === draft.species) return { ...draft, pending };
-  return { ...draft, species, pending, answers: {}, safety: {}, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
+  return { ...draft, species, pending, answers: {}, safety: {}, foodsChecked: false, voice: NO_FACTS, suggested: [], photoGuess: null, coat: "" };
 }
 
 /** The draft for the next pet once one is saved: only what the owner said about themselves carries over. */
@@ -149,12 +152,19 @@ export function birthdateFromAge(ageYears: number, today = new Date()): string {
 }
 
 export function profileFromDraft(draft: OwnerOnboardingDraft): PetProfile {
-  return { ...EMPTY_PROFILE, answers: { ...draft.answers }, safety: { ...draft.safety }, ...(draft.coat ? { coat: draft.coat } : {}) };
+  // The foods answer (s6) goes with the foods: without the owner's check it is left out.
+  const safety = Object.fromEntries(Object.entries(draft.safety).filter(([key]) => key !== "s6" || draft.foodsChecked));
+  return { ...EMPTY_PROFILE, answers: { ...draft.answers }, safety, ...(draft.coat ? { coat: draft.coat } : {}) };
 }
 
-/** Lowercase and unique, as `pet_allergies` stores them. */
+/** Lowercase and unique, as the foods step lists them (whether or not the owner has checked the list yet). */
 export function foodsFromDraft(draft: OwnerOnboardingDraft): string[] {
   return [...new Set(draft.foods.map(normalizeAllergen).filter((f) => f !== ""))];
+}
+
+/** The foods that are saved: only a list the owner checked. A skipped or unchecked list saves nothing. */
+export function confirmedFoods(draft: OwnerOnboardingDraft): string[] {
+  return draft.foodsChecked ? foodsFromDraft(draft) : [];
 }
 
 const KG_PER_LB = 0.45359237;

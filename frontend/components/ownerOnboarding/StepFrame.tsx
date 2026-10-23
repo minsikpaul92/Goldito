@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Icon } from "../../components/ui/Icon";
 import { BrandLogo } from "../BrandLogo";
+import { Button } from "../ui/Button";
 import { Screen } from "../ui/Screen";
 import { TextButton } from "../ui/TextButton";
 import { useTheme, useThemedStyles } from "../../providers/ThemeProvider";
@@ -15,14 +16,17 @@ type Props = {
   hint?: string;
   onBack?: () => void;
   onSkipAll?: () => void;
+  /** Skip this question: the right button of the Back and Skip row under the footer. */
+  onSkip?: () => void;
+  skipTestID?: string;
   children: ReactNode;
-  /** Below the answers: the primary button and the Skip link. */
+  /** Below the answers: the primary button (and anything else that goes above the Back and Skip row). */
   footer?: ReactNode;
   testID?: string;
 };
 
 /** One question per screen, large text (11.15 §7.1): logo, progress bar, Back, a 28 px question, the answers, the footer. */
-export function StepFrame({ progress, title, hint, onBack, onSkipAll, children, footer, testID }: Props) {
+export function StepFrame({ progress, title, hint, onBack, onSkipAll, onSkip, skipTestID = "own-skip", children, footer, testID }: Props) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
 
@@ -49,10 +53,19 @@ export function StepFrame({ progress, title, hint, onBack, onSkipAll, children, 
       </Text>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <View style={styles.body}>{children}</View>
-      {footer || onBack ? (
+      {footer || onBack || onSkip ? (
         <View style={styles.footer}>
           {footer}
-          {onBack ? <TextButton label="Back" onPress={onBack} testID="own-back-bottom" /> : null}
+          {onBack || onSkip ? (
+            <View style={styles.navRow}>
+              <View style={styles.navSlot}>
+                {onBack ? <Button label="Back" variant="secondary" onPress={onBack} testID="own-back-bottom" /> : null}
+              </View>
+              <View style={styles.navSlot}>
+                {onSkip ? <Button label="Skip" variant="secondary" onPress={onSkip} testID={skipTestID} /> : null}
+              </View>
+            </View>
+          ) : null}
         </View>
       ) : null}
     </Screen>
@@ -78,4 +91,6 @@ const makeStyles = (theme: Theme) =>
     hint: { fontSize: 18, lineHeight: 24, color: theme.color.textMuted },
     body: { gap: theme.spacing.sm + theme.spacing.xs },
     footer: { gap: theme.spacing.sm, marginTop: theme.spacing.sm, alignItems: "stretch" },
+    navRow: { flexDirection: "row", gap: theme.spacing.sm },
+    navSlot: { flex: 1 },
   });

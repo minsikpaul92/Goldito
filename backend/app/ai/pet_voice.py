@@ -7,7 +7,7 @@ quote is really in the text and that the value fits it. A fact that fails any ch
 import re
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class RawFact(BaseModel):
@@ -16,6 +16,12 @@ class RawFact(BaseModel):
     value: Any = None
     quote: str = ""
 
+    @field_validator("quote", mode="before")
+    @classmethod
+    def _null_quote_is_no_quote(cls, value: Any) -> Any:
+        # The model writes "quote": null for what was not said; that is a fact without a quote, not a broken answer.
+        return "" if value is None else value
+
 
 class RawFacts(BaseModel):
     breed: RawFact | None = None
@@ -23,6 +29,23 @@ class RawFacts(BaseModel):
     weight_kg: RawFact | None = None
     foods: list[RawFact] = []
     answers: dict[str, RawFact] = {}
+    notes: dict[str, RawFact] = {}
+
+    @field_validator("foods", mode="before")
+    @classmethod
+    def _no_empty_foods(cls, value: Any) -> Any:
+        # An item the model has nothing for comes back as null: skip it, keep the rest.
+        return [] if value is None else [item for item in value if item is not None] if isinstance(value, list) else value
+
+    @field_validator("answers", "notes", mode="before")
+    @classmethod
+    def _no_empty_entries(cls, value: Any) -> Any:
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            return value
+        # `"loves": null` is "nothing said"; a bare string is the quote itself.
+        return {key: ({"quote": item} if isinstance(item, str) else item) for key, item in value.items() if item is not None}
 
 
 class Fact(BaseModel):
@@ -36,8 +59,16 @@ class Facts(BaseModel):
     weight_kg: Fact | None = None
     foods: list[Fact] = []
     answers: dict[str, Fact] = {}
+    # What the owner said for the free-text items of the numbered list, in their own words (the key says which item).
+    notes: dict[str, Fact] = {}
 
 
+# The free-text items of the list the owner reads from: what the pet is like, what it loves, what scares it and how to
+# calm it, a normal day, health and medicine, what to be careful with, anything else.
+NOTE_KEYS = ("personality", "loves", "scares", "routine", "health", "careful", "more")
+MAX_NOTE = 300
+# What an owner says for an item that has nothing to tell: not a note.
+EMPTY_NOTES = {"nothing", "nothing special", "nothing in particular", "none", "no", "nope", "not really", "n a", "na"}
 MAX_FOODS = 8
 MAX_BREED = 60
 MAX_FOOD = 40
@@ -147,5 +178,12 @@ def validate_facts(raw: RawFacts, text: str, options: dict[str, set[str]]) -> Fa
         value = str(answer.value)
         if value in allowed and quote_in(answer.quote, text):
             facts.answers[key] = Fact(value=value, quote=answer.quote.strip())
+
+    # Notes are the owner's own words for an item, so the quote is the value. It has to be in the text.
+    for key in NOTE_KEYS:
+        note = raw.notes.get(key)
+        words = " ".join(note.quote.split()) if note else ""
+        if words and len(words) <= MAX_NOTE and " ".join(_tokens(words)) not in EMPTY_NOTES and quote_in(words, text):
+            facts.notes[key] = Fact(value=words, quote=words)
 
     return facts

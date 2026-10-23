@@ -1,8 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-import { applyVoiceFacts } from "../features/ownerOnboarding/applyVoice";
-import { openQuestions } from "../features/ownerOnboarding/voiceApi";
-import { birthdateFromAge, convertWeight, foodsFromDraft, EMPTY_DRAFT, weightFromDraft, weightText } from "../features/ownerOnboarding/draft";
+import { applyVoiceForm, formFromFacts, introFromForm, voiceItems } from "../features/ownerOnboarding/applyVoice";
+import { NO_FACTS, openQuestions } from "../features/ownerOnboarding/voiceApi";
+import {
+  EMPTY_DRAFT,
+  birthdateFromAge,
+  confirmedFoods,
+  convertWeight,
+  foodsFromDraft,
+  profileFromDraft,
+  weightFromDraft,
+  weightText,
+} from "../features/ownerOnboarding/draft";
 import { CAT_QUESTIONS, DOG_QUESTIONS, SAFETY_QUESTIONS, chartAxes, fill } from "../features/ownerOnboarding/questions";
 import { axisLevels, glance, missingAxes, parseProfile, safetyChips } from "../features/ownerOnboarding/scoring";
 
@@ -99,48 +108,123 @@ test.describe("owner onboarding logic", () => {
   });
 });
 
-test.describe("voice facts in the draft", () => {
+test.describe("voice answers in the draft", () => {
   const facts = {
     breed: { value: "Maltese", quote: "a Maltese" },
     age_years: { value: 4, quote: "four years old" },
     weight_kg: { value: 5.9, quote: "13 pounds" },
-    foods: [{ value: "chicken", quote: "allergic to chicken" }],
+    foods: [
+      { value: "chicken", quote: "allergic to chicken" },
+      { value: "beef", quote: "allergic to chicken and beef" },
+    ],
     answers: {
-      d4: { value: "3", quote: "gets nervous" },
-      d1: { value: "9", quote: "x" },
       s1: { value: "once", quote: "once snapped" },
+    },
+    notes: {
+      personality: { value: "she is a sweet girl", quote: "she is a sweet girl" },
+      routine: { value: "wet food twice a day", quote: "wet food twice a day" },
+      health: { value: "a joint pill each morning", quote: "a joint pill each morning" },
+      careful: { value: "no jumping", quote: "no jumping" },
     },
   };
 
-  test("empty fields are filled, chart answers are marked suggested, safety and foods are never filled", () => {
-    const patch = applyVoiceFacts(EMPTY_DRAFT, facts);
-    expect(patch).toMatchObject({ breed: "Maltese", ageYears: 4, weight: "5.9", answers: { d4: 3 }, suggested: ["d4"] });
-    expect(patch.safety).toBeUndefined();
-    expect(patch.foods).toBeUndefined();
+  test("the form has one text per question, filled from what was heard", () => {
+    expect(formFromFacts(facts, "kg")).toEqual({
+      breed: "Maltese",
+      age: "4",
+      weight: "5.9",
+      personality: "she is a sweet girl",
+      loves: "",
+      scares: "",
+      routine: "wet food twice a day",
+      allergies: "chicken, beef",
+      health: "a joint pill each morning",
+      careful: "no jumping",
+      more: "",
+    });
+    expect(formFromFacts(facts, "lbs").weight).toBe("13");
+    expect(formFromFacts(NO_FACTS, "kg")).toMatchObject({ breed: "", age: "", weight: "", allergies: "" });
+  });
+
+  test("the questions use the pet's name and the weight unit", () => {
+    const items = voiceItems("Pip", "lbs", "dog");
+    expect(items.map((i) => i.key)).toEqual([
+      "breed", "age", "weight", "personality", "loves", "scares", "routine", "allergies", "health", "careful", "more",
+    ]);
+    expect(items[0].question).toBe("What breed is Pip?");
+    expect(items[2].placeholder).toBe("lbs");
+    expect(items.find((i) => i.key === "scares")?.question).toBe("What scares or upsets Pip, and how do you calm Pip down?");
+  });
+
+  test("the hints name what matters for a dog or for a cat", () => {
+    const hint = (species: "dog" | "cat", key: string) => voiceItems("Pip", "kg", species).find((i) => i.key === key)?.hint;
+    expect(hint("dog", "routine")).toContain("walks");
+    expect(hint("cat", "routine")).toContain("litter box");
+    expect(hint("dog", "careful")).toContain("other dogs");
+    expect(hint("cat", "careful")).toContain("scratching");
+  });
+
+  test("the answers kept fill the draft: the intro is the owner's words, allergies are theirs, safety stays a suggestion", () => {
+    const patch = applyVoiceForm(EMPTY_DRAFT, formFromFacts(facts, "kg"), facts);
+    expect(patch).toMatchObject({
+      breed: "Maltese",
+      ageYears: 4,
+      weight: "5.9",
+      foods: ["chicken", "beef"],
+      safety: { s6: "listed" },
+      petIntro: "she is a sweet girl\nRoutine: wet food twice a day\nHealth: a joint pill each morning\nWatch out: no jumping",
+    });
+    expect(patch.answers).toBeUndefined();
     expect(patch.voice).toBe(facts);
   });
 
-  test("a heard weight is written in the unit the owner picked", () => {
-    expect(applyVoiceFacts({ ...EMPTY_DRAFT, weightUnit: "lbs" }, facts).weight).toBe("13");
-  });
-
-  test("what the owner already picked is kept", () => {
-    const patch = applyVoiceFacts({ ...EMPTY_DRAFT, breed: "Poodle", ageYears: 9, weight: "3", answers: { d4: 1 } }, facts);
+  test("typed answers: ages and allergies are read from the text, blank boxes change nothing", () => {
+    const patch = applyVoiceForm(
+      { ...EMPTY_DRAFT, breed: "Poodle", foods: ["dairy"], petIntro: "Kept" },
+      { breed: "", age: "3 years", weight: "", allergies: " Fish, dairy ,", personality: "", routine: "" },
+      null,
+    );
     expect(patch.breed).toBeUndefined();
-    expect(patch.ageYears).toBeUndefined();
+    expect(patch.ageYears).toBe(3);
     expect(patch.weight).toBeUndefined();
-    expect(patch.answers).toEqual({ d4: 1 });
-    expect(patch.suggested).toEqual([]);
+    expect(patch.foods).toEqual(["dairy", "fish"]);
+    expect(patch.safety).toEqual({ s6: "listed" });
+    expect(patch.petIntro).toBeUndefined();
+    expect(patch.voice).toBe(NO_FACTS);
   });
 
-  test("the open questions list only what is not answered, with the pet's name in the wording", () => {
-    const questions = openQuestions("dog", "Pip", { d1: 2 }, { s1: "never" });
+  test("an intro is cut to the limit and empty answers add nothing", () => {
+    expect(introFromForm({}, 500)).toBe("");
+    expect(introFromForm({ loves: "x".repeat(1200) }, 1000)).toHaveLength(1000);
+  });
+
+  test("only the safety questions still open go to the server, never the personality chart", () => {
+    const questions = openQuestions("Pip", { s1: "never" });
     const keys = questions.map((q) => q.key);
-    expect(keys).not.toContain("d1");
+    expect(keys.some((k) => /^[dc]\d+$/.test(k))).toBe(false);
     expect(keys).not.toContain("s1");
-    expect(keys).toContain("d2");
     expect(keys).toContain("s2");
-    expect(questions.find((q) => q.key === "d2")?.prompt).toContain("Pip");
-    expect(questions.find((q) => q.key === "d2")?.options.map((o) => o.value)).toEqual(["1", "2", "3", "4"]);
+    expect(questions.find((q) => q.key === "s2")?.prompt).toContain("Pip");
+  });
+});
+
+test.describe("foods need the owner's check", () => {
+  const listed = { ...EMPTY_DRAFT, foods: ["Chicken", "dairy"], safety: { s1: "never", s6: "listed" } };
+
+  test("an unchecked list saves nothing: no allergies and no foods answer", () => {
+    expect(confirmedFoods(listed)).toEqual([]);
+    expect(profileFromDraft(listed).safety).toEqual({ s1: "never" });
+  });
+
+  test("a checked list is saved with its foods answer", () => {
+    const checked = { ...listed, foodsChecked: true };
+    expect(confirmedFoods(checked)).toEqual(["chicken", "dairy"]);
+    expect(profileFromDraft(checked).safety).toEqual({ s1: "never", s6: "listed" });
+  });
+
+  test("allergies from the voice form start unchecked, even if the list was checked before", () => {
+    const patch = applyVoiceForm({ ...listed, foodsChecked: true }, { allergies: "fish" }, null);
+    expect(patch.foods).toEqual(["Chicken", "dairy", "fish"]);
+    expect(patch.foodsChecked).toBe(false);
   });
 });

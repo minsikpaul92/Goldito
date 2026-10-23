@@ -32,8 +32,39 @@ export type Recording = {
   stop: () => Promise<Blob>;
 };
 
+/**
+ * Calls `onLevel` (0 to 1, about 12 times a second) with how loud the voice is, for a waveform. Does nothing in a
+ * browser without Web Audio. Returns the function that stops it.
+ */
+function meterLevel(stream: MediaStream, onLevel: (level: number) => void): () => void {
+  try {
+    const Context = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Context) return () => undefined;
+    const context = new Context();
+    const source = context.createMediaStreamSource(stream);
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    const data = new Uint8Array(analyser.fftSize);
+    const timer = setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let peak = 0;
+      for (const sample of data) peak = Math.max(peak, Math.abs(sample - 128));
+      onLevel(Math.min(1, peak / 64));
+    }, 80);
+    return () => {
+      clearInterval(timer);
+      source.disconnect();
+      void context.close();
+      onLevel(0);
+    };
+  } catch {
+    return () => undefined;
+  }
+}
+
 /** Asks for the microphone and starts recording. Stops by itself after MAX_RECORDING_MS. */
-export async function startRecording(onAutoStop?: () => void): Promise<Recording> {
+export async function startRecording(onAutoStop?: () => void, onLevel?: (level: number) => void): Promise<Recording> {
   if (!isVoiceSupported()) throw new VoiceError("unsupported");
   let stream: MediaStream;
   try {
@@ -43,6 +74,7 @@ export async function startRecording(onAutoStop?: () => void): Promise<Recording
     throw new VoiceError(name === "NotAllowedError" || name === "SecurityError" ? "denied" : "failed");
   }
 
+  const stopMeter = onLevel ? meterLevel(stream, onLevel) : () => undefined;
   const mimeType = pickMimeType();
   const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
   const chunks: Blob[] = [];
@@ -52,6 +84,7 @@ export async function startRecording(onAutoStop?: () => void): Promise<Recording
   const finished = new Promise<Blob>((resolve) => {
     recorder.onstop = () => {
       // The microphone light goes off as soon as the recording ends.
+      stopMeter();
       stream.getTracks().forEach((track) => track.stop());
       resolve(new Blob(chunks, { type: recorder.mimeType || mimeType || "audio/webm" }));
     };
