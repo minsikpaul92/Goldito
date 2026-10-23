@@ -174,6 +174,7 @@
 | 로그인 · 회원가입 · 역할별 화면 · Welcome 투어 | ✅ 🤖 | 01 · 03 · OB |
 | 펫 · 프로필 | ✅ 🤖 | 03 |
 | **Profile의 Save 고정** (스크롤해도 화면 맨 아래에 Save와 저장 에러가 보임, 오너 · 시터 같음 · 시터는 Your photos가 Badges 위) | 🟡 기존 `profile` e2e가 `profile-save`로 저장 확인 · 고정 위치 · 순서는 사람 확인 대기 | #292 |
+| **Profile 정리 (#180)**: 선택 입력 카드 접기 · 주소 상세 · 우편번호 · 오너 패킹 리스트 · 시터 인수 체크 | 🟡 DB(`015g` 주소 상세 · 우편번호, `015h` 오너 패킹 리스트, 호스팅 DB에 적용됨 10/23) · SQL smoke(CI에서 처음 실행, 로컬 Postgres는 못 돌림) | #180 |
 | 데스크톱 폰 프레임 · 마우스=손가락 | ✅ 🤖 | 01 |
 | 데스크톱 Split view, 폰 두 개 나란히 (`?view=split`, 폭 ≥ 900), 각 폰은 로그인 화면에서 시작하고 로그인한 계정이 폰 위에 보임 | ✅ 🤖 `split.spec.ts` · 사람 SPLIT-1은 다시 확인 대기, SPLIT-2 – 5는 ✅ (2026-10-15 Minsik) | 10 / 10.10 |
 
@@ -1085,6 +1086,13 @@
 | STAGEBAR-2 | Meet & Greet 시간이 합의됨(Meet & Greet set) | M&G 아래 작은 글씨 **Scheduled**. 화상이든 직접이든 같음(Meet & Greet에는 트립이 없음) | 🤖 `meet-greet` | ➖ |
 | STAGEBAR-3 | 둘 다 건너뛰기에 동의 | M&G 원에 ✓ 대신 **–**, 아래 **Skipped** | 🤖 `meet-greet` | ➖ |
 | STAGEBAR-4 | 결제 뒤 맡기기 전 / 맡기기 트립이 가는 중 | Care 아래 **Scheduled**, 트립이 출발해 끝날 때까지(도착 포함) **Trip**, 맡기면 사라짐. 채팅과 예약 화면 모두 | 🤖 `chat-trip` | 실제 트립 👤 |
+
+### 3.52 Profile 정리 (PFOLD) · #180 · *사전: 호스팅 DB에 `015g` · `015h` 적용 뒤(10/23 적용됨)*
+
+| ID | 해보기 | 기대 결과 | 자동 | 사람 |
+| --- | --- | --- | --- | --- |
+| PFOLD-1 | (DB) `rls_smoke.sql`의 015g 블록 | 시터의 `home_address_2` · `home_postal_code`가 있으면 오너가 보는 주소가 "Unit 5, 100 Example St M5A 3C4"로 합쳐져 나옴. 거리 주소 끝에 이미 같은 우편번호가 있으면 반복하지 않고, 아무것도 없으면 null. 클라이언트는 `full_address`를 직접 못 부름 | SQL `rls_smoke` (015g) | CI 결과 대기 |
+| PFOLD-2 | (DB) `rls_smoke.sql`의 015h 블록 | 오너의 `packing_list`는 `get_handoff_details`의 **drop_off 행에만** 실리고 pick_up 행은 null. 시터와 오너 둘 다 그 행에서 읽음. 시터 테이블의 옛 `packing_list`는 더 이상 쓰이지 않음 | SQL `rls_smoke` (3C.4 · 015h) | CI 결과 대기 |
 
 ## 4. 알려진 제약 (버그로 올리기 전에 확인)
 
