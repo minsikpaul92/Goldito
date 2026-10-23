@@ -24,7 +24,7 @@ type State =
 
 const EMPTY: Record<Bucket, { emoji: string; title: string; message: string }> = {
   chats: {
-    emoji: "💬",
+    emoji: "✉️",
     title: "No chats yet",
     message: "Chats with owners show here.",
   },

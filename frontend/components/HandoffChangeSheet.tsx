@@ -200,7 +200,7 @@ export function HandoffChangeSheet({
       <SegmentedControl
         options={KINDS.map((k) => ({
           value: k,
-          label: done[k] ? `${KIND_LABEL[k]} · done ✓` : problems[k] ? `${KIND_LABEL[k]} ⚠️` : KIND_LABEL[k],
+          label: done[k] ? `${KIND_LABEL[k]} · done ✓` : problems[k] ? `${KIND_LABEL[k]} · check` : KIND_LABEL[k],
           disabled: done[k],
         }))}
         value={kind}

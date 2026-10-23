@@ -17,6 +17,7 @@ import { Chip } from "../../../../components/ui/Chip";
 import { Tag } from "../../../../components/ui/Tag";
 import { ChipSuggestions } from "../../../../components/ChipSuggestions";
 import { EmptyState } from "../../../../components/ui/EmptyState";
+import { Icon } from "../../../../components/ui/Icon";
 import { LoadingView } from "../../../../components/ui/LoadingView";
 import { Screen } from "../../../../components/ui/Screen";
 import { Sheet } from "../../../../components/ui/Sheet";
@@ -58,7 +59,7 @@ import { ReceivedReview } from "../../../../components/ReceivedReview";
 import { ReturnSheet } from "../../../../components/ReturnSheet";
 import { OwnerNoteCard, PastOwnerNotes } from "../../../../components/OwnerNote";
 import { requestLifeRecord } from "../../../../features/completion/completionApi";
-import { useThemedStyles } from "../../../../providers/ThemeProvider";
+import { useTheme, useThemedStyles } from "../../../../providers/ThemeProvider";
 import { useOnBookingChange } from "../../../../providers/NotificationsProvider";
 import { useToast } from "../../../../providers/ToastProvider";
 import { Theme } from "../../../../theme/themes";
@@ -115,6 +116,7 @@ function actionError(error: unknown, owner: string): string {
  * **Change time or place**. Received / Returned land in 3B.6, Meet & Greet in 3B.9.
  */
 export default function SitterBookingDetail() {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const toast = useToast();
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -164,7 +166,7 @@ export default function SitterBookingDetail() {
   if (state.status === "missing") {
     return (
       <Screen>
-        <EmptyState emoji="🔍" title="Booking not found" message="It may have been cancelled or removed." />
+        <EmptyState emoji="📅" title="Booking not found" message="It may have been cancelled or removed." />
       </Screen>
     );
   }
@@ -381,7 +383,10 @@ export default function SitterBookingDetail() {
             </Text>
             {pet.cautions.length > 0 ? (
               <View style={styles.headsUp} testID={`heads-up-${pet.name}`}>
-                <Text style={styles.warning}>⚠️ Heads-up</Text>
+                <View style={styles.warnRow}>
+                  <Icon name="warning" size={16} color={theme.color.warning} />
+                  <Text style={styles.warning}>Heads-up</Text>
+                </View>
                 {pet.cautions.map((c) => (
                   <Text key={c} style={styles.body}>{`• ${c}`}</Text>
                 ))}
@@ -634,6 +639,7 @@ const makeStyles = (theme: Theme) =>
       fontSize: theme.fontSize.small,
       color: theme.color.textMuted,
     },
+    warnRow: { flexDirection: "row", alignItems: "center", gap: theme.spacing.xs },
     warning: {
       fontSize: theme.fontSize.small,
       fontWeight: theme.fontWeight.semibold,

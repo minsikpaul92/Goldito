@@ -40,7 +40,7 @@ export default function ReviewScreen() {
   if (!booking || booking.status !== "confirmed" || !booking.pickUp?.completedAt) {
     return (
       <Screen>
-        <EmptyState emoji="⭐" title="Not ready yet" message="You can review a stay once the pets are back home." />
+        <EmptyState emoji="🏠" title="Not ready yet" message="You can review a stay once the pets are back home." />
       </Screen>
     );
   }
