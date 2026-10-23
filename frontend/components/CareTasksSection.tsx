@@ -121,7 +121,7 @@ export function CareTasksSection({ pet, userId }: Props) {
     setBusy(true);
     try {
       await answerCareCounter(request!.id, accept);
-      toast.show(accept ? "Accepted, added to the tasks ✅" : "Declined");
+      toast.show(accept ? "Accepted, added to the tasks" : "Declined");
       await Promise.all([reloadStay(), load()]);
     } catch (error) {
       toast.show((error as Error).message);

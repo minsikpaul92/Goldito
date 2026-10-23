@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, IconName } from "./ui/Icon";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
+import { ProfileAvatar } from "./ProfileAvatar";
 import { useNotifications } from "../providers/NotificationsProvider";
 import { useSession } from "../providers/SessionProvider";
 import { useTheme, useThemedStyles } from "../providers/ThemeProvider";
@@ -100,7 +101,11 @@ export function HeaderMenu() {
             style={({ pressed }) => [styles.you, pressed && styles.pressed]}
             testID="open-profile"
           >
-            <Avatar kind="initial" name={name} size={56} />
+            {profile ? (
+              <ProfileAvatar profileId={profile.id} name={name} size={56} testID="menu-avatar" />
+            ) : (
+              <Avatar kind="initial" name={name} size={56} />
+            )}
             <View style={styles.youText}>
               <Text style={styles.name} numberOfLines={1}>{name}</Text>
               <Text style={styles.muted}>{role}</Text>

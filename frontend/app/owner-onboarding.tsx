@@ -180,12 +180,27 @@ export default function OwnerOnboarding() {
         {`✨ ${lead}: “${fact.quote}”`}
       </Text>
     ) : null;
+
+  const canSkipAll =
+    step === "about" ||
+    step.startsWith("q:") ||
+    step.startsWith("s:") ||
+    step === "foods" ||
+    step === "ownerIntro" ||
+    step === "location";
+
+  const skipAll = () => {
+    setFromSummary(false);
+    goTo("summary");
+  };
+
   const frame = (title: string, body: React.ReactNode, footer?: React.ReactNode, hint?: string) => (
     <StepFrame
       progress={progress(ids, step)}
       title={title}
       hint={hint}
       onBack={index > 0 || fromSummary ? back : undefined}
+      onSkipAll={canSkipAll ? skipAll : undefined}
       footer={footer}
       testID={`own-step-${step}`}
     >
@@ -442,7 +457,10 @@ export default function OwnerOnboarding() {
           ))}
         </View>
       </>,
-      <Button label="Start" onPress={next} testID="own-next" />,
+      <>
+        <Button label="Start" onPress={next} testID="own-next" />
+        <TextButton label="Skip questions" onPress={skipAll} testID="own-skip-questions" />
+      </>,
     );
   }
 

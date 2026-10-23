@@ -100,7 +100,7 @@ test.describe("daily report", () => {
 
     await screen.getByTestId(`report-body-${MAX.id}`).fill("Max had a great day! 🐶");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent. Robert was told");
     await expect(screen.getByTestId(`report-sent-${MAX.id}`)).toContainText("Sent to Robert");
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "Max had a great day! 🐶" });
     expect(db.notifications.find((n) => n.type === "report_sent")?.ref_id).toBe("r1");
@@ -141,7 +141,7 @@ test.describe("daily report", () => {
     await screen.getByTestId(`report-chip-${MAX.id}-${PHOTO_CHIP.id}`).waitFor();
     await screen.getByTestId(`report-body-${MAX.id}`).fill("A walk with a photo.");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", media_id: "media-proof" });
   });
 
@@ -150,7 +150,7 @@ test.describe("daily report", () => {
     const screen = app(page);
     await screen.getByTestId(`report-body-${MAX.id}`).fill("No photo.");
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     expect(db.daily_reports[0].media_id ?? null).toBeNull();
   });
 
@@ -382,7 +382,7 @@ test.describe("daily report", () => {
     await expect(screen.getByTestId(`report-state-${MAX.id}`)).toContainText("Draft. Only you can see it");
     expect(db.daily_reports).toHaveLength(0); // typing saves nothing for the owner
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅ Robert was told");
+    await expect(screen.getByTestId("toast")).toContainText("Sent. Robert was told");
     expect(reportRequests).toHaveLength(0); // no AI call for a hand-written page
     expect(db.daily_reports).toHaveLength(1);
     expect(db.daily_reports[0]).toMatchObject({ status: "sent", body: "We played fetch until Max flopped on the grass.", sitter_id: SITTER.id });
@@ -400,7 +400,7 @@ test.describe("daily report", () => {
     expect(db.report_decor).toHaveLength(0);
 
     await screen.getByTestId(`report-send-${MAX.id}`).click();
-    await expect(screen.getByTestId("toast")).toContainText("Sent ✅");
+    await expect(screen.getByTestId("toast")).toContainText("Sent");
     await expect.poll(() => (db.report_decor.find((r) => r.user_id === SITTER.id)?.items as unknown[] | undefined)?.length).toBe(1);
     expect(db.report_decor[0].report_id).toBe(db.daily_reports[0].id);
   });

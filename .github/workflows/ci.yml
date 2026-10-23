@@ -29,6 +29,7 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docs/CHANGELOG.md'
+              - '.github/workflows/ci.yml'
             # What a browser can see. The Playwright run (export, browsers, specs) needs it; a change that only touches
             # frontend docs, scripts or Vercel config does not. Keep this list in step with the folders in frontend/:
             # main always runs everything, so a miss shows up there.
@@ -93,6 +94,11 @@ jobs:
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # Browsers and their system libraries are baked into the image, so there is no apt or browser download to hang.
+    # Keep the tag equal to @playwright/test in frontend/package-lock.json (bump both together).
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host --init
     strategy:
       fail-fast: false
       matrix:
@@ -137,25 +143,11 @@ jobs:
           EXPO_PUBLIC_API_URL: http://127.0.0.1:4173/api-mock
           # Test-only: the Profile → Demo tools sheet (testing reset) is built in so its spec can open it.
           EXPO_PUBLIC_DEMO_TOOLS: "1"
-      - name: Cache Playwright browsers
-        if: env.RUN_E2E == 'true'
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ env.PW_BROWSERS }}-${{ hashFiles('frontend/package-lock.json') }}
-      - name: Install Playwright browsers
-        # A stuck browser/apt download once hung this step; fail fast and re-run instead.
-        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 8
-        run: npx playwright install --with-deps ${{ env.PW_BROWSERS }}
-      - name: Install Playwright system libraries (browsers come from the cache)
-        if: env.RUN_E2E == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 8
-        run: npx playwright install-deps ${{ env.PW_BROWSERS }}
       - name: Playwright (desktop phone frame + mouse)
         if: env.RUN_E2E == 'true'
         env:
+          # Firefox will not start unless HOME is root's own folder (set here, not on the job: the runner's own steps break).
+          HOME: /root
           # PRs check the frame at one desktop size; main runs all three (1366 / 1440 / 1920).
           PW_FRAME_VIEWPORTS: ${{ github.event_name == 'push' && 'all' || '1366' }}
         run: npx playwright test --shard=${{ matrix.shard }}/2

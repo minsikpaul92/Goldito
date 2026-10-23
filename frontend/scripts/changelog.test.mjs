@@ -16,7 +16,7 @@ test("releases, sections and items; plans and empty releases are left out; markd
     "### Fixed",
     "- Treat check reads the whole label",
   ].join("\n");
-  assert.deepEqual(parse(md), [
+  assert.deepEqual(parse(md, false), [
     {
       version: "1.0.0",
       title: "2026-11-01",
@@ -28,10 +28,14 @@ test("releases, sections and items; plans and empty releases are left out; markd
   ]);
 });
 
-test("releases before 1.0.0 are history, not news", () => {
+test("releases before 1.0.0 are history, not news (unless shown on purpose)", () => {
   const md = ["## [1.1.0] — 2026-12-01", "### Added", "- Recurring bookings", "## [0.2.0] — 2026-10-15", "### Added", "- Photo request"].join("\n");
   assert.deepEqual(
-    parse(md).map((r) => r.version),
+    parse(md, false).map((r) => r.version),
     ["1.1.0"],
+  );
+  assert.deepEqual(
+    parse(md, true).map((r) => r.version),
+    ["1.1.0", "0.2.0"],
   );
 });

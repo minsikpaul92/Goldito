@@ -1,6 +1,6 @@
 # Phase 06 — 케어·투약 의뢰서 → 미션 체크리스트 · 5초 체크 · Activity 히스토리
 
-> **상태 (2026-10-10):** 완료 (2026-10-05, PR #48; 6.7 서버 푸시는 하지 않음). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [TODO](../TODO.md) Phase status이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
+> **상태 (2026-10-10):** 완료 (2026-10-05, PR #48; 6.7 서버 푸시는 하지 않음). DoD 손 확인과 시나리오 상태의 정본은 [test-guide](../test-guide.ko.md) 현황표 · [Phase 목록](README.ko.md)의 상태 칸이고, 이 문서의 체크박스는 더 이상 갱신하지 않는다.
 
 > 공통 전제: [architecture.ko.md](architecture.ko.md) — D8 시간대, D9 missed, D17 리마인더, **D34 5초 체크**  
 > **Product spec (Plan B, locked):** [sitter-care-loop.ko.md](../sitter-care-loop.ko.md) · 제품 흐름: [full-process.ko.md](../full-process.ko.md) Stage 2-1 (의뢰서) · Stage 4-3 (5초 체크)
@@ -95,7 +95,7 @@ Playbook §8 — extend with check-in RPC + Activity (see [sitter-care-loop.ko.m
 
 ---
 
-## Open items (남은 후속 작업 — 명세는 여기, 순서는 [TODO](../TODO.md))
+## Open items (남은 후속 작업 — 명세는 여기, 순서는 [GitHub issues](https://github.com/minsikpaul92/Goldito/issues))
 
 | ID | 내용 | 담당 |
 | :--- | :--- | :--- |

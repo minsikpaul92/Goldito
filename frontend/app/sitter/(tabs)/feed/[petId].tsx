@@ -173,7 +173,7 @@ export default function SitterPetFeed() {
         role: "sitter",
         visibility: shareWithOwner ? "shared" : "private",
       });
-      toast.show(shareWithOwner ? `Shared with ${pet.ownerName} 🐾` : "Saved just for you 🔒");
+      toast.show(shareWithOwner ? `Shared with ${pet.ownerName}` : "Saved just for you");
       await loadPage(0, false, true);
     } catch (err) {
       const message =
